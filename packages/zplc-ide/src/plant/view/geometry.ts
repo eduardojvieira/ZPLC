@@ -70,6 +70,19 @@ export function partShape(view: PartView): ShapeSpec {
     case 'turntable':
     case 'workpiece':
       return { shape: 'box', size: view.pose.size };
+    // M5 parts (PRT-009): each is its pose box; the strings are the ones the parts publish. The crate is an item, drawn by
+    // `crateBoxes`; the mast, rack and doors are secondary views of their parts.
+    case 'crate':
+    case 'lift':
+    case 'stacker-crane':
+    case 'stacker-mast':
+    case 'stacker-rack':
+    case 'machining-centre':
+    case 'machining-door':
+    case 'limit-switch':
+    case 'aligner':
+    case 'chute':
+      return { shape: 'box', size: view.pose.size };
     // Manipulator parts (PRT-009): the pad is the pose box; the frame and beam are secondary views drawn from their own poses.
     case 'pick-place':
     case 'gantry':
@@ -156,6 +169,13 @@ export const OUTLINED_PARTS: ReadonlySet<string> = new Set([
   'diverter-arm',
   'chain-transfer',
   'turntable',
+  'lift',
+  'stacker-crane',
+  'machining-centre',
+  'machining-door',
+  'limit-switch',
+  'aligner',
+  'chute',
 ]);
 
 const thin = 0.02;
@@ -218,12 +238,111 @@ function m4Decor(view: PartView): Decor[] {
   }
 }
 
+/**
+ * Decor of the M5 parts, every cue a shape (VIS-003): a lift has a direction bar on its platform and two guide rails down to
+ * the floor; a crane's fork plate has an extension bar along the fork and a tip bar once the fork is out; a machining centre
+ * has a roof bar, four posts and a progress bar that grows with the cycle (the housing is drawn translucent).
+ */
+function m5Decor(view: PartView): Decor[] {
+  const [w, h, d] = view.pose.size;
+  const top = h / 2 + thin / 2;
+  switch (view.part) {
+    case 'lift': {
+      const rail = Math.max(0, view.pose.p[1] + h / 2);
+      const out: Decor[] = [{ slot: 'direction', tone: 'jaw', lit: true, size: [w * 0.8, thin, d * 0.12], centre: [0, top, 0] }];
+      for (const [slot, z] of [
+        ['rail-a', -(d / 2 + thin)],
+        ['rail-b', d / 2 + thin],
+      ] as const)
+        out.push({ slot, tone: 'jaw', lit: true, size: [thin, rail, thin], centre: [0, (h / 2 - view.pose.p[1]) / 2, z] });
+      return out;
+    }
+    case 'stacker-crane': {
+      const f = num(view.state.fraction, 0);
+      const out: Decor[] = [{ slot: 'extension', tone: 'jaw', lit: true, size: [w * 0.1, thin, d * 0.8], centre: [0, top, 0] }];
+      if (Math.abs(f) > 0.02)
+        out.push({ slot: 'tip', tone: 'jaw', lit: true, size: [w * 0.9, thin, d * 0.1], centre: [0, top, Math.sign(f) * d * 0.45] });
+      return out;
+    }
+    case 'machining-centre': {
+      const f = clamp01(num(view.state.fraction, 0));
+      const out: Decor[] = [{ slot: 'roof', tone: 'jaw', lit: true, size: [w, thin, d], centre: [0, h / 2, 0] }];
+      for (const [slot, x, z] of [
+        ['post-a', -1, -1],
+        ['post-b', 1, -1],
+        ['post-c', -1, 1],
+        ['post-d', 1, 1],
+      ] as const)
+        out.push({ slot, tone: 'jaw', lit: true, size: [thin * 2, h, thin * 2], centre: [x * (w / 2 - thin), 0, z * (d / 2 - thin)] });
+      out.push({
+        slot: 'progress',
+        tone: 'amber',
+        lit: view.state.busy === true,
+        size: [w * f, thin, thin * 2],
+        centre: [-(w * (1 - f)) / 2, h / 2 + thin, 0],
+      });
+      return out;
+    }
+    default:
+      return [];
+  }
+}
+
 /** Boxes drawn inside a part, by catalogue id; empty for a part with none. */
 export function partDecor(view: PartView): readonly Decor[] {
   if (GRIPPER_PARTS.has(view.part)) return gripperDecor(view);
   if (view.part === 'tank') return [tankFill(view)];
   if (view.part === 'stack-light') return stackLamps(view);
-  return m4Decor(view);
+  const m5 = m5Decor(view);
+  return m5.length > 0 ? m5 : m4Decor(view);
+}
+
+/** Wall thickness of the crate (the part publishes the same 0.02 m). */
+export const CRATE_WALL = 0.02;
+
+/**
+ * A crate is an open box (VIS-003): a floor and four wall bars, no top. The floor comes first so it can stand in for the item's
+ * own instance; the rest are the walls. Centres are relative to the item's centre.
+ */
+export function crateBoxes(size: Vec3): readonly { centre: Vec3; size: Vec3 }[] {
+  const [w, h, d] = size;
+  const t = CRATE_WALL;
+  const wallH = Math.max(0, h - t);
+  const y = t / 2;
+  return [
+    { centre: [0, -(h - t) / 2, 0], size: [w, t, d] },
+    { centre: [-(w / 2 - t / 2), y, 0], size: [t, wallH, d] },
+    { centre: [w / 2 - t / 2, y, 0], size: [t, wallH, d] },
+    { centre: [0, y, -(d / 2 - t / 2)], size: [w - 2 * t, wallH, t] },
+    { centre: [0, y, d / 2 - t / 2], size: [w - 2 * t, wallH, t] },
+  ];
+}
+
+const rotate = ([x, y, z, w]: Quat, [vx, vy, vz]: Vec3): Vec3 => {
+  const tx = 2 * (y * vz - z * vy);
+  const ty = 2 * (z * vx - x * vz);
+  const tz = 2 * (x * vy - y * vx);
+  return [vx + w * tx + (y * tz - z * ty), vy + w * ty + (z * tx - x * tz), vz + w * tz + (x * ty - y * tx)];
+};
+
+/** The world pose of one box of a crate (`index` into `crateBoxes`). */
+function crateBox(item: BodyPose, index: number): { p: Vec3; size: Vec3 } {
+  const box = crateBoxes(item.size)[index]!;
+  const o = rotate(item.q, box.centre);
+  return { p: [item.p[0] + o[0], item.p[1] + o[1], item.p[2] + o[2]], size: box.size };
+}
+
+/** The four walls of every crate item, in item order (four consecutive matrices per crate). */
+export function crateWallMatrices(items: readonly BodyPose[], out?: Float32Array): Float32Array {
+  const crates = items.filter((i) => i.tag === 'crate');
+  const m = out && out.length >= crates.length * 64 ? out : new Float32Array(crates.length * 64);
+  crates.forEach((c, i) => {
+    for (let k = 1; k <= 4; k++) {
+      const b = crateBox(c, k);
+      composeMatrix(b.p, c.q, b.size, m, (i * 4 + k - 1) * 16);
+    }
+  });
+  return m;
 }
 
 /** Column-major 4x4 matrix for translation `p`, rotation `q` and scale `s` (same layout as three's Matrix4). */
@@ -263,7 +382,11 @@ export function composeMatrix(p: Vec3, q: Quat, s: Vec3, out: Float32Array, offs
 /** Snapshot to instance data: one unit-cube instance per item, scaled to the item size. */
 export function instanceMatrices(items: readonly BodyPose[], out?: Float32Array): Float32Array {
   const m = out && out.length >= items.length * 16 ? out : new Float32Array(items.length * 16);
-  items.forEach((item, i) => composeMatrix(item.p, item.q, item.size, m, i * 16));
+  items.forEach((item, i) => {
+    // A crate's own instance is its floor; its walls are drawn by `crateWallMatrices`.
+    const b = item.tag === 'crate' ? crateBox(item, 0) : item;
+    composeMatrix(b.p, item.q, b.size, m, i * 16);
+  });
   return m;
 }
 

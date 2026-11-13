@@ -1,7 +1,17 @@
 import type * as THREE_NS from 'three';
 import type { PlantSceneFile, PlantSnapshot } from '../contracts';
 import { cameraFromPreset, cameraPosition, orbitCamera, panCamera, zoomCamera, type CameraState } from './camera';
-import { instanceColors, instanceMatrices, itemToneOf, OUTLINED_PARTS, partDecor, partShape, type Decor, type ShapeSpec } from './geometry';
+import {
+  crateWallMatrices,
+  instanceColors,
+  instanceMatrices,
+  itemToneOf,
+  OUTLINED_PARTS,
+  partDecor,
+  partShape,
+  type Decor,
+  type ShapeSpec,
+} from './geometry';
 import type { Palette } from './displayModes';
 import { chooseInitialQuality, qualitySettings, type QualityLevel } from './quality';
 
@@ -148,6 +158,15 @@ const PART_COLORS: Readonly<Record<string, number>> = {
   'chain-transfer': 0x4b5563,
   turntable: 0x4b5563,
   workpiece: 0xb91c1c,
+  lift: 0x4b5563,
+  'stacker-crane': 0x2563eb,
+  'stacker-mast': 0x64748b,
+  'stacker-rack': 0x94a3b8,
+  'machining-centre': 0x94a3b8,
+  'machining-door': 0xb45309,
+  'limit-switch': 0x15803d,
+  aligner: 0xb45309,
+  chute: 0x6b7280,
 };
 /** Colours of the boxes drawn inside a part: the liquid, and each lamp lit and dark. Shape differs too (VIS-003). */
 const DECOR_COLORS: Readonly<Record<string, number>> = {
@@ -227,6 +246,15 @@ export function createRenderer(
   items.castShadow = true;
   items.count = 0;
   world.add(items);
+  // The four wall bars of every crate (an item drawn open, VIS-003): same material, matrices from `crateWallMatrices`.
+  let wallCapacity = 16;
+  let walls = new THREE.InstancedMesh(unitBox, itemMaterial, wallCapacity);
+  walls.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  walls.frustumCulled = false;
+  walls.castShadow = true;
+  walls.count = 0;
+  world.add(walls);
+  let wallOutline: THREE_NS.InstancedMesh | undefined;
 
   const partMeshes = new Map<string, { mesh: THREE_NS.Mesh; key: string; decor: Map<string, THREE_NS.Mesh> }>();
   const decorMaterials = new Map<string, THREE_NS.MeshStandardMaterial>();
@@ -252,7 +280,7 @@ export function createRenderer(
   const materialFor = (part: string): THREE_NS.MeshStandardMaterial => {
     let m = partMaterials.get(part);
     if (!m) {
-      const glass = part === 'tank' ? { transparent: true, opacity: 0.3, depthWrite: false } : {};
+      const glass = part === 'tank' || part === 'machining-centre' ? { transparent: true, opacity: 0.3, depthWrite: false } : {};
       m = new THREE.MeshStandardMaterial({ color: partColor(part), roughness: 0.7, ...NO_Z_FIGHT, ...glass });
       partMaterials.set(part, m);
     }
@@ -281,6 +309,16 @@ export function createRenderer(
       if (palette && lastItems[i]) items.setColorAt(i, new THREE.Color(itemToneOf(lastItems[i]!, palette)));
       else items.setColorAt(i, new THREE.Color(colors[i * 3], colors[i * 3 + 1], colors[i * 3 + 2]));
     if (items.instanceColor) items.instanceColor.needsUpdate = true;
+    // The crate's walls take the crate's own tone.
+    let w = 0;
+    lastItems.forEach((item, i) => {
+      if (item.tag !== 'crate') return;
+      const tone = palette
+        ? new THREE.Color(itemToneOf(item, palette))
+        : new THREE.Color(colors[i * 3], colors[i * 3 + 1], colors[i * 3 + 2]);
+      for (let k = 0; k < 4; k++) walls.setColorAt(w++, tone);
+    });
+    if (walls.instanceColor) walls.instanceColor.needsUpdate = true;
   };
   let width = canvas.width || 1280;
   let height = canvas.height || 720;
@@ -346,6 +384,8 @@ export function createRenderer(
       }
       if (itemOutline) world.remove(itemOutline);
       itemOutline = undefined;
+      if (wallOutline) world.remove(wallOutline);
+      wallOutline = undefined;
       return;
     }
     lineMaterial ??= new THREE.LineBasicMaterial({ color: colour });
@@ -375,6 +415,13 @@ export function createRenderer(
       world.add(itemOutline);
     }
     itemOutline.count = items.count;
+    if (!wallOutline && walls.count > 0) {
+      wallOutline = new THREE.InstancedMesh(unitBox, wireMaterial, wallCapacity);
+      wallOutline.instanceMatrix = walls.instanceMatrix;
+      wallOutline.frustumCulled = false;
+      world.add(wallOutline);
+    }
+    if (wallOutline) wallOutline.count = walls.count;
   };
 
   const growItems = (needed: number): void => {
@@ -388,6 +435,19 @@ export function createRenderer(
     items.frustumCulled = false;
     items.castShadow = true;
     world.add(items);
+  };
+
+  const growWalls = (needed: number): void => {
+    while (wallCapacity < needed) wallCapacity *= 2;
+    world.remove(walls);
+    if (wallOutline) world.remove(wallOutline);
+    wallOutline = undefined;
+    walls.dispose();
+    walls = new THREE.InstancedMesh(unitBox, itemMaterial, wallCapacity);
+    walls.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    walls.frustumCulled = false;
+    walls.castShadow = true;
+    world.add(walls);
   };
 
   let ghost: THREE_NS.Mesh | undefined;
@@ -411,6 +471,11 @@ export function createRenderer(
       if (disposed) return;
       if (snapshot.items.length > capacity) growItems(snapshot.items.length);
       instanceMatrices(snapshot.items, items.instanceMatrix.array as Float32Array);
+      const crateCount = snapshot.items.filter((i) => i.tag === 'crate').length;
+      if (crateCount * 4 > wallCapacity) growWalls(crateCount * 4);
+      crateWallMatrices(snapshot.items, walls.instanceMatrix.array as Float32Array);
+      walls.count = crateCount * 4;
+      walls.instanceMatrix.needsUpdate = true;
       lastItems = snapshot.items;
       paintItems();
       items.count = snapshot.items.length;
@@ -532,6 +597,7 @@ export function createRenderer(
       unitBox.dispose();
       itemMaterial.dispose();
       items.dispose();
+      walls.dispose();
       renderer.dispose();
     },
   };
