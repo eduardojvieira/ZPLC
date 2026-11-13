@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "name": "Three-level lifts",
+  "shortestPulseMs": 800,
+  "parts": [
+    {
+      "id": "infeed",
+      "part": "belt",
+      "name": "Infeed",
+      "position": [-1.5, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": { "length": 2, "speedMps": 0.5 }
+    },
+    {
+      "id": "source",
+      "part": "emitter",
+      "name": "Source1",
+      "position": [-2.3, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": { "kind": "box", "intervalMs": 10000, "maxItems": 5 }
+    },
+    {
+      "id": "lift-a",
+      "part": "lift",
+      "name": "LiftA",
+      "position": [0, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": { "levels": 2, "levelPitchM": 0.6, "speedMps": 0.5, "travelSpeedMps": 0.6 }
+    },
+    {
+      "id": "transfer",
+      "part": "belt",
+      "name": "Transfer",
+      "position": [1.25, 1.1, 0],
+      "rotationYDeg": 0,
+      "config": { "length": 1.5, "speedMps": 0.5 }
+    },
+    {
+      "id": "lift-b",
+      "part": "lift",
+      "name": "LiftB",
+      "position": [2.5, 1.1, 0],
+      "rotationYDeg": 0,
+      "config": { "levels": 2, "levelPitchM": 0.6, "speedMps": 0.5, "travelSpeedMps": 0.6 }
+    },
+    {
+      "id": "outfeed",
+      "part": "belt",
+      "name": "Outfeed",
+      "position": [3.75, 1.7, 0],
+      "rotationYDeg": 0,
+      "config": { "length": 1.5, "speedMps": 0.5 }
+    },
+    {
+      "id": "top-bin",
+      "part": "remover",
+      "name": "TopBin",
+      "position": [4.4, 1.85, 0],
+      "rotationYDeg": 0,
+      "config": { "width": 0.6, "height": 0.6, "depth": 0.4 }
+    },
+    {
+      "id": "eye-foot",
+      "part": "sensor-diffuse",
+      "name": "EyeFoot",
+      "position": [0.1, 0.5, -0.5],
+      "rotationYDeg": 270,
+      "config": { "rangeM": 1 }
+    },
+    {
+      "id": "eye-mid",
+      "part": "sensor-diffuse",
+      "name": "EyeMid",
+      "position": [2.6, 1.1, -0.5],
+      "rotationYDeg": 270,
+      "config": { "rangeM": 1 }
+    },
+    {
+      "id": "eye-top",
+      "part": "sensor-diffuse",
+      "name": "EyeTop",
+      "position": [3.3, 1.7, -0.5],
+      "rotationYDeg": 270,
+      "config": { "rangeM": 1 }
+    },
+    { "id": "start", "part": "push-button", "name": "StartButton", "position": [-2.6, 0.5, -0.7], "rotationYDeg": 0, "config": {} },
+    { "id": "estop", "part": "emergency-stop", "name": "EStop1", "position": [-2.6, 0.5, -1.1], "rotationYDeg": 0, "config": {} },
+    { "id": "light", "part": "stack-light", "name": "StackLight1", "position": [-0.9, 0.35, -0.9], "rotationYDeg": 0, "config": {} }
+  ],
+  "cameras": [
+    { "name": "Level 1", "position": [-0.5, 1.6, 3.4], "target": [-0.5, 0.5, 0] },
+    { "name": "Level 2", "position": [1.5, 2.2, 3.4], "target": [1.5, 1.1, 0] },
+    { "name": "Level 3", "position": [3.6, 2.8, 3.4], "target": [3.6, 1.7, 0] },
+    { "name": "Overview", "position": [1.2, 3.2, 5.2], "target": [1.2, 1.0, 0] }
+  ]
+}
