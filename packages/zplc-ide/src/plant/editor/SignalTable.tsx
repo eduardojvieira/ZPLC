@@ -4,6 +4,7 @@ import { useT } from '../../i18n';
 import { Button, NumberField, Select, TextField } from '../../ui';
 import type { PlantSignalDef } from '../contracts';
 import type { SignalRange } from '../../plants/plantMap';
+import type { DeclarationLanguage } from './declarations';
 import type { ProblemAt } from './validate';
 
 export interface SignalTableProps {
@@ -14,7 +15,11 @@ export interface SignalTableProps {
   disabled: boolean;
   onBind(signal: string, point: string, range?: SignalRange, type?: 'INT' | 'REAL'): void;
   onUnbind(signal: string): void;
+  /** When given, the table offers to create the program's declarations for the scene in the chosen language (SCN-013). */
+  onCreateDeclarations?: (language: DeclarationLanguage) => void;
 }
+
+const DECLARATION_LANGUAGES: readonly DeclarationLanguage[] = ['ST', 'LD', 'FBD', 'SFC', 'IL'];
 
 const VAR_TYPES = ['INT', 'REAL'] as const;
 const NO_RANGE = { rawMin: '0', rawMax: '100', engMin: '0', engMax: '100', unit: '' };
@@ -127,8 +132,9 @@ function Row(
   );
 }
 
-export function SignalTable({ signals, bindings, problems, disabled, onBind, onUnbind }: SignalTableProps) {
+export function SignalTable({ signals, bindings, problems, disabled, onBind, onUnbind, onCreateDeclarations }: SignalTableProps) {
   const { t } = useT();
+  const [declLanguage, setDeclLanguage] = useState<DeclarationLanguage>('ST');
   return (
     <section aria-labelledby="plant-editor-signals" className="flex flex-col gap-2">
       <h3 id="plant-editor-signals">{t('plantEditor.signalsHeading')}</h3>
@@ -158,6 +164,24 @@ export function SignalTable({ signals, bindings, problems, disabled, onBind, onU
             ))}
           </tbody>
         </table>
+      )}
+      {onCreateDeclarations && (
+        <div className="flex flex-wrap items-end gap-2">
+          <Select
+            label={t('plantEditor.declLanguage')}
+            value={declLanguage}
+            onChange={(e) => setDeclLanguage(e.target.value as DeclarationLanguage)}
+          >
+            {DECLARATION_LANGUAGES.map((l) => (
+              <option key={l} value={l}>
+                {l}
+              </option>
+            ))}
+          </Select>
+          <Button disabled={disabled || signals.length === 0} onClick={() => onCreateDeclarations(declLanguage)}>
+            {t('plantEditor.declCreate')}
+          </Button>
+        </div>
       )}
     </section>
   );
