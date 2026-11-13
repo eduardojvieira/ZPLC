@@ -45,6 +45,7 @@ import { isLessonCheckRequest, lessonCheckAnswer } from './lessonCheckProtocol.j
 import { createLearnProgressHandlers } from './learnProgressIpc.js';
 import { createLearnWorkspaceHandlers } from './learnWorkspaceIpc.js';
 import type { NativeSimulationRequest } from '../shared/nativeSimulationIpc.js';
+import { NativeSimulationRuntimeError } from '../shared/nativeSimulationSupervisor.js';
 import {
   isAllowedAiProviderConfig,
   isAllowedAiProviderKey,
@@ -124,6 +125,27 @@ export interface IpcDeps {
 }
 
 const WORKSPACE_FAILED = 'Workspace operation failed';
+
+/**
+ * What the renderer is told when the native runtime refuses a request: one fixed sentence per protocol error code that
+ * the runtime answers, never the message of the runtime. Any other failure, an unknown code included, stays the denial.
+ */
+const NATIVE_RUNTIME_REFUSALS = new Map([
+  ['PROGRAM_LOAD_FAILED', 'The native runtime could not load or store the program (PROGRAM_LOAD_FAILED).'],
+  ['INVALID_REQUEST', 'The native runtime refused a malformed request (INVALID_REQUEST).'],
+  ['INVALID_STATE', 'The native runtime cannot do this in its current state (INVALID_STATE).'],
+  ['STALE_PROGRAM', 'The request was for a program that is no longer loaded (STALE_PROGRAM).'],
+  ['FORCE_ACTIVE', 'The native runtime refused the change while values are forced (FORCE_ACTIVE).'],
+  [
+    'GENERATION_EXHAUSTED',
+    'The native runtime cannot load another program in this session; restart the simulation (GENERATION_EXHAUSTED).',
+  ],
+  ['COMMIT_UNKNOWN', 'The native runtime could not tell whether the program was stored; restart the simulation (COMMIT_UNKNOWN).'],
+  ['RUNTIME_FAILURE', 'The native runtime failed while it handled the request (RUNTIME_FAILURE).'],
+]);
+
+const nativeRuntimeRefusal = (error: unknown): string | undefined =>
+  error instanceof NativeSimulationRuntimeError && error.code !== null ? NATIVE_RUNTIME_REFUSALS.get(error.code) : undefined;
 
 const noArguments = (args: readonly unknown[]): boolean => args.length === 0;
 const oneArgument =
@@ -249,7 +271,7 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
   const handler = <Args extends readonly unknown[]>(
     accepts: IpcHandler<RendererOwner>['accepts'],
     run: (owner: RendererOwner, args: Args) => unknown,
-    failure?: string,
+    failure?: IpcHandler<RendererOwner>['failure'],
   ): IpcHandler<RendererOwner> => ({ accepts, run: (owner, args) => run(owner, args as unknown as Args), ...(failure ? { failure } : {}) });
 
   const projectFileHandler = (channel: string) =>
@@ -359,6 +381,7 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
     [NATIVE_SIMULATION_CHANNEL.REQUEST]: handler(
       oneArgument(isAllowedNativeSimulationRequest),
       (owner, [request]: [NativeSimulationRequest]) => deps.nativeSimulation.request(owner, request),
+      nativeRuntimeRefusal,
     ),
 
     [WORKSPACE_TESTS_CHANNEL.REGISTER_PROJECT_FILE]: handler(

@@ -4,7 +4,7 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 // is in docs/design/content-outline.md. tools/docs/check_capability_claims.ts and tools/ci/product-name.ts read this file.
 // A span between backticks is a literal identifier and is set in code.
 
-const releasesUrl = 'https://github.com/eduardojvieira/ZPLC/releases';
+export const releasesUrl = 'https://github.com/eduardojvieira/ZPLC/releases';
 const repositoryUrl = 'https://github.com/eduardojvieira/ZPLC';
 const boardReportUrl = 'https://github.com/eduardojvieira/ZPLC/issues/new?template=board_report.yml';
 
@@ -352,6 +352,63 @@ const landingPageContent = {
         { label: 'Discussions', href: 'https://github.com/eduardojvieira/ZPLC/discussions' },
         { label: 'Release notes', to: '/docs/release-notes' },
       ],
+    },
+    // docs/src/pages/download.js
+    download: {
+      metaTitle: 'Download ZPLC',
+      description: 'Installers of ZPLC for Windows, macOS and Linux.',
+      title: 'Download ZPLC',
+      versionLabel: 'Version',
+      lead:
+        'The desktop application for Windows, macOS and Linux: the editor of the five languages, the compiler, the ' +
+        'simulator and the Learn course. Free and open source, under the MIT licence.',
+      detectedLabel: 'For this computer',
+      undetected: 'Choose your system in the list below.',
+      macChooser: 'Not sure which Mac you have? Apple menu, About This Mac: a chip named Apple M is Apple silicon.',
+      otherSystems: 'Other systems',
+      notes: {
+        windows:
+          'The installer is not signed with a paid certificate, so SmartScreen asks before it runs: select More info, ' +
+          'then Run anyway.',
+        macos:
+          'The app is signed only ad hoc, so macOS asks the first time you open it: choose Done, then Open Anyway in ' +
+          'System Settings, Privacy & Security.',
+        linux:
+          'The .deb and the .rpm bring the libraries ZPLC needs and the rule for the serial ports of the boards. Use the ' +
+          'AppImage only when neither fits your distribution.',
+      },
+      firstLaunch: { windows: 'First launch on Windows', macos: 'First launch on macOS', linux: 'Installing on Linux' },
+      systems: {
+        'win-x64': 'Windows, Intel or AMD',
+        'win-arm64': 'Windows on ARM',
+        'mac-arm64': 'macOS, Apple silicon',
+        'mac-x64': 'macOS, Intel',
+        'linux-x64': 'Linux, Intel or AMD',
+        'linux-arm64': 'Linux on ARM',
+      },
+      formats: {
+        setup: 'Installer',
+        portable: 'Portable, without installing',
+        dmg: 'Disk image',
+        zip: 'Zip archive',
+        deb: 'Debian, Ubuntu',
+        rpm: 'Fedora',
+        appimage: 'AppImage, any distribution',
+      },
+      all: { title: 'All installers', system: 'System', files: 'Files' },
+      verify: {
+        title: 'Check the file',
+        text: 'Every file of the release is listed with its SHA-256 hash in',
+        how: 'How to check a download',
+        anchor: 'verify-the-download',
+      },
+      more: {
+        title: 'Also in the release',
+        text:
+          'The command line tool and the MCP server for each system, the firmware images of the boards and the bill of ' +
+          'materials are on the page of the release.',
+        link: 'The release on GitHub',
+      },
     },
   },
   es: {
@@ -727,6 +784,62 @@ const landingPageContent = {
         { label: 'Notas de la versión', to: '/docs/release-notes' },
       ],
     },
+    download: {
+      metaTitle: 'Descargar ZPLC',
+      description: 'Instaladores de ZPLC para Windows, macOS y Linux.',
+      title: 'Descargar ZPLC',
+      versionLabel: 'Versión',
+      lead:
+        'La aplicación de escritorio para Windows, macOS y Linux: el editor de los cinco lenguajes, el compilador, el ' +
+        'simulador y el curso Learn. Libre y de código abierto, con licencia MIT.',
+      detectedLabel: 'Para este equipo',
+      undetected: 'Elija su sistema en la lista de abajo.',
+      macChooser: '¿No sabe qué Mac tiene? Menú Apple, Acerca de esta Mac: un chip llamado Apple M es Apple silicon.',
+      otherSystems: 'Otros sistemas',
+      notes: {
+        windows:
+          'El instalador no está firmado con un certificado de pago, así que SmartScreen pregunta antes de ejecutarlo: ' +
+          'elija More info y luego Run anyway.',
+        macos:
+          'La aplicación está firmada solo ad hoc, así que macOS pregunta la primera vez que la abre: elija Done y luego ' +
+          'Open Anyway en System Settings, Privacy & Security.',
+        linux:
+          'El .deb y el .rpm traen las bibliotecas que ZPLC necesita y la regla de los puertos serie de las placas. Use el ' +
+          'AppImage solo cuando ningún paquete sirva en su distribución.',
+      },
+      firstLaunch: { windows: 'Primer inicio en Windows', macos: 'Primer inicio en macOS', linux: 'Instalar en Linux' },
+      systems: {
+        'win-x64': 'Windows, Intel o AMD',
+        'win-arm64': 'Windows en ARM',
+        'mac-arm64': 'macOS, Apple silicon',
+        'mac-x64': 'macOS, Intel',
+        'linux-x64': 'Linux, Intel o AMD',
+        'linux-arm64': 'Linux en ARM',
+      },
+      formats: {
+        setup: 'Instalador',
+        portable: 'Portable, sin instalar',
+        dmg: 'Imagen de disco',
+        zip: 'Archivo zip',
+        deb: 'Debian, Ubuntu',
+        rpm: 'Fedora',
+        appimage: 'AppImage, cualquier distribución',
+      },
+      all: { title: 'Todos los instaladores', system: 'Sistema', files: 'Archivos' },
+      verify: {
+        title: 'Compruebe el archivo',
+        text: 'Cada archivo de la versión figura con su hash SHA-256 en',
+        how: 'Cómo comprobar una descarga',
+        anchor: 'verificar-la-descarga',
+      },
+      more: {
+        title: 'También en la versión',
+        text:
+          'La herramienta de línea de comandos y el servidor MCP de cada sistema, las imágenes de firmware de las placas y ' +
+          'la lista de materiales de software están en la página de la versión.',
+        link: 'La versión en GitHub',
+      },
+    },
   },
 };
 
@@ -739,7 +852,7 @@ export function getLandingPageContent(locale) {
     ...content,
     paths: {
       ...content.paths,
-      build: { ...content.paths.build, href: releasesUrl, moreTo: '/docs/getting-started' },
+      build: { ...content.paths.build, to: '/download', moreTo: '/docs/getting-started' },
       learn: { ...content.paths.learn, to: '/docs/learn', moreTo: '/docs/learn/educators' },
     },
     portability: {

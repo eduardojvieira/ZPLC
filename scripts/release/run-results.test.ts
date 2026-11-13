@@ -160,6 +160,12 @@ describe('collectRunResults (REL-027)', () => {
     expect(results.jobs).toContainEqual({ job: 'build-macos', result: 'success' });
   });
 
+  test('records whether a bundle holds a checksum file, which the render job merges into SHA256SUMS (S4)', () => {
+    expect(collectRunResults({ ...common, needs: needs({}) }).sha256sums).toBe(false);
+    writeFileSync(join(directory, 'release-bundle-linux', 'SHA256SUMS-linux'), `${'b'.repeat(64)}  zplc-2.0.0-rc.4-linux-x64.deb\n`);
+    expect(collectRunResults({ ...common, needs: needs({}) }).sha256sums).toBe(true);
+  });
+
   test('has no completeness for a version the status record does not know, so the title refuses it', () => {
     const results = collectRunResults({ ...common, status: {}, needs: needs({ 'build-macos': 'success' }) });
     expect(results.completeness).toBeUndefined();

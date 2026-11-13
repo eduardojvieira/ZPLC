@@ -206,6 +206,18 @@ def has_command(commands: list[str], command: str) -> bool:
     return any(normalize_whitespace(value) == command for value in commands)
 
 
+# An upload job sends the bundle to the draft without SHA256SUMS-<platform> and release-evidence-<platform>.json: they
+# stay in the bundle artifact, where the notes job merges the checksums into the one SHA256SUMS of the release.
+UPLOAD_BUNDLE_COMMANDS = (
+    "mapfile -t assets < <(find release -maxdepth 1 -type f ! -name 'SHA256SUMS-*' ! -name 'release-evidence-*.json' | sort)",
+    'gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber',
+)
+
+
+def uploads_bundle(commands: list[str]) -> bool:
+    return all(has_command(commands, command) for command in UPLOAD_BUNDLE_COMMANDS)
+
+
 def has_pinned_checkout_at_sha(job: str) -> tuple[bool, bool]:
     checkouts = [
         step
@@ -450,8 +462,8 @@ def validate_release_workflow(errors: list[str], workflow: str | None = None) ->
             errors.append(f"{upload_name} must not rebuild the prepared release bundle")
         if not any("gh release view" in command and "--json isDraft" in command and "= true" in command for command in commands):
             errors.append(f"{upload_name} must refuse a release that is not a draft")
-        if not has_command(commands, 'gh release upload "$RELEASE_TAG" release/* --clobber'):
-            errors.append(f"{upload_name} must upload the prepared bundle to the draft release")
+        if not uploads_bundle(commands):
+            errors.append(f"{upload_name} must upload the prepared bundle, without its per-platform checksum and evidence files, to the draft release")
 
     validate_firmware_chain(errors, workflow)
 
@@ -522,8 +534,8 @@ def validate_firmware_chain(errors: list[str], workflow: str) -> None:
         commands = run_commands(upload)
         if not any("gh release view" in command and "--json isDraft" in command and "= true" in command for command in commands):
             errors.append("upload-release-firmware must refuse a release that is not a draft")
-        if not has_command(commands, 'gh release upload "$RELEASE_TAG" release/* --clobber'):
-            errors.append("upload-release-firmware must upload the prepared bundle to the draft release")
+        if not uploads_bundle(commands):
+            errors.append("upload-release-firmware must upload the prepared bundle, without its per-platform checksum and evidence files, to the draft release")
 
 
 def validate_ci_checkouts(errors: list[str], workflow: str | None = None) -> None:

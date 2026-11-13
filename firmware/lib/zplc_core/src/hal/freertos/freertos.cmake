@@ -118,7 +118,8 @@ zplc_freertos_suite(test_single_task test_single_task.c
 zplc_freertos_suite(test_failsafe test_failsafe.c SOURCES ${ZPLC_SRC}/zplc_failsafe.c ${ZPLC_SRC}/zplc_sched_core.c ${ZPLC_VM})
 zplc_freertos_suite(test_native_runtime_session test_native_runtime_session.c
     SOURCES ${ZPLC_SESSION}/native_runtime_session.c ${ZPLC_SESSION}/native_program_store.c ${ZPLC_SRC}/zplc_core.c
-    DEFINES ZPLC_EXPECTED_PRODUCT_VERSION="${ZPLC_CORE_VERSION_STR}")
+    DEFINES ZPLC_EXPECTED_PRODUCT_VERSION="${ZPLC_CORE_VERSION_STR}"
+        ZPLC_STORE_FIXTURE_DIR="${ZPLC_TESTS}/fixtures/store-before-draft-counter")
 target_link_libraries(test_native_runtime_session PRIVATE zplc_core)
 # timing
 zplc_freertos_suite(test_port_timing test_port_timing.c DEFINES ZPLC_TEST_PORT_NAME="FreeRTOS")

@@ -80,12 +80,12 @@ function firmwareLevels(directory: string): Map<string, NonNullable<AssetResult[
   return levels;
 }
 
-function evidenceFiles(directory: string): string[] {
+function filesNamed(directory: string, pattern: RegExp): string[] {
   const found: string[] = [];
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const path = join(directory, entry.name);
-    if (entry.isDirectory()) found.push(...evidenceFiles(path));
-    else if (/^release-evidence-.*\.json$/.test(entry.name)) found.push(path);
+    if (entry.isDirectory()) found.push(...filesNamed(path, pattern));
+    else if (pattern.test(entry.name)) found.push(path);
   }
   return found.sort();
 }
@@ -96,7 +96,7 @@ export function collectRunResults(input: CollectInput): RunResults {
     return result === 'success' ? 'passed' : result === 'failure' ? 'failed' : 'not-run';
   };
   const assets = new Map<string, AssetResult>();
-  for (const file of evidenceFiles(input.evidenceDirectory)) {
+  for (const file of filesNamed(input.evidenceDirectory, /^release-evidence-.*\.json$/)) {
     const evidence = JSON.parse(readFileSync(file, 'utf8')) as { artifacts?: Array<{ name: string }> };
     const levels = firmwareLevels(dirname(file));
     for (const { name } of evidence.artifacts ?? []) {
@@ -158,6 +158,8 @@ export function collectRunResults(input: CollectInput): RunResults {
     suites,
     knownFailures: input.expectedFailures.map((entry) => ({ id: entry.test, summary: entry.reason, tracking: entry.requirement })),
     channels: input.channels,
+    // the render job merges the SHA256SUMS-<platform> files of the bundles into the SHA256SUMS of the release
+    sha256sums: filesNamed(input.evidenceDirectory, /^SHA256SUMS-/).length > 0,
     changes: [],
     knownIssues: [...(status.knownIssues ?? []), ...limits],
   };

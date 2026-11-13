@@ -9,6 +9,10 @@
     "2.0.0": {
       "completeness": "the first stable release: no board has a hardware record and the Windows channels are not live",
       "knownIssues": []
+    },
+    "2.0.1": {
+      "completeness": "a fix release: no board has a hardware record and the Windows channels are not live",
+      "knownIssues": []
     }
   }
 }

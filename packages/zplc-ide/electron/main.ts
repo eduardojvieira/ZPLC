@@ -125,7 +125,9 @@ const shellPreferences = createShellPreferencesStore(app.getPath('userData'));
 function spawnToolWorker(): ToolWorkerProcess {
   const { command, args } = spawnVector({ kind: 'tool-worker', script: path.join(__dirname, '..', 'toolWorker.js') });
   const environment: Record<string, string> = {};
-  for (const [name, value] of Object.entries(nativeSimulationEnvironment(process.env, isDev, process.resourcesPath))) {
+  for (const [name, value] of Object.entries(
+    nativeSimulationEnvironment(process.env, isDev, process.resourcesPath, app.getPath('userData')),
+  )) {
     if (typeof value === 'string') environment[name] = value;
   }
   const child = utilityProcess.fork(command, args, { serviceName: 'zplc-tool-worker', env: environment, stdio: 'ignore' });
@@ -515,7 +517,7 @@ function setupIPC(): void {
           nativeSimulationSupervisor = new NativeSimulationSupervisor({
             clientName: 'zplc-ide',
             clientVersion: appVersion,
-            environment: nativeSimulationEnvironment(process.env, isDev, process.resourcesPath),
+            environment: nativeSimulationEnvironment(process.env, isDev, process.resourcesPath, app.getPath('userData')),
           });
         }
         const supervisor = nativeSimulationSupervisor;
@@ -580,10 +582,16 @@ function setupIPC(): void {
     firmwareImages: () => loadFirmwareImages(path.join(process.resourcesPath, 'firmware')),
     reportShellPreferences: applyShellPreferences,
   });
-  registerIpcHandlers(ipcMain, handlers, {
-    authorize: (event) => currentRendererOwner(event as IpcMainInvokeEvent),
-    isCurrent: rendererOwnerIsCurrent,
-  });
+  registerIpcHandlers(
+    ipcMain,
+    handlers,
+    {
+      authorize: (event) => currentRendererOwner(event as IpcMainInvokeEvent),
+      isCurrent: rendererOwnerIsCurrent,
+    },
+    // the renderer gets a fixed text; the error itself, its code included (PROGRAM_LOAD_FAILED, ...), stays in this log
+    (channel, error) => console.error(`IPC ${channel} failed:`, error),
+  );
 }
 
 // App lifecycle handlers

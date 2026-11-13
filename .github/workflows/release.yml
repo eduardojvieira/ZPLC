@@ -1177,7 +1177,10 @@ jobs:
         run: |
           set -euo pipefail
           [ "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true ] || { echo "Release $RELEASE_TAG is not a draft. The pipeline only uploads to drafts."; exit 1; }
-          gh release upload "$RELEASE_TAG" release/* --clobber
+          # SHA256SUMS-<platform> and release-evidence-<platform>.json stay in the bundle artifact: the notes job merges
+          # the checksums into the one SHA256SUMS of the release, and no user downloads the evidence file.
+          mapfile -t assets < <(find release -maxdepth 1 -type f ! -name 'SHA256SUMS-*' ! -name 'release-evidence-*.json' | sort)
+          gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
 
   # ===========================================================================
   # Windows: integrity evidence for every candidate, including dry-runs, then the upload to the draft.
@@ -1301,7 +1304,10 @@ jobs:
         run: |
           set -euo pipefail
           [ "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true ] || { echo "Release $RELEASE_TAG is not a draft. The pipeline only uploads to drafts."; exit 1; }
-          gh release upload "$RELEASE_TAG" release/* --clobber
+          # SHA256SUMS-<platform> and release-evidence-<platform>.json stay in the bundle artifact: the notes job merges
+          # the checksums into the one SHA256SUMS of the release, and no user downloads the evidence file.
+          mapfile -t assets < <(find release -maxdepth 1 -type f ! -name 'SHA256SUMS-*' ! -name 'release-evidence-*.json' | sort)
+          gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
 
   # ===========================================================================
   # Linux: integrity evidence for every candidate, including dry-runs, then the upload to the draft.
@@ -1433,7 +1439,10 @@ jobs:
         run: |
           set -euo pipefail
           [ "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true ] || { echo "Release $RELEASE_TAG is not a draft. The pipeline only uploads to drafts."; exit 1; }
-          gh release upload "$RELEASE_TAG" release/* --clobber
+          # SHA256SUMS-<platform> and release-evidence-<platform>.json stay in the bundle artifact: the notes job merges
+          # the checksums into the one SHA256SUMS of the release, and no user downloads the evidence file.
+          mapfile -t assets < <(find release -maxdepth 1 -type f ! -name 'SHA256SUMS-*' ! -name 'release-evidence-*.json' | sort)
+          gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
 
   # ===========================================================================
   # Firmware: integrity evidence for every candidate, including dry-runs, then the upload to the draft. The images are
@@ -1542,4 +1551,7 @@ jobs:
         run: |
           set -euo pipefail
           [ "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true ] || { echo "Release $RELEASE_TAG is not a draft. The pipeline only uploads to drafts."; exit 1; }
-          gh release upload "$RELEASE_TAG" release/* --clobber
+          # SHA256SUMS-<platform> and release-evidence-<platform>.json stay in the bundle artifact: the notes job merges
+          # the checksums into the one SHA256SUMS of the release, and no user downloads the evidence file.
+          mapfile -t assets < <(find release -maxdepth 1 -type f ! -name 'SHA256SUMS-*' ! -name 'release-evidence-*.json' | sort)
+          gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber

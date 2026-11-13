@@ -548,7 +548,16 @@ describe('release.yml publishes each platform independently and only as a draft 
 
   it.each(platforms)('uploads %s assets only to a release that is still a draft', (platform) => {
     expect(run(`upload-release-${platform}`)).toMatch(/\[ "\$\(gh release view "\$RELEASE_TAG" --json isDraft --jq \.isDraft\)" = true \]/);
-    expect(run(`upload-release-${platform}`)).toContain('gh release upload "$RELEASE_TAG" release/* --clobber');
+    expect(run(`upload-release-${platform}`)).toContain('gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber');
+  });
+
+  // SHA256SUMS-<platform> and release-evidence-<platform>.json stay in the bundle artifact: the notes job merges the
+  // checksums into the one SHA256SUMS of the release, and no user downloads the evidence file.
+  it.each([...platforms, 'firmware'])('leaves the per-platform checksum and evidence files of %s out of the release', (platform) => {
+    expect(run(`upload-release-${platform}`)).toContain(
+      "mapfile -t assets < <(find release -maxdepth 1 -type f ! -name 'SHA256SUMS-*' ! -name 'release-evidence-*.json' | sort)",
+    );
+    expect(run(`upload-release-${platform}`)).not.toContain('release/* --clobber');
   });
 
   it('writes to the repository only in the draft and upload jobs, and uses no protected environment', () => {
