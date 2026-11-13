@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-lift-stacking",
+  "version": 1,
+  "order": 172,
+  "module": 17,
+  "level": "advanced",
+  "prerequisites": ["plant-counted-queue"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The station needs a lift, a feeder and a crate that fills with workpieces; a learner board has none of them, and the scene supplies all three.",
+        "es": "La estación necesita un elevador, un alimentador y un cajón que se llena de piezas; una placa del estudiante no tiene ninguno, y la escena aporta los tres."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus cajas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "lift-stacking",
+  "estimatedMinutes": 45,
+  "starter": {
+    "project": "plant_lift_stacking_starter",
+    "program": "src/LiftStacking.st"
+  },
+  "solution": {
+    "project": "plant_lift_stacking",
+    "program": "src/LiftStacking.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "lift-stacking",
+    "path": "tests/lift-stacking.scenario.json",
+    "sha256": "55fd209e932064f70ccbc43d5e2fa266d3855ce7f9912ae48f1102da9d038314"
+  },
+  "regressionScenarios": []
+}

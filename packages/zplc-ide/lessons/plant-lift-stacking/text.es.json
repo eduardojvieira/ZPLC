@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Reunir piezas en un cajón",
+  "summary": "Lleve un cajón a un elevador, alimente cinco piezas dentro de él una por una y envíelo lleno.",
+  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "objectives": [
+    "Combinar un conteo, un elevador y un cajón en una sola secuencia de pasos.",
+    "Mover el elevador solo con su superficie detenida y alimentar la pieza siguiente solo después de que la anterior haya aterrizado."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/LiftStacking.st, mantenga una variable Step para la secuencia y un conteo Parts: lleve el cajón al elevador, súbalo, alimente cinco piezas, bájelo y envíe el cajón.",
+      "checkpoint": "Cada paso enciende solo las salidas que necesita, así que Step indica qué hace la estación."
+    },
+    {
+      "key": "predict",
+      "title": "Predecir",
+      "body": "Antes de ejecutar, siga el cajón y las piezas: el cajón se detiene en el elevador cuando CrateEye lo ve; en el nivel 2 el alimentador deja una pieza a la vez, y cada una necesita unos dos segundos para aterrizar antes de la siguiente.",
+      "checkpoint": "Up y RunLift nunca son TRUE a la vez, Parts llega a cinco y Green se enciende cuando OutEye ve salir el cajón."
+    },
+    {
+      "key": "edit",
+      "title": "Editar",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que nada se mueve; secuencie la estación: emita un cajón, suba el elevador, alimente y cuente cinco piezas una por una, baje el elevador y envíe el cajón, encendiendo Green cuando OutEye lo vea.",
+      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutar",
+      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario lift-stacking; observe la vista 3D mientras se ejecuta.",
+      "checkpoint": "El escenario requerido se llama lift-stacking y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observar",
+      "body": "Observe cómo aterrizan las piezas en el cajón en la vista 3D y lea loaded:crate:0 en el texto de hechos.",
+      "checkpoint": "El cajón lleva sus piezas mientras el elevador se desplaza, y ninguna aterriza fuera."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexionar",
+      "body": "El hecho loaded:crate:0 es TRUE cuando al menos una pieza reposa dentro del cajón, y el hecho delivered prueba que el cajón llegó a su depósito.",
+      "checkpoint": "La calificación no puede contar las piezas: no distingue cuatro de cinco, porque una expectativa no tiene comparación numérica; lea el conteo en los hechos. No establece la velocidad física del elevador, la temporización de hardware, HIL ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Cuente una pieza cuando CountEye termina (un F_TRIG), no cuando empieza, y espere a que aterrice antes de alimentar la siguiente."
+    },
+    {
+      "level": 2,
+      "text": "Use un TON para la espera del aterrizaje; entre piezas haga correr la superficie de la plataforma un instante para que las piezas no se amontonen en un punto."
+    }
+  ],
+  "faultCases": [
+    "El inicial no gobierna ninguna salida, así que nada se mueve; secuencie la estación: emita un cajón, suba el elevador, alimente y cuente cinco piezas una por una, baje el elevador y envíe el cajón, encendiendo Green cuando OutEye lo vea."
+  ]
+}
