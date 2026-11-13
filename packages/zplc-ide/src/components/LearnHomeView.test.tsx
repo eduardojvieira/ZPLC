@@ -159,6 +159,15 @@ describe('the Learn home', () => {
     expect(render(emptyProgress())).not.toMatch(/role="switch"[^>]*checked=""/);
   });
 
+  it('keeps the markup order the screen-reader check walks: Continue, the path, Unlock, Export', () => {
+    const out = render(emptyProgress());
+    const at = ['data-learn-continue', 'data-learn-path-continue', 'data-learn-unlock-all', 'data-learn-export'].map((name) =>
+      out.indexOf(name),
+    );
+    expect(at.every((index) => index >= 0)).toBe(true);
+    expect([...at].sort((x, y) => x - y)).toEqual(at);
+  });
+
   it('shows the reason an import was refused, and that the progress is unchanged', () => {
     const out = render(emptyProgress(), { transfer: { error: 'unknown-version', version: 3 } });
     expect(out).toContain('The file is version 3, which this version of ZPLC cannot read. Your progress is unchanged.');
