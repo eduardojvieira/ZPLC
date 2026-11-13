@@ -30,7 +30,7 @@ export interface CameraPreset {
 /** C2. One catalogue part, defined once (PRT-002). `physics` and `behave` are the only parts that know Jolt. */
 export interface PartDefinition {
   id: string;
-  family: 'items' | 'sources' | 'conveyors' | 'flow' | 'sensors' | 'panel' | 'process';
+  family: 'items' | 'sources' | 'conveyors' | 'flow' | 'sensors' | 'panel' | 'process' | 'manipulators' | 'stations';
   names: { en: string; es: string };
   config: Readonly<Record<string, ConfigField>>;
   signals(part: ScenePart): PlantSignalDef[]; // derived: `${part.name}.${signal}`
@@ -71,6 +71,8 @@ export interface BodyPose {
   size: Vec3;
   p: Vec3;
   q: Quat;
+  /** An optional tag of an item, so the view can draw a lid or a base differently from a box. Pallets have none. */
+  tag?: 'box' | 'lid' | 'base';
 }
 export interface PartView {
   id: string;

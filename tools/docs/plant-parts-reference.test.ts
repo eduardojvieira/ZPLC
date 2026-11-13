@@ -82,4 +82,17 @@ describe('PRT-002 parts reference generated from the part definitions', () => {
       expect(PARTS.map((p) => p.id)).toContain(id);
     }
   });
+
+  it('PRT-002 the parts reference has a heading for every family of the contract in both languages', () => {
+    const families = ['items', 'sources', 'conveyors', 'flow', 'sensors', 'panel', 'process', 'manipulators', 'stations'] as const;
+    const titles = {
+      en: ['Items', 'Sources', 'Conveyors', 'Flow', 'Sensors', 'Panel', 'Process', 'Manipulators', 'Stations'],
+      es: ['Piezas', 'Fuentes', 'Transportadores', 'Flujo', 'Sensores', 'Panel', 'Proceso', 'Manipuladores', 'Estaciones'],
+    } as const;
+    const stand = families.map((family): PartDefinition => ({ ...PARTS[0]!, id: `zz-${family}`, family }));
+    for (const lang of LANGS) {
+      const body = partsBody(stand, lang);
+      expect([...body.matchAll(/^## (.+)$/gm)].map((m) => m[1])).toEqual([...titles[lang]]);
+    }
+  });
 });
