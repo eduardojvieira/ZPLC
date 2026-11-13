@@ -102,9 +102,10 @@ Si una placa no vuelve, use el procedimiento de recuperación de su perfil:
 ## 3. Conecte ZPLC
 
 1. Abra el proyecto del ejemplo, compílelo (**Compilación**, **Compilar**) y elija
-   **Hardware** en la barra de herramientas en lugar de **Simular**.
+   la placa en el selector de destino de la barra de comandos en lugar de **Simulación**. **Conectar**, **Desconectar** y
+   **Cargar** aparecen cuando una placa es el destino.
 
-   ![El ejemplo de la Raspberry Pi Pico compilado, con Hardware elegido y ninguna placa conectada](/img/screens/first-board-hardware.png)
+   ![El ejemplo de la Raspberry Pi Pico compilado, con la placa como destino y ninguna placa conectada](/img/screens/first-board-hardware.png)
 
 2. Pulse **Conectar**. Un diálogo de ZPLC enumera cada puerto serie con su nombre
    y sus identificadores USB, y marca las placas que conoce. Si la placa no aparece,
@@ -129,8 +130,9 @@ tomar.
    cantidad de tareas y la placa del dispositivo, y le pide confirmar. Una carga
    detiene el programa actual y deja el runtime **detenido**: no lo ejecuta.
 2. Compruebe que la máquina está en un estado en el que una salida puede cambiar.
-3. Pulse **Ejecutar** (F5) usted mismo. El LED debería conmutar cada medio segundo si
-   el programa es el del ejemplo.
+3. Pulse **Ejecutar** (F5) usted mismo. En una placa, Ejecutar nunca conecta ni carga: si la placa no está conectada o no tiene el programa actual,
+   ofrece **Conectar**, **Compilar** o **Cargar** en un aviso. El LED debería conmutar cada medio segundo si el programa
+   es el del ejemplo.
 
 ## 5. Observe
 
@@ -141,13 +143,13 @@ su estado seguro, apagado
 
 ## Qué está verificado
 
-| Paso                   | Evidencia hoy                                                                                                                    | Estado                                         |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| 1. Obtenga el firmware | La integración continua ejecuta `west build` y la misma comprobación del presupuesto de flash y RAM que el script de compilación | Compila en integración continua: `cross-build` |
-| 2. Grábelo             | Ninguna                                                                                                                          | Aún no verificado en hardware                  |
-| 3. Conecte ZPLC        | El diálogo se muestra arriba sin ninguna placa; el tutorial Blink ejercita la conexión en el simulador                           | Aún no verificado en hardware                  |
-| 4. Cargue y ejecute    | El tutorial Blink ejercita la ejecución en el simulador; ninguna placa ha recibido un programa                                   | Aún no verificado en hardware                  |
-| 5. Observe             | La tabla de observación se ejercita en el simulador; nadie ha visto cambiar una salida física                                    | Aún no verificado en hardware                  |
+| Paso                   | Evidencia hoy                                                                                                                     | Estado                                         |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| 1. Obtenga el firmware | La integración continua ejecuta `west build` y la misma comprobación del presupuesto de flash y RAM que el script de compilación  | Compila en integración continua: `cross-build` |
+| 2. Grábelo             | Ninguna                                                                                                                           | Aún no verificado en hardware                  |
+| 3. Conecte ZPLC        | El diálogo se muestra arriba sin ninguna placa; el tutorial Blink se ejecuta en el simulador, que no tiene Conectar               | Aún no verificado en hardware                  |
+| 4. Cargue y ejecute    | El tutorial Blink ejercita la ejecución en el simulador, donde Ejecutar es una sola acción; ninguna placa ha recibido un programa | Aún no verificado en hardware                  |
+| 5. Observe             | La tabla de observación se ejercita en el simulador; nadie ha visto cambiar una salida física                                     | Aún no verificado en hardware                  |
 
 ## Qué informar
 

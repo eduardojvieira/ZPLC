@@ -23,7 +23,7 @@ You need ZPLC installed. If you have not done that, follow [Install ZPLC](../get
 2. Copy the example into an empty folder.
 3. Read the program.
 4. Build it.
-5. Connect to the simulator and run the program.
+5. Run the program in the simulator.
 6. Watch the output `LED_Output` change.
 7. Run the scenario test of the project.
 
@@ -92,14 +92,14 @@ If the build fails, **Problems** lists each error with its line and column.
 
 ## 5. Run it in the simulator
 
-1. In the toolbar, check that **Simulate** is selected, and press **Connect**. ZPLC starts the simulator that is
-   bundled with the application.
-2. Press **Run** (F5).
+1. In the command bar, check that the target selector says **Simulation**.
+2. Press **Run** (F5). ZPLC saves the project, builds it if the build is out of date, starts the simulator that is
+   bundled with the application and runs the program. A simulation needs no **Connect**.
 
 The status line shows **Running** and the cycle count rises. The simulator is the runtime of ZPLC built for your
 computer. It runs your program on a timer, and it does not model the electrical side of a board or its real timing.
 
-![The toolbar and status line with the simulator connected and the program running](/img/tutorials/blink-running.png)
+![The toolbar and status line with the simulation running the program](/img/tutorials/blink-running.png)
 
 ## 6. Watch the output change
 
