@@ -13,13 +13,16 @@ import { join } from 'node:path';
 import { assert, packageRoot } from './run-desktop-smoke';
 import { NotPossible, launchApp, startHarness, type Harness } from './journeyApp';
 import { JOURNEYS, runPackagedSecurityProbes, type Journey } from './journeys';
+import { journeysPlant } from './journeys/plantJourneys';
 import { discoverPackagedExecutable } from './run-packaged-desktop-smoke';
 
 /**
  * Journeys that fail (or are not possible) today because of a defect that a later package fixes. Each entry names the
  * requirement that will fix it. A journey in this list that now passes fails the run, so remove its entry then.
  */
-export const KNOWN_GAPS: Record<string, string> = {};
+export const KNOWN_GAPS: Record<string, string> = {
+  'Q2 A scene is built, bound and run from the keyboard alone': 'SCN-014: "Edit scene" opens no editor panel until E3b wires it',
+};
 
 /**
  * `detail` is the evidence of a failure or the reason a journey is not possible; `notes` are steps the journey needed that a user should
@@ -119,7 +122,7 @@ async function main(): Promise<void> {
     return;
   }
   const only = process.env.ZPLC_JOURNEY_ONLY;
-  const selected = JOURNEYS.filter((journey) => !only || journey.name.toLowerCase().includes(only.toLowerCase()));
+  const selected = [...JOURNEYS, ...journeysPlant].filter((journey) => !only || journey.name.toLowerCase().includes(only.toLowerCase()));
   assert(selected.length > 0, `No journey matches ZPLC_JOURNEY_ONLY=${only}`);
   const { harness, scratch, stop } = await startHarness();
   const results: Array<{ name: string; example: string; outcome: Outcome }> = [];
