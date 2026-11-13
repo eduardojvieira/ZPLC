@@ -20,6 +20,7 @@ const MIN_OVERLAP = 0.3; // share of B's footprint that must lie over A
 const REST_MPS = 0.05;
 const ASSEMBLED_STEPS = 40;
 const ASSEMBLED_CENTRE_M = 0.1;
+const CRATE_WALL_M = 0.02; // the wall and floor thickness of the crate (items.ts CRATE_WALL_M; support.ts stays free of part imports)
 
 // ponytail: footprints are axis-aligned boxes from `size` (yaw ignored), exact for items squared to the
 // axes, loose for a rotated one; upgrade to an oriented-box overlap test if a scene needs rotated stacks.
@@ -107,6 +108,22 @@ export function createSupportTracker(): SupportTracker {
         next[`stacked:pallet:${index}`] = stacked;
         next[`layers:pallet:${index}`] = layers;
         index += 1;
+      });
+      // Crates (R5-C): items at rest whose centre is inside the interior, above the floor top and below the rim.
+      // ponytail: the interior is axis-aligned (the yaw of a crate is ignored), exact for crates squared to the axes.
+      let crates = 0;
+      items.forEach((c) => {
+        if (c.tag !== 'crate') return;
+        let loaded = 0;
+        for (const it of items) {
+          if (it.kind !== 'item' || it.tag === 'crate' || !atRest(it)) continue;
+          if (Math.abs(it.p[0] - c.p[0]) > c.size[0] / 2 - CRATE_WALL_M) continue;
+          if (Math.abs(it.p[2] - c.p[2]) > c.size[2] / 2 - CRATE_WALL_M) continue;
+          if (it.p[1] < c.p[1] - c.size[1] / 2 + CRATE_WALL_M || it.p[1] > c.p[1] + c.size[1] / 2) continue;
+          loaded += 1;
+        }
+        next[`loaded:crate:${crates}`] = loaded;
+        crates += 1;
       });
       current = next;
     },
