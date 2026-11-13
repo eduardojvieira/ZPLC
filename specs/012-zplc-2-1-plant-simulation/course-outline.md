@@ -1,6 +1,6 @@
 # Course outline: ZPLC 2.1 industrial automation course
 
-**Status:** Draft for owner approval (CRS-001). No lesson is written before approval.
+**Status:** Approved by the owner on 2026-11-13 (CRS-001). Assumption A2 (one package with both starters) is open: the 2.0 package format holds one starter (see plan-m7.md, open question 2).
 
 ## How to review this
 
