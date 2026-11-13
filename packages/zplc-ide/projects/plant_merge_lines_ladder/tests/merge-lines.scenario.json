@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "merge-lines",
+  "tickMs": 10,
+  "durationMs": 25000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      { "atMs": 200, "operate": { "signal": "StartButton.pressed", "value": true } },
+      { "atMs": 400, "operate": { "signal": "StartButton.pressed", "value": false } }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    { "kind": "AT", "atMs": 100, "condition": { "MergeLines.HoldA": false, "MergeLines.HoldB": false, "MergeLines.Done": false } },
+    { "kind": "AT", "atMs": 1000, "condition": { "MergeLines.HoldA": true, "MergeLines.HoldB": true, "fact:itemsRemoved": false } },
+    {
+      "kind": "EVENTUALLY",
+      "fromMs": 0,
+      "withinMs": 25000,
+      "condition": { "fact:delivered:Remover1": true, "fact:emitted:EmitterA": true, "fact:emitted:EmitterB": true }
+    },
+    { "kind": "AT", "atMs": 25000, "condition": { "MergeLines.Done": true, "MergeLines.HoldA": true, "MergeLines.HoldB": true } },
+    { "kind": "ALWAYS", "condition": { "fact:itemsDropped": false, "fact:itemsCollided": false } }
+  ]
+}

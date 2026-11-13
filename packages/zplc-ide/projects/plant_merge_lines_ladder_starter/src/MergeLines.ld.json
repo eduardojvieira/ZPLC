@@ -1,0 +1,142 @@
+{
+  "name": "MergeLines",
+  "description": "Arbitrate two feeders that share one outfeed: line A first, one box at a time.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Active",
+        "type": "BOOL",
+        "comment": "Memory: the line has been started"
+      },
+      {
+        "name": "GrantA",
+        "type": "BOOL",
+        "comment": "Line A has the grant"
+      },
+      {
+        "name": "GrantB",
+        "type": "BOOL",
+        "comment": "Line B has the grant"
+      },
+      {
+        "name": "Seen",
+        "type": "BOOL",
+        "comment": "The box of the grant has been seen in the zone"
+      },
+      {
+        "name": "LoadedA",
+        "type": "CTU",
+        "comment": "Counts the boxes loaded on feeder A"
+      },
+      {
+        "name": "LoadedB",
+        "type": "CTU",
+        "comment": "Counts the boxes loaded on feeder B"
+      },
+      {
+        "name": "Merged",
+        "type": "CTU",
+        "comment": "Counts the boxes that have left the zone"
+      },
+      {
+        "name": "LoadedAQ",
+        "type": "BOOL",
+        "comment": "LoadedA.Q: three boxes loaded on A"
+      },
+      {
+        "name": "LoadedBQ",
+        "type": "BOOL",
+        "comment": "LoadedB.Q: three boxes loaded on B"
+      },
+      {
+        "name": "MergedQ",
+        "type": "BOOL",
+        "comment": "Merged.Q: all six boxes have left"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "StartButton.pressed: start the line"
+      },
+      {
+        "name": "WaitA",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "EyeA.detect: a box waits at the blade of feeder A"
+      },
+      {
+        "name": "WaitB",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "EyeB.detect: a box waits at the blade of feeder B"
+      },
+      {
+        "name": "Zone",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "EyeZone.detect: a box is on the outfeed past the merge"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "RunA",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "FeedA.run: run feeder A"
+      },
+      {
+        "name": "RunB",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "FeedB.run: run feeder B"
+      },
+      {
+        "name": "RunOut",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "Outfeed.run: run the outfeed belt"
+      },
+      {
+        "name": "EmitA",
+        "type": "BOOL",
+        "address": "%Q0.3",
+        "comment": "EmitterA.emit: put one box on feeder A"
+      },
+      {
+        "name": "EmitB",
+        "type": "BOOL",
+        "address": "%Q0.4",
+        "comment": "EmitterB.emit: put one box on feeder B"
+      },
+      {
+        "name": "HoldA",
+        "type": "BOOL",
+        "address": "%Q0.5",
+        "comment": "BladeA.extend: the blade holds feeder A while true"
+      },
+      {
+        "name": "HoldB",
+        "type": "BOOL",
+        "address": "%Q0.6",
+        "comment": "BladeB.extend: the blade holds feeder B while true"
+      },
+      {
+        "name": "Done",
+        "type": "BOOL",
+        "address": "%Q0.7",
+        "comment": "DoneLight.lit: lit when all six boxes have left"
+      }
+    ]
+  },
+  "rungs": [],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

@@ -1,0 +1,1499 @@
+{
+  "name": "MergeLines",
+  "description": "Arbitrate two feeders that share one outfeed: line A first, one box at a time.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Active",
+        "type": "BOOL",
+        "comment": "Memory: the line has been started"
+      },
+      {
+        "name": "GrantA",
+        "type": "BOOL",
+        "comment": "Line A has the grant"
+      },
+      {
+        "name": "GrantB",
+        "type": "BOOL",
+        "comment": "Line B has the grant"
+      },
+      {
+        "name": "Seen",
+        "type": "BOOL",
+        "comment": "The box of the grant has been seen in the zone"
+      },
+      {
+        "name": "LoadedA",
+        "type": "CTU",
+        "comment": "Counts the boxes loaded on feeder A"
+      },
+      {
+        "name": "LoadedB",
+        "type": "CTU",
+        "comment": "Counts the boxes loaded on feeder B"
+      },
+      {
+        "name": "Merged",
+        "type": "CTU",
+        "comment": "Counts the boxes that have left the zone"
+      },
+      {
+        "name": "LoadedAQ",
+        "type": "BOOL",
+        "comment": "LoadedA.Q: three boxes loaded on A"
+      },
+      {
+        "name": "LoadedBQ",
+        "type": "BOOL",
+        "comment": "LoadedB.Q: three boxes loaded on B"
+      },
+      {
+        "name": "MergedQ",
+        "type": "BOOL",
+        "comment": "Merged.Q: all six boxes have left"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "StartButton.pressed: start the line"
+      },
+      {
+        "name": "WaitA",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "EyeA.detect: a box waits at the blade of feeder A"
+      },
+      {
+        "name": "WaitB",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "EyeB.detect: a box waits at the blade of feeder B"
+      },
+      {
+        "name": "Zone",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "EyeZone.detect: a box is on the outfeed past the merge"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "RunA",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "FeedA.run: run feeder A"
+      },
+      {
+        "name": "RunB",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "FeedB.run: run feeder B"
+      },
+      {
+        "name": "RunOut",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "Outfeed.run: run the outfeed belt"
+      },
+      {
+        "name": "EmitA",
+        "type": "BOOL",
+        "address": "%Q0.3",
+        "comment": "EmitterA.emit: put one box on feeder A"
+      },
+      {
+        "name": "EmitB",
+        "type": "BOOL",
+        "address": "%Q0.4",
+        "comment": "EmitterB.emit: put one box on feeder B"
+      },
+      {
+        "name": "HoldA",
+        "type": "BOOL",
+        "address": "%Q0.5",
+        "comment": "BladeA.extend: the blade holds feeder A while true"
+      },
+      {
+        "name": "HoldB",
+        "type": "BOOL",
+        "address": "%Q0.6",
+        "comment": "BladeB.extend: the blade holds feeder B while true"
+      },
+      {
+        "name": "Done",
+        "type": "BOOL",
+        "address": "%Q0.7",
+        "comment": "DoneLight.lit: lit when all six boxes have left"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Start remembers that the line is active.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r1_0_0",
+              "type": "contact_no",
+              "variable": "Start",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r1_0_1",
+              "type": "coil_set",
+              "variable": "Active",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "Feeder A is loaded with three boxes: the first on Start, the next once the previous has left the blade.",
+      "branches": [
+        {
+          "id": "branch_1",
+          "startCol": 0,
+          "endCol": 0,
+          "rows": [0, 1]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r2_0_0",
+              "type": "contact_no",
+              "variable": "Start",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r2_0_1",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r2_0_2",
+              "type": "contact_nc",
+              "variable": "LoadedAQ",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r2_0_3",
+              "type": "coil",
+              "variable": "EmitA",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "r2_1_0",
+              "type": "contact_n",
+              "variable": "WaitA",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "Feeder B likewise.",
+      "branches": [
+        {
+          "id": "branch_1",
+          "startCol": 0,
+          "endCol": 0,
+          "rows": [0, 1]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r3_0_0",
+              "type": "contact_no",
+              "variable": "Start",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r3_0_1",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r3_0_2",
+              "type": "contact_nc",
+              "variable": "LoadedBQ",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r3_0_3",
+              "type": "coil",
+              "variable": "EmitB",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "r3_1_0",
+              "type": "contact_n",
+              "variable": "WaitB",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_4",
+      "number": 4,
+      "comment": "Count the boxes that left the blade of A.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r4_0_0",
+              "type": "contact_n",
+              "variable": "WaitA",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r4_0_1",
+              "type": "function_block",
+              "fbType": "CTU",
+              "instance": "LoadedA",
+              "parameters": {
+                "CU": "CONNECTED",
+                "R": "FALSE",
+                "PV": "3"
+              },
+              "outputs": {
+                "Q": "LoadedAQ"
+              },
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_5",
+      "number": 5,
+      "comment": "Count the boxes that left the blade of B.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r5_0_0",
+              "type": "contact_n",
+              "variable": "WaitB",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r5_0_1",
+              "type": "function_block",
+              "fbType": "CTU",
+              "instance": "LoadedB",
+              "parameters": {
+                "CU": "CONNECTED",
+                "R": "FALSE",
+                "PV": "3"
+              },
+              "outputs": {
+                "Q": "LoadedBQ"
+              },
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_6",
+      "number": 6,
+      "comment": "Grant to line A: only when nothing is granted and the zone is empty. It comes first, so A has priority.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r6_0_0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r6_0_1",
+              "type": "contact_nc",
+              "variable": "GrantA",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r6_0_2",
+              "type": "contact_nc",
+              "variable": "GrantB",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r6_0_3",
+              "type": "contact_nc",
+              "variable": "Zone",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r6_0_4",
+              "type": "contact_no",
+              "variable": "WaitA",
+              "row": 0,
+              "col": 4
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r6_0_5",
+              "type": "coil_set",
+              "variable": "GrantA",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_7",
+      "number": 7,
+      "comment": "Grant to line B, only when A did not take it.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r7_0_0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r7_0_1",
+              "type": "contact_nc",
+              "variable": "GrantA",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r7_0_2",
+              "type": "contact_nc",
+              "variable": "GrantB",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r7_0_3",
+              "type": "contact_nc",
+              "variable": "Zone",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r7_0_4",
+              "type": "contact_no",
+              "variable": "WaitB",
+              "row": 0,
+              "col": 4
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r7_0_5",
+              "type": "coil_set",
+              "variable": "GrantB",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_8",
+      "number": 8,
+      "comment": "Remember that the box of the grant entered the zone.",
+      "branches": [
+        {
+          "id": "branch_1",
+          "startCol": 0,
+          "endCol": 0,
+          "rows": [0, 1]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r8_0_0",
+              "type": "contact_no",
+              "variable": "GrantA",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r8_0_1",
+              "type": "contact_no",
+              "variable": "Zone",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r8_0_2",
+              "type": "coil_set",
+              "variable": "Seen",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "r8_1_0",
+              "type": "contact_no",
+              "variable": "GrantB",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_9",
+      "number": 9,
+      "comment": "When the box leaves the zone, the grant of A ends.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r9_0_0",
+              "type": "contact_no",
+              "variable": "Seen",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r9_0_1",
+              "type": "contact_n",
+              "variable": "Zone",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r9_0_2",
+              "type": "coil_reset",
+              "variable": "GrantA",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_10",
+      "number": 10,
+      "comment": "When the box leaves the zone, the grant of B ends.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r10_0_0",
+              "type": "contact_no",
+              "variable": "Seen",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r10_0_1",
+              "type": "contact_n",
+              "variable": "Zone",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r10_0_2",
+              "type": "coil_reset",
+              "variable": "GrantB",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_11",
+      "number": 11,
+      "comment": "And the Seen memory is cleared.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r11_0_0",
+              "type": "contact_no",
+              "variable": "Seen",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r11_0_1",
+              "type": "contact_n",
+              "variable": "Zone",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r11_0_2",
+              "type": "coil_reset",
+              "variable": "Seen",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_12",
+      "number": 12,
+      "comment": "Count the boxes that have left the zone.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r12_0_0",
+              "type": "contact_n",
+              "variable": "Zone",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r12_0_1",
+              "type": "function_block",
+              "fbType": "CTU",
+              "instance": "Merged",
+              "parameters": {
+                "CU": "CONNECTED",
+                "R": "FALSE",
+                "PV": "6"
+              },
+              "outputs": {
+                "Q": "MergedQ"
+              },
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_13",
+      "number": 13,
+      "comment": "Feeder A runs while the line is active.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r13_0_0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r13_0_1",
+              "type": "coil",
+              "variable": "RunA",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_14",
+      "number": 14,
+      "comment": "Feeder B runs while the line is active.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r14_0_0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r14_0_1",
+              "type": "coil",
+              "variable": "RunB",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_15",
+      "number": 15,
+      "comment": "The outfeed runs while the line is active.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r15_0_0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r15_0_1",
+              "type": "coil",
+              "variable": "RunOut",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_16",
+      "number": 16,
+      "comment": "The blade of A holds its feeder unless A has the grant.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r16_0_0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r16_0_1",
+              "type": "contact_nc",
+              "variable": "GrantA",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r16_0_2",
+              "type": "coil",
+              "variable": "HoldA",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_17",
+      "number": 17,
+      "comment": "The blade of B holds its feeder unless B has the grant.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r17_0_0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r17_0_1",
+              "type": "contact_nc",
+              "variable": "GrantB",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r17_0_2",
+              "type": "coil",
+              "variable": "HoldB",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_18",
+      "number": 18,
+      "comment": "Done lights when all six boxes have left.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r18_0_0",
+              "type": "contact_no",
+              "variable": "MergedQ",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r18_0_1",
+              "type": "coil",
+              "variable": "Done",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
