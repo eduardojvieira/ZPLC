@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 2,
+  "target": {
+    "scene": "belt-to-belt-transfer"
+  },
+  "signals": {
+    "StartButton.pressed": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "BeltTransfer.Start"
+    },
+    "EyePick.detect": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "BeltTransfer.Waiting"
+    },
+    "EyeOut.detect": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "BeltTransfer.OutEye"
+    },
+    "Pick1.xAtMin": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "BeltTransfer.XMin"
+    },
+    "Pick1.xAtMax": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "BeltTransfer.XMax"
+    },
+    "Pick1.yAtMin": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "BeltTransfer.YMin"
+    },
+    "Pick1.yAtMax": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "BeltTransfer.YMax"
+    },
+    "Pick1.gripped": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "BeltTransfer.Gripped"
+    },
+    "Infeed.run": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "BeltTransfer.RunIn"
+    },
+    "Outfeed.run": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "BeltTransfer.RunOut"
+    },
+    "Source1.emit": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "BeltTransfer.Emit"
+    },
+    "Stop1.extend": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "BeltTransfer.Hold"
+    },
+    "Pick1.xPlus": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "BeltTransfer.XPlus"
+    },
+    "Pick1.xMinus": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "BeltTransfer.XMinus"
+    },
+    "Pick1.yPlus": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "BeltTransfer.YPlus"
+    },
+    "Pick1.yMinus": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "BeltTransfer.YMinus"
+    },
+    "Pick1.grip": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "BeltTransfer.Grip"
+    },
+    "Beacon.amber": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "BeltTransfer.Busy"
+    },
+    "Beacon.green": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "BeltTransfer.Done"
+    }
+  }
+}
