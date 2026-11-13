@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Modificar una escena: agregar el segundo emisor",
+  "summary": "Abra la escena de fusión terminada, agregue el emisor de la línea B que le falta y enlace su señal en el mapa de la planta, sin tocar el programa que ya arbitra las dos líneas.",
+  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "objectives": [
+    "Agregar una pieza a una escena existente y colocarla donde el resto de la escena la espera.",
+    "Enlazar la señal de la pieza nueva en el mapa de la planta con la variable del programa que ya la gobierna, sin cambiar el programa."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "Abra scene.json en el Editor de escenas: la escena de fusión no tiene emisor para la línea B. Agregue un emisor llamado EmitterB al inicio del alimentador B, con un límite de tres cajas, y en plant-map.json enlace EmitterB.emit con MergeLines.EmitB. El programa de src/MergeLines.ld.json ya gobierna EmitB; déjelo como está.",
+      "checkpoint": "La escena tiene EmitterB, el mapa de la planta enlaza EmitterB.emit y el programa es el que se le dio."
+    },
+    {
+      "key": "predict",
+      "title": "Predecir",
+      "body": "Antes de ejecutar, piense en qué cambia cuando la línea B recibe su emisor: ahora llegan tres cajas a cada alimentador, y el arbitraje debe dejarlas pasar de una en una, como antes.",
+      "checkpoint": "Al principio ambas cuchillas retienen las líneas; luego se abre una cuchilla a la vez, primero la línea A; las seis cajas salen y Done se enciende."
+    },
+    {
+      "key": "edit",
+      "title": "Editar",
+      "body": "Corrija esta omisión del inicial, guarde la escena y el mapa de la planta, y ejecute: La escena inicial no tiene emisor para la línea B, así que nunca llega una caja desde el alimentador B; agregue EmitterB al inicio del alimentador B con un límite de tres cajas, y enlace EmitterB.emit con MergeLines.EmitB en el mapa de la planta.",
+      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutar",
+      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario change-scene; observe la vista 3D mientras se ejecuta.",
+      "checkpoint": "El escenario requerido se llama change-scene y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observar",
+      "body": "Observe cómo el alimentador B se llena de cajas y espera en su cuchilla; si falta la pieza o su enlace, lea el mensaje de la Comprobación: nombra lo que no encuentra.",
+      "checkpoint": "Las seis cajas se entregan por turnos, ninguna choca ni cae, y Done está encendida al final."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexionar",
+      "body": "El programa no cambió, así que la escena sola decidió el resultado; una pieza agregada pero sin enlazar está tan ausente como una pieza que nunca se agregó.",
+      "checkpoint": "No establece la velocidad física de la banda, la respuesta del sensor, la temporización de hardware, HIL, función de seguridad ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Copie los ajustes de EmitterA: un emisor con un límite de tres cajas; EmitterB va sobre la línea del alimentador B, en la posición 0, 0.65, 1.95 y girado 90 grados."
+    },
+    {
+      "level": 2,
+      "text": "En el mapa de la planta la señal es EmitterB.emit, un comando, y su punto es MergeLines.EmitB; revise el nombre letra por letra, porque la Comprobación lo lee exactamente."
+    }
+  ],
+  "faultCases": [
+    "La escena inicial no tiene emisor para la línea B, así que nunca llega una caja desde el alimentador B; agregue EmitterB al inicio del alimentador B con un límite de tres cajas, y enlace EmitterB.emit con MergeLines.EmitB en el mapa de la planta."
+  ]
+}

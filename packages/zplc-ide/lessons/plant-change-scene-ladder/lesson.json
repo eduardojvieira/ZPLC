@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-change-scene-ladder",
+  "version": 1,
+  "order": 1192,
+  "module": 19,
+  "level": "advanced",
+  "prerequisites": ["plant-build-belt-scene-ladder", "plant-merge-lines"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The Ladder version of the lesson changes a finished scene by adding a part and re-binding its signal; a learner board has no scene to change, and the scene is edited only in Simulation.",
+        "es": "La versión en Ladder de la lección modifica una escena terminada añadiendo una pieza y volviendo a enlazar su señal; una placa del estudiante no tiene escena que modificar, y la escena solo se edita en Simulación."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene editor and the scene are part of the lesson.",
+        "es": "Complétela en Simulación, donde el editor de escenas y la escena forman parte de la lección."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "merge-lines",
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "plant_change_scene_ladder_starter",
+    "program": "src/MergeLines.ld.json"
+  },
+  "solution": {
+    "project": "plant_change_scene_ladder",
+    "program": "src/MergeLines.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "change-scene",
+    "path": "tests/change-scene.scenario.json",
+    "sha256": "8d890f9d7479f4b1e528b8fa1dea867082085080f3362e9034401b40fb15eb05"
+  },
+  "regressionScenarios": []
+}
