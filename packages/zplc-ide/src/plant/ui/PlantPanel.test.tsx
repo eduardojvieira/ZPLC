@@ -661,5 +661,23 @@ describe('the scene of the project itself (CRS-012)', () => {
     expect(written.has('plant-map.json')).toBe(true);
     expect(asked).not.toContain('scenes');
   });
-});
 
+  it('a project whose root holds scene.json opens it as its scene although no file of it is open', async () => {
+    const files = new Map([['scene.json', sceneFiles('belt-to-sensor').scene]]);
+    const handle = {
+      getDirectoryHandle: async () => {
+        throw new Error('not found');
+      },
+      getFileHandle: async (name: string) => {
+        const text = files.get(name);
+        if (text === undefined) throw new Error('not found');
+        return { getFile: async () => ({ size: text.length, text: async () => text }) };
+      },
+    } as unknown as FileSystemDirectoryHandle;
+    dom.patchStore(useIDEStore, { directoryHandle: handle, loadedFiles: new Map() as never });
+    const r = rig();
+    dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+    await dom.waitFor(() => expect((dom.screen.getByLabelText(dom.t('plant.panel.scene')) as HTMLSelectElement).value).toBe('project'));
+    await dom.waitFor(() => expect((r.scenes.at(-1) as { name?: string }).name).toBe('Belt to sensor'));
+  });
+});

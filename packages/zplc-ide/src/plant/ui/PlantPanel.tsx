@@ -28,6 +28,7 @@ import { PlantCanvas } from './PlantCanvas';
 import {
   refValue,
   usePlantSession,
+  useProjectSceneTexts,
   useProjectScenes,
   type CanvasFailure,
   type CanvasTiming,
@@ -92,7 +93,7 @@ const prefersReduced = (): boolean =>
 
 export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelProps) {
   const { t, locale } = useT();
-  const hasProjectScene = useIDEStore((state) => [...state.loadedFiles.values()].some((file) => file.path === 'scene.json'));
+  const hasProjectScene = useProjectSceneTexts().scene !== undefined;
   const theme = useIDEStore((state) => state.theme);
   const quality = useAppSettings((state) => state.settings.plantQuality);
   const handle = useIDEStore((state) => state.directoryHandle);

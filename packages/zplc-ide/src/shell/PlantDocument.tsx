@@ -10,7 +10,7 @@ import { LESSON_INDEX } from '../generated/lessonIndex';
 import type { DebugController } from '../hooks/useDebugController';
 import { useT } from '../i18n';
 import { PlantPanel } from '../plant/ui/PlantPanel';
-import { useProjectScenes } from '../plant/ui/usePlantSession';
+import { useProjectSceneTexts, useProjectScenes } from '../plant/ui/usePlantSession';
 import { PlantLivePanel } from '../plants/PlantLivePanel';
 import { resolvePlantMap } from '../plants/plantMap';
 import { listIoMap } from '../runtime/ioMap';
@@ -19,14 +19,10 @@ import { useIDEStore } from '../store/useIDEStore';
 import { Button, ToggleGroup } from '../ui';
 import { useWorkspaceTestResult } from './workspaceTestResult';
 
-/** The project's scene file (`scene.json` at the project root, kept from 2.0; scenes of `scenes/` are listed from the folder). */
-const hasProjectScene = (files: ReadonlyMap<string, { path: string }>): boolean =>
-  [...files.values()].some((file) => file.path === 'scene.json');
-
 export function PlantDocument({ controller, visible }: { controller: DebugController | undefined; visible: boolean }) {
   const { t } = useT();
   const debugMap = useIDEStore((state) => state.debug.debugMap);
-  const rootScene = useIDEStore((state) => hasProjectScene(state.loadedFiles));
+  const rootScene = useProjectSceneTexts().scene !== undefined;
   const savedScenes = useProjectScenes().names.length > 0;
   // A person asked for a scene: shipped, empty or saved (SCN-001, SCN-016); the scene panel stays until the project changes.
   const [asked, setAsked] = useState(false);
