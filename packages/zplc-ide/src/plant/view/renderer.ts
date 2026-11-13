@@ -1,7 +1,7 @@
 import type * as THREE_NS from 'three';
 import type { PlantSceneFile, PlantSnapshot } from '../contracts';
 import { cameraFromPreset, cameraPosition, orbitCamera, panCamera, zoomCamera, type CameraState } from './camera';
-import { instanceColors, instanceMatrices, partDecor, partShape, type Decor, type ShapeSpec } from './geometry';
+import { instanceColors, instanceMatrices, itemTone, partDecor, partShape, type Decor, type ShapeSpec } from './geometry';
 import type { Palette } from './displayModes';
 import { chooseInitialQuality, qualitySettings, type QualityLevel } from './quality';
 
@@ -134,6 +134,11 @@ const PART_COLORS: Readonly<Record<string, number>> = {
   'stack-light': 0x1f2937,
   potentiometer: 0x475569,
   'numeric-display': 0x111827,
+  'pick-place': 0x2563eb,
+  gantry: 0x2563eb,
+  'layer-palletizer': 0x2563eb,
+  'manipulator-frame': 0x64748b,
+  'manipulator-beam': 0x94a3b8,
 };
 /** Colours of the boxes drawn inside a part: the liquid, and each lamp lit and dark. Shape differs too (VIS-003). */
 const DECOR_COLORS: Readonly<Record<string, number>> = {
@@ -144,6 +149,7 @@ const DECOR_COLORS: Readonly<Record<string, number>> = {
   'amber:false': 0x78350f,
   'green:true': 0x22c55e,
   'green:false': 0x14532d,
+  'jaw:true': 0xe5e7eb,
 };
 
 function probeGpu(): { webgl2: boolean; rendererString: string; maxTextureSize: number } | null {
@@ -263,7 +269,7 @@ export function createRenderer(
   const paintItems = (): void => {
     const colors = instanceColors(lastItems);
     for (let i = 0; i < lastItems.length; i++)
-      if (palette) items.setColorAt(i, new THREE.Color(palette.item));
+      if (palette) items.setColorAt(i, new THREE.Color(itemTone(lastItems[i]?.tag, palette)));
       else items.setColorAt(i, new THREE.Color(colors[i * 3], colors[i * 3 + 1], colors[i * 3 + 2]));
     if (items.instanceColor) items.instanceColor.needsUpdate = true;
   };
