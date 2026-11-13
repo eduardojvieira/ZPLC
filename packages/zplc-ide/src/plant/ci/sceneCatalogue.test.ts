@@ -24,6 +24,7 @@ describe('shipped scenes use the public format and catalogue', () => {
       'buffer-release',
       'merge-lines',
       'lift-stacking',
+      'three-level-lifts',
       'tank-level-control',
       'layer-palletizer',
       'belt-to-belt-transfer',
