@@ -16,54 +16,31 @@ import {
   Terminal,
   AlertTriangle,
   Trash2,
-  AlertCircle,
-  Info,
-  CheckCircle,
   Eye,
   FlaskConical,
-  FolderOpen,
-  LoaderCircle,
-  Play,
   Activity,
   FileDiff,
   Bot,
-  Send,
-  CircleStop,
   ShieldCheck,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { shownProjectBridge } from '../ipc/shownProjectBridge';
-import { trackTestRun } from './workspaceTestNotifications';
 import { useIDEStore } from '../store/useIDEStore';
 import { useConsoleState } from '../store/regionSubscriptions';
 import { sha256Text } from './candidateSources';
 import { isCandidateSourcePath } from '../ai/candidatePaths';
 import { presentAgentResponse } from './agent/agentResponse';
-import { AgentProposals } from './agent/AgentProposals';
 import { changeSetIsCurrent, reviewChangeSet, saveChangeSet } from './agent/changeSetReview';
 import { ConsoleTabStrip, type ConsoleTabFace } from './ConsoleTabStrip';
 import { TerminalTab } from './TerminalTab';
 import { WatchTab } from './WatchTab';
 import type { DebugController } from '../hooks/useDebugController';
-import {
-  classifyWorkspaceTestBuildLink,
-  isWorkspaceManifestRegistrationCurrent,
-  isWorkspaceTestRunCurrent,
-  presentCandidateChangeSetReview,
-  presentWorkspaceTestResult,
-  workspaceTestAvailability,
-  workspaceTestRunFallbackState,
-  type WorkspaceTestPresentation,
-} from './workspaceTestPresentation';
+import { presentCandidateChangeSetReview } from './workspaceTestPresentation';
 import { readFileContent } from '../utils/fileSystem';
 import { describeVmError } from '../runtime/nativeTrace';
 import { NativeAdapter } from '../runtime/nativeAdapter';
-import { presentWorkspaceSafetyCheck, type WorkspaceSafetyPresentation } from './workspaceSafetyPresentation';
-import { InterlockCoverage } from './InterlockCoverage';
 import { ErrorBoundary } from './ErrorBoundary';
 import { DevFaultProbe } from './DevFaultProbe';
 import { resultsTabFor } from '../shell/shellRouting';
-import { usePublishWorkspaceTestResult } from '../shell/workspaceTestResult';
 import { elementToSelect } from '../editors/diagnosticElement';
 import { requestElementSelection } from '../editors/elementSelectionRequests';
 import { useProjectBlocks } from '../editors/useProjectBlocks';
@@ -75,30 +52,16 @@ import {
   type AiProviderStatusPresentation,
 } from './aiProviderPresentation';
 import { useTheme } from '../hooks/useTheme';
-import { Badge, Button, Checkbox, FileInput, IconButton, TextField, Textarea, Tooltip } from '../ui';
+import { Badge, Button, FileInput, IconButton } from '../ui';
 import { useT } from '../i18n';
 import { CommandEmptyState } from './panelStates';
-import {
-  CandidateReviewResult,
-  AgentStatus,
-  type CandidateReviewSnapshot,
-  type CandidateReviewState,
-  type AgentState,
-} from './ConsoleReviewPanels';
+import { type CandidateReviewSnapshot, type CandidateReviewState, type AgentState } from './ConsoleReviewPanels';
 import { LiveNativeMotorPanel } from './LiveNativeMotorControls';
-import { WorkspaceTestResult } from './WorkspaceTestResult';
-
-type WorkspaceTestResultState = {
-  presentation: WorkspaceTestPresentation;
-  projectSession: number;
-  compilerRunId: number;
-  workspaceId: string;
-};
-type WorkspaceSafetyTextState = { status: 'running' | 'unavailable'; projectSession: number; compilerRunId: number; workspaceId: string };
-type WorkspaceSafetyState =
-  | 'idle'
-  | WorkspaceSafetyTextState
-  | { presentation: WorkspaceSafetyPresentation; projectSession: number; compilerRunId: number; workspaceId: string };
+import { TestsTab } from './console/TestsTab';
+import { InterlocksTab } from './console/InterlocksTab';
+import { ChangesTab } from './console/ChangesTab';
+import { AgentTab } from './console/AgentTab';
+import { useWorkspaceTestRunner } from './console/useWorkspaceTestRunner';
 
 interface ConsoleProps {
   debugController?: DebugController;
@@ -138,13 +101,24 @@ export function Console({ debugController }: ConsoleProps) {
   const activeConsoleTab = resultsTabFor(storedConsoleTab);
   const { effectiveTheme } = useTheme();
   const projectBlocks = useProjectBlocks();
-  const [workspaceTestBusy, setWorkspaceTestBusy] = useState(false);
-  const [workspaceTestState, setWorkspaceTestState] = useState<
-    'idle' | 'selected' | 'running' | 'cancelling' | 'desktop-unavailable' | WorkspaceTestResultState
-  >('idle');
-  const [workspaceSafetyState, setWorkspaceSafetyState] = useState<WorkspaceSafetyState>('idle');
-  const workspaceManifestInputRef = useRef<HTMLInputElement>(null);
-  const workspaceTests = shownProjectBridge(window.electronAPI?.workspaceTests);
+  const runner = useWorkspaceTestRunner({
+    isProjectOpen,
+    projectSession,
+    compilerRunId,
+    workspaceScenarioLink,
+    linkWorkspaceScenarios,
+    hasUnsavedChanges,
+    saveAllFiles,
+    saveProjectConfig,
+  });
+  const {
+    workspaceTests,
+    workspaceTestBusy,
+    setWorkspaceTestBusy,
+    workspaceManifestInputRef,
+    hasCurrentWorkspaceLink,
+    registerWorkspaceManifest,
+  } = runner;
   const candidateChangeSet = window.electronAPI?.candidateChangeSet;
   const aiProvider = window.electronAPI?.aiProvider;
   const candidateDesktopReady = Boolean(candidateChangeSet && workspaceTests);
@@ -160,30 +134,6 @@ export function Console({ debugController }: ConsoleProps) {
   const [agentSettingsBusy, setAgentSettingsBusy] = useState(false);
   const [agentSettingsMessage, setAgentSettingsMessage] = useState<string | null>(null);
   const [agentSettingsOpen, setAgentSettingsOpen] = useState(false);
-  const hasCurrentWorkspaceLink = workspaceScenarioLink?.projectSession === projectSession;
-  const workspaceTestAvailabilityState = workspaceTestAvailability({
-    desktopAvailable: Boolean(workspaceTests),
-    isProjectOpen,
-    hasCurrentLink: hasCurrentWorkspaceLink,
-    hasUnsavedChanges: hasUnsavedChanges(),
-  });
-  const workspaceTestStateForLink =
-    typeof workspaceTestState === 'object' &&
-    !isWorkspaceTestRunCurrent({ projectSession, compilerRunId, workspaceScenarioLink }, workspaceTestState)
-      ? workspaceTestRunFallbackState({ isProjectOpen, projectSession, workspaceScenarioLink })
-      : hasCurrentWorkspaceLink
-        ? workspaceTestState
-        : 'idle';
-  const workspaceSafetyStateForLink =
-    workspaceSafetyState === 'idle' ||
-    !isWorkspaceTestRunCurrent({ projectSession, compilerRunId, workspaceScenarioLink }, workspaceSafetyState)
-      ? 'idle'
-      : 'status' in workspaceSafetyState
-        ? workspaceSafetyState.status
-        : workspaceSafetyState;
-
-  // The lessons live in the sidebar and read the latest scenario run from here.
-  usePublishWorkspaceTestResult(typeof workspaceTestStateForLink === 'object' ? workspaceTestStateForLink.presentation : undefined);
 
   // Get watch count for badge
   const watchCount = useIDEStore((state) => state.debug.watchVariables.length);
@@ -303,171 +253,6 @@ export function Console({ debugController }: ConsoleProps) {
     },
     { id: 'terminal', label: t('console.tab.terminal'), icon: <Terminal size={14} className="text-[var(--color-accent-green)]" /> },
   ];
-
-  const registerWorkspaceManifest = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const input = event.currentTarget;
-    const file = input.files?.[0];
-    input.value = '';
-    if (!file || !workspaceTests || workspaceTestBusy || !isProjectOpen) return;
-    const expectedProjectSession = projectSession;
-    setWorkspaceTestBusy(true);
-    try {
-      const selection = await workspaceTests.registerProjectFile(file);
-      if (selection?.workspaceId && isWorkspaceManifestRegistrationCurrent(useIDEStore.getState().projectSession, expectedProjectSession)) {
-        if (linkWorkspaceScenarios(selection.workspaceId, expectedProjectSession)) {
-          setWorkspaceTestState('selected');
-        }
-      }
-    } catch {
-      if (isWorkspaceManifestRegistrationCurrent(useIDEStore.getState().projectSession, expectedProjectSession)) {
-        setWorkspaceTestState('desktop-unavailable');
-      }
-    } finally {
-      setWorkspaceTestBusy(false);
-    }
-  };
-
-  const saveWorkspaceProject = async () => {
-    const current = useIDEStore.getState();
-    if (workspaceTestBusy || !current.isProjectOpen) return;
-    const expectedProjectSession = current.projectSession;
-    setWorkspaceTestBusy(true);
-    try {
-      await saveAllFiles();
-      let latest = useIDEStore.getState();
-      if (
-        latest.projectSession !== expectedProjectSession ||
-        !latest.isProjectOpen ||
-        Array.from(latest.loadedFiles.values()).some((file) => file.isModified)
-      )
-        return;
-
-      if (latest.projectConfigDirty) {
-        await saveProjectConfig();
-      }
-
-      latest = useIDEStore.getState();
-      if (latest.projectSession !== expectedProjectSession || !latest.isProjectOpen || latest.hasUnsavedChanges()) return;
-    } finally {
-      setWorkspaceTestBusy(false);
-    }
-  };
-
-  // The workspace test handlers below catch their own errors and show them in the panel; the buttons start them with `void`.
-  const runWorkspaceTests = async (scenarioId?: string) => {
-    const current = useIDEStore.getState();
-    const link = current.workspaceScenarioLink;
-    if (
-      !workspaceTests ||
-      workspaceTestBusy ||
-      !current.isProjectOpen ||
-      current.hasUnsavedChanges() ||
-      !link ||
-      link.projectSession !== current.projectSession
-    )
-      return;
-    const { workspaceId, projectSession: expectedProjectSession } = link;
-    const expectedCompilerRunId = current.compilerRunId;
-    setWorkspaceTestBusy(true);
-    setWorkspaceTestState('running');
-    const notice = trackTestRun(scenarioId, () => {
-      void workspaceTests.cancel().catch(() => undefined);
-    });
-    try {
-      const request = { workspaceId, ...(scenarioId === undefined ? {} : { scenarioId }) };
-      const result = await workspaceTests.run(request);
-      const latest = useIDEStore.getState();
-      if (
-        isWorkspaceTestRunCurrent(latest, { projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId })
-      ) {
-        setWorkspaceTestState({
-          presentation: presentWorkspaceTestResult(result),
-          projectSession: expectedProjectSession,
-          compilerRunId: expectedCompilerRunId,
-          workspaceId,
-        });
-        notice.done(result);
-      } else notice.dismiss();
-    } catch {
-      const latest = useIDEStore.getState();
-      if (
-        isWorkspaceTestRunCurrent(latest, { projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId })
-      ) {
-        setWorkspaceTestState('desktop-unavailable');
-        notice.unavailable();
-      } else notice.dismiss();
-    } finally {
-      setWorkspaceTestBusy(false);
-      const latest = useIDEStore.getState();
-      setWorkspaceTestState((state) => (state === 'running' || state === 'cancelling' ? workspaceTestRunFallbackState(latest) : state));
-    }
-  };
-
-  const runWorkspaceSafetyCheck = async () => {
-    const current = useIDEStore.getState();
-    const link = current.workspaceScenarioLink;
-    if (
-      !workspaceTests ||
-      workspaceTestBusy ||
-      !current.isProjectOpen ||
-      current.hasUnsavedChanges() ||
-      !link ||
-      link.projectSession !== current.projectSession
-    )
-      return;
-    const { workspaceId, projectSession: expectedProjectSession } = link;
-    const expectedCompilerRunId = current.compilerRunId;
-    let published = false;
-    setWorkspaceTestBusy(true);
-    setWorkspaceSafetyState({
-      status: 'running',
-      projectSession: expectedProjectSession,
-      compilerRunId: expectedCompilerRunId,
-      workspaceId,
-    });
-    try {
-      const result = await workspaceTests.safetyCheck({ workspaceId });
-      const latest = useIDEStore.getState();
-      if (
-        isWorkspaceTestRunCurrent(latest, { projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId })
-      ) {
-        setWorkspaceSafetyState({
-          presentation: presentWorkspaceSafetyCheck(result),
-          projectSession: expectedProjectSession,
-          compilerRunId: expectedCompilerRunId,
-          workspaceId,
-        });
-        published = true;
-      }
-    } catch {
-      const latest = useIDEStore.getState();
-      if (
-        isWorkspaceTestRunCurrent(latest, { projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId })
-      ) {
-        setWorkspaceSafetyState({
-          status: 'unavailable',
-          projectSession: expectedProjectSession,
-          compilerRunId: expectedCompilerRunId,
-          workspaceId,
-        });
-        published = true;
-      }
-    } finally {
-      setWorkspaceTestBusy(false);
-      if (!published)
-        setWorkspaceSafetyState((state) => (typeof state === 'object' && 'status' in state && state.status === 'running' ? 'idle' : state));
-    }
-  };
-
-  const cancelWorkspaceTests = async () => {
-    if (!workspaceTests || !workspaceTestBusy || workspaceTestState !== 'running') return;
-    setWorkspaceTestState('cancelling');
-    try {
-      await workspaceTests.cancel();
-    } catch {
-      /* the active run remains authoritative */
-    }
-  };
 
   const candidateSnapshotIsCurrent = (snapshot: CandidateReviewSnapshot) => {
     const current = useIDEStore.getState();
@@ -944,504 +729,68 @@ export function Console({ debugController }: ConsoleProps) {
           )}
 
           {activeConsoleTab === 'tests' && (
-            <div className="p-3 space-y-3 font-sans text-sm text-[var(--color-surface-200)]">
-              {workspaceTestAvailabilityState === 'desktop-unavailable' ? (
-                <p role="status" aria-live="polite" className="flex items-center gap-2 text-[var(--color-surface-400)]">
-                  <Info size={15} aria-hidden="true" />
-                  {t('console.workspaceTestsRequireThe')}
-                </p>
-              ) : workspaceTestAvailabilityState === 'project-required' ? (
-                <CommandEmptyState
-                  title={t('panel.tests.empty.title')}
-                  description={t('panel.tests.empty.description')}
-                  actions={['file.open']}
-                />
-              ) : (
-                <>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => workspaceManifestInputRef.current?.click()}
-                      disabled={workspaceTestBusy}
-                    >
-                      <FolderOpen size={14} aria-hidden="true" />
-                      {hasCurrentWorkspaceLink ? t('console.chooseZplcJsonAgain') : t('console.chooseZplcJson')}
-                    </Button>
-                    {workspaceTestAvailabilityState === 'unsaved' && (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                          void saveWorkspaceProject();
-                        }}
-                        disabled={workspaceTestBusy}
-                      >
-                        {t('console.saveProject')}
-                      </Button>
-                    )}
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => {
-                        void runWorkspaceTests();
-                      }}
-                      disabled={workspaceTestBusy || workspaceTestAvailabilityState !== 'ready'}
-                    >
-                      <Play size={14} aria-hidden="true" />
-                      {t('console.runHostScenarios')}
-                    </Button>
-                    {workspaceTestStateForLink === 'running' || workspaceTestStateForLink === 'cancelling' ? (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                          void cancelWorkspaceTests();
-                        }}
-                        disabled={workspaceTestStateForLink === 'cancelling'}
-                      >
-                        {workspaceTestStateForLink === 'cancelling' ? t('console.cancelling') : t('console.cancelScenarios')}
-                      </Button>
-                    ) : null}
-                  </div>
-
-                  {workspaceTestAvailabilityState === 'link-required' && (
-                    <p role="status" aria-live="polite" className="flex items-center gap-2 text-[var(--color-surface-400)]">
-                      <Info size={15} aria-hidden="true" />
-                      {t('console.selectTheSavedWorkspace')}
-                    </p>
-                  )}
-                  {workspaceTestAvailabilityState === 'unsaved' && (
-                    <p role="status" aria-live="polite" className="flex items-center gap-2 text-[var(--color-accent-yellow)]">
-                      <AlertCircle size={15} aria-hidden="true" />
-                      {t('console.testsUseSavedWorkspace')}
-                    </p>
-                  )}
-                  {workspaceTestAvailabilityState === 'ready' &&
-                    (workspaceTestStateForLink === 'selected' || workspaceTestStateForLink === 'idle') && (
-                      <p role="status" aria-live="polite" className="flex items-center gap-2 text-[var(--color-surface-200)]">
-                        <CheckCircle size={15} aria-hidden="true" />
-                        {t('console.linkedSavedWorkspaceReady')}
-                      </p>
-                    )}
-                  {workspaceTestStateForLink === 'running' && (
-                    <p role="status" aria-live="polite" className="flex items-center gap-2 text-[var(--color-surface-200)]">
-                      <LoaderCircle size={15} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
-                      {t('console.runningHostPosixScenarios')}
-                    </p>
-                  )}
-                  {workspaceTestStateForLink === 'cancelling' && (
-                    <p role="status" aria-live="polite" className="flex items-center gap-2 text-[var(--color-surface-200)]">
-                      <LoaderCircle size={15} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
-                      {t('console.cancellingHostPosixScenarios')}
-                    </p>
-                  )}
-                  {workspaceTestStateForLink === 'desktop-unavailable' && (
-                    <p role="status" aria-live="polite" className="text-[var(--color-accent-yellow)]">
-                      {t('console.hostPosixSimulationIs')}
-                    </p>
-                  )}
-                  {typeof workspaceTestStateForLink === 'object' && (
-                    <WorkspaceTestResult
-                      presentation={workspaceTestStateForLink.presentation}
-                      onRunScenario={(scenarioId) => {
-                        void runWorkspaceTests(scenarioId);
-                      }}
-                      scenarioRunDisabled={workspaceTestBusy || workspaceTestAvailabilityState !== 'ready'}
-                      buildLink={classifyWorkspaceTestBuildLink(
-                        { projectSession, compilerRunId, workspaceScenarioLink },
-                        canonicalWorkspaceBuildEvidence,
-                        workspaceTestStateForLink,
-                      )}
-                    />
-                  )}
-                </>
-              )}
-            </div>
-          )}
-
-          {activeConsoleTab === 'interlocks' && (
-            <InterlockCoverage
-              availability={workspaceTestAvailabilityState}
-              state={workspaceSafetyStateForLink}
-              busy={workspaceTestBusy}
-              onCheck={() => {
-                void runWorkspaceSafetyCheck();
-              }}
+            <TestsTab
+              runner={runner}
+              projectSession={projectSession}
+              compilerRunId={compilerRunId}
+              workspaceScenarioLink={workspaceScenarioLink}
+              canonicalWorkspaceBuildEvidence={canonicalWorkspaceBuildEvidence}
             />
           )}
 
+          {activeConsoleTab === 'interlocks' && <InterlocksTab runner={runner} />}
+
           {activeConsoleTab === 'changes' && (
-            <div className="min-h-full p-3 font-sans text-sm text-[var(--color-surface-200)]">
-              <div className="border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] p-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  {!hasCurrentWorkspaceLink && isProjectOpen && candidateDesktopReady && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => workspaceManifestInputRef.current?.click()}
-                      disabled={workspaceTestBusy}
-                    >
-                      <FolderOpen size={14} aria-hidden="true" />
-                      {t('console.chooseZplcJson')}
-                    </Button>
-                  )}
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => {
-                      void reviewCandidateChange();
-                    }}
-                    disabled={!candidateEligible || workspaceTestBusy}
-                  >
-                    <FileDiff size={14} aria-hidden="true" />
-                    {t('console.reviewActiveStChange')}
-                  </Button>
-                  {candidateReviewStateForCurrent.kind === 'running' && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        void cancelCandidateReview();
-                      }}
-                    >
-                      {t('console.cancelReview')}
-                    </Button>
-                  )}
-                </div>
-                {!candidateDesktopReady ? (
-                  <p role="status" aria-live="polite" className="mt-3">
-                    {t('console.changeReviewRequiresThe')}
-                  </p>
-                ) : !isProjectOpen ? (
-                  <p role="status" aria-live="polite" className="mt-3">
-                    {t('console.openASavedProject')}
-                  </p>
-                ) : !hasCurrentWorkspaceLink ? (
-                  <p role="status" aria-live="polite" className="mt-3">
-                    {t('console.chooseTheSavedWorkspace')}
-                  </p>
-                ) : !candidateEligible ? (
-                  <p role="status" aria-live="polite" className="mt-3">
-                    {t('console.onlyAModifiedActive')}
-                  </p>
-                ) : (
-                  <p className="mt-3 text-[var(--color-surface-300)]">{t('console.onlyTheActiveStructured')}</p>
-                )}
-                <p className="mt-2 text-xs text-[var(--color-surface-400)]">
-                  <Tooltip content={t('console.nativePosixHostEvidence')}>
-                    <span tabIndex={0}>
-                      <Badge tone="neutral">{t('console.hostEvidenceBadge')}</Badge>
-                    </span>
-                  </Tooltip>
-                </p>
-                <p className="text-xs text-[var(--color-surface-400)]">{t('console.reviewItselfDoesNot')}</p>
-              </div>
-              <div role="status" aria-live="polite" className="mt-3">
-                {candidateReviewStateForCurrent.kind === 'matches-disk' && <p>{t('console.theActiveBufferMatches')}</p>}
-                {candidateReviewStateForCurrent.kind === 'no-change' && <p>{t('console.proposalNoChange')}</p>}
-                {candidateReviewStateForCurrent.kind === 'unsaved' && (
-                  <p>{t('console.proposalUnsaved', { path: candidateReviewStateForCurrent.path })}</p>
-                )}
-                {candidateReviewStateForCurrent.kind === 'running' && (
-                  <p className="flex items-center gap-2">
-                    <LoaderCircle size={15} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
-                    {t('console.reviewingTheChangeIn')}
-                  </p>
-                )}
-                {candidateReviewStateForCurrent.kind === 'cancelling' && <p>{t('console.cancellingTheReview')}</p>}
-                {candidateReviewStateForCurrent.kind === 'saving' && <p>{t('console.savingReviewedChange')}</p>}
-                {candidateReviewStateForCurrent.kind === 'stale' && <p>{t('console.theChangeIsNo')}</p>}
-                {candidateReviewStateForCurrent.kind === 'error' && <p>{t('console.theReviewCouldNot')}</p>}
-                {candidateReviewStateForCurrent.kind === 'saved' && <p>{t('console.reviewedChangeSavedReview')}</p>}
-              </div>
-              {candidateReviewStateForCurrent.kind === 'result' && (
-                <CandidateReviewResult
-                  state={candidateReviewStateForCurrent}
-                  effectiveTheme={effectiveTheme}
-                  onSave={() => {
-                    void saveReviewedChange();
-                  }}
-                  busy={workspaceTestBusy}
-                />
-              )}
-            </div>
+            <ChangesTab
+              hasCurrentWorkspaceLink={hasCurrentWorkspaceLink}
+              isProjectOpen={isProjectOpen}
+              candidateDesktopReady={candidateDesktopReady}
+              candidateEligible={candidateEligible}
+              candidateReviewStateForCurrent={candidateReviewStateForCurrent}
+              workspaceTestBusy={workspaceTestBusy}
+              workspaceManifestInputRef={workspaceManifestInputRef}
+              effectiveTheme={effectiveTheme}
+              reviewCandidateChange={reviewCandidateChange}
+              cancelCandidateReview={cancelCandidateReview}
+              saveReviewedChange={saveReviewedChange}
+            />
           )}
 
           {activeConsoleTab === 'agent' && (
-            <div className="min-h-full p-3 font-sans text-sm text-[var(--color-surface-200)]">
-              <section
-                aria-label={t('console.optionalAgent')}
-                className="max-w-3xl space-y-3 border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] p-3"
-              >
-                <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--color-surface-600)] pb-2">
-                  <div>
-                    <h2 className="font-medium text-[var(--color-surface-100)]">{t('console.tab.agent')}</h2>
-                    <p className="mt-1 text-xs text-[var(--color-surface-400)]">{t('console.providerResponseNotEvidence')}</p>
-                  </div>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => {
-                      if (!agentBusy && !agentSettingsBusy) void refreshAiProvider();
-                    }}
-                    disabled={agentState === 'loading' || agentBusy || agentSettingsBusy}
-                  >
-                    {t('console.refreshStatus')}
-                  </Button>
-                </div>
-                <div role="radiogroup" aria-label={t('console.agentMode')} className="flex flex-wrap gap-1">
-                  {(['ask', 'plan', 'edit', 'debug'] as const).map((mode, index, modes) => (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      key={mode}
-                      role="radio"
-                      aria-checked={agentMode === mode}
-                      tabIndex={agentMode === mode ? 0 : -1}
-                      disabled={agentBusy}
-                      onClick={() => {
-                        if (!agentBusy) {
-                          setAgentMode(mode);
-                          setAgentState('idle');
-                        }
-                      }}
-                      onKeyDown={(event) => {
-                        if (agentBusy) return;
-                        const next =
-                          event.key === 'ArrowRight'
-                            ? modes[(index + 1) % modes.length]
-                            : event.key === 'ArrowLeft'
-                              ? modes[(index + modes.length - 1) % modes.length]
-                              : undefined;
-                        if (next) {
-                          event.preventDefault();
-                          setAgentMode(next);
-                          document.getElementById(`agent-mode-${next}`)?.focus();
-                        }
-                      }}
-                      id={`agent-mode-${mode}`}
-                      className={
-                        `border px-2.5 py-1 text-xs font-medium capitalize disabled:cursor-not-allowed ` +
-                        `disabled:opacity-60 ${
-                          agentMode === mode
-                            ? 'border-[var(--color-accent-blue)] ' + 'text-[var(--color-surface-100)]'
-                            : 'border-[var(--color-surface-600)] text-[var(--color-surface-300)] ' + 'hover:bg-[var(--color-surface-700)]'
-                        }`
-                      }
-                    >
-                      {mode}
-                    </Button>
-                  ))}
-                </div>
-                <Textarea
-                  label={t('console.request')}
-                  value={agentPrompt}
-                  disabled={agentBusy}
-                  maxLength={4_000}
-                  onChange={(event) => {
-                    if (!agentBusy) setAgentPrompt(event.target.value);
-                  }}
-                  rows={4}
-                  placeholder={t('console.describeWhatYouWant')}
-                />
-                <p className="text-xs tabular-nums text-[var(--color-surface-400)]">
-                  {agentPrompt.length}
-                  {t('console.4000Characters')}
-                </p>
-                <section
-                  aria-label={t('console.agentContextPreview')}
-                  className="border-y border-[var(--color-surface-600)] py-2 text-xs text-[var(--color-surface-300)]"
-                >
-                  <h3 className="font-medium text-[var(--color-surface-200)]">{t('console.contextPreview')}</h3>
-                  <ul className="mt-1 list-disc space-y-1 pl-4">
-                    <li>{t('console.modePromptLength', { agentMode, length: agentPrompt.trim().length })}</li>
-                    <li>{hasCurrentWorkspaceLink ? t('console.workspaceLinkedSavedWorkspace') : t('console.workspaceChooseZplcJson')}</li>
-                    <li>
-                      {agentMode === 'edit'
-                        ? agentEditFile
-                          ? t('console.hostWillRereadSaved', { path: agentEditFile.path })
-                          : t('console.editRequiresTheActive')
-                        : agentContextFile
-                          ? t('console.hostWillRereadSaved', { path: agentContextFile.path })
-                          : t('console.noProgramOpen')}
-                    </li>
-                    <li>{t('console.projectSummarySent')}</li>
-                    {agentMode === 'debug' && (
-                      <li>{t('console.boundedDiagnosticsHostTrace', { length: agentDiagnostics.length, length2: agentTrace.length })}</li>
-                    )}
-                    <li>{t('console.doNotPutSecrets')}</li>
-                  </ul>
-                </section>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => {
-                      void sendAgentRequest();
-                    }}
-                    disabled={!agentCanSend}
-                  >
-                    <Send size={14} aria-hidden="true" />
-                    {t('console.sendRequest')}
-                  </Button>
-                  {agentBusy && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        void cancelAgentRequest();
-                      }}
-                      disabled={agentState === 'cancelling'}
-                    >
-                      <CircleStop size={14} aria-hidden="true" />
-                      {t('console.cancelRequest')}
-                    </Button>
-                  )}
-                </div>
-                <AgentStatus state={agentState} status={agentStatus} />
-                {typeof agentState === 'object' && agentState.kind === 'response' && (
-                  <section className="space-y-2 border-t border-[var(--color-surface-600)] pt-2">
-                    <p className="whitespace-pre-wrap text-[var(--color-surface-100)]">
-                      {agentState.presentation.kind === 'answer' || agentState.presentation.kind === 'refused'
-                        ? agentState.presentation.answer
-                        : agentState.presentation.kind === 'error'
-                          ? t('console.providerRequestFailed', { code: agentState.presentation.code })
-                          : t('console.providerResponseCouldNot')}
-                    </p>
-                    <p className="text-xs text-[var(--color-surface-400)]">{t('console.providerResponseNotEvidence2')}</p>
-                    {agentState.presentation.kind === 'refused' && (
-                      <div role="alert" className="text-xs text-[var(--color-accent-yellow)]">
-                        <p>
-                          {agentState.presentation.reason === 'sensitive-field'
-                            ? t('console.proposalRefusedSensitive', { path: agentState.presentation.path })
-                            : t('console.proposalRefusedInvalid', { path: agentState.presentation.path })}
-                        </p>
-                        {agentState.presentation.violations.length > 0 && (
-                          <ul className="list-disc pl-4">
-                            {agentState.presentation.violations.map((violation) => (
-                              <li key={violation}>{violation}</li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    )}
-                    {agentState.presentation.kind === 'answer' && agentState.presentation.proposals && (
-                      <AgentProposals proposals={agentState.presentation.proposals} />
-                    )}
-                    {agentState.presentation.kind === 'answer' && agentState.presentation.changes && (
-                      <ul aria-label={t('console.proposedFiles')} className="list-disc pl-4 text-xs text-[var(--color-surface-300)]">
-                        {agentState.presentation.changes.map((change) => (
-                          <li key={change.path}>
-                            {change.path} · {change.kind === 'create' ? t('console.newFile') : t('console.changedFile')}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    {agentState.presentation.kind === 'answer' &&
-                      agentState.presentation.changes &&
-                      (agentProposalCurrent ? (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => {
-                            void reviewAgentProposal();
-                          }}
-                          disabled={workspaceTestBusy || !agentEditFile}
-                        >
-                          <FileDiff size={14} aria-hidden="true" />
-                          {t('console.reviewProposedChange')}
-                        </Button>
-                      ) : (
-                        <p role="status" className="text-xs text-[var(--color-accent-yellow)]">
-                          {t('console.proposedChangeIsStale')}
-                        </p>
-                      ))}
-                  </section>
-                )}
-                <details
-                  open={agentSettingsOpen}
-                  onToggle={(event) => {
-                    if (agentBusy) {
-                      event.currentTarget.open = agentSettingsOpen;
-                      return;
-                    }
-                    setAgentSettingsOpen(event.currentTarget.open);
-                  }}
-                  className="border-t border-[var(--color-surface-600)] pt-2"
-                >
-                  <summary aria-disabled={agentBusy} className="cursor-pointer text-xs font-medium text-[var(--color-surface-200)]">
-                    {t('console.providerSettings')}
-                  </summary>
-                  <fieldset disabled={agentBusy || agentSettingsBusy} className="mt-2 disabled:opacity-60">
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <Checkbox
-                        checked={agentConfig.enabled}
-                        onChange={(event) => setAgentConfig((config) => ({ ...config, enabled: event.target.checked }))}
-                        label={t('console.enabled2')}
-                      />
-                      <TextField
-                        value={agentConfig.endpoint}
-                        onChange={(event) => setAgentConfig((config) => ({ ...config, endpoint: event.target.value }))}
-                        className="mt-1 block w-full"
-                        label={t('console.endpoint')}
-                      />
-                      <TextField
-                        value={agentConfig.model}
-                        onChange={(event) => setAgentConfig((config) => ({ ...config, model: event.target.value }))}
-                        className="mt-1 block w-full"
-                        label={t('console.model')}
-                      />
-                      <TextField
-                        type="password"
-                        value={agentKey}
-                        onChange={(event) => setAgentKey(event.target.value)}
-                        autoComplete="new-password"
-                        className="mt-1 block w-full"
-                        label={t('console.apiKey')}
-                      />
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                          void saveAgentConfig();
-                        }}
-                        disabled={!aiProvider}
-                      >
-                        {t('configEditor.save')}
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                          void storeAgentKey();
-                        }}
-                        disabled={!aiProvider || !agentKey}
-                      >
-                        {t('console.storeKey')}
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                          void clearAgentKey();
-                        }}
-                        disabled={!aiProvider}
-                      >
-                        {t('console.clearKey')}
-                      </Button>
-                    </div>
-                  </fieldset>
-                  {agentSettingsMessage && (
-                    <p role="status" className="mt-2 text-xs text-[var(--color-surface-300)]">
-                      {agentSettingsMessage}
-                    </p>
-                  )}
-                </details>
-              </section>
-            </div>
+            <AgentTab
+              aiProviderAvailable={Boolean(aiProvider)}
+              agentMode={agentMode}
+              setAgentMode={setAgentMode}
+              agentPrompt={agentPrompt}
+              setAgentPrompt={setAgentPrompt}
+              agentState={agentState}
+              setAgentState={setAgentState}
+              agentStatus={agentStatus}
+              agentConfig={agentConfig}
+              setAgentConfig={setAgentConfig}
+              agentKey={agentKey}
+              setAgentKey={setAgentKey}
+              agentSettingsBusy={agentSettingsBusy}
+              agentSettingsMessage={agentSettingsMessage}
+              agentSettingsOpen={agentSettingsOpen}
+              setAgentSettingsOpen={setAgentSettingsOpen}
+              agentBusy={agentBusy}
+              agentCanSend={agentCanSend}
+              agentProposalCurrent={agentProposalCurrent}
+              agentEditFile={agentEditFile}
+              agentContextFile={agentContextFile}
+              agentDiagnosticCount={agentDiagnostics.length}
+              agentTraceCount={agentTrace.length}
+              hasCurrentWorkspaceLink={hasCurrentWorkspaceLink}
+              workspaceTestBusy={workspaceTestBusy}
+              refreshAiProvider={refreshAiProvider}
+              sendAgentRequest={sendAgentRequest}
+              cancelAgentRequest={cancelAgentRequest}
+              reviewAgentProposal={reviewAgentProposal}
+              saveAgentConfig={saveAgentConfig}
+              storeAgentKey={storeAgentKey}
+              clearAgentKey={clearAgentKey}
+            />
           )}
 
           {activeConsoleTab === 'trace' && (
