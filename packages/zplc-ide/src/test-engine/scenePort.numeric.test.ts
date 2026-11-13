@@ -84,7 +84,8 @@ describe('exchangeScan with numeric signals', () => {
     await scan(5);
     await scan(Number.NaN);
     await scan(Number.POSITIVE_INFINITY);
-    expect(plant.applied.map((commands) => commands['flow.lps'])).toEqual([25, undefined, undefined]); // the plant latches the first
+    // the plant records no command for a non-finite value // the plant latches the first
+    expect(plant.applied.map((commands) => commands['flow.lps'])).toEqual([25, undefined, undefined] as unknown as number[]);
     expect(plant.applied.map((commands) => commands['valve.pct'])).toEqual([0, 0, 0]); // other commands are still applied
   });
 

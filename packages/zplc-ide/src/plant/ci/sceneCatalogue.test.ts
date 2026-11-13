@@ -36,7 +36,7 @@ describe('shipped scenes use the public format and catalogue', () => {
     for (const entry of SCENE_INDEX) {
       const scene = load(entry.dir);
       expect(validateScene(scene, catalogue)).toEqual([]);
-      expect(parseScene(JSON.stringify(scene)).problems).toBeUndefined();
+      expect(parseScene(JSON.stringify(scene))).not.toHaveProperty('problems');
       for (const kind of kindsOf(scene)) expect(known.has(kind)).toBe(true);
     }
   });

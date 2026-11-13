@@ -109,7 +109,10 @@ export const journeysManipulator: Journey[] = [
       assert(count(await plantFacts(app), 'Pick1 drops') === 0, 'A fault fired while the action was only being chosen.');
       await app.press('Tab');
       await app.press('Enter');
-      const after = await untilFacts(app, 'the drops fact to change', async () => (count(await plantFacts(app), 'Pick1 drops') ?? 0) >= 1);
+      const after = await untilFacts(app, 'the drops fact to change', async () => {
+        const drops = count(await plantFacts(app), 'Pick1 drops') ?? 0;
+        return drops >= 1 ? drops : undefined;
+      });
       assert(after >= 1, `The drops fact is ${after} after the fault.`);
     },
   },

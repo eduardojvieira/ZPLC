@@ -314,7 +314,7 @@ describe('numeric signals over the real native runtime', () => {
       const gradedCore = ramp();
       const port = { core: gradedCore.core, map: echoMap };
       const at = (name: string) => echoIo.inputs.find((i) => i.path === name)!.address;
-      let image = new Uint8Array(16);
+      let image: Uint8Array = new Uint8Array(16);
       for (let scan = 0; scan < SCANS; scan += 1) {
         await exchangeScan(
           port,
