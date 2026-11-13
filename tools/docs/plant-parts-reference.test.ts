@@ -3,6 +3,9 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 
+import { catalogue } from '../../packages/zplc-ide/src/plant/core/catalogue.ts';
+import '../../packages/zplc-ide/src/plant/core/plantCore.ts'; // registers the shipped parts into the catalogue
+
 import type { PartDefinition } from '../../packages/zplc-ide/src/plant/contracts.ts';
 import { PARTS, outputsFor, partsBody } from './plant-parts-reference';
 import { LANGS, staleOutputs } from './reference-lib';
@@ -115,6 +118,53 @@ describe('PRT-002 parts reference generated from the part definitions', () => {
       expect(body).toContain('| `variant` | `numeric` | xSet REAL, ySet REAL, xPos REAL, yPos REAL');
       expect(body).toContain('| `layerReady` | sensor | BOOL |');
       expect(body).toContain('#### ' + (lang === 'es' ? 'Ecuaciones' : 'Equations'));
+    }
+  });
+
+  it('PRT-002 the generator PARTS has exactly the ids the catalogue registers', async () => {
+    // Every `*Parts` array any part file exports; the generator must list all of them (K9 registers them in the core).
+    const dir = new URL('../../packages/zplc-ide/src/plant/core/parts/', import.meta.url);
+    const files = [...new Bun.Glob('*.ts').scanSync(dir.pathname)].filter((f) => !f.endsWith('.test.ts'));
+    const exported = new Set<string>();
+    for (const f of files) {
+      const mod = (await import(new URL(f, dir).href)) as Record<string, unknown>;
+      for (const [name, value] of Object.entries(mod)) {
+        if (/Parts$/.test(name) && Array.isArray(value)) for (const d of value as PartDefinition[]) exported.add(d.id);
+      }
+    }
+    const ids = PARTS.map((p) => p.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect([...ids].sort()).toEqual([...exported].sort());
+    for (const d of catalogue.list()) expect(ids).toContain(d.id);
+  });
+
+  it('PRT-002 the reference lists the M4 parts with their ranges, variants and fault actions', () => {
+    const wanted: Record<string, string[]> = {
+      workpiece: [],
+      'sensor-inductive': ['stuckOn', 'stuckOff'],
+      'sensor-capacitive': ['stuckOn', 'stuckOff'],
+      'sensor-colour': ['wrongColour'],
+      'light-array': ['readingStuck', 'readingOffset'],
+      scale: ['readingStuck', 'readingOffset'],
+      'vision-sensor': ['blind', 'misread'],
+      pusher: ['stuck'],
+      'diverter-arm': ['stuck'],
+      'chain-transfer': ['liftStuck', 'stall', 'jam'],
+      turntable: ['turnStuck', 'stall', 'jam'],
+    };
+    for (const lang of LANGS) {
+      const body = partsBody(PARTS, lang);
+      for (const [id, actions] of Object.entries(wanted)) {
+        expect(PARTS.map((p) => p.id)).toContain(id);
+        expect(body).toContain(`\`${id}\``);
+        for (const a of actions) expect(body).toContain(`\`${a}\``);
+      }
+      expect(body).toContain('| `height` | sensor | REAL | m |');
+      expect(body).toContain('| `weight` | sensor | REAL | kg |');
+      expect(body).toContain('| `code` | sensor | INT |');
+      expect(body).toContain(lang === 'es' ? '15 a 35' : '15 to 35');
+      expect(body).toContain('| `vary` | enum |');
+      expect(body).toContain('| `acceptsCode` | number |');
     }
   });
 });
