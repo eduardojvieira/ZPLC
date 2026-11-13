@@ -417,6 +417,119 @@ describe('Run in one action (FLW-001, FLW-006) in a DOM', () => {
   });
 });
 
+describe('Run with a plant document open (PLS-003, FLW-014) in a DOM', () => {
+  const fakeSession = (calls: string[], name: string) => ({
+    state: 'stopped',
+    slowdown: 1,
+    onChange: () => () => undefined,
+    start: async () => void calls.push(`${name}:start`),
+    resume: () => undefined,
+    pause: () => undefined,
+    step: async () => undefined,
+    stop: async () => undefined,
+    reset: async () => undefined,
+  });
+
+  it('PLS-003 Run starts the simulator first and waits for the panel to bind, and re-bind, its plant transport', async () => {
+    const { usePlantDocument } = await import('../store/usePlantDocument');
+    openProject(BUILD_OK);
+    const { controller, calls } = simulatorController();
+    const plantCalls: string[] = [];
+    const unregisters: Array<() => void> = [];
+    // the panel binds when the program is loaded, and binds again when the I/O map of the new program arrives
+    const load = (controller as unknown as { loadProgram: () => Promise<void> }).loadProgram;
+    (controller as unknown as { loadProgram: () => Promise<void> }).loadProgram = async () => {
+      await load();
+      setTimeout(() => unregisters.push(registerPlantTransport(plantTransport(fakeSession(plantCalls, 'first') as never))), 20);
+      setTimeout(() => unregisters.push(registerPlantTransport(plantTransport(fakeSession(plantCalls, 'second') as never))), 80);
+    };
+    usePlantDocument.getState().show();
+    try {
+      const { user } = dom.render(<Toolbar debugController={controller} />);
+      await user.click(runButton());
+      await dom.waitFor(() => expect(plantCalls).toEqual(['second:start']));
+      expect(calls).toEqual(['startSimulation', 'loadProgram']);
+    } finally {
+      usePlantDocument.getState().close();
+      unregisters.forEach((off) => off());
+    }
+  });
+});
+
+describe('An offer acts on the current state (FLW-003, LNK-009) in a DOM', () => {
+  const chooseSimulation = async (user: ReturnType<typeof dom.render>['user']) => {
+    await user.click(dom.screen.getByRole('button', { name: /rpi_pico/ }));
+    await user.click(dom.screen.getByRole('menuitem', { name: new RegExp(dom.t('studio.flow.target.simulation')) }));
+  };
+  const offerHandler = () => notices().find((n) => n.status === 'warning')!.recover!.run;
+
+  it(
+    'FLW-003 a stale Connect offer, used after the target went back to Simulation, connects nothing and Run never reaches a ' + 'board',
+    async () => {
+      openProject(BUILD_OK, { board: 'rpi_pico' });
+      const { controller, calls } = simulatorController();
+      const { user } = dom.render(<Toolbar debugController={controller} />);
+      await chooseBoard(user);
+      await user.click(runButton());
+      const stale = offerHandler();
+      await chooseSimulation(user);
+      stale();
+      await dom.settle();
+      expect(calls).not.toContain('connectHardware');
+      expect(notices().filter((n) => n.status === 'warning')).toEqual([]);
+      await user.click(runButton());
+      await dom.waitFor(() => expect(calls).toContain('start'));
+      expect(calls).not.toContain('connectHardware');
+    },
+  );
+
+  it('FLW-003 a stale Deploy offer, used after the target went back to Simulation, does nothing', async () => {
+    openProject(BUILD_OK, { board: 'rpi_pico' });
+    const { controller, calls } = simulatorController({ state: 'idle', session: true });
+    (controller as unknown as { disconnect: () => Promise<void> }).disconnect = async () => undefined;
+    const { user } = dom.render(<Toolbar debugController={controller} />);
+    await chooseBoard(user);
+    await user.click(dom.screen.getByRole('button', { name: new RegExp(dom.t('toolbar.build.label')) }));
+    await user.click(dom.screen.getByRole('menuitem', { name: new RegExp(dom.t('toolbar.compile.label')) }));
+    await dom.waitFor(() => expect(notices().some((n) => n.title === dom.t('toolbarMsg.buildSucceeded'))).toBe(true));
+    await user.click(runButton());
+    const stale = offerHandler();
+    await chooseSimulation(user);
+    stale();
+    await dom.settle();
+    expect(calls).toEqual([]);
+  });
+
+  it('LNK-009 Run on the Simulation target refuses when the session it finds is a board, and loads and starts nothing', async () => {
+    openProject(BUILD_OK);
+    const { controller, calls } = simulatorController({ state: 'idle', session: true });
+    (controller as unknown as { adapter: unknown }).adapter = { connected: true, type: 'serial' };
+    const { user } = dom.render(<Toolbar debugController={controller} />);
+    await user.click(runButton());
+    await dom.waitFor(() => expect(notices().some((n) => n.status === 'error')).toBe(true));
+    expect(calls).toEqual([]);
+  });
+
+  it('FLW-001 a sequence started before the project closed does not act on what comes next', async () => {
+    openProject(BUILD_OK);
+    const { controller, calls } = simulatorController();
+    let release: () => void = () => undefined;
+    const open = (controller as unknown as { startSimulation: () => Promise<void> }).startSimulation;
+    (controller as unknown as { startSimulation: () => Promise<void> }).startSimulation = () =>
+      new Promise<void>((resolve) => {
+        release = () => void open().then(resolve);
+      });
+    const { user } = dom.render(<Toolbar debugController={controller} />);
+    await user.click(runButton());
+    await dom.waitFor(() => expect((runButton() as HTMLButtonElement).disabled).toBe(true));
+    useIDEStore.setState({ projectSession: useIDEStore.getState().projectSession + 1 });
+    release();
+    await dom.waitFor(() => expect(notices().some((n) => n.status === 'error')).toBe(true));
+    expect(calls).not.toContain('loadProgram');
+    expect(calls).not.toContain('start');
+  });
+});
+
 describe('Save all (FLW-005) in a DOM', () => {
   it('FLW-005 Save all is offered when any document is modified, and saves the configuration too', async () => {
     const { saved } = openProject(BUILD_OK);
