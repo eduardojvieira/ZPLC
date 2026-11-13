@@ -5,15 +5,9 @@
   "order": 131,
   "module": 13,
   "level": "advanced",
-  "prerequisites": [
-    "timers-on-delay-off-delay"
-  ],
-  "languages": [
-    "ST"
-  ],
-  "tracks": [
-    "simulation"
-  ],
+  "prerequisites": ["timers-on-delay-off-delay"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
   "unsupported": {
     "hardware": {
       "reason": {

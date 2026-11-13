@@ -55,7 +55,5 @@
       "text": "El ajuste de referencia es KP := 800.0, KI := 10.0, KD := 150.0: un KP grande mantiene el nivel frente al vaciado, KI quita despacio el desvío y KD evita que el término integral haga que el nivel se pase. Luego DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
     }
   ],
-  "faultCases": [
-    "El código inicial nunca llama al lazo: FillCmd se queda en 0 por ciento y el tanque permanece vacío."
-  ]
+  "faultCases": ["El código inicial nunca llama al lazo: FillCmd se queda en 0 por ciento y el tanque permanece vacío."]
 }

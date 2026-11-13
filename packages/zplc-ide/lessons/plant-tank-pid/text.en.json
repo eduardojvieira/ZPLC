@@ -55,7 +55,5 @@
       "text": "The reference tuning is KP := 800.0, KI := 10.0, KD := 150.0: a large KP holds the level under the drain, KI slowly removes the offset and KD stops the integral term from making the level overshoot. Then DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
     }
   ],
-  "faultCases": [
-    "The starter never calls the loop: FillCmd stays at 0 percent and the tank stays empty."
-  ]
+  "faultCases": ["The starter never calls the loop: FillCmd stays at 0 percent and the tank stays empty."]
 }

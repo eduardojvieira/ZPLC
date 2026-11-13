@@ -55,7 +55,5 @@
       "text": "Empiece con IF NOT EStopOk THEN Step := 0; ELSIF Step = 0 AND Start THEN Step := 1; END_IF; y luego un bloque para cada paso: HoldT para dos segundos, DrainT para veinte segundos con la condición de salida LevelLow OR DrainT.Q. Por último Fill := Step = 1; Drain := Step = 3; Amber := Step <> 0; Red := NOT EStopOk, y Green es TRUE tras un ciclo terminado."
     }
   ],
-  "faultCases": [
-    "El código inicial no tiene lógica: ninguna válvula se abre nunca, así que el ciclo no se ejecuta."
-  ]
+  "faultCases": ["El código inicial no tiene lógica: ninguna válvula se abre nunca, así que el ciclo no se ejecuta."]
 }

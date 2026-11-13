@@ -55,7 +55,5 @@
       "text": "FillCmd := 800.0 * (SetM - LevelM); IF FillCmd > 100.0 THEN FillCmd := 100.0; END_IF; IF FillCmd < 0.0 THEN FillCmd := 0.0; END_IF; DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
     }
   ],
-  "faultCases": [
-    "El código inicial no tiene lógica: la entrada nunca se abre, así que el tanque permanece vacío y nunca llega a su banda."
-  ]
+  "faultCases": ["El código inicial no tiene lógica: la entrada nunca se abre, así que el tanque permanece vacío y nunca llega a su banda."]
 }

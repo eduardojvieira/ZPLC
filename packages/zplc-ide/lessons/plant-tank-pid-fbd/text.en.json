@@ -55,7 +55,5 @@
       "text": "Eight wires reach Pid: sp_div to SP, lvl_div to PV, c_kp to KP, c_ki to KI, c_kd to KD, c_dt to DT, c_omin to OUT_MIN and c_omax to OUT_MAX. Then delete the constant c_zero and wire Pid.OUT to the FillCmd output."
     }
   ],
-  "faultCases": [
-    "The starter leaves the loop unwired and sends a constant 0.0 to FillCmd: the inlet never opens and the tank stays empty."
-  ]
+  "faultCases": ["The starter leaves the loop unwired and sends a constant 0.0 to FillCmd: the inlet never opens and the tank stays empty."]
 }

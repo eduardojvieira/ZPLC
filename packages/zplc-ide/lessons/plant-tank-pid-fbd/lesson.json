@@ -5,15 +5,9 @@
   "order": 134,
   "module": 13,
   "level": "advanced",
-  "prerequisites": [
-    "plant-tank-pid"
-  ],
-  "languages": [
-    "FBD"
-  ],
-  "tracks": [
-    "simulation"
-  ],
+  "prerequisites": ["plant-tank-pid"],
+  "languages": ["FBD"],
+  "tracks": ["simulation"],
   "unsupported": {
     "hardware": {
       "reason": {

@@ -5,15 +5,9 @@
   "order": 133,
   "module": 13,
   "level": "advanced",
-  "prerequisites": [
-    "plant-tank-level-scaling"
-  ],
-  "languages": [
-    "ST"
-  ],
-  "tracks": [
-    "simulation"
-  ],
+  "prerequisites": ["plant-tank-level-scaling"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
   "unsupported": {
     "hardware": {
       "reason": {
