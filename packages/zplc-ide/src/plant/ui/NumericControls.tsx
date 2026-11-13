@@ -98,6 +98,13 @@ const LAMPS = [
 // A diverter at rest reads one of these; any other text (extended, diverted, raised, left, right) is the active marker.
 const HOME_TEXTS = ['retracted', 'home', 'lowered', 'centre'];
 
+// The M5 stations read their own `text` (the crane and the machining centre are `stations`: matched before the manipulators).
+const STATIONS: Record<string, 'plant.panel.lift' | 'plant.panel.crane' | 'plant.panel.machine'> = {
+  lift: 'plant.panel.lift',
+  'stacker-crane': 'plant.panel.crane',
+  'machining-centre': 'plant.panel.machine',
+} as const;
+
 const isManipulator = (id: string) => ['manipulators', 'stations'].includes(catalogue.get(id)?.family ?? '');
 
 /** A readout: a numeric display, a stack light or a tank, as text. */
@@ -120,6 +127,13 @@ export function Readout({ part, view }: Pick<ControlProps, 'part' | 'view'>) {
     return (
       <span data-plant-diverter={part.name} className="text-sm">
         {HOME_TEXTS.includes(str(view, 'text')) ? '○' : '▲'} {t('plant.panel.diverter', { name: part.name, text: str(view, 'text') })}
+      </span>
+    );
+  const station = STATIONS[part.part];
+  if (station)
+    return (
+      <span data-plant-station={part.name} className="text-sm">
+        {t(station, { name: part.name, text: str(view, 'text') })}
       </span>
     );
   if (isManipulator(part.part))

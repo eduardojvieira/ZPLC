@@ -80,7 +80,18 @@ function FaultControl({ part, run, act }: { part: ScenePart; run: (action: () =>
 }
 
 /** The numeric sensors and the diverters of the sorting parts, listed by id: each gets a text readout. */
-const READOUT_IDS = ['light-array', 'scale', 'vision-sensor', 'pusher', 'diverter-arm', 'chain-transfer', 'turntable'];
+const READOUT_IDS = [
+  'light-array',
+  'scale',
+  'vision-sensor',
+  'pusher',
+  'diverter-arm',
+  'chain-transfer',
+  'turntable',
+  'lift',
+  'stacker-crane',
+  'machining-centre',
+];
 
 export function OperatePanel(props: { scene: PlantSceneFile; core: PlantCore; snapshot: PlantSnapshot | undefined; onChange: () => void }) {
   const { scene, core, snapshot, onChange } = props;
