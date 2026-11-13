@@ -55,7 +55,7 @@ step and ends with a scenario test.
 2. On the Welcome screen, under **Examples**, in the group **Language tour**, choose **Blinky (structured text)**, then
    choose an empty folder. ZPLC copies the example there and opens it.
 3. Choose **Build**, then **Compile** (Ctrl+B, or Cmd+B on macOS).
-4. In the toolbar select **Simulate**, press **Connect**, then press **Run** (F5).
+4. Check that the target selector of the command bar says **Simulation**, then press **Run** (F5). Run saves what is unsaved, builds what is out of date and starts the program; a simulation needs no **Connect**.
 5. Open the **Watch** tab, press **+** and enter `LED_Output`. Its value changes between true and false about every
    half second.
 

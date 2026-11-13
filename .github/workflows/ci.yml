@@ -214,6 +214,15 @@ jobs:
           test -x "$ZPLC_NATIVE_SIM_BIN"
           xvfb-run --auto-servernum bun run --cwd packages/zplc-ide smoke:journeys
 
+      # Spec 013 section 8.2 item 2: the counts of the interface budget (command bar, status rail, target, run controls,
+      # results tabs) are measured after the journeys, in each state and language, and the job fails on a count over its target.
+      - name: Check the interface budget
+        env:
+          ZPLC_NATIVE_SIM_BIN: ${{ runner.temp }}/zplc-native-sim-build/zplc_runtime
+        run: |
+          test -x "$ZPLC_NATIVE_SIM_BIN"
+          xvfb-run --auto-servernum bun run --cwd packages/zplc-ide scripts/interfaceBudget.ts --check
+
   format:
     name: Formatting and line length
     runs-on: ubuntu-latest

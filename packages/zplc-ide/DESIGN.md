@@ -145,9 +145,22 @@ The scale is fixed and its floor is 11 pixels: caption 11, label 12, body 13, ti
 
 ## Layout
 
-Ledger Grid keeps the toolbar and the operational truth rail above a dominant editor area and one persistent resizable lower tool ledger. Explorer, Inspector, Output, Problems, Tests, Lab, Learn, Changes, Trace, Watch, and Terminal are roving tabs in that ledger; they never cover or reflow the editor. A project opens with the Output tab selected; the Explorer is one of the ledger tabs.
+Ledger Grid has six regions, each with one job (spec 013 section 5.1, SHL-001). `src/shell/surfaces.ts` gives every surface exactly one of them, and a test compares the rail and the results tabs with it.
 
-Technical regions are separated with 1px rules; resizable panel handles are 4px, show cobalt on hover, while dragging and on keyboard focus, and move with the arrow keys. No command palette, global search, or Devices dashboard is present because there is not yet a shared command or device contract to make those controls real.
+| Region | Its job | Holds after U1 |
+|---|---|---|
+| Command bar | What you do to the project | Save, Build, the target selector, the run controls (Run, Pause or Resume, Stop, Reset), Deploy and Connect for a board only, the Inspector and palette buttons, settings |
+| Activity rail and primary sidebar | Where you look for things | Project, Search, Tests, Learn |
+| Editor area | What you work on | Programs, diagrams, configuration editors, settings, Learn pages, the plant document (one or two groups side by side, one can be maximised) |
+| Secondary sidebar | About the selected thing | Inspector, toggled by `view.toggleSecondarySidebar` |
+| Results panel | What the last action produced | Output, Problems, Tests, Interlocks, Changes, Agent, Trace, Watch, Terminal (nine; Lab left it for the plant document) |
+| Status rail | What is true now | One line: the connection indicator, the program state with its one action, the scan interval, forces and overruns only when there are any, and a Details control that opens the rest |
+
+Surfaces that move in U2 keep their 2.0 region until then; the results panel still has nine tabs and the five-tab target belongs to U2. The command palette (`Ctrl+Shift+P`) is a dialog over every region. Global search is the Search view of the rail.
+
+The shell keeps one set of run controls, the command bar's. Run is one action: it saves what is unsaved (Save all, with the `saveBeforeRun` preference), builds what is stale and starts the program. In simulation there is no Connect and no Disconnect, because the session is implicit; a board shows Connect and Deploy. The target is set in one place, the selector, and shown once more by the connection indicator. While a simulation runs the command bar holds nine controls and the status rail three items (2.0: thirteen and nine); `scripts/interfaceBudget.ts --check` holds the counts to the targets of `scripts/interfaceBudget.targets.json` in CI.
+
+Technical regions are separated with 1px rules; resizable panel handles are 4px, show cobalt on hover, while dragging and on keyboard focus, and move with the arrow keys.
 
 ### Density
 
@@ -173,17 +186,17 @@ Every form control has a programmatically associated label (a `Field`, a wrappin
 
 A development build serves every component in every theme and density, six panels on one page, at the `#ui-gallery` address: `http://localhost:3000/#ui-gallery` while `bun run dev` serves ZPLC (in the Electron development window, set `location.hash = '#ui-gallery'` and reload). The page, its scoped theme stylesheet and its text are not in a production build (`scripts/galleryBundle.test.ts`), and journey 40 drives it with real key events.
 
-### Lower tool ledger
+### Results panel
 
-The lower ledger is the only auxiliary navigation surface. Its tabs are roving, with the arrow keys, Home and End, and expose actual content, not placeholder tools. Explorer owns project/tree operations; Inspector remains factual and read-only.
+The results panel's tabs are roving, with the arrow keys, Home and End, and expose actual content, not placeholder tools. Project and tree operations belong to the Project view of the rail; the Inspector remains factual and read-only.
 
 ### Operational truth rail
 
-The truth rail is a persistent, read-only status strip with a 34px minimum height. It names mode, runtime, target, connection/status, and available task facts; force information adds a labeled warning or alert treatment.
+The truth rail is a persistent, read-only status strip with a 34px minimum height and one line. It shows the connection indicator (which carries the target), the program state, the scan interval, forces and overruns when there are any; runtime, cycles, tasks, firmware and protocol are in the Details popover. Force information adds a labeled warning or alert treatment.
 
-### Explorer and Inspector
+### Project view and Inspector
 
-Explorer owns project, migration, tree, and file operations only. Inspector is factual context: it is read-only, uses 1px-rule sections, and each fact uses a label column and a wrapping value column. Inspector shows Controller only when a real connection and board are present, and its evidence note explicitly distinguishes host trace from hardware/HIL evidence.
+The Project view owns project, migration, tree, and file operations only. Inspector is factual context: it is read-only, uses 1px-rule sections, and each fact uses a label column and a wrapping value column. Inspector shows Controller only when a real connection and board are present, and its evidence note explicitly distinguishes host trace from hardware/HIL evidence.
 
 ### Active tab and selection
 
@@ -211,7 +224,7 @@ Under `forced-colors: active`, the ledger regions and visual editors accept the 
 
 - **Don't** use decorative cards, gradients, neon cyberpunk treatment, or fake connector lines in the workbench shell.
 - **Don't** imply hardware, HIL, selected-symbol, or causal evidence that the current data contract does not provide.
-- **Don't** add a command palette, global search, or Devices dashboard before a shared contract makes it functional.
+- **Don't** add a Devices dashboard, or a second set of run controls anywhere, before a shared contract makes it functional.
 - **Don't** encode RUN, STOP, fault, force, or connection only through color.
 - **Don't** write a font size under 11 pixels, a `title` tooltip, or a raw control outside the kit.
 

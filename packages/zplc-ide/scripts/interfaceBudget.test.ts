@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'bun:test';
-import { commandBarCounts, resultsTabCounts, statusRailItems, targetPlaces, type InterfaceSnapshot } from './interfaceBudget';
+import {
+  checkBudget,
+  commandBarCounts,
+  measure,
+  resultsTabCounts,
+  statusRailItems,
+  targetPlaces,
+  type BudgetTargets,
+  type InterfaceSnapshot,
+} from './interfaceBudget';
 
 /** A stored snapshot of the 2.0.0 running state at 1366 by 768, shortened: the shape the capture in the page produces. */
 const control = (label: string, x: number, width = 30) => ({ label, x, width });
@@ -12,8 +21,7 @@ const snapshot: InterfaceSnapshot = {
     controls: [
       control('Save active file (Ctrl+S)', 105, 34),
       control('Build options', 152, 87),
-      control('Simulation mode', 252, 88),
-      control('Hardware mode', 339, 94),
+      control('Where the run goes: Simulation', 252, 88),
       control('Disconnect', 446, 105),
       control('Pause (F6)', 624, 75),
       control('More commands', 0, 0),
@@ -28,6 +36,7 @@ const snapshot: InterfaceSnapshot = {
     { id: 'trace', name: 'Trace', nameWidth: 1, left: 651, right: 697 },
     { id: 'terminal', name: 'Terminal', nameWidth: 60, left: 1300, right: 1400 },
   ],
+  runControlSets: 1,
   statusRail: [
     { text: 'Simulation · native runtime' },
     { text: 'Mode\nSIMULATION' },
@@ -39,7 +48,7 @@ const snapshot: InterfaceSnapshot = {
 
 describe('interface budget counting (spec 013 section 8.1)', () => {
   it('counts the controls of the command bar on each side of the project name', () => {
-    expect(commandBarCounts(snapshot)).toEqual({ left: 6, right: 2, total: 8 });
+    expect(commandBarCounts(snapshot)).toEqual({ left: 5, right: 2, total: 7 });
   });
 
   it('counts only controls that take room: a control of zero width is not in the bar', () => {
@@ -64,7 +73,7 @@ describe('interface budget counting (spec 013 section 8.1)', () => {
     const spanish: InterfaceSnapshot = {
       ...snapshot,
       locale: 'es',
-      commandBar: { ...snapshot.commandBar, controls: [control('Modo de simulación', 252, 88), control('Modo de hardware', 339, 94)] },
+      commandBar: { ...snapshot.commandBar, controls: [control('Adónde va la ejecución: Simulación', 252, 88)] },
       statusRail: [
         { text: 'Simulación · runtime nativo' },
         { text: 'Modo\nSIMULACIÓN' },
@@ -77,5 +86,46 @@ describe('interface budget counting (spec 013 section 8.1)', () => {
 
   it('lists the items of the status rail by their first line', () => {
     expect(statusRailItems(snapshot)).toEqual(['Simulation · native runtime', 'Mode', 'Runtime', 'Target', 'Running']);
+  });
+});
+
+const targets: BudgetTargets = {
+  commandBar: { simulation: { left: 7, right: 3, total: 10 }, board: { left: 9, right: 3 } },
+  statusRailItems: 4,
+  targetPlaces: 2,
+  runControlSets: 1,
+  resultsTabs: { total: 9, reason: 'the five-tab target belongs to U2' },
+};
+
+describe('interface budget check (spec 013 section 8.2 item 2)', () => {
+  it('passes a snapshot within every target', () => {
+    const within: InterfaceSnapshot = {
+      ...snapshot,
+      statusRail: [{ text: 'Simulation · native runtime' }, { text: 'Running' }],
+    };
+    expect(checkBudget([measure(within)], targets)).toEqual([]);
+  });
+
+  it('fails on a count over its target and names the state, the language and the control', () => {
+    const over: InterfaceSnapshot = {
+      ...snapshot,
+      state: 'paused',
+      locale: 'es',
+      commandBar: {
+        ...snapshot.commandBar,
+        controls: [
+          ...snapshot.commandBar.controls,
+          control('Conectar', 460, 60),
+          control('Guardar todo', 40, 30),
+          control('Extra', 80, 30),
+        ],
+      },
+    };
+    const violations = checkBudget([measure(over)], targets);
+    expect(violations.length).toBeGreaterThan(0);
+    const bar = violations.find((violation) => violation.includes('command bar'))!;
+    expect(bar).toContain('paused');
+    expect(bar).toContain('es');
+    expect(bar).toContain('Conectar');
   });
 });

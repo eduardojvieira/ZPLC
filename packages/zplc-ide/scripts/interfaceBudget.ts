@@ -2,10 +2,12 @@
  * The interface budget of spec 013, section 8.1: how many controls the command bar holds, how many tabs of the results panel
  * show their name, how many items the status rail has and how many times the target is shown, counted on the running
  * application. Task W0 of the M1 plan writes it and records the 2.0.0 baseline with it; Task W10 turns the counts into a CI
- * check against the targets.
+ * check against the targets (interfaceBudget.targets.json).
  *
  *   bun scripts/interfaceBudget.ts --out <file.json>        measure Blinky at 1366 by 768 and 1440 by 900, in English and in
  *                                                           Spanish, open, built, running in simulation and paused
+ *   bun scripts/interfaceBudget.ts --check                  the same measurement, then exit 1 naming every count over its target
+ *                                                           (the state, the language, the viewport and the control)
  *
  * The counting functions are pure and work on an `InterfaceSnapshot`, a plain record of what the page showed, so they are
  * checked on a stored snapshot (interfaceBudget.test.ts). Only `capture` and `main` need the application: the same journey
@@ -37,7 +39,9 @@ export interface InterfaceSnapshot {
     left: number;
     right: number;
   }>;
-  /** The items of the status rail, one text each, separators left out. */
+  /** The buttons that are the transport (Run, Pause or Resume with their shortcut) anywhere in the page: sets of run controls. */
+  runControlSets: number;
+  /** The items of the status rail, one text each, separators and the details control left out. */
   statusRail: Array<{ text: string }>;
 }
 
@@ -71,8 +75,9 @@ export const statusRailItems = (snapshot: InterfaceSnapshot): string[] =>
 export function targetPlaces(snapshot: InterfaceSnapshot): string[] {
   const { locale } = snapshot;
   const places: string[] = [];
-  const selectorLabels = [translate(locale, 'toolbar.simulation.label'), translate(locale, 'toolbar.hardware.label')];
-  if (snapshot.commandBar.controls.some((control) => control.width > 0 && selectorLabels.includes(control.label)))
+  // the selector's label is "Where the run goes: <target>"; the words before the target tell it from every other control
+  const selectorPrefix = translate(locale, 'studio.flow.target.title', { target: '' }).trim();
+  if (snapshot.commandBar.controls.some((control) => control.width > 0 && control.label.startsWith(selectorPrefix)))
     places.push('command bar: target selector');
   const words = [translate(locale, 'statusText.mode.simulation'), translate(locale, 'statusText.mode.hardware')].map((word) =>
     word.toLowerCase(),
@@ -95,7 +100,11 @@ export function captureExpression(locale: Locale): string {
   const toolbar = translate(locale, 'toolbar.label');
   const status = translate(locale, 'status.label');
   const panels = translate(locale, 'console.workbenchPanels');
-  return `(() => {
+  const [run, pause, resume] = ['toolbar.run.label', 'toolbar.pause.label', 'toolbar.resume.label'].map((key) =>
+    translate(locale, key as Parameters<typeof translate>[1]),
+  );
+  return (
+    `(() => {
     const box = (element) => element.getBoundingClientRect();
     const bar = document.querySelector('[role="toolbar"][aria-label=${JSON.stringify(toolbar)}]');
     const name = document.querySelector('[data-project-name]');
@@ -119,14 +128,19 @@ export function captureExpression(locale: Locale): string {
         right: Math.round(box(tab).right),
       };
     });
-    const rail = document.querySelector('section[aria-label=${JSON.stringify(status)}] > div > div');
-    const items = rail ? [...rail.children]
-      .filter((child) => child.getAttribute('aria-hidden') !== 'true')
+    const rail = document.querySelector('section[aria-label=${JSON.stringify(status)}] [data-status-line]');
+    const items = rail ? [...rail.querySelectorAll('[data-status-item]')]
       .map((child) => ({ text: (child.innerText ?? '').trim() })) : [];
-    return { commandBar: { projectNameX: name ? Math.round(box(name).x) : null, controls },
+    const transport = [${JSON.stringify(run)}, ${JSON.stringify(pause)}, ${JSON.stringify(resume)}];
+    const sets = [...document.querySelectorAll('button')]
+      .filter((element) => box(element).width > 0 && transport.some((word) => (element.getAttribute('aria-label') ?? '').startsWith(word ` +
+    `+ ' (')))
+      .length;
+    return { runControlSets: sets, commandBar: { projectNameX: name ? Math.round(box(name).x) : null, controls },
       tabStrip: strip ? { left: Math.round(box(strip).left), right: Math.round(box(strip).right) } : null,
       resultsTabs: tabs, statusRail: items };
-  })()`;
+  })()`
+  );
 }
 
 const VIEWPORTS = [
@@ -141,6 +155,7 @@ export interface BudgetSample {
   state: BudgetState;
   commandBar: ReturnType<typeof commandBarCounts> & { labels: string[] };
   resultsTabs: ReturnType<typeof resultsTabCounts>;
+  runControlSets: number;
   statusRail: { count: number; items: string[] };
   targetPlaces: string[];
 }
@@ -156,6 +171,7 @@ export function measure(snapshot: InterfaceSnapshot): BudgetSample {
       labels: snapshot.commandBar.controls.filter((control) => control.width > 0).map((c) => c.label),
     },
     resultsTabs: resultsTabCounts(snapshot),
+    runControlSets: snapshot.runControlSets,
     statusRail: { count: snapshot.statusRail.length, items: statusRailItems(snapshot) },
     targetPlaces: targetPlaces(snapshot),
   };
@@ -209,8 +225,7 @@ async function runLocale(locale: Locale): Promise<BudgetSample[]> {
         ) || undefined,
     );
     await sample('built');
-    await app.click(button(ui('toolbar.connect')), 'Connect');
-    await app.until('the simulation to connect', async () => (await app.visible(button(ui('toolbar.disconnect')))) || undefined);
+    // Run is one action in simulation: the session is implicit, nothing to connect (FLW-001, FLW-008)
     await app.click(button(`${ui('toolbar.run.label')} (F5)`, 'prefix'), 'Run');
     await app.until(
       'the program to run',
@@ -231,7 +246,38 @@ async function runLocale(locale: Locale): Promise<BudgetSample[]> {
   return samples;
 }
 
-/** The numbers of rows 2, 3, 6, 7 and 8 of spec 013 section 8.1, from the samples at 1366 by 768. */
+export interface BudgetTargets {
+  commandBar: { simulation: { left: number; right: number; total: number }; board: { left: number; right: number } };
+  statusRailItems: number;
+  targetPlaces: number;
+  runControlSets: number;
+  resultsTabs: { total: number; reason: string };
+}
+
+/** Every count over its target, one line each, naming the state, the language, the viewport and the controls that make it. */
+export function checkBudget(samples: BudgetSample[], targets: BudgetTargets): string[] {
+  const violations: string[] = [];
+  for (const sample of samples) {
+    const where = `${sample.locale} ${sample.state} ${sample.viewport.width}x${sample.viewport.height}`;
+    const over = (what: string, count: number, limit: number, names: string[]) => {
+      if (count > limit) violations.push(`${where}: ${what} has ${count}, over ${limit} (${names.join(', ')})`);
+    };
+    const bar = targets.commandBar.simulation;
+    over('command bar, left of the project name', sample.commandBar.left, bar.left, sample.commandBar.labels);
+    over('command bar, right of the project name', sample.commandBar.right, bar.right, sample.commandBar.labels);
+    over('command bar', sample.commandBar.total, bar.total, sample.commandBar.labels);
+    over('status rail', sample.statusRail.count, targets.statusRailItems, sample.statusRail.items);
+    over('the target shown', sample.targetPlaces.length, targets.targetPlaces, sample.targetPlaces);
+    over('run controls', sample.runControlSets, targets.runControlSets, ['Run, Pause or Resume of the page']);
+    over('results panel tabs', sample.resultsTabs.total, targets.resultsTabs.total, [
+      ...sample.resultsTabs.namedIds,
+      ...sample.resultsTabs.unnamedIds,
+    ]);
+  }
+  return violations;
+}
+
+/** The numbers of rows 2, 3, 4, 6, 7 and 8 of spec 013 section 8.1, from the samples at 1366 by 768. */
 export function budgetRows(samples: BudgetSample[]) {
   const at = (locale: Locale, state: BudgetState) =>
     samples.find((sample) => sample.locale === locale && sample.state === state && sample.viewport.width === 1366)!;
@@ -241,6 +287,7 @@ export function budgetRows(samples: BudgetSample[]) {
     '3 results tabs shown with their name at 1366 by 768': Object.fromEntries(
       LOCALES.map((locale) => [locale, `${at(locale, 'running').resultsTabs.named} of ${at(locale, 'running').resultsTabs.total}`]),
     ),
+    '4 sets of run controls that act on the simulation': en.runControlSets,
     '6 controls in the command bar while a simulation runs': en.commandBar.total,
     '7 items in the status rail while a simulation runs': en.statusRail.count,
     '8 times the target is shown': en.targetPlaces.length,
@@ -249,12 +296,12 @@ export function budgetRows(samples: BudgetSample[]) {
 
 async function main(): Promise<void> {
   const { parseArgs } = await import('node:util');
-  const { values } = parseArgs({ args: Bun.argv.slice(2), options: { out: { type: 'string' } } });
+  const { values } = parseArgs({ args: Bun.argv.slice(2), options: { out: { type: 'string' }, check: { type: 'boolean' } } });
   const samples: BudgetSample[] = [];
   for (const locale of LOCALES) samples.push(...(await runLocale(locale)));
   const record = {
     what:
-      'The 2.0.0 interface baseline of spec 013 section 8.1 (rows 2, 3, 6, 7 and 8), ' +
+      'The interface of the M1 state (U0 and U1) against spec 013 section 8.1 (rows 2, 3, 4, 6, 7 and 8), ' +
       'measured on the running application by scripts/interfaceBudget.ts',
     runtime: 'Electron development host, headless, native POSIX runtime; example Blinky; Linux only (no macOS or Windows evidence)',
     measuredOn: new Date().toISOString().slice(0, 10),
@@ -263,7 +310,14 @@ async function main(): Promise<void> {
   };
   const text = `${JSON.stringify(record, null, 2)}\n`;
   if (values.out) await Bun.write(values.out, text);
-  else console.log(text);
+  else if (!values.check) console.log(text);
+  if (values.check) {
+    const targets = (await Bun.file(new URL('./interfaceBudget.targets.json', import.meta.url)).json()) as BudgetTargets;
+    const violations = checkBudget(samples, targets);
+    console.log(`interface budget: ${samples.length} samples, ${violations.length} over their target`);
+    for (const violation of violations) console.error(`  over budget: ${violation}`);
+    process.exit(violations.length === 0 ? 0 : 1);
+  }
   process.exit(0);
 }
 

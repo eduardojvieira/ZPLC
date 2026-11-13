@@ -11,7 +11,7 @@ tags: [ide, user-guide]
 
 The workbench is the window you work in. This page shows where everything is, how to manage a project and its files, how to run and watch a program, and what the application keeps for you between sessions. Editing itself is on [Text and visual editors](./editors.md).
 
-An activity rail and a primary sidebar on the left hold the project navigator, search, the tests and the lessons. An optional secondary sidebar on the right holds the Inspector. A results panel under the editor holds Output, Problems, Tests, Interlocks, Lab, Changes, Agent, Trace, Watch and Terminal.
+An activity rail and a primary sidebar on the left hold the project navigator, search, the tests and the lessons. An optional secondary sidebar on the right holds the Inspector. A results panel under the editor holds Output, Problems, Tests, Interlocks, Changes, Agent, Trace, Watch and Terminal. The plant opens as a document in the editor area, next to the program (**Show the plant** in the command palette).
 
 ## Daily workflow
 
@@ -22,7 +22,7 @@ An activity rail and a primary sidebar on the left hold the project navigator, s
 
 ## Layout, navigator and configuration editors
 
-From the top, the window has the application menu, the command bar (build, connect and run controls, the project name and the command palette button), then side by side the **activity rail**, the **primary sidebar**, the **editor area** over the **results panel**, and the **secondary sidebar**, and last the status bar.
+From the top, the window has the application menu, the command bar (save, build, the target selector, the run controls, the project name and the command palette button), then side by side the **activity rail**, the **primary sidebar**, the **editor area** over the **results panel**, and the **secondary sidebar**, and last the status line.
 
 - **Activity rail.** Project, Search, Tests and Learn. Choosing one swaps the primary sidebar; the chosen one is marked by a bar at its edge and a filled button, not by colour alone. Tests also shows the results panel.
 - **Primary sidebar.** Project shows the navigator, Search finds text in the project, Tests explains the scenarios and opens the results, and Learn holds the lessons.
@@ -187,7 +187,9 @@ Evidence level: host. `packages/zplc-ide/src/commands/commands.test.ts` and `pac
 
 ## Simulation and hardware
 
-The native simulation is the way to run a program on your computer. It needs the desktop application, which includes the native runtime. Where the native runtime cannot start, the simulation runs on the WebAssembly runtime; the status bar says so and lists what it does not have (no communication blocks, no serial, no pins, the timing of the application window). See [Software runtime](../runtime/browser-runtime.md).
+The native simulation is the way to run a program on your computer. It needs the desktop application, which includes the native runtime. Where the native runtime cannot start, the simulation runs on the WebAssembly runtime; the status line says so and lists what it does not have (no communication blocks, no serial, no pins, the timing of the application window). See [Software runtime](../runtime/browser-runtime.md).
+
+Run is one action. In simulation, **Run** (F5) saves the project, builds it when the build is out of date and starts the program, and there is no **Connect**: the session of the simulation is implicit. The target selector of the command bar, labelled "Where the run goes", chooses between the simulation and the board of the project, and it asks before it stops a program that is running. **Connect**, **Disconnect** and **Deploy** appear for a board only. Whether Run saves first or asks is the preference **Before running and building**, and **Save all** (command palette) saves every modified document at once.
 
 Hardware actions are separate: build the runtime firmware, flash it, deploy a compiled program, then run and debug. A person starts each of them. See [Deploy a program](./deployment.md).
 
@@ -229,13 +231,13 @@ Evidence level: host, native POSIX simulation, not hardware. `packages/zplc-ide/
 
 ## Live plants
 
-The **Lab** tab starts with **Live plant**: the motor, the conveyor, the tank or the pedestrian crossing of a lesson, running in closed loop with the simulated program. A plant is drawn as a two-dimensional schematic. It reads the outputs of the program and drives the sensors the program reads as inputs, once per scan: the plant is stepped by the scan counter and never by a clock, so it follows the program and not the refresh rate of the window.
+The plant document shows the **Live plant**: the motor, the conveyor, the tank or the pedestrian crossing of a lesson, running in closed loop with the simulated program. A plant is drawn as a two-dimensional schematic. It reads the outputs of the program and drives the sensors the program reads as inputs, once per scan: the plant is stepped by the scan counter and never by a clock, so it follows the program and not the refresh rate of the window.
 
 A plant is bound to the program by an explicit mapping, a data file `plant-map.json` that every lesson naming a plant ships next to its starter. No signal is found by guessing a variable name. The faceplate sits under the plant, so you operate an input and see the plant react.
 
 A mapping in schema 2 types every signal: `{"schemaVersion": 2, "target": {"plant": "motor-v1"}, "signals": {"command": {"direction": "command", "type": "BOOL", "point": "Motor.Cmd"}}}`. The `target` names a 2.0 plant or a scene (`{"scene": "<id>"}`). A signal has a `direction` (`command`: program to plant; `sensor`: plant to program), a `type` (`BOOL`, `INT` for the 16-bit integer, or `REAL`) and the program `point` (`Program.Name`). An `INT` or `REAL` signal also has a `range` with its scaling, in the same shape as the analog channels of a board description: `raw_min`, `raw_max` (the program variable), `eng_min`, `eng_max` and `unit` (the plant value). A `BOOL` signal has no range. Binding checks every signal against the I/O map of the program: a point the program does not declare, or a `BOOL` signal on a numeric variable (or the reverse), is reported as a located message. Mappings in schema 1 (`reads` and `drives`) keep loading unchanged and are read as `BOOL` signals. Scenes are not available yet, so a scene target is validated for shape only.
 
-**Play / Pause plant**, **Step one scan** (enabled while paused, advances exactly one scan), **Reset plant** and the fault actions are buttons, so the keyboard reaches all of them. The fault actions are: stall the motor; jam the belt and make the next part metal; fail the pump; a pedestrian presses the button and block the crossing. Every lamp of the drawing is a glyph and a word, never a colour alone, and nothing glows or pulses. The text equivalent of the state is the accessible name of the drawing and is announced when the situation changes, not on every scan.
+The plant has no run controls of its own: **Run** and **Pause** of the command bar drive the program and the plant together. **Reset plant** and the fault actions are buttons, so the keyboard reaches all of them. The fault actions are: stall the motor; jam the belt and make the next part metal; fail the pump; a pedestrian presses the button and block the crossing. Every lamp of the drawing is a glyph and a word, never a colour alone, and nothing glows or pulses. The text equivalent of the state is the accessible name of the drawing and is announced when the situation changes, not on every scan.
 
 The plant is deterministic: it uses integer arithmetic in permille with a fixed step, and no clock, random number or floating point, so the same program and input script give the same trace on every platform. The live plant is the same model the scenario grader runs (a motor is at speed from 1000 permille, a tank starts at 200, a belt jams by itself once a part reaches the transfer, and every part at the classifier reads as metal), so a program that behaves in the live panel passes its check; the fault actions are the only addition, and they change nothing until you press one. The recorded run of a scenario is still under **Replay of a recorded run**, which says it is a replay of a recorded native POSIX host run.
 
@@ -271,7 +273,7 @@ Evidence level: host. `packages/zplc-ide/src/store/notifications.test.ts` and `p
 ZPLC is built so that its main path can be used with a keyboard and a screen reader. This is what the automated checks prove, and what they do not.
 
 - **Names.** Every field of a form has a label that a screen reader reads with it, and every icon-only button has a name. A CI rule fails the build for a field or an icon-only button without one.
-- **Announcements.** Two hidden live regions, one polite for results and one assertive for faults, announce the result of a build, a save, a deploy, a test run, a connection change, and a variable forced or released. Whether the program is running is read from the status bar.
+- **Announcements.** Two hidden live regions, one polite for results and one assertive for faults, announce the result of a build, a save, a deploy, a test run, a connection change, and a variable forced or released. Whether the program is running is read from the status line.
 - **Keyboard.** The path from opening a project to one Learn lesson can be completed with the keyboard alone: open, edit, build, simulate, watch, force, the deploy question and the lesson check. Tab and Shift+Tab walk the screen in reading order, and the command palette reaches every command. In the code editor Tab types a tab; press `Ctrl+M` to make Tab move the focus out instead, and again to go back. Escape closes a dialog and gives the focus back to the control that opened it.
 - **Controls and density.** Every control comes from one component kit, and a CI rule fails the build for a raw control, a native tooltip, a stock colour or text under 11 pixels. The **Density** preference resizes the controls, rows and spacing of the whole window.
 - **Zoom.** `Ctrl` and plus, minus and 0 (`Cmd` on macOS) enlarge, shrink and reset the page, from the **View** menu.

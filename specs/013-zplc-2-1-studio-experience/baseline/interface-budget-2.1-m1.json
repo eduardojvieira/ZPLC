@@ -1,0 +1,874 @@
+{
+  "what": "The interface of the M1 state (U0 and U1) against spec 013 section 8.1 (rows 2, 3, 4, 6, 7 and 8), measured on the running application by scripts/interfaceBudget.ts",
+  "runtime": "Electron development host, headless, native POSIX runtime; example Blinky; Linux only (no macOS or Windows evidence)",
+  "measuredOn": "2026-11-13",
+  "rows": {
+    "2 tabs in the results panel by default": 9,
+    "3 results tabs shown with their name at 1366 by 768": {
+      "en": "1 of 9",
+      "es": "1 of 9"
+    },
+    "4 sets of run controls that act on the simulation": 1,
+    "6 controls in the command bar while a simulation runs": 9,
+    "7 items in the status rail while a simulation runs": 3,
+    "8 times the target is shown": 2
+  },
+  "samples": [
+    {
+      "locale": "en",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "state": "open",
+      "commandBar": {
+        "left": 5,
+        "right": 3,
+        "total": 8,
+        "labels": [
+          "Save active file (Ctrl+S)",
+          "Build options",
+          "Where the run goes: Simulation",
+          "Run (F5)",
+          "Step one cycle (F10)",
+          "Inspector (Ctrl+Alt+I)",
+          "Command palette (Ctrl+Shift+P)",
+          "Project settings"
+        ]
+      },
+      "resultsTabs": {
+        "total": 9,
+        "named": 1,
+        "namedIds": [
+          "output"
+        ],
+        "unnamedIds": [
+          "problems",
+          "tests",
+          "interlocks",
+          "changes",
+          "agent",
+          "trace",
+          "watch",
+          "terminal"
+        ]
+      },
+      "runControlSets": 1,
+      "statusRail": {
+        "count": 3,
+        "items": [
+          "Simulation · native runtime",
+          "Stopped",
+          "Scan"
+        ]
+      },
+      "targetPlaces": [
+        "command bar: target selector",
+        "status rail: Simulation · native runtime"
+      ]
+    },
+    {
+      "locale": "en",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "state": "open",
+      "commandBar": {
+        "left": 5,
+        "right": 3,
+        "total": 8,
+        "labels": [
+          "Save active file (Ctrl+S)",
+          "Build options",
+          "Where the run goes: Simulation",
+          "Run (F5)",
+          "Step one cycle (F10)",
+          "Inspector (Ctrl+Alt+I)",
+          "Command palette (Ctrl+Shift+P)",
+          "Project settings"
+        ]
+      },
+      "resultsTabs": {
+        "total": 9,
+        "named": 9,
+        "namedIds": [
+          "output",
+          "problems",
+          "tests",
+          "interlocks",
+          "changes",
+          "agent",
+          "trace",
+          "watch",
+          "terminal"
+        ],
+        "unnamedIds": []
+      },
+      "runControlSets": 1,
+      "statusRail": {
+        "count": 3,
+        "items": [
+          "Simulation · native runtime",
+          "Stopped",
+          "Scan"
+        ]
+      },
+      "targetPlaces": [
+        "command bar: target selector",
+        "status rail: Simulation · native runtime"
+      ]
+    },
+    {
+      "locale": "en",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "state": "built",
+      "commandBar": {
+        "left": 5,
+        "right": 3,
+        "total": 8,
+        "labels": [
+          "Save active file (Ctrl+S)",
+          "Build options",
+          "Where the run goes: Simulation",
+          "Run (F5)",
+          "Step one cycle (F10)",
+          "Inspector (Ctrl+Alt+I)",
+          "Command palette (Ctrl+Shift+P)",
+          "Project settings"
+        ]
+      },
+      "resultsTabs": {
+        "total": 9,
+        "named": 1,
+        "namedIds": [
+          "output"
+        ],
+        "unnamedIds": [
+          "problems",
+          "tests",
+          "interlocks",
+          "changes",
+          "agent",
+          "trace",
+          "watch",
+          "terminal"
+        ]
+      },
+      "runControlSets": 1,
+      "statusRail": {
+        "count": 3,
+        "items": [
+          "Simulation · native runtime",
+          "Stopped",
+          "Scan"
+        ]
+      },
+      "targetPlaces": [
+        "command bar: target selector",
+        "status rail: Simulation · native runtime"
+      ]
+    },
+    {
+      "locale": "en",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "state": "built",
+      "commandBar": {
+        "left": 5,
+        "right": 3,
+        "total": 8,
+        "labels": [
+          "Save active file (Ctrl+S)",
+          "Build options",
+          "Where the run goes: Simulation",
+          "Run (F5)",
+          "Step one cycle (F10)",
+          "Inspector (Ctrl+Alt+I)",
+          "Command palette (Ctrl+Shift+P)",
+          "Project settings"
+        ]
+      },
+      "resultsTabs": {
+        "total": 9,
+        "named": 9,
+        "namedIds": [
+          "output",
+          "problems",
+          "tests",
+          "interlocks",
+          "changes",
+          "agent",
+          "trace",
+          "watch",
+          "terminal"
+        ],
+        "unnamedIds": []
+      },
+      "runControlSets": 1,
+      "statusRail": {
+        "count": 3,
+        "items": [
+          "Simulation · native runtime",
+          "Stopped",
+          "Scan"
+        ]
+      },
+      "targetPlaces": [
+        "command bar: target selector",
+        "status rail: Simulation · native runtime"
+      ]
+    },
+    {
+      "locale": "en",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "state": "running",
+      "commandBar": {
+        "left": 6,
+        "right": 3,
+        "total": 9,
+        "labels": [
+          "Save active file (Ctrl+S)",
+          "Build options",
+          "Where the run goes: Simulation",
+          "Pause (F6)",
+          "Stop (Shift+F5)",
+          "Reset runtime (F8)",
+          "Inspector (Ctrl+Alt+I)",
+          "Command palette (Ctrl+Shift+P)",
+          "Project settings"
+        ]
+      },
+      "resultsTabs": {
+        "total": 9,
+        "named": 1,
+        "namedIds": [
+          "output"
+        ],
+        "unnamedIds": [
+          "problems",
+          "tests",
+          "interlocks",
+          "changes",
+          "agent",
+          "trace",
+          "watch",
+          "terminal"
+        ]
+      },
+      "runControlSets": 1,
+      "statusRail": {
+        "count": 3,
+        "items": [
+          "Simulation · native runtime",
+          "Running",
+          "Scan"
+        ]
+      },
+      "targetPlaces": [
+        "command bar: target selector",
+        "status rail: Simulation · native runtime"
+      ]
+    },
+    {
+      "locale": "en",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "state": "running",
+      "commandBar": {
+        "left": 6,
+        "right": 3,
+        "total": 9,
+        "labels": [
+          "Save active file (Ctrl+S)",
+          "Build options",
+          "Where the run goes: Simulation",
+          "Pause (F6)",
+          "Stop (Shift+F5)",
+          "Reset runtime (F8)",
+          "Inspector (Ctrl+Alt+I)",
+          "Command palette (Ctrl+Shift+P)",
+          "Project settings"
+        ]
+      },
+      "resultsTabs": {
+        "total": 9,
+        "named": 9,
+        "namedIds": [
+          "output",
+          "problems",
+          "tests",
+          "interlocks",
+          "changes",
+          "agent",
+          "trace",
+          "watch",
+          "terminal"
+        ],
+        "unnamedIds": []
+      },
+      "runControlSets": 1,
+      "statusRail": {
+        "count": 3,
+        "items": [
+          "Simulation · native runtime",
+          "Running",
+          "Scan"
+        ]
+      },
+      "targetPlaces": [
+        "command bar: target selector",
+        "status rail: Simulation · native runtime"
+      ]
+    },
+    {
+      "locale": "en",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "state": "paused",
+      "commandBar": {
+        "left": 7,
+        "right": 3,
+        "total": 10,
+        "labels": [
+          "Save active file (Ctrl+S)",
+          "Build options",
+          "Where the run goes: Simulation",
+          "Resume (F5)",
+          "Step one cycle (F10)",
+          "Stop (Shift+F5)",
+          "Reset runtime (F8)",
+          "Inspector (Ctrl+Alt+I)",
+          "Command palette (Ctrl+Shift+P)",
+          "Project settings"
+        ]
+      },
+      "resultsTabs": {
+        "total": 9,
+        "named": 1,
+        "namedIds": [
+          "output"
+        ],
+        "unnamedIds": [
+          "problems",
+          "tests",
+          "interlocks",
+          "changes",
+          "agent",
+          "trace",
+          "watch",
+          "terminal"
+        ]
+      },
+      "runControlSets": 1,
+      "statusRail": {
+        "count": 3,
+        "items": [
+          "Simulation · native runtime",
+          "Paused",
+          "Scan"
+        ]
+      },
+      "targetPlaces": [
+        "command bar: target selector",
+        "status rail: Simulation · native runtime"
+      ]
+    },
+    {
+      "locale": "en",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "state": "paused",
+      "commandBar": {
+        "left": 7,
+        "right": 3,
+        "total": 10,
+        "labels": [
+          "Save active file (Ctrl+S)",
+          "Build options",
+          "Where the run goes: Simulation",
+          "Resume (F5)",
+          "Step one cycle (F10)",
+          "Stop (Shift+F5)",
+          "Reset runtime (F8)",
+          "Inspector (Ctrl+Alt+I)",
+          "Command palette (Ctrl+Shift+P)",
+          "Project settings"
+        ]
+      },
+      "resultsTabs": {
+        "total": 9,
+        "named": 9,
+        "namedIds": [
+          "output",
+          "problems",
+          "tests",
+          "interlocks",
+          "changes",
+          "agent",
+          "trace",
+          "watch",
+          "terminal"
+        ],
+        "unnamedIds": []
+      },
+      "runControlSets": 1,
+      "statusRail": {
+        "count": 3,
+        "items": [
+          "Simulation · native runtime",
+          "Paused",
+          "Scan"
+        ]
+      },
+      "targetPlaces": [
+        "command bar: target selector",
+        "status rail: Simulation · native runtime"
+      ]
+    },
+    {
+      "locale": "es",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "state": "open",
+      "commandBar": {
+        "left": 5,
+        "right": 3,
+        "total": 8,
+        "labels": [
+          "Guardar el archivo activo (Ctrl+S)",
+          "Opciones de compilación",
+          "Adónde va la ejecución: Simulación",
+          "Ejecutar (F5)",
+          "Avanzar un ciclo (F10)",
+          "Inspector (Ctrl+Alt+I)",
+          "Paleta de comandos (Ctrl+Mayús+P)",
+          "Configuración del proyecto"
+        ]
+      },
+      "resultsTabs": {
+        "total": 9,
+        "named": 1,
+        "namedIds": [
+          "output"
+        ],
+        "unnamedIds": [
+          "problems",
+          "tests",
+          "interlocks",
+          "changes",
+          "agent",
+          "trace",
+          "watch",
+          "terminal"
+        ]
+      },
+      "runControlSets": 1,
+      "statusRail": {
+        "count": 3,
+        "items": [
+          "Simulación · runtime nativo",
+          "Detenido",
+          "Ciclo"
+        ]
+      },
+      "targetPlaces": [
+        "command bar: target selector",
+        "status rail: Simulación · runtime nativo"
+      ]
+    },
+    {
+      "locale": "es",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "state": "open",
+      "commandBar": {
+        "left": 5,
+        "right": 3,
+        "total": 8,
+        "labels": [
+          "Guardar el archivo activo (Ctrl+S)",
+          "Opciones de compilación",
+          "Adónde va la ejecución: Simulación",
+          "Ejecutar (F5)",
+          "Avanzar un ciclo (F10)",
+          "Inspector (Ctrl+Alt+I)",
+          "Paleta de comandos (Ctrl+Mayús+P)",
+          "Configuración del proyecto"
+        ]
+      },
+      "resultsTabs": {
+        "total": 9,
+        "named": 1,
+        "namedIds": [
+          "output"
+        ],
+        "unnamedIds": [
+          "problems",
+          "tests",
+          "interlocks",
+          "changes",
+          "agent",
+          "trace",
+          "watch",
+          "terminal"
+        ]
+      },
+      "runControlSets": 1,
+      "statusRail": {
+        "count": 3,
+        "items": [
+          "Simulación · runtime nativo",
+          "Detenido",
+          "Ciclo"
+        ]
+      },
+      "targetPlaces": [
+        "command bar: target selector",
+        "status rail: Simulación · runtime nativo"
+      ]
+    },
+    {
+      "locale": "es",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "state": "built",
+      "commandBar": {
+        "left": 5,
+        "right": 3,
+        "total": 8,
+        "labels": [
+          "Guardar el archivo activo (Ctrl+S)",
+          "Opciones de compilación",
+          "Adónde va la ejecución: Simulación",
+          "Ejecutar (F5)",
+          "Avanzar un ciclo (F10)",
+          "Inspector (Ctrl+Alt+I)",
+          "Paleta de comandos (Ctrl+Mayús+P)",
+          "Configuración del proyecto"
+        ]
+      },
+      "resultsTabs": {
+        "total": 9,
+        "named": 1,
+        "namedIds": [
+          "output"
+        ],
+        "unnamedIds": [
+          "problems",
+          "tests",
+          "interlocks",
+          "changes",
+          "agent",
+          "trace",
+          "watch",
+          "terminal"
+        ]
+      },
+      "runControlSets": 1,
+      "statusRail": {
+        "count": 3,
+        "items": [
+          "Simulación · runtime nativo",
+          "Detenido",
+          "Ciclo"
+        ]
+      },
+      "targetPlaces": [
+        "command bar: target selector",
+        "status rail: Simulación · runtime nativo"
+      ]
+    },
+    {
+      "locale": "es",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "state": "built",
+      "commandBar": {
+        "left": 5,
+        "right": 3,
+        "total": 8,
+        "labels": [
+          "Guardar el archivo activo (Ctrl+S)",
+          "Opciones de compilación",
+          "Adónde va la ejecución: Simulación",
+          "Ejecutar (F5)",
+          "Avanzar un ciclo (F10)",
+          "Inspector (Ctrl+Alt+I)",
+          "Paleta de comandos (Ctrl+Mayús+P)",
+          "Configuración del proyecto"
+        ]
+      },
+      "resultsTabs": {
+        "total": 9,
+        "named": 1,
+        "namedIds": [
+          "output"
+        ],
+        "unnamedIds": [
+          "problems",
+          "tests",
+          "interlocks",
+          "changes",
+          "agent",
+          "trace",
+          "watch",
+          "terminal"
+        ]
+      },
+      "runControlSets": 1,
+      "statusRail": {
+        "count": 3,
+        "items": [
+          "Simulación · runtime nativo",
+          "Detenido",
+          "Ciclo"
+        ]
+      },
+      "targetPlaces": [
+        "command bar: target selector",
+        "status rail: Simulación · runtime nativo"
+      ]
+    },
+    {
+      "locale": "es",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "state": "running",
+      "commandBar": {
+        "left": 6,
+        "right": 3,
+        "total": 9,
+        "labels": [
+          "Guardar el archivo activo (Ctrl+S)",
+          "Opciones de compilación",
+          "Adónde va la ejecución: Simulación",
+          "Pausar (F6)",
+          "Detener (Mayús+F5)",
+          "Reiniciar el runtime (F8)",
+          "Inspector (Ctrl+Alt+I)",
+          "Paleta de comandos (Ctrl+Mayús+P)",
+          "Configuración del proyecto"
+        ]
+      },
+      "resultsTabs": {
+        "total": 9,
+        "named": 1,
+        "namedIds": [
+          "output"
+        ],
+        "unnamedIds": [
+          "problems",
+          "tests",
+          "interlocks",
+          "changes",
+          "agent",
+          "trace",
+          "watch",
+          "terminal"
+        ]
+      },
+      "runControlSets": 1,
+      "statusRail": {
+        "count": 3,
+        "items": [
+          "Simulación · runtime nativo",
+          "En ejecución",
+          "Ciclo"
+        ]
+      },
+      "targetPlaces": [
+        "command bar: target selector",
+        "status rail: Simulación · runtime nativo"
+      ]
+    },
+    {
+      "locale": "es",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "state": "running",
+      "commandBar": {
+        "left": 6,
+        "right": 3,
+        "total": 9,
+        "labels": [
+          "Guardar el archivo activo (Ctrl+S)",
+          "Opciones de compilación",
+          "Adónde va la ejecución: Simulación",
+          "Pausar (F6)",
+          "Detener (Mayús+F5)",
+          "Reiniciar el runtime (F8)",
+          "Inspector (Ctrl+Alt+I)",
+          "Paleta de comandos (Ctrl+Mayús+P)",
+          "Configuración del proyecto"
+        ]
+      },
+      "resultsTabs": {
+        "total": 9,
+        "named": 1,
+        "namedIds": [
+          "output"
+        ],
+        "unnamedIds": [
+          "problems",
+          "tests",
+          "interlocks",
+          "changes",
+          "agent",
+          "trace",
+          "watch",
+          "terminal"
+        ]
+      },
+      "runControlSets": 1,
+      "statusRail": {
+        "count": 3,
+        "items": [
+          "Simulación · runtime nativo",
+          "En ejecución",
+          "Ciclo"
+        ]
+      },
+      "targetPlaces": [
+        "command bar: target selector",
+        "status rail: Simulación · runtime nativo"
+      ]
+    },
+    {
+      "locale": "es",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "state": "paused",
+      "commandBar": {
+        "left": 7,
+        "right": 3,
+        "total": 10,
+        "labels": [
+          "Guardar el archivo activo (Ctrl+S)",
+          "Opciones de compilación",
+          "Adónde va la ejecución: Simulación",
+          "Reanudar (F5)",
+          "Avanzar un ciclo (F10)",
+          "Detener (Mayús+F5)",
+          "Reiniciar el runtime (F8)",
+          "Inspector (Ctrl+Alt+I)",
+          "Paleta de comandos (Ctrl+Mayús+P)",
+          "Configuración del proyecto"
+        ]
+      },
+      "resultsTabs": {
+        "total": 9,
+        "named": 1,
+        "namedIds": [
+          "output"
+        ],
+        "unnamedIds": [
+          "problems",
+          "tests",
+          "interlocks",
+          "changes",
+          "agent",
+          "trace",
+          "watch",
+          "terminal"
+        ]
+      },
+      "runControlSets": 1,
+      "statusRail": {
+        "count": 3,
+        "items": [
+          "Simulación · runtime nativo",
+          "En pausa",
+          "Ciclo"
+        ]
+      },
+      "targetPlaces": [
+        "command bar: target selector",
+        "status rail: Simulación · runtime nativo"
+      ]
+    },
+    {
+      "locale": "es",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "state": "paused",
+      "commandBar": {
+        "left": 7,
+        "right": 3,
+        "total": 10,
+        "labels": [
+          "Guardar el archivo activo (Ctrl+S)",
+          "Opciones de compilación",
+          "Adónde va la ejecución: Simulación",
+          "Reanudar (F5)",
+          "Avanzar un ciclo (F10)",
+          "Detener (Mayús+F5)",
+          "Reiniciar el runtime (F8)",
+          "Inspector (Ctrl+Alt+I)",
+          "Paleta de comandos (Ctrl+Mayús+P)",
+          "Configuración del proyecto"
+        ]
+      },
+      "resultsTabs": {
+        "total": 9,
+        "named": 1,
+        "namedIds": [
+          "output"
+        ],
+        "unnamedIds": [
+          "problems",
+          "tests",
+          "interlocks",
+          "changes",
+          "agent",
+          "trace",
+          "watch",
+          "terminal"
+        ]
+      },
+      "runControlSets": 1,
+      "statusRail": {
+        "count": 3,
+        "items": [
+          "Simulación · runtime nativo",
+          "En pausa",
+          "Ciclo"
+        ]
+      },
+      "targetPlaces": [
+        "command bar: target selector",
+        "status rail: Simulación · runtime nativo"
+      ]
+    }
+  ]
+}
