@@ -1,0 +1,8 @@
+{
+  "requirement": "CMP-004",
+  "title": "a standard block output member is read without regard to case",
+  "matrix": ["pous.function-block-call-with-named-inputs"],
+  "scans": 3,
+  "scanMs": 10,
+  "expect": [{ "at": "%QX0.0", "type": "BOOL", "value": true }]
+}

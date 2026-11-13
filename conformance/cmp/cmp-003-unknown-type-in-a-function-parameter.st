@@ -1,0 +1,13 @@
+FUNCTION Twice : INT
+VAR_INPUT
+  a : Widget;
+END_VAR
+  Twice := 2;
+END_FUNCTION
+
+PROGRAM Main
+VAR
+  x : INT;
+END_VAR
+  x := 1;
+END_PROGRAM

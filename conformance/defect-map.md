@@ -19,8 +19,8 @@ of this suite, by another executed test, or it is listed with the reason that no
 | CMP-D01a | Blocker | CMP-001, CMP-002 | `cmp/cmp-001-undeclared-assignment-target`<br>`cmp/cmp-001-sfc-action-undeclared-variable` | An assignment to an undeclared variable is dropped and the build succeeds. |
 | CMP-D01b | Blocker | CMP-001, CMP-002 | `cmp/cmp-001-undeclared-identifier-read`<br>`lng/cmp-001-ld-contact-undeclared-variable` | An unknown identifier becomes PUSH32 0 and the build succeeds. |
 | CMP-D01c | Blocker | CMP-001, CMP-002 | `cmp/cmp-001-unknown-function`<br>`cmp/cmp-002-wrong-argument-count` | An unknown function becomes PUSH8 0 and the build succeeds. |
-| CMP-D01d | Blocker | CMP-003 | `cmp/cmp-003-unknown-type-name`<br>`cmp/cmp-003-char-is-rejected` | Unknown type names get size 0. |
-| CMP-D01e | Blocker | CMP-004 | `cmp/cmp-004-identifier-case-insensitive`<br>`cmp/cmp-004-type-name-case-insensitive`<br>`cmp/cmp-004-lowercase-direct-address`<br>`cmp/cmp-004-user-names-case-insensitive` | Identifiers are case-sensitive. |
+| CMP-D01d | Blocker | CMP-003 | `cmp/cmp-003-unknown-type-name`<br>`cmp/cmp-003-char-is-rejected`<br>`cmp/cmp-003-unknown-type-in-a-function-parameter` | Unknown type names get size 0. |
+| CMP-D01e | Blocker | CMP-004 | `cmp/cmp-004-identifier-case-insensitive`<br>`cmp/cmp-004-type-name-case-insensitive`<br>`cmp/cmp-004-lowercase-direct-address`<br>`cmp/cmp-004-user-names-case-insensitive`<br>`cmp/cmp-004-lowercase-output-member` | Identifiers are case-sensitive. |
 | CMP-D01f | Blocker | CMP-005 | `cmp/cmp-005-bool-assigned-from-int`<br>`cmp/cmp-005-int-assigned-from-real`<br>`cmp/cmp-005-string-assigned-to-int`<br>`cmp/cmp-005-condition-is-not-a-bool` | There is no type checker: a BOOL takes an INT, a STRING a number. |
 | CMP-D01g | Blocker | CMP-001, CMP-002, CMP-010, CMP-045 | `cmp/cmp-001-undeclared-assignment-target`<br>`cmp/cmp-010-build-error-names-the-reason` | validate() accepts such programs: the check and the build must refuse the same ones. Studio Build, the CLI check and the MCP check run the pipeline of the build (the compile entry point test of CMP-045), so a refused build is a refused check. |
 | CMP-D02a | Blocker | CMP-011 | `cmp/cmp-011-int-divide-negative`<br>`cmp/cmp-011-sint-negative-arithmetic`<br>`cmp/cmp-011-int-compare-negative` | Signed 8- and 16-bit values are zero-extended: -8 / 2 gives 32764. |
@@ -168,8 +168,8 @@ The defects that each requirement fixes, and the cases filed under that requirem
 |---|---|---|
 | CMP-001 | CMP-D01a, CMP-D01b, CMP-D01c, CMP-D01g, CMP-D13d | `cmp/cmp-001-sfc-action-undeclared-variable`<br>`cmp/cmp-001-undeclared-assignment-target`<br>`cmp/cmp-001-undeclared-identifier-read`<br>`cmp/cmp-001-unknown-function`<br>`lng/cmp-001-ld-contact-undeclared-variable` |
 | CMP-002 | CMP-D01a, CMP-D01b, CMP-D01c, CMP-D01g | `cmp/cmp-002-wrong-argument-count` |
-| CMP-003 | CMP-D01d | `cmp/cmp-003-char-is-rejected`<br>`cmp/cmp-003-unknown-type-name` |
-| CMP-004 | CMP-D01e | `cmp/cmp-004-identifier-case-insensitive`<br>`cmp/cmp-004-lowercase-direct-address`<br>`cmp/cmp-004-type-name-case-insensitive`<br>`cmp/cmp-004-user-names-case-insensitive` |
+| CMP-003 | CMP-D01d | `cmp/cmp-003-char-is-rejected`<br>`cmp/cmp-003-unknown-type-in-a-function-parameter`<br>`cmp/cmp-003-unknown-type-name` |
+| CMP-004 | CMP-D01e | `cmp/cmp-004-identifier-case-insensitive`<br>`cmp/cmp-004-lowercase-direct-address`<br>`cmp/cmp-004-lowercase-output-member`<br>`cmp/cmp-004-type-name-case-insensitive`<br>`cmp/cmp-004-user-names-case-insensitive` |
 | CMP-005 | CMP-D01f | `cmp/cmp-005-bool-assigned-from-int`<br>`cmp/cmp-005-condition-is-not-a-bool`<br>`cmp/cmp-005-int-assigned-from-real`<br>`cmp/cmp-005-string-assigned-to-int` |
 | CMP-006 | CMP-D08a, CMP-D12b, CMP-D12d, CMP-D12e | `cmp/cmp-006-duplicate-variable-position`<br>`cmp/cmp-006-missing-base-block`<br>`cmp/cmp-006-unknown-identifier-in-function`<br>`cmp/cmp-006-unknown-member-position` |
 | CMP-007 | CMP-D12a | `cmp/cmp-007-three-errors-three-diagnostics`<br>`cmp/cmp-007-undeclared-names-in-every-statement` |
