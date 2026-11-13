@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-xyz-palletizing",
+  "version": 1,
+  "order": 155,
+  "module": 15,
+  "level": "advanced",
+  "prerequisites": ["plant-layer-palletizer"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The program drives three axes with integer counts and a vacuum pad over a pallet; a learner board has no gantry, and the scene supplies one.",
+        "es": "El programa gobierna tres ejes con cuentas enteras y una ventosa sobre un palé; una placa del estudiante no tiene pórtico, y la escena aporta uno."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus cajas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "three-axis-palletizing",
+  "estimatedMinutes": 50,
+  "starter": {
+    "project": "plant_xyz_palletizing_starter",
+    "program": "src/Palletizing.st"
+  },
+  "solution": {
+    "project": "plant_xyz_palletizing",
+    "program": "src/Palletizing.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "three-axis-palletizing",
+    "path": "tests/three-axis-palletizing.scenario.json",
+    "sha256": "206d7b9b66ed1733fe962de857fb04308f6d337bd2846c4466759c2bc9893378"
+  },
+  "regressionScenarios": []
+}

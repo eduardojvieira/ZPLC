@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 2,
+  "target": { "scene": "three-axis-palletizing" },
+  "signals": {
+    "Gantry1.xSet": {
+      "direction": "command",
+      "type": "INT",
+      "point": "Palletizing.XCmd",
+      "range": { "raw_min": 0, "raw_max": 1000, "eng_min": 0, "eng_max": 1.6, "unit": "m" }
+    },
+    "Gantry1.ySet": {
+      "direction": "command",
+      "type": "INT",
+      "point": "Palletizing.YCmd",
+      "range": { "raw_min": 0, "raw_max": 1000, "eng_min": 0, "eng_max": 1.2, "unit": "m" }
+    },
+    "Gantry1.zSet": {
+      "direction": "command",
+      "type": "INT",
+      "point": "Palletizing.ZCmd",
+      "range": { "raw_min": 0, "raw_max": 1000, "eng_min": 0, "eng_max": 1.2, "unit": "m" }
+    },
+    "Gantry1.xPos": {
+      "direction": "sensor",
+      "type": "INT",
+      "point": "Palletizing.XPos",
+      "range": { "raw_min": 0, "raw_max": 1000, "eng_min": 0, "eng_max": 1.6, "unit": "m" }
+    },
+    "Gantry1.yPos": {
+      "direction": "sensor",
+      "type": "INT",
+      "point": "Palletizing.YPos",
+      "range": { "raw_min": 0, "raw_max": 1000, "eng_min": 0, "eng_max": 1.2, "unit": "m" }
+    },
+    "Gantry1.zPos": {
+      "direction": "sensor",
+      "type": "INT",
+      "point": "Palletizing.ZPos",
+      "range": { "raw_min": 0, "raw_max": 1000, "eng_min": 0, "eng_max": 1.2, "unit": "m" }
+    },
+    "Gantry1.grip": { "direction": "command", "type": "BOOL", "point": "Palletizing.Grip" },
+    "Gantry1.gripped": { "direction": "sensor", "type": "BOOL", "point": "Palletizing.Gripped" },
+    "StartButton.pressed": { "direction": "sensor", "type": "BOOL", "point": "Palletizing.Start" },
+    "EyePick.detect": { "direction": "sensor", "type": "BOOL", "point": "Palletizing.EyePick" },
+    "Belt1.run": { "direction": "command", "type": "BOOL", "point": "Palletizing.RunBelt" },
+    "Emitter1.emit": { "direction": "command", "type": "BOOL", "point": "Palletizing.Emit" },
+    "Blade1.extend": { "direction": "command", "type": "BOOL", "point": "Palletizing.Hold" },
+    "StackLight1.green": { "direction": "command", "type": "BOOL", "point": "Palletizing.Green" },
+    "StackLight1.amber": { "direction": "command", "type": "BOOL", "point": "Palletizing.Amber" }
+  }
+}
