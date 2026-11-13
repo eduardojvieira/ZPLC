@@ -889,7 +889,8 @@ const runners: Record<Sequence, () => Promise<Json>> = {
 const git = (command: string) => execSync(`git ${command}`, { cwd: packageRoot, encoding: 'utf8' }).trim();
 const started = new Date().toISOString();
 const commit = git('rev-parse HEAD');
-const dirtyTree = git('status --porcelain').length > 0;
+// The record being written is not a change of the code it measures.
+const dirtyTree = git("status --porcelain -- ':/' ':(top,exclude)specs/012-zplc-2-1-plant-simulation/evidence'").length > 0;
 
 const results: Record<string, Json> = {};
 for (const name of sequences) {
