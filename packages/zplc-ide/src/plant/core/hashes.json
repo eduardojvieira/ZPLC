@@ -5,5 +5,7 @@
   "m3-gantryNumeric-v1": "bc6ac85d01bdf3fbb164423e8b98182d3a532f44ceaffc83670ce1d82e8e45d3",
   "m4-diverters-v1": "5c4918dd24449f34698088fca7d5246d379499b9c469c89f3d085bba0b0e3216",
   "m4-sorting-v1": "52dd70ae5a21dead2a26f17c207e4cf34b24742648950fab728cb36cbd831cc1",
-  "notes": "pinned on Linux by Tasks P4 (m1-palletStack-v1), N6 (m2-tankLoop-v1) and K8 (m3-gripCycle-v1, m3-gantryNumeric-v1) and K9 (m4-diverters-v1, m4-sorting-v1); macOS: pending, Windows: pending"
+  "m5-lifts-v1": "8fe89a09abea227e1bb2cd371824db2ab08ed5dfdd5f9e3bf68c2343dd0a80be",
+  "m5-station-v1": "cddaa257346ea624a88d7f0fe98bfe6f959558c46000938eaadf354e74a66116",
+  "notes": "pinned on Linux by Tasks P4 (m1-palletStack-v1), N6 (m2-tankLoop-v1), K8 (m3-gripCycle-v1, m3-gantryNumeric-v1), K9 (m4-diverters-v1, m4-sorting-v1) and K10 (m5-lifts-v1, m5-station-v1); macOS: pending, Windows: pending"
 }

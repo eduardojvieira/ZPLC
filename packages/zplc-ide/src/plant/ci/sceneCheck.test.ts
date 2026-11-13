@@ -88,7 +88,8 @@ describe('the fact names a scenario reads', () => {
         'itemsDropped, ' +
         'itemsCollided, emitted:<Name>, delivered:<Name>, count:<Name>, position:<kind>:<index>, level:<Name>, volume:<Name>, ' +
         'spilledL:<Name>, highs:<Name>, inBand:<Name>, picked:<Name>, placed:<Name>, drops:<Name>, axis:<Name>:<x|y|z>, itemsAssembled, ' +
-        'stacked:pallet:<index>, layers:pallet:<index>, sorted:<Name>, misrouted:<Name>',
+        'stacked:pallet:<index>, layers:pallet:<index>, sorted:<Name>, misrouted:<Name>, stored:<Name>, produced:<Name>, ' +
+        'misfires:<Name>, blocked:<Name>, cell:<Name>:<column>:<level>, loaded:crate:<index>',
     ]);
     expect(checkSceneFacts(withFacts('position:crate:x'), fixtureScene)).toHaveLength(1);
     expect(checkSceneFacts(withFacts('itemsRemoved:extra'), fixtureScene)).toHaveLength(1);
@@ -151,6 +152,25 @@ describe('the fact names a scenario reads', () => {
     expect(checkSceneFacts(withFacts('misrouted:Nope'), binScene)).toEqual([
       'scenario.json expectations[0].condition: "fact:misrouted:Nope" names "Nope", which is not a part of the scene; it has: BinRed',
     ]);
+  });
+
+  it('SCN-004 the fact grammar accepts stored, produced, misfires, blocked, cell and loaded:crate and names unknown ones', () => {
+    const stations: PlantSceneFile = {
+      ...fixtureScene,
+      parts: [
+        { id: 'crane1', part: 'stacker-crane', name: 'Crane1', position: [0, 0, 0], rotationYDeg: 0, config: {} },
+        { id: 'mc1', part: 'machining-centre', name: 'Mc1', position: [4, 0, 0], rotationYDeg: 0, config: {} },
+      ],
+    };
+    const good = withFacts('stored:Crane1', 'blocked:Crane1', 'cell:Crane1:2:1', 'produced:Mc1', 'misfires:Mc1', 'loaded:crate:0');
+    expect(checkSceneFacts(good, stations)).toEqual([]);
+    const bads = ['cell:Crane1:2', 'cell:Crane1:a:1', 'cell:Crane1:2:1:0', 'stored', 'produced:Mc1:x', 'loaded:crate', 'loaded:box:0'];
+    for (const bad of [...bads, 'loaded:crate:x']) expect(checkSceneFacts(withFacts(bad), stations)).toHaveLength(1);
+    expect(checkSceneFacts(withFacts('cell:Nope:1:1'), stations)).toEqual([
+      'scenario.json expectations[0].condition: "fact:cell:Nope:1:1" names "Nope", which is not a part of the scene; it has: Crane1, Mc1',
+    ]);
+    expect(checkSceneFacts(withFacts('stored:Nope'), stations)[0]).toContain('names "Nope"');
+    expect(checkSceneFacts(withFacts('cell:Crane1:2'), stations)[0]).toContain('cell:<Name>:<column>:<level>, loaded:crate:<index>');
   });
 
   it('SCN-004 refuses a fact that names a part the scene does not have', () => {
