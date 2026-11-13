@@ -20,7 +20,7 @@ describe('panel empty states (UX-021)', () => {
   });
 
   it('UX-021 offers the first next step the state allows: Step once connected, Connect before', () => {
-    publishCommandState({ projectOpen: true, connected: false });
+    publishCommandState({ projectOpen: true, connected: false, mode: 'hardware' });
     const before = renderToStaticMarkup(
       <CommandEmptyState title="No trace" description="Step to collect." actions={['debug.step', 'online.connect']} />,
     );

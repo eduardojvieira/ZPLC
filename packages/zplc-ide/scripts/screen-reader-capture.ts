@@ -44,8 +44,7 @@ const words = (language: Language) => {
     t,
     openProject: t('welcome.open.title'),
     learn: t('welcome.learn.title'),
-    connect: t('toolbar.connect'),
-    disconnect: t('command.online.disconnect'),
+    stop: t('command.debug.stop'),
     pause: t('toolbar.pause.label'),
     resume: t('toolbar.resume.label'),
     addVariable: t('workbench.watch.addVariable'),
@@ -58,7 +57,6 @@ const words = (language: Language) => {
     paletteLearn: t('command.view.showLearn'),
     buildOk: new RegExp(escape(t('toolbarMsg.buildSucceeded'))),
     buildFailed: new RegExp(escape(t('toolbarMsg.buildFailed'))),
-    simulatorReady: new RegExp(escape(t('toolbarMsg.simulatorReady'))),
     running: new RegExp(`^${escape(t('toolbarMsg.status.running'))}$`),
   };
 };
@@ -255,32 +253,14 @@ async function stepBuild({ app, recorder: rec, language, project }: Session): Pr
 
 async function stepSimulate({ app, recorder: rec, language }: Session): Promise<void> {
   const w = words(language);
-  rec.begin('4', 'Simulate', 'Connect and Run are reachable by name, the toolbar messages are announced, and the status bar says running.');
+  rec.begin(
+    '4',
+    'Simulate',
+    'Run is reachable by name and starts the simulator itself (there is no Connect in simulation), the toolbar messages are announced, ' +
+      'and the status bar says running.',
+  );
   await rec.key('Ctrl+B', 'build');
   await rec.expectAnnounced('the build is announced', w.buildOk, 30_000);
-  await rec
-    .reach(
-      'the Connect button of the toolbar',
-      `el.closest('[role="toolbar"]') !== null && (el.getAttribute('aria-label') ?? el.textContent ?? ` +
-        `'').includes(${JSON.stringify(w.connect)})`,
-      'Tab',
-      60,
-    )
-    .catch(async () => {
-      rec.fact('connectVia', 'the command palette (the toolbar button was not reached with Tab)');
-      await palette(rec, app, w.connect);
-    });
-  if (!rec.steps.at(-1)!.facts.connectVia) await rec.key('Enter', 'activate Connect');
-  await app.until(
-    'the simulation to connect',
-    async () =>
-      (await app.eval<boolean>(
-        `[...document.querySelectorAll('button')].some((b) => (b.getAttribute('aria-label') ?? b.textContent ?? ` +
-          `'').includes(${JSON.stringify(w.disconnect)}))`,
-      )) || undefined,
-    30_000,
-  );
-  await rec.expectAnnounced('the connection is announced', w.simulatorReady);
   await rec.key('F5', 'Run');
   await rec.expectAnnounced('running is announced, in the interface language', w.running);
   const status = await app.eval<string>(`document.querySelector('[aria-label="Operational status"], [role="status"]')?.textContent ?? ''`);
@@ -372,10 +352,10 @@ async function stepForce({ app, recorder: rec, language }: Session): Promise<voi
   await rec.expectAnnounced('the second release is announced', /released|liber/i);
   // Force once more and lose the connection: the alert region must say that a force is unconfirmed.
   await rec.key('Space', 'force LED_Output again');
-  await palette(rec, app, w.disconnect);
-  // In the simulator, ending the connection clears the forces (they are the simulator's own); only a physical device keeps a force that
+  await palette(rec, app, w.stop);
+  // In the simulator, stopping the simulator clears the forces (they are the simulator's own); only a physical device keeps a force that
   // nobody confirms.
-  await rec.expectAnnounced('ending the connection says that the force was released', /released|liber/i, 8_000);
+  await rec.expectAnnounced('stopping the simulator says that the force was released', /released|liber/i, 8_000);
   rec.fact(
     'unconfirmedAlert',
     'not reachable in the simulator: it needs a device that keeps a force after the link is lost; the assertive announcement is covered ' +
@@ -619,17 +599,8 @@ async function stepPlant({ app, recorder: rec, language, project }: Session): Pr
   await rec.stop('the lesson workspace has opened');
   await rec.key('Ctrl+B', 'build');
   await rec.expectAnnounced('the build is announced', w.buildOk, 60_000);
-  await palette(rec, app, w.connect);
-  await app.until(
-    'the simulation to connect',
-    async () =>
-      (await app.eval<boolean>(
-        `[...document.querySelectorAll('button')].some((b) => (b.getAttribute('aria-label') ?? b.textContent ?? ` +
-          `'').includes(${JSON.stringify(w.disconnect)}))`,
-      )) || undefined,
-    30_000,
-  );
   await rec.key('F5', 'Run');
+  await rec.expectAnnounced('running is announced', w.running, 45_000);
   // the plant is a document of the editor area (spec 013 D-20), opened by the view.plant command
   await palette(rec, app, w.palettePlant);
   await app.until(

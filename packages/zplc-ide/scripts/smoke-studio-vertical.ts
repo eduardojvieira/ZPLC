@@ -1255,7 +1255,9 @@ async function main(): Promise<void> {
       (await page().evaluate(
         `(() => { const bar = document.querySelector('[aria-label="Operational status"]'); const live = ` +
           `bar?.querySelectorAll('[role="status"][aria-live="polite"][aria-atomic="true"]') ?? []; return Boolean(bar) && ` +
-          `bar?.textContent?.includes('SIMULATION') && bar?.textContent?.includes('No runtime session') && ` +
+          `/simulation/i.test(bar?.querySelector('[data-connection]')?.textContent ?? '') && ` +
+          `[...live].some((region) => region.getAttribute('data-connection') === null && region.textContent?.trim()) && ` +
+          `bar.querySelectorAll('[data-status-line]').length === 1 && ` +
           `bar.getBoundingClientRect().width <= 1366 && !bar?.hasAttribute('aria-live') && live.length === 2 && ` +
           `[...live].some((region) => region.getAttribute('data-connection') !== null) && [...live].every((region) => ` +
           `!region.textContent?.includes('cycles') && !region.textContent?.includes('overruns')); })()`,
@@ -1854,6 +1856,9 @@ async function main(): Promise<void> {
         ? true
         : undefined,
     );
+    // Build saves a modified project first (FLW-006) and the seeded page has no folder to save to: the fence under test is the
+    // missing saved-workspace link, so the source is saved before this Build, as it is for the second one below.
+    await setFile(validProgram, true);
     await click('Compile');
     await waitFor('saved-workspace link fence', async () => ((await text()).includes('Choose zplc.json') ? true : undefined));
     assert(
