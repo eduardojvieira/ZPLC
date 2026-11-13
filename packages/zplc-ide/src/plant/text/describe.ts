@@ -7,7 +7,7 @@ const TOTALS = ['itemsEmitted', 'itemsRemoved', 'itemsDropped', 'itemsCollided']
 const CONTINUOUS = ['level:', 'volume:', 'spilledL:', 'axis:'];
 // The support facts (K5) and a tank's high-mark count are told in words and stay silent at 0, so a scene that assembles or stacks nothing
 // reads as it did before them.
-const SUPPORT = /^(itemsAssembled|stacked:pallet:\d+|layers:pallet:\d+|highs:.+|emitted:.+)$/;
+const SUPPORT = /^(itemsAssembled|stacked:pallet:\d+|layers:pallet:\d+|highs:.+|emitted:.+|sorted:.+|misrouted:.+)$/;
 const kindOf = (k: string) => (k.startsWith('layers:pallet:') ? 'layers' : '');
 const m = (n: number) => String(Math.round(n * 10) / 10);
 
@@ -53,6 +53,8 @@ export function describePlant(snapshot: PlantSnapshot, scene: PlantSceneFile, lo
       parts.push(t(`plant.text.${kind}`, { name, count: String(v) }));
     else if (kind === 'highs' && k.includes(':')) parts.push(tn('plant.text.highs', Number(v), { name }));
     else if (kind === 'emitted' && k.includes(':')) parts.push(tn('plant.text.emitted', Number(v), { name }));
+    else if (kind === 'sorted' && k.includes(':')) parts.push(tn('plant.text.sorted', Number(v), { name }));
+    else if (kind === 'misrouted' && k.includes(':')) parts.push(tn('plant.text.misrouted', Number(v), { name }));
     else if (kind === 'inBand' && k.includes(':')) parts.push(t(v ? 'plant.text.inBand' : 'plant.text.outOfBand', { name }));
     else parts.push(t('plant.text.fact', { name: k, value: String(v) }));
   }
