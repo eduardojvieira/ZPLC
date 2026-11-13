@@ -134,7 +134,7 @@ export function validateScaling(def: import('./contracts').PlantSignalDef, signa
 3. Flows in L/s: `qIn = inletMaxLps * uIn`; gravity discharge (Torricelli, head `h`): `qOut = outletCoef * uOut * detSqrt(h)`; with the `leak` fault, a further constant `leakLps` leaves the tank.
 4. Level: `h = h + (qIn - qOut - qLeak) * dt / (1000 * A)`; if `h < 0` then `h = 0`.
 5. Overflow: if `h > heightM` then `spilled = spilled + (h - heightM) * 1000 * A` and `h = heightM`.
-`detSqrt(v)` is the square root by a fixed number of Newton iterations written with `+ - * /` only (seed `1` for `v >= 1`, `v` otherwise; 12 iterations; `0` for `v <= 0`), so it is identical on every platform. `Math.sqrt`, `Math.pow`, `Math.exp`, `Math.log`, trigonometry, `Math.random` and `Date` are **forbidden** in process models (a test greps the source). With a Torricelli outlet the tank empties in finite time `2 * sqrt(h0) * 1000 * A / outletCoef` at full opening; with the defaults (`A = 0.1`, `h0 = 0.8`) that is about 14.9 s. The plan choice of a Torricelli outlet over a linear one is open question 2.
+`detSqrt(v)` is the square root by a fixed number of Newton iterations written with `+ - * /` only (seed `(1 + v) / 2`; 40 iterations, which reach double precision for `v` from 1e-12 to 1e6; `0` for `v <= 0`; amended during N6, the first rule of 12 iterations from seed `v` overestimated the root below about 1e-5), so it is identical on every platform. `Math.sqrt`, `Math.pow`, `Math.exp`, `Math.log`, trigonometry, `Math.random` and `Date` are **forbidden** in process models (a test greps the source). With a Torricelli outlet the tank empties in finite time `2 * sqrt(h0) * 1000 * A / outletCoef` at full opening; with the defaults (`A = 0.1`, `h0 = 0.8`) that is about 14.9 s. The plan choice of a Torricelli outlet over a linear one is open question 2.
 
 **Facts (plan choice; names are API for scenarios, the text equivalent and the trace).**
 `level:<Name>` (metres, rounded to 0.001, like `position:` facts), `volume:<Name>` (litres, rounded to 0.1), `spilledL:<Name>` (litres spilled since the start, rounded to 0.1), `highs:<Name>` (count of rising edges of `h >= highFraction * heightM`), `inBand:<Name>` (boolean: `bandLow * heightM <= h <= bandHigh * heightM`; with the defaults always true, so a scene sets the band it grades). All five exist in both variants. The fact grammar of `IDE/src/plant/ci/sceneCheck.ts` (`FACT_GRAMMAR`, `factFault`) and the text equivalent learn them in N6 and N8.
@@ -271,7 +271,7 @@ Nothing else. The tank is **not** registered with the catalogue here (N6 does it
 **Interfaces:** consumes `PartDefinition` (with `family: 'process'`, `equations`, `PlantSignalDef.range` of N0), `ScenePart`, `PartRuntime`, `RuntimePartDefinition` of `IDE/src/plant/core/parts/items.ts:5-16`, and the helpers `cfgNumber`, `cfg` (`items.ts:25-31`), `marker` (`sensors.ts:5`). Produces:
 ```ts
 export const DT_S = 0.005; // a test asserts it equals PLANT_STEP_MS / 1000
-export function detSqrt(v: number): number; // + - * / only, 12 Newton iterations
+export function detSqrt(v: number): number; // + - * / only, 40 Newton iterations from (1 + v) / 2
 export interface TankParams { areaM2: number; heightM: number; inletMaxLps: number; outletCoef: number; valveTauS: number; leakLps: number }
 export interface TankState { h: number; uIn: number; uOut: number; spilledL: number }
 export interface TankInput { targetIn: number; targetOut: number; inletStuck: boolean; outletStuck: boolean; leak: boolean }
