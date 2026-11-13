@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Fill and drain with timers",
+  "summary": "Run one fill, hold and drain cycle of a tank with on-delay timers, a panel start and an emergency stop.",
+  "scope": "The grade is a headless run of the simulated tank on the native POSIX runtime. It does not establish the behaviour of a real tank, valve or sensor, hardware timing, HIL, or certification.",
+  "objectives": [
+    "Time one step of a process with an on-delay timer (TON), using one timer for each step.",
+    "Use a timer as a safety limit on a step that normally ends on a sensor, and let an emergency stop abort the cycle."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "The scene is a tank with a fill valve, a drain valve and a low-level switch, a Start button, an emergency stop and a stack light. In src/TimedTank.st, run one cycle for each press of Start while the emergency stop is released and the tank is idle: amber on, Fill open for a time set by a timer (the tank has no sensor at this level, so the timer is the measurement), a two-second hold, then Drain open until LevelLow or twenty seconds, then green on. The emergency stop closes both valves and lights red.",
+      "checkpoint": "The cycle is a chain of steps and each timed step has its own timer."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, predict the outputs at {{t:100}} ms (before the press), at {{t:800}} ms (the cycle has started) and at {{t:1500}} ms (the emergency stop is pressed). Then predict where the cycle stands at {{t:25000}} ms, after a second press at {{t:4000}} ms.",
+      "checkpoint": "{{v:TimedTank.Fill=false,TimedTank.Drain=false,TimedTank.Green=false,TimedTank.Red=false@100|Everything OFF}} at {{t:100}} ms; {{v:TimedTank.Fill=true,TimedTank.Amber=true,TimedTank.Green=false@800|Fill and Amber ON}} at {{t:800}} ms; {{v:TimedTank.Fill=false,TimedTank.Drain=false,TimedTank.Red=true@1500|both valves closed and Red ON}} at {{t:1500}} ms; {{v:TimedTank.Green=true,TimedTank.Drain=false,TimedTank.Red=false@25000|Green ON and the drain closed}} at {{t:25000}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "The starter declares the inputs and outputs and has no logic. Keep a step number (0 idle, 1 fill, 2 hold, 3 drain), one TON for each timed step, and write the outputs from the step at the end of the program. The fill lasts 3.5 seconds: a TON with PT := T#3500ms.",
+      "checkpoint": "The program has a step variable, three timers and one assignment for each output."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs src/TimedTank.st against the tank of scene timed-tank, presses Start, operates the emergency stop and presses Start again, and tests {{assertions}} assertions: the outputs at fixed times, and that the tank never spills.",
+      "checkpoint": "The scenario is named timed-tank and passes all {{assertions}} assertions with saved host evidence."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Watch the tank fill while Amber is on, hold, then empty until the low switch. Relate the emergency stop at {{t:1000}} ms to the step: the cycle goes back to idle, so the press at {{t:4000}} ms starts a new one.",
+      "checkpoint": "The trace shows a first cycle aborted at the stop and a second cycle that ends in Green."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "A timer measures time, not volume: if the fill valve were slower the tank would hold less after the same 3.5 seconds. The drain waits for a sensor and the timer only limits the wait.",
+      "checkpoint": "Name the step where a timer replaces a sensor and the step where it backs one up."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Each timer is started by its step: FillT(IN := Step = 1, PT := T#3500ms). When its Q is TRUE, move to the next step."
+    },
+    {
+      "level": 2,
+      "text": "Start with IF NOT EStopOk THEN Step := 0; ELSIF Step = 0 AND Start THEN Step := 1; END_IF; then one block for each step: HoldT for two seconds, DrainT for twenty seconds with the exit condition LevelLow OR DrainT.Q. Finally Fill := Step = 1; Drain := Step = 3; Amber := Step <> 0; Red := NOT EStopOk, and Green is TRUE after a finished cycle."
+    }
+  ],
+  "faultCases": [
+    "The starter has no logic: no valve ever opens, so the cycle never runs."
+  ]
+}

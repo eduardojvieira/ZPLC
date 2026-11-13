@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-timed-tank",
+  "version": 1,
+  "order": 131,
+  "module": 13,
+  "level": "advanced",
+  "prerequisites": [
+    "timers-on-delay-off-delay"
+  ],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The tank, its valves and the emergency stop of this timed cycle are simulated, and the hardware track of the plant lessons opens in a later release, once plant I/O mode has been measured on a learner board.",
+        "es": "El tanque, sus válvulas y la parada de emergencia de este ciclo temporizado son simulados, y la ruta de hardware de las lecciones de planta se abre en una versión posterior, cuando el modo de E/S de planta se haya medido en una placa del estudiante."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the tank, its valves and the emergency stop are part of the scenario.",
+        "es": "Complétela en Simulación, donde el tanque, sus válvulas y la parada de emergencia forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "timed-tank",
+  "estimatedMinutes": 30,
+  "starter": {
+    "project": "plant_timed_tank_starter",
+    "program": "src/TimedTank.st"
+  },
+  "solution": {
+    "project": "plant_timed_tank",
+    "program": "src/TimedTank.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "timed-tank",
+    "path": "tests/timed-tank.scenario.json",
+    "sha256": "c4a53eaaa6932bd20ae2fb370135f9508121cc759ac4ff54ededa266661c082a"
+  },
+  "regressionScenarios": []
+}
