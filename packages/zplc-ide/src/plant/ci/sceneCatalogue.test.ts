@@ -28,6 +28,7 @@ describe('shipped scenes use the public format and catalogue', () => {
       'belt-to-belt-transfer',
       'three-axis-palletizing',
       'colour-separation',
+      'height-sorting-chain',
     ]);
   });
 

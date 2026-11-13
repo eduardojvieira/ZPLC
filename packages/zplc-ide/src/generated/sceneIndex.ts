@@ -105,5 +105,13 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
       "en": "Colour separation",
       "es": "Colour separation"
     }
+  },
+  {
+    "id": "height-sorting-chain",
+    "dir": "plant-scenes/height-sorting-chain",
+    "names": {
+      "en": "Height sorting with a chain transfer",
+      "es": "Height sorting with a chain transfer"
+    }
   }
 ];
