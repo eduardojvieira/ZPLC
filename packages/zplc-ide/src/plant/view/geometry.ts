@@ -1,4 +1,5 @@
 import type { BodyPose, PartView, Quat, Vec3 } from '../contracts';
+import type { Palette } from './displayModes';
 
 /** Shape descriptions generated in code (PRT-009): no asset is loaded. The renderer turns them into three geometry. */
 export type ShapeSpec =
@@ -58,6 +59,15 @@ export function partShape(view: PartView): ShapeSpec {
       return bladeShape(view);
     case 'sensor':
       return sensorShape(view);
+    // Manipulator parts (PRT-009): the pad is the pose box; the frame and beam are secondary views drawn from their own poses.
+    case 'pick-place':
+    case 'gantry':
+    case 'layer-palletizer':
+    case 'manipulator-frame':
+    case 'manipulator-beam':
+    case 'lid':
+    case 'base':
+      return { shape: 'box', size: view.pose.size };
     // Tank and operator panel parts (PRT-009): the pose box, drawn by the renderer; the tank is translucent and carries a fill.
     case 'tank':
     case 'selector-switch':
@@ -73,7 +83,7 @@ export function partShape(view: PartView): ShapeSpec {
 /** A box drawn inside a part: `centre` is relative to the part's own centre. `tone` names its colour in the renderer. */
 export interface Decor {
   slot: string;
-  tone: 'fill' | 'red' | 'amber' | 'green';
+  tone: 'fill' | 'red' | 'amber' | 'green' | 'jaw';
   lit: boolean;
   size: Vec3;
   centre: Vec3;
@@ -102,8 +112,31 @@ export function stackLamps(view: PartView): Decor[] {
   }));
 }
 
+const GRIPPER_PARTS: ReadonlySet<string> = new Set(['pick-place', 'gantry', 'layer-palletizer']);
+
+/**
+ * A manipulator's gripper under its pad (VIS-003): a clamp is two jaws whose gap shrinks as `closeFraction` grows,
+ * a vacuum gripper a flat suction skirt. Only the shape differs, so the variant is not told by colour alone.
+ */
+export function gripperDecor(view: PartView): Decor[] {
+  const [w, h, d] = view.pose.size;
+  if (view.state.gripper === 'vacuum') {
+    return [{ slot: 'skirt', tone: 'jaw', lit: true, size: [w * 0.6, h * 0.5, d * 0.6], centre: [0, -h, 0] }];
+  }
+  if (view.state.gripper !== 'clamp') return [];
+  const close = clamp01(num(view.state.closeFraction, 0));
+  const jawW = w * 0.08;
+  const reach = (w / 2) * (1 - close) + jawW / 2; // from open (pad edge) to closed (meeting at the centre)
+  const size: Vec3 = [jawW, h * 4, d];
+  return [
+    { slot: 'jaw-a', tone: 'jaw', lit: true, size, centre: [-reach, -h * 2.5, 0] },
+    { slot: 'jaw-b', tone: 'jaw', lit: true, size, centre: [reach, -h * 2.5, 0] },
+  ];
+}
+
 /** Boxes drawn inside a part, by catalogue id; empty for a part with none. */
 export function partDecor(view: PartView): readonly Decor[] {
+  if (GRIPPER_PARTS.has(view.part)) return gripperDecor(view);
   if (view.part === 'tank') return [tankFill(view)];
   if (view.part === 'stack-light') return stackLamps(view);
   return [];
@@ -156,8 +189,22 @@ const ITEM_COLORS: Readonly<Record<BodyPose['kind'], Vec3>> = {
   item: [0.3, 0.6, 0.85],
 };
 
+/** Lids and bases (VIS-009) are told from a box by tone; a tagless item keeps its kind's colour. */
+const TAG_COLORS: Readonly<Record<'lid' | 'base', Vec3>> = {
+  lid: [0.85, 0.85, 0.9],
+  base: [0.2, 0.35, 0.3],
+};
+
+/** The tone of a tagged item under a palette: its three tags stay three different colours in every display mode. */
+export function itemTone(tag: BodyPose['tag'], palette: Palette): number {
+  return tag === 'lid' ? palette.sensorOn : tag === 'base' ? palette.belt : palette.item;
+}
+
 export function instanceColors(items: readonly BodyPose[], out?: Float32Array): Float32Array {
   const c = out && out.length >= items.length * 3 ? out : new Float32Array(items.length * 3);
-  items.forEach((item, i) => c.set(ITEM_COLORS[item.kind] ?? ITEM_COLORS.item, i * 3));
+  items.forEach((item, i) => {
+    const tagged = item.tag === 'lid' || item.tag === 'base' ? TAG_COLORS[item.tag] : undefined;
+    c.set(tagged ?? ITEM_COLORS[item.kind] ?? ITEM_COLORS.item, i * 3);
+  });
   return c;
 }
