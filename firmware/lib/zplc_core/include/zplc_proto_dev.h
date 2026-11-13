@@ -245,6 +245,7 @@ struct zplc_proto_dev {
   zplc_proto_link_t *owner;
   uint32_t session_id;
   uint32_t last_session_id;
+  uint32_t plant_session; /**< session that entered plant I/O mode, 0 when none (D-16: the mode belongs to it) */
   uint32_t last_activity_ms;
   uint8_t session_key[ZPLC_PROTO_KEY_BYTES];
   uint16_t owned[ZPLC_PROTO_OWNED_FORCES];

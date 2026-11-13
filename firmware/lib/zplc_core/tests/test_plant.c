@@ -10,6 +10,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <zplc_core.h>
@@ -602,8 +603,71 @@ static void plant_response_outputs_come_from_one_snapshot(void) {
   CHECK((rsp[8] & 0x01U) == 0x01U, "flags bit 0: mirror");
 }
 
+static void plant_enter_rejects_an_empty_entry(void) {
+  uint8_t req[4] = {0xF4U, 0x01U, 0U, 0U};
+  uint8_t rsp[16];
+  uint16_t rl = 0U;
+  uint16_t offs[1] = {0U};
+  uint8_t specs[1] = {T_BOOL(0)};
+
+  printf("\n=== plant_enter_rejects_an_empty_entry ===\n");
+  start();
+  CHECK(zplc_plant_enter(req, 4U, rsp, &rl) == ERR_BAD, "neither inputs nor outputs is BAD_REQUEST");
+  CHECK(zplc_plant_active() == 0, "still inactive");
+  CHECK(enter_with(0U, 1U, offs, specs) == 0, "an entry with outputs only stays legal");
+  CHECK(zplc_plant_exit(0U) == 0, "closed");
+}
+
+/* LNK-018: the response of a frame (13 + output bytes) must fit the capacity the link gives; nothing is written past it.
+ * The buffers are exact heap blocks, so ASan flags a single byte too many. */
+static void plant_responses_never_exceed_the_given_capacity(void) {
+  uint8_t req[4 + 3 + 3 * 32];
+  uint8_t frame[7] = {1U, 0U, 1U, 0U, 0U, 0U, 1U};
+  uint8_t *rsp;
+  uint16_t rl = 0U;
+  unsigned i;
+
+  printf("\n=== plant_responses_never_exceed_the_given_capacity ===\n");
+  start();
+  req[0] = 0xF4U;
+  req[1] = 0x01U;
+  req[2] = 1U;
+  req[3] = 32U;
+  req[4] = 0U;
+  req[5] = 0U;
+  req[6] = T_BOOL(0);
+  for (i = 0U; i < 32U; i++) {
+    req[7 + 3 * i] = (uint8_t)(4U * i);
+    req[8 + 3 * i] = 0U;
+    req[9 + 3 * i] = T_REAL;
+  }
+  rsp = malloc(63U);
+  CHECK(rsp != NULL, "buffer");
+  CHECK(zplc_plant_enter_bounded(req, (uint16_t)sizeof(req), rsp, 63U, &rl) == ERR_RANGE,
+        "an entry whose frame response (141 bytes) exceeds the capacity (63) is refused");
+  CHECK(zplc_plant_active() == 0, "and the mode is not entered");
+  free(rsp);
+  rsp = malloc(141U);
+  CHECK(rsp != NULL, "buffer");
+  CHECK(zplc_plant_enter_bounded(req, (uint16_t)sizeof(req), rsp, 141U, &rl) == 0, "the same entry with exactly enough room is granted");
+  free(rsp);
+  rsp = malloc(100U);
+  CHECK(rsp != NULL, "buffer");
+  CHECK(zplc_plant_frame_bounded(frame, sizeof(frame), rsp, 100U, &rl) == ERR_RANGE,
+        "a frame on a link with a smaller capacity is refused, with no write past the buffer");
+  {
+    zplc_plant_stats_t st;
+    zplc_plant_get_stats(&st);
+    CHECK(st.frames == 0U && st.rejected == 0U, "and it is neither staged nor counted");
+  }
+  free(rsp);
+  CHECK(zplc_plant_exit(0U) == 0, "closed");
+}
+
 int main(void) {
   CHECK(zplc_core_init() == 0, "core init");
+  plant_enter_rejects_an_empty_entry();
+  plant_responses_never_exceed_the_given_capacity();
   plant_enter_accepts_the_vector();
   plant_enter_rejects_too_many_slots();
   plant_enter_rejects_input_in_system_registers();

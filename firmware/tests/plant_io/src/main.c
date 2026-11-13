@@ -369,12 +369,12 @@ static int engine_enter(void *c, const uint8_t *req, uint16_t len, uint8_t *rsp,
   if (zplc_sched_get_state() != ZPLC_SCHED_STATE_RUNNING) {
     return (int)ZPLC_PROTO_ERR_STATE;
   }
-  return zplc_plant_enter(req, len, rsp, rsp_len);
+  return zplc_plant_enter_bounded(req, len, rsp, *rsp_len, rsp_len);
 }
 
 static int engine_frame(void *c, const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t *rsp_len) {
   ARG_UNUSED(c);
-  return zplc_plant_frame(req, len, rsp, rsp_len);
+  return zplc_plant_frame_bounded(req, len, rsp, *rsp_len, rsp_len);
 }
 
 static int engine_exit(void *c, uint8_t reason, uint8_t *rsp, uint16_t *rsp_len) {

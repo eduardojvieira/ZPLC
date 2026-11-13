@@ -618,7 +618,7 @@ static void attack_entry_timeout_and_counts(void) {
   CHECK(zplc_plant_exit(0U) == 0, "closed");
   CHECK(enter_desc(500U, 33U, 0U, one_in, 3U) == ERR_BAD, "n_in above the slot limit is BAD_REQUEST (the lengths cannot add up either)");
   /* The plan (F5 list): "one with neither is BAD_REQUEST". R-M6-1 does not list it; the mode is harmless but empty. */
-  ADVISORY(enter_desc(500U, 0U, 0U, one_in, 0U) == ERR_BAD, "an entry with neither inputs nor outputs is BAD_REQUEST (plan F5 text)");
+  CHECK(enter_desc(500U, 0U, 0U, one_in, 0U) == ERR_BAD, "an entry with neither inputs nor outputs is BAD_REQUEST (plan F5 text)");
   (void)zplc_plant_exit(0U);
 
   setup(0, 1);
@@ -904,8 +904,8 @@ static void attack_latch_lock_miss_does_not_hand_the_input_back_to_the_pin(void)
   (void)scan(&report);
   lock_fail = 0;
   CHECK(report.faulted == 0U, "the scan was not delayed or faulted by the lock");
-  BLOCKER((ipi()[0] & 1U) == 1U, "R-M6-3: a latch that misses the lock goes on with the values already in the image (DI0 stays on)");
-  BLOCKER((opi()[0] & 1U) == 1U, "the program does not see its bound input fall to the pin level for one scan");
+  CHECK((ipi()[0] & 1U) == 1U, "R-M6-3: a latch that misses the lock goes on with the values already in the image (DI0 stays on)");
+  CHECK((opi()[0] & 1U) == 1U, "the program does not see its bound input fall to the pin level for one scan");
   CHECK(stats().late >= 1U, "the scan was counted late");
   CHECK(send_a(1U) == 0, "the next frame is accepted");
   (void)scan(&report);
@@ -1087,11 +1087,11 @@ static int m_enter(void *c, const uint8_t *req, uint16_t len, uint8_t *rsp, uint
   if (zplc_sched_core_is_running(&core) == 0) {
     return ERR_STATE;
   }
-  return zplc_plant_enter(req, len, rsp, rl);
+  return zplc_plant_enter_bounded(req, len, rsp, *rl, rl);
 }
 static int m_frame(void *c, const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t *rl) {
   (void)c;
-  return zplc_plant_frame(req, len, rsp, rl);
+  return zplc_plant_frame_bounded(req, len, rsp, *rl, rl);
 }
 /* lk_plant_exit: hold first (mirror off), stop while the mode is still active, then leave; BUSY when the stop is refused. */
 static int m_exit(void *c, uint8_t reason, uint8_t *rsp, uint16_t *rl) {
@@ -1409,9 +1409,9 @@ static void attack_engine_response_larger_than_the_negotiated_payload(void) {
   frame_rc = ask(&a, ZPLC_PROTO_MSG_PLANT_FRAME, frame, sizeof(frame));
   /* The entry is granted, the frame is staged and counted, and every response is FAILED: the plant never gets its outputs,
    * while its frames keep the timeout alive. The entry should have been refused (RANGE or TOO_LARGE). */
-  ADVISORY(enter_rc != 0 || frame_rc == 0,
-           "an entry whose frame response cannot fit the negotiated payload is refused at entry, not failed at every frame");
-  ADVISORY(!(frame_rc != 0 && stats().frames == 1U), "a frame whose response failed was not applied");
+  CHECK(enter_rc != 0 || frame_rc == 0,
+        "an entry whose frame response cannot fit the negotiated payload is refused at entry, not failed at every frame");
+  CHECK(!(frame_rc != 0 && stats().frames == 1U), "a frame whose response failed was not applied");
 }
 
 static void attack_engine_exit_orphaned_when_the_stop_is_refused(void) {
@@ -1433,9 +1433,11 @@ static void attack_engine_exit_orphaned_when_the_stop_is_refused(void) {
   CHECK(open_session(&b, 0U) == 0, "B opens a new session");
   /* ADVISORY: the mode outlived its session (COM-020) for at most the staleness bound; in that window another session
    * can drive it. Mirroring is a person's choice per session (D-16): B did not enter this mode. */
-  ADVISORY(ask(&b, ZPLC_PROTO_MSG_PLANT_MIRROR, &on, 1U) != 0, "a session that did not enter the mode cannot turn its mirror on");
+  CHECK(ask(&b, ZPLC_PROTO_MSG_PLANT_MIRROR, &on, 1U) == ERR_STATE, "a session that did not enter the mode cannot turn its mirror on");
   pins_unsafe = (uint8_t)(zplc_plant_holds_outputs() == 0 ? 1U : 0U);
-  ADVISORY(pins_unsafe == 0U, "the orphaned mode still holds the outputs");
+  CHECK(pins_unsafe == 0U, "the orphaned mode still holds the outputs");
+  CHECK(ask(&b, ZPLC_PROTO_MSG_PLANT_EXIT, NULL, 0U) == ERR_STATE, "nor can it end it (exit from another session is STATE)");
+  CHECK(zplc_plant_active() == 1, "the refusals left the mode alone");
   model_stop_busy = 0;
 }
 
