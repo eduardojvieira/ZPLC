@@ -41,5 +41,13 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
       "en": "Merge two lines",
       "es": "Merge two lines"
     }
+  },
+  {
+    "id": "timed-tank",
+    "dir": "plant-scenes/timed-tank",
+    "names": {
+      "en": "Timed tank",
+      "es": "Timed tank"
+    }
   }
 ];

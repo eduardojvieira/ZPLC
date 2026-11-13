@@ -14,7 +14,7 @@ Una planta es un modelo de una máquina pequeña: cintas, cajas, sensores, pulsa
 - **Un documento del área del editor.** El comando Planta lo abre junto al programa, de modo que usted ve ambos a la vez. La interfaz la llama "Planta".
 - **Un modelo con una sola verdad.** El núcleo de la planta es un modelo sin interfaz. La ejecución en vivo, la ejecución calificada y las pruebas de escenario usan ese mismo núcleo y el mismo mapa de señales. Nada se califica a partir de píxeles.
 - **Un modelo con reloj compartido.** La planta y el programa avanzan juntos. Consulte [El reloj de la planta](./clock.md).
-- **Hecha de piezas.** Una escena lista piezas de un catálogo fijo. Consulte la [referencia de piezas](./parts.md), el [formato del archivo de escena](./scene-format.md) y las [cinco primeras escenas](./scenes.md).
+- **Hecha de piezas.** Una escena lista piezas de un catálogo fijo. Consulte la [referencia de piezas](./parts.md), el [formato del archivo de escena](./scene-format.md) y las [escenas incluidas](./scenes.md).
 
 ## Qué no es la planta
 
@@ -30,5 +30,5 @@ La tasa de cuadros, la latencia del enlace y las placas compatibles son afirmaci
 
 - [El reloj de la planta](./clock.md): un solo reloj, y qué hace un punto de interrupción con la planta.
 - [Formato del archivo de escena](./scene-format.md): los campos, los límites y `schemaVersion`.
-- [Las cinco primeras escenas](./scenes.md): qué enseña cada escena y qué comprueba su escenario.
+- [Las escenas incluidas](./scenes.md): qué enseña cada escena y qué comprueba su escenario.
 - [Referencia de piezas de la planta](./parts.md): cada pieza, sus ajustes y sus señales.

@@ -1,18 +1,19 @@
 ---
-title: 'Las cinco primeras escenas'
-sidebar_label: 'Las cinco primeras escenas'
-description: 'Las cinco escenas que se incluyen con ZPLC, qué debe hacer el programa en cada una y qué comprueba su escenario.'
+title: 'Las escenas incluidas'
+sidebar_label: 'Las escenas incluidas'
+description: 'Las escenas que se incluyen con ZPLC, qué debe hacer el programa en cada una y qué comprueba su escenario.'
 tags: [plant, scenes]
 ---
 
-# Las cinco primeras escenas
+# Las escenas incluidas
 
-ZPLC incluye cinco escenas, en orden de dificultad. Cada una tiene un archivo de escena, un mapa de la planta, un programa inicial, un escenario y un programa de referencia que pasa el escenario. El escenario corre en el entorno de ejecución nativo con un ciclo de 10 ms y comprueba salidas del programa y hechos de la planta. El nombre de un hecho empieza con `fact:`, como `fact:count:EyeFar`. Una comprobación sobre un hecho es un sí o un no. Los nombres de las escenas son los de sus archivos, en inglés.
+ZPLC incluye estas escenas, en orden de dificultad. Cada una tiene un archivo de escena, un mapa de la planta, un programa inicial, un escenario y un programa de referencia que pasa el escenario. El escenario corre en el entorno de ejecución nativo con un ciclo de 10 ms y comprueba salidas del programa y hechos de la planta. El nombre de un hecho empieza con `fact:`, como `fact:count:EyeFar`. Una comprobación sobre un hecho es un sí o un no. Los nombres de las escenas son los de sus archivos, en inglés.
 
 | Escena                      | Duración del escenario | Piezas                                                                                                        |
 | --------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------- |
 | `Belt to sensor`            | 8 s                    | cinta, emisor, sensor difuso, pulsador                                                                        |
 | `Latch between two sensors` | 8 s                    | cinta, caja, dos sensores difusos                                                                             |
+| `Timed tank`                | 25 s                   | tanque, pulsador, paro de emergencia, torre de luces                                                          |
 | `Counted queue`             | 20 s                   | cinta, emisor, dos sensores difusos, retirador, pulsador, piloto luminoso                                     |
 | `Buffer and release`        | 36 s                   | dos cintas, emisor, tope retráctil, tres sensores difusos, retirador, dos pulsadores, dos pilotos luminosos   |
 | `Merge two lines`           | 25 s                   | tres cintas, dos emisores, dos topes retráctiles, tres sensores difusos, retirador, pulsador, piloto luminoso |
@@ -28,6 +29,12 @@ El escenario pulsa el botón de inicio y comprueba que la cinta está apagada an
 Una caja viaja por una cinta frente a dos sensores. El primer sensor arranca la cinta y el segundo la detiene. Es un enclavamiento de activación y desactivación.
 
 El escenario comprueba que el primer sensor cuenta una caja en menos de 100 ms, que el segundo cuenta una en menos de 8 s, que la cinta está apagada al final y que no cae ninguna caja.
+
+## Timed tank
+
+Llene un tanque durante un tiempo fijo con un temporizador, manténgalo lleno un momento y luego vacíelo hasta que el interruptor de nivel bajo indique un nivel bajo. Una pulsación del botón de inicio comienza el ciclo. El paro de emergencia cierra las dos válvulas en cualquier momento y enciende la luz roja.
+
+El escenario pulsa el inicio, pulsa el paro de emergencia a mitad del llenado y lo suelta, y vuelve a pulsar el inicio. Comprueba que las válvulas y las luces están apagadas antes del inicio, que la válvula de llenado y la luz ámbar están encendidas durante el llenado, que las dos válvulas están cerradas y la luz roja encendida durante el paro de emergencia, que la luz verde está encendida y la válvula de vaciado cerrada a los 25 s, y que el tanque nunca rebosa.
 
 ## Counted queue
 

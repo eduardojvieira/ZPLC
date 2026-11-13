@@ -14,7 +14,7 @@ A plant is a model of a small machine: belts, boxes, sensors, buttons and lights
 - **A document of the editor area.** The Plant command opens it beside the program, so you can see both at once. The interface calls it "Plant".
 - **A model with one truth.** The plant core is a headless model. The live run, the graded run and the scenario tests all use that same core and the same signal map. Nothing is graded from pixels.
 - **A model with a shared clock.** The plant and the program advance together. See [The plant clock](./clock.md).
-- **Made of parts.** A scene lists parts from a fixed catalogue. See the [parts reference](./parts.md), the [scene file format](./scene-format.md) and the [first five scenes](./scenes.md).
+- **Made of parts.** A scene lists parts from a fixed catalogue. See the [parts reference](./parts.md), the [scene file format](./scene-format.md) and the [shipped scenes](./scenes.md).
 
 ## What the plant is not
 
@@ -30,5 +30,5 @@ Frame rate, link latency and supported boards are claims that need recorded evid
 
 - [The plant clock](./clock.md): one clock, and what a breakpoint does to the plant.
 - [Scene file format](./scene-format.md): the fields, the limits and `schemaVersion`.
-- [The first five scenes](./scenes.md): what each scene teaches and what its scenario checks.
+- [The shipped scenes](./scenes.md): what each scene teaches and what its scenario checks.
 - [Plant parts reference](./parts.md): every part, its settings and its signals.
