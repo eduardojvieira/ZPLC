@@ -12,6 +12,8 @@ export interface OperationalStatusPresentation {
   taskIntervalMs?: number;
   taskCount?: number;
   overruns?: number;
+  /** How many forces are active, when some are (FLW-011); the banner below carries the sentence. */
+  forceCount?: number;
   force?: { kind: 'active' | 'unconfirmed'; text: string };
   /** What the connected runtime does not have or has only in part, when it is the browser runtime (IDE-025). */
   limits?: string;
@@ -152,6 +154,7 @@ export function presentOperationalStatus(input: OperationalStatusInput): Operati
     ...(cycleCount !== undefined ? { cycles: cycleCount } : {}),
     ...taskMetrics(input.projectTasks),
     ...(overruns !== undefined ? { overruns } : {}),
+    ...(forceCount !== undefined && forceCount > 0 ? { forceCount } : {}),
     ...(force ? { force } : {}),
     ...(wasmConnected ? { limits: browserRuntimeLimits() } : {}),
   };
