@@ -59,6 +59,14 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     }
   },
   {
+    "id": "three-axis-palletizing",
+    "dir": "plant-scenes/three-axis-palletizing",
+    "names": {
+      "en": "Three-axis palletizing",
+      "es": "Three-axis palletizing"
+    }
+  },
+  {
     "id": "timed-tank",
     "dir": "plant-scenes/timed-tank",
     "names": {
