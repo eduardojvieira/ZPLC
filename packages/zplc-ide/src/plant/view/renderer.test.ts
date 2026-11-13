@@ -161,7 +161,10 @@ function fakeThree() {
     add(...o: unknown[]) {
       this.children.push(...o);
     }
-    remove() {}
+    userData: Record<string, unknown> = {};
+    remove(o: unknown) {
+      this.children = this.children.filter((c) => c !== o);
+    }
     lookAt() {}
   }
   const mats: Material[] = [];
@@ -189,7 +192,30 @@ function fakeThree() {
     }
   };
   const colorsSet: number[] = [];
+  // Outline materials are kept apart from `mats` so the creation-order assertions on the filled materials hold.
+  class Plain extends Obj {
+    color: Color;
+    wireframe: boolean;
+    constructor(o: { color?: number; wireframe?: boolean } = {}) {
+      super();
+      this.color = new Color(o.color ?? 0xffffff);
+      this.wireframe = o.wireframe ?? false;
+    }
+    dispose() {}
+  }
   const THREE = {
+    LineBasicMaterial: Plain,
+    MeshBasicMaterial: Plain,
+    EdgesGeometry: Geometry,
+    LineSegments: class extends Obj {
+      isLine = true;
+      constructor(
+        public geometry: unknown,
+        public material: Plain,
+      ) {
+        super();
+      }
+    },
     Color,
     Scene: class extends Obj {
       background: Color | null = null;
@@ -208,6 +234,12 @@ function fakeThree() {
     },
     Mesh: mesh,
     InstancedMesh: class extends Obj {
+      constructor(
+        public geometry: unknown,
+        public material: Plain,
+      ) {
+        super();
+      }
       instanceMatrix = { array: new Float32Array(16 * 512), setUsage() {}, needsUpdate: false };
       instanceColor = { needsUpdate: false };
       count = 0;
@@ -231,6 +263,18 @@ function fakeThree() {
     },
   };
   return { THREE: THREE as unknown as typeof import('three'), drawn, colorsSet, mats, scenes };
+}
+
+/** Every outline in the scene: edge lines on parts and wireframe instanced passes, with their colours. */
+function outlinesOf(world: { children: unknown[] } | undefined): { kind: 'line' | 'items'; hex: number }[] {
+  const found: { kind: 'line' | 'items'; hex: number }[] = [];
+  const visit = (o: { children?: unknown[]; isLine?: boolean; material?: { wireframe?: boolean; color?: { hex: number } } }): void => {
+    if (o.material?.wireframe) found.push({ kind: 'items', hex: o.material.color?.hex ?? -1 });
+    else if (o.isLine && o.material?.color) found.push({ kind: 'line', hex: o.material.color.hex });
+    for (const c of o.children ?? []) visit(c as typeof o);
+  };
+  for (const c of world?.children ?? []) visit(c as Parameters<typeof visit>[0]);
+  return found;
 }
 
 describe('display preferences reach the renderer', () => {
@@ -325,5 +369,69 @@ describe('display preferences reach the renderer', () => {
   it('VIS-009 an unavailable renderer has nothing to drive, and the panel helper tolerates it', () => {
     const r = createRenderer(fakeCanvas(null).canvas, scene, { quality: 'low' }, {} as typeof THREE);
     expect('setPalette' in r).toBe(false);
+  });
+
+  const withBlade = {
+    items: snapshot.items,
+    parts: [view('belt'), { ...view('sensor'), id: 's' }, { ...view('blade'), id: 'k' }],
+  } as unknown as Parameters<ReturnType<typeof build>['r']['setSnapshot']>[0];
+  const hc = paletteFor({ mode: 'high-contrast', reducedMotion: false });
+
+  it('VIS-009 high contrast outlines sensors, blades and items in the outline colour, and not belts', () => {
+    const { r, scenes } = build();
+    r.setSnapshot(withBlade);
+    expect(outlinesOf(scenes[0])).toEqual([]); // no palette yet: nothing outlined
+    r.setPalette?.(hc);
+    const found = outlinesOf(scenes[0]);
+    expect(found.filter((o) => o.kind === 'line').length).toBe(2); // sensor + blade, not the belt
+    expect(found.filter((o) => o.kind === 'items').length).toBe(1);
+    expect(found.every((o) => o.hex === 0xffffff)).toBe(true);
+  });
+
+  it('VIS-009 the light and dark palettes draw no outlines, and switching back removes them', () => {
+    const { r, scenes } = build();
+    r.setSnapshot(withBlade);
+    for (const mode of ['light', 'dark'] as const) {
+      r.setPalette?.(paletteFor({ mode, reducedMotion: false }));
+      expect(outlinesOf(scenes[0])).toEqual([]);
+    }
+    r.setPalette?.(hc);
+    expect(outlinesOf(scenes[0]).length).toBe(3);
+    r.setPalette?.(paletteFor({ mode: 'light', reducedMotion: false }));
+    expect(outlinesOf(scenes[0])).toEqual([]);
+    r.setPalette?.(hc);
+    expect(outlinesOf(scenes[0]).length).toBe(3); // and they come back without duplicates
+  });
+
+  it('VIS-009 sensors and blades that appear after high contrast is set get outlines too', () => {
+    const { r, scenes } = build();
+    r.setPalette?.(hc);
+    r.setSnapshot(snapshot);
+    expect(outlinesOf(scenes[0]).filter((o) => o.kind === 'line').length).toBe(1); // the sensor
+    r.setSnapshot(withBlade);
+    expect(outlinesOf(scenes[0]).filter((o) => o.kind === 'line').length).toBe(2);
+    r.setSnapshot({ ...withBlade, parts: [] });
+    expect(outlinesOf(scenes[0]).filter((o) => o.kind === 'line').length).toBe(0);
+  });
+
+  it('VIS-009 items added later are outlined, including after the instance buffer grows', () => {
+    const { r, scenes } = build();
+    r.setPalette?.(hc);
+    const many = { items: Array.from({ length: 300 }, () => pose({ kind: 'item' })), parts: [] } as unknown as typeof snapshot;
+    r.setSnapshot(many);
+    const passes = scenes[0]?.children.filter((c) => (c as { material?: { wireframe?: boolean } }).material?.wireframe) as {
+      count: number;
+    }[];
+    expect(passes.length).toBe(1);
+    expect(passes[0]?.count).toBe(300);
+  });
+
+  it('VIS-009 outlines do not throw after dispose', () => {
+    const { r } = build();
+    r.setSnapshot(withBlade);
+    r.setPalette?.(hc);
+    r.dispose();
+    expect(() => r.setPalette?.(hc)).not.toThrow();
+    expect(() => r.setSnapshot(withBlade)).not.toThrow();
   });
 });

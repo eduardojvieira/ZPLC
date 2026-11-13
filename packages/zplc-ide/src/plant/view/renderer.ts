@@ -119,6 +119,9 @@ const easeToward = (a: CameraState, b: CameraState): CameraState => ({
   target: a.target.map((v, i) => v + ((b.target[i] ?? 0) - v) * EASE) as unknown as CameraState['target'],
 });
 
+/** Pushes filled faces back a little so the outline drawn on them (VIS-009) does not flicker. */
+const NO_Z_FIGHT = { polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 } as const;
+
 const PART_COLORS: Readonly<Record<string, number>> = {
   belt: 0x4b5563,
   roller: 0x6b7280,
@@ -185,7 +188,7 @@ export function createRenderer(
   world.add(floor);
 
   const unitBox = new THREE.BoxGeometry(1, 1, 1);
-  const itemMaterial = new THREE.MeshStandardMaterial({ roughness: 0.8 });
+  const itemMaterial = new THREE.MeshStandardMaterial({ roughness: 0.8, ...NO_Z_FIGHT });
   let capacity = 256;
   let items = new THREE.InstancedMesh(unitBox, itemMaterial, capacity);
   items.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -208,7 +211,7 @@ export function createRenderer(
   const materialFor = (part: string): THREE_NS.MeshStandardMaterial => {
     let m = partMaterials.get(part);
     if (!m) {
-      m = new THREE.MeshStandardMaterial({ color: partColor(part), roughness: 0.7 });
+      m = new THREE.MeshStandardMaterial({ color: partColor(part), roughness: 0.7, ...NO_Z_FIGHT });
       partMaterials.set(part, m);
     }
     return m;
@@ -218,6 +221,12 @@ export function createRenderer(
   let goal: CameraState | null = null; // a preset the camera is still easing toward
   let animate = true;
   let palette: Palette | null = null;
+  // Outlines (VIS-009): built lazily, only while the palette has an outline colour.
+  let lineMaterial: THREE_NS.LineBasicMaterial | undefined;
+  let wireMaterial: THREE_NS.MeshBasicMaterial | undefined;
+  let itemOutline: THREE_NS.InstancedMesh | undefined;
+  const edges = new Map<string, THREE_NS.BufferGeometry>();
+  const partOutlines = new Map<string, { line: THREE_NS.LineSegments; key: string }>();
   let lastItems: PlantSnapshot['items'] = [];
   const partColor = (part: string): number => {
     if (palette && part === 'sensor') return palette.sensorOn;
@@ -285,9 +294,52 @@ export function createRenderer(
   };
   raf = requestAnimationFrame(frame);
 
+  /** Sensors and blades get edge lines; items get a wireframe pass that shares the item matrices (one extra draw call). */
+  const applyOutlines = (): void => {
+    const colour = palette?.outline ?? null;
+    if (colour === null) {
+      for (const [id, o] of partOutlines) {
+        partMeshes.get(id)?.mesh.remove(o.line);
+        partOutlines.delete(id);
+      }
+      if (itemOutline) world.remove(itemOutline);
+      itemOutline = undefined;
+      return;
+    }
+    lineMaterial ??= new THREE.LineBasicMaterial({ color: colour });
+    wireMaterial ??= new THREE.MeshBasicMaterial({ color: colour, wireframe: true });
+    lineMaterial.color.set(colour);
+    wireMaterial.color.set(colour);
+    for (const [id, entry] of partMeshes) {
+      const part = (entry.mesh.userData as { part?: string }).part;
+      const current = partOutlines.get(id);
+      if (part !== 'sensor' && part !== 'blade') continue;
+      if (current?.key === entry.key) continue;
+      if (current) entry.mesh.remove(current.line);
+      let g = edges.get(entry.key);
+      if (!g) {
+        g = new THREE.EdgesGeometry(entry.mesh.geometry);
+        edges.set(entry.key, g);
+      }
+      const line = new THREE.LineSegments(g, lineMaterial);
+      entry.mesh.add(line);
+      partOutlines.set(id, { line, key: entry.key });
+    }
+    for (const id of partOutlines.keys()) if (!partMeshes.has(id)) partOutlines.delete(id);
+    if (!itemOutline) {
+      itemOutline = new THREE.InstancedMesh(unitBox, wireMaterial, capacity);
+      itemOutline.instanceMatrix = items.instanceMatrix;
+      itemOutline.frustumCulled = false;
+      world.add(itemOutline);
+    }
+    itemOutline.count = items.count;
+  };
+
   const growItems = (needed: number): void => {
     while (capacity < needed) capacity *= 2;
     world.remove(items);
+    if (itemOutline) world.remove(itemOutline);
+    itemOutline = undefined; // applyOutlines rebuilds it on the new buffer
     items.dispose();
     items = new THREE.InstancedMesh(unitBox, itemMaterial, capacity);
     items.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -332,6 +384,7 @@ export function createRenderer(
           const mesh = new THREE.Mesh(geometryFor(spec, key), materialFor(view.part));
           mesh.castShadow = true;
           mesh.receiveShadow = true;
+          mesh.userData = { part: view.part };
           world.add(mesh);
           entry = { mesh, key };
           partMeshes.set(view.id, entry);
@@ -348,6 +401,7 @@ export function createRenderer(
           partMeshes.delete(id);
         }
       }
+      applyOutlines();
       dirty = true;
     },
     setQuality(level) {
@@ -385,6 +439,7 @@ export function createRenderer(
       (floor.material as THREE_NS.MeshStandardMaterial).color.set(next.floor);
       partMaterials.forEach((m, part) => m.color.set(partColor(part)));
       paintItems();
+      applyOutlines();
       dirty = true;
     },
     setCameraAnimation(enabled) {
@@ -413,6 +468,9 @@ export function createRenderer(
       stopWatching();
       listeners.clear();
       geometries.forEach((g) => g.dispose());
+      edges.forEach((g) => g.dispose());
+      lineMaterial?.dispose();
+      wireMaterial?.dispose();
       partMaterials.forEach((m) => m.dispose());
       (ghost?.material as THREE_NS.Material | undefined)?.dispose();
       unitBox.dispose();
