@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "zplc_debug.h"
+#include "zplc_proto_defs.h"
 #include "zplc_sched_core.h"
 
 /* ============================================================================
@@ -31,6 +32,19 @@ static void trace(const zplc_sched_core_t *core, zplc_sched_trace_kind_t kind, u
     core->trace(core->trace_ctx, kind, task_id, a, b);
   }
 }
+
+/* The plant I/O mode (LNK-010, LNK-011): installed by the adapter that carries it, NULL otherwise. */
+static const zplc_sched_plant_t *plant_hooks;
+
+void zplc_sched_core_set_plant(const zplc_sched_plant_t *plant) { plant_hooks = plant; }
+
+static void plant_exit(uint8_t reason) {
+  if (plant_hooks != NULL && plant_hooks->exit != NULL) {
+    (void)plant_hooks->exit(reason);
+  }
+}
+
+void zplc_sched_core_plant_exit(void) { plant_exit((uint8_t)ZPLC_PROTO_PLANT_EXIT_REASON_RUN_CONTROL); }
 
 static void count_up(uint32_t *counter) {
   if (*counter != UINT32_MAX) {
@@ -412,6 +426,7 @@ int zplc_sched_core_latch_fault_image(zplc_sched_core_t *core, const zplc_sched_
   const int first = latch_state_locked(core, reason, task_id);
 
   leave(port, key);
+  plant_exit((uint8_t)ZPLC_PROTO_PLANT_EXIT_REASON_FAULT);
   trace(core, ZPLC_SCHED_TRACE_FAULT, task_id, (uint64_t)reason, 0U);
   if (first != 0 && port->fault_latched != NULL) {
     port->fault_latched(port->ctx, reason, task_id);
@@ -437,6 +452,7 @@ int zplc_sched_core_lock_failure(zplc_sched_core_t *core, const zplc_sched_port_
   const int first = latch_state_locked(core, ZPLC_SCHED_FAULT_LOCK, 0U);
 
   leave(port, key);
+  plant_exit((uint8_t)ZPLC_PROTO_PLANT_EXIT_REASON_FAULT);
   trace(core, ZPLC_SCHED_TRACE_FAULT, 0U, (uint64_t)ZPLC_SCHED_FAULT_LOCK, 0U);
   if (first != 0 && port->fault_latched != NULL) {
     port->fault_latched(port->ctx, ZPLC_SCHED_FAULT_LOCK, 0U);
@@ -482,6 +498,8 @@ int zplc_sched_core_apply_safe_outputs(zplc_sched_core_t *core, const zplc_sched
   }
   pins_result = port->drive_safe_pins != NULL ? port->drive_safe_pins(port->ctx) : 0;
   result = image_result != 0 ? image_result : pins_result;
+  /* The run is over and the outputs are safe: the plant mode never outlives it (R-M6-5). */
+  zplc_sched_core_plant_exit();
   if (result != 0) {
     (void)zplc_sched_core_fault(core, port, ZPLC_SCHED_FAULT_IO, 0U);
   }
@@ -655,6 +673,7 @@ int zplc_sched_core_scan(zplc_sched_core_t *core, const zplc_sched_port_t *port,
   int image_fault_result = 0;
   int sample_result = 0;
   int pause_safe_result = 0;
+  int plant_fired = 0;
   zplc_sched_fault_reason_t fault_reason = ZPLC_SCHED_FAULT_RUNTIME;
   uint16_t fault_task = 0U;
   uint64_t batch_start_us = 0U;
@@ -711,6 +730,15 @@ int zplc_sched_core_scan(zplc_sched_core_t *core, const zplc_sched_port_t *port,
   } else {
     if (port->latch_inputs != NULL) {
       port->latch_inputs(port->ctx);
+    }
+    /* The plant comes after the queued writes and the pins: a bound input takes the plant value (LNK-007). */
+    if (plant_hooks != NULL) {
+      if (plant_hooks->latch != NULL) {
+        plant_hooks->latch();
+      }
+      if (plant_hooks->tick != NULL) {
+        plant_fired = plant_hooks->tick() != 0;
+      }
     }
     count_up(&core->input_latch_count);
     count_up(&core->batch_count);
@@ -860,6 +888,10 @@ int zplc_sched_core_scan(zplc_sched_core_t *core, const zplc_sched_port_t *port,
     }
     leave(port, key);
     trace(core, ZPLC_SCHED_TRACE_PAUSE, 0U, 0U, 0U);
+    if (plant_hooks != NULL) {
+      zplc_sched_core_plant_exit();
+      plant_fired = 0;
+    }
     if (pause_safe_result != 0) {
       (void)zplc_sched_core_fault(core, port, ZPLC_SCHED_FAULT_IO, 0U);
     }
@@ -867,7 +899,12 @@ int zplc_sched_core_scan(zplc_sched_core_t *core, const zplc_sched_port_t *port,
 
   report->faulted = core->fault_latched;
   report->paused = (uint8_t)(paused != 0 && faulted == 0);
+  /* A fault already ended the mode through the fault latch. */
+  report->plant_exit = (uint8_t)(plant_fired != 0 && faulted == 0);
 
+  if (report->plant_exit != 0U && port->stop_releases != NULL) {
+    port->stop_releases(port->ctx);
+  }
   if (faulted != 0) {
     if (port->stop_releases != NULL) {
       port->stop_releases(port->ctx);
@@ -1007,6 +1044,12 @@ void zplc_io_capture_outputs(zplc_io_outputs_t *outputs) {
 zplc_hal_result_t zplc_io_write_outputs(const zplc_io_outputs_t *outputs, const zplc_io_ops_t *ops) {
   const size_t count = zplc_io_channel_count();
   size_t index;
+
+  /* LNK-010, R-M6-6: while the plant link feeds the program the pins stay safe; the image still carries the
+   * program's outputs for the plant. The level is chosen in zplc_io_drive_safe() and nowhere else. */
+  if (plant_hooks != NULL && plant_hooks->holds_outputs != NULL && plant_hooks->holds_outputs() != 0) {
+    return zplc_io_drive_safe(ops);
+  }
 
   if (count > ZPLC_IO_MAX_CHANNELS) {
     return ZPLC_HAL_ERROR;

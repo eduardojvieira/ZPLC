@@ -3894,6 +3894,10 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc, char **argv) {
 #include <zplc_proto_dev.h>
 #include <zplc_sha256.h>
 #include <zephyr/drivers/uart.h>
+#ifdef CONFIG_ZPLC_PLANT_IO
+#include <zephyr/spinlock.h>
+#include <zplc_plant.h>
+#endif
 #if defined(CONFIG_CSPRNG_ENABLED)
 #include <zephyr/random/random.h>
 #endif
@@ -4262,6 +4266,174 @@ static int lk_bp_list(void *context, uint16_t *pcs, size_t capacity, size_t *cou
   return 0;
 }
 
+#ifdef CONFIG_ZPLC_PLANT_IO
+/* ---- Plant I/O mode (LNK-007, LNK-010, LNK-011, LNK-012, LNK-018) --------------------------------------------------
+ * The module (zplc_plant.c) owns the slots, the validation and the staleness bound; this port gives it a lock that
+ * is only ever tried, a clock, and the one rule that completes every exit: the program stops, through the path of
+ * the STOP command, with the pins and the image safe, and nothing returns to the pins by itself (R-M6-5). */
+static struct k_spinlock lk_plant_spin;
+static k_spinlock_key_t lk_plant_key;
+static uint16_t lk_plant_id;
+static bool lk_plant_live; /* an entry that was made and whose exit event has not been pushed yet */
+
+#define LK_PLANT_STOP_TRIES 50
+#define LK_PLANT_STOP_WAIT_MS 2
+
+static int lk_plant_lock(void *context) {
+  ARG_UNUSED(context);
+  return k_spin_trylock(&lk_plant_spin, &lk_plant_key) == 0 ? 0 : -EBUSY;
+}
+
+static void lk_plant_unlock(void *context) {
+  ARG_UNUSED(context);
+  k_spin_unlock(&lk_plant_spin, lk_plant_key);
+}
+
+static uint32_t lk_plant_now(void *context) {
+  ARG_UNUSED(context);
+  return k_uptime_get_32();
+}
+
+static const zplc_plant_hooks_t lk_plant_hooks = {
+    .ctx = NULL,
+    .lock = lk_plant_lock,
+    .unlock = lk_plant_unlock,
+    .now_ms = lk_plant_now,
+};
+
+static int lk_plant_enter(void *context, const uint8_t *request, uint16_t length, uint8_t *response, uint16_t *response_length) {
+  int rc;
+
+  ARG_UNUSED(context);
+  /* The mode feeds a program that is running: entering a stopped or paused runtime is a state error (R-M6-1). */
+  if (zplc_sched_get_state() != ZPLC_SCHED_STATE_RUNNING) {
+    return (int)ZPLC_PROTO_ERR_STATE;
+  }
+  rc = zplc_plant_enter_bounded(request, length, response, *response_length, response_length);
+  if (rc == 0) {
+    lk_plant_id = (uint16_t)(response[0] | (response[1] << 8));
+    lk_plant_live = true;
+  }
+  return rc;
+}
+
+static int lk_plant_frame(void *context, const uint8_t *request, uint16_t length, uint8_t *response, uint16_t *response_length) {
+  ARG_UNUSED(context);
+  return zplc_plant_frame_bounded(request, length, response, *response_length, response_length);
+}
+
+/* Every exit that is not decided inside a scan (the person's PLANT_EXIT, the end of the session, the loss of the
+ * link) passes here, and it closes the window that a plain "leave the mode, then stop" would leave open (LNK-011):
+ * once the module is inactive a scan that is still running reads the pins and drives them from the image. So the
+ * outputs are held first (mirror off), the scheduler is stopped while the mode is still active, and only then does
+ * the module leave. A scan that runs meanwhile is still a plant-mode scan: the pins stay safe and it applies the
+ * values of the plant, never the pins. If the scheduler cannot be stopped (its lock is busy) the mode stays active
+ * and held, and the staleness bound ends it within the timeout; the pins are never given back to a running
+ * program. */
+static int lk_plant_exit(void *context, uint8_t reason, uint8_t *response, uint16_t *response_length) {
+  zplc_plant_stats_t stats;
+  int stopped = ZPLC_SCHED_ERR_LOCK;
+  int tries;
+
+  ARG_UNUSED(context);
+  if (zplc_plant_active() == 0) {
+    return (int)ZPLC_PROTO_ERR_STATE;
+  }
+  zplc_plant_get_stats(&stats);
+  zplc_plant_set_mirror(0U);
+  for (tries = 0; tries < LK_PLANT_STOP_TRIES; tries++) {
+    stopped = zplc_sched_stop();
+    if (stopped != ZPLC_SCHED_ERR_LOCK) {
+      break;
+    }
+    k_msleep(LK_PLANT_STOP_WAIT_MS);
+  }
+  if (stopped == ZPLC_SCHED_ERR_LOCK && zplc_sched_get_state() == ZPLC_SCHED_STATE_RUNNING) {
+    return (int)ZPLC_PROTO_ERR_BUSY;
+  }
+  /* The stop already left the mode with RUN_CONTROL when it ran; this is a no-op then, and the reason that the
+   * person or the session gave is the one that is reported. */
+  (void)zplc_plant_exit(reason);
+  lk_plant_live = false;
+  if (response != NULL && response_length != NULL && *response_length >= ZPLC_PROTO_PLANT_EXIT_RSP_FIXED - 1U) {
+    response[0] = reason;
+    response[1] = (uint8_t)stats.frames;
+    response[2] = (uint8_t)(stats.frames >> 8);
+    response[3] = (uint8_t)(stats.frames >> 16);
+    response[4] = (uint8_t)(stats.frames >> 24);
+    response[5] = (uint8_t)stats.late;
+    response[6] = (uint8_t)(stats.late >> 8);
+    response[7] = (uint8_t)stats.rejected;
+    response[8] = (uint8_t)(stats.rejected >> 8);
+    *response_length = ZPLC_PROTO_PLANT_EXIT_RSP_FIXED - 1U;
+  }
+  return 0;
+}
+
+static int lk_plant_mirror(void *context, uint8_t enable, uint8_t *mirror) {
+  ARG_UNUSED(context);
+  if (zplc_plant_active() == 0) {
+    return (int)ZPLC_PROTO_ERR_STATE;
+  }
+  zplc_plant_set_mirror(enable);
+  *mirror = zplc_plant_holds_outputs() == 0 ? 1U : 0U;
+  return 0;
+}
+
+static int lk_plant_status(void *context, uint8_t *response, uint16_t *response_length) {
+  zplc_plant_stats_t stats;
+  uint8_t active = zplc_plant_active() != 0 ? 1U : 0U;
+
+  ARG_UNUSED(context);
+  if (*response_length < ZPLC_PROTO_PLANT_STATUS_RSP_FIXED - 1U) {
+    return (int)ZPLC_PROTO_ERR_FAILED;
+  }
+  zplc_plant_get_stats(&stats);
+  response[0] = active;
+  response[1] = (uint8_t)(active != 0U ? lk_plant_id : 0U);
+  response[2] = (uint8_t)((active != 0U ? lk_plant_id : 0U) >> 8);
+  response[3] = (uint8_t)(active != 0U && zplc_plant_holds_outputs() == 0 ? 1U : 0U);
+  response[4] = (uint8_t)stats.frames;
+  response[5] = (uint8_t)(stats.frames >> 8);
+  response[6] = (uint8_t)(stats.frames >> 16);
+  response[7] = (uint8_t)(stats.frames >> 24);
+  response[8] = (uint8_t)stats.late;
+  response[9] = (uint8_t)(stats.late >> 8);
+  response[10] = (uint8_t)stats.rejected;
+  response[11] = (uint8_t)(stats.rejected >> 8);
+  response[12] = (uint8_t)stats.age_ms;
+  response[13] = (uint8_t)(stats.age_ms >> 8);
+  *response_length = ZPLC_PROTO_PLANT_STATUS_RSP_FIXED - 1U;
+  return 0;
+}
+
+/* An exit that was decided inside the scan (timeout, eight rejected frames) or by a run-control change (STOP, RESET,
+ * program load, pause) completes in the scheduler, which knows nothing of the link: nobody pushes its event. It is
+ * pushed here, once, by the service tick, when an entry that this link made is found inactive without the engine
+ * having performed the exit. A mode that outlives its scan (the scheduler left RUNNING with the mode still
+ * active, so no scan can end it) is ended here too, through the same rule. Called with link_mutex held. */
+static void link_plant_service(zplc_proto_dev_t *dev) {
+  uint8_t data[ZPLC_PROTO_EVT_PLANT_EXIT_FIXED];
+  zplc_plant_stats_t stats;
+
+  if (zplc_plant_active() != 0 && zplc_sched_get_state() != ZPLC_SCHED_STATE_RUNNING) {
+    uint8_t reason = zplc_plant_tick() != 0 ? zplc_plant_exit_reason() : (uint8_t)ZPLC_PROTO_PLANT_EXIT_REASON_RUN_CONTROL;
+
+    (void)zplc_plant_exit(reason);
+  }
+  if (lk_plant_live && zplc_plant_active() == 0) {
+    lk_plant_live = false;
+    zplc_plant_get_stats(&stats);
+    data[ZPLC_PROTO_EVT_PLANT_EXIT_REASON_OFF] = zplc_plant_exit_reason();
+    data[1] = (uint8_t)stats.frames;
+    data[2] = (uint8_t)(stats.frames >> 8);
+    data[3] = (uint8_t)(stats.frames >> 16);
+    data[4] = (uint8_t)(stats.frames >> 24);
+    (void)zplc_proto_event_post(dev, ZPLC_PROTO_EVT_PLANT_EXIT, data, sizeof(data));
+  }
+}
+#endif /* CONFIG_ZPLC_PLANT_IO */
+
 /* The one buffer of the code size is the staging buffer of the shell upload as well: a transfer by the link and a
  * transfer by `zplc sched data` cannot be in progress together, and starting one cancels the other. */
 static int lk_program_begin(void *context, uint32_t size) {
@@ -4397,6 +4569,9 @@ static void link_service(struct k_work *work) {
   if (k_mutex_lock(&link_mutex, K_MSEC(5)) == 0) {
     link_watch_line();
     zplc_proto_dev_service(&link_dev, links, 1U);
+#ifdef CONFIG_ZPLC_PLANT_IO
+    link_plant_service(&link_dev);
+#endif
     k_mutex_unlock(&link_mutex);
   }
   (void)k_work_reschedule(&link_service_work, K_MSEC(LINK_SERVICE_MS));
@@ -4448,6 +4623,14 @@ static void link_start(void) {
   link_ops.signing_key_store = lk_signing_key_store;
   link_ops.signing_key_erase = lk_signing_key_erase;
   link_ops.program_verify = lk_program_verify;
+#endif
+#ifdef CONFIG_ZPLC_PLANT_IO
+  zplc_plant_init(&lk_plant_hooks);
+  link_ops.plant_enter = lk_plant_enter;
+  link_ops.plant_frame = lk_plant_frame;
+  link_ops.plant_exit = lk_plant_exit;
+  link_ops.plant_mirror = lk_plant_mirror;
+  link_ops.plant_status = lk_plant_status;
 #endif
   (void)zplc_proto_dev_init(&link_dev, &link_ops, CONFIG_ZPLC_PROTO_SESSION_IDLE_S);
   zplc_proto_link_init(&link_shell_link, &link_dev, ZPLC_PROTO_TRANSPORT_SERIAL, link_write, NULL);

@@ -802,12 +802,13 @@ add_executable(test_plant_sched
     src/core/zplc_core.c
     src/core/zplc_loader.c
     src/core/zplc_comm_dispatch.c
-    src/hal/posix/zplc_hal_posix.c
 )
 
+# The test brings its own board (an I/O table and a recording pin driver), so it does not link the POSIX HAL.
 target_include_directories(test_plant_sched PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/tests
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/include
 )
 
 target_compile_definitions(test_plant_sched PRIVATE
@@ -858,6 +859,47 @@ if(UNIX AND NOT APPLE)
 endif()
 
 add_test(NAME test_proto_plant COMMAND test_proto_plant)
+
+# Test: independent attack tests of the plant I/O mode (Task F5): wrap-around, lengths, values, hold order, exit and fault,
+# the lock the scan failed to try, the engine with two links, a takeover and a refused stop, the scan racing the link.
+# The second entry runs with ZPLC_ATTACK_STRICT=1, which makes any blocker that is opened again fatal.
+add_executable(test_plant_attack
+    tests/test_plant_attack.c
+    src/core/zplc_sched_core.c
+    src/core/zplc_proto.c
+    src/core/zplc_proto_dev.c
+    src/core/zplc_sha256.c
+    src/core/zplc_sha512.c
+    src/core/zplc_ed25519.c
+    src/core/zplc_plant.c
+    src/core/zplc_exchange.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+)
+
+# The test brings its own board (an I/O table and a recording pin driver), so it does not link the POSIX HAL.
+target_include_directories(test_plant_attack PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/include
+)
+
+target_compile_definitions(test_plant_attack PRIVATE
+    ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}"
+    ZPLC_CORE_TESTING
+)
+
+find_package(Threads REQUIRED)
+target_link_libraries(test_plant_attack PRIVATE Threads::Threads)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_plant_attack PRIVATE rt)
+endif()
+
+add_test(NAME test_plant_attack COMMAND test_plant_attack)
+add_test(NAME test_plant_attack_blockers COMMAND test_plant_attack)
+set_tests_properties(test_plant_attack_blockers PROPERTIES ENVIRONMENT "ZPLC_ATTACK_STRICT=1")
 
 # Test: SHA-512 and Ed25519 verification against FIPS 180-4, RFC 8032 and the signatures of a Python reference,
 # valid and damaged (COM-026). Also run under the sanitizers.
