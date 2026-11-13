@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 2,
+  "target": { "scene": "weight-sorting" },
+  "signals": {
+    "StartButton.pressed": { "direction": "sensor", "type": "BOOL", "point": "WeightSorter.Start" },
+    "Scale1.stable": { "direction": "sensor", "type": "BOOL", "point": "WeightSorter.Stable" },
+    "Pusher1.extended": { "direction": "sensor", "type": "BOOL", "point": "WeightSorter.Extended" },
+    "Pusher1.retracted": { "direction": "sensor", "type": "BOOL", "point": "WeightSorter.Retracted" },
+    "Scale1.weight": {
+      "direction": "sensor",
+      "type": "REAL",
+      "point": "WeightSorter.Weight",
+      "range": { "raw_min": 0, "raw_max": 20, "eng_min": 0, "eng_max": 20, "unit": "kg" }
+    },
+    "Infeed.run": { "direction": "command", "type": "BOOL", "point": "WeightSorter.RunInfeed" },
+    "Outfeed.run": { "direction": "command", "type": "BOOL", "point": "WeightSorter.RunOutfeed" },
+    "SideBelt.run": { "direction": "command", "type": "BOOL", "point": "WeightSorter.RunSide" },
+    "Blade1.extend": { "direction": "command", "type": "BOOL", "point": "WeightSorter.Hold" },
+    "Pusher1.extend": { "direction": "command", "type": "BOOL", "point": "WeightSorter.Push" },
+    "StackLight1.green": { "direction": "command", "type": "BOOL", "point": "WeightSorter.Green" }
+  }
+}
