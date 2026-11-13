@@ -456,6 +456,89 @@ describe('Run with a plant document open (PLS-003, FLW-014) in a DOM', () => {
   });
 });
 
+describe('The command bar follows the active transport (PLS-003, PLS-013, FLW-001) in a DOM', () => {
+  /** A plant session whose state follows its calls, as a lock-step session does while the debug controller stays paused. */
+  const lockStepSession = (state: string) => {
+    const listeners = new Set<(event: unknown) => void>();
+    const session = {
+      state,
+      slowdown: 1,
+      onChange: (listener: (event: unknown) => void) => {
+        listeners.add(listener);
+        return () => void listeners.delete(listener);
+      },
+      move: (next: string) => {
+        session.state = next;
+        listeners.forEach((listener) => listener({ kind: 'state', state: next }));
+      },
+      start: async () => session.move('running'),
+      resume: () => session.move('running'),
+      pause: () => session.move('paused'),
+      step: async () => undefined,
+      stop: async () => session.move('stopped'),
+      reset: async () => undefined,
+    };
+    return session;
+  };
+  const named = (key: 'toolbar.pause.label' | 'toolbar.resume.label' | 'toolbar.stop.label') =>
+    dom.screen.queryByRole('button', { name: new RegExp(dom.t(key)) });
+  // the build of these tests is not current, so the rail words a running session as "Running an older build"
+  const rail = () => dom.screen.queryByText(/^Running/);
+
+  it('PLS-003 running plant with the debug controller left paused: the bar shows Pause and Stop, not Resume, and the rail agrees', () => {
+    const { controller } = liveController();
+    (controller as unknown as { vmState: string }).vmState = 'paused';
+    openProject(BUILD_OK);
+    const session = lockStepSession('running');
+    const unregister = registerPlantTransport(plantTransport(session as never));
+    try {
+      dom.render(<Toolbar debugController={controller} />);
+      expect(named('toolbar.pause.label')).toBeTruthy();
+      expect(named('toolbar.resume.label')).toBeNull();
+      expect(named('toolbar.stop.label')).toBeTruthy();
+      expect(rail()).toBeTruthy();
+    } finally {
+      unregister();
+    }
+  });
+
+  it('PLS-003 Pause on the bar pauses the plant transport, and the bar then shows Resume, which resumes it (FLW-001)', async () => {
+    const { controller, calls } = liveController();
+    (controller as unknown as { vmState: string }).vmState = 'paused';
+    const session = lockStepSession('running');
+    const unregister = registerPlantTransport(plantTransport(session as never));
+    try {
+      const { user } = dom.render(<Toolbar debugController={controller} />);
+      await user.click(button('toolbar.pause.label'));
+      await dom.waitFor(() => expect(named('toolbar.resume.label')).toBeTruthy());
+      expect(named('toolbar.pause.label')).toBeNull();
+      expect(session.state).toBe('paused');
+      await user.click(named('toolbar.resume.label')!);
+      await dom.waitFor(() => expect(named('toolbar.pause.label')).toBeTruthy());
+      expect(session.state).toBe('running');
+      expect(calls).toEqual([]);
+    } finally {
+      unregister();
+    }
+  });
+
+  it('PLS-003 a held plant shows Resume, and a plant that binds or unbinds after the first paint repaints the bar', () => {
+    const { controller } = liveController();
+    (controller as unknown as { vmState: string }).vmState = 'running';
+    dom.render(<Toolbar debugController={controller} />);
+    expect(named('toolbar.pause.label')).toBeTruthy();
+    const session = lockStepSession('held');
+    let unregister = () => {};
+    dom.act(() => {
+      unregister = registerPlantTransport(plantTransport(session as never));
+    });
+    expect(named('toolbar.resume.label')).toBeTruthy();
+    expect(named('toolbar.pause.label')).toBeNull();
+    dom.act(() => unregister());
+    expect(named('toolbar.pause.label')).toBeTruthy();
+  });
+});
+
 describe('An offer acts on the current state (FLW-003, LNK-009) in a DOM', () => {
   const chooseSimulation = async (user: ReturnType<typeof dom.render>['user']) => {
     await user.click(dom.screen.getByRole('button', { name: /rpi_pico/ }));

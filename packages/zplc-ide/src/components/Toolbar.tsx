@@ -42,7 +42,7 @@ import { isWorkspaceTestRunCurrent, presentWorkspaceCompileResult, resolveWorksp
 import { shownProjectBridge } from '../ipc/shownProjectBridge';
 import { useNotifications } from '../store/notifications';
 import { vmInfoNow } from '../store/vmInfo';
-import { activeTransport } from '../store/useTransport';
+import { activeTransport, useRegisteredPlantTransport } from '../store/useTransport';
 import { Notifications } from './Notifications';
 import { useDropdownMenu } from './useDropdownMenu';
 import { canLinkProjectWorkspace, linkProjectWorkspace } from '../utils/workspaceTestLink';
@@ -131,6 +131,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
   // Destructure debug controller
   const { adapter, vmState, startSimulation, connectHardware, disconnect, loadProgram, getHardwareSystemInfo } = debugController;
   // One transport (PLS-003): the plant session when a plant document registered one, else the program alone.
+  // The hook repaints the bar when a plant binds or unbinds and when the plant changes state or slowdown.
+  useRegisteredPlantTransport();
   const transport = activeTransport(debugController);
 
   // Local UI state
@@ -174,10 +176,14 @@ export function Toolbar({ debugController }: ToolbarProps) {
 
   // Derived state from adapter
   const isConnected = adapter?.connected ?? false;
-  const isRunning = vmState === 'running';
-  const isPaused = vmState === 'paused';
+  // With a plant bound the plant session's state decides: it runs in lock-step and leaves the debug controller paused (PLS-003, D-26).
+  const plantBound = transport.kind === 'plant';
+  const isRunning = plantBound ? transport.state === 'running' : vmState === 'running';
+  const isPaused = plantBound ? transport.state === 'paused' || transport.state === 'held' : vmState === 'paused';
   // A simulation that has not started its session is stopped too: Run starts it (FLW-008).
-  const isStopped = vmState === 'idle' || vmState === 'disconnected';
+  const isStopped = plantBound
+    ? transport.state === 'stopped' || transport.state === 'faulted'
+    : vmState === 'idle' || vmState === 'disconnected';
   const controlsBusy = isConnecting || isUploading || isModeTransitioning || isRunPreparing;
   const hasCurrentCompileResult = useIDEStore((s) => isCompileResultCurrent(lastCompileResult?.compilerRunId ?? null, s.compilerRunId));
   // Read from a ref: a step of Run's sequence runs after the build that made the result, in the same closure.

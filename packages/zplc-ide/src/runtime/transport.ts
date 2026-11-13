@@ -139,6 +139,8 @@ export function plantTransport(session: PlantSession): Transport {
     (notify) =>
       session.onChange((event) => {
         if (event.kind === 'state') notify(plantState(event.state), event.reason);
+        // A slowdown changes what the rail says (PLS-013), not the state: listeners read `slowdown` again.
+        else if (event.kind === 'slowdown') notify(plantState(session.state));
       }),
   );
 }

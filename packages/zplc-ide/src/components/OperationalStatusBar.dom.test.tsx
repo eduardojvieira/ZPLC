@@ -244,6 +244,29 @@ describe('PLS-013 the plant session speaks through the one state of the rail', (
     unregister();
   });
 
+  it('PLS-013 a change of the plant slowdown repaints the rail by itself, and a plant bound after the first paint is heard', () => {
+    dom.patchStore(useIDEStore, { isProjectOpen: true });
+    const listeners = new Set<() => void>();
+    const live = {
+      kind: 'plant',
+      state: 'running',
+      slowdown: 1,
+      onChange: (listener: () => void) => (listeners.add(listener), () => void listeners.delete(listener)),
+    };
+    dom.render(<OperationalStatusBar {...idle} adapterType="native" connected status={{ text: 'x', tone: 'neutral', input: current }} />);
+    expect(dom.screen.getByText('Stopped')).toBeTruthy();
+    let unregister = () => {};
+    dom.act(() => {
+      unregister = registerPlantTransport(live as never);
+    });
+    expect(dom.screen.getByText('Running')).toBeTruthy();
+    live.slowdown = 0.5;
+    dom.act(() => listeners.forEach((listener) => listener()));
+    expect(dom.screen.getByText('Running slower than real time')).toBeTruthy();
+    dom.act(() => unregister());
+    expect(dom.screen.getByText('Stopped')).toBeTruthy();
+  });
+
   it('PLS-013 a held scan reads Paused, and the program alone reads as before once the plant is unbound', () => {
     dom.patchStore(useIDEStore, { isProjectOpen: true });
     const unregister = registerPlantTransport(plant('held', 1));
