@@ -7,13 +7,6 @@
     "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
   },
   {
-    "key": "testsView.description",
-    "language": "en",
-    "requirement": "MSG-002",
-    "added": "2026-11-13",
-    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
-  },
-  {
     "key": "console.testsUseSavedWorkspace",
     "language": "en",
     "requirement": "MSG-002",
@@ -148,20 +141,6 @@
   },
   {
     "key": "toolbar.simulation.title",
-    "language": "es",
-    "requirement": "MSG-002",
-    "added": "2026-11-13",
-    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
-  },
-  {
-    "key": "testsView.linked",
-    "language": "es",
-    "requirement": "MSG-002",
-    "added": "2026-11-13",
-    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
-  },
-  {
-    "key": "testsView.notLinked",
     "language": "es",
     "requirement": "MSG-002",
     "added": "2026-11-13",

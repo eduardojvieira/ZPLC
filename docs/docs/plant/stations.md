@@ -51,7 +51,7 @@ A `stacker-crane` stores boxes in a rack and takes them out again.
 
 `bay` sends X to bay times `bayPitchM` and `level` sends Y to level times `levelPitchM`. `inPosition` is TRUE when both are within 5 mm and at rest.
 
-- **Saturation.** A `bay` or a `level` outside its range stops at the end of the range. A value that is not a finite number changes nothing.
+- **Range.** A `bay` or a `level` is an address, not a quantity. When a person or the API applies one outside its range, it is refused with a message that names the signal, the value and the limit, and nothing changes. A value from the program is clamped to the range by the exchange. A REAL command still saturates at its range. A value that is not a finite number is refused.
 - **The fork.** `forkLeft` extends it towards -z and `forkRight` towards +z. Holding the command extends it, releasing it centres it, and both hold it. The fork surface is a belt: `beltRight` runs it towards +z and `beltLeft` towards -z. Both do nothing.
 - **The dock and the rack.** Level 0 is the dock: the rack shelves are levels 1 and up. The dock belts go with their top 0.13 m over the part position, ending at the fork tip (snap points `dockIn` at -z and `dockOut` at +z). The rack is on the +z side. Column c and level l are a pair of rails 0.24 m apart, with their tops at l times `levelPitchM` plus 0.1 m over the part position. A box 0.3 m wide and 0.4 m long rests on both rails and the 0.16 m wide fork passes between them.
 - **Loaded.** `loaded` is TRUE while a box rests on the centre of the fork.

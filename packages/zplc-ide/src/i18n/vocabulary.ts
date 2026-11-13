@@ -69,7 +69,6 @@ export const MAIN_PATH_PREFIXES: readonly string[] = [
   'learn.check',
   'learn.failedAssertions',
   'learn.lessonEvidence',
-  'testsView.',
 ];
 /** A key with one of these segments is a Details, Inspector or Terminal surface and may hold an implementation term. */
 export const DETAIL_SEGMENTS: readonly string[] = ['.details.', '.inspector.', '.terminal.', '.detail.'];

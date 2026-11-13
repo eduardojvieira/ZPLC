@@ -104,6 +104,8 @@ function runtime(part: ScenePart): PartRuntime {
             fraction: spec.strokeM > 0 ? axis.p / spec.strokeM : 0,
             text: here ? `level ${level}` : 'travelling',
             level,
+            strokeM: spec.strokeM,
+            levelPitchM: pitch,
             speedMps: world ? world.beltSpeed(id) : 0,
             stuck,
             stalled,

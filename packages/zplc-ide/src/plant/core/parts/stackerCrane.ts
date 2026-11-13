@@ -324,7 +324,7 @@ function runtime(part: ScenePart): PartRuntime {
           part: 'stacker-rack',
           name,
           pose: pose(`${part.id}-rack`, 'stacker-rack', [rackW, rackH, 0.05], [rx, py + rackH / 2, rz]),
-          state: {},
+          state: { columns, levels, bayPitchM: bayPitch, levelPitchM: levelPitch },
           signals: {},
         },
       ];

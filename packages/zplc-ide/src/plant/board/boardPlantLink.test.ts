@@ -5,6 +5,8 @@ import { listIoMap } from '../../runtime/ioMap';
 import type { PlantMapV2, SignalRange } from '../../plants/plantMap';
 import type { PlantCore } from '../contracts';
 import { exchangeOnce, planExchange } from '../session/exchange';
+import type { FirmwareProtocol } from '../../runtime/link/firmwareProtocol';
+import { plantIoSupport } from './support';
 import { createPlantIoController, type PlantIoController } from './boardPlantLink';
 import { createFakeBoard, type FakeBoardOptions } from './fakeBoard';
 
@@ -91,6 +93,11 @@ async function until(check: () => boolean, what: string) {
 /** The board's program outputs: Valve 500, Flow 2.5, Run true, in the order of the output descriptors. */
 const program = (): FakeBoardOptions['program'] => () => [500, 2.5, true];
 
+const reasonOf = (info: FirmwareProtocol | null) => {
+  const support = plantIoSupport(info);
+  return support.supported ? undefined : support.reason;
+};
+
 function setup(
   options: FakeBoardOptions & {
     rtt?: number[];
@@ -99,6 +106,7 @@ function setup(
     sensed?: Sensed;
     pulse?: number;
     supported?: boolean;
+    firmware?: () => FirmwareProtocol | null;
   } = {},
 ) {
   const clock = { t: 0 };
@@ -121,6 +129,7 @@ function setup(
     frameMs: options.frameMs ?? 20,
     timeoutMs: options.timeoutMs ?? 500,
     shortestPulseMs: options.pulse,
+    ...(options.firmware ? { firmware: options.firmware } : {}),
     now: () => clock.t,
     pace: async (ms) => {
       clock.t += ms;
@@ -282,9 +291,17 @@ describe('board plant link', () => {
     const snap = controller.snapshot();
     expect(snap.phase).toBe('unsupported');
     expect(snap.unsupported?.en.length).toBeGreaterThan(0);
-    expect(snap.unsupported?.es.length).toBeGreaterThan(0);
+    expect(snap.unsupported).toEqual(reasonOf(null));
     expect(board.received).toHaveLength(0);
     expect(board.state.active).toBe(false);
+  });
+
+  it('unsupported firmware that speaks the link without the plant capability says so, from the shared catalog text', async () => {
+    const firmware = () => ({ kind: 'framed' as const, version: 1, capabilities: 0 });
+    const { controller } = setup({ supported: false, firmware });
+    await controller.start();
+    expect(controller.snapshot().unsupported).toEqual(reasonOf(firmware()));
+    expect(controller.snapshot().unsupported).not.toEqual(reasonOf(null));
   });
 
   it('start refuses without a mapped signal or when planExchange throws, with the located message', async () => {
