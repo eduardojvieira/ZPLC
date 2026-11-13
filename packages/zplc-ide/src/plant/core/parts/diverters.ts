@@ -22,7 +22,7 @@ const pusherConfig: Record<string, ConfigField> = {
 const armConfig: Record<string, ConfigField> = {
   lengthM: { kind: 'number', min: 0.4, max: 1.2, default: 0.8, unit: 'm' },
   heightM: { kind: 'number', min: 0.1, max: 0.4, default: 0.25, unit: 'm' },
-  angleDeg: { kind: 'number', min: 15, max: 60, default: 35, unit: 'deg' },
+  angleDeg: { kind: 'number', min: 15, max: 35, default: 35, unit: 'deg' },
   degPerS: { kind: 'number', min: 30, max: 180, default: 90, unit: 'deg/s' },
 };
 
@@ -214,13 +214,17 @@ export const diverterParts: readonly RuntimePartDefinition[] = [
       en:
         'A plate hinged at the part position that lies along its own +x at rest (home). While divert is TRUE it swings towards its ' +
         'own +z (right) by angleDeg at degPerS, with a short ramp, and back otherwise; a box that travels along +x is deflected to the ' +
-        'right. Settings: lengthM, heightM, angleDeg, degPerS. Signals: divert, diverted, home (within 0.5 degrees of an end). ' +
-        'Fault: stuck freezes the arm.',
+        'right. Settings: lengthM, heightM, angleDeg (15 to 35: a steeper arm stops boxes against it), degPerS. ' +
+        'The default length 0.8 m at 35 degrees reaches only 0.46 m across, so a scene that needs a side belt sets a longer arm. ' +
+        'Signals: divert, diverted, home (within 0.5 degrees of an end). Fault: stuck freezes the arm.',
       es:
         'Una placa articulada en la posición de la pieza que reposa a lo largo de su propio +x (home). Mientras divert es TRUE gira ' +
         'hacia su propio +z (derecha) angleDeg a degPerS, con una rampa corta, y vuelve en caso contrario; una caja que viaja a lo ' +
-        'largo de +x se desvía hacia la derecha. Ajustes: lengthM, heightM, angleDeg, degPerS. Señales: divert, diverted, home ' +
-        '(a menos de 0,5 grados de un extremo). Falla: stuck detiene el brazo donde está.',
+        'largo de +x se desvía hacia la derecha. Ajustes: lengthM, heightM, angleDeg (15 a 35: un brazo más inclinado detiene las cajas ' +
+        'contra él), degPerS. ' +
+        'La longitud predeterminada de 0,8 m a 35 grados solo alcanza 0,46 m de lado, así que una escena que necesite una cinta lateral ' +
+        'define un brazo más largo. Señales: divert, diverted, home (a menos de 0,5 grados de un extremo). ' +
+        'Falla: stuck detiene el brazo donde está.',
     },
   ),
 ];
