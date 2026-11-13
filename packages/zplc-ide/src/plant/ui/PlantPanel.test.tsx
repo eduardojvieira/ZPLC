@@ -131,6 +131,7 @@ function rig(mode: 'ok' | 'unavailable' = 'ok', initialState: PlantSession['stat
   const log: string[] = [];
   const cores: ReturnType<typeof fakeCore>[] = [];
   const sessions: FakeSession[] = [];
+  const scenes: { parts: unknown[] }[] = [];
   const renderer = {
     snapshots: 0,
     last: undefined as PlantSnapshot | undefined,
@@ -162,7 +163,8 @@ function rig(mode: 'ok' | 'unavailable' = 'ok', initialState: PlantSession['stat
     dispose: () => void (renderer.disposed += 1),
   };
   const engine: PlantEngine = {
-    async createPlantCore() {
+    async createPlantCore(scene) {
+      scenes.push(scene);
       const core = fakeCore(log, `core${cores.length}`);
       cores.push(core);
       return core;
@@ -185,7 +187,7 @@ function rig(mode: 'ok' | 'unavailable' = 'ok', initialState: PlantSession['stat
     timing: TIMING,
   };
   const controller = { adapter: runtimePort(), vmState: 'idle', debugCapabilities: null } as never;
-  return { log, cores, sessions, renderer, deps, controller };
+  return { log, cores, scenes, sessions, renderer, deps, controller };
 }
 
 const text = () => document.querySelector('[data-plant-text]')?.textContent ?? '';
@@ -374,7 +376,7 @@ describe('the plant panel (VIS-001, VIS-006, VIS-010, PLS-003, PLS-004, PLS-010)
 
   it('PLS-004 Edit scene is offered only while the transport is stopped', async () => {
     const r = rig();
-    dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} onEditScene={() => undefined} />);
+    dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
     await ready();
     const edit = () => document.querySelector<HTMLButtonElement>('[data-plant-edit-scene]')!;
     expect(edit().disabled).toBe(false);
@@ -382,6 +384,60 @@ describe('the plant panel (VIS-001, VIS-006, VIS-010, PLS-003, PLS-004, PLS-010)
     await dom.waitFor(() => expect(edit().disabled).toBe(true));
     await dom.act(async () => activeTransport(r.controller).stop());
     await dom.waitFor(() => expect(edit().disabled).toBe(false));
+  });
+
+  it('SCN-008 Edit scene opens the editor only while stopped; an edit, then Done, rebuilds the plant from the edited scene', async () => {
+    const r = rig();
+    dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+    await ready();
+    const edit = () => document.querySelector<HTMLButtonElement>('[data-plant-edit-scene]')!;
+    await dom.act(async () => activeTransport(r.controller).run());
+    await dom.waitFor(() => expect(edit().disabled).toBe(true));
+    await dom.act(async () => activeTransport(r.controller).stop());
+    await dom.waitFor(() => expect(edit().disabled).toBe(false));
+    await dom.act(async () => dom.fireEvent.click(edit()));
+    expect(document.querySelector('[data-plant-editor]')).toBeTruthy();
+    const before = r.scenes[0]!.parts.length;
+    await dom.act(async () => dom.fireEvent.click(dom.screen.getByRole('button', { name: dom.t('plantEditor.add') })));
+    await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-edit-done]')!));
+    await dom.waitFor(() => expect(r.scenes.length).toBe(2));
+    expect(r.scenes[1]!.parts.length).toBe(before + 1);
+    expect(document.querySelector('[data-plant-editor]')).toBeNull();
+  });
+
+  it('SCN-010 Undo and Redo of the editor toolbar reach the editor', async () => {
+    const r = rig();
+    dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+    await ready();
+    await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-edit-scene]')!));
+    const count = () => document.querySelectorAll('[data-plant-editor] ul[aria-label] li').length;
+    const start = count();
+    await dom.act(async () => dom.fireEvent.click(dom.screen.getByRole('button', { name: dom.t('plantEditor.add') })));
+    expect(count()).toBe(start + 1);
+    await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-undo]')!));
+    expect(count()).toBe(start);
+    await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-redo]')!));
+    expect(count()).toBe(start + 1);
+  });
+
+  it('FLW-005 the scene being edited joins Save all', async () => {
+    const written: string[] = [];
+    const fake = {
+      getDirectoryHandle: async () => ({
+        getFileHandle: async (name: string) => ({
+          createWritable: async () => ({ write: async () => void written.push(name), close: async () => {} }),
+        }),
+      }),
+    } as unknown as FileSystemDirectoryHandle;
+    dom.patchStore(useIDEStore, { directoryHandle: fake });
+    const { saveAllDocuments } = await import('../../store/saveAll');
+    const r = rig();
+    dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+    await ready();
+    await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-edit-scene]')!));
+    await dom.act(async () => dom.fireEvent.click(dom.screen.getByRole('button', { name: dom.t('plantEditor.add') })));
+    expect((await saveAllDocuments()).saved).toBeGreaterThanOrEqual(1);
+    expect(written.some((name) => name.endsWith('.scene.json'))).toBe(true);
   });
 
   it('PLS-010 with visible false no frame is drawn and scan events still arrive', async () => {

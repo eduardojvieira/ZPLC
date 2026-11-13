@@ -92,7 +92,18 @@ const fileText = (files: ReadonlyMap<string, { path: string; content: string }>,
   [...files.values()].find((file) => file.path === path)?.content;
 const NEVER = () => () => undefined;
 
-export function usePlantSession(controller: DebugController | undefined, ref: SceneRef, deps: PlantPanelDeps): PlantBinding {
+/** The texts of a scene edited in the panel: what the plant core is rebuilt from when editing ends (SCN-008). */
+export interface SceneOverride {
+  scene: string;
+  map: string;
+}
+
+export function usePlantSession(
+  controller: DebugController | undefined,
+  ref: SceneRef,
+  deps: PlantPanelDeps,
+  override?: SceneOverride,
+): PlantBinding {
   const projectScene = useIDEStore((state) => fileText(state.loadedFiles, 'scene.json'));
   const projectMap = useIDEStore((state) => fileText(state.loadedFiles, 'plant-map.json'));
   const debugMap = useIDEStore((state) => state.debug.debugMap);
@@ -121,7 +132,8 @@ export function usePlantSession(controller: DebugController | undefined, ref: Sc
 
   // The core of the scene. A result belongs to the scene (and, for the project's, the files) it was built for;
   // for any other it reads as loading.
-  const key = ref.kind === 'project' ? JSON.stringify(['project', projectScene, projectMap]) : `shipped:${ref.id}`;
+  const base = ref.kind === 'project' ? JSON.stringify(['project', projectScene, projectMap]) : `shipped:${ref.id}`;
+  const key = override ? JSON.stringify([base, override]) : base;
   const [loaded, setLoaded] = useState<{ key: string; load: Load } | undefined>();
   const load: Load = loaded?.key === key ? loaded.load : { phase: 'loading' };
   const loadEngine = deps.loadEngine ?? loadPlantEngine;
@@ -130,8 +142,9 @@ export function usePlantSession(controller: DebugController | undefined, ref: Sc
     let created: PlantCore | undefined;
     void (async () => {
       const engine = await loadEngine();
-      const texts =
-        ref.kind === 'project'
+      const texts = override
+        ? override
+        : ref.kind === 'project'
           ? projectScene === undefined
             ? undefined
             : { scene: projectScene, map: projectMap ?? '' }
