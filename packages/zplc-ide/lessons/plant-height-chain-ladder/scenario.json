@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "height-sorting-chain",
+  "tickMs": 10,
+  "durationMs": 62000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      { "atMs": 200, "operate": { "signal": "StartButton.pressed", "value": true } },
+      { "atMs": 400, "operate": { "signal": "StartButton.pressed", "value": false } }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 100,
+      "condition": { "HeightSortChain.Hold": false, "HeightSortChain.Lift": false, "HeightSortChain.Done": false }
+    },
+    {
+      "kind": "EVENTUALLY",
+      "fromMs": 0,
+      "withinMs": 62000,
+      "condition": { "fact:sorted:BinShort": true, "fact:sorted:BinMedium": true, "fact:sorted:BinTall": true }
+    },
+    {
+      "kind": "AT",
+      "atMs": 62000,
+      "condition": {
+        "HeightSortChain.Done": true,
+        "HeightSortChain.Lift": false,
+        "HeightSortChain.MoveRight": false,
+        "HeightSortChain.MoveLeft": false
+      }
+    },
+    {
+      "kind": "ALWAYS",
+      "condition": {
+        "fact:misrouted:BinShort": false,
+        "fact:misrouted:BinMedium": false,
+        "fact:misrouted:BinTall": false,
+        "fact:itemsDropped": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-colour-separation-ladder",
+  "version": 1,
+  "order": 1161,
+  "module": 16,
+  "level": "advanced",
+  "prerequisites": ["plant-counted-queue"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The Ladder version reads the colour sensor and drives the pusher, the blade and the three belts of the scene; a learner board has no colour sensor or bins to wire them to.",
+        "es": "La versión en escalera lee el sensor de color y gobierna el empujador, la cuchilla y las tres bandas de la escena; una placa del estudiante no tiene sensor de color ni contenedores a los que conectarlos."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its items are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus piezas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "colour-separation",
+  "estimatedMinutes": 45,
+  "starter": {
+    "project": "plant_colour_separation_ladder_starter",
+    "program": "src/ColourSeparation.ld.json"
+  },
+  "solution": {
+    "project": "plant_colour_separation_ladder",
+    "program": "src/ColourSeparation.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "colour-separation",
+    "path": "tests/colour-separation.scenario.json",
+    "sha256": "56cc492b39de2608ab1588fe978f76c9a56da800b47a47bce97076a567e33db7"
+  },
+  "regressionScenarios": []
+}

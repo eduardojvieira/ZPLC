@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 2,
+  "target": { "scene": "three-level-lifts" },
+  "signals": {
+    "StartButton.pressed": { "direction": "sensor", "type": "BOOL", "point": "ThreeLevelLifts.Start" },
+    "EStop1.ok": { "direction": "sensor", "type": "BOOL", "point": "ThreeLevelLifts.EStopOk" },
+    "EyeFoot.detect": { "direction": "sensor", "type": "BOOL", "point": "ThreeLevelLifts.BoxOnA" },
+    "EyeMid.detect": { "direction": "sensor", "type": "BOOL", "point": "ThreeLevelLifts.BoxOnB" },
+    "EyeTop.detect": { "direction": "sensor", "type": "BOOL", "point": "ThreeLevelLifts.BoxAtTop" },
+    "LiftA.atLevel1": { "direction": "sensor", "type": "BOOL", "point": "ThreeLevelLifts.AAtLow" },
+    "LiftA.atLevel2": { "direction": "sensor", "type": "BOOL", "point": "ThreeLevelLifts.AAtHigh" },
+    "LiftB.atLevel1": { "direction": "sensor", "type": "BOOL", "point": "ThreeLevelLifts.BAtLow" },
+    "LiftB.atLevel2": { "direction": "sensor", "type": "BOOL", "point": "ThreeLevelLifts.BAtHigh" },
+    "Infeed.run": { "direction": "command", "type": "BOOL", "point": "ThreeLevelLifts.RunInfeed" },
+    "Transfer.run": { "direction": "command", "type": "BOOL", "point": "ThreeLevelLifts.RunTransfer" },
+    "Outfeed.run": { "direction": "command", "type": "BOOL", "point": "ThreeLevelLifts.RunOutfeed" },
+    "LiftA.up": { "direction": "command", "type": "BOOL", "point": "ThreeLevelLifts.AUp" },
+    "LiftA.down": { "direction": "command", "type": "BOOL", "point": "ThreeLevelLifts.ADown" },
+    "LiftA.run": { "direction": "command", "type": "BOOL", "point": "ThreeLevelLifts.ARun" },
+    "LiftB.up": { "direction": "command", "type": "BOOL", "point": "ThreeLevelLifts.BUp" },
+    "LiftB.down": { "direction": "command", "type": "BOOL", "point": "ThreeLevelLifts.BDown" },
+    "LiftB.run": { "direction": "command", "type": "BOOL", "point": "ThreeLevelLifts.BRun" },
+    "StackLight1.green": { "direction": "command", "type": "BOOL", "point": "ThreeLevelLifts.Green" },
+    "StackLight1.red": { "direction": "command", "type": "BOOL", "point": "ThreeLevelLifts.Red" }
+  }
+}

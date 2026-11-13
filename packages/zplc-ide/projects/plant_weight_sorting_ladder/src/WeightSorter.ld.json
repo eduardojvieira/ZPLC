@@ -1,0 +1,1115 @@
+{
+  "name": "WeightSorter",
+  "description": "Weight sorting: a box heavier than 3.5 kg is pushed to the heavy bin, a lighter one is let go, twelve boxes.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Active",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "The line was started"
+      },
+      {
+        "name": "Step",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "One step per move: 0 wait for a stable box, 1 push it out, 2 pull the pusher back, 3 release it to the light bin"
+      },
+      {
+        "name": "Releasing",
+        "type": "TON",
+        "comment": "The blade stays down long enough for a light box to leave the scale"
+      },
+      {
+        "name": "Boxes",
+        "type": "CTU",
+        "comment": "Counts the boxes dealt with"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%IX0.0",
+        "comment": "StartButton.pressed: start the line"
+      },
+      {
+        "name": "Stable",
+        "type": "BOOL",
+        "address": "%IX0.1",
+        "comment": "Scale1.stable: a box has rested on the scale long enough to be weighed"
+      },
+      {
+        "name": "Extended",
+        "type": "BOOL",
+        "address": "%IX0.2",
+        "comment": "Pusher1.extended: the pusher is at the end of its stroke"
+      },
+      {
+        "name": "Retracted",
+        "type": "BOOL",
+        "address": "%IX0.3",
+        "comment": "Pusher1.retracted: the pusher is back at rest"
+      },
+      {
+        "name": "Weight",
+        "type": "REAL",
+        "address": "%ID1",
+        "comment": "Scale1.weight: the weight in kg, 0 while a box moves"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "RunInfeed",
+        "type": "BOOL",
+        "address": "%QX0.0",
+        "comment": "Infeed.run: run the infeed belt"
+      },
+      {
+        "name": "RunOutfeed",
+        "type": "BOOL",
+        "address": "%QX0.1",
+        "comment": "Outfeed.run: run the belt to the light bin"
+      },
+      {
+        "name": "RunSide",
+        "type": "BOOL",
+        "address": "%QX0.2",
+        "comment": "SideBelt.run: run the belt to the heavy bin"
+      },
+      {
+        "name": "Hold",
+        "type": "BOOL",
+        "address": "%QX0.3",
+        "comment": "Blade1.extend: the blade holds the box on the scale while true"
+      },
+      {
+        "name": "Push",
+        "type": "BOOL",
+        "address": "%QX0.4",
+        "comment": "Pusher1.extend: push the box off the infeed onto the side belt"
+      },
+      {
+        "name": "Green",
+        "type": "BOOL",
+        "address": "%QX0.5",
+        "comment": "StackLight1.green: all twelve boxes are sorted"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Start: a press latches the line on.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r1_p0",
+              "type": "contact_no",
+              "variable": "Start",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r1_Active",
+              "type": "coil_set",
+              "variable": "Active",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "Release time: the blade stays down long enough for a light box to leave the scale and clear the blade.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r2_p0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "3"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r2_Releasing",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "Releasing",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#2500ms"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "Count a box when the pusher is back or the light box has been released.",
+      "branches": [
+        {
+          "id": "branch_3",
+          "startCol": 0,
+          "endCol": 1,
+          "rows": [0, 1]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r3_o0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "2"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r3_o0_1",
+              "type": "contact_no",
+              "variable": "Retracted",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r3_Boxes",
+              "type": "function_block",
+              "fbType": "CTU",
+              "instance": "Boxes",
+              "parameters": {
+                "CU": "CONNECTED",
+                "R": "FALSE",
+                "PV": "12"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "r3_o1_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "3"],
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r3_o1_1",
+              "type": "contact_no",
+              "variable": "Releasing.Q",
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_4",
+      "number": 4,
+      "comment": "Step 3, light box released: wait for the next box.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r4_p0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "3"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r4_p1",
+              "type": "contact_no",
+              "variable": "Releasing.Q",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r4_Step",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["0"],
+              "output": "Step",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_5",
+      "number": 5,
+      "comment": "Step 2, pusher back: wait for the next box.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r5_p0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "2"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r5_p1",
+              "type": "contact_no",
+              "variable": "Retracted",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r5_Step",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["0"],
+              "output": "Step",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_6",
+      "number": 6,
+      "comment": "Step 1, pusher out: pull it back.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r6_p0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "1"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r6_p1",
+              "type": "contact_no",
+              "variable": "Extended",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r6_Step",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["2"],
+              "output": "Step",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_7",
+      "number": 7,
+      "comment": "Step 0, heavy box: the limit is 3.5 kg, and the box masses, 2 and 5 kg, sit 1.5 kg either side of it. Push it out.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r7_p0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "0"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r7_p1",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r7_p2",
+              "type": "contact_no",
+              "variable": "Stable",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r7_p3",
+              "type": "function",
+              "functionName": "GT",
+              "operands": ["Weight", "3.5"],
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r7_Step",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["1"],
+              "output": "Step",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_8",
+      "number": 8,
+      "comment": "Step 0, light box: at or under the limit. Release it.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r8_p0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "0"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r8_p1",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r8_p2",
+              "type": "contact_no",
+              "variable": "Stable",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r8_p3",
+              "type": "function",
+              "functionName": "LE",
+              "operands": ["Weight", "3.5"],
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r8_Step",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["3"],
+              "output": "Step",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_9",
+      "number": 9,
+      "comment": "The infeed stops while the pusher works, so the belt never drags the box along the stroke.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r9_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r9_p1",
+              "type": "function",
+              "functionName": "NE",
+              "operands": ["Step", "1"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r9_p2",
+              "type": "function",
+              "functionName": "NE",
+              "operands": ["Step", "2"],
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r9_RunInfeed",
+              "type": "coil",
+              "variable": "RunInfeed",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_10",
+      "number": 10,
+      "comment": "The outfeed belt runs while the line is active.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r10_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r10_RunOutfeed",
+              "type": "coil",
+              "variable": "RunOutfeed",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_11",
+      "number": 11,
+      "comment": "The side belt runs while the line is active.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r11_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r11_RunSide",
+              "type": "coil",
+              "variable": "RunSide",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_12",
+      "number": 12,
+      "comment": "The blade holds the box on the scale except while a light box is released.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r12_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r12_p1",
+              "type": "function",
+              "functionName": "NE",
+              "operands": ["Step", "3"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r12_Hold",
+              "type": "coil",
+              "variable": "Hold",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_13",
+      "number": 13,
+      "comment": "Push: the pusher pushes out in step 1.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r13_p0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "1"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r13_Push",
+              "type": "coil",
+              "variable": "Push",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_14",
+      "number": 14,
+      "comment": "Green: all twelve boxes are sorted.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r14_p0",
+              "type": "contact_no",
+              "variable": "Boxes.Q",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r14_Green",
+              "type": "coil",
+              "variable": "Green",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

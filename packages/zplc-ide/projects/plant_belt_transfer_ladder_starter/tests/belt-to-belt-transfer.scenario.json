@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "belt-to-belt-transfer",
+  "tickMs": 10,
+  "durationMs": 45000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      { "atMs": 200, "operate": { "signal": "StartButton.pressed", "value": true } },
+      { "atMs": 400, "operate": { "signal": "StartButton.pressed", "value": false } }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 100,
+      "condition": {
+        "BeltTransfer.Hold": false,
+        "BeltTransfer.Grip": false,
+        "BeltTransfer.XPlus": false,
+        "BeltTransfer.YPlus": false,
+        "BeltTransfer.Done": false
+      }
+    },
+    { "kind": "AT", "atMs": 1500, "condition": { "BeltTransfer.Hold": true, "BeltTransfer.Busy": true, "BeltTransfer.Done": false } },
+    {
+      "kind": "EVENTUALLY",
+      "fromMs": 0,
+      "withinMs": 45000,
+      "condition": { "fact:picked:Pick1": true, "fact:placed:Pick1": true, "fact:delivered:Remover1": true }
+    },
+    {
+      "kind": "AT",
+      "atMs": 45000,
+      "condition": {
+        "BeltTransfer.Done": true,
+        "BeltTransfer.XPlus": false,
+        "BeltTransfer.XMinus": false,
+        "BeltTransfer.YPlus": false,
+        "BeltTransfer.YMinus": false,
+        "BeltTransfer.Grip": false
+      }
+    },
+    { "kind": "ALWAYS", "condition": { "fact:itemsDropped": false, "fact:drops:Pick1": false } }
+  ]
+}

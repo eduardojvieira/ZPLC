@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "title": "Sort by weight in Ladder",
+  "summary": "Compare the reading of a scale with a limit and send heavy boxes to the side belt and light boxes straight on.",
+  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "objectives": ["Classify an item by comparing an analog value with a limit.", "Read the value only when the scale says it is stable."],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/WeightSorter.ld.json, run the belts after Start and hold each box on the scale with the blade. When Stable is TRUE, compare Weight with 3.5 kg using a comparison block in series: push a heavier box onto the side belt, release a lighter one by lowering the blade for 2.5 s.",
+      "checkpoint": "Heavy boxes end in HeavyBin, light boxes in LightBin, and Green lights after twelve boxes."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, think about what Weight reads while a box is still moving, and why the program waits for Stable. Which of the two box masses, 2 kg and 5 kg, lies on which side of 3.5 kg?",
+      "checkpoint": "Weight is 0 until the box rests; the decision is taken once, on the first scan with Stable TRUE, and the infeed stops while the pusher works."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter has no rungs, so no belt moves and no box is weighed; run the belts after Start, hold each box on the scale and send it to the bin its weight selects.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the weight-sorting scenario; watch the 3D view while it runs.",
+      "checkpoint": "The required scenario is named weight-sorting and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Watch the 3D view and the Weight reading: it jumps from 0 to 2 or 5 kg when the box settles. A 5 kg box is pushed out; a 2 kg box rides on after the blade goes down.",
+      "checkpoint": "The pusher goes out and back once per heavy box, and the infeed belt stands still during the stroke."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The grade cannot compare numbers: it sees which bin each box ended in. Any limit between 2 kg and 5 kg passes, so the 3.5 kg of the task is yours to justify, not the grade.",
+      "checkpoint": "A box that arrives in the wrong bin fails the ALWAYS assertion; the grade does not establish scale accuracy, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Use a step number: 0 wait for a stable box, 1 push, 2 retract, 3 release. Leave step 0 with two rungs in series with Stable: a GT block of Weight and 3.5 goes to step 1, an LE block to step 3."
+    },
+    {
+      "level": 2,
+      "text": "The blade stays down in step 3 for 2.5 s (a TON); drive Hold from Active in series with an NE block on Step and 3. Count the boxes with a CTU of 12 and drive Green from its Q."
+    }
+  ],
+  "faultCases": [
+    "The starter has no rungs, so no belt moves and no box is weighed; run the belts after Start, hold each box on the scale and send it to the bin its weight selects."
+  ]
+}

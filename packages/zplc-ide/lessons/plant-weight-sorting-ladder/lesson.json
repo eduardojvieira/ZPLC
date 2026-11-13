@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-weight-sorting-ladder",
+  "version": 1,
+  "order": 1163,
+  "module": 16,
+  "level": "advanced",
+  "prerequisites": ["plant-colour-separation", "plant-tank-level-scaling"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The Ladder version compares the reading of the scale of the scene with a limit; a learner board has no scale and no boxes of two masses to weigh.",
+        "es": "La versión en escalera compara la lectura de la báscula de la escena con un límite; una placa del estudiante no tiene báscula ni cajas de dos masas que pesar."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its items are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus piezas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "weight-sorting",
+  "estimatedMinutes": 50,
+  "starter": {
+    "project": "plant_weight_sorting_ladder_starter",
+    "program": "src/WeightSorter.ld.json"
+  },
+  "solution": {
+    "project": "plant_weight_sorting_ladder",
+    "program": "src/WeightSorter.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "weight-sorting",
+    "path": "tests/weight-sorting.scenario.json",
+    "sha256": "5b923d84974efc3d904c835c8b47c150b56daab31f1a3a4108185b41cfda4ab2"
+  },
+  "regressionScenarios": []
+}

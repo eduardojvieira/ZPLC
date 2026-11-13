@@ -1,0 +1,2220 @@
+{
+  "name": "ThreeLevelLifts",
+  "description": "Two lifts carry five boxes up three levels; an emergency stop and interlocks keep every move safe to start.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Active",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "The line runs"
+      },
+      {
+        "name": "StepA",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "Lift A: 0 load at level 1, 1 settle, 2 rise, 3 unload at level 2, 4 lower"
+      },
+      {
+        "name": "StepB",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "Lift B: the same sequence, one level higher"
+      },
+      {
+        "name": "SettleA",
+        "type": "TON",
+        "comment": "Lift A: the box is still before the lift rises"
+      },
+      {
+        "name": "UnloadA",
+        "type": "TON",
+        "comment": "Lift A: time for the box to leave at the top"
+      },
+      {
+        "name": "SettleB",
+        "type": "TON",
+        "comment": "Lift B: the box is still before the lift rises"
+      },
+      {
+        "name": "UnloadB",
+        "type": "TON",
+        "comment": "Lift B: time for the box to leave at the top"
+      },
+      {
+        "name": "Boxes",
+        "type": "CTU",
+        "comment": "Counts the boxes that reached the top"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%IX0.0",
+        "comment": "StartButton.pressed: start the line"
+      },
+      {
+        "name": "EStopOk",
+        "type": "BOOL",
+        "address": "%IX0.1",
+        "comment": "EStop1.ok: TRUE while the emergency stop is released"
+      },
+      {
+        "name": "BoxOnA",
+        "type": "BOOL",
+        "address": "%IX0.2",
+        "comment": "EyeFoot.detect: a box has reached the middle of lift A at level 1"
+      },
+      {
+        "name": "BoxOnB",
+        "type": "BOOL",
+        "address": "%IX0.3",
+        "comment": "EyeMid.detect: a box has reached the middle of lift B at its bottom level"
+      },
+      {
+        "name": "BoxAtTop",
+        "type": "BOOL",
+        "address": "%IX0.4",
+        "comment": "EyeTop.detect: a box is on the outfeed belt at level 3"
+      },
+      {
+        "name": "AAtLow",
+        "type": "BOOL",
+        "address": "%IX0.5",
+        "comment": "LiftA.atLevel1: lift A rests at level 1"
+      },
+      {
+        "name": "AAtHigh",
+        "type": "BOOL",
+        "address": "%IX0.6",
+        "comment": "LiftA.atLevel2: lift A rests at level 2"
+      },
+      {
+        "name": "BAtLow",
+        "type": "BOOL",
+        "address": "%IX0.7",
+        "comment": "LiftB.atLevel1: lift B rests at its bottom level (level 2 of the plant)"
+      },
+      {
+        "name": "BAtHigh",
+        "type": "BOOL",
+        "address": "%IX1.0",
+        "comment": "LiftB.atLevel2: lift B rests at its top level (level 3 of the plant)"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "RunInfeed",
+        "type": "BOOL",
+        "address": "%QX0.0",
+        "comment": "Infeed.run: run the belt that feeds lift A"
+      },
+      {
+        "name": "RunTransfer",
+        "type": "BOOL",
+        "address": "%QX0.1",
+        "comment": "Transfer.run: run the belt between the lifts, level 2"
+      },
+      {
+        "name": "RunOutfeed",
+        "type": "BOOL",
+        "address": "%QX0.2",
+        "comment": "Outfeed.run: run the belt to the bin, level 3"
+      },
+      {
+        "name": "AUp",
+        "type": "BOOL",
+        "address": "%QX0.3",
+        "comment": "LiftA.up: raise lift A"
+      },
+      {
+        "name": "ADown",
+        "type": "BOOL",
+        "address": "%QX0.4",
+        "comment": "LiftA.down: lower lift A"
+      },
+      {
+        "name": "ARun",
+        "type": "BOOL",
+        "address": "%QX0.5",
+        "comment": "LiftA.run: run the surface of lift A"
+      },
+      {
+        "name": "BUp",
+        "type": "BOOL",
+        "address": "%QX0.6",
+        "comment": "LiftB.up: raise lift B"
+      },
+      {
+        "name": "BDown",
+        "type": "BOOL",
+        "address": "%QX0.7",
+        "comment": "LiftB.down: lower lift B"
+      },
+      {
+        "name": "BRun",
+        "type": "BOOL",
+        "address": "%QX1.0",
+        "comment": "LiftB.run: run the surface of lift B"
+      },
+      {
+        "name": "Green",
+        "type": "BOOL",
+        "address": "%QX1.1",
+        "comment": "StackLight1.green: all five boxes reached the top"
+      },
+      {
+        "name": "Red",
+        "type": "BOOL",
+        "address": "%QX1.2",
+        "comment": "StackLight1.red: the line is stopped"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Start runs the line; nothing stops it yet. Goal: while EStopOk is FALSE every output is FALSE and Red is TRUE; releasing the stop must not restart the line, only a new press of Start does.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r1_p0",
+              "type": "contact_no",
+              "variable": "Start",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r1_Active",
+              "type": "coil_set",
+              "variable": "Active",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "Lift A settle time: a box on the lift is still for a moment before it rises.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r2_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r2_p1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepA", "1"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r2_SettleA",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "SettleA",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#500ms"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "Lift A unload time: the surface runs while the box leaves.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r3_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r3_p1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepA", "3"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r3_UnloadA",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "UnloadA",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#2500ms"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_4",
+      "number": 4,
+      "comment": "Lift A, state 4: back at the bottom, ready for the next box.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r4_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r4_p1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepA", "4"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r4_p2",
+              "type": "contact_no",
+              "variable": "AAtLow",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r4_StepA",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["0"],
+              "output": "StepA",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_5",
+      "number": 5,
+      "comment": "Lift A, state 3: unloaded, lower.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r5_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r5_p1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepA", "3"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r5_p2",
+              "type": "contact_no",
+              "variable": "UnloadA.Q",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r5_StepA",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["4"],
+              "output": "StepA",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_6",
+      "number": 6,
+      "comment": "Lift A, state 2: at the top, unload.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r6_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r6_p1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepA", "2"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r6_p2",
+              "type": "contact_no",
+              "variable": "AAtHigh",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r6_StepA",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["3"],
+              "output": "StepA",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_7",
+      "number": 7,
+      "comment": "Lift A, state 1: settled, rise.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r7_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r7_p1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepA", "1"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r7_p2",
+              "type": "contact_no",
+              "variable": "SettleA.Q",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r7_StepA",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["2"],
+              "output": "StepA",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_8",
+      "number": 8,
+      "comment": "Lift A, state 0: a box is on the lift, settle.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r8_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r8_p1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepA", "0"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r8_p2",
+              "type": "contact_no",
+              "variable": "AAtLow",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r8_p3",
+              "type": "contact_no",
+              "variable": "BoxOnA",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r8_StepA",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["1"],
+              "output": "StepA",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_9",
+      "number": 9,
+      "comment": "Lift B settle time: a box on the lift is still for a moment before it rises.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r9_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r9_p1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepB", "1"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r9_SettleB",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "SettleB",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#500ms"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_10",
+      "number": 10,
+      "comment": "Lift B unload time: the surface runs while the box leaves.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r10_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r10_p1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepB", "3"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r10_UnloadB",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "UnloadB",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#2500ms"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_11",
+      "number": 11,
+      "comment": "Lift B, state 4: back at the bottom, ready for the next box.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r11_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r11_p1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepB", "4"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r11_p2",
+              "type": "contact_no",
+              "variable": "BAtLow",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r11_StepB",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["0"],
+              "output": "StepB",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_12",
+      "number": 12,
+      "comment": "Lift B, state 3: unloaded, lower.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r12_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r12_p1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepB", "3"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r12_p2",
+              "type": "contact_no",
+              "variable": "UnloadB.Q",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r12_StepB",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["4"],
+              "output": "StepB",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_13",
+      "number": 13,
+      "comment": "Lift B, state 2: at the top, unload.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r13_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r13_p1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepB", "2"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r13_p2",
+              "type": "contact_no",
+              "variable": "BAtHigh",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r13_StepB",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["3"],
+              "output": "StepB",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_14",
+      "number": 14,
+      "comment": "Lift B, state 1: settled, rise.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r14_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r14_p1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepB", "1"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r14_p2",
+              "type": "contact_no",
+              "variable": "SettleB.Q",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r14_StepB",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["2"],
+              "output": "StepB",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_15",
+      "number": 15,
+      "comment": "Lift B, state 0: a box is on the lift, settle.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r15_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r15_p1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepB", "0"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r15_p2",
+              "type": "contact_no",
+              "variable": "BAtLow",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r15_p3",
+              "type": "contact_no",
+              "variable": "BoxOnB",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r15_StepB",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["1"],
+              "output": "StepB",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_16",
+      "number": 16,
+      "comment": "Count each box that reaches the outfeed at level 3.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r16_p0",
+              "type": "contact_no",
+              "variable": "BoxAtTop",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r16_Boxes",
+              "type": "function_block",
+              "fbType": "CTU",
+              "instance": "Boxes",
+              "parameters": {
+                "CU": "CONNECTED",
+                "R": "FALSE",
+                "PV": "5"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_17",
+      "number": 17,
+      "comment": "Surface of lift A: it runs only while lift A stands at the level of its step.",
+      "branches": [
+        {
+          "id": "branch_17",
+          "startCol": 1,
+          "endCol": 3,
+          "rows": [0, 1]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r17_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r17_o0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepA", "0"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r17_o0_1",
+              "type": "contact_no",
+              "variable": "AAtLow",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r17_o0_2",
+              "type": "contact_nc",
+              "variable": "BoxOnA",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r17_ARun",
+              "type": "coil",
+              "variable": "ARun",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": {
+              "id": "r17_o1_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepA", "3"],
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r17_o1_1",
+              "type": "contact_no",
+              "variable": "AAtHigh",
+              "row": 1,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_18",
+      "number": 18,
+      "comment": "Surface of lift B: it runs only while lift B stands at the level of its step.",
+      "branches": [
+        {
+          "id": "branch_18",
+          "startCol": 1,
+          "endCol": 3,
+          "rows": [0, 1]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r18_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r18_o0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepB", "0"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r18_o0_1",
+              "type": "contact_no",
+              "variable": "BAtLow",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r18_o0_2",
+              "type": "contact_nc",
+              "variable": "BoxOnB",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r18_BRun",
+              "type": "coil",
+              "variable": "BRun",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": {
+              "id": "r18_o1_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepB", "3"],
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r18_o1_1",
+              "type": "contact_no",
+              "variable": "BAtHigh",
+              "row": 1,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_19",
+      "number": 19,
+      "comment": "AUp: lift A rises in its rise step, with its surface stopped.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r19_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r19_p1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepA", "2"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r19_AUp",
+              "type": "coil",
+              "variable": "AUp",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_20",
+      "number": 20,
+      "comment": "ADown: lift A lowers in its lower step.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r20_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r20_p1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepA", "4"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r20_ADown",
+              "type": "coil",
+              "variable": "ADown",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_21",
+      "number": 21,
+      "comment": "BUp: lift B rises in its rise step, with its surface stopped.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r21_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r21_p1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepB", "2"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r21_BUp",
+              "type": "coil",
+              "variable": "BUp",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_22",
+      "number": 22,
+      "comment": "BDown: lift B lowers in its lower step.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r22_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r22_p1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepB", "4"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r22_BDown",
+              "type": "coil",
+              "variable": "BDown",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_23",
+      "number": 23,
+      "comment": "The infeed runs only while lift A waits at its loading level, so no box is pushed into a gap.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r23_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r23_p1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepA", "0"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r23_p2",
+              "type": "contact_no",
+              "variable": "AAtLow",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r23_p3",
+              "type": "contact_nc",
+              "variable": "BoxOnA",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r23_RunInfeed",
+              "type": "coil",
+              "variable": "RunInfeed",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_24",
+      "number": 24,
+      "comment": "The transfer belt runs while lift A unloads, or while lift B waits at its loading level.",
+      "branches": [
+        {
+          "id": "branch_24",
+          "startCol": 1,
+          "endCol": 3,
+          "rows": [0, 1]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r24_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r24_o0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepA", "3"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r24_RunTransfer",
+              "type": "coil",
+              "variable": "RunTransfer",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": {
+              "id": "r24_o1_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["StepB", "0"],
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r24_o1_1",
+              "type": "contact_no",
+              "variable": "BAtLow",
+              "row": 1,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r24_o1_2",
+              "type": "contact_nc",
+              "variable": "BoxOnB",
+              "row": 1,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_25",
+      "number": 25,
+      "comment": "The outfeed belt runs while the line runs.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r25_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r25_RunOutfeed",
+              "type": "coil",
+              "variable": "RunOutfeed",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_26",
+      "number": 26,
+      "comment": "Green: all five boxes reached the top.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r26_p0",
+              "type": "contact_no",
+              "variable": "Boxes.Q",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r26_Green",
+              "type": "coil",
+              "variable": "Green",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

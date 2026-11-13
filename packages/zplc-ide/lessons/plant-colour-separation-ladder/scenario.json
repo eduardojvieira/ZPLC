@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "colour-separation",
+  "tickMs": 10,
+  "durationMs": 50000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      { "atMs": 200, "operate": { "signal": "StartButton.pressed", "value": true } },
+      { "atMs": 400, "operate": { "signal": "StartButton.pressed", "value": false } }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 100,
+      "condition": { "ColourSeparation.Hold": false, "ColourSeparation.Push": false, "ColourSeparation.Done": false }
+    },
+    {
+      "kind": "AT",
+      "atMs": 1500,
+      "condition": { "ColourSeparation.Hold": true, "ColourSeparation.Busy": true, "ColourSeparation.Done": false }
+    },
+    { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 50000, "condition": { "fact:sorted:RedBin": true, "fact:sorted:BlueBin": true } },
+    { "kind": "AT", "atMs": 50000, "condition": { "ColourSeparation.Done": true, "ColourSeparation.Push": false } },
+    { "kind": "ALWAYS", "condition": { "fact:misrouted:RedBin": false, "fact:misrouted:BlueBin": false, "fact:itemsDropped": false } }
+  ]
+}

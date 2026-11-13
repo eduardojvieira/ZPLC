@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Sort by height, chain transfer in Ladder",
+  "summary": "Tell three box heights apart with two beams, remember the answer until the box reaches the chain transfer, and send it straight, right or left.",
+  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Decide a route from a combination of two sensors.",
+    "Remember a decision while the next box is already passing the sensors."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/HeightSortChain.ld.json, latch what the two beams see while a box passes: 0.20 m breaks neither, 0.30 m only BeamLow, 0.40 m both. When the box has stood still at the blade for a second, send it straight on, or lift the module and move it right or left.",
+      "checkpoint": "Short boxes end in BinShort, medium in BinMedium, tall in BinTall, and Done lights after nine boxes."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, fill a table of the two beams for the three heights, and say when the latch must be cleared: the next box passes the beams while this one is still on the module.",
+      "checkpoint": "A box is classified when it has stood still at the blade, and the latch is cleared at that moment, not when the box leaves."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter has no rungs, so no belt moves and no box is sorted; run the belts after Start, classify each box from the two beams and send it straight, right or left.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the height-sorting-chain scenario; watch the 3D view while it runs.",
+      "checkpoint": "The required scenario is named height-sorting-chain and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Watch the 3D view: the module stays down for a short box; for the others it stops, rises, slides the box sideways and goes down again. Lift and run are never TRUE together.",
+      "checkpoint": "MoveRight is TRUE only for medium boxes and MoveLeft only for tall ones, and both only while Lift is TRUE."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The grade sees the three bins and that no box was misrouted or dropped; it does not read your latch, so a wrong answer shows only as a misrouted box.",
+      "checkpoint": "It does not establish the speed of the module, the timing of the lift, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Set SawLow and SawHigh with set coils whenever Low and High are TRUE, and decide the direction from them after the box has stood still for a second (a TON on AtBlade). Reset both latches right after with reset coils, in rungs that come later in the same scan."
+    },
+    {
+      "level": 2,
+      "text": "One state per step: 1 wait for the box, 2 straight on, 3 lift and wait until Raised has held for T#300ms, 4 slide, 5 lower and wait for Lowered. Never run the module while Lift is TRUE."
+    }
+  ],
+  "faultCases": [
+    "The starter has no rungs, so no belt moves and no box is sorted; run the belts after Start, classify each box from the two beams and send it straight, right or left."
+  ]
+}

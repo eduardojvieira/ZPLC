@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-estop-interlocks-ladder",
+  "version": 1,
+  "order": 1181,
+  "module": 18,
+  "level": "advanced",
+  "prerequisites": ["plant-three-level-lifts", "interlock-guard-permissive"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The Ladder version reads the emergency stop of the scene and stops its lifts and belts; a learner board has no emergency-stop circuit or lifts, and the hardware track comes with the HIL run.",
+        "es": "La versión en escalera lee el paro de emergencia de la escena y detiene sus elevadores y bandas; una placa del estudiante no tiene circuito de paro de emergencia ni elevadores, y la pista de hardware llega con la ejecución HIL."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus cajas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "three-level-lifts",
+  "estimatedMinutes": 40,
+  "starter": {
+    "project": "plant_estop_interlocks_ladder_starter",
+    "program": "src/ThreeLevelLifts.ld.json"
+  },
+  "solution": {
+    "project": "plant_estop_interlocks_ladder",
+    "program": "src/ThreeLevelLifts.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "estop-interlocks",
+    "path": "tests/estop-interlocks.scenario.json",
+    "sha256": "6ae467a9ecfef06439a046befc16f87327865cad618af0aa7d46fd9b66b76bfe"
+  },
+  "regressionScenarios": []
+}
