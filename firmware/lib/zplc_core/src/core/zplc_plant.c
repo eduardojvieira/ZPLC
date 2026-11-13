@@ -394,7 +394,10 @@ void zplc_plant_latch(void) {
     g.late = (uint16_t)(g.late + g_miss);
     g_miss = 0U;
     ipi = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
-    if (g.fresh != 0U && ipi != NULL) {
+    /* The staged values are applied at every latch once a frame was accepted, not only the first one after it: the
+     * pins are sampled again each scan and would take a bound input back (LNK-007). A latch with no new frame
+     * still counts as late; the staleness bound (R-M6-4) limits how long the values persist. */
+    if (g.have_seq != 0U && ipi != NULL) {
       for (uint8_t i = 0U; i < g.n_in; i++) {
         const slot_t *s = &g.in[i];
 
@@ -410,8 +413,13 @@ void zplc_plant_latch(void) {
           (void)zplc_force_write_bytes((uint16_t)(ZPLC_MEM_IPI_BASE + s->off), g.staged + s->vpos, s->len);
         }
       }
-      g.fresh = 0U;
-      g.applied_seq = g.staged_seq;
+      if (g.fresh != 0U) {
+        g.fresh = 0U;
+        g.applied_seq = g.staged_seq;
+      } else {
+        g.late++;
+        g.missed = 1U;
+      }
     } else {
       g.late++;
       g.missed = 1U;

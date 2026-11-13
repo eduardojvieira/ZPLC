@@ -491,7 +491,7 @@ static void plant_latch_nothing_new_counts_late(void) {
   ipi()[2] = 0U;
   zplc_plant_latch();
   CHECK(late_of() == 2U, "a latch with nothing new is late");
-  CHECK(ipi()[2] == 0U, "and applies nothing: a frame is applied once");
+  CHECK(ipi()[2] == 0xFEU, "and the staged values are applied again, so a pin sampled since cannot take a bound input back (LNK-007)");
   CHECK(good(2U) == 0, "next frame");
   zplc_plant_latch();
   CHECK(ipi()[2] == 0xFEU && late_of() == 2U, "applied, on time");
