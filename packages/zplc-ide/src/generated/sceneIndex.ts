@@ -43,6 +43,14 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     }
   },
   {
+    "id": "tank-level-control",
+    "dir": "plant-scenes/tank-level-control",
+    "names": {
+      "en": "Tank level control",
+      "es": "Tank level control"
+    }
+  },
+  {
     "id": "timed-tank",
     "dir": "plant-scenes/timed-tank",
     "names": {

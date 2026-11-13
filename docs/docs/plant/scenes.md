@@ -17,6 +17,7 @@ These scenes ship with ZPLC, in order of difficulty. Each has a scene file, a pl
 | Counted queue             | 20 s                   | belt, emitter, two diffuse sensors, remover, push button, indicator light                                |
 | Buffer and release        | 36 s                   | two belts, emitter, stop blade, three diffuse sensors, remover, two push buttons, two indicator lights   |
 | Merge two lines           | 25 s                   | three belts, two emitters, two stop blades, three diffuse sensors, remover, push button, indicator light |
+| Tank level control        | 90 s                   | tank, two potentiometers, numeric display, stack light                                                   |
 
 ## Belt to sensor
 
@@ -53,6 +54,12 @@ The scenario checks, among others, that the program holds the line at 8 s, that 
 Two feeder lines each load three boxes and meet at one merge zone. The program grants the zone to one line at a time, line A first. A grant ends when its box has left the zone.
 
 The scenario checks that both blades hold at 1 s with no box removed, that both emitters emit and the remover receives a box, that the done light is on at 25 s with both blades holding, and that no box is dropped or collides.
+
+## Tank level control
+
+Hold the level of a tank at a set point with a PID loop. The set point comes from a potentiometer in metres, a second potentiometer opens the discharge valve as a disturbance, and a numeric display shows the level. The level and the set point arrive as `INT` raw values and the valves take `REAL` percentages: see [numeric signals](./numeric-signals.md).
+
+The scenario sets the set point to 0.5 m, opens the discharge to 40 % at 40 s and lowers the set point to 0.3 m at 70 s. It checks that the level stays in the band of 0.45 m to 0.55 m for 8 s from 30 s and for 8 s from 60 s, that it is back in the band within 20 s of the disturbance, that it is out of the band for 5 s from 85 s, and that the tank never spills.
 
 ## What is not claimed
 

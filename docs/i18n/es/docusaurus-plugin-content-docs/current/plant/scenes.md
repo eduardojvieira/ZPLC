@@ -17,6 +17,7 @@ ZPLC incluye estas escenas, en orden de dificultad. Cada una tiene un archivo de
 | `Counted queue`             | 20 s                   | cinta, emisor, dos sensores difusos, retirador, pulsador, piloto luminoso                                     |
 | `Buffer and release`        | 36 s                   | dos cintas, emisor, tope retráctil, tres sensores difusos, retirador, dos pulsadores, dos pilotos luminosos   |
 | `Merge two lines`           | 25 s                   | tres cintas, dos emisores, dos topes retráctiles, tres sensores difusos, retirador, pulsador, piloto luminoso |
+| `Tank level control`        | 90 s                   | tanque, dos potenciómetros, indicador numérico, torre de luces                                                |
 
 ## Belt to sensor
 
@@ -53,6 +54,12 @@ El escenario comprueba, entre otras cosas, que el programa retiene la línea a l
 Dos líneas de alimentación cargan tres cajas cada una y se encuentran en una zona de unión. El programa concede la zona a una línea a la vez, primero la línea A. Una concesión termina cuando su caja salió de la zona.
 
 El escenario comprueba que a 1 s ambos topes retienen sin que se retire ninguna caja, que ambos emisores emiten y el retirador recibe una caja, que a los 25 s el piloto de fin está encendido con ambos topes reteniendo, y que ninguna caja cae ni choca.
+
+## Tank level control
+
+Mantenga el nivel de un tanque en un valor de consigna con un lazo PID. La consigna viene de un potenciómetro en metros, un segundo potenciómetro abre la válvula de descarga como perturbación y un indicador numérico muestra el nivel. El nivel y la consigna llegan como valores crudos `INT` y las válvulas reciben porcentajes `REAL`: consulte [señales numéricas](./numeric-signals.md).
+
+El escenario fija la consigna en 0.5 m, abre la descarga al 40 % a los 40 s y baja la consigna a 0.3 m a los 70 s. Comprueba que el nivel se mantiene en la banda de 0.45 m a 0.55 m durante 8 s desde los 30 s y durante 8 s desde los 60 s, que vuelve a la banda en menos de 20 s tras la perturbación, que está fuera de la banda durante 5 s desde los 85 s y que el tanque nunca rebosa.
 
 ## Lo que no se afirma
 
