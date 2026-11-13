@@ -13,7 +13,7 @@ const file = (id: string, isModified: boolean) => ({ id, name: `${id}.st`, path:
 function stage(files: ProjectFile[], projectConfigDirty: boolean, failing: string[] = []) {
   const calls = { files: 0, config: 0 };
   useIDEStore.setState({
-    loadedFiles: new Map(files.map((f) => [f.id, f])),
+    loadedFiles: new Map(files.map((f) => [f.id, f])) as never,
     projectConfigDirty,
     saveAllFiles: async () => {
       calls.files += 1;

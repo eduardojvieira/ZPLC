@@ -765,10 +765,11 @@ async function main(): Promise<void> {
     assert(
       await cdp.evaluate(
         `(() => { const toolbar = document.querySelector('[role="toolbar"][aria-label="Project operations"]'); const build = ` +
-          `document.querySelector('button[aria-label="Build options"]'); const mode = ` +
-          `document.querySelector('[role="group"][aria-label="Execution mode"]'); return Boolean(toolbar && ` +
+          `document.querySelector('button[aria-label="Build options"]'); const target = ` +
+          `document.querySelector('button[aria-label^="Where the run goes"]'); return Boolean(toolbar && ` +
           `build?.getAttribute('aria-controls') && build.getAttribute('aria-expanded') === 'false' && ` +
-          `mode?.querySelector('button[aria-pressed="true"]')); })()`,
+          `target?.getAttribute('aria-haspopup') === 'menu' && target.getAttribute('aria-expanded') === 'false' && ` +
+          `target.textContent?.includes('Simulation')); })()`,
       ),
       'Toolbar accessibility semantics are missing.',
     );
@@ -863,21 +864,12 @@ async function main(): Promise<void> {
         ? true
         : undefined,
     );
+    // Simulation has no Connect (spec 013 FLW-007): Run starts the simulator itself, so the control the keyboard reaches is Run.
     assert(
       await cdp.evaluate(
-        `(() => { const connect = document.querySelector('button[aria-label="Connect"]'); connect?.focus(); return ` +
-          `document.activeElement === connect; })()`,
+        `!document.querySelector('button[aria-label="Connect"]') && !document.querySelector('button[aria-label="Disconnect"]')`,
       ),
-      'Connect control is not explicitly named or focusable.',
-    );
-    await press(cdp, 'Enter');
-    await waitFor('SIM connection focus recovery', async () =>
-      (await cdp!.evaluate(
-        `(() => { const disconnect = document.querySelector('button[aria-label="Disconnect"]'); return disconnect && ` +
-          `document.activeElement === disconnect ? true : undefined; })()`,
-      )) === true
-        ? true
-        : undefined,
+      'Simulation must not offer Connect or Disconnect.',
     );
     assert(
       await cdp.evaluate(
@@ -964,7 +956,15 @@ async function main(): Promise<void> {
       const state = (await cdp!.evaluate(card)) as { text: string; cycles: number } | null;
       return state && state.cycles > stopped.cycles && state.text.includes('E-stop: released') ? state : undefined;
     });
-    await waitFor('Disconnect', async () => ((await cdp!.evaluate(click('Disconnect'))) === true ? true : undefined));
+    // The bar's Stop (Shift+F5) ends the simulator session that Run began: the Disconnect of the old bar. The motor panel has a Stop too.
+    await waitFor('Stop', async () =>
+      (await cdp!.evaluate(
+        `(() => { const stop = document.querySelector('[role="toolbar"] button[aria-label^="Stop"]'); if (!stop || stop.disabled) ` +
+          `return false; stop.click(); return true; })()`,
+      )) === true
+        ? true
+        : undefined,
+    );
     await waitFor('motor panel removal', async () =>
       (await cdp!.evaluate('document.querySelector("[aria-label=\\"Live native POSIX motor\\"]") ? undefined : true')) === true
         ? true

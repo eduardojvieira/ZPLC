@@ -6,10 +6,10 @@ import { activeTransport, registerPlantTransport } from '../store/useTransport';
 import { plantTransport, programTransport, type TransportState } from './transport';
 
 /** A debug controller whose calls are recorded and whose `vmState` follows them, like the real one. */
-function fakeController(initial = 'idle') {
+function fakeController(initial: DebugController['vmState'] = 'idle') {
   const calls: string[] = [];
-  const controller = { vmState: initial } as unknown as DebugController & { vmState: string };
-  const act = (name: string, next: string) => async () => {
+  const controller = { vmState: initial } as unknown as DebugController;
+  const act = (name: string, next: DebugController['vmState']) => async () => {
     calls.push(name);
     controller.vmState = next;
   };
@@ -35,7 +35,7 @@ function fakeSession(initial: PlantSessionState = 'idle') {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
-  } as { state: PlantSessionState; slowdown: number } & PlantSession;
+  } as unknown as { state: PlantSessionState; slowdown: number } & PlantSession;
   const move = (name: string, next: PlantSessionState) => {
     calls.push(name);
     session.state = next;
