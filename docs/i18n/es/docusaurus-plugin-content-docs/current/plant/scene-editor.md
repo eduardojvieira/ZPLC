@@ -60,7 +60,7 @@ El editor tiene un módulo que escribe las declaraciones de variables de una esc
 
 - **Deshacer** y **Rehacer** recorren sus ediciones, un paso por cada edición o arrastre. Están desactivados mientras la planta corre.
 - **Terminar de editar** cierra el editor y reconstruye la planta con la escena editada.
-- **Guardar en el proyecto** (en la barra, después de **Terminar de editar**, cuando hay una carpeta de proyecto abierta y la escena no es ya una escena guardada) pide un nombre y guarda la escena y su mapa de la planta como `scenes/<nombre>.scene.json` en su proyecto, donde aparece en **Escena**. Una escena editada también participa en **Guardar todo**.
+- **Guardar en el proyecto** (en la barra, después de **Terminar de editar**, cuando hay una carpeta de proyecto abierta y la escena no es ya una escena guardada) pide un nombre y guarda la escena y su mapa de la planta como `scenes/<nombre>.scene.json` en su proyecto, donde aparece en **Escena**. La escena propia del proyecto (el `scene.json` de la raíz del proyecto, como lo trae una lección de escena) se guarda en su lugar: **Guardar en el proyecto** no pide nombre y escribe `scene.json` y `plant-map.json` en la raíz, los archivos que califica el Check de una lección, sin crear la carpeta `scenes/`. Una escena editada también participa en **Guardar todo**.
 - Para ejecutar, use **Ejecutar** en la barra de comandos. Inicia el programa y la planta juntos. Si las señales no están enlazadas, la planta se muestra pero ningún programa la maneja.
 
 ## Usar el teclado

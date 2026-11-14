@@ -60,7 +60,7 @@ The editor has a module that writes the variable declarations of a scene in ST, 
 
 - **Undo** and **Redo** step through your edits, one step for each edit or drag. They are off while the plant runs.
 - **Done editing** closes the editor and rebuilds the plant from the edited scene.
-- **Save to project** (in the toolbar after **Done editing**, when a project folder is open and the scene is not already a saved scene) asks for a name and saves the scene and its plant map as `scenes/<name>.scene.json` in your project, where it is listed in **Scene**. A scene that has been edited also takes part in **Save all**.
+- **Save to project** (in the toolbar after **Done editing**, when a project folder is open and the scene is not already a saved scene) asks for a name and saves the scene and its plant map as `scenes/<name>.scene.json` in your project, where it is listed in **Scene**. The project's own scene (the `scene.json` at the root of the project, as a scene lesson ships it) is saved in place: **Save to project** asks for no name and writes `scene.json` and `plant-map.json` at the root, the files a lesson Check grades, and creates no `scenes/` folder. A scene that has been edited also takes part in **Save all**.
 - To run, use **Run** in the command bar. It starts the program and the plant together. If the signals are not bound, the plant is shown but no program drives it.
 
 ## Use the keyboard
