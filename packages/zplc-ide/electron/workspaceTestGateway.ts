@@ -11,7 +11,7 @@ export interface WorkspaceTestToken {
 interface WorkspaceIdentity {
   dev: string;
   ino: string;
-  /** Creation time of the directory: constant while entries come and go, new for a replacement directory. */
+  /** rootGeneration: the creation time of the directory (constant while entries come and go), or its ctime without one. */
   birthNs: string;
 }
 
@@ -44,9 +44,14 @@ function validOwner(ownerWebContentsId: unknown): ownerWebContentsId is number {
 }
 
 // ctime moves whenever an entry is added or removed in the root, so it cannot tell a replacement from the app's own writes.
-// ponytail: a filesystem without birth time reports 0 and then only (dev, ino) binds the root.
-function identityOf(status: { dev: bigint; ino: bigint; birthtimeNs: bigint }): WorkspaceIdentity {
-  return { dev: String(status.dev), ino: String(status.ino), birthNs: String(status.birthtimeNs) };
+// A filesystem without birth time reports 0: there the ctime binding of 2.0 stays, stricter than (dev, ino) alone, and a Check
+// after a new entry in the root asks the learner to open the lesson again.
+export function rootGeneration(status: { birthtimeNs: bigint; ctimeNs: bigint }): string {
+  return status.birthtimeNs > 0n ? `birth:${status.birthtimeNs}` : `ctime:${status.ctimeNs}`;
+}
+
+function identityOf(status: { dev: bigint; ino: bigint; birthtimeNs: bigint; ctimeNs: bigint }): WorkspaceIdentity {
+  return { dev: String(status.dev), ino: String(status.ino), birthNs: rootGeneration(status) };
 }
 
 function sameIdentity(left: WorkspaceIdentity, right: WorkspaceIdentity): boolean {

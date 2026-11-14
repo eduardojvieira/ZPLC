@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { createWorkspaceTestGateway } from './workspaceTestGateway';
+import { createWorkspaceTestGateway, rootGeneration } from './workspaceTestGateway';
 
 const temporaryRoots: string[] = [];
 
@@ -345,5 +345,13 @@ describe('Workspace test gateway', () => {
     ).rejects.toThrow('Workspace is unavailable');
     expect(called).toBe(0);
     await expect(gateway.run(7, token, async (root) => root, shownRoot)).resolves.toBe(shownRoot);
+  });
+});
+
+describe('the generation that binds a registered root (81780319)', () => {
+  it('is the birth time when the filesystem reports one, and the ctime of 2.0 when it reports none', () => {
+    expect(rootGeneration({ birthtimeNs: 5n, ctimeNs: 9n })).toBe('birth:5');
+    // a filesystem without birth time (some NFS or FUSE mounts) keeps the stricter ctime binding instead of (dev, ino) alone
+    expect(rootGeneration({ birthtimeNs: 0n, ctimeNs: 9n })).toBe('ctime:9');
   });
 });
