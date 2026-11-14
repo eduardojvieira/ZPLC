@@ -17,7 +17,7 @@ This page says what the mode does and what has been shown about it. Where nothin
 | ----------------------------------------------------------------------------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------- |
 | The firmware validates every frame, applies inputs at the scan, keeps the pins safe and leaves the mode on a rule | Host (C unit tests) | `firmware/lib/zplc_core/tests/test_plant.c`, `test_plant_sched.c` and `test_plant_attack.c` |
 | The firmware module runs in the native simulator and answers frames                                               | Native simulator    | `firmware/tests/plant_io` and the rehearsal record below                                    |
-| Studio feeds a board from the plant, in a loop, with a latency check and a pulse warning                          | Host (test double)  | the tests of `packages/zplc-ide/src/plant/board`, which use a fake board                    |
+| ZPLC feeds a board from the plant, in a loop, with a latency check and a pulse warning                            | Host (test double)  | the tests of `packages/zplc-ide/src/plant/board`, which use a fake board                    |
 | The mode builds for a catalogued board                                                                            | Target build        | Not recorded on this page                                                                   |
 | The mode runs on a physical board, over USB serial or over TCP                                                    | HIL                 | **None. No physical board run exists yet.**                                                 |
 
@@ -29,24 +29,24 @@ Frame rate and link latency on a board are not yet measured. This documentation 
 
 Entering the mode is a physical operation: the outputs of a board are decided by something other than its own pins. Because of that:
 
-- **A person starts it, every session.** The action is the command **Feed the board from the plant**. The text that Studio shows to confirm it reads: "The board will read its inputs from the simulated plant and not from its terminals, until you close the mode or the link ends. Check that nothing connected to its outputs can cause harm."
+- **A person starts it, every session.** The action is the command **Feed the board from the plant**. The text that ZPLC shows to confirm it reads: "The board will read its inputs from the simulated plant and not from its terminals, until you close the mode or the link ends. Check that nothing connected to its outputs can cause harm."
 - **AI and MCP never start it.** The MCP server has no tool that enters, feeds or mirrors a plant, and a test checks that. An agent may run a scene scenario headless against a simulated runtime, which touches no board.
-- **The command is not available yet.** In this version the command exists but is disabled, because the persistent indicator that shows the mode is on is not mounted in Studio yet. Studio cannot start the mode from the interface until it is.
+- **The command is not available yet.** In this version the command exists but is disabled, because the persistent indicator that shows the mode is on is not mounted in ZPLC yet. ZPLC cannot start the mode from the interface until it is.
 
-The mode is a capability that the firmware offers on the control link. With firmware that does not offer it, Studio says so, and a lesson shows its hardware track as unsupported, with the reason.
+The mode is a capability that the firmware offers on the control link. With firmware that does not offer it, ZPLC says so, and a lesson shows its hardware track as unsupported, with the reason.
 
 ## What the outputs of the board do
 
 - **They stay safe while the mode is on.** The pins of the board hold their documented safe level while the board is fed from the plant. The output image still carries what your program writes, and the plant reads it.
 - **Mirroring is a second decision.** A person may turn mirroring on for the session, and only then do the pins follow the output image. It is off every time the mode starts.
-- **The mode ends on a rule, and the pins stay safe.** The mode ends when you close it, when the board gets no frame in time, when the session ends, when the link is lost, when the program is stopped, paused or reset, when the board reports a fault or when it rejects frames that break the protocol. Studio names the reason. The board does not go on with stale plant values and does not go back to its pins by itself.
+- **The mode ends on a rule, and the pins stay safe.** The mode ends when you close it, when the board gets no frame in time, when the session ends, when the link is lost, when the program is stopped, paused or reset, when the board reports a fault or when it rejects frames that break the protocol. ZPLC names the reason. The board does not go on with stale plant values and does not go back to its pins by itself.
 - **The exchange does not delay the scan.** A frame that arrives late is counted and shown.
 
 These rules are shown in the firmware tests at the host level. They are not shown on a board yet.
 
 ## What to connect
 
-For a scene, the board needs only the connection to Studio: a USB serial cable to the computer. The inputs that the plant map binds need nothing on their terminals, because the plant supplies them. The outputs stay safe, so a lamp or a relay wired to an output does not follow the plant unless you turn mirroring on.
+For a scene, the board needs only the connection to ZPLC: a USB serial cable to the computer. The inputs that the plant map binds need nothing on their terminals, because the plant supplies them. The outputs stay safe, so a lamp or a relay wired to an output does not follow the plant unless you turn mirroring on.
 
 No lesson offers the hardware track through plant I/O mode today. Every scene lesson is simulation only and says why. When a lesson offers it, its page says what to connect for that lesson, and a check on the board is labelled as a hardware result, as in the [hardware track](../learn/hardware-track.md).
 

@@ -1,13 +1,13 @@
 ---
 title: 'The scene editor'
 sidebar_label: 'The scene editor'
-description: 'Build or change a plant scene in Studio: add parts, place them, read the signals, bind them to your program, undo, save and run.'
+description: 'Build or change a plant scene in ZPLC: add parts, place them, read the signals, bind them to your program, undo, save and run.'
 tags: [plant, scenes, editor]
 ---
 
 # The scene editor
 
-The scene editor is how you build a scene of your own, or change one that ships with ZPLC, without writing the scene file by hand. This page follows the editor as it is in Studio today. Everything you can do with the pointer you can also do with the keyboard.
+The scene editor is how you build a scene of your own, or change one that ships with ZPLC, without writing the scene file by hand. This page follows the editor as it is in ZPLC today. Everything you can do with the pointer you can also do with the keyboard.
 
 ## Open the editor
 

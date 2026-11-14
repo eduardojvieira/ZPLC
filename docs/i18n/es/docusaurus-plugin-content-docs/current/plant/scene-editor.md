@@ -1,13 +1,13 @@
 ---
 title: 'El editor de escenas'
 sidebar_label: 'El editor de escenas'
-description: 'Construya o cambie una escena de la planta en Studio: añada piezas, colóquelas, lea las señales, enlácelas a su programa, deshaga, guarde y ejecute.'
+description: 'Construya o cambie una escena de la planta en ZPLC: añada piezas, colóquelas, lea las señales, enlácelas a su programa, deshaga, guarde y ejecute.'
 tags: [plant, scenes, editor]
 ---
 
 # El editor de escenas
 
-El editor de escenas sirve para construir una escena propia, o cambiar una de las que incluye ZPLC, sin escribir el archivo de escena a mano. Esta página sigue el editor tal como está hoy en Studio. Todo lo que se puede hacer con el puntero se puede hacer también con el teclado.
+El editor de escenas sirve para construir una escena propia, o cambiar una de las que incluye ZPLC, sin escribir el archivo de escena a mano. Esta página sigue el editor tal como está hoy en ZPLC. Todo lo que se puede hacer con el puntero se puede hacer también con el teclado.
 
 ## Abrir el editor
 
