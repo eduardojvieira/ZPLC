@@ -52,6 +52,7 @@ import { parseElement, rungElement, type SourceElementId } from '../../models/so
 import { getVisualSelection, setVisualSelection, useVisualFileKey } from '../visualSelection';
 import type { VisualGesture } from '../visualHistory';
 import { useT } from '../../i18n';
+import { usePublishSelectedElement } from '../../shell/useSelection';
 
 // =============================================================================
 // Props
@@ -362,6 +363,12 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     const rung = normalizedModel.rungs.find((candidate) => candidate.id === selection.rungId);
     return rung?.grid?.flat().find((cell) => cell.element?.id === selection.elementId)?.element ?? null;
   }, [normalizedModel, selection]);
+
+  // the Inspector and the reference commands read the selected element from the selection store (SHL-009)
+  usePublishSelectedElement(
+    selectionIds(selection)[0] ?? null,
+    [selectedElement?.variable, selectedElement?.instance, selectedElement?.output].filter((name): name is string => !!name),
+  );
 
   /** One gesture is one commit: the document, and the selection from before it and after it (LNG-010). */
   const commit = useCallback(

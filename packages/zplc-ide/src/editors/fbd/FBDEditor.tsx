@@ -65,6 +65,7 @@ import { useElementBreakpoints } from '../elementBreakpoints';
 import { markBreakpointNodes } from '../breakpointMarks';
 import { blockElement, parseElement, type SourceElementId } from '../../models/sourceElements';
 import { t } from '../../i18n';
+import { usePublishSelectedElement } from '../../shell/useSelection';
 import { announce } from '../../utils/announce';
 import { Button, ContextMenu } from '../../ui';
 import { useCanvasContextMenu } from '../useCanvasContextMenu';
@@ -178,6 +179,14 @@ function FBDEditorInner({
   const nodesRef = useRef(nodes);
   const edgesRef = useRef(edges);
   const clipboardRef = useRef<FBDClipboardFragment | undefined>(undefined);
+  // the Inspector and the reference commands read the selected element from the selection store (SHL-009)
+  const selectedBlock = nodes.find((node) => node.selected);
+  usePublishSelectedElement(
+    fbdSelection(nodes, edges)[0] ?? null,
+    [selectedBlock?.data.variableName, selectedBlock?.data.instanceName].filter(
+      (name): name is string => typeof name === 'string' && !!name,
+    ),
+  );
 
   // One gesture is one commit (LNG-010): a delete reaches the canvas as the removal of the nodes and then of their
   // wires in one task, and the document is committed once, with the selection from before the gesture and after it.
