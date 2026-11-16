@@ -5,7 +5,9 @@
  */
 import { useEffect } from 'react';
 import { useIDEStore } from '../../store/useIDEStore';
-import { useShellLayout } from '../../store/useShellLayout';
+import { t } from '../../i18n';
+import { useNotifications } from '../../store/notifications';
+import { resetLayout, useShellLayout } from '../../store/useShellLayout';
 import type { ConsoleTab } from '../../types';
 import { bindCommands } from '../bus';
 
@@ -27,5 +29,15 @@ export const showActivity = (view: 'project' | 'search' | 'learn' | 'tests'): vo
 };
 
 export function useLayoutCommands(): void {
-  useEffect(() => bindCommands({}), []);
+  useEffect(
+    () =>
+      bindCommands({
+        'view.resetLayout': () => {
+          resetLayout();
+          useNotifications.getState().report({ kind: 'save', status: 'success', title: t('layout.reset.done'), details: 'output' });
+          focusSoon('main');
+        },
+      }),
+    [],
+  );
 }
