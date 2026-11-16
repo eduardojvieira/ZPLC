@@ -32,7 +32,11 @@ function runtime(part: ScenePart): PartRuntime {
   const width = cfgNumber(part, fields, 'widthM');
   const speed = cfgNumber(part, fields, 'speedMps');
   const reverse = cfg(part, fields, 'allowReverse') === true;
-  const spec = { strokeM: (levels - 1) * pitch, speedMps: cfgNumber(part, fields, 'travelSpeedMps'), accelMps2: cfgNumber(part, fields, 'accelMps2') };
+  const spec = {
+    strokeM: (levels - 1) * pitch,
+    speedMps: cfgNumber(part, fields, 'travelSpeedMps'),
+    accelMps2: cfgNumber(part, fields, 'accelMps2'),
+  };
   // Table lookup, not libm (PLT-006).
   const yaw = yawEntry(part.rotationYDeg);
   let world: PhysicsWorld | undefined;
@@ -125,8 +129,10 @@ const snapPoints = (part: ScenePart): SnapPoint[] => {
   const half = cfgNumber(part, fields, 'lengthM') / 2;
   const pitch = cfgNumber(part, fields, 'levelPitchM');
   const out: SnapPoint[] = [];
-  for (let k = 1; k <= levelsOf(part); k += 1) out.push({ name: `in${k}`, position: [-half, (k - 1) * pitch, 0], normalYDeg: 180, accepts: ACCEPTS });
-  for (let k = 1; k <= levelsOf(part); k += 1) out.push({ name: `out${k}`, position: [half, (k - 1) * pitch, 0], normalYDeg: 0, accepts: ACCEPTS });
+  for (let k = 1; k <= levelsOf(part); k += 1)
+    out.push({ name: `in${k}`, position: [-half, (k - 1) * pitch, 0], normalYDeg: 180, accepts: ACCEPTS });
+  for (let k = 1; k <= levelsOf(part); k += 1)
+    out.push({ name: `out${k}`, position: [half, (k - 1) * pitch, 0], normalYDeg: 0, accepts: ACCEPTS });
   return out;
 };
 
