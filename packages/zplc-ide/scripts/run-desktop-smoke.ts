@@ -800,8 +800,8 @@ async function main(): Promise<void> {
     await waitFor('canonical saved workspace build', async () =>
       (await cdp!.evaluate(
         `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); return ` +
-          `state.compilerMessagesChecked && state.consoleEntries.some((entry) => entry.message.startsWith('Built saved workspace ` +
-          `locally:')) ? true : undefined; })`,
+          `state.compilerMessagesChecked && state.consoleEntries.some((entry) => entry.message.startsWith('Built the project:')) ` +
+          `? true : undefined; })`,
       )) === true
         ? true
         : undefined,

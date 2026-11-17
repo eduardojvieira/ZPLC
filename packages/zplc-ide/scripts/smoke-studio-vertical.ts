@@ -1783,9 +1783,7 @@ async function main(): Promise<void> {
     }
     assert((await text()).includes('src/Motor.st'), 'Compiler diagnostic did not retain src/Motor.st provenance');
     assert(
-      (await page().evaluate(
-        `window.__zplcSmoke.compileCalls === 0 && !document.body.innerText.includes('Built saved workspace locally:')`,
-      )) === true,
+      (await page().evaluate(`window.__zplcSmoke.compileCalls === 0 && !document.body.innerText.includes('Built the project:')`)) === true,
       'An incremental ST diagnostic must not invoke or claim a canonical build',
     );
     await page().evaluate(
@@ -1866,7 +1864,7 @@ async function main(): Promise<void> {
     assert(
       (await page().evaluate(
         `window.__zplcSmoke.compileCalls === 0 && window.__zplcSmoke.registerCalls === 0 && ` +
-          `document.getElementById('console-panel-tests') && !document.body.innerText.includes('Built saved workspace locally:')`,
+          `document.getElementById('console-panel-tests') && !document.body.innerText.includes('Built the project:')`,
       )) === true,
       'First Build without a saved-workspace link must select Tests without compiling or claiming success',
     );
@@ -1914,9 +1912,7 @@ async function main(): Promise<void> {
         : undefined,
     );
     await click('Output');
-    await waitFor('canonical saved workspace build output', async () =>
-      (await text()).includes('Built saved workspace locally:') ? true : undefined,
-    );
+    await waitFor('canonical saved workspace build output', async () => ((await text()).includes('Built the project:') ? true : undefined));
     const canonicalBuild = await page().evaluate(
       `(() => { const build = window.__zplcSmoke.getBuildState?.(); return { calls: window.__zplcSmoke.compileCalls, sha: ` +
         `build?.evidence?.zplc?.sha256, bytes: build?.evidence?.zplc?.byteLength, fallback: document.body.innerText.includes('The latest ` +

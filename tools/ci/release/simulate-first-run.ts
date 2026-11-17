@@ -312,11 +312,11 @@ async function exercise(launch: Launch, expectedVersion: string): Promise<void> 
             String(await cdp!.evaluate(`document.querySelector('[role="tabpanel"][id^="console-panel-"]')?.innerText ?? ''`)).match(
               new RegExp(
                 [
-                  'Built saved workspace locally: [^\\n]*',
-                  'Canonical workspace build failed[^\\n]*',
-                  'Save changes before building[^\\n]*',
+                  'Built the project: [^\\n]*',
+                  'The project build failed[^\\n]*',
+                  'Save your changes before building[^\\n]*',
                   'Build requires a saved folder[^\\n]*',
-                  'Saved workspace (?:compiler is unavailable|could not be opened)[^\\n]*',
+                  'The project (?:compiler is unavailable|could not be opened)[^\\n]*',
                 ].join('|'),
                 'g',
               ),
