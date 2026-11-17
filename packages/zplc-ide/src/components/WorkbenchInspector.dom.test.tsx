@@ -9,7 +9,7 @@ const { WorkbenchInspector } = await import('./WorkbenchInspector');
 const { useSelection } = await import('../shell/useSelection');
 const { useProjectTests } = await import('../projectTests/useProjectTests');
 
-describe('Inspector (UX-011, SHL-009) in a DOM', () => {
+describe('Inspector (UX-011) in a DOM', () => {
   it('is a labelled complementary region with a heading per section', () => {
     dom.render(<WorkbenchInspector />);
     expect(dom.screen.getByRole('complementary', { name: dom.t('workbench.inspector.region') })).toBeTruthy();
@@ -26,7 +26,9 @@ describe('Inspector (UX-011, SHL-009) in a DOM', () => {
     await user.click(dom.screen.getByRole('button', { name: dom.t('panel.inspector.empty.action') }));
     expect(useIDEStore.getState().activeConsoleTab).toBe('explorer');
   });
+});
 
+describe('Inspector selection (SHL-009) in a DOM', () => {
   it('SHL-009 the Inspector shows the active document: language, declared programs, size and state', () => {
     dom.patchStore(useIDEStore, {
       activeFileId: 'a',
