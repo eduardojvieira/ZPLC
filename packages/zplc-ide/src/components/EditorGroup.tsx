@@ -4,7 +4,7 @@
  */
 import { lazy, Suspense, useCallback, useMemo, type KeyboardEvent } from 'react';
 import { useT } from '../i18n';
-import { X, FileCode, File, Settings, Undo2, Redo2, Columns2, ArrowLeftRight, Maximize2, Boxes } from 'lucide-react';
+import { X, FileCode, File, Settings, Undo2, Redo2, Columns2, ArrowLeftRight, Maximize2, Boxes, FileDiff } from 'lucide-react';
 import { PLC_LANGUAGES, type PLCLanguage, type ProjectFileWithHandle } from '../types';
 import { serializeFBDModel, type FBDModel } from '../models/fbd';
 import { serializeLDModel, type LDModel } from '../models/ld';
@@ -16,6 +16,7 @@ import { DevFaultProbe } from './DevFaultProbe';
 import type { VisualGesture } from '../editors/visualHistory';
 import { ConfigEditorTab } from '../navigator/ConfigEditorTab';
 import { configEditorViewId, isConfigEditorKind, type ConfigEditorKind } from '../navigator/configEditors';
+import { REVIEW_VIEW_ID } from '../store/useReviewDocument';
 import { PLANT_VIEW_ID, SETTINGS_VIEW_ID, isVisualWorkflow, type ViewId } from '../layout/documentKinds';
 import type { DebugController } from '../hooks/useDebugController';
 import { Button, IconButton } from '../ui';
@@ -27,6 +28,7 @@ const LDEditor = lazy(() => import('../editors/ld').then((module) => ({ default:
 const SFCEditor = lazy(() => import('../editors/sfc').then((module) => ({ default: module.SFCEditor })));
 const ConfigEditorHost = lazy(() => import('../navigator/ConfigEditorHost').then((module) => ({ default: module.ConfigEditorHost })));
 const ProjectSettings = lazy(() => import('./settings/ProjectSettings').then((module) => ({ default: module.ProjectSettings })));
+const ReviewDocument = lazy(() => import('./ReviewDocument').then((module) => ({ default: module.ReviewDocument })));
 const PlantDocument = lazy(() => import('../shell/PlantDocument').then((module) => ({ default: module.PlantDocument })));
 const CodeEditor = lazy(() => import('./CodeEditor').then((module) => ({ default: module.CodeEditor })));
 
@@ -107,6 +109,8 @@ export function EditorGroup({
   const showSettings = activeViewId === SETTINGS_VIEW_ID;
   const plantOpen = views.includes(PLANT_VIEW_ID);
   const plantActive = activeViewId === PLANT_VIEW_ID;
+  const reviewOpen = views.includes(REVIEW_VIEW_ID);
+  const reviewActive = activeViewId === REVIEW_VIEW_ID;
 
   const fbdLoad = useMemo(
     (): VisualFileLoad<FBDModel> | null =>
@@ -335,6 +339,45 @@ export function EditorGroup({
             </div>
           )}
 
+          {/* The change review document (SHL-004) */}
+          {reviewOpen && (
+            <div
+              role="presentation"
+              className={
+                'group flex items-center gap-2 px-3 h-full border-r border-[var(--color-surface-600)] cursor-pointer select-none ' +
+                'transition-colors bg-[var(--color-surface-700)] text-[var(--color-surface-100)]'
+              }
+            >
+              <Button
+                variant="bare"
+                id={`editor-tab-${REVIEW_VIEW_ID}`}
+                role="tab"
+                aria-selected={reviewActive}
+                aria-controls={panelId}
+                tabIndex={reviewActive ? 0 : -1}
+                onClick={() => onSelect(REVIEW_VIEW_ID)}
+                onKeyDown={(event) => handleTabKeyDown(event, REVIEW_VIEW_ID)}
+                className="flex min-w-0 items-center gap-2 rounded text-left focus-visible:outline"
+              >
+                <FileDiff size={14} className="text-[var(--color-accent-yellow)]" />
+                <span className="text-sm whitespace-nowrap">{t('review.title')}</span>
+              </Button>
+              <Button
+                variant="bare"
+                type="button"
+                onClick={() => onClose(REVIEW_VIEW_ID)}
+                className={
+                  'p-0.5 rounded opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 ' +
+                  'hover:bg-[var(--color-surface-500)] focus-visible:opacity-100 focus-visible:outline transition-opacity'
+                }
+                aria-label={t('review.close')}
+                tooltip={t('review.close')}
+              >
+                <X size={14} />
+              </Button>
+            </div>
+          )}
+
           {/* File Tabs */}
           {fileViews.map((file) => {
             const isActive = file.id === activeViewId;
@@ -471,6 +514,11 @@ export function EditorGroup({
               )
             ) : null}
             {/* Kept while its tab is open so that it can stop drawing while hidden (PLS-010) */}
+            {reviewOpen && (
+              <div className={reviewActive ? 'h-full' : 'hidden'}>
+                <ReviewDocument />
+              </div>
+            )}
             {plantOpen && (
               <div className={plantActive ? 'h-full' : 'hidden'}>
                 <PlantDocument controller={debugController} visible={plantActive} />
