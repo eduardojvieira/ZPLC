@@ -204,13 +204,14 @@
       "packages/zplc-ide/src/components/console/ChangesTab.tsx",
       "packages/zplc-ide/src/components/console/AgentTab.tsx",
       "packages/zplc-ide/src/components/console/useWorkspaceTestRunner.ts",
+      "packages/zplc-ide/src/components/reviewFlow.ts",
       "packages/zplc-ide/src/components/ConsoleTabStrip.tsx",
       "packages/zplc-ide/src/components/ConsoleReviewPanels.tsx",
       "packages/zplc-ide/src/components/LiveNativeMotorControls.tsx",
       "packages/zplc-ide/src/components/WorkspaceTestResult.tsx"
     ],
     "replacement": "dom",
-    "reason": "Pins roving tab focus, the Tests/Problems/Trace ledgers and their fences as text of Console.tsx. Replace by render tests that drive the tablist with keyboard events once VF-007 provides the DOM environment."
+    "reason": "Pins roving tab focus, the Tests/Problems/Trace ledgers and their fences as text of Console.tsx. Replace by render tests that drive the tablist with keyboard events once VF-007 provides the DOM environment. The manual review flow moved from Console.tsx to reviewFlow.ts in U2-H1 (982fca48); its pins moved with it."
   },
   {
     "file": "packages/zplc-ide/src/components/LearnPanel.test.ts",
