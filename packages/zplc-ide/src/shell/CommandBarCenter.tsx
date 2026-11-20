@@ -51,26 +51,26 @@ export function CommandBarCenter() {
           runCommand('view.commandPalette');
         }}
       />
-      <span className="contents" data-command-exempt="opens a menu of the commands the bar leaves out">
-        <MenuButton
-          label={t('commandBar.more')}
-          variant="ghost"
-          size="sm"
-          placement="bottom-end"
-          className="hidden max-[1100px]:inline-flex"
-          items={OVERFLOW.map((id, index) => ({
-            id,
-            label: t(commandById(id).titleKey),
-            shortcut: shortcutText(id) ?? undefined,
-            separatorBefore: index === 1 || id === 'help.shortcuts',
-            onSelect: () => {
-              runCommand(id);
-            },
-          }))}
-        >
-          <Ellipsis size={16} aria-hidden="true" />
-        </MenuButton>
-      </span>
+      <MenuButton
+        label={t('commandBar.more')}
+        data-command-exempt="opens a menu of the commands the bar leaves out"
+        variant="ghost"
+        size="sm"
+        placement="bottom-end"
+        className="hidden max-[1100px]:inline-flex"
+        items={OVERFLOW.map((id, index) => ({
+          id,
+          command: id,
+          label: t(commandById(id).titleKey),
+          shortcut: shortcutText(id) ?? undefined,
+          separatorBefore: index === 1 || id === 'help.shortcuts',
+          onSelect: () => {
+            runCommand(id);
+          },
+        }))}
+      >
+        <Ellipsis size={16} aria-hidden="true" />
+      </MenuButton>
     </>
   );
 }

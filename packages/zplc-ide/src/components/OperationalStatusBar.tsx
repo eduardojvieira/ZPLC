@@ -7,6 +7,7 @@ import { connectionManager, type LinkInfo } from '../runtime/connectionManager';
 import { ConnectionIndicator } from './ConnectionIndicator';
 import { presentConnection, type ConnectionIndicatorView } from './connectionPresentation';
 import { runCommand } from '../commands/bus';
+import type { CommandId } from '../commands/registry';
 import { Button } from '../ui';
 import { StatusDetails, type StatusDetailRow } from './StatusDetails';
 import { programStateOf, programStateText, type ProgramState, type ProgramStateInput } from './programState';
@@ -130,10 +131,18 @@ export function OperationalStatusBar({ mode, adapterType, connected, status, con
   return <OperationalStatusView presentation={presentation} indicator={indicator} rows={rows} {...(action ? { action } : {})} />;
 }
 
-function actionOf(state: ProgramState, t: ReturnType<typeof useT>['t']): { label: string; run: () => void } | undefined {
+function actionOf(
+  state: ProgramState,
+  t: ReturnType<typeof useT>['t'],
+): { label: string; run: () => void; command: CommandId } | undefined {
   if (state.action === 'debug.rebuildAndRestart')
-    return { label: t('studio.status.action.rebuildAndRestart'), run: () => void runCommand('debug.rebuildAndRestart') };
-  if (state.action === 'build.compile') return { label: t('studio.status.action.build'), run: () => void runCommand('build.compile') };
+    return {
+      label: t('studio.status.action.rebuildAndRestart'),
+      run: () => void runCommand('debug.rebuildAndRestart'),
+      command: 'debug.rebuildAndRestart',
+    };
+  if (state.action === 'build.compile')
+    return { label: t('studio.status.action.build'), run: () => void runCommand('build.compile'), command: 'build.compile' };
   return undefined;
 }
 
@@ -154,7 +163,7 @@ export function OperationalStatusView({
   /** The debug state of the code editor (UX-034). The container no longer passes it: a pause is worded at its place in the state. */
   debug?: string;
   rows?: StatusDetailRow[];
-  action?: { label: string; run: () => void };
+  action?: { label: string; run: () => void; command: CommandId };
 }) {
   const { t } = useT();
   return (
@@ -182,7 +191,7 @@ export function OperationalStatusView({
               <span>{presentation.status.text}</span>
             </span>
             {action && (
-              <Button variant="secondary" size="sm" onClick={action.run}>
+              <Button variant="secondary" size="sm" onClick={action.run} data-command={action.command}>
                 {action.label}
               </Button>
             )}

@@ -1196,20 +1196,25 @@ export function Toolbar({ debugController }: ToolbarProps) {
 
         {/* Save: one control; Save all joins it when it would save more than the active file (FLW-005) */}
         {othersModified ? (
-          <span className="contents" data-command="file.save">
-            <MenuButton
-              label={withShortcut(t('toolbar.save.label'), 'file.save')}
-              variant="bare"
-              size="sm"
-              className="focus-ring p-2 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)]"
-              items={[
-                { id: 'save', label: t('toolbar.save.label'), disabled: !activeFile, onSelect: () => void handleSaveFile() },
-                { id: 'saveAll', label: t('studio.flow.saveAll.label'), onSelect: () => void handleSaveAll() },
-              ]}
-            >
-              <Save size={18} aria-hidden="true" />
-            </MenuButton>
-          </span>
+          <MenuButton
+            label={withShortcut(t('toolbar.save.label'), 'file.save')}
+            data-command-exempt="opens the Save menu: file.save, file.saveAll"
+            variant="bare"
+            size="sm"
+            className="focus-ring p-2 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)]"
+            items={[
+              {
+                id: 'save',
+                label: t('toolbar.save.label'),
+                command: 'file.save',
+                disabled: !activeFile,
+                onSelect: () => void handleSaveFile(),
+              },
+              { id: 'saveAll', label: t('studio.flow.saveAll.label'), command: 'file.saveAll', onSelect: () => void handleSaveAll() },
+            ]}
+          >
+            <Save size={18} aria-hidden="true" />
+          </MenuButton>
         ) : (
           <Button
             variant="bare"
@@ -1244,19 +1249,17 @@ export function Toolbar({ debugController }: ToolbarProps) {
           hasCurrentCompileResult={hasCurrentCompileResult}
         />
 
-        <span className="contents" data-command-exempt="opens the target menu: online.simulation, online.hardware, project.target">
-          <TargetSelector
-            mode={executionMode}
-            boardName={boardName}
-            degraded={adapter?.type === 'wasm'}
-            onChange={(mode) => {
-              void handleExecutionModeChange(mode);
-            }}
-            onChangeBoard={() => {
-              runCommand('project.target');
-            }}
-          />
-        </span>
+        <TargetSelector
+          mode={executionMode}
+          boardName={boardName}
+          degraded={adapter?.type === 'wasm'}
+          onChange={(mode) => {
+            void handleExecutionModeChange(mode);
+          }}
+          onChangeBoard={() => {
+            runCommand('project.target');
+          }}
+        />
 
         {/* Separator */}
         <div className="w-px h-6 bg-[var(--color-surface-600)]" />

@@ -10,6 +10,10 @@ const { ActivityRail } = await import('../shell/ActivityRail');
 const { COMMAND_LIST } = await import('./registry');
 const { AI_COMMAND_PROPOSALS } = await import('../ai/proposals');
 const { createRef } = await import('react');
+const { ConsoleTabStrip } = await import('../components/ConsoleTabStrip');
+const { OperationalStatusView } = await import('../components/OperationalStatusBar');
+const { SURFACES } = await import('../shell/surfaces');
+const { useIDEStore } = await import('../store/useIDEStore');
 const { canvasMenuItems } = await import('../editors/contextMenus');
 const { actionsOf } = await import('../editors/keymap');
 
@@ -17,16 +21,20 @@ const IDS: ReadonlySet<string> = new Set(COMMAND_LIST.map((command) => command.i
 const CONTROL = 'button, [role="menuitem"], [role="tab"]';
 
 /**
- * FND-002 as a checker: a control that runs a handler carries `data-command="<registered id>"` (itself or the element that
- * wraps it, for a kit component that cannot take the attribute) or `data-command-exempt="<reason>"`.
+ * FND-002 as a checker: a control that runs a handler carries `data-command="<registered id>"` or `data-command-exempt="<reason>"`
+ * itself. The one exception is a control inside an element marked `data-command-group="<registered id>"`, for a component that
+ * this check cannot reach (the export items of the Build menu).
  */
 function uncommanded(root: ParentNode): string[] {
   const problems: string[] = [];
   for (const control of root.querySelectorAll<HTMLElement>(CONTROL)) {
     const name = control.getAttribute('aria-label') ?? control.textContent?.trim() ?? control.tagName;
-    const owner = control.closest<HTMLElement>('[data-command], [data-command-exempt]');
+    const own = control.hasAttribute('data-command') || control.hasAttribute('data-command-exempt');
+    const owner = own ? control : control.closest<HTMLElement>('[data-command-group]');
     if (!owner) problems.push(`no command: ${name}`);
-    else if (owner.hasAttribute('data-command') && !IDS.has(owner.getAttribute('data-command') ?? ''))
+    else if (!own) {
+      if (!IDS.has(owner.getAttribute('data-command-group') ?? '')) problems.push(`unknown group: ${name}`);
+    } else if (owner.hasAttribute('data-command') && !IDS.has(owner.getAttribute('data-command') ?? ''))
       problems.push(`unknown command "${owner.getAttribute('data-command')}": ${name}`);
     else if (!owner.hasAttribute('data-command') && !(owner.getAttribute('data-command-exempt') ?? '').trim())
       problems.push(`empty exemption: ${name}`);
@@ -86,6 +94,56 @@ describe('FND-002 the command inventory in a DOM', () => {
     }
   });
 
+  it('FND-002 the items of the Save, target and More menus run registered commands', async () => {
+    dom.patchStore(useIDEStore, { projectConfigDirty: true });
+    const { user } = dom.render(<Toolbar debugController={{} as never} />);
+    const expected: Array<[RegExp, string[]]> = [
+      [new RegExp(dom.t('toolbar.save.label')), ['file.save', 'file.saveAll']],
+      [new RegExp(dom.t('studio.flow.target.simulation')), ['online.simulation', 'online.hardware', 'project.target']],
+      [new RegExp(dom.t('commandBar.more')), ['project.settings', 'view.themeLight', 'view.themeDark']],
+    ];
+    for (const [name, ids] of expected) {
+      await user.click(dom.screen.getAllByRole('button', { name })[0] as HTMLElement);
+      const menu = dom.screen.getByRole('menu');
+      const bound = [...menu.querySelectorAll('[role="menuitem"]')].map((item) => item.getAttribute('data-command'));
+      expect(bound).toEqual(expect.arrayContaining(ids));
+      expect(uncommanded(menu)).toEqual([]);
+      await user.keyboard('{Escape}');
+    }
+    // the triggers of those menus carry the attribute themselves
+    expect(uncommanded(dom.screen.getByRole('toolbar'))).toEqual([]);
+    expect(dom.screen.getByRole('toolbar').querySelectorAll('[data-command-group]').length).toBe(0);
+  });
+
+  it('FND-002 every tab of the results panel names the command of its surface', () => {
+    const ids = ['output', 'problems', 'tests', 'interlocks', 'changes', 'agent', 'trace', 'watch', 'terminal'] as const;
+    const { container } = dom.render(
+      <ConsoleTabStrip tabs={ids.map((id) => ({ id, label: id, icon: null }))} activeConsoleTab="output" onSelect={noop} />,
+    );
+    const tabs = [...container.querySelectorAll('[role="tab"]')];
+    expect(tabs.length).toBe(ids.length);
+    for (const tab of tabs) {
+      const surface = SURFACES.find((candidate) => `console-tab-${candidate.id.replace('results.', '')}` === tab.id);
+      expect(surface).toBeDefined();
+      expect(tab.getAttribute('data-command')).toBe(surface?.command ?? null);
+    }
+    expect(uncommanded(container)).toEqual([]);
+  });
+
+  it('FND-002 the button of the status line names the command it runs', () => {
+    const view = (command: string) => (
+      <OperationalStatusView
+        indicator={{ state: 'simulation', label: 'Simulation', tone: 'info', icon: 'monitor' } as never}
+        presentation={{ mode: 'Simulation', runtime: 'Native', status: { text: 'Stopped', tone: 'info' } } as never}
+        action={{ label: 'Do it', run: noop, command } as never}
+      />
+    );
+    const { container } = dom.render(view('build.compile'));
+    const action = [...container.querySelectorAll('button')].find((button) => button.textContent === 'Do it');
+    expect(action?.getAttribute('data-command')).toBe('build.compile');
+    // The Details button of the line is StatusDetails.tsx's (view.statusDetails): not checked here until that file carries it.
+  });
+
   it('FND-002 every activity of the rail names its command', () => {
     const { container } = dom.render(<ActivityRail active="project" density="regular" onSelect={noop} />);
     expect(container.querySelectorAll('[data-activity]').length).toBe(4);
@@ -95,6 +153,9 @@ describe('FND-002 the command inventory in a DOM', () => {
   it('FND-002 CI fails on a control with a handler and no command', () => {
     const { container } = dom.render(
       <div>
+        <div data-command-group="no.such.group">
+          <button type="button" aria-label="Lost" />
+        </div>
         <button type="button" aria-label="Orphan" onClick={mock(noop)} />
         <button type="button" aria-label="Wrong" data-command="no.such.command" />
         <button type="button" aria-label="Silent" data-command-exempt=" " />
@@ -102,7 +163,12 @@ describe('FND-002 the command inventory in a DOM', () => {
         <button type="button" aria-label="Said why" data-command-exempt="opens a menu of commands" />
       </div>,
     );
-    expect(uncommanded(container)).toEqual(['no command: Orphan', 'unknown command "no.such.command": Wrong', 'empty exemption: Silent']);
+    expect(uncommanded(container)).toEqual([
+      'unknown group: Lost',
+      'no command: Orphan',
+      'unknown command "no.such.command": Wrong',
+      'empty exemption: Silent',
+    ]);
   });
 
   it('FND-002 the Build menu entries run registered commands', async () => {
@@ -119,6 +185,7 @@ describe('FND-002 the command inventory in a DOM', () => {
     );
     const ids = [...container.querySelectorAll('[role="menuitem"][data-command]')].map((item) => item.getAttribute('data-command'));
     expect(ids).toEqual(['build.compile', 'build.generateSt', 'build.downloadProgram', 'build.viewAssembly']);
+    expect(container.querySelector('[data-command-group="file.export"]')).not.toBeNull();
     expect(uncommanded(container)).toEqual([]);
   });
 

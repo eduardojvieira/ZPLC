@@ -27,6 +27,8 @@ export interface MenuItem {
   separatorBefore?: boolean;
   /** Styles the item as destructive (it still needs an alert dialog when it cannot be undone). */
   destructive?: boolean;
+  /** The id of the registered command the item runs (FND-002): rendered as `data-command` so that a check can find it. */
+  command?: string;
   onSelect: () => void;
 }
 
@@ -122,6 +124,7 @@ function MenuSurface({ label, items, anchor, placement, initialActive, onClose, 
               tabIndex={-1}
               data-active={index === active || undefined}
               data-destructive={item.destructive || undefined}
+              data-command={item.command}
               className="ui-menu-item"
               onPointerMove={() => {
                 if (!item.disabled && index !== active) setActive(index);
@@ -151,6 +154,9 @@ export interface MenuButtonProps {
   size?: ButtonSize;
   placement?: Placement;
   className?: string;
+  /** FND-002: the command the trigger runs, or why it runs none (it opens a menu); one of the two, on the trigger itself. */
+  'data-command'?: string;
+  'data-command-exempt'?: string;
 }
 
 export function MenuButton({
@@ -161,6 +167,8 @@ export function MenuButton({
   size = 'md',
   placement = 'bottom-start',
   className,
+  'data-command': dataCommand,
+  'data-command-exempt': dataCommandExempt,
 }: MenuButtonProps) {
   const menuId = useId();
   const trigger = useRef<HTMLButtonElement>(null);
@@ -181,6 +189,8 @@ export function MenuButton({
         variant={variant}
         size={size}
         className={cx('ui-menu-button', className)}
+        data-command={dataCommand}
+        data-command-exempt={dataCommandExempt}
         aria-haspopup="menu"
         aria-expanded={open !== null}
         aria-controls={open !== null ? menuId : undefined}

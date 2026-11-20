@@ -94,3 +94,29 @@ describe('Context menu (UX-001) in a DOM', () => {
     expect(dom.screen.queryByRole('menu')).toBeNull();
   });
 });
+
+describe('Menu command attributes (FND-002) in a DOM', () => {
+  it('FND-002 an item with a command carries data-command, and the trigger forwards its own attributes', async () => {
+    const { user } = dom.render(
+      <MenuButton
+        label="File"
+        data-command-exempt="opens a menu"
+        items={[{ id: 'open', label: 'Open', command: 'file.open', onSelect: () => undefined }, ...items(() => undefined).slice(1)]}
+      />,
+    );
+    const trigger = dom.screen.getByRole('button', { name: 'File' });
+    expect(trigger.getAttribute('data-command-exempt')).toBe('opens a menu');
+    await user.click(trigger);
+    expect(dom.screen.getByRole('menuitem', { name: /Open/ }).getAttribute('data-command')).toBe('file.open');
+    expect(dom.screen.getByRole('menuitem', { name: /Rename/ }).hasAttribute('data-command')).toBe(false);
+  });
+
+  it('FND-002 a menu whose caller passes no command renders the same DOM as before', async () => {
+    const { user } = dom.render(<MenuButton label="File" items={items(() => undefined)} />);
+    const trigger = dom.screen.getByRole('button', { name: 'File' });
+    expect(trigger.hasAttribute('data-command')).toBe(false);
+    expect(trigger.hasAttribute('data-command-exempt')).toBe(false);
+    await user.click(trigger);
+    for (const item of dom.screen.getAllByRole('menuitem')) expect(item.hasAttribute('data-command')).toBe(false);
+  });
+});
