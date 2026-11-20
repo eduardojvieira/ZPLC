@@ -94,7 +94,13 @@
       "surface": "Tests (scenario runs)",
       "where": "components/console/TestsTab.tsx",
       "state": "tested",
-      "tests": ["packages/zplc-ide/src/components/Console.dom.test.tsx"],
+      "tests": [
+        "packages/zplc-ide/src/components/Console.dom.test.tsx",
+        "packages/zplc-ide/src/components/TestResultsTab.dom.test.tsx",
+        "packages/zplc-ide/src/components/TestVerdict.dom.test.tsx",
+        "packages/zplc-ide/src/components/BoundaryBadge.dom.test.tsx",
+        "packages/zplc-ide/src/components/WorkspaceTestResult.dom.test.tsx"
+      ],
       "reason": ""
     },
     {

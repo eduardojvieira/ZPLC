@@ -1,6 +1,6 @@
 /**
- * The Tests tab of the results panel, until Task T3 replaces it with the Test results tab: the latest result of the project's tests
- * and the action to run them again. The tests are listed and chosen in the Tests activity; there is no file to choose (TST-002).
+ * The Tests tab of the results panel: the controls to run the project's tests and the Test results (`TestResultsTab`). The tests are
+ * listed and chosen in the Tests activity; there is no file to choose (TST-002).
  */
 import { CheckCircle, Info, LoaderCircle, Play } from 'lucide-react';
 import { Button } from '../../ui';
@@ -8,8 +8,7 @@ import { useT } from '../../i18n';
 import { useProjectTests } from '../../projectTests/useProjectTests';
 import { useWorkspaceTestResult } from '../../shell/workspaceTestResult';
 import { CommandEmptyState } from '../panelStates';
-import { WorkspaceTestResult } from '../WorkspaceTestResult';
-import { classifyWorkspaceTestBuildLink } from '../workspaceTestPresentation';
+import { TestResultsTab } from '../TestResultsTab';
 import type { WorkspaceTestRunner } from './useWorkspaceTestRunner';
 import type { useConsoleState } from '../../store/regionSubscriptions';
 
@@ -23,13 +22,13 @@ export interface TestsTabProps {
   canonicalWorkspaceBuildEvidence: ConsoleState['canonicalWorkspaceBuildEvidence'];
 }
 
-export function TestsTab({ runner, projectSession, compilerRunId, workspaceScenarioLink, canonicalWorkspaceBuildEvidence }: TestsTabProps) {
+export function TestsTab({ runner, workspaceScenarioLink, canonicalWorkspaceBuildEvidence }: TestsTabProps) {
   const { t } = useT();
   const presentation = useWorkspaceTestResult((state) => state.presentation);
+  const hasRecords = useProjectTests((state) => Object.keys(state.records).length > 0);
   const running = useProjectTests((state) => state.running);
   const cancelling = useProjectTests((state) => state.cancelling);
   const run = useProjectTests((state) => state.run);
-  const runScenario = useProjectTests((state) => state.runScenario);
   const cancel = useProjectTests((state) => state.cancel);
   const availability = runner.workspaceTestAvailabilityState;
   const busy = running !== null;
@@ -69,7 +68,7 @@ export function TestsTab({ runner, projectSession, compilerRunId, workspaceScena
               </Button>
             ) : null}
           </div>
-          {!busy && !presentation && (availability === 'ready' || availability === 'unsaved') && (
+          {!busy && !presentation && !hasRecords && (availability === 'ready' || availability === 'unsaved') && (
             <p role="status" aria-live="polite" className="flex items-center gap-2 text-[var(--color-surface-200)]">
               <CheckCircle size={15} aria-hidden="true" />
               {t('console.linkedSavedWorkspaceReady')}
@@ -81,22 +80,11 @@ export function TestsTab({ runner, projectSession, compilerRunId, workspaceScena
               {cancelling ? t('console.cancellingHostPosixScenarios') : t('console.runningHostPosixScenarios')}
             </p>
           )}
-          {presentation && (
-            <WorkspaceTestResult
-              presentation={presentation}
-              onRunScenario={(scenarioId) => {
-                void runScenario(scenarioId);
-              }}
-              scenarioRunDisabled={busy}
-              buildLink={classifyWorkspaceTestBuildLink(
-                { projectSession, compilerRunId, workspaceScenarioLink },
-                canonicalWorkspaceBuildEvidence,
-                workspaceScenarioLink
-                  ? { presentation, projectSession, compilerRunId, workspaceId: workspaceScenarioLink.workspaceId }
-                  : null,
-              )}
-            />
-          )}
+          <TestResultsTab
+            runDisabled={busy}
+            workspaceScenarioLink={workspaceScenarioLink}
+            canonicalWorkspaceBuildEvidence={canonicalWorkspaceBuildEvidence}
+          />
         </>
       )}
     </div>
