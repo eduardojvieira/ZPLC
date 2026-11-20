@@ -7,6 +7,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { ConsoleTab } from '../types';
 import { Button, Tooltip } from '../ui';
+import { SURFACES } from '../shell/surfaces';
 import { useT } from '../i18n';
 
 export interface ConsoleTabFace {
@@ -28,6 +29,11 @@ function consoleTabAfterKey(tabs: ConsoleTab[], activeTab: ConsoleTab, key: stri
   if (key === 'ArrowRight') return tabs[(index + 1) % tabs.length] ?? null;
   return null;
 }
+
+/** The command that shows a tab: the one its surface names (shell/surfaces.ts), so that the strip and the registry cannot drift. */
+const TAB_COMMANDS: ReadonlyMap<string, string> = new Map(
+  SURFACES.filter((surface) => surface.region === 'results').map((surface) => [surface.id.replace('results.', ''), surface.command]),
+);
 
 export function ConsoleTabStrip({
   tabs,
@@ -78,6 +84,7 @@ export function ConsoleTabStrip({
               variant="bare"
               id={`console-tab-${tab.id}`}
               role="tab"
+              data-command={TAB_COMMANDS.get(tab.id)}
               aria-selected={activeConsoleTab === tab.id}
               aria-controls={`console-panel-${tab.id}`}
               aria-label={tab.ariaLabel}

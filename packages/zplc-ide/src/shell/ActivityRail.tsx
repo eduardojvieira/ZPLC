@@ -16,13 +16,13 @@ interface ActivitySpec {
   view: ActivityView;
   titleKey: MessageKey;
   icon: ReactNode;
-  command: CommandId | null;
+  command: CommandId;
 }
 
 const ACTIVITIES: readonly ActivitySpec[] = [
   { view: 'project', titleKey: 'shell.activity.project', icon: <FolderOpen size={20} />, command: 'view.showProject' },
   { view: 'search', titleKey: 'shell.activity.search', icon: <Search size={20} />, command: 'view.showSearch' },
-  { view: 'tests', titleKey: 'shell.activity.tests', icon: <FlaskConical size={20} />, command: null },
+  { view: 'tests', titleKey: 'shell.activity.tests', icon: <FlaskConical size={20} />, command: 'view.tests' },
   { view: 'learn', titleKey: 'shell.activity.learn', icon: <BookOpen size={20} />, command: 'view.showLearn' },
 ];
 
@@ -54,10 +54,11 @@ export function ActivityRail({ active, density, onSelect }: ActivityRailProps) {
           >
             <IconButton
               label={title}
-              tooltip={activity.command ? withShortcut(title, activity.command) : title}
+              tooltip={withShortcut(title, activity.command)}
               icon={activity.icon}
               aria-current={activity.view === active ? 'true' : undefined}
               data-activity={activity.view}
+              data-command={activity.command}
               onClick={() => onSelect(activity.view)}
             />
             {density === 'regular' && (

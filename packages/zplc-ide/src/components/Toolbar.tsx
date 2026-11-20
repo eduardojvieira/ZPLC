@@ -1198,12 +1198,19 @@ export function Toolbar({ debugController }: ToolbarProps) {
         {othersModified ? (
           <MenuButton
             label={withShortcut(t('toolbar.save.label'), 'file.save')}
+            data-command-exempt="opens the Save menu: file.save, file.saveAll"
             variant="bare"
             size="sm"
             className="focus-ring p-2 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)]"
             items={[
-              { id: 'save', label: t('toolbar.save.label'), disabled: !activeFile, onSelect: () => void handleSaveFile() },
-              { id: 'saveAll', label: t('studio.flow.saveAll.label'), onSelect: () => void handleSaveAll() },
+              {
+                id: 'save',
+                label: t('toolbar.save.label'),
+                command: 'file.save',
+                disabled: !activeFile,
+                onSelect: () => void handleSaveFile(),
+              },
+              { id: 'saveAll', label: t('studio.flow.saveAll.label'), command: 'file.saveAll', onSelect: () => void handleSaveAll() },
             ]}
           >
             <Save size={18} aria-hidden="true" />
@@ -1222,6 +1229,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
             }
             aria-label={withShortcut(t('toolbar.save.label'), 'file.save')}
             tooltip={withShortcut(t('toolbar.save.title'), 'file.save')}
+            data-command="file.save"
           >
             <Save size={18} />
           </Button>
@@ -1292,6 +1300,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
           aria-label={t('toolbar.settings')}
           tooltip={t('toolbar.settings')}
           data-project-settings
+          data-command="project.settings"
         >
           <Settings size={16} />
         </Button>

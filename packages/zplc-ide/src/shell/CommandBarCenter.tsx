@@ -38,6 +38,7 @@ export function CommandBarCenter() {
         icon={<PanelRight size={16} />}
         aria-pressed={inspectorShown}
         data-toggle-inspector
+        data-command="view.toggleSecondarySidebar"
         onClick={() => {
           runCommand('view.toggleSecondarySidebar');
         }}
@@ -45,18 +46,21 @@ export function CommandBarCenter() {
       <IconButton
         label={withShortcut(t('commandBar.palette'), 'view.commandPalette')}
         icon={<Command size={16} />}
+        data-command="view.commandPalette"
         onClick={() => {
           runCommand('view.commandPalette');
         }}
       />
       <MenuButton
         label={t('commandBar.more')}
+        data-command-exempt="opens a menu of the commands the bar leaves out"
         variant="ghost"
         size="sm"
         placement="bottom-end"
         className="hidden max-[1100px]:inline-flex"
         items={OVERFLOW.map((id, index) => ({
           id,
+          command: id,
           label: t(commandById(id).titleKey),
           shortcut: shortcutText(id) ?? undefined,
           separatorBefore: index === 1 || id === 'help.shortcuts',

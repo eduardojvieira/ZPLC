@@ -54,6 +54,7 @@ export function BuildMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls="toolbar-build-menu"
+        data-command-exempt="opens the Build menu, whose entries are the build commands"
         tooltip={stale ? `${t('toolbar.build.label')} · ${t('studio.status.buildStale')}` : t('toolbar.build.label')}
       >
         <Hammer size={14} />
@@ -85,6 +86,7 @@ export function BuildMenu({
               'hover:bg-[var(--menu-item-bg-active)] transition-colors'
             }
             aria-label={withShortcut(t('toolbar.compile.label'), 'build.compile')}
+            data-command="build.compile"
           >
             <Hammer size={14} />
             <span>{t('toolbar.compile.text')}</span>
@@ -105,6 +107,7 @@ export function BuildMenu({
                 'hover:bg-[var(--menu-item-bg-active)] transition-colors'
               }
               aria-label={t('toolbar.toSt.label')}
+              data-command="build.generateSt"
             >
               <FileCode size={14} />
               <span>{t('toolbar.toSt.text')}</span>
@@ -121,6 +124,7 @@ export function BuildMenu({
               'hover:bg-[var(--menu-item-bg-active)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors'
             }
             aria-label={t('toolbar.download.label')}
+            data-command="build.downloadProgram"
           >
             <Download size={14} />
             <span>{t('toolbar.download.text')}</span>
@@ -136,12 +140,15 @@ export function BuildMenu({
               'hover:bg-[var(--menu-item-bg-active)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors'
             }
             aria-label={t('toolbar.assembly.label')}
+            data-command="build.viewAssembly"
           >
             <FileCode size={14} />
             <span>{t('toolbar.assembly.text')}</span>
           </Button>
           <div className="h-px bg-[var(--color-surface-600)] my-1" />
-          <ProjectExportItems />
+          <div role="none" data-command-group="file.export">
+            <ProjectExportItems />
+          </div>
         </div>
       )}
     </div>
