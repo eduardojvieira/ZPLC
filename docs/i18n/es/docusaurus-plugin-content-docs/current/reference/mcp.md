@@ -63,6 +63,15 @@ El servidor habla la revisión 2026-07-28 del protocolo y ninguna anterior: su p
 | `zplc://runtime/trace/{scenarioId}` | plantilla |
 | `zplc://runtime/snapshot/{scenarioId}/{cursor}/{traceSha256}` | plantilla |
 
+## El detalle de una expectativa fallida
+
+Con `--json` (y en las herramientas MCP `tests_run` y `scenario_run`) el resultado tiene un `preview` con una entrada por escenario en `scenarios`, y cada entrada lista sus expectativas en `assertions`: `kind`, `passed` y, cuando la tiene, `atMs`. Una expectativa que falló lleva además dos campos opcionales. Una expectativa que pasó nunca los lleva, y una ejecución en la que todas las expectativas pasaron se informa exactamente como antes. Los valores son los valores crudos de la ejecución, `true` o `false`, sin formato, redondeo, unidad ni traducción. Solo el `preview` lleva estos campos: el archivo de traza y su hash no cambian.
+
+| Campo | Significado |
+| --- | --- |
+| `index` | La posición de la expectativa en la lista `expectations` del archivo del escenario, contada desde 0. |
+| `checks` | Las señales de la condición de la expectativa, como máximo 8. Cada una tiene `signal`, `expected` (el valor que el escenario pide) y `observed` (el valor de la muestra registrada en `atMs`; ausente cuando la señal no está en la traza). |
+
 {/* <<< END GENERATED: reference/mcp <<< */}
 
 Esta página se genera: para cambiarla, se cambia su fuente y se ejecuta `bun run docs:generate`.

@@ -53,6 +53,15 @@ This table is read off the source file `packages/zplc-ide/src/cli/index.ts`; its
 
 Firmware builds are local POSIX ephemeral cross-builds only: they do not flash, deploy, or qualify hardware.
 
+## The detail of a failed expectation
+
+With `--json` (and in the MCP tools `tests_run` and `scenario_run`) the result has a `preview` with one entry per scenario in `scenarios`, and each entry lists its expectations in `assertions`: `kind`, `passed` and, when it has one, `atMs`. An expectation that failed also carries two optional fields. An expectation that passed never does, and a run in which every expectation passed is reported exactly as before. The values are the raw values of the run, `true` or `false`, with no formatting, rounding, unit or translation. Only the `preview` carries these fields: the trace file and its hash do not change.
+
+| Field | Meaning |
+| --- | --- |
+| `index` | The position of the expectation in the `expectations` list of the scenario file, counted from 0. |
+| `checks` | The signals of the condition of the expectation, at most 8. Each one has `signal`, `expected` (the value the scenario asks for) and `observed` (the value in the recorded sample at `atMs`; absent when the signal is not in the trace). |
+
 {/* <<< END GENERATED: reference/cli <<< */}
 
 This page is generated: to change it, change its source and run `bun run docs:generate`.
