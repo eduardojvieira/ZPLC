@@ -2277,7 +2277,11 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/ai/candidatePaths.test.ts","test":"the paths an assistant may read and propose (IDE-030)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ai/manifestPrivacy.test.ts","test":"the manifest an assistant reads or proposes (IDE-030)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/changeSet.test.ts","test":"isolated candidate change sets (IDE-030)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/ConsoleChangesTrace.dom.test.tsx","test":"the Changes tab and the review document hold one review (SHL-004, IDE-030)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/ConsoleChangesTrace.dom.test.tsx","test":"the assistant proposes a change set that a person reviews and saves (IDE-030, S5)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/ReviewDocument.dom.test.tsx","test":"IDE-030 a change that moved since the review is stale and never saves"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/ReviewDocument.dom.test.tsx","test":"IDE-030 accepting and rejecting a change behave as in the Changes tab"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/ReviewDocument.dom.test.tsx","test":"IDE-030 the list of pending changes is reachable with no AI provider configured"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/agent/agentResponse.test.ts","test":"what the host answers is shown as the assistant's answer and a change set, or not at all (IDE-030)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/agent/changeSetReview.test.ts","test":"the review and the save of an assistant change set (S5, IDE-030)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/aiProviderPresentation.test.ts","test":"AI provider presenters (IDE-030)"},
@@ -2289,7 +2293,10 @@
   ],
   "IDE-031": [
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/scenarioParity.test.ts","test":"a project run through the Tool API, the CLI, the MCP tools and Studio gives one result (IDE-031)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/Console.dom.test.tsx","test":"Output, Problems and Tests tabs (IDE-020, IDE-031) in a DOM"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.failureDetail.test.ts","test":"IDE-031 a run with no failure serialises byte for byte as before"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.failureDetail.test.ts","test":"failure detail in the Tool API preview (TST-003, IDE-031)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/Console.dom.test.tsx","test":"Output, Problems and Tests tabs (IDE-020, IDE-031) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/traceKinds.test.ts","test":"IDE-031 trace_get returns the RISING and FALLING assertions of a recorded run"}
   ],
   "IDE-032": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/InterlockCoverage.dom.test.tsx","test":"Declared-interlock coverage check (IDE-032) in a DOM"},
@@ -2546,6 +2553,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/commands/commands.test.ts","test":"command registry (UX-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/commands/commands.test.ts","test":"running a command (UX-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/commands/commands.test.ts","test":"shortcuts (UX-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/commands/palette.test.ts","test":"UX-015 the command filter ranks as before"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/commands/palette.test.ts","test":"the command filter (UX-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/Toolbar.dom.test.tsx","test":"Command bar (IDE-001, UX-011, UX-015) in a DOM"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"3c The command palette runs commands from the keyboard","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"47 The main path is completed with the keyboard alone","partial":true}

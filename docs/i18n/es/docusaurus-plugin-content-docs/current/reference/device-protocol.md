@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/device-protocol. Do not edit. >>> */}
 
-El protocolo de enlace con el dispositivo es como hablan la aplicación ZPLC y un dispositivo: un protocolo binario con tramas y versión, con longitud, número de secuencia y suma de verificación en cada trama, negociación de capacidades y códigos de error explícitos. Funciona sobre UART, USB serie y TCP. Esta es la versión `1` del protocolo: 44 mensajes y 8 eventos. La consola de texto del dispositivo se mantiene: es el protocolo anterior y la consola de recuperación, y `zplc sys info --json` conserva sus claves. Esta página se lee de `tools/contract/protocol.json`, la definición única de la que se generan el códec C del firmware y el códec TypeScript de la aplicación ZPLC. El runtime nativo habla el mismo protocolo por la entrada y la salida estándar cuando se inicia con `--device-link`; `--device-link-network` le aplica las reglas de un enlace de red, para poder ejercitarlas sin un socket.
+El protocolo de enlace con el dispositivo es como hablan la aplicación ZPLC y un dispositivo: un protocolo binario con tramas y versión, con longitud, número de secuencia y suma de verificación en cada trama, negociación de capacidades y códigos de error explícitos. Funciona sobre UART, USB serie y TCP. Esta es la versión `1` del protocolo: 49 mensajes y 9 eventos. La consola de texto del dispositivo se mantiene: es el protocolo anterior y la consola de recuperación, y `zplc sys info --json` conserva sus claves. Esta página se lee de `tools/contract/protocol.json`, la definición única de la que se generan el códec C del firmware y el códec TypeScript de la aplicación ZPLC. El runtime nativo habla el mismo protocolo por la entrada y la salida estándar cuando se inicia con `--device-link`; `--device-link-network` le aplica las reglas de un enlace de red, para poder ejercitarlas sin un socket.
 
 ## Sesiones
 
@@ -23,7 +23,7 @@ Un valor de varios bytes se escribe con un solo `MEM_WRITE`: el dispositivo lo e
 
 Un dispositivo al que se le dio una clave pública con `SIGNING_KEY_SET` (por el enlace serie) acepta solo un programa firmado con la clave privada correspondiente: la firma Ed25519 (RFC 8032) del artefacto completo se envía con `PROGRAM_SIGN` después del último fragmento, y `PROGRAM_COMMIT` la verifica primero. Un programa sin firma se rechaza con `SIGNATURE_REQUIRED`, uno cuya firma no es de este artefacto con `SIGNATURE_INVALID`; la consola de texto rechaza una subida mientras el dispositivo tiene una clave. El saludo dice si se exigen firmas. Un dispositivo que no puede verificar no ofrece la capacidad.
 
-Los mensajes que necesitan una sesión: `MEM_WRITE`, `FORCE_SET`, `FORCE_CLEAR`, `FORCE_CLEAR_ALL`, `SESSION_CLOSE`, `KEEPALIVE`, `RUN`, `STOP`, `PAUSE`, `RESUME`, `STEP`, `RESET`, `BP_ADD`, `BP_REMOVE`, `BP_CLEAR`, `PROGRAM_BEGIN`, `PROGRAM_CHUNK`, `PROGRAM_COMMIT`, `PROGRAM_ABORT`, `PROGRAM_SIGN`, `CONFIG_SET`, `CONFIG_SAVE`, `CONFIG_RESET`, `CRED_BEGIN`, `CRED_CHUNK`, `CRED_COMMIT`, `CRED_ERASE`, `KEY_SET`, `KEY_CLEAR`, `SIGNING_KEY_SET`, `SIGNING_KEY_CLEAR`. `KEY_SET` y `KEY_CLEAR` necesitan además el enlace serie.
+Los mensajes que necesitan una sesión: `MEM_WRITE`, `FORCE_SET`, `FORCE_CLEAR`, `FORCE_CLEAR_ALL`, `SESSION_CLOSE`, `KEEPALIVE`, `RUN`, `STOP`, `PAUSE`, `RESUME`, `STEP`, `RESET`, `BP_ADD`, `BP_REMOVE`, `BP_CLEAR`, `PROGRAM_BEGIN`, `PROGRAM_CHUNK`, `PROGRAM_COMMIT`, `PROGRAM_ABORT`, `PROGRAM_SIGN`, `CONFIG_SET`, `CONFIG_SAVE`, `CONFIG_RESET`, `CRED_BEGIN`, `CRED_CHUNK`, `CRED_COMMIT`, `CRED_ERASE`, `KEY_SET`, `KEY_CLEAR`, `SIGNING_KEY_SET`, `SIGNING_KEY_CLEAR`, `PLANT_ENTER`, `PLANT_FRAME`, `PLANT_EXIT`, `PLANT_MIRROR`, `PLANT_STATUS`. `KEY_SET` y `KEY_CLEAR` necesitan además el enlace serie.
 
 ## Autenticación en un enlace de red
 
@@ -101,6 +101,7 @@ El código cubre el encabezado y la carga útil, de modo que el número de secue
 | `CONFIG` | 9 | Cambiar, guardar y restablecer la configuración. |
 | `CREDENTIALS` | 10 | Subir y borrar credenciales. |
 | `SIGNATURE` | 11 | El dispositivo acepta solo artefactos firmados con la clave que tiene (COM-026). |
+| `PLANT` | 12 | Modo E/S de planta: las entradas enlazadas toman sus valores de un enlace de planta y las salidas se publican hacia él (LNK-012). |
 
 ## Clases de acceso
 
@@ -172,6 +173,13 @@ Una respuesta empieza con su byte de estado. Tras `RANGE` la respuesta lleva `ad
 | `CREDENTIAL` | `CA` | 0 | The certificate authority certificate. |
 | `CREDENTIAL` | `CLIENT` | 1 | The client certificate. |
 | `CREDENTIAL` | `KEY` | 2 | The client private key. |
+| `PLANT_EXIT_REASON` | `CLOSED` | 0 | A person asked for it (PLANT_EXIT). |
+| `PLANT_EXIT_REASON` | `TIMEOUT` | 1 | No valid frame arrived within the granted timeout. |
+| `PLANT_EXIT_REASON` | `SESSION_END` | 2 | The session that started the mode ended. |
+| `PLANT_EXIT_REASON` | `LINK_LOST` | 3 | The link of the session was lost. |
+| `PLANT_EXIT_REASON` | `RUN_CONTROL` | 4 | STOP, RESET, a program load, a pause or a resume of another program. |
+| `PLANT_EXIT_REASON` | `FAULT` | 5 | The runtime latched a fault. |
+| `PLANT_EXIT_REASON` | `PROTOCOL` | 6 | Eight frames in a row were rejected. |
 
 ## Máscara de eventos
 
@@ -183,6 +191,7 @@ Una respuesta empieza con su byte de estado. Tras `RANGE` la respuesta lleva `ad
 | `FORCE` | 3 | A force was set, cleared or released. |
 | `LOG` | 4 | The device wrote a log line. |
 | `WATCH` | 5 | A batch of watched values. |
+| `PLANT` | 6 | Plant I/O mode ended. |
 
 ## Mensajes
 
@@ -232,6 +241,11 @@ Una respuesta empieza con su byte de estado. Tras `RANGE` la respuesta lleva `ad
 | `KEY_CLEAR` | 0x61 | `SERIAL_SESSION` | Borrar la clave; ya no son posibles las sesiones autenticadas. |
 | `SIGNING_KEY_SET` | 0x62 | `SERIAL_SESSION` | Dar al dispositivo la clave pública con la que se deben firmar los programas. Desde entonces solo acepta programas firmados. |
 | `SIGNING_KEY_CLEAR` | 0x63 | `SERIAL_SESSION` | Borrar la clave pública; el dispositivo vuelve a aceptar programas sin firma. |
+| `PLANT_ENTER` | 0x70 | `SESSION` | Iniciar el modo E/S de planta: las entradas listadas toman sus valores de tramas de planta y las salidas listadas se publican hacia la planta. El reflejo hacia los pines está apagado. |
+| `PLANT_FRAME` | 0x71 | `SESSION` | Enviar las entradas de planta de un intercambio y recibir las salidas de un ciclo. |
+| `PLANT_EXIT` | 0x72 | `SESSION` | Terminar el modo E/S de planta: el programa se detiene y las salidas pasan a su estado seguro. |
+| `PLANT_MIRROR` | 0x73 | `SESSION` | Activar o desactivar el reflejo de la imagen de salidas en las salidas físicas. Apagado al entrar. |
+| `PLANT_STATUS` | 0x74 | `SESSION` | El estado del modo E/S de planta. |
 
 ### HELLO (0x01)
 
@@ -915,6 +929,105 @@ sin campos
 
 sin campos
 
+### PLANT_ENTER (0x70)
+
+Iniciar el modo E/S de planta: las entradas listadas toman sus valores de tramas de planta y las salidas listadas se publican hacia la planta. El reflejo hacia los pines está apagado. Acceso: `SESSION`.
+
+**Solicitud**
+
+| Campo | Tipo | Significado |
+| --- | --- | --- |
+| `timeout_ms` | `u16` | Milliseconds without a valid frame after which the mode ends; 50 to 2000. |
+| `n_in` | `u8` | Number of input descriptors. |
+| `n_out` | `u8` | Number of output descriptors. |
+| `descriptors` | `tail` | n_in input descriptors, then n_out output descriptors. A descriptor is 3 bytes: offset (u16; an IPI byte offset for an input, an OPI byte offset for an output) and spec (u8; bits 0-1 the type: 0 BOOL, 1 INT, 2 REAL; bits 2-4 the bit index, BOOL only; bits 5-7 zero). |
+
+**Respuesta** (después del byte de estado)
+
+| Campo | Tipo | Significado |
+| --- | --- | --- |
+| `plant_id` | `u16` | The number of this entry; every frame carries it. |
+| `in_bytes` | `u16` | Bytes of input values in a frame. |
+| `out_bytes` | `u16` | Bytes of output values in a response. |
+| `max_slots` | `u8` | Slots per direction this build accepts. |
+| `timeout_ms` | `u16` | The timeout granted. |
+
+### PLANT_FRAME (0x71)
+
+Enviar las entradas de planta de un intercambio y recibir las salidas de un ciclo. Acceso: `SESSION`.
+
+**Solicitud**
+
+| Campo | Tipo | Significado |
+| --- | --- | --- |
+| `plant_id` | `u16` | The entry the device granted. |
+| `seq` | `u32` | Strictly newer than the last accepted, by a wrap-aware 32-bit difference. |
+| `values` | `tail` | A bitmap of ceil(n_bool / 8) bytes with the BOOL values in descriptor order, then the INT (2 bytes, little endian, signed) and REAL (4 bytes, IEEE 754 binary32, little endian) values in descriptor order. |
+
+**Respuesta** (después del byte de estado)
+
+| Campo | Tipo | Significado |
+| --- | --- | --- |
+| `applied_seq` | `u32` | The last sequence a scan latched before the snapshot. |
+| `scans` | `u32` | Scans completed. |
+| `flags` | `u8` | Bit 0: mirror is on. Bit 1: the outputs were held since the last exchange. |
+| `late` | `u16` | Scans that found no new frame, or could not take the lock. |
+| `rejected` | `u16` | Frames rejected. |
+| `values` | `tail` | The output values of one scan, encoded as the input values, in descriptor order. |
+
+### PLANT_EXIT (0x72)
+
+Terminar el modo E/S de planta: el programa se detiene y las salidas pasan a su estado seguro. Acceso: `SESSION`.
+
+**Solicitud**
+
+sin campos
+
+**Respuesta** (después del byte de estado)
+
+| Campo | Tipo | Significado |
+| --- | --- | --- |
+| `reason` | `u8 (PLANT_EXIT_REASON)` | Why the mode ended (CLOSED for this request). |
+| `frames` | `u32` | Frames accepted during the mode. |
+| `late` | `u16` | Scans counted late. |
+| `rejected` | `u16` | Frames rejected. |
+
+### PLANT_MIRROR (0x73)
+
+Activar o desactivar el reflejo de la imagen de salidas en las salidas físicas. Apagado al entrar. Acceso: `SESSION`.
+
+**Solicitud**
+
+| Campo | Tipo | Significado |
+| --- | --- | --- |
+| `enable` | `u8` | 1 to mirror, 0 to hold the physical outputs in their safe state. |
+
+**Respuesta** (después del byte de estado)
+
+| Campo | Tipo | Significado |
+| --- | --- | --- |
+| `mirror` | `u8` | The state in force. |
+
+### PLANT_STATUS (0x74)
+
+El estado del modo E/S de planta. Acceso: `SESSION`.
+
+**Solicitud**
+
+sin campos
+
+**Respuesta** (después del byte de estado)
+
+| Campo | Tipo | Significado |
+| --- | --- | --- |
+| `active` | `u8` | 1 while the mode is active. |
+| `plant_id` | `u16` | The current entry, 0 when inactive. |
+| `mirror` | `u8` | 1 when mirroring is on. |
+| `frames` | `u32` | Frames accepted. |
+| `late` | `u16` | Scans counted late. |
+| `rejected` | `u16` | Frames rejected. |
+| `age_ms` | `u16` | Milliseconds since the last accepted frame. |
+
 ## Eventos
 
 | Evento | Número | Bit de máscara | Campos | Significado |
@@ -927,6 +1040,7 @@ sin campos
 | `EVT_WATCH` | 0x85 | `WATCH` | `cycle` (`u32`), `data` (`tail`) | Un lote de valores observados, tomados de un mismo ciclo. |
 | `EVT_SESSION_END` | 0x86 | siempre | `reason` (`u8`), `forces_released` (`u8`) | La sesión terminó. Siempre se envía al enlace que la tenía. |
 | `EVT_DROPPED` | 0x87 | siempre | `count` (`u32`) | Se perdieron eventos porque la cola estaba llena. Se envía cuando vuelve a haber espacio. |
+| `EVT_PLANT_EXIT` | 0x88 | `PLANT` | `reason` (`u8`), `frames` (`u32`) | El modo E/S de planta terminó. |
 
 {/* <<< END GENERATED: reference/device-protocol <<< */}
 

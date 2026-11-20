@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/device-protocol. Do not edit. >>> */}
 
-The device link protocol is how the ZPLC application and a device talk: a framed, versioned binary protocol with a length, a sequence number and a checksum on every frame, capability negotiation and explicit error codes. It runs over UART, USB serial and TCP. This is protocol version `1`: 44 messages and 8 events. The text shell of the device stays: it is the older protocol and the recovery console, and `zplc sys info --json` keeps its keys. This page is read off `tools/contract/protocol.json`, the one definition the C codec of the firmware and the TypeScript codec of the ZPLC application are generated from. The native runtime speaks the same protocol on standard input and output when it is started with `--device-link`; `--device-link-network` applies the rules of a network link to it, so that they can be exercised without a socket.
+The device link protocol is how the ZPLC application and a device talk: a framed, versioned binary protocol with a length, a sequence number and a checksum on every frame, capability negotiation and explicit error codes. It runs over UART, USB serial and TCP. This is protocol version `1`: 49 messages and 9 events. The text shell of the device stays: it is the older protocol and the recovery console, and `zplc sys info --json` keeps its keys. This page is read off `tools/contract/protocol.json`, the one definition the C codec of the firmware and the TypeScript codec of the ZPLC application are generated from. The native runtime speaks the same protocol on standard input and output when it is started with `--device-link`; `--device-link-network` applies the rules of a network link to it, so that they can be exercised without a socket.
 
 ## Sessions
 
@@ -23,7 +23,7 @@ A multi-byte value is written with one `MEM_WRITE`: the device queues it whole a
 
 A device that was given a public key with `SIGNING_KEY_SET` (over the serial link) accepts only a program that was signed with the matching private key: the Ed25519 signature (RFC 8032) of the whole artifact is sent with `PROGRAM_SIGN` after the last chunk, and `PROGRAM_COMMIT` verifies it first. An unsigned program is refused with `SIGNATURE_REQUIRED`, one that is not a signature of this artifact with `SIGNATURE_INVALID`; the text shell refuses an upload while the device holds a key. The hello says whether signatures are required. A device that cannot verify does not offer the capability.
 
-The messages that need a session: `MEM_WRITE`, `FORCE_SET`, `FORCE_CLEAR`, `FORCE_CLEAR_ALL`, `SESSION_CLOSE`, `KEEPALIVE`, `RUN`, `STOP`, `PAUSE`, `RESUME`, `STEP`, `RESET`, `BP_ADD`, `BP_REMOVE`, `BP_CLEAR`, `PROGRAM_BEGIN`, `PROGRAM_CHUNK`, `PROGRAM_COMMIT`, `PROGRAM_ABORT`, `PROGRAM_SIGN`, `CONFIG_SET`, `CONFIG_SAVE`, `CONFIG_RESET`, `CRED_BEGIN`, `CRED_CHUNK`, `CRED_COMMIT`, `CRED_ERASE`, `KEY_SET`, `KEY_CLEAR`, `SIGNING_KEY_SET`, `SIGNING_KEY_CLEAR`. `KEY_SET` and `KEY_CLEAR` also need the serial link.
+The messages that need a session: `MEM_WRITE`, `FORCE_SET`, `FORCE_CLEAR`, `FORCE_CLEAR_ALL`, `SESSION_CLOSE`, `KEEPALIVE`, `RUN`, `STOP`, `PAUSE`, `RESUME`, `STEP`, `RESET`, `BP_ADD`, `BP_REMOVE`, `BP_CLEAR`, `PROGRAM_BEGIN`, `PROGRAM_CHUNK`, `PROGRAM_COMMIT`, `PROGRAM_ABORT`, `PROGRAM_SIGN`, `CONFIG_SET`, `CONFIG_SAVE`, `CONFIG_RESET`, `CRED_BEGIN`, `CRED_CHUNK`, `CRED_COMMIT`, `CRED_ERASE`, `KEY_SET`, `KEY_CLEAR`, `SIGNING_KEY_SET`, `SIGNING_KEY_CLEAR`, `PLANT_ENTER`, `PLANT_FRAME`, `PLANT_EXIT`, `PLANT_MIRROR`, `PLANT_STATUS`. `KEY_SET` and `KEY_CLEAR` also need the serial link.
 
 ## Authentication on a network link
 
@@ -101,6 +101,7 @@ The code covers the header and the payload, so the sequence number and the direc
 | `CONFIG` | 9 | Change, save and reset the configuration. |
 | `CREDENTIALS` | 10 | Upload and erase credentials. |
 | `SIGNATURE` | 11 | The device accepts only artifacts signed with the key it holds (COM-026). |
+| `PLANT` | 12 | Plant I/O mode: bound inputs take their values from a plant link and the outputs are published to it (LNK-012). |
 
 ## Access classes
 
@@ -172,6 +173,13 @@ A response starts with its status byte. After `RANGE` the response carries `addr
 | `CREDENTIAL` | `CA` | 0 | The certificate authority certificate. |
 | `CREDENTIAL` | `CLIENT` | 1 | The client certificate. |
 | `CREDENTIAL` | `KEY` | 2 | The client private key. |
+| `PLANT_EXIT_REASON` | `CLOSED` | 0 | A person asked for it (PLANT_EXIT). |
+| `PLANT_EXIT_REASON` | `TIMEOUT` | 1 | No valid frame arrived within the granted timeout. |
+| `PLANT_EXIT_REASON` | `SESSION_END` | 2 | The session that started the mode ended. |
+| `PLANT_EXIT_REASON` | `LINK_LOST` | 3 | The link of the session was lost. |
+| `PLANT_EXIT_REASON` | `RUN_CONTROL` | 4 | STOP, RESET, a program load, a pause or a resume of another program. |
+| `PLANT_EXIT_REASON` | `FAULT` | 5 | The runtime latched a fault. |
+| `PLANT_EXIT_REASON` | `PROTOCOL` | 6 | Eight frames in a row were rejected. |
 
 ## Event mask
 
@@ -183,6 +191,7 @@ A response starts with its status byte. After `RANGE` the response carries `addr
 | `FORCE` | 3 | A force was set, cleared or released. |
 | `LOG` | 4 | The device wrote a log line. |
 | `WATCH` | 5 | A batch of watched values. |
+| `PLANT` | 6 | Plant I/O mode ended. |
 
 ## Messages
 
@@ -232,6 +241,11 @@ A response starts with its status byte. After `RANGE` the response carries `addr
 | `KEY_CLEAR` | 0x61 | `SERIAL_SESSION` | Erase the key; authenticated sessions are no longer possible. |
 | `SIGNING_KEY_SET` | 0x62 | `SERIAL_SESSION` | Give the device the public key that programs have to be signed with. From then on it accepts only signed programs. |
 | `SIGNING_KEY_CLEAR` | 0x63 | `SERIAL_SESSION` | Erase the public key; the device accepts unsigned programs again. |
+| `PLANT_ENTER` | 0x70 | `SESSION` | Start plant I/O mode: the inputs listed take their values from plant frames and the outputs listed are published to the plant. Mirroring to the pins is off. |
+| `PLANT_FRAME` | 0x71 | `SESSION` | Send the plant inputs of one exchange and receive the outputs of one scan. |
+| `PLANT_EXIT` | 0x72 | `SESSION` | End plant I/O mode: the program is stopped and the outputs go to their safe state. |
+| `PLANT_MIRROR` | 0x73 | `SESSION` | Turn mirroring of the output image to the physical outputs on or off. Off at entry. |
+| `PLANT_STATUS` | 0x74 | `SESSION` | The state of plant I/O mode. |
 
 ### HELLO (0x01)
 
@@ -915,6 +929,105 @@ no fields
 
 no fields
 
+### PLANT_ENTER (0x70)
+
+Start plant I/O mode: the inputs listed take their values from plant frames and the outputs listed are published to the plant. Mirroring to the pins is off. Access: `SESSION`.
+
+**Request**
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `timeout_ms` | `u16` | Milliseconds without a valid frame after which the mode ends; 50 to 2000. |
+| `n_in` | `u8` | Number of input descriptors. |
+| `n_out` | `u8` | Number of output descriptors. |
+| `descriptors` | `tail` | n_in input descriptors, then n_out output descriptors. A descriptor is 3 bytes: offset (u16; an IPI byte offset for an input, an OPI byte offset for an output) and spec (u8; bits 0-1 the type: 0 BOOL, 1 INT, 2 REAL; bits 2-4 the bit index, BOOL only; bits 5-7 zero). |
+
+**Response** (after the status byte)
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `plant_id` | `u16` | The number of this entry; every frame carries it. |
+| `in_bytes` | `u16` | Bytes of input values in a frame. |
+| `out_bytes` | `u16` | Bytes of output values in a response. |
+| `max_slots` | `u8` | Slots per direction this build accepts. |
+| `timeout_ms` | `u16` | The timeout granted. |
+
+### PLANT_FRAME (0x71)
+
+Send the plant inputs of one exchange and receive the outputs of one scan. Access: `SESSION`.
+
+**Request**
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `plant_id` | `u16` | The entry the device granted. |
+| `seq` | `u32` | Strictly newer than the last accepted, by a wrap-aware 32-bit difference. |
+| `values` | `tail` | A bitmap of ceil(n_bool / 8) bytes with the BOOL values in descriptor order, then the INT (2 bytes, little endian, signed) and REAL (4 bytes, IEEE 754 binary32, little endian) values in descriptor order. |
+
+**Response** (after the status byte)
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `applied_seq` | `u32` | The last sequence a scan latched before the snapshot. |
+| `scans` | `u32` | Scans completed. |
+| `flags` | `u8` | Bit 0: mirror is on. Bit 1: the outputs were held since the last exchange. |
+| `late` | `u16` | Scans that found no new frame, or could not take the lock. |
+| `rejected` | `u16` | Frames rejected. |
+| `values` | `tail` | The output values of one scan, encoded as the input values, in descriptor order. |
+
+### PLANT_EXIT (0x72)
+
+End plant I/O mode: the program is stopped and the outputs go to their safe state. Access: `SESSION`.
+
+**Request**
+
+no fields
+
+**Response** (after the status byte)
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `reason` | `u8 (PLANT_EXIT_REASON)` | Why the mode ended (CLOSED for this request). |
+| `frames` | `u32` | Frames accepted during the mode. |
+| `late` | `u16` | Scans counted late. |
+| `rejected` | `u16` | Frames rejected. |
+
+### PLANT_MIRROR (0x73)
+
+Turn mirroring of the output image to the physical outputs on or off. Off at entry. Access: `SESSION`.
+
+**Request**
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `enable` | `u8` | 1 to mirror, 0 to hold the physical outputs in their safe state. |
+
+**Response** (after the status byte)
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `mirror` | `u8` | The state in force. |
+
+### PLANT_STATUS (0x74)
+
+The state of plant I/O mode. Access: `SESSION`.
+
+**Request**
+
+no fields
+
+**Response** (after the status byte)
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `active` | `u8` | 1 while the mode is active. |
+| `plant_id` | `u16` | The current entry, 0 when inactive. |
+| `mirror` | `u8` | 1 when mirroring is on. |
+| `frames` | `u32` | Frames accepted. |
+| `late` | `u16` | Scans counted late. |
+| `rejected` | `u16` | Frames rejected. |
+| `age_ms` | `u16` | Milliseconds since the last accepted frame. |
+
 ## Events
 
 | Event | Number | Mask bit | Fields | Meaning |
@@ -927,6 +1040,7 @@ no fields
 | `EVT_WATCH` | 0x85 | `WATCH` | `cycle` (`u32`), `data` (`tail`) | A batch of watched values, taken from one scan. |
 | `EVT_SESSION_END` | 0x86 | always | `reason` (`u8`), `forces_released` (`u8`) | The session ended. Always sent to the link that held it. |
 | `EVT_DROPPED` | 0x87 | always | `count` (`u32`) | Events were lost because the queue was full. Sent when there is room again. |
+| `EVT_PLANT_EXIT` | 0x88 | `PLANT` | `reason` (`u8`), `frames` (`u32`) | Plant I/O mode ended. |
 
 {/* <<< END GENERATED: reference/device-protocol <<< */}
 
