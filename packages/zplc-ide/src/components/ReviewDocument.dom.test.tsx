@@ -10,11 +10,13 @@ const { useReviewDocument } = await import('../store/useReviewDocument');
 const { ReviewDocument } = await import('./ReviewDocument');
 const { useReviewCommands } = await import('../commands/bind/review');
 const { runCommand, resetCommandsForTest } = await import('../commands/bus');
+const { useNotifications } = await import('../store/notifications');
 
 const restores: Array<() => void> = [];
 afterEach(() => {
   while (restores.length > 0) restores.pop()!();
   useReviewDocument.setState({ open: false, active: false, requests: 0, review: { kind: 'idle' }, busy: false });
+  useNotifications.setState({ items: [] });
 });
 
 function desktop(review: (request: unknown) => Promise<unknown>) {
@@ -98,7 +100,7 @@ describe('the review document (SHL-004)', () => {
     expect(ctx.written).toEqual([]);
   });
 
-  it('IDE-030 accepting writes only after the person saves, and a change that moved since the review never saves', async () => {
+  it('IDE-030 a change that moved since the review is stale and never saves', async () => {
     desktop(async () => ({}));
     const buffer = 'PROGRAM Main\nVAR x : BOOL; END_VAR\nEND_PROGRAM\n';
     const ctx = modifiedFile(buffer);
@@ -133,7 +135,7 @@ describe('the review document (SHL-004)', () => {
     void user;
   });
 
-  it('IDE-030 accepting a current accepted change saves the file through the store', async () => {
+  it('IDE-030 accepting and rejecting a change behave as in the Changes tab', async () => {
     desktop(async () => ({}));
     const buffer = 'PROGRAM Main\nVAR x : BOOL; END_VAR\nEND_PROGRAM\n';
     const ctx = modifiedFile(buffer);
@@ -161,6 +163,19 @@ describe('the review document (SHL-004)', () => {
     await user.click(dom.screen.getByRole('button', { name: dom.t('console.saveReviewedChange') }));
     await dom.waitFor(() => expect(dom.screen.getByText(dom.t('console.reviewedChangeSavedReview'))).toBeTruthy());
     expect(saved).toBe(1);
+  });
+
+  it('SHL-010 a proposed change raises one notice with a Review action and moves nothing', () => {
+    const tabBefore = useIDEStore.getState().activeConsoleTab;
+    const review = { kind: 'result', snapshot: { files: [] }, presentation: { kind: 'accepted', diagnostics: [], artifacts: [] } };
+    dom.act(() => useReviewDocument.getState().propose(review as never));
+    const { items } = useNotifications.getState();
+    expect(items).toHaveLength(1);
+    expect(items[0]?.recover?.label).toBe(dom.t('review.open'));
+    expect(useReviewDocument.getState()).toMatchObject({ open: false, active: false });
+    expect(useIDEStore.getState().activeConsoleTab).toBe(tabBefore);
+    dom.act(() => items[0]!.recover!.run());
+    expect(useReviewDocument.getState()).toMatchObject({ open: true, active: true });
   });
 
   it('SHL-004 view.changes opens the review document and makes it the active view', () => {
