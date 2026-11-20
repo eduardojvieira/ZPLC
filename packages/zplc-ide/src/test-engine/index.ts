@@ -135,6 +135,10 @@ export interface ScenarioAssertionResult {
   passed: boolean;
   /** First matching/failing sample according to the temporal assertion kind. */
   atMs?: number;
+  /** Failed assertion only: its position in `expectations`. */
+  index?: number;
+  /** Failed assertion only: the signals of its condition (at most 8), the raw expected value and the one observed at `atMs`. */
+  checks?: Array<{ signal: string; expected: boolean; observed?: boolean }>;
 }
 
 export interface ScenarioRunResult {
@@ -144,6 +148,8 @@ export interface ScenarioRunResult {
 }
 
 type UnknownRecord = Record<string, unknown>;
+
+const MAX_FAILURE_CHECKS = 8;
 
 function fail(message: string): never {
   throw new Error(`Invalid test scenario: ${message}`);
@@ -745,7 +751,7 @@ export async function runScenario(scenario: CompiledScenario, zplc: Uint8Array, 
     });
     inputSnapshots.push(Object.fromEntries([...terminalReads.values()].map((read) => [read.signal, inputs.get(location(read)) ?? false])));
   }
-  const assertions = scenario.expectations.map((expectation): ScenarioAssertionResult => {
+  const outcomes = scenario.expectations.map((expectation): ScenarioAssertionResult => {
     const samples =
       expectation.kind === 'AT'
         ? trace.filter((sample) => sample.atMs === expectation.atMs)
@@ -790,6 +796,15 @@ export async function runScenario(scenario: CompiledScenario, zplc: Uint8Array, 
       return { kind: expectation.kind, passed: failure === undefined, atMs: failure?.atMs };
     }
     return { kind: expectation.kind, passed: firstMatch === undefined, atMs: firstMatch?.atMs };
+  });
+  const assertions = outcomes.map((outcome, index): ScenarioAssertionResult => {
+    if (outcome.passed) return outcome;
+    const observedAt = trace.find((sample) => sample.atMs === outcome.atMs)?.outputs;
+    const checks = scenario.expectations[index]!.reads.slice(0, MAX_FAILURE_CHECKS).map(({ signal, value }) => {
+      const observed = observedAt?.[signal];
+      return { signal, expected: value, ...(typeof observed === 'boolean' ? { observed } : {}) };
+    });
+    return { ...outcome, index, checks };
   });
   return { passed: assertions.every((assertion) => assertion.passed), trace, assertions };
 }

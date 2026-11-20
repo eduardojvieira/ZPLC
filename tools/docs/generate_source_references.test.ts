@@ -40,6 +40,17 @@ describe('source references: the two languages say the same thing (DOC-008)', ()
     }
   });
 
+  it('TST-003 documents the failure detail of an assertion on the command line and MCP pages, in both languages', () => {
+    for (const path of ['reference/cli.md', 'reference/mcp.md']) {
+      const page = PAGES.find((candidate) => candidate.path === path)!;
+      for (const lang of ['en', 'es'] as const) {
+        const body = page.body(lang);
+        for (const field of ['`index`', '`checks`', '`signal`', '`expected`', '`observed`'])
+          expect([path, lang, field, body.includes(field)]).toEqual([path, lang, field, true]);
+      }
+    }
+  });
+
   it('renders each page with its markers, title and a closing sentence', () => {
     for (const page of PAGES) {
       for (const lang of ['en', 'es'] as const) {

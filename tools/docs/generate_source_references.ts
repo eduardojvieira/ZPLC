@@ -441,6 +441,61 @@ export function cliErrors(): string[] {
   return errors;
 }
 
+/**
+ * The optional fields of a failed assertion in the `preview` of `tests_run` and `scenario_run` (TST-003). The Tool API has no
+ * reference page of its own: the command line and the MCP server return its result, so both pages carry this section.
+ */
+function failureDetailSection(lang: Lang): string {
+  const text: L10n = {
+    en:
+      `With ${code('--json')} (and in the MCP tools ${code('tests_run')} and ${code('scenario_run')}) the result has a ` +
+      `${code('preview')} with one entry per scenario in ${code('scenarios')}, and each entry lists its expectations in ` +
+      `${code('assertions')}: ${code('kind')}, ${code('passed')} and, when it has one, ${code('atMs')}. An expectation that failed ` +
+      `also carries two optional fields. An expectation that passed never does, and a run in which every expectation passed ` +
+      `is reported exactly as before. The values are the raw values of the run, ${code('true')} or ${code('false')}, with no ` +
+      `formatting, rounding, unit or translation. Only the ${code('preview')} carries these fields: the trace file and its hash do ` +
+      `not change.`,
+    es:
+      `Con ${code('--json')} (y en las herramientas MCP ${code('tests_run')} y ${code('scenario_run')}) el resultado tiene un ` +
+      `${code('preview')} con una entrada por escenario en ${code('scenarios')}, y cada entrada lista sus expectativas en ` +
+      `${code('assertions')}: ${code('kind')}, ${code('passed')} y, cuando la tiene, ${code('atMs')}. Una expectativa que falló ` +
+      `lleva además dos campos opcionales. Una expectativa que pasó nunca los lleva, y una ejecución en la que todas las ` +
+      `expectativas pasaron se informa exactamente como antes. Los valores son los valores crudos de la ejecución, ${code('true')} ` +
+      `o ${code('false')}, sin formato, redondeo, unidad ni traducción. Solo el ${code('preview')} lleva estos campos: el archivo ` +
+      `de traza y su hash no cambian.`,
+  };
+  const head = lang === 'en' ? ['Field', 'Meaning'] : ['Campo', 'Significado'];
+  const rows: Array<[string, L10n]> = [
+    [
+      'index',
+      {
+        en: 'The position of the expectation in the `expectations` list of the scenario file, counted from 0.',
+        es: 'La posición de la expectativa en la lista `expectations` del archivo del escenario, contada desde 0.',
+      },
+    ],
+    [
+      'checks',
+      {
+        en:
+          'The signals of the condition of the expectation, at most 8. Each one has `signal`, `expected` (the value the scenario ' +
+          'asks for) and `observed` (the value in the recorded sample at `atMs`; absent when the signal is not in the trace).',
+        es:
+          'Las señales de la condición de la expectativa, como máximo 8. Cada una tiene `signal`, `expected` (el valor que el ' +
+          'escenario pide) y `observed` (el valor de la muestra registrada en `atMs`; ausente cuando la señal no está en la traza).',
+      },
+    ],
+  ];
+  const heading: L10n = { en: 'The detail of a failed expectation', es: 'El detalle de una expectativa fallida' };
+  return [
+    `## ${heading[lang]}`,
+    text[lang],
+    table(
+      head,
+      rows.map(([field, meaning]) => [code(field), meaning[lang]]),
+    ),
+  ].join('\n\n');
+}
+
 export function cliBody(lang: Lang): string {
   const cli = parseCli(read(SOURCES.cli));
   const names = [...new Set(cli.commands.map((command) => command.name))];
@@ -492,6 +547,7 @@ export function cliBody(lang: Lang): string {
       cli.exitCodes.map((entry) => [code(String(entry.code)), cell(entry.meaning)]),
     ),
     ...(cli.footnote ? [cell(cli.footnote)] : []),
+    failureDetailSection(lang),
   ].join('\n\n');
 }
 
@@ -599,6 +655,7 @@ export function mcpBody(lang: Lang): string {
       resourceHead,
       mcp.resources.map((resource) => [code(resource.uri), resource.template ? kind[lang].template : kind[lang].fixed]),
     ),
+    failureDetailSection(lang),
   ].join('\n\n');
 }
 
