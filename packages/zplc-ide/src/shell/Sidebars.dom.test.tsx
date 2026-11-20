@@ -37,7 +37,7 @@ describe('the secondary sidebar (SHL-008)', () => {
     expect(dom.screen.getByRole('complementary', { name: dom.t('workbench.inspector.region') })).toBeTruthy();
     expect(dom.screen.queryByRole('region', { name: dom.t('assistant.region') })).toBeNull();
     await user.click(dom.screen.getByRole('button', { name: dom.t('shell.secondary.assistant') }));
-    expect(dom.screen.getByRole('region', { name: dom.t('assistant.region') })).toBeTruthy();
+    expect(await dom.screen.findByRole('region', { name: dom.t('assistant.region') })).toBeTruthy();
     expect(dom.screen.queryByRole('complementary', { name: dom.t('workbench.inspector.region') })).toBeNull();
   });
 

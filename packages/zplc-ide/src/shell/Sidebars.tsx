@@ -2,7 +2,7 @@
  * The two sidebars of the shell (UX-011): the primary one swaps its view with the activity rail, the secondary one holds one of its views
  * at a time (SHL-008).
  */
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { useT } from '../i18n';
 import { useLearnUi } from '../learn/learnUi';
 import { useIDEStore } from '../store/useIDEStore';
@@ -11,7 +11,6 @@ import { lessonSurface } from './shellRouting';
 import { useShellDensity } from './shellDensity';
 import { useAssistantProvider, useSecondaryView, type SecondaryView } from './useSelection';
 import { ErrorBoundary } from '../components/ErrorBoundary';
-import { AssistantView } from '../components/AssistantView';
 import { LearnPanel } from '../components/LearnPanel';
 import { ProjectExplorer } from '../components/ProjectExplorer';
 import { WorkbenchInspector } from '../components/WorkbenchInspector';
@@ -93,6 +92,9 @@ function useShownSecondaryView(): { shown: SecondaryView; available: SecondaryVi
   return { shown: chosen ?? (lesson ? 'lesson' : 'inspector'), available };
 }
 
+// A chunk of its own: the Assistant holds the review panels and, through them, Monaco, which the Welcome screen must not load (IDE-015).
+const AssistantView = lazy(() => import('../components/AssistantView').then((module) => ({ default: module.AssistantView })));
+
 const VIEW_KEYS = {
   lesson: 'shell.secondary.lesson',
   inspector: 'shell.secondary.inspector',
@@ -102,7 +104,12 @@ const VIEW_KEYS = {
 function SecondaryBody({ view }: { view: SecondaryView }) {
   const presentation = useWorkspaceTestResult((state) => state.presentation);
   if (view === 'lesson') return <LearnPanel workspaceTestPresentation={presentation} />;
-  return view === 'assistant' ? <AssistantView /> : <WorkbenchInspector />;
+  if (view !== 'assistant') return <WorkbenchInspector />;
+  return (
+    <Suspense fallback={null}>
+      <AssistantView />
+    </Suspense>
+  );
 }
 
 function SecondarySwitch({ shown, available, label }: { shown: SecondaryView; available: SecondaryView[]; label: string }) {
