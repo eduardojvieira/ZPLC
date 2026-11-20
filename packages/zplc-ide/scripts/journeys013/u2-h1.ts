@@ -19,7 +19,7 @@ export const journeysU2H1: Journey[] = [
       await app.until('the project workbench to appear', async () => (await app.visible(toolbar)) || undefined);
       assert(!(await app.visible(reviewTab)), 'The review document must not be open before it is asked for');
 
-      await runFromPalette(app, 'view.changes', 'show the changes');
+      await runFromPalette(app, 'view.changes', 'show changes');
       await app.until('the review document tab', async () => (await app.visible(reviewTab)) || undefined);
       assert(
         (await app.eval<string>(`document.querySelector('[id="editor-tab-review:changes"]')?.getAttribute('aria-selected') ?? ''`)) ===
