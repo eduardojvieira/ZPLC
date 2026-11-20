@@ -2900,7 +2900,7 @@ export const JOURNEYS: Journey[] = [
       // Before anything is chosen: the defaults, and the update check is off.
       const before = await root(app);
       assert(before.density === 'comfortable', `The density starts as ${before.density}.`);
-      await app.click(css('[data-welcome-preferences] summary'), 'the Preferences disclosure of the Welcome screen');
+      await app.click(button('Preferences'), 'the Preferences button of the Welcome screen');
       await app.until('the preferences on the Welcome screen', async () => (await app.visible(css('[data-app-preferences]'))) || undefined);
       assert(
         await app.eval(`document.querySelector('[data-setting="checkForUpdates"]').checked === false`),
@@ -2919,15 +2919,20 @@ export const JOURNEYS: Journey[] = [
       );
       assert(after.lang === 'en' && after.theme === 'dark', `Language or theme did not apply: ${JSON.stringify(after)}`);
 
-      // Editor choices made inside the project, where the settings tab is.
+      // Editor choices made inside the project, where Preferences is a tab of the editor area.
+      await app.click(button('Back to the start'), 'Back to the start');
       await openFolder(app, project);
       await openFile(app, 'src/Motor.st');
       assert(
         JSON.stringify(await editorOptions(app)) === JSON.stringify({ fontSize: 14, tabSize: 4 }),
         `The editor should start at 14 px and 4 spaces: ${JSON.stringify(await editorOptions(app))}`,
       );
-      await app.click(button('Project settings'), 'the Project settings button');
-      await app.until('the preferences in the settings tab', async () => (await app.visible(css('[data-app-preferences]'))) || undefined);
+      await app.press('Ctrl+Shift+P');
+      await app.until('the palette field', async () => (await app.visible(css('[role="combobox"]'))) || undefined);
+      await app.type('Open preferences');
+      await app.until('the command in the palette', async () => (await app.visible(css('[role="option"]'))) || undefined);
+      await app.press('Enter');
+      await app.until('the preferences in their tab', async () => (await app.visible(css('[data-app-preferences]'))) || undefined);
       await choose(app, '[data-setting="editorFontSize"]', '20 px');
       await choose(app, '[data-setting="editorTabSize"]', '2 spaces');
       await choose(app, '[data-setting="autosaveSeconds"]', 'After 5 seconds without typing');
@@ -2956,7 +2961,7 @@ export const JOURNEYS: Journey[] = [
         restored.density === 'compact' && restored.lang === 'en' && restored.theme === 'dark',
         `The display preferences were not restored: ${JSON.stringify(restored)}`,
       );
-      await again.click(css('[data-welcome-preferences] summary'), 'the Preferences disclosure of the Welcome screen');
+      await again.click(button('Preferences'), 'the Preferences button of the Welcome screen');
       await again.until(
         'the preferences on the Welcome screen',
         async () => (await again.visible(css('[data-app-preferences]'))) || undefined,
@@ -2973,6 +2978,7 @@ export const JOURNEYS: Journey[] = [
           `${selector} should show ${label} after a restart, shows ${await chosen(again, selector)}`,
         );
       }
+      await again.click(button('Back to the start'), 'Back to the start');
       await openFolder(again, project);
       await openFile(again, 'src/Motor.st');
       assert(

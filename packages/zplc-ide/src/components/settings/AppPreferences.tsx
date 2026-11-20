@@ -78,8 +78,8 @@ function Choice<K extends keyof AppSettings>({
   );
 }
 
-/** The preferences of the person; the theme control here is the only one of the product (SHL-012). `includeTheme`: an i18n test. */
-export function AppPreferences({ includeTheme = true }: { includeTheme?: boolean }) {
+/** The preferences of the person; the theme control here is the only one of the product (SHL-012). */
+export function AppPreferences() {
   const { t, tn } = useT();
   const checkForUpdates = useAppSettings((state) => state.settings.checkForUpdates);
   const minimap = useEditorView((state) => state.minimap);
@@ -109,7 +109,7 @@ export function AppPreferences({ includeTheme = true }: { includeTheme?: boolean
       </h2>
       <p className="mt-1 text-xs text-[var(--text-tertiary)]">{t('preferences.intro')}</p>
       <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {includeTheme && <ThemeControl />}
+        <ThemeControl />
         <Choice
           label={t('preferences.fontSize')}
           field="editorFontSize"

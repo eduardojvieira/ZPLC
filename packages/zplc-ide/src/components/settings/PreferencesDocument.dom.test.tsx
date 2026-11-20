@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
-import { isFocused, setupDom, stubProjectLoader } from '../../test/dom';
+import { isFocused, setupDom, stubMonaco, stubProjectLoader } from '../../test/dom';
 
 // SHL-011, SHL-012, FND-001: Preferences is a document of its own, open with or without a project, with the one theme control.
 const dom = await setupDom();
 await stubProjectLoader();
+await stubMonaco();
 const { useIDEStore } = await import('../../store/useIDEStore');
 const { useAppSettings } = await import('../../store/useAppSettings');
 const { usePreferencesDocument } = await import('../../store/usePreferencesDocument');
@@ -14,6 +15,7 @@ const { WelcomeScreen } = await import('../WelcomeScreen');
 const { Toolbar } = await import('../Toolbar');
 const { PreferencesDocument } = await import('./PreferencesDocument');
 const { ProjectSettings } = await import('./ProjectSettings');
+const { AssistantView } = await import('../AssistantView');
 const { useShellCommands } = await import('../../commands/useCommandHost');
 
 function Binder() {
@@ -192,5 +194,21 @@ describe('Preferences (SHL-011, SHL-012) in a DOM', () => {
     console.log = log;
     await user.click(dom.within(section).getByRole('button', { name: dom.t('configEditor.save') }));
     expect(saveConfig).toHaveBeenCalledWith({ enabled: true, endpoint: 'https://example.test/v1', model: 'm1' });
+  });
+
+  it('SHL-011 the Assistant view holds no provider form and offers Preferences at the Assistant section', async () => {
+    (window as unknown as { electronAPI?: unknown }).electronAPI = {
+      aiProvider: {
+        getStatus: async () => ({ configured: true, enabled: true, keyStored: true, vaultAvailable: true }),
+        getConfig: async () => ({ enabled: true, endpoint: 'https://example.test/v1', model: 'm1' }),
+      },
+    };
+    const { user } = dom.render(<AssistantView />);
+    await dom.settle();
+    expect(document.querySelector('input[type="password"]')).toBeNull();
+    expect(dom.screen.queryByLabelText(dom.t('console.apiKey'))).toBeNull();
+    expect(dom.screen.queryByText(dom.t('console.providerSettings'))).toBeNull();
+    await user.click(dom.screen.getByRole('button', { name: dom.t('preferences.assistant.open') }));
+    expect(usePreferencesDocument.getState()).toMatchObject({ open: true, active: true, anchor: 'assistant' });
   });
 });
