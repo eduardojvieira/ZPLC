@@ -11,6 +11,7 @@ export function useTestCommands(): void {
     () =>
       bindCommands({
         'view.tests': () => showActivity('tests'),
+        'view.testResults': showPanel('tests'),
         'view.interlocks': showPanel('interlocks'),
       }),
     [],

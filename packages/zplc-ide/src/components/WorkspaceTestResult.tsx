@@ -1,8 +1,10 @@
 /**
- * The Tests tab's result and scenario preview (IDE-014: split out of Console.tsx).
+ * The evidence record of a run of tests (IDE-014: split out of Console.tsx; TST-004). The verdict and the boundary of the result are
+ * `TestVerdict`'s; what is left is the diagnostics and a closed Details disclosure that holds every field of the 2.0 view: the
+ * recorded scenarios and trace, the artifacts and their hashes, the link to the build and the saved inputs.
  */
 
-import { AlertTriangle, XCircle, AlertCircle, CheckCircle, Activity } from 'lucide-react';
+import { AlertCircle, Activity, Copy } from 'lucide-react';
 import {
   classifyWorkspaceTestBuildLink,
   presentRecordedConveyorPlant,
@@ -12,52 +14,59 @@ import {
   presentRecordedTankLevel,
   type WorkspaceTestPresentation,
 } from './workspaceTestPresentation';
-import { Badge, Button, SIGNAL_TEXT_CLASS, Tooltip } from '../ui';
+import { Button, SIGNAL_TEXT_CLASS, Tooltip } from '../ui';
 import { useT } from '../i18n';
+import { formatHash } from '../i18n/vocabulary';
+import { announce } from '../utils/announce';
+
+/** A sample of a recorded trace to point at: the time a failed expectation names (TST-003). */
+export interface TraceHighlight {
+  scenarioId: string;
+  atMs: number;
+}
+
+/** A hash outside Details: shortened (MSG-006), with the whole value behind a copy action. */
+function HashCopy({ sha256 }: { sha256: string }) {
+  const { t } = useT();
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span className="font-mono" data-hash-short>
+        {formatHash(sha256)}
+      </span>
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-label={t('u2Tests.hash.copy')}
+        onClick={() => {
+          void navigator.clipboard?.writeText(sha256).then(() => announce(t('u2Tests.hash.copied')));
+        }}
+      >
+        <Copy size={12} aria-hidden="true" />
+      </Button>
+    </span>
+  );
+}
 
 export function WorkspaceTestResult({
   presentation,
   buildLink,
   onRunScenario,
   scenarioRunDisabled,
+  detailsOpen = false,
+  onDetailsToggle,
+  highlight = null,
 }: {
   presentation: WorkspaceTestPresentation;
   buildLink: ReturnType<typeof classifyWorkspaceTestBuildLink>;
   onRunScenario: (scenarioId: string) => void;
   scenarioRunDisabled: boolean;
+  detailsOpen?: boolean;
+  onDetailsToggle?: (open: boolean) => void;
+  highlight?: TraceHighlight | null;
 }) {
   const { t, tn } = useT();
-  const Icon =
-    presentation.kind === 'passed'
-      ? CheckCircle
-      : presentation.kind === 'assertion-failed'
-        ? XCircle
-        : presentation.kind === 'invalid'
-          ? AlertTriangle
-          : AlertCircle;
-  const iconColor =
-    presentation.kind === 'passed'
-      ? 'text-[var(--color-accent-green)]'
-      : presentation.kind === 'assertion-failed'
-        ? 'text-[var(--color-accent-red)]'
-        : 'text-[var(--color-accent-yellow)]';
-
   return (
-    <div className="space-y-3">
-      <div className="flex items-start gap-2">
-        <Icon size={16} className={`${iconColor} mt-0.5 flex-shrink-0`} aria-hidden="true" />
-        <div className="min-w-0 space-y-1">
-          <p role="status" aria-live="polite" className="font-medium text-[var(--color-surface-100)]">
-            {presentation.message}
-          </p>
-          {presentation.scenarioCount !== undefined && (
-            <p className="text-xs tabular-nums text-[var(--color-surface-400)]">
-              {tn('console.scenariosPassed', presentation.scenarioCount)}
-            </p>
-          )}
-        </div>
-      </div>
-
+    <div className="space-y-3" data-workspace-test-result>
       {presentation.diagnostics.length > 0 && (
         <div className="space-y-1 border-t border-[var(--color-surface-700)] pt-2">
           {presentation.diagnostics.map((diagnostic, index) => (
@@ -73,110 +82,131 @@ export function WorkspaceTestResult({
         </div>
       )}
 
-      {presentation.preview && (
-        <details
-          open={
-            presentation.kind === 'assertion-failed' ||
-            presentation.preview.scenarios.some(
-              (scenario) =>
-                presentRecordedMotorPlant(scenario) ||
-                presentRecordedConveyorPlant(scenario) ||
-                presentRecordedPedestrianCrossing(scenario) ||
-                presentRecordedTankLevel(scenario),
-            )
-          }
-          className="border-t border-[var(--color-surface-700)] pt-2"
-        >
-          <summary className="cursor-pointer text-xs font-medium text-[var(--color-surface-200)]">
-            {t('console.scenarioEvidenceRecordedTest')}
-          </summary>
-          <p className="mt-2 text-xs text-[var(--color-surface-400)]">{t('console.recordedDuringThisHost')}</p>
-          {presentation.preview.totalScenarioCount > presentation.preview.scenarios.length && (
-            <p className="mt-1 text-xs tabular-nums text-[var(--color-surface-400)]">
-              {tn('console.showingScenarios', presentation.preview.totalScenarioCount, { shown: presentation.preview.scenarios.length })}
+      {presentation.savedTestInputIdentity && (
+        <p className="flex items-center gap-2 text-xs text-[var(--color-surface-400)]">
+          {t('u2Tests.hash.inputs')} <HashCopy sha256={presentation.savedTestInputIdentity.sha256} />
+        </p>
+      )}
+
+      <details
+        data-test-details
+        open={detailsOpen}
+        onToggle={(event) => onDetailsToggle?.(event.currentTarget.open)}
+        className="border-t border-[var(--color-surface-700)] pt-2"
+      >
+        <summary className="cursor-pointer select-none text-xs font-medium text-[var(--color-surface-200)]">
+          {t('u2Tests.details.title')}
+        </summary>
+        <div className="mt-2 space-y-3">
+          {presentation.scenarioCount !== undefined && (
+            <p className="text-xs tabular-nums text-[var(--color-surface-400)]">
+              {tn('console.scenariosPassed', presentation.scenarioCount)}
             </p>
           )}
-          <div className="mt-3 space-y-4">
-            {presentation.preview.scenarios.map((scenario) => (
-              <ScenarioPreview
-                key={`${scenario.id}-${scenario.path}`}
-                scenario={scenario}
-                onRunScenario={onRunScenario}
-                scenarioRunDisabled={scenarioRunDisabled}
-              />
-            ))}
-          </div>
-        </details>
-      )}
+          {presentation.preview && (
+            <details
+              open={
+                highlight !== null ||
+                presentation.kind === 'assertion-failed' ||
+                presentation.preview.scenarios.some(
+                  (scenario) =>
+                    presentRecordedMotorPlant(scenario) ||
+                    presentRecordedConveyorPlant(scenario) ||
+                    presentRecordedPedestrianCrossing(scenario) ||
+                    presentRecordedTankLevel(scenario),
+                )
+              }
+              className="border-t border-[var(--color-surface-700)] pt-2"
+            >
+              <summary className="cursor-pointer text-xs font-medium text-[var(--color-surface-200)]">
+                {t('console.scenarioEvidenceRecordedTest')}
+              </summary>
+              {presentation.preview.totalScenarioCount > presentation.preview.scenarios.length && (
+                <p className="mt-1 text-xs tabular-nums text-[var(--color-surface-400)]">
+                  {tn('console.showingScenarios', presentation.preview.totalScenarioCount, {
+                    shown: presentation.preview.scenarios.length,
+                  })}
+                </p>
+              )}
+              <div className="mt-3 space-y-4">
+                {presentation.preview.scenarios.map((scenario) => (
+                  <ScenarioPreview
+                    key={`${scenario.id}-${scenario.path}`}
+                    scenario={scenario}
+                    onRunScenario={onRunScenario}
+                    scenarioRunDisabled={scenarioRunDisabled}
+                    highlightAtMs={highlight?.scenarioId === scenario.id ? highlight.atMs : undefined}
+                  />
+                ))}
+              </div>
+            </details>
+          )}
 
-      {presentation.hasEvidence && presentation.artifacts.length > 0 && (
-        <div className="overflow-x-auto border-t border-[var(--color-surface-700)] pt-2">
-          <table className="w-full text-left text-xs">
-            <caption className="sr-only">{t('console.nativePosixTestEvidence')}</caption>
-            <thead className="text-[var(--color-surface-400)]">
-              <tr>
-                <th scope="col" className="pr-3 font-medium">
-                  {t('console.artifact')}
-                </th>
-                <th scope="col" className="pr-3 font-medium">
-                  {t('console.sha256')}
-                </th>
-                <th scope="col" className="text-right font-medium">
-                  {t('console.bytes2')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {presentation.artifacts.map((artifact) => (
-                <tr
-                  key={`${artifact.kind}-${artifact.sha256}`}
-                  className="border-t border-[var(--color-surface-700)] text-[var(--color-surface-300)]"
-                >
-                  <td className="py-1.5 pr-3">{artifact.kind}</td>
-                  <Tooltip content={artifact.sha256}>
-                    <td className="py-1.5 pr-3 font-mono" tabIndex={0} aria-label={t('console.sha2562', { sha256: artifact.sha256 })}>
-                      {artifact.sha256.slice(0, 12)}…
-                    </td>
-                  </Tooltip>
-                  <td className="py-1.5 text-right tabular-nums">{artifact.byteLength}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {presentation.hasEvidence && presentation.artifacts.length > 0 && (
+            <div className="overflow-x-auto border-t border-[var(--color-surface-700)] pt-2">
+              <table className="w-full text-left text-xs">
+                <caption className="sr-only">{t('console.nativePosixTestEvidence')}</caption>
+                <thead className="text-[var(--color-surface-400)]">
+                  <tr>
+                    <th scope="col" className="pr-3 font-medium">
+                      {t('console.artifact')}
+                    </th>
+                    <th scope="col" className="pr-3 font-medium">
+                      {t('console.sha256')}
+                    </th>
+                    <th scope="col" className="text-right font-medium">
+                      {t('console.bytes2')}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {presentation.artifacts.map((artifact) => (
+                    <tr
+                      key={`${artifact.kind}-${artifact.sha256}`}
+                      className="border-t border-[var(--color-surface-700)] text-[var(--color-surface-300)]"
+                    >
+                      <td className="py-1.5 pr-3">{artifact.kind}</td>
+                      <Tooltip content={artifact.sha256}>
+                        <td className="py-1.5 pr-3 font-mono" tabIndex={0} aria-label={t('console.sha2562', { sha256: artifact.sha256 })}>
+                          {artifact.sha256.slice(0, 12)}…
+                        </td>
+                      </Tooltip>
+                      <td className="py-1.5 text-right tabular-nums">{artifact.byteLength}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <section aria-label={t('console.canonicalBuildTestLink')} className="border-t border-[var(--color-surface-700)] pt-2 text-xs">
+            {buildLink.kind === 'verified' ? (
+              <p className="text-[var(--color-accent-green)]">{t('console.canonicalSavedBuildLinked')}</p>
+            ) : presentation.hasEvidence ? (
+              <p className="text-[var(--color-surface-400)]">{t('console.notLinkedToThe')}</p>
+            ) : (
+              <p className="text-[var(--color-surface-400)]">{t('console.noScenarioEvidenceWas')}</p>
+            )}
+          </section>
+
+          {presentation.savedTestInputIdentity && (
+            <p className="border-t border-[var(--color-surface-700)] pt-2 text-xs tabular-nums text-[var(--color-surface-400)]">
+              {tn('console.savedInputs', presentation.savedTestInputIdentity.fileCount)}{' '}
+              <Tooltip content={presentation.savedTestInputIdentity.sha256}>
+                <span className="font-mono" tabIndex={0}>
+                  {presentation.savedTestInputIdentity.sha256.slice(0, 12)}…
+                </span>
+              </Tooltip>
+            </p>
+          )}
+
+          {presentation.hasEvidence && (
+            <p className="border-t border-[var(--color-surface-700)] pt-2 text-xs text-[var(--color-surface-400)]">
+              {t('console.logicalSingleTaskScan')}
+            </p>
+          )}
         </div>
-      )}
-
-      <section aria-label={t('console.canonicalBuildTestLink')} className="border-t border-[var(--color-surface-700)] pt-2 text-xs">
-        {buildLink.kind === 'verified' ? (
-          <p className="text-[var(--color-accent-green)]">{t('console.canonicalSavedBuildLinked')}</p>
-        ) : presentation.hasEvidence ? (
-          <p className="text-[var(--color-surface-400)]">{t('console.notLinkedToThe')}</p>
-        ) : (
-          <p className="text-[var(--color-surface-400)]">{t('console.noScenarioEvidenceWas')}</p>
-        )}
-      </section>
-
-      {presentation.savedTestInputIdentity && (
-        <p className="border-t border-[var(--color-surface-700)] pt-2 text-xs tabular-nums text-[var(--color-surface-400)]">
-          {tn('console.savedInputs', presentation.savedTestInputIdentity.fileCount)}{' '}
-          <Tooltip content={presentation.savedTestInputIdentity.sha256}>
-            <span className="font-mono" tabIndex={0}>
-              {presentation.savedTestInputIdentity.sha256.slice(0, 12)}…
-            </span>
-          </Tooltip>
-        </p>
-      )}
-
-      {presentation.hasEvidence && (
-        <p className="border-t border-[var(--color-surface-700)] pt-2 text-xs text-[var(--color-surface-400)]">
-          <Tooltip content={t('console.nativePosixHostEvidence')}>
-            <span tabIndex={0}>
-              <Badge tone="neutral">{t('console.hostEvidenceBadge')}</Badge>
-            </span>
-          </Tooltip>{' '}
-          {t('console.logicalSingleTaskScan')}
-        </p>
-      )}
+      </details>
     </div>
   );
 }
@@ -185,10 +215,13 @@ function ScenarioPreview({
   scenario,
   onRunScenario,
   scenarioRunDisabled,
+  highlightAtMs,
 }: {
   scenario: NonNullable<WorkspaceTestPresentation['preview']>['scenarios'][number];
   onRunScenario: (scenarioId: string) => void;
   scenarioRunDisabled: boolean;
+  /** The time of the sample row to point at (TST-003). */
+  highlightAtMs?: number;
 }) {
   const { t } = useT();
   const signals = [...new Set(scenario.samples.flatMap((sample) => Object.keys(sample.outputs)))].sort();
@@ -261,7 +294,16 @@ function ScenarioPreview({
           </thead>
           <tbody>
             {scenario.samples.map((sample) => (
-              <tr key={sample.atMs} className="border-b border-[var(--color-surface-700)] text-[var(--color-surface-300)]">
+              <tr
+                key={sample.atMs}
+                ref={sample.atMs === highlightAtMs ? (row) => row?.scrollIntoView?.({ block: 'nearest' }) : undefined}
+                data-trace-highlight={sample.atMs === highlightAtMs ? '' : undefined}
+                aria-current={sample.atMs === highlightAtMs ? 'true' : undefined}
+                className={
+                  'border-b border-[var(--color-surface-700)] text-[var(--color-surface-300)]' +
+                  (sample.atMs === highlightAtMs ? ' bg-[var(--color-surface-700)] font-medium' : '')
+                }
+              >
                 <td className="px-2 py-1">{t('console.ms2', { atMs: sample.atMs })}</td>
                 {signals.map((signal) => (
                   <td key={signal} className="px-2 py-1">

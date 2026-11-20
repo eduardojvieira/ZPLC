@@ -24,6 +24,7 @@ import { announce } from '../utils/announce';
 import { useGiveFocusBack } from '../hooks/useGiveFocusBack';
 import { AlertDialog, Button, ToggleGroup } from '../ui';
 import { LearnBoardLesson } from './LearnBoardLesson';
+import { TestVerdict } from './TestVerdict';
 
 export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresentation?: WorkspaceTestPresentation }) {
   const { t, tn } = useT();
@@ -240,6 +241,17 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
               <Info size={16} className="mt-0.5 shrink-0 text-[var(--color-surface-300)]" aria-hidden="true" />
             )}
             <div className="min-w-0">
+              {(shownGrade.kind === 'passed' || shownGrade.kind === 'failed') && (
+                <div className="mb-2">
+                  {/* the verdict and the boundary are the component of the project's tests (TST-008); the lesson's own rows follow */}
+                  <TestVerdict
+                    live={false}
+                    ok={shownGrade.kind === 'passed'}
+                    boundary="simulation"
+                    sentence={t('u2Tests.verdict.counts', { passed: shownGrade.kind === 'passed' ? 1 : 0, total: 1 })}
+                  />
+                </div>
+              )}
               <h3 className="font-medium text-[var(--color-surface-100)]">{gradeCopy.title}</h3>
               <p className="mt-1 leading-5 text-[var(--color-surface-300)]">{gradeCopy.body}</p>
               <p className="mt-1 text-xs leading-5 text-[var(--color-surface-400)]">{lesson.scope}</p>

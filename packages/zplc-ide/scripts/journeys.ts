@@ -8158,7 +8158,7 @@ export const JOURNEYS: Journey[] = [
       );
       await app.click(tab(ui('panel.tests')));
       await app.click(button(ui('console.runHostScenarios')));
-      await app.until('the scenario to pass', async () => (await app.text()).includes('Host POSIX scenarios passed') || undefined, 30_000);
+      await app.until('the scenario to pass', async () => /\b(\d+) of \1 tests passed/.test(await app.text()) || undefined, 30_000);
       await docShot(app, 'guide-scenario-tests');
     },
   },
