@@ -65,3 +65,26 @@ describe('the Search view over diagrams (FND-003) in a DOM', () => {
     expect(await dom.screen.findByText(dom.t('search.noneSearched', { files: 1 }))).toBeTruthy();
   });
 });
+
+describe('the References mode of the Search view (FND-004) in a DOM', () => {
+  it('FND-004 the References mode appears only when there is a result', async () => {
+    prepare();
+    const { useReferences } = await import('../refs/useReferences');
+    useReferences.getState().clear();
+    const { user } = dom.render(<SearchView />);
+    expect(dom.screen.queryByRole('button', { name: dom.t('search.modeReferences') })).toBeNull();
+    dom.act(() =>
+      useReferences.setState({
+        target: { kind: 'symbol', scope: '', name: 'Start' },
+        result: { target: { kind: 'symbol', scope: '', name: 'Start' }, uses: [], truncated: false, broken: [] },
+        status: 'ready',
+        mode: 'references',
+      }),
+    );
+    expect(dom.screen.getByText(dom.t('refs.notDeclared', { name: 'Start' }))).toBeTruthy();
+    await user.click(dom.screen.getByRole('button', { name: dom.t('search.modeSearch') }));
+    expect(dom.screen.getByLabelText(dom.t('search.query'))).toBeTruthy();
+    expect(dom.screen.queryByText(dom.t('refs.notDeclared', { name: 'Start' }))).toBeNull();
+    useReferences.getState().clear();
+  });
+});

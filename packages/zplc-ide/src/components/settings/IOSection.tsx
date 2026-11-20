@@ -1,12 +1,14 @@
 /** Input and output pins of the project. */
 
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Search, Trash2 } from 'lucide-react';
 import type { IOPinConfig } from '../../types';
 import { BOARD_OPTIONS, getBoardIo } from '../../config/boardProfiles';
 import { channelIn, type BoardChannel, type BoardIoDescription } from '../../boards/boardIo';
 import { channelAt, channelsFor, mappingProblem, nextFreeChannel, type IoSection } from '../../boards/boardIoMapping';
 import type { SectionProps } from './settingsSectionProps';
 import { useT } from '../../i18n';
+import { lookUp } from '../../commands/bind/find';
+import { parseAddress } from '../../refs/addresses';
 import { Button, NumberField, Select, TextField, Tooltip } from '../../ui';
 
 export function IOSection({ config, updateConfig }: SectionProps) {
@@ -465,7 +467,20 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
                 }
               />
             </div>
-            <div className="col-span-1 flex justify-end">
+            <div className="col-span-1 flex justify-end gap-1">
+              <Button
+                variant="bare"
+                aria-label={t('refs.findOf', { name: item.address })}
+                disabled={parseAddress(item.address) === undefined}
+                onClick={() => {
+                  const address = parseAddress(item.address);
+                  if (address) void lookUp('references', { kind: 'address', address });
+                }}
+                className="p-1 rounded hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)]"
+                tooltip={t('refs.find')}
+              >
+                <Search size={14} />
+              </Button>
               <Button
                 variant="bare"
                 aria-label={t('io.remove')}

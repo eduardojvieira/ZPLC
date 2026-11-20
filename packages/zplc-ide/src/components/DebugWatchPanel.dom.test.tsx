@@ -98,4 +98,23 @@ describe('Watch and force (CMP-054, IDE-019, UX-009) in a DOM', () => {
     await user.selectOptions(format, other.value);
     expect(format.value).toBe(other.value);
   });
+
+  it('FND-004 a Watch row offers "Find references", which lists the declaration of its variable', async () => {
+    const { useProjectSources } = await import('../store/projectSources');
+    const { useReferences } = await import('../refs/useReferences');
+    useReferences.getState().clear();
+    useProjectSources.setState({
+      sources: [{ path: 'src/Main.st', content: 'PROGRAM Main\nVAR\n  counter : INT;\nEND_VAR\n  counter := counter + 1;\nEND_PROGRAM\n' }],
+    } as never);
+    prepare({ watchVariables: ['Main.counter'] });
+    const { user } = dom.render(<DebugWatchPanel />);
+    await user.click(dom.screen.getByRole('button', { name: dom.t('refs.findOf', { name: 'Main.counter' }) }));
+    await dom.waitFor(() => expect(useReferences.getState().status).toBe('ready'));
+    const { result } = useReferences.getState();
+    expect(result?.definition?.place).toMatchObject({ kind: 'text', file: 'src/Main.st', line: 3 });
+    // the two uses in the program and the row of the Watch table itself
+    expect(result?.uses.map((use) => use.language).sort()).toEqual(['ST', 'ST', 'WATCH']);
+    useReferences.getState().clear();
+    useProjectSources.setState({ sources: [] } as never);
+  });
 });

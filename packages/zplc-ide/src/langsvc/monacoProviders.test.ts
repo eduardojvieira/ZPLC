@@ -1,6 +1,7 @@
 // LNG-015 / LNG-016 in Monaco: the providers answer from the whole project, with the buffer in place of its file.
 // Monaco is replaced by a recorder of what is registered; the models are plain objects.
 import { beforeEach, describe, expect, it } from 'bun:test';
+import { bindCommands, resetCommandsForTest } from '../commands/bus';
 import { registerSTProviders, type ProjectBridge } from './monacoProviders';
 import { setCurrentProject } from './session';
 
@@ -317,5 +318,33 @@ describe('the language service providers (LNG-015, LNG-016)', () => {
     };
     expect(edit.rejectReason).toContain('src/main.ld.json');
     expect(written.size).toBe(0);
+  });
+});
+
+describe('the project-wide navigation keys (FND-004)', () => {
+  it('FND-004 F12 and Shift+F12 are editor actions that run the find commands', () => {
+    resetCommandsForTest();
+    const ran: string[] = [];
+    bindCommands({ 'edit.goToDefinition': () => void ran.push('definition'), 'edit.findAllReferences': () => void ran.push('references') });
+    const added: Array<{ id: string; keybindings: number[]; run: () => void }> = [];
+    const editor = { addAction: (action: (typeof added)[number]) => void added.push(action) };
+    const fake = fakeMonaco();
+    const monaco = fake.monaco as unknown as Record<string, Record<string, unknown>>;
+    monaco.KeyCode = { F12: 70 };
+    monaco.KeyMod = { Shift: 1024 };
+    monaco.editor!.getEditors = () => [editor];
+    let created: ((made: typeof editor) => void) | undefined;
+    monaco.editor!.onDidCreateEditor = (listener: typeof created) => void (created = listener);
+    registerSTProviders(fake.monaco, setup().bridge);
+    created!(editor); // an editor made later gets them too
+    expect(added.map((action) => [action.id, action.keybindings])).toEqual([
+      ['zplc.goToDefinition', [70]],
+      ['zplc.findAllReferences', [1024 | 70]],
+      ['zplc.goToDefinition', [70]],
+      ['zplc.findAllReferences', [1024 | 70]],
+    ]);
+    added[0]!.run();
+    added[1]!.run();
+    expect(ran).toEqual(['definition', 'references']);
   });
 });

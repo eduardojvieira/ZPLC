@@ -53,7 +53,7 @@ export const createDebugActions: StateCreator<
 
   setDebugMap: (debugMap) =>
     set((state) => ({
-      debug: { ...state.debug, debugMap },
+      debug: { ...state.debug, debugMap, debugMapRunId: debugMap ? state.compilerRunId : null },
     })),
 
   toggleBreakpoint: (fileId, line) =>

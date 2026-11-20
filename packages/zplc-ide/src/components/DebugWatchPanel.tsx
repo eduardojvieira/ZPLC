@@ -8,7 +8,7 @@
  */
 
 import { useMemo, useRef, useState } from 'react';
-import { Plus, X, Trash2, Eye, AlertTriangle, LoaderCircle } from 'lucide-react';
+import { Plus, Search, X, Trash2, Eye, AlertTriangle, LoaderCircle } from 'lucide-react';
 import { SIGNAL_TEXT_CLASS, signalTone } from '../theme/signalTone';
 import { useIDEStore } from '../store/useIDEStore';
 import { buildDebugWatchRows } from './debugWatchRows';
@@ -28,6 +28,7 @@ import {
 import { canEditWatchValue, canReleaseForces, canToggleForce, resolveWatchCommitAction, WATCH_COMMIT_ACTION } from './debugWatchPanelLogic';
 import { Button, Checkbox, IconButton, Select, TextField, Tooltip } from '../ui';
 import { useT } from '../i18n';
+import { lookUpWatch } from '../commands/bind/find';
 import { announce } from '../utils/announce';
 import { PanelEmptyState } from './panelStates';
 
@@ -594,13 +595,22 @@ export function DebugWatchPanel({
                     <td className="px-3 py-1.5 text-[var(--color-surface-400)] text-xs">{result.type || '?'}</td>
                     <td className="px-3 py-1.5 text-[var(--color-surface-500)] text-xs font-mono">{formatAddress(result.address)}</td>
                     <td className="px-1">
-                      <IconButton
-                        label={t('workbench.watch.remove')}
-                        variant="ghost"
-                        size="sm"
-                        icon={<X size={12} />}
-                        onClick={() => removeWatch(path)}
-                      />
+                      <div className="flex">
+                        <IconButton
+                          label={t('refs.findOf', { name: path })}
+                          variant="ghost"
+                          size="sm"
+                          icon={<Search size={12} />}
+                          onClick={() => void lookUpWatch(path)}
+                        />
+                        <IconButton
+                          label={t('workbench.watch.remove')}
+                          variant="ghost"
+                          size="sm"
+                          icon={<X size={12} />}
+                          onClick={() => removeWatch(path)}
+                        />
+                      </div>
                     </td>
                   </tr>
                 );
