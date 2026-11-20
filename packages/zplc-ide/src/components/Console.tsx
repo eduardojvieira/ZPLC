@@ -23,19 +23,18 @@ import {
   Bot,
   ShieldCheck,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useIDEStore } from '../store/useIDEStore';
 import { useConsoleState } from '../store/regionSubscriptions';
 import { sha256Text } from './candidateSources';
+import { acceptReview, cancelReview, invalidateReview, reviewActiveChange, reviewIsCurrent, reviewProposal } from './reviewFlow';
+import { useReviewDocument } from '../store/useReviewDocument';
 import { isCandidateSourcePath } from '../ai/candidatePaths';
 import { presentAgentResponse } from './agent/agentResponse';
-import { changeSetIsCurrent, reviewChangeSet, saveChangeSet } from './agent/changeSetReview';
 import { ConsoleTabStrip, type ConsoleTabFace } from './ConsoleTabStrip';
 import { TerminalTab } from './TerminalTab';
 import { WatchTab } from './WatchTab';
 import type { DebugController } from '../hooks/useDebugController';
-import { presentCandidateChangeSetReview } from './workspaceTestPresentation';
-import { readFileContent } from '../utils/fileSystem';
 import { describeVmError } from '../runtime/nativeTrace';
 import { NativeAdapter } from '../runtime/nativeAdapter';
 import { ErrorBoundary } from './ErrorBoundary';
@@ -55,7 +54,7 @@ import { useTheme } from '../hooks/useTheme';
 import { Badge, Button, FileInput, IconButton } from '../ui';
 import { useT } from '../i18n';
 import { CommandEmptyState } from './panelStates';
-import { type CandidateReviewSnapshot, type CandidateReviewState, type AgentState } from './ConsoleReviewPanels';
+import { type CandidateReviewState, type AgentState } from './ConsoleReviewPanels';
 import { LiveNativeMotorPanel } from './LiveNativeMotorControls';
 import { TestsTab } from './console/TestsTab';
 import { InterlocksTab } from './console/InterlocksTab';
@@ -92,7 +91,6 @@ export function Console({ debugController }: ConsoleProps) {
     canonicalWorkspaceBuildEvidence,
     linkWorkspaceScenarios,
     hasUnsavedChanges,
-    saveFile,
   } = useConsoleState();
   // a request for a view that left this panel (the explorer, the inspector, the lessons) is shown by the sidebars; this panel keeps its own
   // tab
@@ -118,9 +116,9 @@ export function Console({ debugController }: ConsoleProps) {
   const candidateChangeSet = window.electronAPI?.candidateChangeSet;
   const aiProvider = window.electronAPI?.aiProvider;
   const candidateDesktopReady = Boolean(candidateChangeSet && workspaceTests);
-  const candidateReviewGeneration = useRef(0);
-  const candidateReviewBusy = useRef(false);
-  const [candidateReviewState, setCandidateReviewState] = useState<CandidateReviewState>({ kind: 'idle' });
+  // the review is held once, by the review document's store, and shown here and in the editor area
+  const candidateReviewState = useReviewDocument((state) => state.review) as CandidateReviewState;
+  const candidateReviewBusy = useReviewDocument((state) => state.busy);
   const [agentMode, setAgentMode] = useState<AiProviderMode>('ask');
   const [agentPrompt, setAgentPrompt] = useState('');
   const [agentState, setAgentState] = useState<AgentState>('idle');
@@ -148,22 +146,11 @@ export function Console({ debugController }: ConsoleProps) {
     activeFile.handle,
   );
   // an assistant's change set is bound to its own files; the person's buffer review to the active file
-  const candidateReviewStateForCurrent =
-    candidateReviewState.kind === 'result' &&
-    ('files' in candidateReviewState.snapshot
-      ? !changeSetIsCurrent(candidateReviewState.snapshot, useIDEStore.getState())
-      : candidateReviewState.snapshot.projectSession !== projectSession ||
-        candidateReviewState.snapshot.compilerRunId !== compilerRunId ||
-        candidateReviewState.snapshot.workspaceId !== workspaceScenarioLink?.workspaceId ||
-        candidateReviewState.snapshot.fileId !== activeFileId ||
-        candidateReviewState.snapshot.path !== activeFile?.path ||
-        candidateReviewState.snapshot.editorContent !== activeFile?.content ||
-        candidateReviewState.snapshot.handle !== activeFile?.handle ||
-        !activeFile?.isModified)
-      ? ({ kind: 'stale' } as CandidateReviewState)
-      : candidateReviewState;
+  const candidateReviewStateForCurrent: CandidateReviewState = reviewIsCurrent(candidateReviewState)
+    ? candidateReviewState
+    : { kind: 'stale' };
   useEffect(() => {
-    candidateReviewGeneration.current += 1;
+    invalidateReview();
   }, [
     projectSession,
     compilerRunId,
@@ -250,128 +237,26 @@ export function Console({ debugController }: ConsoleProps) {
     { id: 'terminal', label: t('console.tab.terminal'), icon: <Terminal size={14} className="text-[var(--color-accent-green)]" /> },
   ];
 
-  const candidateSnapshotIsCurrent = (snapshot: CandidateReviewSnapshot) => {
-    const current = useIDEStore.getState();
-    const file = current.loadedFiles.get(snapshot.fileId);
-    return (
-      current.projectSession === snapshot.projectSession &&
-      current.compilerRunId === snapshot.compilerRunId &&
-      current.activeFileId === snapshot.fileId &&
-      current.workspaceScenarioLink?.projectSession === snapshot.projectSession &&
-      current.workspaceScenarioLink.workspaceId === snapshot.workspaceId &&
-      file?.path === snapshot.path &&
-      file.content === snapshot.editorContent &&
-      file.handle === snapshot.handle &&
-      file.isModified
-    );
-  };
-
   const reviewCandidateChange = async () => {
-    const current = useIDEStore.getState();
-    const file = current.activeFileId ? current.loadedFiles.get(current.activeFileId) : undefined;
-    const link = current.workspaceScenarioLink;
-    if (
-      !candidateChangeSet ||
-      !workspaceTests ||
-      candidateReviewBusy.current ||
-      !file ||
-      !file.handle ||
-      !file.isModified ||
-      !isCandidateSourcePath(file.path) ||
-      workspaceTestBusy ||
-      !current.isProjectOpen ||
-      !link ||
-      link.projectSession !== current.projectSession
-    )
-      return;
-    const generation = ++candidateReviewGeneration.current;
-    candidateReviewBusy.current = true;
+    if (!candidateChangeSet || !workspaceTests || workspaceTestBusy) return;
     setWorkspaceTestBusy(true);
-    setCandidateReviewState({ kind: 'running' });
     try {
-      const baseline = await readFileContent(file.handle);
-      const [beforeSha256, afterSha256] = await Promise.all([sha256Text(baseline), sha256Text(file.content)]);
-      const snapshot: CandidateReviewSnapshot = {
-        origin: 'manual',
-        projectSession: current.projectSession,
-        compilerRunId: current.compilerRunId,
-        workspaceId: link.workspaceId,
-        fileId: file.id,
-        path: file.path,
-        editorContent: file.content,
-        candidate: file.content,
-        handle: file.handle,
-        beforeSha256,
-        afterSha256,
-        baseline,
-      };
-      if (generation !== candidateReviewGeneration.current || !candidateSnapshotIsCurrent(snapshot)) return;
-      if (beforeSha256 === afterSha256) {
-        setCandidateReviewState({ kind: 'matches-disk' });
-        return;
-      }
-      const result = await candidateChangeSet.review({
-        workspaceId: snapshot.workspaceId,
-        edit: { path: snapshot.path, content: snapshot.candidate },
-      });
-      if (generation !== candidateReviewGeneration.current || !candidateSnapshotIsCurrent(snapshot)) return;
-      setCandidateReviewState({ kind: 'result', snapshot, presentation: presentCandidateChangeSetReview(result, snapshot) });
-    } catch {
-      if (generation === candidateReviewGeneration.current) setCandidateReviewState({ kind: 'error' });
+      await reviewActiveChange();
     } finally {
-      if (candidateReviewBusy.current) {
-        candidateReviewBusy.current = false;
-        setWorkspaceTestBusy(false);
-      }
-      setCandidateReviewState((state) => (state.kind === 'running' || state.kind === 'cancelling' ? { kind: 'stale' } : state));
+      setWorkspaceTestBusy(false);
     }
   };
 
   const cancelCandidateReview = async () => {
-    if (!workspaceTests || candidateReviewState.kind !== 'running' || !workspaceTestBusy) return;
-    candidateReviewGeneration.current += 1;
-    setCandidateReviewState({ kind: 'cancelling' });
-    try {
-      await workspaceTests.cancel();
-    } catch {
-      /* cancellation cannot publish a review */
-    }
+    if (!workspaceTests || !workspaceTestBusy) return;
+    await cancelReview();
   };
 
   const saveReviewedChange = async () => {
-    if (candidateReviewBusy.current || candidateReviewState.kind !== 'result' || candidateReviewState.presentation.kind !== 'accepted')
-      return;
-    const { snapshot } = candidateReviewState;
-    if ('files' in snapshot) {
-      // the assistant's change set: the person's click is the only thing that writes it
-      candidateReviewBusy.current = true;
-      setWorkspaceTestBusy(true);
-      setCandidateReviewState({ kind: 'saving' });
-      const saved = await saveChangeSet(snapshot, useIDEStore.getState);
-      setCandidateReviewState({ kind: saved === 'saved' ? 'saved' : saved });
-      candidateReviewBusy.current = false;
-      setWorkspaceTestBusy(false);
-      return;
-    }
-    if (!candidateSnapshotIsCurrent(snapshot)) {
-      setCandidateReviewState({ kind: 'stale' });
-      return;
-    }
-    candidateReviewBusy.current = true;
     setWorkspaceTestBusy(true);
-    setCandidateReviewState({ kind: 'saving' });
     try {
-      const diskHash = await sha256Text(await readFileContent(snapshot.handle));
-      if (diskHash !== snapshot.beforeSha256 || !candidateSnapshotIsCurrent(snapshot)) {
-        setCandidateReviewState({ kind: 'stale' });
-        return;
-      }
-      if (await saveFile(snapshot.fileId)) setCandidateReviewState({ kind: 'saved' });
-      else setCandidateReviewState({ kind: 'error' });
-    } catch {
-      setCandidateReviewState({ kind: 'error' });
+      await acceptReview();
     } finally {
-      candidateReviewBusy.current = false;
       setWorkspaceTestBusy(false);
     }
   };
@@ -446,7 +331,7 @@ export function Console({ debugController }: ConsoleProps) {
       (agentMode === 'edit' && (!file || file !== agentEditFile))
     )
       return;
-    setCandidateReviewState((state) => (state.kind === 'result' ? { kind: 'stale' } : state));
+    if (useReviewDocument.getState().review.kind === 'result') useReviewDocument.setState({ review: { kind: 'stale' } });
     setAgentState('sending');
     try {
       const sentFile = agentMode === 'edit' ? file : file && isCandidateSourcePath(file.path) && file.handle ? file : undefined;
@@ -508,7 +393,7 @@ export function Console({ debugController }: ConsoleProps) {
     if (
       !candidateChangeSet ||
       !workspaceTests ||
-      candidateReviewBusy.current ||
+      candidateReviewBusy ||
       !changes ||
       !expectedEdit ||
       !link ||
@@ -519,23 +404,10 @@ export function Console({ debugController }: ConsoleProps) {
       expectedEdit.workspaceId !== link.workspaceId
     )
       return;
-    const generation = ++candidateReviewGeneration.current;
-    candidateReviewBusy.current = true;
     setWorkspaceTestBusy(true);
-    setCandidateReviewState({ kind: 'running' });
     try {
-      // every file of the proposal is read from the disk and checked against what the host read, then the whole set is reviewed on a copy
-      const outcome = await reviewChangeSet(changes, {
-        workspaceId: link.workspaceId,
-        bridge: candidateChangeSet,
-        getState: useIDEStore.getState,
-        isCurrent: () => generation === candidateReviewGeneration.current,
-      });
-      if (generation === candidateReviewGeneration.current) setCandidateReviewState(outcome);
-    } catch {
-      if (generation === candidateReviewGeneration.current) setCandidateReviewState({ kind: 'error' });
+      await reviewProposal(changes, link.workspaceId, candidateChangeSet);
     } finally {
-      candidateReviewBusy.current = false;
       setWorkspaceTestBusy(false);
     }
   };
@@ -543,7 +415,7 @@ export function Console({ debugController }: ConsoleProps) {
   const cancelAgentRequest = async () => {
     if (!aiProvider || agentState !== 'sending') return;
     setAgentState('cancelling');
-    setCandidateReviewState((state) => (state.kind === 'result' ? { kind: 'stale' } : state));
+    if (useReviewDocument.getState().review.kind === 'result') useReviewDocument.setState({ review: { kind: 'stale' } });
     try {
       await aiProvider.cancel();
     } catch {

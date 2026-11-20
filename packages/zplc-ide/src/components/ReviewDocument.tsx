@@ -1,134 +1,16 @@
 /**
  * The change review document (SHL-004, IDE-030): the editor area's home of a proposed change. It lists the pending change and shows its
- * review, with or without an AI provider; the review reads the disk and writes nothing, and only the person's accept saves.
+ * review, with or without an AI provider; the flow is `reviewFlow.ts`, shared with the Changes tab.
  */
 import { FileDiff, LoaderCircle } from 'lucide-react';
 import { useT } from '../i18n';
 import { useTheme } from '../hooks/useTheme';
 import { isCandidateSourcePath } from '../ai/candidatePaths';
-import { shownProjectBridge } from '../ipc/shownProjectBridge';
 import { useIDEStore } from '../store/useIDEStore';
 import { useReviewDocument } from '../store/useReviewDocument';
 import { Button } from '../ui';
-import { readFileContent } from '../utils/fileSystem';
-import { changeSetIsCurrent, saveChangeSet } from './agent/changeSetReview';
-import { sha256Text } from './candidateSources';
-import { CandidateReviewResult, type CandidateReviewSnapshot, type CandidateReviewState } from './ConsoleReviewPanels';
-import { presentCandidateChangeSetReview } from './workspaceTestPresentation';
-
-let generation = 0;
-const hold = (patch: { review?: CandidateReviewState; busy?: boolean }) => useReviewDocument.setState(patch);
-const held = () => useReviewDocument.getState().review as CandidateReviewState;
-
-const manualIsCurrent = (snapshot: CandidateReviewSnapshot): boolean => {
-  const current = useIDEStore.getState();
-  const file = current.loadedFiles.get(snapshot.fileId);
-  return (
-    current.projectSession === snapshot.projectSession &&
-    current.compilerRunId === snapshot.compilerRunId &&
-    current.activeFileId === snapshot.fileId &&
-    current.workspaceScenarioLink?.projectSession === snapshot.projectSession &&
-    current.workspaceScenarioLink.workspaceId === snapshot.workspaceId &&
-    file?.path === snapshot.path &&
-    file.content === snapshot.editorContent &&
-    file.handle === snapshot.handle &&
-    file.isModified
-  );
-};
-
-/** A result whose files or session moved since the review is stale: it never shows as acceptable and never saves. */
-const reviewIsCurrent = (review: CandidateReviewState): boolean =>
-  review.kind !== 'result' ||
-  ('files' in review.snapshot ? changeSetIsCurrent(review.snapshot, useIDEStore.getState()) : manualIsCurrent(review.snapshot));
-
-/** Reviews the active program's unsaved change on a copy; writes nothing. */
-async function reviewActiveChange(): Promise<void> {
-  const current = useIDEStore.getState();
-  const file = current.activeFileId ? current.loadedFiles.get(current.activeFileId) : undefined;
-  const link = current.workspaceScenarioLink;
-  const bridge = window.electronAPI?.candidateChangeSet;
-  if (
-    !bridge ||
-    useReviewDocument.getState().busy ||
-    !file?.handle ||
-    !file.isModified ||
-    !isCandidateSourcePath(file.path) ||
-    !current.isProjectOpen ||
-    !link ||
-    link.projectSession !== current.projectSession
-  )
-    return;
-  const mine = ++generation;
-  hold({ busy: true, review: { kind: 'running' } });
-  try {
-    const baseline = await readFileContent(file.handle);
-    const [beforeSha256, afterSha256] = await Promise.all([sha256Text(baseline), sha256Text(file.content)]);
-    const snapshot: CandidateReviewSnapshot = {
-      origin: 'manual',
-      projectSession: current.projectSession,
-      compilerRunId: current.compilerRunId,
-      workspaceId: link.workspaceId,
-      fileId: file.id,
-      path: file.path,
-      editorContent: file.content,
-      candidate: file.content,
-      handle: file.handle,
-      beforeSha256,
-      afterSha256,
-      baseline,
-    };
-    if (mine !== generation || !manualIsCurrent(snapshot)) return;
-    if (beforeSha256 === afterSha256) {
-      hold({ review: { kind: 'matches-disk' } });
-      return;
-    }
-    const result = await bridge.review({ workspaceId: snapshot.workspaceId, edit: { path: snapshot.path, content: snapshot.candidate } });
-    if (mine !== generation || !manualIsCurrent(snapshot)) return;
-    hold({ review: { kind: 'result', snapshot, presentation: presentCandidateChangeSetReview(result, snapshot) } });
-  } catch {
-    if (mine === generation) hold({ review: { kind: 'error' } });
-  } finally {
-    const review = held();
-    hold({ busy: false, review: review.kind === 'running' || review.kind === 'cancelling' ? { kind: 'stale' } : review });
-  }
-}
-
-async function cancelReview(): Promise<void> {
-  if (held().kind !== 'running') return;
-  generation += 1;
-  hold({ review: { kind: 'cancelling' } });
-  try {
-    await shownProjectBridge(window.electronAPI?.workspaceTests)?.cancel();
-  } catch {
-    /* cancellation cannot publish a review */
-  }
-}
-
-/** Saves the reviewed change. Only the person's click reaches it, and only for a result that is accepted and still current. */
-async function acceptReview(): Promise<void> {
-  const review = held();
-  if (useReviewDocument.getState().busy || review.kind !== 'result' || review.presentation.kind !== 'accepted') return;
-  if (!reviewIsCurrent(review)) {
-    hold({ review: { kind: 'stale' } });
-    return;
-  }
-  const { snapshot } = review;
-  generation += 1;
-  hold({ busy: true, review: { kind: 'saving' } });
-  try {
-    if ('files' in snapshot) {
-      hold({ review: { kind: await saveChangeSet(snapshot, useIDEStore.getState) } });
-      return;
-    }
-    const disk = await sha256Text(await readFileContent(snapshot.handle));
-    if (disk !== snapshot.beforeSha256 || !manualIsCurrent(snapshot)) hold({ review: { kind: 'stale' } });
-    else hold({ review: { kind: (await useIDEStore.getState().saveFile(snapshot.fileId)) ? 'saved' : 'error' } });
-  } catch {
-    hold({ review: { kind: 'error' } });
-  } finally {
-    hold({ busy: false });
-  }
-}
+import { CandidateReviewResult, type CandidateReviewState } from './ConsoleReviewPanels';
+import { acceptReview, cancelReview, reviewActiveChange, reviewIsCurrent } from './reviewFlow';
 
 const STATUS_KEYS: Partial<Record<CandidateReviewState['kind'], string>> = {
   'matches-disk': 'console.theActiveBufferMatches',

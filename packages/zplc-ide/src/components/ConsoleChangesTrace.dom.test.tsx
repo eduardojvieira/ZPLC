@@ -8,12 +8,18 @@ await stubProjectLoader();
 await stubMonaco();
 const { useIDEStore } = await import('../store/useIDEStore');
 const { Console } = await import('./Console');
+const { ReviewDocument } = await import('./ReviewDocument');
+const { useReviewDocument } = await import('../store/useReviewDocument');
+const { useNotifications } = await import('../store/notifications');
 const { translatorFor } = await import('../i18n');
 const { tn } = translatorFor('en');
 
 const restores: Array<() => void> = [];
 afterEach(() => {
   while (restores.length > 0) restores.pop()!();
+  // the review is held once for the tab and the document: a test must not inherit it
+  useReviewDocument.setState({ open: false, active: false, requests: 0, review: { kind: 'idle' }, busy: false });
+  useNotifications.setState({ items: [] });
 });
 
 function open(tab: string, over: Record<string, unknown> = {}) {
@@ -143,6 +149,80 @@ describe('Changes tab contents in a DOM (VF-007)', () => {
       expect(reviews).toHaveLength(1);
     },
   );
+});
+
+describe('the Changes tab and the review document hold one review (SHL-004, IDE-030)', () => {
+  const buffer = 'PROGRAM Main\nVAR x : BOOL; END_VAR\nEND_PROGRAM\n';
+  const disk = 'PROGRAM Main\nEND_PROGRAM\n';
+  const sha = async (text: string) =>
+    Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))), (b) =>
+      b.toString(16).padStart(2, '0'),
+    ).join('');
+  const both = () => (
+    <>
+      <Console />
+      <ReviewDocument />
+    </>
+  );
+  const results = () => dom.screen.queryAllByRole('region', { name: dom.t('console.changeReviewResult') });
+
+  it('a change reviewed and rejected in the tab is shown, and offers no save, in the document; and the reverse', async () => {
+    desktop(async () => ({
+      schemaVersion: 1,
+      accepted: false,
+      evidenceScope: 'native-posix-host',
+      diagnostics: [{ code: 'CHANGESET_INVALID' }],
+    }));
+    open('changes', modifiedFile(disk, buffer));
+    const { user } = dom.render(both());
+    await user.click(reviewButton());
+    await dom.waitFor(() => expect(results()).toHaveLength(2));
+    for (const region of results()) {
+      expect(dom.within(region).getByText('CHANGESET_INVALID')).toBeTruthy();
+      expect(dom.within(region).queryByRole('button', { name: dom.t('console.saveReviewedChange') })).toBeNull();
+    }
+    // reviewed in the document: the tab shows it too
+    useReviewDocument.setState({ review: { kind: 'idle' } });
+    await dom.waitFor(() => expect(results()).toHaveLength(0));
+    await user.click(
+      dom
+        .within(dom.screen.getByRole('heading', { name: dom.t('review.title') }).parentElement!)
+        .getByRole('button', { name: dom.t('console.reviewActiveStChange') }),
+    );
+    await dom.waitFor(() => expect(results()).toHaveLength(2));
+  });
+
+  it('a change accepted and saved in the document is no longer pending in the tab, and a stale one never saves from either', async () => {
+    desktop(async () => ({}));
+    const ctx = modifiedFile(disk, buffer);
+    let saved = 0;
+    open('changes', { ...ctx, saveFile: async () => ((saved += 1), true) });
+    const file = ctx.loadedFiles.get('f1')!;
+    const snapshot = {
+      origin: 'manual',
+      projectSession: 7,
+      compilerRunId: useIDEStore.getState().compilerRunId,
+      workspaceId: 'w1',
+      fileId: 'f1',
+      path: 'src/main.st',
+      editorContent: buffer,
+      candidate: buffer,
+      handle: file.handle,
+      beforeSha256: await sha(disk),
+      afterSha256: await sha(buffer),
+      baseline: disk,
+    };
+    useReviewDocument.setState({
+      review: { kind: 'result', snapshot, presentation: { kind: 'accepted', diagnostics: [], artifacts: [] } } as never,
+    });
+    const { user } = dom.render(both());
+    expect(results()).toHaveLength(2);
+    const save = dom.within(results()[1]!).getByRole('button', { name: dom.t('console.saveReviewedChange') });
+    await user.click(save);
+    await dom.waitFor(() => expect(dom.screen.getAllByText(dom.t('console.reviewedChangeSavedReview'))).toHaveLength(2));
+    expect(saved).toBe(1);
+    expect(results()).toHaveLength(0);
+  });
 });
 
 /** The assistant: a provider that answers `reply`, and a saved project with Main.st open and unmodified (the disk is `written`). */
@@ -306,6 +386,50 @@ describe('the assistant proposes a change set that a person reviews and saves (I
     expect(ctx.written).toEqual([]);
     expect(useIDEStore.getState().loadedFiles.get('file:src/Main.st')!.isModified).toBe(false);
     expect(useIDEStore.getState().loadedFiles.get('file:src/Main.st')!.content).toBe(ctx.main);
+  });
+
+  it('SHL-010 a reviewed proposal raises one notice with a Review action and moves no region', async () => {
+    const ctx = assistant(
+      async () => ({
+        ok: true,
+        answer: 'Added a lamp',
+        workspaceId: 'w1',
+        fileId: 'file:src/Main.st',
+        path: 'src/Main.st',
+        baselineSha256: await ctx.sha(ctx.main),
+        changes: [{ path: 'src/Lamp.st', kind: 'create', content: 'PROGRAM Lamp\nEND_PROGRAM\n' }],
+      }),
+      async (request) => {
+        const { edits } = request as { edits: Array<{ path: string; content: string }> };
+        const sha = 'f'.repeat(64);
+        return {
+          schemaVersion: 1,
+          accepted: true,
+          evidenceScope: 'native-posix-host',
+          changeSet: {
+            sha256: sha,
+            changes: await Promise.all(
+              edits.map(async (edit) => ({
+                path: edit.path,
+                kind: 'create',
+                after: { sha256: await ctx.sha(edit.content), byteLength: edit.content.length },
+              })),
+            ),
+          },
+          evidence: { schemaVersion: 1, operation: 'test', outcome: 'passed', diagnostics: [], artifacts: [] },
+          savedTestInputIdentity: { schemaVersion: 1, sha256: sha, fileCount: 2 },
+        };
+      },
+    );
+    open('agent', ctx.state);
+    const { user } = dom.render(<Console />);
+    await ask(user);
+    expect(useNotifications.getState().items).toHaveLength(0);
+    await user.click(panel().getByRole('button', { name: dom.t('console.reviewProposedChange') }));
+    await dom.waitFor(() => expect(useNotifications.getState().items).toHaveLength(1));
+    expect(useNotifications.getState().items[0]?.recover?.label).toBe(dom.t('review.open'));
+    expect(useReviewDocument.getState()).toMatchObject({ open: false, active: false });
+    expect(useIDEStore.getState().activeConsoleTab).toBe('agent');
   });
 
   it('shows a proposed ladder that does not load as a refusal with its violations, and offers no review', async () => {

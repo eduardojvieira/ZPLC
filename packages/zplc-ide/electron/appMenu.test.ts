@@ -287,3 +287,25 @@ describe('menu items of commands that nobody bound yet (FND-002)', () => {
     expect(runCommand('view.plant')).toBe('unavailable');
   });
 });
+
+describe('the View menu lists the change review (SHL-004)', () => {
+  it('SHL-004 the View menu has a Show changes item that sends view.changes', () => {
+    const sent: string[] = [];
+    const template = buildMenuTemplate('linux', menuCommands, menuTranslator('en'), {
+      isPackaged: true,
+      appName: 'ZPLC',
+      categories: menuCategories,
+      run: (id) => {
+        sent.push(id);
+      },
+      requestReload: noop,
+    });
+    const view = template.find(
+      (menu) => menu.label === menuTranslator('en')(CATEGORIES.find((category) => category.id === 'view')!.titleKey),
+    );
+    const item = flatten(view?.submenu as never).find((entry) => entry.label === menuTranslator('en')('command.view.changes'))!;
+    expect(item).toBeTruthy();
+    item.click?.({} as never, undefined, {} as never);
+    expect(sent).toEqual(['view.changes']);
+  });
+});
