@@ -1,3 +1,25 @@
-/** Text of milestone U2 of spec 013 for palette and references (keys of the task that owns this file, plan-u2.md); empty until it adds keys. */
-export const u2FindEn = {} as const;
-export const u2FindEs: Record<keyof typeof u2FindEn, string> = {};
+/** Text of the palette's groups (FND-001). */
+export const u2FindEn = {
+  'palette.group.commands': 'Commands',
+  'palette.group.files': 'Files',
+  'palette.group.objects': 'PLC objects',
+  'palette.group.io': 'I/O points',
+  'palette.group.editors': 'Configuration editors',
+  'palette.group.lessons': 'Lessons',
+  'palette.group.preferences': 'Preferences',
+  'palette.group.scenes': 'Scenes',
+  'palette.kind.task': 'Task',
+  'palette.more': 'Show all {count} in {group}',
+} as const;
+export const u2FindEs: Record<keyof typeof u2FindEn, string> = {
+  'palette.group.commands': 'Comandos',
+  'palette.group.files': 'Archivos',
+  'palette.group.objects': 'Objetos del PLC',
+  'palette.group.io': 'Puntos de E/S',
+  'palette.group.editors': 'Editores de configuración',
+  'palette.group.lessons': 'Lecciones',
+  'palette.group.preferences': 'Preferencias',
+  'palette.group.scenes': 'Escenas',
+  'palette.kind.task': 'Tarea',
+  'palette.more': 'Mostrar los {count} de {group}',
+};
