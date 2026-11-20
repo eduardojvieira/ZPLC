@@ -16,6 +16,7 @@ const CONSOLE_MODULES = [
   'console/ChangesTab.tsx',
   'console/AgentTab.tsx',
   'console/useWorkspaceTestRunner.ts',
+  'reviewFlow.ts',
 ];
 const consoleSources = (): string =>
   CONSOLE_MODULES.map((file) => compactSource(readFileSync(join(import.meta.dir, file), 'utf8'))).join('\n');
@@ -82,12 +83,12 @@ describe('Console tab boundary', () => {
     expect(source.match(/data-workspace-manifest-input/g)).toHaveLength(1);
     expect(source).toContain('readFileContent(file.handle)');
     expect(source).toContain('sha256Text');
-    expect(source).toContain('candidateSnapshotIsCurrent(snapshot)');
-    expect(source).toContain('workspaceTests.cancel()');
+    expect(source).toContain('manualIsCurrent(snapshot)');
+    expect(source).toContain('workspaceTests)?.cancel()');
     expect(source).toContain('saveFile(snapshot.fileId)');
     expect(source).toContain('diskHash !== snapshot.beforeSha256');
     expect(source).toContain('presentCandidateChangeSetReview(result, snapshot)');
-    expect(source).toContain('candidateReviewBusy.current || !file');
+    expect(source).toContain('useReviewDocument.getState().busy || !file');
     expect(source).toContain('current.activeFileId === snapshot.fileId');
     // one definition of a candidate path for the five languages (IDE-030), not the Structured Text rule
     expect(source).toContain('isCandidateSourcePath(file.path)');
@@ -105,9 +106,9 @@ describe('Console tab boundary', () => {
     expect(source).toContain('Saved input identity SHA-256 {sha256}');
     expect(source).toContain('scrollBeyondLastLine: false');
     expect(source).toContain('renderSideBySide: true');
-    expect(source).toContain("state.kind === 'running' || state.kind === 'cancelling' ? { kind: 'stale' }");
+    expect(source).toContain("review.kind === 'running' || review.kind === 'cancelling' ? { kind: 'stale' }");
     expect(source).toContain('The change is no longer current. Review again.');
-    expect(source).toContain("setCandidateReviewState({ kind: 'saving' })");
+    expect(source).toContain("review: { kind: 'saving' }");
     expect(source).toContain('Review itself does not write files.');
     expect(source).toContain('Open a saved project folder to review a change.');
     expect(source).not.toContain('candidateChangeSet.apply');

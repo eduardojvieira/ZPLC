@@ -51,6 +51,7 @@ export const SURFACES: readonly Surface[] = [
   })),
   { id: 'editor.settings', titleKey: 'studio.surface.settings', region: 'editor', command: 'project.settings' },
   { id: 'editor.learn', titleKey: 'studio.surface.learn', region: 'editor', command: 'help.learn' },
+  { id: 'editor.changes', titleKey: 'review.title', region: 'editor', command: 'view.changes' },
   { id: 'editor.plant', titleKey: 'studio.surface.plant', region: 'editor', command: 'view.plant' },
   { id: 'dialog.palette', titleKey: 'studio.surface.palette', region: 'dialog', command: 'view.commandPalette' },
   { id: 'dialog.shortcuts', titleKey: 'studio.surface.shortcuts', region: 'dialog', command: 'help.shortcuts' },

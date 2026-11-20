@@ -39,6 +39,7 @@ import { bindCommands, runCommand } from '../commands/bus';
 import { shownGroups } from '../layout/editorGroups';
 import { PLANT_VIEW_ID, SETTINGS_VIEW_ID, isVisualWorkflow, type ViewId } from '../layout/documentKinds';
 import { usePlantDocument } from '../store/usePlantDocument';
+import { REVIEW_VIEW_ID, useReviewDocument } from '../store/useReviewDocument';
 import type { DebugController } from '../hooks/useDebugController';
 import { useShellLayout } from '../store/useShellLayout';
 import { useShellDensity } from '../shell/shellDensity';
@@ -90,13 +91,17 @@ export function EditorArea({ debugController }: { debugController?: DebugControl
   const plantOpen = usePlantDocument((state) => state.open);
   const plantActive = usePlantDocument((state) => state.active);
   const plantRequests = usePlantDocument((state) => state.requests);
+  const reviewOpen = useReviewDocument((state) => state.open);
+  const reviewActive = useReviewDocument((state) => state.active);
   const selectedViewId = showSettings
     ? SETTINGS_VIEW_ID
     : configActive
       ? configEditorViewId(configActive)
-      : plantOpen && plantActive
-        ? PLANT_VIEW_ID
-        : selectedFileId;
+      : reviewOpen && reviewActive
+        ? REVIEW_VIEW_ID
+        : plantOpen && plantActive
+          ? PLANT_VIEW_ID
+          : selectedFileId;
   const [closingConfig, setClosingConfig] = useState<ConfigEditorKind | null>(null);
   const [savingConfig, setSavingConfig] = useState(false);
   const initialVisualHistoryState: VisualHistoryState = {
@@ -115,6 +120,7 @@ export function EditorArea({ debugController }: { debugController?: DebugControl
     ...(showSettings ? [SETTINGS_VIEW_ID] : []),
     ...configOpen.map(configEditorViewId),
     ...(plantOpen ? [PLANT_VIEW_ID] : []),
+    ...(reviewOpen ? [REVIEW_VIEW_ID] : []),
     ...tabFiles.map((file) => file.id),
   ];
   const viewsKey = allViews.join('\n');
@@ -158,6 +164,7 @@ export function EditorArea({ debugController }: { debugController?: DebugControl
         if (state.activeFileId !== previous.activeFileId || state.compilerNavigationTarget !== previous.compilerNavigationTarget) {
           useConfigEditors.getState().deselect();
           usePlantDocument.getState().deselect();
+          useReviewDocument.getState().deselect();
         }
         if (state.projectSession !== previous.projectSession) useConfigEditors.getState().reset();
       }),
@@ -288,13 +295,20 @@ export function EditorArea({ debugController }: { debugController?: DebugControl
   const selectView = useCallback(
     (viewId: ViewId) => {
       const config = configKindOf(viewId);
-      if (viewId === PLANT_VIEW_ID) {
+      if (viewId === PLANT_VIEW_ID || viewId === REVIEW_VIEW_ID) {
         if (showSettings) toggleSettings();
         useConfigEditors.getState().deselect();
-        usePlantDocument.getState().select();
+        if (viewId === PLANT_VIEW_ID) {
+          useReviewDocument.getState().deselect();
+          usePlantDocument.getState().select();
+        } else {
+          usePlantDocument.getState().deselect();
+          useReviewDocument.getState().select();
+        }
         return;
       }
       usePlantDocument.getState().deselect();
+      useReviewDocument.getState().deselect();
       if (viewId === SETTINGS_VIEW_ID) {
         if (!showSettings) toggleSettings();
       } else if (config) selectConfigTab(config);
@@ -374,6 +388,9 @@ export function EditorArea({ debugController }: { debugController?: DebugControl
     const config = configKindOf(viewId);
     if (viewId === PLANT_VIEW_ID) {
       usePlantDocument.getState().close();
+      focusTab(selectedFileId);
+    } else if (viewId === REVIEW_VIEW_ID) {
+      useReviewDocument.getState().close();
       focusTab(selectedFileId);
     } else if (viewId === SETTINGS_VIEW_ID) handleCloseSettings();
     else if (config) handleCloseConfigTab(config);

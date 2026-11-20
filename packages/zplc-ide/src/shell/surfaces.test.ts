@@ -15,6 +15,7 @@ const { COMMAND_LIST, commandById, isCommandEnabled, isCommandId } = await impor
 const { ACTIVITY_VIEWS } = await import('../store/useShellLayout');
 const { SURFACES, surfacesIn } = await import('./surfaces');
 const { useConfigEditors } = await import('../store/useConfigEditors');
+const { useReviewDocument } = await import('../store/useReviewDocument');
 const { useShellCommands } = await import('../commands/useCommandHost');
 
 const REGIONS: readonly Region[] = ['commandBar', 'activity', 'editor', 'secondary', 'results', 'status', 'dialog'];
@@ -65,14 +66,26 @@ describe('surface registry (SHL-001, SHL-002, SHL-004)', () => {
     }
   });
 
-  it('SHL-004 the commands of Interlocks, Changes, Agent and Terminal show their tab, and open the panel when it is collapsed', () => {
+  it('SHL-004 the commands of Interlocks, Agent and Terminal show their tab, and open the panel when it is collapsed', () => {
     dom.render(createElement(Host));
-    for (const tab of ['interlocks', 'changes', 'agent', 'terminal'] as const) {
+    for (const tab of ['interlocks', 'agent', 'terminal'] as const) {
       useIDEStore.setState({ isConsoleCollapsed: true, activeConsoleTab: 'output' });
       expect(runCommand(`view.${tab}`)).toBe('ran');
       expect(useIDEStore.getState().activeConsoleTab).toBe(tab);
       expect(useIDEStore.getState().isConsoleCollapsed).toBe(false);
     }
+  });
+
+  it('SHL-004 view.changes opens the review document of the editor area and leaves the results panel as it is', () => {
+    dom.render(createElement(Host));
+    useReviewDocument.setState({ open: false, active: false });
+    useIDEStore.setState({ isConsoleCollapsed: true, activeConsoleTab: 'output' });
+    expect(SURFACES.find((surface) => surface.id === 'editor.changes')).toMatchObject({ region: 'editor', command: 'view.changes' });
+    expect(runCommand('view.changes')).toBe('ran');
+    expect(useReviewDocument.getState()).toMatchObject({ open: true, active: true });
+    expect(useIDEStore.getState().activeConsoleTab).toBe('output');
+    expect(useIDEStore.getState().isConsoleCollapsed).toBe(true);
+    useReviewDocument.getState().close();
   });
 
   it('SHL-004 each configuration editor opens from its command', () => {
