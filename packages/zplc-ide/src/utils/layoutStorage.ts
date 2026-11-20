@@ -60,3 +60,27 @@ export function useWorkspaceLayout() {
 export function useShellLayoutSizes() {
   return useDefaultLayout({ id: SHELL_LAYOUT_ID, storage: workspaceStorage, onlySaveAfterUserInteractions: true });
 }
+
+/**
+ * Forgets the saved widths and heights of every region (SHL-015) and tells the shell to apply the defaults: an imperative resize is
+ * not saved (`onlySaveAfterUserInteractions`), so the stored layouts are removed here or the next session would bring them back.
+ */
+const sizesResetListeners = new Set<() => void>();
+export function resetLayoutSizes(resolve: () => StorageLike | undefined = () => globalThis.localStorage): void {
+  try {
+    const store = resolve() as Storage | undefined;
+    if (store) {
+      const keys = Array.from({ length: store.length }, (_, index) => store.key(index) ?? '');
+      for (const key of keys) if (key.includes(WORKSPACE_LAYOUT_ID) || key.includes(SHELL_LAYOUT_ID)) store.removeItem(key);
+    }
+  } catch {
+    // Not remembered either way.
+  }
+  for (const listener of sizesResetListeners) listener();
+}
+
+/** The shell subscribes to apply the default sizes to the panels that are on screen; returns the way to stop. */
+export function onLayoutSizesReset(listener: () => void): () => void {
+  sizesResetListeners.add(listener);
+  return () => void sizesResetListeners.delete(listener);
+}

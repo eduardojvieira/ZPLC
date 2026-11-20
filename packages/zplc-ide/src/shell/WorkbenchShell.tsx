@@ -17,7 +17,7 @@ import { usePlantDocument } from '../store/usePlantDocument';
 import { lessonSurface, startShellRouting } from './shellRouting';
 import { toggleMaximise, useShellLayout } from '../store/useShellLayout';
 import { bindCommands } from '../commands/bus';
-import { useShellLayoutSizes, useWorkspaceLayout } from '../utils/layoutStorage';
+import { onLayoutSizesReset, useShellLayoutSizes, useWorkspaceLayout } from '../utils/layoutStorage';
 import { workspaceLayoutFrom } from '../utils/sessionState';
 import { ActivityRail } from './ActivityRail';
 import { PrimarySidebar, SecondarySidebar } from './Sidebars';
@@ -99,6 +99,23 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
     if (isConsoleCollapsed) consolePanel.collapse();
     else consolePanel.expand();
   }, [isConsoleCollapsed, consolePanel]);
+
+  // Reset layout (SHL-015): the panels on screen take their default sizes; the stored sizes were removed by the command.
+  useEffect(
+    () =>
+      onLayoutSizesReset(() => {
+        // After the visibility effects have shown or hidden the sidebars, so that a hidden one is not opened by the resize.
+        window.setTimeout(() => {
+          for (const [panel, size] of [
+            [primaryPanel, '280px'],
+            [secondaryPanel, '280px'],
+            [consolePanel, '28%'],
+          ] as const)
+            if (panel && !panel.isCollapsed()) panel.resize(size);
+        }, 0);
+      }),
+    [primaryPanel, secondaryPanel, consolePanel],
+  );
 
   useCollapsible(primaryPanel, primaryVisible);
   useCollapsible(secondaryPanel, secondaryVisible);

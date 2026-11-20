@@ -5,6 +5,8 @@
  * read, is not used: the defaults apply, field by field for a field that is wrong.
  */
 import { create } from 'zustand';
+import { resetLayoutSizes } from '../utils/layoutStorage';
+import { useEditorGroups } from './useEditorGroups';
 import { useIDEStore } from './useIDEStore';
 
 export const SHELL_STATE_VERSION = 1;
@@ -105,6 +107,8 @@ interface ShellActions {
   setSecondaryVisible: (visible: boolean) => void;
   togglePrimary: () => void;
   toggleSecondary: () => void;
+  /** The shell's own fields back to the defaults, and not maximised; nothing else. */
+  reset: () => void;
 }
 
 export const useShellLayout = create<ShellState & MaximiseState & ShellActions>((set, get) => ({
@@ -139,6 +143,7 @@ export const useShellLayout = create<ShellState & MaximiseState & ShellActions>(
   setSecondaryVisible: (secondaryVisible) => set({ secondaryVisible }),
   togglePrimary: () => set((state) => ({ primaryVisible: !state.primaryVisible })),
   toggleSecondary: () => set((state) => ({ secondaryVisible: !state.secondaryVisible })),
+  reset: () => set({ ...DEFAULT_SHELL_STATE, maximised: false, restoreTo: null }),
 }));
 
 // Saved as it changes; a window that cannot store (a private window, a full quota) keeps the choice for the session.
@@ -165,4 +170,17 @@ export function toggleMaximise(): void {
   }
   const before = layout.leaveMaximise();
   if (before && !before.consoleCollapsed && ide.isConsoleCollapsed) ide.toggleConsole();
+}
+
+/**
+ * Reset layout (SHL-015): the regions, the sizes, the results panel (expanded, on Output) and the editor area (one group) return to
+ * the defaults. Preferences, the project and its files are not touched.
+ */
+export function resetLayout(): void {
+  useShellLayout.getState().reset();
+  const ide = useIDEStore.getState();
+  ide.setActiveConsoleTab('output');
+  if (ide.isConsoleCollapsed) ide.toggleConsole();
+  useEditorGroups.getState().reset();
+  resetLayoutSizes();
 }
