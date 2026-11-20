@@ -139,3 +139,31 @@ describe('Sequential function chart editor in a browser (VF-007, LNG-012)', () =
     expect(es('a11y.sfc.step', { name: 'LED_ON' })).not.toBe(t('a11y.sfc.step', { name: 'LED_ON' }));
   });
 });
+
+const published = (app: BrowserApp) =>
+  app.eval<{ file: string; element: string; names: string[] } | null>(
+    `import('/src/shell/useSelection.ts').then(({ useSelection }) => useSelection.getState().element)`,
+  );
+const closeDocument = (app: BrowserApp) =>
+  app.eval(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => useIDEStore.setState({ activeFileId: null, openTabs: [] }))`);
+
+describe('the Sequential function chart editor publishes its selection (SHL-009)', () => {
+  test('SHL-009 the SFC editor publishes its selected element and clears it on unmount', async () => {
+    const app = await browserApp();
+    await openBlinky(app);
+    await select(app, 'step_led_on');
+    await app.until(
+      'the element in the selection store',
+      `import('/src/shell/useSelection.ts').then(({ useSelection }) => useSelection.getState().element !== null)`,
+    );
+    const element = await published(app);
+    expect(element?.file).toBe('src/main.sfc.json');
+    expect(element?.element).toMatch(/step_led_on/);
+    expect(element?.names).toEqual([]);
+    await closeDocument(app);
+    await app.until(
+      'the selection cleared',
+      `import('/src/shell/useSelection.ts').then(({ useSelection }) => useSelection.getState().element === null)`,
+    );
+  });
+});

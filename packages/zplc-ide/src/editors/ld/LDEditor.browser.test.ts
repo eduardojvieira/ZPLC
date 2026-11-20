@@ -260,3 +260,31 @@ describe('Ladder editor in a browser (VF-007, LNG-012)', () => {
     expect(es('ld.ladderDiagramEditor')).not.toBe(t('ld.ladderDiagramEditor'));
   });
 });
+
+const published = (app: BrowserApp) =>
+  app.eval<{ file: string; element: string; names: string[] } | null>(
+    `import('/src/shell/useSelection.ts').then(({ useSelection }) => useSelection.getState().element)`,
+  );
+const closeDocument = (app: BrowserApp) =>
+  app.eval(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => useIDEStore.setState({ activeFileId: null, openTabs: [] }))`);
+
+describe('the Ladder editor publishes its selection (SHL-009)', () => {
+  test('SHL-009 the Ladder editor publishes its selected element and clears it on unmount', async () => {
+    const app = await browserApp();
+    await openBlinky(app);
+    await app.click(`[aria-label="${SELECT('contact_nc', 'LED_Output')}"]`);
+    await app.until(
+      'the element in the selection store',
+      `import('/src/shell/useSelection.ts').then(({ useSelection }) => useSelection.getState().element !== null)`,
+    );
+    const element = await published(app);
+    expect(element?.file).toBe('src/main.ld.json');
+    expect(element?.element).toMatch(/^rung:rung_\d+\/element:/);
+    expect(element?.names).toContain('LED_Output');
+    await closeDocument(app);
+    await app.until(
+      'the selection cleared',
+      `import('/src/shell/useSelection.ts').then(({ useSelection }) => useSelection.getState().element === null)`,
+    );
+  });
+});

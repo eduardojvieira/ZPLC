@@ -89,7 +89,7 @@ describe('the editors publish their selection (SHL-009)', () => {
     usePublishSelectedElement(element as never, ['Start']);
     return null;
   }
-  it('SHL-009 the Ladder, FBD and SFC editors publish their selected element and clear it on unmount', async () => {
+  it('SHL-009 the publishing hook sets the selected element of the active file, follows it and clears it on unmount', async () => {
     dom.patchStore(useIDEStore, {
       activeFileId: 'a',
       loadedFiles: new Map([['a', { id: 'a', path: 'src/a.ld.json', content: '' }]]),
