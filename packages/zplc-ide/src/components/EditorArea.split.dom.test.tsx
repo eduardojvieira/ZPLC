@@ -14,6 +14,8 @@ afterAll(async () => {
   await mock.module('./CodeEditor', () => realCodeEditor);
 });
 const { useIDEStore } = await import('../store/useIDEStore');
+const { useReviewDocument } = await import('../store/useReviewDocument');
+const { useConfigEditors } = await import('../store/useConfigEditors');
 const { useEditorGroups, restoreEditorGroups } = await import('../store/useEditorGroups');
 const { useShellLayout, toggleMaximise } = await import('../store/useShellLayout');
 const { ONE_GROUP } = await import('../layout/editorGroups');
@@ -43,6 +45,9 @@ function prepare(width = 1400) {
     projectSession: 1,
   } as never);
   dom.patchStore(useEditorGroups, { groups: ONE_GROUP, activeFirst: null, pendingFor: -1 } as never);
+  // another file of the same process may have left the review document or a configuration editor open: they are tabs of the editor area
+  dom.patchStore(useReviewDocument, { open: false, active: false } as never);
+  dom.patchStore(useConfigEditors, { open: [], active: null } as never);
   return files;
 }
 
