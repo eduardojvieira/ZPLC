@@ -196,3 +196,30 @@ describe('Function block diagram editor in a browser (VF-007, LNG-012)', () => {
     expect(es('editors.fbd.canvas')).not.toBe(t('editors.fbd.canvas'));
   });
 });
+
+const published = (app: BrowserApp) =>
+  app.eval<{ file: string; element: string; names: string[] } | null>(
+    `import('/src/shell/useSelection.ts').then(({ useSelection }) => useSelection.getState().element)`,
+  );
+const closeDocument = (app: BrowserApp) =>
+  app.eval(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => useIDEStore.setState({ activeFileId: null, openTabs: [] }))`);
+
+describe('the Function block diagram editor publishes its selection (SHL-009)', () => {
+  test('SHL-009 the FBD editor publishes its selected element and clears it on unmount', async () => {
+    const app = await browserApp();
+    await openBlinky(app);
+    await select(app, 'ton_off');
+    await app.until(
+      'the element in the selection store',
+      `import('/src/shell/useSelection.ts').then(({ useSelection }) => useSelection.getState().element !== null)`,
+    );
+    const element = await published(app);
+    expect(element?.file).toBe('src/main.fbd.json');
+    expect(element?.element).toBe('block:ton_off');
+    await closeDocument(app);
+    await app.until(
+      'the selection cleared',
+      `import('/src/shell/useSelection.ts').then(({ useSelection }) => useSelection.getState().element === null)`,
+    );
+  });
+});

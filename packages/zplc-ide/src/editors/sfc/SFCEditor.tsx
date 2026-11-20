@@ -65,6 +65,7 @@ import { nodeTypes } from './nodes';
 import { edgeTypes } from './edges';
 import SFCToolbox from './SFCToolbox';
 import { useIDEStore } from '../../store/useIDEStore';
+import { usePublishSelectedElement } from '../../shell/useSelection';
 import { SignalValue } from '../../ui';
 import { animationMs } from '../../theme/motion';
 import { useMonitor } from '../../monitoring/useMonitor';
@@ -234,6 +235,9 @@ function SFCEditorInner({
   const [edges, replaceEdges] = useReducer((_current: Edge[], next: Edge[]) => next, initialEdges);
   const nodesRef = useRef(nodes);
   const edgesRef = useRef(edges);
+  // the Inspector and the reference commands read the selected element from the selection store (SHL-009); a step or a transition
+  // names no variable of its own; a wire (`edge:`) is not a source element
+  usePublishSelectedElement(sfcSelection(nodes, [])[0] ?? null, []);
   const clipboardRef = useRef<SFCClipboardFragment | undefined>(undefined);
 
   // One gesture is one commit (LNG-010): the document is committed once, with the selection from before the gesture and after.

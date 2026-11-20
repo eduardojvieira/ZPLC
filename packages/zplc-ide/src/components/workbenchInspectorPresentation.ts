@@ -43,3 +43,30 @@ export function presentWorkbenchInspector(input: WorkbenchInspectorInput) {
       input.nativeTraceCount > 0 ? tn('workbench.inspector.traceSamples', input.nativeTraceCount) : t('workbench.inspector.noTrace'),
   };
 }
+
+/**
+ * The POUs a text file declares (`PROGRAM`, `FUNCTION_BLOCK`, `FUNCTION`), or the `name` of a diagram document; the file name is not
+ * repeated.
+ */
+export function declaredPous(language: string, content: string): string[] {
+  if (language === 'ST' || language === 'IL') {
+    return [...content.matchAll(/^\s*(?:PROGRAM|FUNCTION_BLOCK|FUNCTION)\s+([A-Za-z_]\w*)/gim)].map((match) => match[1]!);
+  }
+  try {
+    const name = (JSON.parse(content) as { name?: unknown }).name;
+    return typeof name === 'string' && name !== '' ? [name] : [];
+  } catch {
+    return [];
+  }
+}
+
+/** The active document for the Inspector (SHL-009): what the tabs and the status rail do not say. */
+export function presentActiveDocument(file: { language: string; content: string; isModified?: boolean }) {
+  return {
+    language: file.language,
+    pous: declaredPous(file.language, file.content),
+    lines: file.content === '' ? 0 : file.content.split('\n').length,
+    characters: file.content.length,
+    saved: !file.isModified,
+  };
+}
