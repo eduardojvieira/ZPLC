@@ -112,7 +112,7 @@ describe('canonical workspace build failures', () => {
 
   it('always creates one visible compiler problem when no safe diagnostic is available', () => {
     expect(toolbarSource).toContain('if (canonical.diagnostics.length === 0)');
-    expect(toolbarSource.match(/addCompilerMessage\(\{ type: 'error', message: Canonical workspace build failed \}\);/g)?.length).toBe(2);
+    expect(toolbarSource.match(/addCompilerMessage\(\{ type: 'error', message: The project build failed \}\);/g)?.length).toBe(2);
   });
 
   it('uses only the canonical workspace compiler and exposes recovery when unavailable', () => {

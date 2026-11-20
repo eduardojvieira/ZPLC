@@ -39,8 +39,8 @@ describe('presentOperationalStatus', () => {
     });
 
     expect(result).toMatchObject({
-      runtime: 'Native POSIX',
-      target: 'Local POSIX',
+      runtime: 'Simulation',
+      target: 'This computer',
       cycles: 0,
       taskIntervalMs: 10,
       overruns: 2,

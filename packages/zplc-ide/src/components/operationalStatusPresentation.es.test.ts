@@ -29,8 +29,8 @@ describe('UX-030 the status bar and the block groups in Spanish', () => {
     setLanguage('es');
     expect(presentOperationalStatus(base).runtime).toBe('Sin sesión de runtime');
     expect(presentOperationalStatus({ ...base, adapterType: 'native', connected: true, vmInfo: { cycles: 1 } })).toMatchObject({
-      runtime: 'POSIX nativo',
-      target: 'POSIX local',
+      runtime: 'Simulación',
+      target: 'Este equipo',
     });
     expect(presentOperationalStatus({ ...base, adapterType: 'serial', connected: true }).status.text).toBe(
       'El modo del runtime no coincide · vuelva a conectar',
