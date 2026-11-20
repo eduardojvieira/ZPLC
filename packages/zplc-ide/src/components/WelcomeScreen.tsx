@@ -3,8 +3,8 @@
  * examples, grouped by topic with a line that says what each one is (UX-022). Hardware and workspace evidence stay
  * inside an opened project. Folders opened before are listed under Recent and reopen without a dialog (IDE-008).
  */
-import React from 'react';
-import { BookOpen, FolderOpen, FolderPlus, History } from 'lucide-react';
+import React, { Suspense, lazy } from 'react';
+import { BookOpen, FolderOpen, FolderPlus, History, Settings } from 'lucide-react';
 import { useIDEStore } from '../store/useIDEStore';
 import { useNewProjectDialog } from '../store/newProjectDialog';
 import { useWelcomeState } from '../store/regionSubscriptions';
@@ -13,11 +13,16 @@ import { isFileSystemAccessSupported } from '../types';
 import { ZPLC_REPO_VERSION } from '../version';
 import { openLearnHome } from '../learn/learnUi';
 import { ImportArchive } from './ImportArchive';
-import { ThemeControl } from './ThemeControl';
-import { AppPreferences } from './settings/AppPreferences';
+import { usePreferencesDocument } from '../store/usePreferencesDocument';
+import { runCommand } from '../commands/bus';
 import { recentRows } from './welcomeRecent';
 import { Button } from '../ui';
 import { useT } from '../i18n';
+
+// the document is loaded when it is asked for: the Welcome screen starts without the settings (IDE-015)
+const PreferencesDocument = lazy(() =>
+  import('./settings/PreferencesDocument').then((module) => ({ default: module.PreferencesDocument })),
+);
 
 const badgeClass = 'border border-[var(--border-color)] px-1.5 py-0.5 text-[11px] leading-4 text-[var(--text-secondary)]';
 
@@ -48,7 +53,7 @@ function ExampleBadges({ example }: { example: ExampleListing }) {
   );
 }
 
-export function WelcomeScreen() {
+function WelcomeStart() {
   const translator = useT();
   const { t } = translator;
   const {
@@ -133,7 +138,10 @@ export function WelcomeScreen() {
             <span className="hidden font-mono text-xs text-[var(--text-muted)] sm:block">
               {t('welcome.build', { version: appVersion })}
             </span>
-            <ThemeControl />
+            <Button size="sm" onClick={() => runCommand('file.preferences')} data-welcome-preferences>
+              <Settings size={14} aria-hidden="true" />
+              {t('welcome.preferences.open')}
+            </Button>
           </div>
         </header>
 
@@ -292,13 +300,6 @@ export function WelcomeScreen() {
           </section>
         )}
 
-        <details data-welcome-preferences className="mt-6 border-t border-[var(--border-color)] pt-3">
-          <summary className="cursor-pointer text-sm text-[var(--text-secondary)]">{t('welcome.preferences.summary')}</summary>
-          <div className="mt-3">
-            <AppPreferences includeTheme={false} />
-          </div>
-        </details>
-
         <aside
           className="mt-6 border-t border-[var(--border-color)] pt-3 text-sm leading-5 text-[var(--text-secondary)]"
           aria-live="polite"
@@ -310,6 +311,27 @@ export function WelcomeScreen() {
           {t('welcome.build', { version: appVersion })}
         </footer>
       </div>
+    </main>
+  );
+}
+
+/** With no project open, Preferences takes the place of the start page until it is closed (SHL-011). */
+export function WelcomeScreen() {
+  const { t } = useT();
+  const preferencesShown = usePreferencesDocument((state) => state.open && state.active);
+  if (!preferencesShown) return <WelcomeStart />;
+  return (
+    <main aria-label={t('preferences.title')} className="flex min-h-0 flex-1 flex-col bg-[var(--color-surface-900)]">
+      <div className="border-b border-[var(--border-color)] px-5 py-2">
+        <Button size="sm" onClick={() => usePreferencesDocument.getState().close()} data-preferences-back>
+          {t('preferences.back')}
+        </Button>
+      </div>
+      <Suspense fallback={null}>
+        <div className="min-h-0 flex-1">
+          <PreferencesDocument />
+        </div>
+      </Suspense>
     </main>
   );
 }

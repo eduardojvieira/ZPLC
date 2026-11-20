@@ -1,7 +1,7 @@
 /**
  * The application preferences of the user (IDE-007, IDE-010): theme, editor font size and tab size, density,
- * language, autosave and the update check. They belong to the person, not to a project, so they sit in front of the
- * project settings and on the Welcome screen, and persist per user (`useAppSettings`). Every control is a native one:
+ * language, autosave and the update check. They belong to the person, not to a project, so they are the Preferences document,
+ * open with or without a project, and persist per user (`useAppSettings`). Every control is a native one:
  * keyboard operable, with its label.
  */
 import { useState } from 'react';
@@ -78,7 +78,7 @@ function Choice<K extends keyof AppSettings>({
   );
 }
 
-/** `includeTheme` is off where the page already has the one theme control (the Welcome screen header). */
+/** The preferences of the person; the theme control here is the only one of the product (SHL-012). `includeTheme`: an i18n test. */
 export function AppPreferences({ includeTheme = true }: { includeTheme?: boolean }) {
   const { t, tn } = useT();
   const checkForUpdates = useAppSettings((state) => state.settings.checkForUpdates);

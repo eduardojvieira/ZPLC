@@ -6,8 +6,9 @@ import { useEffect } from 'react';
 import { useAssistantProvider, useSecondaryView, type SecondaryView } from '../../shell/useSelection';
 import { shellDensity } from '../../shell/shellDensity';
 import { useShellLayout } from '../../store/useShellLayout';
+import { usePreferencesDocument } from '../../store/usePreferencesDocument';
 import { bindCommands } from '../bus';
-import { focusSoon, showPanel } from './layout';
+import { focusSoon } from './layout';
 
 /** Shows a view of the secondary sidebar; where that sidebar has no room (UX-023) the view takes the place of the primary one. */
 function showSecondaryView(view: SecondaryView): void {
@@ -21,14 +22,14 @@ function showSecondaryView(view: SecondaryView): void {
 }
 
 /**
- * `view.agent` shows the Assistant while a provider is configured; without one the Agent tab keeps the settings form (Task H2 moves
- * it). The answer is the last known one, read at once; the status is read again for the next request.
+ * `view.agent` shows the Assistant while a provider is configured; without one it opens Preferences at the Assistant section, where
+ * the provider is configured (SHL-011). The answer is the last known one, read at once; the status is read again for the next request.
  */
 function showAssistant(): void {
   const provider = useAssistantProvider.getState();
   void provider.refresh();
   if (provider.available) showSecondaryView('assistant');
-  else showPanel('agent')();
+  else usePreferencesDocument.getState().show('assistant');
 }
 
 export function useAssistantCommands(): void {
