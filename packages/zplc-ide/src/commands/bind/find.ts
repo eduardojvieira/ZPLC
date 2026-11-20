@@ -32,6 +32,14 @@ export async function lookUp(action: ReferenceAction, target: RefTarget): Promis
   await useReferences.getState().find(target);
 }
 
+/** The references of a Watch row (`Program.Variable`): the index knows which symbol the row names. */
+export async function lookUpWatch(path: string): Promise<void> {
+  const target = (await loadReferenceIndex()).targetAt({ kind: 'watch', path });
+  if (target) return lookUp('references', target);
+  showActivity('search');
+  useReferences.getState().say(t('refs.notDeclared', { name: path }));
+}
+
 async function run(action: ReferenceAction): Promise<void> {
   const refs = useReferences.getState();
   const said = (notice: string): void => {
