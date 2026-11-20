@@ -51,7 +51,7 @@ export const journeysW4: Journey[] = [
       await app.click(menuItem('Compile'));
       await patiently(
         'the build to succeed',
-        async () => /Built saved workspace/.test(await app.eval<string>(`document.body.innerText`)) || undefined,
+        async () => /Built the project/.test(await app.eval<string>(`document.body.innerText`)) || undefined,
       );
       await patiently('Run to be ready', async () => (await app.clickable(button('Run (F5)', 'prefix'))) || undefined);
       await app.click(button('Run (F5)', 'prefix'));

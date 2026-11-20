@@ -2579,7 +2579,7 @@ export const JOURNEYS: Journey[] = [
     run: async (app, { root, relaunch }) => {
       const limit = NATIVE_PROGRAM_MAX_BYTES; // the code size of the VM: 0xB000
       const builtBytes = async (a: App) =>
-        Number(/Built saved workspace locally: (\d+) bytes/.exec((await outputText(a)).match(BUILD_RESULT)?.at(-1) ?? '')?.[1] ?? 'NaN');
+        Number(/Built the project: (\d+) bytes/.exec((await outputText(a)).match(BUILD_RESULT)?.at(-1) ?? '')?.[1] ?? 'NaN');
       const simulateAndWatch = async (a: App, folder: string, bytes: number) => {
         await openFolder(a, folder);
         const result = await compile(a);
@@ -7054,7 +7054,7 @@ export const JOURNEYS: Journey[] = [
       // 3. Build: Ctrl+B; the result is written to Output and announced
       await app.press('Ctrl+B');
       await app
-        .until('a successful build in Output', async () => /Built saved workspace locally/.test(await outputText(app)) || undefined, 30_000)
+        .until('a successful build in Output', async () => /Built the project/.test(await outputText(app)) || undefined, 30_000)
         .catch(async (error: Error) => {
           throw new Error(
             `${error.message}: the announcer says ${JSON.stringify([
