@@ -30,7 +30,14 @@ export interface WorkspaceTestPreview {
     totalSignals: number;
     totalAssertions: number;
     truncated: boolean;
-    assertions: Array<{ kind: ScenarioKind; passed: boolean; atMs?: number }>;
+    /** Failed assertion only (TST-003): its position in the scenario and the raw expected/observed values of its condition. */
+    assertions: Array<{
+      kind: ScenarioKind;
+      passed: boolean;
+      atMs?: number;
+      index?: number;
+      checks?: Array<{ signal: string; expected: boolean; observed?: boolean }>;
+    }>;
     samples: Array<{
       atMs: number;
       outputs: Record<string, boolean>;
@@ -572,6 +579,29 @@ const scenarioKind = (value: unknown): value is ScenarioKind =>
   value === 'RISING' ||
   value === 'FALLING';
 
+/** `{}` for an assertion without detail, the detail of a failed one, `null` when it is malformed (only a failed assertion has any). */
+function failureDetail(
+  assertion: Record<string, unknown>,
+): Pick<WorkspaceTestPreview['scenarios'][number]['assertions'][number], 'index' | 'checks'> | null {
+  if (assertion.index === undefined) return {};
+  const checks = array(assertion.checks);
+  if (assertion.passed !== false || !boundedInteger(assertion.index) || !checks || checks.length < 1 || checks.length > 8) return null;
+  const valid: NonNullable<WorkspaceTestPreview['scenarios'][number]['assertions'][number]['checks']> = [];
+  for (const raw of checks) {
+    const check = record(raw);
+    if (
+      !check ||
+      !onlyKeys(check, check.observed === undefined ? ['signal', 'expected'] : ['signal', 'expected', 'observed']) ||
+      typeof check.signal !== 'string' ||
+      typeof check.expected !== 'boolean' ||
+      (check.observed !== undefined && typeof check.observed !== 'boolean')
+    )
+      return null;
+    valid.push({ signal: check.signal, expected: check.expected, ...(check.observed === undefined ? {} : { observed: check.observed }) });
+  }
+  return { index: assertion.index as number, checks: valid };
+}
+
 function preview(value: unknown, evidence: { artifacts: WorkspaceTestArtifact[] }): WorkspaceTestPreview | undefined {
   const source = record(value);
   const totalScenarioCount = source?.totalScenarioCount;
@@ -635,16 +665,24 @@ function preview(value: unknown, evidence: { artifacts: WorkspaceTestArtifact[] 
       const assertion = record(raw);
       if (
         !assertion ||
-        !onlyKeys(assertion, assertion.atMs === undefined ? ['kind', 'passed'] : ['kind', 'passed', 'atMs']) ||
+        !onlyKeys(assertion, [
+          'kind',
+          'passed',
+          ...(assertion.atMs === undefined ? [] : ['atMs']),
+          ...(assertion.index === undefined ? [] : ['index', 'checks']),
+        ]) ||
         !scenarioKind(assertion.kind) ||
         typeof assertion.passed !== 'boolean' ||
         (assertion.atMs !== undefined && !boundedInteger(assertion.atMs))
       )
         return undefined;
+      const detail = failureDetail(assertion);
+      if (detail === null) return undefined;
       assertions.push({
         kind: assertion.kind,
         passed: assertion.passed,
         ...(assertion.atMs === undefined ? {} : { atMs: assertion.atMs }),
+        ...detail,
       });
     }
     const samples: WorkspaceTestPreview['scenarios'][number]['samples'] = [];

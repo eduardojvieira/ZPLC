@@ -32,6 +32,7 @@ import {
   runScenario,
   type CompiledScenario,
   type ScenarioKind,
+  type ScenarioAssertionResult,
   type ScenarioRunResult,
   type SceneScenarioContext,
 } from '../test-engine';
@@ -106,7 +107,7 @@ export interface TestRunPreview {
     totalSignals: number;
     totalAssertions: number;
     truncated: boolean;
-    assertions: Array<{ kind: ScenarioKind; passed: boolean; atMs?: number }>;
+    assertions: Array<{ kind: ScenarioKind; passed: boolean; atMs?: number; index?: number; checks?: ScenarioAssertionResult['checks'] }>;
     samples: Array<{
       atMs: number;
       outputs: Record<string, boolean>;
@@ -261,7 +262,12 @@ function previewScenario(scenario: {
   );
   const assertions = assertionIndexes
     .map((index) => scenario.assertions[index]!)
-    .map(({ kind, passed, atMs }) => ({ kind, passed, ...(atMs === undefined ? {} : { atMs }) }));
+    .map(({ kind, passed, atMs, index, checks }) => ({
+      kind,
+      passed,
+      ...(atMs === undefined ? {} : { atMs }),
+      ...(index === undefined || !checks ? {} : { index, checks }),
+    }));
   const failureTimes = scenario.assertions.flatMap((assertion) =>
     !assertion.passed && assertion.atMs !== undefined ? [scenario.trace.findIndex((sample) => sample.atMs === assertion.atMs)] : [],
   );
@@ -957,7 +963,14 @@ async function runWorkspaceScenarios(
         schemaVersion: 1,
         backend: 'native-posix',
         mode: 'logical-cyclic-task-set-scan',
-        scenarios: completed.map(({ id, path, passed, trace, assertions }) => ({ id, path, passed, trace, assertions })),
+        scenarios: completed.map(({ id, path, passed, trace, assertions }) => ({
+          id,
+          path,
+          passed,
+          trace,
+          // the failure detail is for the preview; the recorded trace keeps its 2.0 bytes, hash and MCP replay schema
+          assertions: assertions.map(({ kind, passed, atMs }) => ({ kind, passed, atMs })),
+        })),
       }),
     );
     const artifacts = [zplcArtifact, artifactEvidence('trace', aggregateTrace)];
