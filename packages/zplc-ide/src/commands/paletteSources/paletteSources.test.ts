@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import type { PaletteSnapshot } from '../palette';
 import { DEFAULT_SETTINGS } from '../../utils/appSettings';
-import { paletteItems } from './index';
+import { paletteItems } from './providers';
 import { PREFERENCE_ENTRIES } from './preferences';
 import { translatorFor } from '../../i18n';
 import type { FileTreeNode, ZPLCProjectConfig } from '../../types';

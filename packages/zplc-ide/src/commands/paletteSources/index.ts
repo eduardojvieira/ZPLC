@@ -9,14 +9,6 @@ import { projectGlobalVariables } from '../../project/globalVariables';
 import { runCommand } from '../bus';
 import type { PaletteSnapshot } from '../palette';
 import { setPreferenceAnchor } from '../preferenceAnchor';
-import type { PaletteItem, PaletteProvider } from './contracts';
-import { editorsProvider } from './editors';
-import { filesProvider } from './files';
-import { ioProvider } from './io';
-import { lessonsProvider } from './lessons';
-import { objectsProvider } from './objects';
-import { preferencesProvider } from './preferences';
-import { scenesProvider } from './scenes';
 
 export function buildPaletteSnapshot(locale: Locale): PaletteSnapshot {
   const ide = useIDEStore.getState();
@@ -44,10 +36,4 @@ export function buildPaletteSnapshot(locale: Locale): PaletteSnapshot {
   };
 }
 
-export const paletteProviders = (snapshot: PaletteSnapshot): PaletteProvider[] =>
-  [filesProvider, objectsProvider, ioProvider, editorsProvider, lessonsProvider, preferencesProvider, scenesProvider].map((make) =>
-    make(snapshot),
-  );
-
-export const paletteItems = (snapshot: PaletteSnapshot): PaletteItem[] =>
-  paletteProviders(snapshot).flatMap((provider) => provider.items());
+export { paletteItems, paletteProviders } from './providers';

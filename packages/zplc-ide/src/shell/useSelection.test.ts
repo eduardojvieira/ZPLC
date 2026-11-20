@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
-import { useSelection } from './useSelection';
+import { setupDom } from '../test/dom';
+
+await setupDom();
+await (await import('../test/dom')).stubProjectLoader();
+const { useSelection } = await import('./useSelection');
 
 beforeEach(() => useSelection.getState().clear());
 
