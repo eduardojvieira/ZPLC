@@ -89,4 +89,25 @@ describe('ReferencesPanel in a DOM', () => {
     expect(dom.screen.getByText(dom.t('refs.notDeclared', { name: 'Start' }))).toBeTruthy();
     expect(dom.screen.queryAllByRole('button')).toHaveLength(0);
   });
+
+  it('FND-004 the header of an address says when the build that resolved it is older than the sources', async () => {
+    const { MEMORY_MAP } = await import('../runtime/debugAdapter');
+    const debugMap = {
+      pou: { Main: { vars: { Lamp: { region: 'OPI', type: 'BOOL', addr: MEMORY_MAP.opi.baseAddress, size: 1, bitOffset: 0 } } } },
+    };
+    const target = { kind: 'address', address: { area: 'Q', byte: 0, bit: 0, width: 1 } } as const;
+    useReferences.setState({ target, result: { target, uses: [], truncated: false, broken: [] } });
+    const note = dom.t('refs.buildOlder', { path: 'Main.Lamp' });
+    const current = dom.t('refs.build', { path: 'Main.Lamp' });
+    dom.patchStore(useIDEStore, {
+      compilerRunId: 5,
+      debug: { ...useIDEStore.getState().debug, debugMap, debugMapRunId: 5 },
+    } as never);
+    const view = dom.render(<ReferencesPanel />);
+    expect(dom.screen.getByText(current)).toBeTruthy();
+    expect(dom.screen.queryByText(note)).toBeNull();
+    dom.act(() => useIDEStore.setState({ compilerRunId: 6 }));
+    expect(dom.screen.getByText(note)).toBeTruthy();
+    view.unmount();
+  });
 });

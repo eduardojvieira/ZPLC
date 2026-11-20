@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { mock } from 'bun:test';
 import { projectLoaderStub } from '../test/projectLoaderStub';
 import type { ProjectFileWithHandle } from '../types';
@@ -10,6 +10,12 @@ const { pendingElementSelection, clearElementSelection } = await import('../edit
 const { openPlace } = await import('./openPlace');
 
 const opened: Array<[string, number, number]> = [];
+const before = { ...useIDEStore.getState() };
+afterEach(() => {
+  // the store outlives this file in the one test process: put back what the tests replaced
+  useIDEStore.setState({ loadedFiles: before.loadedFiles, navigateToCompilerDiagnostic: before.navigateToCompilerDiagnostic });
+  useConfigEditors.getState().reset();
+});
 beforeEach(() => {
   opened.length = 0;
   clearElementSelection();

@@ -70,6 +70,9 @@ export interface DebugState {
   /** Debug map from last compilation */
   debugMap: DebugMap | null;
 
+  /** The compiler run that made `debugMap` (compare with `compilerRunId`: a lower one is older than the sources). */
+  debugMapRunId?: number | null;
+
   /**
    * Active breakpoints indexed by file ID.
    * Value is a Set of line numbers with breakpoints.
