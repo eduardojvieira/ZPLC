@@ -54,12 +54,7 @@ describe('failure detail in the Tool API preview (TST-003, IDE-031)', () => {
   });
 
   itNative('TST-003 the MCP trace of a failed run still replays and keeps the 2.0 assertion keys', async () => {
-    // The MCP replay schema has no RISING/FALLING kind yet (a 2.0 limit, not touched here): drop them from the copy.
     const root = brokenCopy();
-    const file = join(root, SCENARIO);
-    const scenario = JSON.parse(readFileSync(file, 'utf8')) as { expectations: Array<{ kind: string }> };
-    scenario.expectations = scenario.expectations.filter(({ kind }) => kind !== 'RISING' && kind !== 'FALLING');
-    writeFileSync(file, JSON.stringify(scenario));
     const workspace = await openMcpWorkspace(root);
     const result = await createMcpDispatcher(workspace!)('trace_get', { scenarioId: 'BlinkyST' }, new AbortController().signal);
     const content = result.structuredContent as { assertions: Array<Record<string, unknown>>; traceSha256: string };

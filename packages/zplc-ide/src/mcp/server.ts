@@ -426,7 +426,7 @@ const traceSampleSchema = z
   .strict();
 const assertionSchema = z
   .object({
-    kind: z.enum(['AT', 'WITHIN', 'EVENTUALLY', 'ALWAYS', 'NEVER', 'UNTIL', 'FOR']),
+    kind: z.enum(['AT', 'WITHIN', 'EVENTUALLY', 'ALWAYS', 'NEVER', 'UNTIL', 'FOR', 'RISING', 'FALLING']),
     passed: z.boolean(),
     atMs: z.number().int().min(0).max(3_600_000).optional(),
   })
