@@ -950,6 +950,7 @@ IDE/src/commands/bind/preferences.ts
 IDE/src/commands/bind/assistant.ts
 IDE/src/i18n/catalog/u2Preferences.ts
 IDE/scripts/journeys013/u2-h2.ts
+IDE/scripts/journeys013/u2-p2.ts
 IDE/scripts/screen-reader-capture.ts
 IDE/scripts/run-desktop-smoke.ts
 ```
@@ -959,7 +960,7 @@ IDE/scripts/run-desktop-smoke.ts
 - [ ] **Step 1: Baseline.** `bun test src/components src/shell src/store`; `bun scripts/interfaceBudget.ts --check` if a display is available.
 - [ ] **Step 2: Failing tests.** `PreferencesDocument.dom.test.tsx`: `'SHL-011 Preferences opens with no project open'`; `'SHL-011 Preferences holds none of the project fields and Project settings none of the preferences'`; `'SHL-012 the theme has one control in the whole application'` (render the Welcome screen, Preferences and the command bar; count `ThemeControl` instances, expect 1 across the surfaces that show together and 0 on the Welcome header); `'SHL-012 theme, density and language commands change the same state as the control'`; `'FND-001 Preferences scrolls to the anchor a palette entry sets'`; `'SHL-011 the assistant provider form is a section of Preferences'`. `ProjectSettings.dom.test.tsx`: `'SHL-011 Project settings keeps the metadata and the editor entries'`. Journey `u2-h2.ts`: `'SHL-011 open Preferences from the Welcome screen with no project, change the theme, open a project, open Project settings'`.
 - [ ] **Step 3: Run** `bun test src/components/settings`. Expected: FAIL.
-- [ ] **Step 4: Implement.** Migrate the smoke and the capture where they open settings or change the theme (Global Constraints).
+- [ ] **Step 4: Implement.** Migrate the smoke and the capture where they open settings or change the theme (Global Constraints). Restore the leg of the U2-P2 journey (`IDE/scripts/journeys013/u2-p2.ts`) that chooses a preference in the palette and waits for Preferences open at that setting, and move FND-001 in that file from `partly` back to `proves` (owner, 2026-11-20; the leg was cut at the wave 2 seam because Preferences was not yet a document).
 - [ ] **Step 5: Verify.** `bun test src/components src/shell src/store`, `bunx tsc -b`, `bun run lint`; journeys; the capture in both languages.
 - [ ] **Step 6: Commit.**
 ```bash
