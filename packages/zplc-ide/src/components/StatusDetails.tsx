@@ -24,7 +24,7 @@ export function StatusDetails({ rows }: { rows: StatusDetailRow[] }) {
       label={t('studio.status.detailsLabel')}
       placement="bottom-end"
       trigger={
-        <Button ref={trigger} variant="ghost" size="sm" icon={<Info size={14} aria-hidden="true" />}>
+        <Button ref={trigger} data-command="view.statusDetails" variant="ghost" size="sm" icon={<Info size={14} aria-hidden="true" />}>
           {t('studio.status.details')}
         </Button>
       }

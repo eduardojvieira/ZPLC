@@ -4,7 +4,10 @@
  */
 import { exportArchive } from '../ipc/projectArchiveBridge';
 import { projectRootId } from '../ipc/projectFilesHandles';
+import { t } from '../i18n';
 import { useIDEStore } from '../store/useIDEStore';
+import { redactProjectConfigForExport } from '../project/sensitiveConfig';
+import { collectProjectFilesForExport } from './projectExport';
 
 const KIB = 1024;
 const sizeOf = (bytes: number) =>
@@ -36,4 +39,55 @@ export async function exportOpenProjectArchive(): Promise<void> {
     );
   } else if (outcome.status === 'failed') report('error', `Export failed: ${outcome.message}`);
   else if (outcome.status === 'unavailable') report('error', 'Exporting a project archive needs the desktop app.');
+}
+
+/** Downloads the open project as one JSON document, with the sensitive fields of its configuration omitted (`file.exportProjectJson`). */
+export async function exportProjectAsJson(): Promise<void> {
+  const snapshot = useIDEStore.getState();
+  const { projectSession, fileTree: tree, projectConfig: config, addConsoleEntry } = snapshot;
+  const files = new Map(snapshot.loadedFiles);
+
+  if (!config || !tree) {
+    addConsoleEntry({ type: 'error', message: t('workbench.export.noProject'), source: 'system' });
+    return;
+  }
+
+  try {
+    const fileList = await collectProjectFilesForExport(tree, files);
+    const current = useIDEStore.getState();
+    if (current.projectSession !== projectSession || current.fileTree !== tree || current.projectConfig !== config) {
+      throw new Error(t('workbench.export.projectChanged'));
+    }
+
+    const { config: redactedConfig, redactedPaths } = redactProjectConfigForExport(config);
+    const exportData = {
+      version: '1.0.0',
+      config: redactedConfig,
+      files: fileList,
+      redactedPaths,
+      exportedAt: new Date().toISOString(),
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${config.name || 'zplc-project'}.zplc.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    addConsoleEntry({
+      type: 'success',
+      message: t('workbench.export.jsonStarted', { name: config.name, count: redactedPaths.length }),
+      source: 'system',
+    });
+  } catch (e) {
+    addConsoleEntry({
+      type: 'error',
+      message: t('workbench.export.jsonFailed', { message: e instanceof Error ? e.message : String(e) }),
+      source: 'system',
+    });
+  }
 }

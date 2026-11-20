@@ -405,6 +405,7 @@ const U2_COMMANDS = {
   'view.showInspector': ['view'],
   'file.closeProject': ['file'],
   'file.preferences': ['file', 'Mod+Comma'],
+  'file.exportProjectJson': ['file'],
   'build.runAllTests': ['build', 'Mod+Alt+T'],
   'build.runFailedTests': ['build'],
   'build.runTestAtCursor': ['build'],
@@ -428,7 +429,7 @@ const U2_COMMANDS = {
 
 describe('milestone U2 command contract (FND-002)', () => {
   it('FND-002 every id of the U2 contract is registered with a title in English and Spanish', () => {
-    expect(Object.keys(U2_COMMANDS).length).toBe(24);
+    expect(Object.keys(U2_COMMANDS).length).toBe(25);
     for (const [id, [category, shortcut]] of Object.entries(U2_COMMANDS) as Array<[string, readonly [string, string?]]>) {
       expect([id, isCommandId(id)]).toEqual([id, true]);
       const command = commandById(id as never);
@@ -438,7 +439,7 @@ describe('milestone U2 command contract (FND-002)', () => {
       expect((en as Record<string, string>)[command.titleKey]).not.toBe((es as Record<string, string>)[command.titleKey]);
     }
     expect(Object.keys(u2CommandsEs).sort()).toEqual(Object.keys(u2CommandsEn).sort());
-    expect(Object.keys(u2CommandsEn).length).toBe(24);
+    expect(Object.keys(u2CommandsEn).length).toBe(25);
   });
 
   it('UX-015 keeps the commands of 2.0 and of lane W, in their order, ahead of the U2 ones', () => {

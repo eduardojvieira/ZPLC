@@ -146,9 +146,7 @@ export function BuildMenu({
             <span>{t('toolbar.assembly.text')}</span>
           </Button>
           <div className="h-px bg-[var(--color-surface-600)] my-1" />
-          <div role="none" data-command-group="file.export">
-            <ProjectExportItems />
-          </div>
+          <ProjectExportItems />
         </div>
       )}
     </div>

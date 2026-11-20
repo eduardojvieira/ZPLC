@@ -197,6 +197,7 @@ export const COMMANDS = [
   { id: 'view.showInspector', titleKey: 'command.view.showInspector', category: 'view', enabled: open },
   { id: 'file.closeProject', titleKey: 'command.file.closeProject', category: 'file', enabled: open },
   { id: 'file.preferences', titleKey: 'command.file.preferences', category: 'file', shortcut: 'Mod+Comma' },
+  { id: 'file.exportProjectJson', titleKey: 'command.file.exportProjectJson', category: 'file', enabled: open },
   { id: 'build.runAllTests', titleKey: 'command.build.runAllTests', category: 'build', shortcut: 'Mod+Alt+T', enabled: open },
   { id: 'build.runFailedTests', titleKey: 'command.build.runFailedTests', category: 'build', enabled: open },
   { id: 'build.runTestAtCursor', titleKey: 'command.build.runTestAtCursor', category: 'build', enabled: open },

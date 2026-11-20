@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 import { currentLocale, t } from '../i18n';
 import { useIDEStore } from '../store/useIDEStore';
 import { useAppSettings } from '../store/useAppSettings';
-import { exportOpenProjectArchive } from '../utils/projectArchiveActions';
+import { exportOpenProjectArchive, exportProjectAsJson } from '../utils/projectArchiveActions';
 import { openLearnHome } from '../learn/learnUi';
 import { openConfigEditorFromNavigator } from '../navigator/openConfigEditor';
 import { useNewProjectDialog } from '../store/newProjectDialog';
@@ -72,6 +72,7 @@ export function useShellCommands(): void {
           useNewProjectDialog.getState().show();
         },
         'file.export': () => exportOpenProjectArchive(),
+        'file.exportProjectJson': () => exportProjectAsJson(),
         'view.commandPalette': openPalette,
         'help.shortcuts': openShortcuts,
         'help.learn': openLearnHome,

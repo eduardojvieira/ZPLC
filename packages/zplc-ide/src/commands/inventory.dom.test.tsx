@@ -12,6 +12,7 @@ const { AI_COMMAND_PROPOSALS } = await import('../ai/proposals');
 const { createRef } = await import('react');
 const { ConsoleTabStrip } = await import('../components/ConsoleTabStrip');
 const { OperationalStatusView } = await import('../components/OperationalStatusBar');
+const { StatusDetails } = await import('../components/StatusDetails');
 const { SURFACES } = await import('../shell/surfaces');
 const { useIDEStore } = await import('../store/useIDEStore');
 const { canvasMenuItems } = await import('../editors/contextMenus');
@@ -141,7 +142,11 @@ describe('FND-002 the command inventory in a DOM', () => {
     const { container } = dom.render(view('build.compile'));
     const action = [...container.querySelectorAll('button')].find((button) => button.textContent === 'Do it');
     expect(action?.getAttribute('data-command')).toBe('build.compile');
-    // The Details button of the line is StatusDetails.tsx's (view.statusDetails): not checked here until that file carries it.
+  });
+
+  it('FND-002 the Details button of the status line names view.statusDetails', () => {
+    const { container } = dom.render(<StatusDetails rows={[{ label: 'Runtime', value: 'Simulation' }]} />);
+    expect([...container.querySelectorAll('button')].map((button) => button.getAttribute('data-command'))).toEqual(['view.statusDetails']);
   });
 
   it('FND-002 every activity of the rail names its command', () => {
@@ -184,8 +189,15 @@ describe('FND-002 the command inventory in a DOM', () => {
       />,
     );
     const ids = [...container.querySelectorAll('[role="menuitem"][data-command]')].map((item) => item.getAttribute('data-command'));
-    expect(ids).toEqual(['build.compile', 'build.generateSt', 'build.downloadProgram', 'build.viewAssembly']);
-    expect(container.querySelector('[data-command-group="file.export"]')).not.toBeNull();
+    expect(ids).toEqual([
+      'build.compile',
+      'build.generateSt',
+      'build.downloadProgram',
+      'build.viewAssembly',
+      'file.export',
+      'file.exportProjectJson',
+    ]);
+    expect(container.querySelector('[data-command-group]')).toBeNull();
     expect(uncommanded(container)).toEqual([]);
   });
 
