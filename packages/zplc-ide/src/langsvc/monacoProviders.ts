@@ -6,6 +6,8 @@
  */
 
 import type * as MonacoEditor from 'monaco-editor';
+import { runCommand } from '../commands/bus';
+import { t } from '../i18n';
 import { ST_LANGUAGE_ID } from '../utils/monaco-languages';
 import { projectPathFromModelPath } from '../utils/sessionState';
 import { editorModelPath } from '../components/editorModels';
@@ -32,6 +34,18 @@ type Monaco = typeof MonacoEditor;
 type Model = MonacoEditor.editor.ITextModel;
 
 const registered = new WeakSet<object>();
+let monacoInUse: Monaco | undefined;
+
+/** The cursor of the open editor that shows `path` (the focused one first), for the commands that look a name up. */
+export function cursorOfFile(path: string): { line: number; column: number } | undefined {
+  const editors = monacoInUse?.editor.getEditors() ?? [];
+  const shown = editors.filter((editor) => {
+    const model = editor.getModel();
+    return model !== null && pathOf(model) === path;
+  });
+  const position = (shown.find((editor) => editor.hasTextFocus()) ?? shown[0])?.getPosition();
+  return position ? { line: position.lineNumber, column: position.column } : undefined;
+}
 
 const pathOf = (model: Model): string => {
   const uri = model.uri as { path?: string } | string | undefined;
@@ -113,7 +127,31 @@ function ensureModel(monaco: Monaco, path: string, content: string, current: Mod
 export function registerSTProviders(monaco: Monaco, bridge: ProjectBridge): void {
   if (registered.has(monaco)) return;
   registered.add(monaco);
+  monacoInUse = monaco;
   const language = ST_LANGUAGE_ID;
+
+  // F12 and Shift+F12 reach Monaco first in a text editor (the registry's keys do not run in a text field): the same keys run the
+  // project-wide commands, so the key lists the five languages and not only the peek of Structured Text.
+  if (monaco.KeyCode) {
+    const keys = { definition: monaco.KeyCode.F12, references: monaco.KeyMod.Shift | monaco.KeyCode.F12 };
+    const attach = (shown: MonacoEditor.editor.ICodeEditor): void => {
+      const editor = shown as MonacoEditor.editor.IStandaloneCodeEditor;
+      editor.addAction({
+        id: 'zplc.goToDefinition',
+        label: t('refs.action.definition'),
+        keybindings: [keys.definition],
+        run: () => void runCommand('edit.goToDefinition'),
+      });
+      editor.addAction({
+        id: 'zplc.findAllReferences',
+        label: t('refs.action.references'),
+        keybindings: [keys.references],
+        run: () => void runCommand('edit.findAllReferences'),
+      });
+    };
+    monaco.editor.getEditors().forEach(attach);
+    monaco.editor.onDidCreateEditor(attach);
+  }
 
   monaco.languages.registerCompletionItemProvider(language, {
     triggerCharacters: ['.'],
