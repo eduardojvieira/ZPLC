@@ -73,6 +73,7 @@ export function RunControls({
                 : 'bg-[var(--button-primary-bg)] hover:bg-[var(--button-primary-bg-hover)] text-[var(--button-primary-fg)]'
             } disabled:opacity-50`}
             aria-label={isConnected ? t('toolbar.disconnect') : t('toolbar.connect')}
+            data-command={isConnected ? 'online.disconnect' : 'online.connect'}
             tooltip={isConnected ? t('toolbar.disconnect') : t('toolbar.connect')}
           >
             {isConnecting ? <Loader2 size={14} className="animate-spin" /> : isConnected ? <Unplug size={14} /> : <Usb size={14} />}
@@ -95,6 +96,7 @@ export function RunControls({
               'disabled:opacity-40'
             }
             aria-label={t('toolbar.deploy.label')}
+            data-command="online.deploy"
             tooltip={t('toolbar.deploy.title')}
           >
             {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
@@ -119,6 +121,7 @@ export function RunControls({
                 'hover:brightness-110 text-[var(--color-on-accent)] text-xs font-medium transition-colors'
               }
               aria-label={withShortcut(t('toolbar.pause.label'), 'debug.pause')}
+              data-command="debug.pause"
               tooltip={withShortcut(t('toolbar.pause.label'), 'debug.pause')}
             >
               <Pause size={14} />
@@ -138,6 +141,7 @@ export function RunControls({
                 'hover:brightness-110 text-[var(--color-on-accent)] text-xs font-medium transition-colors'
               }
               aria-label={withShortcut(t('toolbar.resume.label'), 'debug.run')}
+              data-command="debug.run"
               tooltip={withShortcut(t('toolbar.resume.label'), 'debug.run')}
             >
               <Play size={14} />
@@ -157,6 +161,7 @@ export function RunControls({
                 'hover:brightness-110 text-[var(--color-on-accent)] text-xs font-medium transition-colors disabled:opacity-40'
               }
               aria-label={withShortcut(t('toolbar.run.label'), 'debug.run')}
+              data-command="debug.run"
               tooltip={withShortcut(t('toolbar.run.label'), 'debug.run')}
             >
               <Play size={14} />
@@ -178,6 +183,7 @@ export function RunControls({
                 'hover:bg-[var(--menu-item-bg-active)] text-[var(--color-surface-200)] text-xs font-medium transition-colors'
               }
               aria-label={withShortcut(t('toolbar.step.label'), 'debug.step')}
+              data-command="debug.step"
               tooltip={withShortcut(t('toolbar.step.label'), 'debug.step')}
             >
               <SkipForward size={14} />
@@ -198,6 +204,7 @@ export function RunControls({
                 'text-[var(--color-on-accent)] text-xs font-medium transition-colors'
               }
               aria-label={withShortcut(t('toolbar.stop.label'), 'debug.stop')}
+              data-command="debug.stop"
               tooltip={withShortcut(t('toolbar.stop.label'), 'debug.stop')}
             >
               <Square size={14} />
@@ -218,6 +225,7 @@ export function RunControls({
                 'hover:bg-[var(--menu-item-bg-active)] text-[var(--color-surface-200)] text-xs font-medium transition-colors'
               }
               aria-label={withShortcut(t('toolbar.reset.label'), 'debug.reset')}
+              data-command="debug.reset"
               tooltip={withShortcut(t('toolbar.reset.title'), 'debug.reset')}
             >
               <RotateCcw size={14} />

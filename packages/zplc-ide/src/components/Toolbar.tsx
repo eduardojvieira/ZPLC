@@ -1196,18 +1196,20 @@ export function Toolbar({ debugController }: ToolbarProps) {
 
         {/* Save: one control; Save all joins it when it would save more than the active file (FLW-005) */}
         {othersModified ? (
-          <MenuButton
-            label={withShortcut(t('toolbar.save.label'), 'file.save')}
-            variant="bare"
-            size="sm"
-            className="focus-ring p-2 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)]"
-            items={[
-              { id: 'save', label: t('toolbar.save.label'), disabled: !activeFile, onSelect: () => void handleSaveFile() },
-              { id: 'saveAll', label: t('studio.flow.saveAll.label'), onSelect: () => void handleSaveAll() },
-            ]}
-          >
-            <Save size={18} aria-hidden="true" />
-          </MenuButton>
+          <span className="contents" data-command="file.save">
+            <MenuButton
+              label={withShortcut(t('toolbar.save.label'), 'file.save')}
+              variant="bare"
+              size="sm"
+              className="focus-ring p-2 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)]"
+              items={[
+                { id: 'save', label: t('toolbar.save.label'), disabled: !activeFile, onSelect: () => void handleSaveFile() },
+                { id: 'saveAll', label: t('studio.flow.saveAll.label'), onSelect: () => void handleSaveAll() },
+              ]}
+            >
+              <Save size={18} aria-hidden="true" />
+            </MenuButton>
+          </span>
         ) : (
           <Button
             variant="bare"
@@ -1222,6 +1224,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
             }
             aria-label={withShortcut(t('toolbar.save.label'), 'file.save')}
             tooltip={withShortcut(t('toolbar.save.title'), 'file.save')}
+            data-command="file.save"
           >
             <Save size={18} />
           </Button>
@@ -1241,17 +1244,19 @@ export function Toolbar({ debugController }: ToolbarProps) {
           hasCurrentCompileResult={hasCurrentCompileResult}
         />
 
-        <TargetSelector
-          mode={executionMode}
-          boardName={boardName}
-          degraded={adapter?.type === 'wasm'}
-          onChange={(mode) => {
-            void handleExecutionModeChange(mode);
-          }}
-          onChangeBoard={() => {
-            runCommand('project.target');
-          }}
-        />
+        <span className="contents" data-command-exempt="opens the target menu: online.simulation, online.hardware, project.target">
+          <TargetSelector
+            mode={executionMode}
+            boardName={boardName}
+            degraded={adapter?.type === 'wasm'}
+            onChange={(mode) => {
+              void handleExecutionModeChange(mode);
+            }}
+            onChangeBoard={() => {
+              runCommand('project.target');
+            }}
+          />
+        </span>
 
         {/* Separator */}
         <div className="w-px h-6 bg-[var(--color-surface-600)]" />
@@ -1292,6 +1297,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
           aria-label={t('toolbar.settings')}
           tooltip={t('toolbar.settings')}
           data-project-settings
+          data-command="project.settings"
         >
           <Settings size={16} />
         </Button>
