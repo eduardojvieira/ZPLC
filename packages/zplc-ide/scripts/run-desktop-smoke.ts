@@ -852,7 +852,7 @@ async function main(): Promise<void> {
     assert(
       learnSelection.grade === 'not-run' &&
         learnSelection.text.includes('Open the workspace of this lesson.') &&
-        !learnSelection.text.includes('Host POSIX scenarios passed.') &&
+        !/\b(\d+) of \1 tests passed/.test(learnSelection.text) &&
         learnSelection.selected.includes('English'),
       `Learn keyboard selection did not remain read-only: ${JSON.stringify(learnSelection)}`,
     );
@@ -985,7 +985,7 @@ async function main(): Promise<void> {
           `node.getAttribute('aria-label')), buildLink: document.querySelector('[aria-label="Canonical build test link"]')?.textContent ` +
           `}))()`,
       )) as { text: string; hashes: string[]; buildLink?: string };
-      return value.text.includes('Host POSIX scenarios passed.') &&
+      return /\b(\d+) of \1 tests passed/.test(value.text) &&
         value.buildLink?.includes('Canonical saved build linked') &&
         value.hashes.length >= 2
         ? value

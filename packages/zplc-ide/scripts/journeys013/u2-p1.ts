@@ -10,7 +10,7 @@ const isOpen = (app: App) => app.eval<boolean>(`Boolean(document.querySelector('
  * The palette lists only a command that a task has bound. `view.testResults` is bound by task T3 (wave 3, merged after this
  * one); the parent removes it from this list at the seam, and the journey then covers it.
  */
-const NOT_BOUND_YET: readonly string[] = ['view.testResults'];
+const NOT_BOUND_YET: readonly string[] = [];
 
 /** Runs a command the way a keyboard user does: the palette, its title, the arrow keys to its row, Enter. */
 async function runFromPalette(app: App, command: string, title: string): Promise<void> {
@@ -38,7 +38,8 @@ async function runFromPalette(app: App, command: string, title: string): Promise
   await app.press('Enter');
   await app.until(`the palette to close after ${command}`, async () => !(await isOpen(app)) || undefined);
   // A command moves the focus after the palette has closed; the next palette must open after that, not before.
-  await Bun.sleep(300);
+  // Preferences (view.agent without a provider) is a lazily loaded document that takes the focus when it is ready.
+  await Bun.sleep(command === 'view.agent' ? 2000 : 300);
 }
 
 /** Journeys of task U2-P1 (plan-u2.md): every command of the View menu is reachable from the palette (FND-002). */
