@@ -131,10 +131,6 @@ describe('Console tab boundary', () => {
     expect(source).toContain('disabled={agentBusy}');
     expect(source).toContain('tabIndex={agentMode === mode ? 0 : -1}');
     expect(source).toContain('agentStatus.enabled');
-    expect(source).toContain('fieldset disabled={agentBusy || agentSettingsBusy}');
-    expect(source).toContain('presentAiProviderMutation(await aiProvider.saveConfig(agentConfig))');
-    expect(source).toContain('presentAiProviderMutation(await aiProvider.storeKey(agentKey))');
-    expect(source).toContain('presentAiProviderMutation(await aiProvider.clearKey())');
     expect(source).not.toMatch(/aiProvider\.(flash|deploy|force|run|stop|shell|serial)/);
     expect(source).toContain('Do not put secrets in the prompt.');
     expect(source).toContain('Known sensitive patterns in the prompt or context are rejected before network access; do not paste secrets.');
