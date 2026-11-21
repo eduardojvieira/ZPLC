@@ -8,6 +8,14 @@ import { join } from 'node:path';
 import { createServer } from 'node:net';
 import { compilerCompile, testsRun, type CompilerCompileResult, type TestRunResult } from '../src/cli/toolApi';
 
+/** The test verdict sentence when every test passed (TST-008): "N of N tests passed". */
+const PASSED_VERDICT = /\b(\d+) of \1 tests passed/;
+/** A passed run whose preview was refused has no counts, so the result keeps its own message (TST-008). */
+const PASSED_NO_COUNTS = /Host POSIX scenarios? passed\./;
+/** The disclosure of the recorded scenario evidence, inside the Details of the result (not the Details itself), as page JS. */
+const INNER_DETAILS = "'details:not([data-test-details])'";
+const PASSED_ANY = (text: string) => PASSED_VERDICT.test(text) || PASSED_NO_COUNTS.test(text);
+
 const HOST = '127.0.0.1';
 // A hang guard for one CDP reply and for one waitFor, not a measurement: a pass returns the moment its condition holds, so a long
 // bound costs nothing there (a loaded machine needs far more than 15 s for one Runtime.evaluate).
@@ -1064,7 +1072,7 @@ function pageSeed(
     `activeConsoleTab: 'problems', isConsoleCollapsed: false, consoleHeight: 320, compilerMessages: [], ` +
     `compilerMessagesChecked: false, compilerRunId: 11, workspaceScenarioLink: null });
       window.__zplcSmoke.getState = () => { const state = useIDEStore.getState(); return { activeFileId: state.activeFileId, openTabs: ` +
-    `state.openTabs }; };
+    `state.openTabs, isProjectOpen: state.isProjectOpen }; };
       window.__zplcSmoke.getBuildState = () => ({ evidence: useIDEStore.getState().canonicalWorkspaceBuildEvidence });
       window.__zplcSmoke.getFileContent = (fileId) => useIDEStore.getState().loadedFiles.get(fileId)?.content;
       window.__zplcSmoke.ready = true;
@@ -1714,6 +1722,12 @@ async function main(): Promise<void> {
       'Editor close button must be separately focusable',
     );
     const text = async () => String(await page().evaluate('document.body.innerText'));
+    /** The evidence of a run sits behind the closed Details of the result (TST-008): open it before reading a field of it. */
+    const openDetails = async () => {
+      await page().evaluate(
+        `(() => { const details = document.querySelector('details[data-test-details]'); if (details) details.open = true; })()`,
+      );
+    };
     const click = async (label: string) => {
       const clicked = await page().evaluate(
         `(() => { const button = [...document.querySelectorAll('button')].find((item) => item.textContent?.trim() ` +
@@ -1947,14 +1961,15 @@ async function main(): Promise<void> {
 
     await click('Tests');
     await click('Run host scenarios');
-    await waitFor('passed host scenarios', async () => ((await text()).includes('Host POSIX scenarios passed.') ? true : undefined));
+    await waitFor('passed host scenarios', async () => (PASSED_VERDICT.test(await text()) ? true : undefined));
+    await openDetails();
     assert(
       (await text()).includes('Canonical saved build linked · native POSIX run · .zplc match · trace recorded.'),
       'Host scenarios must link to the exact canonical saved .zplc artifact',
     );
     assert(
       (await page().evaluate(
-        `(() => { const details = [...document.querySelectorAll('details')].find((item) => item.textContent?.includes('Scenario ` +
+        `(() => { const details = [...document.querySelectorAll(${INNER_DETAILS})].find((item) => item.textContent?.includes('Scenario ` +
           `evidence')); return Boolean(details) && !details.open; })()`,
       )) === true,
       'Passed preview must start collapsed',
@@ -1968,7 +1983,7 @@ async function main(): Promise<void> {
     );
     assert(
       (await page().evaluate(
-        `(() => { const details = [...document.querySelectorAll('details')].find((item) => item.textContent?.includes('Scenario ` +
+        `(() => { const details = [...document.querySelectorAll(${INNER_DETAILS})].find((item) => item.textContent?.includes('Scenario ` +
           `evidence')); details?.querySelector('summary')?.click(); const strip = ` +
           `details?.querySelector('[data-recorded-motor-output]'); const text = strip?.textContent ?? ''; const labels = ` +
           `[...strip?.querySelectorAll('[aria-label]') ?? []].map((item) => item.getAttribute('aria-label')); return ` +
@@ -2010,14 +2025,15 @@ async function main(): Promise<void> {
       (await page().evaluate(`window.__zplcSmoke.registerCalls === 1`)) === true ? true : undefined,
     );
     await click('Run host scenarios');
-    await waitFor('recorded motor plant', async () =>
-      (await page().evaluate(`document.querySelector('[data-recorded-motor-plant]')?.checkVisibility() ? true : undefined`)) === true
-        ? true
-        : undefined,
-    );
+    await waitFor('recorded motor plant', async () => {
+      await openDetails();
+      const visible = `document.querySelector('[data-recorded-motor-plant]')?.checkVisibility() ? true : undefined`;
+      return (await page().evaluate(visible)) === true ? true : undefined;
+    });
     assert(
       (await page().evaluate(`(() => {
-      const details = [...document.querySelectorAll('details')].find((item) => item.textContent?.includes('Scenario evidence'));
+      const details = [...document.querySelectorAll(${INNER_DETAILS})]
+        .find((item) => item.textContent?.includes('Scenario evidence'));
       const plants = [...document.querySelectorAll('[data-recorded-motor-plant]')];
       const region = plants[0]?.querySelector('[aria-label="Recorded motor plant matrix"]');
       const associations = [...region?.querySelectorAll('[aria-label]') ?? []].map((item) => item.getAttribute('aria-label'));
@@ -2035,12 +2051,12 @@ async function main(): Promise<void> {
       'Motor plant result must auto-open one accessible recorded matrix with golden sample associations and honest host-only copy',
     );
     await click('Run this scenario again');
-    await waitFor('single scenario rerun', async () => ((await text()).includes('Host POSIX scenario passed.') ? true : undefined));
+    await waitFor('single scenario rerun', async () => (PASSED_VERDICT.test(await text()) ? true : undefined));
+    await openDetails();
     const rerun = (await page().evaluate(`(() => ({
       requests: window.__zplcSmoke.runRequests,
-      wholeRunShown: document.body.innerText.includes('Host POSIX scenarios passed.'),
       plantShown: Boolean(document.querySelector('[data-recorded-motor-plant]')),
-    }))()`)) as { requests: unknown; wholeRunShown: boolean; plantShown: boolean };
+    }))()`)) as { requests: unknown; plantShown: boolean };
     // Every request carries the id of the folder the window shows (IDE-002, src/ipc/shownProjectBridge.ts); this page has
     // no folder, so the id is the empty string that the main process would refuse.
     assert(
@@ -2048,9 +2064,7 @@ async function main(): Promise<void> {
         JSON.stringify([
           { workspaceId: 'opaque-workspace-capability', rootId: '' },
           { workspaceId: 'opaque-workspace-capability', scenarioId: 'MotorPlant', rootId: '' },
-        ]) &&
-        !rerun.wholeRunShown &&
-        rerun.plantShown,
+        ]) && rerun.plantShown,
       `Scenario rerun must replace Tests evidence through an exact opaque workspace and scenario request: ${JSON.stringify(rerun)}`,
     );
     if (reviewDir) await captureRecordedPlantReviewScreens(page(), reviewDir, 'motor', 'Recorded motor plant matrix');
@@ -2078,15 +2092,16 @@ async function main(): Promise<void> {
       (await page().evaluate(`window.__zplcSmoke.registerCalls === 1`)) === true ? true : undefined,
     );
     await click('Run host scenarios');
-    await waitFor('recorded conveyor plant', async () =>
-      (await page().evaluate(`document.querySelector('[data-recorded-conveyor-plant]')?.checkVisibility() ? true : undefined`)) === true
-        ? true
-        : undefined,
-    );
+    await waitFor('recorded conveyor plant', async () => {
+      await openDetails();
+      const visible = `document.querySelector('[data-recorded-conveyor-plant]')?.checkVisibility() ? true : undefined`;
+      return (await page().evaluate(visible)) === true ? true : undefined;
+    });
     assert(
       (await page().evaluate(
         `(() => {
-      const details = [...document.querySelectorAll('details')].find((item) => item.textContent?.includes('Scenario evidence'));
+      const details = [...document.querySelectorAll(${INNER_DETAILS})]
+        .find((item) => item.textContent?.includes('Scenario evidence'));
       const plants = [...document.querySelectorAll('[data-recorded-conveyor-plant]')];
       const region = plants[0]?.querySelector('[aria-label="Recorded conveyor plant matrix"]');
       const associations = [...region?.querySelectorAll('[aria-label]') ?? []].map((item) => item.getAttribute('aria-label'));
@@ -2105,9 +2120,8 @@ async function main(): Promise<void> {
       'Conveyor result must auto-open one accessible recorded matrix with golden sample associations and honest host-only copy',
     );
     await page().evaluate(`document.querySelector('button[aria-label="Run Conveyor01 again on native POSIX"]')?.click()`);
-    await waitFor('single conveyor scenario rerun', async () =>
-      (await text()).includes('Host POSIX scenario passed.') ? true : undefined,
-    );
+    await waitFor('single conveyor scenario rerun', async () => (PASSED_VERDICT.test(await text()) ? true : undefined));
+    await openDetails();
     await assertRunRequests('Conveyor01', 'Conveyor rerun must use only the exact scenario aria-label and opaque workspace request');
     if (reviewDir) await captureRecordedPlantReviewScreens(page(), reviewDir, 'conveyor', 'Recorded conveyor plant matrix');
     await click('Trace');
@@ -2134,15 +2148,15 @@ async function main(): Promise<void> {
       (await page().evaluate(`window.__zplcSmoke.registerCalls === 1`)) === true ? true : undefined,
     );
     await click('Run host scenarios');
-    await waitFor('recorded pedestrian crossing', async () =>
-      (await page().evaluate(`document.querySelector('[data-recorded-pedestrian-crossing]')?.checkVisibility() ? true : undefined`)) ===
-      true
-        ? true
-        : undefined,
-    );
+    await waitFor('recorded pedestrian crossing', async () => {
+      await openDetails();
+      const visible = `document.querySelector('[data-recorded-pedestrian-crossing]')?.checkVisibility() ? true : undefined`;
+      return (await page().evaluate(visible)) === true ? true : undefined;
+    });
     assert(
       (await page().evaluate(`(() => {
-      const details = [...document.querySelectorAll('details')].find((item) => item.textContent?.includes('Scenario evidence'));
+      const details = [...document.querySelectorAll(${INNER_DETAILS})]
+        .find((item) => item.textContent?.includes('Scenario evidence'));
       const crossings = [...document.querySelectorAll('[data-recorded-pedestrian-crossing]')];
       const region = crossings[0]?.querySelector('[aria-label="Recorded pedestrian crossing matrix"]');
       const associations = [...region?.querySelectorAll('[aria-label]') ?? []].map((item) => item.getAttribute('aria-label'));
@@ -2161,9 +2175,8 @@ async function main(): Promise<void> {
       'Pedestrian crossing result must auto-open one accessible recorded matrix with golden states and honest host-only copy',
     );
     await page().evaluate(`document.querySelector('button[aria-label="Run PedestrianCrossing again on native POSIX"]')?.click()`);
-    await waitFor('single pedestrian crossing scenario rerun', async () =>
-      (await text()).includes('Host POSIX scenario passed.') ? true : undefined,
-    );
+    await waitFor('single pedestrian crossing scenario rerun', async () => (PASSED_VERDICT.test(await text()) ? true : undefined));
+    await openDetails();
     await assertRunRequests(
       'PedestrianCrossing',
       'Pedestrian crossing rerun must use only the exact scenario aria-label and opaque workspace request',
@@ -2200,14 +2213,15 @@ async function main(): Promise<void> {
       (await page().evaluate(`window.__zplcSmoke.registerCalls === 1`)) === true ? true : undefined,
     );
     await click('Run host scenarios');
-    await waitFor('recorded tank level', async () =>
-      (await page().evaluate(`document.querySelector('[data-recorded-tank-level]')?.checkVisibility() ? true : undefined`)) === true
-        ? true
-        : undefined,
-    );
+    await waitFor('recorded tank level', async () => {
+      await openDetails();
+      const visible = `document.querySelector('[data-recorded-tank-level]')?.checkVisibility() ? true : undefined`;
+      return (await page().evaluate(visible)) === true ? true : undefined;
+    });
     assert(
       (await page().evaluate(`(() => {
-      const details = [...document.querySelectorAll('details')].find((item) => item.textContent?.includes('Scenario evidence'));
+      const details = [...document.querySelectorAll(${INNER_DETAILS})]
+        .find((item) => item.textContent?.includes('Scenario evidence'));
       const tanks = [...document.querySelectorAll('[data-recorded-tank-level]')];
       const region = tanks[0]?.querySelector('[aria-label="Recorded tank level matrix"]');
       const associations = [...region?.querySelectorAll('[aria-label]') ?? []].map((item) => item.getAttribute('aria-label'));
@@ -2224,9 +2238,8 @@ async function main(): Promise<void> {
       'Tank level result must auto-open one accessible recorded matrix with golden states and honest host-only copy',
     );
     await page().evaluate(`document.querySelector('button[aria-label="Run TankLevel again on native POSIX"]')?.click()`);
-    await waitFor('single tank level scenario rerun', async () =>
-      (await text()).includes('Host POSIX scenario passed.') ? true : undefined,
-    );
+    await waitFor('single tank level scenario rerun', async () => (PASSED_VERDICT.test(await text()) ? true : undefined));
+    await openDetails();
     await assertRunRequests('TankLevel', 'Tank level rerun must use only the exact scenario aria-label and opaque workspace request');
     if (reviewDir)
       await captureRecordedPlantReviewScreens(page(), reviewDir, 'tank', 'Recorded tank level matrix', '[data-recorded-tank-level]');
@@ -2249,18 +2262,18 @@ async function main(): Promise<void> {
     assert(
       (await page().evaluate(
         `(() => { const run = [...document.querySelectorAll('button')].find((item) => item.textContent?.includes('Run host scenarios')); ` +
-          `return Boolean(run) && !run.disabled && !document.body.innerText.includes('Host POSIX scenarios passed.'); })()`,
+          `return Boolean(run) && !run.disabled && ` +
+          `!/\\b(\\d+) of \\1 tests passed|Host POSIX scenarios? passed\\./.test(document.body.innerText); })()`,
       )) === true,
       'Edit must hide evidence and leave the run available',
     );
     await setFile(validProgram, true);
-    assert(!(await text()).includes('Host POSIX scenarios passed.'), 'Saving must not revive stale evidence');
+    assert(!PASSED_ANY(await text()), 'Saving must not revive stale evidence');
 
     await page().evaluate(`window.__zplcSmoke.mode = 'malformed'`);
     await click('Run host scenarios');
-    await waitFor('base pass with redacted preview', async () =>
-      (await text()).includes('Host POSIX scenarios passed.') ? true : undefined,
-    );
+    await waitFor('base pass with redacted preview', async () => (PASSED_NO_COUNTS.test(await text()) ? true : undefined));
+    await openDetails();
     const malformedText = await text();
     assert(
       !malformedText.includes('Scenario evidence') &&
@@ -2276,7 +2289,7 @@ async function main(): Promise<void> {
     );
     assert(
       (await page().evaluate(
-        `(() => { const details = [...document.querySelectorAll('details')].find((item) => item.textContent?.includes('Scenario ` +
+        `(() => { const details = [...document.querySelectorAll(${INNER_DETAILS})].find((item) => item.textContent?.includes('Scenario ` +
           `evidence')); return Boolean(details?.open) && document.body.innerText.includes('Failed') && ` +
           `document.body.innerText.includes('10 ms'); })()`,
       )) === true,
@@ -2290,7 +2303,12 @@ async function main(): Promise<void> {
         `return true; })()`,
     );
     assert(settingsOpened === true, 'Could not open Project settings');
-    await waitFor('Project Settings', async () => ((await text()).includes('Project settings') ? true : undefined));
+    // the Project settings document holds the buttons of the configuration editors (the navigator also says "Project settings")
+    await waitFor('Project Settings', async () =>
+      (await page().evaluate(`Boolean(document.querySelector('[data-open-config-editor="tasks"]')) ? true : undefined`)) === true
+        ? true
+        : undefined,
+    );
     // the task form is the Tasks editor, a tab of its own (UX-013)
     await page().evaluate(`document.querySelector('[data-open-config-editor="tasks"]')?.click()`);
     await waitFor('the Tasks editor', async () =>
