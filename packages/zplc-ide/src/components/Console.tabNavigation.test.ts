@@ -77,7 +77,7 @@ describe('Console tab boundary', () => {
     expect(source).toContain('<DiffEditor');
     expect(source).toContain('Native POSIX host evidence — not hardware or HIL evidence.');
     expect(source).toContain('Host evidence only');
-    expect(source.match(/Native POSIX host evidence — not hardware or HIL evidence\./g)).toHaveLength(3);
+    expect(source.match(/Native POSIX host evidence — not hardware or HIL evidence\./g)).toHaveLength(2);
     expect(source).toContain('No file has been written.');
     expect(source).toContain('workspaceManifestInputRef.current?.click()');
     expect(source.match(/data-workspace-manifest-input/g)).toHaveLength(1);
@@ -211,7 +211,6 @@ describe('Console tab boundary', () => {
     const source = withEnglishMessages(consoleSources());
 
     expect(source).toContain('Scenario evidence (recorded test result)');
-    expect(source).toContain('Recorded during this host test run. It does not update with the live trace panel.');
     expect(source).toContain('Recorded assertions for');
     expect(source).toContain('Recorded sampled timeline for');
     expect(source).toContain('useWorkspaceTestResult((state) => state.presentation)');
@@ -260,11 +259,6 @@ describe('Console tab boundary', () => {
     expect(source).toContain('Pump');
     expect(source).toContain('Alarm');
     expect(source).toContain('Recorded native POSIX scenario result — not live runtime, hardware, or HIL evidence.');
-    expect(source).toContain(
-      "open={presentation.kind === 'assertion-failed' || presentation.preview.scenarios.some((scenario) => " +
-        'presentRecordedMotorPlant(scenario) || presentRecordedConveyorPlant(scenario) || presentRecordedPedestrianCrossing(scenario) || ' +
-        'presentRecordedTankLevel(scenario))}',
-    );
     expect(source).not.toContain('Reset plant');
     expect(source).not.toContain('resetPlant');
   });

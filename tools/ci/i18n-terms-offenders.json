@@ -35,13 +35,6 @@
     "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
   },
   {
-    "key": "console.recordedDuringThisHost",
-    "language": "source",
-    "requirement": "MSG-003",
-    "added": "2026-11-13",
-    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
-  },
-  {
     "key": "console.nativePosixHostEvidence",
     "language": "source",
     "requirement": "MSG-003",
