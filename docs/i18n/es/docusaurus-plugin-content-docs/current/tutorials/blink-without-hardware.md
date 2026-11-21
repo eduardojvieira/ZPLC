@@ -125,10 +125,13 @@ enumera cada campo.
 1. Abra la pestaña **Pruebas**. ZPLC vincula por sí mismo el `zplc.json` del proyecto abierto.
 2. Pulse **Ejecutar escenarios en el host**.
 
-La pestaña dice **Los escenarios POSIX de la computadora pasaron.** y `1 escenario superado.` La prueba ejecutó su programa guardado
-en el simulador, sin interfaz y con un reloj virtual, así que tarda un momento y no espera 2,1 segundos.
+La pestaña dice **1 de 1 pruebas pasaron**, con la insignia **Resultado en simulación** al lado. Si una prueba falla, la
+pestaña la lista en **Pruebas que fallaron** con lo que esperaba y lo que observó cada comprobación. El desplegable **Detalles**,
+cerrado de forma predeterminada, conserva el registro completo de la ejecución. La prueba ejecutó su programa guardado en el
+simulador, sin interfaz y con un reloj virtual, así que tarda un momento y no espera 2,1 segundos. Un resultado en
+simulación no es evidencia de hardware, de tiempos, de HIL ni de certificación.
 
-![La pestaña Pruebas informando que los escenarios POSIX de la computadora pasaron](/img/tutorials/blink-6-scenario-es.png)
+![La pestaña Pruebas informando que 1 de 1 pruebas pasaron como resultado en simulación](/img/tutorials/blink-6-scenario-es.png)
 
 Puede ejecutar la misma prueba sin la aplicación, desde una terminal en la raíz de una copia del repositorio, una vez que
 `bun run setup` haya construido el runtime:

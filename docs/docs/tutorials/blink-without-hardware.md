@@ -122,10 +122,13 @@ seconds of simulated time. The [scenario file format](../reference/scenario-file
 1. Open the **Tests** tab. ZPLC links the `zplc.json` of the open project by itself.
 2. Press **Run host scenarios**.
 
-The tab says **Host POSIX scenarios passed.** and `1 scenario passed.` The test ran your saved program on the simulator,
-headless and on a virtual clock, so it takes a moment and does not wait 2.1 seconds.
+The tab says **1 of 1 tests passed**, with the **Simulation result** badge beside it. If a test fails, the tab lists it
+under **Failed tests** with what each check expected and what it observed. The **Details** disclosure, closed by default,
+keeps the full record of the run. The test ran your saved program on the simulator, headless and on a virtual clock, so
+it takes a moment and does not wait 2.1 seconds. A simulation result is not evidence of hardware, timing, HIL or
+certification.
 
-![The Tests tab reporting Host POSIX scenarios passed](/img/tutorials/blink-6-scenario.png)
+![The Tests tab reporting 1 of 1 tests passed as a simulation result](/img/tutorials/blink-6-scenario.png)
 
 You can run the same test without the application, from a terminal at the root of a checkout of the repository once
 `bun run setup` has built the runtime:
