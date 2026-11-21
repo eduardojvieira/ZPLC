@@ -1156,7 +1156,7 @@ tools/docs/capture-screenshots.ts
 - [ ] **Step 1: Baseline.** `bun test tools/docs` (needs the runtime built) green.
 - [ ] **Step 2: Failing tests.** The docs suites compare English and Spanish page sets and the Spanish register and terms (`tools/docs`, the tests named in logbook L17 and L19: sidebar and both-languages, register, DOC-008 source references, DOC-009 fragments): write the English pages first, watch the both-languages test fail, then add the Spanish pages. No new test.
 - [ ] **Step 3: Run** `bun test tools/docs`. Expected: FAIL until both languages exist.
-- [ ] **Step 4: Implement.** Spanish: neutral usted, `falla`, `ciclo`, `tarima`, "ZPLC" as the product name.
+- [ ] **Step 4: Implement.** Spanish: neutral usted, `falla`, `ciclo`, `tarima`, "ZPLC" as the product name. Recapture the tutorial screenshots after H6 (`bun tools/docs/capture-screenshots.ts`, whole tutorial set; it has no per-shot option): `docs/static/img/tutorials/blink-6-scenario.png` and `-es` still show the 2.0 headline the T3 prose no longer describes, and `guide-scenario-tests.png` (journey 68) is likely stale; then `--check` (logbook L254).
 - [ ] **Step 5: Verify.** `bun test tools/docs`, root `bun test ./tools/ci`, the pinned formatter `--check` (Markdown is checked by Prettier in the docs lint, **Unconfirmed**: run the docs lint named in `docs/package.json`).
 - [ ] **Step 6: Commit.**
 ```bash
