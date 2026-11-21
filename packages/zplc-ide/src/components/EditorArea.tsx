@@ -40,6 +40,7 @@ import { shownGroups } from '../layout/editorGroups';
 import { PLANT_VIEW_ID, SETTINGS_VIEW_ID, isVisualWorkflow, type ViewId } from '../layout/documentKinds';
 import { usePlantDocument } from '../store/usePlantDocument';
 import { REVIEW_VIEW_ID, useReviewDocument } from '../store/useReviewDocument';
+import { PREFERENCES_VIEW_ID, usePreferencesDocument } from '../store/usePreferencesDocument';
 import type { DebugController } from '../hooks/useDebugController';
 import { useShellLayout } from '../store/useShellLayout';
 import { useShellDensity } from '../shell/shellDensity';
@@ -93,15 +94,19 @@ export function EditorArea({ debugController }: { debugController?: DebugControl
   const plantRequests = usePlantDocument((state) => state.requests);
   const reviewOpen = useReviewDocument((state) => state.open);
   const reviewActive = useReviewDocument((state) => state.active);
+  const preferencesOpen = usePreferencesDocument((state) => state.open);
+  const preferencesActive = usePreferencesDocument((state) => state.active);
   const selectedViewId = showSettings
     ? SETTINGS_VIEW_ID
-    : configActive
-      ? configEditorViewId(configActive)
-      : reviewOpen && reviewActive
-        ? REVIEW_VIEW_ID
-        : plantOpen && plantActive
-          ? PLANT_VIEW_ID
-          : selectedFileId;
+    : preferencesOpen && preferencesActive
+      ? PREFERENCES_VIEW_ID
+      : configActive
+        ? configEditorViewId(configActive)
+        : reviewOpen && reviewActive
+          ? REVIEW_VIEW_ID
+          : plantOpen && plantActive
+            ? PLANT_VIEW_ID
+            : selectedFileId;
   const [closingConfig, setClosingConfig] = useState<ConfigEditorKind | null>(null);
   const [savingConfig, setSavingConfig] = useState(false);
   const initialVisualHistoryState: VisualHistoryState = {
@@ -118,6 +123,7 @@ export function EditorArea({ debugController }: { debugController?: DebugControl
   // Every open view in tab order: the settings, the configuration editors, then the files. The groups split this list.
   const allViews: ViewId[] = [
     ...(showSettings ? [SETTINGS_VIEW_ID] : []),
+    ...(preferencesOpen ? [PREFERENCES_VIEW_ID] : []),
     ...configOpen.map(configEditorViewId),
     ...(plantOpen ? [PLANT_VIEW_ID] : []),
     ...(reviewOpen ? [REVIEW_VIEW_ID] : []),
@@ -165,11 +171,31 @@ export function EditorArea({ debugController }: { debugController?: DebugControl
           useConfigEditors.getState().deselect();
           usePlantDocument.getState().deselect();
           useReviewDocument.getState().deselect();
+          usePreferencesDocument.getState().deselect();
         }
+        if (state.showSettings && !previous.showSettings) usePreferencesDocument.getState().deselect();
         if (state.projectSession !== previous.projectSession) useConfigEditors.getState().reset();
       }),
     [],
   );
+
+  // Preferences is one view among the others: showing it leaves the others, and showing another one leaves it.
+  useEffect(() => {
+    const stopPreferences = usePreferencesDocument.subscribe((state, previous) => {
+      if (state.requests === previous.requests) return;
+      useConfigEditors.getState().deselect();
+      usePlantDocument.getState().deselect();
+      useReviewDocument.getState().deselect();
+      if (useIDEStore.getState().showSettings) useIDEStore.getState().toggleSettings();
+    });
+    const stopConfig = useConfigEditors.subscribe((state, previous) => {
+      if (state.active && state.active !== previous.active) usePreferencesDocument.getState().deselect();
+    });
+    return () => {
+      stopPreferences();
+      stopConfig();
+    };
+  }, []);
 
   // Text files keep their Monaco model while their tab is open; closing the tab or the project drops it.
   useEffect(() => {
@@ -295,6 +321,15 @@ export function EditorArea({ debugController }: { debugController?: DebugControl
   const selectView = useCallback(
     (viewId: ViewId) => {
       const config = configKindOf(viewId);
+      if (viewId === PREFERENCES_VIEW_ID) {
+        if (showSettings) toggleSettings();
+        useConfigEditors.getState().deselect();
+        usePlantDocument.getState().deselect();
+        useReviewDocument.getState().deselect();
+        usePreferencesDocument.getState().select();
+        return;
+      }
+      usePreferencesDocument.getState().deselect();
       if (viewId === PLANT_VIEW_ID || viewId === REVIEW_VIEW_ID) {
         if (showSettings) toggleSettings();
         useConfigEditors.getState().deselect();
@@ -386,7 +421,10 @@ export function EditorArea({ debugController }: { debugController?: DebugControl
 
   const closeView = (viewId: ViewId) => {
     const config = configKindOf(viewId);
-    if (viewId === PLANT_VIEW_ID) {
+    if (viewId === PREFERENCES_VIEW_ID) {
+      usePreferencesDocument.getState().close();
+      focusTab(selectedFileId);
+    } else if (viewId === PLANT_VIEW_ID) {
       usePlantDocument.getState().close();
       focusTab(selectedFileId);
     } else if (viewId === REVIEW_VIEW_ID) {

@@ -1,7 +1,7 @@
 /**
  * The application preferences of the user (IDE-007, IDE-010): theme, editor font size and tab size, density,
- * language, autosave and the update check. They belong to the person, not to a project, so they sit in front of the
- * project settings and on the Welcome screen, and persist per user (`useAppSettings`). Every control is a native one:
+ * language, autosave and the update check. They belong to the person, not to a project, so they are the Preferences document,
+ * open with or without a project, and persist per user (`useAppSettings`). Every control is a native one:
  * keyboard operable, with its label.
  */
 import { useState } from 'react';
@@ -78,8 +78,8 @@ function Choice<K extends keyof AppSettings>({
   );
 }
 
-/** `includeTheme` is off where the page already has the one theme control (the Welcome screen header). */
-export function AppPreferences({ includeTheme = true }: { includeTheme?: boolean }) {
+/** The preferences of the person; the theme control here is the only one of the product (SHL-012). */
+export function AppPreferences() {
   const { t, tn } = useT();
   const checkForUpdates = useAppSettings((state) => state.settings.checkForUpdates);
   const minimap = useEditorView((state) => state.minimap);
@@ -109,7 +109,7 @@ export function AppPreferences({ includeTheme = true }: { includeTheme?: boolean
       </h2>
       <p className="mt-1 text-xs text-[var(--text-tertiary)]">{t('preferences.intro')}</p>
       <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {includeTheme && <ThemeControl />}
+        <ThemeControl />
         <Choice
           label={t('preferences.fontSize')}
           field="editorFontSize"

@@ -2,11 +2,12 @@
  * The project navigator (UX-012): by PLC objects, or by files with the declarations of the project and its library folders
  * under the tree (IDE-023). The mode is a toggle in its header and is remembered.
  */
+import { runCommand } from '../commands/bus';
 import { useT } from '../i18n';
 import { NavigatorDialogs } from '../navigator/NewObjectMenu';
 import { ObjectNavigator } from '../navigator/ObjectNavigator';
 import { useShellLayout, type NavigatorMode } from '../store/useShellLayout';
-import { ToggleGroup } from '../ui';
+import { Button, ToggleGroup } from '../ui';
 import { ProjectDeclarations } from './ProjectDeclarations';
 import { Sidebar } from './Sidebar';
 
@@ -16,7 +17,7 @@ export function ProjectExplorer() {
   const setMode = useShellLayout((state) => state.setNavigatorMode);
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex shrink-0 items-center border-b border-[var(--color-surface-600)] px-2 py-1">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--color-surface-600)] px-2 py-1">
         <ToggleGroup
           label={t('navigator.mode.label')}
           value={mode}
@@ -26,6 +27,10 @@ export function ProjectExplorer() {
             { value: 'files', label: t('navigator.mode.files') },
           ]}
         />
+        {/* the root of the project: Project settings is the project's own document (SHL-011) */}
+        <Button size="sm" variant="ghost" data-command="project.settings" onClick={() => runCommand('project.settings')}>
+          {t('command.project.settings')}
+        </Button>
       </div>
       {mode === 'objects' ? (
         <div className="min-h-0 flex-1">

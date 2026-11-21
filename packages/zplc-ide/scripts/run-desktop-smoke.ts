@@ -458,13 +458,23 @@ async function main(): Promise<void> {
     }).catch((error: unknown) => {
       throw new Error(`${error instanceof Error ? error.message : String(error)} renderer=${rendererText.slice(0, 1_000)}`);
     });
+    // SHL-012: the one theme control is in Preferences, which the Welcome screen opens with no project open.
+    assert(
+      (await cdp.evaluate(
+        `(() => { const entry = document.querySelector('button[data-welcome-preferences]'); entry?.click(); return Boolean(entry); })()`,
+      )) === true,
+      'The Welcome screen has no Preferences entry.',
+    );
+    await waitFor('Preferences', async () =>
+      (await cdp!.evaluate(`document.querySelector('select[data-theme-control]') !== null`)) ? true : undefined,
+    );
     assert(
       await cdp.evaluate(
         `(() => { const control = document.querySelector('select[data-theme-control]'); control?.focus(); const style = control ? ` +
           `getComputedStyle(control) : null; return Boolean(control && document.activeElement === control && ` +
           `control.matches(':focus-visible') && style?.outlineStyle !== 'none'); })()`,
       ),
-      'Welcome theme control does not expose a visible keyboard focus state.',
+      'The theme control in Preferences does not expose a visible keyboard focus state.',
     );
     // UX-005: one global ring, so a control that opts out with focus:outline-none still shows a non-zero outline.
     const optOut = (await cdp.evaluate(
@@ -533,6 +543,7 @@ async function main(): Promise<void> {
       'Forced-colors media did not preserve a visible keyboard focus outline.',
     );
     await cdp.command('Emulation.setEmulatedMedia', { features: [] });
+    await cdp.evaluate(`document.querySelector('button[data-preferences-back]')?.click()`);
     // IDE-001, IDE-003 (T7.5): the folder is chosen by the native dialog of the main process, answered here by the development-only
     // hook. The renderer must never open a browser picker, so the file system permission is never requested (the handlers stay
     // deny-by-default).

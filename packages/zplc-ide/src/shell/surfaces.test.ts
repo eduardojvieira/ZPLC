@@ -16,6 +16,7 @@ const { ACTIVITY_VIEWS } = await import('../store/useShellLayout');
 const { SURFACES, surfacesIn } = await import('./surfaces');
 const { useConfigEditors } = await import('../store/useConfigEditors');
 const { useReviewDocument } = await import('../store/useReviewDocument');
+const { usePreferencesDocument } = await import('../store/usePreferencesDocument');
 const { useShellCommands } = await import('../commands/useCommandHost');
 
 const REGIONS: readonly Region[] = ['commandBar', 'activity', 'editor', 'secondary', 'results', 'status', 'dialog'];
@@ -66,14 +67,22 @@ describe('surface registry (SHL-001, SHL-002, SHL-004)', () => {
     }
   });
 
-  it('SHL-004 the commands of Interlocks, Agent and Terminal show their tab, and open the panel when it is collapsed', () => {
+  it('SHL-004 the commands of Interlocks and Terminal show their tab, and open the panel when it is collapsed', () => {
     dom.render(createElement(Host));
-    for (const tab of ['interlocks', 'agent', 'terminal'] as const) {
+    for (const tab of ['interlocks', 'terminal'] as const) {
       useIDEStore.setState({ isConsoleCollapsed: true, activeConsoleTab: 'output' });
       expect(runCommand(`view.${tab}`)).toBe('ran');
       expect(useIDEStore.getState().activeConsoleTab).toBe(tab);
       expect(useIDEStore.getState().isConsoleCollapsed).toBe(false);
     }
+  });
+
+  it('SHL-011 view.agent with no provider opens Preferences at the Assistant section', () => {
+    dom.render(createElement(Host));
+    usePreferencesDocument.setState({ open: false, active: false, anchor: null });
+    expect(runCommand('view.agent')).toBe('ran');
+    expect(usePreferencesDocument.getState()).toMatchObject({ open: true, active: true, anchor: 'assistant' });
+    usePreferencesDocument.setState({ open: false, active: false, anchor: null });
   });
 
   it('SHL-004 view.changes opens the review document of the editor area and leaves the results panel as it is', () => {

@@ -12,13 +12,7 @@ import { useIDEStore } from '../store/useIDEStore';
 import { useTheme } from '../hooks/useTheme';
 import { presentAgentResponse } from './agent/agentResponse';
 import { reviewChangeSet, saveChangeSet } from './agent/changeSetReview';
-import {
-  presentAiProviderConfig,
-  presentAiProviderStatus,
-  presentAiProviderMutation,
-  type AiProviderMode,
-  type AiProviderStatusPresentation,
-} from './aiProviderPresentation';
+import { presentAiProviderStatus, type AiProviderMode, type AiProviderStatusPresentation } from './aiProviderPresentation';
 import { sha256Text } from './candidateSources';
 import { AgentTab } from './console/AgentTab';
 import { CandidateReviewResult, type AgentState, type CandidateReviewState } from './ConsoleReviewPanels';
@@ -41,11 +35,6 @@ export function AssistantView() {
   const [prompt, setPrompt] = useState('');
   const [agentState, setAgentState] = useState<AgentState>('idle');
   const [status, setStatus] = useState<AiProviderStatusPresentation>({ kind: 'invalid' });
-  const [config, setConfig] = useState({ enabled: false, endpoint: '', model: '' });
-  const [key, setKey] = useState('');
-  const [settingsBusy, setSettingsBusy] = useState(false);
-  const [settingsMessage, setSettingsMessage] = useState<string | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [review, setReview] = useState<CandidateReviewState>({ kind: 'idle' });
   const [reviewBusy, setReviewBusy] = useState(false);
   const reviewGeneration = useRef(0);
@@ -59,11 +48,9 @@ export function AssistantView() {
     }
     setAgentState('loading');
     try {
-      const [statusValue, configValue] = await Promise.all([aiProvider.getStatus(), aiProvider.getConfig()]);
+      const statusValue = await aiProvider.getStatus();
       const next = presentAiProviderStatus(statusValue);
-      const nextConfig = presentAiProviderConfig(configValue);
       setStatus(next);
-      if (nextConfig) setConfig(nextConfig);
       setAgentState(next.kind === 'invalid' ? 'unavailable' : 'idle');
       void refreshAvailability();
     } catch {
@@ -95,7 +82,6 @@ export function AssistantView() {
   const canSend = Boolean(
     aiProvider &&
     !busy &&
-    !settingsBusy &&
     status.kind === 'ready' &&
     status.configured &&
     status.enabled &&
@@ -244,34 +230,9 @@ export function AssistantView() {
     }
   };
 
-  /** One change of the provider's settings: runs it, says what happened, and reads the status again. */
-  const mutate = async (
-    act: () => Promise<unknown>,
-    say: { ok: string; failed: (code: string) => string; untrusted: string; thrown: string },
-    clearKey = false,
-  ) => {
-    setSettingsBusy(true);
-    setSettingsMessage(null);
-    try {
-      const result = presentAiProviderMutation(await act());
-      if (result.kind !== 'ok') {
-        setSettingsMessage(result.kind === 'error' ? say.failed(result.code) : say.untrusted);
-        return;
-      }
-      if (clearKey) setKey('');
-      await refresh();
-      setSettingsMessage(say.ok);
-    } catch {
-      setSettingsMessage(say.thrown);
-    } finally {
-      setSettingsBusy(false);
-    }
-  };
-
   return (
     <div aria-label={t('assistant.region')} role="region">
       <AgentTab
-        aiProviderAvailable={Boolean(aiProvider)}
         agentMode={mode}
         setAgentMode={setMode}
         agentPrompt={prompt}
@@ -279,14 +240,6 @@ export function AssistantView() {
         agentState={agentState}
         setAgentState={setAgentState}
         agentStatus={status}
-        agentConfig={config}
-        setAgentConfig={setConfig}
-        agentKey={key}
-        setAgentKey={setKey}
-        agentSettingsBusy={settingsBusy}
-        agentSettingsMessage={settingsMessage}
-        agentSettingsOpen={settingsOpen}
-        setAgentSettingsOpen={setSettingsOpen}
         agentBusy={busy}
         agentCanSend={canSend}
         agentProposalCurrent={proposalCurrent}
@@ -300,37 +253,6 @@ export function AssistantView() {
         sendAgentRequest={send}
         cancelAgentRequest={cancel}
         reviewAgentProposal={reviewProposal}
-        saveAgentConfig={() => {
-          if (!aiProvider || busy || settingsBusy) return Promise.resolve();
-          return mutate(() => aiProvider.saveConfig(config), {
-            ok: t('assistant.configSaved'),
-            failed: (code) => t('assistant.configNotSaved', { code }),
-            untrusted: t('assistant.configUntrusted'),
-            thrown: t('assistant.configNotSavedThrown'),
-          });
-        }}
-        storeAgentKey={() => {
-          if (!aiProvider || !key || busy || settingsBusy) return Promise.resolve();
-          return mutate(
-            () => aiProvider.storeKey(key),
-            {
-              ok: t('assistant.keyStored'),
-              failed: (code) => t('assistant.keyNotStored', { code }),
-              untrusted: t('assistant.keyStoreUntrusted'),
-              thrown: t('assistant.keyNotStoredThrown'),
-            },
-            true,
-          );
-        }}
-        clearAgentKey={() => {
-          if (!aiProvider || busy || settingsBusy) return Promise.resolve();
-          return mutate(() => aiProvider.clearKey(), {
-            ok: t('assistant.keyCleared'),
-            failed: (code) => t('assistant.keyNotCleared', { code }),
-            untrusted: t('assistant.keyClearUntrusted'),
-            thrown: t('assistant.keyNotClearedThrown'),
-          });
-        }}
       />
       <div role="status" aria-live="polite" className="px-3 text-sm">
         {review.kind === 'running' && <p>{t('console.reviewingTheChangeIn')}</p>}

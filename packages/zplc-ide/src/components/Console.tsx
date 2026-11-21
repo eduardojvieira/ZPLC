@@ -43,13 +43,7 @@ import { resultsTabFor } from '../shell/shellRouting';
 import { elementToSelect } from '../editors/diagnosticElement';
 import { requestElementSelection } from '../editors/elementSelectionRequests';
 import { useProjectBlocks } from '../editors/useProjectBlocks';
-import {
-  presentAiProviderConfig,
-  presentAiProviderMutation,
-  presentAiProviderStatus,
-  type AiProviderMode,
-  type AiProviderStatusPresentation,
-} from './aiProviderPresentation';
+import { presentAiProviderStatus, type AiProviderMode, type AiProviderStatusPresentation } from './aiProviderPresentation';
 import { useTheme } from '../hooks/useTheme';
 import { Badge, Button, FileInput, IconButton } from '../ui';
 import { useT } from '../i18n';
@@ -123,11 +117,6 @@ export function Console({ debugController }: ConsoleProps) {
   const [agentPrompt, setAgentPrompt] = useState('');
   const [agentState, setAgentState] = useState<AgentState>('idle');
   const [agentStatus, setAgentStatus] = useState<AiProviderStatusPresentation>({ kind: 'invalid' });
-  const [agentConfig, setAgentConfig] = useState({ enabled: false, endpoint: '', model: '' });
-  const [agentKey, setAgentKey] = useState('');
-  const [agentSettingsBusy, setAgentSettingsBusy] = useState(false);
-  const [agentSettingsMessage, setAgentSettingsMessage] = useState<string | null>(null);
-  const [agentSettingsOpen, setAgentSettingsOpen] = useState(false);
 
   // Get watch count for badge
   const watchCount = useIDEStore((state) => state.debug.watchVariables.length);
@@ -270,16 +259,14 @@ export function Console({ debugController }: ConsoleProps) {
     }
     setAgentState('loading');
     try {
-      const [statusValue, configValue] = await Promise.all([aiProvider.getStatus(), aiProvider.getConfig()]);
+      const statusValue = await aiProvider.getStatus();
       const status = presentAiProviderStatus(statusValue);
-      const config = presentAiProviderConfig(configValue);
       setAgentStatus(status);
-      if (config) setAgentConfig(config);
       setAgentState(status.kind === 'invalid' ? 'unavailable' : 'idle');
     } catch {
       setAgentState('unavailable');
     }
-  }, [aiProvider, setAgentState, setAgentStatus, setAgentConfig]);
+  }, [aiProvider, setAgentState, setAgentStatus]);
 
   // the open program, in any of the five languages, goes with a request in every mode; an edit also needs it saved and unmodified
   const agentContextFile = activeFile && isCandidateSourcePath(activeFile.path) && activeFile.handle ? activeFile : undefined;
@@ -300,7 +287,6 @@ export function Console({ debugController }: ConsoleProps) {
   const agentCanSend = Boolean(
     aiProvider &&
     !agentBusy &&
-    !agentSettingsBusy &&
     agentStatus.kind === 'ready' &&
     agentStatus.configured &&
     agentStatus.enabled &&
@@ -420,70 +406,6 @@ export function Console({ debugController }: ConsoleProps) {
       await aiProvider.cancel();
     } catch {
       /* the provider request remains authoritative */
-    }
-  };
-
-  const saveAgentConfig = async () => {
-    if (!aiProvider || agentBusy || agentSettingsBusy) return;
-    setAgentSettingsBusy(true);
-    setAgentSettingsMessage(null);
-    try {
-      const result = presentAiProviderMutation(await aiProvider.saveConfig(agentConfig));
-      if (result.kind !== 'ok') {
-        setAgentSettingsMessage(
-          result.kind === 'error' ? `Configuration was not saved: ${result.code}.` : 'Configuration result could not be trusted.',
-        );
-        return;
-      }
-      await refreshAiProvider();
-      setAgentSettingsMessage('Configuration saved.');
-    } catch {
-      setAgentSettingsMessage('Configuration could not be saved.');
-    } finally {
-      setAgentSettingsBusy(false);
-    }
-  };
-
-  const storeAgentKey = async () => {
-    if (!aiProvider || !agentKey || agentBusy || agentSettingsBusy) return;
-    setAgentSettingsBusy(true);
-    setAgentSettingsMessage(null);
-    try {
-      const result = presentAiProviderMutation(await aiProvider.storeKey(agentKey));
-      if (result.kind !== 'ok') {
-        setAgentSettingsMessage(
-          result.kind === 'error' ? `Key was not stored: ${result.code}.` : 'Key storage result could not be trusted.',
-        );
-        return;
-      }
-      setAgentKey('');
-      await refreshAiProvider();
-      setAgentSettingsMessage('Key stored.');
-    } catch {
-      setAgentSettingsMessage('Key could not be stored.');
-    } finally {
-      setAgentSettingsBusy(false);
-    }
-  };
-
-  const clearAgentKey = async () => {
-    if (!aiProvider || agentBusy || agentSettingsBusy) return;
-    setAgentSettingsBusy(true);
-    setAgentSettingsMessage(null);
-    try {
-      const result = presentAiProviderMutation(await aiProvider.clearKey());
-      if (result.kind !== 'ok') {
-        setAgentSettingsMessage(
-          result.kind === 'error' ? `Key was not cleared: ${result.code}.` : 'Key clear result could not be trusted.',
-        );
-        return;
-      }
-      await refreshAiProvider();
-      setAgentSettingsMessage('Stored key cleared.');
-    } catch {
-      setAgentSettingsMessage('Key could not be cleared.');
-    } finally {
-      setAgentSettingsBusy(false);
     }
   };
 
@@ -626,7 +548,6 @@ export function Console({ debugController }: ConsoleProps) {
 
           {activeConsoleTab === 'agent' && (
             <AgentTab
-              aiProviderAvailable={Boolean(aiProvider)}
               agentMode={agentMode}
               setAgentMode={setAgentMode}
               agentPrompt={agentPrompt}
@@ -634,14 +555,6 @@ export function Console({ debugController }: ConsoleProps) {
               agentState={agentState}
               setAgentState={setAgentState}
               agentStatus={agentStatus}
-              agentConfig={agentConfig}
-              setAgentConfig={setAgentConfig}
-              agentKey={agentKey}
-              setAgentKey={setAgentKey}
-              agentSettingsBusy={agentSettingsBusy}
-              agentSettingsMessage={agentSettingsMessage}
-              agentSettingsOpen={agentSettingsOpen}
-              setAgentSettingsOpen={setAgentSettingsOpen}
               agentBusy={agentBusy}
               agentCanSend={agentCanSend}
               agentProposalCurrent={agentProposalCurrent}
@@ -655,9 +568,6 @@ export function Console({ debugController }: ConsoleProps) {
               sendAgentRequest={sendAgentRequest}
               cancelAgentRequest={cancelAgentRequest}
               reviewAgentProposal={reviewAgentProposal}
-              saveAgentConfig={saveAgentConfig}
-              storeAgentKey={storeAgentKey}
-              clearAgentKey={clearAgentKey}
             />
           )}
 

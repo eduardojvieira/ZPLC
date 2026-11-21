@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
+import type { ReactElement } from 'react';
 
 import { SerialPortDialog } from '../components/SerialPortDialog';
 import { UnsavedChangesDialog } from '../components/UnsavedChangesDialog';
@@ -28,6 +29,22 @@ afterEach(() => {
   setLanguage('auto');
   setSystemLanguage('en-US');
 });
+
+/** The theme control reads the system colour scheme while it renders; a server-side render has no window to ask. */
+function renderWithMatchMedia(element: ReactElement): string {
+  const target = globalThis as unknown as { window?: { matchMedia?: unknown } };
+  const had = 'window' in target;
+  const before = target.window?.matchMedia;
+  target.window ??= {};
+  target.window.matchMedia = () => ({ matches: false, addEventListener: () => undefined, removeEventListener: () => undefined });
+  try {
+    return renderToStaticMarkup(element);
+  } finally {
+    if (!had) delete target.window;
+    else if (before === undefined) delete target.window!.matchMedia;
+    else target.window!.matchMedia = before;
+  }
+}
 
 describe('UX-016 the catalogs call the application ZPLC (decision D-03)', () => {
   it('UX-016 names it neither "ZPLC Studio", "ZPLC IDE" nor "Studio", in English or in Spanish', () => {
@@ -162,7 +179,7 @@ describe('UX-029 migrated components render in the language of the setting', () 
     expect(notice).toContain('aria-label="Hay una versión más reciente de ZPLC disponible"');
     expect(notice).toContain('ZPLC 2.1.0 está disponible');
     expect(notice).toContain('Descargue el nuevo archivo');
-    const preferences = renderToStaticMarkup(<AppPreferences includeTheme={false} />);
+    const preferences = renderWithMatchMedia(<AppPreferences />);
     expect(preferences).toContain('>Preferencias<');
     expect(preferences).toContain('Tamaño de tabulación');
     expect(preferences).toContain('>4 espacios<');
@@ -171,7 +188,7 @@ describe('UX-029 migrated components render in the language of the setting', () 
   });
 
   it('UX-029 offers the three language choices, and the English default leaves the preferences in English', () => {
-    const preferences = renderToStaticMarkup(<AppPreferences includeTheme={false} />);
+    const preferences = renderWithMatchMedia(<AppPreferences />);
     expect(preferences).toContain('>Preferences<');
     expect(preferences).toMatch(
       new RegExp(

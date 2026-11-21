@@ -1,19 +1,12 @@
 import { CircleStop, FileDiff, Send } from 'lucide-react';
-import type { Dispatch, SetStateAction } from 'react';
-import { Button, Checkbox, TextField, Textarea } from '../../ui';
+import { Button, Textarea } from '../../ui';
 import { useT } from '../../i18n';
+import { usePreferencesDocument } from '../../store/usePreferencesDocument';
 import { AgentProposals } from '../agent/AgentProposals';
 import { AgentStatus, type AgentState } from '../ConsoleReviewPanels';
 import type { AiProviderMode, AiProviderStatusPresentation } from '../aiProviderPresentation';
 
-export interface AgentConfig {
-  enabled: boolean;
-  endpoint: string;
-  model: string;
-}
-
 export interface AgentTabProps {
-  aiProviderAvailable: boolean;
   agentMode: AiProviderMode;
   setAgentMode: (mode: AiProviderMode) => void;
   agentPrompt: string;
@@ -21,14 +14,6 @@ export interface AgentTabProps {
   agentState: AgentState;
   setAgentState: (state: AgentState) => void;
   agentStatus: AiProviderStatusPresentation;
-  agentConfig: AgentConfig;
-  setAgentConfig: Dispatch<SetStateAction<AgentConfig>>;
-  agentKey: string;
-  setAgentKey: (key: string) => void;
-  agentSettingsBusy: boolean;
-  agentSettingsMessage: string | null;
-  agentSettingsOpen: boolean;
-  setAgentSettingsOpen: (open: boolean) => void;
   agentBusy: boolean;
   agentCanSend: boolean;
   agentProposalCurrent: boolean;
@@ -42,13 +27,9 @@ export interface AgentTabProps {
   sendAgentRequest: () => Promise<void>;
   cancelAgentRequest: () => Promise<void>;
   reviewAgentProposal: () => Promise<void>;
-  saveAgentConfig: () => Promise<void>;
-  storeAgentKey: () => Promise<void>;
-  clearAgentKey: () => Promise<void>;
 }
 
 export function AgentTab({
-  aiProviderAvailable,
   agentMode,
   setAgentMode,
   agentPrompt,
@@ -56,14 +37,6 @@ export function AgentTab({
   agentState,
   setAgentState,
   agentStatus,
-  agentConfig,
-  setAgentConfig,
-  agentKey,
-  setAgentKey,
-  agentSettingsBusy,
-  agentSettingsMessage,
-  agentSettingsOpen,
-  setAgentSettingsOpen,
   agentBusy,
   agentCanSend,
   agentProposalCurrent,
@@ -77,12 +50,8 @@ export function AgentTab({
   sendAgentRequest,
   cancelAgentRequest,
   reviewAgentProposal,
-  saveAgentConfig,
-  storeAgentKey,
-  clearAgentKey,
 }: AgentTabProps) {
   const { t } = useT();
-  const aiProvider = aiProviderAvailable;
   return (
     <div className="min-h-full p-3 font-sans text-sm text-[var(--color-surface-200)]">
       <section
@@ -98,9 +67,9 @@ export function AgentTab({
             variant="secondary"
             size="sm"
             onClick={() => {
-              if (!agentBusy && !agentSettingsBusy) void refreshAiProvider();
+              if (!agentBusy) void refreshAiProvider();
             }}
-            disabled={agentState === 'loading' || agentBusy || agentSettingsBusy}
+            disabled={agentState === 'loading' || agentBusy}
           >
             {t('console.refreshStatus')}
           </Button>
@@ -274,87 +243,11 @@ export function AgentTab({
               ))}
           </section>
         )}
-        <details
-          open={agentSettingsOpen}
-          onToggle={(event) => {
-            if (agentBusy) {
-              event.currentTarget.open = agentSettingsOpen;
-              return;
-            }
-            setAgentSettingsOpen(event.currentTarget.open);
-          }}
-          className="border-t border-[var(--color-surface-600)] pt-2"
-        >
-          <summary aria-disabled={agentBusy} className="cursor-pointer text-xs font-medium text-[var(--color-surface-200)]">
-            {t('console.providerSettings')}
-          </summary>
-          <fieldset disabled={agentBusy || agentSettingsBusy} className="mt-2 disabled:opacity-60">
-            <div className="grid gap-2 sm:grid-cols-2">
-              <Checkbox
-                checked={agentConfig.enabled}
-                onChange={(event) => setAgentConfig((config) => ({ ...config, enabled: event.target.checked }))}
-                label={t('console.enabled2')}
-              />
-              <TextField
-                value={agentConfig.endpoint}
-                onChange={(event) => setAgentConfig((config) => ({ ...config, endpoint: event.target.value }))}
-                className="mt-1 block w-full"
-                label={t('console.endpoint')}
-              />
-              <TextField
-                value={agentConfig.model}
-                onChange={(event) => setAgentConfig((config) => ({ ...config, model: event.target.value }))}
-                className="mt-1 block w-full"
-                label={t('console.model')}
-              />
-              <TextField
-                type="password"
-                value={agentKey}
-                onChange={(event) => setAgentKey(event.target.value)}
-                autoComplete="new-password"
-                className="mt-1 block w-full"
-                label={t('console.apiKey')}
-              />
-            </div>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  void saveAgentConfig();
-                }}
-                disabled={!aiProvider}
-              >
-                {t('configEditor.save')}
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  void storeAgentKey();
-                }}
-                disabled={!aiProvider || !agentKey}
-              >
-                {t('console.storeKey')}
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  void clearAgentKey();
-                }}
-                disabled={!aiProvider}
-              >
-                {t('console.clearKey')}
-              </Button>
-            </div>
-          </fieldset>
-          {agentSettingsMessage && (
-            <p role="status" className="mt-2 text-xs text-[var(--color-surface-300)]">
-              {agentSettingsMessage}
-            </p>
-          )}
-        </details>
+        <div className="border-t border-[var(--color-surface-600)] pt-2">
+          <Button variant="secondary" size="sm" onClick={() => usePreferencesDocument.getState().show('assistant')}>
+            {t('preferences.assistant.open')}
+          </Button>
+        </div>
       </section>
     </div>
   );

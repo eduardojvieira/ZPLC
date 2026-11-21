@@ -7,6 +7,7 @@ await stubMonaco();
 const { useIDEStore } = await import('../store/useIDEStore');
 const { useLearnUi } = await import('../learn/learnUi');
 const { useShellLayout } = await import('../store/useShellLayout');
+const { usePreferencesDocument } = await import('../store/usePreferencesDocument');
 const commandBus = await import('../commands/bus');
 const { useAssistantCommands } = await import('../commands/bind/assistant');
 const { PrimarySidebar, SecondarySidebar } = await import('./Sidebars');
@@ -127,11 +128,12 @@ describe('the commands of the views (SHL-008)', () => {
     expect(useSecondaryView.getState().choice?.view).toBe('assistant');
   });
 
-  it('SHL-008 view.agent without a provider still opens the Agent tab, as in 2.0', async () => {
+  it('SHL-008 view.agent without a provider opens Preferences at the Assistant section', async () => {
     available(false);
-    dom.patchStore(useIDEStore, { activeConsoleTab: 'output', isConsoleCollapsed: false } as never);
+    usePreferencesDocument.setState({ open: false, active: false, anchor: null });
     dom.render(<Host />);
     await dom.act(async () => void runCommand('view.agent'));
-    expect(useIDEStore.getState().activeConsoleTab).toBe('agent');
+    expect(usePreferencesDocument.getState()).toMatchObject({ open: true, active: true, anchor: 'assistant' });
+    usePreferencesDocument.setState({ open: false, active: false, anchor: null });
   });
 });

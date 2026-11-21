@@ -17,6 +17,7 @@ import type { VisualGesture } from '../editors/visualHistory';
 import { ConfigEditorTab } from '../navigator/ConfigEditorTab';
 import { configEditorViewId, isConfigEditorKind, type ConfigEditorKind } from '../navigator/configEditors';
 import { REVIEW_VIEW_ID } from '../store/useReviewDocument';
+import { PREFERENCES_VIEW_ID } from '../store/usePreferencesDocument';
 import { PLANT_VIEW_ID, SETTINGS_VIEW_ID, isVisualWorkflow, type ViewId } from '../layout/documentKinds';
 import type { DebugController } from '../hooks/useDebugController';
 import { Button, IconButton } from '../ui';
@@ -28,6 +29,9 @@ const LDEditor = lazy(() => import('../editors/ld').then((module) => ({ default:
 const SFCEditor = lazy(() => import('../editors/sfc').then((module) => ({ default: module.SFCEditor })));
 const ConfigEditorHost = lazy(() => import('../navigator/ConfigEditorHost').then((module) => ({ default: module.ConfigEditorHost })));
 const ProjectSettings = lazy(() => import('./settings/ProjectSettings').then((module) => ({ default: module.ProjectSettings })));
+const PreferencesDocument = lazy(() =>
+  import('./settings/PreferencesDocument').then((module) => ({ default: module.PreferencesDocument })),
+);
 const ReviewDocument = lazy(() => import('./ReviewDocument').then((module) => ({ default: module.ReviewDocument })));
 const PlantDocument = lazy(() => import('../shell/PlantDocument').then((module) => ({ default: module.PlantDocument })));
 const CodeEditor = lazy(() => import('./CodeEditor').then((module) => ({ default: module.CodeEditor })));
@@ -109,6 +113,8 @@ export function EditorGroup({
   const showSettings = activeViewId === SETTINGS_VIEW_ID;
   const plantOpen = views.includes(PLANT_VIEW_ID);
   const plantActive = activeViewId === PLANT_VIEW_ID;
+  const preferencesOpen = views.includes(PREFERENCES_VIEW_ID);
+  const preferencesActive = activeViewId === PREFERENCES_VIEW_ID;
   const reviewOpen = views.includes(REVIEW_VIEW_ID);
   const reviewActive = activeViewId === REVIEW_VIEW_ID;
 
@@ -339,6 +345,45 @@ export function EditorGroup({
             </div>
           )}
 
+          {/* The Preferences document (SHL-011) */}
+          {preferencesOpen && (
+            <div
+              role="presentation"
+              className={
+                'group flex items-center gap-2 px-3 h-full border-r border-[var(--color-surface-600)] cursor-pointer select-none ' +
+                'transition-colors bg-[var(--color-surface-700)] text-[var(--color-surface-100)]'
+              }
+            >
+              <Button
+                variant="bare"
+                id={`editor-tab-${PREFERENCES_VIEW_ID}`}
+                role="tab"
+                aria-selected={preferencesActive}
+                aria-controls={panelId}
+                tabIndex={preferencesActive ? 0 : -1}
+                onClick={() => onSelect(PREFERENCES_VIEW_ID)}
+                onKeyDown={(event) => handleTabKeyDown(event, PREFERENCES_VIEW_ID)}
+                className="flex min-w-0 items-center gap-2 rounded text-left focus-visible:outline"
+              >
+                <Settings size={14} className="text-[var(--color-accent-blue)]" />
+                <span className="text-sm whitespace-nowrap">{t('preferences.title')}</span>
+              </Button>
+              <Button
+                variant="bare"
+                type="button"
+                onClick={() => onClose(PREFERENCES_VIEW_ID)}
+                className={
+                  'p-0.5 rounded opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 ' +
+                  'hover:bg-[var(--color-surface-500)] focus-visible:opacity-100 focus-visible:outline transition-opacity'
+                }
+                aria-label={t('preferences.close')}
+                tooltip={t('preferences.close')}
+              >
+                <X size={14} />
+              </Button>
+            </div>
+          )}
+
           {/* The change review document (SHL-004) */}
           {reviewOpen && (
             <div
@@ -454,6 +499,8 @@ export function EditorGroup({
           <Suspense fallback={<ViewLoading />}>
             {showSettings ? (
               <ProjectSettings />
+            ) : preferencesActive ? (
+              <PreferencesDocument />
             ) : configActive ? (
               <ConfigEditorHost kind={configActive} />
             ) : activeFile ? (

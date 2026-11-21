@@ -71,8 +71,8 @@ describe('Welcome screen contract', () => {
     expect(source).toContain('disabled={unavailable || isCopyingExample}');
   });
 
-  it('has one theme control and no pair of theme buttons', () => {
-    expect(source.match(/<ThemeControl \/>/g)).toHaveLength(1);
+  it('has no theme control (SHL-012: the one control is in Preferences) and no pair of theme buttons', () => {
+    expect(source).not.toContain('<ThemeControl');
     expect(source).not.toContain('Toggle high contrast theme');
     expect(source).not.toContain('Switch to');
     expect(source).not.toContain('setTheme');

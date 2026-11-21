@@ -1,7 +1,8 @@
 /**
  * ProjectSettings Component
  *
- * The settings tab of zplc.json: the project metadata, the preferences of the application and a summary. The target, the
+ * The settings tab of zplc.json: the project metadata and a summary. The preferences of the application are a document of their own
+ * (SHL-011). The target, the
  * network, the I/O mapping, the communication and the tasks are editors of their own, tabs of the editor area opened from
  * the project navigator or from the list below (UX-013); they are the same sections, unchanged.
  */
@@ -11,7 +12,6 @@ import { Settings, FileText } from 'lucide-react';
 import { useProjectSettingsState } from '../../store/regionSubscriptions';
 import type { ZPLCProjectConfig } from '../../types';
 import { getBoardNetworkType } from '../../config/boardProfiles';
-import { AppPreferences } from './AppPreferences';
 import { SettingsSection } from './SettingsSection';
 import { MetadataSection } from './MetadataSection';
 import { Button } from '../../ui';
@@ -30,7 +30,6 @@ export function ProjectSettings() {
     return (
       <div className="h-full overflow-auto bg-[var(--color-surface-900)] p-6">
         <div className="max-w-3xl mx-auto">
-          <AppPreferences />
           <p className="text-center text-[var(--color-surface-400)]">{t('project.noProjectConfigurationLoaded')}</p>
         </div>
       </div>
@@ -82,7 +81,7 @@ export function ProjectSettings() {
           </Button>
         </div>
 
-        <AppPreferences />
+        <p className="mb-4 text-xs text-[var(--color-surface-400)]">{t('project.settings.scope')}</p>
 
         <section
           aria-labelledby="config-editors-heading"
