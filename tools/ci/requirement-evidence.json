@@ -2917,7 +2917,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-012 every Foundation and Intermediate lesson can be completed in simulation, with no hardware"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-012 lists the simulation track for every Foundation and Intermediate lesson, apart from a board check of module 0"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-012 reaches a blink within ten minutes of lesson time: the lessons Continue starts with, up to the first blink, add up to at most ten minutes"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-012 the Run stage of the first lesson names Build, Compile, Connect, Run, Watch and Check by their labels, in English and in Spanish"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-012 the Run stage of the first lesson names Run, Watch and Check by their labels, in English and in Spanish"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-012 the first lesson leads to a blink with the controls Studio shows"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"57 First launch to a blinking simulated output, following only what Studio shows"},
     {"kind":"manual","ref":"packages/zplc-ide/scripts/journeys.ts","test":"57 First launch to a blinking simulated output","note":"Owner decision 2026-10-20: journey 57, which reaches a blinking simulated output from a fresh profile by following only the controls Studio shows, is accepted as the first-use evidence of LRN-012; no timed study with a first-time user was run"}
