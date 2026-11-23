@@ -452,16 +452,19 @@ function failureDetailSection(lang: Lang): string {
       `${code('preview')} with one entry per scenario in ${code('scenarios')}, and each entry lists its expectations in ` +
       `${code('assertions')}: ${code('kind')}, ${code('passed')} and, when it has one, ${code('atMs')}. An expectation that failed ` +
       `also carries two optional fields. An expectation that passed never does, and a run in which every expectation passed ` +
-      `is reported exactly as before. The values are the raw values of the run, ${code('true')} or ${code('false')}, with no ` +
-      `formatting, rounding, unit or translation. Only the ${code('preview')} carries these fields: the trace file and its hash do ` +
+      `is reported exactly as before. The values are the raw values of the ` +
+      `run: ${code('true')} or ${code('false')} for a signal, and for a plant ` +
+      `fact a number or a ${code('{ min, max }')} range, with no formatting, rounding, unit or translation. Only ` +
+      `the ${code('preview')} carries these fields: the trace file and its hash do ` +
       `not change.`,
     es:
       `Con ${code('--json')} (y en las herramientas MCP ${code('tests_run')} y ${code('scenario_run')}) el resultado tiene un ` +
       `${code('preview')} con una entrada por escenario en ${code('scenarios')}, y cada entrada lista sus expectativas en ` +
       `${code('assertions')}: ${code('kind')}, ${code('passed')} y, cuando la tiene, ${code('atMs')}. Una expectativa que falló ` +
       `lleva además dos campos opcionales. Una expectativa que pasó nunca los lleva, y una ejecución en la que todas las ` +
-      `expectativas pasaron se informa exactamente como antes. Los valores son los valores crudos de la ejecución, ${code('true')} ` +
-      `o ${code('false')}, sin formato, redondeo, unidad ni traducción. Solo el ${code('preview')} lleva estos campos: el archivo ` +
+      `expectativas pasaron se informa exactamente como antes. Los valores son los valores crudos de la ejecución: ${code('true')} ` +
+      `o ${code('false')} para una señal, y para un hecho de la planta un número o un rango ${code('{ min, max }')}, sin formato, ` +
+      `redondeo, unidad ni traducción. Solo el ${code('preview')} lleva estos campos: el archivo ` +
       `de traza y su hash no cambian.`,
   };
   const head = lang === 'en' ? ['Field', 'Meaning'] : ['Campo', 'Significado'];
@@ -478,10 +481,13 @@ function failureDetailSection(lang: Lang): string {
       {
         en:
           'The signals of the condition of the expectation, at most 8. Each one has `signal`, `expected` (the value the scenario ' +
-          'asks for) and `observed` (the value in the recorded sample at `atMs`; absent when the signal is not in the trace).',
+          'asks for: `true` or `false`, or for a plant fact a number or a `{ min, max }` range) and `observed` (the value in the ' +
+          'recorded sample at `atMs`, a boolean or for a plant fact a number; absent when the signal is not in the trace).',
         es:
           'Las señales de la condición de la expectativa, como máximo 8. Cada una tiene `signal`, `expected` (el valor que el ' +
-          'escenario pide) y `observed` (el valor de la muestra registrada en `atMs`; ausente cuando la señal no está en la traza).',
+          'escenario pide: `true` o `false`, o para un hecho de la planta un número o un rango `{ min, max }`) y `observed` (el valor ' +
+          'de la muestra registrada en `atMs`, un booleano o para un hecho de la planta un número; ausente cuando la señal no está en ' +
+          'la traza).',
       },
     ],
   ];

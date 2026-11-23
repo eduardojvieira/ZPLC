@@ -47,7 +47,13 @@ export interface ResolvedSignal {
   readonly address: number;
   readonly bitOffset: number;
   readonly value: boolean;
+  /** A numeric fact condition only: the fact name and what it must hold (SCN-005). `signal` is then a unique trace key. */
+  readonly fact?: string;
+  readonly expect?: FactExpect;
 }
+
+/** What a numeric `fact:` condition states: an exact number (integer facts) or an inclusive range (real facts). */
+export type FactExpect = number | { min?: number; max?: number };
 
 /** A scene plant bound to the program: the port, the script, and every mapped signal resolved to its address (S1, C7). */
 export interface CompiledScene {
@@ -138,7 +144,7 @@ export interface ScenarioAssertionResult {
   /** Failed assertion only: its position in `expectations`. */
   index?: number;
   /** Failed assertion only: the signals of its condition (at most 8), the raw expected value and the one observed at `atMs`. */
-  checks?: Array<{ signal: string; expected: boolean; observed?: boolean }>;
+  checks?: Array<{ signal: string; expected: boolean | FactExpect; observed?: boolean | number }>;
 }
 
 export interface ScenarioRunResult {
@@ -209,14 +215,68 @@ function namedSignal(signal: unknown, path: string): string {
   if (typeof signal !== 'string' || !SIGNAL.test(signal)) fail(`${path} must be a POU.variable signal, or the name of a global`);
   return signal;
 }
-function signalSet(value: unknown, path: string, allowFacts = false): Array<{ signal: string; value: boolean }> {
+// The type of a plant fact by the head of its name (the fact grammar of plant/ci/sceneCheck.ts): counts are integers, positions and
+// quantities are reals, and inBand and cell are booleans.
+const REAL_FACTS = new Set(['position', 'level', 'volume', 'spilledL', 'axis']);
+const BOOLEAN_FACTS = new Set(['inBand', 'cell']);
+const INTEGER_FACTS = new Set([
+  ...['itemsEmitted', 'itemsRemoved', 'itemsDropped', 'itemsCollided', 'itemsAssembled', 'emitted', 'delivered', 'count', 'highs'],
+  ...['picked', 'placed', 'drops', 'sorted', 'misrouted', 'stored', 'produced', 'misfires', 'blocked', 'stacked', 'layers', 'loaded'],
+]);
+const finiteNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
+
+/** A numeric `fact:` condition (SCN-005): an exact whole number for an integer fact, `{ min?, max? }` for a real fact. */
+function factExpectation(signal: string, expected: unknown, path: string): { fact: string; expect: FactExpect; key: string } {
+  const where = `${path}.${signal}`;
+  const head = signal.split(':')[1]!;
+  if (BOOLEAN_FACTS.has(head)) fail(`${where} is a boolean fact: state true or false`);
+  if (!INTEGER_FACTS.has(head) && !REAL_FACTS.has(head)) fail(`${where} is not a numeric fact: state true or false`);
+  const key = (parts: Array<string | false>) => `${signal}:${parts.filter(Boolean).join(':')}`.replaceAll('+', '');
+  if (finiteNumber(expected)) {
+    if (REAL_FACTS.has(head)) fail(`${where} is a real fact: state a range { "min": …, "max": … }, not an exact number`);
+    if (!Number.isInteger(expected)) fail(`${where} must be a whole number`);
+    return { fact: signal.slice('fact:'.length), expect: expected, key: key([`eq-${expected}`]) };
+  }
+  if (expected === null || typeof expected !== 'object' || Array.isArray(expected))
+    fail(
+      REAL_FACTS.has(head)
+        ? `${where} is a real fact: state a range { "min": …, "max": … }`
+        : `${where} is an integer fact: state an exact whole number`,
+    );
+  const range = expected as UnknownRecord;
+  const { min, max } = range;
+  if (
+    !Object.keys(range).every((name) => name === 'min' || name === 'max') ||
+    (min === undefined && max === undefined) ||
+    (min !== undefined && !finiteNumber(min)) ||
+    (max !== undefined && !finiteNumber(max))
+  )
+    fail(`${where} must be a range with a number min and max, either or both`);
+  if (!REAL_FACTS.has(head)) fail(`${where} is an integer fact: state an exact whole number, not a range`);
+  if (min !== undefined && max !== undefined && (min as number) > (max as number)) fail(`${where} needs min at most max`);
+  return {
+    fact: signal.slice('fact:'.length),
+    expect: { ...(min === undefined ? {} : { min: min as number }), ...(max === undefined ? {} : { max: max as number }) },
+    key: key([min !== undefined && `min-${min}`, max !== undefined && `max-${max}`]),
+  };
+}
+function signalSet(
+  value: unknown,
+  path: string,
+  allowFacts = false,
+): Array<{ signal: string; value: boolean; fact?: string; expect?: FactExpect }> {
   const set = record(value, path);
   const entries = Object.entries(set);
   if (entries.length === 0 || entries.length > MAX_SIGNALS) fail(`${path} must contain 1-${MAX_SIGNALS} signals`);
   return entries
     .map(([signal, expected]) => {
+      const isFact = allowFacts && FACT_READ.test(signal);
+      if (isFact && typeof expected !== 'boolean') {
+        const { key, ...numeric } = factExpectation(signal, expected, path);
+        return { signal: key, value: true, ...numeric };
+      }
       if (typeof expected !== 'boolean') fail(`${path}.${signal} must be boolean`);
-      return { signal: allowFacts && FACT_READ.test(signal) ? signal : namedSignal(signal, path), value: expected };
+      return { signal: isFact ? signal : namedSignal(signal, path), value: expected };
     })
     .sort((left, right) => (left.signal < right.signal ? -1 : left.signal > right.signal ? 1 : 0));
 }
@@ -287,6 +347,11 @@ function validateAddress(variable: DebugVarInfo, debugMap: DebugMap, expectedReg
   if (!Number.isInteger(base) || !Number.isInteger(size) || size < 1 || variable.addr < base || variable.addr + variable.size > base + size)
     fail(`${signal} is outside ${expectedRegion} memory`);
 }
+function factHolds(fact: number, expect: FactExpect): boolean {
+  if (typeof expect === 'number') return fact === expect;
+  return (expect.min === undefined || fact >= expect.min) && (expect.max === undefined || fact <= expect.max);
+}
+
 function location(signal: Pick<ResolvedSignal, 'address' | 'bitOffset'>): string {
   return `${signal.address}:${signal.bitOffset}`;
 }
@@ -508,8 +573,8 @@ export function compileScenario(input: unknown, debugMap: DebugMap, sceneContext
               ? ['kind', 'fromMs', 'condition', 'until']
               : ['kind', 'condition'];
     exact(expectation, keys, `expectations[${index}]`);
-    const reads = signalSet(expectation.condition, `expectations[${index}].condition`, hasScene).map(({ signal, value }) =>
-      signal.startsWith('fact:') ? { signal, address: -1, bitOffset: 0, value } : resolve(debugMap, signal, 'OPI', value),
+    const reads = signalSet(expectation.condition, `expectations[${index}].condition`, hasScene).map(({ signal, value, ...numeric }) =>
+      signal.startsWith('fact:') ? { signal, address: -1, bitOffset: 0, value, ...numeric } : resolve(debugMap, signal, 'OPI', value),
     );
     if (kind === 'AT') return { kind, reads, atMs: aligned(expectation.atMs, `expectations[${index}].atMs`, tickMs, durationMs) };
     if (kind === 'WITHIN' || kind === 'EVENTUALLY' || kind === 'RISING' || kind === 'FALLING') {
@@ -603,6 +668,8 @@ export async function runScenario(scenario: CompiledScenario, zplc: Uint8Array, 
   // raw values of the numeric commands, read after each step like `lastOutputs` for BOOL
   const commandValues: Record<string, number> = {};
   const trace: ScenarioTraceSample[] = [];
+  // the number a numeric fact condition read at each time: the trace itself stays boolean
+  const rawFacts = new Map<number, Record<string, number>>();
   const inputs = new Map<string, boolean>([...terminalReads.values()].map((read) => [location(read), false]));
   const inputSnapshots: Record<string, boolean>[] = [];
   let speedPermille = 0;
@@ -691,7 +758,16 @@ export async function runScenario(scenario: CompiledScenario, zplc: Uint8Array, 
       for (const command of scene.commands)
         if (command.numeric) commandValues[command.name] = await runtime.readOutputNumber!(command.signal.address, command.numeric.type);
       const facts = scene.port.core.facts();
-      for (const read of factReads) outputs[read.signal] = factTruthy(facts[read.signal.slice('fact:'.length)]);
+      const raw: Record<string, number> = {};
+      for (const read of factReads) {
+        const fact = facts[read.fact ?? read.signal.slice('fact:'.length)];
+        if (read.expect === undefined) outputs[read.signal] = factTruthy(fact);
+        else {
+          outputs[read.signal] = typeof fact === 'number' && factHolds(fact, read.expect);
+          if (typeof fact === 'number') raw[read.signal] = fact;
+        }
+      }
+      rawFacts.set(atMs, raw);
       lastOutputs = outputs;
     }
     if (scenario.plant?.kind === 'motor-v1')
@@ -800,7 +876,11 @@ export async function runScenario(scenario: CompiledScenario, zplc: Uint8Array, 
   const assertions = outcomes.map((outcome, index): ScenarioAssertionResult => {
     if (outcome.passed) return outcome;
     const observedAt = trace.find((sample) => sample.atMs === outcome.atMs)?.outputs;
-    const checks = scenario.expectations[index]!.reads.slice(0, MAX_FAILURE_CHECKS).map(({ signal, value }) => {
+    const checks = scenario.expectations[index]!.reads.slice(0, MAX_FAILURE_CHECKS).map(({ signal, value, fact, expect }) => {
+      if (expect !== undefined) {
+        const observed = rawFacts.get(outcome.atMs!)?.[signal];
+        return { signal: `fact:${fact}`, expected: expect, ...(observed === undefined ? {} : { observed }) };
+      }
       const observed = observedAt?.[signal];
       return { signal, expected: value, ...(typeof observed === 'boolean' ? { observed } : {}) };
     });
