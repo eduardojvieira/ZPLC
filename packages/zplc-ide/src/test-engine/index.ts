@@ -237,7 +237,12 @@ function factExpectation(signal: string, expected: unknown, path: string): { fac
     if (!Number.isInteger(expected)) fail(`${where} must be a whole number`);
     return { fact: signal.slice('fact:'.length), expect: expected, key: key([`eq-${expected}`]) };
   }
-  if (expected === null || typeof expected !== 'object' || Array.isArray(expected)) fail(`${where} must be boolean`);
+  if (expected === null || typeof expected !== 'object' || Array.isArray(expected))
+    fail(
+      REAL_FACTS.has(head)
+        ? `${where} is a real fact: state a range { "min": …, "max": … }`
+        : `${where} is an integer fact: state an exact whole number`,
+    );
   const range = expected as UnknownRecord;
   const { min, max } = range;
   if (

@@ -8,6 +8,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect } from 'bun:test';
 
+import { presentWorkspaceTestResult } from '../components/workspaceTestPresentation';
 import { createMcpDispatcher, openMcpWorkspace } from '../mcp/server';
 import { itNative } from './nativeRuntimeGuard';
 import { testsRun } from './toolApi';
@@ -77,4 +78,92 @@ describe('failure detail in the Tool API preview (TST-003, IDE-031)', () => {
       '29a0a362dcd1993e0429da1cecf085d4ee411ec14450f789734814ab74d1862b',
     );
   });
+});
+
+const BELT = new URL('../../projects/plant_belt_to_sensor/', import.meta.url).pathname;
+const BELT_SCENARIO = 'tests/belt-to-sensor.scenario.json';
+function numericProject(extra: unknown[]): string {
+  const root = join(scratch, `numeric-${Math.random().toString(36).slice(2)}`);
+  cpSync(BELT, root, { recursive: true });
+  const file = join(root, BELT_SCENARIO);
+  const scenario = JSON.parse(readFileSync(file, 'utf8'));
+  scenario.expectations.push(...extra);
+  writeFileSync(file, JSON.stringify(scenario, null, 2));
+  return root;
+}
+
+describe('SCN-005 numeric conditions end to end (plant_belt_to_sensor)', () => {
+  itNative(
+    'passing numeric conditions pass; failing ones report raw numbers through the Tool API, the presentation and MCP',
+    async () => {
+      const root = numericProject([
+        { kind: 'AT', atMs: 8000, condition: { 'fact:count:EyeFar': 1 } },
+        { kind: 'AT', atMs: 8000, condition: { 'fact:position:box:0': { min: -100, max: 100 } } },
+        { kind: 'AT', atMs: 8000, condition: { 'fact:count:EyeFar': 99 } },
+        { kind: 'AT', atMs: 8000, condition: { 'fact:position:box:0': { min: 50.25 } } },
+      ]);
+      try {
+        const run = await testsRun(root);
+        const assertions = run.preview!.scenarios[0]!.assertions as Array<Record<string, unknown>>;
+        expect(assertions.map((a) => a.passed)).toEqual([true, true, true, true, true, true, false, false]);
+        const [countCheck] = assertions[6]!.checks as Array<Record<string, unknown>>;
+        expect(countCheck).toMatchObject({ signal: 'fact:count:EyeFar', expected: 99 });
+        expect(Number.isInteger(countCheck!.observed)).toBe(true);
+        const [rangeCheck] = assertions[7]!.checks as Array<Record<string, unknown>>;
+        expect(rangeCheck).toMatchObject({ signal: 'fact:position:box:0', expected: { min: 50.25 } });
+        expect(typeof rangeCheck!.observed).toBe('number');
+        expect(Object.keys(assertions[7]!)).toEqual(['kind', 'passed', 'atMs', 'index', 'checks']);
+
+        const shown = presentWorkspaceTestResult(run);
+        expect(shown.kind).toBe('assertion-failed');
+        expect(shown.preview?.scenarios[0]?.assertions).toEqual(assertions as never);
+
+        // the recorded trace keeps the 2.0 assertion shape; its keys are valid MCP output names
+        const trace = JSON.parse(new TextDecoder().decode((run as { traceFile: Uint8Array }).traceFile));
+        expect(trace.scenarios[0].assertions[6]).toEqual({ kind: 'AT', passed: false, atMs: 8000 });
+        const keys = Object.keys(trace.scenarios[0].trace[0].outputs);
+        expect(keys).toContain('fact:count:EyeFar:eq-99');
+        expect(keys).toContain('fact:position:box:0:min-50.25');
+
+        const workspace = await openMcpWorkspace(root);
+        expect(workspace).toBeDefined();
+        const dispatch = createMcpDispatcher(workspace!);
+        const signal = new AbortController().signal;
+        const replay = await dispatch('trace_get', { scenarioId: 'belt-to-sensor' }, signal);
+        expect((replay.structuredContent as { code?: string }).code).toBeUndefined();
+        expect(replay.structuredContent).toMatchObject({ scope: 'recorded-native-posix-host', ok: false });
+        const replayed = replay.structuredContent as { trace: Array<{ outputs: Record<string, boolean> }>; traceSha256: string };
+        expect(Object.keys(replayed.trace[0]!.outputs)).toContain('fact:position:box:0:min-50.25');
+        const snapshot = await dispatch(
+          'runtime_snapshot',
+          { scenarioId: 'belt-to-sensor', cursor: 800, traceSha256: replayed.traceSha256 },
+          signal,
+        );
+        expect((snapshot.structuredContent as { snapshot?: { atMs: number } }).snapshot?.atMs).toBe(8000);
+        const tests = await dispatch('tests_run', {}, signal);
+        expect((tests.structuredContent as { code?: string }).code).toBeUndefined();
+        expect(tests.structuredContent).toMatchObject({ ok: false, evidence: { outcome: 'failed' } });
+        // pre-existing at ffff8361: the MCP public result drops `preview` (server.ts publicResult), so no checks reach MCP
+        expect(Object.keys(tests.structuredContent as object)).not.toContain('preview');
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
+    },
+    120_000,
+  );
+
+  itNative(
+    'a refused numeric condition is a located TEST_SCENARIO_INVALID / binding diagnostic, not a run',
+    async () => {
+      const root = numericProject([{ kind: 'AT', atMs: 8000, condition: { 'fact:position:box:0': 3 } }]);
+      try {
+        const run = await testsRun(root);
+        expect(run.ok).toBe(false);
+        expect(JSON.stringify(run.evidence.diagnostics)).toContain('real fact');
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
+    },
+    120_000,
+  );
 });

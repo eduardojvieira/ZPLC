@@ -106,4 +106,23 @@ describe('failure detail in the presentation (TST-003)', () => {
     expect(presentation.preview?.scenarios[0]?.assertions[0]).toMatchObject({ index: 0, checks: failure.checks });
     expect(gradeRecordedScenarioLesson(lesson, presentation).kind).toBe('failed');
   });
+
+  it('the lesson check accepts a numeric and a range expected', () => {
+    for (const checks of [
+      [{ signal: 'fact:stored:Rack', expected: 3, observed: 2 }],
+      [{ signal: 'fact:level:Tank', expected: { min: 2, max: 4 }, observed: 1.5 }],
+      [{ signal: 'fact:level:Tank', expected: { max: 4 } }],
+    ]) {
+      const assertions = lesson.scenario.expectations.map((expectation, index) =>
+        index === 0
+          ? { kind: expectation.kind, passed: false, atMs: 10, index: 0, checks }
+          : { kind: expectation.kind, passed: true, atMs: 20 },
+      );
+      const presentation = presentWorkspaceTestResult(
+        result('scenario-run', { id: lesson.requiredScenario, path: lesson.scenarioPath }, assertions),
+      );
+      expect(presentation.preview?.scenarios[0]?.assertions[0]).toMatchObject({ index: 0, checks });
+      expect(gradeRecordedScenarioLesson(lesson, presentation).kind).toBe('failed');
+    }
+  });
 });

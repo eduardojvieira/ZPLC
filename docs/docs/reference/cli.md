@@ -55,7 +55,7 @@ Firmware builds are local POSIX ephemeral cross-builds only: they do not flash, 
 
 ## The detail of a failed expectation
 
-With `--json` (and in the MCP tools `tests_run` and `scenario_run`) the result has a `preview` with one entry per scenario in `scenarios`, and each entry lists its expectations in `assertions`: `kind`, `passed` and, when it has one, `atMs`. An expectation that failed also carries two optional fields. An expectation that passed never does, and a run in which every expectation passed is reported exactly as before. The values are the raw values of the run, `true` or `false`, with no formatting, rounding, unit or translation. Only the `preview` carries these fields: the trace file and its hash do not change.
+With `--json` (and in the MCP tools `tests_run` and `scenario_run`) the result has a `preview` with one entry per scenario in `scenarios`, and each entry lists its expectations in `assertions`: `kind`, `passed` and, when it has one, `atMs`. An expectation that failed also carries two optional fields. An expectation that passed never does, and a run in which every expectation passed is reported exactly as before. The values are the raw values of the run: `true` or `false` for a signal, and for a plant fact a number or a `{ min, max }` range, with no formatting, rounding, unit or translation. Only the `preview` carries these fields: the trace file and its hash do not change.
 
 | Field | Meaning |
 | --- | --- |
