@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Mantenga un contador de pares enviados y otro de pares vistos en EyeIn, para que la banda lleve solo dos pares; Layer dice qué capa sigue y es el índice de JogMs."
+      "text": "Mantenga un contador de pares enviados y otro de pares vistos en EyeIn, para que la cinta lleve solo dos pares; Layer dice qué capa sigue y es el índice de JogMs."
     },
     {
       "level": 2,

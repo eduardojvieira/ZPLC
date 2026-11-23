@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Clasificación en un transportador como diagrama",
-  "summary": "Describa un transportador clasificador como un diagrama de pasos de detenido, en marcha y falla: clasifique las piezas metálicas en marcha y bloquee la banda cuando la planta informe un atasco.",
+  "summary": "Describa un transportador clasificador como un diagrama de pasos de detenido, en marcha y falla: clasifique las piezas metálicas en marcha y bloquee la cinta cuando la planta informe un atasco.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra un transportador físico ni la liberación de atascos.",
   "objectives": [
     "Describa un transportador con tres pasos, con la memoria de clasificación en una variable local que actualiza la acción de marcha.",
@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objetivo",
       "body": "En src/Conveyor.sfc.json están dibujados los pasos STOPPED, RUNNING y FAULT, sus acciones y las transiciones de STOPPED a RUNNING (Start), de RUNNING a STOPPED (Stop) y de FAULT a STOPPED (Reset AND NOT JamDetected); los sensores pertenecen a la planta. Agregue la transición que falta de RUNNING a FAULT con JamDetected y prioridad 1, de modo que un atasco gane sobre Stop.",
-      "checkpoint": "La banda funciona tras Start, el desviador actúa una vez para la pieza metálica, y un atasco detiene la banda y enciende FaultLamp."
+      "checkpoint": "La cinta funciona tras Start, el desviador actúa una vez para la pieza metálica, y un atasco detiene la cinta y enciende FaultLamp."
     },
     {
       "key": "predict",
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene transición de RUNNING a FAULT, así que un atasco no cambia nada: la banda sigue en marcha y FaultLamp queda apagada; agregue una transición de RUNNING a FAULT cuya condición sea JamDetected y cuya prioridad sea 1.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene transición de RUNNING a FAULT, así que un atasco no cambia nada: la cinta sigue en marcha y FaultLamp queda apagada; agregue una transición de RUNNING a FAULT cuya condición sea JamDetected y cuya prioridad sea 1.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial no tiene transición de RUNNING a FAULT, así que un atasco no cambia nada: la banda sigue en marcha y FaultLamp queda apagada; agregue una transición de RUNNING a FAULT cuya condición sea JamDetected y cuya prioridad sea 1."
+    "El programa inicial no tiene transición de RUNNING a FAULT, así que un atasco no cambia nada: la cinta sigue en marcha y FaultLamp queda apagada; agregue una transición de RUNNING a FAULT cuya condición sea JamDetected y cuya prioridad sea 1."
   ]
 }

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "title": "Construir una escena de banda desde el suelo vacío",
-  "summary": "Abra el Editor de escenas sobre un suelo vacío, coloque una banda, un emisor, un sensor y un botón de inicio con los nombres que da la lección, enlace sus señales en el mapa de la planta y escriba el programa que corre sobre ellos.",
+  "title": "Construir una escena de cinta desde el suelo vacío",
+  "summary": "Abra el Editor de escenas sobre un suelo vacío, coloque una cinta, un emisor, un sensor y un botón de inicio con los nombres que da la lección, enlace sus señales en el mapa de la planta y escriba el programa que corre sobre ellos.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa.",
@@ -11,19 +11,19 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "Abra scene.json en el Editor de escenas y coloque cuatro piezas con exactamente estos nombres: Belt1 (una banda), Emitter1 (un emisor en el extremo cercano de la banda), EyeFar (un sensor difuso junto al extremo lejano de la banda, mirándola) y StartButton (un pulsador). En plant-map.json enlace StartButton.pressed con BeltToSensor.Start, EyeFar.detect con BeltToSensor.EyeFar, Belt1.run con BeltToSensor.Run y Emitter1.emit con BeltToSensor.Emit; luego, en src/BeltToSensor.st, mantenga una memoria Running: actívela con Start, bórrela con EyeFar y conecte Run y Emit.",
-      "checkpoint": "La escena tiene cuatro piezas con esos nombres, el mapa de la planta tiene cuatro señales, y Run sigue a la memoria mientras Emit pone una caja en la banda cuando se pulsa Start."
+      "body": "Abra scene.json en el Editor de escenas y coloque cuatro piezas con exactamente estos nombres: Belt1 (una cinta), Emitter1 (un emisor en el extremo cercano de la cinta), EyeFar (un sensor difuso junto al extremo lejano de la cinta, mirándola) y StartButton (un pulsador). En plant-map.json enlace StartButton.pressed con BeltToSensor.Start, EyeFar.detect con BeltToSensor.EyeFar, Belt1.run con BeltToSensor.Run y Emitter1.emit con BeltToSensor.Emit; luego, en src/BeltToSensor.st, mantenga una memoria Running: actívela con Start, bórrela con EyeFar y conecte Run y Emit.",
+      "checkpoint": "La escena tiene cuatro piezas con esos nombres, el mapa de la planta tiene cuatro señales, y Run sigue a la memoria mientras Emit pone una caja en la cinta cuando se pulsa Start."
     },
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, siga la caja: el emisor la pone en el extremo cercano, la banda la lleva al extremo lejano y el sensor avisa al programa para detener la banda. Una pieza que falta o tiene otro nombre no puede hacer nada de eso, y la Comprobación dice cuál no encuentra.",
-      "checkpoint": "Banda apagada antes de la pulsación; encendida después, con una caja encima; apagada otra vez en cuanto EyeFar ve la caja, y así se queda."
+      "body": "Antes de ejecutar, siga la caja: el emisor la pone en el extremo cercano, la cinta la lleva al extremo lejano y el sensor avisa al programa para detener la cinta. Una pieza que falta o tiene otro nombre no puede hacer nada de eso, y la Comprobación dice cuál no encuentra.",
+      "checkpoint": "Cinta apagada antes de la pulsación; encendida después, con una caja encima; apagada otra vez en cuanto EyeFar ve la caja, y así se queda."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde la escena, el mapa de la planta y el programa, y ejecute: La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la banda y la detiene cuando EyeFar ve la caja.",
+      "body": "Corrija esta omisión del inicial, guarde la escena, el mapa de la planta y el programa, y ejecute: La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la cinta y la detiene cuando EyeFar ve la caja.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -35,7 +35,7 @@
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe la caja avanzar por la banda que usted colocó y detenerse bajo el sensor que usted colocó; si falta una pieza, lea el mensaje de la Comprobación: nombra la pieza y el archivo donde se corrige.",
+      "body": "Observe la caja avanzar por la cinta que usted colocó y detenerse bajo el sensor que usted colocó; si falta una pieza, lea el mensaje de la Comprobación: nombra la pieza y el archivo donde se corrige.",
       "checkpoint": "Run baja cuando el sensor se activa, no antes, y la caja nunca cae."
     },
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "En el Editor de escenas elija la plantilla Suelo vacío, agregue las cuatro piezas y renombre cada una; la banda tiene longitud 2.4 y velocidad 0.5, y el sensor tiene alcance 1."
+      "text": "En el Editor de escenas elija la plantilla Suelo vacío, agregue las cuatro piezas y renombre cada una; la cinta tiene longitud 2.4 y velocidad 0.5, y el sensor tiene alcance 1."
     },
     {
       "level": 2,
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la banda y la detiene cuando EyeFar ve la caja."
+    "La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la cinta y la detiene cuando EyeFar ve la caja."
   ]
 }

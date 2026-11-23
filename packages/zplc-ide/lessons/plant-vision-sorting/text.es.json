@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Clasificar por código de identidad",
-  "summary": "Lea el código de cada pieza que ve el sensor de visión y accione un brazo desviador para que las piezas de código 2 salgan por la banda lateral.",
+  "summary": "Lea el código de cada pieza que ve el sensor de visión y accione un brazo desviador para que las piezas de código 2 salgan por la cinta lateral.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Encaminar piezas por un código entero y no por un interruptor.",
@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/VisionSorting.st, ponga en marcha ambas bandas tras Start. Lea Code mientras la pieza está en el campo del sensor de visión: la de código 1 sigue de frente; para código 2, cruce el brazo antes de que llegue la pieza, manténgalo hasta que haya pasado su extremo libre y vuelva a llevarlo a su posición.",
+      "body": "En src/VisionSorting.st, ponga en marcha ambas cintas tras Start. Lea Code mientras la pieza está en el campo del sensor de visión: la de código 1 sigue de frente; para código 2, cruce el brazo antes de que llegue la pieza, manténgalo hasta que haya pasado su extremo libre y vuelva a llevarlo a su posición.",
       "checkpoint": "Las piezas de código 1 terminan en Product1, las de código 2 en Product2, y Done se enciende tras doce piezas."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna banda se mueve y no se clasifica ninguna pieza; ponga en marcha ambas bandas tras Start y accione el brazo para cada pieza de código 2.",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna pieza; ponga en marcha ambas cintas tras Start y accione el brazo para cada pieza de código 2.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -35,13 +35,13 @@
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe la vista 3D y la lectura del sensor de visión: el código aparece mientras la pieza está en el campo, el brazo gira delante de una pieza de código 2 y esta se desliza a la banda lateral.",
+      "body": "Observe la vista 3D y la lectura del sensor de visión: el código aparece mientras la pieza está en el campo, el brazo gira delante de una pieza de código 2 y esta se desliza a la cinta lateral.",
       "checkpoint": "Una pieza de código 1 nunca mueve el brazo, y el brazo está en reposo antes de que llegue la pieza siguiente."
     },
     {
       "key": "reflect",
       "title": "Reflexionar",
-      "body": "La calificación ve las dos bandas de producto y que nada cayó; no ve su temporización, así que un tiempo que golpee una pieza solo se nota como una pieza mal encaminada o caída.",
+      "body": "La calificación ve las dos cintas de producto y que nada cayó; no ve su temporización, así que un tiempo que golpee una pieza solo se nota como una pieza mal encaminada o caída.",
       "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El inicial no gobierna ninguna salida, así que ninguna banda se mueve y no se clasifica ninguna pieza; ponga en marcha ambas bandas tras Start y accione el brazo para cada pieza de código 2."
+    "El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna pieza; ponga en marcha ambas cintas tras Start y accione el brazo para cada pieza de código 2."
   ]
 }

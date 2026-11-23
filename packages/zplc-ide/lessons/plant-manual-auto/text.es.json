@@ -17,7 +17,7 @@
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, siga el panel: el escenario lleva el brazo a la banda de las bases y lo devuelve, pulsa Start en manual, pasa a automático, arranca el ciclo y mantiene un botón de avance pulsado en mitad del ciclo.",
+      "body": "Antes de ejecutar, siga el panel: el escenario lleva el brazo a la cinta de las bases y lo devuelve, pulsa Start en manual, pasa a automático, arranca el ciclo y mantiene un botón de avance pulsado en mitad del ciclo.",
       "checkpoint": "En manual el brazo se mueve solo mientras se mantiene un botón y se detiene en su final de carrera; Start no hace nada; en automático el ciclo corre y el botón mantenido no cambia nada."
     },
     {

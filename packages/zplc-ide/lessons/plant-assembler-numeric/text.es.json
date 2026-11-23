@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/Assembler.st, nombre las posiciones como constantes (banda de tapas x 0, banda de bases x 100, abajo y 0, altura segura y 30, tolerancia 0,2 cm), escriba XSet y YSet en un estado por movimiento y continúe cuando XAt o YAt diga que el brazo está dentro de la tolerancia.",
-      "checkpoint": "Cada movimiento es una consigna y una comparación; el brazo nunca cruza las bandas por debajo de la altura segura."
+      "body": "En src/Assembler.st, nombre las posiciones como constantes (cinta de tapas x 0, cinta de bases x 100, abajo y 0, altura segura y 30, tolerancia 0,2 cm), escriba XSet y YSet en un estado por movimiento y continúe cuando XAt o YAt diga que el brazo está dentro de la tolerancia.",
+      "checkpoint": "Cada movimiento es una consigna y una comparación; el brazo nunca cruza las cintas por debajo de la altura segura."
     },
     {
       "key": "predict",
@@ -35,7 +35,7 @@
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe en la traza cómo XPos y YPos llegan a cada consigna, y el brazo en la vista 3D cruzar las bandas solo a la altura segura.",
+      "body": "Observe en la traza cómo XPos y YPos llegan a cada consigna, y el brazo en la vista 3D cruzar las cintas solo a la altura segura.",
       "checkpoint": "Se coloca una tapa sobre cada base, nada se cae y Green está encendido al final."
     },
     {

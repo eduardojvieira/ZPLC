@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/HeightSortChain.st el clasificador de la lección 16.4 funciona mientras los sensores dicen la verdad. Añada un diagnóstico: una caja rompe BeamHigh durante cerca de un segundo, así que un TON de tres segundos sobre High marca la barrera como atascada. Memorice un Fault, detenga la banda de entrada y el módulo de cadenas, mantenga la cuchilla retenida y apague Busy.",
-      "checkpoint": "Tras la falla la banda de entrada está apagada, Busy y Done están apagados, la cuchilla sigue reteniendo y ninguna caja ha ido al contenedor equivocado."
+      "body": "En src/HeightSortChain.st el clasificador de la lección 16.4 funciona mientras los sensores dicen la verdad. Añada un diagnóstico: una caja rompe BeamHigh durante cerca de un segundo, así que un TON de tres segundos sobre High marca la barrera como atascada. Memorice un Fault, detenga la cinta de entrada y el módulo de cadenas, mantenga la cuchilla retenida y apague Busy.",
+      "checkpoint": "Tras la falla la cinta de entrada está apagada, Busy y Done están apagados, la cuchilla sigue reteniendo y ninguna caja ha ido al contenedor equivocado."
     },
     {
       "key": "predict",
@@ -35,13 +35,13 @@
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Provoque usted mismo la falla en la vista 3D (BeamHigh, stuckOn) y observe High en la traza: permanece en TRUE mientras van y vienen cajas. Unos tres segundos después Fault se memoriza, la banda de entrada se detiene y Busy se apaga.",
+      "body": "Provoque usted mismo la falla en la vista 3D (BeamHigh, stuckOn) y observe High en la traza: permanece en TRUE mientras van y vienen cajas. Unos tres segundos después Fault se memoriza, la cinta de entrada se detiene y Busy se apaga.",
       "checkpoint": "High permanece en TRUE mucho más tiempo del que una caja necesita para pasar, y la parada sigue a la falla, no a una caja."
     },
     {
       "key": "reflect",
       "title": "Reflexionar",
-      "body": "La calificación ve lo que hizo la planta: ninguna caja desviada en ningún contenedor, la banda de entrada apagada y la cuchilla reteniendo al final. No ve su variable Fault ni los tres segundos que eligió; un límite demasiado corto detiene la línea en la primera caja alta y suspende.",
+      "body": "La calificación ve lo que hizo la planta: ninguna caja desviada en ningún contenedor, la cinta de entrada apagada y la cuchilla reteniendo al final. No ve su variable Fault ni los tres segundos que eligió; un límite demasiado corto detiene la línea en la primera caja alta y suspende.",
       "checkpoint": "Esta regla detecta una barrera atascada en encendido. Una barrera atascada en apagado, o un atasco del módulo de cadenas, necesita otra regla."
     }
   ],
@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "Detenga lo que trae cajas nuevas: RunIn y RunChain llevan AND NOT Fault, Stand lleva AND NOT Fault para no encaminar ninguna caja con una lectura en la que no confía, y Busy se apaga. Deje en marcha las tres bandas de salida para que llegue una caja que ya va de camino."
+      "text": "Detenga lo que trae cajas nuevas: RunIn y RunChain llevan AND NOT Fault, Stand lleva AND NOT Fault para no encaminar ninguna caja con una lectura en la que no confía, y Busy se apaga. Deje en marcha las tres cintas de salida para que llegue una caja que ya va de camino."
     }
   ],
   "faultCases": [

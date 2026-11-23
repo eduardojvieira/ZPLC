@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "title": "Enviar cada color a su banda",
-  "summary": "Lea el color de cada pieza que espera en la cuchilla de parada, empuje las rojas a la banda lateral y deje pasar las azules.",
-  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el tiempo de respuesta del sensor ni la velocidad de la banda.",
+  "title": "Enviar cada color a su cinta",
+  "summary": "Lea el color de cada pieza que espera en la cuchilla de parada, empuje las rojas a la cinta lateral y deje pasar las azules.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el tiempo de respuesta del sensor ni la velocidad de la cinta.",
   "objectives": [
     "Decidir una ruta a partir del resultado de un sensor cuando la pieza está quieta.",
     "Ejecutar un empuje como una secuencia corta: extender hasta Extended, retraer hasta Retracted."
@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/ColourSeparation.st, ponga en marcha las tres bandas tras Start y retenga cada pieza en la cuchilla. Espere a que esté quieta (T#300ms) y lea IsRed: empuje la roja a la banda lateral y suelte la azul.",
+      "body": "En src/ColourSeparation.st, ponga en marcha las tres cintas tras Start y retenga cada pieza en la cuchilla. Espere a que esté quieta (T#300ms) y lea IsRed: empuje la roja a la cinta lateral y suelte la azul.",
       "checkpoint": "Las piezas rojas terminan en RedBin, las azules en BlueBin, y Done se enciende tras la octava."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna banda se mueve y ninguna pieza se clasifica; ponga en marcha las bandas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules.",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y ninguna pieza se clasifica; ponga en marcha las cintas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -35,7 +35,7 @@
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe la vista 3D: una pieza roja se detiene en la cuchilla, la placa la empuja a la banda lateral y la siguiente espera; una azul pasa de largo hacia la salida.",
+      "body": "Observe la vista 3D: una pieza roja se detiene en la cuchilla, la placa la empuja a la cinta lateral y la siguiente espera; una azul pasa de largo hacia la salida.",
       "checkpoint": "Push nunca pasa a TRUE con una pieza azul, y la placa está de vuelta (Retracted) antes de que la cuchilla retenga la siguiente."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El inicial no gobierna ninguna salida, así que ninguna banda se mueve y ninguna pieza se clasifica; ponga en marcha las bandas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules."
+    "El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y ninguna pieza se clasifica; ponga en marcha las cintas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules."
   ]
 }

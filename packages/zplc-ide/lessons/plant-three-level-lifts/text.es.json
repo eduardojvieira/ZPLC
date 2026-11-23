@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "title": "Mover cajas entre tres niveles",
-  "summary": "Secuencie dos elevadores como dos cadenas que corren en paralelo y se encuentran solo en la banda de transferencia compartida.",
+  "summary": "Secuencie dos elevadores como dos cadenas que corren en paralelo y se encuentran solo en la cinta de transferencia compartida.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Describir cada elevador como su propia cadena de pasos que vuelve a su primer paso.",
-    "Arrancar ambas cadenas con una sola transición y dejar que se encuentren solo en la banda entre los elevadores."
+    "Arrancar ambas cadenas con una sola transición y dejar que se encuentren solo en la cinta entre los elevadores."
   ],
   "stages": [
     {
@@ -17,13 +17,13 @@
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, siga una caja: recorre la banda de entrada hasta el elevador A, A sube con su superficie detenida, pasa la caja a la banda de transferencia del nivel 2 y baja; B hace lo mismo un nivel más arriba y entrega la caja a la banda de salida.",
-      "checkpoint": "Un elevador se mueve solo mientras su superficie está detenida, una banda corre hacia un elevador solo mientras ese elevador espera en su nivel de carga, y Green se enciende cuando cinco cajas han pasado por EyeTop."
+      "body": "Antes de ejecutar, siga una caja: recorre la cinta de entrada hasta el elevador A, A sube con su superficie detenida, pasa la caja a la cinta de transferencia del nivel 2 y baja; B hace lo mismo un nivel más arriba y entrega la caja a la cinta de salida.",
+      "checkpoint": "Un elevador se mueve solo mientras su superficie está detenida, una cinta corre hacia un elevador solo mientras ese elevador espera en su nivel de carga, y Green se enciende cuando cinco cajas han pasado por EyeTop."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la banda de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A.",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la cinta de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -35,7 +35,7 @@
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe ambos elevadores en la vista 3D: pueden moverse a la vez, y la banda de transferencia del nivel 2 es el único lugar donde sus cadenas se encuentran.",
+      "body": "Observe ambos elevadores en la vista 3D: pueden moverse a la vez, y la cinta de transferencia del nivel 2 es el único lugar donde sus cadenas se encuentran.",
       "checkpoint": "Ningún elevador se mueve mientras su superficie corre, y no cae ninguna caja."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la banda de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A."
+    "El inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la cinta de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A."
   ]
 }

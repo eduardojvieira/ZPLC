@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "title": "Tipos, aritmética y comparación: un total y tres bandas",
+  "title": "Tipos, aritmética y comparación: un total y tres cintas",
   "summary": "Mantenga un total acumulado en una variable INT, súmele un valor en cada pulsación y conviértalo en tres resultados BOOL con operadores de comparación.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador concreto.",
   "objectives": [
@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objetivo",
       "body": "En src/TypedSteps.st están escritas la variable INT Total y las comparaciones Low (Total < 10), Exact (Total = 10) y High (Total > 10). Escriba la aritmética: en cada flanco ascendente de Step sume 5 a Total, y mientras Reset sea TRUE ponga Total en 0.",
-      "checkpoint": "Total pasa por 0, 5, 10 y 15, y las tres salidas muestran en qué banda está."
+      "checkpoint": "Total pasa por 0, 5, 10 y 15, y las tres salidas muestran en qué cinta está."
     },
     {
       "key": "predict",

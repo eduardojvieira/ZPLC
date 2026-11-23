@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Del sensor A al sensor B",
-  "summary": "Secuencie un movimiento con un set y un reset: haga correr la banda desde el sensor A hasta que la caja llegue al sensor B.",
+  "summary": "Secuencie un movimiento con un set y un reset: haga correr la cinta desde el sensor A hasta que la caja llegue al sensor B.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Usar un set y un reset para mantener una salida entre dos eventos.",
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial nunca hace correr la banda; active Run cuando EyeA vea la caja y bórrela cuando EyeB vea la caja.",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial nunca hace correr la cinta; active Run cuando EyeA vea la caja y bórrela cuando EyeB vea la caja.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -35,7 +35,7 @@
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Compare el instante en que A se apaga con el instante en que B se enciende: la banda sigue corriendo entre ambos porque Run conserva su valor.",
+      "body": "Compare el instante en que A se apaga con el instante en que B se enciende: la cinta sigue corriendo entre ambos porque Run conserva su valor.",
       "checkpoint": "Ambos sensores cuentan la caja, Run está apagada al final y ninguna caja cae."
     },
     {
@@ -55,5 +55,5 @@
       "text": "Añada después un segundo IF que escriba FALSE cuando EyeB sea TRUE, para que el reset gane cuando ambos sensores sean TRUE."
     }
   ],
-  "faultCases": ["El inicial nunca hace correr la banda; active Run cuando EyeA vea la caja y bórrela cuando EyeB vea la caja."]
+  "faultCases": ["El inicial nunca hace correr la cinta; active Run cuando EyeA vea la caja y bórrela cuando EyeB vea la caja."]
 }

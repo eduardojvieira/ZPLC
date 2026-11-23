@@ -3714,7 +3714,7 @@
           ]
         },
         "es": {
-          "title": "Tipos, aritmética y comparación: un total y tres bandas",
+          "title": "Tipos, aritmética y comparación: un total y tres cintas",
           "summary": "Mantenga un total acumulado en una variable INT, súmele un valor en cada pulsación y conviértalo en tres resultados BOOL con operadores de comparación.",
           "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador concreto.",
           "objectives": [
@@ -3726,7 +3726,7 @@
               "key": "objective",
               "title": "Objetivo",
               "body": "En src/TypedSteps.st están escritas la variable INT Total y las comparaciones Low (Total < 10), Exact (Total = 10) y High (Total > 10). Escriba la aritmética: en cada flanco ascendente de Step sume 5 a Total, y mientras Reset sea TRUE ponga Total en 0.",
-              "checkpoint": "Total pasa por 0, 5, 10 y 15, y las tres salidas muestran en qué banda está."
+              "checkpoint": "Total pasa por 0, 5, 10 y 15, y las tres salidas muestran en qué cinta está."
             },
             {
               "key": "predict",
@@ -8332,7 +8332,7 @@
           ]
         },
         "es": {
-          "title": "Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres bandas",
+          "title": "Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres cintas",
           "summary": "Mantenga un total acumulado en una variable INT con bloques ADD, SEL y R_TRIG, y conviértalo en tres resultados BOOL con bloques de comparación.",
           "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador en particular.",
           "objectives": [
@@ -8344,7 +8344,7 @@
               "key": "objective",
               "title": "Objetivo",
               "body": "En src/TypedSteps.fbd.json un bloque SEL borra la variable INT Total mientras Reset es TRUE, y las comparaciones Low (Total < 10), Exact (Total = 10) y High (Total > 10) están conectadas a sus salidas. Arme la aritmética: en cada flanco ascendente de Step sume 5 a Total.",
-              "checkpoint": "Total va de 0 a 5, a 10 y a 15, y las tres salidas muestran en qué banda está."
+              "checkpoint": "Total va de 0 a 5, a 10 y a 15, y las tres salidas muestran en qué cinta está."
             },
             {
               "key": "predict",
@@ -9402,7 +9402,7 @@
         },
         "es": {
           "title": "Clasificación en un transportador como diagrama",
-          "summary": "Describa un transportador clasificador como un diagrama de pasos de detenido, en marcha y falla: clasifique las piezas metálicas en marcha y bloquee la banda cuando la planta informe un atasco.",
+          "summary": "Describa un transportador clasificador como un diagrama de pasos de detenido, en marcha y falla: clasifique las piezas metálicas en marcha y bloquee la cinta cuando la planta informe un atasco.",
           "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra un transportador físico ni la liberación de atascos.",
           "objectives": [
             "Describa un transportador con tres pasos, con la memoria de clasificación en una variable local que actualiza la acción de marcha.",
@@ -9413,7 +9413,7 @@
               "key": "objective",
               "title": "Objetivo",
               "body": "En src/Conveyor.sfc.json están dibujados los pasos STOPPED, RUNNING y FAULT, sus acciones y las transiciones de STOPPED a RUNNING (Start), de RUNNING a STOPPED (Stop) y de FAULT a STOPPED (Reset AND NOT JamDetected); los sensores pertenecen a la planta. Agregue la transición que falta de RUNNING a FAULT con JamDetected y prioridad 1, de modo que un atasco gane sobre Stop.",
-              "checkpoint": "La banda funciona tras Start, el desviador actúa una vez para la pieza metálica, y un atasco detiene la banda y enciende FaultLamp."
+              "checkpoint": "La cinta funciona tras Start, el desviador actúa una vez para la pieza metálica, y un atasco detiene la cinta y enciende FaultLamp."
             },
             {
               "key": "predict",
@@ -9424,7 +9424,7 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene transición de RUNNING a FAULT, así que un atasco no cambia nada: la banda sigue en marcha y FaultLamp queda apagada; agregue una transición de RUNNING a FAULT cuya condición sea JamDetected y cuya prioridad sea 1.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene transición de RUNNING a FAULT, así que un atasco no cambia nada: la cinta sigue en marcha y FaultLamp queda apagada; agregue una transición de RUNNING a FAULT cuya condición sea JamDetected y cuya prioridad sea 1.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -9457,7 +9457,7 @@
             }
           ],
           "faultCases": [
-            "El programa inicial no tiene transición de RUNNING a FAULT, así que un atasco no cambia nada: la banda sigue en marcha y FaultLamp queda apagada; agregue una transición de RUNNING a FAULT cuya condición sea JamDetected y cuya prioridad sea 1."
+            "El programa inicial no tiene transición de RUNNING a FAULT, así que un atasco no cambia nada: la cinta sigue en marcha y FaultLamp queda apagada; agregue una transición de RUNNING a FAULT cuya condición sea JamDetected y cuya prioridad sea 1."
           ]
         }
       }
@@ -9748,7 +9748,7 @@
         },
         "es": {
           "title": "Proyecto final: una estación de empaque como diagrama",
-          "summary": "Construya una estación de empaque como un diagrama funcional secuencial a partir de una descripción escrita, con una banda con autorretención, una cuenta de tres piezas, una parada de emergencia y una falla enclavada, y demuéstrelo con un escenario que también comprueba lo que no debe ocurrir.",
+          "summary": "Construya una estación de empaque como un diagrama funcional secuencial a partir de una descripción escrita, con una cinta con autorretención, una cuenta de tres piezas, una parada de emergencia y una falla enclavada, y demuéstrelo con un escenario que también comprueba lo que no debe ocurrir.",
           "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra requisitos de una línea de empaque, el comportamiento de una función de seguridad, tiempos de sensores ni ningún comportamiento de máquinas reales.",
           "objectives": [
             "Convierta cinco requisitos escritos en un diagrama de pasos, transiciones y acciones, y decida qué comportamiento es un paso y cuál es una transición.",
@@ -9758,19 +9758,19 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "Una estación de empaque tiene una banda, un sensor de piezas y cinco botones. Complete el diagrama de src/Station.sfc.json para que: (1) Start encienda Belt, y Stop o EStop la apaguen y devuelvan el diagrama a IDLE. (2) Cada pieza que llegue al sensor se cuente una vez, y tres piezas formen un lote: BatchFull se enciende y la banda se detiene. (3) Si Part permanece encendida 50 ms o más, el sensor está bloqueado: Fault se enciende y la banda se detiene. (4) Reset borre la cuenta y BatchFull, y borre Fault solo cuando Part ya no esté encendida. (5) Tras cualquier parada, la banda funcione de nuevo solo después de un nuevo Start. El programa inicial tiene los pasos IDLE y RUN; agregue SEEN (hay una pieza en el sensor), BATCH_FULL y JAMMED, con sus transiciones y acciones.",
-              "checkpoint": "La banda funciona tras Start, se detiene con Stop, EStop, un lote completo y un sensor bloqueado, y nunca se reinicia sin un nuevo Start."
+              "body": "Una estación de empaque tiene una cinta, un sensor de piezas y cinco botones. Complete el diagrama de src/Station.sfc.json para que: (1) Start encienda Belt, y Stop o EStop la apaguen y devuelvan el diagrama a IDLE. (2) Cada pieza que llegue al sensor se cuente una vez, y tres piezas formen un lote: BatchFull se enciende y la cinta se detiene. (3) Si Part permanece encendida 50 ms o más, el sensor está bloqueado: Fault se enciende y la cinta se detiene. (4) Reset borre la cuenta y BatchFull, y borre Fault solo cuando Part ya no esté encendida. (5) Tras cualquier parada, la cinta funcione de nuevo solo después de un nuevo Start. El programa inicial tiene los pasos IDLE y RUN; agregue SEEN (hay una pieza en el sensor), BATCH_FULL y JAMMED, con sus transiciones y acciones.",
+              "checkpoint": "La cinta funciona tras Start, se detiene con Stop, EStop, un lote completo y un sensor bloqueado, y nunca se reinicia sin un nuevo Start."
             },
             {
               "key": "predict",
               "title": "Prediga",
               "body": "Las piezas pasan por el sensor a los 50, 90 y 150 ms. Prediga BatchFull a los 140 ms y a los 180 ms, y Belt a los 180 ms. Start se pulsa de nuevo a los 200 ms: prediga Belt a los 230 ms.",
-              "checkpoint": "OFF a los 140 ms, tras dos piezas; ON a los 180 ms, con la banda detenida; la banda sigue apagada a los 230 ms, porque el diagrama espera en BATCH_FULL y solo Reset lo deja."
+              "checkpoint": "OFF a los 140 ms, tras dos piezas; ON a los 180 ms, con la cinta detenida; la cinta sigue apagada a los 230 ms, porque el diagrama espera en BATCH_FULL y solo Reset lo deja."
             },
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial solo tiene IDLE y RUN y deja que Stop detenga la banda. Agregue el paso SEEN, con la acción A_RUN y una acción P1 que cuente, los pasos BATCH_FULL y JAMMED, las transiciones entre ellos con prioridades, y EStop en las transiciones de parada.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial solo tiene IDLE y RUN y deja que Stop detenga la cinta. Agregue el paso SEEN, con la acción A_RUN y una acción P1 que cuente, los pasos BATCH_FULL y JAMMED, las transiciones entre ellos con prioridades, y EStop en las transiciones de parada.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -9782,14 +9782,14 @@
             {
               "key": "observe",
               "title": "Observe",
-              "body": "Compare 270, 320, 330 y 400 ms: Reset vacía el lote a los 240 ms pero la banda sigue apagada hasta un nuevo Start a los 280 ms, y la parada de emergencia de los 320 ms detiene la banda a los 330 ms, donde se queda hasta que se pulsa Start a los 370 ms. La pieza que bloquea el sensor desde los 410 ms provoca la falla, y Reset a los 480 ms no la borra mientras el sensor siga bloqueado; solo se borra después de que Part cae a los 510 ms y se pulsa Reset a los 530 ms.",
-              "checkpoint": "A los 490 ms Fault está encendida y la banda apagada aunque se pulsó Reset; a los 550 ms Fault está apagada y la banda sigue apagada."
+              "body": "Compare 270, 320, 330 y 400 ms: Reset vacía el lote a los 240 ms pero la cinta sigue apagada hasta un nuevo Start a los 280 ms, y la parada de emergencia de los 320 ms detiene la cinta a los 330 ms, donde se queda hasta que se pulsa Start a los 370 ms. La pieza que bloquea el sensor desde los 410 ms provoca la falla, y Reset a los 480 ms no la borra mientras el sensor siga bloqueado; solo se borra después de que Part cae a los 510 ms y se pulsa Reset a los 530 ms.",
+              "checkpoint": "A los 490 ms Fault está encendida y la cinta apagada aunque se pulsó Reset; a los 550 ms Fault está apagada y la cinta sigue apagada."
             },
             {
               "key": "reflect",
               "title": "Reflexione",
               "body": "¿A cuál de los cinco requisitos apuntó la primera aserción fallida, y cuáles solo encontró al leer el escenario? Piense en algo más que la estación nunca debería hacer, y si el escenario lo detectaría.",
-              "checkpoint": "La mayoría de las aserciones comprueban lo que no debe ocurrir: una banda que se reinicia sola, una falla borrada demasiado pronto, una luz de lote que queda encendida. Un diagrama que solo hace lo pedido pasa el camino feliz y aun así falla estas. El escenario muestra solo la lógica; no es una línea de empaque ni una función de seguridad."
+              "checkpoint": "La mayoría de las aserciones comprueban lo que no debe ocurrir: una cinta que se reinicia sola, una falla borrada demasiado pronto, una luz de lote que queda encendida. Un diagrama que solo hace lo pedido pasa el camino feliz y aun así falla estas. El escenario muestra solo la lógica; no es una línea de empaque ni una función de seguridad."
             }
           ],
           "hints": [
@@ -9803,7 +9803,7 @@
             }
           ],
           "faultCases": [
-            "El programa inicial solo tiene IDLE y RUN y deja que Stop detenga la banda. Agregue el paso SEEN, con la acción A_RUN y una acción P1 que cuente, los pasos BATCH_FULL y JAMMED, las transiciones entre ellos con prioridades, y EStop en las transiciones de parada."
+            "El programa inicial solo tiene IDLE y RUN y deja que Stop detenga la cinta. Agregue el paso SEEN, con la acción A_RUN y una acción P1 que cuente, los pasos BATCH_FULL y JAMMED, las transiciones entre ellos con prioridades, y EStop en las transiciones de parada."
           ]
         }
       }
@@ -10843,7 +10843,7 @@
               "key": "objective",
               "title": "Objetivo",
               "body": "En src/TypedSteps.il están escritas las tres comparaciones del final: LD Total carga el INT, LT 10 lo compara y deja un BOOL, y ST Low lo guarda. Escriba la aritmética encima: en cada flanco ascendente de Step (Step en ON ahora y StepWas en OFF) sume 5 a Total, con LD Total, ADD 5, ST Total; JMPCN skip salta esas líneas cuando la condición es FALSE. Después, mientras Reset sea TRUE, cargue 0 y guárdelo en Total.",
-              "checkpoint": "Total pasa por 0, 5, 10, 15, y las tres salidas muestran en qué banda está."
+              "checkpoint": "Total pasa por 0, 5, 10, 15, y las tres salidas muestran en qué cinta está."
             },
             {
               "key": "predict",
@@ -13614,7 +13614,7 @@
         },
         "es": {
           "title": "Mover una caja hasta un sensor",
-          "summary": "Arranque una banda con un botón y deténgala cuando una caja llegue al sensor del extremo.",
+          "summary": "Arranque una cinta con un botón y deténgala cuando una caja llegue al sensor del extremo.",
           "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
           "objectives": [
             "Arrancar un actuador con la pulsación de un botón y recordar que está en marcha.",
@@ -13625,18 +13625,18 @@
               "key": "objective",
               "title": "Objetivo",
               "body": "En src/BeltToSensor.st, mantenga una memoria Running: actívela con Start, bórrela con EyeFar y conecte Run y Emit.",
-              "checkpoint": "Run sigue a la memoria; Emit pone una caja en la banda cuando se pulsa Start."
+              "checkpoint": "Run sigue a la memoria; Emit pone una caja en la cinta cuando se pulsa Start."
             },
             {
               "key": "predict",
               "title": "Predecir",
-              "body": "Antes de ejecutar, siga la caja: el botón de inicio es solo una pulsación corta, pero la banda debe seguir en marcha hasta que llegue la caja.",
-              "checkpoint": "Banda apagada antes de la pulsación; encendida después, con una caja encima; apagada otra vez en cuanto EyeFar ve la caja, y así se queda."
+              "body": "Antes de ejecutar, siga la caja: el botón de inicio es solo una pulsación corta, pero la cinta debe seguir en marcha hasta que llegue la caja.",
+              "checkpoint": "Cinta apagada antes de la pulsación; encendida después, con una caja encima; apagada otra vez en cuanto EyeFar ve la caja, y así se queda."
             },
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que la banda nunca se mueve; arranque la banda y ponga una caja con Start, y detenga la banda cuando EyeFar vea la caja.",
+              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que la cinta nunca se mueve; arranque la cinta y ponga una caja con Start, y detenga la cinta cuando EyeFar vea la caja.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -13648,7 +13648,7 @@
             {
               "key": "observe",
               "title": "Observar",
-              "body": "Observe la caja avanzar por la banda en la vista 3D y detenerse bajo el sensor; compárelo con la salida Run en la traza.",
+              "body": "Observe la caja avanzar por la cinta en la vista 3D y detenerse bajo el sensor; compárelo con la salida Run en la traza.",
               "checkpoint": "Run baja cuando el sensor se activa, no antes, y la caja nunca cae."
             },
             {
@@ -13661,7 +13661,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "Start es un pulso, así que la banda necesita una memoria: active Running cuando Start sea TRUE y bórrela cuando EyeFar sea TRUE."
+              "text": "Start es un pulso, así que la cinta necesita una memoria: active Running cuando Start sea TRUE y bórrela cuando EyeFar sea TRUE."
             },
             {
               "level": 2,
@@ -13669,7 +13669,7 @@
             }
           ],
           "faultCases": [
-            "El inicial no gobierna ninguna salida, así que la banda nunca se mueve; arranque la banda y ponga una caja con Start, y detenga la banda cuando EyeFar vea la caja."
+            "El inicial no gobierna ninguna salida, así que la cinta nunca se mueve; arranque la cinta y ponga una caja con Start, y detenga la cinta cuando EyeFar vea la caja."
           ]
         }
       }
@@ -13809,7 +13809,7 @@
         },
         "es": {
           "title": "Del sensor A al sensor B",
-          "summary": "Secuencie un movimiento con un set y un reset: haga correr la banda desde el sensor A hasta que la caja llegue al sensor B.",
+          "summary": "Secuencie un movimiento con un set y un reset: haga correr la cinta desde el sensor A hasta que la caja llegue al sensor B.",
           "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
           "objectives": [
             "Usar un set y un reset para mantener una salida entre dos eventos.",
@@ -13831,7 +13831,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial nunca hace correr la banda; active Run cuando EyeA vea la caja y bórrela cuando EyeB vea la caja.",
+              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial nunca hace correr la cinta; active Run cuando EyeA vea la caja y bórrela cuando EyeB vea la caja.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -13843,7 +13843,7 @@
             {
               "key": "observe",
               "title": "Observar",
-              "body": "Compare el instante en que A se apaga con el instante en que B se enciende: la banda sigue corriendo entre ambos porque Run conserva su valor.",
+              "body": "Compare el instante en que A se apaga con el instante en que B se enciende: la cinta sigue corriendo entre ambos porque Run conserva su valor.",
               "checkpoint": "Ambos sensores cuentan la caja, Run está apagada al final y ninguna caja cae."
             },
             {
@@ -13864,7 +13864,7 @@
             }
           ],
           "faultCases": [
-            "El inicial nunca hace correr la banda; active Run cuando EyeA vea la caja y bórrela cuando EyeB vea la caja."
+            "El inicial nunca hace correr la cinta; active Run cuando EyeA vea la caja y bórrela cuando EyeB vea la caja."
           ]
         }
       }
@@ -14036,13 +14036,13 @@
             {
               "key": "predict",
               "title": "Predecir",
-              "body": "Antes de ejecutar, cuente las cajas: se cargan tres, una tras otra, y luego la banda las descarga.",
-              "checkpoint": "La banda corre y aparecen cajas hasta que tres han pasado por EyeIn; Done sigue apagada hasta que la tercera caja pasa por EyeOut, y entonces la banda se detiene."
+              "body": "Antes de ejecutar, cuente las cajas: se cargan tres, una tras otra, y luego la cinta las descarga.",
+              "checkpoint": "La cinta corre y aparecen cajas hasta que tres han pasado por EyeIn; Done sigue apagada hasta que la tercera caja pasa por EyeOut, y entonces la cinta se detiene."
             },
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la banda.",
+              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la cinta.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -14055,12 +14055,12 @@
               "key": "observe",
               "title": "Observar",
               "body": "Observe las cajas entrar una a una y salir por el otro extremo; los contadores cambian una vez por caja, no una vez por ciclo.",
-              "checkpoint": "Las tres cajas se entregan, ninguna cae ni choca, y Done está encendida cuando la banda se detiene."
+              "checkpoint": "Las tres cajas se entregan, ninguna cae ni choca, y Done está encendida cuando la cinta se detiene."
             },
             {
               "key": "reflect",
               "title": "Reflexionar",
-              "body": "Un contador cuenta flancos ascendentes, así que una caja que permanece bajo un sensor cuenta una sola vez; la aserción AT final fija Done y la banda detenida.",
+              "body": "Un contador cuenta flancos ascendentes, así que una caja que permanece bajo un sensor cuenta una sola vez; la aserción AT final fija Done y la cinta detenida.",
               "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
             }
           ],
@@ -14075,7 +14075,7 @@
             }
           ],
           "faultCases": [
-            "El inicial no tiene contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la banda."
+            "El inicial no tiene contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la cinta."
           ]
         }
       }
@@ -15768,30 +15768,30 @@
           ]
         },
         "es": {
-          "title": "Tomar de una banda y dejar en otra",
-          "summary": "Secuencie un carro con pinza usando finales de carrera y la señal de agarre para pasar cuatro cajas de una banda de entrada a una banda de salida.",
+          "title": "Tomar de una cinta y dejar en otra",
+          "summary": "Secuencie un carro con pinza usando finales de carrera y la señal de agarre para pasar cuatro cajas de una cinta de entrada a una cinta de salida.",
           "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
           "objectives": [
             "Secuenciar un tomar y colocar con un estado por movimiento, cada uno a la espera de su final de carrera.",
-            "Esperar la señal de agarre antes de elevar y mantener detenida la banda receptora mientras se deja una caja."
+            "Esperar la señal de agarre antes de elevar y mantener detenida la cinta receptora mientras se deja una caja."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/BeltTransfer.st, escriba una máquina de estados con CASE: para cada caja baje la pinza, ciérrela y espere Gripped, eleve, lleve la caja sobre la banda de salida, baje, abra la pinza y deje que la caja se asiente, eleve y regrese. Hágalo con cuatro cajas y encienda Done cuando la cuarta haya pasado EyeOut.",
+              "body": "En src/BeltTransfer.st, escriba una máquina de estados con CASE: para cada caja baje la pinza, ciérrela y espere Gripped, eleve, lleve la caja sobre la cinta de salida, baje, abra la pinza y deje que la caja se asiente, eleve y regrese. Hágalo con cuatro cajas y encienda Done cuando la cuarta haya pasado EyeOut.",
               "checkpoint": "Cada movimiento empieza cuando el final de carrera del anterior está activo, y las salidas siguen al estado."
             },
             {
               "key": "predict",
               "title": "Predecir",
-              "body": "Antes de ejecutar, siga una caja: la cuchilla la sujeta en EyePick, la pinza baja, cierra, eleva y cruza hasta XMax, y la banda de salida permanece detenida mientras la caja se deja y se asienta.",
-              "checkpoint": "Grip está activo desde que la pinza cierra hasta que la caja está sobre la banda de salida; Hold sigue activo durante el trabajo; la banda de salida vuelve a correr cuando la caja está en reposo."
+              "body": "Antes de ejecutar, siga una caja: la cuchilla la sujeta en EyePick, la pinza baja, cierra, eleva y cruza hasta XMax, y la cinta de salida permanece detenida mientras la caja se deja y se asienta.",
+              "checkpoint": "Grip está activo desde que la pinza cierra hasta que la caja está sobre la cinta de salida; Hold sigue activo durante el trabajo; la cinta de salida vuelve a correr cuando la caja está en reposo."
             },
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la banda de salida, y encienda Done tras la cuarta.",
+              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la cinta de salida, y encienda Done tras la cuarta.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -15803,13 +15803,13 @@
             {
               "key": "observe",
               "title": "Observar",
-              "body": "Observe la pinza en la vista 3D: permanece cerrada y quieta hasta que sujeta la caja, y la caja queda quieta sobre la banda de salida antes de que esa banda vuelva a correr.",
-              "checkpoint": "Ninguna caja cae, y la pinza se abre solo sobre la banda de salida."
+              "body": "Observe la pinza en la vista 3D: permanece cerrada y quieta hasta que sujeta la caja, y la caja queda quieta sobre la cinta de salida antes de que esa cinta vuelva a correr.",
+              "checkpoint": "Ninguna caja cae, y la pinza se abre solo sobre la cinta de salida."
             },
             {
               "key": "reflect",
               "title": "Reflexionar",
-              "body": "El escenario prueba que la pinza tomó una caja y la dejó, que una caja llegó al final de la banda de salida, que nada se cayó y que Done está encendido al final. No cuenta que crucen exactamente cuatro cajas: esa cuenta está en su programa.",
+              "body": "El escenario prueba que la pinza tomó una caja y la dejó, que una caja llegó al final de la cinta de salida, que nada se cayó y que Done está encendido al final. No cuenta que crucen exactamente cuatro cajas: esa cuenta está en su programa.",
               "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
             }
           ],
@@ -15820,11 +15820,11 @@
             },
             {
               "level": 2,
-              "text": "La pinza tarda en cerrar y una caja que aún se mueve no se toma: espere a que EyePick se mantenga un momento antes de bajar y espere Gripped antes de elevar. Detenga la banda de salida mientras se deja la caja."
+              "text": "La pinza tarda en cerrar y una caja que aún se mueve no se toma: espere a que EyePick se mantenga un momento antes de bajar y espere Gripped antes de elevar. Detenga la cinta de salida mientras se deja la caja."
             }
           ],
           "faultCases": [
-            "El inicial no gobierna ninguna salida, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la banda de salida, y encienda Done tras la cuarta."
+            "El inicial no gobierna ninguna salida, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la cinta de salida, y encienda Done tras la cuarta."
           ]
         }
       }
@@ -16060,7 +16060,7 @@
         },
         "es": {
           "title": "Ensamblar tapas y bases",
-          "summary": "Modele un ensamblador de dos ejes como un diagrama: tome una tapa de una banda, colóquela sobre una base en otra banda y repita tres veces.",
+          "summary": "Modele un ensamblador de dos ejes como un diagrama: tome una tapa de una cinta, colóquela sobre una base en otra cinta y repita tres veces.",
           "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
           "objectives": [
             "Coordinar dos ejes y una ventosa en una sola secuencia, con un paso por movimiento.",
@@ -16076,8 +16076,8 @@
             {
               "key": "predict",
               "title": "Predecir",
-              "body": "Antes de ejecutar, recorra el diagrama para una tapa: el brazo espera en la banda de tapas, baja, toma la tapa con la ventosa, eleva, cruza a la banda de bases, baja, suelta y regresa mientras la base ensamblada sale.",
-              "checkpoint": "El brazo nunca cruza las bandas mientras está abajo; la cuchilla de la base se abre solo después de soltar la tapa; Green se enciende tras el tercer ensamble."
+              "body": "Antes de ejecutar, recorra el diagrama para una tapa: el brazo espera en la cinta de tapas, baja, toma la tapa con la ventosa, eleva, cruza a la cinta de bases, baja, suelta y regresa mientras la base ensamblada sale.",
+              "checkpoint": "El brazo nunca cruza las cintas mientras está abajo; la cuchilla de la base se abre solo después de soltar la tapa; Green se enciende tras el tercer ensamble."
             },
             {
               "key": "edit",
@@ -16368,8 +16368,8 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/Assembler.st, nombre las posiciones como constantes (banda de tapas x 0, banda de bases x 100, abajo y 0, altura segura y 30, tolerancia 0,2 cm), escriba XSet y YSet en un estado por movimiento y continúe cuando XAt o YAt diga que el brazo está dentro de la tolerancia.",
-              "checkpoint": "Cada movimiento es una consigna y una comparación; el brazo nunca cruza las bandas por debajo de la altura segura."
+              "body": "En src/Assembler.st, nombre las posiciones como constantes (cinta de tapas x 0, cinta de bases x 100, abajo y 0, altura segura y 30, tolerancia 0,2 cm), escriba XSet y YSet en un estado por movimiento y continúe cuando XAt o YAt diga que el brazo está dentro de la tolerancia.",
+              "checkpoint": "Cada movimiento es una consigna y una comparación; el brazo nunca cruza las cintas por debajo de la altura segura."
             },
             {
               "key": "predict",
@@ -16392,7 +16392,7 @@
             {
               "key": "observe",
               "title": "Observar",
-              "body": "Observe en la traza cómo XPos y YPos llegan a cada consigna, y el brazo en la vista 3D cruzar las bandas solo a la altura segura.",
+              "body": "Observe en la traza cómo XPos y YPos llegan a cada consigna, y el brazo en la vista 3D cruzar las cintas solo a la altura segura.",
               "checkpoint": "Se coloca una tapa sobre cada base, nada se cae y Green está encendido al final."
             },
             {
@@ -16686,7 +16686,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "Mantenga un contador de pares enviados y otro de pares vistos en EyeIn, para que la banda lleve solo dos pares; Layer dice qué capa sigue y es el índice de JogMs."
+              "text": "Mantenga un contador de pares enviados y otro de pares vistos en EyeIn, para que la cinta lleve solo dos pares; Layer dice qué capa sigue y es el índice de JogMs."
             },
             {
               "level": 2,
@@ -16952,7 +16952,7 @@
             {
               "key": "predict",
               "title": "Predecir",
-              "body": "Antes de ejecutar, siga las cuentas: Y sube a 917 antes de que nada cruce la banda, baja a 500 sobre la caja, sube de nuevo, pasa al hueco en X y Z, y baja a 372 para la primera capa o a 622 para la segunda.",
+              "body": "Antes de ejecutar, siga las cuentas: Y sube a 917 antes de que nada cruce la cinta, baja a 500 sobre la caja, sube de nuevo, pasa al hueco en X y Z, y baja a 372 para la primera capa o a 622 para la segunda.",
               "checkpoint": "El hueco sigue a Cycle MOD 4 y la altura sigue a Cycle: cuatro cajas sobre la tarima y luego cuatro encima."
             },
             {
@@ -16987,7 +16987,7 @@
             },
             {
               "level": 2,
-              "text": "Use Cycle MOD 4 para el hueco y Cycle < 4 para la capa, y envíe la siguiente caja solo cuando la ventosa esté fuera de la banda."
+              "text": "Use Cycle MOD 4 para el hueco y Cycle < 4 para la capa, y envíe la siguiente caja solo cuando la ventosa esté fuera de la cinta."
             }
           ],
           "faultCases": [
@@ -17175,9 +17175,9 @@
           ]
         },
         "es": {
-          "title": "Enviar cada color a su banda",
-          "summary": "Lea el color de cada pieza que espera en la cuchilla de parada, empuje las rojas a la banda lateral y deje pasar las azules.",
-          "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el tiempo de respuesta del sensor ni la velocidad de la banda.",
+          "title": "Enviar cada color a su cinta",
+          "summary": "Lea el color de cada pieza que espera en la cuchilla de parada, empuje las rojas a la cinta lateral y deje pasar las azules.",
+          "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el tiempo de respuesta del sensor ni la velocidad de la cinta.",
           "objectives": [
             "Decidir una ruta a partir del resultado de un sensor cuando la pieza está quieta.",
             "Ejecutar un empuje como una secuencia corta: extender hasta Extended, retraer hasta Retracted."
@@ -17186,7 +17186,7 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/ColourSeparation.st, ponga en marcha las tres bandas tras Start y retenga cada pieza en la cuchilla. Espere a que esté quieta (T#300ms) y lea IsRed: empuje la roja a la banda lateral y suelte la azul.",
+              "body": "En src/ColourSeparation.st, ponga en marcha las tres cintas tras Start y retenga cada pieza en la cuchilla. Espere a que esté quieta (T#300ms) y lea IsRed: empuje la roja a la cinta lateral y suelte la azul.",
               "checkpoint": "Las piezas rojas terminan en RedBin, las azules en BlueBin, y Done se enciende tras la octava."
             },
             {
@@ -17198,7 +17198,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna banda se mueve y ninguna pieza se clasifica; ponga en marcha las bandas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules.",
+              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y ninguna pieza se clasifica; ponga en marcha las cintas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -17210,7 +17210,7 @@
             {
               "key": "observe",
               "title": "Observar",
-              "body": "Observe la vista 3D: una pieza roja se detiene en la cuchilla, la placa la empuja a la banda lateral y la siguiente espera; una azul pasa de largo hacia la salida.",
+              "body": "Observe la vista 3D: una pieza roja se detiene en la cuchilla, la placa la empuja a la cinta lateral y la siguiente espera; una azul pasa de largo hacia la salida.",
               "checkpoint": "Push nunca pasa a TRUE con una pieza azul, y la placa está de vuelta (Retracted) antes de que la cuchilla retenga la siguiente."
             },
             {
@@ -17231,7 +17231,7 @@
             }
           ],
           "faultCases": [
-            "El inicial no gobierna ninguna salida, así que ninguna banda se mueve y ninguna pieza se clasifica; ponga en marcha las bandas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules."
+            "El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y ninguna pieza se clasifica; ponga en marcha las cintas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules."
           ]
         }
       }
@@ -17439,7 +17439,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial solo memoriza Start y hace girar la banda de entrada, así que no se lee ni se clasifica ninguna pieza; añada los cuatro bloques de estado y gobierne las demás salidas.",
+              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial solo memoriza Start y hace girar la cinta de entrada, así que no se lee ni se clasifica ninguna pieza; añada los cuatro bloques de estado y gobierne las demás salidas.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -17472,7 +17472,7 @@
             }
           ],
           "faultCases": [
-            "El inicial solo memoriza Start y hace girar la banda de entrada, así que no se lee ni se clasifica ninguna pieza; añada los cuatro bloques de estado y gobierne las demás salidas."
+            "El inicial solo memoriza Start y hace girar la cinta de entrada, así que no se lee ni se clasifica ninguna pieza; añada los cuatro bloques de estado y gobierne las demás salidas."
           ]
         }
       }
@@ -17660,7 +17660,7 @@
         },
         "es": {
           "title": "Clasificar por peso",
-          "summary": "Compare la lectura de una báscula con un límite y envíe las cajas pesadas a la banda lateral y las ligeras de frente.",
+          "summary": "Compare la lectura de una báscula con un límite y envíe las cajas pesadas a la cinta lateral y las ligeras de frente.",
           "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la exactitud de la báscula.",
           "objectives": [
             "Clasificar una pieza comparando un valor analógico con un límite.",
@@ -17670,19 +17670,19 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/WeightSorter.st, ponga en marcha las bandas tras Start y retenga cada caja sobre la báscula con la cuchilla. Cuando Stable sea TRUE, compare Weight con 3.5 kg: empuje la caja más pesada a la banda lateral y suelte la más ligera bajando la cuchilla 2.5 s.",
+              "body": "En src/WeightSorter.st, ponga en marcha las cintas tras Start y retenga cada caja sobre la báscula con la cuchilla. Cuando Stable sea TRUE, compare Weight con 3.5 kg: empuje la caja más pesada a la cinta lateral y suelte la más ligera bajando la cuchilla 2.5 s.",
               "checkpoint": "Las cajas pesadas terminan en HeavyBin, las ligeras en LightBin, y Green se enciende tras doce cajas."
             },
             {
               "key": "predict",
               "title": "Predecir",
               "body": "Antes de ejecutar, piense qué lee Weight mientras la caja aún se mueve y por qué el programa espera a Stable. ¿Cuál de las dos masas, 2 kg y 5 kg, queda a cada lado de 3.5 kg?",
-              "checkpoint": "Weight es 0 hasta que la caja reposa; la decisión se toma una vez, en el primer ciclo con Stable en TRUE, y la banda de entrada se detiene mientras trabaja el empujador."
+              "checkpoint": "Weight es 0 hasta que la caja reposa; la decisión se toma una vez, en el primer ciclo con Stable en TRUE, y la cinta de entrada se detiene mientras trabaja el empujador."
             },
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna banda se mueve y no se pesa ninguna caja; ponga en marcha las bandas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso.",
+              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -17695,7 +17695,7 @@
               "key": "observe",
               "title": "Observar",
               "body": "Observe la vista 3D y la lectura de Weight: pasa de 0 a 2 o 5 kg cuando la caja se asienta. Una caja de 5 kg se empuja; una de 2 kg sigue su camino cuando baja la cuchilla.",
-              "checkpoint": "El empujador sale y vuelve una vez por caja pesada, y la banda de entrada permanece quieta durante la carrera."
+              "checkpoint": "El empujador sale y vuelve una vez por caja pesada, y la cinta de entrada permanece quieta durante la carrera."
             },
             {
               "key": "reflect",
@@ -17715,7 +17715,7 @@
             }
           ],
           "faultCases": [
-            "El inicial no gobierna ninguna salida, así que ninguna banda se mueve y no se pesa ninguna caja; ponga en marcha las bandas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso."
+            "El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso."
           ]
         }
       }
@@ -17947,7 +17947,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna banda se mueve y no se clasifica ninguna caja; ponga en marcha las bandas tras Start, clasifique cada caja con las dos barreras y envíela de frente, a la derecha o a la izquierda.",
+              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, clasifique cada caja con las dos barreras y envíela de frente, a la derecha o a la izquierda.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -17980,7 +17980,7 @@
             }
           ],
           "faultCases": [
-            "El inicial no gobierna ninguna salida, así que ninguna banda se mueve y no se clasifica ninguna caja; ponga en marcha las bandas tras Start, clasifique cada caja con las dos barreras y envíela de frente, a la derecha o a la izquierda."
+            "El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, clasifique cada caja con las dos barreras y envíela de frente, a la derecha o a la izquierda."
           ]
         }
       }
@@ -18202,7 +18202,7 @@
         },
         "es": {
           "title": "Clasificar por altura, mesa giratoria",
-          "summary": "Mida la altura de cada caja con una cortina de luz, conserve la lectura mayor y gire una mesa para que la caja salga por la banda de su clase.",
+          "summary": "Mida la altura de cada caja con una cortina de luz, conserve la lectura mayor y gire una mesa para que la caja salga por la cinta de su clase.",
           "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la exactitud de la cortina ni la velocidad de la mesa.",
           "objectives": [
             "Reducir un flujo de lecturas a un valor, el máximo, y clasificarlo con dos límites.",
@@ -18213,7 +18213,7 @@
               "key": "objective",
               "title": "Objetivo",
               "body": "En src/HeightSort.st, conserve el mayor HeightCm mientras ArrayBusy sea TRUE y clasifique la caja cuando haya pasado: hasta 25 cm baja, hasta 35 cm media, por encima alta. Lleve la caja a la mesa, deténgala, gire la mesa, saque la caja y vuelva al centro.",
-              "checkpoint": "Las cajas bajas salen por la banda central, las medias a la derecha, las altas a la izquierda, y Done se enciende tras siete cajas."
+              "checkpoint": "Las cajas bajas salen por la cinta central, las medias a la derecha, las altas a la izquierda, y Done se enciende tras siete cajas."
             },
             {
               "key": "predict",
@@ -18224,7 +18224,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna banda se mueve y no se clasifica ninguna caja; ponga en marcha las bandas tras Start, mida cada caja, gire la mesa hacia la banda de su clase y vuélvala al centro.",
+              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, mida cada caja, gire la mesa hacia la cinta de su clase y vuélvala al centro.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -18243,7 +18243,7 @@
               "key": "reflect",
               "title": "Reflexionar",
               "body": "La calificación no puede comparar números: ve los contenedores, no el máximo que midió ni los límites que eligió. Límites en cualquier punto entre 20 y 30 cm y entre 30 y 40 cm dan la misma calificación.",
-              "checkpoint": "Una caja en la banda equivocada incumple la aserción ALWAYS."
+              "checkpoint": "Una caja en la cinta equivocada incumple la aserción ALWAYS."
             }
           ],
           "hints": [
@@ -18257,7 +18257,7 @@
             }
           ],
           "faultCases": [
-            "El inicial no gobierna ninguna salida, así que ninguna banda se mueve y no se clasifica ninguna caja; ponga en marcha las bandas tras Start, mida cada caja, gire la mesa hacia la banda de su clase y vuélvala al centro."
+            "El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, mida cada caja, gire la mesa hacia la cinta de su clase y vuélvala al centro."
           ]
         }
       }
@@ -18429,7 +18429,7 @@
         },
         "es": {
           "title": "Clasificar por código de identidad",
-          "summary": "Lea el código de cada pieza que ve el sensor de visión y accione un brazo desviador para que las piezas de código 2 salgan por la banda lateral.",
+          "summary": "Lea el código de cada pieza que ve el sensor de visión y accione un brazo desviador para que las piezas de código 2 salgan por la cinta lateral.",
           "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
           "objectives": [
             "Encaminar piezas por un código entero y no por un interruptor.",
@@ -18439,7 +18439,7 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/VisionSorting.st, ponga en marcha ambas bandas tras Start. Lea Code mientras la pieza está en el campo del sensor de visión: la de código 1 sigue de frente; para código 2, cruce el brazo antes de que llegue la pieza, manténgalo hasta que haya pasado su extremo libre y vuelva a llevarlo a su posición.",
+              "body": "En src/VisionSorting.st, ponga en marcha ambas cintas tras Start. Lea Code mientras la pieza está en el campo del sensor de visión: la de código 1 sigue de frente; para código 2, cruce el brazo antes de que llegue la pieza, manténgalo hasta que haya pasado su extremo libre y vuelva a llevarlo a su posición.",
               "checkpoint": "Las piezas de código 1 terminan en Product1, las de código 2 en Product2, y Done se enciende tras doce piezas."
             },
             {
@@ -18451,7 +18451,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna banda se mueve y no se clasifica ninguna pieza; ponga en marcha ambas bandas tras Start y accione el brazo para cada pieza de código 2.",
+              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna pieza; ponga en marcha ambas cintas tras Start y accione el brazo para cada pieza de código 2.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -18463,13 +18463,13 @@
             {
               "key": "observe",
               "title": "Observar",
-              "body": "Observe la vista 3D y la lectura del sensor de visión: el código aparece mientras la pieza está en el campo, el brazo gira delante de una pieza de código 2 y esta se desliza a la banda lateral.",
+              "body": "Observe la vista 3D y la lectura del sensor de visión: el código aparece mientras la pieza está en el campo, el brazo gira delante de una pieza de código 2 y esta se desliza a la cinta lateral.",
               "checkpoint": "Una pieza de código 1 nunca mueve el brazo, y el brazo está en reposo antes de que llegue la pieza siguiente."
             },
             {
               "key": "reflect",
               "title": "Reflexionar",
-              "body": "La calificación ve las dos bandas de producto y que nada cayó; no ve su temporización, así que un tiempo que golpee una pieza solo se nota como una pieza mal encaminada o caída.",
+              "body": "La calificación ve las dos cintas de producto y que nada cayó; no ve su temporización, así que un tiempo que golpee una pieza solo se nota como una pieza mal encaminada o caída.",
               "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
             }
           ],
@@ -18484,7 +18484,7 @@
             }
           ],
           "faultCases": [
-            "El inicial no gobierna ninguna salida, así que ninguna banda se mueve y no se clasifica ninguna pieza; ponga en marcha ambas bandas tras Start y accione el brazo para cada pieza de código 2."
+            "El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna pieza; ponga en marcha ambas cintas tras Start y accione el brazo para cada pieza de código 2."
           ]
         }
       }
@@ -18709,11 +18709,11 @@
         },
         "es": {
           "title": "Mover cajas entre tres niveles",
-          "summary": "Secuencie dos elevadores como dos cadenas que corren en paralelo y se encuentran solo en la banda de transferencia compartida.",
+          "summary": "Secuencie dos elevadores como dos cadenas que corren en paralelo y se encuentran solo en la cinta de transferencia compartida.",
           "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
           "objectives": [
             "Describir cada elevador como su propia cadena de pasos que vuelve a su primer paso.",
-            "Arrancar ambas cadenas con una sola transición y dejar que se encuentren solo en la banda entre los elevadores."
+            "Arrancar ambas cadenas con una sola transición y dejar que se encuentren solo en la cinta entre los elevadores."
           ],
           "stages": [
             {
@@ -18725,13 +18725,13 @@
             {
               "key": "predict",
               "title": "Predecir",
-              "body": "Antes de ejecutar, siga una caja: recorre la banda de entrada hasta el elevador A, A sube con su superficie detenida, pasa la caja a la banda de transferencia del nivel 2 y baja; B hace lo mismo un nivel más arriba y entrega la caja a la banda de salida.",
-              "checkpoint": "Un elevador se mueve solo mientras su superficie está detenida, una banda corre hacia un elevador solo mientras ese elevador espera en su nivel de carga, y Green se enciende cuando cinco cajas han pasado por EyeTop."
+              "body": "Antes de ejecutar, siga una caja: recorre la cinta de entrada hasta el elevador A, A sube con su superficie detenida, pasa la caja a la cinta de transferencia del nivel 2 y baja; B hace lo mismo un nivel más arriba y entrega la caja a la cinta de salida.",
+              "checkpoint": "Un elevador se mueve solo mientras su superficie está detenida, una cinta corre hacia un elevador solo mientras ese elevador espera en su nivel de carga, y Green se enciende cuando cinco cajas han pasado por EyeTop."
             },
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la banda de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A.",
+              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la cinta de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -18743,7 +18743,7 @@
             {
               "key": "observe",
               "title": "Observar",
-              "body": "Observe ambos elevadores en la vista 3D: pueden moverse a la vez, y la banda de transferencia del nivel 2 es el único lugar donde sus cadenas se encuentran.",
+              "body": "Observe ambos elevadores en la vista 3D: pueden moverse a la vez, y la cinta de transferencia del nivel 2 es el único lugar donde sus cadenas se encuentran.",
               "checkpoint": "Ningún elevador se mueve mientras su superficie corre, y no cae ninguna caja."
             },
             {
@@ -18764,7 +18764,7 @@
             }
           ],
           "faultCases": [
-            "El inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la banda de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A."
+            "El inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la cinta de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A."
           ]
         }
       }
@@ -19268,19 +19268,19 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/Warehouse.sfc.json, añada la cadena de recuperar de R_PICK a R_FINISH: saque la caja de la celda pedida, llévela al muelle y póngala en la banda de salida.",
+              "body": "En src/Warehouse.sfc.json, añada la cadena de recuperar de R_PICK a R_FINISH: saque la caja de la celda pedida, llévela al muelle y póngala en la cinta de salida.",
               "checkpoint": "El paso IDLE es el único lugar donde se elige el trabajo siguiente: una caja en la entrada se almacena, una petición que espera por una celda con caja se recupera."
             },
             {
               "key": "predict",
               "title": "Predecir",
               "body": "Antes de ejecutar, siga el transelevador: toma la caja con la horquilla, la retrae, se mueve a la celda, extiende, baja la horquilla y la retrae otra vez; para recuperar, invierte la secuencia y entrega la caja en el muelle.",
-              "checkpoint": "El transelevador se mueve solo con la horquilla retraída, cada movimiento espera 0,3 s antes de fiarse de InPos, y Green se enciende cuando dos cajas han salido por la banda de salida."
+              "checkpoint": "El transelevador se mueve solo con la horquilla retraída, cada movimiento espera 0,3 s antes de fiarse de InPos, y Green se enciende cuando dos cajas han salido por la cinta de salida."
             },
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial almacena cajas pero no tiene pasos de recuperar, así que una petición nunca se atiende; añada la cadena que saca la caja de su celda, la lleva al muelle y la pone en la banda de salida, y deje que IDLE la inicie cuando una petición espere por una celda con caja.",
+              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial almacena cajas pero no tiene pasos de recuperar, así que una petición nunca se atiende; añada la cadena que saca la caja de su celda, la lleva al muelle y la pone en la cinta de salida, y deje que IDLE la inicie cuando una petición espere por una celda con caja.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -19313,7 +19313,7 @@
             }
           ],
           "faultCases": [
-            "El inicial almacena cajas pero no tiene pasos de recuperar, así que una petición nunca se atiende; añada la cadena que saca la caja de su celda, la lleva al muelle y la pone en la banda de salida, y deje que IDLE la inicie cuando una petición espere por una celda con caja."
+            "El inicial almacena cajas pero no tiene pasos de recuperar, así que una petición nunca se atiende; añada la cadena que saca la caja de su celda, la lleva al muelle y la pone en la cinta de salida, y deje que IDLE la inicie cuando una petición espere por una celda con caja."
           ]
         }
       }
@@ -19821,7 +19821,7 @@
               "key": "objective",
               "title": "Objetivo",
               "body": "En src/ThreeLevelLifts.st, añada una memoria Stopped: actívela cuando EStopOk sea FALSE, bórrela solo con Start, y haga que borre Active y encienda Red.",
-              "checkpoint": "Todas las salidas ya dependen de Active, así que borrar Active detiene las bandas y los elevadores a la vez."
+              "checkpoint": "Todas las salidas ya dependen de Active, así que borrar Active detiene las cintas y los elevadores a la vez."
             },
             {
               "key": "predict",
@@ -19844,7 +19844,7 @@
             {
               "key": "observe",
               "title": "Observar",
-              "body": "Observe cómo la luz de la torre se pone roja y las bandas y los elevadores se detienen cuando el escenario pulsa el paro de emergencia, y vuelven a funcionar tras Start.",
+              "body": "Observe cómo la luz de la torre se pone roja y las cintas y los elevadores se detienen cuando el escenario pulsa el paro de emergencia, y vuelven a funcionar tras Start.",
               "checkpoint": "Red sigue encendida después de soltar hasta Start, y las salidas caen en el mismo ciclo que EStopOk."
             },
             {
@@ -20142,7 +20142,7 @@
             {
               "key": "predict",
               "title": "Predecir",
-              "body": "Antes de ejecutar, siga el panel: el escenario lleva el brazo a la banda de las bases y lo devuelve, pulsa Start en manual, pasa a automático, arranca el ciclo y mantiene un botón de avance pulsado en mitad del ciclo.",
+              "body": "Antes de ejecutar, siga el panel: el escenario lleva el brazo a la cinta de las bases y lo devuelve, pulsa Start en manual, pasa a automático, arranca el ciclo y mantiene un botón de avance pulsado en mitad del ciclo.",
               "checkpoint": "En manual el brazo se mueve solo mientras se mantiene un botón y se detiene en su final de carrera; Start no hace nada; en automático el ciclo corre y el botón mantenido no cambia nada."
             },
             {
@@ -20401,8 +20401,8 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/HeightSortChain.st el clasificador de la lección 16.4 funciona mientras los sensores dicen la verdad. Añada un diagnóstico: una caja rompe BeamHigh durante cerca de un segundo, así que un TON de tres segundos sobre High marca la barrera como atascada. Memorice un Fault, detenga la banda de entrada y el módulo de cadenas, mantenga la cuchilla retenida y apague Busy.",
-              "checkpoint": "Tras la falla la banda de entrada está apagada, Busy y Done están apagados, la cuchilla sigue reteniendo y ninguna caja ha ido al contenedor equivocado."
+              "body": "En src/HeightSortChain.st el clasificador de la lección 16.4 funciona mientras los sensores dicen la verdad. Añada un diagnóstico: una caja rompe BeamHigh durante cerca de un segundo, así que un TON de tres segundos sobre High marca la barrera como atascada. Memorice un Fault, detenga la cinta de entrada y el módulo de cadenas, mantenga la cuchilla retenida y apague Busy.",
+              "checkpoint": "Tras la falla la cinta de entrada está apagada, Busy y Done están apagados, la cuchilla sigue reteniendo y ninguna caja ha ido al contenedor equivocado."
             },
             {
               "key": "predict",
@@ -20425,13 +20425,13 @@
             {
               "key": "observe",
               "title": "Observar",
-              "body": "Provoque usted mismo la falla en la vista 3D (BeamHigh, stuckOn) y observe High en la traza: permanece en TRUE mientras van y vienen cajas. Unos tres segundos después Fault se memoriza, la banda de entrada se detiene y Busy se apaga.",
+              "body": "Provoque usted mismo la falla en la vista 3D (BeamHigh, stuckOn) y observe High en la traza: permanece en TRUE mientras van y vienen cajas. Unos tres segundos después Fault se memoriza, la cinta de entrada se detiene y Busy se apaga.",
               "checkpoint": "High permanece en TRUE mucho más tiempo del que una caja necesita para pasar, y la parada sigue a la falla, no a una caja."
             },
             {
               "key": "reflect",
               "title": "Reflexionar",
-              "body": "La calificación ve lo que hizo la planta: ninguna caja desviada en ningún contenedor, la banda de entrada apagada y la cuchilla reteniendo al final. No ve su variable Fault ni los tres segundos que eligió; un límite demasiado corto detiene la línea en la primera caja alta y suspende.",
+              "body": "La calificación ve lo que hizo la planta: ninguna caja desviada en ningún contenedor, la cinta de entrada apagada y la cuchilla reteniendo al final. No ve su variable Fault ni los tres segundos que eligió; un límite demasiado corto detiene la línea en la primera caja alta y suspende.",
               "checkpoint": "Esta regla detecta una barrera atascada en encendido. Una barrera atascada en apagado, o un atasco del módulo de cadenas, necesita otra regla."
             }
           ],
@@ -20442,7 +20442,7 @@
             },
             {
               "level": 2,
-              "text": "Detenga lo que trae cajas nuevas: RunIn y RunChain llevan AND NOT Fault, Stand lleva AND NOT Fault para no encaminar ninguna caja con una lectura en la que no confía, y Busy se apaga. Deje en marcha las tres bandas de salida para que llegue una caja que ya va de camino."
+              "text": "Detenga lo que trae cajas nuevas: RunIn y RunChain llevan AND NOT Fault, Stand lleva AND NOT Fault para no encaminar ninguna caja con una lectura en la que no confía, y Busy se apaga. Deje en marcha las tres cintas de salida para que llegue una caja que ya va de camino."
             }
           ],
           "faultCases": [
@@ -20591,8 +20591,8 @@
           ]
         },
         "es": {
-          "title": "Construir una escena de banda desde el suelo vacío",
-          "summary": "Abra el Editor de escenas sobre un suelo vacío, coloque una banda, un emisor, un sensor y un botón de inicio con los nombres que da la lección, enlace sus señales en el mapa de la planta y escriba el programa que corre sobre ellos.",
+          "title": "Construir una escena de cinta desde el suelo vacío",
+          "summary": "Abra el Editor de escenas sobre un suelo vacío, coloque una cinta, un emisor, un sensor y un botón de inicio con los nombres que da la lección, enlace sus señales en el mapa de la planta y escriba el programa que corre sobre ellos.",
           "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
           "objectives": [
             "Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa.",
@@ -20602,19 +20602,19 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "Abra scene.json en el Editor de escenas y coloque cuatro piezas con exactamente estos nombres: Belt1 (una banda), Emitter1 (un emisor en el extremo cercano de la banda), EyeFar (un sensor difuso junto al extremo lejano de la banda, mirándola) y StartButton (un pulsador). En plant-map.json enlace StartButton.pressed con BeltToSensor.Start, EyeFar.detect con BeltToSensor.EyeFar, Belt1.run con BeltToSensor.Run y Emitter1.emit con BeltToSensor.Emit; luego, en src/BeltToSensor.st, mantenga una memoria Running: actívela con Start, bórrela con EyeFar y conecte Run y Emit.",
-              "checkpoint": "La escena tiene cuatro piezas con esos nombres, el mapa de la planta tiene cuatro señales, y Run sigue a la memoria mientras Emit pone una caja en la banda cuando se pulsa Start."
+              "body": "Abra scene.json en el Editor de escenas y coloque cuatro piezas con exactamente estos nombres: Belt1 (una cinta), Emitter1 (un emisor en el extremo cercano de la cinta), EyeFar (un sensor difuso junto al extremo lejano de la cinta, mirándola) y StartButton (un pulsador). En plant-map.json enlace StartButton.pressed con BeltToSensor.Start, EyeFar.detect con BeltToSensor.EyeFar, Belt1.run con BeltToSensor.Run y Emitter1.emit con BeltToSensor.Emit; luego, en src/BeltToSensor.st, mantenga una memoria Running: actívela con Start, bórrela con EyeFar y conecte Run y Emit.",
+              "checkpoint": "La escena tiene cuatro piezas con esos nombres, el mapa de la planta tiene cuatro señales, y Run sigue a la memoria mientras Emit pone una caja en la cinta cuando se pulsa Start."
             },
             {
               "key": "predict",
               "title": "Predecir",
-              "body": "Antes de ejecutar, siga la caja: el emisor la pone en el extremo cercano, la banda la lleva al extremo lejano y el sensor avisa al programa para detener la banda. Una pieza que falta o tiene otro nombre no puede hacer nada de eso, y la Comprobación dice cuál no encuentra.",
-              "checkpoint": "Banda apagada antes de la pulsación; encendida después, con una caja encima; apagada otra vez en cuanto EyeFar ve la caja, y así se queda."
+              "body": "Antes de ejecutar, siga la caja: el emisor la pone en el extremo cercano, la cinta la lleva al extremo lejano y el sensor avisa al programa para detener la cinta. Una pieza que falta o tiene otro nombre no puede hacer nada de eso, y la Comprobación dice cuál no encuentra.",
+              "checkpoint": "Cinta apagada antes de la pulsación; encendida después, con una caja encima; apagada otra vez en cuanto EyeFar ve la caja, y así se queda."
             },
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde la escena, el mapa de la planta y el programa, y ejecute: La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la banda y la detiene cuando EyeFar ve la caja.",
+              "body": "Corrija esta omisión del inicial, guarde la escena, el mapa de la planta y el programa, y ejecute: La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la cinta y la detiene cuando EyeFar ve la caja.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -20626,7 +20626,7 @@
             {
               "key": "observe",
               "title": "Observar",
-              "body": "Observe la caja avanzar por la banda que usted colocó y detenerse bajo el sensor que usted colocó; si falta una pieza, lea el mensaje de la Comprobación: nombra la pieza y el archivo donde se corrige.",
+              "body": "Observe la caja avanzar por la cinta que usted colocó y detenerse bajo el sensor que usted colocó; si falta una pieza, lea el mensaje de la Comprobación: nombra la pieza y el archivo donde se corrige.",
               "checkpoint": "Run baja cuando el sensor se activa, no antes, y la caja nunca cae."
             },
             {
@@ -20639,7 +20639,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "En el Editor de escenas elija la plantilla Suelo vacío, agregue las cuatro piezas y renombre cada una; la banda tiene longitud 2.4 y velocidad 0.5, y el sensor tiene alcance 1."
+              "text": "En el Editor de escenas elija la plantilla Suelo vacío, agregue las cuatro piezas y renombre cada una; la cinta tiene longitud 2.4 y velocidad 0.5, y el sensor tiene alcance 1."
             },
             {
               "level": 2,
@@ -20647,7 +20647,7 @@
             }
           ],
           "faultCases": [
-            "La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la banda y la detiene cuando EyeFar ve la caja."
+            "La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la cinta y la detiene cuando EyeFar ve la caja."
           ]
         }
       }
@@ -21033,7 +21033,7 @@
         },
         "es": {
           "title": "Mover una caja hasta un sensor en diagrama de escalera",
-          "summary": "Arranque una banda con un botón mediante una bobina de activación y deténgala con una bobina de borrado cuando una caja llegue al sensor del extremo.",
+          "summary": "Arranque una cinta con un botón mediante una bobina de activación y deténgala con una bobina de borrado cuando una caja llegue al sensor del extremo.",
           "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
           "objectives": [
             "Arrancar un actuador con la pulsación de un botón mediante una bobina de activación y recordar que está en marcha.",
@@ -21044,18 +21044,18 @@
               "key": "objective",
               "title": "Objetivo",
               "body": "En src/BeltToSensor.ld.json, mantenga una memoria Running: un peldaño la activa con Start, un segundo peldaño la borra con EyeFar, y otros dos peldaños gobiernan Run y Emit.",
-              "checkpoint": "Run sigue a la memoria; Emit pone una caja en la banda cuando se pulsa Start."
+              "checkpoint": "Run sigue a la memoria; Emit pone una caja en la cinta cuando se pulsa Start."
             },
             {
               "key": "predict",
               "title": "Predecir",
-              "body": "Antes de ejecutar, siga la caja: el botón de inicio es solo una pulsación corta, pero la banda debe seguir en marcha hasta que llegue la caja.",
-              "checkpoint": "Banda apagada antes de la pulsación; encendida después, con una caja encima; apagada otra vez en cuanto EyeFar ve la caja, y así se queda."
+              "body": "Antes de ejecutar, siga la caja: el botón de inicio es solo una pulsación corta, pero la cinta debe seguir en marcha hasta que llegue la caja.",
+              "checkpoint": "Cinta apagada antes de la pulsación; encendida después, con una caja encima; apagada otra vez en cuanto EyeFar ve la caja, y así se queda."
             },
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que la banda nunca se mueve; arranque la banda y ponga una caja con Start, y detenga la banda cuando EyeFar vea la caja.",
+              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que la cinta nunca se mueve; arranque la cinta y ponga una caja con Start, y detenga la cinta cuando EyeFar vea la caja.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -21067,7 +21067,7 @@
             {
               "key": "observe",
               "title": "Observar",
-              "body": "Observe la caja avanzar por la banda en la vista 3D y detenerse bajo el sensor; compárelo con la salida Run en la traza.",
+              "body": "Observe la caja avanzar por la cinta en la vista 3D y detenerse bajo el sensor; compárelo con la salida Run en la traza.",
               "checkpoint": "Run baja cuando el sensor se activa, no antes, y la caja nunca cae."
             },
             {
@@ -21080,7 +21080,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "Start es un pulso, así que la banda necesita una memoria: un peldaño con un contacto Start y una bobina de activación sobre Running la mantiene encendida, y un peldaño con un contacto EyeFar y una bobina de borrado la apaga."
+              "text": "Start es un pulso, así que la cinta necesita una memoria: un peldaño con un contacto Start y una bobina de activación sobre Running la mantiene encendida, y un peldaño con un contacto EyeFar y una bobina de borrado la apaga."
             },
             {
               "level": 2,
@@ -21088,7 +21088,7 @@
             }
           ],
           "faultCases": [
-            "El inicial no tiene peldaños, así que la banda nunca se mueve; arranque la banda y ponga una caja con Start, y detenga la banda cuando EyeFar vea la caja."
+            "El inicial no tiene peldaños, así que la cinta nunca se mueve; arranque la cinta y ponga una caja con Start, y detenga la cinta cuando EyeFar vea la caja."
           ]
         }
       }
@@ -21228,7 +21228,7 @@
         },
         "es": {
           "title": "Del sensor A al sensor B en diagrama de escalera",
-          "summary": "Secuencie un movimiento con una bobina de activación y una de borrado: haga correr la banda desde el sensor A hasta que la caja llegue al sensor B.",
+          "summary": "Secuencie un movimiento con una bobina de activación y una de borrado: haga correr la cinta desde el sensor A hasta que la caja llegue al sensor B.",
           "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
           "objectives": [
             "Usar un set y un reset para mantener una salida entre dos eventos.",
@@ -21250,7 +21250,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que la banda nunca corre; active Run cuando EyeA vea la caja y bórrelo cuando EyeB vea la caja.",
+              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que la cinta nunca corre; active Run cuando EyeA vea la caja y bórrelo cuando EyeB vea la caja.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -21262,7 +21262,7 @@
             {
               "key": "observe",
               "title": "Observar",
-              "body": "Compare el instante en que A se apaga con el instante en que B se enciende: la banda sigue corriendo entre ambos porque Run conserva su valor.",
+              "body": "Compare el instante en que A se apaga con el instante en que B se enciende: la cinta sigue corriendo entre ambos porque Run conserva su valor.",
               "checkpoint": "Ambos sensores cuentan la caja, Run está apagada al final y ninguna caja cae."
             },
             {
@@ -21283,7 +21283,7 @@
             }
           ],
           "faultCases": [
-            "El inicial no tiene peldaños, así que la banda nunca corre; active Run cuando EyeA vea la caja y bórrelo cuando EyeB vea la caja."
+            "El inicial no tiene peldaños, así que la cinta nunca corre; active Run cuando EyeA vea la caja y bórrelo cuando EyeB vea la caja."
           ]
         }
       }
@@ -21455,13 +21455,13 @@
             {
               "key": "predict",
               "title": "Predecir",
-              "body": "Antes de ejecutar, cuente las cajas: se cargan tres, una tras otra, y luego la banda las descarga.",
-              "checkpoint": "La banda corre y aparecen cajas hasta que tres han pasado por EyeIn; Done sigue apagada hasta que la tercera caja pasa por EyeOut, y entonces la banda se detiene."
+              "body": "Antes de ejecutar, cuente las cajas: se cargan tres, una tras otra, y luego la cinta las descarga.",
+              "checkpoint": "La cinta corre y aparecen cajas hasta que tres han pasado por EyeIn; Done sigue apagada hasta que la tercera caja pasa por EyeOut, y entonces la cinta se detiene."
             },
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños ni contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la banda.",
+              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños ni contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la cinta.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -21474,12 +21474,12 @@
               "key": "observe",
               "title": "Observar",
               "body": "Observe las cajas entrar una a una y salir por el otro extremo; los contadores cambian una vez por caja, no una vez por ciclo.",
-              "checkpoint": "Las tres cajas se entregan, ninguna cae ni choca, y Done está encendida cuando la banda se detiene."
+              "checkpoint": "Las tres cajas se entregan, ninguna cae ni choca, y Done está encendida cuando la cinta se detiene."
             },
             {
               "key": "reflect",
               "title": "Reflexionar",
-              "body": "Un contador cuenta flancos ascendentes, así que una caja que permanece bajo un sensor cuenta una sola vez; la aserción AT final fija Done y la banda detenida.",
+              "body": "Un contador cuenta flancos ascendentes, así que una caja que permanece bajo un sensor cuenta una sola vez; la aserción AT final fija Done y la cinta detenida.",
               "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
             }
           ],
@@ -21494,7 +21494,7 @@
             }
           ],
           "faultCases": [
-            "El inicial no tiene peldaños ni contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la banda."
+            "El inicial no tiene peldaños ni contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la cinta."
           ]
         }
       }
@@ -22437,30 +22437,30 @@
           ]
         },
         "es": {
-          "title": "Tomar de una banda y dejar en otra en diagrama de escalera",
-          "summary": "Secuencie un carro con pinza usando finales de carrera y la señal de agarre para pasar cuatro cajas de una banda de entrada a una banda de salida.",
+          "title": "Tomar de una cinta y dejar en otra en diagrama de escalera",
+          "summary": "Secuencie un carro con pinza usando finales de carrera y la señal de agarre para pasar cuatro cajas de una cinta de entrada a una cinta de salida.",
           "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
           "objectives": [
             "Secuenciar un tomar y colocar con un estado por movimiento, cada uno a la espera de su final de carrera.",
-            "Esperar la señal de agarre antes de elevar y mantener detenida la banda receptora mientras se deja una caja."
+            "Esperar la señal de agarre antes de elevar y mantener detenida la cinta receptora mientras se deja una caja."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/BeltTransfer.ld.json, escriba una máquina de estados en escalera (State es un INT: un bloque EQ lo comprueba y un bloque MOVE lo cambia): para cada caja baje la pinza, ciérrela y espere Gripped, eleve, lleve la caja sobre la banda de salida, baje, abra la pinza y deje que la caja se asiente, eleve y regrese. Hágalo con cuatro cajas y encienda Done cuando la cuarta haya pasado EyeOut.",
+              "body": "En src/BeltTransfer.ld.json, escriba una máquina de estados en escalera (State es un INT: un bloque EQ lo comprueba y un bloque MOVE lo cambia): para cada caja baje la pinza, ciérrela y espere Gripped, eleve, lleve la caja sobre la cinta de salida, baje, abra la pinza y deje que la caja se asiente, eleve y regrese. Hágalo con cuatro cajas y encienda Done cuando la cuarta haya pasado EyeOut.",
               "checkpoint": "Cada movimiento empieza cuando el final de carrera del anterior está activo, y las salidas siguen al estado."
             },
             {
               "key": "predict",
               "title": "Predecir",
-              "body": "Antes de ejecutar, siga una caja: la cuchilla la sujeta en EyePick, la pinza baja, cierra, eleva y cruza hasta XMax, y la banda de salida permanece detenida mientras la caja se deja y se asienta.",
-              "checkpoint": "Grip está activo desde que la pinza cierra hasta que la caja está sobre la banda de salida; Hold sigue activo durante el trabajo; la banda de salida vuelve a correr cuando la caja está en reposo."
+              "body": "Antes de ejecutar, siga una caja: la cuchilla la sujeta en EyePick, la pinza baja, cierra, eleva y cruza hasta XMax, y la cinta de salida permanece detenida mientras la caja se deja y se asienta.",
+              "checkpoint": "Grip está activo desde que la pinza cierra hasta que la caja está sobre la cinta de salida; Hold sigue activo durante el trabajo; la cinta de salida vuelve a correr cuando la caja está en reposo."
             },
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la banda de salida, y encienda Done tras la cuarta.",
+              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la cinta de salida, y encienda Done tras la cuarta.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -22472,13 +22472,13 @@
             {
               "key": "observe",
               "title": "Observar",
-              "body": "Observe la pinza en la vista 3D: permanece cerrada y quieta hasta que sujeta la caja, y la caja queda quieta sobre la banda de salida antes de que esa banda vuelva a correr.",
-              "checkpoint": "Ninguna caja cae, y la pinza se abre solo sobre la banda de salida."
+              "body": "Observe la pinza en la vista 3D: permanece cerrada y quieta hasta que sujeta la caja, y la caja queda quieta sobre la cinta de salida antes de que esa cinta vuelva a correr.",
+              "checkpoint": "Ninguna caja cae, y la pinza se abre solo sobre la cinta de salida."
             },
             {
               "key": "reflect",
               "title": "Reflexionar",
-              "body": "El escenario prueba que la pinza tomó una caja y la dejó, que una caja llegó al final de la banda de salida, que nada se cayó y que Done está encendido al final. No cuenta que crucen exactamente cuatro cajas: esa cuenta está en su programa.",
+              "body": "El escenario prueba que la pinza tomó una caja y la dejó, que una caja llegó al final de la cinta de salida, que nada se cayó y que Done está encendido al final. No cuenta que crucen exactamente cuatro cajas: esa cuenta está en su programa.",
               "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
             }
           ],
@@ -22489,11 +22489,11 @@
             },
             {
               "level": 2,
-              "text": "La pinza tarda en cerrar y una caja que aún se mueve no se toma: espere a que EyePick se mantenga un momento antes de bajar y espere Gripped antes de elevar. Detenga la banda de salida mientras se deja la caja."
+              "text": "La pinza tarda en cerrar y una caja que aún se mueve no se toma: espere a que EyePick se mantenga un momento antes de bajar y espere Gripped antes de elevar. Detenga la cinta de salida mientras se deja la caja."
             }
           ],
           "faultCases": [
-            "El inicial no tiene peldaños, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la banda de salida, y encienda Done tras la cuarta."
+            "El inicial no tiene peldaños, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la cinta de salida, y encienda Done tras la cuarta."
           ]
         }
       }
@@ -22677,9 +22677,9 @@
           ]
         },
         "es": {
-          "title": "Enviar cada color a su banda en diagrama de escalera",
-          "summary": "Lea el color de cada pieza que espera en la cuchilla de parada, empuje las rojas a la banda lateral y deje pasar las azules.",
-          "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el tiempo de respuesta del sensor ni la velocidad de la banda.",
+          "title": "Enviar cada color a su cinta en diagrama de escalera",
+          "summary": "Lea el color de cada pieza que espera en la cuchilla de parada, empuje las rojas a la cinta lateral y deje pasar las azules.",
+          "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el tiempo de respuesta del sensor ni la velocidad de la cinta.",
           "objectives": [
             "Decidir una ruta a partir del resultado de un sensor cuando la pieza está quieta.",
             "Ejecutar un empuje como una secuencia corta: extender hasta Extended, retraer hasta Retracted."
@@ -22688,7 +22688,7 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/ColourSeparation.ld.json, ponga en marcha las tres bandas tras Start y retenga cada pieza en la cuchilla. Espere a que esté quieta (T#300ms) y lea IsRed: empuje la roja a la banda lateral y suelte la azul.",
+              "body": "En src/ColourSeparation.ld.json, ponga en marcha las tres cintas tras Start y retenga cada pieza en la cuchilla. Espere a que esté quieta (T#300ms) y lea IsRed: empuje la roja a la cinta lateral y suelte la azul.",
               "checkpoint": "Las piezas rojas terminan en RedBin, las azules en BlueBin, y Done se enciende tras la octava."
             },
             {
@@ -22700,7 +22700,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que ninguna banda se mueve y ninguna pieza se clasifica; ponga en marcha las bandas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules.",
+              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que ninguna cinta se mueve y ninguna pieza se clasifica; ponga en marcha las cintas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -22712,7 +22712,7 @@
             {
               "key": "observe",
               "title": "Observar",
-              "body": "Observe la vista 3D: una pieza roja se detiene en la cuchilla, la placa la empuja a la banda lateral y la siguiente espera; una azul pasa de largo hacia la salida.",
+              "body": "Observe la vista 3D: una pieza roja se detiene en la cuchilla, la placa la empuja a la cinta lateral y la siguiente espera; una azul pasa de largo hacia la salida.",
               "checkpoint": "Push nunca pasa a TRUE con una pieza azul, y la placa está de vuelta (Retracted) antes de que la cuchilla retenga la siguiente."
             },
             {
@@ -22733,7 +22733,7 @@
             }
           ],
           "faultCases": [
-            "El inicial no tiene peldaños, así que ninguna banda se mueve y ninguna pieza se clasifica; ponga en marcha las bandas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules."
+            "El inicial no tiene peldaños, así que ninguna cinta se mueve y ninguna pieza se clasifica; ponga en marcha las cintas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules."
           ]
         }
       }
@@ -22921,7 +22921,7 @@
         },
         "es": {
           "title": "Clasificar por peso en diagrama de escalera",
-          "summary": "Compare la lectura de una báscula con un límite y envíe las cajas pesadas a la banda lateral y las ligeras de frente.",
+          "summary": "Compare la lectura de una báscula con un límite y envíe las cajas pesadas a la cinta lateral y las ligeras de frente.",
           "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la exactitud de la báscula.",
           "objectives": [
             "Clasificar una pieza comparando un valor analógico con un límite.",
@@ -22931,19 +22931,19 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/WeightSorter.ld.json, ponga en marcha las bandas tras Start y retenga cada caja sobre la báscula con la cuchilla. Cuando Stable sea TRUE, compare Weight con 3.5 kg con un bloque de comparación en serie: empuje la caja más pesada a la banda lateral y suelte la más ligera bajando la cuchilla 2.5 s.",
+              "body": "En src/WeightSorter.ld.json, ponga en marcha las cintas tras Start y retenga cada caja sobre la báscula con la cuchilla. Cuando Stable sea TRUE, compare Weight con 3.5 kg con un bloque de comparación en serie: empuje la caja más pesada a la cinta lateral y suelte la más ligera bajando la cuchilla 2.5 s.",
               "checkpoint": "Las cajas pesadas terminan en HeavyBin, las ligeras en LightBin, y Green se enciende tras doce cajas."
             },
             {
               "key": "predict",
               "title": "Predecir",
               "body": "Antes de ejecutar, piense qué lee Weight mientras la caja aún se mueve y por qué el programa espera a Stable. ¿Cuál de las dos masas, 2 kg y 5 kg, queda a cada lado de 3.5 kg?",
-              "checkpoint": "Weight es 0 hasta que la caja reposa; la decisión se toma una vez, en el primer ciclo con Stable en TRUE, y la banda de entrada se detiene mientras trabaja el empujador."
+              "checkpoint": "Weight es 0 hasta que la caja reposa; la decisión se toma una vez, en el primer ciclo con Stable en TRUE, y la cinta de entrada se detiene mientras trabaja el empujador."
             },
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que ninguna banda se mueve y no se pesa ninguna caja; ponga en marcha las bandas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso.",
+              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -22956,7 +22956,7 @@
               "key": "observe",
               "title": "Observar",
               "body": "Observe la vista 3D y la lectura de Weight: pasa de 0 a 2 o 5 kg cuando la caja se asienta. Una caja de 5 kg se empuja; una de 2 kg sigue su camino cuando baja la cuchilla.",
-              "checkpoint": "El empujador sale y vuelve una vez por caja pesada, y la banda de entrada permanece quieta durante la carrera."
+              "checkpoint": "El empujador sale y vuelve una vez por caja pesada, y la cinta de entrada permanece quieta durante la carrera."
             },
             {
               "key": "reflect",
@@ -22976,7 +22976,7 @@
             }
           ],
           "faultCases": [
-            "El inicial no tiene peldaños, así que ninguna banda se mueve y no se pesa ninguna caja; ponga en marcha las bandas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso."
+            "El inicial no tiene peldaños, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso."
           ]
         }
       }
@@ -23208,7 +23208,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que ninguna banda se mueve y no se clasifica ninguna caja; ponga en marcha las bandas tras Start, clasifique cada caja con las dos barreras y envíela de frente, a la derecha o a la izquierda.",
+              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, clasifique cada caja con las dos barreras y envíela de frente, a la derecha o a la izquierda.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -23241,7 +23241,7 @@
             }
           ],
           "faultCases": [
-            "El inicial no tiene peldaños, así que ninguna banda se mueve y no se clasifica ninguna caja; ponga en marcha las bandas tras Start, clasifique cada caja con las dos barreras y envíela de frente, a la derecha o a la izquierda."
+            "El inicial no tiene peldaños, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, clasifique cada caja con las dos barreras y envíela de frente, a la derecha o a la izquierda."
           ]
         }
       }
@@ -23478,7 +23478,7 @@
               "key": "objective",
               "title": "Objetivo",
               "body": "En src/ThreeLevelLifts.ld.json, añada una memoria Stopped: un peldaño con un contacto normalmente cerrado de EStopOk la activa, un peldaño con Start y EStopOk la desactiva, el mismo contacto de paro desactiva Active, y Red se enciende desde Stopped. Ponga los peldaños de paro después del de Start, para que el paro gane.",
-              "checkpoint": "Todas las salidas ya dependen de Active, así que borrar Active detiene las bandas y los elevadores a la vez."
+              "checkpoint": "Todas las salidas ya dependen de Active, así que borrar Active detiene las cintas y los elevadores a la vez."
             },
             {
               "key": "predict",
@@ -23501,7 +23501,7 @@
             {
               "key": "observe",
               "title": "Observar",
-              "body": "Observe cómo la luz de la torre se pone roja y las bandas y los elevadores se detienen cuando el escenario pulsa el paro de emergencia, y vuelven a funcionar tras Start.",
+              "body": "Observe cómo la luz de la torre se pone roja y las cintas y los elevadores se detienen cuando el escenario pulsa el paro de emergencia, y vuelven a funcionar tras Start.",
               "checkpoint": "Red sigue encendida después de soltar hasta Start, y las salidas caen en el mismo ciclo que EStopOk."
             },
             {
@@ -23799,7 +23799,7 @@
             {
               "key": "predict",
               "title": "Predecir",
-              "body": "Antes de ejecutar, siga el panel: el escenario lleva el brazo a la banda de las bases y lo devuelve, pulsa Start en manual, pasa a automático, arranca el ciclo y mantiene un botón de avance pulsado en mitad del ciclo.",
+              "body": "Antes de ejecutar, siga el panel: el escenario lleva el brazo a la cinta de las bases y lo devuelve, pulsa Start en manual, pasa a automático, arranca el ciclo y mantiene un botón de avance pulsado en mitad del ciclo.",
               "checkpoint": "En manual el brazo se mueve solo mientras se mantiene un botón y se detiene en su final de carrera; Start no hace nada; en automático el ciclo corre y el botón mantenido no cambia nada."
             },
             {
@@ -23983,8 +23983,8 @@
           ]
         },
         "es": {
-          "title": "Construir una escena de banda desde el suelo vacío",
-          "summary": "Abra el Editor de escenas sobre un suelo vacío, coloque una banda, un emisor, un sensor y un botón de inicio con los nombres que da la lección, enlace sus señales en el mapa de la planta y escriba el programa que corre sobre ellos.",
+          "title": "Construir una escena de cinta desde el suelo vacío",
+          "summary": "Abra el Editor de escenas sobre un suelo vacío, coloque una cinta, un emisor, un sensor y un botón de inicio con los nombres que da la lección, enlace sus señales en el mapa de la planta y escriba el programa que corre sobre ellos.",
           "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
           "objectives": [
             "Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa.",
@@ -23994,19 +23994,19 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "Abra scene.json en el Editor de escenas y coloque cuatro piezas con exactamente estos nombres: Belt1 (una banda), Emitter1 (un emisor en el extremo cercano de la banda), EyeFar (un sensor difuso junto al extremo lejano de la banda, mirándola) y StartButton (un pulsador). En plant-map.json enlace StartButton.pressed con BeltToSensor.Start, EyeFar.detect con BeltToSensor.EyeFar, Belt1.run con BeltToSensor.Run y Emitter1.emit con BeltToSensor.Emit; luego, en src/BeltToSensor.ld.json, dibuje dos peldaños: uno con un contacto normalmente cerrado en EyeFar en serie con Start en paralelo con un contacto de retención en Run, que termine en la bobina Run, y otro de Start a la bobina Emit.",
-              "checkpoint": "La escena tiene cuatro piezas con esos nombres, el mapa de la planta tiene cuatro señales, y Run sigue a la memoria mientras Emit pone una caja en la banda cuando se pulsa Start."
+              "body": "Abra scene.json en el Editor de escenas y coloque cuatro piezas con exactamente estos nombres: Belt1 (una cinta), Emitter1 (un emisor en el extremo cercano de la cinta), EyeFar (un sensor difuso junto al extremo lejano de la cinta, mirándola) y StartButton (un pulsador). En plant-map.json enlace StartButton.pressed con BeltToSensor.Start, EyeFar.detect con BeltToSensor.EyeFar, Belt1.run con BeltToSensor.Run y Emitter1.emit con BeltToSensor.Emit; luego, en src/BeltToSensor.ld.json, dibuje dos peldaños: uno con un contacto normalmente cerrado en EyeFar en serie con Start en paralelo con un contacto de retención en Run, que termine en la bobina Run, y otro de Start a la bobina Emit.",
+              "checkpoint": "La escena tiene cuatro piezas con esos nombres, el mapa de la planta tiene cuatro señales, y Run sigue a la memoria mientras Emit pone una caja en la cinta cuando se pulsa Start."
             },
             {
               "key": "predict",
               "title": "Predecir",
-              "body": "Antes de ejecutar, siga la caja: el emisor la pone en el extremo cercano, la banda la lleva al extremo lejano y el sensor avisa al programa para detener la banda. Una pieza que falta o tiene otro nombre no puede hacer nada de eso, y la Comprobación dice cuál no encuentra.",
-              "checkpoint": "Banda apagada antes de la pulsación; encendida después, con una caja encima; apagada otra vez en cuanto EyeFar ve la caja, y así se queda."
+              "body": "Antes de ejecutar, siga la caja: el emisor la pone en el extremo cercano, la cinta la lleva al extremo lejano y el sensor avisa al programa para detener la cinta. Una pieza que falta o tiene otro nombre no puede hacer nada de eso, y la Comprobación dice cuál no encuentra.",
+              "checkpoint": "Cinta apagada antes de la pulsación; encendida después, con una caja encima; apagada otra vez en cuanto EyeFar ve la caja, y así se queda."
             },
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde la escena, el mapa de la planta y el programa, y ejecute: La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la banda y la detiene cuando EyeFar ve la caja.",
+              "body": "Corrija esta omisión del inicial, guarde la escena, el mapa de la planta y el programa, y ejecute: La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la cinta y la detiene cuando EyeFar ve la caja.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -24018,7 +24018,7 @@
             {
               "key": "observe",
               "title": "Observar",
-              "body": "Observe la caja avanzar por la banda que usted colocó y detenerse bajo el sensor que usted colocó; si falta una pieza, lea el mensaje de la Comprobación: nombra la pieza y el archivo donde se corrige.",
+              "body": "Observe la caja avanzar por la cinta que usted colocó y detenerse bajo el sensor que usted colocó; si falta una pieza, lea el mensaje de la Comprobación: nombra la pieza y el archivo donde se corrige.",
               "checkpoint": "Run baja cuando el sensor se activa, no antes, y la caja nunca cae."
             },
             {
@@ -24031,15 +24031,15 @@
           "hints": [
             {
               "level": 1,
-              "text": "En el Editor de escenas elija la plantilla Suelo vacío, agregue las cuatro piezas y renombre cada una; la banda tiene longitud 2.4 y velocidad 0.5, y el sensor tiene alcance 1."
+              "text": "En el Editor de escenas elija la plantilla Suelo vacío, agregue las cuatro piezas y renombre cada una; la cinta tiene longitud 2.4 y velocidad 0.5, y el sensor tiene alcance 1."
             },
             {
               "level": 2,
-              "text": "Ponga un contacto de Run en paralelo con el contacto de Start para que la banda se mantenga encendida, y deje el contacto de EyeFar normalmente cerrado para que abra el peldaño cuando llegue la caja."
+              "text": "Ponga un contacto de Run en paralelo con el contacto de Start para que la cinta se mantenga encendida, y deje el contacto de EyeFar normalmente cerrado para que abra el peldaño cuando llegue la caja."
             }
           ],
           "faultCases": [
-            "La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la banda y la detiene cuando EyeFar ve la caja."
+            "La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la cinta y la detiene cuando EyeFar ve la caja."
           ]
         }
       }

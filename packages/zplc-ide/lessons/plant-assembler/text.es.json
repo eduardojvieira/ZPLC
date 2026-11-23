@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Ensamblar tapas y bases",
-  "summary": "Modele un ensamblador de dos ejes como un diagrama: tome una tapa de una banda, colóquela sobre una base en otra banda y repita tres veces.",
+  "summary": "Modele un ensamblador de dos ejes como un diagrama: tome una tapa de una cinta, colóquela sobre una base en otra cinta y repita tres veces.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Coordinar dos ejes y una ventosa en una sola secuencia, con un paso por movimiento.",
@@ -17,8 +17,8 @@
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, recorra el diagrama para una tapa: el brazo espera en la banda de tapas, baja, toma la tapa con la ventosa, eleva, cruza a la banda de bases, baja, suelta y regresa mientras la base ensamblada sale.",
-      "checkpoint": "El brazo nunca cruza las bandas mientras está abajo; la cuchilla de la base se abre solo después de soltar la tapa; Green se enciende tras el tercer ensamble."
+      "body": "Antes de ejecutar, recorra el diagrama para una tapa: el brazo espera en la cinta de tapas, baja, toma la tapa con la ventosa, eleva, cruza a la cinta de bases, baja, suelta y regresa mientras la base ensamblada sale.",
+      "checkpoint": "El brazo nunca cruza las cintas mientras está abajo; la cuchilla de la base se abre solo después de soltar la tapa; Green se enciende tras el tercer ensamble."
     },
     {
       "key": "edit",

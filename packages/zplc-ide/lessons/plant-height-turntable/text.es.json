@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Clasificar por altura, mesa giratoria",
-  "summary": "Mida la altura de cada caja con una cortina de luz, conserve la lectura mayor y gire una mesa para que la caja salga por la banda de su clase.",
+  "summary": "Mida la altura de cada caja con una cortina de luz, conserve la lectura mayor y gire una mesa para que la caja salga por la cinta de su clase.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la exactitud de la cortina ni la velocidad de la mesa.",
   "objectives": [
     "Reducir un flujo de lecturas a un valor, el máximo, y clasificarlo con dos límites.",
@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objetivo",
       "body": "En src/HeightSort.st, conserve el mayor HeightCm mientras ArrayBusy sea TRUE y clasifique la caja cuando haya pasado: hasta 25 cm baja, hasta 35 cm media, por encima alta. Lleve la caja a la mesa, deténgala, gire la mesa, saque la caja y vuelva al centro.",
-      "checkpoint": "Las cajas bajas salen por la banda central, las medias a la derecha, las altas a la izquierda, y Done se enciende tras siete cajas."
+      "checkpoint": "Las cajas bajas salen por la cinta central, las medias a la derecha, las altas a la izquierda, y Done se enciende tras siete cajas."
     },
     {
       "key": "predict",
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna banda se mueve y no se clasifica ninguna caja; ponga en marcha las bandas tras Start, mida cada caja, gire la mesa hacia la banda de su clase y vuélvala al centro.",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, mida cada caja, gire la mesa hacia la cinta de su clase y vuélvala al centro.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "La calificación no puede comparar números: ve los contenedores, no el máximo que midió ni los límites que eligió. Límites en cualquier punto entre 20 y 30 cm y entre 30 y 40 cm dan la misma calificación.",
-      "checkpoint": "Una caja en la banda equivocada incumple la aserción ALWAYS."
+      "checkpoint": "Una caja en la cinta equivocada incumple la aserción ALWAYS."
     }
   ],
   "hints": [
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El inicial no gobierna ninguna salida, así que ninguna banda se mueve y no se clasifica ninguna caja; ponga en marcha las bandas tras Start, mida cada caja, gire la mesa hacia la banda de su clase y vuélvala al centro."
+    "El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, mida cada caja, gire la mesa hacia la cinta de su clase y vuélvala al centro."
   ]
 }

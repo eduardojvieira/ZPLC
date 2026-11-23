@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objetivo",
       "body": "En src/ThreeLevelLifts.st, añada una memoria Stopped: actívela cuando EStopOk sea FALSE, bórrela solo con Start, y haga que borre Active y encienda Red.",
-      "checkpoint": "Todas las salidas ya dependen de Active, así que borrar Active detiene las bandas y los elevadores a la vez."
+      "checkpoint": "Todas las salidas ya dependen de Active, así que borrar Active detiene las cintas y los elevadores a la vez."
     },
     {
       "key": "predict",
@@ -35,7 +35,7 @@
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe cómo la luz de la torre se pone roja y las bandas y los elevadores se detienen cuando el escenario pulsa el paro de emergencia, y vuelven a funcionar tras Start.",
+      "body": "Observe cómo la luz de la torre se pone roja y las cintas y los elevadores se detienen cuando el escenario pulsa el paro de emergencia, y vuelven a funcionar tras Start.",
       "checkpoint": "Red sigue encendida después de soltar hasta Start, y las salidas caen en el mismo ciclo que EStopOk."
     },
     {

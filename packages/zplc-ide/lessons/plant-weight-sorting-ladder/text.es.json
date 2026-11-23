@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Clasificar por peso en diagrama de escalera",
-  "summary": "Compare la lectura de una báscula con un límite y envíe las cajas pesadas a la banda lateral y las ligeras de frente.",
+  "summary": "Compare la lectura de una báscula con un límite y envíe las cajas pesadas a la cinta lateral y las ligeras de frente.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la exactitud de la báscula.",
   "objectives": [
     "Clasificar una pieza comparando un valor analógico con un límite.",
@@ -11,19 +11,19 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/WeightSorter.ld.json, ponga en marcha las bandas tras Start y retenga cada caja sobre la báscula con la cuchilla. Cuando Stable sea TRUE, compare Weight con 3.5 kg con un bloque de comparación en serie: empuje la caja más pesada a la banda lateral y suelte la más ligera bajando la cuchilla 2.5 s.",
+      "body": "En src/WeightSorter.ld.json, ponga en marcha las cintas tras Start y retenga cada caja sobre la báscula con la cuchilla. Cuando Stable sea TRUE, compare Weight con 3.5 kg con un bloque de comparación en serie: empuje la caja más pesada a la cinta lateral y suelte la más ligera bajando la cuchilla 2.5 s.",
       "checkpoint": "Las cajas pesadas terminan en HeavyBin, las ligeras en LightBin, y Green se enciende tras doce cajas."
     },
     {
       "key": "predict",
       "title": "Predecir",
       "body": "Antes de ejecutar, piense qué lee Weight mientras la caja aún se mueve y por qué el programa espera a Stable. ¿Cuál de las dos masas, 2 kg y 5 kg, queda a cada lado de 3.5 kg?",
-      "checkpoint": "Weight es 0 hasta que la caja reposa; la decisión se toma una vez, en el primer ciclo con Stable en TRUE, y la banda de entrada se detiene mientras trabaja el empujador."
+      "checkpoint": "Weight es 0 hasta que la caja reposa; la decisión se toma una vez, en el primer ciclo con Stable en TRUE, y la cinta de entrada se detiene mientras trabaja el empujador."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que ninguna banda se mueve y no se pesa ninguna caja; ponga en marcha las bandas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso.",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -36,7 +36,7 @@
       "key": "observe",
       "title": "Observar",
       "body": "Observe la vista 3D y la lectura de Weight: pasa de 0 a 2 o 5 kg cuando la caja se asienta. Una caja de 5 kg se empuja; una de 2 kg sigue su camino cuando baja la cuchilla.",
-      "checkpoint": "El empujador sale y vuelve una vez por caja pesada, y la banda de entrada permanece quieta durante la carrera."
+      "checkpoint": "El empujador sale y vuelve una vez por caja pesada, y la cinta de entrada permanece quieta durante la carrera."
     },
     {
       "key": "reflect",
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El inicial no tiene peldaños, así que ninguna banda se mueve y no se pesa ninguna caja; ponga en marcha las bandas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso."
+    "El inicial no tiene peldaños, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso."
   ]
 }

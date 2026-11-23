@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Proyecto final: una estación de empaque como diagrama",
-  "summary": "Construya una estación de empaque como un diagrama funcional secuencial a partir de una descripción escrita, con una banda con autorretención, una cuenta de tres piezas, una parada de emergencia y una falla enclavada, y demuéstrelo con un escenario que también comprueba lo que no debe ocurrir.",
+  "summary": "Construya una estación de empaque como un diagrama funcional secuencial a partir de una descripción escrita, con una cinta con autorretención, una cuenta de tres piezas, una parada de emergencia y una falla enclavada, y demuéstrelo con un escenario que también comprueba lo que no debe ocurrir.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra requisitos de una línea de empaque, el comportamiento de una función de seguridad, tiempos de sensores ni ningún comportamiento de máquinas reales.",
   "objectives": [
     "Convierta cinco requisitos escritos en un diagrama de pasos, transiciones y acciones, y decida qué comportamiento es un paso y cuál es una transición.",
@@ -11,19 +11,19 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "Una estación de empaque tiene una banda, un sensor de piezas y cinco botones. Complete el diagrama de src/Station.sfc.json para que: (1) Start encienda Belt, y Stop o EStop la apaguen y devuelvan el diagrama a IDLE. (2) Cada pieza que llegue al sensor se cuente una vez, y tres piezas formen un lote: BatchFull se enciende y la banda se detiene. (3) Si Part permanece encendida {{t:50}} ms o más, el sensor está bloqueado: Fault se enciende y la banda se detiene. (4) Reset borre la cuenta y BatchFull, y borre Fault solo cuando Part ya no esté encendida. (5) Tras cualquier parada, la banda funcione de nuevo solo después de un nuevo Start. El programa inicial tiene los pasos IDLE y RUN; agregue SEEN (hay una pieza en el sensor), BATCH_FULL y JAMMED, con sus transiciones y acciones.",
-      "checkpoint": "La banda funciona tras Start, se detiene con Stop, EStop, un lote completo y un sensor bloqueado, y nunca se reinicia sin un nuevo Start."
+      "body": "Una estación de empaque tiene una cinta, un sensor de piezas y cinco botones. Complete el diagrama de src/Station.sfc.json para que: (1) Start encienda Belt, y Stop o EStop la apaguen y devuelvan el diagrama a IDLE. (2) Cada pieza que llegue al sensor se cuente una vez, y tres piezas formen un lote: BatchFull se enciende y la cinta se detiene. (3) Si Part permanece encendida {{t:50}} ms o más, el sensor está bloqueado: Fault se enciende y la cinta se detiene. (4) Reset borre la cuenta y BatchFull, y borre Fault solo cuando Part ya no esté encendida. (5) Tras cualquier parada, la cinta funcione de nuevo solo después de un nuevo Start. El programa inicial tiene los pasos IDLE y RUN; agregue SEEN (hay una pieza en el sensor), BATCH_FULL y JAMMED, con sus transiciones y acciones.",
+      "checkpoint": "La cinta funciona tras Start, se detiene con Stop, EStop, un lote completo y un sensor bloqueado, y nunca se reinicia sin un nuevo Start."
     },
     {
       "key": "predict",
       "title": "Prediga",
       "body": "Las piezas pasan por el sensor a los {{t:50}}, {{t:90}} y {{t:150}} ms. Prediga BatchFull a los {{t:140}} ms y a los {{t:180}} ms, y Belt a los {{t:180}} ms. Start se pulsa de nuevo a los {{t:200}} ms: prediga Belt a los {{t:230}} ms.",
-      "checkpoint": "{{v:Station.BatchFull=false@140|OFF}} a los {{t:140}} ms, tras dos piezas; {{v:Station.BatchFull=true@180|ON}} a los {{t:180}} ms, con {{v:Station.Belt=false@180|la banda detenida}}; {{v:Station.Belt=false@230|la banda sigue apagada}} a los {{t:230}} ms, porque el diagrama espera en BATCH_FULL y solo Reset lo deja."
+      "checkpoint": "{{v:Station.BatchFull=false@140|OFF}} a los {{t:140}} ms, tras dos piezas; {{v:Station.BatchFull=true@180|ON}} a los {{t:180}} ms, con {{v:Station.Belt=false@180|la cinta detenida}}; {{v:Station.Belt=false@230|la cinta sigue apagada}} a los {{t:230}} ms, porque el diagrama espera en BATCH_FULL y solo Reset lo deja."
     },
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial solo tiene IDLE y RUN y deja que Stop detenga la banda. Agregue el paso SEEN, con la acción A_RUN y una acción P1 que cuente, los pasos BATCH_FULL y JAMMED, las transiciones entre ellos con prioridades, y EStop en las transiciones de parada.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial solo tiene IDLE y RUN y deja que Stop detenga la cinta. Agregue el paso SEEN, con la acción A_RUN y una acción P1 que cuente, los pasos BATCH_FULL y JAMMED, las transiciones entre ellos con prioridades, y EStop en las transiciones de parada.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -35,14 +35,14 @@
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Compare {{t:270}}, {{t:320}}, {{t:330}} y {{t:400}} ms: Reset vacía el lote a los {{t:240}} ms pero la banda sigue apagada hasta un nuevo Start a los {{t:280}} ms, y la parada de emergencia de los {{t:320}} ms detiene la banda a los {{t:330}} ms, donde se queda hasta que se pulsa Start a los {{t:370}} ms. La pieza que bloquea el sensor desde los {{t:410}} ms provoca la falla, y Reset a los {{t:480}} ms no la borra mientras el sensor siga bloqueado; solo se borra después de que Part cae a los {{t:510}} ms y se pulsa Reset a los {{t:530}} ms.",
-      "checkpoint": "A los {{t:490}} ms Fault está encendida y la banda apagada aunque se pulsó Reset; a los {{t:550}} ms Fault está apagada y la banda sigue apagada."
+      "body": "Compare {{t:270}}, {{t:320}}, {{t:330}} y {{t:400}} ms: Reset vacía el lote a los {{t:240}} ms pero la cinta sigue apagada hasta un nuevo Start a los {{t:280}} ms, y la parada de emergencia de los {{t:320}} ms detiene la cinta a los {{t:330}} ms, donde se queda hasta que se pulsa Start a los {{t:370}} ms. La pieza que bloquea el sensor desde los {{t:410}} ms provoca la falla, y Reset a los {{t:480}} ms no la borra mientras el sensor siga bloqueado; solo se borra después de que Part cae a los {{t:510}} ms y se pulsa Reset a los {{t:530}} ms.",
+      "checkpoint": "A los {{t:490}} ms Fault está encendida y la cinta apagada aunque se pulsó Reset; a los {{t:550}} ms Fault está apagada y la cinta sigue apagada."
     },
     {
       "key": "reflect",
       "title": "Reflexione",
       "body": "¿A cuál de los cinco requisitos apuntó la primera aserción fallida, y cuáles solo encontró al leer el escenario? Piense en algo más que la estación nunca debería hacer, y si el escenario lo detectaría.",
-      "checkpoint": "La mayoría de las aserciones comprueban lo que no debe ocurrir: una banda que se reinicia sola, una falla borrada demasiado pronto, una luz de lote que queda encendida. Un diagrama que solo hace lo pedido pasa el camino feliz y aun así falla estas. El escenario muestra solo la lógica; no es una línea de empaque ni una función de seguridad."
+      "checkpoint": "La mayoría de las aserciones comprueban lo que no debe ocurrir: una cinta que se reinicia sola, una falla borrada demasiado pronto, una luz de lote que queda encendida. Un diagrama que solo hace lo pedido pasa el camino feliz y aun así falla estas. El escenario muestra solo la lógica; no es una línea de empaque ni una función de seguridad."
     }
   ],
   "hints": [
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial solo tiene IDLE y RUN y deja que Stop detenga la banda. Agregue el paso SEEN, con la acción A_RUN y una acción P1 que cuente, los pasos BATCH_FULL y JAMMED, las transiciones entre ellos con prioridades, y EStop en las transiciones de parada."
+    "El programa inicial solo tiene IDLE y RUN y deja que Stop detenga la cinta. Agregue el paso SEEN, con la acción A_RUN y una acción P1 que cuente, los pasos BATCH_FULL y JAMMED, las transiciones entre ellos con prioridades, y EStop en las transiciones de parada."
   ]
 }

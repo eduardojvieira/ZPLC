@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial solo memoriza Start y hace girar la banda de entrada, así que no se lee ni se clasifica ninguna pieza; añada los cuatro bloques de estado y gobierne las demás salidas.",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial solo memoriza Start y hace girar la cinta de entrada, así que no se lee ni se clasifica ninguna pieza; añada los cuatro bloques de estado y gobierne las demás salidas.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El inicial solo memoriza Start y hace girar la banda de entrada, así que no se lee ni se clasifica ninguna pieza; añada los cuatro bloques de estado y gobierne las demás salidas."
+    "El inicial solo memoriza Start y hace girar la cinta de entrada, así que no se lee ni se clasifica ninguna pieza; añada los cuatro bloques de estado y gobierne las demás salidas."
   ]
 }

@@ -17,7 +17,7 @@
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, siga las cuentas: Y sube a 917 antes de que nada cruce la banda, baja a 500 sobre la caja, sube de nuevo, pasa al hueco en X y Z, y baja a 372 para la primera capa o a 622 para la segunda.",
+      "body": "Antes de ejecutar, siga las cuentas: Y sube a 917 antes de que nada cruce la cinta, baja a 500 sobre la caja, sube de nuevo, pasa al hueco en X y Z, y baja a 372 para la primera capa o a 622 para la segunda.",
       "checkpoint": "El hueco sigue a Cycle MOD 4 y la altura sigue a Cycle: cuatro cajas sobre la tarima y luego cuatro encima."
     },
     {
@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "Use Cycle MOD 4 para el hueco y Cycle < 4 para la capa, y envíe la siguiente caja solo cuando la ventosa esté fuera de la banda."
+      "text": "Use Cycle MOD 4 para el hueco y Cycle < 4 para la capa, y envíe la siguiente caja solo cuando la ventosa esté fuera de la cinta."
     }
   ],
   "faultCases": [

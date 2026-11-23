@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Mover una caja hasta un sensor",
-  "summary": "Arranque una banda con un botón y deténgala cuando una caja llegue al sensor del extremo.",
+  "summary": "Arranque una cinta con un botón y deténgala cuando una caja llegue al sensor del extremo.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Arrancar un actuador con la pulsación de un botón y recordar que está en marcha.",
@@ -12,18 +12,18 @@
       "key": "objective",
       "title": "Objetivo",
       "body": "En src/BeltToSensor.st, mantenga una memoria Running: actívela con Start, bórrela con EyeFar y conecte Run y Emit.",
-      "checkpoint": "Run sigue a la memoria; Emit pone una caja en la banda cuando se pulsa Start."
+      "checkpoint": "Run sigue a la memoria; Emit pone una caja en la cinta cuando se pulsa Start."
     },
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, siga la caja: el botón de inicio es solo una pulsación corta, pero la banda debe seguir en marcha hasta que llegue la caja.",
-      "checkpoint": "Banda apagada antes de la pulsación; encendida después, con una caja encima; apagada otra vez en cuanto EyeFar ve la caja, y así se queda."
+      "body": "Antes de ejecutar, siga la caja: el botón de inicio es solo una pulsación corta, pero la cinta debe seguir en marcha hasta que llegue la caja.",
+      "checkpoint": "Cinta apagada antes de la pulsación; encendida después, con una caja encima; apagada otra vez en cuanto EyeFar ve la caja, y así se queda."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que la banda nunca se mueve; arranque la banda y ponga una caja con Start, y detenga la banda cuando EyeFar vea la caja.",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que la cinta nunca se mueve; arranque la cinta y ponga una caja con Start, y detenga la cinta cuando EyeFar vea la caja.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -35,7 +35,7 @@
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe la caja avanzar por la banda en la vista 3D y detenerse bajo el sensor; compárelo con la salida Run en la traza.",
+      "body": "Observe la caja avanzar por la cinta en la vista 3D y detenerse bajo el sensor; compárelo con la salida Run en la traza.",
       "checkpoint": "Run baja cuando el sensor se activa, no antes, y la caja nunca cae."
     },
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Start es un pulso, así que la banda necesita una memoria: active Running cuando Start sea TRUE y bórrela cuando EyeFar sea TRUE."
+      "text": "Start es un pulso, así que la cinta necesita una memoria: active Running cuando Start sea TRUE y bórrela cuando EyeFar sea TRUE."
     },
     {
       "level": 2,
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El inicial no gobierna ninguna salida, así que la banda nunca se mueve; arranque la banda y ponga una caja con Start, y detenga la banda cuando EyeFar vea la caja."
+    "El inicial no gobierna ninguna salida, así que la cinta nunca se mueve; arranque la cinta y ponga una caja con Start, y detenga la cinta cuando EyeFar vea la caja."
   ]
 }
