@@ -86,7 +86,7 @@ describe('the evidence record behind Details (TST-004)', () => {
     render();
     expect(dom.screen.queryByText(presentation.message)).toBeNull();
     expect(dom.screen.queryByText('Host evidence only')).toBeNull();
-    expect(dom.screen.queryByText(dom.t('console.recordedDuringThisHost'))).toBeNull();
+    expect(dom.screen.queryByText('Recorded during this host test run. It does not update with the live trace panel.')).toBeNull();
   });
 
   it('TST-004 pointing at a time opens Details and marks that sample in the recorded trace', () => {

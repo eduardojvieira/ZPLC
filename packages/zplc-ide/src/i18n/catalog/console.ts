@@ -34,7 +34,6 @@ export const consoleEn = {
   'console.onlyAModifiedActive':
     'Only a modified active program under src/, in any of the five languages, can be reviewed. Other unsaved buffers are left out.',
   'console.onlyTheActiveStructured': 'Only the active program buffer is reviewed. Other unsaved buffers are left out.',
-  'console.nativePosixHostEvidence': 'Native POSIX host evidence — not hardware or HIL evidence.',
   'console.reviewItselfDoesNot': 'Review itself does not write files.',
   'console.theActiveBufferMatches': 'The active buffer matches the file on disk; no review was run.',
   'console.reviewingTheChangeIn': 'Reviewing the change in an isolated host run…',
@@ -159,7 +158,6 @@ export const consoleEn = {
   'console.eStop': 'E-stop: {value}',
   'console.inputControlsUnavailable': 'Input controls unavailable.',
   'console.scenarioEvidenceRecordedTest': 'Scenario evidence (recorded test result)',
-  'console.recordedDuringThisHost': 'Recorded during this host test run. It does not update with the live trace panel.',
   'console.nativePosixTestEvidence': 'Native POSIX test evidence artifacts.',
   'console.artifact': 'Artifact',
   'console.sha256': 'SHA-256',
@@ -288,7 +286,6 @@ export const consoleEs: Record<keyof typeof consoleEn, string> = {
   'console.onlyAModifiedActive':
     'Solo se puede revisar un programa activo y modificado dentro de src/, en cualquiera de los cinco lenguajes. Los demás búferes sin guardar quedan fuera.',
   'console.onlyTheActiveStructured': 'Solo se revisa el búfer del programa activo. Los demás búferes sin guardar quedan fuera.',
-  'console.nativePosixHostEvidence': 'Evidencia del host POSIX nativo; no es evidencia de hardware ni de HIL.',
   'console.reviewItselfDoesNot': 'La revisión por sí misma no escribe archivos.',
   'console.theActiveBufferMatches': 'El búfer activo coincide con el archivo en disco; no se ejecutó ninguna revisión.',
   'console.reviewingTheChangeIn': 'Revisando el cambio en una ejecución aislada en el host…',
@@ -418,8 +415,6 @@ export const consoleEs: Record<keyof typeof consoleEn, string> = {
   'console.eStop': 'Paro de emergencia: {value}',
   'console.inputControlsUnavailable': 'Controles de entrada no disponibles.',
   'console.scenarioEvidenceRecordedTest': 'Evidencia de escenarios (resultado de prueba registrado)',
-  'console.recordedDuringThisHost':
-    'Registrado durante esta ejecución de pruebas en el host. No se actualiza con el panel de traza en vivo.',
   'console.nativePosixTestEvidence': 'Artefactos de evidencia de pruebas POSIX nativas.',
   'console.artifact': 'Artefacto',
   'console.sha256': 'SHA-256',

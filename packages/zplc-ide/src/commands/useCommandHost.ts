@@ -114,7 +114,7 @@ export function useMainProcessBridge(): void {
         // The menu offers a command in every state; one the state does not offer is said in the console, not run.
         if (runCommand(id, { respectEnabled: true }) === 'unavailable') {
           useIDEStore.getState().addConsoleEntry({
-            type: 'info',
+            type: 'warning',
             message: t('commands.unavailable', { title: t(commandById(id).titleKey) }),
             source: 'system',
           });

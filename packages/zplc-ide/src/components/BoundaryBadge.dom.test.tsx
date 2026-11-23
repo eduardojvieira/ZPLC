@@ -13,7 +13,7 @@ describe('the boundary badge (MSG-003)', () => {
     expect(dom.screen.getAllByText(VOCABULARY.resultSimulation.en)).toHaveLength(1);
     // the old statements of the boundary are gone
     expect(dom.screen.queryByText('Host evidence only')).toBeNull();
-    expect(dom.screen.queryByText(dom.t('console.nativePosixHostEvidence'))).toBeNull();
+    expect(dom.screen.queryByText('Native POSIX host evidence — not hardware or HIL evidence.')).toBeNull();
   });
 
   it('MSG-003 the tooltip carries the full claim', async () => {
