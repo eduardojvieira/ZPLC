@@ -68,11 +68,28 @@ describe('rules, each failing when broken', () => {
   });
 
   test('vocabulary: a word of the evidence list in any learner field or reading page, as a word, in either language', () => {
-    expect(offending(base([lesson('a', { text: { en: text({ scope: 'Native POSIX host.' }), es: text({}, 'Pulse Comprobar.') } })]))).toEqual(['a:vocabulary']);
-    expect(offending(base([lesson('a', { text: { en: text({ hints: [{ level: 1, text: 'no hil' }] }), es: text({ faultCases: ['sin certificación'] }, 'Pulse Comprobar.') } })]))).toEqual(['a:vocabulary']);
+    expect(
+      offending(base([lesson('a', { text: { en: text({ scope: 'Native POSIX host.' }), es: text({}, 'Pulse Comprobar.') } })])),
+    ).toEqual(['a:vocabulary']);
+    expect(
+      offending(
+        base([
+          lesson('a', {
+            text: {
+              en: text({ hints: [{ level: 1, text: 'no hil' }] }),
+              es: text({ faultCases: ['sin certificación'] }, 'Pulse Comprobar.'),
+            },
+          }),
+        ]),
+      ),
+    ).toEqual(['a:vocabulary']);
     expect(offending(base([lesson('a', { readingText: { en: 'Not for HIL use.', es: '' } })]))).toEqual(['a:vocabulary']);
     // Part of a longer word, a name with a hyphen or a placeholder is not the word.
-    expect(offending(base([lesson('a', { text: { en: text({ scope: 'A posixly name, hil-x and {{HIL}}.' }), es: text({}, 'Pulse Comprobar.') } })]))).toEqual([]);
+    expect(
+      offending(
+        base([lesson('a', { text: { en: text({ scope: 'A posixly name, hil-x and {{HIL}}.' }), es: text({}, 'Pulse Comprobar.') } })]),
+      ),
+    ).toEqual([]);
   });
 
   test('order: a lesson before the lesson that explains an idea it practises', () => {
@@ -85,8 +102,12 @@ describe('rules, each failing when broken', () => {
     const terms = [{ concept: 'belt', en: 'belt', es: 'banda', forbidden: { en: ['strap'], es: ['cinta'] } }];
     const es = (body: string) => text({ summary: body }, 'Pulse Comprobar.');
     expect(offending(base([lesson('a', { text: { en: text(), es: es('La cinta avanza.') } })], { terms }))).toEqual(['a:glossary']);
-    expect(offending(base([lesson('a', { text: { en: text({ summary: 'The strap moves.' }), es: es('La banda avanza.') } })], { terms }))).toEqual(['a:glossary']);
-    expect(offending(base([lesson('a', { text: { en: text({ summary: 'A cinta here.' }), es: es('La banda avanza.') } })], { terms }))).toEqual([]);
+    expect(
+      offending(base([lesson('a', { text: { en: text({ summary: 'The strap moves.' }), es: es('La banda avanza.') } })], { terms })),
+    ).toEqual(['a:glossary']);
+    expect(
+      offending(base([lesson('a', { text: { en: text({ summary: 'A cinta here.' }), es: es('La banda avanza.') } })], { terms })),
+    ).toEqual([]);
   });
 
   test('hasWord ignores case but a control label keeps it', () => {
@@ -113,7 +134,8 @@ describe('ratchet', () => {
   const rows = evaluate(base([lesson('a', { reading: { en: false, es: false } }), lesson('b')]));
   const table = renderTable(rows);
   test('the baseline matches: nothing to report', () => expect(check(rows, ['a:reading'], table, [])).toEqual([]));
-  test('an offence the baseline does not list fails', () => expect(check(rows, [], table, [])).toEqual([expect.stringContaining('new offence a:reading')]));
+  test('an offence the baseline does not list fails', () =>
+    expect(check(rows, [], table, [])).toEqual([expect.stringContaining('new offence a:reading')]));
   test('a stale baseline entry fails: a fixed lesson must leave the list', () => {
     expect(ratchet(rows, ['a:reading', 'b:reading'])).toEqual({ added: [], stale: ['b:reading'] });
     expect(check(rows, ['a:reading', 'b:reading'], table, [])).toEqual([expect.stringContaining('b:reading no longer occurs')]);

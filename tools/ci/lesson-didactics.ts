@@ -3,8 +3,9 @@
 //   bun tools/ci/lesson-didactics.ts --check            fail on a rule broken by a lesson that is not in the baseline, on a baseline entry
 //                                                       that no longer occurs, and on a stale table (CI runs this through the test)
 //   bun tools/ci/lesson-didactics.ts --write            regenerate specs/012-zplc-2-1-plant-simulation/lesson-didactics.md
-//   bun tools/ci/lesson-didactics.ts --write-baseline   rewrite tools/ci/lesson-didactics-baseline.json; it may only shrink, so it refuses a
-//                                                       new offence (fix the lesson); the first run, with no baseline file, writes it all
+//   bun tools/ci/lesson-didactics.ts --write-baseline   rewrite tools/ci/lesson-didactics-baseline.json; it may only shrink, so it
+//                                                       refuses a new offence (fix the lesson); the first run, with no
+//                                                       baseline file, writes it all
 //
 // The rules, per lesson (the owner's brief, ids are the baseline keys):
 //   reading     a reading page exists in English and in Spanish
@@ -85,7 +86,10 @@ export interface Row {
 }
 
 const escape = (phrase: string): string => phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-/** Whole-word, case-insensitive match (a hyphen joins words, so `estop-interlocks` is a name, not the word);  `sensitive` keeps the case (for a control label). */
+/**
+ * Whole-word, case-insensitive match (a hyphen joins words, so `estop-interlocks` is a name, not the word);
+ * `sensitive` keeps the case (for a control label).
+ */
 export function hasWord(text: string, phrase: string, sensitive = false): boolean {
   return new RegExp(`(?<![\\p{L}\\p{N}_-])${escape(phrase)}(?![\\p{L}\\p{N}_-])`, sensitive ? 'u' : 'iu').test(text);
 }
@@ -116,7 +120,10 @@ export function evaluate(input: Input): Row[] {
       const stage = lesson.text[lang].stages.find((candidate) => candidate.key === 'run');
       return stage ? unplaced(`${stage.title}\n${stage.body}\n${stage.checkpoint}`) : '';
     };
-    const namesCheck = Object.fromEntries(LANGS.map((lang) => [lang, hasWord(run(lang), input.checkLabel[lang], true)])) as Record<Lang, boolean>;
+    const namesCheck = Object.fromEntries(LANGS.map((lang) => [lang, hasWord(run(lang), input.checkLabel[lang], true)])) as Record<
+      Lang,
+      boolean
+    >;
 
     const noReading = LANGS.filter((lang) => !lesson.reading[lang]);
     if (noReading.length > 0) offences.reading = `no ${noReading.join(SEPARATOR)}`;
@@ -130,7 +137,9 @@ export function evaluate(input: Input): Row[] {
     });
     if (early.length > 0) offences.order = early.map((idea) => `${idea} < ${input.ideas.ideas[idea]!.explainedBy}`).join(SEPARATOR);
     const wrongTerms = input.terms.flatMap((term) =>
-      LANGS.flatMap((lang) => term.forbidden[lang].filter((word) => hasWord(full(lang), word)).map((word) => `${word} (${lang}, use ${term[lang]})`)),
+      LANGS.flatMap((lang) =>
+        term.forbidden[lang].filter((word) => hasWord(full(lang), word)).map((word) => `${word} (${lang}, use ${term[lang]})`),
+      ),
     );
     if (wrongTerms.length > 0) offences.glossary = wrongTerms.join(SEPARATOR);
     return { position: index + 1, lesson, namesCheck, offences };
@@ -146,12 +155,16 @@ export function mappingProblems(input: Input, glossary?: Record<Lang, string>): 
   }
   for (const [id, ideas] of Object.entries(input.ideas.practises)) {
     if (!ids.has(id)) problems.push(`lesson-ideas.json: practises names "${id}", which is not a lesson`);
-    for (const idea of ideas) if (!input.ideas.ideas[idea]) problems.push(`lesson-ideas.json: "${id}" practises the unknown idea "${idea}"`);
+    for (const idea of ideas)
+      if (!input.ideas.ideas[idea]) problems.push(`lesson-ideas.json: "${id}" practises the unknown idea "${idea}"`);
   }
   for (const term of input.terms) {
     for (const lang of LANGS) {
       if (glossary && term.glossary !== false && !glossary[lang].toLowerCase().includes(term[lang].toLowerCase())) {
-        problems.push(`glossary-terms.json: "${term[lang]}" (${term.concept}, ${lang}) is not on the glossary page; set "glossary": false if the row is still to come`);
+        problems.push(
+          `glossary-terms.json: "${term[lang]}" (${term.concept}, ${lang}) is not on the glossary page; ` +
+            'set "glossary": false if the row is still to come',
+        );
       }
     }
   }
@@ -171,17 +184,22 @@ export function ratchet(rows: readonly Row[], baseline: readonly string[]): { ad
 const yes = (value: boolean) => (value ? 'yes' : 'no');
 export function renderTable(rows: readonly Row[]): string {
   const cell = (row: Row, rule: Rule) => (row.offences[rule] ?? 'ok').replaceAll('|', '/');
-  const counts = RULES.map((rule) => `- \`${rule}\`: ${rows.filter((row) => row.offences[rule] !== undefined).length} of ${rows.length} lessons break it`);
+  const counts = RULES.map(
+    (rule) => `- \`${rule}\`: ${rows.filter((row) => row.offences[rule] !== undefined).length} of ${rows.length} lessons break it`,
+  );
   return [
     '# Lesson didactics',
     '',
-    'GENERATED by `tools/ci/lesson-didactics.ts`; do not edit. `bun tools/ci/lesson-didactics.ts --write` regenerates it and `--check` fails when it is stale.',
-    'Lessons are in full-course order (`courseOrder`). "Code lines to add" counts the non-comment lines the solution adds to the starter, for ST and IL only.',
+    'GENERATED by `tools/ci/lesson-didactics.ts`; do not edit. ' +
+      '`bun tools/ci/lesson-didactics.ts --write` regenerates it and `--check` fails when it is stale.',
+    'Lessons are in full-course order (`courseOrder`). ' +
+      '"Code lines to add" counts the non-comment lines the solution adds to the starter, for ST and IL only.',
     'The last five columns are the rules of the script header: `ok`, or what breaks it.',
     '',
     ...counts,
     '',
-    '| # | Lesson | Module | Language | Minutes | Reading | Code lines to add | Text names Check | Wrong-program set | reading | check | vocabulary | order | glossary |',
+    '| # | Lesson | Module | Language | Minutes | Reading | Code lines to add | Text names Check | Wrong-program set ' +
+      '| reading | check | vocabulary | order | glossary |',
     '|---|---|---|---|---|---|---|---|---|---|---|---|---|---|',
     ...rows.map((row) =>
       [
@@ -195,7 +213,10 @@ export function renderTable(rows: readonly Row[]): string {
         yes(row.namesCheck.en && row.namesCheck.es),
         yes(row.lesson.hasWrongSet),
         ...RULES.map((rule) => cell(row, rule)),
-      ].join(' | ').replace(/^/, '| ').concat(' |'),
+      ]
+        .join(' | ')
+        .replace(/^/, '| ')
+        .concat(' |'),
     ),
     '',
   ].join('\n');
