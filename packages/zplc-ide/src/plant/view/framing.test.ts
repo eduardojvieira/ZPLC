@@ -9,7 +9,6 @@ import { join } from 'node:path';
 import type * as THREE from 'three';
 import type { PlantSceneFile, PlantSnapshot, Quat } from '../contracts';
 import '../core/plantCore'; // registers the shipped parts before the catalogue is read
-import { catalogue } from '../core/catalogue';
 import { cameraFromPreset, cameraPosition, type CameraState } from './camera';
 import { partShape } from './geometry';
 import { createRenderer, type PlantRenderer } from './renderer';
@@ -219,12 +218,6 @@ async function snapshotOf(scene: PlantSceneFile): Promise<PlantSnapshot> {
 describe('the first view fits the whole scene (VIS-002)', () => {
   it('VIS-002 the first view fits the whole scene at 480×640, 720×800, 1280×720 and 1920×1080, for the 21 shipped scenes', async () => {
     expect(IDS.length).toBe(21);
-    // OperatePanel.sorting.test.tsx registers empty stand-ins for the M4 parts in the same process; the real core cannot load a scene
-    // with them. That file's run order is not ours to change: run this file alone (the journey of this task covers it in a window).
-    if (Object.keys(catalogue.get('diverter-arm')?.config ?? {}).length === 0) {
-      console.warn('VIS-002 21 scenes: skipped, the catalogue holds the stand-ins of another test file');
-      return;
-    }
     const cut: string[] = [];
     for (const id of IDS) {
       const scene = loadScene(id);

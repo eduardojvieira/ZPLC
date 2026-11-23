@@ -8,7 +8,9 @@ const { registerParts, catalogue } = await import('../core/catalogue');
 const { plantViewEn, plantViewEs } = await import('../../i18n/catalog/plantView');
 import type { PartDefinition, PartView, PlantCore, PlantSceneFile, PlantSnapshot, ScenePart } from '../contracts';
 
-// K9 registers the real M4 parts; until then the panel is exercised against stand-ins that carry the actions of the plan's table.
+// The real parts register when the plant core is imported, so it is imported first: a stand-in is registered only for a part the core
+// does not define, and a stand-in never takes the place of a real part for another test file of the same process.
+await import('../core/plantCore');
 const STANDINS: Record<string, [PartDefinition['family'], readonly string[]]> = {
   'light-array': ['sensors', ['readingStuck', 'readingOffset']],
   scale: ['sensors', ['readingStuck', 'readingOffset']],
@@ -32,7 +34,6 @@ registerParts(
       doc: { en: '', es: '' },
     })),
 );
-await import('../core/plantCore');
 
 const part = (id: string, kind: string, name: string): ScenePart => ({
   id,
