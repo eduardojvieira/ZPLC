@@ -13,7 +13,8 @@ const reading: LessonReading = {
   files: { 'reading/fig.ld.json': '{}' },
   images: ['images/panel.svg'],
 };
-const entry = LESSON_INDEX.lessons[0]!;
+// A lesson without a reading page, named by id: the course now opens with an explaining lesson, which has one.
+const entry = LESSON_INDEX.lessons.find(({ id }) => id === 'motor-start-stop-safe')!;
 const withReading = (value: LessonReading): LessonIndexEntry => ({ ...entry, reading: value });
 const catalog = (value: LessonIndexEntry) => ({
   es: createLearnContentV1('es', [value]),
