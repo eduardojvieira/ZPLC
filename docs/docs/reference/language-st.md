@@ -90,7 +90,7 @@ The picture is a real screenshot of this editor, captured by automation from the
 | FUNCTION | Works | 16 | CMP-027, CMP-035, CMP-036 |
 | FUNCTION\_BLOCK with state and several instances | Works | 4 | CMP-038 |
 | Function-block instances inside function blocks; arrays of instances | Works | 2 | CMP-038 |
-| Function-block call with named inputs | Works | 3 | CMP-037 |
+| Function-block call with named inputs | Works | 4 | CMP-037 |
 | Function-block call with =\> | Works | 2 | CMP-037 |
 | Positional function-block call | Rejected with a message, decision open | 1 | CMP-006 |
 | Methods, THIS | Works | 4 | CMP-041 |

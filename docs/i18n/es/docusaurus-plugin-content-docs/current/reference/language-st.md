@@ -90,7 +90,7 @@ La imagen es una captura de pantalla real de este editor, tomada de forma autom�
 | FUNCTION | Funciona | 16 | CMP-027, CMP-035, CMP-036 |
 | FUNCTION\_BLOCK con estado y varias instancias | Funciona | 4 | CMP-038 |
 | Instancias de bloque de función dentro de bloques de función; matrices de instancias | Funciona | 2 | CMP-038 |
-| Llamada a un bloque de función con entradas con nombre | Funciona | 3 | CMP-037 |
+| Llamada a un bloque de función con entradas con nombre | Funciona | 4 | CMP-037 |
 | Llamada a un bloque de función con =\> | Funciona | 2 | CMP-037 |
 | Llamada posicional a un bloque de función | Se rechaza con un mensaje, decisión abierta | 1 | CMP-006 |
 | Métodos, THIS | Funciona | 4 | CMP-041 |
