@@ -115,6 +115,7 @@ describe('command registry (UX-015)', () => {
       .sort();
     expect(physical).toEqual([
       'debug.pause',
+      'debug.rebuildAndRestart',
       'debug.reset',
       'debug.run',
       'debug.step',
@@ -123,6 +124,7 @@ describe('command registry (UX-015)', () => {
       'online.deploy',
       'online.disconnect',
       'online.feedBoardFromPlant',
+      'online.restartSimulator',
     ]);
   });
 

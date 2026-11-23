@@ -183,8 +183,8 @@ export const COMMANDS = [
   { id: 'project.network', titleKey: 'command.project.network', category: 'project', enabled: open },
   { id: 'project.communication', titleKey: 'command.project.communication', category: 'project', enabled: open },
   { id: 'project.target', titleKey: 'command.project.target', category: 'project', enabled: open },
-  { id: 'online.restartSimulator', titleKey: 'command.online.restartSimulator', category: 'online', enabled: idle },
-  { id: 'debug.rebuildAndRestart', titleKey: 'command.debug.rebuildAndRestart', category: 'debug', enabled: idle },
+  { id: 'online.restartSimulator', titleKey: 'command.online.restartSimulator', category: 'online', enabled: idle, physical: true },
+  { id: 'debug.rebuildAndRestart', titleKey: 'command.debug.rebuildAndRestart', category: 'debug', enabled: idle, physical: true },
 
   { id: 'help.shortcuts', titleKey: 'command.help.shortcuts', category: 'help', shortcut: 'Mod+K Mod+S' },
   // The Learn home opens with no project open: the Help menu is where a person who has not opened one looks (LRN-001).

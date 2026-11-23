@@ -238,6 +238,7 @@ describe('FND-002 the command inventory in a DOM', () => {
         .sort(),
     ).toEqual([
       'debug.pause',
+      'debug.rebuildAndRestart',
       'debug.reset',
       'debug.run',
       'debug.step',
@@ -246,6 +247,7 @@ describe('FND-002 the command inventory in a DOM', () => {
       'online.deploy',
       'online.disconnect',
       'online.feedBoardFromPlant',
+      'online.restartSimulator',
     ]);
   });
 });
