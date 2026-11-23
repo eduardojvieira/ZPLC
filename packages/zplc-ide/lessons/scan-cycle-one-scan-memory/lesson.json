@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "scan-cycle-one-scan-memory",
   "version": 2,
-  "order": 8,
+  "order": 14,
   "module": 1,
   "level": "foundation",
   "prerequisites": ["first-blink-simulation"],

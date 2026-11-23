@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "set-reset-alarm-latch-il",
   "version": 2,
-  "order": 71,
+  "order": 80,
   "module": 2,
   "level": "foundation",
   "prerequisites": ["set-reset-alarm-latch", "boolean-logic-two-hand-guard-il"],

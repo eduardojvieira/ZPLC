@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "boolean-logic-two-hand-guard",
   "version": 3,
-  "order": 12,
+  "order": 15,
   "module": 2,
   "level": "foundation",
   "prerequisites": ["blinky-ladder-timer-feedback"],

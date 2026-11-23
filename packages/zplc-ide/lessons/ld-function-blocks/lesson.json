@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "ld-function-blocks",
   "version": 1,
-  "order": 86,
+  "order": 21,
   "module": 7,
   "level": "intermediate",
   "prerequisites": ["tank-level-fault-reset-ladder"],

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "sfc-fill-mix-sequence",
   "version": 3,
-  "order": 23,
+  "order": 60,
   "module": 5,
   "level": "intermediate",
   "prerequisites": ["edge-counter-pulses"],

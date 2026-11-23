@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "function-block-valves-fbd",
   "version": 3,
-  "order": 32,
+  "order": 76,
   "module": 7,
   "level": "intermediate",
   "prerequisites": ["function-block-pump-pair", "counter-batch-fbd"],

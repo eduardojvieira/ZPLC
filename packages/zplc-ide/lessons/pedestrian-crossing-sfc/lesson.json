@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "pedestrian-crossing-sfc",
   "version": 1,
-  "order": 60,
+  "order": 61,
   "module": 5,
   "level": "intermediate",
   "prerequisites": ["pedestrian-crossing-states", "sfc-fill-mix-sequence"],

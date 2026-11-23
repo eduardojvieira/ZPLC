@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "set-reset-alarm-latch-ladder",
   "version": 3,
-  "order": 41,
+  "order": 70,
   "module": 2,
   "level": "foundation",
   "prerequisites": ["set-reset-alarm-latch", "blinky-ladder-timer-feedback"],
