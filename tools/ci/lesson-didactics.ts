@@ -40,7 +40,7 @@ const LANGS: readonly Lang[] = ['en', 'es'];
 /** The evidence vocabulary of the project (review finding L6): a learner has no use for it. The one place the words are listed. */
 export const VOCABULARY: Record<Lang, readonly string[]> = {
   en: ['POSIX', 'HIL', 'certification', 'host evidence'],
-  es: ['POSIX', 'HIL', 'certificación', 'evidencia del host', 'evidencia guardada del host'],
+  es: ['POSIX', 'HIL', 'certificación', 'evidencia del host', 'evidencia guardada del host', 'equipo anfitrión'],
 };
 
 export interface Term {
@@ -260,7 +260,10 @@ export function loadInput(): { input: Input; glossary: Record<Lang, string>; pro
     ideas: JSON.parse(readFileSync(IDEAS_FILE, 'utf8')) as Ideas,
     terms: (JSON.parse(readFileSync(TERMS_FILE, 'utf8')) as { terms: Term[] }).terms,
   };
-  const glossary = { en: glossaryCells(readFileSync(GLOSSARY_PAGES.en, 'utf8')), es: glossaryCells(readFileSync(GLOSSARY_PAGES.es, 'utf8')) };
+  const glossary = {
+    en: glossaryCells(readFileSync(GLOSSARY_PAGES.en, 'utf8')),
+    es: glossaryCells(readFileSync(GLOSSARY_PAGES.es, 'utf8')),
+  };
   return { input, glossary, problems };
 }
 

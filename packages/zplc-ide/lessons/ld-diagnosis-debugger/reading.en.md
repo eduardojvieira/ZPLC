@@ -70,7 +70,7 @@ Forcing an input is a good experiment. If you force `DoorClosed` to FALSE and th
 
 ## The Trace
 
-The **Trace** records samples of the values during a run on the simulator, so that you can read what happened after the fact. It is the tool for questions such as "when did the output change?" and "did it change at the same scan as the input?". The Trace of the simulator is host evidence only: it is not evidence from a real board.
+The **Trace** records samples of the values during a run on the simulator, so that you can read what happened after the fact. It is the tool for questions such as "when did the output change?" and "did it change at the same scan as the input?". The Trace of the simulator shows what happened in the simulator on this computer, not on a real board.
 
 ## Fix, remove the forces, check again
 

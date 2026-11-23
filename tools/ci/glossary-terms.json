@@ -11,6 +11,6 @@
     { "concept": "starter", "en": "starter", "es": "proyecto inicial", "forbidden": { "en": [], "es": ["starter"] } },
     { "concept": "sample", "en": "sample", "es": "muestra", "forbidden": { "en": [], "es": ["sample", "samples"] } },
     { "concept": "assertion", "en": "assertion", "es": "aserción", "forbidden": { "en": [], "es": ["assertion", "assertions"] } },
-    { "concept": "belt", "en": "belt", "es": "banda", "glossary": false, "forbidden": { "en": [], "es": ["cinta", "cintas"] } }
+    { "concept": "belt", "en": "belt", "es": "cinta", "forbidden": { "en": [], "es": ["banda transportadora", "bandas transportadoras"] } }
   ]
 }
