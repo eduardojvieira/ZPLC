@@ -202,7 +202,7 @@ describe('LRN-006 the course follows the curriculum table of the spec, in its or
     },
   );
 
-  it('LRN-006 begins with the tour of module 0, then what a PLC is and the scan cycle explained, then the first blink in Ladder and in Structured Text', () => {
+  it('LRN-006 begins with the tour of module 0, then the scan cycle, then the first blink in Ladder and in Structured Text', () => {
     const ids = order.map((lesson) => lesson.id);
     const tour = order.filter((lesson) => lesson.module === 0).map((lesson) => lesson.id);
     expect(tour[0]).toBe('first-blink-simulation');
