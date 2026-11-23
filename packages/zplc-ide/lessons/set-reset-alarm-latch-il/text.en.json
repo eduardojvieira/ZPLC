@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Instruction List: S and R, and the line that comes last",
   "summary": "Keep a fault in memory with the S and R instructions and see that, when the fault and the acknowledge arrive together, the instruction written last decides which one wins.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish alarm handling requirements of a real machine, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show alarm handling requirements of a real machine.",
   "objectives": [
     "Hold an alarm after the fault has gone, until it is acknowledged, with the IL instructions S and R.",
     "Use the order of two lines to decide whether set or reset wins, and tell it from the SR and RS blocks."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter flaw, save it, then press Check: The starting program copies Fault to both outputs with ST, so they go OFF at {{t:20}} ms when the fault is gone; replace it with S and R lines, loading Ack and then Fault for SetFirst, and Fault and then Ack for ResetFirst, and save the file.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

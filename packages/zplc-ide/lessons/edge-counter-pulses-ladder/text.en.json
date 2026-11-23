@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Counting pulses in Ladder: a CTU counts the edges itself",
   "summary": "Place a CTU in a rung so that CountReached turns on at the third rising edge of a pulse input and Reset clears the count.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the counting accuracy of a real input, wiring, hardware timing, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the counting accuracy of a real input or wiring.",
   "objectives": [
     "Place a counter block in a rung and set its preset and its reset.",
     "Explain that a counter adds one on the rising edge of its input, not on every scan in which the input is high."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter copies the pulse to the coil: CountReached is ON at {{t:10}} ms, on the first pulse, instead of after the third; place a CTU with PV 3, Reset on its R input, between PulseInput and CountReached. In the Ladder editor drag a CTU block between the contact and the coil, name its instance Count, and set PV to 3 and R to Reset.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Palletize with a gantry",
   "summary": "Drive a three-axis gantry through a computed 2 by 2 pattern to stack eight boxes in two layers on a pallet.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Command three axes with integer counts and compare each position with its command within one count.",
     "Choose the place of each box from its number: the slot in the layer and the height of the layer."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter commands no position, so the gantry stays on the floor; send each box, grip it, place it on the pallet in a 2 by 2 pattern of two layers, and light Green after the eighth.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "A pattern is arithmetic: the slot and the layer come from one counter, so eight boxes need one sequence and not eight. The scenario proves that boxes were placed and rest on pallet 0, that some were sent, that nothing was dropped and that Green is on at the end. It cannot read a position, so it does not check your counts or that the pattern is exactly eight boxes.",
-      "checkpoint": "It does not establish physical gripper timing, axis speed, hardware timing, HIL, or certification."
+      "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [

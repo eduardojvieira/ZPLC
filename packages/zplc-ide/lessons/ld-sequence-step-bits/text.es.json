@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Una secuencia en escalera: los bits de paso llevan un tanque de llenado a mezcla y a vaciado",
   "summary": "Agregue en una secuencia en escalera la transición del paso de mezcla al paso de vaciado, para que haya exactamente un bit de paso en ON a la vez y el tanque se vacíe después de la mezcla.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el tiempo de recorrido de las válvulas, el comportamiento del motor del mezclador, la medición de nivel del tanque, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el tiempo de recorrido de las válvulas, el comportamiento del motor del mezclador ni la medición de nivel del tanque.",
   "objectives": [
     "Explique una secuencia como bits de paso, de los cuales exactamente uno está en ON a la vez y una transición pasa la secuencia al siguiente.",
     "Escriba una transición en escalera como dos acciones en el mismo ciclo: activar el bit del paso siguiente y desactivar el del paso actual."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene transición de salida del paso de mezcla: Mixer sigue en ON a los {{t:100}} ms y DrainValve sigue en OFF; agregue un peldaño que active StepDrain y otro que desactive StepMix cuando StepMix y MixTimer.Q estén ambos en ON. En el editor de escalera copie los dos peldaños de la transición de llenado a mezcla, cambie sus contactos a StepMix y MixTimer.Q y sus bobinas a una bobina set sobre StepDrain y una bobina reset sobre StepMix.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

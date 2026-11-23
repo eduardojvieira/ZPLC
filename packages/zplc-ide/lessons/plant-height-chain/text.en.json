@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Sort by height, chain transfer",
   "summary": "Tell three box heights apart with two beams, remember the answer until the box reaches the chain transfer, and send it straight, right or left.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Decide a route from a combination of two sensors.",
     "Remember a decision while the next box is already passing the sensors."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter drives no output, so no belt moves and no box is sorted; run the belts after Start, classify each box from the two beams and send it straight, right or left.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The grade sees the three bins and that no box was misrouted or dropped; it does not read your latch, so a wrong answer shows only as a misrouted box.",
-      "checkpoint": "It does not establish the speed of the module, the timing of the lift, hardware timing, HIL, or certification."
+      "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [

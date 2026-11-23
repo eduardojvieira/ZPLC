@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Move boxes between three levels",
   "summary": "Sequence two lifts as two chains that run side by side and meet only at the shared transfer belt.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Describe each lift as its own chain of steps that loops back to its first step.",
     "Start both chains with one transition and let them meet only at the belt between the lifts."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter runs only lift A, so boxes pile up on the transfer belt; add the chain of lift B and start it from the same transition as lift A.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The EVENTUALLY assertion proves a box reached the top bin, the AT assertion proves Green is lit at the end and the ALWAYS assertion proves no box fell.",
-      "checkpoint": "The grade cannot see the order of the steps of each lift, nor whether a lift moved while its surface ran; it sees only what arrived and what fell. It does not establish physical lift speed, hardware timing, HIL, or certification."
+      "checkpoint": "The grade cannot see the order of the steps of each lift, nor whether a lift moved while its surface ran; it sees only what arrived and what fell."
     }
   ],
   "hints": [

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Sort by identity code",
   "summary": "Read the code of each item that the vision sensor sees and swing a diverter arm so that code 2 items leave on the side belt.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Route items by an integer code instead of a switch.",
     "Time an actuator against the travel of an item that has already been read."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter drives no output, so no belt moves and no item is sorted; run both belts after Start and swing the arm for each code 2 item.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The grade sees the two product belts and that nothing was dropped; it cannot see your timing, so a timing that clips an item shows only as a misrouted or dropped item.",
-      "checkpoint": "It does not establish the reading time of a real vision sensor, belt speed, hardware timing, HIL, or certification."
+      "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [

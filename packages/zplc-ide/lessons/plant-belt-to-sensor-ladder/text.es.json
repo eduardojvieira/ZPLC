@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Mover una caja hasta un sensor en diagrama de escalera",
   "summary": "Arranque una banda con un botón mediante una bobina de activación y deténgala con una bobina de borrado cuando una caja llegue al sensor del extremo.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Arrancar un actuador con la pulsación de un botón mediante una bobina de activación y recordar que está en marcha.",
     "Detener el actuador con una bobina de borrado cuando un sensor ve la caja."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que la banda nunca se mueve; arranque la banda y ponga una caja con Start, y detenga la banda cuando EyeFar vea la caja.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "La aserción EVENTUALLY prueba que el sensor vio la caja en ocho segundos; las aserciones AT fijan el estado al inicio y al final.",
-      "checkpoint": "No establece la velocidad física de la banda, la respuesta del sensor, la temporización de hardware, HIL ni certificación."
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [

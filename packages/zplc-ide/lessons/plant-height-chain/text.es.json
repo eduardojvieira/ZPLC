@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Clasificar por altura, transferencia de cadenas",
   "summary": "Distinga tres alturas de caja con dos barreras, recuerde la respuesta hasta que la caja llegue a la transferencia de cadenas y envíela de frente, a la derecha o a la izquierda.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Decidir una ruta a partir de una combinación de dos sensores.",
     "Recordar una decisión mientras la caja siguiente ya pasa por los sensores."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna banda se mueve y no se clasifica ninguna caja; ponga en marcha las bandas tras Start, clasifique cada caja con las dos barreras y envíela de frente, a la derecha o a la izquierda.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "La calificación ve los tres contenedores y que ninguna caja se desvió ni cayó; no lee su memoria, así que una respuesta errónea solo se nota como una caja mal encaminada.",
-      "checkpoint": "No establece la velocidad del módulo, la temporización de la elevación, la temporización de hardware, HIL ni certificación."
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [

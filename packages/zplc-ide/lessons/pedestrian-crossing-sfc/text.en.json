@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Pedestrian crossing as a chart",
   "summary": "Draw the pedestrian crossing as a Sequential Function Chart with one step per light combination, and check that WALK shows only while the vehicles are red.",
-  "scope": "Tests provide deterministic native POSIX host evidence only; they are not physical crossing, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a physical crossing or real phase durations.",
   "objectives": [
     "Turn the phases of a pedestrian crossing into the steps of a chart, each with an action that sets every light.",
     "Leave the green step with a transition on the plant's request and move through the other phases with timed transitions."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter has no way out of GREEN, so the crossing never leaves the vehicle green; add a transition from GREEN to YELLOW whose condition is PedRequest.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "Why does every action set all five lights instead of only the one that changes? Change the WALK action to leave VehicleGreen on and see which assertion fails.",
-      "checkpoint": "A step defines the whole output state, so no phase can leave a lamp on by omission. The scenario checks the logical sequence; it does not establish a physical crossing, real phase durations, HIL, or certification."
+      "checkpoint": "A step defines the whole output state, so no phase can leave a lamp on by omission. The scenario checks the logical sequence."
     }
   ],
   "hints": [

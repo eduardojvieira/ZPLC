@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Merge two lines in Ladder",
   "summary": "Arbitrate two feeders that share one outfeed with latch rungs: give line A priority, let one box through at a time and interlock the two blades.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Arbitrate two requests with a priority: line A wins when both lines wait.",
     "Interlock two outputs so they are never active together, and release the grant only when the box has cleared the merge."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter has no rungs, so nothing is loaded and no blade moves; load three boxes on each feeder, open one blade at a time, with line A first, never both together, and open the next only when the previous box has left the merge zone.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The ALWAYS assertion on collisions is the interlock check: a design that opened both blades could pass the delivery check and still fail it.",
-      "checkpoint": "It does not establish physical belt speed, sensor response, hardware timing, HIL, safety function, or certification."
+      "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [

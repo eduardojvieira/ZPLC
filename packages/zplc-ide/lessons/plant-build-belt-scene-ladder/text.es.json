@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Construir una escena de banda desde el suelo vacío",
   "summary": "Abra el Editor de escenas sobre un suelo vacío, coloque una banda, un emisor, un sensor y un botón de inicio con los nombres que da la lección, enlace sus señales en el mapa de la planta y escriba el programa que corre sobre ellos.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa.",
     "Ejecutar un programa sobre la escena que usted construyó y ver que la Comprobación califica esa escena, no una copia."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del inicial, guarde la escena, el mapa de la planta y el programa, y ejecute: La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la banda y la detiene cuando EyeFar ve la caja.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "El escenario lee hechos de la planta de las piezas que usted nombró, así que una escena con otros nombres no tiene nada que calificar; los nombres forman parte del contrato entre la escena, el mapa de la planta y el programa.",
-      "checkpoint": "No establece la velocidad física de la banda, la respuesta del sensor, la temporización de hardware, HIL ni certificación."
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Lo mismo con posiciones numéricas",
   "summary": "Ordene a un ensamblador de dos ejes con consignas numéricas en centímetros y una tolerancia de posición, en lugar de finales de carrera.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Enviar un eje a una posición con nombre mediante una consigna y leer su posición de vuelta.",
     "Decidir que un movimiento terminó cuando la posición está dentro de una tolerancia de la consigna, no cuando es igual a ella."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no ordena ninguna posición, así que el brazo se queda donde está; envíelo a la tapa, agarre, lleve la tapa a la base y suéltela, tres veces, y encienda Green tras la tercera.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "Una posición es una medida, así que comparar con una tolerancia es la prueba correcta; una igualdad exacta de dos valores REAL puede fallar siempre. El escenario prueba que se hizo y se entregó un ensamble, que nada se cayó y que Green está encendido al final. No puede leer un valor de posición, así que no comprueba su tolerancia ni sus consignas.",
-      "checkpoint": "No establece la temporización física de la pinza, la velocidad de los ejes, la temporización de hardware, HIL ni certificación."
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [

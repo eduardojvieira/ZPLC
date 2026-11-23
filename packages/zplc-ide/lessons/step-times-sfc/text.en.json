@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Step times: a horn before the gate opens",
   "summary": "Use the time a step has been active in a transition, so that a horn sounds for a fixed time before the gate motor runs for another.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish warning times required for a real gate, safety function behaviour, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show warning times required for a real gate or safety function behaviour.",
   "objectives": [
     "Use the elapsed time of a step, written step.T, as the condition of a transition.",
     "Check that the time of a step restarts at zero each time the step becomes active, so that two cycles take the same time."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter's transition from WARN to OPEN has the condition TRUE, so the horn sounds for a single scan and the gate opens at once; change the condition to step_warn.T >= T#30ms.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

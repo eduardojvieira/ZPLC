@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Enviar cada color a su banda",
   "summary": "Lea el color de cada pieza que espera en la cuchilla de parada, empuje las rojas a la banda lateral y deje pasar las azules.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el tiempo de respuesta del sensor ni la velocidad de la banda.",
   "objectives": [
     "Decidir una ruta a partir del resultado de un sensor cuando la pieza está quieta.",
     "Ejecutar un empuje como una secuencia corta: extender hasta Extended, retraer hasta Retracted."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna banda se mueve y ninguna pieza se clasifica; ponga en marcha las bandas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "La aserción EVENTUALLY prueba que ambos contenedores recibieron una pieza; la aserción ALWAYS prueba que ninguna fue al contenedor equivocado ni cayó; las aserciones AT fijan las lámparas.",
-      "checkpoint": "La calificación ve los contenedores, no el color que leyó su programa; no establece el tiempo de respuesta del sensor, la velocidad de la banda, la temporización de hardware, HIL ni certificación."
+      "checkpoint": "La calificación ve los contenedores, no el color que leyó su programa."
     }
   ],
   "hints": [

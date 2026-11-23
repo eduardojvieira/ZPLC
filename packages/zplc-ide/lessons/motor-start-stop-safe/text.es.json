@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Arranque y parada seguros",
   "summary": "Recorra un motor con autorretención, parada y protección por sobrecarga usando el ejemplo Motor Start Stop.",
-  "scope": "Las pruebas aportan solo evidencia del host con el runtime nativo POSIX; no son evidencia de hardware ni de HIL.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Mantenga el motor encendido tras soltar Start mediante una autorretención.",
     "Detenga el motor con Stop, EStop y Overload, y evite que un Start mantenido lo vuelva a arrancar por sí solo."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial pierde la autorretención al soltar Start; haga que Stop, EStop y Overload detengan el motor, y que nunca arranque ni vuelva a arrancar mientras Start siga pulsado tras el encendido o una parada.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexione",
       "body": "La aserción NEVER exacta comprueba la cobertura lógica de este escenario.",
-      "checkpoint": "No demuestra seguridad física, tiempos del hardware ni certificación."
+      "checkpoint": "Este escenario prueba la lógica del programa; no es una función de seguridad y no dice nada sobre la seguridad física."
     }
   ],
   "hints": [

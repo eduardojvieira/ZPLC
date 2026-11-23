@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Series and parallel: AND and OR with contacts",
   "summary": "Combine contacts in series for AND and in parallel for OR, read a truth table, and finish a program with a horn that sounds when either of two conditions is true.",
-  "scope": "Tests provide deterministic native POSIX host evidence on your computer only; they are not hardware, electrical, HIL, or safety evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Explain that contacts in series pass power only when all of them conduct (AND), and contacts in parallel pass power when any of them conducts (OR).",
     "Add a parallel path to a rung so that a horn sounds when the door is open or the motor is overheated, and check it against every row of a truth table."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Fix this starter omission, save it, then press Check: The starter reads only DoorOpen in the horn rung, so Horn stays OFF at {{t:50}} ms although Overheat is TRUE; add a normally open contact on Overheat in parallel with the DoorOpen contact. In the Ladder editor, put the cursor on the DoorOpen contact and press B to start a parallel branch.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

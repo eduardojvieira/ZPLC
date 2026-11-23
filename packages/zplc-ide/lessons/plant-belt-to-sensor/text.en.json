@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Move a box to a sensor",
   "summary": "Start a belt from a button and stop it when a box reaches the sensor at the far end.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": ["Start an actuator from a button press and remember that it is running.", "Stop the actuator when a sensor sees the box."],
   "stages": [
     {
@@ -21,7 +21,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter drives no output, so the belt never moves; start the belt and put a box on it with Start, and stop the belt when EyeFar sees the box.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -39,7 +39,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The EVENTUALLY assertion proves the sensor saw the box within eight seconds; the AT assertions pin the state at the start and at the end.",
-      "checkpoint": "It does not establish physical belt speed, sensor response, hardware timing, HIL, or certification."
+      "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [

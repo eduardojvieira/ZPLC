@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Balance a production line",
   "summary": "Split a line into one function block per machine, and send alternate blanks to each so that both machines make four products.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Move the control of one machine into a function block and use one instance for each machine.",
     "Balance two machines of different speeds by alternating the blanks between them."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter controls only machine A, written inline; move that control into a function block, call it for machine A and for machine B, and light Green when both have finished four cycles.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The EVENTUALLY assertion proves both machines made a product and both bins received one; the ALWAYS assertion proves no Start was a misfire and nothing fell.",
-      "checkpoint": "The grade cannot count the products: it reads Green, which the program lights from its own count, so read produced: in the facts for the real number. It does not establish physical machine timing, hardware timing, HIL, or certification."
+      "checkpoint": "The grade cannot count the products: it reads Green, which the program lights from its own count, so read produced: in the facts for the real number."
     }
   ],
   "hints": [

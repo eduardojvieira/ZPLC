@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Paro de emergencia y enclavamientos",
   "summary": "Haga que una línea en marcha se detenga al pulsar el paro de emergencia, muéstrelo con la luz roja y rehúse reiniciar hasta que se pulse Start de nuevo.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Detener todas las salidas mientras el paro de emergencia está pulsado.",
     "Recordar el paro, de modo que soltar el botón no reinicie la línea."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial ignora el paro de emergencia, así que la línea sigue funcionando; detenga todas las salidas mientras EStopOk sea FALSE, encienda Red, mantenga recordado el paro después de soltarlo y haga funcionar la línea de nuevo solo con una nueva pulsación de Start.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "Las aserciones AT fijan el paro a los 16 s, el paro mantenido a los 17,3 s y el reinicio a los 18 s; los enclavamientos que ya estaban en el programa son la misma idea de la lección 2.0 interlock-guard-permissive.",
-      "checkpoint": "No establece una función de seguridad: es un paro escrito en el programa del PLC, no un circuito con certificación de seguridad, y no da tiempo de parada, temporización de hardware, HIL ni certificación. La calificación no puede ver un elevador que se desplaza después del paro."
+      "checkpoint": "Es un paro escrito en el programa del PLC, no un circuito de seguridad, así que no es una función de seguridad y no da tiempo de parada. La calificación no puede ver un elevador que se desplaza después del paro."
     }
   ],
   "hints": [

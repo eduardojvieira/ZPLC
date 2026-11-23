@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Assemble lids and bases",
   "summary": "Model a two-axis assembler as a chart: take a lid from one belt, set it on a base on another belt, and repeat three times.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Coordinate two axes and a vacuum pad in one sequence, with one step for each move.",
     "Choose between two next steps with transition conditions that exclude each other."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter only homes the pad: add the steps and transitions that feed a lid and a base, take the lid, set it on the base, let the assembly leave, repeat three times and finish with Green.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The chart shows the whole sequence; the transition conditions are the only way to move between steps, so a missing limit switch stops the assembler. The scenario proves that at least one assembly was made and delivered, that nothing was dropped and that Green is on at the end. It does not count that exactly three were made.",
-      "checkpoint": "It does not establish physical gripper timing, axis speed, hardware timing, HIL, or certification."
+      "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [

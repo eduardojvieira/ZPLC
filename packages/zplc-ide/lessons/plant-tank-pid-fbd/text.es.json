@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "El mismo lazo con bloques de función",
   "summary": "Cablee el lazo de nivel de un tanque como un diagrama de bloques de función: un bloque PID_Compact entre el nivel y la consigna escalados y la válvula de entrada.",
-  "scope": "La calificación es una ejecución sin interfaz del tanque simulado en el entorno de ejecución POSIX nativo. Comprueba hacia dónde va el nivel, no cómo se dibuja el diagrama ni los valores de las ganancias. No establece el comportamiento de un tanque o una válvula reales, la temporización en hardware, HIL ni la certificación.",
+  "scope": "La calificación ejecuta el tanque simulado en el simulador de esta computadora. Comprueba hacia dónde va el nivel, no cómo se dibuja el diagrama ni los valores de las ganancias. No dice nada sobre un tanque o una válvula reales, sus tiempos ni su seguridad.",
   "objectives": [
     "Cablear un bloque de función PID_Compact en un diagrama: consigna, variable de proceso, ganancias, tiempo de ciclo y límites de salida a la izquierda, la salida a la derecha.",
     "Seguir un valor por el diagrama, desde el número entero bruto del nivel hasta metros y de ahí a la válvula de entrada."
@@ -29,8 +29,8 @@
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Check. ZPLC traduce el diagrama, lo ejecuta con el tanque de la escena tank-level-control, sube la consigna, abre el vaciado y baja la consigna, y comprueba {{assertions}} aserciones: el nivel dentro de la banda en dos ventanas, fuera de ella al final y sin derrame.",
-      "checkpoint": "El escenario se llama tank-pid-fbd y contiene {{assertions}} aserciones y las pasa todas con evidencia guardada del host."
+      "body": "Pulse Comprobar. ZPLC traduce el diagrama, lo ejecuta con el tanque de la escena tank-level-control, sube la consigna, abre el vaciado y baja la consigna, y comprueba {{assertions}} aserciones: el nivel dentro de la banda en dos ventanas, fuera de ella al final y sin derrame.",
+      "checkpoint": "El escenario se llama tank-pid-fbd y contiene {{assertions}} aserciones y las pasa todas."
     },
     {
       "key": "observe",

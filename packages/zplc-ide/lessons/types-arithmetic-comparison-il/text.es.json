@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Lista de instrucciones: aritmética, comparación y un salto en un flanco ascendente",
   "summary": "Mantenga un total en una variable INT, súmele en cada pulsación con ADD y un salto condicional, y conviértalo en tres resultados BOOL con LT, EQ y GT.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el rango de un sensor real ni el comportamiento de desbordamiento de un controlador concreto, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el rango de un sensor real ni el comportamiento de desbordamiento de un controlador concreto.",
   "objectives": [
     "Use ADD sobre un número en el resultado actual, y LT, EQ y GT para convertir un número en un BOOL.",
     "Salte un grupo de líneas con JMPCN para que un número cambie solo en el flanco ascendente de una entrada."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial recuerda Step en StepWas y escribe las tres comparaciones, pero nunca cambia Total, así que Low queda en ON para siempre; sume 5 a Total en cada flanco ascendente de Step y bórrelo mientras Reset sea TRUE.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

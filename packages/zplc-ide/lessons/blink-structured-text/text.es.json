@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Escriba un parpadeador en texto estructurado",
   "summary": "Construya un parpadeador con un temporizador TON y una variable de memoria, y haga que funcione solo mientras una entrada de habilitación está en ON.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no son evidencia de una lámpara física, de los tiempos del hardware, de HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Escriba el patrón de temporizador y memoria que hace cambiar una salida a intervalos fijos.",
     "Condicione una salida a una entrada para que se detenga de inmediato cuando la entrada cae."

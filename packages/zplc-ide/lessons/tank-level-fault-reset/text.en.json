@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Tank level, faults, and reset",
   "summary": "Walk through level control and the fault and reset latches in the Tank Level example.",
-  "scope": "Tests provide deterministic native POSIX host evidence only; they are not physical-process, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Keep the pump on from LevelLow until LevelHigh with a latch.",
     "Latch the alarm on PumpFault or EStop and release it only with a fresh Reset after the fault has cleared."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter has no pump hysteresis and runs through a pump fault; keep the pump on from LevelLow until LevelHigh, latch the alarm on PumpFault or EStop, and release it only with a Reset pressed after the fault has cleared.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The NEVER assertion covers Pump+Alarm only in this recorded scenario.",
-      "checkpoint": "It does not establish a physical process, hardware timing, HIL, or certification."
+      "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [

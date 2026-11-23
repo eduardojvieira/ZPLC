@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Ciclo de escaneo y memoria de un ciclo",
   "summary": "Siga cómo una entrada produce la salida actual y una copia demorada un ciclo.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una única tarea de 10 ms; no demuestran los tiempos en el dispositivo de destino, las instantáneas bajo interrupciones físicas, el rebote eléctrico, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra los tiempos en el dispositivo de destino, las instantáneas bajo interrupciones físicas ni el rebote eléctrico.",
   "objectives": [
     "Compruebe que una variable conserva su valor de un ciclo al siguiente.",
     "Construya un retardo de un ciclo y un pulso de un ciclo con una única memoria."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial no tiene memoria de un ciclo; conserve Previous, calcule Delayed a partir de Previous, derive RisingPulse de Current y Delayed y actualice Previous al final.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -41,8 +41,8 @@
     {
       "key": "evidence",
       "title": "Evidencia",
-      "body": "AT/RISING/FALLING/NEVER cubren el escenario; los hashes y la traza corresponden al host.",
-      "checkpoint": "La evidencia registrada corresponde al escenario ejecutado en el host."
+      "body": "AT/RISING/FALLING/NEVER cubren el escenario; los hashes y la traza corresponden al escenario que se ejecutó.",
+      "checkpoint": "La evidencia registrada corresponde al escenario ejecutado."
     },
     {
       "key": "reflect",

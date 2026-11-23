@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Gather items into a crate",
   "summary": "Bring a crate onto a lift, feed five workpieces into it one at a time and send it away full.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Combine a count, a lift and a crate in one sequence of steps.",
     "Move the lift only with its surface stopped, and feed the next workpiece only after the last one has landed."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter drives no output, so nothing moves; sequence the station: emit a crate, raise the lift, feed and count five workpieces one at a time, lower the lift and send the crate out, lighting Green when OutEye sees it.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The loaded:crate:0 fact is TRUE once at least one workpiece rests inside the crate, and the delivered fact proves the crate reached its bin.",
-      "checkpoint": "The grade cannot count the workpieces: it does not tell four from five, because an expectation has no numeric comparison; read the count in the facts. It does not establish physical lift speed, hardware timing, HIL, or certification."
+      "checkpoint": "The grade cannot count the workpieces: it does not tell four from five, because an expectation has no numeric comparison; read the count in the facts."
     }
   ],
   "hints": [

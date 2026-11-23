@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "MQTT: publicar un mensaje y recibirlo",
   "summary": "Conéctese al broker de la simulación, suscríbase a un tema, publique un mensaje en él y conserve constancia del mensaje, que llega de vuelta durante un solo ciclo.",
-  "scope": "El broker MQTT de esta lección es un doble de loopback que ZPLC inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un broker, un servicio en la nube o un dispositivo reales acepten la misma sesión, los mismos temas o la misma calidad de servicio, y no dice nada sobre los tiempos de una red, HIL ni certificación.",
+  "scope": "El broker MQTT de esta lección es un doble de loopback que ZPLC inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un broker, un servicio en la nube o un dispositivo reales acepten la misma sesión, los mismos temas o la misma calidad de servicio, y no dice nada sobre los tiempos de una red.",
   "objectives": [
     "Distinga un bloque de servicio (MQTT_CONNECT, MQTT_SUBSCRIBE), que informa su estado en cada ciclo, de un bloque de solicitud (MQTT_PUBLISH), que envía una vez por cada flanco ascendente de EN.",
     "Publique solo cuando la suscripción ya esté activa, porque un mensaje enviado antes no se le entrega.",
@@ -26,7 +26,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial se conecta al broker y se suscribe, pero nunca publica ni registra lo que recibe, así que Published y Heard quedan en OFF; llame a MQTT_PUBLISH con EN := Send AND Sub.DONE y mantenga Heard en ON una vez que Sub.VALID sea TRUE con el contenido 'START'.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Clasificar por código de identidad",
   "summary": "Lea el código de cada pieza que ve el sensor de visión y accione un brazo desviador para que las piezas de código 2 salgan por la banda lateral.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Encaminar piezas por un código entero y no por un interruptor.",
     "Sincronizar un actuador con el recorrido de una pieza ya leída."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna banda se mueve y no se clasifica ninguna pieza; ponga en marcha ambas bandas tras Start y accione el brazo para cada pieza de código 2.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "La calificación ve las dos bandas de producto y que nada cayó; no ve su temporización, así que un tiempo que golpee una pieza solo se nota como una pieza mal encaminada o caída.",
-      "checkpoint": "No establece el tiempo de lectura de un sensor de visión real, la velocidad de la banda, la temporización de hardware, HIL ni certificación."
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [

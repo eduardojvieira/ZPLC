@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Aserciones temporales y falla por atasco",
   "summary": "Retenga la falla por atasco y compruebe su temporización con aserciones AT, WITHIN, FOR, UNTIL, RISING y FALLING.",
-  "scope": "Las pruebas aportan solo evidencia del host con el runtime nativo POSIX y entradas discretas; el atasco programado no es evidencia de una falla física, del despeje físico, de los tiempos en el dispositivo de destino, de HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra una falla física, el despeje físico ni los tiempos en el dispositivo de destino.",
   "objectives": [
     "Retenga la falla por atasco y compruebe su temporización con aserciones temporales.",
     "Exija un nuevo Start antes de que la cinta vuelva a moverse tras liberar la falla."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial no retiene la falla por atasco; retenga la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela solo con Reset después de que se despeje el atasco y exija un nuevo Start para volver a mover la cinta.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexione",
       "body": "NEVER prohíbe que BeltCommand y FaultLamp estén en ON a la vez en este escenario. Un Reset con el atasco presente no debe liberar la falla, y liberarla no debe volver a arrancar la cinta.",
-      "checkpoint": "Un atasco inyectado no demuestra una falla física, el despeje físico, los tiempos en el dispositivo de destino, HIL ni certificación."
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [

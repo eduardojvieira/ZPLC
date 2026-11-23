@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Final project in Ladder: a packing station, from description to tested program",
   "summary": "Turn the written description of a small packing station into a Ladder program with a seal-in, a stop and an emergency stop wired normally closed, a counter, a timer and a latched fault, and prove it with a scenario that also checks what must not happen.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish packing-line requirements, safety function behavior, sensor timing or any real machine behavior, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show packing-line requirements, safety function behavior, sensor timing or any real machine behavior.",
   "objectives": [
     "Turn five written requirements into one Ladder program that combines a seal-in, normally closed stops, a counter, a timer and a latched fault.",
     "Read a scenario that checks both what must happen and what must not happen, and use its failed assertions to find the requirement you missed."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter has only the belt rung, so a full batch never stops the belt and a blocked sensor never raises Fault. Add the counter with Reset on its R input, the timer on Part that sets Fault, the RESET coil that Reset reaches only when Part is clear, and a normally closed contact of Fault and of BatchFull in the belt rung. Plan first: write the inputs and outputs in a table, then the steps, then the tests. The rungs are: rung 1, the counter (CU from Part, R from Reset, preset 3) driving BatchFull; rung 2, the timer on Part that sets Fault; rung 3, the RESET coil on Fault under Reset with a normally closed contact of Part.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Build a belt scene from the empty floor",
   "summary": "Open the Scene editor on an empty floor, place a belt, an emitter, a sensor and a start button with the names the lesson gives, bind their signals in the plant map and write the program that runs on them.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Place the parts of a scene by name and bind each signal of the plant map to a program variable.",
     "Run a program on the scene you built and see the Check grade that scene, not a copy of it."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save the scene, the plant map and the program, then run: The starter scene is an empty floor, so there is nothing to run; place Belt1, Emitter1, EyeFar and StartButton, bind their four signals in the plant map, and write the program that starts the belt and stops it when EyeFar sees the box.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The scenario reads plant facts of the parts you named, so a scene with other names has nothing to grade; the names are part of the contract between the scene, the plant map and the program.",
-      "checkpoint": "It does not establish physical belt speed, sensor response, hardware timing, HIL, or certification."
+      "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [

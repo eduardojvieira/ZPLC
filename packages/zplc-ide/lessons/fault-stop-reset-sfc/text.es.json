@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Fallas, parada y reinicio en un diagrama",
   "summary": "Detenga un ciclo de alimentación y prensa en cuanto aparece una falla, y devuélvalo a IDLE solo cuando la falla haya desaparecido y se pulse Reset.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran una parada segura, una función de seguridad, el comportamiento de una prensa, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra una parada segura, una función de seguridad ni el comportamiento de una prensa.",
   "objectives": [
     "Agregue un paso de falla al que pueda llegar todo paso de trabajo, con una transición de mayor prioridad que las temporizadas.",
     "Devuelva el diagrama a su paso inicial con un Reset que funciona solo cuando la falla ha desaparecido."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial entra en FAULTED con Fault pero no tiene salida, así que Alarm queda encendida para siempre y no puede iniciarse un nuevo ciclo; agregue una transición de FAULTED a IDLE cuya condición sea Reset AND NOT Fault.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

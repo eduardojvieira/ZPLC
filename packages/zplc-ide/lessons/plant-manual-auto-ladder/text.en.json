@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Manual and automatic modes",
   "summary": "Add a mode to the two-axis assembly: jog the pad by hand in manual, run the assembly cycle in automatic, and never let one leak into the other.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Keep the mode in a memory that one press of ModeBtn switches, and let the machine power up in manual.",
     "Move the pad with the jog buttons only in manual, never past a limit switch, and start the cycle with Start only in automatic."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter has no mode: a press of Start in manual starts the cycle and the jog buttons do nothing; switch with ModeBtn, allow Start only in automatic, and move the pad with the jog buttons only in manual.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The AT assertions pin the idle machine, the pad at each limit, the quiet Start in manual and the running cycle; the facts prove that the assembly finished without a dropped part.",
-      "checkpoint": "It does not establish an operator-safe machine: a real manual mode also needs a guarded jog speed and a safety function, and the grade gives no hardware timing, HIL, or certification."
+      "checkpoint": "A real manual mode also needs a guarded jog speed and a safety function; passing here does not make the machine safe for an operator."
     }
   ],
   "hints": [

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Su primer parpadeo en simulación",
   "summary": "Haga que una lámpara simulada se encienda y se apague cada medio segundo cambiando un solo número, y vea el resultado en la traza.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX, solo en su equipo; no son evidencia de una lámpara física, de los tiempos del hardware, de HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Ejecute un programa sobre una salida simulada, sin ningún hardware.",
     "Cambie un valor en texto estructurado y vea cómo cambia la salida en la traza."

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Mover cajas entre tres niveles",
   "summary": "Secuencie dos elevadores como dos cadenas que corren en paralelo y se encuentran solo en la banda de transferencia compartida.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Describir cada elevador como su propia cadena de pasos que vuelve a su primer paso.",
     "Arrancar ambas cadenas con una sola transición y dejar que se encuentren solo en la banda entre los elevadores."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la banda de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "La aserción EVENTUALLY prueba que una caja llegó al depósito superior, la aserción AT prueba que Green está encendida al final y la aserción ALWAYS prueba que no cayó ninguna caja.",
-      "checkpoint": "La calificación no puede ver el orden de los pasos de cada elevador ni si un elevador se movió con su superficie en marcha; solo ve qué llegó y qué cayó. No establece la velocidad física del elevador, la temporización de hardware, HIL ni certificación."
+      "checkpoint": "La calificación no puede ver el orden de los pasos de cada elevador ni si un elevador se movió con su superficie en marcha; solo ve qué llegó y qué cayó."
     }
   ],
   "hints": [

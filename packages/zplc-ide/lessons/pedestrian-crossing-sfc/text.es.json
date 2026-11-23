@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Cruce peatonal como diagrama funcional secuencial",
   "summary": "Dibuje el cruce peatonal como un diagrama funcional secuencial con un paso por combinación de luces, y compruebe que WALK se muestra solo mientras los vehículos están en rojo.",
-  "scope": "Las pruebas aportan solo evidencia determinista del host con el runtime nativo POSIX, que no es evidencia de cruce físico, hardware, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra un cruce físico ni duraciones reales de las fases.",
   "objectives": [
     "Convierta las fases de un cruce peatonal en los pasos de un diagrama, cada uno con una acción que escribe todas las luces.",
     "Salga del paso verde con una transición sobre la solicitud de la planta y recorra las demás fases con transiciones temporizadas."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene salida desde GREEN, así que el cruce nunca deja el verde de los vehículos; agregue una transición de GREEN a YELLOW cuya condición sea PedRequest.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexione",
       "body": "¿Por qué cada acción escribe las cinco luces en lugar de solo la que cambia? Cambie la acción de WALK para que deje VehicleGreen encendida y vea qué aserción falla.",
-      "checkpoint": "Un paso define todo el estado de salida, así que ninguna fase puede dejar una luz encendida por descuido. El escenario comprueba la secuencia lógica; no demuestra un cruce físico, duraciones reales de las fases, HIL ni certificación."
+      "checkpoint": "Un paso define todo el estado de salida, así que ninguna fase puede dejar una luz encendida por descuido. El escenario comprueba la secuencia lógica."
     }
   ],
   "hints": [

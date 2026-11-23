@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Acumular y liberar",
   "summary": "Modele una estación de búfer como una máquina de estados: cargue cinco cajas, retenga en una cuchilla y libere una por cada pulsación del botón.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Modelar una estación con pasos y transiciones, un paso por cada cosa que hace la estación.",
     "Elegir entre dos pasos siguientes con condiciones de transición que se excluyen entre sí."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial carga cajas pero nunca las retiene ni las libera de una en una; añada los pasos y transiciones que cuentan cinco cajas, retienen la cuchilla, liberan una por pulsación y terminan con Done.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "El diagrama muestra toda la secuencia; las condiciones de transición son la única forma de pasar de un paso a otro, así que una condición que falta detiene la estación.",
-      "checkpoint": "No establece la velocidad física de la banda, la respuesta del sensor, la temporización de hardware, HIL ni certificación."
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Fusionar dos líneas en diagrama de escalera",
   "summary": "Arbitre con peldaños de enclavamiento dos alimentadores que comparten una salida: dé prioridad a la línea A, deje pasar una caja a la vez y bloquee entre sí las dos cuchillas.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Arbitrar dos peticiones con una prioridad: la línea A gana cuando ambas esperan.",
     "Enclavar dos salidas para que nunca estén activas juntas y liberar la concesión solo cuando la caja haya despejado la fusión."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que no se carga nada y ninguna cuchilla se mueve; cargue tres cajas en cada alimentador, abra una cuchilla a la vez, con la línea A primero y nunca ambas juntas, y abra la siguiente solo cuando la caja anterior haya salido de la zona de fusión.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "La aserción ALWAYS sobre colisiones es la comprobación del enclavamiento: un diseño que abriera ambas cuchillas podría pasar la entrega y aun así fallar esa aserción.",
-      "checkpoint": "No establece la velocidad física de la banda, la respuesta del sensor, la temporización de hardware, HIL, función de seguridad ni certificación."
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Clasificar por peso",
   "summary": "Compare la lectura de una báscula con un límite y envíe las cajas pesadas a la banda lateral y las ligeras de frente.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la exactitud de la báscula.",
   "objectives": [
     "Clasificar una pieza comparando un valor analógico con un límite.",
     "Leer el valor solo cuando la báscula indica que es estable."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna banda se mueve y no se pesa ninguna caja; ponga en marcha las bandas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "La calificación no puede comparar números: ve en qué contenedor terminó cada caja. Cualquier límite entre 2 kg y 5 kg pasa, así que los 3.5 kg del enunciado los justifica usted, no la calificación.",
-      "checkpoint": "Una caja que llega al contenedor equivocado incumple la aserción ALWAYS; la calificación no establece la exactitud de la báscula, la temporización de hardware, HIL ni certificación."
+      "checkpoint": "Una caja que llega al contenedor equivocado incumple la aserción ALWAYS."
     }
   ],
   "hints": [

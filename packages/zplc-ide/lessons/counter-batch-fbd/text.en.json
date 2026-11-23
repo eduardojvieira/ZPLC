@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Counters in Function Block Diagram: count parts to a batch",
   "summary": "Edit a Function Block Diagram so that a CTU counter counts three parts, lights BatchFull, and clears with Reset.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish sensor wiring, debounce, counting accuracy at machine speed, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show sensor wiring, debounce or counting accuracy at machine speed.",
   "objectives": [
     "Read a Function Block Diagram as blocks whose output ports are wired to the input ports of other blocks.",
     "Wire a CTU counter: a rising edge on CU counts, R clears it, and Q is TRUE when the count reaches the preset PV."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter has the counter and the preset, but PartSensor and Reset are not wired to it, so Count never counts and BatchFull stays OFF; wire PartSensor to the CU input and Reset to the R input.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Pick from one belt, place on another in Ladder",
   "summary": "Sequence a clamp carriage with limit sensors and a grip feedback to move four boxes from an infeed belt to an outfeed belt.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Sequence a pick and place with one state per move, each move waiting for its limit sensor.",
     "Wait for the grip feedback before lifting, and keep the receiving belt still while a box is put down."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter has no rungs, so nothing moves; write the transfer: feed one box at a time, grip, carry and release each one over the outfeed, and light Done after the fourth.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The scenario proves that the clamp picked a box and put it down, that a box reached the end of the outfeed, that nothing was dropped and that Done is lit at the end. It does not count that exactly four boxes crossed: that count is in your program.",
-      "checkpoint": "It does not establish physical gripper timing, axis speed, hardware timing, HIL, or certification."
+      "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [

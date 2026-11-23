@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Your first blink in simulation",
   "summary": "Make a simulated lamp turn on and off every half second by changing one number, then see the result in the trace.",
-  "scope": "Tests provide native POSIX host evidence on your computer only; they are not evidence of a physical lamp, hardware timing, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Run a program against a simulated output without any hardware.",
     "Change one value in Structured Text and see the output change in the trace."

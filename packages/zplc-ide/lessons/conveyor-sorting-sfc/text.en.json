@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Conveyor sorting as a chart",
   "summary": "Describe a sorting conveyor as a chart of stopped, running and fault steps: sort metal parts while running, and lock the belt out when the plant reports a jam.",
-  "scope": "Tests provide deterministic native POSIX host evidence only; they are not physical conveyor, jam clearance, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a physical conveyor or jam clearance.",
   "objectives": [
     "Describe a conveyor as three steps, with the sorting memory kept in a local variable that the running action updates.",
     "Move from RUNNING to FAULT on the jam sensor, and leave FAULT only when Reset is pressed and the jam is gone."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter has no transition from RUNNING to FAULT, so a jam changes nothing: the belt keeps running and FaultLamp stays off; add a transition from RUNNING to FAULT whose condition is JamDetected and whose priority is 1.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "Why does the diverter fire at {{t:40}} ms and not when the metal part is at the classifier? Replace the memory MetalLatched with a test of the classifier alone and see which assertion fails.",
-      "checkpoint": "The classifier and the diverter see the part at different times, so the metal result is kept in MetalLatched until the part reaches the diverter. The scenario shows the logic only; it does not establish a physical conveyor, jam clearance, hardware timing, HIL, or certification."
+      "checkpoint": "The classifier and the diverter see the part at different times, so the metal result is kept in MetalLatched until the part reaches the diverter. The scenario shows the logic only."
     }
   ],
   "hints": [

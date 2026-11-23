@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Tank level, faults and reset in Ladder: latches and the order of the rungs",
   "summary": "Control a tank pump with a seal-in, latch a fault with SET and RESET coils, and clear it only with a fresh Reset, in a program that follows the plant level.",
-  "scope": "Tests provide deterministic native POSIX host evidence only; they are not physical-process, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Keep the pump on from LevelLow until LevelHigh with a seal-in, with every stop condition in series.",
     "Latch the alarm on PumpFault or EStop with a SET coil, and release it with a RESET coil that only a fresh Reset press can reach."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter never sets FaultLatched, so Alarm drops as soon as PumpFault goes away at {{t:90}} ms instead of staying ON until a Reset; add the rungs that set FaultLatched on EStop or PumpFault, arm Reset when it is released, and clear the latch with a fresh Reset press. The rungs run from top to bottom: put the latch rungs before the pump rung, so that the pump rung already sees the FaultLatched of this scan.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The NEVER assertion covers Pump and Alarm only in this recorded scenario. Try pressing Reset before the fault input has gone away: which rung stops it?",
-      "checkpoint": "It does not establish a physical process, hardware timing, HIL, or certification. The scenario never holds Reset through a fault, so the armed Reset is explained here but not proved by it."
+      "checkpoint": "The scenario never holds Reset through a fault, so the armed Reset is explained here but not proved by it."
     }
   ],
   "hints": [

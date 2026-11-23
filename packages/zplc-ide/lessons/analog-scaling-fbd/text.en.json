@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Analog scaling in Function Block Diagram: a high level alarm",
   "summary": "Edit a Function Block Diagram that scales raw analog counts from 0 to 4095 into a level in percent with MUL, DIV and LIMIT blocks, and lights HighLevel at 75 percent.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task and a stand-in for the potentiometer; they do not establish the accuracy, noise or calibration of a real analog input, wiring, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the accuracy, noise, calibration of a real analog input or wiring.",
   "objectives": [
     "Scale raw analog counts to engineering units with arithmetic blocks: multiply by the span of the units, then divide by the span of the counts.",
     "Keep a scaled value inside its range with a LIMIT block, and compare the value in engineering units, not in raw counts, with a threshold."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter multiplies Raw by 100 but never divides by 4095, so LIMIT clamps the product to 100 from the first scan and HighLevel lights at {{t:10}} ms; insert a DIV block that divides the product by 4095 between MUL and LIMIT. Place a DIV block and a constant 4095 of type DINT, wire MUL.OUT to DIV.IN1 and the constant to DIV.IN2, then wire DIV.OUT to LIMIT.IN in place of the wire from MUL.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

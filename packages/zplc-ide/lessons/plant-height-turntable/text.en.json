@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Sort by height, turntable",
   "summary": "Measure the height of each box with a light array, keep the largest reading, and turn a turntable so the box leaves on the belt of its class.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the accuracy of the array or turntable speed.",
   "objectives": [
     "Reduce a stream of readings to one value, the peak, and classify it with two limits.",
     "Coordinate a turntable with the decision: stop, turn, run out, turn back."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter drives no output, so no belt moves and no box is sorted; run the belts after Start, measure each box, turn the table to the belt of its class and turn it back to the centre.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The grade cannot compare numbers: it sees the bins, not the peak you measured or the limits you chose. Limits anywhere between 20 and 30 cm and between 30 and 40 cm give the same grade.",
-      "checkpoint": "A box on the wrong belt fails the ALWAYS assertion; the grade does not establish the accuracy of the array, turntable speed, hardware timing, HIL, or certification."
+      "checkpoint": "A box on the wrong belt fails the ALWAYS assertion."
     }
   ],
   "hints": [

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Tomar de una banda y dejar en otra en diagrama de escalera",
   "summary": "Secuencie un carro con pinza usando finales de carrera y la señal de agarre para pasar cuatro cajas de una banda de entrada a una banda de salida.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Secuenciar un tomar y colocar con un estado por movimiento, cada uno a la espera de su final de carrera.",
     "Esperar la señal de agarre antes de elevar y mantener detenida la banda receptora mientras se deja una caja."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la banda de salida, y encienda Done tras la cuarta.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "El escenario prueba que la pinza tomó una caja y la dejó, que una caja llegó al final de la banda de salida, que nada se cayó y que Done está encendido al final. No cuenta que crucen exactamente cuatro cajas: esa cuenta está en su programa.",
-      "checkpoint": "No establece la temporización física de la pinza, la velocidad de los ejes, la temporización de hardware, HIL ni certificación."
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [

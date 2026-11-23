@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Del sensor A al sensor B",
   "summary": "Secuencie un movimiento con un set y un reset: haga correr la banda desde el sensor A hasta que la caja llegue al sensor B.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Usar un set y un reset para mantener una salida entre dos eventos.",
     "Explicar por qué un sensor que se apaga no puede mantener la salida por sí solo."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial nunca hace correr la banda; active Run cuando EyeA vea la caja y bórrela cuando EyeB vea la caja.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "Las aserciones comprueban la cuenta en ambos sensores y el estado final; no dicen nada sobre cuánto dura el movimiento en la vida real.",
-      "checkpoint": "No establece la velocidad física de la banda, la respuesta del sensor, la temporización de hardware, HIL ni certificación."
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [

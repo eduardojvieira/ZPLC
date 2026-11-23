@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Su propio bloque de función en diagrama de bloques de función: dos válvulas, un bloque",
   "summary": "Edite un diagrama de bloques de función para que una segunda instancia del bloque de función ValveCtl del proyecto comande la válvula de vaciado, con sus entradas y su salida conectadas.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el cableado de las válvulas, su tiempo de recorrido, la supervisión del suministro de aire, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el cableado de las válvulas, su tiempo de recorrido ni la supervisión del suministro de aire.",
   "objectives": [
     "Coloque en un diagrama de bloques de función un bloque de función que el proyecto declara en texto estructurado, y lea sus puertos en la declaración.",
     "Conecte una segunda instancia del mismo bloque de función, y vea que cada instancia conserva una memoria propia."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial conecta solo la instancia Fill, así que la válvula de vaciado nunca se abre y DrainValve queda en OFF a los {{t:30}} ms; conecte DrainPB a Drain.Open, StopPB a Drain.Close y AirOk a Drain.Permit, y escriba Drain.Cmd en DrainValve con un bloque de salida. ValveCtl está en la categoría Proyecto de la paleta, pero la instancia Drain ya está colocada, así que solo faltan los cables y el bloque de salida.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

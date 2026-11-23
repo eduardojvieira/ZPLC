@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Send each colour to its belt",
   "summary": "Read the colour of each workpiece that waits at the stop blade, push the red ones onto the side belt and let the blue ones ride on.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show sensor response time or belt speed.",
   "objectives": [
     "Decide a route from one sensor result once the part lies still.",
     "Run a push as a short sequence: extend until Extended, retract until Retracted."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter drives no output, so no belt moves and no workpiece is sorted; run the belts after Start, read IsRed once the workpiece is still, push red ones out and release blue ones.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The EVENTUALLY assertion proves both bins received a workpiece; the ALWAYS assertion proves none went to the wrong bin and none was dropped; the AT assertions pin the lamps.",
-      "checkpoint": "The grade sees the bins, not the colour your program read; it does not establish sensor response time, belt speed, hardware timing, HIL, or certification."
+      "checkpoint": "The grade sees the bins, not the colour your program read."
     }
   ],
   "hints": [

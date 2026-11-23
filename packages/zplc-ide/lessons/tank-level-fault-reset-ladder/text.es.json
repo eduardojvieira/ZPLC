@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Nivel de tanque, fallas y reset en escalera: enclavamientos y orden de los peldaños",
   "summary": "Controle la bomba de un tanque con una autorretención, enclave una falla con bobinas SET y RESET y bórrela solo con un Reset nuevo, en un programa que sigue el nivel de la planta.",
-  "scope": "Las pruebas aportan solo evidencia determinista del host con el runtime nativo POSIX; no son evidencia de proceso físico, hardware, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Mantenga la bomba encendida desde LevelLow hasta LevelHigh con una autorretención, con todas las condiciones de parada en serie.",
     "Enclave la alarma con PumpFault o EStop mediante una bobina SET y libérela con una bobina RESET a la que solo llegue una nueva pulsación de Reset."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial nunca activa FaultLatched, así que Alarm cae en cuanto PumpFault desaparece a los {{t:90}} ms en lugar de seguir en ON hasta un Reset; agregue los peldaños que activan FaultLatched con EStop o PumpFault, arman Reset cuando se suelta y borran el enclavamiento con una nueva pulsación de Reset. Los peldaños se ejecutan de arriba abajo: ponga los peldaños del enclavamiento antes del peldaño de la bomba, para que este ya vea el FaultLatched de este escaneo.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexione",
       "body": "La aserción NEVER cubre Pump y Alarm solo en este escenario registrado. Pruebe a pulsar Reset antes de que desaparezca la entrada de falla: ¿qué peldaño lo impide?",
-      "checkpoint": "No establece un proceso físico, tiempos de hardware, HIL ni certificación. El escenario nunca mantiene Reset pulsado durante una falla, así que el Reset armado se explica aquí pero no lo demuestra."
+      "checkpoint": "El escenario nunca mantiene Reset pulsado durante una falla, así que el Reset armado se explica aquí pero no lo demuestra."
     }
   ],
   "hints": [

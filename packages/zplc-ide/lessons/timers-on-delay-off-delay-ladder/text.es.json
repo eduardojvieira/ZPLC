@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Retardo a la conexión y a la desconexión en escalera: temporizadores como bloques en un peldaño",
   "summary": "Coloque un TOF y un TON entre un contacto y una bobina, y compruebe que un retardo a la desconexión mantiene una luz tras soltar el botón y que un retardo a la conexión ignora un sensor que no se mantiene.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran los requisitos de filtrado de un sensor real, el cableado, los tiempos del hardware, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra los requisitos de filtrado de un sensor real ni el cableado.",
   "objectives": [
     "Coloque un bloque temporizador en un peldaño, con el contacto en su entrada IN y su salida en la bobina.",
     "Distinga un retardo a la desconexión (TOF) de uno a la conexión (TON) por lo que hace cada uno cuando la entrada sube y baja."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene temporizadores: Light cae en cuanto se suelta Button y Confirmed sigue a Sensor, así que Light está en OFF a los {{t:450}} ms y Confirmed está en ON a los {{t:120}} ms; ponga un TOF de T#300ms entre Button y Light, y un TON de T#200ms entre Sensor y Confirmed. Desde la caja de herramientas arrastre un bloque TOF al primer peldaño y un TON al segundo, entre el contacto y la bobina, y fije PT en cada uno.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

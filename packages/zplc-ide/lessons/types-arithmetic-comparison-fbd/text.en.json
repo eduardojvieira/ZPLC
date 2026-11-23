@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Types, arithmetic and comparison in Function Block Diagram: a total and three bands",
   "summary": "Keep a running total in an INT variable with ADD, SEL and R_TRIG blocks, and turn it into three BOOL results with comparison blocks.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the range of a real sensor or the overflow behaviour of a particular controller, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the range of a real sensor or the overflow behaviour of a particular controller.",
   "objectives": [
     "Use an INT variable for a number: an ADD block builds the next value, SEL blocks choose between the old total, the new one and zero, and LT, EQ and GT blocks turn the number into BOOL results.",
     "Add to a number only on the rising edge of an input, with an R_TRIG block, so that a button held for several scans counts once."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter clears Total on Reset but never adds to it, so Low stays ON for ever; add 5 to Total on each rising edge of Step. Place an R_TRIG block named StepEdge with Step on CLK, an ADD block that adds Total and a constant 5 of type INT, and a SEL block with StepEdge.Q on G, Total on IN0 and ADD.OUT on IN1. Wire the SEL output to IN0 of the SEL block that handles Reset, in place of the wire from Total.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

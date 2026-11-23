@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Change a scene: add the second emitter",
   "summary": "Open the finished merge scene, add the emitter of line B that it lacks and bind its signal in the plant map, without touching the program that already arbitrates the two lines.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Add a part to an existing scene and place it where the rest of the scene expects it.",
     "Bind the new part's signal in the plant map to the program variable that already drives it, leaving the program unchanged."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save the scene and the plant map, then run: The starter scene has no emitter for line B, so no box ever comes from feeder B; add EmitterB at the start of feeder B with a limit of three boxes, and bind EmitterB.emit to MergeLines.EmitB in the plant map.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The program did not change, so the scene alone decided the result; a part that is added but not bound is as absent as a part that was never added.",
-      "checkpoint": "It does not establish physical belt speed, sensor response, hardware timing, HIL, safety function, or certification."
+      "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [

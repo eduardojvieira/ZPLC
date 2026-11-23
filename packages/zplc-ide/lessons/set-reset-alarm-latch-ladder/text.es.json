@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Enclavar una alarma en escalera: bobinas SET y RESET, y el orden de los peldaños",
   "summary": "Mantenga una falla en memoria con bobinas SET y RESET, y compruebe que en escalera el peldaño que va al final decide cuál gana.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran los requisitos de manejo de alarmas de una máquina real, el cableado, los tiempos del hardware, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra los requisitos de manejo de alarmas de una máquina real ni el cableado.",
   "objectives": [
     "Mantenga una alarma después de que la falla desaparezca con una bobina SET y bórrela solo con una bobina RESET.",
     "Decida la prioridad entre set y reset por el orden de los peldaños: gana el último que se escanea."

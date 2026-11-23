@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Temporal assertions and jam fault",
   "summary": "Latch the jam fault and prove its timing with AT, WITHIN, FOR, UNTIL, RISING, and FALLING assertions.",
-  "scope": "Tests provide native POSIX host runtime and discrete-input evidence only; the scheduled jam is not a physical fault, physical clearance, target timing, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a physical fault, physical clearance or target timing.",
   "objectives": [
     "Latch the jam fault and prove its timing with temporal assertions.",
     "Require a new Start before the belt moves again after the fault is released."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter misses the jam latch; latch the fault on JamDetected, ignore Reset while the jam is present, release it only with Reset after the jam clears, and require a new Start to run the belt again.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "NEVER forbids BeltCommand and FaultLamp ON together in this scenario. A Reset while the jam is present must not release the fault, and releasing it must not restart the belt.",
-      "checkpoint": "An injected jam does not establish a physical fault, physical clearance, target timing, HIL, or certification."
+      "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [

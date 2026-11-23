@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Tiempos de paso: una bocina antes de abrir la puerta",
   "summary": "Use el tiempo que un paso lleva activo en una transición, de modo que una bocina suene un tiempo fijo antes de que el motor de la puerta funcione otro tiempo fijo.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran los tiempos de aviso de una puerta real, el comportamiento de una función de seguridad, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra los tiempos de aviso de una puerta real ni el comportamiento de una función de seguridad.",
   "objectives": [
     "Use el tiempo transcurrido de un paso, escrito step.T, como condición de una transición.",
     "Compruebe que el tiempo de un paso vuelve a cero cada vez que el paso se activa, de modo que dos ciclos duren lo mismo."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: La transición de WARN a OPEN del programa inicial tiene la condición TRUE, así que la bocina suena durante un solo ciclo y la puerta se abre de inmediato; cambie la condición a step_warn.T >= T#30ms.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

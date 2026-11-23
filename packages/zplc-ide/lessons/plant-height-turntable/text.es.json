@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Clasificar por altura, mesa giratoria",
   "summary": "Mida la altura de cada caja con una cortina de luz, conserve la lectura mayor y gire una mesa para que la caja salga por la banda de su clase.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la exactitud de la cortina ni la velocidad de la mesa.",
   "objectives": [
     "Reducir un flujo de lecturas a un valor, el máximo, y clasificarlo con dos límites.",
     "Coordinar una mesa giratoria con la decisión: detener, girar, sacar la caja y volver a girar."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna banda se mueve y no se clasifica ninguna caja; ponga en marcha las bandas tras Start, mida cada caja, gire la mesa hacia la banda de su clase y vuélvala al centro.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "La calificación no puede comparar números: ve los contenedores, no el máximo que midió ni los límites que eligió. Límites en cualquier punto entre 20 y 30 cm y entre 30 y 40 cm dan la misma calificación.",
-      "checkpoint": "Una caja en la banda equivocada incumple la aserción ALWAYS; la calificación no establece la exactitud de la cortina, la velocidad de la mesa, la temporización de hardware, HIL ni certificación."
+      "checkpoint": "Una caja en la banda equivocada incumple la aserción ALWAYS."
     }
   ],
   "hints": [

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión",
   "summary": "Use un temporizador TOF para mantener una luz encendida después de soltar un botón, y un TON para ignorar un pulso de sensor demasiado corto.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el antirrebote eléctrico, la respuesta del sensor, los tiempos en el dispositivo de destino, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el antirrebote eléctrico, la respuesta del sensor ni los tiempos en el dispositivo de destino.",
   "objectives": [
     "Mantenga una salida encendida durante un tiempo fijo después de que su entrada caiga, con TOF.",
     "Ignore una entrada que permanezca en ON menos de un tiempo fijo, con TON."

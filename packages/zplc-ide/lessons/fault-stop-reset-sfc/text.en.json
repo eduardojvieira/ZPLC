@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Faults, stop and reset in a chart",
   "summary": "Stop a feed and press cycle the moment a fault appears, and return it to IDLE only after the fault is gone and Reset is pressed.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish a safe stop, a safety function, press behaviour, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a safe stop, a safety function or press behaviour.",
   "objectives": [
     "Add a fault step that every working step can reach, with a transition of higher priority than the timers.",
     "Return the chart to its initial step with a Reset that works only once the fault is gone."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter enters FAULTED on Fault but has no way out, so Alarm stays on forever and no new cycle can start; add a transition from FAULTED to IDLE whose condition is Reset AND NOT Fault.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

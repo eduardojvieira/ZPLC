@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Palletize in layers",
   "summary": "Load four boxes into a layer, square it, carry it with a clamp head and stack three layers on a pallet.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Build a layer by counting pairs of boxes, and square it before the clamp takes it.",
     "Keep the jog of each layer in an array and fill it with a FOR loop, so each layer sets down one box height higher than the one below."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter declares the array JogMs but fills nothing and drives no output, so the head never rises and no box arrives; fill JogMs with a FOR loop, then load, square, carry and set three layers of four boxes on the pallet and light Green at the end.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "A single sequence handles every layer because Layer picks the one thing that differs, the jog, from an array that one FOR loop filled. The scenario proves that the clamp placed items, that boxes rest on pallet 0, that no box was dropped and that Green is on at the end. The facts do not count three layers of four exactly, and the jog times are timed, not measured.",
-      "checkpoint": "It does not establish physical gripper timing, axis speed, hardware timing, HIL, or certification."
+      "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [

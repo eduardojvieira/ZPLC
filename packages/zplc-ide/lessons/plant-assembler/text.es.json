@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Ensamblar tapas y bases",
   "summary": "Modele un ensamblador de dos ejes como un diagrama: tome una tapa de una banda, colóquela sobre una base en otra banda y repita tres veces.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Coordinar dos ejes y una ventosa en una sola secuencia, con un paso por movimiento.",
     "Elegir entre dos pasos siguientes con condiciones de transición que se excluyen entre sí."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial solo lleva el brazo a su posición de partida: agregue los pasos y transiciones que alimentan una tapa y una base, toman la tapa, la colocan sobre la base, dejan salir el ensamble, repiten tres veces y terminan con Green.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "El diagrama muestra toda la secuencia; las condiciones de transición son la única forma de pasar de un paso a otro, así que un final de carrera que falta detiene el ensamblador. El escenario prueba que se hizo y se entregó al menos un ensamble, que nada se cayó y que Green está encendido al final. No cuenta que se hagan exactamente tres.",
-      "checkpoint": "No establece la temporización física de la pinza, la velocidad de los ejes, la temporización de hardware, HIL ni certificación."
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [

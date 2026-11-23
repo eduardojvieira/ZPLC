@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres bandas",
   "summary": "Mantenga un total acumulado en una variable INT con bloques ADD, SEL y R_TRIG, y conviértalo en tres resultados BOOL con bloques de comparación.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador en particular, ni son evidencia de HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador en particular.",
   "objectives": [
     "Use una variable INT para un número: un bloque ADD calcula el valor siguiente, los bloques SEL eligen entre el total anterior, el nuevo y cero, y los bloques LT, EQ y GT convierten el número en resultados BOOL.",
     "Sume a un número solo en el flanco ascendente de una entrada, con un bloque R_TRIG, de modo que un botón mantenido durante varios ciclos cuente una sola vez."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del diagrama inicial, guárdelo y pulse Comprobar: El diagrama inicial borra Total con Reset pero nunca le suma, así que Low se queda en ON para siempre; sume 5 a Total en cada flanco ascendente de Step. Coloque un bloque R_TRIG llamado StepEdge con Step en CLK, un bloque ADD que sume Total y una constante 5 de tipo INT, y un bloque SEL con StepEdge.Q en G, Total en IN0 y ADD.OUT en IN1. Conecte la salida de ese SEL a IN0 del bloque SEL que maneja Reset, en lugar del cable que viene de Total.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

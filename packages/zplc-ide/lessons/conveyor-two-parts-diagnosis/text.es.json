@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Diagnóstico reproducible: dos piezas, una decisión",
   "summary": "Use el calendario versionado para distinguir una pieza metálica de una no metálica sin inventar observabilidad.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y entradas programadas por el escenario; no son evidencia de sensores ni de piezas físicas, de los tiempos en el dispositivo de destino, de hardware, de HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Distinga una pieza metálica de una no metálica con una memoria que se conserva entre dos sensores.",
     "Lea una línea de tiempo de entradas programadas y prediga las salidas antes de ejecutarla."
@@ -30,7 +30,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial nunca retiene el metal para el desviador; mantenga la solicitud de la cinta tras Start, memorice el metal en el clasificador y bórrelo solo cuando la pieza llegue al desviador.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -41,14 +41,14 @@
     {
       "key": "observe",
       "title": "Diagnostique",
-      "body": "La matriz de Pruebas demuestra las salidas del host: compare las muestras de {{t:30}} y {{t:70}} ms.",
+      "body": "La matriz de Pruebas demuestra las salidas de la simulación: compare las muestras de {{t:30}} y {{t:70}} ms.",
       "checkpoint": "No demuestra ni registra las entradas, las piezas físicas ni el estado interno MetalLatched."
     },
     {
       "key": "reflect",
       "title": "Límites",
-      "body": "Repita el mismo escenario para tomar una decisión reproducible sobre las salidas del host.",
-      "checkpoint": "No demuestra sensores ni piezas físicas, los tiempos en el dispositivo de destino, hardware, HIL ni certificación."
+      "body": "Repita el mismo escenario para tomar una decisión reproducible sobre las salidas de la simulación.",
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [

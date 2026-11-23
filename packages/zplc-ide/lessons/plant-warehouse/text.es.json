@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Almacenar y recuperar",
   "summary": "Maneje un transelevador desde un diagrama: almacene cada caja en la primera celda libre y traiga una caja de vuelta cuando se pulse su botón de petición.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Escribir las secuencias de almacenar y de recuperar de un transelevador como cadenas de pasos.",
     "Llevar una tabla de celdas ocupadas y las peticiones que esperan, y elegir el trabajo siguiente a partir de ellas."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial almacena cajas pero no tiene pasos de recuperar, así que una petición nunca se atiende; añada la cadena que saca la caja de su celda, la lleva al muelle y la pone en la banda de salida, y deje que IDLE la inicie cuando una petición espere por una celda con caja.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "Las aserciones EVENTUALLY prueban que las celdas 1 y 2 tuvieron una caja y que una caja llegó al depósito de salida; la aserción ALWAYS prueba que ningún movimiento fue rechazado y que nada cayó.",
-      "checkpoint": "La calificación no puede ver de qué celda salió una caja ni el orden de los trabajos; ve las celdas, el depósito y Green. No establece la velocidad física del transelevador, la temporización de hardware, HIL ni certificación."
+      "checkpoint": "La calificación no puede ver de qué celda salió una caja ni el orden de los trabajos; ve las celdas, el depósito y Green."
     }
   ],
   "hints": [

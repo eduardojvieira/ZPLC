@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Ramas de selección: un camino entre dos",
   "summary": "Envíe una pieza a la bahía pequeña o a la grande con dos transiciones que salen del mismo paso, y deje que su prioridad decida cuál se activa.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el dimensionado de piezas, los tiempos de compuertas en equipos reales, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el dimensionado de piezas ni los tiempos de compuertas en equipos reales.",
   "objectives": [
     "Lea una divergencia de selección como varias transiciones que salen de un paso, de las cuales se activa como máximo una.",
     "Use la prioridad de una transición para decidir qué rama gana cuando se cumple más de una condición."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial tiene la rama grande pero ninguna transición a SMALL, así que una pieza que no es grande deja el diagrama en IDLE y no se abre ninguna compuerta; agregue una transición de IDLE a SMALL cuya condición sea Start y cuya prioridad sea 2.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

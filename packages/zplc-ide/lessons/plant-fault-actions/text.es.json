@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Encontrar la falla",
   "summary": "Diagnostique una barrera que se atasca en encendido mientras la línea clasifica: compare su señal con el tiempo que una caja puede romperlo de verdad y detenga la línea antes de que desvíe una caja.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el comportamiento del sensor en hardware real.",
   "objectives": [
     "Diagnosticar un sensor atascado a partir de un hecho que el programa puede leer, no del propio sensor.",
     "Elegir una reacción segura: detener lo que trae cajas nuevas y dejar llegar las que ya se mueven."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial clasifica bien pero se fía de BeamHigh para siempre; cuando la barrera se atasca en encendido, las cajas que no son altas van a BinTall, así que memorice una falla cuando High permanezca en TRUE tres segundos y detenga la línea.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "La calificación ve lo que hizo la planta: ninguna caja desviada en ningún contenedor, la banda de entrada apagada y la cuchilla reteniendo al final. No ve su variable Fault ni los tres segundos que eligió; un límite demasiado corto detiene la línea en la primera caja alta y suspende.",
-      "checkpoint": "Esta regla detecta una barrera atascada en encendido. Una barrera atascada en apagado, o un atasco del módulo de cadenas, necesita otra regla; la calificación no establece el comportamiento del sensor en hardware real, HIL ni certificación."
+      "checkpoint": "Esta regla detecta una barrera atascada en encendido. Una barrera atascada en apagado, o un atasco del módulo de cadenas, necesita otra regla."
     }
   ],
   "hints": [

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Accumulate and release",
   "summary": "Model a buffer station as a state machine: load five boxes, hold them at a blade, and release one per button press.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Model a station as steps and transitions, one step for each thing the station does.",
     "Choose between two next steps with transition conditions that exclude each other."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter loads boxes but never holds them or releases them one at a time; add the steps and transitions that count five boxes in, hold the blade, release one per press, and finish with Done.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The chart shows the whole sequence; the transition conditions are the only way to move between steps, so a missing condition stops the station.",
-      "checkpoint": "It does not establish physical belt speed, sensor response, hardware timing, HIL, or certification."
+      "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [

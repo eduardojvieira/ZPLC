@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Modificar una escena: agregar el segundo emisor",
   "summary": "Abra la escena de fusión terminada, agregue el emisor de la línea B que le falta y enlace su señal en el mapa de la planta, sin tocar el programa que ya arbitra las dos líneas.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Agregar una pieza a una escena existente y colocarla donde el resto de la escena la espera.",
     "Enlazar la señal de la pieza nueva en el mapa de la planta con la variable del programa que ya la gobierna, sin cambiar el programa."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del inicial, guarde la escena y el mapa de la planta, y ejecute: La escena inicial no tiene emisor para la línea B, así que nunca llega una caja desde el alimentador B; agregue EmitterB al inicio del alimentador B con un límite de tres cajas, y enlace EmitterB.emit con MergeLines.EmitB en el mapa de la planta.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "El programa no cambió, así que la escena sola decidió el resultado; una pieza agregada pero sin enlazar está tan ausente como una pieza que nunca se agregó.",
-      "checkpoint": "No establece la velocidad física de la banda, la respuesta del sensor, la temporización de hardware, HIL, función de seguridad ni certificación."
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [

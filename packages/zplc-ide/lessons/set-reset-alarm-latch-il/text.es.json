@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Lista de instrucciones: S y R, y la línea que va al final",
   "summary": "Mantenga una falla en memoria con las instrucciones S y R y vea que, cuando la falla y el reconocimiento llegan juntos, la instrucción escrita al final decide cuál gana.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran los requisitos de manejo de alarmas de una máquina real, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra los requisitos de manejo de alarmas de una máquina real.",
   "objectives": [
     "Retenga una alarma después de que la falla desaparece, hasta que se reconozca, con las instrucciones IL S y R.",
     "Use el orden de dos líneas para decidir si gana set o reset, y distíngalo de los bloques SR y RS."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija este defecto del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia Fault a las dos salidas con ST, así que pasan a OFF a los {{t:20}} ms cuando la falla desaparece; reemplácelo por líneas S y R, cargando Ack y luego Fault para SetFirst, y Fault y luego Ack para ResetFirst, y guarde el archivo.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
