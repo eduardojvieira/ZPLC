@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test';
-import { readFileSync } from 'node:fs';
 
 import type { DebugMap } from '../compiler';
 import type { FactValue, PlantCore, PlantSceneFile } from '../plant/contracts';
+import { checkSceneFacts } from '../plant/ci/sceneCheck';
 import { createCatalogue } from '../plant/core/catalogue';
 import type { PlantMapV2 } from '../plants/plantMap';
 import { compileScenario, runScenario, type ScenarioRuntimePort, type SceneScenarioContext } from './index';
@@ -344,9 +344,12 @@ describe('SCN-005 the rules on every fact head', () => {
     ).toThrow('events[0].set.Cell.Eye must be boolean');
   });
   it('a numeric fact condition in a scenario without a scene is refused as before', () => {
-    expect(() => compileScenario((({ scene: _drop, ...rest }) => rest)(scenario([at({ 'fact:stored:P': 3 })])), debugMap())).toThrow(
-      'expectations[0].condition.fact:stored:P must be boolean',
-    );
+    expect(() =>
+      compileScenario(
+        Object.fromEntries(Object.entries(scenario([at({ 'fact:stored:P': 3 })])).filter(([key]) => key !== 'scene')),
+        debugMap(),
+      ),
+    ).toThrow('expectations[0].condition.fact:stored:P must be boolean');
   });
   it('ALWAYS, NEVER, FOR and WITHIN grade a numeric condition at every sample', async () => {
     const window = { fromMs: 0, withinMs: 20 };
@@ -371,14 +374,9 @@ describe('SCN-005 the rules on every fact head', () => {
     }
   });
   it('SCN-005 every head of the fact grammar of sceneCheck is an integer, a real or a boolean fact in the engine', () => {
-    const source = readFileSync(new URL('../plant/ci/sceneCheck.ts', import.meta.url), 'utf8');
-    const grammar = /const FACT_GRAMMAR =([\s\S]*?);\n/.exec(source)![1]!;
-    const names = [...grammar.matchAll(/'([^']*)'/g)].flatMap((literal) =>
-      literal[1]!
-        .split(', ')
-        .map((name) => name.trim())
-        .filter(Boolean),
-    );
+    // the grammar is the tail of the message sceneCheck gives for a name that is not a fact
+    const [problem] = checkSceneFacts({ expectations: [{ condition: { 'fact:nope': true } }] }, scene);
+    const names = problem!.split('the facts are ')[1]!.split(', ');
     expect(names.length).toBeGreaterThan(25);
     const sample = (name: string) =>
       name
