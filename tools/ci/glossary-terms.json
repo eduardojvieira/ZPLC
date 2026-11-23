@@ -1,0 +1,16 @@
+{
+  "note": "One term per concept and language, from docs/docs/learn/glossary.md (the Spanish deny-list is the one of lessonLanguage.test.ts). `forbidden` are synonyms a lesson, hint or reading page must not use. A concept with glossary:false has no row on the page yet.",
+  "terms": [
+    { "concept": "scan cycle", "en": "scan cycle", "es": "ciclo de escaneo", "forbidden": { "en": ["scan loop"], "es": ["ciclo de scan", "scan", "scans"] } },
+    { "concept": "rung", "en": "rung", "es": "peldaño", "forbidden": { "en": [], "es": ["rung", "rungs", "escalón", "escalones"] } },
+    { "concept": "seal-in", "en": "seal-in", "es": "autorretención", "forbidden": { "en": [], "es": ["seal-in"] } },
+    { "concept": "interlock", "en": "interlock", "es": "enclavamiento", "forbidden": { "en": [], "es": ["interbloqueo", "interbloqueos", "interlock", "interlocks"] } },
+    { "concept": "fault", "en": "fault", "es": "falla", "forbidden": { "en": [], "es": ["fallo", "fallos"] } },
+    { "concept": "rising edge", "en": "rising edge", "es": "flanco ascendente", "forbidden": { "en": ["leading edge"], "es": ["flanco de subida", "flancos de subida"] } },
+    { "concept": "function block", "en": "function block", "es": "bloque de función", "forbidden": { "en": [], "es": ["bloque funcional", "bloques funcionales"] } },
+    { "concept": "starter", "en": "starter", "es": "proyecto inicial", "forbidden": { "en": [], "es": ["starter"] } },
+    { "concept": "sample", "en": "sample", "es": "muestra", "forbidden": { "en": [], "es": ["sample", "samples"] } },
+    { "concept": "assertion", "en": "assertion", "es": "aserción", "forbidden": { "en": [], "es": ["assertion", "assertions"] } },
+    { "concept": "belt", "en": "belt", "es": "banda", "glossary": false, "forbidden": { "en": [], "es": ["cinta", "cintas"] } }
+  ]
+}
