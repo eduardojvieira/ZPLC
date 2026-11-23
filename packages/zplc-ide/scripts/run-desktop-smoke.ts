@@ -1115,7 +1115,7 @@ async function main(): Promise<void> {
     await storeEval(
       cdp,
       `useIDEStore.setState({ activeConsoleTab: 'output', isConsoleCollapsed: false, consoleEntries: [{ id: 'broken', type: 'info', ` +
-        `message: { not: 'text' }, timestamp: new Date(), source: 'system' }] }); return true;`,
+        `step: true, message: { not: 'text' }, timestamp: new Date(), source: 'system' }] }); return true;`,
     );
     await waitFor('Panel region error', async () => ((await cdp!.evaluate(regionError('Panel'))) === true ? true : undefined));
     assert(
