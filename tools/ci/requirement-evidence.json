@@ -2301,6 +2301,7 @@
   "IDE-032": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/InterlockCoverage.dom.test.tsx","test":"Declared-interlock coverage check (IDE-032) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/InterlockCoverage.test.tsx","test":"InterlockCoverage (IDE-032)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/shell/InterlocksView.dom.test.tsx","test":"IDE-032 the interlock coverage check behaves as in 2.0"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"33 Declared interlock coverage has a tab of its own","partial":true}
   ],
   "IDE-033": [
