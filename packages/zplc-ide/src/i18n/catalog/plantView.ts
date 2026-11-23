@@ -71,6 +71,7 @@ export const plantViewEn = {
   'plant.panel.view3d': '3D view',
   'plant.panel.viewSchematic': 'Schematic',
   'plant.panel.camera': 'Camera',
+  'command.view.fitPlantScene': 'Fit scene',
   'plant.panel.resetPlant': 'Reset plant',
   'plant.panel.editScene': 'Edit scene',
   'plant.panel.dragHint': 'Drag a part on the floor to move it; Escape cancels. The fields of the editor do the same without a pointer.',
@@ -221,6 +222,7 @@ export const plantViewEs: Record<keyof typeof plantViewEn, string> = {
   'plant.panel.view3d': 'Vista 3D',
   'plant.panel.viewSchematic': 'Esquema',
   'plant.panel.camera': 'Cámara',
+  'command.view.fitPlantScene': 'Encuadrar la escena',
   'plant.panel.resetPlant': 'Reiniciar planta',
   'plant.panel.editScene': 'Editar escena',
   'plant.panel.dragHint':

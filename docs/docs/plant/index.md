@@ -22,6 +22,10 @@ A plant is a model of a small machine: belts, boxes, sensors, buttons and lights
 - **Not a controller.** The plant has no Run, Pause, Step or Reset of its own. The command bar is the only transport, and it drives the plant and the program together.
 - **Not hardware evidence.** The plant is a model. A result in the plant does not say how a real machine, board or link behaves.
 
+## The 3D view and its camera
+
+The view opens with the whole scene in the panel, at any panel size. It keeps the viewing direction of the first camera of the scene, and chooses the target and the distance from the size of the scene and the shape of the panel. While you have not moved the camera, resizing the panel fits the scene again. Dragging, the arrow keys, plus and minus, and W, A, S and D move the camera yourself, and from then on a resize leaves it where it is. The **Camera** list chooses another saved camera, and that one keeps the framing its author gave it. **Fit scene** (also in the command palette, as "Fit scene") shows the whole scene again from the direction you are looking from. It only moves the camera: it does not touch the plant or the program.
+
 ## What is measured
 
 Frame rate, link latency and supported boards are claims that need recorded evidence. They are not yet measured on the reference machines, so this documentation gives no figure for them.

@@ -139,6 +139,7 @@ function rig(mode: 'ok' | 'unavailable' = 'ok', initialState: PlantSession['stat
     options: [] as unknown[],
     qualities: [] as string[],
     presets: [] as string[],
+    fits: 0,
     keys: [] as string[],
     context: undefined as ((event: 'lost' | 'restored' | 'unavailable') => void) | undefined,
     p5: 60,
@@ -153,6 +154,7 @@ function rig(mode: 'ok' | 'unavailable' = 'ok', initialState: PlantSession['stat
     },
     setQuality: (level) => void renderer.qualities.push(level),
     setCameraPreset: (name) => void renderer.presets.push(name),
+    fitScene: () => void (renderer.fits += 1),
     cameraState: () => renderer.camera,
     orbit: () => void renderer.keys.push('orbit'),
     pan: () => void renderer.keys.push('pan'),
@@ -501,6 +503,28 @@ describe('the plant panel (VIS-001, VIS-006, VIS-010, PLS-003, PLS-004, PLS-010)
     await dom.act(async () => useAppSettings.getState().update({ plantQuality: 'high' }));
     await dom.waitFor(() => expect(b.renderer.qualities).toEqual(['high']));
   });
+
+  it(
+    'VIS-002 the Fit scene button and the command of the same name refit the view, and the command is bound only while a 3D view is ' +
+      'shown',
+    async () => {
+      const { runCommand, isCommandBound } = await import('../../commands/bus');
+      expect(isCommandBound('view.fitPlantScene')).toBe(false);
+      const r = rig();
+      dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+      const fit = () => document.querySelector<HTMLButtonElement>('[data-command="view.fitPlantScene"]')!;
+      await dom.waitFor(() => expect(fit().disabled).toBe(false));
+      expect(fit().textContent).toBe(dom.t('command.view.fitPlantScene'));
+      await dom.act(async () => void fit().click());
+      expect(r.renderer.fits).toBe(1);
+      expect(isCommandBound('view.fitPlantScene')).toBe(true);
+      expect(runCommand('view.fitPlantScene')).toBe('ran');
+      expect(r.renderer.fits).toBe(2);
+      await dom.act(async () => void dom.fireEvent.click(dom.screen.getByRole('button', { name: dom.t('plant.panel.viewSchematic') })));
+      expect(isCommandBound('view.fitPlantScene')).toBe(false);
+      expect(document.querySelector('[data-command="view.fitPlantScene"]')).toBeNull();
+    },
+  );
 
   it('VIS-002 the keyboard moves the camera and the preset chooser sets a preset', async () => {
     const r = rig();

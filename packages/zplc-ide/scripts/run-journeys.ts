@@ -14,6 +14,7 @@ import { assert, packageRoot } from './run-desktop-smoke';
 import { NotPossible, launchApp, startHarness, type Harness } from './journeyApp';
 import { JOURNEYS, runPackagedSecurityProbes, type Journey } from './journeys';
 import { journeysPlant } from './journeys/plantJourneys';
+import { journeysPlantFraming } from './journeys013/plantFraming';
 import { discoverPackagedExecutable } from './run-packaged-desktop-smoke';
 
 /**
@@ -120,7 +121,9 @@ async function main(): Promise<void> {
     return;
   }
   const only = process.env.ZPLC_JOURNEY_ONLY;
-  const selected = [...JOURNEYS, ...journeysPlant].filter((journey) => !only || journey.name.toLowerCase().includes(only.toLowerCase()));
+  const selected = [...JOURNEYS, ...journeysPlant, ...journeysPlantFraming].filter(
+    (journey) => !only || journey.name.toLowerCase().includes(only.toLowerCase()),
+  );
   assert(selected.length > 0, `No journey matches ZPLC_JOURNEY_ONLY=${only}`);
   const { harness, scratch, stop } = await startHarness();
   const results: Array<{ name: string; example: string; outcome: Outcome }> = [];

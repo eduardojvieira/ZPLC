@@ -71,7 +71,7 @@ Every control of the editor is a labelled field or a button that you reach with 
 2. In **Part settings**, type the position, the rotation and the settings.
 3. In **Signals**, type the program points and bind them.
 
-The 3D view also takes the keyboard: with the view focused, the arrow keys orbit, plus and minus zoom, and W, A, S and D pan.
+The 3D view also takes the keyboard: with the view focused, the arrow keys orbit, plus and minus zoom, and W, A, S and D pan. **Fit scene** shows the whole scene again from where you are looking.
 
 ## What is not claimed
 
