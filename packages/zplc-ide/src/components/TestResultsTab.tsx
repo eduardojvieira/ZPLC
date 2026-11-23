@@ -8,9 +8,12 @@ import { Button } from '../ui';
 import { useT } from '../i18n';
 import { locateJsonPointer } from '../refs/jsonPlace';
 import { useProjectTests } from '../projectTests/useProjectTests';
+import { usePlantDocument } from '../store/usePlantDocument';
 import { useWorkspaceTestResult } from '../shell/workspaceTestResult';
 import { useIDEStore } from '../store/useIDEStore';
 import { findFileInTree } from '../utils/fileSystem';
+import { SafetyCoverageReport } from './InterlockCoverage';
+import { recordedLabScenes } from './labPlayback';
 import { TestVerdict, type VerdictFailure } from './TestVerdict';
 import { WorkspaceTestResult, type TraceHighlight } from './WorkspaceTestResult';
 import { classifyWorkspaceTestBuildLink, type WorkspaceTestPresentation } from './workspaceTestPresentation';
@@ -89,6 +92,7 @@ export function TestResultsTab({ runDisabled = false, workspaceScenarioLink, can
   const records = useProjectTests((state) => state.records);
   const running = useProjectTests((state) => state.running);
   const run = useProjectTests((state) => state.run);
+  const safety = useProjectTests((state) => state.safety);
   const runScenario = useProjectTests((state) => state.runScenario);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [highlight, setHighlight] = useState<TraceHighlight | null>(null);
@@ -100,7 +104,17 @@ export function TestResultsTab({ runDisabled = false, workspaceScenarioLink, can
     .filter((record) => record.presentation && record.projectSession === projectSession)
     .sort((a, b) => b.at - a.at)[0];
   const presentation = published ?? latest?.presentation;
-  if (!presentation) return null;
+  // the interlock check has its own run and its own heading (TST-006): it is never mixed into the verdict of the tests
+  const interlock =
+    typeof safety === 'object' ? (
+      <section data-interlock-result className="space-y-2">
+        <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-surface-200)]">
+          {t('u2Tests.interlocks.title')}
+        </h3>
+        <SafetyCoverageReport presentation={safety.presentation} />
+      </section>
+    ) : null;
+  if (!presentation) return interlock;
   const older = !published && latest !== undefined && latest.compilerRunId !== compilerRunId;
   const busy = running !== null || runDisabled;
   const verdict = verdictOf(presentation, t);
@@ -162,6 +176,16 @@ export function TestResultsTab({ runDisabled = false, workspaceScenarioLink, can
           setDetailsOpen(true);
         }}
       />
+      {recordedLabScenes(presentation).length > 0 && (
+        <Button
+          variant="secondary"
+          size="sm"
+          data-command-exempt="shows the plant document on the recording of this result (view.plant)"
+          onClick={() => usePlantDocument.getState().showReplay()}
+        >
+          {t('u2Tests.replay')}
+        </Button>
+      )}
       {step && (
         <section data-scenario-step className="space-y-1 text-xs">
           <p className="font-medium text-[var(--color-surface-200)]">
@@ -195,6 +219,7 @@ export function TestResultsTab({ runDisabled = false, workspaceScenarioLink, can
             : null,
         )}
       />
+      {interlock}
     </div>
   );
 }

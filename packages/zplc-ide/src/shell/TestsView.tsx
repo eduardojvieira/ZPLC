@@ -5,6 +5,7 @@
  */
 import { useEffect, useRef } from 'react';
 import { useT } from '../i18n';
+import { InterlocksView } from './InterlocksView';
 import { statusOf, useProjectTests } from '../projectTests/useProjectTests';
 import type { TestStatus } from '../projectTests/contracts';
 import { useIDEStore } from '../store/useIDEStore';
@@ -38,11 +39,16 @@ export function TestsView() {
   const refresh = useProjectTests((state) => state.refresh);
   const run = useProjectTests((state) => state.run);
   const cancel = useProjectTests((state) => state.cancel);
+  const runFailed = useProjectTests((state) => state.runFailed);
+  const newTest = useProjectTests((state) => state.newTest);
+  const view = useProjectTests((state) => state.view);
+  const setView = useProjectTests((state) => state.setView);
+  const safetyRunning = useProjectTests((state) => state.safety === 'running');
   const selected = useSelection((state) => state.test);
   const setTest = useSelection((state) => state.setTest);
   const rows = useRef<Array<HTMLButtonElement | null>>([]);
   const desktop = typeof window !== 'undefined' && Boolean(window.electronAPI?.workspaceTests);
-  const busy = running !== null;
+  const busy = running !== null || safetyRunning;
 
   useEffect(() => {
     void refresh();
@@ -61,12 +67,44 @@ export function TestsView() {
     const next = Math.min(tests.length - 1, Math.max(0, from + step));
     rows.current[next]?.focus();
   };
+  const viewSwitch = (
+    <div role="group" aria-label={t('u2Tests.view.label')} className="flex gap-1">
+      <Button
+        variant={view === 'tests' ? 'primary' : 'secondary'}
+        size="sm"
+        aria-pressed={view === 'tests'}
+        data-command="view.tests"
+        onClick={() => setView('tests')}
+      >
+        {t('u2Tests.view.tests')}
+      </Button>
+      <Button
+        variant={view === 'interlocks' ? 'primary' : 'secondary'}
+        size="sm"
+        aria-pressed={view === 'interlocks'}
+        data-command="view.interlocks"
+        onClick={() => setView('interlocks')}
+      >
+        {t('u2Tests.view.interlocks')}
+      </Button>
+    </div>
+  );
+  if (view === 'interlocks') {
+    return (
+      <div className="space-y-1 p-3 font-sans text-sm text-[var(--color-surface-200)]" data-tests-view data-interlocks-view>
+        {viewSwitch}
+        <InterlocksView />
+      </div>
+    );
+  }
   return (
     <div className="space-y-3 p-3 font-sans text-sm text-[var(--color-surface-200)]" data-tests-view>
+      {viewSwitch}
       <div className="flex flex-wrap items-center gap-2">
         <Button
           variant="primary"
           size="sm"
+          data-command="build.runAllTests"
           disabled={busy || !desktop || tests.length === 0}
           onClick={() => {
             void run();
@@ -74,10 +112,33 @@ export function TestsView() {
         >
           {t('u2Tests.runAll')}
         </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          data-command="build.runFailedTests"
+          disabled={busy || !desktop || tests.length === 0}
+          onClick={() => {
+            void runFailed();
+          }}
+        >
+          {t('u2Tests.runFailed')}
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          data-command="build.newTest"
+          disabled={busy}
+          onClick={() => {
+            void newTest();
+          }}
+        >
+          {t('u2Tests.new')}
+        </Button>
         {busy && (
           <Button
             variant="secondary"
             size="sm"
+            data-command-exempt="stops the run in progress; the run itself starts from a command"
             disabled={cancelling}
             onClick={() => {
               void cancel();
@@ -115,6 +176,8 @@ export function TestsView() {
                     tabIndex={test.path === stop ? 0 : -1}
                     aria-expanded={open}
                     data-test-row={test.path}
+                    data-command-exempt="shows the expectations of the test; Enter runs it"
+
                     className="flex min-w-0 flex-1 items-baseline gap-2 rounded px-1 py-0.5 text-left"
                     onClick={() => setTest(open ? null : test.path)}
                     onKeyDown={(event) => {
@@ -135,6 +198,8 @@ export function TestsView() {
                     size="sm"
                     tabIndex={-1}
                     aria-label={t('u2Tests.runOne', { id: test.id })}
+                    data-command-exempt="runs the one test of this row; build.runTestAtCursor runs the selected one"
+
                     disabled={busy || !desktop || !test.valid}
                     onClick={() => {
                       void run([test.path]);

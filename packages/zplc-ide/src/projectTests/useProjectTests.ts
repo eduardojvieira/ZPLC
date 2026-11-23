@@ -6,14 +6,32 @@
 import { create } from 'zustand';
 import { isWorkspaceTestRunCurrent, presentWorkspaceTestResult } from '../components/workspaceTestPresentation';
 import { trackTestRun } from '../components/workspaceTestNotifications';
+import { presentWorkspaceSafetyCheck, type WorkspaceSafetyPresentation } from '../components/workspaceSafetyPresentation';
+import { t } from '../i18n';
 import { useWorkspaceTestResult } from '../shell/workspaceTestResult';
+import { useNotifications } from '../store/notifications';
 import { useIDEStore } from '../store/useIDEStore';
+import { findFileInTree, fileTreeFileId, loadFileFromTree } from '../utils/fileSystem';
 import type { ProjectTest, TestRecord, TestStatus } from './contracts';
+import { createTest, type NewTestContext } from './newTest';
 import { prepareProjectTestRun, type RunRefusal } from './runProjectTests';
 import { listProjectTests } from './scenarioList';
 
+/** The interlock check of the project (IDE-032): before a check, while it runs, its answer, or that it could not be made. */
+export type SafetyState = 'idle' | 'running' | 'unavailable' | { presentation: WorkspaceSafetyPresentation };
+
 interface ProjectTestsState {
   tests: ProjectTest[];
+  /** The view the Tests activity shows (TST-006): the tests, or the interlock coverage with its own run. */
+  view: 'tests' | 'interlocks';
+  setView: (view: 'tests' | 'interlocks') => void;
+  /** The last interlock check; it is withdrawn when the sources or the project change, like the result of a test run. */
+  safety: SafetyState;
+  runSafety: () => Promise<void>;
+  /** Runs the tests whose last result is a failure, one after another; says so, and runs nothing, when there are none. */
+  runFailed: () => Promise<void>;
+  /** TST-009: writes a test for the first program, opens it, and says what it did. */
+  newTest: () => Promise<void>;
   records: Record<string, TestRecord>;
   /** 'all' while every test runs, the path of the test that runs, null when nothing runs. */
   running: 'all' | string | null;
@@ -40,8 +58,67 @@ function openScenarioBuffers(): Map<string, string> {
   return buffers;
 }
 
+/** What a new test reads of the open project and writes into it, through the store. */
+export function newTestContext(): NewTestContext {
+  const ide = () => useIDEStore.getState();
+  return {
+    config: ide().projectConfig,
+    tree: ide().fileTree,
+    read: async (path) => {
+      const open = ide().loadedFiles.get(fileTreeFileId(path));
+      if (open) return open.content;
+      const node = ide().fileTree ? findFileInTree(ide().fileTree!, path) : null;
+      return node?.type === 'file' ? ((await loadFileFromTree(node))?.content ?? null) : null;
+    },
+    createFolder: (parent, name) => ide().createFolder(parent, name),
+    createFile: (name, language, parent, content) => ide().createFile(name, language, parent, content),
+  };
+}
+
+export const sayTests = (status: 'success' | 'warning' | 'error', title: string, detail?: string): void =>
+  useNotifications.getState().report({ kind: 'tests', status, title, ...(detail === undefined ? {} : { detail }), details: 'tests' });
+
 export const useProjectTests = create<ProjectTestsState>((set, get) => ({
   tests: [],
+  view: 'tests',
+  setView: (view) => set({ view }),
+  safety: 'idle',
+
+  runSafety: async () => {
+    if (get().safety === 'running' || get().running !== null) return;
+    set({ safety: 'running' });
+    const prepared = await prepareProjectTestRun(() => void get().runSafety());
+    if (!prepared.ok) return set({ safety: 'idle' });
+    const { bridge, workspaceId, projectSession, compilerRunId } = prepared.run;
+    const current = () => isWorkspaceTestRunCurrent(useIDEStore.getState(), { projectSession, compilerRunId, workspaceId });
+    try {
+      const result = await bridge.safetyCheck({ workspaceId });
+      set({ safety: current() ? { presentation: presentWorkspaceSafetyCheck(result) } : 'idle' });
+    } catch {
+      set({ safety: current() ? 'unavailable' : 'idle' });
+    }
+  },
+
+  runFailed: async () => {
+    const { projectSession } = useIDEStore.getState();
+    const failed = Object.values(get().records)
+      .filter((record) => record.status === 'failed' && record.projectSession === projectSession)
+      .map((record) => record.path);
+    if (failed.length === 0) return sayTests('warning', t('u2Tests.runFailed.none'), t('u2Tests.runFailed.noneDetail'));
+    await get().run(failed);
+  },
+
+  newTest: async () => {
+    try {
+      const result = await createTest(newTestContext());
+      if (!result.ok) return sayTests('error', t('u2Tests.new.refused'), result.message);
+      sayTests('success', t('u2Tests.new.created', { file: result.path, signal: result.signal }));
+      await get().refresh();
+    } catch (error) {
+      sayTests('error', t('u2Tests.new.refused'), error instanceof Error ? error.message : String(error));
+    }
+  },
+
   records: {},
   running: null,
   cancelling: false,
@@ -90,7 +167,7 @@ async function execute(
   set: Set,
   get: () => ProjectTestsState,
 ): Promise<void> {
-  if (get().running !== null) return;
+  if (get().running !== null || get().safety === 'running') return;
   set({ running, cancelling: false, refusal: null });
   try {
     const prepared = await prepareProjectTestRun(retry);
@@ -148,6 +225,8 @@ async function runOne(
 
 // What the lessons and the plant document read is about the sources as they were: it goes when they change.
 useIDEStore.subscribe((state, previous) => {
-  if (state.projectSession !== previous.projectSession || state.compilerRunId !== previous.compilerRunId)
+  if (state.projectSession !== previous.projectSession || state.compilerRunId !== previous.compilerRunId) {
     useWorkspaceTestResult.getState().publish(undefined);
+    if (useProjectTests.getState().safety !== 'running') useProjectTests.setState({ safety: 'idle' });
+  }
 });

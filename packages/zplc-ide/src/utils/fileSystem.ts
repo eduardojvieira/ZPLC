@@ -6,7 +6,7 @@
  *
  */
 
-import type { FileTreeNode, PLCLanguage, ZPLCProjectConfig, ZPLCProjectV2, ProjectFileWithHandle, POUType } from '../types';
+import type { FileLanguage, FileTreeNode, PLCLanguage, ZPLCProjectConfig, ZPLCProjectV2, ProjectFileWithHandle, POUType } from '../types';
 import { parseAndMigrateProject, type ProjectMigrationChange, type ProjectModelDiagnostic } from '../project/projectModel';
 import { getExtensionForLanguage, getFileLanguage, isFileSystemAccessSupported } from '../types';
 import { newProjectConfig, newProjectProgram, SIMULATION_TARGET, type NewProjectChoices } from '../project/newProject';
@@ -122,7 +122,8 @@ export class FileNameTakenError extends Error {
  * language (pump.ld, PUMP.LD.JSON) is not doubled, and keeps the case of the name before it; the suffix of another
  * language is part of the name. The text languages keep their exact-match rule.
  */
-export function fileNameForNewFile(typed: string, language: PLCLanguage): string {
+export function fileNameForNewFile(typed: string, language: FileLanguage): string {
+  if (language === 'SCENARIO') return typed.toLowerCase().endsWith('.scenario.json') ? typed : `${typed}.scenario.json`;
   const extension = getExtensionForLanguage(language);
   if (!extension.endsWith('.json')) return typed.endsWith(extension) ? typed : `${typed}${extension}`;
   const lowerCased = typed.toLowerCase();
