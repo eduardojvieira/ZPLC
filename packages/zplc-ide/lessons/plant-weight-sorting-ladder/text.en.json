@@ -26,7 +26,7 @@
     {
       "key": "run",
       "title": "Run",
-      "body": "In Tests, choose the saved zplc.json and run only the weight-sorting scenario; watch the 3D view while it runs.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
       "checkpoint": "The required scenario is named weight-sorting and contains {{assertions}} assertions."
     },
     {

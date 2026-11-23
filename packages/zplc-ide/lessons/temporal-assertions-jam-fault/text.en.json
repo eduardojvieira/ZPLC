@@ -29,7 +29,7 @@
     {
       "key": "run",
       "title": "Run",
-      "body": "In Tests, choose the saved zplc.json and run only ConveyorJamTiming; Conveyor01 is the lesson 4 scenario and stays a regression check.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The required scenario is named ConveyorJamTiming and contains {{assertions}} assertions."
     },
     {

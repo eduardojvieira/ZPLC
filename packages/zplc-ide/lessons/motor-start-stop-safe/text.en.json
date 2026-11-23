@@ -29,7 +29,7 @@
     {
       "key": "run",
       "title": "Run",
-      "body": "In Tests, choose the saved zplc.json and run only the MotorStartStop scenario.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The required scenario is named MotorStartStop and contains {{assertions}} assertions."
     },
     {

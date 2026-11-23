@@ -29,7 +29,7 @@
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo Conveyor01; el programa inicial también incluye ConveyorJamTiming (lección 9), así que ejecutar todas las pruebas calificaría dos escenarios.",
+      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario requerido se llama Conveyor01 y contiene {{assertions}} aserciones."
     },
     {

@@ -139,7 +139,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the MotorStartStop scenario.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
               "checkpoint": "The required scenario is named MotorStartStop and contains 27 assertions."
             },
             {
@@ -199,7 +199,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario MotorStartStop.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
               "checkpoint": "El escenario requerido se llama MotorStartStop y contiene 27 aserciones."
             },
             {
@@ -324,7 +324,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the PedestrianCrossing scenario.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
               "checkpoint": "The required scenario is named PedestrianCrossing and contains 15 assertions."
             },
             {
@@ -384,7 +384,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario PedestrianCrossing.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
               "checkpoint": "El escenario requerido se llama PedestrianCrossing y contiene 15 aserciones."
             },
             {
@@ -507,7 +507,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the TankLevel scenario.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
               "checkpoint": "The required scenario is named TankLevel and contains 13 assertions."
             },
             {
@@ -567,7 +567,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario TankLevel.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
               "checkpoint": "El escenario requerido se llama TankLevel y contiene 13 aserciones."
             },
             {
@@ -693,7 +693,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only Conveyor01; the starter also ships ConveyorJamTiming (lesson 9), so Tests-all would grade two scenarios.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
               "checkpoint": "The required scenario is named Conveyor01 and contains 6 assertions."
             },
             {
@@ -753,7 +753,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo Conveyor01; el programa inicial también incluye ConveyorJamTiming (lección 9), así que ejecutar todas las pruebas calificaría dos escenarios.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
               "checkpoint": "El escenario requerido se llama Conveyor01 y contiene 6 aserciones."
             },
             {
@@ -876,7 +876,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the BlinkyVisual scenario.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
               "checkpoint": "The required scenario is named BlinkyVisual and contains 11 assertions."
             },
             {
@@ -936,7 +936,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario BlinkyVisual.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
               "checkpoint": "El escenario requerido se llama BlinkyVisual y contiene 11 aserciones."
             },
             {
@@ -1066,7 +1066,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the MotorPlant scenario.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
               "checkpoint": "The required scenario is named MotorPlant and contains 7 assertions."
             },
             {
@@ -1126,7 +1126,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario MotorPlant.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
               "checkpoint": "El escenario requerido se llama MotorPlant y contiene 7 aserciones."
             },
             {
@@ -1267,7 +1267,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the EdgeCounter scenario.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
               "checkpoint": "The required scenario is named EdgeCounter and contains 7 assertions."
             },
             {
@@ -1327,7 +1327,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario EdgeCounter.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
               "checkpoint": "El escenario requerido se llama EdgeCounter y contiene 7 aserciones."
             },
             {
@@ -1481,7 +1481,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the ScanSnapshot scenario.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
               "checkpoint": "The required scenario is named ScanSnapshot and contains 9 assertions."
             },
             {
@@ -1547,7 +1547,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario ScanSnapshot.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
               "checkpoint": "El escenario requerido se llama ScanSnapshot y contiene 9 aserciones."
             },
             {
@@ -1667,7 +1667,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only ConveyorJamTiming; Conveyor01 is the lesson 4 scenario and stays a regression check.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
               "checkpoint": "The required scenario is named ConveyorJamTiming and contains 9 assertions."
             },
             {
@@ -1727,7 +1727,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo ConveyorJamTiming; Conveyor01 es el escenario de la lección 4 y se mantiene como comprobación de regresión.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
               "checkpoint": "El escenario requerido se llama ConveyorJamTiming y contiene 9 aserciones."
             },
             {
@@ -1845,7 +1845,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only ConveyorTwoParts.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
               "checkpoint": "The required scenario is named ConveyorTwoParts and contains 3 assertions."
             },
             {
@@ -1911,7 +1911,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo ConveyorTwoParts.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
               "checkpoint": "El escenario requerido se llama ConveyorTwoParts y contiene 3 aserciones."
             },
             {
@@ -7624,7 +7624,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the TankLevel scenario.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
               "checkpoint": "The required scenario is named TankLevel and contains 13 assertions."
             },
             {
@@ -7684,7 +7684,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario TankLevel.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
               "checkpoint": "El escenario requerido se llama TankLevel y contiene 13 aserciones."
             },
             {
@@ -13582,7 +13582,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the belt-to-sensor scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named belt-to-sensor and contains 4 assertions."
             },
             {
@@ -13642,7 +13642,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario belt-to-sensor; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama belt-to-sensor y contiene 4 aserciones."
             },
             {
@@ -13777,7 +13777,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the latch-two-sensors scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named latch-two-sensors and contains 4 assertions."
             },
             {
@@ -13837,7 +13837,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario latch-two-sensors; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama latch-two-sensors y contiene 4 aserciones."
             },
             {
@@ -13988,7 +13988,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the counted-queue scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named counted-queue and contains 4 assertions."
             },
             {
@@ -14048,7 +14048,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario counted-queue; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama counted-queue y contiene 4 aserciones."
             },
             {
@@ -15221,7 +15221,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the buffer-release scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named buffer-release and contains 7 assertions."
             },
             {
@@ -15281,7 +15281,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario buffer-release; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama buffer-release y contiene 7 aserciones."
             },
             {
@@ -15462,7 +15462,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the merge-lines scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named merge-lines and contains 5 assertions."
             },
             {
@@ -15522,7 +15522,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario merge-lines; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama merge-lines y contiene 5 aserciones."
             },
             {
@@ -15737,7 +15737,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the belt-to-belt-transfer scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named belt-to-belt-transfer and contains 5 assertions."
             },
             {
@@ -15797,7 +15797,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario belt-to-belt-transfer; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama belt-to-belt-transfer y contiene 5 aserciones."
             },
             {
@@ -16028,7 +16028,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the two-axis-assembly scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named two-axis-assembly and contains 5 assertions."
             },
             {
@@ -16088,7 +16088,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario two-axis-assembly; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama two-axis-assembly y contiene 5 aserciones."
             },
             {
@@ -16326,7 +16326,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the two-axis-assembly-numeric scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named two-axis-assembly-numeric and contains 5 assertions."
             },
             {
@@ -16386,7 +16386,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario two-axis-assembly-numeric; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama two-axis-assembly-numeric y contiene 5 aserciones."
             },
             {
@@ -16607,7 +16607,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the layer-palletizer scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named layer-palletizer and contains 5 assertions."
             },
             {
@@ -16667,7 +16667,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario layer-palletizer; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama layer-palletizer y contiene 5 aserciones."
             },
             {
@@ -16904,7 +16904,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the three-axis-palletizing scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named three-axis-palletizing and contains 5 assertions."
             },
             {
@@ -16964,7 +16964,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario three-axis-palletizing; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama three-axis-palletizing y contiene 5 aserciones."
             },
             {
@@ -17144,7 +17144,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the colour-separation scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named colour-separation and contains 5 assertions."
             },
             {
@@ -17204,7 +17204,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario colour-separation; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama colour-separation y contiene 5 aserciones."
             },
             {
@@ -17385,7 +17385,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the colour-separation scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named colour-separation and contains 5 assertions."
             },
             {
@@ -17445,7 +17445,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario colour-separation; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama colour-separation y contiene 5 aserciones."
             },
             {
@@ -17628,7 +17628,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the weight-sorting scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named weight-sorting and contains 4 assertions."
             },
             {
@@ -17688,7 +17688,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario weight-sorting; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama weight-sorting y contiene 4 aserciones."
             },
             {
@@ -17893,7 +17893,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the height-sorting-chain scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named height-sorting-chain and contains 4 assertions."
             },
             {
@@ -17953,7 +17953,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario height-sorting-chain; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama height-sorting-chain y contiene 4 aserciones."
             },
             {
@@ -18170,7 +18170,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the height-sorting-turntable scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named height-sorting-turntable and contains 4 assertions."
             },
             {
@@ -18230,7 +18230,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario height-sorting-turntable; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama height-sorting-turntable y contiene 4 aserciones."
             },
             {
@@ -18397,7 +18397,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the vision-sorting scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named vision-sorting and contains 3 assertions."
             },
             {
@@ -18457,7 +18457,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario vision-sorting; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama vision-sorting y contiene 3 aserciones."
             },
             {
@@ -18677,7 +18677,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the three-level-lifts scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named three-level-lifts and contains 3 assertions."
             },
             {
@@ -18737,7 +18737,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario three-level-lifts; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama three-level-lifts y contiene 3 aserciones."
             },
             {
@@ -18932,7 +18932,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the lift-stacking scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named lift-stacking and contains 4 assertions."
             },
             {
@@ -18992,7 +18992,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario lift-stacking; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama lift-stacking y contiene 4 aserciones."
             },
             {
@@ -19226,7 +19226,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the stacker-crane-warehouse scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named stacker-crane-warehouse and contains 6 assertions."
             },
             {
@@ -19286,7 +19286,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario stacker-crane-warehouse; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama stacker-crane-warehouse y contiene 6 aserciones."
             },
             {
@@ -19497,7 +19497,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the balanced-production-line scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named balanced-production-line and contains 3 assertions."
             },
             {
@@ -19557,7 +19557,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario balanced-production-line; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama balanced-production-line y contiene 3 aserciones."
             },
             {
@@ -19778,7 +19778,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the estop-interlocks scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named estop-interlocks and contains 6 assertions."
             },
             {
@@ -19838,7 +19838,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario estop-interlocks; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama estop-interlocks y contiene 6 aserciones."
             },
             {
@@ -20094,7 +20094,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the plant-manual-auto scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named plant-manual-auto and contains 14 assertions."
             },
             {
@@ -20154,7 +20154,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario plant-manual-auto; observe la vista 3D mientras corre.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama plant-manual-auto y contiene 14 aserciones."
             },
             {
@@ -20359,7 +20359,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the fault-actions scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named fault-actions and contains 4 assertions."
             },
             {
@@ -20419,7 +20419,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario fault-actions; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama fault-actions y contiene 4 aserciones."
             },
             {
@@ -20560,7 +20560,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the build-belt-scene scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named build-belt-scene and contains 4 assertions."
             },
             {
@@ -20620,7 +20620,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario build-belt-scene; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama build-belt-scene y contiene 4 aserciones."
             },
             {
@@ -20801,7 +20801,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the change-scene scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named change-scene and contains 5 assertions."
             },
             {
@@ -20861,7 +20861,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario change-scene; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama change-scene y contiene 5 aserciones."
             },
             {
@@ -21001,7 +21001,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the belt-to-sensor scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named belt-to-sensor and contains 4 assertions."
             },
             {
@@ -21061,7 +21061,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario belt-to-sensor; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama belt-to-sensor y contiene 4 aserciones."
             },
             {
@@ -21196,7 +21196,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the latch-two-sensors scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named latch-two-sensors and contains 4 assertions."
             },
             {
@@ -21256,7 +21256,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario latch-two-sensors; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama latch-two-sensors y contiene 4 aserciones."
             },
             {
@@ -21407,7 +21407,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the counted-queue scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named counted-queue and contains 4 assertions."
             },
             {
@@ -21467,7 +21467,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario counted-queue; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama counted-queue y contiene 4 aserciones."
             },
             {
@@ -22131,7 +22131,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the merge-lines scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named merge-lines and contains 5 assertions."
             },
             {
@@ -22191,7 +22191,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario merge-lines; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama merge-lines y contiene 5 aserciones."
             },
             {
@@ -22406,7 +22406,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the belt-to-belt-transfer scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named belt-to-belt-transfer and contains 5 assertions."
             },
             {
@@ -22466,7 +22466,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario belt-to-belt-transfer; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama belt-to-belt-transfer y contiene 5 aserciones."
             },
             {
@@ -22646,7 +22646,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the colour-separation scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named colour-separation and contains 5 assertions."
             },
             {
@@ -22706,7 +22706,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario colour-separation; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama colour-separation y contiene 5 aserciones."
             },
             {
@@ -22889,7 +22889,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the weight-sorting scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named weight-sorting and contains 4 assertions."
             },
             {
@@ -22949,7 +22949,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario weight-sorting; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama weight-sorting y contiene 4 aserciones."
             },
             {
@@ -23154,7 +23154,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the height-sorting-chain scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named height-sorting-chain and contains 4 assertions."
             },
             {
@@ -23214,7 +23214,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario height-sorting-chain; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama height-sorting-chain y contiene 4 aserciones."
             },
             {
@@ -23435,7 +23435,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the estop-interlocks scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named estop-interlocks and contains 6 assertions."
             },
             {
@@ -23495,7 +23495,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario estop-interlocks; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama estop-interlocks y contiene 6 aserciones."
             },
             {
@@ -23751,7 +23751,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the plant-manual-auto scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named plant-manual-auto and contains 14 assertions."
             },
             {
@@ -23811,7 +23811,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario plant-manual-auto; observe la vista 3D mientras corre.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama plant-manual-auto y contiene 14 aserciones."
             },
             {
@@ -23952,7 +23952,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the build-belt-scene scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named build-belt-scene and contains 4 assertions."
             },
             {
@@ -24012,7 +24012,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario build-belt-scene; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama build-belt-scene y contiene 4 aserciones."
             },
             {
@@ -24193,7 +24193,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "In Tests, choose the saved zplc.json and run only the change-scene scenario; watch the 3D view while it runs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named change-scene and contains 5 assertions."
             },
             {
@@ -24253,7 +24253,7 @@
             {
               "key": "run",
               "title": "Ejecutar",
-              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario change-scene; observe la vista 3D mientras se ejecuta.",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
               "checkpoint": "El escenario requerido se llama change-scene y contiene 5 aserciones."
             },
             {
