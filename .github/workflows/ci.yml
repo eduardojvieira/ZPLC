@@ -217,7 +217,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 1 to SHARDS of tools/ci/test-shards.ts (tools/ci/ci-workflow.test.ts checks that they agree)
+        # 1 to SHARDS of tools/ci/test-shards.ts (tools/ci/workflow-lint.ts checks that they agree)
         shard: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - name: Checkout
@@ -710,6 +710,10 @@ jobs:
           bun tools/docs/check_doc_claims.ts
           bun tools/ci/test-inventory.ts
           bun tools/ci/test-source-guard.ts
+
+      # VF-006: the time limits of every workflow and the shard jobs of the IDE suite, checked by a lint and not by a test
+      - name: Lint the workflows
+        run: bun tools/ci/workflow-lint.ts
 
       - name: Check the generated binary contract
         run: bun run contract:check

@@ -4,17 +4,12 @@ import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 
 import { CLANG_FORMAT_VERSION } from './format';
-import { SHARDS, SPLIT, measuredSeconds, plan, testFiles } from './test-shards';
 
 type Step = { name?: string; uses?: string; run?: string; if?: string; env?: Record<string, string>; with?: Record<string, string> };
-type Job = {
-  'runs-on'?: string;
-  env?: Record<string, string>;
-  'timeout-minutes'?: number;
-  steps: Step[];
-  strategy?: { 'fail-fast'?: boolean; matrix: { include: Array<{ id: string; board: string }>; shard?: number[] } };
+type Workflow = {
+  on: Record<string, { branches?: string[] } | null>;
+  jobs: Record<string, { 'runs-on'?: string; steps: Step[]; strategy?: { matrix: { include: Array<{ id: string; board: string }> } } }>;
 };
-type Workflow = { on: Record<string, { branches?: string[] } | null>; jobs: Record<string, Job> };
 
 const workflow = Bun.YAML.parse(readFileSync(new URL('../../.github/workflows/ci.yml', import.meta.url), 'utf8')) as Workflow;
 
@@ -32,42 +27,6 @@ describe('ci.yml expected-failure check (VF-027)', () => {
     const step = workflow.jobs[job]!.steps.find((candidate) => candidate.run?.includes(`bun run ${script}`));
     expect(step?.run).toContain('--reporter=junit');
     expect(step?.run).toContain(rule);
-  });
-});
-
-describe('the IDE suite in shards (tools/ci/test-shards.ts)', () => {
-  const nightly = Bun.YAML.parse(readFileSync(new URL('../../.github/workflows/nightly-quality.yml', import.meta.url), 'utf8')) as Workflow;
-  const sharded: Array<[string, Job]> = [
-    ['ci.yml ide-tests', workflow.jobs['ide-tests']!],
-    ['nightly desktop-ide-tests', nightly.jobs['desktop-ide-tests']!],
-  ];
-
-  it.each(sharded)('%s runs every shard of the plan, and one failing shard stops no other', (_name, job) => {
-    expect(job.strategy?.matrix.shard).toEqual(Array.from({ length: SHARDS }, (_, index) => index + 1));
-    expect(job.strategy?.['fail-fast']).toBe(false);
-    const commands = job.steps.map((step) => step.run ?? '').join('\n');
-    expect(commands).toContain('bun tools/ci/test-shards.ts env "${{ matrix.shard }}"');
-    expect(commands).toContain('"${ZPLC_IDE_SHARD_FILES:?}"');
-  });
-
-  it.each(sharded)('%s hands the part of each split file to the tests through $GITHUB_ENV, and no step sets one', (_name, job) => {
-    const select = job.steps.find((step) => step.run?.includes('bun tools/ci/test-shards.ts env'));
-    expect(select?.run).toContain('bun tools/ci/test-shards.ts env "${{ matrix.shard }}" | tee -a "${GITHUB_ENV}"');
-    const variables = new Set(Object.values(SPLIT).map(({ variable }) => variable));
-    const set = [job.env, ...job.steps.map((step) => step.env)].flatMap((env) => Object.keys(env ?? {}));
-    expect(set.filter((name) => variables.has(name))).toEqual([]);
-  });
-
-  it.each(sharded)('%s gives a shard more minutes than the longest shard of the plan measures', (_name, job) => {
-    const longest = Math.max(...plan(testFiles(), measuredSeconds()).map((shard) => shard.seconds)) / 60;
-    expect(job['timeout-minutes']).toBeGreaterThan(longest);
-  });
-
-  it.each([
-    ['ci.yml', workflow],
-    ['nightly-quality.yml', nightly],
-  ] as const)('%s gives every job a time limit', (_name, flow) => {
-    for (const job of Object.values(flow.jobs)) expect(job['timeout-minutes']).toBeGreaterThan(0);
   });
 });
 
@@ -132,7 +91,10 @@ describe('ci.yml cross-build artifacts', () => {
 });
 
 describe('the package manager cache is restored before the install', () => {
-  const nightly = Bun.YAML.parse(readFileSync(new URL('../../.github/workflows/nightly-quality.yml', import.meta.url), 'utf8')) as Workflow;
+  type Job = { steps: Step[] };
+  const nightly = Bun.YAML.parse(readFileSync(new URL('../../.github/workflows/nightly-quality.yml', import.meta.url), 'utf8')) as {
+    jobs: Record<string, Job>;
+  };
   const sites: Array<[string, Job]> = [
     ['ci.yml typescript', workflow.jobs.typescript!],
     ['ci.yml ide-tests', workflow.jobs['ide-tests']!],
