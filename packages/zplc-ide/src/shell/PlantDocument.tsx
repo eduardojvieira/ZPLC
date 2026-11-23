@@ -15,6 +15,7 @@ import { PlantLivePanel } from '../plants/PlantLivePanel';
 import { resolvePlantMap } from '../plants/plantMap';
 import { listIoMap } from '../runtime/ioMap';
 import { runCommand } from '../commands/bus';
+import { usePlantDocument } from '../store/usePlantDocument';
 import { useIDEStore } from '../store/useIDEStore';
 import { Button, ToggleGroup } from '../ui';
 import { useWorkspaceTestResult } from './workspaceTestResult';
@@ -29,6 +30,13 @@ export function PlantDocument({ controller, visible }: { controller: DebugContro
   const sceneOpen = rootScene || savedScenes || asked;
   const presentation = useWorkspaceTestResult((state) => state.presentation);
   const [view, setView] = useState<'live' | 'replay'>('live');
+  // "Replay" on a result asks for the recording: the request switches the view once, and the toggle stays free after it (TST-007)
+  const replayRequests = usePlantDocument((state) => state.replayRequests);
+  const [seenReplay, setSeenReplay] = useState(replayRequests);
+  if (seenReplay !== replayRequests) {
+    setSeenReplay(replayRequests);
+    setView('replay');
+  }
 
   // The live plant of 2.0 exists when a lesson mapping binds to every I/O point of the loaded program, as `PlantLivePanel` decides.
   const liveOpen = useMemo(() => {
@@ -66,7 +74,14 @@ export function PlantDocument({ controller, visible }: { controller: DebugContro
       )}
       {showing === 'live' &&
         (sceneOpen ? <PlantPanel controller={controller} visible={visible} /> : <PlantLivePanel controller={controller} />)}
-      {showing === 'replay' && <LabPanel presentation={presentation ?? null} />}
+      {showing === 'replay' && (
+        <>
+          <h2 data-plant-replay className="px-3 pt-2 text-sm font-semibold text-[var(--text-primary)]">
+            {t('studio.plant.replay')}
+          </h2>
+          <LabPanel presentation={presentation ?? null} />
+        </>
+      )}
       {showing === 'none' && (
         <div className="p-4 text-sm text-[var(--text-secondary)]">
           <p>{t('studio.plant.empty')}</p>

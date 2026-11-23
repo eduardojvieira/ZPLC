@@ -1,14 +1,16 @@
 import { afterEach, beforeAll, describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { setupDom, stubProjectLoader } from '../test/dom';
+import { setupDom, stubMonaco, stubProjectLoader } from '../test/dom';
 import { compileMultiTaskProject, type DebugMap } from '../compiler';
 import { LESSON_INDEX } from '../generated/lessonIndex';
 import { getLanguageFromFilename } from '../types';
 
 const dom = await setupDom();
 await stubProjectLoader();
+await stubMonaco();
 const { PlantDocument } = await import('./PlantDocument');
+const { TestResultsTab } = await import('../components/TestResultsTab');
 const { useIDEStore } = await import('../store/useIDEStore');
 const { useWorkspaceTestResult } = await import('./workspaceTestResult');
 const { usePlantDocument } = await import('../store/usePlantDocument');
@@ -67,7 +69,7 @@ const recordedMotorRun = {
 
 afterEach(() => {
   resetCommandsForTest();
-  usePlantDocument.setState({ open: false, active: false, requests: 0 });
+  usePlantDocument.setState({ open: false, active: false, requests: 0, replayRequests: 0 });
   useWorkspaceTestResult.setState({ presentation: undefined });
   useIDEStore.setState((state) => ({ debug: { ...state.debug, debugMap: null } }));
 });
@@ -89,6 +91,39 @@ describe('the plant document (PLS-001, PLS-002)', () => {
     await user.click(dom.screen.getByRole('button', { name: dom.t('studio.plant.replay') }));
     expect(dom.screen.getByText(dom.t('lab.labRecordedScenario'))).toBeTruthy();
     expect(dom.screen.getByText(dom.t('lab.recordedNativePosixHost'))).toBeTruthy();
+  });
+
+  it('TST-007 Replay opens the plant document in the replay view, labelled as a replay', () => {
+    useIDEStore.setState((state) => ({ debug: { ...state.debug, debugMap: motorLessonDebugMap() } }));
+    useWorkspaceTestResult.setState({ presentation: recordedMotorRun });
+    dom.render(<PlantDocument controller={undefined} visible />);
+    // the live plant shows first; a Replay request from a result switches to the recording
+    expect(dom.screen.queryByText(dom.t('lab.labRecordedScenario'))).toBeNull();
+    dom.act(() => usePlantDocument.getState().showReplay());
+    expect(usePlantDocument.getState()).toMatchObject({ open: true, active: true, replayRequests: 1 });
+    expect(dom.screen.getByRole('heading', { name: dom.t('studio.plant.replay') })).toBeTruthy();
+    expect(dom.screen.getByText(dom.t('lab.labRecordedScenario'))).toBeTruthy();
+    expect(dom.screen.getByRole('slider', { name: dom.t('lab.recordedScenarioTimeline') })).toBeTruthy();
+  });
+
+  it('TST-007 a result that recorded a plant trace offers Replay, and it asks for the replay view', async () => {
+    useWorkspaceTestResult.setState({ presentation: recordedMotorRun });
+    const { user } = dom.render(<TestResultsTab workspaceScenarioLink={null} canonicalWorkspaceBuildEvidence={null} />);
+    await user.click(dom.screen.getByRole('button', { name: dom.t('u2Tests.replay') }));
+    expect(usePlantDocument.getState()).toMatchObject({ open: true, active: true, replayRequests: 1 });
+    // a result with no plant trace has nothing to replay
+    const withoutPlant = { ...(recordedMotorRun as object), preview: { scenarios: [] } } as never;
+    dom.act(() => useWorkspaceTestResult.setState({ presentation: withoutPlant }));
+    expect(dom.screen.queryByRole('button', { name: dom.t('u2Tests.replay') })).toBeNull();
+  });
+
+  it('PLS-003 the replay has no run controls', () => {
+    useWorkspaceTestResult.setState({ presentation: recordedMotorRun });
+    dom.act(() => usePlantDocument.getState().showReplay());
+    dom.render(<PlantDocument controller={undefined} visible />);
+    const text = dom.t as (key: string) => string;
+    const names = ['debug.run', 'debug.pause', 'debug.stop', 'online.simulation'].map((id) => text(`command.${id}`));
+    for (const name of names) expect(dom.screen.queryByRole('button', { name })).toBeNull();
   });
 
   it('PLS-001 with neither it shows an empty state that names the next action (UX-021)', () => {

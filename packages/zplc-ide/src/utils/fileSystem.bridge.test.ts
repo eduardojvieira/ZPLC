@@ -5,11 +5,13 @@ import path from 'node:path';
 
 import { createProjectFiles } from '../../electron/projectFiles';
 import { PROJECT_FILES_CHANNEL, PROJECT_FILES_OPS, type ProjectFilesBridge } from '../../electron/projectFilesProtocol';
+import { isVisualWorkflow } from '../layout/documentKinds';
 import { DEFAULT_ZPLC_CONFIG } from '../types';
 import {
   copyProjectToFolder,
   createNewProject,
   isFileSystemAccessSupported,
+  isProgramSourceFile,
   loadFileFromTree,
   openDirectoryPicker,
   readDirectoryRecursive,
@@ -66,6 +68,22 @@ function seedProject(): void {
   mkdirSync(path.join(project, 'node_modules'));
   writeFileSync(path.join(project, 'node_modules', 'ignored.st'), 'ignored');
 }
+
+describe('scenario files in the project tree', () => {
+  it('TST-001 a project lists tests/*.scenario.json as SCENARIO documents that open in the code editor', async () => {
+    seedProject();
+    mkdirSync(path.join(project, 'tests'));
+    writeFileSync(path.join(project, 'tests', 'x.scenario.json'), '{"schemaVersion":1}');
+    const tree = await readDirectoryRecursive((await openDirectoryPicker())!);
+    const tests = tree.children?.find((child) => child.name === 'tests');
+    expect(tests?.children?.map((child) => [child.path, child.language])).toEqual([['tests/x.scenario.json', 'SCENARIO']]);
+    const opened = await loadFileFromTree(tests!.children![0]!);
+    expect(opened?.language).toBe('SCENARIO');
+    expect(opened?.content).toBe('{"schemaVersion":1}');
+    expect(isVisualWorkflow('SCENARIO')).toBe(false);
+    expect(isProgramSourceFile('x.scenario.json')).toBe(false);
+  });
+});
 
 describe('folder access in Electron', () => {
   it('is available through the bridge alone, and unavailable with neither bridge nor picker', () => {
@@ -213,7 +231,7 @@ describe('create and copy an example on a real folder', () => {
     expect(readFileSync(path.join(project, 'tests', 'motor.scenario.json'), 'utf8')).toBe('{"scenario":true}');
     const config = await readProjectConfig(root);
     expect(config.kind === 'valid' && config.config.name).toBe('motor');
-    expect((await readDirectoryRecursive(root)).children?.map((child) => child.name)).toEqual(['src']);
+    expect((await readDirectoryRecursive(root)).children?.map((child) => child.name)).toEqual(['src', 'tests']);
   });
 
   it('stops before writing when an example file already exists', async () => {

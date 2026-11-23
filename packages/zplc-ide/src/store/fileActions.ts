@@ -4,7 +4,7 @@
 
 import type { StateCreator } from 'zustand';
 import { SHOW_OUTPUT } from './consoleEntries';
-import type { PLCLanguage, ProjectFileWithHandle } from '../types';
+import type { FileLanguage, ProjectFileWithHandle } from '../types';
 import { createEmptyFileContent } from '../types';
 import {
   readDirectoryRecursive,
@@ -165,7 +165,7 @@ export const createFileActions: StateCreator<
     }
   },
 
-  createFile: async (name: string, language: PLCLanguage, parentPath: string = 'src') => {
+  createFile: async (name: string, language: FileLanguage, parentPath: string = 'src', initialContent?: string) => {
     const initial = get();
     const { directoryHandle, fileTree, projectSession: expectedProjectSession } = initial;
     const trimmedName = name.trim();
@@ -181,7 +181,7 @@ export const createFileActions: StateCreator<
     const fileName = fileNameForNewFile(trimmedName, language);
     const filePath = `${parentPath}/${fileName}`;
     const fileId = fileTreeFileId(filePath);
-    const content = createEmptyFileContent(language);
+    const content = initialContent ?? (language === 'SCENARIO' ? '' : createEmptyFileContent(language));
 
     const newFile: ProjectFileWithHandle = {
       id: fileId,

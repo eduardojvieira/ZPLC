@@ -7,7 +7,7 @@ import type {
   ConnectionState,
   ConsoleEntry,
   ConsoleTab,
-  PLCLanguage,
+  FileLanguage,
   CompilerMessage,
   STBufferDiagnostics,
   ZPLCProjectConfig,
@@ -221,7 +221,8 @@ export interface IDEState {
   /** `quiet` (autosave) writes the file without the "Saved" line in Output; a failure is always reported. */
   saveFile: (fileId: string, options?: { quiet?: boolean }) => Promise<boolean>;
   saveAllFiles: (options?: { quiet?: boolean }) => Promise<void>;
-  createFile: (name: string, language: PLCLanguage, parentPath?: string) => Promise<string>;
+  /** `content` is what the new file holds; without it the file starts as an empty program of its language. */
+  createFile: (name: string, language: FileLanguage, parentPath?: string, content?: string) => Promise<string>;
   deleteFile: (fileId: string, expectedProjectSession?: number) => Promise<boolean>;
   /** The project tree operations of the Explorer (IDE-004). Each raises an Error with a message for the user when it refuses. */
   createFolder: (parentPath: string, name: string) => Promise<void>;

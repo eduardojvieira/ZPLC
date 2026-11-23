@@ -22,7 +22,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useT } from '../i18n';
 import { ilInlineTargets, inlineValues, stInlineTargets } from '../monitoring/inlineValues';
 import { useMonitoredVariables } from '../monitoring/useMonitor';
-import type { PLCLanguage } from '../types';
+import type { FileLanguage } from '../types';
 import {
   breakpointDecorationClasses,
   breakpointFileKey,
@@ -64,7 +64,7 @@ interface CodeEditorProps {
   /** File content */
   content: string;
   /** PLC language for syntax highlighting */
-  language: PLCLanguage;
+  language: FileLanguage;
   /** Callback when content changes */
   onChange?: (value: string) => void;
   /** Read-only mode */
@@ -74,7 +74,7 @@ interface CodeEditorProps {
 /**
  * Map PLC language to Monaco language ID
  */
-function getMonacoLanguage(lang: PLCLanguage): string {
+function getMonacoLanguage(lang: FileLanguage): string {
   switch (lang) {
     case 'ST':
       return ST_LANGUAGE_ID;

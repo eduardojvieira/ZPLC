@@ -1,12 +1,12 @@
-import type { PLCLanguage } from '../types';
+import type { FileLanguage } from '../types';
 
 export function canCommitVisualEditorChange(
   currentProjectSession: number,
   expectedProjectSession: number,
   activeFileId: string | null,
   expectedFileId: string,
-  expectedLanguage: PLCLanguage,
-  file: { id: string; language: PLCLanguage } | undefined,
+  expectedLanguage: FileLanguage,
+  file: { id: string; language: FileLanguage } | undefined,
 ): boolean {
   return (
     currentProjectSession === expectedProjectSession &&

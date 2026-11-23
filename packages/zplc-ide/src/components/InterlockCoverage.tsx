@@ -45,7 +45,8 @@ function SafetyDiagnostics({ diagnostics }: { diagnostics: WorkspaceSafetyPresen
   );
 }
 
-function SafetyCoverageReport({ presentation }: { presentation: WorkspaceSafetyPresentation }) {
+/** The answer of a check: the declared pairs and which of them lack an exact NEVER; shared with the Test results tab. */
+export function SafetyCoverageReport({ presentation }: { presentation: WorkspaceSafetyPresentation }) {
   const { t } = useT();
   if (presentation.kind === 'not-configured')
     return (
@@ -111,7 +112,13 @@ export function InterlockCoverage({ availability, state, busy, onCheck }: Interl
         <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-surface-200)]">
           {t('interlock.declaredInterlockCoverage')}
         </h2>
-        <Button variant="secondary" size="sm" onClick={onCheck} disabled={busy || availability !== 'ready'}>
+        <Button
+          variant="secondary"
+          size="sm"
+          data-command="build.checkInterlocks"
+          onClick={onCheck}
+          disabled={busy || availability !== 'ready'}
+        >
           {state === 'running' ? t('interlock.checking') : t('interlock.checkDeclaredInterlocks')}
         </Button>
       </div>

@@ -219,7 +219,7 @@ function TreeNode({
 
     // Visual vs text language
     const lang = node.language || 'ST';
-    const info = PLC_LANGUAGES[lang];
+    const info = lang === 'SCENARIO' ? undefined : PLC_LANGUAGES[lang];
     if (info?.isVisual) {
       return <FileCode size={16} className="text-[var(--color-accent-purple)]" />;
     }

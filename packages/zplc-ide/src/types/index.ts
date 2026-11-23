@@ -13,6 +13,8 @@ import { t } from '../i18n';
 // =============================================================================
 
 export type PLCLanguage = 'ST' | 'IL' | 'LD' | 'FBD' | 'SFC';
+/** What a project file can be: a PLC language, or a scenario file (a test, edited as text). */
+export type FileLanguage = PLCLanguage | 'SCENARIO';
 
 export interface PLCLanguageInfo {
   id: PLCLanguage;
@@ -87,7 +89,7 @@ export const PLC_LANGUAGES: Record<PLCLanguage, PLCLanguageInfo> = {
 export interface ProjectFile {
   id: string;
   name: string;
-  language: PLCLanguage;
+  language: FileLanguage;
   content: string;
   isModified: boolean;
   path: string;
@@ -688,7 +690,7 @@ export interface FileTreeNode {
   path: string;
   children?: FileTreeNode[];
   // File-specific
-  language?: PLCLanguage;
+  language?: FileLanguage;
   pouType?: POUType;
   handle?: FileSystemFileHandle;
   // Directory-specific
@@ -727,6 +729,11 @@ export interface EditorTab {
 // =============================================================================
 // File Helpers
 // =============================================================================
+
+/** The language of a project file by its name: a scenario file is `SCENARIO`, any other name as `getLanguageFromFilename`. */
+export function getFileLanguage(filename: string): FileLanguage {
+  return filename.toLowerCase().endsWith('.scenario.json') ? 'SCENARIO' : getLanguageFromFilename(filename);
+}
 
 export function getLanguageFromFilename(filename: string): PLCLanguage {
   const normalized = filename.toLowerCase();
