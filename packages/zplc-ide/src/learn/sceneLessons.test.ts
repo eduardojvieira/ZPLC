@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect } from 'bun:test';
+import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -85,20 +85,28 @@ function fixture(
 }
 const guard = (entry: LessonIndexEntry, now?: () => number) => checkSceneLessons({ lessons: [entry], projectsDir: projects, now });
 
+const sceneLessons = LESSON_INDEX.lessons.filter((candidate) => candidate.scene);
+/** Slowest lesson 17.3 s on 4 cores (plant-warehouse, 2026-11-23); two grades at the 60 s CRS-006 limit fail the lesson anyway. */
+const LESSON_GRADES_MS = 120_000;
+
 describe('the scene-lesson guard on real programs (CRS-005, CRS-006, CRS-010)', () => {
-  itNative(
-    'passes on the tree today: every scene lesson grades as it should, and the ten plant lessons are as pinned',
-    async () => {
-      const sceneLessons = LESSON_INDEX.lessons.filter((candidate) => candidate.scene);
-      expect(sceneLessons.length).toBeGreaterThan(0);
-      const { problems, report } = await checkSceneLessons();
-      expect(problems).toEqual([]);
-      // One line of grade times per scene lesson (starter and solution).
-      expect(report.filter((line) => sceneLessons.some((lesson) => line.startsWith(`${lesson.id}:`)))).toHaveLength(sceneLessons.length);
-      expect(plantLessonPinFaults(LESSON_INDEX.lessons)).toEqual([]);
-    },
-    600_000,
-  );
+  it('passes on the tree today: the static and sibling rules of every scene lesson, and the pins of the ten plant lessons', async () => {
+    expect(sceneLessons.length).toBeGreaterThan(0);
+    expect((await checkSceneLessons({ grade: false })).problems).toEqual([]);
+    expect(plantLessonPinFaults(LESSON_INDEX.lessons)).toEqual([]);
+  });
+
+  for (const sceneLesson of sceneLessons)
+    itNative(
+      `passes on the tree today: ${sceneLesson.id} grades as it should`,
+      async () => {
+        const { problems, report } = await checkSceneLessons({ lessons: [sceneLesson] });
+        expect(problems).toEqual([]);
+        // One line of grade times (starter and solution).
+        expect(report.filter((line) => line.startsWith(`${sceneLesson.id}:`))).toHaveLength(1);
+      },
+      LESSON_GRADES_MS,
+    );
 
   itNative(
     'CRS-005 a lesson whose reference passes and whose starter fails is accepted, with its grade times reported',
