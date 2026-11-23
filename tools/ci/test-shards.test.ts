@@ -87,11 +87,13 @@ describe('the shards of the IDE suite', () => {
 });
 
 describe.each(Object.entries(SPLIT))('the parts of %s', (file, { variable, parts }) => {
-  it('hold every case of the file once, and the file alone holds all of them', async () => {
-    const [all, ...each] = await Promise.all([
+  it('hold every case of the file once, and the file alone holds all of them, with the variable unset or empty', async () => {
+    const [all, empty, ...each] = await Promise.all([
       listCases(file, {}),
+      listCases(file, { [variable]: '' }),
       ...Array.from({ length: parts }, (_, index) => listCases(file, { [variable]: `${index + 1}/${parts}` })),
     ]);
+    expect(empty).toEqual(all!);
     for (const cases of each) expect(cases.length).toBeGreaterThan(0);
     const runs = count(each.flat());
     expect([...runs.keys()].sort()).toEqual([...all!].sort());

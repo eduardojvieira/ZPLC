@@ -17,7 +17,8 @@
 // UNMEASURED_SECONDS, so a new test file always lands in a shard; every unit also counts LOAD_SECONDS.
 // tools/ci/test-shards.test.ts proves that the shards hold every file and every case once.
 // ponytail: a part counts the time of its file over the number of parts (the three parts of scenarioParity.test.ts
-// measured 25.6, 21.0 and 18.6 min); time the parts if a shard outgrows its job.
+// measured 25.6, 21.0 and 18.6 min; the testcases of the two parts of lessonCi.test.ts sum to 23.1 and 21.6 min in the
+// report of the table); time the parts if a shard outgrows its job.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
@@ -28,6 +29,7 @@ export const SUITE = 'packages/zplc-ide';
 export const SHARDS = 8;
 export const SPLIT: Record<string, { variable: string; parts: number }> = {
   'src/cli/scenarioParity.test.ts': { variable: 'ZPLC_PARITY_PART', parts: 3 },
+  'src/learn/lessonCi.test.ts': { variable: 'ZPLC_LESSON_PART', parts: 2 },
 };
 export const UNMEASURED_SECONDS = 60;
 /** Loading a file takes time that no testcase holds: (13027 s of wall time - 12906 s of testcases) / 620 files. */

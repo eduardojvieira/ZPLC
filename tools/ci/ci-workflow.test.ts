@@ -4,11 +4,12 @@ import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 
 import { CLANG_FORMAT_VERSION } from './format';
-import { SHARDS } from './test-shards';
+import { SHARDS, SPLIT, measuredSeconds, plan, testFiles } from './test-shards';
 
 type Step = { name?: string; uses?: string; run?: string; if?: string; env?: Record<string, string>; with?: Record<string, string> };
 type Job = {
   'runs-on'?: string;
+  env?: Record<string, string>;
   'timeout-minutes'?: number;
   steps: Step[];
   strategy?: { 'fail-fast'?: boolean; matrix: { include: Array<{ id: string; board: string }>; shard?: number[] } };
@@ -47,6 +48,19 @@ describe('the IDE suite in shards (tools/ci/test-shards.ts)', () => {
     const commands = job.steps.map((step) => step.run ?? '').join('\n');
     expect(commands).toContain('bun tools/ci/test-shards.ts env "${{ matrix.shard }}"');
     expect(commands).toContain('"${ZPLC_IDE_SHARD_FILES:?}"');
+  });
+
+  it.each(sharded)('%s hands the part of each split file to the tests through $GITHUB_ENV, and no step sets one', (_name, job) => {
+    const select = job.steps.find((step) => step.run?.includes('bun tools/ci/test-shards.ts env'));
+    expect(select?.run).toContain('bun tools/ci/test-shards.ts env "${{ matrix.shard }}" | tee -a "${GITHUB_ENV}"');
+    const variables = new Set(Object.values(SPLIT).map(({ variable }) => variable));
+    const set = [job.env, ...job.steps.map((step) => step.env)].flatMap((env) => Object.keys(env ?? {}));
+    expect(set.filter((name) => variables.has(name))).toEqual([]);
+  });
+
+  it.each(sharded)('%s gives a shard more minutes than the longest shard of the plan measures', (_name, job) => {
+    const longest = Math.max(...plan(testFiles(), measuredSeconds()).map((shard) => shard.seconds)) / 60;
+    expect(job['timeout-minutes']).toBeGreaterThan(longest);
   });
 
   it.each([

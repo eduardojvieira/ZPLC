@@ -22,7 +22,14 @@ import { PROJECTS_DIRECTORY, loadLessonPackages, validateCourse, type LessonPack
  */
 
 const loaded = loadLessonPackages();
-const packages = loaded.packages;
+/**
+ * CI runs this file in parts (tools/ci/test-shards.ts): ZPLC_LESSON_PART=i/n keeps every n-th lesson package from the i-th,
+ * and part 1 also keeps the two describes that belong to no lesson. Without the variable (or with it empty) every case runs.
+ */
+const partOption = process.env.ZPLC_LESSON_PART || '1/1';
+const [, part = 0, parts = 0] = (/^(\d+)\/(\d+)$/.exec(partOption) ?? []).map(Number);
+if (part < 1 || part > parts) throw new Error(`ZPLC_LESSON_PART must be i/n with 1 <= i <= n, not "${partOption}"`);
+const packages = loaded.packages.filter((_, index) => index % parts === part - 1);
 const LOCALES = ['en', 'es'] as const;
 /**
  * The voseo forms in one string, from the deny-list of actual voseo forms the catalog guard uses (UX-030): "vos", "tenés",
@@ -99,20 +106,22 @@ afterAll(() => {
   rmSync(workRoot, { recursive: true, force: true });
 });
 
-describe('the voseo guard of the lesson text (LRN-029)', () => {
-  it('LRN-029 names actual voseo forms and leaves correct Spanish alone: future forms, "sí", "así"', () => {
-    expect(voseoIn('El resultado será el mismo, entre sí, y quedará así; la planta lo mostrará.')).toEqual([]);
-    expect(voseoIn('Agregá el contacto, guardá el archivo y tenés el resultado.')).toEqual(['Agregá', 'guardá', 'tenés']);
+if (part === 1) {
+  describe('the voseo guard of the lesson text (LRN-029)', () => {
+    it('LRN-029 names actual voseo forms and leaves correct Spanish alone: future forms, "sí", "así"', () => {
+      expect(voseoIn('El resultado será el mismo, entre sí, y quedará así; la planta lo mostrará.')).toEqual([]);
+      expect(voseoIn('Agregá el contacto, guardá el archivo y tenés el resultado.')).toEqual(['Agregá', 'guardá', 'tenés']);
+    });
   });
-});
 
-describe('lesson packages (LRN-009, LRN-010, LRN-027)', () => {
-  it('are all valid, and form one course', () => {
-    expect(loaded.problems).toEqual([]);
-    expect(validateCourse(packages)).toEqual([]);
-    expect(packages.length).toBeGreaterThanOrEqual(10);
+  describe('lesson packages (LRN-009, LRN-010, LRN-027)', () => {
+    it('are all valid, and form one course', () => {
+      expect(loaded.problems).toEqual([]);
+      expect(validateCourse(loaded.packages)).toEqual([]);
+      expect(loaded.packages.length).toBeGreaterThanOrEqual(10);
+    });
   });
-});
+}
 
 for (const lesson of packages) {
   const { manifest, scenario, checks } = lesson;

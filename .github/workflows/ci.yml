@@ -207,13 +207,13 @@ jobs:
           xvfb-run --auto-servernum bun run --cwd packages/zplc-ide scripts/interfaceBudget.ts --check
 
   # The IDE unit tests in shards. `bun test` runs the files one after the other, and the whole suite took 3 h 37 min pinned
-  # to 4 cores, so tools/ci/test-shards.ts gives each shard about 25 measured minutes (tools/ci/ide-test-times.json), and
+  # to 4 cores, so tools/ci/test-shards.ts gives each shard about 27 measured minutes (tools/ci/ide-test-times.json), and
   # parts of a file that is too long for one shard. Each shard keeps its report and applies the expected-failure rule
   # (VF-027) to the files it ran; release.yml merges the reports for the release notes (REL-027).
   ide-tests:
     name: IDE tests (shard ${{ matrix.shard }}/${{ strategy.job-total }})
     runs-on: ubuntu-latest
-    timeout-minutes: 75 # longest shard: 44.7 min measured (lessonCi.test.ts, 4 cores under load), plus about 4 min of set-up
+    timeout-minutes: 50 # longest shard: 27.4 min measured (4 cores under load), plus about 4 min of set-up
     strategy:
       fail-fast: false
       matrix:

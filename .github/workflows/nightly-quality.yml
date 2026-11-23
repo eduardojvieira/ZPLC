@@ -192,7 +192,7 @@ jobs:
   desktop-ide-tests:
     name: IDE tests (${{ matrix.platform.name }}, shard ${{ matrix.shard }})
     runs-on: ${{ matrix.platform.runner }}
-    timeout-minutes: 120 # Linux shards measure up to 44.7 min on 4 cores; not measured on macOS and Windows, hence the margin
+    timeout-minutes: 120 # Linux shards measure up to 27.4 min on 4 cores; not measured on macOS and Windows, hence the margin
     strategy:
       fail-fast: false
       matrix:
