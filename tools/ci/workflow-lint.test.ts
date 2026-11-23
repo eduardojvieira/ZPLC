@@ -104,7 +104,12 @@ describe('the workflow lint', () => {
 
   const only = 'which only bun tools/ci/test-shards.ts env may set, through $GITHUB_ENV';
   it.each([
-    ['release.yml', 'on: push\njobs:', 'on: push\nenv:\n  ZPLC_LESSON_PART: 1/2\njobs:', `release.yml: the workflow env sets ZPLC_LESSON_PART, ${only}`],
+    [
+      'release.yml',
+      'on: push\njobs:',
+      'on: push\nenv:\n  ZPLC_LESSON_PART: 1/2\njobs:',
+      `release.yml: the workflow env sets ZPLC_LESSON_PART, ${only}`,
+    ],
     [
       'ci.yml',
       '    timeout-minutes: 15\n',
