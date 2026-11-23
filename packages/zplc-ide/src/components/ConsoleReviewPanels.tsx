@@ -10,6 +10,7 @@ import { type AgentResponsePresentation } from './agent/agentResponse';
 import { type ChangeSetSnapshot } from './agent/changeSetReview';
 import { MONACO_THEME_ID } from '../utils/monaco-themes';
 import { Badge, Button, Tooltip } from '../ui';
+import { BoundaryBadge } from './BoundaryBadge';
 import { useT } from '../i18n';
 
 /** The review of the person's own modified buffer: one program, saved by the same click. */
@@ -166,11 +167,7 @@ export function CandidateReviewResult({
         </div>
       ))}
       <p className="text-xs text-[var(--color-surface-400)]">
-        <Tooltip content={t('console.nativePosixHostEvidence')}>
-          <span tabIndex={0}>
-            <Badge tone="neutral">{t('console.hostEvidenceBadge')}</Badge>
-          </span>
-        </Tooltip>
+        <BoundaryBadge boundary="simulation" />
       </p>
       <p className="text-xs text-[var(--color-surface-400)]">{t('console.noFileHasBeen')}</p>
       {accepted && (

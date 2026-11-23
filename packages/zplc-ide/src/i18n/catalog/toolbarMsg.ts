@@ -20,6 +20,7 @@ export const toolbarMsgEn = {
   'toolbarMsg.buildingSavedWorkspaceLocally': 'Building the project on this computer...',
   'toolbarMsg.buildingProject': 'Building project',
   'toolbarMsg.buildFailed': 'Build failed',
+  'toolbarMsg.buildFailed.action': 'Go to the problem',
   'toolbarMsg.canonicalWorkspaceBuildFailed': 'The project build failed',
   'toolbarMsg.builtSavedWorkspaceLocally':
     'Built the project: {length} bytes ({codeSize} code, {taskCount} tasks, contract draft {DRAFT_COUNTER})',
@@ -94,6 +95,7 @@ export const toolbarMsgEs: Record<keyof typeof toolbarMsgEn, string> = {
   'toolbarMsg.buildingSavedWorkspaceLocally': 'Compilando el proyecto en este equipo...',
   'toolbarMsg.buildingProject': 'Compilando el proyecto',
   'toolbarMsg.buildFailed': 'La compilación falló',
+  'toolbarMsg.buildFailed.action': 'Ir al problema',
   'toolbarMsg.canonicalWorkspaceBuildFailed': 'Falló la compilación del proyecto',
   'toolbarMsg.builtSavedWorkspaceLocally':
     'Proyecto compilado: {length} bytes ({codeSize} de código, {taskCount} tareas, borrador de contrato {DRAFT_COUNTER})',

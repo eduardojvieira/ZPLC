@@ -188,7 +188,7 @@ export const baseEn = {
   'toolbar.assembly.text': 'View assembly',
   'toolbar.mode.label': 'Execution mode',
   'toolbar.simulation.label': 'Simulation mode',
-  'toolbar.simulation.title': 'Simulation mode (local native runtime)',
+  'toolbar.simulation.title': 'Simulation mode (runs on this computer)',
   'toolbar.simulation.text': 'Simulate',
   'toolbar.hardware.label': 'Hardware mode',
   'toolbar.hardware.title': 'Hardware mode (serial)',

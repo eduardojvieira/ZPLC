@@ -75,9 +75,6 @@ describe('Console tab boundary', () => {
     expect(source).toContain("id: 'changes'");
     expect(source).toContain("activeConsoleTab === 'changes'");
     expect(source).toContain('<DiffEditor');
-    expect(source).toContain('Native POSIX host evidence — not hardware or HIL evidence.');
-    expect(source).toContain('Host evidence only');
-    expect(source.match(/Native POSIX host evidence — not hardware or HIL evidence\./g)).toHaveLength(2);
     expect(source).toContain('No file has been written.');
     expect(source).toContain('workspaceManifestInputRef.current?.click()');
     expect(source.match(/data-workspace-manifest-input/g)).toHaveLength(1);

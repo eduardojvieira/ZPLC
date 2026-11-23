@@ -377,6 +377,40 @@ describe('Run in one action (FLW-001, FLW-006) in a DOM', () => {
     expect(calls.filter((call) => call === 'start')).toHaveLength(1);
   });
 
+  it('MSG-005 Run writes one line for each step it did, and the normal level of Output shows them', async () => {
+    openProject(BUILD_OK);
+    const { controller, calls } = simulatorController();
+    dom.patchStore(useIDEStore, { consoleEntries: [] });
+    const { user } = dom.render(<Toolbar debugController={controller} />);
+    await user.click(runButton());
+    await dom.waitFor(() => expect(calls).toContain('start'));
+    const { entriesForLevel } = await import('../store/consoleEntries');
+    await dom.waitFor(() => {
+      const shown = entriesForLevel(useIDEStore.getState().consoleEntries, 'normal').map((entry) => entry.message);
+      expect(shown).toContain(dom.t('toolbarMsg.buildingSavedWorkspaceLocally'));
+      expect(shown.some((message) => message.startsWith('Built the project:'))).toBe(true);
+    });
+  });
+
+  it('MSG-004 a build error says what failed, where, and offers to go there (toolbarMsg.buildFailed)', async () => {
+    const failure = { code: 'UNKNOWN_IDENTIFIER', message: 'Undeclared variable Speed', path: 'src/main.st', line: 3, column: 2 };
+    openProject({ ok: false, evidence: { outcome: 'failed', diagnostics: [failure], artifacts: [] } });
+    const go = mock(async () => true);
+    dom.patchStore(useIDEStore, { navigateToCompilerDiagnostic: go as never });
+    const { user } = dom.render(<Toolbar debugController={debugController} />);
+    await user.click(dom.screen.getByRole('button', { name: new RegExp(dom.t('toolbar.build.label')) }));
+    await user.click(dom.screen.getAllByRole('menuitem')[0]!);
+    await dom.waitFor(() => expect(notices().some((n) => n.status === 'error')).toBe(true));
+    const notice = notices().find((n) => n.status === 'error')!;
+    expect(notice.title).toBe(dom.t('toolbarMsg.buildFailed'));
+    // what failed and where: the file, the line and the compiler's own text
+    expect(notice.detail).toBe('src/main.st:3: Undeclared variable Speed');
+    // what to do next, as a button that opens the place
+    expect(notice.recover?.label).toBe(dom.t('toolbarMsg.buildFailed.action'));
+    notice.recover?.run();
+    expect(go).toHaveBeenCalledWith('src/main.st', 3, 2);
+  });
+
   it('FLW-004 no refusal is written to Output alone', async () => {
     withBoard();
     const { controller, calls } = simulatorController();

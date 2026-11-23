@@ -24,11 +24,15 @@ export const SAVE_BEFORE_RUN_CHOICES = ['always', 'ask'] as const;
 /** The 3D plant's quality (VIS-005, PLS-012): `auto` picks a level from the graphics at first run. */
 export const PLANT_QUALITY_CHOICES = ['auto', 'low', 'medium', 'high'] as const;
 
+/** The two levels of Output (MSG-005): `normal` is one line per step, `detailed` is everything 2.0 wrote. */
+export const OUTPUT_LEVEL_CHOICES = ['normal', 'detailed'] as const;
+
 export type TabSize = (typeof TAB_SIZE_CHOICES)[number];
 export type Density = (typeof DENSITY_CHOICES)[number];
 export type Language = LanguageSetting;
 export type SaveBeforeRun = (typeof SAVE_BEFORE_RUN_CHOICES)[number];
 export type PlantQualitySetting = (typeof PLANT_QUALITY_CHOICES)[number];
+export type OutputLevel = (typeof OUTPUT_LEVEL_CHOICES)[number];
 export type AutosaveSeconds = (typeof AUTOSAVE_CHOICES)[number];
 
 export interface AppSettings {
@@ -47,7 +51,12 @@ export interface AppSettings {
   hideSolutions: boolean;
   saveBeforeRun: SaveBeforeRun;
   plantQuality: PlantQualitySetting;
+  /** Absent until the user chooses: a setting saved by 2.0 has none, and `outputLevelOf` reads absent as `normal` (MSG-005). */
+  outputLevel?: OutputLevel;
 }
+
+/** The level of Output: the saved choice, else `normal`. */
+export const outputLevelOf = (settings: AppSettings): OutputLevel => settings.outputLevel ?? 'normal';
 
 export const DEFAULT_SETTINGS: AppSettings = {
   editorFontSize: 14,
@@ -75,7 +84,8 @@ const oneOf = <T extends readonly unknown[]>(choices: T, value: unknown): value 
 export function parseSettings(raw: unknown, defaults: AppSettings = DEFAULT_SETTINGS): AppSettings {
   const value = typeof raw === 'object' && raw !== null && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
   const { editorFontSize, editorTabSize, density, language, autosaveSeconds, checkForUpdates, unlockAllLessons, hideSolutions } = value;
-  const { saveBeforeRun, plantQuality } = value;
+  const { saveBeforeRun, plantQuality, outputLevel } = value;
+  const level = oneOf(OUTPUT_LEVEL_CHOICES, outputLevel) ? outputLevel : defaults.outputLevel;
   return {
     editorFontSize:
       typeof editorFontSize === 'number' &&
@@ -93,6 +103,7 @@ export function parseSettings(raw: unknown, defaults: AppSettings = DEFAULT_SETT
     hideSolutions: typeof hideSolutions === 'boolean' ? hideSolutions : defaults.hideSolutions,
     saveBeforeRun: oneOf(SAVE_BEFORE_RUN_CHOICES, saveBeforeRun) ? saveBeforeRun : defaults.saveBeforeRun,
     plantQuality: oneOf(PLANT_QUALITY_CHOICES, plantQuality) ? plantQuality : defaults.plantQuality,
+    ...(level ? { outputLevel: level } : {}),
   };
 }
 

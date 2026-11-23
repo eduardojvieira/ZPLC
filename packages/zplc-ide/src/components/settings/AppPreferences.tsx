@@ -14,6 +14,7 @@ import {
   AUTOSAVE_CHOICES,
   DENSITY_CHOICES,
   LANGUAGE_CHOICES,
+  outputLevelOf,
   PLANT_QUALITY_CHOICES,
   SAVE_BEFORE_RUN_CHOICES,
   TAB_SIZE_CHOICES,
@@ -82,6 +83,7 @@ function Choice<K extends keyof AppSettings>({
 export function AppPreferences() {
   const { t, tn } = useT();
   const checkForUpdates = useAppSettings((state) => state.settings.checkForUpdates);
+  const outputLevel = useAppSettings((state) => outputLevelOf(state.settings));
   const minimap = useEditorView((state) => state.minimap);
   const setMinimap = useEditorView((state) => state.setMinimap);
   const update = useAppSettings((state) => state.update);
@@ -154,6 +156,12 @@ export function AppPreferences() {
           checked={minimap}
           onChange={(event) => setMinimap(event.target.checked)}
           data-setting="editorMinimap"
+        />
+        <Checkbox
+          label={t('console.output.detailed')}
+          checked={outputLevel === 'detailed'}
+          onChange={(event) => update({ outputLevel: event.target.checked ? 'detailed' : 'normal' })}
+          data-setting="outputLevel"
         />
         <Checkbox
           label={t('preferences.updates.check')}

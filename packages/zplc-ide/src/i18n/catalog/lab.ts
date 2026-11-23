@@ -7,7 +7,7 @@ export const labEn = {
   'lab.recordedConveyorState': 'Recorded conveyor state',
   'lab.recordedTankState': 'Recorded tank state',
   'lab.recordedPedestrianCrossingStat': 'Recorded pedestrian crossing state',
-  'lab.runTheSavedHost': 'Run the saved host scenarios to inspect a recorded plant trace here.',
+  'lab.runTheSavedHost': 'Run the saved tests to inspect a recorded plant trace here.',
   'lab.runningScenarios': 'Running scenarios…',
   'lab.labRecordedScenario': 'Replay of a recorded run',
   'lab.recordedNativePosixHost':
@@ -95,7 +95,7 @@ export const labEs: Record<keyof typeof labEn, string> = {
   'lab.recordedConveyorState': 'Estado registrado de la cinta transportadora',
   'lab.recordedTankState': 'Estado registrado del tanque',
   'lab.recordedPedestrianCrossingStat': 'Estado registrado del cruce peatonal',
-  'lab.runTheSavedHost': 'Ejecute los escenarios guardados en el host para inspeccionar aquí una traza registrada de la planta.',
+  'lab.runTheSavedHost': 'Ejecute las pruebas guardadas para inspeccionar aquí una traza registrada de la planta.',
   'lab.runningScenarios': 'Ejecutando escenarios…',
   'lab.labRecordedScenario': 'Repetición de una ejecución registrada',
   'lab.recordedNativePosixHost':

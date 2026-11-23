@@ -330,6 +330,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     if (!file) return;
     addConsoleEntry({
       type: 'info',
+      step: true,
       message: t('toolbarMsg.transpilingToStructuredText', { language: file.language }),
       source: 'transpiler',
     });
@@ -419,7 +420,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
       }
       const workspaceId = link.workspaceId;
       const expected = { projectSession, compilerRunId, workspaceId };
-      addConsoleEntry({ type: 'info', message: t('toolbarMsg.buildingSavedWorkspaceLocally'), source: 'compiler' });
+      addConsoleEntry({ type: 'info', message: t('toolbarMsg.buildingSavedWorkspaceLocally'), step: true, source: 'compiler' });
       let cancelRequested = false;
       const notices = useNotifications.getState();
       const operation = quiet
@@ -449,15 +450,22 @@ export function Toolbar({ debugController }: ToolbarProps) {
         const canonical = presentWorkspaceCompileResult(response);
         if (!canonical.ok) {
           const first = canonical.diagnostics[0];
-          const located = first ? `${first.path ? `${first.path}: ` : ''}${first.message}` : undefined;
+          const located = first ? `${first.path ? `${first.path}${first.line ? `:${first.line}` : ''}: ` : ''}${first.message}` : undefined;
+          const place = first?.path && first.line ? { path: first.path, line: first.line, column: first.column ?? 1 } : null;
           finishNotice({
             kind: 'build',
             status: 'error',
             title: t('toolbarMsg.buildFailed'),
             details: 'problems',
-            detail: canonical.diagnostics[0]
-              ? `${canonical.diagnostics[0].path ? `${canonical.diagnostics[0].path}: ` : ''}${canonical.diagnostics[0].message}`
-              : undefined,
+            detail: located,
+            ...(place
+              ? {
+                  recover: {
+                    label: t('toolbarMsg.buildFailed.action'),
+                    run: () => void useIDEStore.getState().navigateToCompilerDiagnostic(place.path, place.line, place.column),
+                  },
+                }
+              : {}),
           });
           revealCompileProblems();
           addConsoleEntry({ type: 'error', message: t('toolbarMsg.canonicalWorkspaceBuildFailed'), source: 'compiler' });
@@ -888,7 +896,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
       await settlePlantTransport();
       requireSimulator(startedInRef.current);
       await activeTransport(controllerRef.current).run();
-      addConsoleEntry({ type: 'info', message: t('toolbarMsg.executionStarted'), source: 'runtime' });
+      addConsoleEntry({ type: 'info', message: t('toolbarMsg.executionStarted'), step: true, source: 'runtime' });
     },
     // The session is ready and nothing has scanned: the next Step runs the first scan.
     holdBeforeFirstScan: async () => undefined,
@@ -930,7 +938,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     pendingExecutionFocusRef.current = keyboardInitiated ? 'running' : null;
     try {
       await transport.run();
-      addConsoleEntry({ type: 'info', message: t('toolbarMsg.executionStarted'), source: 'runtime' });
+      addConsoleEntry({ type: 'info', message: t('toolbarMsg.executionStarted'), step: true, source: 'runtime' });
     } catch (e) {
       pendingExecutionFocusRef.current = null;
       addConsoleEntry({
@@ -975,7 +983,12 @@ export function Toolbar({ debugController }: ToolbarProps) {
     pendingExecutionFocusRef.current = keyboardInitiated ? 'paused' : null;
     try {
       await transport.pause();
-      addConsoleEntry({ type: 'info', message: t('toolbarMsg.pausedAtCycle', { value: vmInfoNow()?.cycles || 0 }), source: 'runtime' });
+      addConsoleEntry({
+        type: 'info',
+        message: t('toolbarMsg.pausedAtCycle', { value: vmInfoNow()?.cycles || 0 }),
+        step: true,
+        source: 'runtime',
+      });
     } catch (e) {
       pendingExecutionFocusRef.current = null;
       addConsoleEntry({
@@ -999,7 +1012,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     pendingExecutionFocusRef.current = keyboardInitiated ? 'running' : null;
     try {
       await transport.run();
-      addConsoleEntry({ type: 'info', message: t('toolbarMsg.resumed'), source: 'runtime' });
+      addConsoleEntry({ type: 'info', message: t('toolbarMsg.resumed'), step: true, source: 'runtime' });
     } catch (e) {
       pendingExecutionFocusRef.current = null;
       addConsoleEntry({
@@ -1014,7 +1027,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     if (controlsBusy || !(await proceedAfterConfirmation(executionMode, confirmStop))) return;
     try {
       await transport.stop();
-      addConsoleEntry({ type: 'info', message: t('toolbarMsg.stopped'), source: 'runtime' });
+      addConsoleEntry({ type: 'info', message: t('toolbarMsg.stopped'), step: true, source: 'runtime' });
     } catch (e) {
       addConsoleEntry({
         type: 'error',
@@ -1061,7 +1074,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     if (controlsBusy || !(await proceedAfterConfirmation(executionMode, confirmReset))) return;
     try {
       await transport.reset();
-      addConsoleEntry({ type: 'info', message: t('toolbarMsg.reset'), source: 'runtime' });
+      addConsoleEntry({ type: 'info', message: t('toolbarMsg.reset'), step: true, source: 'runtime' });
     } catch (e) {
       addConsoleEntry({
         type: 'error',

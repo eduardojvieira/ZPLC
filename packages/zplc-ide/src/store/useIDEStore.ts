@@ -176,7 +176,7 @@ async function openExistingProject(
     if (!isCurrent()) return false;
     if (!dirHandle) return false;
 
-    get().addConsoleEntry({ type: 'info', message: t('store.openingFolder', { name: dirHandle.name }), source: 'system' });
+    get().addConsoleEntry({ type: 'info', message: t('store.openingFolder', { name: dirHandle.name }), step: true, source: 'system' });
 
     const readResult = await readProjectConfig(dirHandle);
     if (!isCurrent()) return false;
@@ -389,7 +389,7 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
         return false;
       }
 
-      get().addConsoleEntry({ type: 'info', message: t('store.creatingProject', { name: dirHandle.name }), source: 'system' });
+      get().addConsoleEntry({ type: 'info', message: t('store.creatingProject', { name: dirHandle.name }), step: true, source: 'system' });
 
       const config = await createNewProject(dirHandle, options?.name ?? dirHandle.name, options);
       const fileTree = await readDirectoryRecursive(dirHandle);
@@ -467,6 +467,7 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
       const dirHandle = chosen.handle;
       get().addConsoleEntry({
         type: 'info',
+        step: true,
         message: t(chosen.seed ? 'statusText.copyingExample' : 'statusText.reopening', { name: dirHandle.name }),
         source: 'system',
       });
@@ -583,6 +584,7 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
 
     get().addConsoleEntry({
       type: 'info',
+      step: true,
       message: t('store.projectClosed'),
       source: 'system',
     });

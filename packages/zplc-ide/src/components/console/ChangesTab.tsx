@@ -1,6 +1,7 @@
 import { FileDiff, FolderOpen, LoaderCircle } from 'lucide-react';
 import type { RefObject } from 'react';
-import { Badge, Button, Tooltip } from '../../ui';
+import { Button } from '../../ui';
+import { BoundaryBadge } from '../BoundaryBadge';
 import { useT } from '../../i18n';
 import { CandidateReviewResult, type CandidateReviewState } from '../ConsoleReviewPanels';
 import type { useTheme } from '../../hooks/useTheme';
@@ -86,11 +87,7 @@ export function ChangesTab({
           <p className="mt-3 text-[var(--color-surface-300)]">{t('console.onlyTheActiveStructured')}</p>
         )}
         <p className="mt-2 text-xs text-[var(--color-surface-400)]">
-          <Tooltip content={t('console.nativePosixHostEvidence')}>
-            <span tabIndex={0}>
-              <Badge tone="neutral">{t('console.hostEvidenceBadge')}</Badge>
-            </span>
-          </Tooltip>
+          <BoundaryBadge boundary="simulation" />
         </p>
         <p className="text-xs text-[var(--color-surface-400)]">{t('console.reviewItselfDoesNot')}</p>
       </div>

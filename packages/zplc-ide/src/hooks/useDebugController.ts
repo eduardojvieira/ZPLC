@@ -199,6 +199,7 @@ export function useDebugController(): DebugController {
 
           addConsoleEntry({
             type: 'info',
+            step: true,
             message,
             source: 'debugger',
           });
@@ -442,6 +443,7 @@ export function useDebugController(): DebugController {
       } else {
         addConsoleEntry({
           type: 'info',
+          step: true,
           message: t('debugger.disconnected'),
           source: 'debugger',
         });

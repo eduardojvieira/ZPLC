@@ -188,7 +188,7 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'toolbar.assembly.text': 'Ver ensamblador',
   'toolbar.mode.label': 'Modo de ejecución',
   'toolbar.simulation.label': 'Modo de simulación',
-  'toolbar.simulation.title': 'Modo de simulación (runtime nativo local)',
+  'toolbar.simulation.title': 'Modo de simulación (se ejecuta en este equipo)',
   'toolbar.simulation.text': 'Simular',
   'toolbar.hardware.label': 'Modo de hardware',
   'toolbar.hardware.title': 'Modo de hardware (serie)',

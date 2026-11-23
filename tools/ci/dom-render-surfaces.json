@@ -78,9 +78,9 @@
     },
     {
       "surface": "Output",
-      "where": "components/Console.tsx",
+      "where": "components/console/OutputTab.tsx",
       "state": "tested",
-      "tests": ["packages/zplc-ide/src/components/Console.dom.test.tsx"],
+      "tests": ["packages/zplc-ide/src/components/Console.dom.test.tsx", "packages/zplc-ide/src/components/console/OutputTab.dom.test.tsx"],
       "reason": ""
     },
     {
