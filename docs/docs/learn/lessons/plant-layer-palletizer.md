@@ -26,7 +26,7 @@ Load four boxes into a layer, square it, carry it with a clamp head and stack th
 ## Objectives
 
 - Build a layer by counting pairs of boxes, and square it before the clamp takes it.
-- Set each layer at its own height, one box height higher than the one below.
+- Keep the jog of each layer in an array and fill it with a FOR loop, so each layer sets down one box height higher than the one below.
 
 ## Stages
 
