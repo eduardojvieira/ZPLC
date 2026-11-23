@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "timers-on-delay-off-delay-ladder",
   "version": 3,
-  "order": 42,
+  "order": 43,
   "module": 3,
   "level": "foundation",
   "prerequisites": ["timers-on-delay-off-delay", "blinky-ladder-timer-feedback"],

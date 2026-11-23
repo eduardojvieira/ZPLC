@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "timers-on-delay-off-delay",
   "version": 3,
-  "order": 13,
+  "order": 7,
   "module": 3,
   "level": "foundation",
   "prerequisites": ["motor-start-stop-safe"],

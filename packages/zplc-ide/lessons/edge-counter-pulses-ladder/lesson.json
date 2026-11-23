@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "edge-counter-pulses-ladder",
   "version": 3,
-  "order": 43,
+  "order": 51,
   "module": 3,
   "level": "foundation",
   "prerequisites": ["edge-counter-pulses", "blinky-ladder-timer-feedback"],

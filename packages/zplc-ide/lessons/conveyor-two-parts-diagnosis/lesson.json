@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "conveyor-two-parts-diagnosis",
   "version": 2,
-  "order": 10,
+  "order": 87,
   "module": 8,
   "level": "advanced",
   "prerequisites": ["conveyor-classification-jam"],

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "ld-what-is-a-plc",
   "version": 1,
-  "order": 77,
+  "order": 5,
   "module": 1,
   "level": "foundation",
   "prerequisites": [],

@@ -63,40 +63,40 @@ Each release has a prebuilt image for this board, `zplc-runtime-<version>-rpi-pi
 
 | Lesson | Id |
 | --- | --- |
-| [Safe motor start-stop](./rpi-pico-rp2040/motor-start-stop-safe.md) | `motor-start-stop-safe` |
-| [TON oscillator and output feedback](./rpi-pico-rp2040/blinky-ladder-timer-feedback.md) | `blinky-ladder-timer-feedback` |
-| [Edges and pulse counter](./rpi-pico-rp2040/edge-counter-pulses.md) | `edge-counter-pulses` |
+| [Timers: an off-delay light and an on-delay filter](./rpi-pico-rp2040/timers-on-delay-off-delay.md) | `timers-on-delay-off-delay` |
 | [Scan cycle and one-scan memory](./rpi-pico-rp2040/scan-cycle-one-scan-memory.md) | `scan-cycle-one-scan-memory` |
 | [Boolean logic: a two-hand control with a guard](./rpi-pico-rp2040/boolean-logic-two-hand-guard.md) | `boolean-logic-two-hand-guard` |
-| [Timers: an off-delay light and an on-delay filter](./rpi-pico-rp2040/timers-on-delay-off-delay.md) | `timers-on-delay-off-delay` |
-| [Write a blinker in Structured Text](./rpi-pico-rp2040/blink-structured-text.md) | `blink-structured-text` |
-| [Latching an alarm: set and reset, and which one wins](./rpi-pico-rp2040/set-reset-alarm-latch.md) | `set-reset-alarm-latch` |
 | [Seal-in in Ladder: a motor that holds itself on](./rpi-pico-rp2040/seal-in-ladder.md) | `seal-in-ladder` |
-| [Counters in Function Block Diagram: count parts to a batch](./rpi-pico-rp2040/counter-batch-fbd.md) | `counter-batch-fbd` |
-| [Types, arithmetic and comparison: a total and three bands](./rpi-pico-rp2040/types-arithmetic-comparison.md) | `types-arithmetic-comparison` |
-| [Analog scaling: from raw counts to a percentage](./rpi-pico-rp2040/analog-scaling-integer.md) | `analog-scaling-integer` |
+| [Edges and pulse counter](./rpi-pico-rp2040/edge-counter-pulses.md) | `edge-counter-pulses` |
 | [Function blocks: one latch, two pumps](./rpi-pico-rp2040/function-block-pump-pair.md) | `function-block-pump-pair` |
-| [Structures and arrays: a panel of three calls](./rpi-pico-rp2040/structures-arrays-call-panel.md) | `structures-arrays-call-panel` |
-| [A sequence in Sequential Function Chart: fill, then mix](./rpi-pico-rp2040/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` |
 | [Instruction List: the current result and the order of instructions](./rpi-pico-rp2040/instruction-list-door-alarm.md) | `instruction-list-door-alarm` |
 | [One logic in five languages: a gate that holds itself open](./rpi-pico-rp2040/one-logic-five-languages.md) | `one-logic-five-languages` |
-| [Analog scaling in Function Block Diagram: a high level alarm](./rpi-pico-rp2040/analog-scaling-fbd.md) | `analog-scaling-fbd` |
 | [Interlocks in Ladder: a reversing motor](./rpi-pico-rp2040/interlock-reversing-ladder.md) | `interlock-reversing-ladder` |
-| [Your own function block in Function Block Diagram: two valves, one block](./rpi-pico-rp2040/function-block-valves-fbd.md) | `function-block-valves-fbd` |
+| [Structures and arrays: a panel of three calls](./rpi-pico-rp2040/structures-arrays-call-panel.md) | `structures-arrays-call-panel` |
 | [Verify my board](./rpi-pico-rp2040/verify-my-board.md) | `verify-my-board` |
-| [Boolean logic in Ladder: a two-hand guard](./rpi-pico-rp2040/boolean-logic-two-hand-guard-ladder.md) | `boolean-logic-two-hand-guard-ladder` |
-| [Latching an alarm in Ladder: SET and RESET coils, and the order of the rungs](./rpi-pico-rp2040/set-reset-alarm-latch-ladder.md) | `set-reset-alarm-latch-ladder` |
+| [Latching an alarm: set and reset, and which one wins](./rpi-pico-rp2040/set-reset-alarm-latch.md) | `set-reset-alarm-latch` |
+| [Safe motor start-stop](./rpi-pico-rp2040/motor-start-stop-safe.md) | `motor-start-stop-safe` |
+| [Counters in Function Block Diagram: count parts to a batch](./rpi-pico-rp2040/counter-batch-fbd.md) | `counter-batch-fbd` |
 | [On-delay and off-delay in Ladder: timers as blocks in a rung](./rpi-pico-rp2040/timers-on-delay-off-delay-ladder.md) | `timers-on-delay-off-delay-ladder` |
+| [Boolean logic in Ladder: a two-hand guard](./rpi-pico-rp2040/boolean-logic-two-hand-guard-ladder.md) | `boolean-logic-two-hand-guard-ladder` |
 | [Counting pulses in Ladder: a CTU counts the edges itself](./rpi-pico-rp2040/edge-counter-pulses-ladder.md) | `edge-counter-pulses-ladder` |
+| [Types, arithmetic and comparison: a total and three bands](./rpi-pico-rp2040/types-arithmetic-comparison.md) | `types-arithmetic-comparison` |
+| [A sequence in Sequential Function Chart: fill, then mix](./rpi-pico-rp2040/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` |
+| [Latching an alarm in Ladder: SET and RESET coils, and the order of the rungs](./rpi-pico-rp2040/set-reset-alarm-latch-ladder.md) | `set-reset-alarm-latch-ladder` |
 | [Function Block Diagram: a two-hand control with a guard](./rpi-pico-rp2040/boolean-logic-two-hand-guard-fbd.md) | `boolean-logic-two-hand-guard-fbd` |
 | [Timers in Function Block Diagram: an off-delay light and an on-delay filter](./rpi-pico-rp2040/timers-on-delay-off-delay-fbd.md) | `timers-on-delay-off-delay-fbd` |
-| [Types, arithmetic and comparison in Function Block Diagram: a total and three bands](./rpi-pico-rp2040/types-arithmetic-comparison-fbd.md) | `types-arithmetic-comparison-fbd` |
+| [Instruction List: calling an off-delay and an on-delay timer](./rpi-pico-rp2040/timers-on-delay-off-delay-il.md) | `timers-on-delay-off-delay-il` |
+| [Analog scaling: from raw counts to a percentage](./rpi-pico-rp2040/analog-scaling-integer.md) | `analog-scaling-integer` |
+| [Your own function block in Function Block Diagram: two valves, one block](./rpi-pico-rp2040/function-block-valves-fbd.md) | `function-block-valves-fbd` |
+| [TON oscillator and output feedback](./rpi-pico-rp2040/blinky-ladder-timer-feedback.md) | `blinky-ladder-timer-feedback` |
+| [Write a blinker in Structured Text](./rpi-pico-rp2040/blink-structured-text.md) | `blink-structured-text` |
 | [Instruction List: the current result in a two-hand control](./rpi-pico-rp2040/boolean-logic-two-hand-guard-il.md) | `boolean-logic-two-hand-guard-il` |
 | [Instruction List: S and R, and the line that comes last](./rpi-pico-rp2040/set-reset-alarm-latch-il.md) | `set-reset-alarm-latch-il` |
-| [Instruction List: calling an off-delay and an on-delay timer](./rpi-pico-rp2040/timers-on-delay-off-delay-il.md) | `timers-on-delay-off-delay-il` |
 | [Instruction List: counting pulses with a CTU](./rpi-pico-rp2040/edge-counter-pulses-il.md) | `edge-counter-pulses-il` |
-| [Instruction List: arithmetic, comparison and a jump on a rising edge](./rpi-pico-rp2040/types-arithmetic-comparison-il.md) | `types-arithmetic-comparison-il` |
+| [Analog scaling in Function Block Diagram: a high level alarm](./rpi-pico-rp2040/analog-scaling-fbd.md) | `analog-scaling-fbd` |
 | [Instruction List: calling a function block and reading its outputs](./rpi-pico-rp2040/function-block-call-il.md) | `function-block-call-il` |
+| [Types, arithmetic and comparison in Function Block Diagram: a total and three bands](./rpi-pico-rp2040/types-arithmetic-comparison-fbd.md) | `types-arithmetic-comparison-fbd` |
+| [Instruction List: arithmetic, comparison and a jump on a rising edge](./rpi-pico-rp2040/types-arithmetic-comparison-il.md) | `types-arithmetic-comparison-il` |
 
 {/* <<< END GENERATED: reference/learner-kits/rpi-pico-rp2040 <<< */}
 

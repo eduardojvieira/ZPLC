@@ -59,40 +59,40 @@ Cada versión publicada tiene una imagen precompilada para esta placa, `zplc-run
 
 | Lección | Id |
 | --- | --- |
-| [Arranque y parada seguros](./esp32-s3-devkitc/motor-start-stop-safe.md) | `motor-start-stop-safe` |
-| [Oscilador TON y realimentación de salida](./esp32-s3-devkitc/blinky-ladder-timer-feedback.md) | `blinky-ladder-timer-feedback` |
-| [Flancos y contador de pulsos](./esp32-s3-devkitc/edge-counter-pulses.md) | `edge-counter-pulses` |
+| [Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión](./esp32-s3-devkitc/timers-on-delay-off-delay.md) | `timers-on-delay-off-delay` |
 | [Ciclo de escaneo y memoria de un ciclo](./esp32-s3-devkitc/scan-cycle-one-scan-memory.md) | `scan-cycle-one-scan-memory` |
 | [Lógica booleana: un mando a dos manos con protección](./esp32-s3-devkitc/boolean-logic-two-hand-guard.md) | `boolean-logic-two-hand-guard` |
-| [Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión](./esp32-s3-devkitc/timers-on-delay-off-delay.md) | `timers-on-delay-off-delay` |
-| [Escriba un parpadeador en texto estructurado](./esp32-s3-devkitc/blink-structured-text.md) | `blink-structured-text` |
-| [Retener una alarma: set y reset, y cuál tiene prioridad](./esp32-s3-devkitc/set-reset-alarm-latch.md) | `set-reset-alarm-latch` |
 | [Autorretención en diagrama de escalera: un motor que se mantiene encendido](./esp32-s3-devkitc/seal-in-ladder.md) | `seal-in-ladder` |
-| [Contadores en diagrama de bloques de función: contar piezas hasta completar un lote](./esp32-s3-devkitc/counter-batch-fbd.md) | `counter-batch-fbd` |
-| [Tipos, aritmética y comparación: un total y tres bandas](./esp32-s3-devkitc/types-arithmetic-comparison.md) | `types-arithmetic-comparison` |
-| [Escalado analógico: de cuentas en bruto a un porcentaje](./esp32-s3-devkitc/analog-scaling-integer.md) | `analog-scaling-integer` |
+| [Flancos y contador de pulsos](./esp32-s3-devkitc/edge-counter-pulses.md) | `edge-counter-pulses` |
 | [Bloques de función: un biestable, dos bombas](./esp32-s3-devkitc/function-block-pump-pair.md) | `function-block-pump-pair` |
-| [Estructuras y arreglos: un panel de tres llamadas](./esp32-s3-devkitc/structures-arrays-call-panel.md) | `structures-arrays-call-panel` |
-| [Una secuencia en diagrama funcional secuencial: llenar y luego mezclar](./esp32-s3-devkitc/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` |
 | [Lista de instrucciones: el resultado actual y el orden de las instrucciones](./esp32-s3-devkitc/instruction-list-door-alarm.md) | `instruction-list-door-alarm` |
 | [Una lógica en cinco lenguajes: un portón que se mantiene abierto](./esp32-s3-devkitc/one-logic-five-languages.md) | `one-logic-five-languages` |
-| [Escalado analógico en diagrama de bloques de función: una alarma de nivel alto](./esp32-s3-devkitc/analog-scaling-fbd.md) | `analog-scaling-fbd` |
 | [Enclavamientos en diagrama de escalera: un motor con inversión de giro](./esp32-s3-devkitc/interlock-reversing-ladder.md) | `interlock-reversing-ladder` |
-| [Su propio bloque de función en diagrama de bloques de función: dos válvulas, un bloque](./esp32-s3-devkitc/function-block-valves-fbd.md) | `function-block-valves-fbd` |
+| [Estructuras y arreglos: un panel de tres llamadas](./esp32-s3-devkitc/structures-arrays-call-panel.md) | `structures-arrays-call-panel` |
 | [Verificar mi placa](./esp32-s3-devkitc/verify-my-board.md) | `verify-my-board` |
-| [Lógica booleana en escalera: un mando a dos manos](./esp32-s3-devkitc/boolean-logic-two-hand-guard-ladder.md) | `boolean-logic-two-hand-guard-ladder` |
-| [Enclavar una alarma en escalera: bobinas SET y RESET, y el orden de los peldaños](./esp32-s3-devkitc/set-reset-alarm-latch-ladder.md) | `set-reset-alarm-latch-ladder` |
+| [Retener una alarma: set y reset, y cuál tiene prioridad](./esp32-s3-devkitc/set-reset-alarm-latch.md) | `set-reset-alarm-latch` |
+| [Arranque y parada seguros](./esp32-s3-devkitc/motor-start-stop-safe.md) | `motor-start-stop-safe` |
+| [Contadores en diagrama de bloques de función: contar piezas hasta completar un lote](./esp32-s3-devkitc/counter-batch-fbd.md) | `counter-batch-fbd` |
 | [Retardo a la conexión y a la desconexión en escalera: temporizadores como bloques en un peldaño](./esp32-s3-devkitc/timers-on-delay-off-delay-ladder.md) | `timers-on-delay-off-delay-ladder` |
+| [Lógica booleana en escalera: un mando a dos manos](./esp32-s3-devkitc/boolean-logic-two-hand-guard-ladder.md) | `boolean-logic-two-hand-guard-ladder` |
 | [Contar pulsos en escalera: un CTU cuenta los flancos por sí mismo](./esp32-s3-devkitc/edge-counter-pulses-ladder.md) | `edge-counter-pulses-ladder` |
+| [Tipos, aritmética y comparación: un total y tres bandas](./esp32-s3-devkitc/types-arithmetic-comparison.md) | `types-arithmetic-comparison` |
+| [Una secuencia en diagrama funcional secuencial: llenar y luego mezclar](./esp32-s3-devkitc/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` |
+| [Enclavar una alarma en escalera: bobinas SET y RESET, y el orden de los peldaños](./esp32-s3-devkitc/set-reset-alarm-latch-ladder.md) | `set-reset-alarm-latch-ladder` |
 | [Diagrama de bloques de función: un mando a dos manos con protección](./esp32-s3-devkitc/boolean-logic-two-hand-guard-fbd.md) | `boolean-logic-two-hand-guard-fbd` |
 | [Temporizadores en diagrama de bloques de función: una luz con retardo a la desconexión y un filtro con retardo a la conexión](./esp32-s3-devkitc/timers-on-delay-off-delay-fbd.md) | `timers-on-delay-off-delay-fbd` |
-| [Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres bandas](./esp32-s3-devkitc/types-arithmetic-comparison-fbd.md) | `types-arithmetic-comparison-fbd` |
+| [Lista de instrucciones: llamar a un temporizador de retardo a la desconexión y a la conexión](./esp32-s3-devkitc/timers-on-delay-off-delay-il.md) | `timers-on-delay-off-delay-il` |
+| [Escalado analógico: de cuentas en bruto a un porcentaje](./esp32-s3-devkitc/analog-scaling-integer.md) | `analog-scaling-integer` |
+| [Su propio bloque de función en diagrama de bloques de función: dos válvulas, un bloque](./esp32-s3-devkitc/function-block-valves-fbd.md) | `function-block-valves-fbd` |
+| [Oscilador TON y realimentación de salida](./esp32-s3-devkitc/blinky-ladder-timer-feedback.md) | `blinky-ladder-timer-feedback` |
+| [Escriba un parpadeador en texto estructurado](./esp32-s3-devkitc/blink-structured-text.md) | `blink-structured-text` |
 | [Lista de instrucciones: el resultado actual en un mando a dos manos](./esp32-s3-devkitc/boolean-logic-two-hand-guard-il.md) | `boolean-logic-two-hand-guard-il` |
 | [Lista de instrucciones: S y R, y la línea que va al final](./esp32-s3-devkitc/set-reset-alarm-latch-il.md) | `set-reset-alarm-latch-il` |
-| [Lista de instrucciones: llamar a un temporizador de retardo a la desconexión y a la conexión](./esp32-s3-devkitc/timers-on-delay-off-delay-il.md) | `timers-on-delay-off-delay-il` |
 | [Lista de instrucciones: contar pulsos con un CTU](./esp32-s3-devkitc/edge-counter-pulses-il.md) | `edge-counter-pulses-il` |
-| [Lista de instrucciones: aritmética, comparación y un salto en un flanco ascendente](./esp32-s3-devkitc/types-arithmetic-comparison-il.md) | `types-arithmetic-comparison-il` |
+| [Escalado analógico en diagrama de bloques de función: una alarma de nivel alto](./esp32-s3-devkitc/analog-scaling-fbd.md) | `analog-scaling-fbd` |
 | [Lista de instrucciones: llamar a un bloque de función y leer sus salidas](./esp32-s3-devkitc/function-block-call-il.md) | `function-block-call-il` |
+| [Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres bandas](./esp32-s3-devkitc/types-arithmetic-comparison-fbd.md) | `types-arithmetic-comparison-fbd` |
+| [Lista de instrucciones: aritmética, comparación y un salto en un flanco ascendente](./esp32-s3-devkitc/types-arithmetic-comparison-il.md) | `types-arithmetic-comparison-il` |
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc <<< */}
 

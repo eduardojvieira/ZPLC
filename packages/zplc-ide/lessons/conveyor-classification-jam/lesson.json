@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "conveyor-classification-jam",
   "version": 2,
-  "order": 4,
+  "order": 9,
   "module": 8,
   "level": "advanced",
   "prerequisites": ["motor-plant-feedback", "tank-level-fault-reset"],
