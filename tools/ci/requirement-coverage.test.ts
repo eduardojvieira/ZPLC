@@ -519,7 +519,7 @@ describe('requirement coverage of spec 012', () => {
   it('requirements of spec 012 are indexed with their IDs', () => {
     const counts: Record<string, number> = {};
     for (const { workstream } of index012()) counts[workstream] = (counts[workstream] ?? 0) + 1;
-    expect(counts).toEqual({ PLT: 17, VIS: 13, PRT: 10, SCN: 16, LNK: 18, CRS: 13 });
+    expect(counts).toEqual({ PLT: 17, VIS: 19, PRT: 10, SCN: 16, LNK: 18, CRS: 13 });
   });
 
   it('a requirement of spec 012 with no test and no condition is reported as uncovered, and the report never fails', () => {
@@ -527,7 +527,7 @@ describe('requirement coverage of spec 012', () => {
     expect(result.exitCode).toBe(0);
     expect(text(result)).toContain('spec 012');
     expect(text(result)).toMatch(/^ {2}(PLT|VIS|PRT|SCN|LNK|CRS)-\d{3} uncovered: /m);
-    expect(text(result)).toMatch(/overall\s+\d+ \/\s+87/);
+    expect(text(result)).toMatch(/overall\s+\d+ \/\s+93/);
   });
 
   it('a test that names a requirement of spec 012 covers it', () => {
@@ -544,7 +544,7 @@ describe('requirement coverage of spec 012', () => {
     );
     const { states, overall } = coverage(index, mergeEvidence(scanned, {}), []);
     expect(states.get('PLT-001')).toBe('covered');
-    expect(overall.total).toBe(87);
+    expect(overall.total).toBe(93);
     expect(overall.covered).toBe(1);
   });
 

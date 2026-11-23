@@ -81,7 +81,7 @@ Principles P1 to P13 of spec 011 apply unchanged. This spec adds four. A require
 
 ## 4. Scope and owner decisions
 ### 4.1 Owner decisions (binding)
-Recorded from the owner's messages of 2026-11-12, quoted as written. Numbering continues from S-5 of spec 011.
+Recorded from the owner's messages of 2026-11-12, quoted as written; S-12 is of 2026-11-23. Numbering continues from S-5 of spec 011; S-10 and S-11 belong to spec 013.
 
 | ID | Decision | Owner's words |
 |---|---|---|
@@ -89,6 +89,7 @@ Recorded from the owner's messages of 2026-11-12, quoted as written. Numbering c
 | S-7 | At minimum the plant covers the exercises of the 21 scenes that ship with Factory I/O. The ideal is a very complete industrial automation course. | "como minimo deberiamos cubrir las escenas de factory i/o y lo ideal es tener un curso de automatizacion industrial muy completo" |
 | S-8 | It stays multi-platform, it connects to the simulator and to boards running the ZPLC firmware, and the 2.0 course stays compatible and well integrated. | "la idea es mantener el multiplataforma y que incluso el 3d pueda conectarse no solo con el simulador sino con placas completas corriendo el firmware zplc. todo el curso de programacion de plcs que se esta lanzando en zplc 2.0.0 tiene que ser compatible y bien integrado con la planta de simulacion." |
 | S-9 | It ships in ZPLC 2.1. | "esto sera para zplc 2.1" |
+| S-12 | The 3D view does not look like an industrial plant. Said after an independent visual check of the 21 scenes at `ffff8361`. | "Las representaciones son feas, no parecen máquinas industriales." |
 
 Earlier decisions that still bind this work: nothing is descoped (P4), no recurring cost (P5), ZPLC is the desktop application only, with no hosted web build (D-07 of spec 011), and the learner boards are the ESP32-S3-DevKitC-1 and the Raspberry Pi Pico.
 
@@ -103,6 +104,7 @@ Each decision was put to the owner with a recommended default. The owner answere
 | D-17 | Boards with plant evidence in 2.1 | (A) The two learner boards at HIL level; every other catalogued board at target-build level. (B) Every catalogued board at HIL level. | A. HIL evidence needs the board on the bench. | LNK-016, CRS-009 |
 | D-18 | Use of Open Industry Project, an MIT-licensed simulator on the same stack as option A of D-14 | (A) Study it and write ZPLC's own code. (B) Also reuse named parts or assets with attribution, decided item by item after the gate reviews their quality. (C) Depend on it as a library. | B. Not C in 2.1: its README says breaking changes can land in any update (`research.md` section 5). | Effort of PRT |
 | D-19 | The four 2.0 plants have a live model and a graded model that differ (section 2) | (A) Leave both as they are. (B) Make the live plant behave as the graded one; every scenario, hash and grade stays. (C) Grade against the live model; scenarios and hashes change. | B. No grade changes (P4, PLT-013), and what the learner sees live becomes what the check measures. | PLT-013, LNK-007 for the 2.0 plants, CRS-010 |
+| D-27 | The look of the 3D view | (A) Keep the current look: one box, cylinder or arc per part, flat colours, and photorealism out of scope. (B) Photorealistic scenes: composed, detailed geometry still generated in code, physically based materials with textures, an environment map, soft shadows and correct tone mapping and colour space; the low quality level keeps the frame-rate budget. | B. The owner's own decision of 2026-11-23, following S-12, not a recommended default: "Las escenas tienen que ser fotorrealistas. Esto revierte "Out: photorealism" del alcance VIS de la spec 012." | VIS scope, VIS-014 to VIS-019, PRT-009 |
 
 ### 4.3 Design defaults
 These were chosen while writing and are not owner decisions.
@@ -195,9 +197,9 @@ A scene runs as a headless, deterministic simulation with physical time and type
 The learner sees and operates the plant in three dimensions at interactive frame rates on an ordinary laptop, and loses nothing essential without it.
 
 #### Scope
-- **In:** the 3D panel, cameras, quality settings, state cues, operating panel parts by hand, the generated schematic, the text equivalent, fallbacks.
+- **In:** the 3D panel, cameras, quality settings, state cues, operating panel parts by hand, the generated schematic, the text equivalent, fallbacks, a photorealistic look (D-27).
 - **Kept:** the schematic drawings of the four 2.0 plants.
-- **Out:** photorealism, virtual reality, video export.
+- **Out:** virtual reality, video export. Photorealism was out until the owner reversed it on 2026-11-23 (S-12, D-27).
 
 #### Requirements
 - **VIS-001** Studio MUST show the running scene in a 3D panel in a plant document of the editor area (decision D-20 of spec 013). The panel MUST be maximisable and SHOULD be movable to a window of its own for a second monitor.
@@ -214,11 +216,20 @@ The learner sees and operates the plant in three dimensions at interactive frame
 - **VIS-011** All text of the view MUST exist in English and Spanish (LRN-029), and its controls MUST come from the Studio component kit (UX-002).
 - **VIS-012** The Electron security posture MUST NOT weaken: the sandboxed renderer and the existing content security policy stay as they are (constitution rule 6). The view MUST NOT load a remote asset; every asset is bundled.
 - **VIS-013** The feature MUST add no more than 50 MB to each installer (design default, confirmed at the gate), and every binary asset MUST have its licence recorded (P17).
+- **VIS-014** A person MUST recognise each part of the minimum catalogue as the industrial device it represents without reading its label (D-27). Geometry stays generated in code (PRT-009) but is composed and detailed: a belt has a frame, legs, rollers and a band; a photoelectric sensor has a bracket and a beam; a push button stands on a pedestal; an emergency stop is red on yellow; a stack light stands on a pole; a tank has its pipes; a manipulator has its columns; edges are bevelled. Each part and each item is drawn once. *Measure:* the owner approves each part, in each of its states, on the catalogue sheet the capture script produces; a part the owner has not approved is not done. In a real window, no two meshes of a reference scene have the same pose and size.
+- **VIS-015** At the medium and high quality levels the view MUST look physically based: materials with base colour, normal, roughness and metalness maps, an environment map, soft shadows, a filmic tone mapping and output in the sRGB colour space. The low level MUST use no texture and no environment map, so that it meets VIS-004 and VIS-005 on integrated graphics. High contrast stays flat, with outlines (VIS-009). *Measure:* in a real window, a check reads the renderer state per level (tone mapping, output colour space, shadow type, the maps of each material, the environment map); the bench records frames per second per level on the largest reference scene.
+- **VIS-016** Each state VIS-003 names MUST change the rendered frame in the region of its part: a sensor that detects and a clear one (the beam is drawn and changes), a running belt and a stopped one (the band visibly moves; with reduced motion a still direction mark replaces the motion), a pressed and a released push button or emergency stop (the head travels), an actuator's position, a lamp on and off. Each state keeps a cue other than colour (VIS-003). *Measure:* for each pair, two frames rendered in a real window differ in at least 1% of the pixels of the part's projected box (design default), in each display mode; a journey hovers and focuses a part and reads its signal name.
+- **VIS-017** The initial view of every scene MUST show the whole scene, every part and every item at rest, at any panel size, and a "Fit scene" command MUST refit the view at any time from the current viewing direction. The fit is computed by the view; scene files and their camera presets do not change. *Measure:* in a real window, for each reference scene at 480×640, 720×800, 1280×720 and 1920×1080, the projected box corners of every part and item lie inside the frame.
+- **VIS-018** An item MUST be drawn in the colour its lesson and scene name: a "red" item is red, a "blue" item is blue, an item with no named colour differs from every named colour, and a base or a lid has a colour of its own, not the colour of the conveyor. Part colours MUST NOT be flattened into one palette colour. In high contrast, items keep the outlines of VIS-009 and a cue other than colour. *Measure:* a test lists the colour words of every lesson and scene; in frames rendered in a real window in the light and dark modes, the sampled hue of each named item lies within 25° of its named hue (lightness for white, grey and black, design default), and the item with no named colour differs from each of them.
+- **VIS-019** Every generated asset MUST have a provenance record kept next to it: the tool, the model, the prompt, the date and the post-processing. Prompts are generic: no product names, brands or logos (P17, SCN-003) and no repository or personal data. A bundled texture is seamless, at most 2048 pixels on a side, and its real file format matches its extension; its normal and roughness maps are derived by a script of the repository that reproduces them exactly. Concept images are not bundled. *Measure:* a CI guard checks each bundled texture for its record and those properties and derives its maps again; the installer growth the textures cause is reported against VIS-013.
 
 #### Verification
 - A frame-rate benchmark is recorded per reference machine and quality level (VIS-004, VIS-005).
 - Journeys cover a forced context loss, a machine with no WebGL 2, keyboard-only operation and each display mode (VIS-006, VIS-002, VIS-009, VIS-010).
 - The content security policy test of 2.0 passes unchanged (VIS-012).
+- Checks on frames rendered in a real window (the plant bench or a journey) cover VIS-014 (no two meshes coincide), VIS-016, VIS-017 and VIS-018. A unit test with the fake three.js does not count as evidence of what is drawn.
+- A capture script regenerates the 21 scenes and a catalogue sheet with each part in each state, in the three display modes and the three quality levels (VIS-014, VIS-015).
+- The bench records frames per second per quality level on the largest reference scene (VIS-004, VIS-015).
 
 #### Risks and dependencies
 - A Windows virtual machine without a GPU proves the fallback only. The Windows frame-rate evidence needs a machine with a GPU, which is not named yet.
@@ -439,6 +450,7 @@ Each milestone ships its scenes together with their lessons and ends in a state 
 | S-8: simulator and boards | LNK-004, LNK-005, LNK-007 to LNK-018 |
 | S-8: the 2.0 course stays compatible and integrated | PLT-013, CRS-002 to CRS-004, CRS-010 |
 | S-9: ships in 2.1 | Sections 6 and 7 |
+| S-12, D-27: photorealistic scenes | VIS-014 to VIS-019, VIS-003, VIS-009, VIS-013, PRT-009 |
 
 ### 8.2 Requirements of spec 011 that this spec extends
 | Spec 011 | Says | Extended by |
