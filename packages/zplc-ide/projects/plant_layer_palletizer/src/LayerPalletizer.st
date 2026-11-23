@@ -39,6 +39,8 @@ VAR
     DownT     : TON;
     HoldT     : TON;
     ReleaseT  : TON;
+    JogMs     : ARRAY[0..2] OF INT;  (* per layer: the timed jog down from YMax, in ms; slot 0 is unused, layer 0 goes to YMin *)
+    i         : INT;
     DownMs    : TIME;
 END_VAR
 
@@ -60,12 +62,10 @@ IF Step = 2 THEN
     END_IF;
 END_IF;
 
-(* the layer height: the head comes down from YMax by a timed jog, one box height lower per layer.
-   The first layer is set down at YMin, so it needs no jog. *)
-IF Layer = 1 THEN
-    DownMs := T#580ms;
-ELSE
-    DownMs := T#440ms;
+(* the layer height: the head comes down from YMax by a timed jog, one box height (140 ms) less per layer.
+   The first layer is set down at YMin, so its slot is never used. Layer is 0 to 2 while a layer is being set down. *)
+IF Layer < 3 THEN
+    DownMs := INT_TO_TIME(JogMs[Layer]);
 END_IF;
 
 (* every timer runs only in its own step, so each step starts it from zero *)
@@ -80,6 +80,9 @@ ReleaseT(IN := Step = 12 AND NOT Gripped, PT := T#800ms);
 CASE Step OF
     0:  (* wait for Start *)
         IF Start THEN
+            FOR i := 1 TO 2 DO
+                JogMs[i] := 720 - 140 * i;
+            END_FOR;
             Layer := 0;
             Step := 1;
         END_IF;

@@ -5,25 +5,25 @@
   "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
   "objectives": [
     "Build a layer by counting pairs of boxes, and square it before the clamp takes it.",
-    "Set each layer at its own height, one box height higher than the one below."
+    "Keep the jog of each layer in an array and fill it with a FOR loop, so each layer sets down one box height higher than the one below."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/LayerPalletizer.st, repeat three times: load two pairs of boxes (Emit1 and Emit2 together make a pair, EyeIn counts them), wait for LayerReady, square, retract, take the layer with the clamp, carry it to XMax, lower it by a height that depends on Layer, release and return.",
-      "checkpoint": "Layer counts the finished layers and chooses the lowering of each one; the same states run for every layer."
+      "body": "In src/LayerPalletizer.st, keep a CASE on Step as the sequence and repeat it three times: load two pairs of boxes (Emit1 and Emit2 together make a pair, EyeIn counts them), wait for LayerReady, square, retract, take the layer with the clamp, carry it to XMax, lower it, release and return. The lowering of each layer lives in the array JogMs: a FOR loop fills it on Start, and JogMs[Layer] says how long the head comes down from YMax.",
+      "checkpoint": "JogMs holds one jog per layer, a FOR loop fills it, Layer indexes it, and the CASE runs the same steps for every layer."
     },
     {
       "key": "predict",
       "title": "Predict",
-      "body": "Before running, follow the head: it starts at its lowest and rises first, the first layer goes down to YMin, and each later layer stops one box height higher than the previous one.",
+      "body": "Before running, follow the head: it starts at its lowest and rises first, the first layer goes down to YMin, and each later layer comes down for the jog JogMs[Layer], less than the layer below by one box height, so it stops one box height higher.",
       "checkpoint": "The pusher is retracted before the head moves; the clamp opens only over the pallet; Green lights after the third layer."
     },
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter drives no output, so the head never rises and no box arrives; load, square, carry and set three layers of four boxes on the pallet and light Green at the end.",
+      "body": "Correct this starter omission, save it, then run: The starter declares the array JogMs but fills nothing and drives no output, so the head never rises and no box arrives; fill JogMs with a FOR loop, then load, square, carry and set three layers of four boxes on the pallet and light Green at the end.",
       "checkpoint": "The visible scenario must pass with saved host evidence."
     },
     {
@@ -41,21 +41,21 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "A single loop of states handles every layer because Layer changes the one thing that differs: the lowering. The scenario proves that the clamp placed items, that boxes rest on pallet 0, that no box was dropped and that Green is on at the end. The facts do not count three layers of four exactly, and the jog times are timed, not measured.",
+      "body": "A single sequence handles every layer because Layer picks the one thing that differs, the jog, from an array that one FOR loop filled. The scenario proves that the clamp placed items, that boxes rest on pallet 0, that no box was dropped and that Green is on at the end. The facts do not count three layers of four exactly, and the jog times are timed, not measured.",
       "checkpoint": "It does not establish physical gripper timing, axis speed, hardware timing, HIL, or certification."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Keep one counter for the pairs sent and one for the pairs seen at EyeIn, so the belt carries only two pairs; Layer says which layer is next and drives the lowering."
+      "text": "Keep one counter for the pairs sent and one for the pairs seen at EyeIn, so the belt carries only two pairs; Layer says which layer is next and is the index into JogMs."
     },
     {
       "level": 2,
-      "text": "Lower the first layer to YMin; for the others use a timed jog from YMax chosen by Layer, found by trial in the trace (the second layer needs a longer jog than the third), so each layer stops one box height higher than the previous."
+      "text": "Declare JogMs : ARRAY[0..2] OF INT and an INT index i. Slot 0 is not used, because the first layer goes down to YMin. On Start, FOR i := 1 TO 2 DO JogMs[i] := 720 - 140 * i; END_FOR; gives the jogs 580 and 440, so each layer stops one box height higher than the previous. While Layer is below 3, use INT_TO_TIME(JogMs[Layer]) as the preset of the timer that runs while the head comes down onto the pallet."
     }
   ],
   "faultCases": [
-    "The starter drives no output, so the head never rises and no box arrives; load, square, carry and set three layers of four boxes on the pallet and light Green at the end."
+    "The starter declares the array JogMs but fills nothing and drives no output, so the head never rises and no box arrives; fill JogMs with a FOR loop, then load, square, carry and set three layers of four boxes on the pallet and light Green at the end."
   ]
 }
