@@ -81,7 +81,7 @@ Principles P1 to P13 of spec 011 apply unchanged. This spec adds four. A require
 
 ## 4. Scope and owner decisions
 ### 4.1 Owner decisions (binding)
-Recorded from the owner's messages of 2026-11-12, quoted as written; S-12 is of 2026-11-23. Numbering continues from S-5 of spec 011; S-10 and S-11 belong to spec 013.
+Recorded from the owner's messages of 2026-11-12, quoted as written; S-12 and S-13 are of 2026-11-23. Numbering continues from S-5 of spec 011; S-10 and S-11 belong to spec 013.
 
 | ID | Decision | Owner's words |
 |---|---|---|
@@ -90,6 +90,7 @@ Recorded from the owner's messages of 2026-11-12, quoted as written; S-12 is of 
 | S-8 | It stays multi-platform, it connects to the simulator and to boards running the ZPLC firmware, and the 2.0 course stays compatible and well integrated. | "la idea es mantener el multiplataforma y que incluso el 3d pueda conectarse no solo con el simulador sino con placas completas corriendo el firmware zplc. todo el curso de programacion de plcs que se esta lanzando en zplc 2.0.0 tiene que ser compatible y bien integrado con la planta de simulacion." |
 | S-9 | It ships in ZPLC 2.1. | "esto sera para zplc 2.1" |
 | S-12 | The 3D view does not look like an industrial plant. Said after an independent visual check of the 21 scenes at `ffff8361`. | "Las representaciones son feas, no parecen máquinas industriales." |
+| S-13 | Every lesson, of programming and of the plant, is very didactic, and the lessons together serve as complete courses. Decided after an independent review of the 111 lesson packages at `ffff8361`. It applies to the 2.0 lessons as well as to the course of this spec; their scenarios, hashes and lesson ids do not change (PLT-013, CRS-010). | "Las lecciones, las de programación y las de planta, tienen que ser muy didácticas y servir como cursos completos." |
 
 Earlier decisions that still bind this work: nothing is descoped (P4), no recurring cost (P5), ZPLC is the desktop application only, with no hosted web build (D-07 of spec 011), and the learner boards are the ESP32-S3-DevKitC-1 and the Raspberry Pi Pico.
 
@@ -451,6 +452,7 @@ Each milestone ships its scenes together with their lessons and ends in a state 
 | S-8: the 2.0 course stays compatible and integrated | PLT-013, CRS-002 to CRS-004, CRS-010 |
 | S-9: ships in 2.1 | Sections 6 and 7 |
 | S-12, D-27: photorealistic scenes | VIS-014 to VIS-019, VIS-003, VIS-009, VIS-013, PRT-009 |
+| S-13: very didactic lessons that serve as complete courses | CRS-001 (the outline is amended), CRS-002, CRS-007, CRS-011; the didactic standard is added as requirements in the amendment of step 2 |
 
 ### 8.2 Requirements of spec 011 that this spec extends
 | Spec 011 | Says | Extended by |

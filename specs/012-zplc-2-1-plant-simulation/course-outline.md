@@ -1,6 +1,7 @@
 # Course outline: ZPLC 2.1 industrial automation course
 
 **Status:** Approved by the owner on 2026-11-13 (CRS-001), with A2 decided the same day (sibling packages).
+**Amended:** 2026-11-23 by the owner's decision S-13 (spec section 4.1): every lesson, of programming and of the plant, is very didactic and the lessons together serve as complete courses. In the full course an explanation comes before the practice that uses it; the didactic standard, the path "Structured Text from zero" and the new lessons are added by the amendment that follows, which the owner approves before modules are rewritten. Lesson ids, scenarios and hashes do not change.
 
 ## How to review this
 
