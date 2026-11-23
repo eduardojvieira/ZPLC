@@ -60,7 +60,7 @@ With `--json` (and in the MCP tools `tests_run` and `scenario_run`) the result h
 | Field | Meaning |
 | --- | --- |
 | `index` | The position of the expectation in the `expectations` list of the scenario file, counted from 0. |
-| `checks` | The signals of the condition of the expectation, at most 8. Each one has `signal`, `expected` (the value the scenario asks for) and `observed` (the value in the recorded sample at `atMs`; absent when the signal is not in the trace). |
+| `checks` | The signals of the condition of the expectation, at most 8. Each one has `signal`, `expected` (the value the scenario asks for: `true` or `false`, or for a plant fact a number or a `{ min, max }` range) and `observed` (the value in the recorded sample at `atMs`, a boolean or for a plant fact a number; absent when the signal is not in the trace). |
 
 {/* <<< END GENERATED: reference/cli <<< */}
 

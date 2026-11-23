@@ -70,7 +70,7 @@ Con `--json` (y en las herramientas MCP `tests_run` y `scenario_run`) el resulta
 | Campo | Significado |
 | --- | --- |
 | `index` | La posición de la expectativa en la lista `expectations` del archivo del escenario, contada desde 0. |
-| `checks` | Las señales de la condición de la expectativa, como máximo 8. Cada una tiene `signal`, `expected` (el valor que el escenario pide) y `observed` (el valor de la muestra registrada en `atMs`; ausente cuando la señal no está en la traza). |
+| `checks` | Las señales de la condición de la expectativa, como máximo 8. Cada una tiene `signal`, `expected` (el valor que el escenario pide: `true` o `false`, o para un hecho de la planta un número o un rango `{ min, max }`) y `observed` (el valor de la muestra registrada en `atMs`, un booleano o para un hecho de la planta un número; ausente cuando la señal no está en la traza). |
 
 {/* <<< END GENERATED: reference/mcp <<< */}
 

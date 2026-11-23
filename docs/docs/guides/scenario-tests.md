@@ -84,6 +84,7 @@ It runs every scenario of the project headless, prints `test passed` or the fail
 - **State what must never happen** with `NEVER`. For two outputs that must not be on together, assert it. The **Interlocks** tab of ZPLC lists each pair you declared under `safety.incompatibleOutputs` as covered or not, from your `NEVER` expectations.
 - **Check an edge** with `RISING` and `FALLING` when the moment matters more than the level.
 - **Use a plant model** (`motor-v1`, `conveyor-v1`, `tank-v1`, `pedestrian-v1`) when the program needs feedback from the process. The model drives the program's inputs from its outputs, and it requires `tickMs` 10.
+- **Count in a plant scene.** A scenario that runs a plant scene may state a number for a plant fact: an exact whole number for a count (`"fact:delivered:Bin": 5`), or an inclusive range for a measure (`"fact:level:Tank": { "min": 0.4, "max": 0.6 }`, either bound alone is allowed). A number on a measure, a range on a count, and a number on a program signal or a true/false fact are refused with a message that names the line. Every other condition stays `true` or `false`.
 - **Keep scenarios short.** A scenario holds at most 256 events and 256 expectations, and the files of a project are bounded. The limits are in the reference.
 
 ## What is verified, and what is not

@@ -1,6 +1,6 @@
 import { isErrorCode } from '@zplc/compiler';
 import { isSourceElementId } from '../models/sourceElements';
-import type { ScenarioKind } from '../test-engine';
+import type { FactExpect, ScenarioKind } from '../test-engine';
 import type { CanonicalWorkspaceBuildEvidence, WorkspaceTestArtifact } from '../store/buildEvidence';
 import { t, type MessageKey } from '../i18n';
 
@@ -36,7 +36,7 @@ export interface WorkspaceTestPreview {
       passed: boolean;
       atMs?: number;
       index?: number;
-      checks?: Array<{ signal: string; expected: boolean; observed?: boolean }>;
+      checks?: Array<{ signal: string; expected: boolean | FactExpect; observed?: boolean | number }>;
     }>;
     samples: Array<{
       atMs: number;
@@ -579,6 +579,17 @@ const scenarioKind = (value: unknown): value is ScenarioKind =>
   value === 'RISING' ||
   value === 'FALLING';
 
+/** A boolean, a finite number, or a `{ min?, max? }` range of finite numbers with at least one bound (SCN-005). */
+function validExpected(value: unknown): boolean {
+  if (typeof value === 'boolean' || (typeof value === 'number' && Number.isFinite(value))) return true;
+  const range = record(value);
+  return (
+    range !== null &&
+    Object.keys(range).length > 0 &&
+    Object.entries(range).every(([key, bound]) => (key === 'min' || key === 'max') && typeof bound === 'number' && Number.isFinite(bound))
+  );
+}
+
 /** `{}` for an assertion without detail, the detail of a failed one, `null` when it is malformed (only a failed assertion has any). */
 function failureDetail(
   assertion: Record<string, unknown>,
@@ -593,11 +604,15 @@ function failureDetail(
       !check ||
       !onlyKeys(check, check.observed === undefined ? ['signal', 'expected'] : ['signal', 'expected', 'observed']) ||
       typeof check.signal !== 'string' ||
-      typeof check.expected !== 'boolean' ||
-      (check.observed !== undefined && typeof check.observed !== 'boolean')
+      !validExpected(check.expected) ||
+      (check.observed !== undefined && typeof check.observed !== 'boolean' && !Number.isFinite(check.observed))
     )
       return null;
-    valid.push({ signal: check.signal, expected: check.expected, ...(check.observed === undefined ? {} : { observed: check.observed }) });
+    valid.push({
+      signal: check.signal,
+      expected: check.expected as boolean | FactExpect,
+      ...(check.observed === undefined ? {} : { observed: check.observed as boolean | number }),
+    });
   }
   return { index: assertion.index as number, checks: valid };
 }

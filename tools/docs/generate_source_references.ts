@@ -478,10 +478,13 @@ function failureDetailSection(lang: Lang): string {
       {
         en:
           'The signals of the condition of the expectation, at most 8. Each one has `signal`, `expected` (the value the scenario ' +
-          'asks for) and `observed` (the value in the recorded sample at `atMs`; absent when the signal is not in the trace).',
+          'asks for: `true` or `false`, or for a plant fact a number or a `{ min, max }` range) and `observed` (the value in the ' +
+          'recorded sample at `atMs`, a boolean or for a plant fact a number; absent when the signal is not in the trace).',
         es:
           'Las señales de la condición de la expectativa, como máximo 8. Cada una tiene `signal`, `expected` (el valor que el ' +
-          'escenario pide) y `observed` (el valor de la muestra registrada en `atMs`; ausente cuando la señal no está en la traza).',
+          'escenario pide: `true` o `false`, o para un hecho de la planta un número o un rango `{ min, max }`) y `observed` (el valor ' +
+          'de la muestra registrada en `atMs`, un booleano o para un hecho de la planta un número; ausente cuando la señal no está en ' +
+          'la traza).',
       },
     ],
   ];

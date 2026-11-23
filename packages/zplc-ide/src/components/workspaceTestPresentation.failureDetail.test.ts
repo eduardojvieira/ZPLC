@@ -69,6 +69,33 @@ describe('failure detail in the presentation (TST-003)', () => {
       expect(presentWorkspaceTestResult(result('test', motor, [bad])).preview).toBeUndefined();
   });
 
+  it('SCN-005 the presentation accepts a numeric expected and a min and max expected, and rejects any other shape', () => {
+    const detail = (checks: unknown[]) => ({ ...failure, checks });
+    const good = [
+      detail([{ signal: 'fact:stored:Rack', expected: 3, observed: 2 }]),
+      detail([{ signal: 'fact:level:Tank', expected: { min: 2, max: 4 }, observed: 1.5 }]),
+      detail([{ signal: 'fact:level:Tank', expected: { min: 2 } }]),
+      detail([{ signal: 'fact:level:Tank', expected: { max: 4 }, observed: 5 }]),
+    ];
+    for (const assertion of good) {
+      const shown = presentWorkspaceTestResult(result('test', motor, [assertion])).preview?.scenarios[0]?.assertions;
+      expect(shown).toEqual([assertion] as never);
+    }
+
+    for (const bad of [
+      { signal: 'fact:level:Tank', expected: {} },
+      { signal: 'fact:level:Tank', expected: { min: '2' } },
+      { signal: 'fact:level:Tank', expected: { min: 2, extra: 1 } },
+      { signal: 'fact:level:Tank', expected: { min: Number.NaN } },
+      { signal: 'fact:level:Tank', expected: [2, 4] },
+      { signal: 'fact:level:Tank', expected: null },
+      { signal: 'fact:stored:Rack', expected: Number.POSITIVE_INFINITY },
+      { signal: 'fact:stored:Rack', expected: 3, observed: { min: 1 } },
+      { signal: 'fact:stored:Rack', expected: 3, observed: '2' },
+    ])
+      expect(presentWorkspaceTestResult(result('test', motor, [detail([bad])])).preview).toBeUndefined();
+  });
+
   it('TST-003 the lesson check accepts the same shape', () => {
     const assertions = lesson.scenario.expectations.map((expectation, index) =>
       index === 0 ? { ...failure, kind: expectation.kind } : { kind: expectation.kind, passed: true, atMs: 20 },

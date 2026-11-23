@@ -36,6 +36,23 @@ describe('the verdict (TST-003)', () => {
     expect(dom.screen.getByText('Motor.Forward: expected true, observed not recorded')).toBeTruthy();
   });
 
+  it('SCN-005 a number and a range are shown as numbers, not as true or false', () => {
+    const numeric = {
+      ...failure,
+      checks: [
+        { signal: 'fact:stored:Rack', expected: 3, observed: 2 },
+        { signal: 'fact:level:Tank', expected: { min: 2, max: 4 }, observed: 1.5 },
+        { signal: 'fact:level:Tank', expected: { min: 2 }, observed: 1.5 },
+        { signal: 'fact:spilledL:Tank', expected: { max: 4 } },
+      ],
+    };
+    dom.render(<TestVerdict sentence="0 of 1 tests passed" ok={false} failures={[numeric]} boundary={null} />);
+    expect(dom.screen.getByText('fact:stored:Rack: expected 3, observed 2')).toBeTruthy();
+    expect(dom.screen.getByText('fact:level:Tank: expected [2, 4], observed 1.5')).toBeTruthy();
+    expect(dom.screen.getByText('fact:level:Tank: expected ≥ 2, observed 1.5')).toBeTruthy();
+    expect(dom.screen.getByText('fact:spilledL:Tank: expected ≤ 4, observed not recorded')).toBeTruthy();
+  });
+
   it('TST-003 the scenario step link opens the scenario file at the expectation', async () => {
     const opened: Array<[string, number | undefined]> = [];
     const traced: Array<number | undefined> = [];
