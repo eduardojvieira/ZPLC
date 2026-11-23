@@ -201,6 +201,7 @@ The learner sees and operates the plant in three dimensions at interactive frame
 
 #### Requirements
 - **VIS-001** Studio MUST show the running scene in a 3D panel in a plant document of the editor area (decision D-20 of spec 013). The panel MUST be maximisable and SHOULD be movable to a window of its own for a second monitor.
+  *Not delivered in 2.1.0 (owner, 2026-11-23; open question 4 of plan M7, option B):* the window of its own moves to 2.1.x. Reason: it is the only part of M7 that adds an Electron window and its IPC surface (`IDE/electron/`), which needs its own security review and verifier; the plant document and its maximised view are delivered, and the SHOULD is recorded as open.
 - **VIS-002** The camera MUST orbit, pan and zoom by mouse and by keyboard, and each scene MUST offer named camera presets.
 - **VIS-003** The view MUST show the state that matters for control: sensor beams and whether they detect, actuator state, and the signal name of a part on hover and on focus. It MUST use the signal vocabulary of UX-009, with a cue other than colour for every state.
 - **VIS-004** On each reference machine at 1920×1080, the largest reference scene MUST render at 60 frames per second typically and never below 30 (design default, confirmed at the gate and published as evidence, P6).
@@ -300,6 +301,7 @@ Names are working names (design default). The last column records which scene of
 - **SCN-003** Layouts, names, text and assets MUST be original (P17). A reference scene answers a teaching goal; it is not a copy of another product's scene.
 - **SCN-004** Each reference scene MUST have a deterministic scenario that its reference program passes and an empty program fails, run in CI.
 - **SCN-005** A scenario MUST be able to script panel inputs, item emission and fault actions at virtual times, and to assert on plant facts with the expectation kinds that exist today.
+  *Decision (owner, 2026-11-23; open question 4 of plan M5, Task N10):* an expectation on a `fact:` name MAY state a number: an exact value for an integer fact, an inclusive `{ "min": …, "max": … }` range for a real fact. Every other expectation stays boolean, and an existing scenario reads and grades byte for byte as before.
 - **SCN-006** A scene MUST be saved with its project. A scene written by an older Studio MUST open in a newer one or fail with a located message that names the version.
 - **SCN-007** Each scene MUST declare the shortest sensor pulse it can produce at catalogue speeds, for LNK-014.
 - **SCN-008** The editor MUST place, move, rotate, duplicate and delete parts with snapping and a grid, while the plant is stopped. (Under decision D-15, SCN-008 to SCN-016 apply to learners as well as to scene authors.)

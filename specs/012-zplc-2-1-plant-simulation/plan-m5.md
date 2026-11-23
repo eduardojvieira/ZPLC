@@ -322,6 +322,7 @@ git commit -m "feat(plant): stackable crate, crate emitter and the loaded-in-cra
 ---
 
 ### Task N10: Numeric and ranged conditions on plant facts (CONDITIONAL on open question 4)
+**Owner, 2026-11-23: yes.** Exact value only for an integer fact, an inclusive `{ min, max }` range for a real fact (spec 012 SCN-005). The validators of spec 013 Task T1 (the failure detail of a failed assertion, `checks[].expected`) must accept a numeric expected value and a `{ min, max }` range.
 **Spec:** SCN-005, CRS-005. **Lane A. Wave 1. KEEP. Do not start until the owner answers question 4.** Persisted-format change: high risk, independent verifier required.
 
 This is **Task N10 of `plan-m2.md` carried forward unchanged** (as plans M3 and M4 carried it): it was never started, and `fd -t f . IDE/src/test-engine` shows no `sceneCompare.test.ts` (read on 2026-11-13). If it was already merged when M5 starts, skip this task and tighten scenes 7, 10, 11 and 16 (and the M3 and M4 scenes, in follow-up commits) with it. The allowed surfaces, steps, tests and commit message are those of plan M4's Task N10:

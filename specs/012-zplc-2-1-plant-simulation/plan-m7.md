@@ -314,6 +314,7 @@ Read `IDE/scripts/journeys/plantJourneys.ts:121` (the Q2 journey "A scene is bui
 ---
 
 ### Task W1: The plant in a window of its own (CONDITIONAL on Open question 4)
+**Status: not delivered in 2.1.0.** Owner, 2026-11-23: option B, the window moves to 2.1.x (spec 012 VIS-001 records the reason).
 **Spec:** VIS-001 (SHOULD), spec 013 PLS-001. **Lane W. Wave 1 start, last to merge. KEEP. High risk (item 2).**
 
 **Allowed edit surfaces**
