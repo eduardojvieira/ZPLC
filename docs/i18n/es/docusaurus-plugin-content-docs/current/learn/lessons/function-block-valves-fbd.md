@@ -39,7 +39,7 @@ Edite un diagrama de bloques de función para que una segunda instancia del bloq
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el cableado de las válvulas, su tiempo de recorrido, la supervisión del suministro de aire, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el cableado de las válvulas, su tiempo de recorrido ni la supervisión del suministro de aire.
 
 ## Cableado
 

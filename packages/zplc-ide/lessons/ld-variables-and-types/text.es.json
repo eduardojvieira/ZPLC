@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Variables, tipos y direcciones en escalera: bits de memoria, valores TIME y el mapa de E/S",
   "summary": "Guarde una solicitud en un bit de memoria, almacene una duración en una variable TIME y vea qué variables están conectadas a la máquina mediante el mapa de E/S.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el cableado, los niveles eléctricos ni los tiempos de entradas y salidas reales, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el cableado, los niveles eléctricos ni los tiempos de entradas y salidas reales.",
   "objectives": [
     "Distinga un bit de memoria de una variable conectada a una entrada o salida física mediante su dirección.",
     "Elija el tipo que corresponde a un valor (BOOL, INT, REAL, TIME) y fije el valor de una variable TIME."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial deja WarnTime en T#500ms y no tiene bobina para Motor: Motor está en OFF a los {{t:100}} ms en lugar de ON; asigne a WarnTime el valor T#50ms en la tabla de variables y conecte Motor a WarnTimer.Q. En el editor de escalera, abra la tabla de variables del programa para cambiar el valor de WarnTime, y agregue un peldaño con un contacto sobre WarnTimer.Q y una bobina sobre Motor.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

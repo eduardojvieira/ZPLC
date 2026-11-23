@@ -39,7 +39,7 @@ Construya un parpadeador con un temporizador TON y una variable de memoria, y ha
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no son evidencia de una lámpara física, de los tiempos del hardware, de HIL ni de certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.
 
 ## Cableado
 

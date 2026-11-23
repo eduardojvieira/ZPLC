@@ -39,7 +39,7 @@ Edite un peldaño en diagrama de escalera para que una pulsación de Start mante
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran una función de parada segura, el cableado, los tiempos del hardware, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra una función de parada segura ni el cableado.
 
 ## Cableado
 

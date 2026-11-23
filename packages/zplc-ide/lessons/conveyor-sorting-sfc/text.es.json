@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "title": "Clasificación en un transportador como diagrama",
-  "summary": "Describa un transportador clasificador como un diagrama de pasos de detenido, en marcha y falla: clasifique las piezas metálicas en marcha y bloquee la banda cuando la planta informe un atasco.",
-  "scope": "Las pruebas aportan solo evidencia determinista del host con el runtime nativo POSIX, que no es evidencia de transportador físico, liberación de atascos, hardware, HIL ni certificación.",
+  "summary": "Describa un transportador clasificador como un diagrama de pasos de detenido, en marcha y falla: clasifique las piezas metálicas en marcha y bloquee la cinta cuando la planta informe un atasco.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra un transportador físico ni la liberación de atascos.",
   "objectives": [
     "Describa un transportador con tres pasos, con la memoria de clasificación en una variable local que actualiza la acción de marcha.",
     "Pase de RUNNING a FAULT con el sensor de atasco, y salga de FAULT solo cuando se pulse Reset y el atasco haya desaparecido."
@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objetivo",
       "body": "En src/Conveyor.sfc.json están dibujados los pasos STOPPED, RUNNING y FAULT, sus acciones y las transiciones de STOPPED a RUNNING (Start), de RUNNING a STOPPED (Stop) y de FAULT a STOPPED (Reset AND NOT JamDetected); los sensores pertenecen a la planta. Agregue la transición que falta de RUNNING a FAULT con JamDetected y prioridad 1, de modo que un atasco gane sobre Stop.",
-      "checkpoint": "La banda funciona tras Start, el desviador actúa una vez para la pieza metálica, y un atasco detiene la banda y enciende FaultLamp."
+      "checkpoint": "La cinta funciona tras Start, el desviador actúa una vez para la pieza metálica, y un atasco detiene la cinta y enciende FaultLamp."
     },
     {
       "key": "predict",
@@ -23,8 +23,8 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene transición de RUNNING a FAULT, así que un atasco no cambia nada: la banda sigue en marcha y FaultLamp queda apagada; agregue una transición de RUNNING a FAULT cuya condición sea JamDetected y cuya prioridad sea 1.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene transición de RUNNING a FAULT, así que un atasco no cambia nada: la cinta sigue en marcha y FaultLamp queda apagada; agregue una transición de RUNNING a FAULT cuya condición sea JamDetected y cuya prioridad sea 1.",
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexione",
       "body": "¿Por qué el desviador actúa a los {{t:40}} ms y no cuando la pieza metálica está en el clasificador? Reemplace la memoria MetalLatched por una prueba solo del clasificador y vea qué aserción falla.",
-      "checkpoint": "El clasificador y el desviador ven la pieza en momentos distintos, así que el resultado metálico se guarda en MetalLatched hasta que la pieza llega al desviador. El escenario muestra solo la lógica; no demuestra un transportador físico, la liberación de atascos, tiempos de hardware, HIL ni certificación."
+      "checkpoint": "El clasificador y el desviador ven la pieza en momentos distintos, así que el resultado metálico se guarda en MetalLatched hasta que la pieza llega al desviador. El escenario muestra solo la lógica."
     }
   ],
   "hints": [
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial no tiene transición de RUNNING a FAULT, así que un atasco no cambia nada: la banda sigue en marcha y FaultLamp queda apagada; agregue una transición de RUNNING a FAULT cuya condición sea JamDetected y cuya prioridad sea 1."
+    "El programa inicial no tiene transición de RUNNING a FAULT, así que un atasco no cambia nada: la cinta sigue en marcha y FaultLamp queda apagada; agregue una transición de RUNNING a FAULT cuya condición sea JamDetected y cuya prioridad sea 1."
   ]
 }

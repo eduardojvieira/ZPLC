@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Boolean logic in Ladder: a two-hand guard",
   "summary": "Draw AND, NOT and exclusive-or as contacts in series and in parallel, and enable a press only with both hands on the buttons and the guard closed.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish a certified two-hand control or a safety function, wiring, hardware timing, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a two-hand safety control, any safety function or wiring.",
   "objectives": [
     "Read series contacts as AND, a normally closed contact as NOT and two parallel paths as OR.",
     "Build an exclusive-or (exactly one hand) from two parallel paths of two contacts each."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter enables the press without looking at the guard: PressEnable is ON at {{t:30}} ms although GuardClosed is FALSE; add a normally open contact on GuardClosed in series with the two hand contacts of the PressEnable rung. In the Ladder editor add a contact after RightHand in the first rung and name it GuardClosed.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

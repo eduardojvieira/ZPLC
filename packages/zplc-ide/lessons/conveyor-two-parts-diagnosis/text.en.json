@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Reproducible diagnosis: two parts, one decision",
   "summary": "Use the versioned schedule to distinguish one metal part from one non-metal part without inventing observability.",
-  "scope": "Tests provide native POSIX host runtime evidence with scenario-scheduled inputs; they are not physical sensors or parts, target timing, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Distinguish a metal part from a non-metal part with one memory that lives between two sensors.",
     "Read a scheduled input timeline and predict the outputs before running it."
@@ -30,25 +30,25 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter never latches metal for the diverter; hold the belt request after Start, latch metal at the classifier, and clear it only when the part reaches the diverter.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "In Tests, choose the saved zplc.json and run only ConveyorTwoParts.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The required scenario is named ConveyorTwoParts and contains {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Diagnose",
-      "body": "The Tests matrix proves host outputs: compare the {{t:30}} and {{t:70}} ms samples.",
+      "body": "The Tests matrix proves the outputs of the simulation: compare the {{t:30}} and {{t:70}} ms samples.",
       "checkpoint": "It does not prove or record inputs, physical parts, or the internal MetalLatched state."
     },
     {
       "key": "reflect",
       "title": "Limits",
-      "body": "Repeat the same scenario for a reproducible decision about host outputs.",
-      "checkpoint": "It does not establish physical sensors or parts, target timing, hardware, HIL, or certification."
+      "body": "Repeat the same scenario for a reproducible decision about the outputs of the simulation.",
+      "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [

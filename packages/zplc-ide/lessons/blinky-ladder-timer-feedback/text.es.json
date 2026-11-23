@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Oscilador TON y realimentación de salida",
   "summary": "Complete un parpadeador de {{t:500}} ms en diagrama de escalera, hecho con dos temporizadores TON y bobinas SET y RESET, y verifique sus tiempos de encendido y apagado con aserciones FOR y AT.",
-  "scope": "Las pruebas aportan solo evidencia del host con el runtime nativo POSIX; no son evidencia de un LED físico, de los tiempos del hardware, de HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el período eléctrico ni el brillo.",
   "objectives": [
     "Lea un oscilador de dos temporizadores en diagrama de escalera: cada temporizador cuenta durante un semiperíodo y pone en marcha al siguiente.",
     "Complételo con una bobina SET y una bobina RESET accionadas por las salidas Q de los temporizadores."
@@ -24,12 +24,12 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial tiene los dos temporizadores pero ninguna bobina, así que LED_Output queda en OFF para siempre; agregue una bobina SET accionada por OffTimer.Q y una bobina RESET accionada por OnTimer.Q, de modo que el LED esté en OFF unos {{t:500}} ms, luego en ON unos {{t:500}} ms, y se repita.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario BlinkyVisual.",
+      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario requerido se llama BlinkyVisual y contiene {{assertions}} aserciones."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexione",
       "body": "Un programa que invierte la salida en cada ciclo, parpadea al doble de velocidad o queda en ON solo el 20 % del tiempo no supera las aserciones FOR y AT.",
-      "checkpoint": "El escenario del host evalúa la forma de onda lógica, no la técnica (un semiperíodo de {{t:500}} o de {{t:510}} ms pasa); no demuestra el período eléctrico, el brillo, los tiempos del hardware, HIL ni certificación."
+      "checkpoint": "El escenario evalúa la forma de onda lógica, no la técnica (un semiperíodo de {{t:500}} o de {{t:510}} ms pasa)."
     }
   ],
   "hints": [

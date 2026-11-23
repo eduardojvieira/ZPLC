@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Equilibrar una línea de producción",
   "summary": "Divida una línea en un bloque de función por máquina y envíe piezas alternas a cada una para que ambas máquinas hagan cuatro productos.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Mover el control de una máquina a un bloque de función y usar una instancia para cada máquina.",
     "Equilibrar dos máquinas de distinta velocidad alternando las piezas entre ellas."
@@ -24,12 +24,12 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial controla solo la máquina A, escrita en línea; mueva ese control a un bloque de función, llámelo para la máquina A y para la máquina B, y encienda Green cuando ambas hayan terminado cuatro ciclos.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario balanced-production-line; observe la vista 3D mientras se ejecuta.",
+      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
       "checkpoint": "El escenario requerido se llama balanced-production-line y contiene {{assertions}} aserciones."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "La aserción EVENTUALLY prueba que ambas máquinas hicieron un producto y que ambos depósitos recibieron uno; la aserción ALWAYS prueba que ningún Start fue un disparo en falso y que nada cayó.",
-      "checkpoint": "La calificación no puede contar los productos: lee Green, que el programa enciende con su propio conteo, así que lea produced: en los hechos para el número real. No establece la temporización física de las máquinas, la temporización de hardware, HIL ni certificación."
+      "checkpoint": "La calificación no puede contar los productos: lee Green, que el programa enciende con su propio conteo, así que lea produced: en los hechos para el número real."
     }
   ],
   "hints": [

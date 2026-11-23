@@ -39,7 +39,7 @@ Measure the height of each box with a light array, keep the largest reading, and
 
 ## What the evidence covers
 
-Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the accuracy of the array or turntable speed.
 
 ## On a board
 

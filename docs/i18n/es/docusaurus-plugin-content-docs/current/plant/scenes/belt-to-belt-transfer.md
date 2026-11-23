@@ -71,8 +71,8 @@ Pasar una pieza de una máquina a otra y esperar a que quede en reposo antes de 
 
 ## Lecciones que usan esta escena
 
-- [Tomar de una banda y dejar en otra](../../learn/lessons/plant-belt-transfer.md)
-- [Tomar de una banda y dejar en otra en diagrama de escalera](../../learn/lessons/plant-belt-transfer-ladder.md)
+- [Tomar de una cinta y dejar en otra](../../learn/lessons/plant-belt-transfer.md)
+- [Tomar de una cinta y dejar en otra en diagrama de escalera](../../learn/lessons/plant-belt-transfer-ladder.md)
 
 ## Lo que no se afirma
 

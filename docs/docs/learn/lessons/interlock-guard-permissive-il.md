@@ -39,7 +39,7 @@ Add a permissive to a motor start and stop in Instruction List so that the motor
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish a safety function, guard wiring or stopping time, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a safety function, guard wiring or stopping time.
 
 ## On a board
 

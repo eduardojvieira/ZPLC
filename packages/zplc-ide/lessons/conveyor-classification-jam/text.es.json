@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Cinta de clasificación y atasco seguro",
   "summary": "Recorra la clasificación de piezas y el bloqueo seguro por atasco del ejemplo Conveyor 01.",
-  "scope": "Las pruebas aportan solo evidencia determinista del host con el runtime nativo POSIX, que no es evidencia de una cinta física, del despeje de un atasco, hardware, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Detenga la cinta y encienda FaultLamp mientras la planta informa JamDetected.",
     "Evite que Reset libere la falla mientras el atasco siga presente."
@@ -24,12 +24,12 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial no tiene el bloqueo determinista por atasco; detenga la cinta y encienda FaultLamp mientras la planta informa JamDetected, y no deje que Reset libere el bloqueo mientras el atasco continúe.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo Conveyor01; el programa inicial también incluye ConveyorJamTiming (lección 9), así que ejecutar todas las pruebas calificaría dos escenarios.",
+      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario requerido se llama Conveyor01 y contiene {{assertions}} aserciones."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexione",
       "body": "La aserción NEVER cubre DiverterCommand ON con BeltCommand OFF solo en este escenario.",
-      "checkpoint": "No demuestra una cinta física, el despeje de un atasco, los tiempos del hardware, HIL ni certificación."
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [

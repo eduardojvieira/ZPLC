@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Analog scaling: from raw counts to a percentage",
   "summary": "Scale a raw count from 0 to 1000 into a percentage with integer arithmetic, and raise a warning at 50 percent and an alarm at 80 percent.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the accuracy, noise or calibration of a real analog input, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the accuracy, noise or calibration of a real analog input.",
   "objectives": [
     "Scale a raw count to engineering units with a multiplication followed by a division, in that order.",
     "See that integer division drops the remainder, and choose an integer type wide enough for the intermediate product."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter fault, save it, then press Check: The starter divides before it multiplies, so the integer division Raw / 1000 gives 0 until Raw reaches 1000 and the percentage stays at 0; multiply by 100 first, then divide by 1000.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

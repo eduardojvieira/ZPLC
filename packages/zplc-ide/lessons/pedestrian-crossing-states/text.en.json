@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Pedestrian crossing and safe states",
   "summary": "Walk through pedestrian-crossing states with mutually consistent vehicle and pedestrian outputs.",
-  "scope": "Tests provide deterministic native POSIX host evidence only; they are not physical crossing, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Model the crossing as numbered states, each with an explicit output combination.",
     "Show WALK only while the vehicles are red."
@@ -24,12 +24,12 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter ignores the pedestrian request; after PedRequest run yellow, red clearance, WALK, and red recovery before returning to green, and show WALK only while the vehicles are red.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "In Tests, choose the saved zplc.json and run only the PedestrianCrossing scenario.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The required scenario is named PedestrianCrossing and contains {{assertions}} assertions."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The NEVER assertion covers logically incompatible outputs only in this scenario.",
-      "checkpoint": "It does not establish a physical crossing, hardware timing, HIL, or certification."
+      "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [

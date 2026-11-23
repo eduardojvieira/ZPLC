@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Escalado analógico en diagrama de bloques de función: una alarma de nivel alto",
   "summary": "Edite un diagrama de bloques de función que escala cuentas analógicas en bruto de 0 a 4095 a un nivel en porcentaje con los bloques MUL, DIV y LIMIT, y enciende HighLevel al 75 por ciento.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX, una tarea de 10 ms y un sustituto del potenciómetro; no demuestran la exactitud, el ruido ni la calibración de una entrada analógica real, el cableado, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la exactitud, el ruido, la calibración de una entrada analógica real ni el cableado.",
   "objectives": [
     "Escale cuentas analógicas en bruto a unidades de ingeniería con bloques aritméticos: multiplique por el rango de las unidades y luego divida por el rango de las cuentas.",
     "Mantenga un valor escalado dentro de su rango con un bloque LIMIT, y compare con un umbral el valor en unidades de ingeniería, no en cuentas en bruto."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial multiplica Raw por 100 pero nunca divide por 4095, así que LIMIT recorta el producto a 100 desde el primer ciclo y HighLevel se enciende a los {{t:10}} ms; inserte entre MUL y LIMIT un bloque DIV que divida el producto por 4095. Coloque un bloque DIV y una constante 4095 de tipo DINT, conecte MUL.OUT a DIV.IN1 y la constante a DIV.IN2, y luego conecte DIV.OUT a LIMIT.IN en lugar del cable que viene de MUL.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

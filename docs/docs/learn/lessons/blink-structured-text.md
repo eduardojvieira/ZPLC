@@ -39,7 +39,7 @@ Build a blinker from a TON timer and a memory variable, and make it run only whi
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they are not evidence of a physical lamp, hardware timing, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.
 
 ## Wiring
 

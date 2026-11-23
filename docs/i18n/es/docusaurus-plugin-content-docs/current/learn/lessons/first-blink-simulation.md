@@ -38,7 +38,7 @@ Haga que una lámpara simulada se encienda y se apague cada medio segundo cambia
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX, solo en su equipo; no son evidencia de una lámpara física, de los tiempos del hardware, de HIL ni de certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.
 
 ## En una placa
 

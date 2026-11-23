@@ -52,9 +52,9 @@ Arrancar un actuador con un pulsador, recordar que está en marcha y detenerlo c
 ## Lecciones que usan esta escena
 
 - [Mover una caja hasta un sensor](../../learn/lessons/plant-belt-to-sensor.md)
-- [Construir una escena de banda desde el suelo vacío](../../learn/lessons/plant-build-belt-scene.md)
+- [Construir una escena de cinta desde el suelo vacío](../../learn/lessons/plant-build-belt-scene.md)
 - [Mover una caja hasta un sensor en diagrama de escalera](../../learn/lessons/plant-belt-to-sensor-ladder.md)
-- [Construir una escena de banda desde el suelo vacío](../../learn/lessons/plant-build-belt-scene-ladder.md)
+- [Construir una escena de cinta desde el suelo vacío](../../learn/lessons/plant-build-belt-scene-ladder.md)
 
 ## Lo que no se afirma
 

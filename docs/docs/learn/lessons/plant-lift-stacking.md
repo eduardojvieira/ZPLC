@@ -39,7 +39,7 @@ Bring a crate onto a lift, feed five workpieces into it one at a time and send i
 
 ## What the evidence covers
 
-Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.
 
 ## On a board
 

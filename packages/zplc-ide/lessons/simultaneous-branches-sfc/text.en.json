@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Simultaneous branches: fill and heat together",
   "summary": "Start two branches at once, let each finish in its own time, and join them so that the mixer starts only when both are done.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish heating rates, fill volumes, mixing quality, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show heating rates, fill volumes or mixing quality.",
   "objectives": [
     "Read a simultaneous divergence as one transition that activates several steps at once, so that they run side by side.",
     "Write a convergence as one transition that leaves every step it waits for and fires only when all of them are active."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter starts both branches but has no join, so the chart waits in FILL_DONE and HEAT_DONE and the mixer never runs; add a transition to MIX with the condition TRUE that lists both FILL_DONE and HEAT_DONE in fromSteps.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

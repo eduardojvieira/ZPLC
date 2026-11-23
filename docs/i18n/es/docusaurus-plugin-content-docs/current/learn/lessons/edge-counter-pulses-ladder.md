@@ -39,7 +39,7 @@ Coloque un CTU en un peldaño para que CountReached se active en el tercer flanc
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran la exactitud de conteo de una entrada real, el cableado, los tiempos del hardware, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la exactitud de conteo de una entrada real ni el cableado.
 
 ## Cableado
 

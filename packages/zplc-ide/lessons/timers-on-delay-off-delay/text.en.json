@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Timers: an off-delay light and an on-delay filter",
   "summary": "Use a TOF timer to keep a light on after a button is released, and a TON timer to ignore a sensor blip that is too short.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish electrical debounce, sensor response, target timing, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show electrical debounce, sensor response or target timing.",
   "objectives": [
     "Keep an output on for a fixed time after its input drops, using TOF.",
     "Ignore an input that is on for less than a fixed time, using TON."

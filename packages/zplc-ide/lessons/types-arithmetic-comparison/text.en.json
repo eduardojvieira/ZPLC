@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Types, arithmetic and comparison: a total and three bands",
   "summary": "Keep a running total in an INT variable, add to it on each press, and turn it into three BOOL results with comparison operators.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the range of a real sensor or the overflow behaviour of a particular controller, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the range of a real sensor or the overflow behaviour of a particular controller.",
   "objectives": [
     "Use an INT variable for a number and a BOOL variable for a yes or no, and see that a comparison turns a number into a BOOL.",
     "Add to a number only on the rising edge of an input, so that a button held for several scans counts once."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter declares Total and the three comparisons but never changes Total, so Low stays ON for ever; add 5 to Total on each rising edge of Step and clear it while Reset is TRUE.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

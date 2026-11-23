@@ -39,7 +39,7 @@ Use the time a step has been active in a transition, so that a horn sounds for a
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish warning times required for a real gate, safety function behaviour, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show warning times required for a real gate or safety function behaviour.
 
 ## On a board
 

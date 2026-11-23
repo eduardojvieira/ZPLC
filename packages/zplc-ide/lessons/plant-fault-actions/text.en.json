@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Find the fault",
   "summary": "Diagnose a beam that sticks on while the line is sorting: compare its signal with how long a box can really break it, and stop the line before it misroutes a box.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show sensor behaviour on real hardware.",
   "objectives": [
     "Diagnose a stuck sensor from a fact the program can read, not from the sensor itself.",
     "Choose a safe reaction: stop what brings new boxes and let the boxes already moving arrive."
@@ -24,12 +24,12 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter sorts correctly but trusts BeamHigh for ever; when the beam sticks on, boxes that are not tall are sent to BinTall, so latch a fault when High stays on for three seconds and stop the line.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "In Tests, choose the saved zplc.json and run only the fault-actions scenario; watch the 3D view while it runs.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
       "checkpoint": "The required scenario is named fault-actions and contains {{assertions}} assertions."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The grade sees what the plant did: no misrouted box in any bin, the infeed off and the blade holding at the end. It does not see your Fault variable or the three seconds you chose; a limit that is too short stops the line at the first tall box and fails.",
-      "checkpoint": "This rule catches a beam stuck on. A beam stuck off, or a jam of the chain module, needs another rule; the grade does not establish sensor behaviour on real hardware, HIL, or certification."
+      "checkpoint": "This rule catches a beam stuck on. A beam stuck off, or a jam of the chain module, needs another rule."
     }
   ],
   "hints": [

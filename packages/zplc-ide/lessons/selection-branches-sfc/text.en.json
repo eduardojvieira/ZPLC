@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Selection branches: one path out of two",
   "summary": "Send a part to the small or to the large bay with two transitions that leave the same step, and let their priority decide which one fires.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish part sizing, gate timing on real equipment, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show part sizing or gate timing on real equipment.",
   "objectives": [
     "Read a selection divergence as several transitions that leave one step, of which at most one fires.",
     "Use the priority of a transition to decide which branch wins when more than one condition holds."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter has the large branch but no transition to SMALL, so a part that is not large leaves the chart in IDLE and no gate opens; add a transition from IDLE to SMALL whose condition is Start and whose priority is 2.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

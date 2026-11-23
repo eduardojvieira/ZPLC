@@ -20,8 +20,8 @@ La clasificación convierte combinaciones de sensores en rutas. Reutiliza las ha
 
 | Lección | Id | Lenguajes | minutos |
 | --- | --- | --- | --- |
-| [Enviar cada color a su banda](../lessons/plant-colour-separation.md) | `plant-colour-separation` | ST | 45 |
-| [Enviar cada color a su banda en diagrama de escalera](../lessons/plant-colour-separation-ladder.md) | `plant-colour-separation-ladder` | LD | 45 |
+| [Enviar cada color a su cinta](../lessons/plant-colour-separation.md) | `plant-colour-separation` | ST | 45 |
+| [Enviar cada color a su cinta en diagrama de escalera](../lessons/plant-colour-separation-ladder.md) | `plant-colour-separation-ladder` | LD | 45 |
 | [La misma clasificación en Lista de instrucciones](../lessons/plant-colour-separation-il.md) | `plant-colour-separation-il` | IL | 50 |
 | [Clasificar por peso](../lessons/plant-weight-sorting.md) | `plant-weight-sorting` | ST | 50 |
 | [Clasificar por peso en diagrama de escalera](../lessons/plant-weight-sorting-ladder.md) | `plant-weight-sorting-ladder` | LD | 50 |

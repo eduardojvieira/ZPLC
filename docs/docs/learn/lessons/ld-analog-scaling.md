@@ -39,7 +39,7 @@ Scale the raw counts of an analog input to a level in percent with a MUL box and
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task and blocks that stand in for the sensor; they do not establish the accuracy, noise or calibration of a real analog input, wiring, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the accuracy, noise, calibration of a real analog input or wiring.
 
 ## On a board
 

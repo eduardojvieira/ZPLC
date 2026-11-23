@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "MQTT: publish a message and receive it",
   "summary": "Join the broker of the simulation, subscribe to a topic, publish a message on it, and keep a record of the message when it comes back for a single scan.",
-  "scope": "The MQTT broker in this lesson is a loopback double that ZPLC starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real broker, cloud service or device accepts the same session, topics or quality of service, and it says nothing about network timing, HIL, or certification.",
+  "scope": "The MQTT broker in this lesson is a loopback double that ZPLC starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real broker, cloud service or device accepts the same session, topics or quality of service, and it says nothing about network timing.",
   "objectives": [
     "Tell a service block (MQTT_CONNECT, MQTT_SUBSCRIBE), which reports its state on every scan, from a request block (MQTT_PUBLISH), which sends once for each rising edge of EN.",
     "Publish only after the subscription holds, because a message sent earlier is not delivered to it.",
@@ -26,7 +26,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter joins the broker and subscribes, but it never publishes and never records what it receives, so Published and Heard stay OFF; call MQTT_PUBLISH with EN := Send AND Sub.DONE, and keep Heard ON once Sub.VALID is TRUE with the payload 'START'.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

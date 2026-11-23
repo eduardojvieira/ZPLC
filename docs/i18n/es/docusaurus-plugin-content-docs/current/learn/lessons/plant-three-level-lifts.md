@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-three-level-lifts. Do not edit. >>> */}
 
-Secuencie dos elevadores como dos cadenas que corren en paralelo y se encuentran solo en la banda de transferencia compartida.
+Secuencie dos elevadores como dos cadenas que corren en paralelo y se encuentran solo en la cinta de transferencia compartida.
 
 ## Datos
 
@@ -26,7 +26,7 @@ Secuencie dos elevadores como dos cadenas que corren en paralelo y se encuentran
 ## Objetivos
 
 - Describir cada elevador como su propia cadena de pasos que vuelve a su primer paso.
-- Arrancar ambas cadenas con una sola transición y dejar que se encuentren solo en la banda entre los elevadores.
+- Arrancar ambas cadenas con una sola transición y dejar que se encuentren solo en la cinta entre los elevadores.
 
 ## Etapas
 
@@ -39,7 +39,7 @@ Secuencie dos elevadores como dos cadenas que corren en paralelo y se encuentran
 
 ## Qué cubre la evidencia
 
-Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.
 
 ## En una placa
 

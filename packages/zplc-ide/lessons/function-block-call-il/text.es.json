@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Lista de instrucciones: llamar a un bloque de función y leer sus salidas",
   "summary": "Llame con CAL a dos instancias del mismo bloque de función, pase sus entradas por nombre y lea cada salida con LD Instancia.Salida.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el comportamiento de una bomba, la corriente de arranque ni ningún requisito de una máquina real, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el comportamiento de una bomba, la corriente de arranque ni ningún requisito de una máquina real.",
   "objectives": [
     "Llame a una instancia de bloque de función con CAL, pasando sus entradas por nombre, y lea su salida con LD Instancia.Salida.",
     "Vea que dos instancias del mismo bloque de función guardan memorias separadas."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial llama a PumpA pero nunca llama a PumpB, así que RunB nunca sube y queda en OFF a los {{t:30}} ms; agregue CAL PumpB(Set := StartB, Reset := StopB), y luego LD PumpB.Q y ST RunB.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

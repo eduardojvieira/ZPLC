@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Flancos en escalera: contactos P y N y pulsos de un escaneo",
   "summary": "Use un contacto de transición positiva y un contacto de transición negativa para que una caja en un transportador dé un pulso al llegar y otro al salir, sin importar cuánto tiempo siga activo el sensor.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el antirrebote, el tiempo de respuesta ni el cableado de un sensor real, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el antirrebote, el tiempo de respuesta ni el cableado de un sensor real.",
   "objectives": [
     "Use un contacto de transición positiva (P) y un contacto de transición negativa (N) para convertir un nivel en un pulso de un escaneo.",
     "Explique por qué una entrada retenida debe contarse una sola vez y qué escaneo ve el pulso."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia el sensor a las dos bobinas: BoxArrived sigue en ON a los {{t:20}} ms, con la caja retenida, en lugar de bajar tras un escaneo, y BoxLeft nunca pulsa; use un contacto de transición positiva para BoxArrived y un contacto de transición negativa para BoxLeft. En el editor de escalera, seleccione cada contacto y reemplácelo por el contacto de transición de la caja de herramientas.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

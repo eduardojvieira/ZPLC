@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Bloques de función: un biestable, dos bombas",
   "summary": "Escriba el cuerpo de un bloque de función que implementa una retención de arranque y parada, y úselo dos veces, una para cada bomba.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el comportamiento de una bomba, la corriente de arranque ni ningún requisito de una máquina real, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el comportamiento de una bomba, la corriente de arranque ni ningún requisito de una máquina real.",
   "objectives": [
     "Escriba un bloque de función con entradas, una salida y una memoria que se conserva entre llamadas.",
     "Vea que dos instancias del mismo bloque de función guardan memorias separadas."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial define el bloque de función Latch y lo llama dos veces, pero el cuerpo de Latch está vacío, así que Q nunca cambia y las dos bombas quedan en OFF; escriba el cuerpo para que Set ponga Q en ON, Reset lo ponga en OFF y Q conserve su valor entre llamadas.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

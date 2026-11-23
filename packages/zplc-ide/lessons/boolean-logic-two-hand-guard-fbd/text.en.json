@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Function Block Diagram: a two-hand control with a guard",
   "summary": "Read a Function Block Diagram and wire AND, NOT and XOR blocks so a press can only be enabled when both hands are on the buttons and the guard is closed.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the response time, redundancy or fault behaviour a real two-hand safety device needs, and they are not safety, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Read a Function Block Diagram: blocks are joined by wires from an output port to an input port, and each output shows the result of the blocks wired to it.",
     "Wire AND, NOT and XOR blocks so that an output is ON only when several inputs are ON together, when one input is OFF, or when exactly one of two inputs is ON."

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Ramas simultáneas: llenar y calentar a la vez",
   "summary": "Inicie dos ramas a la vez, deje que cada una termine a su tiempo y únalas para que el mezclador arranque solo cuando ambas hayan terminado.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran velocidades de calentamiento, volúmenes de llenado, calidad de mezcla, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra velocidades de calentamiento, volúmenes de llenado ni calidad de mezcla.",
   "objectives": [
     "Lea una divergencia simultánea como una transición que activa varios pasos a la vez, de modo que se ejecuten en paralelo.",
     "Escriba una convergencia como una transición que sale de todos los pasos que espera y se activa solo cuando todos están activos."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial inicia las dos ramas pero no tiene unión, así que el diagrama espera en FILL_DONE y HEAT_DONE y el mezclador nunca se ejecuta; agregue una transición a MIX con la condición TRUE que liste FILL_DONE y HEAT_DONE en fromSteps.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Function blocks: one latch, two pumps",
   "summary": "Write the body of a function block that holds a start and stop latch, then use it twice, once for each pump.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish pump behaviour, start-up current or any real machine requirement, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show pump behaviour, start-up current or any real machine requirement.",
   "objectives": [
     "Write a function block with inputs, an output and a memory that lives between calls.",
     "See that two instances of the same function block keep separate memories."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter defines the Latch function block and calls it twice, but the body of Latch is empty, so Q never changes and both pumps stay OFF; write the body so that Set turns Q ON, Reset turns it OFF, and Q keeps its value between calls.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Interlocks and permissives in Function Block Diagram: a guard that stops the motor",
   "summary": "Wire a permissive into the reset of an RS bistable so that the motor runs only while a guard is closed, and check it against the motor plant and its speed feedback.",
-  "scope": "Tests provide native POSIX host evidence for a built-in motor plant model with one 10 ms task; they do not establish a safety function, guard wiring, stopping time, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a safety function, guard wiring or stopping time.",
   "objectives": [
     "Tell a permissive, a condition that must be TRUE for the output to be ON, from a command.",
     "Wire the permissive into the reset of an RS bistable, which is reset dominant, so that an open guard drops the motor and also stops Start from restarting it."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter has no permissive on the guard, so when the guard opens at {{t:50}} ms the motor keeps running and Start can restart it; reset the RS block whenever the guard is open. Place a NOT block on GuardClosed and an OR block with Stop and the output of the NOT block, then wire the OR output to Hold.R1 in place of the wire from Stop.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "Why does the guard reach the reset of the RS block and not only Start? Put an AND block of Start and GuardClosed on S and leave R1 wired to Stop alone, and see which assertion fails.",
-      "checkpoint": "A permissive that gates only Start lets a running motor ignore an open guard. The scenario shows the logic only; it is not a safety function and does not replace a certified guard interlock."
+      "checkpoint": "A permissive that gates only Start lets a running motor ignore an open guard. The scenario shows the logic only; it is not a safety function and does not replace a safety-rated guard interlock."
     }
   ],
   "hints": [

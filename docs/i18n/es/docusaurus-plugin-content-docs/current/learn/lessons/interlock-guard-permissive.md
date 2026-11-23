@@ -39,7 +39,7 @@ Agregue un permisivo al arranque y a la parada de un motor para que funcione sol
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX para un modelo integrado de planta de motor, con una tarea de 10 ms; no demuestran una función de seguridad, el cableado de la protección, el tiempo de parada, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra una función de seguridad, el cableado de la protección ni el tiempo de parada.
 
 ## En una placa
 

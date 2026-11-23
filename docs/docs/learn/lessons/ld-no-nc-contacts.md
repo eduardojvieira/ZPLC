@@ -39,7 +39,7 @@ Learn the normally open and normally closed contacts, why a stop button is wired
 
 ## What the evidence covers
 
-Tests provide deterministic native POSIX host evidence on your computer only. The stop signal is set by the scenario; they do not prove a safe stop function, wiring, hardware timing, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a safe stop function or wiring. The scenario sets the stop signal for you.
 
 ## On a board
 

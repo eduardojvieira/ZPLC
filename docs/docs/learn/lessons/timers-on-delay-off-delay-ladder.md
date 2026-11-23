@@ -39,7 +39,7 @@ Place a TOF and a TON between a contact and a coil, and see that an off-delay ke
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish real sensor filtering requirements, wiring, hardware timing, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show real sensor filtering requirements or wiring.
 
 ## Wiring
 

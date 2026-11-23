@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-height-turntable. Do not edit. >>> */}
 
-Mida la altura de cada caja con una cortina de luz, conserve la lectura mayor y gire una mesa para que la caja salga por la banda de su clase.
+Mida la altura de cada caja con una cortina de luz, conserve la lectura mayor y gire una mesa para que la caja salga por la cinta de su clase.
 
 ## Datos
 
@@ -39,7 +39,7 @@ Mida la altura de cada caja con una cortina de luz, conserve la lectura mayor y 
 
 ## Qué cubre la evidencia
 
-Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la exactitud de la cortina ni la velocidad de la mesa.
 
 ## En una placa
 

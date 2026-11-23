@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Temporizadores en diagrama de bloques de función: una luz con retardo a la desconexión y un filtro con retardo a la conexión",
   "summary": "Conecte un bloque TOF para mantener una luz encendida después de soltar un botón, y un bloque TON para ignorar un pulso de sensor demasiado corto.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el antirrebote eléctrico, la respuesta del sensor, el tiempo en el destino, ni son evidencia de HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el antirrebote eléctrico, la respuesta del sensor ni el tiempo en el destino.",
   "objectives": [
     "Mantenga una salida en ON durante un tiempo fijo después de que su entrada cae, con un bloque TOF cuya entrada PT está conectada a una constante TIME.",
     "Ignore una entrada que está en ON menos de un tiempo fijo, con un bloque TON, y diga qué temporizador retrasa el inicio y cuál retrasa el final."

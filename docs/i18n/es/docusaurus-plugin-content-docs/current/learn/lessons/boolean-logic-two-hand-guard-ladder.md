@@ -39,7 +39,7 @@ Dibuje AND, NOT y OR exclusivo como contactos en serie y en paralelo, y habilite
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran un mando bimanual certificado ni una función de seguridad, el cableado, los tiempos del hardware, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra un mando bimanual de seguridad, una función de seguridad ni el cableado.
 
 ## Cableado
 

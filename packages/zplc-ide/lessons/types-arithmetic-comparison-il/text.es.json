@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Lista de instrucciones: aritmética, comparación y un salto en un flanco ascendente",
   "summary": "Mantenga un total en una variable INT, súmele en cada pulsación con ADD y un salto condicional, y conviértalo en tres resultados BOOL con LT, EQ y GT.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el rango de un sensor real ni el comportamiento de desbordamiento de un controlador concreto, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el rango de un sensor real ni el comportamiento de desbordamiento de un controlador concreto.",
   "objectives": [
     "Use ADD sobre un número en el resultado actual, y LT, EQ y GT para convertir un número en un BOOL.",
     "Salte un grupo de líneas con JMPCN para que un número cambie solo en el flanco ascendente de una entrada."
@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objetivo",
       "body": "En src/TypedSteps.il están escritas las tres comparaciones del final: LD Total carga el INT, LT 10 lo compara y deja un BOOL, y ST Low lo guarda. Escriba la aritmética encima: en cada flanco ascendente de Step (Step en ON ahora y StepWas en OFF) sume 5 a Total, con LD Total, ADD 5, ST Total; JMPCN skip salta esas líneas cuando la condición es FALSE. Después, mientras Reset sea TRUE, cargue 0 y guárdelo en Total.",
-      "checkpoint": "Total pasa por 0, 5, 10, 15, y las tres salidas muestran en qué banda está."
+      "checkpoint": "Total pasa por 0, 5, 10, 15, y las tres salidas muestran en qué cinta está."
     },
     {
       "key": "predict",
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial recuerda Step en StepWas y escribe las tres comparaciones, pero nunca cambia Total, así que Low queda en ON para siempre; sume 5 a Total en cada flanco ascendente de Step y bórrelo mientras Reset sea TRUE.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

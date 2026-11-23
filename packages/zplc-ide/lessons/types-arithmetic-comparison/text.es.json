@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "title": "Tipos, aritmética y comparación: un total y tres bandas",
+  "title": "Tipos, aritmética y comparación: un total y tres cintas",
   "summary": "Mantenga un total acumulado en una variable INT, súmele un valor en cada pulsación y conviértalo en tres resultados BOOL con operadores de comparación.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador concreto, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador concreto.",
   "objectives": [
     "Use una variable INT para un número y una variable BOOL para un sí o un no, y vea que una comparación convierte un número en un BOOL.",
     "Sume a un número solo en el flanco ascendente de una entrada, para que un botón mantenido varios ciclos cuente una vez."
@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objetivo",
       "body": "En src/TypedSteps.st están escritas la variable INT Total y las comparaciones Low (Total < 10), Exact (Total = 10) y High (Total > 10). Escriba la aritmética: en cada flanco ascendente de Step sume 5 a Total, y mientras Reset sea TRUE ponga Total en 0.",
-      "checkpoint": "Total pasa por 0, 5, 10 y 15, y las tres salidas muestran en qué banda está."
+      "checkpoint": "Total pasa por 0, 5, 10 y 15, y las tres salidas muestran en qué cinta está."
     },
     {
       "key": "predict",
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial declara Total y las tres comparaciones pero nunca cambia Total, así que Low queda en ON para siempre; sume 5 a Total en cada flanco ascendente de Step y bórrelo mientras Reset sea TRUE.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Bloques de comparación y de cálculo en escalera: una alarma de tanque y una división segura",
   "summary": "Use bloques de comparación como condiciones y bloques matemáticos como cálculos en escalera, y proteja una división para que un divisor en cero nunca llegue a ella.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el comportamiento de un sensor de nivel real, su cableado, los tiempos de un tanque real, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el comportamiento de un sensor de nivel real, su cableado ni los tiempos de un tanque real.",
   "objectives": [
     "Use un bloque de comparación como condición en serie y elija entre GT y GE para un límite.",
     "Calcule con bloques matemáticos que se ejecutan solo mientras su peldaño tiene energía, y proteja una división con una comparación NE para que el divisor nunca sea cero."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene peldaño para Percent, así que Percent se queda en 0 y HighAlarm nunca pasa a ON a los {{t:80}} ms; agregue un peldaño con una caja NE (Capacity, 0), una caja MUL (Level, 100, hacia Scaled) y una caja DIV (Scaled, Capacity, hacia Percent), en ese orden. Inserte cada caja desde el grupo Funciones de la paleta de escalera y escriba sus operandos: una variable declarada o un número.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

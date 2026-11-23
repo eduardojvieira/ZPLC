@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Diagnóstico de un programa en escalera en simulación: observación, punto de interrupción, forzado y traza",
   "summary": "Encuentre por qué un motor no se detiene observando sus variables, deteniendo el programa en un peldaño, forzando una entrada en simulación y leyendo la traza; luego corrija el peldaño y libere todos los forzados.",
-  "scope": "Las pruebas aportan solo evidencia determinista del equipo anfitrión con POSIX nativo. El forzado y los puntos de interrupción de esta lección son acciones del estudiante en simulación; no son evidencia de hardware, de HIL, de seguridad ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y forzar un valor o detenerse en un punto de interrupción son acciones que usted hace en el simulador, no en una máquina real.",
   "objectives": [
     "Usar la tabla de observación, un punto de interrupción en un peldaño, una entrada forzada y la traza para encontrar la causa de un programa en escalera que no se comporta como se describe.",
     "Corregir el peldaño para que el paro y la sobrecarga detengan el motor, y liberar todos los forzados antes de comprobar."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta falla del programa inicial, guárdelo y luego pulse Comprobar: StopOK está dibujado en serie con StartPB dentro de la rama, de modo que el contacto de autorretención de Motor lo rodea: pulsar el paro a los {{t:60}} ms deja Motor en ON a los {{t:80}} ms. Mueva StopOK a la parte en serie posterior a la rama. Antes de editar, diagnostique. Ejecute el programa inicial en Simulación y abra la tabla de observación. Agregue Motor, StartPB y StopOK. Pulse el botón de arranque y luego el de paro, y vea que Motor sigue en ON. Seleccione el peldaño 1 y pulse F9 para poner un punto de interrupción, ejecute de nuevo y lea los valores en la parada. Fuerce StopOK a FALSE desde la tabla de observación y vea que nada cambia. Abra la traza y busque dónde Motor debió caer. Después mueva StopOK fuera de la rama, a continuación de ella, en serie con toda la rama.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del equipo anfitrión, y la tabla de observación no muestra ningún forzado activo."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado, y la tabla de observación no muestra ningún forzado activo."
     },
     {
       "key": "run",

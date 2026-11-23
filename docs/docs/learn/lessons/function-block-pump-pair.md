@@ -39,7 +39,7 @@ Write the body of a function block that holds a start and stop latch, then use i
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish pump behaviour, start-up current or any real machine requirement, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show pump behaviour, start-up current or any real machine requirement.
 
 ## Wiring
 

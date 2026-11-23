@@ -65,9 +65,9 @@ Decidir con la lectura de un sensor mientras la pieza está retenida y actuar un
 
 ## Lecciones que usan esta escena
 
-- [Enviar cada color a su banda](../../learn/lessons/plant-colour-separation.md)
+- [Enviar cada color a su cinta](../../learn/lessons/plant-colour-separation.md)
 - [La misma clasificación en Lista de instrucciones](../../learn/lessons/plant-colour-separation-il.md)
-- [Enviar cada color a su banda en diagrama de escalera](../../learn/lessons/plant-colour-separation-ladder.md)
+- [Enviar cada color a su cinta en diagrama de escalera](../../learn/lessons/plant-colour-separation-ladder.md)
 
 ## Lo que no se afirma
 

@@ -41,7 +41,7 @@ Join the broker of the simulation, subscribe to a topic, publish a message on it
 
 ## What the evidence covers
 
-The MQTT broker in this lesson is a loopback double that ZPLC starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real broker, cloud service or device accepts the same session, topics or quality of service, and it says nothing about network timing, HIL, or certification.
+The MQTT broker in this lesson is a loopback double that ZPLC starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real broker, cloud service or device accepts the same session, topics or quality of service, and it says nothing about network timing.
 
 ## On a board
 

@@ -1,48 +1,48 @@
 {
   "schemaVersion": 1,
-  "title": "Tomar de una banda y dejar en otra en diagrama de escalera",
-  "summary": "Secuencie un carro con pinza usando finales de carrera y la señal de agarre para pasar cuatro cajas de una banda de entrada a una banda de salida.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "title": "Tomar de una cinta y dejar en otra en diagrama de escalera",
+  "summary": "Secuencie un carro con pinza usando finales de carrera y la señal de agarre para pasar cuatro cajas de una cinta de entrada a una cinta de salida.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Secuenciar un tomar y colocar con un estado por movimiento, cada uno a la espera de su final de carrera.",
-    "Esperar la señal de agarre antes de elevar y mantener detenida la banda receptora mientras se deja una caja."
+    "Esperar la señal de agarre antes de elevar y mantener detenida la cinta receptora mientras se deja una caja."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/BeltTransfer.ld.json, escriba una máquina de estados en escalera (State es un INT: un bloque EQ lo comprueba y un bloque MOVE lo cambia): para cada caja baje la pinza, ciérrela y espere Gripped, eleve, lleve la caja sobre la banda de salida, baje, abra la pinza y deje que la caja se asiente, eleve y regrese. Hágalo con cuatro cajas y encienda Done cuando la cuarta haya pasado EyeOut.",
+      "body": "En src/BeltTransfer.ld.json, escriba una máquina de estados en escalera (State es un INT: un bloque EQ lo comprueba y un bloque MOVE lo cambia): para cada caja baje la pinza, ciérrela y espere Gripped, eleve, lleve la caja sobre la cinta de salida, baje, abra la pinza y deje que la caja se asiente, eleve y regrese. Hágalo con cuatro cajas y encienda Done cuando la cuarta haya pasado EyeOut.",
       "checkpoint": "Cada movimiento empieza cuando el final de carrera del anterior está activo, y las salidas siguen al estado."
     },
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, siga una caja: la cuchilla la sujeta en EyePick, la pinza baja, cierra, eleva y cruza hasta XMax, y la banda de salida permanece detenida mientras la caja se deja y se asienta.",
-      "checkpoint": "Grip está activo desde que la pinza cierra hasta que la caja está sobre la banda de salida; Hold sigue activo durante el trabajo; la banda de salida vuelve a correr cuando la caja está en reposo."
+      "body": "Antes de ejecutar, siga una caja: la cuchilla la sujeta en EyePick, la pinza baja, cierra, eleva y cruza hasta XMax, y la cinta de salida permanece detenida mientras la caja se deja y se asienta.",
+      "checkpoint": "Grip está activo desde que la pinza cierra hasta que la caja está sobre la cinta de salida; Hold sigue activo durante el trabajo; la cinta de salida vuelve a correr cuando la caja está en reposo."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la banda de salida, y encienda Done tras la cuarta.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la cinta de salida, y encienda Done tras la cuarta.",
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario belt-to-belt-transfer; observe la vista 3D mientras se ejecuta.",
+      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
       "checkpoint": "El escenario requerido se llama belt-to-belt-transfer y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe la pinza en la vista 3D: permanece cerrada y quieta hasta que sujeta la caja, y la caja queda quieta sobre la banda de salida antes de que esa banda vuelva a correr.",
-      "checkpoint": "Ninguna caja cae, y la pinza se abre solo sobre la banda de salida."
+      "body": "Observe la pinza en la vista 3D: permanece cerrada y quieta hasta que sujeta la caja, y la caja queda quieta sobre la cinta de salida antes de que esa cinta vuelva a correr.",
+      "checkpoint": "Ninguna caja cae, y la pinza se abre solo sobre la cinta de salida."
     },
     {
       "key": "reflect",
       "title": "Reflexionar",
-      "body": "El escenario prueba que la pinza tomó una caja y la dejó, que una caja llegó al final de la banda de salida, que nada se cayó y que Done está encendido al final. No cuenta que crucen exactamente cuatro cajas: esa cuenta está en su programa.",
-      "checkpoint": "No establece la temporización física de la pinza, la velocidad de los ejes, la temporización de hardware, HIL ni certificación."
+      "body": "El escenario prueba que la pinza tomó una caja y la dejó, que una caja llegó al final de la cinta de salida, que nada se cayó y que Done está encendido al final. No cuenta que crucen exactamente cuatro cajas: esa cuenta está en su programa.",
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [
@@ -52,10 +52,10 @@
     },
     {
       "level": 2,
-      "text": "La pinza tarda en cerrar y una caja que aún se mueve no se toma: espere a que EyePick se mantenga un momento antes de bajar y espere Gripped antes de elevar. Detenga la banda de salida mientras se deja la caja."
+      "text": "La pinza tarda en cerrar y una caja que aún se mueve no se toma: espere a que EyePick se mantenga un momento antes de bajar y espere Gripped antes de elevar. Detenga la cinta de salida mientras se deja la caja."
     }
   ],
   "faultCases": [
-    "El inicial no tiene peldaños, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la banda de salida, y encienda Done tras la cuarta."
+    "El inicial no tiene peldaños, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la cinta de salida, y encienda Done tras la cuarta."
   ]
 }

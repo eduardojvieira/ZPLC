@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "The same sorting in Instruction List",
   "summary": "Write the colour-sorting logic as an instruction list: one current result, labels and jumps, and two timers called with CAL.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Turn the states of a sorting sequence into compare-and-jump blocks.",
     "Call a TON from Instruction List with CAL and read its Q output."
@@ -24,12 +24,12 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter only latches Start and runs the infeed belt, so no workpiece is read or sorted; add the four state blocks and drive the other outputs.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "In Tests, choose the saved zplc.json and run only the colour-separation scenario; watch the 3D view while it runs.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
       "checkpoint": "The required scenario is named colour-separation and contains {{assertions}} assertions."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The grade checks the bins, the lamps and that nothing was dropped; it does not read how the program is written, so the same behaviour in another language passes.",
-      "checkpoint": "It does not establish scan timing of the instruction list, sensor response, hardware timing, HIL, or certification."
+      "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [

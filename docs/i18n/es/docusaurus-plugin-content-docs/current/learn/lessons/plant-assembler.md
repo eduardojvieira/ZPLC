@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-assembler. Do not edit. >>> */}
 
-Modele un ensamblador de dos ejes como un diagrama: tome una tapa de una banda, colóquela sobre una base en otra banda y repita tres veces.
+Modele un ensamblador de dos ejes como un diagrama: tome una tapa de una cinta, colóquela sobre una base en otra cinta y repita tres veces.
 
 ## Datos
 
@@ -39,7 +39,7 @@ Modele un ensamblador de dos ejes como un diagrama: tome una tapa de una banda, 
 
 ## Qué cubre la evidencia
 
-Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.
 
 ## En una placa
 

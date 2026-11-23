@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Lista de instrucciones: una protección como permisivo de toda la condición",
   "summary": "Agregue un permisivo al arranque y la parada de un motor en lista de instrucciones para que el motor funcione solo mientras una protección está cerrada, y compruébelo con la planta del motor y su realimentación de velocidad.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran una función de seguridad, el cableado de la protección ni el tiempo de parada, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra una función de seguridad, el cableado de la protección ni el tiempo de parada.",
   "objectives": [
     "Distinga un permisivo, una condición que debe ser verdadera para que la salida esté en ON, de una orden, y escríbalo como una línea AND más.",
     "Coloque el permisivo después de las líneas que retienen el motor, para que lo apague y también impida que Start lo reinicie."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene ninguna línea para la protección, así que cuando la protección se abre a los {{t:50}} ms el motor sigue funcionando y Start puede reiniciarlo; agregue AND GuardClosed después de ANDN Stop y antes de ST Command, para que se aplique a toda la condición.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexione",
       "body": "¿Por qué un permisivo sobre toda la condición es más seguro que un permisivo solo sobre Start? Mueva AND GuardClosed junto a LD Start y vea qué aserción falla.",
-      "checkpoint": "Un permisivo que solo condiciona Start deja que un motor en marcha ignore una protección abierta. En IL la posición de la línea es su alcance: todo lo que está encima queda dentro de la condición. El escenario muestra solo la lógica; no es una función de seguridad ni reemplaza un enclavamiento de protección certificado."
+      "checkpoint": "Un permisivo que solo condiciona Start deja que un motor en marcha ignore una protección abierta. En IL la posición de la línea es su alcance: todo lo que está encima queda dentro de la condición. El escenario muestra solo la lógica; no es una función de seguridad ni reemplaza un enclavamiento de protección diseñado para seguridad."
     }
   ],
   "hints": [

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Su propio bloque de función en escalera: dos bombas, un bloque",
   "summary": "Llame al bloque de función PumpCtl del proyecto desde un segundo peldaño de escalera para que la bomba 2 tenga su propia instancia, con su propia memoria, junto a la bomba 1.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran la corriente de arranque de las bombas, el cableado de los contactores, la supervisión de la línea de succión, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la corriente de arranque de las bombas, el cableado de los contactores ni la supervisión de la línea de succión.",
   "objectives": [
     "Coloque en un peldaño de escalera un bloque de función que el proyecto declara en texto estructurado, y conecte sus entradas y su salida.",
     "Explique que cada instancia de un bloque de función guarda su propia memoria, por lo que dos bombas necesitan dos instancias de un mismo bloque."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial llama solo a la instancia Pump1Ctl, así que Pump2 nunca pasa a ON y queda en OFF a los {{t:50}} ms; agregue un peldaño con Start2 y un bloque PumpCtl para Pump2Ctl, con Stop en Stop y Ready en Ready, y escriba su salida Run en Pump2. PumpCtl está en la categoría Proyecto de la caja de herramientas de escalera. La instancia Pump2Ctl ya está declarada, así que solo falta el peldaño.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Sort by weight in Ladder",
   "summary": "Compare the reading of a scale with a limit and send heavy boxes to the side belt and light boxes straight on.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show scale accuracy.",
   "objectives": ["Classify an item by comparing an analog value with a limit.", "Read the value only when the scale says it is stable."],
   "stages": [
     {
@@ -21,12 +21,12 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter has no rungs, so no belt moves and no box is weighed; run the belts after Start, hold each box on the scale and send it to the bin its weight selects.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "In Tests, choose the saved zplc.json and run only the weight-sorting scenario; watch the 3D view while it runs.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
       "checkpoint": "The required scenario is named weight-sorting and contains {{assertions}} assertions."
     },
     {
@@ -39,7 +39,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The grade cannot compare numbers: it sees which bin each box ended in. Any limit between 2 kg and 5 kg passes, so the 3.5 kg of the task is yours to justify, not the grade.",
-      "checkpoint": "A box that arrives in the wrong bin fails the ALWAYS assertion; the grade does not establish scale accuracy, hardware timing, HIL, or certification."
+      "checkpoint": "A box that arrives in the wrong bin fails the ALWAYS assertion."
     }
   ],
   "hints": [

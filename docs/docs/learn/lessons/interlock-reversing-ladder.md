@@ -39,7 +39,7 @@ Edit two Ladder rungs so that a reversing motor never closes its Forward and Rev
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish a safety function, mechanically interlocked contactors, wiring, hardware timing, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a safety function, mechanically interlocked contactors or wiring.
 
 ## Wiring
 

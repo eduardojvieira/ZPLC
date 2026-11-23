@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Analog scaling in Ladder: counts to percent with MUL, DIV and LIMIT",
   "summary": "Scale the raw counts of an analog input to a level in percent with a MUL box and then a DIV box, keep the result in range with LIMIT, and drive two level lamps with comparison boxes.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task and blocks that stand in for the sensor; they do not establish the accuracy, noise or calibration of a real analog input, wiring, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the accuracy, noise, calibration of a real analog input or wiring.",
   "objectives": [
     "Scale raw analog counts to engineering units by multiplying by the span of the units and then dividing by the span of the counts, in a type that the product fits.",
     "Keep a value inside its range with a LIMIT box, and compare the scaled value, not the raw counts, with the thresholds of the alarms."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter has no rung between Raw and Level, so Level stays 0 and Warn and HighLevel never turn ON at {{t:50}} ms and {{t:80}} ms; add one rung with a MUL box (Raw, 100, into Scaled) and a DIV box (Scaled, 4095, into Quot), in that order. Insert each box from the Functions group of the Ladder palette and type its operands: a declared variable or a number.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

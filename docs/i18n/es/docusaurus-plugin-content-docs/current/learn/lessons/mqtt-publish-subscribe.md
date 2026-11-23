@@ -41,7 +41,7 @@ Conéctese al broker de la simulación, suscríbase a un tema, publique un mensa
 
 ## Qué cubre la evidencia
 
-El broker MQTT de esta lección es un doble de loopback que ZPLC inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un broker, un servicio en la nube o un dispositivo reales acepten la misma sesión, los mismos temas o la misma calidad de servicio, y no dice nada sobre los tiempos de una red, HIL ni certificación.
+El broker MQTT de esta lección es un doble de loopback que ZPLC inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un broker, un servicio en la nube o un dispositivo reales acepten la misma sesión, los mismos temas o la misma calidad de servicio, y no dice nada sobre los tiempos de una red.
 
 ## En una placa
 

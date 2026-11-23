@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Paletizar por capas",
   "summary": "Cargue cuatro cajas en una capa, escuádrela, llévela con un cabezal de pinza y apile tres capas sobre una tarima.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Formar una capa contando pares de cajas y escuadrarla antes de que la pinza la tome.",
     "Guardar el descenso de cada capa en un arreglo y llenarlo con un bucle FOR, de modo que cada capa se coloque una altura de caja más arriba que la inferior."
@@ -24,12 +24,12 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial declara el arreglo JogMs pero no lo llena ni gobierna ninguna salida, así que el cabezal nunca sube y no llega ninguna caja; llene JogMs con un bucle FOR, y luego cargue, escuadre, lleve y coloque tres capas de cuatro cajas sobre la tarima y encienda Green al final.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario layer-palletizer; observe la vista 3D mientras se ejecuta.",
+      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
       "checkpoint": "El escenario requerido se llama layer-palletizer y contiene {{assertions}} aserciones."
     },
     {
@@ -42,13 +42,13 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "Una sola secuencia atiende todas las capas porque Layer elige lo único que difiere, el descenso, de un arreglo que un solo bucle FOR llenó. El escenario prueba que la pinza colocó elementos, que hay cajas en reposo sobre la tarima 0, que ninguna caja se cayó y que Green está encendido al final. Los hechos no cuentan exactamente tres capas de cuatro, y los tiempos de descenso son temporizados, no medidos.",
-      "checkpoint": "No establece la temporización física de la pinza, la velocidad de los ejes, la temporización de hardware, HIL ni certificación."
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Mantenga un contador de pares enviados y otro de pares vistos en EyeIn, para que la banda lleve solo dos pares; Layer dice qué capa sigue y es el índice de JogMs."
+      "text": "Mantenga un contador de pares enviados y otro de pares vistos en EyeIn, para que la cinta lleve solo dos pares; Layer dice qué capa sigue y es el índice de JogMs."
     },
     {
       "level": 2,

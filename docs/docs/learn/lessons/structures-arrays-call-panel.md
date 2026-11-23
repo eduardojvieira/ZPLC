@@ -39,7 +39,7 @@ Keep three call buttons in an array of structures and write one FOR loop that ho
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish the response time of a real call panel or tasks beyond the one 10 ms task, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the response time of a real call panel or tasks beyond the one 10 ms task.
 
 ## Wiring
 

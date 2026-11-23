@@ -40,7 +40,7 @@ Use the versioned schedule to distinguish one metal part from one non-metal part
 
 ## What the evidence covers
 
-Tests provide native POSIX host runtime evidence with scenario-scheduled inputs; they are not physical sensors or parts, target timing, hardware, HIL, or certification evidence.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.
 
 ## On a board
 

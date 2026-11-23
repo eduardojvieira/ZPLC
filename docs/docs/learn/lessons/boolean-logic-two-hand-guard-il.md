@@ -39,7 +39,7 @@ Read an Instruction List program as one current result that each line combines w
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish the response time, redundancy or fault behaviour a real two-hand safety device needs, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the response time, redundancy or fault behaviour a real two-hand safety device needs.
 
 ## Wiring
 

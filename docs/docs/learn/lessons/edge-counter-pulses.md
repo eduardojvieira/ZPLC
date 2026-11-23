@@ -39,7 +39,7 @@ Use a CTU counter to count three discrete pulses and reset the count.
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence only; they are not physical-sensor, bounce, hardware, HIL, or certification evidence.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.
 
 ## Wiring
 

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Load and unload three boxes",
   "summary": "Count boxes with two counters to run a fixed batch: load three, unload three, then light Done.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Count items with a counter that has a preset value.",
     "Use one counter to stop loading and another to know the batch is finished."
@@ -24,12 +24,12 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter has no counters; load three boxes with a counter at EyeIn, count the unloaded boxes with a counter at EyeOut, light Done when all three are out, and stop the belt then.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "In Tests, choose the saved zplc.json and run only the counted-queue scenario; watch the 3D view while it runs.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
       "checkpoint": "The required scenario is named counted-queue and contains {{assertions}} assertions."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "A counter counts rising edges, so a box that stays under a sensor counts once; the final AT assertion pins Done and the stopped belt.",
-      "checkpoint": "It does not establish physical belt speed, sensor response, hardware timing, HIL, or certification."
+      "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [

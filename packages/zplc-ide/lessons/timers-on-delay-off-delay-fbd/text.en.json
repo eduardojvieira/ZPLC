@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Timers in Function Block Diagram: an off-delay light and an on-delay filter",
   "summary": "Wire a TOF block to keep a light on after a button is released, and a TON block to ignore a sensor blip that is too short.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish electrical debounce, sensor response, target timing, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show electrical debounce, sensor response or target timing.",
   "objectives": [
     "Keep an output ON for a fixed time after its input drops, with a TOF block whose PT input is wired to a TIME constant.",
     "Ignore an input that is ON for less than a fixed time, with a TON block, and say which timer delays the start and which one delays the end."

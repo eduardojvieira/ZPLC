@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Write a blinker in Structured Text",
   "summary": "Build a blinker from a TON timer and a memory variable, and make it run only while an enable input is on.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they are not evidence of a physical lamp, hardware timing, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Write the timer-and-memory pattern that makes an output change state at a fixed interval.",
     "Gate an output with an input so that it stops at once when the input drops."

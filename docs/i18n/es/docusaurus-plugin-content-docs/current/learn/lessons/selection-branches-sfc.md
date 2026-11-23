@@ -39,7 +39,7 @@ Envíe una pieza a la bahía pequeña o a la grande con dos transiciones que sal
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el dimensionado de piezas, los tiempos de compuertas en equipos reales, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el dimensionado de piezas ni los tiempos de compuertas en equipos reales.
 
 ## En una placa
 

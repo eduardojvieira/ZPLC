@@ -1,16 +1,16 @@
 ---
-title: "Cableado: Tipos, aritmética y comparación: un total y tres bandas en Raspberry Pi Pico (RP2040)"
+title: "Cableado: Tipos, aritmética y comparación: un total y tres cintas en Raspberry Pi Pico (RP2040)"
 sidebar_label: "types-arithmetic-comparison"
 description: "Cómo cablear la lección types-arithmetic-comparison en la Raspberry Pi Pico (RP2040), generado a partir de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
 
-# Cableado: Tipos, aritmética y comparación: un total y tres bandas en Raspberry Pi Pico (RP2040)
+# Cableado: Tipos, aritmética y comparación: un total y tres cintas en Raspberry Pi Pico (RP2040)
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/rpi-pico-rp2040/types-arithmetic-comparison. Do not edit. >>> */}
 
-El cableado de la lección [Tipos, aritmética y comparación: un total y tres bandas](../../../learn/lessons/types-arithmetic-comparison.md) en la [Raspberry Pi Pico (RP2040)](../rpi-pico-rp2040.md). Haga el cableado con el cable USB desconectado.
+El cableado de la lección [Tipos, aritmética y comparación: un total y tres cintas](../../../learn/lessons/types-arithmetic-comparison.md) en la [Raspberry Pi Pico (RP2040)](../rpi-pico-rp2040.md). Haga el cableado con el cable USB desconectado.
 
 ## Límite de tensión
 
@@ -22,7 +22,7 @@ El cableado de la lección [Tipos, aritmética y comparación: un total y tres b
 
 ## Diagrama
 
-![Cableado de Tipos, aritmética y comparación: un total y tres bandas en Raspberry Pi Pico (RP2040)](/img/wiring/rpi-pico-rp2040/types-arithmetic-comparison.es.svg)
+![Cableado de Tipos, aritmética y comparación: un total y tres cintas en Raspberry Pi Pico (RP2040)](/img/wiring/rpi-pico-rp2040/types-arithmetic-comparison.es.svg)
 
 ## Tarjeta de cableado
 

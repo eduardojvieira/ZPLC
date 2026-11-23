@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Modbus TCP: write a register and read it back",
   "summary": "Write one holding register through a Modbus TCP block, read it back once the write is done, and report whether the value that came back is the one you sent.",
-  "scope": "The Modbus server in this lesson is a loopback double that ZPLC starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real controller, drive or gateway accepts the same request, and it says nothing about wiring, network timing or a real device, HIL, or certification.",
+  "scope": "The Modbus server in this lesson is a loopback double that ZPLC starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real controller, drive or gateway accepts the same request, and it says nothing about wiring, network timing or a real device.",
   "objectives": [
     "Write a holding register with MB_WRITE_HREG and read it back with MB_READ_HREG, in that order, using the DONE output of the first block as the trigger of the second.",
     "Compare the value read with the value written, and report an ERROR from either block.",
@@ -25,7 +25,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter writes register 8 but never reads it back, so Match stays OFF; call MB_READ_HREG on the same register when Wr.DONE is TRUE, turn Match ON when Rd.DONE is TRUE and Rd.VALUE equals 1234, and turn Failed ON when Wr.ERROR or Rd.ERROR is TRUE.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

@@ -39,7 +39,7 @@ Wire the level loop of a tank as a function block diagram: a PID_Compact block b
 
 ## What the evidence covers
 
-The grade is a headless run of the simulated tank on the native POSIX runtime. It tests where the level goes, not how the diagram is drawn or the values of the gains. It does not establish the behaviour of a real tank or valve, hardware timing, HIL, or certification.
+The grade runs the simulated tank in the simulator on this computer. It tests where the level goes, not how the diagram is drawn or the values of the gains. It says nothing about a real tank or valve, its timing or its safety.
 
 ## On a board
 

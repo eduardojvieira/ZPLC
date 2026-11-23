@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Instruction List: the current result in a two-hand control",
   "summary": "Read an Instruction List program as one current result that each line combines with an operand, and use it to enable a press only when both hands are on the buttons and the guard is closed.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the response time, redundancy or fault behaviour a real two-hand safety device needs, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the response time, redundancy or fault behaviour a real two-hand safety device needs.",
   "objectives": [
     "Read an Instruction List (IL) program as one current result that each instruction combines with an operand, from top to bottom.",
     "Use LD, LDN, AND, XOR and ST to turn three inputs into three outputs."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter flaw, save it, then press Check: The starting program loads LeftHand, combines it with OR RightHand and stores it in PressEnable, so PressEnable is already ON at {{t:10}} ms with one hand, and the two lamps are fixed OFF; rewrite the three groups of lines, one for each output, and save the file.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

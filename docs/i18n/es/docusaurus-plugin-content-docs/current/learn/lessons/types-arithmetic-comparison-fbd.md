@@ -1,12 +1,12 @@
 ---
-title: "Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres bandas"
+title: "Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres cintas"
 sidebar_label: "types-arithmetic-comparison-fbd"
 description: "La lección types-arithmetic-comparison-fbd: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres bandas
+# Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres cintas
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/types-arithmetic-comparison-fbd. Do not edit. >>> */}
 
@@ -39,7 +39,7 @@ Mantenga un total acumulado en una variable INT con bloques ADD, SEL y R_TRIG, y
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador en particular, ni son evidencia de HIL ni de certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador en particular.
 
 ## Cableado
 

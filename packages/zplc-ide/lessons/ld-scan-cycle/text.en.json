@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "The scan cycle: why the order of the rungs matters",
   "summary": "Learn that a PLC reads its inputs, solves the rungs from top to bottom and then writes its outputs, and fix a program whose lamp follows the button one scan too late.",
-  "scope": "Tests provide deterministic native POSIX host evidence with a 10 ms task on your computer only; they are not hardware, timing-on-a-board, HIL, or safety evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Describe the scan cycle: read the inputs, solve the rungs from top to bottom, write the outputs, and repeat.",
     "Reorder two rungs so that a value is calculated before the rung that uses it, and see the difference of one scan in the recorded trace."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Fix this starter order, save it, then press Check: The starter solves the lamp rung before it updates ButtonSeen, so the lamp lights one scan late, at {{t:20}} ms instead of {{t:10}} ms; move the ButtonSeen rung above the lamp rung. In the Ladder editor, use the Move rung up button.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

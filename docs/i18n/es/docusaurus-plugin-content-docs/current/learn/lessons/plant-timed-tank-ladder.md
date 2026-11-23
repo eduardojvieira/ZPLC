@@ -39,7 +39,7 @@ Ejecute un ciclo de llenado, retención y vaciado de un tanque con bloques TON e
 
 ## Qué cubre la evidencia
 
-La calificación es una ejecución sin interfaz del tanque simulado en el entorno de ejecución POSIX nativo. No establece el comportamiento de un tanque, una válvula o un sensor reales, la temporización en hardware, HIL ni la certificación.
+La calificación ejecuta el tanque simulado en el simulador de esta computadora. No dice nada sobre un tanque, una válvula o un sensor reales, sus tiempos ni su seguridad.
 
 ## En una placa
 

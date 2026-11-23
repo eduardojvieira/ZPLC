@@ -39,7 +39,7 @@ Complete un parpadeador de 500 ms en diagrama de escalera, hecho con dos tempori
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan solo evidencia del host con el runtime nativo POSIX; no son evidencia de un LED físico, de los tiempos del hardware, de HIL ni de certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el período eléctrico ni el brillo.
 
 ## Cableado
 

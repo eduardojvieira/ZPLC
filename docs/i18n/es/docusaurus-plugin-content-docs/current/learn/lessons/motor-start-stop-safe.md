@@ -39,7 +39,7 @@ Recorra un motor con autorretención, parada y protección por sobrecarga usando
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan solo evidencia del host con el runtime nativo POSIX; no son evidencia de hardware ni de HIL.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.
 
 ## Cableado
 

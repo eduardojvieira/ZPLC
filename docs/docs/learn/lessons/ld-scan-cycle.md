@@ -39,7 +39,7 @@ Learn that a PLC reads its inputs, solves the rungs from top to bottom and then 
 
 ## What the evidence covers
 
-Tests provide deterministic native POSIX host evidence with a 10 ms task on your computer only; they are not hardware, timing-on-a-board, HIL, or safety evidence.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.
 
 ## On a board
 

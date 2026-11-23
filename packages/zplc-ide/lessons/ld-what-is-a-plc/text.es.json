@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Qué es un PLC: su primer peldaño",
   "summary": "Conozca las tres partes de toda máquina con PLC, entradas, un programa y salidas, y termine un programa de un peldaño que enciende una lámpara mientras se pulsa un botón.",
-  "scope": "Las pruebas aportan evidencia determinista del host con el runtime nativo POSIX, solo en su computadora; no son evidencia de hardware, eléctrica, HIL ni de seguridad.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Nombre las tres partes de un sistema con PLC: las entradas que leen el mundo, un programa que decide y las salidas que actúan sobre el mundo.",
     "Complete un peldaño en diagrama de escalera en el que un botón pulsado enciende una lámpara, y lea el resultado en el laboratorio simulado."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial tiene la bobina Lamp pero nada que lea el botón, así que la energía siempre llega a la bobina y la lámpara está encendida a los {{t:0}} ms antes de que alguien pulse algo; agregue un contacto normalmente abierto de StartButton a la izquierda de la bobina.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
