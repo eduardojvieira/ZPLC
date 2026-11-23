@@ -3,6 +3,7 @@ import { requestElementSelection } from '../editors/elementSelectionRequests';
 import { showPanel } from '../commands/bind/layout';
 import { openConfigEditorFromNavigator } from '../navigator/openConfigEditor';
 import { useIDEStore } from '../store/useIDEStore';
+import { fileTreeFileId } from '../utils/fileSystem';
 import type { Place } from './contracts';
 import { locateJsonPointer } from './jsonPlace';
 
@@ -26,7 +27,7 @@ export async function openPlace(place: Place): Promise<void> {
       showPanel('watch')();
       return;
     case 'scenario': {
-      const textOf = (): string | undefined => useIDEStore.getState().loadedFiles.get(place.file)?.content;
+      const textOf = (): string | undefined => useIDEStore.getState().loadedFiles.get(fileTreeFileId(place.file))?.content;
       let text = textOf();
       if (text === undefined) {
         await navigate(place.file, 1, 1); // opening the file loads it

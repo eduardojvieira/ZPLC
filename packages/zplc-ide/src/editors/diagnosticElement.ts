@@ -9,10 +9,10 @@
 import { transpileToST } from '../compiler';
 import { elementAtLine, isSourceElementId, type SourceElementId } from '../models/sourceElements';
 import type { ProjectBlock } from '../models/projectBlocks';
-import type { PLCLanguage } from '../types';
+import type { FileLanguage } from '../types';
 
 export function elementOfDiagnostic(
-  file: { language: PLCLanguage; content: string },
+  file: { language: FileLanguage; content: string },
   diagnostic: { message: string; line?: number },
   projectBlocks?: readonly ProjectBlock[],
 ): SourceElementId | undefined {
@@ -32,7 +32,7 @@ export function elementOfDiagnostic(
  */
 export function elementToSelect(
   diagnostic: { message: string; line?: number; element?: string },
-  file: { language: PLCLanguage; content: string } | undefined,
+  file: { language: FileLanguage; content: string } | undefined,
   projectBlocks?: readonly ProjectBlock[],
 ): SourceElementId | undefined {
   if (isSourceElementId(diagnostic.element)) return diagnostic.element;

@@ -5,7 +5,7 @@
 import { lazy, Suspense, useCallback, useMemo, type KeyboardEvent } from 'react';
 import { useT } from '../i18n';
 import { X, FileCode, File, Settings, Undo2, Redo2, Columns2, ArrowLeftRight, Maximize2, Boxes, FileDiff } from 'lucide-react';
-import { PLC_LANGUAGES, type PLCLanguage, type ProjectFileWithHandle } from '../types';
+import { PLC_LANGUAGES, type FileLanguage, type PLCLanguage, type ProjectFileWithHandle } from '../types';
 import { serializeFBDModel, type FBDModel } from '../models/fbd';
 import { serializeLDModel, type LDModel } from '../models/ld';
 import { serializeSFCModel, type SFCModel } from '../models/sfc';
@@ -159,8 +159,8 @@ export function EditorGroup({
     [focusTab, onSelect, views],
   );
 
-  const getFileIcon = (lang: PLCLanguage) =>
-    PLC_LANGUAGES[lang]?.isVisual ? (
+  const getFileIcon = (lang: FileLanguage) =>
+    lang !== 'SCENARIO' && PLC_LANGUAGES[lang]?.isVisual ? (
       <FileCode size={14} className="text-[var(--color-accent-purple)]" />
     ) : (
       <File size={14} className="text-[var(--color-accent-blue)]" />

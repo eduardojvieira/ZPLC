@@ -76,15 +76,17 @@ export const journeysU2T3: Journey[] = [
       assert((await app.eval<number>(`document.querySelectorAll('[data-boundary-badge]').length`)) === 1, 'The boundary is stated once');
       assert(await app.eval<boolean>(`document.querySelector('details[data-test-details]')?.open === false`), 'Details starts closed');
 
-      // the scenario step: the project tree lists programs only, so the step of the scenario file is shown with its line
+      // the scenario step: the scenario file is a document of the project, so the editor opens at the step
       await app.click(button('Scenario step'), 'the Scenario step link of the first failure');
       await app.until(
-        'the step of the scenario file',
+        'the scenario file open in the editor at the step',
         async () =>
           (await app.eval<boolean>(
-            `/tests\\/conveyor-01\\.scenario\\.json, line \\d+/.test(document.querySelector('[data-scenario-step]')?.textContent ?? '') ` +
-              `&& ` +
-              `(document.querySelector('[data-scenario-step] pre')?.textContent ?? '').includes('"kind"')`,
+            `(async () => { const monaco = await ${MONACO_MODULE}; ` +
+              `const editor = monaco.editor.getEditors().find((e) => e.getModel()?.getValue().includes('"expectations"')); ` +
+              `const selected = document.querySelector('[role="tab"][aria-selected="true"][id^="editor-tab-"]')?.textContent ?? ''; ` +
+              `return Boolean(editor) && selected.includes('conveyor-01.scenario.json') ` +
+              `&& (editor.getPosition()?.lineNumber ?? 1) > 1; })()`,
           )) || undefined,
       );
 

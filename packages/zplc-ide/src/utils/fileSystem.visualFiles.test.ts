@@ -10,6 +10,7 @@ import {
   DEFAULT_ZPLC_CONFIG,
   getExtensionForLanguage,
   getLanguageFromFilename,
+  getFileLanguage,
   PLC_LANGUAGES,
   type FileTreeNode,
   type PLCLanguage,
@@ -376,7 +377,7 @@ describe('the bundled example projects', () => {
   const projects = path.join(import.meta.dir, '..', '..', 'projects');
   // What the folder reader listed before LX-7: lower-case .st .il .ld.json .fbd.json .sfc.json .gvl, never zplc.json, never ignored
   // folders.
-  const BEFORE = ['.st', '.il', '.ld.json', '.fbd.json', '.sfc.json', '.gvl'];
+  const BEFORE = ['.st', '.il', '.ld.json', '.fbd.json', '.sfc.json', '.gvl', '.scenario.json'];
   const IGNORED_DIRS = ['node_modules', '.git', 'build', 'dist', '.vscode'];
   const wasListed = (name: string) => name !== 'zplc.json' && BEFORE.some((extension) => name.endsWith(extension));
 
@@ -408,7 +409,7 @@ describe('the bundled example projects', () => {
     const nodes = files(await readDirectoryRecursive((await openDirectoryPicker())!));
 
     expect(nodes.map((node) => node.path).sort()).toEqual(before(dialogAnswer).sort());
-    for (const node of nodes) expect(node.language).toBe(getLanguageFromFilename(node.name));
+    for (const node of nodes) expect(node.language).toBe(getFileLanguage(node.name));
   });
 
   // Guards the reader change (cli/workspace.ts): the build reads the same sources as before from every example.

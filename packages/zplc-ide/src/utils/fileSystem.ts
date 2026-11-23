@@ -8,7 +8,7 @@
 
 import type { FileTreeNode, PLCLanguage, ZPLCProjectConfig, ZPLCProjectV2, ProjectFileWithHandle, POUType } from '../types';
 import { parseAndMigrateProject, type ProjectMigrationChange, type ProjectModelDiagnostic } from '../project/projectModel';
-import { getExtensionForLanguage, getLanguageFromFilename, isFileSystemAccessSupported } from '../types';
+import { getExtensionForLanguage, getFileLanguage, isFileSystemAccessSupported } from '../types';
 import { newProjectConfig, newProjectProgram, SIMULATION_TARGET, type NewProjectChoices } from '../project/newProject';
 import { chooseProjectFolder } from '../ipc/projectFilesHandles';
 
@@ -62,15 +62,17 @@ export async function openDirectoryPicker(): Promise<FileSystemDirectoryHandle |
  */
 const PROGRAM_SOURCE_FILE = /\.(st|il|(ld|fbd|sfc)(\.json)?)$/i;
 const GVL_FILE = /\.gvl$/i;
+/** A project test (tests/*.scenario.json): a document of the project, not a program the build reads. */
+const SCENARIO_FILE = /\.scenario\.json$/i;
 
 /** True for a file the build reads as a program (and a task can run). */
 export function isProgramSourceFile(name: string): boolean {
   return PROGRAM_SOURCE_FILE.test(name);
 }
 
-/** Files we list for a ZPLC project: the programs and the .gvl files. */
+/** Files we list for a ZPLC project: the programs, the .gvl files and the scenario files. */
 function isZplcSourceFile(name: string): boolean {
-  return PROGRAM_SOURCE_FILE.test(name) || GVL_FILE.test(name);
+  return PROGRAM_SOURCE_FILE.test(name) || GVL_FILE.test(name) || SCENARIO_FILE.test(name);
 }
 
 const IGNORED_DIRS = ['node_modules', '.git', 'build', 'dist', '.vscode'];
@@ -174,7 +176,7 @@ async function readTree(dirHandle: FileSystemDirectoryHandle, path: string): Pro
       // Check if it's a ZPLC-relevant source file
       if (isZplcSourceFile(entry.name)) {
         const fileHandle = await dirHandle.getFileHandle(entry.name);
-        const language = getLanguageFromFilename(entry.name);
+        const language = getFileLanguage(entry.name);
         const pouType = detectPOUType(entry.name);
 
         children.push({

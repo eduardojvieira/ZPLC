@@ -27,7 +27,7 @@ export function remapPath(path: string, from: string, to: string): string | null
   return path.startsWith(`${from}/`) ? `${to}${path.slice(from.length)}` : null;
 }
 
-const DOUBLE_EXTENSION = /\.(ld|fbd|sfc)\.json$/i;
+const DOUBLE_EXTENSION = /\.(ld|fbd|sfc|scenario)\.json$/i;
 
 /** The name of a copy: `_copy` before the extension, then `_copy2`, `_copy3`... until `isFree` accepts it. */
 export function copyName(name: string, isFree: (candidate: string) => boolean): string {

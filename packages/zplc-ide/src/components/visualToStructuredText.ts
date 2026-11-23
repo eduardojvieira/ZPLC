@@ -1,5 +1,5 @@
 import { transpileToST } from '../compiler';
-import type { PLCLanguage } from '../types';
+import type { FileLanguage } from '../types';
 
 type Report = (entry: { type: 'error'; message: string; source: 'transpiler' }) => void;
 
@@ -7,7 +7,7 @@ type Report = (entry: { type: 'error'; message: string; source: 'transpiler' }) 
  * The Structured Text that a diagram (FBD, LD, SFC) is translated to, or null when the file is not a diagram or the
  * translation failed; what the translation found is reported, one entry per finding.
  */
-export function generateStructuredText(file: { language: PLCLanguage; content: string }, report: Report): string | null {
+export function generateStructuredText(file: { language: FileLanguage; content: string }, report: Report): string | null {
   if (file.language !== 'FBD' && file.language !== 'LD' && file.language !== 'SFC') return null;
   try {
     const result = transpileToST(file.content, file.language);

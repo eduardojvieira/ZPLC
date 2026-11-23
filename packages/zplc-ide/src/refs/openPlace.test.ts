@@ -22,7 +22,7 @@ beforeEach(() => {
   useConfigEditors.getState().reset();
   useIDEStore.setState({
     loadedFiles: new Map([
-      ['tests/a.scenario.json', { content: '{\n  "expectations": [\n    {},\n    { "kind": "x" }\n  ]\n}' } as ProjectFileWithHandle],
+      ['file:tests/a.scenario.json', { content: '{\n  "expectations": [\n    {},\n    { "kind": "x" }\n  ]\n}' } as ProjectFileWithHandle],
     ]),
     navigateToCompilerDiagnostic: async (file: string, line: number, column: number) => {
       opened.push([file, line, column]);

@@ -65,6 +65,7 @@ describe('a copy of a file (IDE-004)', () => {
     expect(copyName('Boiler.ld.json', () => true)).toBe('Boiler_copy.ld.json');
     expect(copyName('Notes', () => true)).toBe('Notes_copy');
     expect(copyName('Globals.gvl', () => true)).toBe('Globals_copy.gvl');
+    expect(copyName('blink.scenario.json', () => true)).toBe('blink_copy.scenario.json');
   });
 });
 

@@ -1,10 +1,10 @@
-import type { FileTreeNode, PLCLanguage, ProjectFileWithHandle } from '../types';
+import type { FileTreeNode, FileLanguage, ProjectFileWithHandle } from '../types';
 import { loadFileFromTree } from './fileSystem';
 
 export interface ExportedProjectFile {
   name: string;
   path: string;
-  language: PLCLanguage;
+  language: FileLanguage;
   content: string;
 }
 
