@@ -38,7 +38,8 @@ export interface SceneFraming {
 }
 
 /** The page side: it runs in the window, imports the product's modules from the development server and returns one record per scene. */
-const PAGE = `
+const PAGE =
+  `
 (async () => {
   const sizes = ${JSON.stringify(FRAMING_SIZES)};
   const [{ createRenderer }, { createPlantCore }, { SCENE_INDEX }, THREE] = await Promise.all([
@@ -47,7 +48,8 @@ const PAGE = `
     import('/src/generated/sceneIndex.ts'),
     import('/node_modules/three/build/three.module.js'),
   ]);
-  const frames = (n) => new Promise((resolve) => { let k = 0; const f = () => (++k >= n ? resolve() : requestAnimationFrame(f)); requestAnimationFrame(f); });
+  const frames = (n) => new Promise((resolve) => { let k = 0; const f = () => (++k >= n ? resolve() : requestAnimationFrame(f)); ` +
+  `requestAnimationFrame(f); });
   const r3 = (v) => Math.round(v * 1000) / 1000;
   const out = [];
   for (const entry of SCENE_INDEX) {
@@ -67,7 +69,8 @@ const PAGE = `
     const renderer = createRenderer(canvas, scene, { quality: 'low' }, T);
     if ('unavailable' in renderer) throw new Error(entry.id + ': ' + renderer.unavailable);
     renderer.setSnapshot(snapshot);
-    const record = { id: entry.id, parts: snapshot.parts.length, items: snapshot.items.length, boxes: 0, outside: [], coincident: [], notDrawn: [] };
+    const record = { id: entry.id, parts: snapshot.parts.length, items: snapshot.items.length, boxes: 0, outside: [], coincident: [], ` +
+  `notDrawn: [] };
     for (const [w, h] of sizes) {
       renderer.resize(w, h);
       await frames(3);
@@ -91,13 +94,16 @@ const PAGE = `
         const bb = o.geometry.boundingBox;
         if (o.isInstancedMesh) {
           const m = new THREE.Matrix4();
-          for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m); add('instanced' + meshIndex + '#' + i, bb, new THREE.Matrix4().multiplyMatrices(o.matrixWorld, m)); }
+          for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m); add('instanced' + meshIndex + '#' + i, bb, new ` +
+  `THREE.Matrix4().multiplyMatrices(o.matrixWorld, m)); }
           meshIndex++;
-        } else add((o.userData && o.userData.part ? o.userData.part : 'mesh') + '@' + o.position.toArray().map(r3).join(','), bb, o.matrixWorld);
+        } else add((o.userData && o.userData.part ? o.userData.part : 'mesh') + '@' + o.position.toArray().map(r3).join(','), bb, ` +
+  `o.matrixWorld);
       });
       const bad = [];
       for (const box of boxes)
-        if (box.corners.some((c) => { const v = c.clone().applyMatrix4(view); const p = v.clone().applyMatrix4(cam.projectionMatrix); return !(v.z < -cam.near) || Math.abs(p.x) > 1 || Math.abs(p.y) > 1; }))
+        if (box.corners.some((c) => { const v = c.clone().applyMatrix4(view); const p = v.clone().applyMatrix4(cam.projectionMatrix); ` +
+  `return !(v.z < -cam.near) || Math.abs(p.x) > 1 || Math.abs(p.y) > 1; }))
           bad.push(box.name);
       record.boxes = boxes.length;
       if (bad.length) record.outside.push({ size: label, boxes: bad });
@@ -156,7 +162,13 @@ async function withGlWindow<T>(root: string, runtime: string, body: (page: Cdp) 
     page = await Cdp.connect(target);
     for (const method of ['Runtime.enable', 'Page.enable', 'Page.bringToFront']) await page.command(method);
     await page.command('Emulation.setFocusEmulationEnabled', { enabled: true });
-    await waitFor('the application page', async () => ((await page!.evaluate(`document.querySelector('h1')?.textContent`)) === 'ZPLC' ? true : undefined));
+    // A cold development server transforms the application on this first load: wait longer than a warm window needs.
+    for (const deadline = Date.now() + 300_000; Date.now() < deadline; await Bun.sleep(250))
+      if ((await page.evaluate(`document.querySelector('h1')?.textContent`).catch(() => undefined)) === 'ZPLC') break;
+    assert(
+      (await page.evaluate(`document.querySelector('h1')?.textContent`)) === 'ZPLC',
+      'The application page did not open in 5 minutes.',
+    );
     return await body(page);
   } catch (error) {
     throw new Error(`${error instanceof Error ? error.message : String(error)}\n${output.join('').slice(-2_000)}`);
@@ -174,7 +186,8 @@ export function framingProblems(records: readonly SceneFraming[]): string[] {
   for (const r of records) {
     if (r.boxes === 0) problems.push(`${r.id}: nothing was drawn`);
     for (const size of r.notDrawn) problems.push(`${r.id} ${size}: the frame was not drawn at that size`);
-    for (const o of r.outside) problems.push(`${r.id} ${o.size}: outside the frame: ${o.boxes.slice(0, 4).join(', ')}${o.boxes.length > 4 ? '...' : ''}`);
+    for (const o of r.outside)
+      problems.push(`${r.id} ${o.size}: outside the frame: ${o.boxes.slice(0, 4).join(', ')}${o.boxes.length > 4 ? '...' : ''}`);
     for (const group of r.coincident) problems.push(`${r.id}: drawn twice: ${group.join(' + ')}`);
   }
   return problems;
@@ -188,7 +201,10 @@ export const journeysPlantFraming: Journey[] = [
     partly: ['VIS-002', 'VIS-003'],
     run: async (_app, { root, runtime }) => {
       await withGlWindow(root, runtime, async (page) => {
-        await page.evaluate(`(() => { window.__framing = undefined; ${PAGE}.then((v) => { window.__framing = { ok: v }; }, (e) => { window.__framing = { err: String((e && e.stack) || e) }; }); return true; })()`);
+        await page.evaluate(
+          `(() => { window.__framing = undefined; ${PAGE}.then((v) => { window.__framing = { ok: v }; }, (e) => { window.__framing = { ` +
+            `err: String((e && e.stack) || e) }; }); return true; })()`,
+        );
         // The 21 scenes on software GL take minutes: a page task polled here, never one protocol command.
         let records: SceneFraming[] | undefined;
         for (const deadline = Date.now() + 900_000; !records && Date.now() < deadline; await Bun.sleep(500)) {
@@ -199,7 +215,12 @@ export const journeysPlantFraming: Journey[] = [
         assert(records, 'The framing check of the 21 scenes did not finish in 15 minutes.');
         assert(records.length === 21, `${records.length} scenes were checked instead of 21.`);
         const problems = framingProblems(records);
-        console.log(`  ${records.length} scenes, ${records.reduce((n, r) => n + r.boxes, 0)} boxes at 1920x1080, ${FRAMING_SIZES.length} sizes each: ${problems.length} problems`);
+        console.log(
+          `  ${records.length} scenes, ${records.reduce(
+            (n, r) => n + r.boxes,
+            0,
+          )} boxes at 1920x1080, ${FRAMING_SIZES.length} sizes each: ${problems.length} problems`,
+        );
         assert(problems.length === 0, problems.join('\n'));
       });
     },
