@@ -44,6 +44,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20 # generating and validating took 1 s and the documentation build 134 s on 4 cores
     steps:
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -90,6 +91,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20 # not measured here: actions/deploy-pages waits up to 10 min for the deployment by default
     needs: build
     permissions:
       pages: write

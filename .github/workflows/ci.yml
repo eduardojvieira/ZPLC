@@ -15,6 +15,7 @@ jobs:
   typescript:
     name: TypeScript packages
     runs-on: ubuntu-latest
+    timeout-minutes: 90 # its steps took 55 min on 4 cores under load, 44 of them the journeys (31 failed there at their 60 s limit)
     steps:
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -117,10 +118,9 @@ jobs:
       - name: Typecheck every TypeScript program
         run: bun run typecheck
 
-      # IDE-025: tools/wasm-core builds the core of the runtime as WebAssembly with clang and wasm-ld, and the IDE tests run the
-      # conformance cases on it with the loader's verifier. IO-013: they also build the C suites of the core with the HAL port
-      # of that runtime (tools/wasm-core/suites.ts) and run the port conformance suite on it (wasmPortSuites.test.ts).
-      # Without the tools those tests fail here; they never skip.
+      # IDE-025: tools/wasm-core builds the core of the runtime as WebAssembly with clang and wasm-ld, and the IDE build below
+      # embeds it. The IDE tests (the ide-tests job) run the conformance cases on it with the loader's verifier, and IO-013
+      # the port conformance suite on the C suites of the core built with its HAL port (tools/wasm-core/suites.ts).
       - name: Install the WebAssembly toolchain
         run: |
           sudo apt-get update
@@ -139,28 +139,11 @@ jobs:
           python3 -B tools/test_crc32_cross.py
           bun test packages/zplc-hil
 
-      # VF-007: the *.browser.test.ts files of the IDE (the Monaco and React Flow editors) are part of this suite: they start the
-      # Vite server in the test process and drive headless Chromium over the DevTools protocol (packages/zplc-ide/src/test/browser.ts),
-      # with the google-chrome of the runner image, as the studio-vertical smoke below does. They need no display and no new dependency.
-      - name: Build, test, and lint IDE
-        env:
-          ZPLC_NATIVE_SIM_BIN: ${{ runner.temp }}/zplc-native-sim-build/zplc_runtime
+      # The IDE unit tests run in the ide-tests shards below; this job builds the IDE for its lint and its smokes.
+      - name: Build and lint IDE
         run: |
-          test -x "$ZPLC_NATIVE_SIM_BIN"
           bun run build:ide
-          status=0
-          bun run test:ide -- --reporter=junit --reporter-outfile="${RUNNER_TEMP}/junit-ide.xml" || status=$?
-          bun tools/ci/check-expected-failures.ts --exit-code "${status}" "packages/zplc-ide=${RUNNER_TEMP}/junit-ide.xml"
           bun run lint:ide
-
-      - name: Keep the Studio test report
-        if: ${{ always() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: junit-ide
-          path: ${{ runner.temp }}/junit-ide.xml
-          if-no-files-found: ignore
-          retention-days: 7
 
       - name: Smoke Studio renderer vertical
         env:
@@ -223,9 +206,93 @@ jobs:
           test -x "$ZPLC_NATIVE_SIM_BIN"
           xvfb-run --auto-servernum bun run --cwd packages/zplc-ide scripts/interfaceBudget.ts --check
 
+  # The IDE unit tests in shards. `bun test` runs the files one after the other, and the whole suite took 3 h 37 min pinned
+  # to 4 cores, so tools/ci/test-shards.ts gives each shard about 25 measured minutes (tools/ci/ide-test-times.json), and
+  # parts of a file that is too long for one shard. Each shard keeps its report and applies the expected-failure rule
+  # (VF-027) to the files it ran; release.yml merges the reports for the release notes (REL-027).
+  ide-tests:
+    name: IDE tests (shard ${{ matrix.shard }}/${{ strategy.job-total }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 75 # longest shard: 44.7 min measured (lessonCi.test.ts, 4 cores under load), plus about 4 min of set-up
+    strategy:
+      fail-fast: false
+      matrix:
+        # 1 to SHARDS of tools/ci/test-shards.ts (tools/ci/ci-workflow.test.ts checks that they agree)
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '20'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@f4d14e03ff726c06358e5557344e1da148b56cf7 # v1.2.2
+        with:
+          bun-version: 1.3.14
+
+      - name: Restore the bun install cache
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Install dependencies
+        run: |
+          test -f bun.lock
+          bun install --frozen-lockfile
+
+      # IDE-025, IO-013: the IDE build embeds the WebAssembly runtime, and its tests build the core and the C suites of the
+      # core with clang and wasm-ld. Without the tools those tests fail here; they never skip.
+      - name: Install the WebAssembly toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends clang lld
+
+      - name: Build the native POSIX simulator, the compiler and the IDE
+        run: |
+          cmake -S firmware/lib/zplc_core -B "${RUNNER_TEMP}/zplc-native-sim-build"
+          cmake --build "${RUNNER_TEMP}/zplc-native-sim-build" --target zplc_runtime zplc_loopback --parallel
+          bun run build:compiler
+          bun run build:ide
+
+      - name: Select the test files of the shard
+        shell: bash
+        run: bun tools/ci/test-shards.ts env "${{ matrix.shard }}" | tee -a "${GITHUB_ENV}"
+
+      # VF-007: the *.browser.test.ts files of the IDE (the Monaco and React Flow editors) are part of this suite: they start the
+      # Vite server in the test process and drive headless Chromium over the DevTools protocol (packages/zplc-ide/src/test/browser.ts),
+      # with the google-chrome of the runner image, as the studio-vertical smoke of the typescript job does. They need no display.
+      - name: Test the IDE
+        env:
+          ZPLC_NATIVE_SIM_BIN: ${{ runner.temp }}/zplc-native-sim-build/zplc_runtime
+        run: |
+          test -x "$ZPLC_NATIVE_SIM_BIN"
+          read -ra files <<< "${ZPLC_IDE_SHARD_FILES:?}"
+          report="${RUNNER_TEMP}/junit-ide-${{ matrix.shard }}.xml"
+          status=0
+          bun run test:ide -- "${files[@]}" --reporter=junit --reporter-outfile="${report}" || status=$?
+          bun tools/ci/test-shards.ts check "${{ matrix.shard }}" --exit-code "${status}" "${report}"
+
+      - name: Keep the Studio test report of the shard
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: junit-ide-${{ matrix.shard }}
+          path: ${{ runner.temp }}/junit-ide-${{ matrix.shard }}.xml
+          if-no-files-found: ignore
+          retention-days: 7
+
   format:
     name: Formatting and line length
     runs-on: ubuntu-latest
+    timeout-minutes: 15 # the format check took 66 s on 4 cores here; install and the pinned clang-format are the rest
     steps:
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -260,6 +327,7 @@ jobs:
   host-core:
     name: C99 host core
     runs-on: ubuntu-latest
+    timeout-minutes: 15 # configure, build and ctest took 14 s on 4 cores here; the margin is for a cold runner
     steps:
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -278,6 +346,7 @@ jobs:
   host-core-sanitized:
     name: C99 host core (ASan + UBSan)
     runs-on: ubuntu-latest
+    timeout-minutes: 20 # sanitized build and ctest 31 s, fuzzing 64 s on 4 cores; the pinned clang-tidy was not measured
     steps:
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -331,6 +400,7 @@ jobs:
   freertos-port:
     name: FreeRTOS port (POSIX simulator)
     runs-on: ubuntu-latest
+    timeout-minutes: 30 # not measured here (it fetches FreeRTOS-Kernel): one CMake build of the port and its suites
     steps:
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -343,6 +413,7 @@ jobs:
   zephyr-twister:
     name: Zephyr Twister (native_sim/native/64)
     runs-on: ubuntu-latest
+    timeout-minutes: 120 # not measured here: a cold Zephyr workspace and SDK, four Twister runs and three application checks
     env:
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
     steps:
@@ -441,6 +512,7 @@ jobs:
   zephyr-cross-build:
     name: Zephyr cross-build (${{ matrix.id }})
     runs-on: ubuntu-latest
+    timeout-minutes: 60 # not measured here: the Zephyr set-up, one board build, its clang-tidy pass and the size check
     strategy:
       fail-fast: false
       matrix:
@@ -589,6 +661,7 @@ jobs:
   docs-and-truth:
     name: Docs and truth sources
     runs-on: ubuntu-latest
+    timeout-minutes: 20 # its checks took 3 min on 4 cores, 134 s of them the documentation build
     steps:
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
