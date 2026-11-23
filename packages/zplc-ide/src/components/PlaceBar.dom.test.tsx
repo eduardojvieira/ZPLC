@@ -8,6 +8,7 @@ const { useProjectSources } = await import('../store/projectSources');
 const { useShellLayout } = await import('../store/useShellLayout');
 const { useNavigatorReveal } = await import('../store/useNavigationHistory');
 const { PlaceBar } = await import('./PlaceBar');
+const { ObjectNavigator } = await import('../navigator/ObjectNavigator');
 
 const file = { id: 'file:src/Main.st', path: 'src/Main.st', name: 'Main.st', language: 'ST', content: '' };
 const declarations = [{ file: 'src/Main.st', declarations: [{ name: 'Main', kind: 'PROGRAM', file: 'src/Main.st', line: 3, column: 9 }] }];
@@ -45,8 +46,18 @@ describe('FND-007 the place bar', () => {
   it('FND-007 a step opens the navigator with that group expanded', async () => {
     arrange();
     useShellLayout.setState({ activityView: 'search', navigatorMode: 'files' });
-    const { user } = dom.render(<PlaceBar viewId={file.id} />);
+    const { user } = dom.render(
+      <>
+        <PlaceBar viewId={file.id} />
+        <ObjectNavigator />
+      </>,
+    );
+    const header = () => document.querySelector('[data-navigator-group="programs"] button') as HTMLElement;
+    await user.click(header());
+    expect(header().getAttribute('aria-expanded')).toBe('false');
     await user.click(dom.screen.getByRole('button', { name: dom.t('placeBar.step', { name: 'Main' }) }));
+    await dom.waitFor(() => expect(header().getAttribute('aria-expanded')).toBe('true'));
+    await dom.waitFor(() => expect(document.activeElement?.getAttribute('data-navigator-item')).toBe('PROGRAM:src/Main.st:Main'));
     expect(useShellLayout.getState().activityView).toBe('project');
     expect(useShellLayout.getState().navigatorMode).toBe('objects');
     expect(useNavigatorReveal.getState().group).toBe('programs');

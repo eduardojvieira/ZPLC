@@ -4,15 +4,14 @@ import { translate } from '../../src/i18n/translate';
 import { assert } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
 import type { Journey } from '../journeys';
-import { runFromPalette } from './w3';
 
 const NAMES = ['PlaceOne', 'PlaceTwo', 'PlaceThree'] as const;
 const selected = (name: string) =>
   `document.querySelector('[id="editor-tab-file:src/${name}.st"]')?.getAttribute('aria-selected') === 'true'`;
 
 /**
- * Journeys of task U2-P3 (plan-u2.md): Back and Forward through the places visited. The commands run from the palette with the keyboard:
- * Alt+Left and Alt+Right are menu accelerators, which a key sent through the debugger does not reach.
+ * Journeys of task U2-P3 (plan-u2.md): Back and Forward through the places visited. Alt+Left and Alt+Right reach the renderer's
+ * shortcut handler (a key sent through the debugger does not reach the menu accelerator, which a person's key would).
  */
 export const journeysU2P3: Journey[] = [
   {
@@ -52,11 +51,11 @@ export const journeysU2P3: Journey[] = [
 
       const expectShown = async (name: string, why: string) =>
         app.until(why, async () => (await app.eval<boolean>(selected(name))) || undefined);
-      await runFromPalette(app, 'edit.goBack', 'go back');
+      await app.press('Alt+ArrowLeft');
       await expectShown(NAMES[1], 'Back to the second document');
-      await runFromPalette(app, 'edit.goBack', 'go back');
+      await app.press('Alt+ArrowLeft');
       await expectShown(NAMES[0], 'Back to the first document');
-      await runFromPalette(app, 'edit.goForward', 'go forward');
+      await app.press('Alt+ArrowRight');
       await expectShown(NAMES[1], 'Forward to the second document');
     },
   },
