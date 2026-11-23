@@ -15,7 +15,10 @@ const { LearnPanel } = await import('./LearnPanel');
 const { LearnHome } = await import('./LearnHome');
 const { LearnReadingView } = await import('./LearnReadingView');
 
-const [WITH, WITHOUT] = [LESSON_INDEX.lessons[0]!, LESSON_INDEX.lessons[1]!];
+// WITHOUT is named by id, a lesson with no reading page: the second lesson of the course has one since the explaining lessons
+// come first, and deleting it here would strip the real page for every later test of the process.
+const WITH = LESSON_INDEX.lessons[0]!;
+const WITHOUT = LESSON_INDEX.lessons.find(({ id }) => id === 'pedestrian-crossing-states')!;
 const original = WITH.reading;
 const PAGE = { en: '## Hello page\n\nA paragraph.', es: '## Página de hola\n\nUn párrafo.', files: {}, images: [] };
 
