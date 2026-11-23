@@ -4,12 +4,16 @@ import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 
 import { CLANG_FORMAT_VERSION } from './format';
+import { SHARDS } from './test-shards';
 
 type Step = { name?: string; uses?: string; run?: string; if?: string; env?: Record<string, string>; with?: Record<string, string> };
-type Workflow = {
-  on: Record<string, { branches?: string[] } | null>;
-  jobs: Record<string, { 'runs-on'?: string; steps: Step[]; strategy?: { matrix: { include: Array<{ id: string; board: string }> } } }>;
+type Job = {
+  'runs-on'?: string;
+  'timeout-minutes'?: number;
+  steps: Step[];
+  strategy?: { 'fail-fast'?: boolean; matrix: { include: Array<{ id: string; board: string }>; shard?: number[] } };
 };
+type Workflow = { on: Record<string, { branches?: string[] } | null>; jobs: Record<string, Job> };
 
 const workflow = Bun.YAML.parse(readFileSync(new URL('../../.github/workflows/ci.yml', import.meta.url), 'utf8')) as Workflow;
 
@@ -20,10 +24,29 @@ describe('ci.yml triggers (VF-016)', () => {
 });
 
 describe('ci.yml expected-failure check (VF-027)', () => {
-  it.each(['test:compiler', 'test:ide'])('runs %s through the JUnit report and the expected-failure rule', (script) => {
-    const step = workflow.jobs.typescript!.steps.find((candidate) => candidate.run?.includes(`bun run ${script}`));
+  it.each([
+    ['test:compiler', 'typescript', 'tools/ci/check-expected-failures.ts'],
+    ['test:ide', 'ide-tests', 'tools/ci/test-shards.ts check'],
+  ])('runs %s in the %s job through the JUnit report and the expected-failure rule', (script, job, rule) => {
+    const step = workflow.jobs[job]!.steps.find((candidate) => candidate.run?.includes(`bun run ${script}`));
     expect(step?.run).toContain('--reporter=junit');
-    expect(step?.run).toContain('tools/ci/check-expected-failures.ts');
+    expect(step?.run).toContain(rule);
+  });
+});
+
+describe('the IDE suite in shards (tools/ci/test-shards.ts)', () => {
+  const nightly = Bun.YAML.parse(readFileSync(new URL('../../.github/workflows/nightly-quality.yml', import.meta.url), 'utf8')) as Workflow;
+  const sharded: Array<[string, Job]> = [
+    ['ci.yml ide-tests', workflow.jobs['ide-tests']!],
+    ['nightly desktop-ide-tests', nightly.jobs['desktop-ide-tests']!],
+  ];
+
+  it.each(sharded)('%s runs every shard of the plan, and one failing shard stops no other', (_name, job) => {
+    expect(job.strategy?.matrix.shard).toEqual(Array.from({ length: SHARDS }, (_, index) => index + 1));
+    expect(job.strategy?.['fail-fast']).toBe(false);
+    const commands = job.steps.map((step) => step.run ?? '').join('\n');
+    expect(commands).toContain('bun tools/ci/test-shards.ts env "${{ matrix.shard }}"');
+    expect(commands).toContain('"${ZPLC_IDE_SHARD_FILES:?}"');
   });
 });
 
@@ -88,14 +111,13 @@ describe('ci.yml cross-build artifacts', () => {
 });
 
 describe('the package manager cache is restored before the install', () => {
-  type Job = { steps: Step[] };
-  const nightly = Bun.YAML.parse(readFileSync(new URL('../../.github/workflows/nightly-quality.yml', import.meta.url), 'utf8')) as {
-    jobs: Record<string, Job>;
-  };
+  const nightly = Bun.YAML.parse(readFileSync(new URL('../../.github/workflows/nightly-quality.yml', import.meta.url), 'utf8')) as Workflow;
   const sites: Array<[string, Job]> = [
     ['ci.yml typescript', workflow.jobs.typescript!],
+    ['ci.yml ide-tests', workflow.jobs['ide-tests']!],
     ['ci.yml docs-and-truth', workflow.jobs['docs-and-truth']!],
     ['nightly desktop-platforms', nightly.jobs['desktop-platforms']!],
+    ['nightly desktop-ide-tests', nightly.jobs['desktop-ide-tests']!],
   ];
 
   it.each(sites)('%s restores the bun install cache under a key of bun.lock, then installs frozen', (_name, job) => {

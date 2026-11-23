@@ -95,8 +95,8 @@ function validateCiCheckoutsUseExactSha(workflow) {
       ),
     ),
   ];
-  // Seven since the FreeRTOS port job (IO-016) joined the workflow; each one is still bound to the caller SHA below.
-  assert.equal(checkouts.length, 8, 'CI must keep exactly eight pinned checkout steps');
+  // Nine since the shards of the IDE suite (ide-tests) joined the workflow; each one is still bound to the caller SHA below.
+  assert.equal(checkouts.length, 9, 'CI must keep exactly nine pinned checkout steps');
   for (const checkout of checkouts) {
     assert.match(checkout[0], /\n\s+with:\n\s+ref:\s*\$\{\{ github\.sha \}\}/, 'every CI checkout must use the caller SHA');
   }
@@ -123,8 +123,8 @@ test('rejects an altered SHA or version comment', () => {
 
 test('requires every frozen Bun install to guard the checked-out root lockfile', async () => {
   const expectedInstallCounts = new Map([
-    ['.github/workflows/ci.yml', 3],
-    ['.github/workflows/nightly-quality.yml', 1],
+    ['.github/workflows/ci.yml', 4],
+    ['.github/workflows/nightly-quality.yml', 2],
     ['.github/workflows/release.yml', 4],
     ['.github/workflows/deploy-docs.yml', 1],
   ]);

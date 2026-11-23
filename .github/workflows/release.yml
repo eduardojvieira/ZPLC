@@ -956,7 +956,10 @@ jobs:
           printf '%s' "$NEEDS" > release-notes/needs.json
           junit=()
           [ -f junit/junit-compiler/junit-compiler.xml ] && junit+=(--junit "compiler=typescript=junit/junit-compiler/junit-compiler.xml")
-          [ -f junit/junit-ide/junit-ide.xml ] && junit+=(--junit "studio=typescript=junit/junit-ide/junit-ide.xml")
+          # the IDE suite runs in the shards of ci.yml (tools/ci/test-shards.ts): one report of all of them, none when one is missing
+          if bun tools/ci/test-shards.ts merge junit/junit-ide.xml junit/junit-ide-*/junit-ide-*.xml; then
+            junit+=(--junit "studio=ide-tests=junit/junit-ide.xml")
+          fi
           bun scripts/release/run-results.ts \
             --needs release-notes/needs.json \
             --evidence bundles \
