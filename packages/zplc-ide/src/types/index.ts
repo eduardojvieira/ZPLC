@@ -207,6 +207,10 @@ export interface ConsoleEntry {
   message: string;
   timestamp: Date;
   source?: string;
+  /**
+   * The call site reports a step the user asked for (MSG-005): shown at the normal level of Output, as are errors, warnings and successes.
+   */
+  step?: true;
 }
 
 // =============================================================================

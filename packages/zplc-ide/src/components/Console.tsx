@@ -8,7 +8,6 @@
  */
 
 import { ProblemsPanel } from './ProblemsPanel';
-import { getEntryIcon, getEntryColor, formatTime } from './consoleEntryStyle';
 import { useUnseen } from './consoleAttention';
 import {
   ChevronDown,
@@ -50,6 +49,10 @@ import { useT } from '../i18n';
 import { CommandEmptyState } from './panelStates';
 import { type CandidateReviewState, type AgentState } from './ConsoleReviewPanels';
 import { LiveNativeMotorPanel } from './LiveNativeMotorControls';
+import { useAppSettings } from '../store/useAppSettings';
+import { outputLevelOf } from '../utils/appSettings';
+import { entriesForLevel } from '../store/consoleEntries';
+import { OutputTab } from './console/OutputTab';
 import { TestsTab } from './console/TestsTab';
 import { InterlocksTab } from './console/InterlocksTab';
 import { ChangesTab } from './console/ChangesTab';
@@ -177,7 +180,11 @@ export function Console({ debugController }: ConsoleProps) {
   };
 
   // a message written while another view is visible raises an indicator on its tab (IDE-020)
-  const unseen = useUnseen({ output: consoleEntries.length, problems: compilerMessages.length }, activeConsoleTab);
+  const outputLevel = useAppSettings((state) => outputLevelOf(state.settings));
+  const unseen = useUnseen(
+    { output: entriesForLevel(consoleEntries, outputLevel).length, problems: compilerMessages.length },
+    activeConsoleTab,
+  );
   const unseenTab = (count = 0) =>
     count > 0
       ? {
@@ -483,26 +490,7 @@ export function Console({ debugController }: ConsoleProps) {
               void registerWorkspaceManifest(event);
             }}
           />
-          {activeConsoleTab === 'output' && (
-            <div className="p-2 space-y-0.5">
-              {consoleEntries.length === 0 ? (
-                <CommandEmptyState
-                  title={t('panel.output.empty.title')}
-                  description={t('panel.output.empty.description')}
-                  actions={['build.compile']}
-                />
-              ) : (
-                consoleEntries.map((entry) => (
-                  <div key={entry.id} className="flex items-start gap-2 py-0.5 hover:bg-[var(--color-surface-700)] px-1 rounded">
-                    {getEntryIcon(entry.type)}
-                    <span className="shrink-0 text-[var(--color-surface-400)] text-xs">[{formatTime(entry.timestamp)}]</span>
-                    {entry.source && <span className="shrink-0 text-[var(--text-muted)] text-xs">[{entry.source}]</span>}
-                    <span className={getEntryColor(entry.type)}>{entry.message}</span>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
+          {activeConsoleTab === 'output' && <OutputTab entries={consoleEntries} />}
 
           {activeConsoleTab === 'problems' && (
             <ProblemsPanel

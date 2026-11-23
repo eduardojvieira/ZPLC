@@ -1,4 +1,5 @@
 import type { ConsoleEntry } from '../types';
+import type { OutputLevel } from '../utils/appSettings';
 
 export const MAX_CONSOLE_ENTRIES = 1000;
 
@@ -23,6 +24,15 @@ export function appendConsoleEntries(existingEntries: ConsoleEntry[], entries: N
   }
 
   return nextEntries.slice(-MAX_CONSOLE_ENTRIES);
+}
+
+/**
+ * What Output shows at a level (MSG-005). The detailed level is everything written. The normal level keeps every error, warning and
+ * success, so a message that reports a failure is never hidden, and an info or command line only when its call site marked a step.
+ */
+export function entriesForLevel(entries: readonly ConsoleEntry[], level: OutputLevel): readonly ConsoleEntry[] {
+  if (level === 'detailed') return entries;
+  return entries.filter((entry) => entry.type === 'error' || entry.type === 'warning' || entry.type === 'success' || entry.step === true);
 }
 
 /** Brings the console's output tab into view, where a failed action reports why. */
