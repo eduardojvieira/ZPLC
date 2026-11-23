@@ -71,7 +71,7 @@ Cada control del editor es un campo con etiqueta o un botón al que se llega con
 2. En **Ajustes de la pieza**, escriba la posición, la rotación y los ajustes.
 3. En **Señales**, escriba los puntos del programa y enlácelos.
 
-La vista 3D también acepta el teclado: con la vista enfocada, las flechas orbitan, más y menos acercan y alejan, y W, A, S y D desplazan.
+La vista 3D también acepta el teclado: con la vista enfocada, las flechas orbitan, más y menos acercan y alejan, y W, A, S y D desplazan. **Encuadrar la escena** vuelve a mostrar toda la escena desde donde usted mira.
 
 ## Lo que no se afirma
 

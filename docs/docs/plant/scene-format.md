@@ -53,7 +53,7 @@ Each part has these keys:
 | `rotationYDeg` | A number, the turn about the vertical axis, in degrees.                                                                                                                                      |
 | `config`       | The settings of the part. Each value is a number, a text or true or false. The part decides the names and ranges.                                                                            |
 
-Each camera has `name`, `position` and `target`. The position and the target are three numbers.
+Each camera has `name`, `position` and `target`. The position and the target are three numbers. The first camera is the one the scene opens with: the 3D view keeps its direction and fits the distance and the target to the whole scene and to the size of the panel. Any other camera is shown exactly as written.
 
 ## schemaVersion
 

@@ -53,7 +53,7 @@ Cada pieza tiene estas claves:
 | `rotationYDeg` | Un número, el giro sobre el eje vertical, en grados.                                                                                                                                                |
 | `config`       | Los ajustes de la pieza. Cada valor es un número, un texto o verdadero o falso. La pieza decide los nombres y los rangos.                                                                           |
 
-Cada cámara tiene `name`, `position` y `target`. La posición y el objetivo son tres números.
+Cada cámara tiene `name`, `position` y `target`. La posición y el objetivo son tres números. La primera cámara es con la que se abre la escena: la vista 3D conserva su dirección y ajusta la distancia y el objetivo a toda la escena y al tamaño del panel. Cualquier otra cámara se muestra tal como está escrita.
 
 ## schemaVersion
 
