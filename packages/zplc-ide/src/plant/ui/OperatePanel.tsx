@@ -3,7 +3,7 @@
  * fault action, and add or remove an item. Every control is a native one, so the pointer and the keyboard both work; the push
  * button is held for as long as the pointer, Space or Enter is held.
  */
-import { useState, type KeyboardEvent } from 'react';
+import { useState, type FocusEvent, type KeyboardEvent } from 'react';
 import { useT, type MessageKey } from '../../i18n';
 import { Button, Select } from '../../ui';
 import type { PlantCore, PlantSceneFile, PlantSnapshot, ScenePart } from '../contracts';
@@ -93,8 +93,15 @@ const READOUT_IDS = [
   'machining-centre',
 ];
 
-export function OperatePanel(props: { scene: PlantSceneFile; core: PlantCore; snapshot: PlantSnapshot | undefined; onChange: () => void }) {
-  const { scene, core, snapshot, onChange } = props;
+export function OperatePanel(props: {
+  scene: PlantSceneFile;
+  core: PlantCore;
+  snapshot: PlantSnapshot | undefined;
+  onChange: () => void;
+  /** The part whose control has the keyboard focus, so the 3D view can mark it and name its signals (VIS-003); undefined on blur. */
+  onFocusPart?: (id: string | undefined) => void;
+}) {
+  const { scene, core, snapshot, onChange, onFocusPart } = props;
   const { t } = useT();
   const [message, setMessage] = useState<string | undefined>();
   const [removeId, setRemoveId] = useState('');
@@ -131,9 +138,19 @@ export function OperatePanel(props: { scene: PlantSceneFile; core: PlantCore; sn
   };
 
   return (
-    <section data-plant-operate aria-label={t('plant.panel.operate')} className="flex flex-wrap items-end gap-3 p-2">
+    <section
+      data-plant-operate
+      aria-label={t('plant.panel.operate')}
+      className="flex flex-wrap items-end gap-3 p-2"
+      onFocus={(event: FocusEvent) =>
+        onFocusPart?.((event.target as HTMLElement).closest('[data-plant-part]')?.getAttribute('data-plant-part') ?? undefined)
+      }
+      onBlur={() => onFocusPart?.(undefined)}
+    >
       {buttons.map((part) => (
-        <HoldButton key={part.id} part={part} core={core} />
+        <span key={part.id} data-plant-part={part.id} className="contents">
+          <HoldButton part={part} core={core} />
+        </span>
       ))}
       {lights.map((part) => {
         const view = snapshot?.parts.find((candidate) => candidate.id === part.id);
@@ -147,13 +164,26 @@ export function OperatePanel(props: { scene: PlantSceneFile; core: PlantCore; sn
       })}
       {numeric.map((part) => {
         const props = { part, view: viewOf(part), core, run: attempt };
-        if (part.part === 'potentiometer') return <PotentiometerControl key={part.id} {...props} />;
-        if (part.part === 'selector-switch') return <SelectorControl key={part.id} {...props} />;
-        if (part.part === 'emergency-stop') return <EmergencyStopControl key={part.id} {...props} />;
-        return <Readout key={part.id} part={part} view={props.view} />;
+        const control =
+          part.part === 'potentiometer' ? (
+            <PotentiometerControl {...props} />
+          ) : part.part === 'selector-switch' ? (
+            <SelectorControl {...props} />
+          ) : part.part === 'emergency-stop' ? (
+            <EmergencyStopControl {...props} />
+          ) : (
+            <Readout part={part} view={props.view} />
+          );
+        return (
+          <span key={part.id} data-plant-part={part.id} className="contents">
+            {control}
+          </span>
+        );
       })}
       {faulty.map((part) => (
-        <FaultControl key={part.id} part={part} run={attempt} act={(action) => core.act(part.name, action)} />
+        <span key={part.id} data-plant-part={part.id} className="contents">
+          <FaultControl part={part} run={attempt} act={(action) => core.act(part.name, action)} />
+        </span>
       ))}
       <Button data-plant-add-item onClick={addItem}>
         {t('plant.panel.addItem')}
