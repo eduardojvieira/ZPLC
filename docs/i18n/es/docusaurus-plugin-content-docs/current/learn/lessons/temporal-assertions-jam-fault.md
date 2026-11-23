@@ -39,7 +39,7 @@ Retenga la falla por atasco y compruebe su temporización con aserciones AT, WIT
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan solo evidencia del host con el runtime nativo POSIX y entradas discretas; el atasco programado no es evidencia de una falla física, del despeje físico, de los tiempos en el dispositivo de destino, de HIL ni de certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra una falla física, el despeje físico ni los tiempos en el dispositivo de destino.
 
 ## En una placa
 

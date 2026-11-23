@@ -39,7 +39,7 @@ Find why a motor will not stop by watching its variables, stopping the program o
 
 ## What the evidence covers
 
-Tests provide deterministic native POSIX host evidence only. Forcing and breakpoints here are simulation actions by the learner; they are not hardware, HIL, safety or certification evidence.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and forcing a value or stopping at a breakpoint here are things you do in the simulator, not on a real machine.
 
 ## On a board
 

@@ -69,7 +69,7 @@ Cada versión publicada tiene una imagen precompilada para esta placa, `zplc-run
 | [Retener una alarma: set y reset, y cuál tiene prioridad](./esp32-s3-devkitc/set-reset-alarm-latch.md) | `set-reset-alarm-latch` |
 | [Autorretención en diagrama de escalera: un motor que se mantiene encendido](./esp32-s3-devkitc/seal-in-ladder.md) | `seal-in-ladder` |
 | [Contadores en diagrama de bloques de función: contar piezas hasta completar un lote](./esp32-s3-devkitc/counter-batch-fbd.md) | `counter-batch-fbd` |
-| [Tipos, aritmética y comparación: un total y tres bandas](./esp32-s3-devkitc/types-arithmetic-comparison.md) | `types-arithmetic-comparison` |
+| [Tipos, aritmética y comparación: un total y tres cintas](./esp32-s3-devkitc/types-arithmetic-comparison.md) | `types-arithmetic-comparison` |
 | [Escalado analógico: de cuentas en bruto a un porcentaje](./esp32-s3-devkitc/analog-scaling-integer.md) | `analog-scaling-integer` |
 | [Bloques de función: un biestable, dos bombas](./esp32-s3-devkitc/function-block-pump-pair.md) | `function-block-pump-pair` |
 | [Estructuras y arreglos: un panel de tres llamadas](./esp32-s3-devkitc/structures-arrays-call-panel.md) | `structures-arrays-call-panel` |
@@ -86,7 +86,7 @@ Cada versión publicada tiene una imagen precompilada para esta placa, `zplc-run
 | [Contar pulsos en escalera: un CTU cuenta los flancos por sí mismo](./esp32-s3-devkitc/edge-counter-pulses-ladder.md) | `edge-counter-pulses-ladder` |
 | [Diagrama de bloques de función: un mando a dos manos con protección](./esp32-s3-devkitc/boolean-logic-two-hand-guard-fbd.md) | `boolean-logic-two-hand-guard-fbd` |
 | [Temporizadores en diagrama de bloques de función: una luz con retardo a la desconexión y un filtro con retardo a la conexión](./esp32-s3-devkitc/timers-on-delay-off-delay-fbd.md) | `timers-on-delay-off-delay-fbd` |
-| [Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres bandas](./esp32-s3-devkitc/types-arithmetic-comparison-fbd.md) | `types-arithmetic-comparison-fbd` |
+| [Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres cintas](./esp32-s3-devkitc/types-arithmetic-comparison-fbd.md) | `types-arithmetic-comparison-fbd` |
 | [Lista de instrucciones: el resultado actual en un mando a dos manos](./esp32-s3-devkitc/boolean-logic-two-hand-guard-il.md) | `boolean-logic-two-hand-guard-il` |
 | [Lista de instrucciones: S y R, y la línea que va al final](./esp32-s3-devkitc/set-reset-alarm-latch-il.md) | `set-reset-alarm-latch-il` |
 | [Lista de instrucciones: llamar a un temporizador de retardo a la desconexión y a la conexión](./esp32-s3-devkitc/timers-on-delay-off-delay-il.md) | `timers-on-delay-off-delay-il` |

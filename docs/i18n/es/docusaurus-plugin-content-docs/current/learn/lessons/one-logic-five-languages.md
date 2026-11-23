@@ -39,7 +39,7 @@ Corrija un programa en texto estructurado para que un portón se mantenga abiert
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran requisitos de un portón, tiempos de actuadores ni el comportamiento de una máquina real, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra requisitos de un portón, tiempos de actuadores ni el comportamiento de una máquina real.
 
 ## Cableado
 

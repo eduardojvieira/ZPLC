@@ -39,7 +39,7 @@ Start two branches at once, let each finish in its own time, and join them so th
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish heating rates, fill volumes, mixing quality, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show heating rates, fill volumes or mixing quality.
 
 ## On a board
 

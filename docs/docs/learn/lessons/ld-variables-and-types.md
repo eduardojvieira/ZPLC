@@ -39,7 +39,7 @@ Keep a request in a memory bit, store a duration in a TIME variable, and see whi
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish the wiring, the electrical levels or the timing of real inputs and outputs, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the wiring, the electrical levels or the timing of real inputs and outputs.
 
 ## On a board
 

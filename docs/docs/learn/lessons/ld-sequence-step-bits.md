@@ -39,7 +39,7 @@ Add the transition from the mix step to the drain step in a Ladder sequence, so 
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish valve travel time, mixer motor behavior, tank level measurement, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show valve travel time, mixer motor behavior or tank level measurement.
 
 ## On a board
 

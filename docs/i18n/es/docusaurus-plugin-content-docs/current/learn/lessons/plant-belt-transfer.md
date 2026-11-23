@@ -1,16 +1,16 @@
 ---
-title: "Tomar de una banda y dejar en otra"
+title: "Tomar de una cinta y dejar en otra"
 sidebar_label: "plant-belt-transfer"
 description: "La lección plant-belt-transfer: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Tomar de una banda y dejar en otra
+# Tomar de una cinta y dejar en otra
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-belt-transfer. Do not edit. >>> */}
 
-Secuencie un carro con pinza usando finales de carrera y la señal de agarre para pasar cuatro cajas de una banda de entrada a una banda de salida.
+Secuencie un carro con pinza usando finales de carrera y la señal de agarre para pasar cuatro cajas de una cinta de entrada a una cinta de salida.
 
 ## Datos
 
@@ -26,7 +26,7 @@ Secuencie un carro con pinza usando finales de carrera y la señal de agarre par
 ## Objetivos
 
 - Secuenciar un tomar y colocar con un estado por movimiento, cada uno a la espera de su final de carrera.
-- Esperar la señal de agarre antes de elevar y mantener detenida la banda receptora mientras se deja una caja.
+- Esperar la señal de agarre antes de elevar y mantener detenida la cinta receptora mientras se deja una caja.
 
 ## Etapas
 
@@ -39,7 +39,7 @@ Secuencie un carro con pinza usando finales de carrera y la señal de agarre par
 
 ## Qué cubre la evidencia
 
-Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.
 
 ## En una placa
 

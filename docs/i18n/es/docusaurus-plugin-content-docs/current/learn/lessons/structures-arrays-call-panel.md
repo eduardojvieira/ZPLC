@@ -39,7 +39,7 @@ Guarde tres botones de llamada en un arreglo de estructuras y escriba un solo bu
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el tiempo de respuesta de un panel de llamadas real ni tareas distintas de esa única tarea de 10 ms, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el tiempo de respuesta de un panel de llamadas real ni tareas distintas de esa única tarea de 10 ms.
 
 ## Cableado
 

@@ -39,7 +39,7 @@ Cablee el lazo de nivel de un tanque como un diagrama de bloques de función: un
 
 ## Qué cubre la evidencia
 
-La calificación es una ejecución sin interfaz del tanque simulado en el entorno de ejecución POSIX nativo. Comprueba hacia dónde va el nivel, no cómo se dibuja el diagrama ni los valores de las ganancias. No establece el comportamiento de un tanque o una válvula reales, la temporización en hardware, HIL ni la certificación.
+La calificación ejecuta el tanque simulado en el simulador de esta computadora. Comprueba hacia dónde va el nivel, no cómo se dibuja el diagrama ni los valores de las ganancias. No dice nada sobre un tanque o una válvula reales, sus tiempos ni su seguridad.
 
 ## En una placa
 

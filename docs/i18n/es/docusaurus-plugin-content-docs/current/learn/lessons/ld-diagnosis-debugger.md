@@ -39,7 +39,7 @@ Encuentre por qué un motor no se detiene observando sus variables, deteniendo e
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan solo evidencia determinista del equipo anfitrión con POSIX nativo. El forzado y los puntos de interrupción de esta lección son acciones del estudiante en simulación; no son evidencia de hardware, de HIL, de seguridad ni de certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y forzar un valor o detenerse en un punto de interrupción son acciones que usted hace en el simulador, no en una máquina real.
 
 ## En una placa
 

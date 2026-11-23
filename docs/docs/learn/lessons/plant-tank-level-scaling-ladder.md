@@ -39,7 +39,7 @@ Scale the raw level of a tank, a whole number from 0 to 27648, to metres with fu
 
 ## What the evidence covers
 
-The grade is a headless run of the simulated tank on the native POSIX runtime, with an analog level that follows the scaling rules of the plant map. It does not establish the accuracy, noise or calibration of a real level transmitter, hardware timing, HIL, or certification.
+The grade runs the simulated tank in the simulator on this computer, with an analog level that follows the scaling rules of the plant map. It says nothing about the accuracy, noise or calibration of a real level transmitter, a real machine, its timing or its safety.
 
 ## On a board
 

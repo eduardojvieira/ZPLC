@@ -398,8 +398,8 @@ Los manipuladores añaden pasos que deben ocurrir en orden. Tomar, colocar y ens
 
 | Lección                                                                                 | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                                  |
 | --------------------------------------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | --------------------------------------------------------- |
-| `plant-belt-transfer` Tomar de una banda y dejar en otra                                | Disponible | ST        | Simulación | -      | 40      | `plant-counted-queue`                                     |
-| `plant-belt-transfer-ladder` Tomar de una banda y dejar en otra en diagrama de escalera | Disponible | LD        | Simulación | -      | 40      | `plant-counted-queue`                                     |
+| `plant-belt-transfer` Tomar de una cinta y dejar en otra                                | Disponible | ST        | Simulación | -      | 40      | `plant-counted-queue`                                     |
+| `plant-belt-transfer-ladder` Tomar de una cinta y dejar en otra en diagrama de escalera | Disponible | LD        | Simulación | -      | 40      | `plant-counted-queue`                                     |
 | `plant-assembler` Ensamblar tapas y bases                                               | Disponible | SFC       | Simulación | -      | 50      | `sfc-fill-mix-sequence`, `plant-belt-transfer`            |
 | `plant-assembler-numeric` Lo mismo con posiciones numéricas                             | Disponible | ST        | Simulación | -      | 40      | `plant-assembler`                                         |
 | `plant-layer-palletizer` Paletizar por capas                                            | Disponible | ST        | Simulación | -      | 50      | `structures-arrays-call-panel`, `plant-assembler-numeric` |
@@ -407,8 +407,8 @@ Los manipuladores añaden pasos que deben ocurrir en orden. Tomar, colocar y ens
 
 Objetivos de las lecciones disponibles:
 
-- **Tomar de una banda y dejar en otra**: Secuenciar un tomar y colocar con un estado por movimiento, cada uno a la espera de su final de carrera. Esperar la señal de agarre antes de elevar y mantener detenida la banda receptora mientras se deja una caja.
-- **Tomar de una banda y dejar en otra en diagrama de escalera**: Secuenciar un tomar y colocar con un estado por movimiento, cada uno a la espera de su final de carrera. Esperar la señal de agarre antes de elevar y mantener detenida la banda receptora mientras se deja una caja.
+- **Tomar de una cinta y dejar en otra**: Secuenciar un tomar y colocar con un estado por movimiento, cada uno a la espera de su final de carrera. Esperar la señal de agarre antes de elevar y mantener detenida la cinta receptora mientras se deja una caja.
+- **Tomar de una cinta y dejar en otra en diagrama de escalera**: Secuenciar un tomar y colocar con un estado por movimiento, cada uno a la espera de su final de carrera. Esperar la señal de agarre antes de elevar y mantener detenida la cinta receptora mientras se deja una caja.
 - **Ensamblar tapas y bases**: Coordinar dos ejes y una ventosa en una sola secuencia, con un paso por movimiento. Elegir entre dos pasos siguientes con condiciones de transición que se excluyen entre sí.
 - **Lo mismo con posiciones numéricas**: Enviar un eje a una posición con nombre mediante una consigna y leer su posición de vuelta. Decidir que un movimiento terminó cuando la posición está dentro de una tolerancia de la consigna, no cuando es igual a ella.
 - **Paletizar por capas**: Formar una capa contando pares de cajas y escuadrarla antes de que la pinza la tome. Guardar el descenso de cada capa en un arreglo y llenarlo con un bucle FOR, de modo que cada capa se coloque una altura de caja más arriba que la inferior.
@@ -422,8 +422,8 @@ La clasificación convierte combinaciones de sensores en rutas. Reutiliza las ha
 
 | Lección                                                                                             | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                                 |
 | --------------------------------------------------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | -------------------------------------------------------- |
-| `plant-colour-separation` Enviar cada color a su banda                                              | Disponible | ST        | Simulación | -      | 45      | `plant-counted-queue`                                    |
-| `plant-colour-separation-ladder` Enviar cada color a su banda en diagrama de escalera               | Disponible | LD        | Simulación | -      | 45      | `plant-counted-queue`                                    |
+| `plant-colour-separation` Enviar cada color a su cinta                                              | Disponible | ST        | Simulación | -      | 45      | `plant-counted-queue`                                    |
+| `plant-colour-separation-ladder` Enviar cada color a su cinta en diagrama de escalera               | Disponible | LD        | Simulación | -      | 45      | `plant-counted-queue`                                    |
 | `plant-colour-separation-il` La misma clasificación en Lista de instrucciones                       | Disponible | IL        | Simulación | -      | 50      | `plant-colour-separation`, `instruction-list-door-alarm` |
 | `plant-weight-sorting` Clasificar por peso                                                          | Disponible | ST        | Simulación | -      | 50      | `plant-colour-separation`, `plant-tank-level-scaling`    |
 | `plant-weight-sorting-ladder` Clasificar por peso en diagrama de escalera                           | Disponible | LD        | Simulación | -      | 50      | `plant-colour-separation`, `plant-tank-level-scaling`    |
@@ -434,8 +434,8 @@ La clasificación convierte combinaciones de sensores en rutas. Reutiliza las ha
 
 Objetivos de las lecciones disponibles:
 
-- **Enviar cada color a su banda**: Decidir una ruta a partir del resultado de un sensor cuando la pieza está quieta. Ejecutar un empuje como una secuencia corta: extender hasta Extended, retraer hasta Retracted.
-- **Enviar cada color a su banda en diagrama de escalera**: Decidir una ruta a partir del resultado de un sensor cuando la pieza está quieta. Ejecutar un empuje como una secuencia corta: extender hasta Extended, retraer hasta Retracted.
+- **Enviar cada color a su cinta**: Decidir una ruta a partir del resultado de un sensor cuando la pieza está quieta. Ejecutar un empuje como una secuencia corta: extender hasta Extended, retraer hasta Retracted.
+- **Enviar cada color a su cinta en diagrama de escalera**: Decidir una ruta a partir del resultado de un sensor cuando la pieza está quieta. Ejecutar un empuje como una secuencia corta: extender hasta Extended, retraer hasta Retracted.
 - **La misma clasificación en Lista de instrucciones**: Convertir los estados de una secuencia de clasificación en bloques de comparar y saltar. Llamar a un TON desde Lista de instrucciones con CAL y leer su salida Q.
 - **Clasificar por peso**: Clasificar una pieza comparando un valor analógico con un límite. Leer el valor solo cuando la báscula indica que es estable.
 - **Clasificar por peso en diagrama de escalera**: Clasificar una pieza comparando un valor analógico con un límite. Leer el valor solo cuando la báscula indica que es estable.
@@ -459,7 +459,7 @@ Una estación agrupa clasificación, transferencia y secuencia en una sola unida
 
 Objetivos de las lecciones disponibles:
 
-- **Mover cajas entre tres niveles**: Describir cada elevador como su propia cadena de pasos que vuelve a su primer paso. Arrancar ambas cadenas con una sola transición y dejar que se encuentren solo en la banda entre los elevadores.
+- **Mover cajas entre tres niveles**: Describir cada elevador como su propia cadena de pasos que vuelve a su primer paso. Arrancar ambas cadenas con una sola transición y dejar que se encuentren solo en la cinta entre los elevadores.
 - **Reunir piezas en un cajón**: Combinar un conteo, un elevador y un cajón en una sola secuencia de pasos. Mover el elevador solo con su superficie detenida y alimentar la pieza siguiente solo después de que la anterior haya aterrizado.
 - **Almacenar y recuperar**: Escribir las secuencias de almacenar y de recuperar de un transelevador como cadenas de pasos. Llevar una tabla de celdas ocupadas y las peticiones que esperan, y elegir el trabajo siguiente a partir de ellas.
 - **Equilibrar una línea de producción**: Mover el control de una máquina a un bloque de función y usar una instancia para cada máquina. Equilibrar dos máquinas de distinta velocidad alternando las piezas entre ellas.
@@ -494,15 +494,15 @@ El curso termina construyendo la propia planta: piezas, señales y un programa q
 
 | Lección                                                                            | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                             |
 | ---------------------------------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | ---------------------------------------------------- |
-| `plant-build-belt-scene` Construir una escena de banda desde el suelo vacío        | Disponible | ST        | Simulación | -      | 25      | `plant-belt-to-sensor`, `plant-fault-actions`        |
-| `plant-build-belt-scene-ladder` Construir una escena de banda desde el suelo vacío | Disponible | LD        | Simulación | -      | 25      | `plant-belt-to-sensor`, `plant-fault-actions`        |
+| `plant-build-belt-scene` Construir una escena de cinta desde el suelo vacío        | Disponible | ST        | Simulación | -      | 25      | `plant-belt-to-sensor`, `plant-fault-actions`        |
+| `plant-build-belt-scene-ladder` Construir una escena de cinta desde el suelo vacío | Disponible | LD        | Simulación | -      | 25      | `plant-belt-to-sensor`, `plant-fault-actions`        |
 | `plant-change-scene` Modificar una escena: agregar el segundo emisor               | Disponible | ST        | Simulación | -      | 20      | `plant-build-belt-scene`, `plant-merge-lines`        |
 | `plant-change-scene-ladder` Modificar una escena: agregar el segundo emisor        | Disponible | LD        | Simulación | -      | 20      | `plant-build-belt-scene-ladder`, `plant-merge-lines` |
 
 Objetivos de las lecciones disponibles:
 
-- **Construir una escena de banda desde el suelo vacío**: Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa. Ejecutar un programa sobre la escena que usted construyó y ver que la Comprobación califica esa escena, no una copia.
-- **Construir una escena de banda desde el suelo vacío**: Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa. Ejecutar un programa sobre la escena que usted construyó y ver que la Comprobación califica esa escena, no una copia.
+- **Construir una escena de cinta desde el suelo vacío**: Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa. Ejecutar un programa sobre la escena que usted construyó y ver que la Comprobación califica esa escena, no una copia.
+- **Construir una escena de cinta desde el suelo vacío**: Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa. Ejecutar un programa sobre la escena que usted construyó y ver que la Comprobación califica esa escena, no una copia.
 - **Modificar una escena: agregar el segundo emisor**: Agregar una pieza a una escena existente y colocarla donde el resto de la escena la espera. Enlazar la señal de la pieza nueva en el mapa de la planta con la variable del programa que ya la gobierna, sin cambiar el programa.
 - **Modificar una escena: agregar el segundo emisor**: Agregar una pieza a una escena existente y colocarla donde el resto de la escena la espera. Enlazar la señal de la pieza nueva en el mapa de la planta con la variable del programa que ya la gobierna, sin cambiar el programa.
 

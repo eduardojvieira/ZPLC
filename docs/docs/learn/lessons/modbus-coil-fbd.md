@@ -39,7 +39,7 @@ Edit a Function Block Diagram so that MB_READ_COIL reads coil 4 back once MB_WRI
 
 ## What the evidence covers
 
-The Modbus server of this lesson is a loopback double that ZPLC starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real controller, drive or gateway accepts the same request, and it says nothing about wiring, network timing, a real device, HIL or certification.
+The Modbus server of this lesson is a loopback double that ZPLC starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real controller, drive or gateway accepts the same request, and it says nothing about wiring, network timing or a real device.
 
 ## On a board
 

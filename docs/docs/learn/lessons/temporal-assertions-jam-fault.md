@@ -39,7 +39,7 @@ Latch the jam fault and prove its timing with AT, WITHIN, FOR, UNTIL, RISING, an
 
 ## What the evidence covers
 
-Tests provide native POSIX host runtime and discrete-input evidence only; the scheduled jam is not a physical fault, physical clearance, target timing, HIL, or certification evidence.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a physical fault, physical clearance or target timing.
 
 ## On a board
 

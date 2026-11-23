@@ -1,16 +1,16 @@
 ---
-title: "Enviar cada color a su banda"
+title: "Enviar cada color a su cinta"
 sidebar_label: "plant-colour-separation"
 description: "La lección plant-colour-separation: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Enviar cada color a su banda
+# Enviar cada color a su cinta
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-colour-separation. Do not edit. >>> */}
 
-Lea el color de cada pieza que espera en la cuchilla de parada, empuje las rojas a la banda lateral y deje pasar las azules.
+Lea el color de cada pieza que espera en la cuchilla de parada, empuje las rojas a la cinta lateral y deje pasar las azules.
 
 ## Datos
 
@@ -39,7 +39,7 @@ Lea el color de cada pieza que espera en la cuchilla de parada, empuje las rojas
 
 ## Qué cubre la evidencia
 
-Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el tiempo de respuesta del sensor ni la velocidad de la cinta.
 
 ## En una placa
 

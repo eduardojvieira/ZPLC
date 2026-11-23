@@ -39,7 +39,7 @@ Edit a Function Block Diagram so that a CTU counter counts three parts, lights B
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish sensor wiring, debounce, counting accuracy at machine speed, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show sensor wiring, debounce or counting accuracy at machine speed.
 
 ## Wiring
 

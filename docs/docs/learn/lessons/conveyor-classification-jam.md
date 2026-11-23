@@ -39,7 +39,7 @@ Walk through part classification and the safe jam lockout in the Conveyor 01 exa
 
 ## What the evidence covers
 
-Tests provide deterministic native POSIX host evidence only; they are not physical conveyor, jam clearance, hardware, HIL, or certification evidence.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.
 
 ## On a board
 

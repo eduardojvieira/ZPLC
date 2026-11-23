@@ -40,7 +40,7 @@ Follow how one input produces the current output and a copy delayed by one scan.
 
 ## What the evidence covers
 
-Tests provide native POSIX host runtime evidence with one 10 ms task; they do not establish target timing, snapshots under physical interrupts, electrical bounce, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show target timing, snapshots under physical interrupts or electrical bounce.
 
 ## Wiring
 

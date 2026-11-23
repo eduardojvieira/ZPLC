@@ -39,7 +39,7 @@ Keep a running total in an INT variable, add to it on each press with ADD and a 
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish the range of a real sensor or the overflow behaviour of a particular controller, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the range of a real sensor or the overflow behaviour of a particular controller.
 
 ## Wiring
 

@@ -1,12 +1,12 @@
 ---
-title: "Tipos, aritmética y comparación: un total y tres bandas"
+title: "Tipos, aritmética y comparación: un total y tres cintas"
 sidebar_label: "types-arithmetic-comparison"
 description: "La lección types-arithmetic-comparison: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Tipos, aritmética y comparación: un total y tres bandas
+# Tipos, aritmética y comparación: un total y tres cintas
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/types-arithmetic-comparison. Do not edit. >>> */}
 
@@ -39,7 +39,7 @@ Mantenga un total acumulado en una variable INT, súmele un valor en cada pulsac
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador concreto, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador concreto.
 
 ## Cableado
 

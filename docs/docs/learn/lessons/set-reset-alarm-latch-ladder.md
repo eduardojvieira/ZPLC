@@ -39,7 +39,7 @@ Hold a fault in memory with SET and RESET coils, and see that in Ladder the rung
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish the alarm handling requirements of a real machine, wiring, hardware timing, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the alarm handling requirements of a real machine or wiring.
 
 ## Wiring
 

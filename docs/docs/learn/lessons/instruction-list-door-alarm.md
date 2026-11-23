@@ -39,7 +39,7 @@ Complete an Instruction List program so that a door alarm holds itself on after 
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish alarm requirements, siren timing or any real machine behaviour, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show alarm requirements, siren timing or any real machine behaviour.
 
 ## Wiring
 

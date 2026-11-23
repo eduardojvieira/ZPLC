@@ -39,7 +39,7 @@ Send a part to the small or to the large bay with two transitions that leave the
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish part sizing, gate timing on real equipment, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show part sizing or gate timing on real equipment.
 
 ## On a board
 

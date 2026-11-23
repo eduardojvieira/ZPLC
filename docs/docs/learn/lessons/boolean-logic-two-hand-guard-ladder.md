@@ -39,7 +39,7 @@ Draw AND, NOT and exclusive-or as contacts in series and in parallel, and enable
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish a certified two-hand control or a safety function, wiring, hardware timing, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a two-hand safety control, any safety function or wiring.
 
 ## Wiring
 

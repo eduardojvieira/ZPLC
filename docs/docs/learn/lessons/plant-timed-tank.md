@@ -39,7 +39,7 @@ Run one fill, hold and drain cycle of a tank with on-delay timers, a panel start
 
 ## What the evidence covers
 
-The grade is a headless run of the simulated tank on the native POSIX runtime. It does not establish the behaviour of a real tank, valve or sensor, hardware timing, HIL, or certification.
+The grade runs the simulated tank in the simulator on this computer. It says nothing about a real tank, valve or sensor, its timing or its safety.
 
 ## On a board
 

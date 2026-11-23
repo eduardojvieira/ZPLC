@@ -39,7 +39,7 @@ Draw the pedestrian crossing as a Sequential Function Chart with one step per li
 
 ## What the evidence covers
 
-Tests provide deterministic native POSIX host evidence only; they are not physical crossing, hardware, HIL, or certification evidence.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a physical crossing or real phase durations.
 
 ## On a board
 

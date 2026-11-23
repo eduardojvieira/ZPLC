@@ -40,7 +40,7 @@ Siga cómo una entrada produce la salida actual y una copia demorada un ciclo.
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una única tarea de 10 ms; no demuestran los tiempos en el dispositivo de destino, las instantáneas bajo interrupciones físicas, el rebote eléctrico, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra los tiempos en el dispositivo de destino, las instantáneas bajo interrupciones físicas ni el rebote eléctrico.
 
 ## Cableado
 

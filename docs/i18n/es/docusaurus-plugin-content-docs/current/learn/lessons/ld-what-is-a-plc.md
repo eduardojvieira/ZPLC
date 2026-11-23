@@ -38,7 +38,7 @@ Conozca las tres partes de toda máquina con PLC, entradas, un programa y salida
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia determinista del host con el runtime nativo POSIX, solo en su computadora; no son evidencia de hardware, eléctrica, HIL ni de seguridad.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.
 
 ## En una placa
 

@@ -39,7 +39,7 @@ Call the project's function block PumpCtl from a second Ladder rung so that pump
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish pump starting current, contactor wiring, suction line monitoring, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show pump starting current, contactor wiring or suction line monitoring.
 
 ## On a board
 

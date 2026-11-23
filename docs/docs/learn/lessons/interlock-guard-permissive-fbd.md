@@ -39,7 +39,7 @@ Wire a permissive into the reset of an RS bistable so that the motor runs only w
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence for a built-in motor plant model with one 10 ms task; they do not establish a safety function, guard wiring, stopping time, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a safety function, guard wiring or stopping time.
 
 ## On a board
 

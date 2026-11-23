@@ -39,7 +39,7 @@ Detenga un ciclo de alimentación y prensa en cuanto aparece una falla, y devué
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran una parada segura, una función de seguridad, el comportamiento de una prensa, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra una parada segura, una función de seguridad ni el comportamiento de una prensa.
 
 ## En una placa
 

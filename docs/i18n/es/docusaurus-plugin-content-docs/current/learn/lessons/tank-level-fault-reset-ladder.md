@@ -39,7 +39,7 @@ Controle la bomba de un tanque con una autorretención, enclave una falla con bo
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan solo evidencia determinista del host con el runtime nativo POSIX; no son evidencia de proceso físico, hardware, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.
 
 ## En una placa
 

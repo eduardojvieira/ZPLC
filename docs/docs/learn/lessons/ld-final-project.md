@@ -39,7 +39,7 @@ Turn the written description of a small packing station into a Ladder program wi
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish packing-line requirements, safety function behavior, sensor timing or any real machine behavior, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show packing-line requirements, safety function behavior, sensor timing or any real machine behavior.
 
 ## On a board
 

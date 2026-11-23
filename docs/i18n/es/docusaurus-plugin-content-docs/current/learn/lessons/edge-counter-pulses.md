@@ -39,7 +39,7 @@ Use un contador CTU para contar tres pulsos discretos y poner la cuenta a cero.
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan solo evidencia del host con el runtime nativo POSIX; no son evidencia de un sensor físico, de rebotes, de hardware, de HIL ni de certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.
 
 ## Cableado
 

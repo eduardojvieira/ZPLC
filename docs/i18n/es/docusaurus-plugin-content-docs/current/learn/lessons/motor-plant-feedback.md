@@ -39,7 +39,7 @@ Separe la orden del motor de la confirmación de marcha usando la planta Motor P
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan solo evidencia determinista del host con el runtime nativo POSIX y de la planta discreta; no son evidencia de un motor físico, hardware, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.
 
 ## En una placa
 

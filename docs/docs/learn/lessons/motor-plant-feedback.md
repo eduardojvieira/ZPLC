@@ -39,7 +39,7 @@ Separate a motor command from the run confirmation using the Motor Plant.
 
 ## What the evidence covers
 
-Tests provide deterministic native POSIX host and discrete-plant evidence only; they are not physical-motor, hardware, HIL, or certification evidence.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.
 
 ## On a board
 

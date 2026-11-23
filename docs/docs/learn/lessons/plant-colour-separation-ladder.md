@@ -39,7 +39,7 @@ Read the colour of each workpiece that waits at the stop blade, push the red one
 
 ## What the evidence covers
 
-Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show sensor response time or belt speed.
 
 ## On a board
 

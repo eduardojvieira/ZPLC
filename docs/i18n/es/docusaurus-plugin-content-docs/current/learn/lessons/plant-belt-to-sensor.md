@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-belt-to-sensor. Do not edit. >>> */}
 
-Arranque una banda con un botón y deténgala cuando una caja llegue al sensor del extremo.
+Arranque una cinta con un botón y deténgala cuando una caja llegue al sensor del extremo.
 
 ## Datos
 
@@ -39,7 +39,7 @@ Arranque una banda con un botón y deténgala cuando una caja llegue al sensor d
 
 ## Qué cubre la evidencia
 
-Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.
 
 ## En una placa
 

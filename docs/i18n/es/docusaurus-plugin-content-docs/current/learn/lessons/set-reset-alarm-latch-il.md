@@ -39,7 +39,7 @@ Mantenga una falla en memoria con las instrucciones S y R y vea que, cuando la f
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran los requisitos de manejo de alarmas de una máquina real, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra los requisitos de manejo de alarmas de una máquina real.
 
 ## Cableado
 

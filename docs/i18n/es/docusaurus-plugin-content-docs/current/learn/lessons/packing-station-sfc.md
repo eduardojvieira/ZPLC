@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/packing-station-sfc. Do not edit. >>> */}
 
-Construya una estación de empaque como un diagrama funcional secuencial a partir de una descripción escrita, con una banda con autorretención, una cuenta de tres piezas, una parada de emergencia y una falla enclavada, y demuéstrelo con un escenario que también comprueba lo que no debe ocurrir.
+Construya una estación de empaque como un diagrama funcional secuencial a partir de una descripción escrita, con una cinta con autorretención, una cuenta de tres piezas, una parada de emergencia y una falla enclavada, y demuéstrelo con un escenario que también comprueba lo que no debe ocurrir.
 
 ## Datos
 
@@ -39,7 +39,7 @@ Construya una estación de empaque como un diagrama funcional secuencial a parti
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran requisitos de una línea de empaque, el comportamiento de una función de seguridad, tiempos de sensores ni ningún comportamiento de máquinas reales, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra requisitos de una línea de empaque, el comportamiento de una función de seguridad, tiempos de sensores ni ningún comportamiento de máquinas reales.
 
 ## En una placa
 

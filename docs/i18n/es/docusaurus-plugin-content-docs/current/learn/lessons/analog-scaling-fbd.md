@@ -39,7 +39,7 @@ Edite un diagrama de bloques de función que escala cuentas analógicas en bruto
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX, una tarea de 10 ms y un sustituto del potenciómetro; no demuestran la exactitud, el ruido ni la calibración de una entrada analógica real, el cableado, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la exactitud, el ruido, la calibración de una entrada analógica real ni el cableado.
 
 ## Cableado
 
