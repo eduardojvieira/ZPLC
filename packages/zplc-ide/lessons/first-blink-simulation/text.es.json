@@ -29,7 +29,7 @@
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Compile el programa: en la barra de herramientas, abra Compilación y elija Compilar. Pulse Conectar para iniciar la simulación y después Ejecutar (F5); Ejecutar queda desactivado hasta que exista una compilación. Abra la pestaña Observación y vea cómo Lamp se enciende y se apaga. Después pulse Comprobar: ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "body": "Pulse Ejecutar (F5) en la barra de herramientas. Una sola pulsación guarda el proyecto, lo compila si la compilación es antigua, inicia el simulador, carga el programa y lo ejecuta, y un aviso nombra el paso en curso; si la compilación falla, los problemas aparecen en la lista y no se ejecuta nada. Abra la pestaña Observación y vea cómo Lamp se enciende y se apaga. Después pulse Comprobar: ZPLC ejecuta el programa guardado con el escenario de esta lección.",
       "checkpoint": "El escenario se llama FirstBlink y contiene {{assertions}} aserciones; ZPLC enumera cada una de las que fallaron."
     },
     {
