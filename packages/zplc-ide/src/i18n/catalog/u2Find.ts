@@ -10,6 +10,9 @@ export const u2FindEn = {
   'palette.group.scenes': 'Scenes',
   'palette.kind.task': 'Task',
   'palette.more': 'Show all {count} in {group}',
+  'placeBar.label': 'Place of the document',
+  'placeBar.project': 'Project',
+  'placeBar.step': 'Show {name} in the navigator',
 } as const;
 export const u2FindEs: Record<keyof typeof u2FindEn, string> = {
   'palette.group.commands': 'Comandos',
@@ -22,4 +25,7 @@ export const u2FindEs: Record<keyof typeof u2FindEn, string> = {
   'palette.group.scenes': 'Escenas',
   'palette.kind.task': 'Tarea',
   'palette.more': 'Mostrar los {count} de {group}',
+  'placeBar.label': 'Ubicación del documento',
+  'placeBar.project': 'Proyecto',
+  'placeBar.step': 'Mostrar {name} en el navegador',
 };

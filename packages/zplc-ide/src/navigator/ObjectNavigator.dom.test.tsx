@@ -216,3 +216,29 @@ describe('creation from the navigator (SHL-013)', () => {
     expect(dom.screen.queryByRole('alertdialog')).toBeNull();
   });
 });
+
+describe('the place bar shows the navigator (FND-007)', () => {
+  it('FND-007 a reveal request expands a collapsed group and focuses the item', async () => {
+    reset();
+    const { useProjectSources } = await import('../store/projectSources');
+    const { useNavigatorReveal } = await import('../store/useNavigationHistory');
+    const { ObjectNavigator } = await import('./ObjectNavigator');
+    dom.patchStore(useIDEStore, { projectConfig: config, fileTree: null } as never);
+    dom.patchStore(useProjectSources, { declarations: groupsDeclarations() as never });
+    const { user } = dom.render(<ObjectNavigator />);
+    const header = () => dom.within(group('programs')).getAllByRole('button')[0]!;
+    await user.click(header());
+    expect(header().getAttribute('aria-expanded')).toBe('false');
+    expect(group('programs').querySelector('[data-navigator-item]')).toBeNull();
+    dom.act(() => useNavigatorReveal.getState().reveal('programs', 'PROGRAM:src/Main.st:Main'));
+    await dom.waitFor(() => expect(header().getAttribute('aria-expanded')).toBe('true'));
+    const item = document.querySelector('[data-navigator-item="PROGRAM:src/Main.st:Main"]') as HTMLElement;
+    expect(item).not.toBeNull();
+    await dom.waitFor(() => expect(document.activeElement).toBe(item));
+    useNavigatorReveal.setState({ group: null, item: null });
+  });
+});
+
+function groupsDeclarations() {
+  return [{ file: 'src/Main.st', declarations: [{ name: 'Main', kind: 'PROGRAM', file: 'src/Main.st', line: 3, column: 9 }] }];
+}

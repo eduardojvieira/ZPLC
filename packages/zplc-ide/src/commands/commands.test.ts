@@ -192,6 +192,15 @@ describe('shortcuts (UX-015)', () => {
     expect(() => parseChord('Mod+')).toThrow();
   });
 
+  it('FND-006 an arrow shortcut matches the keydown that names the arrow key, and no other chord changes', () => {
+    expect(chordMatches(parseChord('Alt+Left'), key('ArrowLeft', { altKey: true }))).toBe(true);
+    expect(chordMatches(parseChord('Alt+Right'), key('ArrowRight', { altKey: true }))).toBe(true);
+    expect(chordMatches(parseChord('Alt+Left'), key('ArrowRight', { altKey: true }))).toBe(false);
+    expect(chordMatches(parseChord('Alt+Left'), key('ArrowLeft'))).toBe(false);
+    expect(parseChord('F5').key).toBe('F5');
+    expect(parseChord('Enter').key).toBe('Enter');
+  });
+
   it('UX-015 matches Ctrl or Cmd as the command key and refuses a modifier that was not asked for', () => {
     const save = parseChord('Mod+S');
     expect(chordMatches(save, key('s', { ctrlKey: true }))).toBe(true);

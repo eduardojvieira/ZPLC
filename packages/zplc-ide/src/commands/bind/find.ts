@@ -12,6 +12,7 @@ import { loadReferenceIndex } from '../../refs/sources';
 import { useReferences, type ReferenceAction } from '../../refs/useReferences';
 import { useSelection } from '../../shell/useSelection';
 import { useIDEStore } from '../../store/useIDEStore';
+import { useNavigationHistory, watchNavigation } from '../../store/useNavigationHistory';
 import { bindCommands } from '../bus';
 import { showActivity } from './layout';
 
@@ -70,12 +71,17 @@ async function run(action: ReferenceAction): Promise<void> {
 }
 
 export function useFindCommands(): void {
-  useEffect(
-    () =>
-      bindCommands({
-        'edit.goToDefinition': () => run('definition'),
-        'edit.findAllReferences': () => run('references'),
-      }),
-    [],
-  );
+  useEffect(() => {
+    const stopWatching = watchNavigation();
+    const unbind = bindCommands({
+      'edit.goToDefinition': () => run('definition'),
+      'edit.findAllReferences': () => run('references'),
+      'edit.goBack': () => useNavigationHistory.getState().back(),
+      'edit.goForward': () => useNavigationHistory.getState().forward(),
+    });
+    return () => {
+      unbind();
+      stopWatching();
+    };
+  }, []);
 }

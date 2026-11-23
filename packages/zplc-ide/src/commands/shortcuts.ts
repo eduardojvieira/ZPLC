@@ -24,6 +24,9 @@ export interface KeyEventLike {
 
 const MODIFIER_KEYS: ReadonlySet<string> = new Set(['Control', 'Shift', 'Alt', 'Meta', 'AltGraph', 'CapsLock']);
 
+/** The registry writes an arrow as `Left`; the keyboard event names it `ArrowLeft`. */
+const ARROWS: Readonly<Record<string, string>> = { Left: 'ArrowLeft', Right: 'ArrowRight', Up: 'ArrowUp', Down: 'ArrowDown' };
+
 /** `Mod+Shift+P` as one chord; a letter is stored in lower case, a named key (`F5`, `Enter`) as it is. */
 export function parseChord(text: string): KeyChord {
   const chord: KeyChord = { mod: false, shift: false, alt: false, key: '' };
@@ -31,7 +34,7 @@ export function parseChord(text: string): KeyChord {
     if (part === 'Mod') chord.mod = true;
     else if (part === 'Shift') chord.shift = true;
     else if (part === 'Alt') chord.alt = true;
-    else chord.key = part.length === 1 ? part.toLowerCase() : part;
+    else chord.key = part.length === 1 ? part.toLowerCase() : (ARROWS[part] ?? part);
   }
   if (chord.key === '') throw new Error(`The shortcut "${text}" names no key`);
   return chord;

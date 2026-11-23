@@ -21,6 +21,7 @@ import { PREFERENCES_VIEW_ID } from '../store/usePreferencesDocument';
 import { PLANT_VIEW_ID, SETTINGS_VIEW_ID, isVisualWorkflow, type ViewId } from '../layout/documentKinds';
 import type { DebugController } from '../hooks/useDebugController';
 import { Button, IconButton } from '../ui';
+import { PlaceBar } from './PlaceBar';
 
 // Each view loads when it is first shown (IDE-015): a project of Structured Text files never fetches the visual editors,
 // one of diagrams never fetches Monaco, and the settings load when they are opened.
@@ -491,6 +492,8 @@ export function EditorGroup({
           />
         </div>
       </div>
+
+      <PlaceBar viewId={activeViewId} />
 
       {/* Editor Content */}
       <div id={panelId} role="tabpanel" aria-labelledby={`editor-tab-${activeViewId}`} className="flex-1 overflow-hidden">

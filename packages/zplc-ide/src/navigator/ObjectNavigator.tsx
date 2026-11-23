@@ -2,11 +2,12 @@
  * The project navigator organised by PLC objects (UX-012): groups that open, each object opens its file at its line or its configuration
  * editor.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useT, type MessageKey } from '../i18n';
 import { useProjectSources } from '../store/projectSources';
 import { useIDEStore } from '../store/useIDEStore';
+import { useNavigatorReveal } from '../store/useNavigationHistory';
 import { projectGlobalVariables } from '../project/globalVariables';
 import { Button, MenuButton, type MenuItem } from '../ui';
 import { runCommand } from '../commands/bus';
@@ -98,6 +99,7 @@ export function ObjectNavigatorView({ groups, collapsed, onToggle, onOpen }: Obj
                       <Button
                         variant="ghost"
                         size="sm"
+                        data-navigator-item={item.key}
                         onClick={() => onOpen(item.target)}
                         className="h-auto min-w-0 flex-1 justify-start gap-2 py-1 pl-8 pr-2 text-left whitespace-normal"
                       >
@@ -129,6 +131,30 @@ export function ObjectNavigator() {
     () => buildNavigatorGroups({ declarations, globals, fileTree, config }, navigatorWords(translator)),
     [declarations, globals, fileTree, config, translator],
   );
+  // A step of the place bar asks for its group to be open and its item shown (FND-007).
+  const nonce = useNavigatorReveal((state) => state.nonce);
+  const revealGroup = useNavigatorReveal((state) => state.group);
+  const revealItem = useNavigatorReveal((state) => state.item);
+  const [seen, setSeen] = useState(nonce);
+  if (nonce !== seen) {
+    setSeen(nonce);
+    if (revealGroup !== null && collapsed.has(revealGroup as NavigatorGroupId)) {
+      const next = new Set(collapsed);
+      next.delete(revealGroup as NavigatorGroupId);
+      setCollapsed(next);
+    }
+  }
+  useEffect(() => {
+    if (nonce === 0 || revealItem === null) return;
+    const frame = requestAnimationFrame(() => {
+      const row = [...document.querySelectorAll<HTMLElement>('[data-navigator-item]')].find(
+        (element) => element.dataset.navigatorItem === revealItem,
+      );
+      row?.scrollIntoView?.({ block: 'nearest' });
+      row?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [nonce, revealItem]);
   const toggle = (id: NavigatorGroupId): void =>
     setCollapsed((current) => {
       const next = new Set(current);
