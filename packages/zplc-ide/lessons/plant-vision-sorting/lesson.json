@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "plant-vision-sorting",
-  "version": 1,
+  "version": 2,
   "order": 166,
   "module": 16,
   "level": "advanced",

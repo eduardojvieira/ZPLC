@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "ld-sequence-step-bits",
-  "version": 1,
+  "version": 2,
   "order": 2,
   "module": 5,
   "level": "intermediate",

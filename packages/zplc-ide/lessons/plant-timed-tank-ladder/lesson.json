@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "plant-timed-tank-ladder",
-  "version": 1,
+  "version": 2,
   "order": 1131,
   "module": 13,
   "level": "advanced",

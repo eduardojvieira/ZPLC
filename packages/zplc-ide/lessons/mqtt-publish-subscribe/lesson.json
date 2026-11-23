@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "mqtt-publish-subscribe",
-  "version": 3,
+  "version": 4,
   "order": 28,
   "module": 10,
   "level": "advanced",

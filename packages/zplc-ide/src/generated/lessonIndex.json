@@ -3,7 +3,7 @@
   "lessons": [
     {
       "id": "ld-no-nc-contacts",
-      "version": 1,
+      "version": 2,
       "order": 1,
       "module": 2,
       "level": "foundation",
@@ -185,7 +185,7 @@
     },
     {
       "id": "ld-sequence-step-bits",
-      "version": 1,
+      "version": 2,
       "order": 2,
       "module": 5,
       "level": "intermediate",
@@ -365,7 +365,7 @@
     },
     {
       "id": "tank-level-fault-reset",
-      "version": 2,
+      "version": 3,
       "order": 3,
       "module": 6,
       "level": "intermediate",
@@ -548,7 +548,7 @@
     },
     {
       "id": "ld-diagnosis-debugger",
-      "version": 1,
+      "version": 2,
       "order": 4,
       "module": 8,
       "level": "advanced",
@@ -729,7 +729,7 @@
     },
     {
       "id": "ld-what-is-a-plc",
-      "version": 1,
+      "version": 2,
       "order": 5,
       "module": 1,
       "level": "foundation",
@@ -909,7 +909,7 @@
     },
     {
       "id": "motor-plant-feedback",
-      "version": 2,
+      "version": 3,
       "order": 6,
       "module": 6,
       "level": "intermediate",
@@ -1090,7 +1090,7 @@
     },
     {
       "id": "timers-on-delay-off-delay",
-      "version": 3,
+      "version": 4,
       "order": 7,
       "module": 3,
       "level": "foundation",
@@ -1302,7 +1302,7 @@
     },
     {
       "id": "ld-scan-cycle",
-      "version": 1,
+      "version": 2,
       "order": 8,
       "module": 1,
       "level": "foundation",
@@ -1485,7 +1485,7 @@
     },
     {
       "id": "conveyor-classification-jam",
-      "version": 2,
+      "version": 3,
       "order": 9,
       "module": 8,
       "level": "advanced",
@@ -1671,7 +1671,7 @@
     },
     {
       "id": "temporal-assertions-jam-fault",
-      "version": 2,
+      "version": 3,
       "order": 10,
       "module": 8,
       "level": "advanced",
@@ -1845,7 +1845,7 @@
     },
     {
       "id": "first-blink-simulation",
-      "version": 3,
+      "version": 4,
       "order": 11,
       "module": 0,
       "level": "foundation",
@@ -2015,7 +2015,7 @@
     },
     {
       "id": "ld-series-parallel",
-      "version": 1,
+      "version": 2,
       "order": 12,
       "module": 2,
       "level": "foundation",
@@ -2195,7 +2195,7 @@
     },
     {
       "id": "ld-edges",
-      "version": 1,
+      "version": 2,
       "order": 13,
       "module": 3,
       "level": "foundation",
@@ -2376,7 +2376,7 @@
     },
     {
       "id": "scan-cycle-one-scan-memory",
-      "version": 2,
+      "version": 3,
       "order": 14,
       "module": 1,
       "level": "foundation",
@@ -2602,7 +2602,7 @@
     },
     {
       "id": "boolean-logic-two-hand-guard",
-      "version": 3,
+      "version": 4,
       "order": 15,
       "module": 2,
       "level": "foundation",
@@ -2834,7 +2834,7 @@
     },
     {
       "id": "seal-in-ladder",
-      "version": 4,
+      "version": 5,
       "order": 16,
       "module": 2,
       "level": "foundation",
@@ -3043,7 +3043,7 @@
     },
     {
       "id": "edge-counter-pulses",
-      "version": 2,
+      "version": 3,
       "order": 17,
       "module": 3,
       "level": "foundation",
@@ -3244,7 +3244,7 @@
     },
     {
       "id": "interlock-guard-permissive",
-      "version": 3,
+      "version": 4,
       "order": 18,
       "module": 6,
       "level": "intermediate",
@@ -3425,7 +3425,7 @@
     },
     {
       "id": "ld-variables-and-types",
-      "version": 1,
+      "version": 2,
       "order": 19,
       "module": 4,
       "level": "intermediate",
@@ -3606,7 +3606,7 @@
     },
     {
       "id": "ld-compare-math",
-      "version": 1,
+      "version": 2,
       "order": 20,
       "module": 4,
       "level": "intermediate",
@@ -3787,7 +3787,7 @@
     },
     {
       "id": "ld-function-blocks",
-      "version": 1,
+      "version": 2,
       "order": 21,
       "module": 7,
       "level": "intermediate",
@@ -3967,7 +3967,7 @@
     },
     {
       "id": "function-block-pump-pair",
-      "version": 4,
+      "version": 5,
       "order": 22,
       "module": 7,
       "level": "intermediate",
@@ -4197,7 +4197,7 @@
     },
     {
       "id": "pedestrian-crossing-states",
-      "version": 2,
+      "version": 3,
       "order": 23,
       "module": 5,
       "level": "intermediate",
@@ -4382,7 +4382,7 @@
     },
     {
       "id": "instruction-list-door-alarm",
-      "version": 3,
+      "version": 4,
       "order": 24,
       "module": 9,
       "level": "advanced",
@@ -4592,7 +4592,7 @@
     },
     {
       "id": "one-logic-five-languages",
-      "version": 4,
+      "version": 5,
       "order": 25,
       "module": 9,
       "level": "advanced",
@@ -4805,7 +4805,7 @@
     },
     {
       "id": "capstone-packing-station",
-      "version": 3,
+      "version": 4,
       "order": 26,
       "module": 11,
       "level": "advanced",
@@ -4977,7 +4977,7 @@
     },
     {
       "id": "modbus-register-round-trip",
-      "version": 3,
+      "version": 4,
       "order": 27,
       "module": 10,
       "level": "advanced",
@@ -5151,7 +5151,7 @@
     },
     {
       "id": "mqtt-publish-subscribe",
-      "version": 3,
+      "version": 4,
       "order": 28,
       "module": 10,
       "level": "advanced",
@@ -5327,7 +5327,7 @@
     },
     {
       "id": "ld-analog-scaling",
-      "version": 1,
+      "version": 2,
       "order": 30,
       "module": 4,
       "level": "intermediate",
@@ -5507,7 +5507,7 @@
     },
     {
       "id": "interlock-reversing-ladder",
-      "version": 5,
+      "version": 6,
       "order": 31,
       "module": 6,
       "level": "intermediate",
@@ -5746,7 +5746,7 @@
     },
     {
       "id": "structures-arrays-call-panel",
-      "version": 4,
+      "version": 5,
       "order": 32,
       "module": 7,
       "level": "intermediate",
@@ -5976,7 +5976,7 @@
     },
     {
       "id": "verify-my-board",
-      "version": 3,
+      "version": 4,
       "order": 33,
       "module": 0,
       "level": "foundation",
@@ -6192,7 +6192,7 @@
     },
     {
       "id": "modbus-coil-fbd",
-      "version": 2,
+      "version": 3,
       "order": 34,
       "module": 10,
       "level": "advanced",
@@ -6365,7 +6365,7 @@
     },
     {
       "id": "set-reset-alarm-latch",
-      "version": 3,
+      "version": 4,
       "order": 40,
       "module": 2,
       "level": "foundation",
@@ -6577,7 +6577,7 @@
     },
     {
       "id": "motor-start-stop-safe",
-      "version": 3,
+      "version": 4,
       "order": 41,
       "module": 2,
       "level": "foundation",
@@ -6807,7 +6807,7 @@
     },
     {
       "id": "counter-batch-fbd",
-      "version": 3,
+      "version": 4,
       "order": 42,
       "module": 3,
       "level": "foundation",
@@ -7008,7 +7008,7 @@
     },
     {
       "id": "timers-on-delay-off-delay-ladder",
-      "version": 3,
+      "version": 4,
       "order": 43,
       "module": 3,
       "level": "foundation",
@@ -7230,7 +7230,7 @@
     },
     {
       "id": "tank-level-fault-reset-ladder",
-      "version": 3,
+      "version": 4,
       "order": 44,
       "module": 6,
       "level": "intermediate",
@@ -7422,7 +7422,7 @@
     },
     {
       "id": "boolean-logic-two-hand-guard-ladder",
-      "version": 3,
+      "version": 4,
       "order": 50,
       "module": 2,
       "level": "foundation",
@@ -7663,7 +7663,7 @@
     },
     {
       "id": "edge-counter-pulses-ladder",
-      "version": 3,
+      "version": 4,
       "order": 51,
       "module": 3,
       "level": "foundation",
@@ -7873,7 +7873,7 @@
     },
     {
       "id": "types-arithmetic-comparison",
-      "version": 3,
+      "version": 4,
       "order": 52,
       "module": 4,
       "level": "intermediate",
@@ -8096,7 +8096,7 @@
     },
     {
       "id": "interlock-guard-permissive-fbd",
-      "version": 3,
+      "version": 4,
       "order": 53,
       "module": 6,
       "level": "intermediate",
@@ -8278,7 +8278,7 @@
     },
     {
       "id": "sfc-fill-mix-sequence",
-      "version": 3,
+      "version": 4,
       "order": 60,
       "module": 5,
       "level": "intermediate",
@@ -8481,7 +8481,7 @@
     },
     {
       "id": "pedestrian-crossing-sfc",
-      "version": 1,
+      "version": 2,
       "order": 61,
       "module": 5,
       "level": "intermediate",
@@ -8667,7 +8667,7 @@
     },
     {
       "id": "selection-branches-sfc",
-      "version": 1,
+      "version": 2,
       "order": 62,
       "module": 5,
       "level": "intermediate",
@@ -8839,7 +8839,7 @@
     },
     {
       "id": "simultaneous-branches-sfc",
-      "version": 1,
+      "version": 2,
       "order": 63,
       "module": 5,
       "level": "intermediate",
@@ -9011,7 +9011,7 @@
     },
     {
       "id": "step-times-sfc",
-      "version": 1,
+      "version": 2,
       "order": 64,
       "module": 5,
       "level": "intermediate",
@@ -9183,7 +9183,7 @@
     },
     {
       "id": "fault-stop-reset-sfc",
-      "version": 1,
+      "version": 2,
       "order": 65,
       "module": 6,
       "level": "intermediate",
@@ -9356,7 +9356,7 @@
     },
     {
       "id": "packing-station-sfc",
-      "version": 1,
+      "version": 2,
       "order": 66,
       "module": 11,
       "level": "advanced",
@@ -9529,7 +9529,7 @@
     },
     {
       "id": "set-reset-alarm-latch-ladder",
-      "version": 3,
+      "version": 4,
       "order": 70,
       "module": 2,
       "level": "foundation",
@@ -9750,7 +9750,7 @@
     },
     {
       "id": "boolean-logic-two-hand-guard-fbd",
-      "version": 2,
+      "version": 3,
       "order": 71,
       "module": 2,
       "level": "foundation",
@@ -9982,7 +9982,7 @@
     },
     {
       "id": "timers-on-delay-off-delay-fbd",
-      "version": 2,
+      "version": 3,
       "order": 72,
       "module": 3,
       "level": "foundation",
@@ -10195,7 +10195,7 @@
     },
     {
       "id": "timers-on-delay-off-delay-il",
-      "version": 2,
+      "version": 3,
       "order": 73,
       "module": 3,
       "level": "foundation",
@@ -10408,7 +10408,7 @@
     },
     {
       "id": "analog-scaling-integer",
-      "version": 3,
+      "version": 4,
       "order": 74,
       "module": 4,
       "level": "intermediate",
@@ -10611,7 +10611,7 @@
     },
     {
       "id": "interlock-guard-permissive-il",
-      "version": 2,
+      "version": 3,
       "order": 75,
       "module": 6,
       "level": "intermediate",
@@ -10793,7 +10793,7 @@
     },
     {
       "id": "function-block-valves-fbd",
-      "version": 3,
+      "version": 4,
       "order": 76,
       "module": 7,
       "level": "intermediate",
@@ -11024,7 +11024,7 @@
     },
     {
       "id": "blinky-ladder-timer-feedback",
-      "version": 4,
+      "version": 5,
       "order": 77,
       "module": 1,
       "level": "foundation",
@@ -11216,7 +11216,7 @@
     },
     {
       "id": "blink-structured-text",
-      "version": 3,
+      "version": 4,
       "order": 78,
       "module": 1,
       "level": "foundation",
@@ -11408,7 +11408,7 @@
     },
     {
       "id": "boolean-logic-two-hand-guard-il",
-      "version": 2,
+      "version": 3,
       "order": 79,
       "module": 2,
       "level": "foundation",
@@ -11640,7 +11640,7 @@
     },
     {
       "id": "set-reset-alarm-latch-il",
-      "version": 2,
+      "version": 3,
       "order": 80,
       "module": 2,
       "level": "foundation",
@@ -11853,7 +11853,7 @@
     },
     {
       "id": "edge-counter-pulses-il",
-      "version": 2,
+      "version": 3,
       "order": 81,
       "module": 3,
       "level": "foundation",
@@ -12055,7 +12055,7 @@
     },
     {
       "id": "analog-scaling-fbd",
-      "version": 2,
+      "version": 3,
       "order": 82,
       "module": 4,
       "level": "intermediate",
@@ -12248,7 +12248,7 @@
     },
     {
       "id": "conveyor-sorting-sfc",
-      "version": 1,
+      "version": 2,
       "order": 85,
       "module": 5,
       "level": "intermediate",
@@ -12433,7 +12433,7 @@
     },
     {
       "id": "function-block-call-il",
-      "version": 2,
+      "version": 3,
       "order": 86,
       "module": 7,
       "level": "intermediate",
@@ -12664,7 +12664,7 @@
     },
     {
       "id": "conveyor-two-parts-diagnosis",
-      "version": 2,
+      "version": 3,
       "order": 87,
       "module": 8,
       "level": "advanced",
@@ -12848,7 +12848,7 @@
     },
     {
       "id": "ld-final-project",
-      "version": 1,
+      "version": 2,
       "order": 88,
       "module": 11,
       "level": "advanced",
@@ -13028,7 +13028,7 @@
     },
     {
       "id": "types-arithmetic-comparison-fbd",
-      "version": 2,
+      "version": 3,
       "order": 89,
       "module": 4,
       "level": "intermediate",
@@ -13252,7 +13252,7 @@
     },
     {
       "id": "types-arithmetic-comparison-il",
-      "version": 2,
+      "version": 3,
       "order": 90,
       "module": 4,
       "level": "intermediate",
@@ -13476,7 +13476,7 @@
     },
     {
       "id": "plant-belt-to-sensor",
-      "version": 1,
+      "version": 2,
       "order": 121,
       "module": 12,
       "level": "advanced",
@@ -13676,7 +13676,7 @@
     },
     {
       "id": "plant-latch-two-sensors",
-      "version": 1,
+      "version": 2,
       "order": 122,
       "module": 12,
       "level": "advanced",
@@ -13871,7 +13871,7 @@
     },
     {
       "id": "plant-counted-queue",
-      "version": 1,
+      "version": 2,
       "order": 123,
       "module": 12,
       "level": "advanced",
@@ -14082,7 +14082,7 @@
     },
     {
       "id": "plant-timed-tank",
-      "version": 1,
+      "version": 2,
       "order": 131,
       "module": 13,
       "level": "advanced",
@@ -14307,7 +14307,7 @@
     },
     {
       "id": "plant-tank-level-scaling",
-      "version": 1,
+      "version": 2,
       "order": 132,
       "module": 13,
       "level": "advanced",
@@ -14565,7 +14565,7 @@
     },
     {
       "id": "plant-tank-pid",
-      "version": 1,
+      "version": 2,
       "order": 133,
       "module": 13,
       "level": "advanced",
@@ -14822,7 +14822,7 @@
     },
     {
       "id": "plant-tank-pid-fbd",
-      "version": 1,
+      "version": 2,
       "order": 134,
       "module": 13,
       "level": "advanced",
@@ -15079,7 +15079,7 @@
     },
     {
       "id": "plant-buffer-release",
-      "version": 1,
+      "version": 2,
       "order": 141,
       "module": 14,
       "level": "advanced",
@@ -15315,7 +15315,7 @@
     },
     {
       "id": "plant-merge-lines",
-      "version": 1,
+      "version": 2,
       "order": 142,
       "module": 14,
       "level": "advanced",
@@ -15556,7 +15556,7 @@
     },
     {
       "id": "plant-belt-transfer",
-      "version": 1,
+      "version": 2,
       "order": 151,
       "module": 15,
       "level": "advanced",
@@ -15831,7 +15831,7 @@
     },
     {
       "id": "plant-assembler",
-      "version": 1,
+      "version": 2,
       "order": 152,
       "module": 15,
       "level": "advanced",
@@ -16122,7 +16122,7 @@
     },
     {
       "id": "plant-assembler-numeric",
-      "version": 1,
+      "version": 2,
       "order": 153,
       "module": 15,
       "level": "advanced",
@@ -16420,7 +16420,7 @@
     },
     {
       "id": "plant-layer-palletizer",
-      "version": 2,
+      "version": 3,
       "order": 154,
       "module": 15,
       "level": "advanced",
@@ -16701,7 +16701,7 @@
     },
     {
       "id": "plant-xyz-palletizing",
-      "version": 1,
+      "version": 2,
       "order": 155,
       "module": 15,
       "level": "advanced",
@@ -16998,7 +16998,7 @@
     },
     {
       "id": "plant-colour-separation",
-      "version": 1,
+      "version": 2,
       "order": 161,
       "module": 16,
       "level": "advanced",
@@ -17238,7 +17238,7 @@
     },
     {
       "id": "plant-colour-separation-il",
-      "version": 1,
+      "version": 2,
       "order": 162,
       "module": 16,
       "level": "advanced",
@@ -17479,7 +17479,7 @@
     },
     {
       "id": "plant-weight-sorting",
-      "version": 1,
+      "version": 2,
       "order": 163,
       "module": 16,
       "level": "advanced",
@@ -17722,7 +17722,7 @@
     },
     {
       "id": "plant-height-chain",
-      "version": 1,
+      "version": 2,
       "order": 164,
       "module": 16,
       "level": "advanced",
@@ -17987,7 +17987,7 @@
     },
     {
       "id": "plant-height-turntable",
-      "version": 1,
+      "version": 2,
       "order": 165,
       "module": 16,
       "level": "advanced",
@@ -18264,7 +18264,7 @@
     },
     {
       "id": "plant-vision-sorting",
-      "version": 1,
+      "version": 2,
       "order": 166,
       "module": 16,
       "level": "advanced",
@@ -18491,7 +18491,7 @@
     },
     {
       "id": "plant-three-level-lifts",
-      "version": 1,
+      "version": 2,
       "order": 171,
       "module": 17,
       "level": "advanced",
@@ -18771,7 +18771,7 @@
     },
     {
       "id": "plant-lift-stacking",
-      "version": 1,
+      "version": 2,
       "order": 172,
       "module": 17,
       "level": "advanced",
@@ -19026,7 +19026,7 @@
     },
     {
       "id": "plant-warehouse",
-      "version": 1,
+      "version": 2,
       "order": 173,
       "module": 17,
       "level": "advanced",
@@ -19320,7 +19320,7 @@
     },
     {
       "id": "plant-production-line",
-      "version": 1,
+      "version": 2,
       "order": 174,
       "module": 17,
       "level": "advanced",
@@ -19591,7 +19591,7 @@
     },
     {
       "id": "plant-estop-interlocks",
-      "version": 1,
+      "version": 2,
       "order": 181,
       "module": 18,
       "level": "advanced",
@@ -19872,7 +19872,7 @@
     },
     {
       "id": "plant-manual-auto",
-      "version": 1,
+      "version": 2,
       "order": 182,
       "module": 18,
       "level": "advanced",
@@ -20188,7 +20188,7 @@
     },
     {
       "id": "plant-fault-actions",
-      "version": 1,
+      "version": 2,
       "order": 183,
       "module": 18,
       "level": "advanced",
@@ -20453,7 +20453,7 @@
     },
     {
       "id": "plant-build-belt-scene",
-      "version": 1,
+      "version": 2,
       "order": 191,
       "module": 19,
       "level": "advanced",
@@ -20654,7 +20654,7 @@
     },
     {
       "id": "plant-change-scene",
-      "version": 1,
+      "version": 2,
       "order": 192,
       "module": 19,
       "level": "advanced",
@@ -20895,7 +20895,7 @@
     },
     {
       "id": "plant-belt-to-sensor-ladder",
-      "version": 1,
+      "version": 2,
       "order": 1121,
       "module": 12,
       "level": "advanced",
@@ -21095,7 +21095,7 @@
     },
     {
       "id": "plant-latch-two-sensors-ladder",
-      "version": 1,
+      "version": 2,
       "order": 1122,
       "module": 12,
       "level": "advanced",
@@ -21290,7 +21290,7 @@
     },
     {
       "id": "plant-counted-queue-ladder",
-      "version": 1,
+      "version": 2,
       "order": 1123,
       "module": 12,
       "level": "advanced",
@@ -21501,7 +21501,7 @@
     },
     {
       "id": "plant-timed-tank-ladder",
-      "version": 1,
+      "version": 2,
       "order": 1131,
       "module": 13,
       "level": "advanced",
@@ -21726,7 +21726,7 @@
     },
     {
       "id": "plant-tank-level-scaling-ladder",
-      "version": 1,
+      "version": 2,
       "order": 1132,
       "module": 13,
       "level": "advanced",
@@ -21984,7 +21984,7 @@
     },
     {
       "id": "plant-merge-lines-ladder",
-      "version": 1,
+      "version": 2,
       "order": 1142,
       "module": 14,
       "level": "advanced",
@@ -22225,7 +22225,7 @@
     },
     {
       "id": "plant-belt-transfer-ladder",
-      "version": 1,
+      "version": 2,
       "order": 1151,
       "module": 15,
       "level": "advanced",
@@ -22500,7 +22500,7 @@
     },
     {
       "id": "plant-colour-separation-ladder",
-      "version": 1,
+      "version": 2,
       "order": 1161,
       "module": 16,
       "level": "advanced",
@@ -22740,7 +22740,7 @@
     },
     {
       "id": "plant-weight-sorting-ladder",
-      "version": 1,
+      "version": 2,
       "order": 1163,
       "module": 16,
       "level": "advanced",
@@ -22983,7 +22983,7 @@
     },
     {
       "id": "plant-height-chain-ladder",
-      "version": 1,
+      "version": 2,
       "order": 1164,
       "module": 16,
       "level": "advanced",
@@ -23248,7 +23248,7 @@
     },
     {
       "id": "plant-estop-interlocks-ladder",
-      "version": 1,
+      "version": 2,
       "order": 1181,
       "module": 18,
       "level": "advanced",
@@ -23529,7 +23529,7 @@
     },
     {
       "id": "plant-manual-auto-ladder",
-      "version": 1,
+      "version": 2,
       "order": 1182,
       "module": 18,
       "level": "advanced",
@@ -23845,7 +23845,7 @@
     },
     {
       "id": "plant-build-belt-scene-ladder",
-      "version": 1,
+      "version": 2,
       "order": 1191,
       "module": 19,
       "level": "advanced",
@@ -24046,7 +24046,7 @@
     },
     {
       "id": "plant-change-scene-ladder",
-      "version": 1,
+      "version": 2,
       "order": 1192,
       "module": 19,
       "level": "advanced",

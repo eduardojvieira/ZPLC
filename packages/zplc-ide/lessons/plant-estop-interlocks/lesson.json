@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "plant-estop-interlocks",
-  "version": 1,
+  "version": 2,
   "order": 181,
   "module": 18,
   "level": "advanced",

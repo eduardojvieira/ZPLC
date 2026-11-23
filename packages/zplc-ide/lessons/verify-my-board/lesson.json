@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "verify-my-board",
-  "version": 3,
+  "version": 4,
   "order": 33,
   "module": 0,
   "level": "foundation",

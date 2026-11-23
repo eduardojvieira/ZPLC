@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "pedestrian-crossing-sfc",
-  "version": 1,
+  "version": 2,
   "order": 61,
   "module": 5,
   "level": "intermediate",
