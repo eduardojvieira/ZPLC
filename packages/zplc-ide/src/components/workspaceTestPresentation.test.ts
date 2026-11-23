@@ -222,7 +222,11 @@ describe('presentWorkspaceTestResult', () => {
         ok: false,
         evidence: { ...validEvidence, outcome: 'failed', diagnostics: [{ code, message: 'Test execution failed' }] },
       }),
-    ).toMatchObject({ kind: 'infrastructure-unavailable', message: 'Host POSIX simulation is unavailable.', hasEvidence: true });
+    ).toMatchObject({
+      kind: 'infrastructure-unavailable',
+      message: 'The simulation is not available. Restart ZPLC and run the tests again.',
+      hasEvidence: true,
+    });
   });
 
   it.each(['UNKNOWN_IDENTIFIER', 'TEST_SCENARIO_INVALID', 'TEST_BUDGET_EXCEEDED'])('classifies %s as an invalid run', (code) => {
@@ -231,12 +235,16 @@ describe('presentWorkspaceTestResult', () => {
         ok: false,
         evidence: { ...validEvidence, outcome: 'failed', diagnostics: [{ code, message: 'Test execution failed' }] },
       }),
-    ).toMatchObject({ kind: 'invalid', message: 'Host scenarios could not run.', hasEvidence: true });
+    ).toMatchObject({
+      kind: 'invalid',
+      message: "Tests could not run. Build the project, then run them again; Details has the runtime's own code and message.",
+      hasEvidence: true,
+    });
   });
 
   it.each([
     ['TEST_CANCELLED', 'cancelled', 'Host scenario run was cancelled.'],
-    ['TEST_TIMEOUT', 'timeout', 'Host scenario run exceeded its deadline.'],
+    ['TEST_TIMEOUT', 'timeout', 'The test run took too long and was stopped. Run it again, or run fewer tests at once.'],
   ])('keeps %s as non-evidence', (code, kind, message) => {
     const presentation = presentWorkspaceTestResult({
       ok: false,
@@ -254,7 +262,7 @@ describe('presentWorkspaceTestResult', () => {
   it('treats malformed results as unavailable infrastructure', () => {
     expect(presentWorkspaceTestResult({ ok: true, summary: {}, evidence: validEvidence })).toMatchObject({
       kind: 'infrastructure-unavailable',
-      message: 'Host POSIX simulation is unavailable.',
+      message: 'The simulation is not available. Restart ZPLC and run the tests again.',
       hasEvidence: false,
     });
   });
@@ -1739,7 +1747,17 @@ describe('saved workspace compilation presentation', () => {
           ok: false,
           evidence: { outcome: 'failed', diagnostics: [{ code: 'UNKNOWN_IDENTIFIER', message, line: 2, column: 1 }] },
         }),
-      ).toEqual({ ok: false, diagnostics: [{ code: 'UNKNOWN_IDENTIFIER', message: 'Compilation failed.', line: 2, column: 1 }] });
+      ).toEqual({
+        ok: false,
+        diagnostics: [
+          {
+            code: 'UNKNOWN_IDENTIFIER',
+            message: 'The build failed and the compiler gave no readable message. Build again and look at the problems list.',
+            line: 2,
+            column: 1,
+          },
+        ],
+      });
     }
     // Every other code keeps its fixed text, whatever message arrives.
     expect(

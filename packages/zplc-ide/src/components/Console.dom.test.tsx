@@ -64,7 +64,7 @@ describe('Output, Problems and Tests tabs (IDE-020, IDE-031) in a DOM', () => {
     const { user } = dom.render(<Console />);
     expect(dom.screen.getByText(dom.t('panel.output.empty.title'))).toBeTruthy();
     await dom.act(async () => {
-      useIDEStore.getState().addConsoleEntry({ type: 'info', message: 'Build finished', source: 'compiler' });
+      useIDEStore.getState().addConsoleEntry({ type: 'info', message: 'Build finished', source: 'compiler', step: true });
     });
     expect(dom.screen.getByText('Build finished')).toBeTruthy();
     await user.click(dom.screen.getByRole('button', { name: /^Clear/i }));

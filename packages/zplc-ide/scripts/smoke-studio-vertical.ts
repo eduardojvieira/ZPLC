@@ -1761,7 +1761,7 @@ async function main(): Promise<void> {
     await click('English');
     await waitFor('English Learn lesson', async () => ((await text()).includes('Safe motor start-stop') ? true : undefined));
     assert(
-      (await text()).includes('The starter fails this host scenario until the stated omission is corrected.') &&
+      (await text()).includes('The starter fails this test until the stated omission is corrected.') &&
         (await text()).includes('native POSIX host evidence only') &&
         (await text()).includes('not hardware or HIL evidence.'),
       'Learn must preserve honest host-only evidence wording',

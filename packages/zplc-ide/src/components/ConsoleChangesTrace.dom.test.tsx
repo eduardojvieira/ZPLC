@@ -83,7 +83,7 @@ describe('Changes tab contents in a DOM (VF-007)', () => {
     dom.render(<Console />);
     expect(panel().getByText(dom.t('console.changeReviewRequiresThe')).getAttribute('role')).toBe('status');
     expect(reviewButton().disabled).toBe(true);
-    expect(panel().getByText(dom.t('console.hostEvidenceBadge'))).toBeTruthy();
+    expect(panel().getByText(dom.t('u2Tests.boundary.simulation'))).toBeTruthy();
   });
 
   it('with the desktop app and no saved workspace linked it offers to choose the workspace file', () => {
