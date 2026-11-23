@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import type { BodyPose, PartView, Vec3 } from '../contracts';
 import { cuesFor } from './cues';
 import { paletteFor, type DisplayMode } from './displayModes';
-import { instanceColors, itemTone, itemToneOf, OUTLINED_PARTS, partDecor, partShape } from './geometry';
+import { itemToneOf, OUTLINED_PARTS, partDecor, partShape } from './geometry';
 
 // The view kinds the M4 parts publish (plan-m4 "View state keys"). Once K9 registers the parts, a real-snapshot test
 // must assert these equal the `part` of the views of `createPlantCore` (the M1 'curve' / 'blade' defect).
@@ -90,8 +90,6 @@ describe('M4 view kinds', () => {
         expect(new Set([red, blue, metal]).size).toBe(3);
         expect(lightness(red!)).not.toBe(lightness(blue!));
       }
-      const c = instanceColors([item({ colour: 'red' }), item({ colour: 'blue' }), item({ metal: true })]);
-      expect(new Set([c.slice(0, 3).join(), c.slice(3, 6).join(), c.slice(6, 9).join()]).size).toBe(3);
     },
   );
 
@@ -113,11 +111,11 @@ describe('M4 view kinds', () => {
     });
     expect(partDecor(view('stack-light')).map((d) => d.slot)).toEqual(['red', 'amber', 'green']);
     expect(partDecor(view('belt'))).toEqual([]);
-    const c = instanceColors([item(), item({ kind: 'pallet' }), item({ kind: 'item' }), item({ tag: 'lid' }), item({ tag: 'base' })]);
-    expect(Array.from(c.slice(0, 3))).toEqual([0.82, 0.58, 0.28].map(Math.fround));
-    expect(Array.from(c.slice(3, 6))).toEqual([0.62, 0.48, 0.32].map(Math.fround));
-    expect(Array.from(c.slice(6, 9))).toEqual([0.3, 0.6, 0.85].map(Math.fround));
     const p = paletteFor({ mode: 'light', reducedMotion: false });
-    expect([itemTone('lid', p), itemTone('base', p), itemTone('box', p)]).toEqual([p.sensorOn, p.belt, p.item]);
+    expect([itemToneOf(item({ tag: 'lid' }), p), itemToneOf(item({ tag: 'base' }), p), itemToneOf(item({ tag: 'box' }), p)]).toEqual([
+      p.items.lid,
+      p.items.base,
+      p.item,
+    ]);
   });
 });

@@ -3,7 +3,8 @@ import type * as THREE from 'three';
 import type { BodyPose, PartView, PlantSceneFile } from '../contracts';
 import { createFrameStats, createRenderer, loadRenderer, watchContext } from './renderer';
 import { paletteFor } from './displayModes';
-import { instanceColors, instanceMatrices, partDecor, partShape, boxShape, palletShape } from './geometry';
+import { partColour } from './look';
+import { instanceMatrices, partDecor, partShape, boxShape, palletShape } from './geometry';
 
 const scene: PlantSceneFile = { schemaVersion: 1, name: 't', parts: [], cameras: [] };
 
@@ -128,7 +129,6 @@ describe('geometry', () => {
     // A quarter turn about Y sends +X to -Z.
     expect(m[16]).toBeCloseTo(0);
     expect(m[18]).toBeCloseTo(-1);
-    expect(instanceColors([pose({ kind: 'pallet' }), pose({ kind: 'item' })]).length).toBe(6);
   });
 });
 
@@ -141,6 +141,10 @@ function fakeThree() {
     }
     set(v: number) {
       this.hex = v;
+    }
+    copy(c: Color) {
+      this.hex = c.hex;
+      return this;
     }
   }
   class Vec {
@@ -171,6 +175,8 @@ function fakeThree() {
   const scenes: { background: Color | null; children: unknown[] }[] = [];
   class Material {
     color: Color;
+    emissive = new Color(0);
+    name = '';
     constructor(o: { color?: number } = {}) {
       this.color = new Color(o.color ?? 0xffffff);
       mats.push(this);
@@ -228,7 +234,15 @@ function fakeThree() {
       aspect = 1;
       updateProjectionMatrix() {}
     },
-    HemisphereLight: Obj,
+    HemisphereLight: class extends Obj {
+      color = new Color(0);
+      groundColor = new Color(0);
+    },
+    Group: Obj,
+    Fog: class {
+      color = new Color(0);
+    },
+    CylinderGeometry: Geometry,
     DirectionalLight: class extends Obj {
       shadow = { mapSize: { set() {} } };
     },
@@ -266,16 +280,26 @@ function fakeThree() {
 }
 
 /** Every outline in the scene: edge lines on parts and wireframe instanced passes, with their colours. */
-function outlinesOf(world: { children: unknown[] } | undefined): { kind: 'line' | 'items'; hex: number }[] {
-  const found: { kind: 'line' | 'items'; hex: number }[] = [];
-  const visit = (o: { children?: unknown[]; isLine?: boolean; material?: { wireframe?: boolean; color?: { hex: number } } }): void => {
-    if (o.material?.wireframe) found.push({ kind: 'items', hex: o.material.color?.hex ?? -1 });
-    else if (o.isLine && o.material?.color) found.push({ kind: 'line', hex: o.material.color.hex });
-    for (const c of o.children ?? []) visit(c as typeof o);
+function outlinesOf(world: { children: unknown[] } | undefined): { kind: 'line' | 'items'; hex: number; part?: string }[] {
+  const found: { kind: 'line' | 'items'; hex: number; part?: string }[] = [];
+  type Node = {
+    children?: unknown[];
+    isLine?: boolean;
+    userData?: { part?: string };
+    material?: { wireframe?: boolean; color?: { hex: number } };
   };
-  for (const c of world?.children ?? []) visit(c as Parameters<typeof visit>[0]);
+  const visit = (o: Node, part: string | undefined): void => {
+    const owner = o.userData?.part ?? part;
+    if (o.material?.wireframe) found.push({ kind: 'items', hex: o.material.color?.hex ?? -1 });
+    else if (o.isLine && o.material?.color) found.push({ kind: 'line', hex: o.material.color.hex, ...(owner ? { part: owner } : {}) });
+    for (const c of o.children ?? []) visit(c as Node, owner);
+  };
+  for (const c of world?.children ?? []) visit(c as Node, undefined);
   return found;
 }
+/** The parts that have at least one edge line. */
+const outlinedParts = (world: { children: unknown[] } | undefined): string[] =>
+  [...new Set(outlinesOf(world).flatMap((o) => (o.kind === 'line' && o.part ? [o.part] : [])))].sort();
 
 describe('tank and panel geometry', () => {
   const PANEL = ['tank', 'selector-switch', 'emergency-stop', 'stack-light', 'potentiometer', 'numeric-display'];
@@ -346,15 +370,20 @@ describe('display preferences reach the renderer', () => {
     ReturnType<typeof build>['r']['setSnapshot']
   >[0];
 
-  it('VIS-009 setPalette recolours the floor, belts, sensors and items, including ones that already exist', () => {
+  it('VIS-009 VIS-018 setPalette recolours the floor and the items, and parts keep their own colours, including ones that exist', () => {
     const { r, colorsSet, mats, scenes } = build();
     r.setSnapshot(snapshot);
     colorsSet.length = 0;
-    r.setPalette?.(paletteFor({ mode: 'high-contrast', reducedMotion: false }));
-    expect(colorsSet).toEqual([0xffffff]); // existing items repainted with the high-contrast item colour
-    // materials in creation order: floor, items, belt, sensor
-    expect(mats.map((m) => m.color.hex)).toEqual([0x000000, 0xffffff, 0x808080, 0xffff00]);
+    const hc = paletteFor({ mode: 'high-contrast', reducedMotion: false });
+    r.setPalette?.(hc);
+    expect(colorsSet).toEqual([hc.item]); // the existing item (no colour named) repainted in the high-contrast item tone
+    const colour = (name: string) => mats.find((m) => m.name === name)?.color.hex;
+    expect(colour('floor')).toBe(0x000000);
     expect(scenes[0]?.background?.hex).toBe(0x000000);
+    // The belt's frame and the sensor's housing keep their own part colours (lightened for the black floor), never one palette tone.
+    expect(colour('frame:belt')).toBe(partColour('belt', hc));
+    expect(colour('housing:sensor')).toBe(partColour('sensor', hc));
+    expect(colour('frame:belt')).not.toBe(colour('housing:sensor'));
   });
 
   it('VIS-009 parts built after setPalette use the palette colours', () => {
@@ -362,7 +391,7 @@ describe('display preferences reach the renderer', () => {
     r.setPalette?.(paletteFor({ mode: 'dark', reducedMotion: false }));
     colorsSet.length = 0;
     r.setSnapshot(snapshot);
-    expect(colorsSet).toEqual([0xfbbf24]);
+    expect(colorsSet).toEqual([paletteFor({ mode: 'dark', reducedMotion: false }).item]);
   });
 
   it('SCN-008 the renderer exposes its camera and draws a ghost marker only while one is set', () => {
@@ -452,7 +481,7 @@ describe('display preferences reach the renderer', () => {
     expect(outlinesOf(scenes[0])).toEqual([]); // no palette yet: nothing outlined
     r.setPalette?.(hc);
     const found = outlinesOf(scenes[0]);
-    expect(found.filter((o) => o.kind === 'line').length).toBe(2); // sensor + blade, not the belt
+    expect(outlinedParts(scenes[0])).toEqual(['sensor', 'stop-blade']); // every piece of the sensor and the blade, not the belt
     expect(found.filter((o) => o.kind === 'items').length).toBe(1);
     expect(found.every((o) => o.hex === 0xffffff)).toBe(true);
   });
@@ -481,7 +510,7 @@ describe('display preferences reach the renderer', () => {
     const { r, scenes, mats } = build();
     r.setSnapshot({ items: [], parts: [blade] } as unknown as Parameters<typeof r.setSnapshot>[0]);
     r.setPalette?.(hc);
-    expect(mats.some((m) => m.color.hex === 0xb45309)).toBe(true); // the blade keeps its own colour under a palette
+    expect(mats.some((m) => m.color.hex === partColour('stop-blade', hc))).toBe(true); // the blade keeps its own colour under a palette
     expect(outlinesOf(scenes[0]).filter((o) => o.kind === 'line').length).toBe(1); // the blade (the fake three has no Shape for the arc)
   });
 
@@ -565,22 +594,23 @@ describe('display preferences reach the renderer', () => {
       expect(outlinesOf(scenes[0])).toEqual([]);
     }
     r.setPalette?.(hc);
-    expect(outlinesOf(scenes[0]).length).toBe(3);
+    const outlines = outlinesOf(scenes[0]).length;
+    expect(outlines).toBeGreaterThan(2);
     r.setPalette?.(paletteFor({ mode: 'light', reducedMotion: false }));
     expect(outlinesOf(scenes[0])).toEqual([]);
     r.setPalette?.(hc);
-    expect(outlinesOf(scenes[0]).length).toBe(3); // and they come back without duplicates
+    expect(outlinesOf(scenes[0]).length).toBe(outlines); // and they come back without duplicates
   });
 
   it('VIS-009 sensors and blades that appear after high contrast is set get outlines too', () => {
     const { r, scenes } = build();
     r.setPalette?.(hc);
     r.setSnapshot(snapshot);
-    expect(outlinesOf(scenes[0]).filter((o) => o.kind === 'line').length).toBe(1); // the sensor
+    expect(outlinedParts(scenes[0])).toEqual(['sensor']);
     r.setSnapshot(withBlade);
-    expect(outlinesOf(scenes[0]).filter((o) => o.kind === 'line').length).toBe(2);
+    expect(outlinedParts(scenes[0])).toEqual(['sensor', 'stop-blade']);
     r.setSnapshot({ ...withBlade, parts: [] });
-    expect(outlinesOf(scenes[0]).filter((o) => o.kind === 'line').length).toBe(0);
+    expect(outlinedParts(scenes[0])).toEqual([]);
   });
 
   it('VIS-009 items added later are outlined, including after the instance buffer grows', () => {

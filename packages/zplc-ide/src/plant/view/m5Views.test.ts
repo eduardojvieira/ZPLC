@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test';
 import type { PartView, PlantCore, ScenePart } from '../contracts';
 import { createPlantCore } from '../core/plantCore';
 import { cuesFor } from './cues';
-import { crateWallMatrices, instanceColors, itemToneOf, OUTLINED_PARTS, partDecor, partShape } from './geometry';
+import { crateWallMatrices, itemToneOf, OUTLINED_PARTS, partDecor, partShape } from './geometry';
 import { paletteFor } from './displayModes';
 
 // The view kinds V7 handles (view/stations.test.ts); here they are compared with what the REAL parts publish through the REAL core.
@@ -153,7 +153,6 @@ describe('M5 views from a real snapshot', () => {
     expect(crateWallMatrices(items)).toHaveLength(64); // four walls of the one crate
     const p = paletteFor({ mode: 'light', reducedMotion: false });
     expect(itemToneOf(items[0]!, p)).toBe(p.item); // a crate is drawn in the plain item tone, as a box
-    expect(instanceColors(items)).toHaveLength(6);
   });
 
   it(

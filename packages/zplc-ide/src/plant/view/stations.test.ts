@@ -112,7 +112,7 @@ describe('M5 view kinds', () => {
     for (const mode of MODES) {
       const palette = paletteFor({ mode, reducedMotion: false });
       const tones = [itemToneOf(crate(), palette), itemToneOf(crate({ tag: 'lid' }), palette), itemToneOf(crate({ tag: 'base' }), palette)];
-      expect(tones[0]).toBe(itemToneOf({}, palette)); // the item tone, as a plain box has
+      expect(tones[0]).toBe(itemToneOf({ tag: 'box' }, palette)); // the tone of a plain box
       expect(new Set(tones).size).toBe(3);
     }
   });
