@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, setDefaultTimeout, test } from 'bun:test';
-import { browserApp, closeBrowserApp } from './browser';
+import type { Cdp } from '../../scripts/cdpHarness';
+import { BrowserApp, browserApp, closeBrowserApp } from './browser';
 
 // The click of the browser driver: the workbench lays its panels out for a moment after the editor is drawn, and a click that
 // aimed at the box it measured landed on the sidebar separator instead, so the editor never got the focus and every key of
@@ -26,4 +27,26 @@ describe('the click of the browser driver', () => {
     await app.click('#moving');
     expect(await app.eval<boolean>('window.__hit === true')).toBe(true);
   });
+});
+
+describe('the page load of the browser driver', () => {
+  // Chromium aborts every request in flight when an interface of the host comes or goes (a container that restarts adds and
+  // drops one): the page then never draws, and the test used to wait 60 s for it and fail. A stand-in for DevTools: the first
+  // load meets that change, the second one draws.
+  test('loads the page again when a change of the host network aborted the load', async () => {
+    const navigations: unknown[] = [];
+    const cdp = {
+      errors: [] as string[],
+      command: async (method: string, params: { url?: string } = {}) => {
+        if (method === 'Page.navigate') {
+          navigations.push(params.url);
+          if (navigations.length === 1) cdp.errors.push('Failed to load resource: net::ERR_NETWORK_CHANGED');
+        }
+        return {};
+      },
+      evaluate: async () => navigations.length === 2,
+    };
+    await new BrowserApp(cdp as unknown as Cdp, 'http://127.0.0.1:9/').reload();
+    expect(navigations).toEqual(['http://127.0.0.1:9/', 'http://127.0.0.1:9/']);
+  }, 5_000);
 });
