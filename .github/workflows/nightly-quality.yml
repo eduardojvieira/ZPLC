@@ -12,7 +12,7 @@ jobs:
   loader-fuzz:
     name: Extended loader verification fuzz
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 30 # 15 min of fuzzing (-max_total_time=900) and one build
     steps:
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -40,7 +40,7 @@ jobs:
   native-sim-twister:
     name: Repeated Zephyr Twister (native_sim/native/64)
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 45 # not measured here: two Twister runs on native_sim/native/64 after the Zephyr set-up
     env:
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
     steps:
@@ -278,6 +278,7 @@ jobs:
     needs: [loader-fuzz, native-sim-twister, desktop-platforms, desktop-ide-tests]
     if: ${{ always() && contains(needs.*.result, 'failure') && github.event_name == 'schedule' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10 # not measured: two gh calls
     permissions:
       issues: write
     steps:

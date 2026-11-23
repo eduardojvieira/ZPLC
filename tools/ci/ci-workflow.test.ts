@@ -48,6 +48,13 @@ describe('the IDE suite in shards (tools/ci/test-shards.ts)', () => {
     expect(commands).toContain('bun tools/ci/test-shards.ts env "${{ matrix.shard }}"');
     expect(commands).toContain('"${ZPLC_IDE_SHARD_FILES:?}"');
   });
+
+  it.each([
+    ['ci.yml', workflow],
+    ['nightly-quality.yml', nightly],
+  ] as const)('%s gives every job a time limit', (_name, flow) => {
+    for (const job of Object.values(flow.jobs)) expect(job['timeout-minutes']).toBeGreaterThan(0);
+  });
 });
 
 describe('ci.yml type-check (VF-010, VF-011)', () => {

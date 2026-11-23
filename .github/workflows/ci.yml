@@ -15,6 +15,7 @@ jobs:
   typescript:
     name: TypeScript packages
     runs-on: ubuntu-latest
+    timeout-minutes: 90 # its steps took 55 min on 4 cores under load, 44 of them the journeys (31 failed there at their 60 s limit)
     steps:
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -291,6 +292,7 @@ jobs:
   format:
     name: Formatting and line length
     runs-on: ubuntu-latest
+    timeout-minutes: 15 # the format check took 66 s on 4 cores here; install and the pinned clang-format are the rest
     steps:
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -325,6 +327,7 @@ jobs:
   host-core:
     name: C99 host core
     runs-on: ubuntu-latest
+    timeout-minutes: 15 # configure, build and ctest took 14 s on 4 cores here; the margin is for a cold runner
     steps:
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -343,6 +346,7 @@ jobs:
   host-core-sanitized:
     name: C99 host core (ASan + UBSan)
     runs-on: ubuntu-latest
+    timeout-minutes: 20 # sanitized build and ctest 31 s, fuzzing 64 s on 4 cores; the pinned clang-tidy was not measured
     steps:
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -396,6 +400,7 @@ jobs:
   freertos-port:
     name: FreeRTOS port (POSIX simulator)
     runs-on: ubuntu-latest
+    timeout-minutes: 30 # not measured here (it fetches FreeRTOS-Kernel): one CMake build of the port and its suites
     steps:
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -408,6 +413,7 @@ jobs:
   zephyr-twister:
     name: Zephyr Twister (native_sim/native/64)
     runs-on: ubuntu-latest
+    timeout-minutes: 120 # not measured here: a cold Zephyr workspace and SDK, four Twister runs and three application checks
     env:
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
     steps:
@@ -506,6 +512,7 @@ jobs:
   zephyr-cross-build:
     name: Zephyr cross-build (${{ matrix.id }})
     runs-on: ubuntu-latest
+    timeout-minutes: 60 # not measured here: the Zephyr set-up, one board build, its clang-tidy pass and the size check
     strategy:
       fail-fast: false
       matrix:
@@ -654,6 +661,7 @@ jobs:
   docs-and-truth:
     name: Docs and truth sources
     runs-on: ubuntu-latest
+    timeout-minutes: 20 # its checks took 3 min on 4 cores, 134 s of them the documentation build
     steps:
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
