@@ -217,6 +217,9 @@ export const COMMANDS = [
   { id: 'project.moveFile', titleKey: 'command.project.moveFile', category: 'project', enabled: open },
   { id: 'project.duplicate', titleKey: 'command.project.duplicate', category: 'project', enabled: open },
   { id: 'project.delete', titleKey: 'command.project.delete', category: 'project', enabled: open },
+
+  // The 3D plant view (spec 012 VIS-002): the plant panel binds it while its 3D view is on screen.
+  { id: 'view.fitPlantScene', titleKey: 'command.view.fitPlantScene', category: 'view', enabled: open },
 ] as const satisfies readonly CommandDefinition[];
 
 export type CommandId = (typeof COMMANDS)[number]['id'];

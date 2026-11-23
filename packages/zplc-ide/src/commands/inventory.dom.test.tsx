@@ -231,6 +231,12 @@ describe('FND-002 the command inventory in a DOM', () => {
     }
   });
 
+  it('FND-002 Fit scene of the plant view is a registered view command that is not physical and that the AI cannot propose', () => {
+    const fit = COMMAND_LIST.find((command) => command.id === 'view.fitPlantScene');
+    expect([fit?.category, fit?.physical]).toEqual(['view', undefined]);
+    expect(Object.values(AI_COMMAND_PROPOSALS) as string[]).not.toContain('view.fitPlantScene');
+  });
+
   it('FND-002 the physical commands are the pinned list', () => {
     expect(
       COMMAND_LIST.filter((command) => command.physical)

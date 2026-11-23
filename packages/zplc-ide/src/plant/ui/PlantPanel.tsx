@@ -9,6 +9,7 @@ import type { DebugController } from '../../hooks/debugControllerTypes';
 import { useT } from '../../i18n';
 import { SCENE_INDEX } from '../../generated/sceneIndex';
 import { saveProjectScene, saveScene } from '../persistence/sceneFiles';
+import { bindCommands } from '../../commands/bus';
 import { useAppSettings } from '../../store/useAppSettings';
 import { useIDEStore } from '../../store/useIDEStore';
 import { announce } from '../../utils/announce';
@@ -140,6 +141,12 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
     announced.current = facts.key;
   }, [facts]);
 
+  // "Fit scene" is a command of the palette and the menu while a 3D view is on screen (VIS-002).
+  useEffect(
+    () => (renderer && visible && view === '3d' ? bindCommands({ 'view.fitPlantScene': () => renderer.fitScene?.() }) : undefined),
+    [renderer, visible, view],
+  );
+
   const stopped = state === 'stopped';
   const startEditing = () => {
     if (!ready) return;
@@ -220,6 +227,11 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
               </option>
             ))}
           </Select>
+        )}
+        {ready && view === '3d' && (
+          <Button data-command="view.fitPlantScene" disabled={!renderer} onClick={() => renderer?.fitScene?.()}>
+            {t('command.view.fitPlantScene')}
+          </Button>
         )}
         <Button
           data-plant-reset

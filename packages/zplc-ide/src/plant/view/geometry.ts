@@ -361,6 +361,35 @@ export function crateWallMatrices(items: readonly BodyPose[], out?: Float32Array
   return m;
 }
 
+/** The size of the box that holds a shape: what a fit of the camera needs to know of it. */
+export function shapeExtent(spec: ShapeSpec): Vec3 {
+  return spec.shape === 'box'
+    ? spec.size
+    : spec.shape === 'cylinder'
+      ? [spec.length, spec.radius * 2, spec.radius * 2]
+      : [spec.outerRadius * 2, spec.height, spec.outerRadius * 2]; // an arc lies inside the square of its outer radius around its origin
+}
+
+/** The box that holds every part view and every item of a snapshot (corners of each rotated box), or null for an empty one. */
+export function snapshotBounds(snapshot: { parts: readonly PartView[]; items: readonly BodyPose[] }): { min: Vec3; max: Vec3 } | null {
+  const min = [Infinity, Infinity, Infinity];
+  const max = [-Infinity, -Infinity, -Infinity];
+  const add = (p: Vec3, q: Quat, size: Vec3) => {
+    for (const sx of [-0.5, 0.5])
+      for (const sy of [-0.5, 0.5])
+        for (const sz of [-0.5, 0.5]) {
+          const c = rotate(q, [size[0] * sx, size[1] * sy, size[2] * sz]);
+          for (let i = 0; i < 3; i++) {
+            min[i] = Math.min(min[i]!, p[i]! + c[i]!);
+            max[i] = Math.max(max[i]!, p[i]! + c[i]!);
+          }
+        }
+  };
+  for (const view of snapshot.parts) add(view.pose.p, view.pose.q, shapeExtent(partShape(view)));
+  for (const item of snapshot.items) add(item.p, item.q, item.size);
+  return Number.isFinite(min[0]) ? { min: min as unknown as Vec3, max: max as unknown as Vec3 } : null;
+}
+
 /** Column-major 4x4 matrix for translation `p`, rotation `q` and scale `s` (same layout as three's Matrix4). */
 export function composeMatrix(p: Vec3, q: Quat, s: Vec3, out: Float32Array, offset: number): void {
   const [x, y, z, w] = q;

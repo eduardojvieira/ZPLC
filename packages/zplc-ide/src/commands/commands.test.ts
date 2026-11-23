@@ -401,7 +401,7 @@ describe('lane W command contract (FND-002)', () => {
 
   it('FND-002 keeps the 38 commands of 2.0 and the plant I/O one, in their order, ahead of the new ones', () => {
     const ids = COMMAND_LIST.map((command) => command.id);
-    const old = ids.filter((id) => !(id in LANE_W_COMMANDS) && !(id in U2_COMMANDS));
+    const old = ids.filter((id) => !(id in LANE_W_COMMANDS) && !(id in U2_COMMANDS) && !(id in PLANT_VIEW_COMMANDS));
     expect(old.length).toBe(39);
     expect(old.slice(0, 5)).toEqual(['file.save', 'file.open', 'file.new', 'file.export', 'view.commandPalette']);
     expect(old.at(-1)).toBe('help.learn');
@@ -438,6 +438,33 @@ const U2_COMMANDS = {
   'project.delete': ['project'],
 } as const satisfies Record<string, readonly [string, string?]>;
 
+/** The commands of the 3D plant view (spec 012), registered after those of milestone U2. */
+const PLANT_VIEW_COMMANDS = { 'view.fitPlantScene': ['view', 'Fit scene', 'Encuadrar la escena'] } as const;
+
+describe('plant view command contract (FND-002, VIS-002)', () => {
+  it('VIS-002 Fit scene is a registered view command, not a physical one, with its title in English and Spanish', () => {
+    for (const [id, [category, english, spanish]] of Object.entries(PLANT_VIEW_COMMANDS)) {
+      expect([id, isCommandId(id)]).toEqual([id, true]);
+      const command = commandById(id as never);
+      expect([id, command.category, command.physical]).toEqual([id, category, undefined]);
+      expect([(en as Record<string, string>)[command.titleKey], (es as Record<string, string>)[command.titleKey]]).toEqual([
+        english,
+        spanish,
+      ]);
+    }
+  });
+
+  it('VIS-002 the palette lists Fit scene only while a plant view has bound it', () => {
+    publishCommandState({ projectOpen: true });
+    const listed = () => listedCommands(COMMAND_LIST, isCommandBound).map((command) => command.id);
+    expect(listed()).not.toContain('view.fitPlantScene');
+    const unbind = bindCommands({ 'view.fitPlantScene': () => undefined });
+    expect(listed()).toContain('view.fitPlantScene');
+    unbind();
+    expect(listed()).not.toContain('view.fitPlantScene');
+  });
+});
+
 describe('milestone U2 command contract (FND-002)', () => {
   it('FND-002 every id of the U2 contract is registered with a title in English and Spanish', () => {
     expect(Object.keys(U2_COMMANDS).length).toBe(25);
@@ -457,7 +484,7 @@ describe('milestone U2 command contract (FND-002)', () => {
     const ids = COMMAND_LIST.map((command) => command.id as string);
     const firstU2 = ids.findIndex((id) => id in U2_COMMANDS);
     expect(ids.slice(0, firstU2).length).toBe(39 + Object.keys(LANE_W_COMMANDS).length);
-    expect(ids.slice(firstU2)).toEqual(Object.keys(U2_COMMANDS));
+    expect(ids.slice(firstU2)).toEqual([...Object.keys(U2_COMMANDS), ...Object.keys(PLANT_VIEW_COMMANDS)]);
     expect(ids[firstU2 - 1]).toBe('help.learn');
     expect(ids.slice(0, 5)).toEqual(['file.save', 'file.open', 'file.new', 'file.export', 'view.commandPalette']);
   });

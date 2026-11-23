@@ -1,6 +1,16 @@
 import type * as THREE_NS from 'three';
 import type { PlantSceneFile, PlantSnapshot } from '../contracts';
-import { cameraFromPreset, cameraPosition, orbitCamera, panCamera, zoomCamera, type CameraState } from './camera';
+import {
+  cameraFromPreset,
+  cameraPosition,
+  fitCamera,
+  FOV_DEG,
+  orbitCamera,
+  panCamera,
+  zoomCamera,
+  type Bounds,
+  type CameraState,
+} from './camera';
 import {
   crateWallMatrices,
   instanceColors,
@@ -9,6 +19,7 @@ import {
   OUTLINED_PARTS,
   partDecor,
   partShape,
+  snapshotBounds,
   type Decor,
   type ShapeSpec,
 } from './geometry';
@@ -23,6 +34,8 @@ export interface PlantRenderer {
   setSnapshot(snapshot: PlantSnapshot): void;
   setQuality(level: QualityLevel): void;
   setCameraPreset(name: string): void;
+  /** Shows the whole scene from the current viewing direction (VIS-002). Until a person moves the camera, a resize does the same. */
+  fitScene?(): void;
   /** Colours for floor, belts, items and sensors (VIS-009). */
   setPalette?(palette: Palette): void;
   /** Off means preset changes jump instead of easing (reduced motion, VIS-009). */
@@ -227,7 +240,7 @@ export function createRenderer(
 
   const world = new THREE.Scene();
   world.background = new THREE.Color(0xe5e7eb);
-  const camera = new THREE.PerspectiveCamera(45, 16 / 9, 0.1, 1000);
+  const camera = new THREE.PerspectiveCamera(FOV_DEG, 16 / 9, 0.1, 1000);
   const hemi = new THREE.HemisphereLight(0xffffff, 0x9ca3af, 1.1);
   const sun = new THREE.DirectionalLight(0xffffff, 1.6);
   sun.position.set(6, 12, 8);
@@ -289,6 +302,9 @@ export function createRenderer(
 
   let camState: CameraState = cameraFromPreset(scene.cameras[0] ?? { name: 'default', position: [6, 6, 8], target: [0, 0, 0] });
   let goal: CameraState | null = null; // a preset the camera is still easing toward
+  // The first view and a resize show the whole scene (VIS-002) until a person moves the camera or chooses another named preset.
+  let sceneBounds: Bounds | null = null;
+  let autoFit = true;
   let animate = true;
   let palette: Palette | null = null;
   // Outlines (VIS-009): built lazily, only while the palette has an outline colour.
@@ -322,6 +338,7 @@ export function createRenderer(
   };
   let width = canvas.width || 1280;
   let height = canvas.height || 720;
+  const fitted = (from: CameraState): CameraState => (sceneBounds ? fitCamera(from, sceneBounds, width / height) : from);
   let dirty = true;
   let disposed = false;
   let paused = false;
@@ -481,8 +498,19 @@ export function createRenderer(
       items.count = snapshot.items.length;
       items.instanceMatrix.needsUpdate = true;
 
+      if (!sceneBounds) {
+        sceneBounds = snapshotBounds(snapshot);
+        if (autoFit) {
+          camState = fitted(goal ?? camState);
+          goal = null;
+        }
+      }
+      // A part whose item is in the snapshot too (a pallet, a fixed crate) is drawn as the item: it can move, and carries the item's
+      // colour.
+      const itemIds = new Set(snapshot.items.map((item) => item.id));
       const seen = new Set<string>();
       for (const view of snapshot.parts) {
+        if (itemIds.has(view.id)) continue;
         seen.add(view.id);
         const spec = partShape(view);
         const key = JSON.stringify(spec);
@@ -532,23 +560,35 @@ export function createRenderer(
     setCameraPreset(name) {
       const preset = scene.cameras.find((c) => c.name === name);
       if (preset) {
-        goal = cameraFromPreset(preset);
+        // The first preset is the one the scene opens with, so it is fitted like the first view; the others keep their authored framing.
+        autoFit = preset === scene.cameras[0];
+        goal = autoFit ? fitted(cameraFromPreset(preset)) : cameraFromPreset(preset);
         if (!animate) camState = goal;
         dirty = true;
       }
     },
+    fitScene() {
+      if (disposed || !sceneBounds) return;
+      autoFit = true;
+      goal = fitted(goal ?? camState);
+      if (!animate) camState = goal;
+      dirty = true;
+    },
     orbit(dx, dy) {
       goal = null;
+      autoFit = false;
       camState = orbitCamera(camState, dx, dy);
       dirty = true;
     },
     pan(dx, dz) {
       goal = null;
+      autoFit = false;
       camState = panCamera(camState, dx, dz);
       dirty = true;
     },
     zoom(factor) {
       goal = null;
+      autoFit = false;
       camState = zoomCamera(camState, factor);
       dirty = true;
     },
@@ -579,6 +619,10 @@ export function createRenderer(
       width = Math.max(1, Math.floor(w));
       height = Math.max(1, Math.floor(h));
       renderer.setSize(width, height, false);
+      if (autoFit && sceneBounds) {
+        camState = fitted(goal ?? camState);
+        goal = null;
+      }
       dirty = true;
     },
     dispose() {
