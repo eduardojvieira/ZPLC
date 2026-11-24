@@ -118,7 +118,7 @@ Notes that save time:
   `packages/zplc-compiler` runs one file. `ZPLC_JOURNEY_ONLY=<text> bun run
 test:journeys` runs the journeys whose name contains the text.
 - **Journeys** use `packages/zplc-ide/node_modules/electron/dist`. If it is
-  missing, run `node packages/zplc-ide/node_modules/electron/install.js`, then
+  missing, run `bun run --cwd packages/zplc-ide electron:install`, then
   `bun run --cwd packages/zplc-ide build`, `build:assets` and `electron:compile`.
 - **Firmware** modes can be run one at a time, for example
   `tools/firmware-test/run.sh native`. [Firmware testing](docs/docs/development/firmware-testing.md)
