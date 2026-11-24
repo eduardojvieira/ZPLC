@@ -18,6 +18,18 @@ const NATIVE_MESSAGE_TYPE = {
 
 interface NativeErrorPayload {
   message: string;
+  code?: unknown;
+}
+
+/** A request the runtime answered with a protocol error: its message, and its code (`PROGRAM_LOAD_FAILED`, ...) when it sent one. */
+export class NativeSimulationRuntimeError extends Error {
+  readonly code: string | null;
+
+  constructor(message: string, code: string | null) {
+    super(message);
+    this.name = 'NativeSimulationRuntimeError';
+    this.code = code;
+  }
 }
 
 interface NativeResponseMessage<TResult = unknown> {
@@ -536,7 +548,8 @@ export class NativeSimulationSupervisor {
 
     this.pendingRequests.delete(message.id);
     if (message.error) {
-      pending.reject(new Error(message.error.message));
+      const { code } = message.error;
+      pending.reject(new NativeSimulationRuntimeError(message.error.message, typeof code === 'string' ? code : null));
       return;
     }
 

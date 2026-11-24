@@ -11,7 +11,8 @@
  *   2. the whole argument list is acceptable to the handler's schema (`accepts`), else the call is denied;
  *   3. the handler runs, and the answer is released only while that document is still the current one.
  *
- * A failure inside a handler reaches the renderer as one fixed message, never as the text of the internal error.
+ * A failure inside a handler reaches the renderer as one fixed message, never as the text of the internal error; the
+ * error itself goes to the log of the main process.
  */
 import { IPC_INVOKE_CHANNELS } from './ipcContract.js';
 
@@ -22,9 +23,15 @@ export interface IpcHandler<Owner> {
   accepts(args: readonly unknown[]): boolean;
   /** Runs for a trusted sender with an accepted argument list. */
   run(owner: Owner, args: readonly unknown[]): unknown;
-  /** What the renderer is told when `run` throws; the denial text when absent. */
-  failure?: string;
+  /**
+   * What the renderer is told when `run` throws; the denial text when absent. A function picks the text from a fixed
+   * list by the kind of error, never from its message, and answers undefined for the denial text.
+   */
+  failure?: string | ((error: unknown) => string | undefined);
 }
+
+/** Where the main process logs an error that a handler threw and the renderer was not told. */
+export type IpcFailureLog = (channel: string, error: unknown) => void;
 
 export type IpcHandlerTable<Owner> = Readonly<Record<string, IpcHandler<Owner>>>;
 
@@ -47,7 +54,12 @@ export function ipcTableMismatch(table: Readonly<Record<string, unknown>>): { mi
   };
 }
 
-export function registerIpcHandlers<Owner>(ipc: IpcMainLike, table: IpcHandlerTable<Owner>, guard: IpcGuard<Owner>): void {
+export function registerIpcHandlers<Owner>(
+  ipc: IpcMainLike,
+  table: IpcHandlerTable<Owner>,
+  guard: IpcGuard<Owner>,
+  logFailure: IpcFailureLog = () => undefined,
+): void {
   const { missing, extra } = ipcTableMismatch(table);
   if (missing.length > 0 || extra.length > 0) {
     throw new Error(`IPC handlers differ from the contract: missing [${missing.join(', ')}], not in the contract [${extra.join(', ')}]`);
@@ -60,8 +72,10 @@ export function registerIpcHandlers<Owner>(ipc: IpcMainLike, table: IpcHandlerTa
       let answer: unknown;
       try {
         answer = await handler.run(owner, args);
-      } catch {
-        throw new Error(guard.isCurrent(owner) ? (handler.failure ?? IPC_DENIED) : IPC_DENIED);
+      } catch (error) {
+        logFailure(channel, error);
+        const failure = typeof handler.failure === 'function' ? handler.failure(error) : handler.failure;
+        throw new Error(guard.isCurrent(owner) ? (failure ?? IPC_DENIED) : IPC_DENIED);
       }
       if (!guard.isCurrent(owner)) throw new Error(IPC_DENIED);
       return answer;

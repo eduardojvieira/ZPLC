@@ -5,7 +5,7 @@ import path from 'node:path';
 import { PassThrough } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 
-import { NativeSimulationSupervisor } from '../shared/nativeSimulationSupervisor';
+import { NativeSimulationRuntimeError, NativeSimulationSupervisor } from '../shared/nativeSimulationSupervisor';
 import { resolveDefaultSimulatorBinaryPathForTests } from '../shared/nativeSimulationSupervisor';
 
 const NATIVE_MESSAGE_TYPE = {
@@ -747,6 +747,26 @@ describe('NativeSimulationSupervisor', () => {
       state: 'idle',
       focused_vm: { pc: 4 },
     });
+  });
+
+  it('rejects a refused request with the protocol error code and the message of the runtime', async () => {
+    const supervisor = new NativeSimulationSupervisor({ clientName: 'zplc-ide', clientVersion: '1.4.8', spawnProcess: () => child });
+    await startReadySession(supervisor, child);
+    const pendingLoad = supervisor.request(createNativeRequest('req-load', 'program.load', { bytecode_hex: '00' }));
+    const load = JSON.parse(await waitForStdInLine(child.stdin)) as { id: string };
+    child.stdout.write(
+      `${JSON.stringify({
+        id: load.id,
+        type: NATIVE_MESSAGE_TYPE.RESPONSE,
+        error: { code: 'PROGRAM_LOAD_FAILED', message: 'program persistence commit failed' },
+      })}\n`,
+    );
+    const refusal = await pendingLoad.then(
+      () => undefined,
+      (error: unknown) => error,
+    );
+    expect(refusal).toBeInstanceOf(NativeSimulationRuntimeError);
+    expect(refusal).toMatchObject({ code: 'PROGRAM_LOAD_FAILED', message: 'program persistence commit failed' });
   });
 
   it('forwards runtime events and performs graceful shutdown', async () => {

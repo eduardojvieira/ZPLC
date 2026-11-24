@@ -13,6 +13,8 @@ import { createProjectFiles } from './projectFiles';
 import { IPC_EVENT_CHANNELS, IPC_INVOKE_CHANNELS, PROJECT_FILES_CHANNEL } from './ipcContract';
 import { createIpcHandlers, type IpcDeps, type RendererOwner, type ToolApiModule } from './ipcHandlers';
 import type { ToolWorkerRequest } from './toolWorkerProtocol';
+import type { NativeSimulationRequest } from '../shared/nativeSimulationIpc';
+import { NativeSimulationRuntimeError } from '../shared/nativeSimulationSupervisor';
 import { finishToolExecution, isToolExecutionEnvelope, startToolExecution } from '../src/cli/toolApi';
 import { IPC_DENIED, ipcTableMismatch, registerIpcHandlers, type IpcMainLike } from './ipcRegistry';
 
@@ -26,6 +28,8 @@ interface Harness {
   deps: IpcDeps;
   /** Every call that reached a dependency, as `name` or `name:detail`. */
   touched: string[];
+  /** Every handler failure the registry logged in the main process. */
+  logged: Array<{ channel: string; error: unknown }>;
   invoke(channel: string, event: unknown, ...args: unknown[]): Promise<unknown>;
   setCurrent(value: boolean): void;
   folder: string;
@@ -38,7 +42,12 @@ afterEach(() => {
 });
 
 async function harness(
-  options: { toolApi?: Partial<ToolApiModule>; failToolApi?: boolean; worker?: (request: ToolWorkerRequest) => Promise<unknown> } = {},
+  options: {
+    toolApi?: Partial<ToolApiModule>;
+    failToolApi?: boolean;
+    worker?: (request: ToolWorkerRequest) => Promise<unknown>;
+    native?: (request: NativeSimulationRequest) => Promise<unknown>;
+  } = {},
 ): Promise<Harness> {
   const folder = realpathSync(mkdtempSync(path.join(tmpdir(), 'zplc-ipc-registry-')));
   scratches.push(folder);
@@ -205,7 +214,7 @@ async function harness(
       },
       request: async (_owner, request) => {
         note(`native.request:${request.method}`);
-        return {};
+        return options.native ? options.native(request) : {};
       },
     },
     pickToolchainRepository: async () => {
@@ -232,13 +241,20 @@ async function harness(
       listeners.set(channel, listener);
     },
   };
-  registerIpcHandlers(ipc, createIpcHandlers(deps), {
-    authorize: (event) => (event === TRUSTED ? OWNER : null),
-    isCurrent: () => current,
-  });
+  const logged: Array<{ channel: string; error: unknown }> = [];
+  registerIpcHandlers(
+    ipc,
+    createIpcHandlers(deps),
+    {
+      authorize: (event) => (event === TRUSTED ? OWNER : null),
+      isCurrent: () => current,
+    },
+    (channel, error) => logged.push({ channel, error }),
+  );
   return {
     deps,
     touched,
+    logged,
     invoke: async (channel, event, ...args) => {
       const listener = listeners.get(channel);
       if (!listener) throw new Error(`no handler for ${channel}`);
@@ -349,6 +365,45 @@ describe('every invoke channel (IDE-017)', () => {
     });
     const answer = await settle(h.invoke('workspace-tests:compile', TRUSTED, { workspaceId: WORKSPACE_ID, rootId: h.rootId }));
     expect(answer).toEqual({ ok: false, message: 'Workspace operation failed' });
+  });
+});
+
+describe('a refusal of the native runtime over the IPC boundary (S3)', () => {
+  const LOAD = { id: 'req-1', type: 'request', method: 'program.load', params: { bytecode_hex: '00' } };
+  const refusing = (error: unknown) => harness({ native: async () => Promise.reject(error) });
+
+  it('tells the renderer the fixed sentence of the code, never the text of the runtime, and logs the error in main', async () => {
+    const refusal = new NativeSimulationRuntimeError('program persistence commit failed /home/secret', 'PROGRAM_LOAD_FAILED');
+    const h = await refusing(refusal);
+    const answer = await settle(h.invoke('native-simulation:request', TRUSTED, LOAD));
+    expect(answer).toEqual({ ok: false, message: 'The native runtime could not load or store the program (PROGRAM_LOAD_FAILED).' });
+    expect(h.logged).toEqual([{ channel: 'native-simulation:request', error: refusal }]);
+  });
+
+  it('stays the denial for an unknown code, a refusal with no code and any other failure, and logs each', async () => {
+    for (const error of [
+      new NativeSimulationRuntimeError('x', 'SOMETHING_NEW'),
+      new NativeSimulationRuntimeError('x', '__proto__'),
+      new NativeSimulationRuntimeError('x', null),
+      Object.assign(new Error('Native simulation session is not active'), { code: 'PROGRAM_LOAD_FAILED' }),
+    ]) {
+      const h = await refusing(error);
+      expect(await settle(h.invoke('native-simulation:request', TRUSTED, LOAD))).toEqual({ ok: false, message: IPC_DENIED });
+      expect(h.logged).toEqual([{ channel: 'native-simulation:request', error }]);
+    }
+  });
+
+  it('denies a sender that is not the trusted document before the runtime is asked, and logs nothing', async () => {
+    const h = await refusing(new NativeSimulationRuntimeError('program persistence commit failed', 'PROGRAM_LOAD_FAILED'));
+    expect(await settle(h.invoke('native-simulation:request', UNTRUSTED, LOAD))).toEqual({ ok: false, message: IPC_DENIED });
+    expect(h.touched).toEqual([]);
+    expect(h.logged).toEqual([]);
+  });
+
+  it('answers the denial when the document that asked was replaced while the runtime answered', async () => {
+    const h = await refusing(new NativeSimulationRuntimeError('program persistence commit failed', 'PROGRAM_LOAD_FAILED'));
+    h.setCurrent(false);
+    expect(await settle(h.invoke('native-simulation:request', TRUSTED, LOAD))).toEqual({ ok: false, message: IPC_DENIED });
   });
 });
 

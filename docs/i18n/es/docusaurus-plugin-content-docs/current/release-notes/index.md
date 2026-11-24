@@ -13,12 +13,6 @@ ZPLC 2.0 es una versión mayor nueva de la aplicación, el compilador y el runti
 qué deja de funcionar, los pasos para pasar desde 1.x y qué no se ha verificado. El registro técnico completo está en
 `CHANGELOG.md` en el repositorio.
 
-:::warning Versión de evaluación
-ZPLC 2.0.0 es para evaluación. Ninguna placa se ha grabado, arrancado ni ejecutado, así que todas están en el nivel
-`cross-build`. Los instaladores no están firmados, y ZPLC no es un PLC de seguridad y no debe controlar maquinaria:
-[Seguridad y limitaciones](../safety-and-limitations.md).
-:::
-
 ## Lo más destacado
 
 - **Un curso dentro de la aplicación.** Aprender tiene 68 lecciones en español e inglés, una ruta de escalera que parte de
@@ -187,3 +181,5 @@ tiene la lista y las reglas.
 
 No deduzca equivalencia de funciones, rendimiento de tiempos ni seguridad física a partir de esta página ni de la presencia
 de código fuente.
+
+Lo que ZPLC no hace, y qué probar antes de que maneje una máquina: [Seguridad y limitaciones](../safety-and-limitations.md).

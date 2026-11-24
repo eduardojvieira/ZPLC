@@ -1,0 +1,208 @@
+/* The download page (docs/src/pages/download.js). Like the landing page it adds no colours of its own: only the --zplc-*
+   tokens of docs/src/css/custom.css, and the landing's own classes for the page, the wrapper and the primary action. */
+
+.top {
+  padding-block: clamp(3rem, 2rem + 4vw, 6rem) var(--zplc-section);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--zplc-text-3xl);
+  font-weight: 650;
+  line-height: 1.06;
+  letter-spacing: -0.028em;
+  text-wrap: balance;
+}
+
+/* the version stands apart from the name (docs/PRODUCT.md) */
+.version {
+  margin: var(--zplc-space-3) 0 0;
+  font-size: var(--zplc-text-md);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--zplc-ink-3);
+}
+
+/* the place of the detected system keeps its height while the page waits for the browser, so nothing jumps */
+.featured {
+  min-height: 11rem;
+  max-width: 60rem;
+  margin-top: var(--zplc-space-7);
+  padding-top: var(--zplc-space-6);
+  border-top: 1px solid var(--zplc-rule);
+}
+
+.detected {
+  margin: 0 0 var(--zplc-space-5);
+  font-size: var(--zplc-text-sm);
+  font-weight: 500;
+  color: var(--zplc-ink-3);
+}
+
+.system + .system {
+  margin-top: var(--zplc-space-6);
+}
+
+.systemName {
+  margin: 0 0 var(--zplc-space-4);
+  font-size: var(--zplc-text-xl);
+  font-weight: 600;
+  letter-spacing: -0.012em;
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--zplc-space-5) var(--zplc-space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.options li {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--zplc-space-2);
+}
+
+/* the other formats of a system: the metrics of the primary action, drawn in outline */
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding-inline: var(--zplc-space-5);
+  border: 1px solid var(--zplc-rule-strong);
+  border-radius: var(--zplc-radius-control);
+  background: transparent;
+  color: var(--zplc-ink);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: border-color 150ms ease-out;
+}
+
+.secondary:hover {
+  border-color: var(--zplc-cobalt);
+  color: var(--zplc-ink);
+  text-decoration: none;
+}
+
+.secondary:active {
+  transform: translateY(1px);
+}
+
+.file {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--zplc-font-mono);
+  font-size: var(--zplc-text-xs);
+  color: var(--zplc-ink-3);
+  overflow-wrap: anywhere;
+}
+
+.hint,
+.note {
+  max-width: var(--zplc-measure);
+  margin: var(--zplc-space-5) 0 0;
+  line-height: 1.55;
+  color: var(--zplc-ink-2);
+  text-wrap: pretty;
+}
+
+.note + .note {
+  margin-top: var(--zplc-space-3);
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: var(--zplc-text-2xl);
+  font-weight: 650;
+  line-height: 1.1;
+  letter-spacing: -0.022em;
+}
+
+.table {
+  margin-top: var(--zplc-space-6);
+  overflow-x: auto;
+}
+
+.table table {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--zplc-text-sm);
+}
+
+.table th,
+.table td {
+  padding: var(--zplc-space-4);
+  border: 0;
+  border-bottom: 1px solid var(--zplc-rule);
+  background: none;
+  text-align: left;
+  vertical-align: top;
+}
+
+.table thead th {
+  font-size: var(--zplc-text-xs);
+  font-weight: 600;
+  color: var(--zplc-ink-2);
+  background: var(--zplc-band);
+}
+
+.table tbody tr {
+  background: none;
+}
+
+.table tbody th {
+  width: 16rem;
+  font-weight: 600;
+}
+
+.files {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(19rem, 100%), 1fr));
+  gap: var(--zplc-space-3) var(--zplc-space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.files li {
+  display: flex;
+  flex-direction: column;
+  gap: var(--zplc-space-1);
+}
+
+.files a {
+  font-weight: 600;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: var(--zplc-space-7) var(--zplc-space-8);
+  margin-top: var(--zplc-section);
+}
+
+/* on a phone each system is a block: its name, then its files, so neither column is squeezed */
+@media (max-width: 40rem) {
+  .table thead {
+    display: none;
+  }
+
+  .table tbody tr,
+  .table tbody th,
+  .table tbody td {
+    display: block;
+    width: auto;
+  }
+
+  .table tbody th {
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+}
