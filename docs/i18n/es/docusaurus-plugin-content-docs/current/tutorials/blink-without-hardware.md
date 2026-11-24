@@ -122,7 +122,7 @@ Este no fija ninguna entrada: comprueba que la salida esté apagada durante los 
 apagada otra vez, y así durante 2,1 segundos de tiempo simulado. El [formato del archivo de escenario](../reference/scenario-file.md)
 enumera cada campo.
 
-1. Abra la pestaña **Pruebas**. ZPLC vincula por sí mismo el `zplc.json` del proyecto abierto.
+1. Abra la pestaña **Resultados de las pruebas**. ZPLC vincula por sí mismo el `zplc.json` del proyecto abierto.
 2. Pulse **Ejecutar escenarios en el host**.
 
 La pestaña dice **1 de 1 pruebas pasaron**, con la insignia **Resultado en simulación** al lado. Si una prueba falla, la
@@ -131,7 +131,7 @@ cerrado de forma predeterminada, conserva el registro completo de la ejecución.
 simulador, sin interfaz y con un reloj virtual, así que tarda un momento y no espera 2,1 segundos. Un resultado en
 simulación no es evidencia de hardware, de tiempos, de HIL ni de certificación.
 
-![La pestaña Pruebas informando que 1 de 1 pruebas pasaron como resultado en simulación](/img/tutorials/blink-6-scenario-es.png)
+![La pestaña Resultados de las pruebas informando que 1 de 1 pruebas pasaron como resultado en simulación](/img/tutorials/blink-6-scenario-es.png)
 
 Puede ejecutar la misma prueba sin la aplicación, desde una terminal en la raíz de una copia del repositorio, una vez que
 `bun run setup` haya construido el runtime:

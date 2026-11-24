@@ -218,7 +218,7 @@ export const COMMANDS = [
   { id: 'project.duplicate', titleKey: 'command.project.duplicate', category: 'project', enabled: open },
   { id: 'project.delete', titleKey: 'command.project.delete', category: 'project', enabled: open },
 
-  // The 3D plant view (spec 012 VIS-002): the plant panel binds it while its 3D view is on screen.
+  // The 3D plant view (spec 012 VIS-002): the shell binds it in every state; it fits the 3D view on screen (`bind/plant.ts`).
   { id: 'view.fitPlantScene', titleKey: 'command.view.fitPlantScene', category: 'view', enabled: open },
 ] as const satisfies readonly CommandDefinition[];
 

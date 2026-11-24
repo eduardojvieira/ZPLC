@@ -24,7 +24,7 @@ Una planta es un modelo de una máquina pequeña: cintas, cajas, sensores, pulsa
 
 ## La vista 3D y su cámara
 
-La vista se abre con toda la escena en el panel, con cualquier tamaño de panel. Conserva la dirección de vista de la primera cámara de la escena, y elige el objetivo y la distancia según el tamaño de la escena y la forma del panel. Mientras usted no haya movido la cámara, cambiar el tamaño del panel vuelve a encuadrar la escena. Arrastrar, las flechas, más y menos, y W, A, S y D mueven la cámara por su cuenta, y desde entonces un cambio de tamaño la deja donde está. La lista **Cámara** elige otra cámara guardada, y esa conserva el encuadre que le dio su autor. **Encuadrar la escena** (también en la paleta de comandos, con ese nombre) vuelve a mostrar toda la escena desde la dirección en que usted mira. Solo mueve la cámara: no toca la planta ni el programa.
+La vista se abre con toda la escena en el panel, con cualquier tamaño de panel. Conserva la dirección de vista de la primera cámara de la escena, y elige el objetivo y la distancia según el tamaño de la escena y la forma del panel. Mientras usted no haya movido la cámara, cambiar el tamaño del panel vuelve a encuadrar la escena. Arrastrar, las flechas, más y menos, y W, A, S y D mueven la cámara por su cuenta, y desde entonces un cambio de tamaño la deja donde está. La lista **Cámara** elige otra cámara guardada, y esa conserva el encuadre que le dio su autor. **Encuadrar la escena** (también en la paleta de comandos, con ese nombre) vuelve a mostrar toda la escena desde la dirección en que usted mira. Solo mueve la cámara: no toca la planta ni el programa. Si no hay una vista 3D en pantalla, el comando no encuadra nada y explica el motivo en **Salida**.
 
 ## Qué dibuja la vista 3D
 

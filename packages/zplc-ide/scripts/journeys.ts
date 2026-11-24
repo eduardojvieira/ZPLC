@@ -202,6 +202,19 @@ async function closeProject(app: App): Promise<void> {
   await app.press('Enter');
 }
 
+/** Runs a command from the palette by its title, as a keyboard user does: the arrow keys to its row, then Enter (FND-002). */
+async function fromPalette(app: App, command: string, title: string): Promise<void> {
+  const row = `document.querySelector('[role="option"][data-command="${command}"]')`;
+  await app.press('Ctrl+Shift+P');
+  await app.until('the palette field', async () => (await app.visible(css('[role="combobox"]'))) || undefined);
+  await app.type(title);
+  await app.until(`the palette to list ${command}`, async () => (await app.eval<boolean>(`Boolean(${row})`)) || undefined);
+  for (let step = 0; step < 12 && !(await app.eval<boolean>(`${row}?.getAttribute('aria-selected') === 'true'`)); step++)
+    await app.press('ArrowDown');
+  await app.press('Enter');
+  await app.until('the palette to close', async () => !(await app.visible(css('[role="combobox"]'))) || undefined);
+}
+
 async function showExplorer(app: App): Promise<void> {
   await app.click(css('[data-activity="project"]'), 'the Project activity of the rail');
   await app.click(
@@ -1482,7 +1495,7 @@ export const JOURNEYS: Journey[] = [
     partly: ['IDE-001'],
     run: async (app, { project }) => {
       await openFolder(app, project);
-      await app.click(tab('Tests'));
+      await app.click(tab('Test results'));
       await app
         .until(
           'the Tests tab to report the linked workspace',
@@ -4924,7 +4937,7 @@ export const JOURNEYS: Journey[] = [
   },
 
   {
-    name: '33 Declared interlock coverage has a tab of its own',
+    name: '33 Declared interlock coverage has a view of its own in the Tests activity',
     example: 'motor_start_stop',
     proves: [],
     partly: ['IDE-032'],
@@ -4932,17 +4945,18 @@ export const JOURNEYS: Journey[] = [
       const view = css('[data-interlock-coverage]');
       await openFolder(app, project);
 
-      // It is not part of Problems or of Tests any more.
+      // It is not part of Problems or of Test results.
       await app.click(tab('Problems'));
       assert(
         !(await app.visible(view)) && !(await app.text()).toLowerCase().includes('declared interlock coverage'),
         'Declared interlock coverage is still shown inside Problems.',
       );
-      await app.click(tab('Tests', 'prefix'));
-      assert(!(await app.visible(view)), 'Declared interlock coverage is shown inside Tests.');
+      await app.click(tab('Test results', 'prefix'));
+      assert(!(await app.visible(view)), 'Declared interlock coverage is shown inside Test results.');
 
-      // It is a tab: it says what it checks and what it does not, and runs the check on the saved project.
-      await app.click(tab('Interlocks'), 'the Interlocks tab');
+      // It is a view of the Tests activity since U2 (SHL-004), opened by its command: it says what it checks and what it does not, and
+      // runs the check on the saved project.
+      await fromPalette(app, 'view.interlocks', 'Show interlocks');
       await app.until('the view', async () => (await app.visible(view)) || undefined);
       const before = await app.eval<string>(`document.querySelector('[data-interlock-coverage]').innerText`);
       assert(
@@ -5117,7 +5131,7 @@ export const JOURNEYS: Journey[] = [
       const known = new Set(descendants().map((process) => process.pid));
       const added = () => descendants().filter((process) => !known.has(process.pid));
       assert(known.size > 0, 'The journey could not find the processes of the app under test.');
-      await app.click(tab('Tests'));
+      await app.click(tab('Test results'));
       await app.click(run);
       await app.until('Cancel scenarios while the scenarios run', async () => (await app.visible(cancel)) || undefined);
       // The tests run in a process of their own, which starts the native runtime: neither is a process of the app's main process alone.
@@ -5241,7 +5255,7 @@ export const JOURNEYS: Journey[] = [
         };
         writeFileSync(join(project, 'tests', `${name}.scenario.json`), JSON.stringify(scenario));
       }
-      await app.click(tab('Tests'));
+      await app.click(tab('Test results'));
       await app.click(button('Run host scenarios'));
       // the Cancel of the notification is named by its title, from the catalog ("Running tests" since 8c67a06d)
       const cancel = button(translate('en', 'notifications.cancelLabel', { title: ui('notices.tests.running') }));
@@ -6073,7 +6087,7 @@ export const JOURNEYS: Journey[] = [
         );
 
         // Step 7: run the scenario test of the project.
-        await app.click(tab(ui('panel.tests')));
+        await app.click(tab(ui('u2Panel.testResults')));
         await app.click(button(ui('console.runHostScenarios')));
         // the result opens with its verdict (8a4c2726), "N of N tests passed" in the language of the window
         const counts = ui('u2Tests.verdict.counts').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -6509,7 +6523,7 @@ export const JOURNEYS: Journey[] = [
   {
     // IDE-030: a change is a difference that is reviewed, in isolation, before a person saves it, and Studio does all this
     // without the assistant, which is optional and, until it is configured, cannot be asked. The assistant's own proposal
-    // takes the same road (the review of the Changes tab, then the same button); it is not driven here, because the
+    // takes the same road (the review document, then the same button); it is not driven here, because the
     // provider needs the secret store of the system and the headless host has none (electron/aiProvider.test.ts holds it).
     name: '43 A change is reviewed as a difference and saved by a person, and Studio works without the assistant',
     example: 'motor_start_stop',
@@ -6521,17 +6535,20 @@ export const JOURNEYS: Journey[] = [
       await openFile(app, 'src/Motor.st');
       const original = disk(file);
 
-      // the assistant is optional: it says so, says it cannot operate hardware, and cannot be asked before it is configured
-      await app.click(tab('Agent'), 'the Agent tab');
-      const agent = await app.until('the Agent panel', async () => {
-        const text = await app.eval<string>(`document.querySelector('[aria-label="Optional agent"]')?.innerText ?? ''`);
-        return text.includes('Agent') ? text : undefined;
+      // the assistant is optional: until a provider is configured it is not offered, and its command (the Agent tab of 2.0 went to
+      // the Assistant view, SHL-004) opens Preferences where one is configured, which says so (SHL-008, SHL-011)
+      await fromPalette(app, 'view.agent', 'Show the agent');
+      const settings = await app.until('the Assistant section of Preferences', async () => {
+        const text = await app.eval<string>(`document.getElementById('assistant')?.innerText ?? ''`);
+        return text.includes('Without one, the assistant is not offered.') ? text : undefined;
       });
+      assert(settings !== '', 'Preferences do not say that the assistant is offered only with a provider.');
       assert(
-        agent.includes('It cannot operate hardware.'),
-        `The Agent panel does not say that it cannot operate hardware: ${JSON.stringify(agent)}`,
+        !(await app.visible(css('[aria-label="Optional agent"]'))) && !(await app.clickable(button('Send request'))),
+        'The assistant can be asked although no provider is configured.',
       );
-      assert(!(await app.clickable(button('Send request'))), 'The assistant can be asked although no provider is configured.');
+      // Preferences took the editor area: back to the program
+      await app.click(css('[id="editor-tab-file:src/Motor.st"]'), 'the Motor.st tab');
 
       // a statement of the person's own, added to the open file and not saved: it breaks what the scenario of the project says
       const before = await editorText(app);
@@ -6542,19 +6559,20 @@ export const JOURNEYS: Journey[] = [
       await app.type('Forward := FALSE;');
       assert(disk(file) === original, 'The file changed on disk before the person saved it.');
 
-      // Changes: the review is run in isolation and shows the difference; it writes nothing; a change that fails is not offered for saving
+      // the review document (the Changes tab of 2.0, SHL-004): the review is run in isolation and shows the difference; it writes
+      // nothing; a change that fails is not offered for saving
       const reviewed = async () => {
         await app.click(button('Review active ST change'), 'Review active ST change');
         await app
           .until('the review result', async () => (await app.visible(css('[aria-label="Change review result"]'))) || undefined, 60_000)
           .catch(async (error: Error) => {
             throw new Error(
-              `${error.message}: the Changes tab says ${JSON.stringify((await app.text()).replace(/\s+/g, ' ').slice(-700))}`,
+              `${error.message}: the review document says ${JSON.stringify((await app.text()).replace(/\s+/g, ' ').slice(-700))}`,
             );
           });
         return app.eval<string>(`document.querySelector('[aria-label="Change review result"]').innerText`);
       };
-      await app.click(tab('Changes'), 'the Changes tab');
+      await fromPalette(app, 'view.changes', 'Show changes');
       const refused = await reviewed();
       assert(
         refused.includes('Rejected: the change was not accepted.') && refused.includes('SCENARIO_ASSERTION_FAILED'),
@@ -6581,7 +6599,8 @@ export const JOURNEYS: Journey[] = [
       assert(!(await app.visible(button('Save reviewed change'))), 'A change that the review refused is offered for saving.');
       assert(disk(file) === original, 'Reviewing the change wrote the file.');
 
-      // the person takes the statement back and writes one that is harmless
+      // the person closes the review, which covered the program, takes the statement back and writes one that is harmless
+      await app.click(button('Close the changes'), 'Close the changes');
       await showExplorer(app);
       await clickEditorLine(app, last + 1);
       for (let attempt = 0; attempt < 6 && (await editorText(app)) !== before; attempt++) await app.press('Ctrl+Z');
@@ -6589,7 +6608,7 @@ export const JOURNEYS: Journey[] = [
       await cursorAtEndOfLine(app, last);
       await app.press('Enter');
       await app.type('Reverse := FALSE;');
-      await app.click(tab('Changes'), 'the Changes tab');
+      await fromPalette(app, 'view.changes', 'Show changes');
       const accepted = await reviewed();
       assert(
         accepted.includes('Accepted: the change passed in an isolated host run.'),
@@ -7521,10 +7540,16 @@ export const JOURNEYS: Journey[] = [
         String.raw`sfc|fbd|testDiag|archive|tree|picker|types|signal|store|debugger|link|labPlayback|workbench\.[a-z]+|editors\.[a-z]+|` +
         String.raw`settings\.(?:communication|firmware|metadata|target|tasks))\.[a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*\b`;
       const text = (id: string) => app.eval<string>(`document.getElementById(${JSON.stringify(id)})?.innerText ?? ''`);
-      const walk = async (tab: string, expected: string[], english: string[]) => {
-        await app.click(css(`#console-tab-${tab}`), `the ${tab} tab`);
-        await app.until(`the ${tab} panel`, async () => (await text(`console-panel-${tab}`)) !== '' || undefined);
-        const body = await text(`console-panel-${tab}`);
+      // a tab of the results panel, or (`open`) a place a tab of 2.0 moved to, opened by its command, read in `selector` (SHL-004)
+      const walk = async (tab: string, expected: string[], english: string[], open?: { command: string; selector: string }) => {
+        const read = () =>
+          open
+            ? app.eval<string>(`document.querySelector(${JSON.stringify(open.selector)})?.innerText ?? ''`)
+            : text(`console-panel-${tab}`);
+        if (open) await app.eval(`import('/src/commands/bus.ts').then(({ runCommand }) => runCommand(${JSON.stringify(open.command)}))`);
+        else await app.click(css(`#console-tab-${tab}`), `the ${tab} tab`);
+        await app.until(`the ${tab} panel`, async () => (await read()) !== '' || undefined);
+        const body = await read();
         for (const phrase of expected)
           assert(
             body.toLowerCase().includes(phrase.toLowerCase()),
@@ -7538,13 +7563,26 @@ export const JOURNEYS: Journey[] = [
         assert(!new RegExp(RAW_KEY).test(body), `The ${tab} panel shows a raw catalog key: ${body.match(new RegExp(RAW_KEY))?.[0]}`);
       };
       await walk('tests', ['Ejecutar escenarios en el host'], ['Choose zplc.json', 'Run host scenarios', 'Select the saved']);
-      await walk('interlocks', ['Cobertura de enclavamientos declarados'], ['Declared interlock coverage', 'Check declared interlocks']);
-      await walk('changes', ['cambio'], ['Review active ST change', 'requires the desktop app']);
-      await walk('agent', ['Actualizar el estado'], ['Provider settings', 'Refresh status']);
+      // Interlocks, Changes and Agent left the results panel (SHL-004): their places read in Spanish too. With no AI provider the
+      // command of the Agent opens Preferences at the section where one is configured.
+      await walk('interlocks', ['Cobertura de enclavamientos declarados'], ['Declared interlock coverage', 'Check declared interlocks'], {
+        command: 'view.interlocks',
+        selector: '[data-interlocks-view]',
+      });
+      await walk('changes', ['cambio'], ['Review active ST change', 'requires the desktop app'], {
+        command: 'view.changes',
+        selector: '[data-review-document]',
+      });
+      await walk(
+        'agent',
+        [translate('es', 'preferences.assistant.heading')],
+        [translate('en', 'preferences.assistant.heading'), 'Provider settings'],
+        { command: 'view.agent', selector: '#assistant' },
+      );
       const tabs = await app.eval<string[]>(
         `[...document.querySelectorAll('[role="tab"][id^="console-tab-"]')].map((tab) => tab.textContent.trim())`,
       );
-      for (const label of ['Salida', 'Problemas', 'Enclavamientos', 'Cambios', 'Agente'])
+      for (const label of ['Salida', 'Problemas', 'Resultados de las pruebas', 'Traza', translate('es', 'panel.watch')])
         assert(
           tabs.some((tab) => tab.includes(label)),
           `The results tabs are ${JSON.stringify(tabs)}, without ${label}.`,
@@ -7553,7 +7591,9 @@ export const JOURNEYS: Journey[] = [
       assert(!new RegExp(RAW_KEY).test(chrome), `The window shows a raw catalog key: ${chrome.match(new RegExp(RAW_KEY))?.[0]}`);
       // The second batch of migrated surfaces (WP-65): the Watch and Terminal tabs, the Inspector and the project settings sections.
       await walk('watch', [], ['Add variable', 'Start debugging to see live values', 'Watch']);
-      // WP-75: the opening lines of the Terminal come from the catalog too (they were written in a plain .ts module).
+      // WP-75: the opening lines of the Terminal come from the catalog too (they were written in a plain .ts module). In simulation
+      // the Terminal is a tab once the person asks for it (SHL-003).
+      await app.eval(`import('/src/commands/bus.ts').then(({ runCommand }) => runCommand('view.terminal'))`);
       await walk(
         'terminal',
         ['Sin conexión', 'Terminal serie de ZPLC', 'Use la conexión compartida de la barra de herramientas'],
@@ -7883,7 +7923,7 @@ export const JOURNEYS: Journey[] = [
       );
 
       // 5. The recorded run stays, and says it is a replay.
-      await app.click(tab('Tests', 'prefix'), 'the Tests tab');
+      await app.click(tab('Test results', 'prefix'), 'the Tests tab');
       await app.click(button('Run host scenarios'), 'Run host scenarios');
       await app.click(button('Replay'), 'the Replay view of the plant document');
       await patiently(
@@ -8204,7 +8244,7 @@ export const JOURNEYS: Journey[] = [
         'the program to stop',
         async () => (await app.visible(button(`${ui('toolbar.run.label')} (F5)`, 'prefix'))) || undefined,
       );
-      await app.click(tab(ui('panel.tests')));
+      await app.click(tab(ui('u2Panel.testResults')));
       await app.click(button(ui('console.runHostScenarios')));
       await app.until('the scenario to pass', async () => /\b(\d+) of \1 tests passed/.test(await app.text()) || undefined, 30_000);
       await docShot(app, 'guide-scenario-tests');

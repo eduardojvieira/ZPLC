@@ -119,7 +119,7 @@ A scenario is a short script that sets inputs, lets the program run for a fixed 
 sets no input: it checks that the output is off for the first 490 ms, on until 1000 ms, off again, and so on for 2.1
 seconds of simulated time. The [scenario file format](../reference/scenario-file.md) lists every field.
 
-1. Open the **Tests** tab. ZPLC links the `zplc.json` of the open project by itself.
+1. Open the **Test results** tab. ZPLC links the `zplc.json` of the open project by itself.
 2. Press **Run host scenarios**.
 
 The tab says **1 of 1 tests passed**, with the **Simulation result** badge beside it. If a test fails, the tab lists it
@@ -128,7 +128,7 @@ keeps the full record of the run. The test ran your saved program on the simulat
 it takes a moment and does not wait 2.1 seconds. A simulation result is not evidence of hardware, timing, HIL or
 certification.
 
-![The Tests tab reporting 1 of 1 tests passed as a simulation result](/img/tutorials/blink-6-scenario.png)
+![The Test results tab reporting 1 of 1 tests passed as a simulation result](/img/tutorials/blink-6-scenario.png)
 
 You can run the same test without the application, from a terminal at the root of a checkout of the repository once
 `bun run setup` has built the runtime:

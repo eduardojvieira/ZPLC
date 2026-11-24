@@ -178,4 +178,4 @@ Nivel de evidencia: host, en la aplicación real. El recorrido 46 abre un archiv
 
 ## Edición con IA
 
-Un asistente de IA edita los modelos visuales mediante operaciones con tipo, nunca con JSON sin procesar. El cambio candidato resultante queda aislado en la pestaña **Cambios** hasta que usted lo revise, lo compile y lo pruebe, y lo guarde. Vea [IA y privacidad](./ai-privacy.md).
+Un asistente de IA edita los modelos visuales mediante operaciones con tipo, nunca con JSON sin procesar. El cambio candidato resultante queda aislado en el documento de revisión (**Mostrar los cambios**) hasta que usted lo revise, lo compile y lo pruebe, y lo guarde. Vea [IA y privacidad](./ai-privacy.md).

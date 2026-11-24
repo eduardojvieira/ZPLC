@@ -20,6 +20,7 @@ import { createShortcutMatcher, parseShortcut } from './shortcuts';
 import { openPalette, openShortcuts } from './surfaces';
 import { useU2Commands } from './bind';
 import { focusSoon, showActivity, showPanel } from './bind/layout';
+import { fitPlantScene } from './bind/plant';
 
 /** Commands that also work while the focus is in a text field: the others leave a field its own keys. */
 const WORKS_IN_TEXT_FIELDS: ReadonlySet<string> = new Set<CommandId>(['view.commandPalette', 'help.shortcuts']);
@@ -83,6 +84,7 @@ export function useShellCommands(): void {
         'view.showSearch': () => showActivity('search'),
         'view.showLearn': () => showActivity('learn'),
         'view.plant': showPlant,
+        'view.fitPlantScene': fitPlantScene,
         'view.output': showPanel('output'),
         'view.problems': showPanel('problems'),
         'view.trace': showPanel('trace'),

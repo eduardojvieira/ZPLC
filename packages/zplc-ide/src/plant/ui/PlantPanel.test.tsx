@@ -504,12 +504,12 @@ describe('the plant panel (VIS-001, VIS-006, VIS-010, PLS-003, PLS-004, PLS-010)
     await dom.waitFor(() => expect(b.renderer.qualities).toEqual(['high']));
   });
 
+  // The shell binds the command in every state (FND-002); the 3D view on screen is what it fits.
   it(
-    'VIS-002 the Fit scene button and the command of the same name refit the view, and the command is bound only while a 3D view is ' +
-      'shown',
+    'VIS-002 the Fit scene button and the command of the same name refit the view while a 3D view is shown, and once none is the ' +
+      'command fits nothing and says why',
     async () => {
-      const { runCommand, isCommandBound } = await import('../../commands/bus');
-      expect(isCommandBound('view.fitPlantScene')).toBe(false);
+      const { fitPlantScene } = await import('../../commands/bind/plant');
       const r = rig();
       dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
       const fit = () => document.querySelector<HTMLButtonElement>('[data-command="view.fitPlantScene"]')!;
@@ -517,12 +517,16 @@ describe('the plant panel (VIS-001, VIS-006, VIS-010, PLS-003, PLS-004, PLS-010)
       expect(fit().textContent).toBe(dom.t('command.view.fitPlantScene'));
       await dom.act(async () => void fit().click());
       expect(r.renderer.fits).toBe(1);
-      expect(isCommandBound('view.fitPlantScene')).toBe(true);
-      expect(runCommand('view.fitPlantScene')).toBe('ran');
+      fitPlantScene();
       expect(r.renderer.fits).toBe(2);
       await dom.act(async () => void dom.fireEvent.click(dom.screen.getByRole('button', { name: dom.t('plant.panel.viewSchematic') })));
-      expect(isCommandBound('view.fitPlantScene')).toBe(false);
       expect(document.querySelector('[data-command="view.fitPlantScene"]')).toBeNull();
+      useIDEStore.setState({ consoleEntries: [] });
+      fitPlantScene();
+      expect(r.renderer.fits).toBe(2);
+      expect(useIDEStore.getState().consoleEntries.map((entry) => [entry.type, entry.message])).toEqual([
+        ['warning', dom.t('plant.panel.fitNoView')],
+      ]);
     },
   );
 

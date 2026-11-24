@@ -1,5 +1,5 @@
 /**
- * Helpers of the review of a candidate change to a source file (the Console's Agent and Tests tabs).
+ * Helpers of the review of a candidate change to a source file (the review document and the Assistant view).
  */
 
 export async function sha256Text(value: string): Promise<string> {

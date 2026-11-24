@@ -12,7 +12,9 @@ import { useT, type MessageKey } from '../i18n';
 const PANEL_NAMES: Partial<Record<ConsoleTab, MessageKey>> = {
   output: 'panel.output',
   problems: 'panel.problems',
-  tests: 'panel.tests',
+  tests: 'u2Panel.testResults',
+  // the review notice's details open the review document, where the Changes tab went (SHL-004)
+  changes: 'review.title',
   trace: 'panel.trace',
   watch: 'panel.watch',
 };

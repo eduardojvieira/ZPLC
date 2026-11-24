@@ -117,7 +117,8 @@ describe('FND-002 the command inventory in a DOM', () => {
   });
 
   it('FND-002 every tab of the results panel names the command of its surface', () => {
-    const ids = ['output', 'problems', 'tests', 'interlocks', 'changes', 'agent', 'trace', 'watch', 'terminal'] as const;
+    // the tabs the panel has since U2 (SHL-003); Interlocks, Changes and Agent are surfaces of other regions (SHL-004)
+    const ids = ['output', 'problems', 'tests', 'trace', 'watch', 'terminal'] as const;
     const { container } = dom.render(
       <ConsoleTabStrip tabs={ids.map((id) => ({ id, label: id, icon: null }))} activeConsoleTab="output" onSelect={noop} />,
     );

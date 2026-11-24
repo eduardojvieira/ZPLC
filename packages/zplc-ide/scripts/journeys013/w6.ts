@@ -134,7 +134,7 @@ export const journeysW6: Journey[] = [
         'Build did not save the edit it was pressed after.',
       );
       assert(
-        !(await app.visible(tab('Tests'))) || !/saved workspace/i.test(await noticeText(app)),
+        !(await app.visible(tab('Test results'))) || !/saved workspace/i.test(await noticeText(app)),
         'Build sent the user to the Tests tab.',
       );
     },

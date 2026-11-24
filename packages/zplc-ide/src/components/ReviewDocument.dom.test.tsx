@@ -100,6 +100,34 @@ describe('the review document (SHL-004)', () => {
     expect(ctx.written).toEqual([]);
   });
 
+  // The Changes tab of 2.0 asked for the project's zplc.json when no workspace was linked; the review document links the open
+  // project itself, as Build, Tests and Simulate do (IDE-001), so leaving the panel took no way to review a change away (SHL-004).
+  it('SHL-004 with no workspace linked yet, Review links the open project and reviews the change', async () => {
+    const reviews = desktop(async () => ({
+      schemaVersion: 1,
+      accepted: false,
+      evidenceScope: 'native-posix-host',
+      diagnostics: [{ code: 'CHANGESET_INVALID' }],
+    }));
+    const registered: unknown[] = [];
+    const api = (window as unknown as { electronAPI: { workspaceTests: Record<string, unknown> } }).electronAPI;
+    api.workspaceTests.registerProjectRoot = async (request: unknown) => (registered.push(request), { workspaceId: 'w9' });
+    const { chooseProjectFolder } = await import('../ipc/projectFilesHandles');
+    const directoryHandle = await chooseProjectFolder({
+      chooseFolder: async () => ({ ok: true, value: { rootId: 'root-1', name: 'plant' } }),
+    } as never);
+    const buffer = 'PROGRAM Main\nVAR x : BOOL; END_VAR\nEND_PROGRAM\n';
+    const ctx = modifiedFile(buffer);
+    dom.patchStore(useIDEStore, { ...ctx.state, directoryHandle, workspaceScenarioLink: null } as never);
+    const { user } = dom.render(<ReviewDocument />);
+    expect(reviewButton().disabled).toBe(false);
+    await user.click(reviewButton());
+    await dom.screen.findByRole('region', { name: dom.t('console.changeReviewResult') });
+    expect(registered).toEqual([{ rootId: 'root-1' }]);
+    expect(reviews).toEqual([{ workspaceId: 'w9', edit: { path: 'src/main.st', content: buffer } }]);
+    expect(useIDEStore.getState().workspaceScenarioLink).toEqual({ workspaceId: 'w9', projectSession: 7 });
+  });
+
   it('IDE-030 a change that moved since the review is stale and never saves', async () => {
     desktop(async () => ({}));
     const buffer = 'PROGRAM Main\nVAR x : BOOL; END_VAR\nEND_PROGRAM\n';

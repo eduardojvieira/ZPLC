@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'bun:test';
+import { afterEach, describe, expect, it } from 'bun:test';
 import type { ConsoleTab } from '../types';
+import { bindCommands, resetCommandsForTest } from '../commands/bus';
 import { SIDEBAR_CONSOLE_TABS, lessonSurface, resultsTabFor, routeConsoleTab, startShellRouting } from './shellRouting';
 import { COMPACT_MAX_WIDTH, shellDensity } from './shellDensity';
 
@@ -94,5 +95,44 @@ describe('the Lab tab of a stored session (SHL-004, PLS-002)', () => {
     live.getState().setActiveConsoleTab('lab');
     expect(shown).toEqual(['plant']);
     expect(live.getState().activeConsoleTab).toBe('problems');
+  });
+});
+
+describe('the tabs of 2.0 that left the results panel (SHL-004)', () => {
+  afterEach(() => resetCommandsForTest());
+  const actions = (shown: string[]) => () => ({
+    showActivity: (view: string) => shown.push(view),
+    setSecondaryVisible: (visible: boolean) => shown.push(`secondary:${visible}`),
+    showPlant: () => shown.push('plant'),
+  });
+
+  it('SHL-004 a stored interlocks, changes or agent tab opens its new place', () => {
+    const ran: string[] = [];
+    bindCommands({
+      'view.interlocks': () => void ran.push('view.interlocks'),
+      'view.changes': () => void ran.push('view.changes'),
+      'view.agent': () => void ran.push('view.agent'),
+    });
+    for (const tab of ['interlocks', 'changes', 'agent'] as const) {
+      expect(routeConsoleTab(tab)).toEqual({ command: `view.${tab}` });
+      expect(resultsTabFor(tab)).toBe('output');
+      // a session of 2.0 with that tab active: its new place opens at once, and the results panel shows a tab it has
+      ran.length = 0;
+      const shown: string[] = [];
+      const stored = fakeWorkbench(tab);
+      const stop = startShellRouting(stored, actions(shown));
+      expect(ran).toEqual([`view.${tab}`]);
+      expect(stored.getState().activeConsoleTab).toBe('output');
+      stop();
+      // asked for while the panel is on Problems: the new place opens, the panel stays on Problems
+      ran.length = 0;
+      const live = fakeWorkbench('problems');
+      const stopLive = startShellRouting(live, actions(shown));
+      live.getState().setActiveConsoleTab(tab);
+      expect(ran).toEqual([`view.${tab}`]);
+      expect(live.getState().activeConsoleTab).toBe('problems');
+      stopLive();
+      expect(shown).toEqual([]);
+    }
   });
 });

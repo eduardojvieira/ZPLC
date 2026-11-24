@@ -251,7 +251,8 @@ export interface BudgetTargets {
   statusRailItems: number;
   targetPlaces: number;
   runControlSets: number;
-  resultsTabs: { total: number; reason: string };
+  /** `namedAtDefault`: how many of the default tabs must show their name (spec 013 row 3: all of them). */
+  resultsTabs: { total: number; namedAtDefault: number; reason: string };
 }
 
 /** Every count over its target, one line each, naming the state, the language, the viewport and the controls that make it. */
@@ -273,6 +274,11 @@ export function checkBudget(samples: BudgetSample[], targets: BudgetTargets): st
       ...sample.resultsTabs.namedIds,
       ...sample.resultsTabs.unnamedIds,
     ]);
+    if (sample.resultsTabs.named < targets.resultsTabs.namedAtDefault)
+      violations.push(
+        `${where}: results panel tabs shown with their name are ${sample.resultsTabs.named}, under ` +
+          `${targets.resultsTabs.namedAtDefault} (unnamed: ${sample.resultsTabs.unnamedIds.join(', ')})`,
+      );
   }
   return violations;
 }
