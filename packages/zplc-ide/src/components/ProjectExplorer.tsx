@@ -17,7 +17,8 @@ export function ProjectExplorer() {
   const setMode = useShellLayout((state) => state.setNavigatorMode);
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--color-surface-600)] px-2 py-1">
+      {/* in a narrow sidebar the switch and Project settings take a line each, and the button's name wraps (SHL-016) */}
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-[var(--color-surface-600)] px-2 py-1">
         <ToggleGroup
           label={t('navigator.mode.label')}
           value={mode}
@@ -28,7 +29,13 @@ export function ProjectExplorer() {
           ]}
         />
         {/* the root of the project: Project settings is the project's own document (SHL-011) */}
-        <Button size="sm" variant="ghost" data-command="project.settings" onClick={() => runCommand('project.settings')}>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-auto min-w-0 whitespace-normal text-left"
+          data-command="project.settings"
+          onClick={() => runCommand('project.settings')}
+        >
           {t('command.project.settings')}
         </Button>
       </div>

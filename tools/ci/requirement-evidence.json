@@ -30,8 +30,8 @@
   "VF-007": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/CodeEditor.browser.test.ts","test":"Instruction List editor in a browser (VF-007, LNG-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/CodeEditor.browser.test.ts","test":"Structured Text editor in a browser (VF-007, LNG-015)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/ConsoleChangesTrace.dom.test.tsx","test":"Changes tab contents in a DOM (VF-007)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/ConsoleChangesTrace.dom.test.tsx","test":"Trace tab contents in a DOM (VF-007)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/ConsoleChangesTrace.dom.test.tsx","test":"the review document contents in a DOM (VF-007)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnPanel.dom.test.tsx","test":"Learn lesson panel in a DOM (VF-007, LRN-004)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/ProjectExportItems.dom.test.tsx","test":"Project export items in a DOM (VF-007, IDE-022)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/TerminalTab.dom.test.tsx","test":"Terminal tab in a DOM (VF-007)"},
@@ -2137,7 +2137,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28l A running Ladder keeps the window responsive","partial":true}
   ],
   "IDE-014": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/console/split.test.ts","test":"IDE-014 the Tests, Interlocks, Changes and Agent panels are modules of their own"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/console/split.test.ts","test":"IDE-014 the Tests and Agent panels are modules of their own"},
     {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"adoptOffenders (IDE-014, VF-017)"},
     {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"module size (IDE-014): a hand-written module has at most the limit of lines"}
   ],
@@ -2277,7 +2277,6 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/ai/candidatePaths.test.ts","test":"the paths an assistant may read and propose (IDE-030)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ai/manifestPrivacy.test.ts","test":"the manifest an assistant reads or proposes (IDE-030)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/changeSet.test.ts","test":"isolated candidate change sets (IDE-030)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/ConsoleChangesTrace.dom.test.tsx","test":"the Changes tab and the review document hold one review (SHL-004, IDE-030)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/ConsoleChangesTrace.dom.test.tsx","test":"the assistant proposes a change set that a person reviews and saves (IDE-030, S5)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/ReviewDocument.dom.test.tsx","test":"IDE-030 a change that moved since the review is stale and never saves"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/ReviewDocument.dom.test.tsx","test":"IDE-030 accepting and rejecting a change behave as in the Changes tab"},
@@ -2302,7 +2301,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/components/InterlockCoverage.dom.test.tsx","test":"Declared-interlock coverage check (IDE-032) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/InterlockCoverage.test.tsx","test":"InterlockCoverage (IDE-032)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/shell/InterlocksView.dom.test.tsx","test":"IDE-032 the interlock coverage check behaves as in 2.0"},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"33 Declared interlock coverage has a tab of its own","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"33 Declared interlock coverage has a view of its own in the Tests activity","partial":true}
   ],
   "IDE-033": [
     {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"import cycles (IDE-033)"},

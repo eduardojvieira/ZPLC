@@ -1,6 +1,6 @@
 /**
  * The review flow of a proposed change (SHL-004, IDE-030), held once in the review document's store: the editor area's document and the
- * Changes tab of the results panel both read that state and act through these functions. The review reads the disk and writes nothing,
+ * Assistant view both read that state and act through these functions. The review reads the disk and writes nothing,
  * and only the person's accept saves: an accepted result that is still current and whose disk hash still matches.
  */
 import { isCandidateSourcePath } from '../ai/candidatePaths';

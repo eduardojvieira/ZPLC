@@ -178,4 +178,4 @@ Evidence level: host, in the real application. Journey 46 opens a Ladder, an FBD
 
 ## AI editing
 
-An AI assistant edits visual models through typed operations, never raw JSON. The resulting candidate change stays isolated in the **Changes** tab until you review it, build and test it, and save it. See [AI and privacy](./ai-privacy.md).
+An AI assistant edits visual models through typed operations, never raw JSON. The resulting candidate change stays isolated in the review document (**Show changes**) until you review it, build and test it, and save it. See [AI and privacy](./ai-privacy.md).

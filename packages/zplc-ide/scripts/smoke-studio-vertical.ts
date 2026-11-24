@@ -1939,8 +1939,9 @@ async function main(): Promise<void> {
         `fallback: ${JSON.stringify(canonicalBuild)}`,
     );
 
-    // The declared-interlock coverage check has a tab of its own (IDE-032): it is not part of Problems.
-    await click('Interlocks');
+    // The declared-interlock coverage check is a view of its own (IDE-032), in the Tests activity since U2 (SHL-004): it is not part
+    // of Problems.
+    await page().evaluate("import('/src/commands/bus.ts').then(({ runCommand }) => runCommand('view.interlocks'))");
     await waitFor('Interlocks view', async () =>
       (await page().evaluate(`document.querySelector('[data-interlock-coverage]') ? true : undefined`)) === true ? true : undefined,
     );
@@ -1959,7 +1960,7 @@ async function main(): Promise<void> {
     );
     assert(!(await text()).includes('do-not-render'), 'Malformed declared interlock payload leaked into Problems');
 
-    await click('Tests');
+    await click('Test results');
     await click('Run host scenarios');
     await waitFor('passed host scenarios', async () => (PASSED_VERDICT.test(await text()) ? true : undefined));
     await openDetails();
@@ -2008,7 +2009,7 @@ async function main(): Promise<void> {
     );
 
     await seed('motor plant', motorPlant, validProgram, false);
-    await click('Tests');
+    await click('Test results');
     assert(
       (await page().evaluate(`(() => {
       const input = document.querySelector('input[data-workspace-manifest-input]');
@@ -2075,7 +2076,7 @@ async function main(): Promise<void> {
     );
 
     await seed('conveyor', conveyor, validProgram, false);
-    await click('Tests');
+    await click('Test results');
     assert(
       (await page().evaluate(`(() => {
       const input = document.querySelector('input[data-workspace-manifest-input]');
@@ -2131,7 +2132,7 @@ async function main(): Promise<void> {
     );
 
     await seed('pedestrian crossing', pedestrian, validProgram, false);
-    await click('Tests');
+    await click('Test results');
     assert(
       (await page().evaluate(`(() => {
       const input = document.querySelector('input[data-workspace-manifest-input]');
@@ -2196,7 +2197,7 @@ async function main(): Promise<void> {
     );
 
     await seed('tank level', tank, validProgram, false);
-    await click('Tests');
+    await click('Test results');
     assert(
       (await page().evaluate(`(() => {
       const input = document.querySelector('input[data-workspace-manifest-input]');
@@ -2257,7 +2258,7 @@ async function main(): Promise<void> {
     );
 
     await setFile(invalidProgram, false);
-    await click('Tests');
+    await click('Test results');
     // A modified document does not block the run (FLW-006): the run saves it first. What the edit does is withdraw the old evidence.
     assert(
       (await page().evaluate(

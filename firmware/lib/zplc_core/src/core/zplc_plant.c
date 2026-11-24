@@ -138,7 +138,7 @@ static int build_slots(const uint8_t *d, uint8_t n, slot_t *s, uint32_t limit, u
   uint16_t pos;
 
   for (uint8_t i = 0U; i < n; i++) {
-    s[i].off = rd16(d + DESC_BYTES * i);
+    s[i].off = rd16(d + ((size_t)DESC_BYTES * i));
     s[i].type = (uint8_t)(d[DESC_BYTES * i + 2U] & 0x03U);
     s[i].bit = (uint8_t)((d[DESC_BYTES * i + 2U] >> 2) & 0x07U);
     s[i].len = type_len(s[i].type);
@@ -207,7 +207,7 @@ int zplc_plant_enter_bounded(const uint8_t *req, uint16_t len, uint8_t *rsp, uin
   }
   rc = build_slots(req + ENTER_FIXED, n_in, g.in, SYS_REG_OFF, &g.in_bool, &g.in_bytes);
   if (rc == 0) {
-    rc = build_slots(req + ENTER_FIXED + DESC_BYTES * n_in, n_out, g.out, ZPLC_MEM_OPI_SIZE, &g.out_bool, &g.out_bytes);
+    rc = build_slots(req + ENTER_FIXED + ((size_t)DESC_BYTES * n_in), n_out, g.out, ZPLC_MEM_OPI_SIZE, &g.out_bool, &g.out_bytes);
   }
   if (rc != 0) {
     goto out;

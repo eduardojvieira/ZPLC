@@ -1,5 +1,5 @@
 {
-  "what": "The targets of spec 013 section 8.1 that milestones U0 and U1 own, checked by scripts/interfaceBudget.ts --check on every measured state, language and viewport (simulation; a board needs hardware and is measured by hand).",
+  "what": "The targets of spec 013 section 8.1 that milestones U0, U1 and U2 own, checked by scripts/interfaceBudget.ts --check on every measured state, language and viewport (simulation; a board needs hardware and is measured by hand).",
   "commandBar": {
     "simulation": { "left": 7, "right": 3, "total": 10 },
     "board": { "left": 9, "right": 3 }
@@ -8,7 +8,8 @@
   "targetPlaces": 2,
   "runControlSets": 1,
   "resultsTabs": {
-    "total": 9,
-    "reason": "Spec 013 row 2 targets five tabs; that move belongs to U2 (the Tests activity and the rest of the panel), so U0 and U1 hold the nine that remain once Lab left the panel."
+    "total": 5,
+    "namedAtDefault": 5,
+    "reason": "Spec 013 rows 2 and 3 (SHL-003): Problems, Output, Test results, Watch and Trace, each with its name. Terminal makes six only with a board as the target, which is measured by hand as for the command bar."
   }
 }

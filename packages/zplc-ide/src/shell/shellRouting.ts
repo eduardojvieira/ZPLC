@@ -5,6 +5,8 @@
  */
 import type { ConsoleTab } from '../types';
 import type { ActivityView } from '../store/useShellLayout';
+import { runCommand } from '../commands/bus';
+import type { CommandId } from '../commands/registry';
 
 export const SIDEBAR_CONSOLE_TABS = ['explorer', 'inspector', 'learn'] as const;
 export type SidebarConsoleTab = (typeof SIDEBAR_CONSOLE_TABS)[number];
@@ -12,10 +14,17 @@ export type SidebarConsoleTab = (typeof SIDEBAR_CONSOLE_TABS)[number];
 export const isSidebarConsoleTab = (tab: ConsoleTab): tab is SidebarConsoleTab => (SIDEBAR_CONSOLE_TABS as readonly string[]).includes(tab);
 
 /**
- * The tab the results panel shows for a stored tab: the stored one, or Output when the request belongs to a sidebar or to the plant
- * document.
+ * The tabs of 2.0 that left the results panel in U2 (SHL-004), with the command that shows each in its new place: Interlocks in the
+ * Tests activity, Changes in the review document, Agent in the Assistant view (or Preferences while no provider is configured).
  */
-export const resultsTabFor = (tab: ConsoleTab): ConsoleTab => (isSidebarConsoleTab(tab) || tab === 'lab' ? 'output' : tab);
+const MOVED_TABS: Partial<Record<ConsoleTab, CommandId>> = { interlocks: 'view.interlocks', changes: 'view.changes', agent: 'view.agent' };
+
+/**
+ * The tab the results panel shows for a stored tab: the stored one, or Output when the request belongs to a sidebar, to the plant
+ * document or to a place that left the panel.
+ */
+export const resultsTabFor = (tab: ConsoleTab): ConsoleTab =>
+  isSidebarConsoleTab(tab) || tab === 'lab' || MOVED_TABS[tab] !== undefined ? 'output' : tab;
 
 /**
  * Where the lesson of the open lesson workspace is shown (LRN-004). On the Learn rail it fills the primary sidebar; on any other
@@ -26,16 +35,17 @@ export const lessonSurface = (view: ActivityView, lessonOpen: boolean): 'primary
 
 /**
  * `lab` is the tab 2.0 stored for the plant: it is a document of the editor area now (PLS-002), and the value stays so that a stored
- * session parses.
+ * session parses; so do `interlocks`, `changes` and `agent`, whose places are opened by their commands.
  */
-export type ShellRoute = { primary: ActivityView } | { secondary: 'inspector' } | { plant: true };
+export type ShellRoute = { primary: ActivityView } | { secondary: 'inspector' } | { plant: true } | { command: CommandId };
 
 export function routeConsoleTab(tab: ConsoleTab): ShellRoute | null {
   if (tab === 'explorer') return { primary: 'project' };
   if (tab === 'learn') return { primary: 'learn' };
   if (tab === 'inspector') return { secondary: 'inspector' };
   if (tab === 'lab') return { plant: true };
-  return null;
+  const command = MOVED_TABS[tab];
+  return command ? { command } : null;
 }
 
 interface WorkbenchStore {
@@ -63,6 +73,7 @@ export function startShellRouting(workbench: WorkbenchStore, shell: () => ShellA
     }
     if ('primary' in route) shell().showActivity(route.primary);
     else if ('plant' in route) shell().showPlant();
+    else if ('command' in route) runCommand(route.command);
     else shell().setSecondaryVisible(true);
     workbench.getState().setActiveConsoleTab(resultsTab);
   };

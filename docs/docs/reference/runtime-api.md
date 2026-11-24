@@ -3177,6 +3177,24 @@ int zplc_plant_enter(const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t *r
 | `rsp` | `uint8_t *` | — |
 | `rsp_len` | `uint16_t *` | — |
 
+#### `zplc_plant_enter_bounded`
+
+```c
+int zplc_plant_enter_bounded(const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t cap, uint16_t *rsp_len);
+```
+
+**Source summary:** PLANT_ENTER with the capacity of @p rsp in bytes. An entry whose PLANT_FRAME response (13 + output bytes) or own response would not fit is refused with ZPLC_PROTO_ERR_RANGE (LNK-018). Link code must use this form.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `req` | `const uint8_t *` | — |
+| `len` | `uint16_t` | — |
+| `rsp` | `uint8_t *` | — |
+| `cap` | `uint16_t` | — |
+| `rsp_len` | `uint16_t *` | — |
+
 #### `zplc_plant_frame`
 
 ```c
@@ -3192,6 +3210,24 @@ int zplc_plant_frame(const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t *r
 | `req` | `const uint8_t *` | — |
 | `len` | `uint16_t` | — |
 | `rsp` | `uint8_t *` | — |
+| `rsp_len` | `uint16_t *` | — |
+
+#### `zplc_plant_frame_bounded`
+
+```c
+int zplc_plant_frame_bounded(const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t cap, uint16_t *rsp_len);
+```
+
+**Source summary:** PLANT_FRAME with the capacity of @p rsp: a response that does not fit is never written; the frame is then answered ZPLC_PROTO_ERR_RANGE and neither staged nor counted. Link code must use this form.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `req` | `const uint8_t *` | — |
+| `len` | `uint16_t` | — |
+| `rsp` | `uint8_t *` | — |
+| `cap` | `uint16_t` | — |
 | `rsp_len` | `uint16_t *` | — |
 
 #### `zplc_plant_exit`
@@ -4061,6 +4097,34 @@ const char *zplc_sched_fault_reason_name(zplc_sched_fault_reason_t reason);
 | --- | --- | --- |
 | `reason` | `zplc_sched_fault_reason_t` | — |
 
+#### `zplc_sched_core_set_plant`
+
+```c
+void zplc_sched_core_set_plant(const zplc_sched_plant_t *plant);
+```
+
+**Source summary:** Install the plant hooks, or NULL to remove them. Not thread safe: call it before the first scan.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `plant` | `const zplc_sched_plant_t *` | — |
+
+#### `zplc_sched_core_plant_exit`
+
+```c
+void zplc_sched_core_plant_exit(void);
+```
+
+**Source summary:** Leave the plant mode because the run ended or was changed (STOP, pause, program load, reset or a fault), with ZPLC_PROTO_PLANT_EXIT_REASON_RUN_CONTROL. Idempotent; a no-op without plant hooks. Call it once the outputs are safe.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
 #### `zplc_sched_core_init`
 
 ```c
@@ -4650,6 +4714,7 @@ int zplc_io_reset_image(void);
 | `zplc_sched_trace_fn` | Typedef | — |
 | `zplc_sched_probe_t` | Enum | Points at which a test may look at, or steer, a scan. A product adapter leaves the probe NULL. |
 | `ctx` | Struct | The services of the platform. Every member is optional except now_us; an absent callback is a step the platform does not have (the host runtime has no pins, a single thread has no locks). |
+| `latch` | Struct | The plant I/O mode as the core sees it (LNK-010, LNK-011). Installed once by an adapter that carries the mode; absent, every scan and every write of the outputs behaves as before. |
 | `task` | Struct | One task as the core sees it. The VM belongs to the adapter; the core runs it. |
 | `slot` | Struct | — |
 | `error_task` | Struct | What a scan has to say: kept while the image lock is held and printed after it is released. |

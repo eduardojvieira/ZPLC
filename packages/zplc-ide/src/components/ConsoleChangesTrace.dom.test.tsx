@@ -9,6 +9,7 @@ await stubMonaco();
 const { useIDEStore } = await import('../store/useIDEStore');
 const { Console } = await import('./Console');
 const { ReviewDocument } = await import('./ReviewDocument');
+const { AssistantView } = await import('./AssistantView');
 const { useReviewDocument } = await import('../store/useReviewDocument');
 const { useNotifications } = await import('../store/notifications');
 const { translatorFor } = await import('../i18n');
@@ -74,32 +75,23 @@ function modifiedFile(disk: string, buffer: string) {
     loadedFiles: new Map([['f1', file]]),
   };
 }
-const panel = () => dom.within(dom.screen.getByRole('tabpanel'));
-const reviewButton = () => panel().getByRole('button', { name: dom.t('console.reviewActiveStChange') }) as HTMLButtonElement;
+const review = () => dom.within(document.querySelector<HTMLElement>('[data-review-document]')!);
+const reviewButton = () => review().getByRole('button', { name: dom.t('console.reviewActiveStChange') }) as HTMLButtonElement;
 
-describe('Changes tab contents in a DOM (VF-007)', () => {
+// The Changes tab left the results panel for the review document (SHL-004): these are its contents there.
+describe('the review document contents in a DOM (VF-007)', () => {
   it('without the desktop app it says so and the review button is disabled', () => {
-    open('changes');
-    dom.render(<Console />);
-    expect(panel().getByText(dom.t('console.changeReviewRequiresThe')).getAttribute('role')).toBe('status');
-    expect(reviewButton().disabled).toBe(true);
-    expect(panel().getByText(dom.t('u2Tests.boundary.simulation'))).toBeTruthy();
-  });
-
-  it('with the desktop app and no saved workspace linked it offers to choose the workspace file', () => {
-    desktop(async () => ({}));
-    open('changes', { projectSession: 7, workspaceScenarioLink: null });
-    dom.render(<Console />);
-    expect(panel().getByText(dom.t('console.chooseTheSavedWorkspace'))).toBeTruthy();
-    expect((panel().getByRole('button', { name: dom.t('console.chooseZplcJson') }) as HTMLButtonElement).disabled).toBe(false);
+    open('output');
+    dom.render(<ReviewDocument />);
+    expect(review().getByText(dom.t('console.changeReviewRequiresThe'))).toBeTruthy();
     expect(reviewButton().disabled).toBe(true);
   });
 
-  it('with a workspace linked but a buffer that is not modified it says only a modified file can be reviewed', () => {
+  it('with a workspace linked but a buffer that is not modified the review button is disabled', () => {
     desktop(async () => ({}));
-    open('changes', modifiedFile('PROGRAM Main\nEND_PROGRAM\n', 'PROGRAM Main\nEND_PROGRAM\n'));
-    dom.render(<Console />);
-    expect(panel().getByText(dom.t('console.onlyAModifiedActive'))).toBeTruthy();
+    open('output', modifiedFile('PROGRAM Main\nEND_PROGRAM\n', 'PROGRAM Main\nEND_PROGRAM\n'));
+    dom.render(<ReviewDocument />);
+    expect(review().getByText(dom.t('review.emptyHint'))).toBeTruthy();
     expect(reviewButton().disabled).toBe(true);
   });
 
@@ -114,8 +106,8 @@ describe('Changes tab contents in a DOM (VF-007)', () => {
         diagnostics: [{ code: 'CHANGESET_INVALID' }],
       }));
       const buffer = 'PROGRAM Main\nVAR x : BOOL; END_VAR\nEND_PROGRAM\n';
-      open('changes', modifiedFile('PROGRAM Main\nEND_PROGRAM\n', buffer));
-      const { user } = dom.render(<Console />);
+      open('output', modifiedFile('PROGRAM Main\nEND_PROGRAM\n', buffer));
+      const { user } = dom.render(<ReviewDocument />);
       expect(reviewButton().disabled).toBe(false);
       await user.click(reviewButton());
       const result = await dom.screen.findByRole('region', { name: dom.t('console.changeReviewResult') });
@@ -134,95 +126,21 @@ describe('Changes tab contents in a DOM (VF-007)', () => {
       const reviews = desktop(async () => {
         throw new Error('host closed');
       });
-      open('changes', modifiedFile('PROGRAM Main\nEND_PROGRAM\n', 'PROGRAM Main\nVAR x : BOOL; END_VAR\nEND_PROGRAM\n'));
-      const { user } = dom.render(<Console />);
+      open('output', modifiedFile('PROGRAM Main\nEND_PROGRAM\n', 'PROGRAM Main\nVAR x : BOOL; END_VAR\nEND_PROGRAM\n'));
+      const { user } = dom.render(<ReviewDocument />);
       await user.click(reviewButton());
-      await dom.waitFor(() => expect(panel().getByText(dom.t('console.theReviewCouldNot'))).toBeTruthy());
+      await dom.waitFor(() => expect(review().getByText(dom.t('console.theReviewCouldNot'))).toBeTruthy());
       expect(reviews).toHaveLength(1);
 
       const same = 'PROGRAM Main\nEND_PROGRAM\n';
       const file = modifiedFile(same, same);
       file.loadedFiles.get('f1')!.isModified = true;
-      open('changes', file);
+      open('output', file);
       await user.click(reviewButton());
-      await dom.waitFor(() => expect(panel().getByText(dom.t('console.theActiveBufferMatches'))).toBeTruthy());
+      await dom.waitFor(() => expect(review().getByText(dom.t('console.theActiveBufferMatches'))).toBeTruthy());
       expect(reviews).toHaveLength(1);
     },
   );
-});
-
-describe('the Changes tab and the review document hold one review (SHL-004, IDE-030)', () => {
-  const buffer = 'PROGRAM Main\nVAR x : BOOL; END_VAR\nEND_PROGRAM\n';
-  const disk = 'PROGRAM Main\nEND_PROGRAM\n';
-  const sha = async (text: string) =>
-    Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))), (b) =>
-      b.toString(16).padStart(2, '0'),
-    ).join('');
-  const both = () => (
-    <>
-      <Console />
-      <ReviewDocument />
-    </>
-  );
-  const results = () => dom.screen.queryAllByRole('region', { name: dom.t('console.changeReviewResult') });
-
-  it('a change reviewed and rejected in the tab is shown, and offers no save, in the document; and the reverse', async () => {
-    desktop(async () => ({
-      schemaVersion: 1,
-      accepted: false,
-      evidenceScope: 'native-posix-host',
-      diagnostics: [{ code: 'CHANGESET_INVALID' }],
-    }));
-    open('changes', modifiedFile(disk, buffer));
-    const { user } = dom.render(both());
-    await user.click(reviewButton());
-    await dom.waitFor(() => expect(results()).toHaveLength(2));
-    for (const region of results()) {
-      expect(dom.within(region).getByText('CHANGESET_INVALID')).toBeTruthy();
-      expect(dom.within(region).queryByRole('button', { name: dom.t('console.saveReviewedChange') })).toBeNull();
-    }
-    // reviewed in the document: the tab shows it too
-    useReviewDocument.setState({ review: { kind: 'idle' } });
-    await dom.waitFor(() => expect(results()).toHaveLength(0));
-    await user.click(
-      dom
-        .within(dom.screen.getByRole('heading', { name: dom.t('review.title') }).parentElement!)
-        .getByRole('button', { name: dom.t('console.reviewActiveStChange') }),
-    );
-    await dom.waitFor(() => expect(results()).toHaveLength(2));
-  });
-
-  it('a change accepted and saved in the document is no longer pending in the tab, and a stale one never saves from either', async () => {
-    desktop(async () => ({}));
-    const ctx = modifiedFile(disk, buffer);
-    let saved = 0;
-    open('changes', { ...ctx, saveFile: async () => ((saved += 1), true) });
-    const file = ctx.loadedFiles.get('f1')!;
-    const snapshot = {
-      origin: 'manual',
-      projectSession: 7,
-      compilerRunId: useIDEStore.getState().compilerRunId,
-      workspaceId: 'w1',
-      fileId: 'f1',
-      path: 'src/main.st',
-      editorContent: buffer,
-      candidate: buffer,
-      handle: file.handle,
-      beforeSha256: await sha(disk),
-      afterSha256: await sha(buffer),
-      baseline: disk,
-    };
-    useReviewDocument.setState({
-      review: { kind: 'result', snapshot, presentation: { kind: 'accepted', diagnostics: [], artifacts: [] } } as never,
-    });
-    const { user } = dom.render(both());
-    expect(results()).toHaveLength(2);
-    const save = dom.within(results()[1]!).getByRole('button', { name: dom.t('console.saveReviewedChange') });
-    await user.click(save);
-    await dom.waitFor(() => expect(dom.screen.getAllByText(dom.t('console.reviewedChangeSavedReview'))).toHaveLength(2));
-    expect(saved).toBe(1);
-    expect(results()).toHaveLength(0);
-  });
 });
 
 /** The assistant: a provider that answers `reply`, and a saved project with Main.st open and unmodified (the disk is `written`). */
@@ -291,7 +209,15 @@ function assistant(reply: unknown, review: (request: unknown) => Promise<unknown
   };
 }
 
+// The Agent tab left the results panel for the Assistant view (SHL-004); a reviewed proposal opens as the review document.
 describe('the assistant proposes a change set that a person reviews and saves (IDE-030, S5)', () => {
+  const panel = () => dom.within(dom.screen.getByRole('region', { name: dom.t('assistant.region') }));
+  const Assistant = () => (
+    <>
+      <AssistantView />
+      <ReviewDocument />
+    </>
+  );
   const ready = async (user: ReturnType<typeof dom.render>['user']) => {
     await user.click(panel().getByRole('button', { name: dom.t('console.refreshStatus') }));
     await dom.waitFor(() => expect(panel().getByText(/Provider enabled/i)).toBeTruthy());
@@ -354,8 +280,8 @@ describe('the assistant proposes a change set that a person reviews and saves (I
         };
       },
     );
-    open('agent', ctx.state);
-    const { user } = dom.render(<Console />);
+    open('output', ctx.state);
+    const { user } = dom.render(<Assistant />);
     await ask(user);
     const files = await dom.screen.findByRole('list', { name: dom.t('console.proposedFiles') });
     expect(
@@ -376,8 +302,7 @@ describe('the assistant proposes a change set that a person reviews and saves (I
         { path: 'src/Lamp.st', content: 'PROGRAM Lamp\nEND_PROGRAM\n' },
       ],
     });
-    // the review is a result in the Changes tab: a difference per file, and no write happened
-    await user.click(dom.screen.getByRole('tab', { name: new RegExp(dom.t('console.tab.changes')) }));
+    // the review is a result of the review document: a difference per file, and no write happened
     const result = await dom.screen.findByRole('region', { name: dom.t('console.changeReviewResult') });
     expect(dom.within(result).getByRole('heading', { name: tn('console.reviewChangeSet', 2) })).toBeTruthy();
     expect(dom.within(result).getByText('src/Lamp.st')).toBeTruthy();
@@ -421,15 +346,15 @@ describe('the assistant proposes a change set that a person reviews and saves (I
         };
       },
     );
-    open('agent', ctx.state);
-    const { user } = dom.render(<Console />);
+    open('output', ctx.state);
+    const { user } = dom.render(<Assistant />);
     await ask(user);
     expect(useNotifications.getState().items).toHaveLength(0);
     await user.click(panel().getByRole('button', { name: dom.t('console.reviewProposedChange') }));
     await dom.waitFor(() => expect(useNotifications.getState().items).toHaveLength(1));
     expect(useNotifications.getState().items[0]?.recover?.label).toBe(dom.t('review.open'));
     expect(useReviewDocument.getState()).toMatchObject({ open: false, active: false });
-    expect(useIDEStore.getState().activeConsoleTab).toBe('agent');
+    expect(useIDEStore.getState().activeConsoleTab).toBe('output');
   });
 
   it('shows a proposed ladder that does not load as a refusal with its violations, and offers no review', async () => {
@@ -445,8 +370,8 @@ describe('the assistant proposes a change set that a person reviews and saves (I
       }),
       async () => ({}),
     );
-    open('agent', ctx.state);
-    const { user } = dom.render(<Console />);
+    open('output', ctx.state);
+    const { user } = dom.render(<Assistant />);
     await ask(user);
     const alert = await dom.screen.findByRole('alert');
     expect(alert.textContent).toContain(dom.t('console.proposalRefusedInvalid', { path: 'src/Seal.ld.json' }));
@@ -477,8 +402,8 @@ describe('the assistant proposes a change set that a person reviews and saves (I
       async () => ({}),
     );
     dom.patchStore(useIDEStore, { theme: 'light' } as never);
-    open('agent', ctx.state);
-    const { user } = dom.render(<Console />);
+    open('output', ctx.state);
+    const { user } = dom.render(<Assistant />);
     await ready(user);
     await user.type(panel().getByRole('textbox', { name: dom.t('console.request') }), 'Help me');
     await dom.waitFor(() =>
@@ -525,8 +450,8 @@ describe('the assistant proposes a change set that a person reviews and saves (I
     bindCommands({ 'online.simulation': () => void ran.push('online.simulation') });
     restores.push(resetCommandsForTest);
     const ctx = assistant({ ok: true, answer: 'Switch', proposals: [{ type: 'startSimulation' }] }, async () => ({}));
-    open('agent', ctx.state);
-    const { user } = dom.render(<Console />);
+    open('output', ctx.state);
+    const { user } = dom.render(<Assistant />);
     await ready(user);
     await user.type(panel().getByRole('textbox', { name: dom.t('console.request') }), 'Simulate');
     await dom.waitFor(() =>
@@ -543,8 +468,8 @@ describe('the assistant proposes a change set that a person reviews and saves (I
 
   it('shows an answer that proposes something physical as not trusted, with no button', async () => {
     const ctx = assistant({ ok: true, answer: 'Deploy it', proposals: [{ type: 'deploy' }] }, async () => ({}));
-    open('agent', ctx.state);
-    const { user } = dom.render(<Console />);
+    open('output', ctx.state);
+    const { user } = dom.render(<Assistant />);
     await ready(user);
     await user.type(panel().getByRole('textbox', { name: dom.t('console.request') }), 'Deploy');
     await dom.waitFor(() =>
@@ -557,8 +482,8 @@ describe('the assistant proposes a change set that a person reviews and saves (I
 
   it('sends the open program with a plain question as well, in any language', async () => {
     const ctx = assistant({ ok: true, answer: 'It latches.' }, async () => ({}));
-    open('agent', ctx.state);
-    const { user } = dom.render(<Console />);
+    open('output', ctx.state);
+    const { user } = dom.render(<Assistant />);
     await ready(user);
     await user.type(panel().getByRole('textbox', { name: dom.t('console.request') }), 'What does it do?');
     await dom.waitFor(() =>
@@ -572,6 +497,15 @@ describe('the assistant proposes a change set that a person reviews and saves (I
       prompt: 'What does it do?',
       activeFile: { fileId: 'file:src/Main.st', path: 'src/Main.st' },
     });
+  });
+
+  it('offers its modes as a named radio group with exactly one checked', () => {
+    open('output');
+    dom.render(<AssistantView />);
+    const group = dom.screen.getByRole('radiogroup', { name: dom.t('console.agentMode') });
+    const radios = dom.within(group).getAllByRole('radio');
+    expect(radios).toHaveLength(4);
+    expect(radios.filter((radio) => radio.getAttribute('aria-checked') === 'true')).toHaveLength(1);
   });
 });
 

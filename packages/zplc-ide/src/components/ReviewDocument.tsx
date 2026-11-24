@@ -1,6 +1,6 @@
 /**
  * The change review document (SHL-004, IDE-030): the editor area's home of a proposed change. It lists the pending change and shows its
- * review, with or without an AI provider; the flow is `reviewFlow.ts`, shared with the Changes tab.
+ * review, with or without an AI provider; the flow is `reviewFlow.ts`, shared with the Assistant view.
  */
 import { FileDiff, LoaderCircle } from 'lucide-react';
 import { useT } from '../i18n';
@@ -11,6 +11,14 @@ import { useReviewDocument } from '../store/useReviewDocument';
 import { Button } from '../ui';
 import { CandidateReviewResult, type CandidateReviewState } from './ConsoleReviewPanels';
 import { acceptReview, cancelReview, reviewActiveChange, reviewIsCurrent } from './reviewFlow';
+import { canLinkProjectWorkspace, linkProjectWorkspace } from '../utils/workspaceTestLink';
+
+/** Reviews the active change; a project not linked yet is linked first, as Build, Tests and Simulate link it (IDE-001). */
+async function linkAndReview(): Promise<void> {
+  const { workspaceScenarioLink, projectSession } = useIDEStore.getState();
+  if (workspaceScenarioLink?.projectSession !== projectSession && !(await linkProjectWorkspace())) return;
+  await reviewActiveChange();
+}
 
 const STATUS_KEYS: Partial<Record<CandidateReviewState['kind'], string>> = {
   'matches-disk': 'console.theActiveBufferMatches',
@@ -33,15 +41,16 @@ export function ReviewDocument() {
   // a result whose program moved since the review is shown as stale and cannot be saved
   const review: CandidateReviewState = reviewIsCurrent(reviewState) ? reviewState : { kind: 'stale' };
   const desktop = Boolean(window.electronAPI?.candidateChangeSet);
+  const linkable = hasLink || canLinkProjectWorkspace();
   const eligible = Boolean(
-    desktop && isProjectOpen && hasLink && activeFile?.handle && activeFile.isModified && isCandidateSourcePath(activeFile.path),
+    desktop && isProjectOpen && linkable && activeFile?.handle && activeFile.isModified && isCandidateSourcePath(activeFile.path),
   );
   const statusKey = STATUS_KEYS[review.kind];
   return (
     <div className="h-full overflow-auto p-3 font-sans text-sm text-[var(--color-surface-200)]" data-review-document>
       <h1 className="mb-3 text-base font-medium text-[var(--color-surface-100)]">{t('review.title')}</h1>
       <div className="flex flex-wrap items-center gap-2">
-        <Button variant="primary" size="sm" onClick={() => void reviewActiveChange()} disabled={!eligible || busy}>
+        <Button variant="primary" size="sm" onClick={() => void linkAndReview()} disabled={!eligible || busy}>
           <FileDiff size={14} aria-hidden="true" />
           {t('console.reviewActiveStChange')}
         </Button>

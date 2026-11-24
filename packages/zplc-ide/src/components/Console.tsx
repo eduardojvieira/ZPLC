@@ -1,35 +1,21 @@
 /**
  * Console Component
  *
- * The results panel under the editor (UX-011): Output, Problems, Tests, Interlocks, Changes, Agent, Trace, Watch and Terminal tabs.
- * The Explorer, the Inspector and the lessons are views of the sidebars (shell/Sidebars.tsx).
+ * The results panel under the editor (UX-011, SHL-003): Output, Problems, Test results, Trace and Watch, and Terminal while the target
+ * is a board or once the person has opened it. The Explorer, the Inspector and the lessons are views of the sidebars
+ * (shell/Sidebars.tsx); Interlocks, Changes and Agent are the Tests activity, the review document and the Assistant view (SHL-004).
  * The Terminal tab provides direct shell access to ZPLC devices.
  * The Watch tab shows live debug values.
  */
 
 import { ProblemsPanel } from './ProblemsPanel';
 import { useUnseen } from './consoleAttention';
-import {
-  ChevronDown,
-  ChevronUp,
-  Terminal,
-  AlertTriangle,
-  Trash2,
-  Eye,
-  FlaskConical,
-  Activity,
-  FileDiff,
-  Bot,
-  ShieldCheck,
-} from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { ChevronDown, ChevronUp, Terminal, AlertTriangle, Trash2, Eye, FlaskConical, Activity } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useIDEStore } from '../store/useIDEStore';
 import { useConsoleState } from '../store/regionSubscriptions';
-import { sha256Text } from './candidateSources';
-import { acceptReview, cancelReview, invalidateReview, reviewActiveChange, reviewIsCurrent, reviewProposal } from './reviewFlow';
-import { useReviewDocument } from '../store/useReviewDocument';
-import { isCandidateSourcePath } from '../ai/candidatePaths';
-import { presentAgentResponse } from './agent/agentResponse';
+import { invalidateReview } from './reviewFlow';
+import { useCommandState } from '../commands/bus';
 import { ConsoleTabStrip, type ConsoleTabFace } from './ConsoleTabStrip';
 import { TerminalTab } from './TerminalTab';
 import { WatchTab } from './WatchTab';
@@ -42,21 +28,15 @@ import { resultsTabFor } from '../shell/shellRouting';
 import { elementToSelect } from '../editors/diagnosticElement';
 import { requestElementSelection } from '../editors/elementSelectionRequests';
 import { useProjectBlocks } from '../editors/useProjectBlocks';
-import { presentAiProviderStatus, type AiProviderMode, type AiProviderStatusPresentation } from './aiProviderPresentation';
-import { useTheme } from '../hooks/useTheme';
 import { Badge, Button, FileInput, IconButton } from '../ui';
 import { useT } from '../i18n';
 import { CommandEmptyState } from './panelStates';
-import { type CandidateReviewState, type AgentState } from './ConsoleReviewPanels';
 import { LiveNativeMotorPanel } from './LiveNativeMotorControls';
 import { useAppSettings } from '../store/useAppSettings';
 import { outputLevelOf } from '../utils/appSettings';
 import { entriesForLevel } from '../store/consoleEntries';
 import { OutputTab } from './console/OutputTab';
 import { TestsTab } from './console/TestsTab';
-import { InterlocksTab } from './console/InterlocksTab';
-import { ChangesTab } from './console/ChangesTab';
-import { AgentTab } from './console/AgentTab';
 import { useWorkspaceTestRunner } from './console/useWorkspaceTestRunner';
 
 interface ConsoleProps {
@@ -92,34 +72,19 @@ export function Console({ debugController }: ConsoleProps) {
   // a request for a view that left this panel (the explorer, the inspector, the lessons) is shown by the sidebars; this panel keeps its own
   // tab
   const activeConsoleTab = resultsTabFor(storedConsoleTab);
-  const { effectiveTheme } = useTheme();
+  // Terminal is a tab while the target is a board, and from the first time the person asks for it while the project stays open (SHL-003)
+  const boardTarget = useCommandState().mode === 'hardware';
+  const [terminalOpened, setTerminalOpened] = useState(false);
+  if (activeConsoleTab === 'terminal' && !terminalOpened) setTerminalOpened(true);
   const projectBlocks = useProjectBlocks();
   const runner = useWorkspaceTestRunner({
     isProjectOpen,
     projectSession,
-    compilerRunId,
     workspaceScenarioLink,
     linkWorkspaceScenarios,
     hasUnsavedChanges,
   });
-  const {
-    workspaceTests,
-    workspaceTestBusy,
-    setWorkspaceTestBusy,
-    workspaceManifestInputRef,
-    hasCurrentWorkspaceLink,
-    registerWorkspaceManifest,
-  } = runner;
-  const candidateChangeSet = window.electronAPI?.candidateChangeSet;
-  const aiProvider = window.electronAPI?.aiProvider;
-  const candidateDesktopReady = Boolean(candidateChangeSet && workspaceTests);
-  // the review is held once, by the review document's store, and shown here and in the editor area
-  const candidateReviewState = useReviewDocument((state) => state.review) as CandidateReviewState;
-  const candidateReviewBusy = useReviewDocument((state) => state.busy);
-  const [agentMode, setAgentMode] = useState<AiProviderMode>('ask');
-  const [agentPrompt, setAgentPrompt] = useState('');
-  const [agentState, setAgentState] = useState<AgentState>('idle');
-  const [agentStatus, setAgentStatus] = useState<AiProviderStatusPresentation>({ kind: 'invalid' });
+  const { workspaceManifestInputRef, registerWorkspaceManifest } = runner;
 
   // Get watch count for badge
   const watchCount = useIDEStore((state) => state.debug.watchVariables.length);
@@ -128,19 +93,8 @@ export function Console({ debugController }: ConsoleProps) {
   const debugMode = useIDEStore((state) => state.debug.mode);
   const latestNativeTrace = nativeTrace.at(-1);
   const activeFile = activeFileId ? loadedFiles.get(activeFileId) : undefined;
-  const candidateEligible = Boolean(
-    candidateDesktopReady &&
-    isProjectOpen &&
-    hasCurrentWorkspaceLink &&
-    activeFile &&
-    isCandidateSourcePath(activeFile.path) &&
-    activeFile.isModified &&
-    activeFile.handle,
-  );
-  // an assistant's change set is bound to its own files; the person's buffer review to the active file
-  const candidateReviewStateForCurrent: CandidateReviewState = reviewIsCurrent(candidateReviewState)
-    ? candidateReviewState
-    : { kind: 'stale' };
+  // a review of the review document is about the program as it was: a change of the program makes it stale. This panel is mounted with
+  // the workbench, as the Changes tab that held the review was.
   useEffect(() => {
     invalidateReview();
   }, [
@@ -210,13 +164,10 @@ export function Console({ debugController }: ConsoleProps) {
     },
     {
       id: 'tests',
-      label: t('panel.tests'),
+      label: t('u2Panel.testResults'),
       icon: <FlaskConical size={14} />,
       ariaLabel: t('console.tab.testsAria'),
     },
-    { id: 'interlocks', label: t('console.tab.interlocks'), icon: <ShieldCheck size={14} />, ariaLabel: t('console.tab.interlocksAria') },
-    { id: 'changes', label: t('console.tab.changes'), icon: <FileDiff size={14} />, ariaLabel: t('console.tab.changesAria') },
-    { id: 'agent', label: t('console.tab.agent'), icon: <Bot size={14} />, ariaLabel: t('console.tab.agentAria') },
     {
       id: 'trace',
       label: t('panel.trace'),
@@ -230,191 +181,16 @@ export function Console({ debugController }: ConsoleProps) {
       icon: <Eye size={14} className={debugMode !== 'none' ? 'text-[var(--color-accent-green)]' : ''} />,
       count: watchCount > 0 ? watchCount : undefined,
     },
-    { id: 'terminal', label: t('console.tab.terminal'), icon: <Terminal size={14} className="text-[var(--color-accent-green)]" /> },
+    ...(boardTarget || terminalOpened
+      ? [
+          {
+            id: 'terminal' as const,
+            label: t('console.tab.terminal'),
+            icon: <Terminal size={14} className="text-[var(--color-accent-green)]" />,
+          },
+        ]
+      : []),
   ];
-
-  const reviewCandidateChange = async () => {
-    if (!candidateChangeSet || !workspaceTests || workspaceTestBusy) return;
-    setWorkspaceTestBusy(true);
-    try {
-      await reviewActiveChange();
-    } finally {
-      setWorkspaceTestBusy(false);
-    }
-  };
-
-  const cancelCandidateReview = async () => {
-    if (!workspaceTests || !workspaceTestBusy) return;
-    await cancelReview();
-  };
-
-  const saveReviewedChange = async () => {
-    setWorkspaceTestBusy(true);
-    try {
-      await acceptReview();
-    } finally {
-      setWorkspaceTestBusy(false);
-    }
-  };
-
-  const refreshAiProvider = useCallback(async () => {
-    await Promise.resolve();
-    if (!aiProvider) {
-      setAgentState('unavailable');
-      setAgentStatus({ kind: 'invalid' });
-      return;
-    }
-    setAgentState('loading');
-    try {
-      const statusValue = await aiProvider.getStatus();
-      const status = presentAiProviderStatus(statusValue);
-      setAgentStatus(status);
-      setAgentState(status.kind === 'invalid' ? 'unavailable' : 'idle');
-    } catch {
-      setAgentState('unavailable');
-    }
-  }, [aiProvider, setAgentState, setAgentStatus]);
-
-  // the open program, in any of the five languages, goes with a request in every mode; an edit also needs it saved and unmodified
-  const agentContextFile = activeFile && isCandidateSourcePath(activeFile.path) && activeFile.handle ? activeFile : undefined;
-  const agentEditFile = agentContextFile && !agentContextFile.isModified ? agentContextFile : undefined;
-  const agentBusy = agentState === 'sending' || agentState === 'cancelling';
-  const agentProposalCurrent =
-    typeof agentState === 'object' &&
-    agentState.kind === 'response' &&
-    agentState.expectedEdit !== undefined &&
-    agentState.expectedEdit.projectSession === projectSession &&
-    agentState.expectedEdit.compilerRunId === compilerRunId &&
-    agentState.expectedEdit.workspaceId === workspaceScenarioLink?.workspaceId &&
-    agentState.expectedEdit.fileId === activeFile?.id &&
-    agentState.expectedEdit.path === activeFile?.path &&
-    agentState.expectedEdit.content === activeFile?.content &&
-    agentState.expectedEdit.handle === activeFile?.handle &&
-    !activeFile?.isModified;
-  const agentCanSend = Boolean(
-    aiProvider &&
-    !agentBusy &&
-    agentStatus.kind === 'ready' &&
-    agentStatus.configured &&
-    agentStatus.enabled &&
-    hasCurrentWorkspaceLink &&
-    isProjectOpen &&
-    agentPrompt.trim().length > 0 &&
-    agentPrompt.length <= 4_000 &&
-    (agentMode !== 'edit' || agentEditFile),
-  );
-  const agentDiagnostics = liveSTDiagnostics.slice(0, 32).map(({ code, line, column }) => ({
-    code,
-    ...(activeFile?.path ? { path: activeFile.path } : {}),
-    ...(line === undefined ? {} : { line }),
-    ...(column === undefined ? {} : { column }),
-  }));
-  const agentTrace = nativeTrace.slice(-32).map((sample) => ({ atMs: sample.uptimeMs, signal: 'runtime.cycles', value: sample.cycles }));
-
-  const sendAgentRequest = async () => {
-    const current = useIDEStore.getState();
-    const link = current.workspaceScenarioLink;
-    const file = current.activeFileId ? current.loadedFiles.get(current.activeFileId) : undefined;
-    if (
-      !aiProvider ||
-      !link ||
-      link.projectSession !== current.projectSession ||
-      !current.isProjectOpen ||
-      !agentCanSend ||
-      (agentMode === 'edit' && (!file || file !== agentEditFile))
-    )
-      return;
-    if (useReviewDocument.getState().review.kind === 'result') useReviewDocument.setState({ review: { kind: 'stale' } });
-    setAgentState('sending');
-    try {
-      const sentFile = agentMode === 'edit' ? file : file && isCandidateSourcePath(file.path) && file.handle ? file : undefined;
-      const request = {
-        workspaceId: link.workspaceId,
-        mode: agentMode,
-        prompt: agentPrompt.trim(),
-        ...(sentFile ? { activeFile: { fileId: sentFile.id, path: sentFile.path } } : {}),
-        ...(agentMode === 'debug' ? { diagnostics: agentDiagnostics, trace: agentTrace } : {}),
-      };
-      const response = await aiProvider.request(request);
-      const latest = useIDEStore.getState();
-      const latestFile = latest.activeFileId ? latest.loadedFiles.get(latest.activeFileId) : undefined;
-      if (
-        latest.projectSession !== current.projectSession ||
-        latest.compilerRunId !== current.compilerRunId ||
-        latest.workspaceScenarioLink?.workspaceId !== link.workspaceId ||
-        (agentMode === 'edit' &&
-          (!latestFile || latestFile.id !== file?.id || latestFile.content !== file?.content || latestFile.isModified))
-      ) {
-        setAgentState('error');
-        return;
-      }
-      const baselineSha256 = agentMode === 'edit' && file ? await sha256Text(file.content) : undefined;
-      const expectedEdit =
-        agentMode === 'edit' && file && baselineSha256
-          ? {
-              projectSession: current.projectSession,
-              compilerRunId: current.compilerRunId,
-              workspaceId: link.workspaceId,
-              fileId: file.id,
-              path: file.path,
-              content: file.content,
-              handle: file.handle!,
-              baselineSha256,
-            }
-          : undefined;
-      const sent = sentFile
-        ? {
-            workspaceId: link.workspaceId,
-            fileId: sentFile.id,
-            path: sentFile.path,
-            ...(baselineSha256 ? { baselineSha256 } : {}),
-          }
-        : undefined;
-      const presentation = presentAgentResponse(response, sent);
-      setAgentState({ kind: 'response', presentation, ...(expectedEdit ? { expectedEdit } : {}) });
-    } catch {
-      setAgentState('error');
-    }
-  };
-
-  const reviewAgentProposal = async () => {
-    const current = useIDEStore.getState();
-    const link = current.workspaceScenarioLink;
-    const response = typeof agentState === 'object' && agentState.kind === 'response' ? agentState : undefined;
-    const expectedEdit = response?.expectedEdit;
-    const changes = response?.presentation.kind === 'answer' ? response.presentation.changes : undefined;
-    if (
-      !candidateChangeSet ||
-      !workspaceTests ||
-      candidateReviewBusy ||
-      !changes ||
-      !expectedEdit ||
-      !link ||
-      link.projectSession !== current.projectSession ||
-      workspaceTestBusy ||
-      expectedEdit.projectSession !== current.projectSession ||
-      expectedEdit.compilerRunId !== current.compilerRunId ||
-      expectedEdit.workspaceId !== link.workspaceId
-    )
-      return;
-    setWorkspaceTestBusy(true);
-    try {
-      await reviewProposal(changes, link.workspaceId, candidateChangeSet);
-    } finally {
-      setWorkspaceTestBusy(false);
-    }
-  };
-
-  const cancelAgentRequest = async () => {
-    if (!aiProvider || agentState !== 'sending') return;
-    setAgentState('cancelling');
-    if (useReviewDocument.getState().review.kind === 'result') useReviewDocument.setState({ review: { kind: 'stale' } });
-    try {
-      await aiProvider.cancel();
-    } catch {
-      /* the provider request remains authoritative */
-    }
-  };
 
   // Collapsed state - just show header bar
   if (isConsoleCollapsed) {
@@ -435,8 +211,8 @@ export function Console({ debugController }: ConsoleProps) {
 
   return (
     <div className="h-full flex flex-col bg-[var(--color-surface-800)] border-t border-[var(--color-surface-600)]">
-      {/* Tab Bar */}
-      <div className="h-8 flex items-center border-b border-[var(--color-surface-600)] px-2">
+      {/* Tab Bar: as tall as its tabs, since the compact density shrinks the spacing but not the text (SHL-016) */}
+      <div className="min-h-8 flex items-center border-b border-[var(--color-surface-600)] px-2">
         {/* Collapse Button */}
         <IconButton
           label={t('console.collapseWorkbenchPanel')}
@@ -447,14 +223,7 @@ export function Console({ debugController }: ConsoleProps) {
           className="mr-2"
         />
 
-        <ConsoleTabStrip
-          tabs={tabs}
-          activeConsoleTab={activeConsoleTab}
-          onSelect={(tab) => {
-            setActiveConsoleTab(tab);
-            if (tab === 'agent') void refreshAiProvider();
-          }}
-        />
+        <ConsoleTabStrip tabs={tabs} activeConsoleTab={activeConsoleTab} onSelect={setActiveConsoleTab} />
 
         {(activeConsoleTab === 'output' || activeConsoleTab === 'problems' || activeConsoleTab === 'trace') && (
           <IconButton
@@ -513,49 +282,6 @@ export function Console({ debugController }: ConsoleProps) {
               compilerRunId={compilerRunId}
               workspaceScenarioLink={workspaceScenarioLink}
               canonicalWorkspaceBuildEvidence={canonicalWorkspaceBuildEvidence}
-            />
-          )}
-
-          {activeConsoleTab === 'interlocks' && <InterlocksTab runner={runner} />}
-
-          {activeConsoleTab === 'changes' && (
-            <ChangesTab
-              hasCurrentWorkspaceLink={hasCurrentWorkspaceLink}
-              isProjectOpen={isProjectOpen}
-              candidateDesktopReady={candidateDesktopReady}
-              candidateEligible={candidateEligible}
-              candidateReviewStateForCurrent={candidateReviewStateForCurrent}
-              workspaceTestBusy={workspaceTestBusy}
-              workspaceManifestInputRef={workspaceManifestInputRef}
-              effectiveTheme={effectiveTheme}
-              reviewCandidateChange={reviewCandidateChange}
-              cancelCandidateReview={cancelCandidateReview}
-              saveReviewedChange={saveReviewedChange}
-            />
-          )}
-
-          {activeConsoleTab === 'agent' && (
-            <AgentTab
-              agentMode={agentMode}
-              setAgentMode={setAgentMode}
-              agentPrompt={agentPrompt}
-              setAgentPrompt={setAgentPrompt}
-              agentState={agentState}
-              setAgentState={setAgentState}
-              agentStatus={agentStatus}
-              agentBusy={agentBusy}
-              agentCanSend={agentCanSend}
-              agentProposalCurrent={agentProposalCurrent}
-              agentEditFile={agentEditFile}
-              agentContextFile={agentContextFile}
-              agentDiagnosticCount={agentDiagnostics.length}
-              agentTraceCount={agentTrace.length}
-              hasCurrentWorkspaceLink={hasCurrentWorkspaceLink}
-              workspaceTestBusy={workspaceTestBusy}
-              refreshAiProvider={refreshAiProvider}
-              sendAgentRequest={sendAgentRequest}
-              cancelAgentRequest={cancelAgentRequest}
-              reviewAgentProposal={reviewAgentProposal}
             />
           )}
 

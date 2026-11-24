@@ -11,7 +11,7 @@ tags: [ide, user-guide]
 
 The workbench is the window you work in. This page shows where everything is, how to manage a project and its files, how to run and watch a program, and what the application keeps for you between sessions. Editing itself is on [Text and visual editors](./editors.md).
 
-An activity rail and a primary sidebar on the left hold the project navigator, search, the tests and the lessons. An optional secondary sidebar on the right holds the Inspector. A results panel under the editor holds Output, Problems, Tests, Interlocks, Changes, Agent, Trace, Watch and Terminal. The plant opens as a document in the editor area, next to the program (**Show the plant** in the command palette).
+An activity rail and a primary sidebar on the left hold the project navigator, search, the tests and the lessons. An optional secondary sidebar on the right holds the Inspector. A results panel under the editor holds Output, Problems, Test results, Trace and Watch, and Terminal while the target is a board or once you open it (**Show the terminal**). Interlocks are a view of the Tests activity (**Show interlocks**), the review of a change is a document of the editor area (**Show changes**), and the assistant is a view of the secondary sidebar while an AI provider is configured (**Show the agent**). The plant opens as a document in the editor area, next to the program (**Show the plant** in the command palette).
 
 ## Daily workflow
 
@@ -26,7 +26,7 @@ From the top, the window has the application menu, the command bar (save, build,
 
 - **Activity rail.** Project, Search, Tests and Learn. Choosing one swaps the primary sidebar; the chosen one is marked by a bar at its edge and a filled button, not by colour alone. Tests also shows the results panel.
 - **Primary sidebar.** Project shows the navigator, Search finds text in the project, Tests explains the scenarios and opens the results, and Learn holds the lessons.
-- **Secondary sidebar.** The Inspector. It starts hidden so that the editor keeps its width; show or hide it with the Inspector button of the command bar or **View > Show or hide the secondary sidebar**.
+- **Secondary sidebar.** The Inspector, and the Assistant while an AI provider is configured. It starts hidden so that the editor keeps its width; show or hide it with the Inspector button of the command bar or **View > Show or hide the secondary sidebar**.
 - **Results panel.** Hide it with **View > Show or hide the results panel**.
 
 The primary sidebar is `Ctrl+Alt+B`, the secondary sidebar `Ctrl+Alt+I` and the results panel `Ctrl+Alt+J` (⌘⌥ on macOS). **Show the project navigator** is `Ctrl+Shift+E` and **Search in the project** is `Ctrl+Shift+F`. Which sidebars are shown and which activity is selected are kept between sessions.
@@ -249,13 +249,13 @@ Watches, traces, breakpoints and forces show only what the connected adapter can
 
 ## Declared interlock coverage
 
-A project can declare pairs of outputs that must never be on together, under `safety.incompatibleOutputs` in `zplc.json`. The **Interlocks** tab checks that the saved scenarios assert each pair with an exact `NEVER`, and lists every pair as **Covered** or **Missing exact NEVER coverage**. It needs a saved project opened in the desktop application and says what to do when it cannot run. It checks the scenarios, not the machine: it does not establish physical safety, timing or certification. `zplc-cli safety-check` and the MCP tool `safety_check` give the same answer.
+A project can declare pairs of outputs that must never be on together, under `safety.incompatibleOutputs` in `zplc.json`. The **Interlocks** view of the Tests activity (**Show interlocks**) checks that the saved scenarios assert each pair with an exact `NEVER`, and lists every pair as **Covered** or **Missing exact NEVER coverage**. It needs a saved project opened in the desktop application and says what to do when it cannot run. It checks the scenarios, not the machine: it does not establish physical safety, timing or certification. `zplc-cli safety-check` and the MCP tool `safety_check` give the same answer.
 
 Evidence level: host. `packages/zplc-ide/src/components/InterlockCoverage.test.tsx` renders the view, and journey 33 of `bun run test:journeys` runs the check in the real application.
 
 ## One result from the application, the CLI and the MCP tools
 
-A scenario test gives the same result wherever you run it. The **Tests** tab, `zplc-cli test`, `zplc-cli scenario-run` and the MCP tools `tests_run` and `scenario_run` all call the same Tool API on the same native runtime with the same virtual clock, so a temporal assertion (`AT`, `WITHIN`, `FOR`, `EVENTUALLY`, `ALWAYS`, `NEVER`, `UNTIL`, `RISING`, `FALLING`) is judged on the same samples. The verdict, the hash of the compiled program and the hash and length of the recorded trace of each scenario are equal, and a failing assertion fails the same way from each, with the CLI exiting with code 1.
+A scenario test gives the same result wherever you run it. The **Tests** activity, `zplc-cli test`, `zplc-cli scenario-run` and the MCP tools `tests_run` and `scenario_run` all call the same Tool API on the same native runtime with the same virtual clock, so a temporal assertion (`AT`, `WITHIN`, `FOR`, `EVENTUALLY`, `ALWAYS`, `NEVER`, `UNTIL`, `RISING`, `FALLING`) is judged on the same samples. The verdict, the hash of the compiled program and the hash and length of the recorded trace of each scenario are equal, and a failing assertion fails the same way from each, with the CLI exiting with code 1.
 
 A scenario with a `scene` block runs the same way, headless: the plant core reads the project's `scene.json` and `plant-map.json`, as a lesson Check does, and never starts plant I/O mode or touches a board. A scene the scenario cannot run on (a part it names is missing, or a signal is not bound in the map) gives a diagnostic at `scene.json` or `plant-map.json` instead of a verdict.
 

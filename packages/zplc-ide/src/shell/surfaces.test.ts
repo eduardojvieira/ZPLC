@@ -12,26 +12,26 @@ const { useIDEStore } = await import('../store/useIDEStore');
 const { CONFIG_EDITOR_KINDS } = await import('../navigator/configEditors');
 const { getCommandState, listedCommands, resetCommandsForTest, runCommand } = await import('../commands/bus');
 const { COMMAND_LIST, commandById, isCommandEnabled, isCommandId } = await import('../commands/registry');
-const { ACTIVITY_VIEWS } = await import('../store/useShellLayout');
+const { ACTIVITY_VIEWS, useShellLayout } = await import('../store/useShellLayout');
 const { SURFACES, surfacesIn } = await import('./surfaces');
 const { useConfigEditors } = await import('../store/useConfigEditors');
 const { useReviewDocument } = await import('../store/useReviewDocument');
 const { usePreferencesDocument } = await import('../store/usePreferencesDocument');
 const { useShellCommands } = await import('../commands/useCommandHost');
+const { useProjectTests } = await import('../projectTests/useProjectTests');
 
 const REGIONS: readonly Region[] = ['commandBar', 'activity', 'editor', 'secondary', 'results', 'status', 'dialog'];
 
+/** The ids of 2.0 that name a surface which left the results panel: they stay in `ConsoleTab` so that a stored value parses (SHL-004). */
+type MovedTab = 'explorer' | 'inspector' | 'learn' | 'lab' | 'interlocks' | 'changes' | 'agent';
 /** Every tab of the results panel; a new `ConsoleTab` that is not listed here fails the build (SHL-002). */
-const RESULTS_TABS: Record<Exclude<ConsoleTab, 'explorer' | 'inspector' | 'learn' | 'lab'>, true> = {
+const RESULTS_TABS: Record<Exclude<ConsoleTab, MovedTab>, true> = {
   output: true,
   problems: true,
   tests: true,
-  changes: true,
-  agent: true,
   terminal: true,
   watch: true,
   trace: true,
-  interlocks: true,
 };
 
 const Host = () => {
@@ -50,7 +50,9 @@ describe('surface registry (SHL-001, SHL-002, SHL-004)', () => {
       expect(typeof (en as Record<string, string>)[surface.titleKey]).toBe('string');
       expect(typeof (es as Record<string, string>)[surface.titleKey]).toBe('string');
     }
-    expect(surfacesIn('activity').map((surface) => surface.id)).toEqual(ACTIVITY_VIEWS.map((view) => `activity.${view}`));
+    // the rail's activities; a view inside one of them (the interlocks of Tests) is `activity.<activity>.<view>`
+    const activities = surfacesIn('activity').filter((surface) => surface.id.split('.').length === 2);
+    expect(activities.map((surface) => surface.id)).toEqual(ACTIVITY_VIEWS.map((view) => `activity.${view}`));
   });
 
   it('SHL-002 every activity of the rail and every tab of the results panel is a surface', () => {
@@ -67,14 +69,44 @@ describe('surface registry (SHL-001, SHL-002, SHL-004)', () => {
     }
   });
 
-  it('SHL-004 the commands of Interlocks and Terminal show their tab, and open the panel when it is collapsed', () => {
+  it('SHL-003 the results panel registry lists Problems, Output, Test results, Watch, Trace and the conditional Terminal', () => {
+    const results = surfacesIn('results');
+    expect(results.map((surface) => surface.id).sort()).toEqual(
+      ['results.output', 'results.problems', 'results.tests', 'results.trace', 'results.watch', 'results.terminal'].sort(),
+    );
+    // the tab named Test results is shown by the command of the same name; Show tests opens the Tests activity
+    expect(results.find((surface) => surface.id === 'results.tests')).toMatchObject({ command: 'view.testResults' });
+    expect(en[results.find((surface) => surface.id === 'results.tests')!.titleKey as keyof typeof en]).toBe('Test results');
+    expect(es[results.find((surface) => surface.id === 'results.tests')!.titleKey as keyof typeof es]).toBe('Resultados de las pruebas');
+  });
+
+  it('SHL-004 every surface that left the panel has a command, the palette and the View menu', () => {
+    useIDEStore.setState({ isProjectOpen: true });
     dom.render(createElement(Host));
-    for (const tab of ['interlocks', 'terminal'] as const) {
-      useIDEStore.setState({ isConsoleCollapsed: true, activeConsoleTab: 'output' });
-      expect(runCommand(`view.${tab}`)).toBe('ran');
-      expect(useIDEStore.getState().activeConsoleTab).toBe(tab);
-      expect(useIDEStore.getState().isConsoleCollapsed).toBe(false);
+    const moved = { interlocks: 'activity.tests.interlocks', changes: 'editor.changes', agent: 'secondary.assistant' } as const;
+    const listed = listedCommands(COMMAND_LIST).map((command) => command.id);
+    for (const [tab, id] of Object.entries(moved)) {
+      expect(SURFACES.find((surface) => surface.id === `results.${tab}`)).toBeUndefined();
+      const surface = SURFACES.find((candidate) => candidate.id === id);
+      expect([tab, surface?.command]).toEqual([tab, `view.${tab}`]);
+      expect(commandById(surface!.command).category).toBe('view');
+      expect(listed).toContain(surface!.command);
     }
+    // Interlocks is a view of the Tests activity now: its command shows it there and leaves the results panel as it is
+    useProjectTests.getState().setView('tests');
+    useIDEStore.setState({ isConsoleCollapsed: true, activeConsoleTab: 'output' });
+    expect(runCommand('view.interlocks')).toBe('ran');
+    expect(useShellLayout.getState()).toMatchObject({ activityView: 'tests', primaryVisible: true });
+    expect(useProjectTests.getState().view).toBe('interlocks');
+    expect(useIDEStore.getState()).toMatchObject({ activeConsoleTab: 'output', isConsoleCollapsed: true });
+  });
+
+  it('SHL-004 the command of Terminal shows its tab, and opens the panel when it is collapsed', () => {
+    dom.render(createElement(Host));
+    useIDEStore.setState({ isConsoleCollapsed: true, activeConsoleTab: 'output' });
+    expect(runCommand('view.terminal')).toBe('ran');
+    expect(useIDEStore.getState().activeConsoleTab).toBe('terminal');
+    expect(useIDEStore.getState().isConsoleCollapsed).toBe(false);
   });
 
   it('SHL-011 view.agent with no provider opens Preferences at the Assistant section', () => {

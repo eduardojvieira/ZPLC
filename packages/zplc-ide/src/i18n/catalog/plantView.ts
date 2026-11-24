@@ -74,6 +74,7 @@ export const plantViewEn = {
   'command.view.fitPlantScene': 'Fit scene',
   'plant.view.partSignals': '{name} · signals: {signals}',
   'plant.view.partNoSignals': '{name} · no signals',
+  'plant.panel.fitNoView': 'Fit scene works on the 3D view of a plant, and none is on screen. Show the plant and choose 3D view.',
   'plant.panel.resetPlant': 'Reset plant',
   'plant.panel.editScene': 'Edit scene',
   'plant.panel.dragHint': 'Drag a part on the floor to move it; Escape cancels. The fields of the editor do the same without a pointer.',
@@ -227,6 +228,8 @@ export const plantViewEs: Record<keyof typeof plantViewEn, string> = {
   'command.view.fitPlantScene': 'Encuadrar la escena',
   'plant.view.partSignals': '{name} · señales: {signals}',
   'plant.view.partNoSignals': '{name} · sin señales',
+  'plant.panel.fitNoView':
+    'Encuadrar la escena actúa sobre la vista 3D de una planta, y no hay ninguna en pantalla. Muestre la planta y elija la vista 3D.',
   'plant.panel.resetPlant': 'Reiniciar planta',
   'plant.panel.editScene': 'Editar escena',
   'plant.panel.dragHint':
