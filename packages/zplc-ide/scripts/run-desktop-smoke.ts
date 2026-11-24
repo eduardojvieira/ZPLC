@@ -745,10 +745,10 @@ async function main(): Promise<void> {
         1,
       )} (${afterKey.state}), pointer -> ${afterDrag.now.toFixed(1)}, saved ${JSON.stringify(afterDrag.saved)}`,
     );
-    await waitFor('Tests tab', async () =>
+    await waitFor('Test results tab', async () =>
       (await cdp!.evaluate(
         `(() => { const tab = [...document.querySelectorAll('button')].find((item) => ` +
-          `item.getAttribute('aria-label')?.startsWith('Tests,')); if (!tab) return false; tab.click(); return true; })()`,
+          `item.getAttribute('aria-label')?.startsWith('Test results,')); if (!tab) return false; tab.click(); return true; })()`,
       )) === true
         ? true
         : undefined,
@@ -856,10 +856,10 @@ async function main(): Promise<void> {
         learnSelection.selected.includes('English'),
       `Learn keyboard selection did not remain read-only: ${JSON.stringify(learnSelection)}`,
     );
-    await waitFor('Tests tab after Learn', async () =>
+    await waitFor('Test results tab after Learn', async () =>
       (await cdp!.evaluate(
         `(() => { const tab = [...document.querySelectorAll('button')].find((item) => ` +
-          `item.getAttribute('aria-label')?.startsWith('Tests,')); if (!tab) return false; tab.click(); return true; })()`,
+          `item.getAttribute('aria-label')?.startsWith('Test results,')); if (!tab) return false; tab.click(); return true; })()`,
       )) === true
         ? true
         : undefined,
@@ -970,10 +970,10 @@ async function main(): Promise<void> {
         ? true
         : undefined,
     );
-    await waitFor('Tests tab', async () =>
+    await waitFor('Test results tab', async () =>
       (await cdp!.evaluate(
         `(() => { const tab = [...document.querySelectorAll('button')].find((item) => ` +
-          `item.getAttribute('aria-label')?.startsWith('Tests,')); if (!tab) return false; tab.click(); return true; })()`,
+          `item.getAttribute('aria-label')?.startsWith('Test results,')); if (!tab) return false; tab.click(); return true; })()`,
       )) === true
         ? true
         : undefined,
