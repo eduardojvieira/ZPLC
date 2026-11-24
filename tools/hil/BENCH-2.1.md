@@ -148,7 +148,13 @@ at the pull; it records the state and the output image after it.
 ## How a run goes
 
 There is no mirror flag: every run streams `--frames` frames with mirroring off, then does the three physical
-sequences in order, mirror off, mirror on and link loss. A `hil` file is valid only with all three confirmed.
+sequences in order, mirror off, mirror on and link loss. Mirroring stays on from sequence 2 into the cable pull, so the
+LEDs follow the outputs until the board leaves the mode. A `hil` file is valid only with all three confirmed.
+
+Just before it enters the mode, the bench reads the board's uptime (`uptime_ms` of `zplc sys info --json`), and it
+reads it again after the cable is back. A board that kept its power counts on through the pull; one that restarted
+starts again from zero. The validator refuses a run whose uptime grew less than the bench clock did (less the time of
+the first read): a power cut is not a link loss.
 
 The bench needs an interactive terminal (rule G7): it refuses when stdin is not a terminal, and it starts only when
 the board id is typed. The agent's shell has none, so the agent runs it in tmux and relays: it types the board id only
@@ -162,14 +168,14 @@ tmux capture-pane -p -t bench | tail -20          # read the prompt, tell the pe
 tmux send-keys -t bench "<the board id, or yes / no as the person answered>" Enter
 ```
 
-| Prompt of the bench                                | Who answers                                    | What the person sees or does                                                                                                                                                                                            |
-| -------------------------------------------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Type the board id (...) to start`                 | **[person]** says go; **[agent]** types the id | Nothing yet. The bench sends RUN if the program is stopped, enters the mode and streams for about 5000 frame periods (100 s at 20 ms, 250 s at 50 ms; at 10 ms it goes as fast as the link answers). The LEDs stay off. |
-| `1. MIRROR OFF ... Did the LED stay off?`          | **[person]**                                   | For 5 s the program's outputs toggle in the image, but both LEDs stay **off**: the pins are held at their safe level. Answer `yes` only if they stayed off.                                                             |
-| `2. MIRROR ON ... Did the LED follow the outputs?` | **[person]**                                   | For 5 s both LEDs **light and flicker**: DO0 toggles every frame and DO1 every second frame (at 10 and 20 ms DO0 looks dimmed rather than blinking; at 50 ms both visibly blink).                                       |
-| `3. LINK LOSS ... Ready to pull the cable?`        | **[person]**                                   | Answer `yes`, then **pull the data cable** (ESP32-S3: the one in the port marked USB; Pico: its USB cable). The bench notices, waits 10 s.                                                                              |
-| `Plug the cable back, then press Enter`            | **[person]** plugs it; **[agent]** sends Enter | The bench opens the port again and reads `zplc sched status --json` (must be `idle`, that is STOPPED) and the output image (must be all zero).                                                                          |
-| `Is the LED off?`                                  | **[person]**                                   | Both LEDs **off**. Answer `yes` only if they are.                                                                                                                                                                       |
+| Prompt of the bench                                              | Who answers                                    | What the person sees or does                                                                                                                                                                                                                                                                                                                            |
+| ---------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Type the board id (...) to start`                               | **[person]** says go; **[agent]** types the id | Nothing yet. The bench sends RUN if the program is stopped, enters the mode and streams for about 5000 frame periods (100 s at 20 ms, 250 s at 50 ms; at 10 ms it goes as fast as the link answers). The LEDs stay off.                                                                                                                                 |
+| `1. MIRROR OFF ... Did the LED stay off?`                        | **[person]**                                   | For 5 s the program's outputs toggle in the image, but both LEDs stay **off**: the pins are held at their safe level. Answer `yes` only if they stayed off.                                                                                                                                                                                             |
+| `2. MIRROR ON ... Did the LED follow the outputs?`               | **[person]**                                   | For 5 s both LEDs **light and flicker**: DO0 toggles every frame and DO1 every second frame (at 10 and 20 ms DO0 looks dimmed rather than blinking; at 50 ms both visibly blink).                                                                                                                                                                       |
+| `3. LINK LOSS ... Ready to pull the cable?`                      | **[person]**                                   | The LEDs still flicker (mirroring is on). Answer `yes`, then **pull the data cable** (ESP32-S3: the one in the port marked USB; Pico: its USB cable). Watch the LEDs: they must go **off** as the board leaves the mode (on the Pico when it sees the line drop, on the ESP32-S3 within the 500 ms timeout). The bench notices the pull and waits 10 s. |
+| `Plug the cable back, then press Enter`                          | **[person]** plugs it; **[agent]** sends Enter | The bench opens the port again and reads `zplc sched status --json` (must be `idle`, that is STOPPED), the output image (must be all zero) and the uptime (must have counted on).                                                                                                                                                                       |
+| `Did the LED go off when the cable came out, and is it off now?` | **[person]**                                   | Answer `yes` only if both LEDs went off when the cable came out and are still off.                                                                                                                                                                                                                                                                      |
 
 The run ends with `PASSED: <file>` or `FAILED: <file>` and the reasons. A failed file is evidence too: never edit it,
 never run over it (the bench refuses an existing `--out`), and report it. A run that stops before it streams (for
@@ -184,7 +190,8 @@ Only the `--out` file, `$EV/plant-io-<board>-usb-serial[-10ms|-50ms].json`, in t
 commit and dirty state of the checkout, the firmware identity and its `zplc version` output, the date, the tool
 versions, the program size and CRC-32, `rtt_ms` and `gap_ms` (count, p50, p95, p99, max), `late`, `rejected`, the
 bench's own counts, the exit (`closed`) or the board's own exit events, the gap limit, and the three physical
-sequences with `confirmed_by: "person"`. Then, **[agent]**:
+sequences with `confirmed_by: "person"`. The link-loss sequence also holds the mirror flag when the cable went out and
+the uptime marker: `uptime_before_ms`, `uptime_after_ms`, `host_elapsed_ms` and `read_slack_ms`. Then, **[agent]**:
 
 ```bash
 python3 tools/hil/validate_plant_io_evidence.py --level hil $EV/plant-io-*-usb-serial*.json
@@ -205,10 +212,11 @@ and the measured worst gap per board goes into `docs/docs/plant/io-mode.md` (bot
       Pico: DO0 = GP0 (header pin 1) and DO1 = GP1 (header pin 2), GND on pin 38.
       Not the on-board LED: the echo program drives `%QX0.0` and `%QX0.1`. Nothing on the inputs: in plant mode the
       plant feeds `%IX0.0` to `%IX0.3`. No jumper or loopback wire is needed.
-- [ ] **Power while the cable is out.** The DevKitC-1 stays powered from its UART port while the USB cable is pulled.
-      For the Pico, preferably power VSYS (pin 39) from a 5 V supply through a Schottky diode, as the Pico datasheet
-      shows. Without it the pull also cuts the power: the board then boots with the program stopped, so sequence 3
-      still reads `idle`, but it no longer shows that the firmware left the mode on link loss; say so in the log.
+- [ ] **Power while the cable is out (required).** The DevKitC-1 stays powered from its UART port while the USB cable
+      is pulled. The Pico needs VSYS (pin 39) powered from a 5 V supply through a Schottky diode, as the Pico datasheet
+      shows, with its GND to the Pico's GND. Without it the pull cuts the power, the board restarts, and the validator
+      refuses the run ("the board restarted while the cable was out"). If the ESP32-S3 restarts whenever its port
+      opens (not seen yet), every run fails the same way although it kept its power: report that, do not edit the file.
 - [ ] **USB permissions.** On this machine the user is in `uucp`, which owns `/dev/ttyACM*` on Arch: no udev rule is
       needed. ModemManager and brltty are inactive (checked 2026-11-24), so nothing probes a new port.
 - [ ] **Free ports.** No Studio connected to the board, no serial monitor (screen, minicom, picocom, the monitor of
