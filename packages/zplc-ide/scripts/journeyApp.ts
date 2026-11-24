@@ -208,12 +208,29 @@ async function connectApp(
     }
     throw new Error(`Timed out waiting for ${description}${last instanceof Error ? `: ${last.message}` : ''}`);
   };
-  await until(
-    'real preload bridge and Welcome screen',
-    async () =>
-      (await evaluate<boolean>(`Boolean(window.electronAPI?.isElectron && document.querySelector('h1')?.textContent === 'ZPLC')`)) ||
-      undefined,
-  );
+  // Chromium aborts every request in flight when an interface of the host comes or goes (a container that restarts adds and
+  // drops one), and a window whose modules died with its load never draws. As BrowserApp.reload() does, a load that met that
+  // change is started again, twice at most, and the table notes it; a load that fails any other way waits out the bound.
+  for (let attempt = 1; ; attempt++) {
+    const seen = page.errors.length;
+    const outcome = await until('real preload bridge and Welcome screen', async () => {
+      if (await evaluate<boolean>(`Boolean(window.electronAPI?.isElectron && document.querySelector('h1')?.textContent === 'ZPLC')`))
+        return 'drawn';
+      const aborted = page.errors.slice(seen).some((error) => error.includes('net::ERR_NETWORK_CHANGED'));
+      return aborted && attempt < 3 ? 'aborted' : undefined;
+    }).catch(async (error: Error) => {
+      // A window that never drew says why only in its own log: name what it shows and the last renderer errors.
+      const shown = await evaluate<string>(
+        `JSON.stringify({ url: location.href, readyState: document.readyState, h1: document.querySelector('h1')?.textContent ?? null })`,
+      ).catch((reason: Error) => reason.message);
+      throw new Error(
+        `${error.message}; the window: ${shown}; ${page.errors.length} renderer errors: ${[...new Set(page.errors)].slice(-5).join(' | ')}`,
+      );
+    });
+    if (outcome === 'drawn') break;
+    notes.push(`the window was loaded again: its load ${attempt} met net::ERR_NETWORK_CHANGED`);
+    await page.command('Page.reload');
+  }
   page.errors.splice(0);
   page.errorDetails.splice(0); // the headless bootstrap diagnostics are asserted by run-desktop-smoke.ts
   const app: App = {
