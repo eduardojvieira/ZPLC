@@ -67,9 +67,9 @@ La comprobación de la documentación ejecuta este escenario contra el programa 
 
 ## 3. Ejecutarlo
 
-**En ZPLC**, abra la pestaña **Resultados de las pruebas** y pulse **Ejecutar escenarios en el host**. Cada escenario aparece como aprobado o fallido, con sus aserciones y los tiempos de cada una. Una aserción fallida muestra el instante, el valor esperado y el valor observado. Un escenario no se ejecuta mientras haya un valor forzado, así que libere antes sus forzados ([Forzar un valor](./force-values.md)).
+**En ZPLC**, elija **Pruebas** en la barra de actividades y pulse **Ejecutar todas**, o **Ejecutar** en la fila de una prueba. La pestaña **Resultados de las pruebas** se abre con el veredicto en una oración, como "1 de 1 pruebas pasaron", y luego las pruebas que fallaron: para cada expectativa que falló, su tiempo, el valor esperado y el valor observado, con enlaces al paso del escenario y a ese instante en la traza. El registro completo de la ejecución está detrás de **Detalles**, y [Pruebas y resultados de las pruebas](../ide/tests.md) explica cada parte. Un escenario no se ejecuta mientras haya un valor forzado, así que libere antes sus forzados ([Forzar un valor](./force-values.md)).
 
-![La pestaña Tests después de Run host scenarios (interfaz en inglés)](/img/screens/guide-scenario-tests.png)
+![La pestaña Test results después de una ejecución, con su veredicto y la insignia Simulation result (interfaz en inglés)](/img/screens/guide-scenario-tests.png)
 
 **Desde una terminal**, con la línea de comandos del proyecto (compile el runtime una vez con `bun run setup`):
 

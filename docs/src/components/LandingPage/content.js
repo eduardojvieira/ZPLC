@@ -231,7 +231,7 @@ const landingPageContent = {
         },
         {
           title: 'Tests that replay a scenario',
-          text: 'Write the inputs over time and the outputs you expect. Run them in the Tests tab, or with `zplc-cli` in a CI job.',
+          text: 'Write the inputs over time and the outputs you expect. Run them from the Tests activity, or with `zplc-cli` in a CI job.',
           link: 'Scenario tests',
           to: '/docs/guides/scenario-tests',
         },
@@ -634,7 +634,7 @@ const landingPageContent = {
         {
           title: 'Pruebas que repiten un escenario',
           text:
-            'Escriba las entradas en el tiempo y las salidas que espera. Ejecútelas en la pestaña Pruebas o con `zplc-cli` en un ' +
+            'Escriba las entradas en el tiempo y las salidas que espera. Ejecútelas desde la actividad Pruebas o con `zplc-cli` en un ' +
             'trabajo de CI.',
           link: 'Pruebas de escenario',
           to: '/docs/guides/scenario-tests',
