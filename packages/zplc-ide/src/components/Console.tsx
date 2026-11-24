@@ -435,8 +435,8 @@ export function Console({ debugController }: ConsoleProps) {
 
   return (
     <div className="h-full flex flex-col bg-[var(--color-surface-800)] border-t border-[var(--color-surface-600)]">
-      {/* Tab Bar */}
-      <div className="h-8 flex items-center border-b border-[var(--color-surface-600)] px-2">
+      {/* Tab Bar: as tall as its tabs, since the compact density shrinks the spacing but not the text (SHL-016) */}
+      <div className="min-h-8 flex items-center border-b border-[var(--color-surface-600)] px-2">
         {/* Collapse Button */}
         <IconButton
           label={t('console.collapseWorkbenchPanel')}
