@@ -50,7 +50,8 @@ describe('the project navigator in a browser (SHL-016)', () => {
       const found: string[] = [];
       for (const density of ['comfortable', 'compact'] as const) {
         await app.eval(
-          `import('/src/store/useAppSettings.ts').then(({ useAppSettings }) => useAppSettings.getState().update({ density: '${density}' }))`,
+          `import('/src/store/useAppSettings.ts').then(({ useAppSettings }) => ` +
+            `useAppSettings.getState().update({ density: '${density}' }))`,
         );
         for (const [width, height] of [
           [1440, 900],

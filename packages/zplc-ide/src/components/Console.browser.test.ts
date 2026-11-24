@@ -16,11 +16,8 @@ const tabsOutOfStrip = (): string[] => {
   return [...strip.querySelectorAll('[role="tab"]')].flatMap((tab) => {
     const at = tab.getBoundingClientRect();
     const out = at.left < box.left - 1 || at.right > box.right + 1 || at.top < box.top - 1 || at.bottom > box.bottom + 1;
-    return out
-      ? [
-          `${tab.id} is ${Math.round(at.height)} px tall at ${Math.round(at.top)} in a strip of ${Math.round(box.height)} at ${Math.round(box.top)}`,
-        ]
-      : [];
+    const where = (of: DOMRect) => `${Math.round(of.height)} px tall at ${Math.round(of.top)}`;
+    return out ? [`${tab.id} is ${where(at)} in a strip ${where(box)}`] : [];
   });
 };
 
@@ -38,7 +35,8 @@ describe('the results panel in a browser (SHL-016)', () => {
       const found: string[] = [];
       for (const density of ['comfortable', 'compact'] as const) {
         await app.eval(
-          `import('/src/store/useAppSettings.ts').then(({ useAppSettings }) => useAppSettings.getState().update({ density: '${density}' }))`,
+          `import('/src/store/useAppSettings.ts').then(({ useAppSettings }) => ` +
+            `useAppSettings.getState().update({ density: '${density}' }))`,
         );
         await Bun.sleep(400); // the layout that follows a density
         for (const problem of await app.eval<string[]>(`(${tabsOutOfStrip.toString()})()`)) found.push(`${density}: ${problem}`);

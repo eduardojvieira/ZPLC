@@ -18,7 +18,7 @@ export function ProjectExplorer() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* in a narrow sidebar the switch and Project settings take a line each, and the button's name wraps (SHL-016) */}
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b border-[var(--color-surface-600)] px-2 py-1">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-[var(--color-surface-600)] px-2 py-1">
         <ToggleGroup
           label={t('navigator.mode.label')}
           value={mode}
