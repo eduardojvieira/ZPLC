@@ -3,7 +3,10 @@
   "title": "Mover una caja hasta un sensor",
   "summary": "Arranque una cinta con un botón y deténgala cuando una caja llegue al sensor del extremo.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
-  "objectives": ["Arrancar un actuador con la pulsación de un botón y recordar que está en marcha.", "Detener el actuador cuando un sensor ve la caja."],
+  "objectives": [
+    "Arrancar un actuador con la pulsación de un botón y recordar que está en marcha.",
+    "Detener el actuador cuando un sensor ve la caja."
+  ],
   "stages": [
     {
       "key": "objective",

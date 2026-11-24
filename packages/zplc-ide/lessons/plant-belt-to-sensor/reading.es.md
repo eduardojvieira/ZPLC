@@ -6,12 +6,12 @@ Esta es la primera máquina del curso y la estación más pequeña de una línea
 
 La estación tiene cuatro elementos. La tabla dice qué es cada uno en una planta real y qué significa su señal para su programa. La variable del PLC es el nombre que usa el programa: el mapa de planta de la lección une cada señal de la escena con ella.
 
-| Pieza | Qué es en una planta real | Señal | Variable del PLC | Dirección | Tipo | Significado |
-| --- | --- | --- | --- | --- | --- | --- |
-| `Belt1` (Cinta transportadora) | Una cinta movida por un motor que lleva la mercancía a lo largo de una línea, la base de casi toda línea de embalaje o clasificación. | `Belt1.run` | `Run` | Salida del PLC | BOOL | TRUE hace avanzar la cinta. |
-| `Emitter1` (Emisor de piezas) | Representa lo que alimenta la línea: la máquina anterior, un operario o un cargador que suelta una pieza. | `Emitter1.emit` | `Emit` | Salida del PLC | BOOL | Cada flanco ascendente suelta una pieza en la línea. |
-| `EyeFar` (Sensor óptico difuso) | Un sensor fotoeléctrico que emite luz y la ve rebotar en un objeto que tiene delante. | `EyeFar.detect` | `EyeFar` | Entrada del PLC | BOOL | TRUE mientras hay un objeto en el haz. |
-| `StartButton` (Pulsador) | Un pulsador del panel del operador, presionado solo mientras un dedo lo mantiene. | `StartButton.pressed` | `Start` | Entrada del PLC | BOOL | TRUE mientras el pulsador se mantiene presionado. |
+| Pieza                           | Qué es en una planta real                                                                                                             | Señal                 | Variable del PLC | Dirección       | Tipo | Significado                                          |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | --------------------- | ---------------- | --------------- | ---- | ---------------------------------------------------- |
+| `Belt1` (Cinta transportadora)  | Una cinta movida por un motor que lleva la mercancía a lo largo de una línea, la base de casi toda línea de embalaje o clasificación. | `Belt1.run`           | `Run`            | Salida del PLC  | BOOL | TRUE hace avanzar la cinta.                          |
+| `Emitter1` (Emisor de piezas)   | Representa lo que alimenta la línea: la máquina anterior, un operario o un cargador que suelta una pieza.                             | `Emitter1.emit`       | `Emit`           | Salida del PLC  | BOOL | Cada flanco ascendente suelta una pieza en la línea. |
+| `EyeFar` (Sensor óptico difuso) | Un sensor fotoeléctrico que emite luz y la ve rebotar en un objeto que tiene delante.                                                 | `EyeFar.detect`       | `EyeFar`         | Entrada del PLC | BOOL | TRUE mientras hay un objeto en el haz.               |
+| `StartButton` (Pulsador)        | Un pulsador del panel del operador, presionado solo mientras un dedo lo mantiene.                                                     | `StartButton.pressed` | `Start`          | Entrada del PLC | BOOL | TRUE mientras el pulsador se mantiene presionado.    |
 
 Una salida del PLC acciona un elemento de la máquina; una entrada del PLC es lo que informa un elemento. Su programa solo ve las cuatro variables: nunca ve la caja misma, solo lo que el sensor dice de ella.
 

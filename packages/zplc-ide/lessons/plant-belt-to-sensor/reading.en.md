@@ -6,12 +6,12 @@ This is the first machine of the course, and the smallest station of a packing l
 
 The station has four parts. The table says what each one is in a real plant and what its signal means to your program. The PLC variable is the name the program uses: the plant map of the lesson binds each signal of the scene to it.
 
-| Part | What it is in a real plant | Signal | PLC variable | Direction | Type | Meaning |
-| --- | --- | --- | --- | --- | --- | --- |
-| `Belt1` (Belt conveyor) | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines. | `Belt1.run` | `Run` | PLC output | BOOL | TRUE runs the belt forward. |
-| `Emitter1` (Item emitter) | Stands for whatever feeds the line: the machine before it, an operator, or a magazine that releases one item. | `Emitter1.emit` | `Emit` | PLC output | BOOL | Each rising edge releases one item onto the line. |
-| `EyeFar` (Diffuse optical sensor) | A photoelectric sensor that sends out light and sees it bounce back off an object in front of it. | `EyeFar.detect` | `EyeFar` | PLC input | BOOL | TRUE while an object is in the beam. |
-| `StartButton` (Push button) | A button on the operator panel that is pressed only while a finger holds it. | `StartButton.pressed` | `Start` | PLC input | BOOL | TRUE while the button is held down. |
+| Part                              | What it is in a real plant                                                                                    | Signal                | PLC variable | Direction  | Type | Meaning                                           |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------- | ------------ | ---------- | ---- | ------------------------------------------------- |
+| `Belt1` (Belt conveyor)           | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines.              | `Belt1.run`           | `Run`        | PLC output | BOOL | TRUE runs the belt forward.                       |
+| `Emitter1` (Item emitter)         | Stands for whatever feeds the line: the machine before it, an operator, or a magazine that releases one item. | `Emitter1.emit`       | `Emit`       | PLC output | BOOL | Each rising edge releases one item onto the line. |
+| `EyeFar` (Diffuse optical sensor) | A photoelectric sensor that sends out light and sees it bounce back off an object in front of it.             | `EyeFar.detect`       | `EyeFar`     | PLC input  | BOOL | TRUE while an object is in the beam.              |
+| `StartButton` (Push button)       | A button on the operator panel that is pressed only while a finger holds it.                                  | `StartButton.pressed` | `Start`      | PLC input  | BOOL | TRUE while the button is held down.               |
 
 A PLC output drives a part of the machine; a PLC input is what a part reports. Your program sees only the four variables: it never sees the box itself, only what the sensor says about it.
 
