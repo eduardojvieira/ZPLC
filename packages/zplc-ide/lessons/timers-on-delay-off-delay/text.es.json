@@ -2,17 +2,17 @@
   "schemaVersion": 1,
   "title": "Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión",
   "summary": "Use un temporizador TOF para mantener una luz encendida después de soltar un botón, y un TON para ignorar un pulso de sensor demasiado corto.",
-  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el antirrebote eléctrico, la respuesta del sensor ni los tiempos en el dispositivo de destino.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un botón real ni con qué rapidez responde un sensor real.",
   "objectives": [
-    "Mantenga una salida encendida durante un tiempo fijo después de que su entrada caiga, con TOF.",
-    "Ignore una entrada que permanezca en ON menos de un tiempo fijo, con TON."
+    "Mantenga una salida encendida durante un tiempo fijo después de que su entrada caiga, con una instancia de TOF que se llama en cada ciclo.",
+    "Ignore una entrada que permanezca en ON menos de un tiempo fijo, con una instancia de TON."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/Delays.st los temporizadores HoldTimer (TOF) y FilterTimer (TON) están declarados pero no se usan. Light debe seguir en ON durante {{t:300}} ms después de soltar Button. Confirmed debe pasar a ON solo después de que Sensor haya estado en ON durante {{t:200}} ms.",
-      "checkpoint": "Usted puede decir qué temporizador mantiene una salida encendida y cuál espera antes de encenderla."
+      "body": "En src/Delays.st están declarados dos temporizadores, HoldTimer (TOF) y FilterTimer (TON), y el programa copia Button en Light y Sensor en Confirmed. Haga que Light siga en ON durante {{t:300}} ms después de soltar Button, y que Confirmed pase a ON solo después de que Sensor haya estado en ON durante {{t:200}} ms.",
+      "checkpoint": "Usted puede decir cuál de los dos temporizadores mantiene una salida encendida después de que su entrada cae, y cuál espera antes de encender su salida."
     },
     {
       "key": "predict",
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia las entradas a las salidas, así que Light ya está en OFF a los {{t:450}} ms y Confirmed pasa a ON con el pulso de {{t:100}} ms. Llame a HoldTimer con Button como IN y un valor preestablecido de T#300ms, y asigne a Light su salida Q. Haga lo mismo con FilterTimer, Sensor y T#200ms para Confirmed. Guarde el archivo.",
-      "checkpoint": "Los dos temporizadores se llaman en cada ciclo y cada salida proviene de la Q de su temporizador."
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial copia las entradas a las salidas, así que Light ya está en OFF a los {{t:450}} ms y Confirmed pasa a ON con el pulso breve de los {{t:100}} ms. Cámbielo para que Light siga en ON hasta {{t:300}} ms después de soltar Button, y Confirmed pase a ON solo cuando Sensor lleve {{t:200}} ms en ON sin interrupción. Escriba usted las instrucciones: las declaraciones ya están.",
+      "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta el programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario se llama Delays y contiene {{assertions}} aserciones."
     },
     {
@@ -41,14 +41,14 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "Intercambie los dos temporizadores mentalmente: ¿qué haría un TON sobre Button y un TOF sobre Sensor con este escenario?",
-      "checkpoint": "TON retrasa el inicio y TOF retrasa el final; cada uno responde una pregunta distinta sobre una señal."
+      "body": "Intercambie los dos temporizadores mentalmente: ¿qué haría un TON sobre Button y un TOF sobre Sensor con este escenario? Después imagine las dos llamadas dentro de IF Button THEN ... END_IF: ¿qué haría Confirmed?",
+      "checkpoint": "TON retrasa el inicio y TOF retrasa el final; cada uno responde una pregunta distinta sobre una señal. Un temporizador que no se llama conserva su reloj y su Q como estaban, así que Light nunca bajaría y Confirmed nunca subiría."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "TOF mantiene su Q en ON durante el tiempo preestablecido después de que IN cae, y TON pone Q en ON solo cuando IN lleva ese tiempo en ON."
+      "text": "Light debe seguir encendida después de que su entrada cae, así que necesita el TOF; Confirmed debe esperar antes de encenderse, así que necesita el TON. Llame a cada instancia en cada ciclo con su entrada y su valor preestablecido, y después lea su Q."
     },
     {
       "level": 2,
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial copia las entradas a las salidas, así que Light ya está en OFF a los {{t:450}} ms y Confirmed pasa a ON con el pulso de {{t:100}} ms."
+    "El programa inicial copia las entradas a las salidas, así que Light ya está en OFF a los {{t:450}} ms y Confirmed pasa a ON con el pulso breve de los {{t:100}} ms."
   ]
 }

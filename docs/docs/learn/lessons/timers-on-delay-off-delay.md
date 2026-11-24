@@ -19,14 +19,14 @@ Use a TOF timer to keep a light on after a button is released, and a TON timer t
 - Estimated time: 15 minutes
 - Languages: ST
 - Tracks: Simulation, Hardware
-- Reading page: no
+- Reading page: yes
 - Plant: none
 - Prerequisites: [motor-start-stop-safe](./motor-start-stop-safe.md)
 
 ## Objectives
 
-- Keep an output on for a fixed time after its input drops, using TOF.
-- Ignore an input that is on for less than a fixed time, using TON.
+- Keep an output on for a fixed time after its input drops, with a TOF instance called on every scan.
+- Ignore an input that is on for less than a fixed time, with a TON instance.
 
 ## Stages
 
@@ -39,7 +39,7 @@ Use a TOF timer to keep a light on after a button is released, and a TON timer t
 
 ## What the evidence covers
 
-Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show electrical debounce, sensor response or target timing.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real button bounces or how fast a real sensor answers.
 
 ## Wiring
 

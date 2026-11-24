@@ -132,7 +132,7 @@ El tiempo y los eventos vienen después de la lógica: los temporizadores retras
 
 Objetivos de las lecciones disponibles:
 
-- **Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión**: Mantenga una salida encendida durante un tiempo fijo después de que su entrada caiga, con TOF. Ignore una entrada que permanezca en ON menos de un tiempo fijo, con TON.
+- **Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión**: Mantenga una salida encendida durante un tiempo fijo después de que su entrada caiga, con una instancia de TOF que se llama en cada ciclo. Ignore una entrada que permanezca en ON menos de un tiempo fijo, con una instancia de TON.
 - **Flancos y contador de pulsos**: Cuente tres flancos ascendentes de PulseInput con un contador CTU. Ponga a cero la cuenta y CountReached con Reset.
 - **Contadores en diagrama de bloques de función: contar piezas hasta completar un lote**: Lea un diagrama de bloques de función como bloques cuyos puertos de salida se conectan a los puertos de entrada de otros bloques. Conecte un contador CTU: un flanco ascendente en CU cuenta, R lo borra y Q es TRUE cuando la cuenta llega al valor preestablecido PV.
 - **Retardo a la conexión y a la desconexión en escalera: temporizadores como bloques en un peldaño**: Coloque un bloque temporizador en un peldaño, con el contacto en su entrada IN y su salida en la bobina. Distinga un retardo a la desconexión (TOF) de uno a la conexión (TON) por lo que hace cada uno cuando la entrada sube y baja.

@@ -1090,7 +1090,7 @@
     },
     {
       "id": "timers-on-delay-off-delay",
-      "version": 4,
+      "version": 5,
       "order": 7,
       "module": 3,
       "level": "foundation",
@@ -1181,17 +1181,17 @@
         "en": {
           "title": "Timers: an off-delay light and an on-delay filter",
           "summary": "Use a TOF timer to keep a light on after a button is released, and a TON timer to ignore a sensor blip that is too short.",
-          "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show electrical debounce, sensor response or target timing.",
+          "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real button bounces or how fast a real sensor answers.",
           "objectives": [
-            "Keep an output on for a fixed time after its input drops, using TOF.",
-            "Ignore an input that is on for less than a fixed time, using TON."
+            "Keep an output on for a fixed time after its input drops, with a TOF instance called on every scan.",
+            "Ignore an input that is on for less than a fixed time, with a TON instance."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objective",
-              "body": "In src/Delays.st the timers HoldTimer (TOF) and FilterTimer (TON) are declared but not used. Light must stay ON for 300 ms after Button is released. Confirmed must turn ON only after Sensor has stayed ON for 200 ms.",
-              "checkpoint": "You can say which timer keeps an output on and which one waits before turning it on."
+              "body": "In src/Delays.st two timers are declared, HoldTimer (TOF) and FilterTimer (TON), and the program copies Button to Light and Sensor to Confirmed. Make Light stay ON for 300 ms after Button is released, and make Confirmed turn ON only after Sensor has stayed ON for 200 ms.",
+              "checkpoint": "You can say which of the two timers keeps an output on after its input falls, and which one waits before it turns its output on."
             },
             {
               "key": "predict",
@@ -1202,13 +1202,13 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this flaw of the starting program, save it, then press Check: The starting program copies the inputs to the outputs, so Light is already OFF at 450 ms and Confirmed turns ON for the 100 ms blip. Call HoldTimer with Button as IN and a preset of T#300ms, and set Light from its Q output. Do the same with FilterTimer, Sensor and T#200ms for Confirmed. Save the file.",
-              "checkpoint": "Both timers are called every scan and each output comes from its timer's Q."
+              "body": "Correct the starting program, save it, then press Check. The starting program copies the inputs to the outputs, so Light is already OFF at 450 ms and Confirmed turns ON with the short blip at 100 ms. Change it so that Light stays ON until 300 ms after Button is released, and Confirmed turns ON only when Sensor has been ON for 200 ms without a break. Write the statements yourself: the declarations are already there.",
+              "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
               "checkpoint": "The scenario is named Delays and contains 10 assertions."
             },
             {
@@ -1220,14 +1220,14 @@
             {
               "key": "reflect",
               "title": "Reflect",
-              "body": "Swap the two timers in your head: what would a TON on Button and a TOF on Sensor do with this scenario?",
-              "checkpoint": "TON delays the start and TOF delays the end; each answers a different question about a signal."
+              "body": "Swap the two timers in your head: what would a TON on Button and a TOF on Sensor do with this scenario? Then imagine the two calls inside IF Button THEN ... END_IF: what would Confirmed do?",
+              "checkpoint": "TON delays the start and TOF delays the end; each answers a different question about a signal. A timer that is not called keeps its clock and its Q as they were, so Light would never fall and Confirmed would never rise."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "TOF keeps its Q on for the preset time after IN falls, and TON raises Q only after IN has been on for the preset time."
+              "text": "Light must stay on after its input falls, so it needs the TOF; Confirmed must wait before it turns on, so it needs the TON. Call each instance on every scan with its input and its preset, then read its Q."
             },
             {
               "level": 2,
@@ -1235,23 +1235,23 @@
             }
           ],
           "faultCases": [
-            "The starting program copies the inputs to the outputs, so Light is already OFF at 450 ms and Confirmed turns ON for the 100 ms blip."
+            "The starting program copies the inputs to the outputs, so Light is already OFF at 450 ms and Confirmed turns ON with the short blip at 100 ms."
           ]
         },
         "es": {
           "title": "Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión",
           "summary": "Use un temporizador TOF para mantener una luz encendida después de soltar un botón, y un TON para ignorar un pulso de sensor demasiado corto.",
-          "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el antirrebote eléctrico, la respuesta del sensor ni los tiempos en el dispositivo de destino.",
+          "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un botón real ni con qué rapidez responde un sensor real.",
           "objectives": [
-            "Mantenga una salida encendida durante un tiempo fijo después de que su entrada caiga, con TOF.",
-            "Ignore una entrada que permanezca en ON menos de un tiempo fijo, con TON."
+            "Mantenga una salida encendida durante un tiempo fijo después de que su entrada caiga, con una instancia de TOF que se llama en cada ciclo.",
+            "Ignore una entrada que permanezca en ON menos de un tiempo fijo, con una instancia de TON."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/Delays.st los temporizadores HoldTimer (TOF) y FilterTimer (TON) están declarados pero no se usan. Light debe seguir en ON durante 300 ms después de soltar Button. Confirmed debe pasar a ON solo después de que Sensor haya estado en ON durante 200 ms.",
-              "checkpoint": "Usted puede decir qué temporizador mantiene una salida encendida y cuál espera antes de encenderla."
+              "body": "En src/Delays.st están declarados dos temporizadores, HoldTimer (TOF) y FilterTimer (TON), y el programa copia Button en Light y Sensor en Confirmed. Haga que Light siga en ON durante 300 ms después de soltar Button, y que Confirmed pase a ON solo después de que Sensor haya estado en ON durante 200 ms.",
+              "checkpoint": "Usted puede decir cuál de los dos temporizadores mantiene una salida encendida después de que su entrada cae, y cuál espera antes de encender su salida."
             },
             {
               "key": "predict",
@@ -1262,13 +1262,13 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia las entradas a las salidas, así que Light ya está en OFF a los 450 ms y Confirmed pasa a ON con el pulso de 100 ms. Llame a HoldTimer con Button como IN y un valor preestablecido de T#300ms, y asigne a Light su salida Q. Haga lo mismo con FilterTimer, Sensor y T#200ms para Confirmed. Guarde el archivo.",
-              "checkpoint": "Los dos temporizadores se llaman en cada ciclo y cada salida proviene de la Q de su temporizador."
+              "body": "Corrija el programa inicial, guárdelo y pulse Comprobar. El programa inicial copia las entradas a las salidas, así que Light ya está en OFF a los 450 ms y Confirmed pasa a ON con el pulso breve de los 100 ms. Cámbielo para que Light siga en ON hasta 300 ms después de soltar Button, y Confirmed pase a ON solo cuando Sensor lleve 200 ms en ON sin interrupción. Escriba usted las instrucciones: las declaraciones ya están.",
+              "checkpoint": "Comprobar informa que el escenario de esta lección pasó."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
               "checkpoint": "El escenario se llama Delays y contiene 10 aserciones."
             },
             {
@@ -1280,14 +1280,14 @@
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "Intercambie los dos temporizadores mentalmente: ¿qué haría un TON sobre Button y un TOF sobre Sensor con este escenario?",
-              "checkpoint": "TON retrasa el inicio y TOF retrasa el final; cada uno responde una pregunta distinta sobre una señal."
+              "body": "Intercambie los dos temporizadores mentalmente: ¿qué haría un TON sobre Button y un TOF sobre Sensor con este escenario? Después imagine las dos llamadas dentro de IF Button THEN ... END_IF: ¿qué haría Confirmed?",
+              "checkpoint": "TON retrasa el inicio y TOF retrasa el final; cada uno responde una pregunta distinta sobre una señal. Un temporizador que no se llama conserva su reloj y su Q como estaban, así que Light nunca bajaría y Confirmed nunca subiría."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "TOF mantiene su Q en ON durante el tiempo preestablecido después de que IN cae, y TON pone Q en ON solo cuando IN lleva ese tiempo en ON."
+              "text": "Light debe seguir encendida después de que su entrada cae, así que necesita el TOF; Confirmed debe esperar antes de encenderse, así que necesita el TON. Llame a cada instancia en cada ciclo con su entrada y su valor preestablecido, y después lea su Q."
             },
             {
               "level": 2,
@@ -1295,9 +1295,17 @@
             }
           ],
           "faultCases": [
-            "El programa inicial copia las entradas a las salidas, así que Light ya está en OFF a los 450 ms y Confirmed pasa a ON con el pulso de 100 ms."
+            "El programa inicial copia las entradas a las salidas, así que Light ya está en OFF a los 450 ms y Confirmed pasa a ON con el pulso breve de los 100 ms."
           ]
         }
+      },
+      "reading": {
+        "en": "## Waiting without stopping\n\nA PLC program never waits. Every scan it reads the inputs, runs every statement from top to bottom and writes the outputs, a few milliseconds later it does it all again, and nothing in between may pause. Yet machines need time all the time: a fan that keeps blowing for a moment after the heater stops, a pump that starts only if the tank stays empty, a sensor that must see a part for a moment before the program believes it.\n\nA **timer** gives a program time without stopping it. It is a function block: a small piece of program that keeps its own memory from one scan to the next. On every scan you give it the newest value of its input, it looks at its clock and it answers with an output. The program goes on with the next statement at once.\n\n## A timer is an instance you call\n\nIn Structured Text a timer is a variable. You declare an **instance** of the timer type in `VAR`, with a name of its own, and from then on that name is the timer:\n\n```st\nVAR\n  FanDelay : TOF;\nEND_VAR\n```\n\nThen you **call** the instance, once on every scan, with its two inputs, and read its outputs after the call:\n\n![Two timer blocks side by side, TON and TOF, each with the inputs IN and PT on the left and the outputs Q and ET on the right.](images/timer-blocks.svg)\n\n- **IN** is the signal the timer watches, a BOOL.\n- **PT** is the preset, how long the timer counts. It is a value of type TIME, written with `T#`: `T#300ms`, `T#2s`, `T#1m30s`.\n- **Q** is the answer, a BOOL. You read it as `FanDelay.Q`.\n- **ET** is the elapsed time, how far the clock has counted, also a TIME. You read it as `FanDelay.ET`.\n\nA call names each input with `:=`, as in `FanDelay(IN := HeaterOn, PT := T#5s);`. The call updates the clock and Q; the statements after it see the new Q in the same scan.\n\n## TON delays the rise, TOF delays the fall\n\nThere are two timers you will use in almost every program, and they are mirror images.\n\n- **TON**, the **on-delay timer**. When IN turns on, the clock starts. Q turns on only when IN has stayed on for the whole preset. If IN falls earlier, the clock goes back to zero and Q never rises. When IN falls, Q falls at once.\n- **TOF**, the **off-delay timer**. When IN turns on, Q turns on at once. When IN falls, the clock starts, and Q stays on until the preset is over. If IN comes back first, Q never falls.\n\nThe timing diagram shows both timers watching the same input. Time runs to the right; a line is up while its signal is ON.\n\n```timing\nspan: 5000\nsignals:\n  - { name: IN, edges: [1000, 3000] }\n  - { name: TON.Q, edges: [2000, 3000] }\n  - { name: TOF.Q, edges: [1000, 4000] }\nmarks:\n  - { from: 1000, to: 2000, label: PT }\n  - { from: 3000, to: 4000, label: PT }\ncaption: The same input fed to a TON and to a TOF with the same preset\n```\n\nThe TON adds the preset after the rise of IN, the TOF after its fall. One question picks the timer: must the output wait before it turns on (TON), or stay on after its input is gone (TOF)?\n\n## Worked example\n\nA hand dryer has a sensor, `HandsSeen`, that flickers while hands move under it. The fan must start only when hands have been seen for `T#300ms`, so that a sleeve passing by does not start it, and it must keep blowing for `T#2s` after the hands leave.\n\nThe two needs are one of each: \"wait before turning on\" is a TON, \"stay on after\" is a TOF. The output of the first becomes the input of the second.\n\n```st\nPROGRAM HandDryer\nVAR_INPUT HandsSeen : BOOL; END_VAR\nVAR_OUTPUT Fan : BOOL; END_VAR\nVAR\n  StartDelay : TON;\n  RunOn : TOF;\nEND_VAR\nStartDelay(IN := HandsSeen, PT := T#300ms);\nRunOn(IN := StartDelay.Q, PT := T#2s);\nFan := RunOn.Q;\nEND_PROGRAM\n```\n\nFollow it on the diagram. The first flicker of `HandsSeen` is too short: StartDelay starts counting, the hands are gone before the preset is over, and nothing happens. The second time the hands stay, so StartDelay.Q rises after the preset, RunOn.Q rises with it, and the fan runs. When the hands leave, StartDelay.Q falls at once, and RunOn keeps the fan on for its own preset.\n\n```timing\nspan: 5000\nsignals:\n  - { name: HandsSeen, edges: [500, 600, 1000, 2500] }\n  - { name: StartDelay.Q, edges: [1300, 2500] }\n  - { name: Fan, edges: [1300, 4500] }\nmarks:\n  - { from: 1000, to: 1300, label: 'T#300ms' }\n  - { from: 2500, to: 4500, label: 'T#2s' }\ncaption: The short flicker never reaches the fan; the fan runs on after the hands leave\n```\n\nBoth instances are called on every scan, whatever the inputs are doing, and the program never asks a timer to wait: it only reads its Q.\n\n## Common mistakes\n\n- Calling a timer inside an IF. When the condition is FALSE the instance is not called, so its clock and its Q freeze where they were. Call every timer on every scan and put the condition in IN.\n- Reading Q before the call. A statement above the call sees the Q of the previous scan, one scan late.\n- Calling one instance twice in a scan with different inputs. Each delay needs its own instance, declared once.\n- Writing the wrong unit: `T#300s` is five minutes, not a third of a second.\n- Expecting a TON to remember a short pulse. If IN falls before the preset, the count is lost.\n\n> [!WARNING]\n> A timer delays a signal in the program. It does not make a machine safe: a stop that protects people is wired in hardware and never waits for a timer in a program.\n\n## Check yourself\n\n```quiz\nquestion: A program calls a timer only inside IF Enable THEN ... END_IF. Its Q is TRUE when Enable turns FALSE. What does Q do then?\noptions:\n  - { text: 'It stays TRUE, because the instance is no longer called', correct: true, feedback: 'Yes. An instance changes only when it is called, so its clock and Q freeze.' }\n  - { text: 'It turns FALSE at once', feedback: 'Nothing turns it off. The call that would update Q no longer runs.' }\n  - { text: 'It turns FALSE when the preset is over', feedback: 'The clock only moves while the instance is called.' }\n```\n\n```quiz\nquestion: A level switch splashes ON for a moment as the liquid moves. A pump must start only when the switch stays ON for a full second. Which timer do you need?\noptions:\n  - { text: 'A TON with PT := T#1s', correct: true, feedback: 'Right. A TON raises Q only after IN has stayed ON for the whole preset, so a splash never starts the pump.' }\n  - { text: 'A TOF with PT := T#1s', feedback: 'A TOF passes every splash at once and stretches it by a second.' }\n  - { text: 'No timer: the switch is enough', feedback: 'Then every splash starts the pump.' }\n```\n\n## What you will do in the practice\n\nThe starting program declares two timers, HoldTimer (TOF) and FilterTimer (TON), and copies the button and the sensor straight to their outputs. You will make Light stay on after Button is released, and make Confirmed ignore the short Sensor blip that starts at 100 ms but believe the Sensor when it stays on from 500 ms. Then press Check.\n",
+        "es": "## Esperar sin detenerse\n\nUn programa de PLC nunca espera. En cada ciclo lee las entradas, ejecuta todas las instrucciones de arriba abajo y escribe las salidas; unos milisegundos después lo hace todo otra vez, y nada en el medio puede hacer una pausa. Sin embargo, las máquinas necesitan tiempo todo el tiempo: un ventilador que sigue soplando un momento después de que se apaga el calefactor, una bomba que arranca solo si el tanque sigue vacío, un sensor que debe ver una pieza un momento antes de que el programa le crea.\n\nUn **temporizador** le da tiempo a un programa sin detenerlo. Es un bloque de función: una pequeña parte del programa que guarda su propia memoria de un ciclo al siguiente. En cada ciclo usted le da el valor más reciente de su entrada, el bloque mira su reloj y responde con una salida. El programa sigue enseguida con la instrucción siguiente.\n\n## Un temporizador es una instancia que se llama\n\nEn texto estructurado un temporizador es una variable. Se declara una **instancia** del tipo de temporizador en `VAR`, con un nombre propio, y desde entonces ese nombre es el temporizador:\n\n```st\nVAR\n  FanDelay : TOF;\nEND_VAR\n```\n\nDespués se **llama** a la instancia, una vez en cada ciclo, con sus dos entradas, y se leen sus salidas después de la llamada:\n\n![Dos bloques temporizadores uno al lado del otro, TON y TOF, cada uno con las entradas IN y PT a la izquierda y las salidas Q y ET a la derecha.](images/timer-blocks.svg)\n\n- **IN** es la señal que vigila el temporizador, un BOOL.\n- **PT** es el valor preestablecido, cuánto tiempo cuenta el temporizador. Es un valor de tipo TIME y se escribe con `T#`: `T#300ms`, `T#2s`, `T#1m30s`.\n- **Q** es la respuesta, un BOOL. Se lee como `FanDelay.Q`.\n- **ET** es el tiempo transcurrido, cuánto lleva contado el reloj, también un TIME. Se lee como `FanDelay.ET`.\n\nUna llamada nombra cada entrada con `:=`, como en `FanDelay(IN := HeaterOn, PT := T#5s);`. La llamada actualiza el reloj y Q; las instrucciones que siguen ven la Q nueva en el mismo ciclo.\n\n## TON retrasa la subida, TOF retrasa la bajada\n\nHay dos temporizadores que usará en casi todos los programas, y son uno el reflejo del otro.\n\n- **TON**, el **temporizador con retardo a la conexión**. Cuando IN pasa a ON, el reloj arranca. Q pasa a ON solo cuando IN se mantuvo en ON durante todo el valor preestablecido. Si IN cae antes, el reloj vuelve a cero y Q nunca sube. Cuando IN cae, Q cae enseguida.\n- **TOF**, el **temporizador con retardo a la desconexión**. Cuando IN pasa a ON, Q pasa a ON enseguida. Cuando IN cae, el reloj arranca, y Q sigue en ON hasta que termina el valor preestablecido. Si IN vuelve antes, Q nunca cae.\n\nEl diagrama de tiempos muestra los dos temporizadores vigilando la misma entrada. El tiempo avanza hacia la derecha; una línea está arriba mientras su señal está en ON.\n\n```timing\nspan: 5000\nsignals:\n  - { name: IN, edges: [1000, 3000] }\n  - { name: TON.Q, edges: [2000, 3000] }\n  - { name: TOF.Q, edges: [1000, 4000] }\nmarks:\n  - { from: 1000, to: 2000, label: PT }\n  - { from: 3000, to: 4000, label: PT }\ncaption: La misma entrada en un TON y en un TOF con el mismo valor preestablecido\n```\n\nEl TON agrega el valor preestablecido después de la subida de IN, el TOF después de su bajada. Una pregunta elige el temporizador: ¿la salida debe esperar antes de pasar a ON (TON), o seguir en ON después de que su entrada se fue (TOF)?\n\n## Ejemplo resuelto\n\nUn secador de manos tiene un sensor, `HandsSeen`, que parpadea mientras las manos se mueven debajo. El ventilador debe arrancar solo cuando las manos se vieron durante `T#300ms`, para que una manga que pasa no lo arranque, y debe seguir soplando `T#2s` después de que las manos se retiran.\n\nLas dos necesidades son una de cada tipo: \"esperar antes de encender\" es un TON, \"seguir encendido después\" es un TOF. La salida del primero es la entrada del segundo.\n\n```st\nPROGRAM HandDryer\nVAR_INPUT HandsSeen : BOOL; END_VAR\nVAR_OUTPUT Fan : BOOL; END_VAR\nVAR\n  StartDelay : TON;\n  RunOn : TOF;\nEND_VAR\nStartDelay(IN := HandsSeen, PT := T#300ms);\nRunOn(IN := StartDelay.Q, PT := T#2s);\nFan := RunOn.Q;\nEND_PROGRAM\n```\n\nSígalo en el diagrama. El primer parpadeo de `HandsSeen` es demasiado corto: StartDelay empieza a contar, las manos se van antes de que termine el valor preestablecido y no pasa nada. La segunda vez las manos se quedan, así que StartDelay.Q sube después del valor preestablecido, RunOn.Q sube con ella y el ventilador funciona. Cuando las manos se retiran, StartDelay.Q cae enseguida y RunOn mantiene el ventilador encendido durante su propio valor preestablecido.\n\n```timing\nspan: 5000\nsignals:\n  - { name: HandsSeen, edges: [500, 600, 1000, 2500] }\n  - { name: StartDelay.Q, edges: [1300, 2500] }\n  - { name: Fan, edges: [1300, 4500] }\nmarks:\n  - { from: 1000, to: 1300, label: 'T#300ms' }\n  - { from: 2500, to: 4500, label: 'T#2s' }\ncaption: El parpadeo corto nunca llega al ventilador; el ventilador sigue después de que las manos se retiran\n```\n\nLas dos instancias se llaman en cada ciclo, hagan lo que hagan las entradas, y el programa nunca le pide a un temporizador que espere: solo lee su Q.\n\n## Errores comunes\n\n- Llamar a un temporizador dentro de un IF. Cuando la condición es FALSE la instancia no se llama, así que su reloj y su Q quedan congelados donde estaban. Llame a cada temporizador en cada ciclo y ponga la condición en IN.\n- Leer Q antes de la llamada. Una instrucción que está arriba de la llamada ve la Q del ciclo anterior, un ciclo tarde.\n- Llamar a una misma instancia dos veces en un ciclo con entradas distintas. Cada retardo necesita su propia instancia, declarada una vez.\n- Escribir la unidad equivocada: `T#300s` son cinco minutos, no un tercio de segundo.\n- Esperar que un TON recuerde un pulso corto. Si IN cae antes del valor preestablecido, la cuenta se pierde.\n\n> [!WARNING]\n> Un temporizador retrasa una señal en el programa. No hace segura una máquina: una parada que protege a las personas se cablea en hardware y nunca espera a un temporizador de un programa.\n\n## Compruébelo usted\n\n```quiz\nquestion: Un programa llama a un temporizador solo dentro de IF Enable THEN ... END_IF. Su Q está en TRUE cuando Enable pasa a FALSE. ¿Qué hace Q entonces?\noptions:\n  - { text: 'Sigue en TRUE, porque la instancia ya no se llama', correct: true, feedback: 'Sí. Una instancia cambia solo cuando se la llama, así que su reloj y su Q quedan congelados.' }\n  - { text: 'Pasa a FALSE enseguida', feedback: 'Nada la apaga. La llamada que actualizaría Q ya no se ejecuta.' }\n  - { text: 'Pasa a FALSE cuando termina el valor preestablecido', feedback: 'El reloj solo avanza mientras se llama a la instancia.' }\n```\n\n```quiz\nquestion: Un interruptor de nivel salpica a ON por un momento cuando el líquido se mueve. Una bomba debe arrancar solo cuando el interruptor se mantiene en ON durante un segundo entero. ¿Qué temporizador necesita?\noptions:\n  - { text: 'Un TON con PT := T#1s', correct: true, feedback: 'Correcto. Un TON pone Q en ON solo después de que IN se mantuvo en ON durante todo el valor preestablecido, así que una salpicadura nunca arranca la bomba.' }\n  - { text: 'Un TOF con PT := T#1s', feedback: 'Un TOF deja pasar cada salpicadura enseguida y la alarga un segundo.' }\n  - { text: 'Ningún temporizador: el interruptor alcanza', feedback: 'Entonces cada salpicadura arranca la bomba.' }\n```\n\n## Qué hará en la práctica\n\nEl programa inicial declara dos temporizadores, HoldTimer (TOF) y FilterTimer (TON), y copia el botón y el sensor directamente a sus salidas. Usted hará que Light siga encendida después de soltar Button, y que Confirmed ignore el pulso breve de Sensor que empieza a los 100 ms pero le crea a Sensor cuando se mantiene en ON desde los 500 ms. Después pulse Comprobar.\n",
+        "files": {},
+        "images": [
+          "images/timer-blocks.svg"
+        ]
       }
     },
     {
