@@ -10,7 +10,8 @@
  *   wiring.json     a lesson on the hardware track: the parts and the board channels they connect to (src/boards/wiring)
  *   checks.json     optional: wrong programs that must stay RED and other correct programs that must be GREEN
  *   reading.en.md   optional, with reading.es.md (both or neither): the reading page, Markdown in the subset of readingMarkdown.ts
- *   reading/        the files its live blocks use (Ladder programs as .ld.json); images/ holds its .svg and .png images
+ *   reading/        the files its live blocks use (Ladder programs as .ld.json); images/ holds its .svg and .png images, and a
+ *                   picture with words may come as a language pair, images/<name>.en.png and images/<name>.es.png
  *
  * The starter and the reference solution are example projects of `projects/` that the manifest names, because the
  * example loader and the workspace copy already serve them from there.
@@ -712,7 +713,7 @@ export function checkReading(source: ReadingSource, scenario: ScenarioFile): Rea
     const parsed = parseReading(result.text);
     problems.push(...parsed.errors.map((error) => `${file}:${error.line}: ${error.message}`));
     if (parsed.errors.length > 0) continue;
-    shapes[locale] = JSON.stringify(readingShape(parsed.blocks));
+    shapes[locale] = JSON.stringify(readingShape(parsed.blocks, locale));
     walks[locale] = walkReading(parsed.blocks);
     const wanted = [...directiveFiles(walks[locale].directives), ...walks[locale].images];
     for (const path of new Set(wanted)) {

@@ -81,6 +81,28 @@ describe('a lesson package with a reading page (LRN-042)', () => {
     expect(problemsOf(lessons())).toEqual([]);
   });
 
+  // A labelled picture has words, so each page may show the picture of its own language: images/x.en.png beside images/x.es.png.
+  it('CRS-016 lets a page pair use the image of its own language, images/<name>.en and images/<name>.es, and nothing looser', () => {
+    const pair = (en: string, es: string) =>
+      problemsOf(
+        lessons((directory) => {
+          cpSync(join(directory, 'images', 'dot.png'), join(directory, 'images', 'dot.en.png'));
+          cpSync(join(directory, 'images', 'dot.png'), join(directory, 'images', 'dot.es.png'));
+          edit(directory, 'reading.en.md', (text) => text.replace('images/dot.png', en));
+          edit(directory, 'reading.es.md', (text) => text.replace('images/dot.png', es));
+        }),
+      );
+    const shape = `${LESSON}: the English and Spanish reading pages do not have the same structure`;
+    expect(pair('images/dot.en.png', 'images/dot.es.png')).toEqual([]);
+    // the languages swapped, another name, or a language suffix on one page only
+    expect(pair('images/dot.es.png', 'images/dot.en.png')).toEqual([shape]);
+    expect(pair('images/dot.en.png', 'images/panel.es.png')).toEqual([
+      `${LESSON}/reading.es.md: "images/panel.es.png" is not in the package`,
+      shape,
+    ]);
+    expect(pair('images/dot.en.png', 'images/dot.png')).toEqual([shape]);
+  });
+
   it('refuses English and Spanish pages that quote different facts', () => {
     const swapped = lessons((directory) => edit(directory, 'reading.es.md', (text) => text.replace('{{assertions}}', 'diez')));
     expect(problemsOf(swapped)).toEqual([`${LESSON}: the English and Spanish reading pages do not quote the same facts`]);
