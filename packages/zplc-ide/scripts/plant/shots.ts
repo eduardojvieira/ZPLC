@@ -18,7 +18,7 @@ export interface ShotSpec {
   state: string;
   /** A part view whose projected box is returned with the frame, for a close-up on a contact sheet. */
   focus?: string;
-  /** A camera of the capture's own, taken as an extra preset of the scene in the page (the file does not change); default the fitted view. */
+  /** A camera of the capture's own, added as a preset of the scene in the page (the file does not change); default the fitted view. */
   camera?: Omit<CameraPreset, 'name'>;
 }
 
