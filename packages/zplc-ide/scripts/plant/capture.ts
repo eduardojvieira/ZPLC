@@ -3,7 +3,7 @@
  *
  *   bun scripts/plant/capture.ts [--out <dir>] [--scenes a,b] [--sizes 480x640,1280x720] [--modes light,dark] [--levels low,high]
  *                                [--no-states] [--no-looks]
- *   bun scripts/plant/capture.ts --fps [--scenes a,b] [--seconds 30]
+ *   bun scripts/plant/capture.ts --fps [--uncapped] [--scenes a,b] [--seconds 30]
  *   bun scripts/plant/capture.ts --concepts <dir of the concept images> [--out <dir>]
  *
  * For each scene: one frame per size, display mode and quality level of the scene at work (belts running, an item on the way), a
@@ -27,6 +27,8 @@ const flag = (name: string): string | undefined => {
   return at >= 0 ? process.argv[at + 1] : undefined;
 };
 const fps = process.argv.includes('--fps');
+/** Frame rate with no display cap: frames do not wait for vsync or for the compositor, which also holds back a window it does not show. */
+const uncapped = process.argv.includes('--uncapped');
 const out = resolve(flag('out') ?? join(packageRoot, '..', '..', '.cache', 'claude-ux-review', 'plant-pilot'));
 const scenes = (flag('scenes') ?? (fps ? 'belt-to-sensor,merge-lines' : 'belt-to-sensor')).split(',');
 const sizes = (flag('sizes') ?? '480x640,1280x720,1920x1080').split(',').map((s) => s.split('x').map(Number) as [number, number]);
@@ -71,7 +73,12 @@ async function withWindow<T>(gpu: boolean, body: (page: Cdp) => Promise<T>): Pro
     const cdpPort = await freePort();
     const flags = gpu
       ? // A window covered by another one must keep drawing: Chromium otherwise stops its animation frames.
-        ['--window-size=1920,1080', '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding']
+        [
+          '--window-size=1920,1080',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
+          ...(uncapped ? ['--disable-frame-rate-limit', '--disable-gpu-vsync'] : []),
+        ]
       : ['--headless', '--use-angle=swiftshader-webgl', '--use-gl=angle', '--enable-unsafe-swiftshader', `--zplc-smoke-port=${port}`];
     electron = Bun.spawn(
       [
@@ -249,7 +256,7 @@ async function frameRates(page: Cdp): Promise<void> {
       }
       const r = result.ok;
       const window = (await page.evaluate('({ width: innerWidth, height: innerHeight, dpr: devicePixelRatio })')) as Record<string, number>;
-      const row = { scene, quality, ...r, window, load1: Number(load.toFixed(2)), underLoad: load > 4 };
+      const row = { scene, quality, ...r, window, cap: uncapped ? 'off' : 'display', load1: Number(load.toFixed(2)), underLoad: load > 4 };
       rows.push(row);
       console.log(
         `  ${scene} ${quality}: ${r.mean.toFixed(1)} fps mean, ${r.p5.toFixed(1)} fps at the slowest 5 %, ${r.frames} frames, ` +
