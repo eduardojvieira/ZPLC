@@ -12,6 +12,7 @@ import {
   mergeEvidence,
   pythonChecks,
   pythonFilesRunInCi,
+  reportOnlyLines,
   scanFiles,
   serializeEvidence,
   unitChecks,
@@ -546,6 +547,58 @@ describe('requirement coverage of spec 012', () => {
     expect(states.get('PLT-001')).toBe('covered');
     expect(overall.total).toBe(93);
     expect(overall.covered).toBe(1);
+  });
+
+  it('a gated requirement of spec 012 is reported as pending with what its gate still asks for, never as covered', () => {
+    const index = [
+      { id: 'LNK-001', workstream: 'LNK', title: 'a' },
+      { id: 'LNK-002', workstream: 'LNK', title: 'b' },
+      { id: 'LNK-003', workstream: 'LNK', title: 'c' },
+      { id: 'CRS-001', workstream: 'CRS', title: 'd' },
+    ];
+    const check = (id: string): Check => ({ kind: 'unit', ref: REF, test: `a check (${id})` });
+    const gate: Check = { kind: 'gate', ref: 'tools/hil/BENCH-2.1.md', note: 'a HIL run on both learner boards' };
+    const lines = reportOnlyLines(
+      index,
+      { 'LNK-001': [check('LNK-001')], 'LNK-002': [check('LNK-002'), gate], 'LNK-003': [gate] },
+      [],
+      true,
+    );
+    const out = lines.join('\n');
+    expect(out).toMatch(/^ +covered +partial +decided +uncovered +pending$/m);
+    expect(out).toMatch(/^LNK +1 \/ +3 +0 +0 +0 +2$/m);
+    expect(out).toMatch(/^CRS +0 \/ +1 +0 +0 +1 +0$/m);
+    expect(out).toMatch(/^overall +1 \/ +4 +0 +0 +1 +2$/m);
+    expect(lines).toContain('  LNK-002 pending: b');
+    expect(lines).toContain('  LNK-003 pending: c');
+    expect(lines).toContain('        gate: a HIL run on both learner boards');
+    expect(lines).toContain('  CRS-001 uncovered: d');
+    expect(out).not.toContain('LNK-001');
+    // without a gate the table keeps the four columns of spec 011
+    expect(reportOnlyLines(index, { 'LNK-001': [check('LNK-001')] }, [], false).join('\n')).not.toContain('pending');
+  });
+
+  it('gates LNK-016 on the HIL runs of H8 and LNK-017 on those runs and the open TCP question, and reports both pending', () => {
+    const records = JSON.parse(readFileSync(new URL('./requirement-evidence-012.json', import.meta.url), 'utf8')) as Record<
+      string,
+      Check[]
+    >;
+    const known = new Set(index012().map((entry) => entry.id));
+    expect(Object.keys(records).filter((id) => !known.has(id))).toEqual([]);
+    for (const [id, checks] of Object.entries(records))
+      for (const check of checks) {
+        expect({ id, kind: ['gate', 'decided', 'manual', 'hardware'].includes(check.kind) }).toEqual({ id, kind: true });
+        expect({ id, note: Boolean(check.note) }).toEqual({ id, note: true });
+        expect({ id, ref: existsSync(new URL(`../../${check.ref}`, import.meta.url)) }).toEqual({ id, ref: true });
+      }
+    const gated = Object.keys(records).filter((id) => records[id]!.some((check) => check.kind === 'gate'));
+    expect(gated).toEqual(expect.arrayContaining(['LNK-016', 'LNK-017']));
+    const result = run('--spec', '012', '--list');
+    expect(result.exitCode).toBe(0);
+    for (const id of ['LNK-016', 'LNK-017']) {
+      expect(text(result)).toContain(`  ${id} pending: `);
+      for (const check of records[id]!) expect(text(result)).toContain(`        gate: ${check.note}`);
+    }
   });
 
   it('leaves the output and the check of spec 011 as they were', () => {

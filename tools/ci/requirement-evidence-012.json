@@ -1,0 +1,16 @@
+{
+  "LNK-016": [
+    {
+      "kind": "gate",
+      "ref": "tools/hil/BENCH-2.1.md",
+      "note": "HIL runs of plant I/O mode on the ESP32-S3-DevKitC-1 and the Raspberry Pi Pico (decision D-17, plan-m6 Task H8): validated plant-io-*-usb-serial*.json files of level hil, which do not exist yet. Host, native simulator, QEMU, emulation and target build are covered by the scanned checks."
+    }
+  ],
+  "LNK-017": [
+    {
+      "kind": "gate",
+      "ref": "specs/012-zplc-2-1-plant-simulation/plan-m6.md",
+      "note": "USB serial on a board needs the same HIL runs (plan-m6 Task H8, tools/hil/BENCH-2.1.md); TCP waits for plan-m6 open question 2: the Zephyr firmware has no TCP transport for the device link, and only the host engine test of a network link exists."
+    }
+  ]
+}
