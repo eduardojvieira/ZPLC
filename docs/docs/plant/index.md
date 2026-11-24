@@ -24,7 +24,7 @@ A plant is a model of a small machine: belts, boxes, sensors, buttons and lights
 
 ## The 3D view and its camera
 
-The view opens with the whole scene in the panel, at any panel size. It keeps the viewing direction of the first camera of the scene, and chooses the target and the distance from the size of the scene and the shape of the panel. While you have not moved the camera, resizing the panel fits the scene again. Dragging, the arrow keys, plus and minus, and W, A, S and D move the camera yourself, and from then on a resize leaves it where it is. The **Camera** list chooses another saved camera, and that one keeps the framing its author gave it. **Fit scene** (also in the command palette, as "Fit scene") shows the whole scene again from the direction you are looking from. It only moves the camera: it does not touch the plant or the program.
+The view opens with the whole scene in the panel, at any panel size. It keeps the viewing direction of the first camera of the scene, and chooses the target and the distance from the size of the scene and the shape of the panel. While you have not moved the camera, resizing the panel fits the scene again. Dragging, the arrow keys, plus and minus, and W, A, S and D move the camera yourself, and from then on a resize leaves it where it is. The **Camera** list chooses another saved camera, and that one keeps the framing its author gave it. **Fit scene** (also in the command palette, as "Fit scene") shows the whole scene again from the direction you are looking from. It only moves the camera: it does not touch the plant or the program. With no 3D view on screen, the command fits nothing and says why in **Output**.
 
 ## What is measured
 
