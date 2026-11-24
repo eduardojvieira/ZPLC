@@ -211,7 +211,7 @@ and the measured worst gap per board goes into `docs/docs/plant/io-mode.md` (bot
       still reads `idle`, but it no longer shows that the firmware left the mode on link loss; say so in the log.
 - [ ] **USB permissions.** On this machine the user is in `uucp`, which owns `/dev/ttyACM*` on Arch: no udev rule is
       needed. ModemManager and brltty are inactive (checked 2026-11-24), so nothing probes a new port.
-- [ ] **Free ports.** No Studio connected to the board, no serial monitor (screen, minicom, picocom, `west espressif
-  monitor`), no other HIL script on the port. One learner board on USB at a time is simplest.
+- [ ] **Free ports.** No Studio connected to the board, no serial monitor (screen, minicom, picocom, the monitor of
+      west), no other HIL script on the port. One learner board on USB at a time is simplest.
 - [ ] **Time.** About 20 minutes per board after the wiring: flash and deploy about 5, the three runs about 2, 2 and 5
       minutes of streaming plus the sequences, and three cable pulls per board. About 45 minutes for both.

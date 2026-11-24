@@ -41,19 +41,24 @@ export function qualify(scene: { shortestPulseMs: number; scanMs: number }, evid
     if (runs.length === 0)
       return closed(
         `No plant I/O run over ${QUALIFYING_TRANSPORT} is recorded for ${board}, so no scene can run against that board yet.`,
-        `No hay ninguna ejecución de E/S de planta por ${QUALIFYING_TRANSPORT} registrada para ${board}, así que ninguna escena puede ejecutarse todavía contra esa placa.`,
+        `No hay ninguna ejecución de E/S de planta por ${QUALIFYING_TRANSPORT} registrada para ${board}, ` +
+          'así que ninguna escena puede ejecutarse todavía contra esa placa.',
       );
     const bench = runs.filter((run) => run.level === 'hil');
+    const level = runs[0]!.level;
     if (bench.length === 0)
       return closed(
-        `The plant I/O evidence for ${board} is at level ${runs[0]!.level}, not from a board on the bench (hil), so it cannot qualify a scene.`,
-        `La evidencia de E/S de planta de ${board} es de nivel ${runs[0]!.level}, no de una placa en el banco (hil), así que no puede habilitar una escena.`,
+        `The plant I/O evidence for ${board} is at level ${level}, not from a board on the bench (hil), so it cannot qualify a scene.`,
+        `La evidencia de E/S de planta de ${board} es de nivel ${level}, no de una placa en el banco (hil), ` +
+          'así que no puede habilitar una escena.',
       );
     const gap = Math.max(...bench.map((run) => run.measurements.gap_ms.max));
     if (pulse < gap + scan)
       return closed(
-        `On ${board} over ${QUALIFYING_TRANSPORT} the worst gap between exchanges is ${ms(gap)} and one scan is ${ms(scan)}: a sensor pulse of ${ms(pulse)} can fall between two frames (it needs at least ${ms(gap + scan)}).`,
-        `En ${board} por ${QUALIFYING_TRANSPORT} el peor intervalo entre intercambios es de ${ms(gap)} y un ciclo es de ${ms(scan)}: un pulso de sensor de ${ms(pulse)} puede caer entre dos frames (necesita al menos ${ms(gap + scan)}).`,
+        `On ${board} over ${QUALIFYING_TRANSPORT} the worst gap between exchanges is ${ms(gap)} and one scan is ${ms(scan)}: ` +
+          `a sensor pulse of ${ms(pulse)} can fall between two frames (it needs at least ${ms(gap + scan)}).`,
+        `En ${board} por ${QUALIFYING_TRANSPORT} el peor intervalo entre intercambios es de ${ms(gap)} y un ciclo es de ${ms(scan)}: ` +
+          `un pulso de sensor de ${ms(pulse)} puede caer entre dos frames (necesita al menos ${ms(gap + scan)}).`,
       );
   }
   return { qualifies: true };
@@ -76,7 +81,8 @@ export function qualificationTable(subjects: readonly QualificationSubject[], ev
     comment:
       level === 'hil'
         ? 'Made from the HIL runs a person recorded at the bench (H8).'
-        : 'Provisional: made from the fake board of Studio tests, which answers every frame at once. It is not a measurement of any board, and qualify() offers no scene on it (G10, P6). It is made again from the HIL runs (H8).',
+        : 'Provisional: made from the fake board of Studio tests, which answers every frame at once. It is not a measurement of ' +
+          'any board, and qualify() offers no scene on it (G10, P6). It is made again from the HIL runs (H8).',
     rule: 'R-M6-8: shortestPulseMs >= worstGapMs + scanMs on every learner board over usb-serial; only hil evidence qualifies',
     boards: LEARNER_BOARDS,
     transport: QUALIFYING_TRANSPORT,
