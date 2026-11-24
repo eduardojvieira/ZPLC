@@ -77,7 +77,6 @@
     "selection-branches-sfc:reading",
     "set-reset-alarm-latch-il:reading",
     "set-reset-alarm-latch:reading",
-    "sfc-fill-mix-sequence:reading",
     "simultaneous-branches-sfc:reading",
     "step-times-sfc:reading",
     "structures-arrays-call-panel:reading",

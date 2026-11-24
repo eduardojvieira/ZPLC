@@ -8286,7 +8286,7 @@
     },
     {
       "id": "sfc-fill-mix-sequence",
-      "version": 4,
+      "version": 5,
       "order": 60,
       "module": 5,
       "level": "intermediate",
@@ -8368,7 +8368,7 @@
         "en": {
           "title": "A sequence in Sequential Function Chart: fill, then mix",
           "summary": "Complete a Sequential Function Chart with three steps by adding the missing timed transition, and check that the valve and the mixer never run together.",
-          "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show process volumes, mixing quality or valve timing on real equipment.",
+          "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how much a real tank holds, how well it mixes or how fast a real valve moves.",
           "objectives": [
             "Read a Sequential Function Chart as steps that are active one at a time, actions that run while their step is active, and transitions that move the activity.",
             "Add a timed transition that uses the elapsed time of a step."
@@ -8377,7 +8377,7 @@
             {
               "key": "objective",
               "title": "Objective",
-              "body": "In src/FillMix.sfc.json the steps IDLE, FILL and MIX, their actions and the transitions IDLE to FILL (Start) and MIX to IDLE (after a delay) are drawn. Add the missing transition from FILL to MIX with the condition step_fill.T >= T#50ms, where T is how long the step has been active.",
+              "body": "In src/FillMix.sfc.json the steps IDLE, FILL and MIX are drawn with their actions, and so are the transitions from IDLE to FILL (Start) and from MIX back to IDLE (after a time). The transition out of FILL is missing. Make the sequence leave FILL for MIX once FILL has been active for 50 ms.",
               "checkpoint": "The sequence runs IDLE, FILL, MIX and back to IDLE on each Start, with one step active at a time."
             },
             {
@@ -8389,13 +8389,13 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then press Check: The starter has the three steps and two of the three transitions: FILL never leaves, so the valve stays open and MIX never runs; add a transition from FILL to MIX whose condition is step_fill.T >= T#50ms.",
+              "body": "Complete the chart, save it, then press Check. The starting chart has the three steps and two of the three transitions, so FILL never ends: the valve stays open and MIX never runs. The valve must close and the mixer must start once FILL has been active for 50 ms, and the rest of the sequence must stay as it is: MIX still returns to IDLE, which waits for the next Start.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
               "checkpoint": "The scenario is named FillMix and contains 12 assertions."
             },
             {
@@ -8407,14 +8407,14 @@
             {
               "key": "reflect",
               "title": "Reflect",
-              "body": "Which step is active while the valve is open, and why can only one be active at a time? Change the MIX action to open the valve too and see which assertion fails.",
-              "checkpoint": "Each action sets both outputs, so a step defines the whole output state and the sequence cannot leave an output on by accident. The scenario shows the sequence logic only; it does not show process feedback such as a level switch."
+              "body": "Which step is active while the valve is open, and why can only one be active at a time? A real tank leaves FILL when a level switch says it is full, not after a time: what would change in the chart?",
+              "checkpoint": "Each action writes both outputs, so a step defines the whole output state and the sequence cannot leave an output on by accident. With a level switch only the condition of the transition out of FILL changes: it reads the switch instead of the clock of the step."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "A transition has a source step, a target step and a condition. The transition from IDLE to FILL is already there; copy its shape for FILL to MIX."
+              "text": "A transition has a source step, a target step and a condition. The transition out of MIX already leaves after a time, because its condition reads the clock of its own step, step_mix.T. FILL needs the same kind of transition, to MIX."
             },
             {
               "level": 2,
@@ -8422,13 +8422,13 @@
             }
           ],
           "faultCases": [
-            "The starter has the three steps and two of the three transitions: FILL never leaves, so the valve stays open and MIX never runs; add a transition from FILL to MIX whose condition is step_fill.T >= T#50ms."
+            "The starting chart has the three steps and two of the three transitions, so FILL never ends: the valve stays open and MIX never runs."
           ]
         },
         "es": {
           "title": "Una secuencia en diagrama funcional secuencial: llenar y luego mezclar",
           "summary": "Complete un diagrama funcional secuencial de tres pasos agregando la transición temporizada que falta, y compruebe que la válvula y el mezclador nunca funcionan a la vez.",
-          "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra volúmenes de proceso, calidad de mezcla ni tiempos de válvulas en equipos reales.",
+          "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cuánto contiene un tanque real, qué tan bien mezcla ni con qué rapidez se mueve una válvula real.",
           "objectives": [
             "Lea un diagrama funcional secuencial como pasos que se activan de uno en uno, acciones que se ejecutan mientras su paso está activo y transiciones que trasladan la actividad.",
             "Agregue una transición temporizada que use el tiempo transcurrido de un paso."
@@ -8437,7 +8437,7 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/FillMix.sfc.json están dibujados los pasos IDLE, FILL y MIX, sus acciones y las transiciones de IDLE a FILL (Start) y de MIX a IDLE (tras un retardo). Agregue la transición que falta de FILL a MIX con la condición step_fill.T >= T#50ms, donde T es el tiempo que el paso lleva activo.",
+              "body": "En src/FillMix.sfc.json están dibujados los pasos IDLE, FILL y MIX con sus acciones, y también las transiciones de IDLE a FILL (Start) y de MIX de vuelta a IDLE (tras un tiempo). Falta la transición que sale de FILL. Haga que la secuencia pase de FILL a MIX cuando FILL lleve 50 ms activo.",
               "checkpoint": "La secuencia recorre IDLE, FILL, MIX y vuelve a IDLE en cada Start, con un solo paso activo a la vez."
             },
             {
@@ -8449,13 +8449,13 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial tiene los tres pasos y dos de las tres transiciones: FILL nunca termina, así que la válvula queda abierta y MIX nunca se ejecuta; agregue una transición de FILL a MIX cuya condición sea step_fill.T >= T#50ms.",
-              "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+              "body": "Complete el diagrama, guárdelo y pulse Comprobar. El diagrama inicial tiene los tres pasos y dos de las tres transiciones, así que FILL nunca termina: la válvula queda abierta y MIX nunca se ejecuta. La válvula debe cerrarse y el mezclador debe arrancar cuando FILL lleve 50 ms activo, y el resto de la secuencia debe quedar como está: MIX sigue volviendo a IDLE, que espera el Start siguiente.",
+              "checkpoint": "Comprobar informa que el escenario de esta lección pasó."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
               "checkpoint": "El escenario se llama FillMix y contiene 12 aserciones."
             },
             {
@@ -8467,14 +8467,14 @@
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "¿Qué paso está activo mientras la válvula está abierta, y por qué solo uno puede estarlo a la vez? Cambie la acción de MIX para que también abra la válvula y vea qué aserción falla.",
-              "checkpoint": "Cada acción escribe las dos salidas, así que un paso define todo el estado de salida y la secuencia no puede dejar una salida encendida por descuido. El escenario muestra solo la lógica de la secuencia; no muestra realimentación del proceso, como un interruptor de nivel."
+              "body": "¿Qué paso está activo mientras la válvula está abierta, y por qué solo uno puede estarlo a la vez? Un tanque real sale de FILL cuando un interruptor de nivel indica que está lleno, no tras un tiempo: ¿qué cambiaría en el diagrama?",
+              "checkpoint": "Cada acción escribe las dos salidas, así que un paso define todo el estado de salida y la secuencia no puede dejar una salida encendida por descuido. Con un interruptor de nivel solo cambia la condición de la transición que sale de FILL: lee el interruptor en lugar del reloj del paso."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "Una transición tiene un paso de origen, un paso de destino y una condición. La transición de IDLE a FILL ya está; copie su forma para FILL a MIX."
+              "text": "Una transición tiene un paso de origen, un paso de destino y una condición. La transición que sale de MIX ya sale tras un tiempo, porque su condición lee el reloj de su propio paso, step_mix.T. FILL necesita la misma clase de transición, hacia MIX."
             },
             {
               "level": 2,
@@ -8482,9 +8482,17 @@
             }
           ],
           "faultCases": [
-            "El programa inicial tiene los tres pasos y dos de las tres transiciones: FILL nunca termina, así que la válvula queda abierta y MIX nunca se ejecuta; agregue una transición de FILL a MIX cuya condición sea step_fill.T >= T#50ms."
+            "El diagrama inicial tiene los tres pasos y dos de las tres transiciones, así que FILL nunca termina: la válvula queda abierta y MIX nunca se ejecuta."
           ]
         }
+      },
+      "reading": {
+        "en": "## A machine that works in steps\n\nMany machines do one thing after another. A car wash soaps, then rinses, then waits for the next car. A mixing tank fills, then mixes, then waits. Each phase is a **step**, and the machine moves to the next step when something tells it to: a button, a sensor, or enough time spent in the step.\n\nYou can write such a machine with IF statements and memory bits, as the Ladder lesson on step bits did. A **sequential function chart**, SFC for short, draws the steps instead, so the order of the machine is the picture you see.\n\n## Steps, actions and transitions\n\nA chart has three kinds of element.\n\n- A **step** is a phase of the machine. A step is either active or not. The **initial step**, drawn with a double border, is the one that is active when the program starts.\n- An **action** belongs to a step and runs on every scan while its step is active. In ZPLC an action is a few statements of Structured Text, and the qualifier `N` means \"while the step is active\". When the step ends, its action stops running.\n- A **transition** joins one step to the next and holds a **condition**. While the step before it is active, the condition is evaluated on every scan; when it is TRUE, the step before it ends and the step after it becomes active.\n\nIn a simple sequence exactly one step is active at a time. The activity moves down the chart, one transition at a time, and the last transition leads back to the top.\n\nEvery step also has its own clock: how long it has been active. You read it as the step's name followed by `.T`, for example `SOAP.T`; the step's id works too, as in `step_soap.T`. It is a value of type TIME, it starts from zero each time the step becomes active, and a condition such as `SOAP.T >= T#30s` is TRUE once the step has been active for thirty seconds. A timed step needs no timer block.\n\n## Worked example\n\nA small car wash starts when a coin drops. It soaps for thirty seconds, rinses for twenty seconds and then waits for the next coin. The outputs are `Soap` and `Water`, the input is `Coin`.\n\nThree phases give three steps: WAIT, which is the initial step, SOAP and RINSE. Three changes give three transitions: a coin, the end of the soap time and the end of the rinse time. Each action writes both outputs, so each step says the whole state of the machine.\n\n![A chart of three steps one above the other, WAIT with a double border, SOAP and RINSE. Each has an N action that writes Soap and Water. The transitions are Coin, SOAP.T >= T#30s and RINSE.T >= T#20s, and the last one leads back to WAIT.](images/car-wash-chart.svg)\n\nFollow a coin through the chart. WAIT is active and writes both outputs FALSE. The coin makes the first condition TRUE, so on the next scan SOAP becomes active and its action turns the soap on. Thirty seconds later `SOAP.T >= T#30s` is TRUE, SOAP ends and RINSE begins. After twenty seconds of RINSE the chart is back in WAIT, which turns the water off.\n\n```timing\nspan: 60000\nsignals:\n  - { name: Coin, edges: [1000, 2000] }\n  - { name: WAIT, edges: [0, 1000, 51000] }\n  - { name: SOAP, edges: [1000, 31000] }\n  - { name: RINSE, edges: [31000, 51000] }\nmarks:\n  - { from: 1000, to: 31000, label: 'T#30s' }\n  - { from: 31000, to: 51000, label: 'T#20s' }\ncaption: One coin moves the activity from WAIT to SOAP, RINSE and back to WAIT\n```\n\nA step changes on the scan after its condition becomes TRUE. At a scan of a few milliseconds that delay is invisible in a car wash, but a lesson that checks every scan sees it, so remember it when you predict.\n\n## Common mistakes\n\n- Forgetting a transition, or writing a condition that never becomes TRUE. The step before it stays active for ever, and its action keeps running.\n- Writing an output only in the step that turns it on. When the step ends its action stops running, and the output keeps its last value. Let every action write every output the sequence drives, or turn the output off in the next step.\n- Expecting the next step in the same scan as the condition. The chart moves on the following scan.\n- Using the clock of the wrong step. `SOAP.T` counts only while SOAP is active, and it starts from zero each time SOAP begins.\n\n> [!NOTE]\n> A chart shows the order of a machine, not its safety. A guard or an emergency stop is wired so that it stops the machine whatever step is active.\n\n## Check yourself\n\n```quiz\nquestion: SOAP is active and its condition SOAP.T >= T#30s becomes TRUE on this scan. When does RINSE become active?\noptions:\n  - { text: 'On the next scan', correct: true, feedback: 'Yes. The chart sees the condition on this scan and moves the activity on the next one.' }\n  - { text: 'On this same scan', feedback: 'The condition is evaluated on this scan; the step changes on the following one.' }\n  - { text: 'Thirty seconds later', feedback: 'The thirty seconds are already over: that is what the condition says.' }\n```\n\n```quiz\nquestion: The action of SOAP writes Soap := TRUE and nothing else, and the action of RINSE writes Water := TRUE and nothing else. What is Soap while RINSE is active?\noptions:\n  - { text: 'TRUE, because nothing turned it off', correct: true, feedback: 'Right. The action of SOAP stopped running but Soap kept its last value. Each action should write every output.' }\n  - { text: 'FALSE, because SOAP is no longer active', feedback: 'An output is not reset when its step ends; it keeps the value it was given.' }\n  - { text: 'It changes on every scan', feedback: 'No action writes Soap while RINSE is active, so it does not change.' }\n```\n\n## What you will do in the practice\n\nThe chart of the practice already has the steps IDLE, FILL and MIX, their actions, and the transitions out of IDLE and out of MIX. The transition out of FILL is missing, so the valve never closes. You will make the sequence leave FILL for MIX once FILL has been active for 50 ms, then press Check.\n",
+        "es": "## Una máquina que trabaja por pasos\n\nMuchas máquinas hacen una cosa después de otra. Un lavadero de autos enjabona, después enjuaga y después espera el auto siguiente. Un tanque de mezcla se llena, después mezcla y después espera. Cada fase es un **paso**, y la máquina pasa al paso siguiente cuando algo se lo indica: un botón, un sensor o el tiempo suficiente dentro del paso.\n\nUna máquina así se puede escribir con instrucciones IF y bits de memoria, como hizo la lección de bits de paso en diagrama de escalera. Un **diagrama funcional secuencial**, SFC por sus siglas, dibuja en cambio los pasos, de modo que el orden de la máquina es el dibujo que usted ve.\n\n## Pasos, acciones y transiciones\n\nUn diagrama tiene tres clases de elemento.\n\n- Un **paso** es una fase de la máquina. Un paso está activo o no lo está. El **paso inicial**, dibujado con doble borde, es el que está activo cuando el programa arranca.\n- Una **acción** pertenece a un paso y se ejecuta en cada ciclo mientras su paso está activo. En ZPLC una acción es unas pocas instrucciones de texto estructurado, y el calificador `N` significa \"mientras el paso está activo\". Cuando el paso termina, su acción deja de ejecutarse.\n- Una **transición** une un paso con el siguiente y contiene una **condición**. Mientras el paso anterior está activo, la condición se evalúa en cada ciclo; cuando es TRUE, el paso anterior termina y el paso siguiente pasa a estar activo.\n\nEn una secuencia simple hay exactamente un paso activo a la vez. La actividad baja por el diagrama, una transición por vez, y la última transición vuelve arriba.\n\nCada paso tiene además su propio reloj: cuánto tiempo lleva activo. Se lee como el nombre del paso seguido de `.T`, por ejemplo `SOAP.T`; el id del paso también sirve, como en `step_soap.T`. Es un valor de tipo TIME, empieza de cero cada vez que el paso se activa, y una condición como `SOAP.T >= T#30s` es TRUE cuando el paso lleva treinta segundos activo. Un paso temporizado no necesita un bloque temporizador.\n\n## Ejemplo resuelto\n\nUn lavadero de autos pequeño arranca cuando cae una moneda. Enjabona durante treinta segundos, enjuaga durante veinte segundos y después espera la moneda siguiente. Las salidas son `Soap` y `Water`, la entrada es `Coin`.\n\nTres fases dan tres pasos: WAIT, que es el paso inicial, SOAP y RINSE. Tres cambios dan tres transiciones: una moneda, el fin del tiempo de jabón y el fin del tiempo de enjuague. Cada acción escribe las dos salidas, así que cada paso dice el estado completo de la máquina.\n\n![Un diagrama de tres pasos uno debajo del otro, WAIT con doble borde, SOAP y RINSE. Cada uno tiene una acción N que escribe Soap y Water. Las transiciones son Coin, SOAP.T >= T#30s y RINSE.T >= T#20s, y la última vuelve a WAIT.](images/car-wash-chart.svg)\n\nSiga una moneda por el diagrama. WAIT está activo y escribe FALSE en las dos salidas. La moneda hace TRUE la primera condición, así que en el ciclo siguiente SOAP pasa a estar activo y su acción enciende el jabón. Treinta segundos después `SOAP.T >= T#30s` es TRUE, SOAP termina y empieza RINSE. Tras veinte segundos de RINSE el diagrama vuelve a WAIT, que apaga el agua.\n\n```timing\nspan: 60000\nsignals:\n  - { name: Coin, edges: [1000, 2000] }\n  - { name: WAIT, edges: [0, 1000, 51000] }\n  - { name: SOAP, edges: [1000, 31000] }\n  - { name: RINSE, edges: [31000, 51000] }\nmarks:\n  - { from: 1000, to: 31000, label: 'T#30s' }\n  - { from: 31000, to: 51000, label: 'T#20s' }\ncaption: Una moneda lleva la actividad de WAIT a SOAP, a RINSE y de vuelta a WAIT\n```\n\nUn paso cambia en el ciclo siguiente a aquel en que su condición se hace TRUE. Con un ciclo de unos pocos milisegundos esa demora no se nota en un lavadero, pero una lección que comprueba cada ciclo la ve, así que recuérdela cuando haga su predicción.\n\n## Errores comunes\n\n- Olvidar una transición, o escribir una condición que nunca se hace TRUE. El paso anterior queda activo para siempre y su acción sigue ejecutándose.\n- Escribir una salida solo en el paso que la enciende. Cuando el paso termina su acción deja de ejecutarse, y la salida conserva su último valor. Haga que cada acción escriba todas las salidas que maneja la secuencia, o apague la salida en el paso siguiente.\n- Esperar el paso siguiente en el mismo ciclo que la condición. El diagrama avanza en el ciclo siguiente.\n- Usar el reloj del paso equivocado. `SOAP.T` cuenta solo mientras SOAP está activo, y empieza de cero cada vez que SOAP comienza.\n\n> [!NOTE]\n> Un diagrama muestra el orden de una máquina, no su seguridad. Una protección o una parada de emergencia se cablea para que detenga la máquina sea cual sea el paso activo.\n\n## Compruébelo usted\n\n```quiz\nquestion: SOAP está activo y su condición SOAP.T >= T#30s se hace TRUE en este ciclo. ¿Cuándo pasa RINSE a estar activo?\noptions:\n  - { text: 'En el ciclo siguiente', correct: true, feedback: 'Sí. El diagrama ve la condición en este ciclo y traslada la actividad en el siguiente.' }\n  - { text: 'En este mismo ciclo', feedback: 'La condición se evalúa en este ciclo; el paso cambia en el siguiente.' }\n  - { text: 'Treinta segundos después', feedback: 'Los treinta segundos ya pasaron: eso es lo que dice la condición.' }\n```\n\n```quiz\nquestion: La acción de SOAP escribe Soap := TRUE y nada más, y la acción de RINSE escribe Water := TRUE y nada más. ¿Qué vale Soap mientras RINSE está activo?\noptions:\n  - { text: 'TRUE, porque nada lo apagó', correct: true, feedback: 'Correcto. La acción de SOAP dejó de ejecutarse pero Soap conservó su último valor. Cada acción debería escribir todas las salidas.' }\n  - { text: 'FALSE, porque SOAP ya no está activo', feedback: 'Una salida no se pone a cero cuando su paso termina; conserva el valor que se le dio.' }\n  - { text: 'Cambia en cada ciclo', feedback: 'Ninguna acción escribe Soap mientras RINSE está activo, así que no cambia.' }\n```\n\n## Qué hará en la práctica\n\nEl diagrama de la práctica ya tiene los pasos IDLE, FILL y MIX, sus acciones y las transiciones que salen de IDLE y de MIX. Falta la transición que sale de FILL, así que la válvula nunca se cierra. Usted hará que la secuencia pase de FILL a MIX cuando FILL lleve 50 ms activo, y después pulsará Comprobar.\n",
+        "files": {},
+        "images": [
+          "images/car-wash-chart.svg"
+        ]
       }
     },
     {
