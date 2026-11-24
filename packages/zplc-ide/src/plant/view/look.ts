@@ -74,8 +74,26 @@ export function epoxyFloor(palette: Palette): { floor: number; haze: number; wal
 /** The bundled texture sets (src/plant/assets/textures). */
 export type Skin = 'painted-steel' | 'brushed-metal' | 'rubber-belt' | 'plastic' | 'cardboard' | 'floor';
 
-/** What a piece of a composed part is made of; the model builders name roles, never colours. */
-export type Role = 'frame' | 'steel' | 'band' | 'mark' | 'housing' | 'lens' | 'lamp' | 'lampOff' | 'beam' | 'head' | 'collar' | 'zone';
+/**
+ * What a piece of a composed part is made of; the model builders name roles, never colours. `frame` is the silver anodised aluminium
+ * of slotted profiles, the same on every part; `painted` is painted steel in the part's own colour (a machine body); `steel` is the
+ * brushed steel of drums, plates and bolts; `rubber` a pad or a tyre.
+ */
+export type Role =
+  | 'frame'
+  | 'painted'
+  | 'steel'
+  | 'rubber'
+  | 'band'
+  | 'mark'
+  | 'housing'
+  | 'lens'
+  | 'lamp'
+  | 'lampOff'
+  | 'beam'
+  | 'head'
+  | 'collar'
+  | 'zone';
 
 export interface RoleLook {
   skin: Skin | null;
@@ -104,9 +122,14 @@ export function roleLook(role: Role, part: string, palette: Palette): RoleLook {
   const tone = (hex: number) => (flat ? lighten(hex, 0.4) : hex);
   switch (role) {
     case 'frame':
+      // Anodised: the brushed maps with a lighter, satin finish, so a frame reads apart from the steel of the drums it holds.
+      return surface('brushed-metal', tone(0xd2d6db), 0.55, 1);
+    case 'painted':
       return surface('painted-steel', partColour(part, palette), 0.55, 0.2);
     case 'steel':
       return surface('brushed-metal', tone(0xb8bec6), 0.4, 1);
+    case 'rubber':
+      return surface('plastic', tone(0x1c1c1f), 0.85);
     case 'band':
       return surface('rubber-belt', tone(0x2a2a2c), 0.85);
     case 'mark':

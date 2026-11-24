@@ -129,8 +129,12 @@ function fakeThree() {
   class Geometry {
     dispose() {}
     rotateX() {}
+    rotateY() {}
     rotateZ() {}
     translate() {}
+    getAttribute() {
+      return undefined;
+    }
   }
   const worlds: Obj[] = [];
   class Mesh extends Obj {
@@ -182,6 +186,11 @@ function fakeThree() {
     PlaneGeometry: Geometry,
     BoxGeometry: Geometry,
     CylinderGeometry: Geometry,
+    ExtrudeGeometry: Geometry,
+    Shape: class {
+      moveTo() {}
+      lineTo() {}
+    },
     MeshStandardMaterial: Material,
     DynamicDrawUsage: 0,
     WebGLRenderer: class {

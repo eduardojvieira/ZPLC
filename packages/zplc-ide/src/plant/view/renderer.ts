@@ -25,7 +25,7 @@ import {
   type ShapeSpec,
 } from './geometry';
 import { epoxyFloor, partColour, roleLook, type Role, type Skin } from './look';
-import { partModel, sensorMount, type Piece, type PieceShape } from './models';
+import { partModel, sensorMount, type Piece, type PieceShape, type Section } from './models';
 import { chooseInitialQuality, lookFor, qualitySettings, type Look, type QualityLevel } from './quality';
 import { MAP_NAMES, textureUrl, TILE_M, type MapName } from './textures';
 
@@ -146,14 +146,44 @@ function buildGeometry(THREE: Three, spec: ShapeSpec): THREE_NS.BufferGeometry {
   }
 }
 
+/** How much light reaches the faces inside the slots of a profile: a slot reads as a dark groove, as on a real profile (VIS-014). */
+const RECESS_SHADE = 0.3;
+
+/**
+ * Vertex colours for an extrusion still in three's frame (section in x and y, ends first): the side faces that lie inside the box
+ * of the section are dark, the outer faces and the two ends in full. A material draws them when its `vertexColors` is on.
+ */
+function shadeRecesses(THREE: Three, g: THREE_NS.BufferGeometry, section: Section): void {
+  const pos = g.getAttribute('position');
+  if (!pos) return;
+  const a = Math.max(...section.map((p) => Math.abs(p[0])));
+  const b = Math.max(...section.map((p) => Math.abs(p[1])));
+  const ends = g.groups[0]?.count ?? 0;
+  const colour = new Float32Array(pos.count * 3).fill(1);
+  for (let i = ends; i < pos.count; i++)
+    if (Math.min(a - Math.abs(pos.getX(i)), b - Math.abs(pos.getY(i))) > 1e-6) colour.fill(RECESS_SHADE, 3 * i, 3 * i + 3);
+  g.setAttribute('color', new THREE.BufferAttribute(colour, 3));
+}
+
 /** The geometry of a piece of a composed model; `sharp` drops the bevel (the outline of high contrast follows the plain box). */
-function pieceGeometry(THREE: Three, addons: RendererAddons, shape: PieceShape, sharp = false): THREE_NS.BufferGeometry {
+export function pieceGeometry(THREE: Three, addons: RendererAddons, shape: PieceShape, sharp = false): THREE_NS.BufferGeometry {
   if (shape.kind === 'box') {
     const [w, h, d] = shape.size;
     const bevel = Math.min(shape.bevel, w / 2.5, h / 2.5, d / 2.5);
     return !sharp && bevel > 0 && addons.RoundedBoxGeometry
       ? new addons.RoundedBoxGeometry(w, h, d, 2, bevel)
       : new THREE.BoxGeometry(w, h, d);
+  }
+  if (shape.kind === 'extrusion') {
+    // three extrudes the outline (x, y) along +z; turned so the section's (a, b) lies across the axis as `Section` says.
+    const outline = new THREE.Shape();
+    shape.section.forEach(([a, b], i) => (i === 0 ? outline.moveTo(a, b) : outline.lineTo(a, b)));
+    const g = new THREE.ExtrudeGeometry(outline, { depth: shape.length, bevelEnabled: false });
+    if (shape.recessDark) shadeRecesses(THREE, g, shape.section);
+    g.translate(0, 0, -shape.length / 2);
+    if (shape.axis === 'x') g.rotateY(-Math.PI / 2);
+    else if (shape.axis === 'y') g.rotateX(Math.PI / 2);
+    return g;
   }
   const g = new THREE.CylinderGeometry(shape.radius, shape.radius, shape.length, shape.sides ?? 20);
   if (shape.axis === 'x') g.rotateZ(Math.PI / 2);
@@ -523,12 +553,15 @@ export function createRenderer(
     m.color.copy(tinted(rl.colour, set));
     setMaps(m, set && entry.owner && set.loaded ? bandMapsOf(entry.owner, set) : (set?.maps ?? null));
   };
-  const roleMaterial = (role: Role, part: string, owner?: string): THREE_NS.MeshStandardMaterial => {
-    const key = owner ? `${role}:${part}:${owner}` : `${role}:${part}`;
+  /** `recessDark`: the material draws the vertex colours of a slotted profile (`shadeRecesses`); a piece without them uses another. */
+  const roleMaterial = (role: Role, part: string, owner?: string, recessDark = false): THREE_NS.MeshStandardMaterial => {
+    const name = owner ? `${role}:${part}:${owner}` : `${role}:${part}`;
+    const key = recessDark ? `${name}:recess` : name;
     let entry = roleMaterials.get(key);
     if (!entry) {
       const material = new THREE.MeshStandardMaterial({ roughness: 0.6, ...NO_Z_FIGHT });
-      material.name = owner ? `${role}:${part}:${owner}` : `${role}:${part}`;
+      material.name = name;
+      material.vertexColors = recessDark;
       entry = { material, role, part, ...(owner ? { owner } : {}) };
       paintRole(entry);
       roleMaterials.set(key, entry);
@@ -868,7 +901,8 @@ export function createRenderer(
     for (const piece of pieces) {
       shown.add(piece.slot);
       const key = JSON.stringify(piece.shape);
-      const material = roleMaterial(piece.role, view.part, piece.role === 'band' ? view.id : undefined);
+      const recessDark = piece.shape.kind === 'extrusion' && piece.shape.recessDark === true;
+      const material = roleMaterial(piece.role, view.part, piece.role === 'band' ? view.id : undefined, recessDark);
       let mesh = entry.pieces.get(piece.slot);
       if (!mesh) {
         mesh = new THREE.Mesh(pieceGeometryFor(piece.shape, key), material);
