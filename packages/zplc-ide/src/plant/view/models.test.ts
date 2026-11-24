@@ -7,8 +7,10 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { PartView, PlantCore, PlantSceneFile } from '../contracts';
 import { createPlantCore } from '../core/plantCore';
+import { paletteFor } from './displayModes';
 import { snapshotBounds } from './geometry';
-import { BELT, MODELS, modelBounds, partModel, pieceExtent, PUSH_BUTTON, type Piece } from './models';
+import { partColour } from './look';
+import { BELT, EMITTER, MODELS, modelBounds, partModel, pieceExtent, PUSH_BUTTON, sensorMount, type Piece } from './models';
 
 const scene = JSON.parse(readFileSync(join(import.meta.dir, '../../../plant-scenes/belt-to-sensor/scene.json'), 'utf8')) as PlantSceneFile;
 let core: PlantCore | undefined;
@@ -52,6 +54,27 @@ describe('composed part models (VIS-014)', () => {
     // The top of the band is the conveying surface the physics uses.
     const band = slot(pieces, 'band');
     expect(band.at[1] + pieceExtent(band)[1]).toBeCloseTo(belt.pose.size[1] / 2, 9);
+  });
+
+  it('VIS-014 the band wraps a steel drum at each end, and the side frames stop at the drum axis so the end shows', async () => {
+    const belt = (await views()).belt!;
+    const pieces = partModel(belt)!;
+    const [length, thickness, width] = belt.pose.size;
+    for (const end of ['a', 'b']) {
+      const wrap = slot(pieces, `wrap-${end}`);
+      const drum = slot(pieces, `drum-${end}`);
+      expect(wrap.role).toBe('band');
+      expect(wrap.at[1] + pieceExtent(wrap)[1]).toBeCloseTo(thickness / 2, 9); // the band runs over the top of the drum
+      expect(Math.abs(wrap.at[0]) + pieceExtent(wrap)[0]).toBeCloseTo(length / 2, 9); // and round the end of the belt
+      expect(pieceExtent(wrap)[2]).toBeCloseTo(width / 2, 9);
+      expect(drum.at).toEqual(wrap.at); // one axis
+      expect(pieceExtent(drum)[2]).toBeGreaterThan(width / 2); // the steel shows beside the band
+      for (const rail of ['rail-a', 'rail-b']) expect(pieceExtent(slot(pieces, rail))[0]).toBeLessThanOrEqual(Math.abs(drum.at[0]) + 1e-9);
+    }
+    // A round end cap on each side of each end holds a drum.
+    const caps = pieces.filter((p) => p.slot.startsWith('cap-'));
+    expect(caps.length).toBe(4);
+    for (const cap of caps) expect(Math.abs(cap.at[2])).toBeGreaterThan(width / 2);
   });
 
   it('VIS-014 a belt close to the floor has no legs', async () => {
@@ -98,6 +121,34 @@ describe('composed part models (VIS-014)', () => {
     expect(bottom(slot(detecting, 'base'))).toBeCloseTo(-eye.pose.p[1], 9);
   });
 
+  it('VIS-014 a sensor beside a belt sits on a bracket bolted to the belt frame, with a fine beam and no post to the floor', async () => {
+    const v = await views();
+    const eye = v['eye-far']!;
+    // The outer face of the near rail, at its top: 0.17 m ahead of the lens and 0.088 m below it (scene belt-to-sensor).
+    const mount = sensorMount(eye, Object.values(v))!;
+    expect(mount.map((c) => Number(c.toFixed(6)) + 0)).toEqual([0.17, -0.088, 0]);
+    const pieces = partModel(eye, { travel: 0, mount })!;
+    expect(pieces.some((p) => p.slot === 'post' || p.slot === 'base')).toBe(false);
+    const plate = slot(pieces, 'bracket-plate');
+    expect(plate.at[0] + pieceExtent(plate)[0]).toBeCloseTo(mount[0], 9); // flat on the rail's outer face
+    expect(bottom(plate)).toBeLessThan(mount[1]); // and down past the rail's top edge
+    const arm = slot(pieces, 'bracket-arm');
+    expect(arm.at[1] + pieceExtent(arm)[1]).toBeCloseTo(bottom(slot(pieces, 'housing')), 9); // the arm carries the housing
+    expect(pieces.filter((p) => p.slot.startsWith('bolt-')).length).toBeGreaterThanOrEqual(2);
+    // A fine beam: no thicker than 6 mm, solid or dashed.
+    for (const p of pieces.filter((x) => x.role === 'beam')) expect(2 * pieceExtent(p)[1]).toBeLessThanOrEqual(0.006);
+    // No belt frame in reach: the sensor keeps a post to the floor.
+    expect(sensorMount(eye, [eye, v.start!])).toBeNull();
+  });
+
+  it('VIS-014 the sensor body is a neutral grey, its own colour in every display mode', () => {
+    for (const mode of ['light', 'dark'] as const) {
+      const hex = partColour('sensor', paletteFor({ mode, reducedMotion: false }));
+      const [r, g, b] = [(hex >> 16) & 255, (hex >> 8) & 255, hex & 255];
+      expect(Math.max(r, g, b) - Math.min(r, g, b)).toBeLessThanOrEqual(16);
+    }
+  });
+
   it('VIS-016 the head of a pressed push button travels into its collar', async () => {
     const v = await views();
     const head = (view: PartView) => slot(partModel(view)!, 'head');
@@ -109,17 +160,40 @@ describe('composed part models (VIS-014)', () => {
     expect(released.at[1] - pressed.at[1]).toBeGreaterThanOrEqual(0.015);
   });
 
-  it('VIS-014 the emitter is an open frame of eight bars around the zone where items appear', async () => {
-    const pieces = partModel((await views()).emitter!)!;
+  it('VIS-014 the push button is a control box on a pedestal: a square column on a base plate bolted to the floor', async () => {
+    const start = (await views()).start!;
+    const pieces = partModel(start)!;
+    const floor = -start.pose.p[1];
+    const post = slot(pieces, 'post');
+    const base = slot(pieces, 'base');
+    expect(post.shape.kind).toBe('box');
+    expect(pieceExtent(post)[0]).toBeCloseTo(pieceExtent(post)[2], 9);
+    expect(bottom(base)).toBeCloseTo(floor, 9);
+    expect(bottom(post)).toBeCloseTo(base.at[1] + pieceExtent(base)[1], 9);
+    expect(post.at[1] + pieceExtent(post)[1]).toBeCloseTo(bottom(slot(pieces, 'enclosure')), 9);
+    const bolts = pieces.filter((p) => p.slot.startsWith('bolt-'));
+    expect(bolts.length).toBe(4);
+    for (const b of bolts) expect(bottom(b)).toBeCloseTo(base.at[1] + pieceExtent(base)[1], 9);
+  });
+
+  it('VIS-014 the emitter marks the zone where items appear with four flat corner marks, not a cage', async () => {
+    const emitter = (await views()).emitter!;
+    const pieces = partModel(emitter)!;
     expect(pieces.length).toBe(8);
-    expect(new Set(pieces.map((p) => p.role))).toEqual(new Set(['cage']));
+    expect(new Set(pieces.map((p) => p.role))).toEqual(new Set(['zone']));
+    for (const p of pieces) {
+      expect(bottom(p)).toBeGreaterThanOrEqual(0);
+      expect(p.at[1] + pieceExtent(p)[1]).toBeLessThanOrEqual(0.005); // lying on the surface the items appear on
+      expect(Math.max(Math.abs(p.at[0]), Math.abs(p.at[2])) + 1e-9).toBeGreaterThanOrEqual(EMITTER.size / 2 - EMITTER.mark);
+    }
   });
 
   it('VIS-014 no two pieces of a model have the same place and shape, in any state', async () => {
     const v = await views();
     const running = { ...v.belt!, state: { ...v.belt!.state, speedMps: 0.5 } };
-    for (const view of [v.belt!, running, v['eye-far']!, v.start!, v.emitter!]) {
-      const keys = partModel(view)!.map((p) => JSON.stringify([p.at, p.shape, p.yaw]));
+    const mounted = partModel(v['eye-far']!, { travel: 0, mount: sensorMount(v['eye-far']!, Object.values(v)) })!;
+    for (const pieces of [v.belt!, running, v['eye-far']!, v.start!, v.emitter!].map((view) => partModel(view)!).concat([mounted])) {
+      const keys = pieces.map((p) => JSON.stringify([p.at, p.shape, p.yaw]));
       expect(new Set(keys).size).toBe(keys.length);
     }
   });

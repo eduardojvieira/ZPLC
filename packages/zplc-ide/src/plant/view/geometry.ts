@@ -1,6 +1,6 @@
 import type { BodyPose, PartView, Quat, Vec3 } from '../contracts';
 import type { Palette } from './displayModes';
-import { modelBounds } from './models';
+import { modelBounds, rotate } from './models';
 
 /** Shape descriptions generated in code (PRT-009): no asset is loaded. The renderer turns them into three geometry. */
 export type ShapeSpec =
@@ -336,13 +336,6 @@ export function crateBoxes(size: Vec3): readonly { centre: Vec3; size: Vec3 }[] 
   ];
 }
 
-const rotate = ([x, y, z, w]: Quat, [vx, vy, vz]: Vec3): Vec3 => {
-  const tx = 2 * (y * vz - z * vy);
-  const ty = 2 * (z * vx - x * vz);
-  const tz = 2 * (x * vy - y * vx);
-  return [vx + w * tx + (y * tz - z * ty), vy + w * ty + (z * tx - x * tz), vz + w * tz + (x * ty - y * tx)];
-};
-
 /** The world pose of one box of a crate (`index` into `crateBoxes`). */
 function crateBox(item: BodyPose, index: number): { p: Vec3; size: Vec3 } {
   const box = crateBoxes(item.size)[index]!;
@@ -393,7 +386,7 @@ export function snapshotBounds(snapshot: { parts: readonly PartView[]; items: re
   const centred = (p: Vec3, q: Quat, size: Vec3) =>
     add(p, q, [-size[0] / 2, -size[1] / 2, -size[2] / 2], [size[0] / 2, size[1] / 2, size[2] / 2]);
   for (const view of snapshot.parts) {
-    const model = modelBounds(view);
+    const model = modelBounds(view, snapshot.parts);
     if (model) add(view.pose.p, view.pose.q, model.min, model.max);
     else centred(view.pose.p, view.pose.q, shapeExtent(partShape(view)));
   }

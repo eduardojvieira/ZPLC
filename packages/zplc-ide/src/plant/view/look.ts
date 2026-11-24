@@ -10,7 +10,7 @@ export const PART_COLORS: Readonly<Record<string, number>> = {
   roller: 0x6b7280,
   curved: 0x4b5563,
   'stop-blade': 0xb45309,
-  sensor: 0x15803d,
+  sensor: 0x8a8f94, // a neutral grey housing, as photoelectric sensors are
   'push-button': 0x9ca3af,
   tank: 0x94a3b8,
   'selector-switch': 0x475569,
@@ -75,7 +75,7 @@ export function epoxyFloor(palette: Palette): { floor: number; haze: number; wal
 export type Skin = 'painted-steel' | 'brushed-metal' | 'rubber-belt' | 'plastic' | 'cardboard' | 'floor';
 
 /** What a piece of a composed part is made of; the model builders name roles, never colours. */
-export type Role = 'frame' | 'steel' | 'band' | 'mark' | 'housing' | 'lens' | 'lamp' | 'lampOff' | 'beam' | 'head' | 'collar' | 'cage';
+export type Role = 'frame' | 'steel' | 'band' | 'mark' | 'housing' | 'lens' | 'lamp' | 'lampOff' | 'beam' | 'head' | 'collar' | 'zone';
 
 export interface RoleLook {
   skin: Skin | null;
@@ -125,7 +125,7 @@ export function roleLook(role: Role, part: string, palette: Palette): RoleLook {
       return surface('plastic', tone(0x16a34a), 0.35);
     case 'collar':
       return surface('plastic', tone(0x27272a), 0.5);
-    case 'cage':
-      return light(flat ? 0x00ffff : 0x22d3ee, flat ? 1 : 0.6);
+    case 'zone':
+      return light(flat ? 0x00ffff : 0x22d3ee, flat ? 1 : 0.9);
   }
 }

@@ -25,7 +25,7 @@ import {
   type ShapeSpec,
 } from './geometry';
 import { epoxyFloor, partColour, roleLook, type Role, type Skin } from './look';
-import { partModel, type Piece, type PieceShape } from './models';
+import { partModel, sensorMount, type Piece, type PieceShape } from './models';
 import { chooseInitialQuality, lookFor, qualitySettings, type Look, type QualityLevel } from './quality';
 import { MAP_NAMES, textureUrl, TILE_M, type MapName } from './textures';
 
@@ -958,7 +958,7 @@ export function createRenderer(
         seen.add(view.id);
         const speed = typeof view.state.speedMps === 'number' ? view.state.speedMps : 0;
         if (animate && speed !== 0 && dt > 0) travel.set(view.id, (travel.get(view.id) ?? 0) + speed * dt);
-        const pieces = partModel(view, { travel: travel.get(view.id) ?? 0 });
+        const pieces = partModel(view, { travel: travel.get(view.id) ?? 0, mount: sensorMount(view, snapshot.parts) });
         if (pieces) drawModel(view, pieces);
         else drawShape(view);
       }

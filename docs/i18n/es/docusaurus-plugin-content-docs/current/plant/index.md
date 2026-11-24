@@ -28,12 +28,12 @@ La vista se abre con toda la escena en el panel, con cualquier tamaño de panel.
 
 ## Qué dibuja la vista 3D
 
-- **Estados, con una señal que no es el color.** Un sensor fotoeléctrico dibuja su haz: una línea fina y discontinua mientras no hay nada en él, una línea gruesa y continua con su lámpara encendida mientras detecta. Una cinta en marcha muestra flechas que avanzan con la banda, y una cinta parada no muestra ninguna; con movimiento reducido las flechas quedan quietas. El cabezal de un pulsador presionado se hunde en su anillo.
+- **Estados, con una señal que no es el color.** Un sensor fotoeléctrico dibuja su haz: una línea fina y discontinua mientras no hay nada en él, una línea fina y continua con su lámpara de salida encendida mientras detecta. Una cinta en marcha muestra flechas que avanzan con la banda, y una cinta parada no muestra ninguna; con movimiento reducido las flechas quedan quietas. El cabezal de un pulsador presionado se hunde en su anillo.
 - **Nombres.** Apunte a una pieza para ver su nombre y los nombres de sus señales, con un recuadro alrededor. Llevar el foco del teclado al control de una pieza bajo la vista (un pulsador, una lista de fallas) hace lo mismo.
 - **Colores.** Un elemento que la lección llama rojo es rojo y uno que llama azul es azul, en los modos claro y oscuro. Un elemento sin color es de cartón. Una base y una tapa tienen colores propios, y cada pieza conserva su propio color. El alto contraste dibuja colores planos con contornos.
 - **Calidad.** **Baja** dibuja colores lisos, sin texturas, sin luz de entorno y sin sombras, para mantener los cuadros por segundo en gráficos integrados. **Media** y **Alta** dibujan materiales con texturas (mapas de color base, normales, rugosidad y metalicidad), luz de un entorno que genera la aplicación, sombras suaves y una curva de tonos fílmica; Alta sube el detalle de sombras y texturas. Todas las texturas vienen dentro de la aplicación: no se descarga nada.
 
-Por ahora la cinta, el sensor fotoeléctrico, el pulsador y el emisor se dibujan como modelos detallados; las demás piezas conservan una sola caja o forma bajo la misma luz.
+Por ahora la cinta, el sensor fotoeléctrico, el pulsador y el emisor se dibujan como modelos detallados: la banda de una cinta envuelve un tambor de acero en cada extremo, un sensor junto a una cinta va en un soporte atornillado al bastidor de la cinta, el pulsador es una caja de mando sobre un pedestal, y cuatro marcas de esquina muestran dónde el emisor hace aparecer los elementos. Las demás piezas conservan una sola caja o forma bajo la misma luz. En **Media** y **Alta** el piso es un piso satinado que termina en un horizonte.
 
 ## Qué está medido
 
