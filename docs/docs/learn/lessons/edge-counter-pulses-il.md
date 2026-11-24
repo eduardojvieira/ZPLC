@@ -39,7 +39,7 @@ Call a CTU counter from Instruction List to count three discrete pulses, read it
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish physical sensors, contact bounce or hardware timing, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show physical sensors or contact bounce.
 
 ## Wiring
 

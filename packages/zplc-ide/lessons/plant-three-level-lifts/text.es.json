@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "title": "Mover cajas entre tres niveles",
-  "summary": "Secuencie dos elevadores como dos cadenas que corren en paralelo y se encuentran solo en la banda de transferencia compartida.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "summary": "Secuencie dos elevadores como dos cadenas que corren en paralelo y se encuentran solo en la cinta de transferencia compartida.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Describir cada elevador como su propia cadena de pasos que vuelve a su primer paso.",
-    "Arrancar ambas cadenas con una sola transición y dejar que se encuentren solo en la banda entre los elevadores."
+    "Arrancar ambas cadenas con una sola transición y dejar que se encuentren solo en la cinta entre los elevadores."
   ],
   "stages": [
     {
@@ -17,32 +17,32 @@
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, siga una caja: recorre la banda de entrada hasta el elevador A, A sube con su superficie detenida, pasa la caja a la banda de transferencia del nivel 2 y baja; B hace lo mismo un nivel más arriba y entrega la caja a la banda de salida.",
-      "checkpoint": "Un elevador se mueve solo mientras su superficie está detenida, una banda corre hacia un elevador solo mientras ese elevador espera en su nivel de carga, y Green se enciende cuando cinco cajas han pasado por EyeTop."
+      "body": "Antes de ejecutar, siga una caja: recorre la cinta de entrada hasta el elevador A, A sube con su superficie detenida, pasa la caja a la cinta de transferencia del nivel 2 y baja; B hace lo mismo un nivel más arriba y entrega la caja a la cinta de salida.",
+      "checkpoint": "Un elevador se mueve solo mientras su superficie está detenida, una cinta corre hacia un elevador solo mientras ese elevador espera en su nivel de carga, y Green se enciende cuando cinco cajas han pasado por EyeTop."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la banda de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la cinta de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A.",
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario three-level-lifts; observe la vista 3D mientras se ejecuta.",
+      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
       "checkpoint": "El escenario requerido se llama three-level-lifts y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe ambos elevadores en la vista 3D: pueden moverse a la vez, y la banda de transferencia del nivel 2 es el único lugar donde sus cadenas se encuentran.",
+      "body": "Observe ambos elevadores en la vista 3D: pueden moverse a la vez, y la cinta de transferencia del nivel 2 es el único lugar donde sus cadenas se encuentran.",
       "checkpoint": "Ningún elevador se mueve mientras su superficie corre, y no cae ninguna caja."
     },
     {
       "key": "reflect",
       "title": "Reflexionar",
       "body": "La aserción EVENTUALLY prueba que una caja llegó al depósito superior, la aserción AT prueba que Green está encendida al final y la aserción ALWAYS prueba que no cayó ninguna caja.",
-      "checkpoint": "La calificación no puede ver el orden de los pasos de cada elevador ni si un elevador se movió con su superficie en marcha; solo ve qué llegó y qué cayó. No establece la velocidad física del elevador, la temporización de hardware, HIL ni certificación."
+      "checkpoint": "La calificación no puede ver el orden de los pasos de cada elevador ni si un elevador se movió con su superficie en marcha; solo ve qué llegó y qué cayó."
     }
   ],
   "hints": [
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la banda de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A."
+    "El inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la cinta de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A."
   ]
 }

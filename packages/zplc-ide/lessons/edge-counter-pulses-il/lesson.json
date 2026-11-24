@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "edge-counter-pulses-il",
-  "version": 2,
-  "order": 73,
+  "version": 3,
+  "order": 81,
   "module": 3,
   "level": "foundation",
   "prerequisites": ["edge-counter-pulses", "boolean-logic-two-hand-guard-il"],

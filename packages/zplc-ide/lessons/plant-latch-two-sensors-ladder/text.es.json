@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "title": "Del sensor A al sensor B en diagrama de escalera",
-  "summary": "Secuencie un movimiento con una bobina de activación y una de borrado: haga correr la banda desde el sensor A hasta que la caja llegue al sensor B.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "summary": "Secuencie un movimiento con una bobina de activación y una de borrado: haga correr la cinta desde el sensor A hasta que la caja llegue al sensor B.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Usar un set y un reset para mantener una salida entre dos eventos.",
     "Explicar por qué un sensor que se apaga no puede mantener la salida por sí solo."
@@ -23,26 +23,26 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que la banda nunca corre; active Run cuando EyeA vea la caja y bórrelo cuando EyeB vea la caja.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que la cinta nunca corre; active Run cuando EyeA vea la caja y bórrelo cuando EyeB vea la caja.",
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario latch-two-sensors; observe la vista 3D mientras se ejecuta.",
+      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
       "checkpoint": "El escenario requerido se llama latch-two-sensors y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Compare el instante en que A se apaga con el instante en que B se enciende: la banda sigue corriendo entre ambos porque Run conserva su valor.",
+      "body": "Compare el instante en que A se apaga con el instante en que B se enciende: la cinta sigue corriendo entre ambos porque Run conserva su valor.",
       "checkpoint": "Ambos sensores cuentan la caja, Run está apagada al final y ninguna caja cae."
     },
     {
       "key": "reflect",
       "title": "Reflexionar",
       "body": "Las aserciones comprueban la cuenta en ambos sensores y el estado final; no dicen nada sobre cuánto dura el movimiento en la vida real.",
-      "checkpoint": "No establece la velocidad física de la banda, la respuesta del sensor, la temporización de hardware, HIL ni certificación."
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El inicial no tiene peldaños, así que la banda nunca corre; active Run cuando EyeA vea la caja y bórrelo cuando EyeB vea la caja."
+    "El inicial no tiene peldaños, así que la cinta nunca corre; active Run cuando EyeA vea la caja y bórrelo cuando EyeB vea la caja."
   ]
 }

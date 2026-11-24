@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/conveyor-sorting-sfc. Do not edit. >>> */}
 
-Describa un transportador clasificador como un diagrama de pasos de detenido, en marcha y falla: clasifique las piezas metálicas en marcha y bloquee la banda cuando la planta informe un atasco.
+Describa un transportador clasificador como un diagrama de pasos de detenido, en marcha y falla: clasifique las piezas metálicas en marcha y bloquee la cinta cuando la planta informe un atasco.
 
 ## Datos
 
@@ -39,7 +39,7 @@ Describa un transportador clasificador como un diagrama de pasos de detenido, en
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan solo evidencia determinista del host con el runtime nativo POSIX, que no es evidencia de transportador físico, liberación de atascos, hardware, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra un transportador físico ni la liberación de atascos.
 
 ## En una placa
 

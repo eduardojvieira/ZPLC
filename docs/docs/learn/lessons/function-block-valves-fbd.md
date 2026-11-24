@@ -39,7 +39,7 @@ Edit a Function Block Diagram so that a second instance of the project's functio
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish valve wiring, valve travel time, air supply monitoring, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show valve wiring, valve travel time or air supply monitoring.
 
 ## Wiring
 

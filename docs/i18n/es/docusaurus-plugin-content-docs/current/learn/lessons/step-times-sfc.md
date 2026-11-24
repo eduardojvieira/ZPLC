@@ -39,7 +39,7 @@ Use el tiempo que un paso lleva activo en una transición, de modo que una bocin
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran los tiempos de aviso de una puerta real, el comportamiento de una función de seguridad, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra los tiempos de aviso de una puerta real ni el comportamiento de una función de seguridad.
 
 ## En una placa
 

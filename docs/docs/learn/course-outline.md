@@ -35,7 +35,7 @@ Each of the five languages is introduced by one lesson whose objective names it,
 | Language | Introduced by                      | Name                      |
 | -------- | ---------------------------------- | ------------------------- |
 | ST       | `first-blink-simulation`           | Structured Text           |
-| LD       | `blinky-ladder-timer-feedback`     | Ladder                    |
+| LD       | `ld-what-is-a-plc`                 | Ladder                    |
 | FBD      | `boolean-logic-two-hand-guard-fbd` | Function Block Diagram    |
 | SFC      | `sfc-fill-mix-sequence`            | Sequential Function Chart |
 | IL       | `boolean-logic-two-hand-guard-il`  | Instruction List          |
@@ -64,11 +64,11 @@ A PLC repeats one cycle: read the inputs, run the program, write the outputs. Se
 
 | Lesson                                                             | Status    | Languages | Tracks               | Plant | Minutes | Requires                     |
 | ------------------------------------------------------------------ | --------- | --------- | -------------------- | ----- | ------- | ---------------------------- |
+| `ld-what-is-a-plc` What a PLC is: your first rung                  | Available | LD        | Simulation           | -     | 15      | -                            |
+| `ld-scan-cycle` The scan cycle: why the order of the rungs matters | Available | LD        | Simulation           | -     | 15      | `ld-what-is-a-plc`           |
 | `scan-cycle-one-scan-memory` Scan cycle and one-scan memory        | Available | ST        | Simulation, Hardware | -     | 10      | `first-blink-simulation`     |
 | `blinky-ladder-timer-feedback` TON oscillator and output feedback  | Available | LD        | Simulation, Hardware | -     | 20      | `scan-cycle-one-scan-memory` |
 | `blink-structured-text` Write a blinker in Structured Text         | Available | ST        | Simulation, Hardware | -     | 15      | `scan-cycle-one-scan-memory` |
-| `ld-what-is-a-plc` What a PLC is: your first rung                  | Available | LD        | Simulation           | -     | 15      | -                            |
-| `ld-scan-cycle` The scan cycle: why the order of the rungs matters | Available | LD        | Simulation           | -     | 15      | `ld-what-is-a-plc`           |
 
 Objectives of the available lessons:
 
@@ -86,6 +86,8 @@ Boolean logic is the vocabulary of every program. It is taught in Ladder beside 
 
 | Lesson                                                                                                      | Status    | Languages | Tracks               | Plant | Minutes | Requires                                                       |
 | ----------------------------------------------------------------------------------------------------------- | --------- | --------- | -------------------- | ----- | ------- | -------------------------------------------------------------- |
+| `ld-no-nc-contacts` NO and NC contacts: a stop button that fails safe                                       | Available | LD        | Simulation           | -     | 20      | `blinky-ladder-timer-feedback`                                 |
+| `ld-series-parallel` Series and parallel: AND and OR with contacts                                          | Available | LD        | Simulation           | -     | 20      | `ld-no-nc-contacts`                                            |
 | `boolean-logic-two-hand-guard` Boolean logic: a two-hand control with a guard                               | Available | ST        | Simulation, Hardware | -     | 15      | `blinky-ladder-timer-feedback`                                 |
 | `seal-in-ladder` Seal-in in Ladder: a motor that holds itself on                                            | Available | LD        | Simulation, Hardware | -     | 20      | `boolean-logic-two-hand-guard`                                 |
 | `set-reset-alarm-latch` Latching an alarm: set and reset, and which one wins                                | Available | ST        | Simulation, Hardware | -     | 15      | `seal-in-ladder`                                               |
@@ -95,8 +97,6 @@ Boolean logic is the vocabulary of every program. It is taught in Ladder beside 
 | `boolean-logic-two-hand-guard-fbd` Function Block Diagram: a two-hand control with a guard                  | Available | FBD       | Simulation, Hardware | -     | 20      | `boolean-logic-two-hand-guard`                                 |
 | `boolean-logic-two-hand-guard-il` Instruction List: the current result in a two-hand control                | Available | IL        | Simulation, Hardware | -     | 15      | `boolean-logic-two-hand-guard`                                 |
 | `set-reset-alarm-latch-il` Instruction List: S and R, and the line that comes last                          | Available | IL        | Simulation, Hardware | -     | 15      | `set-reset-alarm-latch`, `boolean-logic-two-hand-guard-il`     |
-| `ld-no-nc-contacts` NO and NC contacts: a stop button that fails safe                                       | Available | LD        | Simulation           | -     | 20      | `blinky-ladder-timer-feedback`                                 |
-| `ld-series-parallel` Series and parallel: AND and OR with contacts                                          | Available | LD        | Simulation           | -     | 20      | `ld-no-nc-contacts`                                            |
 
 Objectives of the available lessons:
 
@@ -121,6 +121,7 @@ Time and events come after logic: timers delay or hold a signal, edges turn a le
 | Lesson                                                                                                      | Status    | Languages | Tracks               | Plant | Minutes | Requires                                                        |
 | ----------------------------------------------------------------------------------------------------------- | --------- | --------- | -------------------- | ----- | ------- | --------------------------------------------------------------- |
 | `timers-on-delay-off-delay` Timers: an off-delay light and an on-delay filter                               | Available | ST        | Simulation, Hardware | -     | 15      | `motor-start-stop-safe`                                         |
+| `ld-edges` Edges in Ladder: P and N contacts and one-scan pulses                                            | Available | LD        | Simulation           | -     | 15      | `set-reset-alarm-latch-ladder`                                  |
 | `edge-counter-pulses` Edges and pulse counter                                                               | Available | ST        | Simulation, Hardware | -     | 15      | `timers-on-delay-off-delay`                                     |
 | `counter-batch-fbd` Counters in Function Block Diagram: count parts to a batch                              | Available | FBD       | Simulation, Hardware | -     | 20      | `edge-counter-pulses`                                           |
 | `timers-on-delay-off-delay-ladder` On-delay and off-delay in Ladder: timers as blocks in a rung             | Available | LD        | Simulation, Hardware | -     | 20      | `timers-on-delay-off-delay`, `blinky-ladder-timer-feedback`     |
@@ -128,7 +129,6 @@ Time and events come after logic: timers delay or hold a signal, edges turn a le
 | `timers-on-delay-off-delay-fbd` Timers in Function Block Diagram: an off-delay light and an on-delay filter | Available | FBD       | Simulation, Hardware | -     | 20      | `timers-on-delay-off-delay`, `boolean-logic-two-hand-guard-fbd` |
 | `timers-on-delay-off-delay-il` Instruction List: calling an off-delay and an on-delay timer                 | Available | IL        | Simulation, Hardware | -     | 15      | `timers-on-delay-off-delay`, `boolean-logic-two-hand-guard-il`  |
 | `edge-counter-pulses-il` Instruction List: counting pulses with a CTU                                       | Available | IL        | Simulation, Hardware | -     | 15      | `edge-counter-pulses`, `boolean-logic-two-hand-guard-il`        |
-| `ld-edges` Edges in Ladder: P and N contacts and one-scan pulses                                            | Available | LD        | Simulation           | -     | 15      | `set-reset-alarm-latch-ladder`                                  |
 
 Objectives of the available lessons:
 
@@ -150,14 +150,14 @@ Real signals are numbers, not only on and off. Types, arithmetic, comparison and
 
 | Lesson                                                                                                                | Status    | Languages | Tracks               | Plant | Minutes | Requires                                                          |
 | --------------------------------------------------------------------------------------------------------------------- | --------- | --------- | -------------------- | ----- | ------- | ----------------------------------------------------------------- |
+| `ld-variables-and-types` Variables, types and addresses in Ladder: memory bits, TIME values and the I/O map           | Available | LD        | Simulation           | -     | 20      | `edge-counter-pulses-ladder`                                      |
+| `ld-compare-math` Comparison and math boxes in Ladder: a tank alarm and a safe division                               | Available | LD        | Simulation           | -     | 25      | `ld-variables-and-types`                                          |
+| `ld-analog-scaling` Analog scaling in Ladder: counts to percent with MUL, DIV and LIMIT                               | Available | LD        | Simulation           | -     | 25      | `ld-compare-math`                                                 |
 | `types-arithmetic-comparison` Types, arithmetic and comparison: a total and three bands                               | Available | ST        | Simulation, Hardware | -     | 20      | `edge-counter-pulses`                                             |
 | `analog-scaling-integer` Analog scaling: from raw counts to a percentage                                              | Available | ST        | Simulation, Hardware | -     | 20      | `types-arithmetic-comparison`                                     |
 | `analog-scaling-fbd` Analog scaling in Function Block Diagram: a high level alarm                                     | Available | FBD       | Simulation, Hardware | -     | 20      | `analog-scaling-integer`, `counter-batch-fbd`                     |
 | `types-arithmetic-comparison-fbd` Types, arithmetic and comparison in Function Block Diagram: a total and three bands | Available | FBD       | Simulation, Hardware | -     | 25      | `types-arithmetic-comparison`, `boolean-logic-two-hand-guard-fbd` |
 | `types-arithmetic-comparison-il` Instruction List: arithmetic, comparison and a jump on a rising edge                 | Available | IL        | Simulation, Hardware | -     | 20      | `types-arithmetic-comparison`, `edge-counter-pulses-il`           |
-| `ld-variables-and-types` Variables, types and addresses in Ladder: memory bits, TIME values and the I/O map           | Available | LD        | Simulation           | -     | 20      | `edge-counter-pulses-ladder`                                      |
-| `ld-compare-math` Comparison and math boxes in Ladder: a tank alarm and a safe division                               | Available | LD        | Simulation           | -     | 25      | `ld-variables-and-types`                                          |
-| `ld-analog-scaling` Analog scaling in Ladder: counts to percent with MUL, DIV and LIMIT                               | Available | LD        | Simulation           | -     | 25      | `ld-compare-math`                                                 |
 
 Objectives of the available lessons:
 
@@ -178,6 +178,7 @@ A machine that does things in order is a state machine. Sequences are written as
 
 | Lesson                                                                                        | Status    | Languages | Tracks               | Plant         | Minutes | Requires                                              |
 | --------------------------------------------------------------------------------------------- | --------- | --------- | -------------------- | ------------- | ------- | ----------------------------------------------------- |
+| `ld-sequence-step-bits` A sequence in Ladder: step bits move a tank from fill to mix to drain | Available | LD        | Simulation           | -             | 25      | `ld-analog-scaling`                                   |
 | `pedestrian-crossing-states` Pedestrian crossing and safe states                              | Available | ST        | Simulation           | pedestrian-v1 | 25      | `edge-counter-pulses`                                 |
 | `sfc-fill-mix-sequence` A sequence in Sequential Function Chart: fill, then mix               | Available | SFC       | Simulation, Hardware | -             | 25      | `edge-counter-pulses`                                 |
 | `pedestrian-crossing-sfc` Pedestrian crossing as a chart                                      | Available | SFC       | Simulation           | pedestrian-v1 | 25      | `pedestrian-crossing-states`, `sfc-fill-mix-sequence` |
@@ -185,7 +186,6 @@ A machine that does things in order is a state machine. Sequences are written as
 | `simultaneous-branches-sfc` Simultaneous branches: fill and heat together                     | Available | SFC       | Simulation           | -             | 30      | `sfc-fill-mix-sequence`                               |
 | `step-times-sfc` Step times: a horn before the gate opens                                     | Available | SFC       | Simulation           | -             | 20      | `sfc-fill-mix-sequence`                               |
 | `conveyor-sorting-sfc` Conveyor sorting as a chart                                            | Available | SFC       | Simulation           | conveyor-v1   | 30      | `sfc-fill-mix-sequence`                               |
-| `ld-sequence-step-bits` A sequence in Ladder: step bits move a tank from fill to mix to drain | Available | LD        | Simulation           | -             | 25      | `ld-analog-scaling`                                   |
 
 Objectives of the available lessons:
 
@@ -236,11 +236,11 @@ The lessons below cover function blocks, also called from Function Block Diagram
 
 | Lesson                                                                                               | Status    | Languages | Tracks               | Plant | Minutes | Requires                                                      |
 | ---------------------------------------------------------------------------------------------------- | --------- | --------- | -------------------- | ----- | ------- | ------------------------------------------------------------- |
+| `ld-function-blocks` Your own function block in Ladder: two pumps, one block                         | Available | LD        | Simulation           | -     | 25      | `tank-level-fault-reset-ladder`                               |
 | `function-block-pump-pair` Function blocks: one latch, two pumps                                     | Available | ST        | Simulation, Hardware | -     | 25      | `types-arithmetic-comparison`                                 |
 | `structures-arrays-call-panel` Structures and arrays: a panel of three calls                         | Available | ST        | Simulation, Hardware | -     | 25      | `function-block-pump-pair`                                    |
 | `function-block-valves-fbd` Your own function block in Function Block Diagram: two valves, one block | Available | FBD       | Simulation, Hardware | -     | 20      | `function-block-pump-pair`, `counter-batch-fbd`               |
 | `function-block-call-il` Instruction List: calling a function block and reading its outputs          | Available | IL        | Simulation, Hardware | -     | 25      | `function-block-pump-pair`, `boolean-logic-two-hand-guard-il` |
-| `ld-function-blocks` Your own function block in Ladder: two pumps, one block                         | Available | LD        | Simulation           | -     | 25      | `tank-level-fault-reset-ladder`                               |
 
 Objectives of the available lessons:
 
@@ -258,10 +258,10 @@ Testing comes once you have programs worth testing. Scenario tests, temporal ass
 
 | Lesson                                                                                                | Status    | Languages | Tracks     | Plant       | Minutes | Requires                                         |
 | ----------------------------------------------------------------------------------------------------- | --------- | --------- | ---------- | ----------- | ------- | ------------------------------------------------ |
+| `ld-diagnosis-debugger` Diagnosing a Ladder program in simulation: watch, breakpoint, force and trace | Available | LD        | Simulation | -           | 40      | `ld-function-blocks`                             |
 | `conveyor-classification-jam` Conveyor classification and safe jam                                    | Available | ST        | Simulation | conveyor-v1 | 25      | `motor-plant-feedback`, `tank-level-fault-reset` |
 | `temporal-assertions-jam-fault` Temporal assertions and jam fault                                     | Available | ST        | Simulation | -           | 25      | `conveyor-classification-jam`                    |
 | `conveyor-two-parts-diagnosis` Reproducible diagnosis: two parts, one decision                        | Available | ST        | Simulation | -           | 20      | `conveyor-classification-jam`                    |
-| `ld-diagnosis-debugger` Diagnosing a Ladder program in simulation: watch, breakpoint, force and trace | Available | LD        | Simulation | -           | 40      | `ld-function-blocks`                             |
 
 Objectives of the available lessons:
 
@@ -411,7 +411,7 @@ Objectives of the available lessons:
 - **Pick from one belt, place on another in Ladder**: Sequence a pick and place with one state per move, each move waiting for its limit sensor. Wait for the grip feedback before lifting, and keep the receiving belt still while a box is put down.
 - **Assemble lids and bases**: Coordinate two axes and a vacuum pad in one sequence, with one step for each move. Choose between two next steps with transition conditions that exclude each other.
 - **The same with numeric positions**: Send an axis to a named position with a setpoint and read its position back. Decide that a move is done when the position is within a tolerance of the setpoint, not when it is equal to it.
-- **Palletize in layers**: Build a layer by counting pairs of boxes, and square it before the clamp takes it. Set each layer at its own height, one box height higher than the one below.
+- **Palletize in layers**: Build a layer by counting pairs of boxes, and square it before the clamp takes it. Keep the jog of each layer in an array and fill it with a FOR loop, so each layer sets down one box height higher than the one below.
 - **Palletize with a gantry**: Command three axes with integer counts and compare each position with its command within one count. Choose the place of each box from its number: the slot in the layer and the height of the layer.
 
 ## Module 16: Sorting: decide a route from what the sensors report

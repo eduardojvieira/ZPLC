@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "A sequence in Sequential Function Chart: fill, then mix",
   "summary": "Complete a Sequential Function Chart with three steps by adding the missing timed transition, and check that the valve and the mixer never run together.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish process volumes, mixing quality, valve timing on real equipment, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show process volumes, mixing quality or valve timing on real equipment.",
   "objectives": [
     "Read a Sequential Function Chart as steps that are active one at a time, actions that run while their step is active, and transitions that move the activity.",
     "Add a timed transition that uses the elapsed time of a step."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter has the three steps and two of the three transitions: FILL never leaves, so the valve stays open and MIX never runs; add a transition from FILL to MIX whose condition is step_fill.T >= T#50ms.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

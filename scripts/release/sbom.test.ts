@@ -82,6 +82,20 @@ describe('buildSbom (REL-018)', () => {
   test('is the same bytes for the same inputs', () => {
     expect(JSON.stringify(buildSbom(input))).toBe(JSON.stringify(buildSbom(input)));
   });
+
+  // actions/attest reads a document as CycloneDX only when bomFormat, serialNumber and specVersion are all set; without
+  // the serial number the release fails with "Unsupported SBOM format. Must be valid SPDX or CycloneDX JSON."
+  test('has the serial number that actions/attest needs, in the form CycloneDX 1.5 allows', () => {
+    expect((sbom as { serialNumber?: string }).serialNumber).toMatch(
+      /^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
+  });
+
+  test('derives the serial number from the content, so another version of the product gets another one', () => {
+    const other = buildSbom({ ...input, productVersion: '2.0.0' }) as { serialNumber?: string };
+    expect(other.serialNumber).toBeDefined();
+    expect(other.serialNumber).not.toBe((sbom as { serialNumber?: string }).serialNumber);
+  });
 });
 
 describe('westProjects (REL-018)', () => {

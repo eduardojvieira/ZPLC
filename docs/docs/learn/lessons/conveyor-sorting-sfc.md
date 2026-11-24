@@ -39,7 +39,7 @@ Describe a sorting conveyor as a chart of stopped, running and fault steps: sort
 
 ## What the evidence covers
 
-Tests provide deterministic native POSIX host evidence only; they are not physical conveyor, jam clearance, hardware, HIL, or certification evidence.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a physical conveyor or jam clearance.
 
 ## On a board
 

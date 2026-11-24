@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Your own function block in Function Block Diagram: two valves, one block",
   "summary": "Edit a Function Block Diagram so that a second instance of the project's function block ValveCtl commands the drain valve, with its inputs and its output wired.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish valve wiring, valve travel time, air supply monitoring, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show valve wiring, valve travel time or air supply monitoring.",
   "objectives": [
     "Place a function block that the project declares in Structured Text in a Function Block Diagram, and read its ports from the declaration.",
     "Wire a second instance of the same function block, and see that each instance keeps a memory of its own."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter wires only the instance Fill, so the drain valve never opens and DrainValve stays OFF at {{t:30}} ms; wire DrainPB to Drain.Open, StopPB to Drain.Close and AirOk to Drain.Permit, and write Drain.Cmd to DrainValve with an output block. ValveCtl is in the Project category of the palette, but the instance Drain is already placed, so only the wires and the output block are missing.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

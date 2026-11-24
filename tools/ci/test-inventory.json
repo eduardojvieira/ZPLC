@@ -1,7 +1,7 @@
 {
   "runs": [
     { "pattern": "packages/zplc-compiler/**/*.test.ts", "job": "typescript", "command": "bun run test:compiler" },
-    { "pattern": "packages/zplc-ide/**/*.test.{ts,tsx}", "job": "typescript", "command": "bun run test:ide" },
+    { "pattern": "packages/zplc-ide/**/*.test.{ts,tsx}", "job": "ide-tests", "command": "bun run test:ide" },
     { "pattern": "tools/ci/**/*.test.ts", "job": "typescript", "command": "bun test ./tools/ci" },
     { "pattern": "tools/docs/**/*.test.ts", "job": "typescript", "command": "bun test ./tools/docs" },
     { "pattern": "tools/history/**/*.test.ts", "job": "typescript", "command": "bun test ./tools/history" },

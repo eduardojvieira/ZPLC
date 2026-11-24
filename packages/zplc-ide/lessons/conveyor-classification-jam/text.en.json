@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Conveyor classification and safe jam",
   "summary": "Walk through part classification and the safe jam lockout in the Conveyor 01 example.",
-  "scope": "Tests provide deterministic native POSIX host evidence only; they are not physical conveyor, jam clearance, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Stop the belt and light FaultLamp while the plant reports JamDetected.",
     "Keep Reset from releasing the fault while the jam is still present."
@@ -24,12 +24,12 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter misses the deterministic jam lockout; stop the belt and light FaultLamp while the plant reports JamDetected, and do not let Reset release it while the jam remains.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "In Tests, choose the saved zplc.json and run only Conveyor01; the starter also ships ConveyorJamTiming (lesson 9), so Tests-all would grade two scenarios.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The required scenario is named Conveyor01 and contains {{assertions}} assertions."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The NEVER assertion covers DiverterCommand ON with BeltCommand OFF only in this scenario.",
-      "checkpoint": "It does not establish a physical conveyor, jam clearance, hardware timing, HIL, or certification."
+      "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [

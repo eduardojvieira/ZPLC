@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Safe motor start-stop",
   "summary": "Walk through a motor with seal-in, stop, and overload handling using the Motor Start Stop example.",
-  "scope": "Tests provide native POSIX host evidence only; they are not hardware or HIL evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Hold the motor on after Start is released with a seal-in.",
     "Drop the motor out on Stop, EStop and Overload, and never let a held Start restart it by itself."
@@ -24,12 +24,12 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter loses seal-in when Start is released; implement Stop, EStop, and Overload dropout, and never start or restart while Start is still held after power-up or a stop.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "In Tests, choose the saved zplc.json and run only the MotorStartStop scenario.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The required scenario is named MotorStartStop and contains {{assertions}} assertions."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The exact NEVER assertion checks logical coverage for this scenario.",
-      "checkpoint": "It does not establish physical safety, hardware timing, or certification."
+      "checkpoint": "This scenario tests the logic of the program; it is not a safety function and says nothing about physical safety."
     }
   ],
   "hints": [

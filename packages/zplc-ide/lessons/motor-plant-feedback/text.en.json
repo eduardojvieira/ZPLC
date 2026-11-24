@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Command, feedback, and speed",
   "summary": "Separate a motor command from the run confirmation using the Motor Plant.",
-  "scope": "Tests provide deterministic native POSIX host and discrete-plant evidence only; they are not physical-motor, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Separate the command to the motor from the confirmation that it runs.",
     "Keep the request until Stop and let Running follow the request only once AtSpeed arrives."
@@ -24,12 +24,12 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter loses Command when Start falls and ignores Stop; retain the request until Stop and gate Running with AtSpeed.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "In Tests, choose the saved zplc.json and run only the MotorPlant scenario.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The required scenario is named MotorPlant and contains {{assertions}} assertions."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "RISING/FALLING cover this transition, and NEVER checks that Running never appears without Command in this scenario.",
-      "checkpoint": "It does not establish inertia, a physical motor, hardware timing, HIL, or certification."
+      "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [

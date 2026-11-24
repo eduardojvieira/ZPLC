@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "pedestrian-crossing-states",
-  "version": 2,
-  "order": 2,
+  "version": 3,
+  "order": 23,
   "module": 5,
   "level": "intermediate",
   "prerequisites": ["edge-counter-pulses"],

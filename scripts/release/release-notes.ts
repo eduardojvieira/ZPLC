@@ -8,6 +8,8 @@
 // changes. Every sentence about signing or checking is rendered from those fields, and where a check did not pass
 // or did not run the notes say that and make no claim. scripts/release/run-results.ts writes the file in the pipeline.
 import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { classifyAsset } from './run-results';
 
 export type Platform = 'macos' | 'windows' | 'linux' | 'cli' | 'firmware' | 'metadata';
 export type SigningState = 'adhoc' | 'unsigned' | 'signed';
@@ -39,6 +41,8 @@ export interface RunResults {
   suites: Array<{ suite: string; job: string; executed: number; failed: number; skipped: number }>;
   knownFailures: Array<{ id: string; summary: string; tracking?: string }>;
   channels: Array<{ channel: string; state: ChannelStateName }>;
+  /** Whether the bundles hold the checksum files that the render job merges into the `SHA256SUMS` of the release. */
+  sha256sums?: boolean;
   changes: string[];
   /** What a user has to do differently after this release, and how to move (DOC-030). */
   breaking?: string[];
@@ -178,14 +182,153 @@ function cell(text: string): string {
   return text.replaceAll('|', '\\|').replaceAll('\n', ' ');
 }
 
+const INSTALL_GUIDE = 'https://eduardojvieira.github.io/ZPLC/docs/getting-started/install';
+
+/** The systems of the downloads, in the words a person knows their computer by. */
+const SYSTEMS = [
+  { label: 'Windows, Intel or AMD (x64)', platform: 'windows', os: 'win', arch: 'x64' },
+  { label: 'Windows on ARM (arm64)', platform: 'windows', os: 'win', arch: 'arm64' },
+  { label: 'macOS, Apple silicon (M1 and later)', platform: 'macos', os: 'mac', arch: 'arm64' },
+  { label: 'macOS, Intel', platform: 'macos', os: 'mac', arch: 'x64' },
+  { label: 'Linux, Intel or AMD (x86_64)', platform: 'linux', os: 'linux', arch: 'x64' },
+  { label: 'Linux on ARM (arm64, aarch64)', platform: 'linux', os: 'linux', arch: 'arm64' },
+] as const;
+
+/** The formats of each system, the recommended one first. */
+const FORMATS: Record<'windows' | 'macos' | 'linux', Array<[string, RegExp]>> = {
+  windows: [
+    ['Installer', /-setup(?:-unsigned)?\.exe$/],
+    ['Portable', /-portable(?:-unsigned)?\.exe$/],
+  ],
+  macos: [
+    ['Disk image', /\.dmg$/],
+    ['Zip', /\.zip$/],
+  ],
+  linux: [
+    ['Debian, Ubuntu (.deb)', /\.deb$/],
+    ['Fedora (.rpm)', /\.rpm$/],
+    ['Other distributions (AppImage)', /\.AppImage$/],
+  ],
+};
+
+/** A section that GitHub shows collapsed, under its summary. */
+function details(summary: string, body: string[]): string[] {
+  return ['<details>', `<summary>${summary}</summary>`, '', ...body, '', '</details>', ''];
+}
+
+/** The display name of each board of firmware/app/boards/boards.json, by the `board_id` that its image names carry. */
+function boardNames(): Map<string, string> {
+  const boards = JSON.parse(readFileSync(join(import.meta.dir, '..', '..', 'firmware', 'app', 'boards', 'boards.json'), 'utf8')) as Array<{
+    board_id: string;
+    display_name: string;
+  }>;
+  return new Map(boards.map((board) => [board.board_id, board.display_name]));
+}
+
+/**
+ * The downloads, first (S4): a row per system with the direct address of each file on the release, and the tools and
+ * the firmware collapsed. Only a file that a bundle of the run holds is linked.
+ */
+function downloads(results: RunResults): string[] {
+  const repository = /^(https:\/\/[^/]+\/[^/]+\/[^/]+)\/actions\/runs\/\d+/.exec(results.runUrl)?.[1];
+  if (repository === undefined)
+    throw new Error(`the run URL ${results.runUrl} names no repository, so the notes cannot link the files of the release`);
+  const link = (label: string, name: string) =>
+    `[${label}](${repository}/releases/download/${encodeURIComponent(results.tag)}/${encodeURIComponent(name)})`;
+  const arch = (name: string) => classifyAsset(name).arch;
+  const out = ['### Download', '', '| Your system | Download | Other formats |', '| --- | --- | --- |'];
+  for (const system of SYSTEMS) {
+    const files = results.assets.filter((asset) => asset.platform === system.platform && arch(asset.name) === system.arch);
+    const [first, ...others] = FORMATS[system.platform].flatMap(([label, pattern]) => {
+      const file = files.find((asset) => pattern.test(asset.name));
+      return file ? [link(label, file.name)] : [];
+    });
+    const smaller = others.map((other) => `<sub>${other}</sub>`).join(' · ');
+    out.push(`| ${system.label} | ${first ? `**${first}**` : 'Not in this release'} | ${smaller} |`);
+  }
+  out.push(
+    '',
+    'Not sure which one? Windows: **Settings**, **System**, **About**, _System type_. Mac: Apple menu, **About This Mac**: a _Chip_ ' +
+      'is Apple silicon, a _Processor_ is Intel. Linux: `uname -m` prints `x86_64` or `aarch64`. How to open ZPLC the first time: ' +
+      `[First launch](${INSTALL_GUIDE}#first-launch).`,
+    '',
+  );
+
+  const tools = results.assets.filter((asset) => asset.platform === 'cli');
+  if (tools.length > 0) {
+    const tool = (kind: 'cli' | 'mcp', system: (typeof SYSTEMS)[number]) => {
+      const file = tools.find(
+        (asset) =>
+          asset.name.startsWith(`zplc-${kind}-`) &&
+          /-(win|mac|linux)-[^-]+$/.exec(asset.name)?.[1] === system.os &&
+          arch(asset.name) === system.arch,
+      );
+      return file ? link('Download', file.name) : 'Not in this release';
+    };
+    out.push(
+      ...details('Command line tool and MCP server', [
+        '| Your system | Command line tool (`zplc-cli`) | MCP server for AI assistants (`zplc-mcp`) |',
+        '| --- | --- | --- |',
+        ...SYSTEMS.map((system) => `| ${system.label} | ${tool('cli', system)} | ${tool('mcp', system)} |`),
+        '',
+        'Each is one executable that needs no installer, Node.js or Bun. On macOS and Linux, make it executable first: ' +
+          '`chmod +x <file>`.',
+      ]),
+    );
+  }
+
+  const firmware = results.assets.filter((asset) => asset.platform === 'firmware');
+  const images = firmware.filter((asset) => !asset.name.endsWith('.manifest.json'));
+  if (images.length > 0) {
+    const names = boardNames();
+    const prefix = `zplc-runtime-${results.version}-`;
+    const boards = new Map<string, AssetResult[]>();
+    for (const image of images) {
+      const board = (image.name.startsWith(prefix) ? image.name.slice(prefix.length) : image.name).replace(/\.[^.]+$/, '');
+      boards.set(board, [...(boards.get(board) ?? []), image]);
+    }
+    const rows = [...boards].map(([board, files]) => {
+      const [flash, ...rest] = [...files]
+        .sort((a, b) => Number(a.name.endsWith('.elf')) - Number(b.name.endsWith('.elf')))
+        .map((file) => {
+          const extension = file.name.slice(file.name.lastIndexOf('.') + 1);
+          return link(extension === 'elf' ? 'Debug image (.elf)' : `Flash image (.${extension})`, file.name);
+        });
+      const links = [`**${flash}**`, ...rest.map((other) => `<sub>${other}</sub>`)].join(' · ');
+      return `| ${cell(names.get(board) ?? board)} | ${links} | ${files[0]!.evidenceLevel ?? 'not recorded'} |`;
+    });
+    const levels = [...new Set(images.flatMap((image) => (image.evidenceLevel ? [image.evidenceLevel] : [])))];
+    const manifest = firmware.find((asset) => asset.name.endsWith('.manifest.json'));
+    out.push(
+      ...details('Runtime firmware for the boards', [
+        '| Board | Download | Evidence level of the board |',
+        '| --- | --- | --- |',
+        ...rows,
+        '',
+        ...levels.map((level) => `- ${LEVEL_TEXT[level]}`),
+        ...(manifest
+          ? ['', `${link('Firmware manifest', manifest.name)}: the images with their checksums, build identity and board levels.`]
+          : []),
+      ]),
+    );
+  }
+
+  if (results.sha256sums === true) {
+    out.push(
+      `**Check the file:** compare it with its line in ${link('SHA256SUMS', 'SHA256SUMS')}, as ` +
+        `[Verify the download](${INSTALL_GUIDE}#verify-the-download) shows.`,
+      '',
+    );
+  }
+  return out;
+}
+
 export function renderReleaseNotes(results: RunResults): string {
   for (const { channel, state } of results.channels) {
     if (!CHANNEL_STATES.includes(state))
       throw new Error(`Unknown channel state for ${channel}: ${state} (channel state must be one of ${CHANNEL_STATES.join(', ')})`);
   }
-  const out: string[] = [];
-  out.push(`## Release v${results.version}`, '');
-  out.push(`Built from commit \`${results.commit}\` by [this run](${results.runUrl}).`, '');
+  const out: string[] = downloads(results);
 
   out.push('### What changed', '');
   out.push(
@@ -220,17 +363,28 @@ export function renderReleaseNotes(results: RunResults): string {
   }
   out.push('');
 
-  out.push('### Signing state and checks of every asset', '');
-  out.push('| Asset | Built by | Signing state | Checks in this run |', '| --- | --- | --- | --- |');
+  if (results.assets.some((asset) => asset.platform === 'windows' && asset.signing === 'unsigned')) {
+    out.push('### Windows: unsigned installers', '');
+    out.push('The setup and portable executables are not signed, so their file names carry `unsigned`. To run one:', '');
+    out.push('1. Windows shows "Windows protected your PC" (SmartScreen).', '2. Select **More info**, then **Run anyway**.', '');
+    out.push(
+      'Smart App Control blocks unsigned apps and offers no Run anyway option. On a PC where Smart App Control is on, these files do not ' +
+        'run.',
+      '',
+    );
+  }
+
+  // what the run recorded, collapsed (S4): every line is still in the notes, under a summary that says what it holds
+  const signing = ['| Asset | Built by | Signing state | Checks in this run |', '| --- | --- | --- | --- |'];
   for (const asset of results.assets) {
     const job = asset.runUrl ? `[${asset.job}](${asset.runUrl})` : asset.job;
-    out.push(`| ${cell(asset.name)} | ${cell(job)} | ${cell(signingText(asset))} | ${cell(checksText(asset))} |`);
+    signing.push(`| ${cell(asset.name)} | ${cell(job)} | ${cell(signingText(asset))} | ${cell(checksText(asset))} |`);
   }
-  out.push('');
+  signing.push('');
   for (const platform of ['macos', 'windows', 'linux'] as const) {
     if (results.assets.some((asset) => asset.platform === platform)) continue;
     const job = results.jobs.find((candidate) => candidate.job === `build-${platform}`);
-    out.push(
+    signing.push(
       `No files were published for ${PLATFORM_NAMES[platform]}: its build job ${
         job ? `ended in ${job.result}` : 'did not report a result'
       }.`,
@@ -243,23 +397,23 @@ export function renderReleaseNotes(results: RunResults): string {
       (candidate) =>
         /^(?:build|assemble)-firmware$|^prepare-release-evidence-firmware$/.test(candidate.job) && candidate.result !== 'success',
     );
-    out.push(
+    signing.push(
       `No firmware image was published: ${
         failed.length > 0
           ? failed.map((candidate) => `${candidate.job} ended in ${candidate.result}`).join(', ')
           : 'the firmware jobs did not ' + 'report a result'
       }.`,
-      '',
     );
   }
+  out.push(...details(`Signing state and checks of every asset (${results.assets.length} files)`, signing));
 
-  out.push('### Tests executed in this run', '');
   if (results.suites.length === 0) {
-    out.push('The run recorded no test results, so these notes make no claim about tests.');
+    out.push(
+      ...details('Tests executed in this run: none recorded', [
+        'The run recorded no test results, so these notes make no claim about tests.',
+      ]),
+    );
   } else {
-    out.push('| Suite | Job | Executed | Failed | Skipped |', '| --- | --- | --- | --- | --- |');
-    for (const suite of results.suites)
-      out.push(`| ${cell(suite.suite)} | ${cell(suite.job)} | ${suite.executed} | ${suite.failed} | ${suite.skipped} |`);
     const total = results.suites.reduce(
       (sum, suite) => ({
         executed: sum.executed + suite.executed,
@@ -268,59 +422,61 @@ export function renderReleaseNotes(results: RunResults): string {
       }),
       { executed: 0, failed: 0, skipped: 0 },
     );
-    out.push('', `${total.executed} tests executed, ${total.failed} failed, ${total.skipped} skipped.`);
-  }
-  out.push('');
-
-  if (results.assets.some((asset) => asset.platform === 'windows' && asset.signing === 'unsigned')) {
-    out.push('### Windows: unsigned installers', '');
-    out.push('The setup and portable executables are not signed, so their file names carry `unsigned`. To run one:', '');
-    out.push('1. Windows shows "Windows protected your PC" (SmartScreen).', '2. Select **More info**, then **Run anyway**.', '');
     out.push(
-      'Smart App Control blocks unsigned apps and offers no Run anyway option. On a PC where Smart App Control is on, these files do not ' +
-        'run.',
-      '',
+      ...details(`Tests executed in this run: ${total.executed} executed, ${total.failed} failed, ${total.skipped} skipped`, [
+        '| Suite | Job | Executed | Failed | Skipped |',
+        '| --- | --- | --- | --- | --- |',
+        ...results.suites.map(
+          (suite) => `| ${cell(suite.suite)} | ${cell(suite.job)} | ${suite.executed} | ${suite.failed} | ${suite.skipped} |`,
+        ),
+        '',
+        `${total.executed} tests executed, ${total.failed} failed, ${total.skipped} skipped.`,
+      ]),
     );
   }
+
   if (results.channels.length > 0) {
-    out.push('### Windows channels', '', '| Channel | State |', '| --- | --- |');
-    out.push(...results.channels.map((channel) => `| ${channel.channel} | ${channel.state} |`));
     out.push(
-      '',
-      'A channel is live, submitted, refused or not yet submittable. Until a channel is live, the unsigned files above are the only ' +
-        'Windows download.',
-      '',
+      ...details('Windows channels', [
+        '| Channel | State |',
+        '| --- | --- |',
+        ...results.channels.map((channel) => `| ${channel.channel} | ${channel.state} |`),
+        '',
+        'A channel is live, submitted, refused or not yet submittable. Until a channel is live, the unsigned files of this release are ' +
+          'the only Windows download.',
+      ]),
     );
   }
 
-  out.push('### Verify what you downloaded', '');
-  out.push('Every file is listed in `SHA256SUMS`. In the folder with your download:', '', '```text');
   out.push(
-    'Linux:    sha256sum --ignore-missing -c SHA256SUMS',
-    'macOS:    shasum -a 256 -c SHA256SUMS',
-    'Windows:  Get-FileHash .\\<file> -Algorithm SHA256   (compare it with the line for your file)',
-    '```',
-    '',
-  );
-  out.push(
-    'The build provenance attestation says which run built the file:',
-    '',
-    '```text',
-    'gh attestation verify <file> --repo eduardojvieira/ZPLC',
-    '```',
-    '',
-  );
-  out.push(
-    'An attestation proves where a file was built, not that it is safe, and it does not change the warnings of your operating system.',
-    '',
+    ...details('Verify what you downloaded: checksums and build provenance', [
+      'Every file is listed in `SHA256SUMS`. In the folder with your download:',
+      '',
+      '```text',
+      'Linux:    sha256sum --ignore-missing -c SHA256SUMS',
+      'macOS:    shasum -a 256 -c SHA256SUMS',
+      'Windows:  Get-FileHash .\\<file> -Algorithm SHA256   (compare it with the line for your file)',
+      '```',
+      '',
+      'The build provenance attestation says which run built the file:',
+      '',
+      '```text',
+      'gh attestation verify <file> --repo eduardojvieira/ZPLC',
+      '```',
+      '',
+      'An attestation proves where a file was built, not that it is safe, and it does not change the warnings of your operating system.',
+    ]),
   );
 
-  out.push('### Evidence boundary', '');
   out.push(
-    'Repository and hosted workflow results do not establish HIL, board qualification, timing, safety certification, or human release ' +
-      'sign-off.',
+    ...details('Evidence boundary: what this release does not establish', [
+      `Built from commit \`${results.commit}\` by [this run](${results.runUrl}).`,
+      '',
+      'Repository and hosted workflow results do not establish HIL, board qualification, timing, safety certification, or human release ' +
+        'sign-off.',
+      'Prerelease tags remain release candidates, not GA declarations.',
+    ]),
   );
-  out.push('Prerelease tags remain release candidates, not GA declarations.', '');
 
   out.push('### Documentation', '');
   out.push(

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Lista de instrucciones: contar pulsos con un CTU",
   "summary": "Llame a un contador CTU desde lista de instrucciones para contar tres pulsos discretos, lea su salida con LD y reinicie la cuenta.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran sensores físicos, rebote de contactos ni tiempos de hardware, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra sensores físicos ni rebote de contactos.",
   "objectives": [
     "Llame a un contador CTU con CAL y lea su salida con LD Count.Q.",
     "Cuente los flancos ascendentes de PulseInput hasta un valor preestablecido de 3, y borre la cuenta con Reset."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial guarda FALSE en CountReached y nunca llama al contador; llame a Count con PV := 3 para que CountReached pase a ON en el tercer flanco ascendente y Reset lo pase a OFF.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexione",
       "body": "Mueva el CAL después de la línea LD Count.Q, de modo que la salida se lea antes de que el contador se ejecute. ¿Qué cambia, y en qué ciclo?",
-      "checkpoint": "La salida mostraría la cuenta del ciclo anterior, un ciclo tarde. En IL el orden de las líneas es el orden de ejecución. Las aserciones AT, RISING y FALLING cubren solo esta secuencia lógica; no demuestran rebote, pulsos eléctricos, tiempos de hardware, HIL ni certificación."
+      "checkpoint": "La salida mostraría la cuenta del ciclo anterior, un ciclo tarde. En IL el orden de las líneas es el orden de ejecución. Las aserciones AT, RISING y FALLING cubren solo esta secuencia lógica."
     }
   ],
   "hints": [

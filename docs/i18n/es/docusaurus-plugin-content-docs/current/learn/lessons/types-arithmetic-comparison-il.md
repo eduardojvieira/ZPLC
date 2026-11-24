@@ -39,7 +39,7 @@ Mantenga un total en una variable INT, súmele en cada pulsación con ADD y un s
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el rango de un sensor real ni el comportamiento de desbordamiento de un controlador concreto, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el rango de un sensor real ni el comportamiento de desbordamiento de un controlador concreto.
 
 ## Cableado
 

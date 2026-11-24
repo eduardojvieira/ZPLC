@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "types-arithmetic-comparison-il",
-  "version": 2,
-  "order": 74,
+  "version": 3,
+  "order": 90,
   "module": 4,
   "level": "intermediate",
   "prerequisites": ["types-arithmetic-comparison", "edge-counter-pulses-il"],

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "selection-branches-sfc",
-  "version": 1,
-  "order": 61,
+  "version": 2,
+  "order": 62,
   "module": 5,
   "level": "intermediate",
   "prerequisites": ["sfc-fill-mix-sequence"],

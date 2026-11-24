@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Variables, types and addresses in Ladder: memory bits, TIME values and the I/O map",
   "summary": "Keep a request in a memory bit, store a duration in a TIME variable, and see which variables are wired to the machine through the I/O map.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the wiring, the electrical levels or the timing of real inputs and outputs, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the wiring, the electrical levels or the timing of real inputs and outputs.",
   "objectives": [
     "Tell a memory bit from a variable that is wired to a physical input or output through its address.",
     "Choose the type that fits a value (BOOL, INT, REAL, TIME) and set the value of a TIME variable."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter keeps WarnTime at T#500ms and has no coil for Motor: Motor is OFF at {{t:100}} ms instead of ON; give WarnTime the value T#50ms in the variable table and connect Motor to WarnTimer.Q. In the Ladder editor, open the variable table of the program to change the value of WarnTime, and add a rung with a contact on WarnTimer.Q and a coil on Motor.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

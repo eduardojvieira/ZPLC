@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Seal-in in Ladder: a motor that holds itself on",
   "summary": "Edit a Ladder rung so that a Start press keeps the motor on after the button is released, and a Stop press drops it even while Start is still pressed.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish a safe stop function, wiring, hardware timing, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a safe stop function or wiring.",
   "objectives": [
     "Read a Ladder rung as a path of contacts that must all pass power to reach a coil.",
     "Hold a coil on with a contact of its own output in parallel with Start, and keep Stop in series so that Stop wins."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter drives Motor only while StartPB is pressed, so it drops out as soon as Start is released at {{t:20}} ms; add a normally open contact on Motor in parallel with the StartPB contact, so the coil holds itself on. In the Ladder editor add a contact on the second row under StartPB and name it Motor.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

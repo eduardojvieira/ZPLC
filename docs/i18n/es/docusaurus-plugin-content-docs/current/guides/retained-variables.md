@@ -39,7 +39,7 @@ El runtime nativo del simulador guarda la región y la restaura cuando usted car
 2. Pulse **Detener**. La región se almacena con los valores del último ciclo completo.
 3. Pulse **Ejecutar** de nuevo, o cierre y reabra ZPLC y ejecute el mismo programa. El contador continúa desde el valor que tenía.
 
-El simulador guarda su almacén en la carpeta `.zplc` de su directorio personal, salvo que `ZPLC_PERSIST_ROOT` indique otro lugar. Mientras el programa se ejecuta, la región se almacena como máximo una vez por intervalo (30 segundos por defecto) y solo cuando cambió. La variable de entorno `ZPLC_RETAIN_SAVE_INTERVAL_MS` del proceso que inicia el runtime fija el intervalo. `0` desactiva los guardados periódicos, y una detención y un apagado siguen almacenando.
+ZPLC guarda el almacén en la carpeta `native-simulation` de su carpeta de datos de usuario: `~/.config/ZPLC` en Linux, `~/Library/Application Support/ZPLC` en macOS y `%APPDATA%\ZPLC` en Windows. Un `zplc_runtime` que usted inicie por su cuenta usa la carpeta que indique `ZPLC_PERSIST_ROOT`, o la carpeta `.zplc` de su directorio personal. Mientras el programa se ejecuta, la región se almacena como máximo una vez por intervalo (30 segundos por defecto) y solo cuando cambió. La variable de entorno `ZPLC_RETAIN_SAVE_INTERVAL_MS` del proceso que inicia el runtime fija el intervalo. `0` desactiva los guardados periódicos, y una detención y un apagado siguen almacenando.
 
 ## 3. Qué descarta los valores
 

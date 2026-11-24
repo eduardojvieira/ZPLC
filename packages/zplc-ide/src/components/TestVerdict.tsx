@@ -4,6 +4,7 @@
  */
 import { CheckCircle, XCircle } from 'lucide-react';
 import { useT } from '../i18n';
+import type { FactExpect } from '../test-engine';
 import { Button } from '../ui';
 import { BoundaryBadge, type ResultBoundary } from './BoundaryBadge';
 
@@ -15,7 +16,7 @@ export interface VerdictFailure {
   atMs?: number;
   /** The position of the expectation in the scenario file. */
   index?: number;
-  checks?: ReadonlyArray<{ signal: string; expected: boolean; observed?: boolean }>;
+  checks?: ReadonlyArray<{ signal: string; expected: boolean | FactExpect; observed?: boolean | number }>;
 }
 
 export interface TestVerdictProps {
@@ -45,8 +46,19 @@ export function TestVerdict({
 }: TestVerdictProps) {
   const { t } = useT();
   const word = (key: string) => t(key as Parameters<typeof t>[0]);
-  const value = (flag: boolean | undefined) =>
-    flag === undefined ? t('u2Tests.value.missing') : t(flag ? 'u2Tests.value.true' : 'u2Tests.value.false');
+  // a number or a range is the same in both languages: "3", "[2, 4]", "≥ 2", "≤ 4" (SCN-005)
+  const value = (flag: boolean | number | FactExpect | undefined) =>
+    flag === undefined
+      ? t('u2Tests.value.missing')
+      : typeof flag === 'number'
+        ? String(flag)
+        : typeof flag === 'object'
+          ? flag.min !== undefined && flag.max !== undefined
+            ? `[${flag.min}, ${flag.max}]`
+            : flag.min !== undefined
+              ? `≥ ${flag.min}`
+              : `≤ ${flag.max}`
+          : t(flag ? 'u2Tests.value.true' : 'u2Tests.value.false');
   const Icon = ok === false ? XCircle : CheckCircle;
   const tone =
     ok === false ? 'text-[var(--color-accent-red)]' : ok ? 'text-[var(--color-accent-green)]' : 'text-[var(--color-accent-yellow)]';

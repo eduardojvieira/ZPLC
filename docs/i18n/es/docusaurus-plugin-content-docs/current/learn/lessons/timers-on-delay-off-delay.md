@@ -39,7 +39,7 @@ Use un temporizador TOF para mantener una luz encendida después de soltar un bo
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el antirrebote eléctrico, la respuesta del sensor, los tiempos en el dispositivo de destino, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el antirrebote eléctrico, la respuesta del sensor ni los tiempos en el dispositivo de destino.
 
 ## Cableado
 

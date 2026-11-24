@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Read the level",
   "summary": "Scale the raw level of a tank, a whole number from 0 to 27648, to metres, and use it to hold the level near a set point with a proportional inlet.",
-  "scope": "The grade is a headless run of the simulated tank on the native POSIX runtime, with an analog level that follows the scaling rules of the plant map. It does not establish the accuracy, noise or calibration of a real level transmitter, hardware timing, HIL, or certification.",
+  "scope": "The grade runs the simulated tank in the simulator on this computer, with an analog level that follows the scaling rules of the plant map. It says nothing about the accuracy, noise or calibration of a real level transmitter, a real machine, its timing or its safety.",
   "objectives": [
     "Scale an analog value to engineering units: convert to REAL first, then divide by the raw span.",
     "Read the plant map to find the raw range of each signal, and see what a wrong scale does to the process."
@@ -30,7 +30,7 @@
       "key": "run",
       "title": "Run",
       "body": "Press Check. ZPLC runs src/TankLevel.st against the tank of scene tank-level-control, raises the set point and opens the drain, and tests {{assertions}} assertions on the tank: it stays in its band in two windows and it never spills.",
-      "checkpoint": "The scenario is named tank-level-scaling and contains {{assertions}} assertions and passes them all with saved host evidence."
+      "checkpoint": "The scenario is named tank-level-scaling and contains {{assertions}} assertions and passes them all."
     },
     {
       "key": "observe",

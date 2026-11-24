@@ -39,7 +39,7 @@ Recorra el control de nivel y las memorias de falla y de reset del ejemplo Tank 
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan solo evidencia determinista del host con el runtime nativo POSIX, que no es evidencia de un proceso físico, hardware, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.
 
 ## En una placa
 

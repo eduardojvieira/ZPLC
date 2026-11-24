@@ -55,6 +55,7 @@ jobs:
   # that identity but never rewrite repository metadata during a release.
   validate-version:
     runs-on: ubuntu-latest
+    timeout-minutes: 10 # check:versions took under 1 s here; the rest is checkout and set-up
     outputs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.version.outputs.tag }}
@@ -102,6 +103,7 @@ jobs:
   verify-linux-x64-payload-reproducibility:
     needs: [validate-version, verify-release-candidate]
     runs-on: ubuntu-24.04
+    timeout-minutes: 90 # not measured here: two clean installs and two Linux x64 packagings
     # REL-032: kept, and never a reason for a release run to fail or wait. A job that continues on error reports success to
     # the jobs that read it, so its verdict is an output; the notes read the output, they do not wait on a result.
     continue-on-error: true
@@ -190,6 +192,7 @@ jobs:
   build-firmware:
     needs: [validate-version, verify-release-candidate]
     runs-on: ubuntu-24.04
+    timeout-minutes: 60 # not measured here: the Zephyr set-up and one board build, as in the cross-build of ci.yml
     strategy:
       fail-fast: false
       matrix:
@@ -303,6 +306,7 @@ jobs:
   assemble-firmware:
     needs: [validate-version, build-firmware]
     runs-on: ubuntu-latest
+    timeout-minutes: 15 # not measured here: a download of the board images and one bun script
     steps:
       - name: Checkout release tooling
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -342,6 +346,7 @@ jobs:
     needs: [validate-version, verify-release-candidate, assemble-firmware]
     if: ${{ !cancelled() && needs.validate-version.result == 'success' && needs.verify-release-candidate.result == 'success' }}
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90 # not measured here (macOS packaging): install, Homebrew LLVM, package, sign check, launch checks
     strategy:
       fail-fast: false
       matrix:
@@ -503,6 +508,7 @@ jobs:
     needs: [validate-version, verify-release-candidate, assemble-firmware]
     if: ${{ !cancelled() && needs.validate-version.result == 'success' && needs.verify-release-candidate.result == 'success' }}
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90 # not measured here (Windows packaging): install, Chocolatey LLVM, package, install and launch checks
     strategy:
       fail-fast: false
       matrix:
@@ -673,6 +679,7 @@ jobs:
     needs: [validate-version, verify-release-candidate, assemble-firmware]
     if: ${{ !cancelled() && needs.validate-version.result == 'success' && needs.verify-release-candidate.result == 'success' }}
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90 # not measured here (packaging): build, package, launch checks in three clean containers
     strategy:
       fail-fast: false
       matrix:
@@ -873,6 +880,7 @@ jobs:
     needs: [validate-version, verify-release-candidate, build-macos, build-windows, build-linux]
     if: ${{ !cancelled() && needs.validate-version.outputs.publishing == 'true' && needs.verify-release-candidate.result == 'success' && (needs.build-macos.result == 'success' || needs.build-windows.result == 'success' || needs.build-linux.result == 'success') }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10 # not measured here: one gh release call
     permissions:
       contents: write
     steps:
@@ -918,6 +926,7 @@ jobs:
       - prepare-release-evidence-linux
     if: ${{ always() && needs.validate-version.result == 'success' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15 # not measured here: two downloads and two bun scripts
     permissions:
       contents: read
     steps:
@@ -956,7 +965,10 @@ jobs:
           printf '%s' "$NEEDS" > release-notes/needs.json
           junit=()
           [ -f junit/junit-compiler/junit-compiler.xml ] && junit+=(--junit "compiler=typescript=junit/junit-compiler/junit-compiler.xml")
-          [ -f junit/junit-ide/junit-ide.xml ] && junit+=(--junit "studio=typescript=junit/junit-ide/junit-ide.xml")
+          # the IDE suite runs in the shards of ci.yml (tools/ci/test-shards.ts): one report of all of them, none when one is missing
+          if bun tools/ci/test-shards.ts merge junit/junit-ide.xml junit/junit-ide-*/junit-ide-*.xml; then
+            junit+=(--junit "studio=ide-tests=junit/junit-ide.xml")
+          fi
           bun scripts/release/run-results.ts \
             --needs release-notes/needs.json \
             --evidence bundles \
@@ -1008,6 +1020,7 @@ jobs:
       - upload-release-linux
     if: ${{ always() && needs.validate-version.outputs.publishing == 'true' && needs.create-draft-release.result == 'success' && needs.render-release-notes.result == 'success' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15 # not measured here: a download, gh calls and one bun script
     permissions:
       contents: write
     steps:
@@ -1056,6 +1069,7 @@ jobs:
   prepare-release-evidence-macos:
     needs: [validate-version, build-macos]
     runs-on: ubuntu-latest
+    timeout-minutes: 30 # not measured here: download, verify, bill of materials and attestation of the bundle
     permissions:
       contents: read
       id-token: write
@@ -1160,6 +1174,7 @@ jobs:
     needs: [validate-version, create-draft-release, prepare-release-evidence-macos]
     if: ${{ needs.validate-version.outputs.publishing == 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30 # not measured here: one upload of the bundle to the draft release
     permissions:
       contents: write
     steps:
@@ -1177,7 +1192,10 @@ jobs:
         run: |
           set -euo pipefail
           [ "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true ] || { echo "Release $RELEASE_TAG is not a draft. The pipeline only uploads to drafts."; exit 1; }
-          gh release upload "$RELEASE_TAG" release/* --clobber
+          # SHA256SUMS-<platform> and release-evidence-<platform>.json stay in the bundle artifact: the notes job merges
+          # the checksums into the one SHA256SUMS of the release, and no user downloads the evidence file.
+          mapfile -t assets < <(find release -maxdepth 1 -type f ! -name 'SHA256SUMS-*' ! -name 'release-evidence-*.json' | sort)
+          gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
 
   # ===========================================================================
   # Windows: integrity evidence for every candidate, including dry-runs, then the upload to the draft.
@@ -1186,6 +1204,7 @@ jobs:
   prepare-release-evidence-windows:
     needs: [validate-version, build-windows]
     runs-on: ubuntu-latest
+    timeout-minutes: 30 # not measured here: download, verify, bill of materials and attestation of the bundle
     permissions:
       contents: read
       id-token: write
@@ -1284,6 +1303,7 @@ jobs:
     needs: [validate-version, create-draft-release, prepare-release-evidence-windows]
     if: ${{ needs.validate-version.outputs.publishing == 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30 # not measured here: one upload of the bundle to the draft release
     permissions:
       contents: write
     steps:
@@ -1301,7 +1321,10 @@ jobs:
         run: |
           set -euo pipefail
           [ "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true ] || { echo "Release $RELEASE_TAG is not a draft. The pipeline only uploads to drafts."; exit 1; }
-          gh release upload "$RELEASE_TAG" release/* --clobber
+          # SHA256SUMS-<platform> and release-evidence-<platform>.json stay in the bundle artifact: the notes job merges
+          # the checksums into the one SHA256SUMS of the release, and no user downloads the evidence file.
+          mapfile -t assets < <(find release -maxdepth 1 -type f ! -name 'SHA256SUMS-*' ! -name 'release-evidence-*.json' | sort)
+          gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
 
   # ===========================================================================
   # Linux: integrity evidence for every candidate, including dry-runs, then the upload to the draft.
@@ -1310,6 +1333,7 @@ jobs:
   prepare-release-evidence-linux:
     needs: [validate-version, build-linux]
     runs-on: ubuntu-latest
+    timeout-minutes: 30 # not measured here: download, verify, bill of materials and attestation of the bundle
     permissions:
       contents: read
       id-token: write
@@ -1416,6 +1440,7 @@ jobs:
     needs: [validate-version, create-draft-release, prepare-release-evidence-linux]
     if: ${{ needs.validate-version.outputs.publishing == 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30 # not measured here: one upload of the bundle to the draft release
     permissions:
       contents: write
     steps:
@@ -1433,7 +1458,10 @@ jobs:
         run: |
           set -euo pipefail
           [ "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true ] || { echo "Release $RELEASE_TAG is not a draft. The pipeline only uploads to drafts."; exit 1; }
-          gh release upload "$RELEASE_TAG" release/* --clobber
+          # SHA256SUMS-<platform> and release-evidence-<platform>.json stay in the bundle artifact: the notes job merges
+          # the checksums into the one SHA256SUMS of the release, and no user downloads the evidence file.
+          mapfile -t assets < <(find release -maxdepth 1 -type f ! -name 'SHA256SUMS-*' ! -name 'release-evidence-*.json' | sort)
+          gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
 
   # ===========================================================================
   # Firmware: integrity evidence for every candidate, including dry-runs, then the upload to the draft. The images are
@@ -1443,6 +1471,7 @@ jobs:
   prepare-release-evidence-firmware:
     needs: [validate-version, assemble-firmware]
     runs-on: ubuntu-latest
+    timeout-minutes: 30 # not measured here: download, verify, bill of materials and attestation of the bundle
     permissions:
       contents: read
       id-token: write
@@ -1525,6 +1554,7 @@ jobs:
     needs: [validate-version, create-draft-release, prepare-release-evidence-firmware]
     if: ${{ needs.validate-version.outputs.publishing == 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30 # not measured here: one upload of the bundle to the draft release
     permissions:
       contents: write
     steps:
@@ -1542,4 +1572,7 @@ jobs:
         run: |
           set -euo pipefail
           [ "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true ] || { echo "Release $RELEASE_TAG is not a draft. The pipeline only uploads to drafts."; exit 1; }
-          gh release upload "$RELEASE_TAG" release/* --clobber
+          # SHA256SUMS-<platform> and release-evidence-<platform>.json stay in the bundle artifact: the notes job merges
+          # the checksums into the one SHA256SUMS of the release, and no user downloads the evidence file.
+          mapfile -t assets < <(find release -maxdepth 1 -type f ! -name 'SHA256SUMS-*' ! -name 'release-evidence-*.json' | sort)
+          gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber

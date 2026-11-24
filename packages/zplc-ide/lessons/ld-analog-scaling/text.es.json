@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Escalado analógico en escalera: de cuentas a porcentaje con MUL, DIV y LIMIT",
   "summary": "Escale las cuentas crudas de una entrada analógica a un nivel en porcentaje con una caja MUL y luego una caja DIV, mantenga el resultado en rango con LIMIT y gobierne dos lámparas de nivel con cajas de comparación.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms, con bloques que reemplazan al sensor; no demuestran la precisión, el ruido ni la calibración de una entrada analógica real, el cableado, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la precisión, el ruido, la calibración de una entrada analógica real ni el cableado.",
   "objectives": [
     "Escale cuentas analógicas crudas a unidades de ingeniería multiplicando por el rango de las unidades y luego dividiendo entre el rango de las cuentas, en un tipo donde quepa el producto.",
     "Mantenga un valor dentro de su rango con una caja LIMIT y compare el valor escalado, no las cuentas crudas, con los umbrales de las alarmas."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene peldaño entre Raw y Level, así que Level se queda en 0 y Warn y HighLevel nunca pasan a ON a los {{t:50}} ms y {{t:80}} ms; agregue un peldaño con una caja MUL (Raw, 100, hacia Scaled) y una caja DIV (Scaled, 4095, hacia Quot), en ese orden. Inserte cada caja desde el grupo Funciones de la paleta de escalera y escriba sus operandos: una variable declarada o un número.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Retener una alarma: set y reset, y cuál tiene prioridad",
   "summary": "Mantenga una falla en memoria con los bloques SR y RS y vea qué hace cada uno cuando la falla y el reconocimiento llegan juntos.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran los requisitos de gestión de alarmas de una máquina real, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra los requisitos de gestión de alarmas de una máquina real.",
   "objectives": [
     "Mantenga una alarma después de que la falla haya desaparecido, hasta que se reconozca.",
     "Distinga el bloque SR, dominante en set, del bloque RS, dominante en reset."

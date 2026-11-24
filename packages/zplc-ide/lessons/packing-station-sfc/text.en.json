@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Capstone: a packing station as a chart",
   "summary": "Build a packing station as a Sequential Function Chart from a written description, with a seal-in belt, a count of three parts, an emergency stop and a latched fault, and prove it with a scenario that also checks what must not happen.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish packing-line requirements, safety function behaviour, sensor timing or any real machine behaviour, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show packing-line requirements, safety function behaviour, sensor timing or any real machine behaviour.",
   "objectives": [
     "Turn five written requirements into a chart of steps, transitions and actions, and decide which behaviour is a step and which is a transition.",
     "Read a scenario that checks both what must happen and what must not happen, and use its failed assertions to find the requirement you missed."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter only has IDLE and RUN and lets Stop drop the belt. Add the step SEEN, with the action A_RUN and a P1 action that counts, the steps BATCH_FULL and JAMMED, the transitions between them with priorities, and EStop in the stop transitions.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

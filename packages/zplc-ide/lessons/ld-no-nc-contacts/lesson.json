@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "ld-no-nc-contacts",
-  "version": 1,
-  "order": 79,
+  "version": 2,
+  "order": 1,
   "module": 2,
   "level": "foundation",
   "prerequisites": ["blinky-ladder-timer-feedback"],

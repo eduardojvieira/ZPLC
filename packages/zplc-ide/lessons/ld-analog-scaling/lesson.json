@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "ld-analog-scaling",
-  "version": 1,
-  "order": 90,
+  "version": 2,
+  "order": 30,
   "module": 4,
   "level": "intermediate",
   "prerequisites": ["ld-compare-math"],

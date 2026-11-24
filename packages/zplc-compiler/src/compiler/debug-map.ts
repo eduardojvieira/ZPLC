@@ -254,7 +254,7 @@ export interface DebugMap {
  * fails when they differ, and the compiler test `debug-map.test.ts` fails the same way, so a version bump
  * cannot ship a map that names the old compiler.
  */
-export const COMPILER_VERSION = '2.0.0';
+export const COMPILER_VERSION = '2.0.1';
 
 /**
  * Creates an empty debug map with default values.

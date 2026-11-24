@@ -61,12 +61,17 @@ static char root[128];
 /* Fixtures                                                                    */
 /* ------------------------------------------------------------------------- */
 
-/* The admission check the tests give the store: the container CRC-32 convention of the loader (every byte but the
- * word at offset 12) and one rule of the runtime's, so that a program can be inadmissible on purpose. */
+/* The admission check the tests give the store: the loader's refusal of another contract (draft counter or ISA
+ * version, checked first), the container CRC-32 convention of the loader (every byte but the word at offset 12) and
+ * one rule of the runtime's, so that a program can be inadmissible on purpose. */
 static int admit(const uint8_t *artifact, size_t size, void *context) {
   (void)context;
   if (size < ZPLC_FILE_HEADER_SIZE || memcmp(artifact, "ZPLC", 4U) != 0) {
     return -1;
+  }
+  if (zplc_get_u32_le(artifact + 28U) != ZPLC_DRAFT_COUNTER || zplc_get_u16_le(artifact + 4U) != ZPLC_VERSION_MAJOR ||
+      zplc_get_u16_le(artifact + 6U) != ZPLC_VERSION_MINOR) {
+    return -4;
   }
   if (size > ZPLC_FILE_HEADER_SIZE && artifact[ZPLC_FILE_HEADER_SIZE] == 0xEEU) {
     return -2;
@@ -90,24 +95,30 @@ static zplc_pstore_config_t config(uint8_t repair) {
   return c;
 }
 
+/* Writes the container CRC-32 of an artifact into its header. */
+static void seal(uint8_t *out, size_t size) {
+  uint32_t crc = zplc_crc32_update(0xFFFFFFFFU, out, 12U);
+
+  crc = zplc_crc32_update(crc, out + 16U, size - 16U) ^ 0xFFFFFFFFU;
+  zplc_put_u32_le(out + 12U, crc);
+}
+
 static void build(uint8_t *out, size_t size, uint8_t seed) {
   size_t index;
-  uint32_t crc;
 
   memset(out, 0, size);
   memcpy(out, "ZPLC", 4U);
   zplc_put_u16_le(out + 4U, ZPLC_VERSION_MAJOR);
   zplc_put_u16_le(out + 6U, ZPLC_VERSION_MINOR);
   zplc_put_u32_le(out + 16U, (uint32_t)size);
+  zplc_put_u32_le(out + 28U, ZPLC_DRAFT_COUNTER);
   for (index = ZPLC_FILE_HEADER_SIZE; index < size; index++) {
     out[index] = (uint8_t)(seed + index * 31U + (index >> 8));
   }
   if (size > ZPLC_FILE_HEADER_SIZE && out[ZPLC_FILE_HEADER_SIZE] == 0xEEU) {
     out[ZPLC_FILE_HEADER_SIZE] = 0x11U;
   }
-  crc = zplc_crc32_update(0xFFFFFFFFU, out, 12U);
-  crc = zplc_crc32_update(crc, out + 16U, size - 16U) ^ 0xFFFFFFFFU;
-  zplc_put_u32_le(out + 12U, crc);
+  seal(out, size);
 }
 
 static void key_path(const char *key, char *out, size_t cap) { (void)snprintf(out, cap, "%s/%s.bin", root, key); }
@@ -339,7 +350,8 @@ static void test_largest_artifact_is_the_code_size(void) {
   CHECK(!key_exists("program_v1_slot_a_payload") && !key_exists("program_v1_active"), "and the store holds nothing of it");
 }
 
-/* A store written by the first version of the firmware: the whole payload under one key, whatever its length. */
+/* A store written by the first version of the firmware: the whole payload under one key, whatever its length. The
+ * metadata carries the ISA version of the runtime that wrote it, which is the one of the program it admitted. */
 static void write_first_version_store(const uint8_t *program, size_t size, unsigned generation) {
   uint8_t meta[32];
   uint8_t active[16];
@@ -359,8 +371,8 @@ static void write_first_version_store(const uint8_t *program, size_t size, unsig
   zplc_put_u32_le(meta + 8U, generation);
   zplc_put_u32_le(meta + 12U, (uint32_t)size);
   zplc_put_u32_le(meta + 16U, zplc_get_u32_le(program + 12U));
-  zplc_put_u16_le(meta + 20U, ZPLC_VERSION_MAJOR);
-  zplc_put_u16_le(meta + 22U, ZPLC_VERSION_MINOR);
+  zplc_put_u16_le(meta + 20U, zplc_get_u16_le(program + 4U));
+  zplc_put_u16_le(meta + 22U, zplc_get_u16_le(program + 6U));
   zplc_put_u32_le(meta + 28U, zplc_crc32(meta, 28U));
   (void)write_file("program_v1_slot_a_meta", meta, sizeof(meta));
 
@@ -371,6 +383,17 @@ static void write_first_version_store(const uint8_t *program, size_t size, unsig
   zplc_put_u32_le(active + 8U, generation);
   zplc_put_u32_le(active + 12U, zplc_crc32(active, 12U));
   (void)write_file("program_v1_active", active, sizeof(active));
+}
+
+/* A store left by a runtime of another contract: its program, whole and sealed, active in slot A, built for the
+ * draft counter and the ISA version given, which this runtime refuses. The program is in expect_a. */
+static void write_other_contract_store(size_t size, uint32_t draft, uint16_t major, uint16_t minor) {
+  build(expect_a, size, 91U);
+  zplc_put_u16_le(expect_a + 4U, major);
+  zplc_put_u16_le(expect_a + 6U, minor);
+  zplc_put_u32_le(expect_a + 28U, draft);
+  seal(expect_a, size);
+  write_first_version_store(expect_a, size, 61U);
 }
 
 static void test_store_of_the_first_version_is_read(void) {
@@ -719,6 +742,137 @@ static void test_inadmissible_programs_never_persist(void) {
         "the damaged program is not restored, and the store says it cannot verify what it holds");
 }
 
+/* 2.0.1: a whole program that a runtime of another contract left is nothing to fall back to. A deploy goes through,
+ * to the slot that does not hold it, and is the program restored afterwards. A damaged one, and a backend that
+ * fails, still stop the deploy before it writes. */
+static void test_a_program_of_another_contract_is_no_rollback(void) {
+  static const struct {
+    uint32_t draft;
+    uint16_t major;
+    uint16_t minor;
+    const char *what;
+  } contracts[] = {
+      {0U, ZPLC_VERSION_MAJOR, ZPLC_VERSION_MINOR, "built before the draft counter"},
+      {ZPLC_DRAFT_COUNTER - 1U, ZPLC_VERSION_MAJOR, ZPLC_VERSION_MINOR, "built for an older draft"},
+      {ZPLC_DRAFT_COUNTER, ZPLC_VERSION_MAJOR, (uint16_t)(ZPLC_VERSION_MINOR + 1U), "built for another ISA version"},
+  };
+  static struct snapshot before;
+  static struct snapshot after;
+  zplc_pstore_rollback_t rollback;
+  size_t restored = 0U;
+  size_t index;
+  unsigned long operations;
+  unsigned long point;
+  unsigned variant;
+  unsigned reads = 0U;
+  int read_failures_refused = 1;
+  int recovered = 1;
+
+  printf("\n=== Test: a whole program of another contract is no rollback, a damaged one still stops a deploy ===\n");
+  build(expect_b, 1300U, 92U);
+  for (index = 0U; index < sizeof(contracts) / sizeof(contracts[0]); index++) {
+    printf("--- a program %s\n", contracts[index].what);
+    CHECK(fresh_root() == 0, "a clean store");
+    write_other_contract_store(900U, contracts[index].draft, contracts[index].major, contracts[index].minor);
+    CHECK(restore(&restored) != ZPLC_PROGRAM_STORE_OK && restored == 0U, "the program of another contract is not restored");
+    CHECK(probe(&rollback) == 0 && rollback.kind == ZPLC_PSTORE_ROLLBACK_STALE, "the probe finds nothing to fall back to");
+    CHECK(commit(expect_b, 1300U) == ZPLC_PROGRAM_STORE_COMMIT_OK, "a deploy over it commits");
+    CHECK(restore(&restored) == ZPLC_PROGRAM_STORE_OK && restored == 1300U && memcmp(workspace, expect_b, 1300U) == 0,
+          "and the new program is the one restored");
+    CHECK(key_exists("program_v1_slot_b_payload_1"), "it went to slot B, not over the old program");
+  }
+
+  /* The keys of the first firmware holding a whole program of another contract, and nothing else. */
+  {
+    uint8_t length_bytes[4];
+
+    CHECK(fresh_root() == 0, "a clean store");
+    build(expect_a, 900U, 93U);
+    zplc_put_u32_le(expect_a + 28U, 0U);
+    seal(expect_a, 900U);
+    zplc_put_u32_le(length_bytes, 900U);
+    CHECK(write_file("code_len", length_bytes, 4U) == 0 && write_file("code", expect_a, 900U) == 0,
+          "the legacy keys hold a program built before the draft counter");
+    CHECK(probe(&rollback) == 0 && rollback.kind == ZPLC_PSTORE_ROLLBACK_EMPTY, "it is no rollback, and no slot holds it");
+    CHECK(commit(expect_b, 1300U) == ZPLC_PROGRAM_STORE_COMMIT_OK && !key_exists("code") && !key_exists("code_len"),
+          "a deploy commits, and the legacy keys are gone");
+    CHECK(restore(&restored) == ZPLC_PROGRAM_STORE_OK && restored == 1300U && memcmp(workspace, expect_b, 1300U) == 0,
+          "and the new program is the one restored");
+  }
+
+  /* Damaged: one flipped bit of the program (its CRC-32 no longer matches), or a payload cut short. */
+  for (variant = 0U; variant < 2U; variant++) {
+    CHECK(fresh_root() == 0, "a clean store");
+    write_other_contract_store(900U, 0U, ZPLC_VERSION_MAJOR, ZPLC_VERSION_MINOR);
+    if (variant == 0U) {
+      expect_a[ZPLC_FILE_HEADER_SIZE + 100U] ^= 0x01U;
+      write_first_version_store(expect_a, 900U, 61U);
+    } else {
+      CHECK(write_file("program_v1_slot_a_payload", expect_a, 500U) == 0, "the payload is cut short");
+    }
+    CHECK(snapshot_take(&before) == 0, "its files are read");
+    CHECK(probe(&rollback) == ZPLC_PROGRAM_STORE_COMMIT_ERROR && rollback.kind == ZPLC_PSTORE_ROLLBACK_NONE,
+          "the damaged program gives no rollback");
+    CHECK(commit(expect_b, 1300U) == ZPLC_PROGRAM_STORE_COMMIT_ERROR, "and a deploy refuses to write over it");
+    CHECK(snapshot_take(&after) == 0 && snapshot_same(&before, &after), "which is still there");
+  }
+
+  /* A backend failure at every read before the first write refuses the deploy, and nothing is written. */
+  for (point = 1UL; point < 200UL; point++) {
+    int result;
+
+    if (fresh_root() != 0) {
+      read_failures_refused = 0;
+      break;
+    }
+    write_other_contract_store(900U, 0U, ZPLC_VERSION_MAJOR, ZPLC_VERSION_MINOR);
+    if (snapshot_take(&before) != 0) {
+      read_failures_refused = 0;
+      break;
+    }
+    zplc_hal_persist_test_fail_at(point);
+    result = commit(expect_b, 1300U);
+    zplc_hal_persist_test_fail_at(0UL);
+    if (snapshot_take(&after) != 0 || !snapshot_same(&before, &after)) {
+      break; /* the failure reached the writes */
+    }
+    reads++;
+    if (result != ZPLC_PROGRAM_STORE_COMMIT_ERROR) {
+      read_failures_refused = 0;
+      fprintf(stderr, "a failure at operation %lu gave %d\n", point, result);
+    }
+  }
+  CHECK(reads > 5U && read_failures_refused, "a backend failure at any read of the store refuses the deploy");
+
+  /* A power cut, or a torn write, at every operation of that deploy: the next deploy still goes through. */
+  CHECK(fresh_root() == 0, "a clean store");
+  write_other_contract_store(900U, 0U, ZPLC_VERSION_MAJOR, ZPLC_VERSION_MINOR);
+  CHECK(commit(expect_b, 1300U) == ZPLC_PROGRAM_STORE_COMMIT_OK, "the deploy, uninterrupted");
+  operations = zplc_hal_persist_test_operation_count();
+  for (point = 1UL; point <= operations; point++) {
+    for (variant = 0U; variant < 2U; variant++) {
+      if (fresh_root() != 0) {
+        recovered = 0;
+        break;
+      }
+      write_other_contract_store(900U, 0U, ZPLC_VERSION_MAJOR, ZPLC_VERSION_MINOR);
+      if (variant == 0U) {
+        zplc_hal_persist_test_power_cut_at(point);
+      } else {
+        zplc_hal_persist_test_tear_at(point, 9U);
+      }
+      (void)commit(expect_b, 1300U);
+      zplc_hal_persist_test_fail_at(0UL);
+      if (commit(expect_b, 1300U) != ZPLC_PROGRAM_STORE_COMMIT_OK || restore(&restored) != ZPLC_PROGRAM_STORE_OK || restored != 1300U ||
+          memcmp(workspace, expect_b, 1300U) != 0) {
+        recovered = 0;
+        fprintf(stderr, "variant %u cut at operation %lu: the next deploy did not go through\n", variant, point);
+      }
+    }
+  }
+  CHECK(operations > 5UL && recovered, "after a cut at any operation, the next deploy goes through and is restored");
+}
+
 /* ------------------------------------------------------------------------- */
 /* The rollback found before the upload (WS-42)                                */
 /* ------------------------------------------------------------------------- */
@@ -734,6 +888,7 @@ enum {
   STATE_LEGACY_AND_DAMAGED_V1,
   STATE_ORPHAN_PAYLOAD,
   STATE_ONLY_PAYLOAD_DAMAGED,
+  STATE_OTHER_CONTRACT,
   STATE_COUNT
 };
 
@@ -775,6 +930,9 @@ static int make_state(int state) {
     return write_file("program_v1_slot_a_payload", damaged, sizeof(damaged));
   case STATE_ONLY_PAYLOAD_DAMAGED:
     return commit(expect_a, 2500U) == 0 ? write_file("program_v1_slot_a_payload_1", damaged, sizeof(damaged)) : -1;
+  case STATE_OTHER_CONTRACT:
+    write_other_contract_store(2500U, 0U, ZPLC_VERSION_MAJOR, ZPLC_VERSION_MINOR);
+    return 0;
   default:
     return -1;
   }
@@ -1034,6 +1192,7 @@ int main(void) {
   test_unverifiable_state_is_not_empty();
   test_legacy_program();
   test_inadmissible_programs_never_persist();
+  test_a_program_of_another_contract_is_no_rollback();
   test_probed_commit_is_the_commit_for_every_state();
   test_probe_writes_nothing();
   test_probed_commit_refuses_a_store_that_changed_since_the_probe();

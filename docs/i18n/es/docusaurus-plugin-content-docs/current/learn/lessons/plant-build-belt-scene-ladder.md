@@ -1,16 +1,16 @@
 ---
-title: "Construir una escena de banda desde el suelo vacío"
+title: "Construir una escena de cinta desde el suelo vacío"
 sidebar_label: "plant-build-belt-scene-ladder"
 description: "La lección plant-build-belt-scene-ladder: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Construir una escena de banda desde el suelo vacío
+# Construir una escena de cinta desde el suelo vacío
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-build-belt-scene-ladder. Do not edit. >>> */}
 
-Abra el Editor de escenas sobre un suelo vacío, coloque una banda, un emisor, un sensor y un botón de inicio con los nombres que da la lección, enlace sus señales en el mapa de la planta y escriba el programa que corre sobre ellos.
+Abra el Editor de escenas sobre un suelo vacío, coloque una cinta, un emisor, un sensor y un botón de inicio con los nombres que da la lección, enlace sus señales en el mapa de la planta y escriba el programa que corre sobre ellos.
 
 ## Datos
 
@@ -39,7 +39,7 @@ Abra el Editor de escenas sobre un suelo vacío, coloque una banda, un emisor, u
 
 ## Qué cubre la evidencia
 
-Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.
 
 ## En una placa
 

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "types-arithmetic-comparison",
-  "version": 3,
-  "order": 19,
+  "version": 4,
+  "order": 52,
   "module": 4,
   "level": "intermediate",
   "prerequisites": ["edge-counter-pulses"],

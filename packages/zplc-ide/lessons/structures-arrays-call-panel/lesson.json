@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "structures-arrays-call-panel",
-  "version": 4,
-  "order": 22,
+  "version": 5,
+  "order": 32,
   "module": 7,
   "level": "intermediate",
   "prerequisites": ["function-block-pump-pair"],

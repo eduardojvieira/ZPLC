@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "On-delay and off-delay in Ladder: timers as blocks in a rung",
   "summary": "Place a TOF and a TON between a contact and a coil, and see that an off-delay keeps a light on after the button and an on-delay ignores a sensor that does not stay on.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish real sensor filtering requirements, wiring, hardware timing, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show real sensor filtering requirements or wiring.",
   "objectives": [
     "Place a timer function block in a rung, with the contact feeding its IN and its output feeding the coil.",
     "Tell an off-delay (TOF) from an on-delay (TON) by what each does when the input rises and falls."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter has no timers: Light drops the moment Button is released and Confirmed follows Sensor, so Light is OFF at {{t:450}} ms and Confirmed is ON at {{t:120}} ms; place a TOF of T#300ms between Button and Light, and a TON of T#200ms between Sensor and Confirmed. From the toolbox drag a TOF block into the first rung and a TON into the second, between the contact and the coil, and set PT on each.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

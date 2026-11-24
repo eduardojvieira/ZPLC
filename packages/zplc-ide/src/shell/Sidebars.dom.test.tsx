@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'bun:test';
+import { afterAll, afterEach, describe, expect, it } from 'bun:test';
 import { setupDom, stubMonaco, stubProjectLoader } from '../test/dom';
 
 const dom = await setupDom();
@@ -25,6 +25,11 @@ afterEach(() => {
   useLearnUi.setState({ workspace: null });
   useSelection.getState().clear();
   useShellLayout.setState({ activityView: 'project' });
+});
+// The store is shared by every file of the process: the files after this one read the provider of the bridge again.
+const { refresh } = useAssistantProvider.getState();
+afterAll(() => {
+  useAssistantProvider.setState({ available: false, refresh });
 });
 
 const available = (on: boolean) => useAssistantProvider.setState({ available: on, refresh: async () => {} });

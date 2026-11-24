@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Edges and pulse counter",
   "summary": "Use a CTU counter to count three discrete pulses and reset the count.",
-  "scope": "Tests provide native POSIX host evidence only; they are not physical-sensor, bounce, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": ["Count three rising edges of PulseInput with a CTU counter.", "Reset the count and CountReached with Reset."],
   "stages": [
     {
@@ -21,12 +21,12 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter never counts; add a CTU with PV=3 so CountReached turns ON on the third rising edge and Reset turns it OFF.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "In Tests, choose the saved zplc.json and run only the EdgeCounter scenario.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The required scenario is named EdgeCounter and contains {{assertions}} assertions."
     },
     {
@@ -39,7 +39,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The AT/RISING/FALLING assertions cover this discrete logical sequence.",
-      "checkpoint": "They do not establish bounce, electrical pulses, hardware timing, HIL, or certification."
+      "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [

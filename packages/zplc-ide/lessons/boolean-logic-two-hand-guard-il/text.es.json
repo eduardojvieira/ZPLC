@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Lista de instrucciones: el resultado actual en un mando a dos manos",
   "summary": "Lea un programa en lista de instrucciones como un resultado actual que cada línea combina con un operando, y úselo para habilitar una prensa solo cuando las dos manos están en los botones y la protección está cerrada.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el tiempo de respuesta, la redundancia ni el comportamiento ante fallas que necesita un dispositivo real de mando a dos manos, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el tiempo de respuesta, la redundancia ni el comportamiento ante fallas que necesita un dispositivo real de mando a dos manos.",
   "objectives": [
     "Lea un programa en lista de instrucciones (IL) como un resultado actual que cada instrucción combina con un operando, de arriba hacia abajo.",
     "Use LD, LDN, AND, XOR y ST para convertir tres entradas en tres salidas."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija este defecto del programa inicial, guárdelo y pulse Comprobar: El programa inicial carga LeftHand, le combina OR RightHand y lo guarda en PressEnable, así que PressEnable ya está en ON a los {{t:10}} ms con una sola mano, y las dos lámparas quedan fijas en OFF; reescriba los tres grupos de líneas, uno para cada salida, y guarde el archivo.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

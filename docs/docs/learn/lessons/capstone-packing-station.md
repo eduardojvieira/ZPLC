@@ -39,7 +39,7 @@ Turn a written description of a small packing station into a Structured Text pro
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish packing-line requirements, safety function behaviour, sensor timing or any real machine behaviour, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show packing-line requirements, safety function behaviour, sensor timing or any real machine behaviour.
 
 ## On a board
 

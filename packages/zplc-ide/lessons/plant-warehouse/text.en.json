@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Store and retrieve",
   "summary": "Run a stacker crane from a chart: store each box in the first free cell and bring a box back when its request button is pressed.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Write the store and the retrieve sequences of a crane as chains of steps.",
     "Keep a table of occupied cells and the requests that wait, and choose the next job from them."
@@ -24,12 +24,12 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter stores boxes but has no retrieve steps, so a request is never served; add the chain that takes the box out of its cell, brings it to the dock and puts it on the outfeed, and let IDLE start it when a request waits for a cell that holds a box.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "In Tests, choose the saved zplc.json and run only the stacker-crane-warehouse scenario; watch the 3D view while it runs.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
       "checkpoint": "The required scenario is named stacker-crane-warehouse and contains {{assertions}} assertions."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The EVENTUALLY assertions prove that cells 1 and 2 held a box and that a box reached the outfeed bin; the ALWAYS assertion proves no move was refused and nothing fell.",
-      "checkpoint": "The grade cannot see which cell a box left from, nor the order of the jobs; it sees the cells, the bin and Green. It does not establish physical crane speed, hardware timing, HIL, or certification."
+      "checkpoint": "The grade cannot see which cell a box left from, nor the order of the jobs; it sees the cells, the bin and Green."
     }
   ],
   "hints": [

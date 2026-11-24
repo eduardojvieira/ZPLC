@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Leer el nivel en diagrama de escalera",
   "summary": "Escale con cuadros de función el nivel crudo de un tanque, un número entero de 0 a 27648, a metros, y úselo para mantener el nivel cerca de un valor de consigna con una entrada proporcional.",
-  "scope": "La calificación es una ejecución sin interfaz del tanque simulado en el entorno de ejecución POSIX nativo, con un nivel analógico que sigue las reglas de escala del mapa de la planta. No establece la exactitud, el ruido ni la calibración de un transmisor de nivel real, la temporización en hardware, HIL ni la certificación.",
+  "scope": "La calificación ejecuta el tanque simulado en el simulador de esta computadora, con un nivel analógico que sigue las reglas de escala del mapa de la planta. No dice nada sobre la exactitud, el ruido ni la calibración de un transmisor de nivel real, una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Escalar con cuadros un valor analógico a unidades de ingeniería: convertir primero a REAL y luego dividir entre el rango crudo.",
     "Leer el mapa de planta para hallar el rango crudo de cada señal, y ver qué hace al proceso una escala equivocada."
@@ -29,8 +29,8 @@
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Check. ZPLC ejecuta src/TankLevel.ld.json contra el tanque de la escena tank-level-control, sube la consigna y abre el vaciado, y prueba {{assertions}} aserciones sobre el tanque: se mantiene en su banda en dos ventanas y nunca se derrama.",
-      "checkpoint": "El escenario se llama tank-level-scaling y contiene {{assertions}} aserciones y las pasa todas con evidencia guardada del host."
+      "body": "Pulse Comprobar. ZPLC ejecuta src/TankLevel.ld.json contra el tanque de la escena tank-level-control, sube la consigna y abre el vaciado, y prueba {{assertions}} aserciones sobre el tanque: se mantiene en su banda en dos ventanas y nunca se derrama.",
+      "checkpoint": "El escenario se llama tank-level-scaling y contiene {{assertions}} aserciones y las pasa todas."
     },
     {
       "key": "observe",

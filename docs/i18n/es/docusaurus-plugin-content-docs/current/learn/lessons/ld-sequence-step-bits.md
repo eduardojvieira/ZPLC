@@ -39,7 +39,7 @@ Agregue en una secuencia en escalera la transición del paso de mezcla al paso d
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el tiempo de recorrido de las válvulas, el comportamiento del motor del mezclador, la medición de nivel del tanque, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el tiempo de recorrido de las válvulas, el comportamiento del motor del mezclador ni la medición de nivel del tanque.
 
 ## En una placa
 

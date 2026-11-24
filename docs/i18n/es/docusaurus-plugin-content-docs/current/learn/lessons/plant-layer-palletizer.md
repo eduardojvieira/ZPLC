@@ -26,7 +26,7 @@ Cargue cuatro cajas en una capa, escuádrela, llévela con un cabezal de pinza y
 ## Objetivos
 
 - Formar una capa contando pares de cajas y escuadrarla antes de que la pinza la tome.
-- Colocar cada capa a su propia altura, una altura de caja más arriba que la inferior.
+- Guardar el descenso de cada capa en un arreglo y llenarlo con un bucle FOR, de modo que cada capa se coloque una altura de caja más arriba que la inferior.
 
 ## Etapas
 
@@ -39,7 +39,7 @@ Cargue cuatro cajas en una capa, escuádrela, llévela con un cabezal de pinza y
 
 ## Qué cubre la evidencia
 
-Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.
 
 ## En una placa
 

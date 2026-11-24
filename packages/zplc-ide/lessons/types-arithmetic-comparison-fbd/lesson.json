@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "types-arithmetic-comparison-fbd",
-  "version": 2,
-  "order": 52,
+  "version": 3,
+  "order": 89,
   "module": 4,
   "level": "intermediate",
   "prerequisites": ["types-arithmetic-comparison", "boolean-logic-two-hand-guard-fbd"],

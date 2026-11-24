@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Instruction List: a guard as a permissive on the whole condition",
   "summary": "Add a permissive to a motor start and stop in Instruction List so that the motor runs only while a guard is closed, and check it against the motor plant and its speed feedback.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish a safety function, guard wiring or stopping time, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a safety function, guard wiring or stopping time.",
   "objectives": [
     "Tell a permissive, a condition that must be true for the output to be on, from a command, and write it as one more AND line.",
     "Place the permissive after the lines that hold the motor, so that it drops the motor and also stops Start from restarting it."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starting program has no line for the guard, so when the guard opens at {{t:50}} ms the motor keeps running and Start can restart it; add AND GuardClosed after ANDN Stop and before ST Command, so that it applies to the whole condition.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "Why is a permissive on the whole condition safer than a permissive only on Start? Move AND GuardClosed next to LD Start and see which assertion fails.",
-      "checkpoint": "A permissive that gates only Start lets a running motor ignore an open guard. In IL the position of the line is its scope: everything above it is in the condition. The scenario shows the logic only; it is not a safety function and does not replace a certified guard interlock."
+      "checkpoint": "A permissive that gates only Start lets a running motor ignore an open guard. In IL the position of the line is its scope: everything above it is in the condition. The scenario shows the logic only; it is not a safety function and does not replace a safety-rated guard interlock."
     }
   ],
   "hints": [

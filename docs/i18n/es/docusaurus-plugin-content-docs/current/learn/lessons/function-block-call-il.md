@@ -39,7 +39,7 @@ Llame con CAL a dos instancias del mismo bloque de función, pase sus entradas p
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el comportamiento de una bomba, la corriente de arranque ni ningún requisito de una máquina real, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el comportamiento de una bomba, la corriente de arranque ni ningún requisito de una máquina real.
 
 ## Cableado
 

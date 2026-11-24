@@ -20,6 +20,8 @@ Boolean logic is the vocabulary of every program. It is taught in Ladder beside 
 
 | Lesson | Id | Languages | minutes |
 | --- | --- | --- | --- |
+| [NO and NC contacts: a stop button that fails safe](../lessons/ld-no-nc-contacts.md) | `ld-no-nc-contacts` | LD | 20 |
+| [Series and parallel: AND and OR with contacts](../lessons/ld-series-parallel.md) | `ld-series-parallel` | LD | 20 |
 | [Boolean logic: a two-hand control with a guard](../lessons/boolean-logic-two-hand-guard.md) | `boolean-logic-two-hand-guard` | ST | 15 |
 | [Seal-in in Ladder: a motor that holds itself on](../lessons/seal-in-ladder.md) | `seal-in-ladder` | LD | 20 |
 | [Latching an alarm: set and reset, and which one wins](../lessons/set-reset-alarm-latch.md) | `set-reset-alarm-latch` | ST | 15 |
@@ -29,8 +31,6 @@ Boolean logic is the vocabulary of every program. It is taught in Ladder beside 
 | [Function Block Diagram: a two-hand control with a guard](../lessons/boolean-logic-two-hand-guard-fbd.md) | `boolean-logic-two-hand-guard-fbd` | FBD | 20 |
 | [Instruction List: the current result in a two-hand control](../lessons/boolean-logic-two-hand-guard-il.md) | `boolean-logic-two-hand-guard-il` | IL | 15 |
 | [Instruction List: S and R, and the line that comes last](../lessons/set-reset-alarm-latch-il.md) | `set-reset-alarm-latch-il` | IL | 15 |
-| [NO and NC contacts: a stop button that fails safe](../lessons/ld-no-nc-contacts.md) | `ld-no-nc-contacts` | LD | 20 |
-| [Series and parallel: AND and OR with contacts](../lessons/ld-series-parallel.md) | `ld-series-parallel` | LD | 20 |
 
 {/* <<< END GENERATED: learn/modules/module-2 <<< */}
 

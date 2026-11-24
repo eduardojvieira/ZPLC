@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "ld-edges",
-  "version": 1,
-  "order": 81,
+  "version": 2,
+  "order": 13,
   "module": 3,
   "level": "foundation",
   "prerequisites": ["set-reset-alarm-latch-ladder"],

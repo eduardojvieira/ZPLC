@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "blink-structured-text",
-  "version": 3,
-  "order": 14,
+  "version": 4,
+  "order": 78,
   "module": 1,
   "level": "foundation",
   "prerequisites": ["scan-cycle-one-scan-memory"],

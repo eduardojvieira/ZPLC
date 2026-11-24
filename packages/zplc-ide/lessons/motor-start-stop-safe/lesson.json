@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "motor-start-stop-safe",
-  "version": 3,
-  "order": 1,
+  "version": 4,
+  "order": 41,
   "module": 2,
   "level": "foundation",
   "prerequisites": ["set-reset-alarm-latch"],

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Paletizar con un pórtico",
   "summary": "Gobierne un pórtico de tres ejes a través de un patrón calculado de 2 por 2 para apilar ocho cajas en dos capas sobre una tarima.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Ordenar tres ejes con cuentas enteras y comparar cada posición con su orden con un margen de una cuenta.",
     "Elegir el lugar de cada caja a partir de su número: el hueco en la capa y la altura de la capa."
@@ -17,19 +17,19 @@
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, siga las cuentas: Y sube a 917 antes de que nada cruce la banda, baja a 500 sobre la caja, sube de nuevo, pasa al hueco en X y Z, y baja a 372 para la primera capa o a 622 para la segunda.",
+      "body": "Antes de ejecutar, siga las cuentas: Y sube a 917 antes de que nada cruce la cinta, baja a 500 sobre la caja, sube de nuevo, pasa al hueco en X y Z, y baja a 372 para la primera capa o a 622 para la segunda.",
       "checkpoint": "El hueco sigue a Cycle MOD 4 y la altura sigue a Cycle: cuatro cajas sobre la tarima y luego cuatro encima."
     },
     {
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no ordena ninguna posición, así que el pórtico se queda en el suelo; envíe cada caja, agárrela, colóquela sobre la tarima en un patrón de 2 por 2 de dos capas y encienda Green tras la octava.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario three-axis-palletizing; observe la vista 3D mientras se ejecuta.",
+      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
       "checkpoint": "El escenario requerido se llama three-axis-palletizing y contiene {{assertions}} aserciones."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "Un patrón es aritmética: el hueco y la capa salen de un solo contador, así que ocho cajas necesitan una secuencia y no ocho. El escenario prueba que se colocaron cajas y que descansan sobre la tarima 0, que se enviaron cajas, que nada se cayó y que Green está encendido al final. No puede leer una posición, así que no comprueba sus cuentas ni que el patrón sea exactamente de ocho cajas.",
-      "checkpoint": "No establece la temporización física de la pinza, la velocidad de los ejes, la temporización de hardware, HIL ni certificación."
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [
@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "Use Cycle MOD 4 para el hueco y Cycle < 4 para la capa, y envíe la siguiente caja solo cuando la ventosa esté fuera de la banda."
+      "text": "Use Cycle MOD 4 para el hueco y Cycle < 4 para la capa, y envíe la siguiente caja solo cuando la ventosa esté fuera de la cinta."
     }
   ],
   "faultCases": [

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "TON oscillator and output feedback",
   "summary": "Complete a {{t:500}} ms Ladder blinker made of two TON timers and SET and RESET coils, and check its on and off times with FOR and AT assertions.",
-  "scope": "Tests provide native POSIX host evidence only; they are not physical LED, hardware timing, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show electrical period or brightness.",
   "objectives": [
     "Read a two-timer Ladder oscillator: each timer runs in one half period and starts the next.",
     "Complete it with a SET coil and a RESET coil driven by the timers' Q outputs."
@@ -24,12 +24,12 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter has the two timers but no coils, so LED_Output stays OFF forever; add a SET coil driven by OffTimer.Q and a RESET coil driven by OnTimer.Q, so the LED is OFF for about {{t:500}} ms, then ON for about {{t:500}} ms, and repeats.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "In Tests, choose the saved zplc.json and run only the BlinkyVisual scenario.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The required scenario is named BlinkyVisual and contains {{assertions}} assertions."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "A program that toggles on every scan, blinks twice as fast, or stays ON only 20% of the time fails the FOR and AT assertions.",
-      "checkpoint": "The host scenario grades the logical waveform, not the technique (a {{t:500}} ms or {{t:510}} ms half period passes); it does not establish electrical period, brightness, hardware timing, HIL, or certification."
+      "checkpoint": "The scenario grades the logical waveform, not the technique (a {{t:500}} ms or {{t:510}} ms half period passes)."
     }
   ],
   "hints": [

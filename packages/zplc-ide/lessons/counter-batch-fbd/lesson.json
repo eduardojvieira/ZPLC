@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "counter-batch-fbd",
-  "version": 3,
-  "order": 17,
+  "version": 4,
+  "order": 42,
   "module": 3,
   "level": "foundation",
   "prerequisites": ["edge-counter-pulses"],

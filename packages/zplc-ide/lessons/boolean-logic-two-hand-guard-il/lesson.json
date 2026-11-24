@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "boolean-logic-two-hand-guard-il",
-  "version": 2,
-  "order": 70,
+  "version": 3,
+  "order": 79,
   "module": 2,
   "level": "foundation",
   "prerequisites": ["boolean-logic-two-hand-guard"],

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [],
+  "wrong": [
+    {
+      "intent": "divides the raw integer before converting it to REAL, so the level is always zero",
+      "files": {
+        "src/TankLevel.st": "PROGRAM TankLevel\nVAR_INPUT\n    LevelRaw    AT %IW0 : INT;  (* Tank1.level: 0 to 27648 is 0 to 1 m *)\n    SetPointRaw AT %IW1 : INT;  (* SetPoint.value: 0 to 1000 is 0 to 1 m *)\n    DrainRaw    AT %IW2 : INT;  (* DrainPot.value: 0 to 1000 is 0 to 100 percent *)\nEND_VAR\nVAR_OUTPUT\n    FillCmd    AT %QD0 : REAL;  (* Tank1.fill: 0 to 100 percent of the inlet valve *)\n    DrainCmd   AT %QD1 : REAL;  (* Tank1.drain: 0 to 100 percent of the discharge valve *)\n    LevelShown AT %QD2 : REAL;  (* LevelDisplay.value: the level in m *)\n    Green      AT %QX12.0 : BOOL;  (* StackLight1.green: the level is within 5 percent of the set point *)\nEND_VAR\n\nVAR\n    LevelM : REAL;  (* the level in m *)\n    SetM   : REAL;  (* the set point in m *)\nEND_VAR\n\n(* scale the raw values to metres: convert to REAL first, then divide by the raw span *)\nLevelM := INT_TO_REAL(LevelRaw / 27648);\nSetM := INT_TO_REAL(SetPointRaw) / 1000.0;\n\n(* proportional inlet: 800 percent per metre of error, limited to 0 to 100 percent *)\nFillCmd := 800.0 * (SetM - LevelM);\nIF FillCmd > 100.0 THEN\n    FillCmd := 100.0;\nEND_IF;\nIF FillCmd < 0.0 THEN\n    FillCmd := 0.0;\nEND_IF;\n\n(* the operator's disturbance: DrainPot opens the discharge, 0 to 1000 is 0 to 100 percent *)\nDrainCmd := INT_TO_REAL(DrainRaw) / 10.0;\n\nLevelShown := LevelM;\nGreen := ABS(SetM - LevelM) <= 0.05 * SetM;\n\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "scales the set point with the span of the level sensor instead of its own",
+      "files": {
+        "src/TankLevel.st": "PROGRAM TankLevel\nVAR_INPUT\n    LevelRaw    AT %IW0 : INT;  (* Tank1.level: 0 to 27648 is 0 to 1 m *)\n    SetPointRaw AT %IW1 : INT;  (* SetPoint.value: 0 to 1000 is 0 to 1 m *)\n    DrainRaw    AT %IW2 : INT;  (* DrainPot.value: 0 to 1000 is 0 to 100 percent *)\nEND_VAR\nVAR_OUTPUT\n    FillCmd    AT %QD0 : REAL;  (* Tank1.fill: 0 to 100 percent of the inlet valve *)\n    DrainCmd   AT %QD1 : REAL;  (* Tank1.drain: 0 to 100 percent of the discharge valve *)\n    LevelShown AT %QD2 : REAL;  (* LevelDisplay.value: the level in m *)\n    Green      AT %QX12.0 : BOOL;  (* StackLight1.green: the level is within 5 percent of the set point *)\nEND_VAR\n\nVAR\n    LevelM : REAL;  (* the level in m *)\n    SetM   : REAL;  (* the set point in m *)\nEND_VAR\n\n(* scale the raw values to metres: convert to REAL first, then divide by the raw span *)\nLevelM := INT_TO_REAL(LevelRaw) / 27648.0;\nSetM := INT_TO_REAL(SetPointRaw) / 27648.0;\n\n(* proportional inlet: 800 percent per metre of error, limited to 0 to 100 percent *)\nFillCmd := 800.0 * (SetM - LevelM);\nIF FillCmd > 100.0 THEN\n    FillCmd := 100.0;\nEND_IF;\nIF FillCmd < 0.0 THEN\n    FillCmd := 0.0;\nEND_IF;\n\n(* the operator's disturbance: DrainPot opens the discharge, 0 to 1000 is 0 to 100 percent *)\nDrainCmd := INT_TO_REAL(DrainRaw) / 10.0;\n\nLevelShown := LevelM;\nGreen := ABS(SetM - LevelM) <= 0.05 * SetM;\n\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "reads the drain potentiometer as 0 to 1000 percent instead of 0 to 100",
+      "files": {
+        "src/TankLevel.st": "PROGRAM TankLevel\nVAR_INPUT\n    LevelRaw    AT %IW0 : INT;  (* Tank1.level: 0 to 27648 is 0 to 1 m *)\n    SetPointRaw AT %IW1 : INT;  (* SetPoint.value: 0 to 1000 is 0 to 1 m *)\n    DrainRaw    AT %IW2 : INT;  (* DrainPot.value: 0 to 1000 is 0 to 100 percent *)\nEND_VAR\nVAR_OUTPUT\n    FillCmd    AT %QD0 : REAL;  (* Tank1.fill: 0 to 100 percent of the inlet valve *)\n    DrainCmd   AT %QD1 : REAL;  (* Tank1.drain: 0 to 100 percent of the discharge valve *)\n    LevelShown AT %QD2 : REAL;  (* LevelDisplay.value: the level in m *)\n    Green      AT %QX12.0 : BOOL;  (* StackLight1.green: the level is within 5 percent of the set point *)\nEND_VAR\n\nVAR\n    LevelM : REAL;  (* the level in m *)\n    SetM   : REAL;  (* the set point in m *)\nEND_VAR\n\n(* scale the raw values to metres: convert to REAL first, then divide by the raw span *)\nLevelM := INT_TO_REAL(LevelRaw) / 27648.0;\nSetM := INT_TO_REAL(SetPointRaw) / 1000.0;\n\n(* proportional inlet: 800 percent per metre of error, limited to 0 to 100 percent *)\nFillCmd := 800.0 * (SetM - LevelM);\nIF FillCmd > 100.0 THEN\n    FillCmd := 100.0;\nEND_IF;\nIF FillCmd < 0.0 THEN\n    FillCmd := 0.0;\nEND_IF;\n\n(* the operator's disturbance: DrainPot opens the discharge, 0 to 1000 is 0 to 100 percent *)\nDrainCmd := INT_TO_REAL(DrainRaw);\n\nLevelShown := LevelM;\nGreen := ABS(SetM - LevelM) <= 0.05 * SetM;\n\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

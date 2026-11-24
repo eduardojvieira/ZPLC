@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Fill and drain with timers in Ladder",
   "summary": "Run one fill, hold and drain cycle of a tank with TON blocks in rungs, a panel start and an emergency stop.",
-  "scope": "The grade is a headless run of the simulated tank on the native POSIX runtime. It does not establish the behaviour of a real tank, valve or sensor, hardware timing, HIL, or certification.",
+  "scope": "The grade runs the simulated tank in the simulator on this computer. It says nothing about a real tank, valve or sensor, its timing or its safety.",
   "objectives": [
     "Time one step of a process with an on-delay timer (TON), using one timer for each step.",
     "Use a timer as a safety limit on a step that normally ends on a sensor, and let an emergency stop abort the cycle."
@@ -30,7 +30,7 @@
       "key": "run",
       "title": "Run",
       "body": "Press Check. ZPLC runs src/TimedTank.ld.json against the tank of scene timed-tank, presses Start, operates the emergency stop and presses Start again, and tests {{assertions}} assertions: the outputs at fixed times, and that the tank never spills.",
-      "checkpoint": "The scenario is named timed-tank and contains {{assertions}} assertions and passes them all with saved host evidence."
+      "checkpoint": "The scenario is named timed-tank and contains {{assertions}} assertions and passes them all."
     },
     {
       "key": "observe",

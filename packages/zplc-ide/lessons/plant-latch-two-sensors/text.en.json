@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "From sensor A to sensor B",
   "summary": "Sequence a move with a set and a reset: run the belt from sensor A until the box reaches sensor B.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Use a set and a reset to hold an output between two events.",
     "Explain why a sensor that goes dark cannot hold the output by itself."
@@ -24,12 +24,12 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter never runs the belt; set Run when EyeA sees the box and reset it when EyeB sees the box.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "In Tests, choose the saved zplc.json and run only the latch-two-sensors scenario; watch the 3D view while it runs.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
       "checkpoint": "The required scenario is named latch-two-sensors and contains {{assertions}} assertions."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The assertions check the count at both sensors and the final state; they say nothing about how long the move takes in real life.",
-      "checkpoint": "It does not establish physical belt speed, sensor response, hardware timing, HIL, or certification."
+      "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "The same with numeric positions",
   "summary": "Command a two-axis assembler with numeric setpoints in centimetres and a position tolerance instead of limit switches.",
-  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Send an axis to a named position with a setpoint and read its position back.",
     "Decide that a move is done when the position is within a tolerance of the setpoint, not when it is equal to it."
@@ -24,12 +24,12 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter commands no position, so the pad stays where it is; send it to the lid, grip, carry the lid to the base and release it, three times, and light Green after the third.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "In Tests, choose the saved zplc.json and run only the two-axis-assembly-numeric scenario; watch the 3D view while it runs.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
       "checkpoint": "The required scenario is named two-axis-assembly-numeric and contains {{assertions}} assertions."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "A position is a measurement, so a comparison with a tolerance is the correct test; an exact equality of two REAL values can fail forever. The scenario proves that an assembly was made and delivered, that nothing was dropped and that Green is on at the end. It cannot read a position value, so it does not check your tolerance or your setpoints.",
-      "checkpoint": "It does not establish physical gripper timing, axis speed, hardware timing, HIL, or certification."
+      "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [

@@ -20,6 +20,7 @@ Una máquina que hace cosas en orden es una máquina de estados. Las secuencias 
 
 | Lección | Id | Lenguajes | minutos |
 | --- | --- | --- | --- |
+| [Una secuencia en escalera: los bits de paso llevan un tanque de llenado a mezcla y a vaciado](../lessons/ld-sequence-step-bits.md) | `ld-sequence-step-bits` | LD | 25 |
 | [Cruce peatonal y estados seguros](../lessons/pedestrian-crossing-states.md) | `pedestrian-crossing-states` | ST | 25 |
 | [Una secuencia en diagrama funcional secuencial: llenar y luego mezclar](../lessons/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` | SFC | 25 |
 | [Cruce peatonal como diagrama funcional secuencial](../lessons/pedestrian-crossing-sfc.md) | `pedestrian-crossing-sfc` | SFC | 25 |
@@ -27,7 +28,6 @@ Una máquina que hace cosas en orden es una máquina de estados. Las secuencias 
 | [Ramas simultáneas: llenar y calentar a la vez](../lessons/simultaneous-branches-sfc.md) | `simultaneous-branches-sfc` | SFC | 30 |
 | [Tiempos de paso: una bocina antes de abrir la puerta](../lessons/step-times-sfc.md) | `step-times-sfc` | SFC | 20 |
 | [Clasificación en un transportador como diagrama](../lessons/conveyor-sorting-sfc.md) | `conveyor-sorting-sfc` | SFC | 30 |
-| [Una secuencia en escalera: los bits de paso llevan un tanque de llenado a mezcla y a vaciado](../lessons/ld-sequence-step-bits.md) | `ld-sequence-step-bits` | LD | 25 |
 
 {/* <<< END GENERATED: learn/modules/module-5 <<< */}
 

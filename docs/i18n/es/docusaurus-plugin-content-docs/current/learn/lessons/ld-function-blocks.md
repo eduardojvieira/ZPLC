@@ -39,7 +39,7 @@ Llame al bloque de función PumpCtl del proyecto desde un segundo peldaño de es
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran la corriente de arranque de las bombas, el cableado de los contactores, la supervisión de la línea de succión, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la corriente de arranque de las bombas, el cableado de los contactores ni la supervisión de la línea de succión.
 
 ## En una placa
 

@@ -59,40 +59,40 @@ Each release has a prebuilt image for this board, `zplc-runtime-<version>-esp32-
 
 | Lesson | Id |
 | --- | --- |
-| [Safe motor start-stop](./esp32-s3-devkitc/motor-start-stop-safe.md) | `motor-start-stop-safe` |
-| [TON oscillator and output feedback](./esp32-s3-devkitc/blinky-ladder-timer-feedback.md) | `blinky-ladder-timer-feedback` |
-| [Edges and pulse counter](./esp32-s3-devkitc/edge-counter-pulses.md) | `edge-counter-pulses` |
+| [Timers: an off-delay light and an on-delay filter](./esp32-s3-devkitc/timers-on-delay-off-delay.md) | `timers-on-delay-off-delay` |
 | [Scan cycle and one-scan memory](./esp32-s3-devkitc/scan-cycle-one-scan-memory.md) | `scan-cycle-one-scan-memory` |
 | [Boolean logic: a two-hand control with a guard](./esp32-s3-devkitc/boolean-logic-two-hand-guard.md) | `boolean-logic-two-hand-guard` |
-| [Timers: an off-delay light and an on-delay filter](./esp32-s3-devkitc/timers-on-delay-off-delay.md) | `timers-on-delay-off-delay` |
-| [Write a blinker in Structured Text](./esp32-s3-devkitc/blink-structured-text.md) | `blink-structured-text` |
-| [Latching an alarm: set and reset, and which one wins](./esp32-s3-devkitc/set-reset-alarm-latch.md) | `set-reset-alarm-latch` |
 | [Seal-in in Ladder: a motor that holds itself on](./esp32-s3-devkitc/seal-in-ladder.md) | `seal-in-ladder` |
-| [Counters in Function Block Diagram: count parts to a batch](./esp32-s3-devkitc/counter-batch-fbd.md) | `counter-batch-fbd` |
-| [Types, arithmetic and comparison: a total and three bands](./esp32-s3-devkitc/types-arithmetic-comparison.md) | `types-arithmetic-comparison` |
-| [Analog scaling: from raw counts to a percentage](./esp32-s3-devkitc/analog-scaling-integer.md) | `analog-scaling-integer` |
+| [Edges and pulse counter](./esp32-s3-devkitc/edge-counter-pulses.md) | `edge-counter-pulses` |
 | [Function blocks: one latch, two pumps](./esp32-s3-devkitc/function-block-pump-pair.md) | `function-block-pump-pair` |
-| [Structures and arrays: a panel of three calls](./esp32-s3-devkitc/structures-arrays-call-panel.md) | `structures-arrays-call-panel` |
-| [A sequence in Sequential Function Chart: fill, then mix](./esp32-s3-devkitc/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` |
 | [Instruction List: the current result and the order of instructions](./esp32-s3-devkitc/instruction-list-door-alarm.md) | `instruction-list-door-alarm` |
 | [One logic in five languages: a gate that holds itself open](./esp32-s3-devkitc/one-logic-five-languages.md) | `one-logic-five-languages` |
-| [Analog scaling in Function Block Diagram: a high level alarm](./esp32-s3-devkitc/analog-scaling-fbd.md) | `analog-scaling-fbd` |
 | [Interlocks in Ladder: a reversing motor](./esp32-s3-devkitc/interlock-reversing-ladder.md) | `interlock-reversing-ladder` |
-| [Your own function block in Function Block Diagram: two valves, one block](./esp32-s3-devkitc/function-block-valves-fbd.md) | `function-block-valves-fbd` |
+| [Structures and arrays: a panel of three calls](./esp32-s3-devkitc/structures-arrays-call-panel.md) | `structures-arrays-call-panel` |
 | [Verify my board](./esp32-s3-devkitc/verify-my-board.md) | `verify-my-board` |
-| [Boolean logic in Ladder: a two-hand guard](./esp32-s3-devkitc/boolean-logic-two-hand-guard-ladder.md) | `boolean-logic-two-hand-guard-ladder` |
-| [Latching an alarm in Ladder: SET and RESET coils, and the order of the rungs](./esp32-s3-devkitc/set-reset-alarm-latch-ladder.md) | `set-reset-alarm-latch-ladder` |
+| [Latching an alarm: set and reset, and which one wins](./esp32-s3-devkitc/set-reset-alarm-latch.md) | `set-reset-alarm-latch` |
+| [Safe motor start-stop](./esp32-s3-devkitc/motor-start-stop-safe.md) | `motor-start-stop-safe` |
+| [Counters in Function Block Diagram: count parts to a batch](./esp32-s3-devkitc/counter-batch-fbd.md) | `counter-batch-fbd` |
 | [On-delay and off-delay in Ladder: timers as blocks in a rung](./esp32-s3-devkitc/timers-on-delay-off-delay-ladder.md) | `timers-on-delay-off-delay-ladder` |
+| [Boolean logic in Ladder: a two-hand guard](./esp32-s3-devkitc/boolean-logic-two-hand-guard-ladder.md) | `boolean-logic-two-hand-guard-ladder` |
 | [Counting pulses in Ladder: a CTU counts the edges itself](./esp32-s3-devkitc/edge-counter-pulses-ladder.md) | `edge-counter-pulses-ladder` |
+| [Types, arithmetic and comparison: a total and three bands](./esp32-s3-devkitc/types-arithmetic-comparison.md) | `types-arithmetic-comparison` |
+| [A sequence in Sequential Function Chart: fill, then mix](./esp32-s3-devkitc/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` |
+| [Latching an alarm in Ladder: SET and RESET coils, and the order of the rungs](./esp32-s3-devkitc/set-reset-alarm-latch-ladder.md) | `set-reset-alarm-latch-ladder` |
 | [Function Block Diagram: a two-hand control with a guard](./esp32-s3-devkitc/boolean-logic-two-hand-guard-fbd.md) | `boolean-logic-two-hand-guard-fbd` |
 | [Timers in Function Block Diagram: an off-delay light and an on-delay filter](./esp32-s3-devkitc/timers-on-delay-off-delay-fbd.md) | `timers-on-delay-off-delay-fbd` |
-| [Types, arithmetic and comparison in Function Block Diagram: a total and three bands](./esp32-s3-devkitc/types-arithmetic-comparison-fbd.md) | `types-arithmetic-comparison-fbd` |
+| [Instruction List: calling an off-delay and an on-delay timer](./esp32-s3-devkitc/timers-on-delay-off-delay-il.md) | `timers-on-delay-off-delay-il` |
+| [Analog scaling: from raw counts to a percentage](./esp32-s3-devkitc/analog-scaling-integer.md) | `analog-scaling-integer` |
+| [Your own function block in Function Block Diagram: two valves, one block](./esp32-s3-devkitc/function-block-valves-fbd.md) | `function-block-valves-fbd` |
+| [TON oscillator and output feedback](./esp32-s3-devkitc/blinky-ladder-timer-feedback.md) | `blinky-ladder-timer-feedback` |
+| [Write a blinker in Structured Text](./esp32-s3-devkitc/blink-structured-text.md) | `blink-structured-text` |
 | [Instruction List: the current result in a two-hand control](./esp32-s3-devkitc/boolean-logic-two-hand-guard-il.md) | `boolean-logic-two-hand-guard-il` |
 | [Instruction List: S and R, and the line that comes last](./esp32-s3-devkitc/set-reset-alarm-latch-il.md) | `set-reset-alarm-latch-il` |
-| [Instruction List: calling an off-delay and an on-delay timer](./esp32-s3-devkitc/timers-on-delay-off-delay-il.md) | `timers-on-delay-off-delay-il` |
 | [Instruction List: counting pulses with a CTU](./esp32-s3-devkitc/edge-counter-pulses-il.md) | `edge-counter-pulses-il` |
-| [Instruction List: arithmetic, comparison and a jump on a rising edge](./esp32-s3-devkitc/types-arithmetic-comparison-il.md) | `types-arithmetic-comparison-il` |
+| [Analog scaling in Function Block Diagram: a high level alarm](./esp32-s3-devkitc/analog-scaling-fbd.md) | `analog-scaling-fbd` |
 | [Instruction List: calling a function block and reading its outputs](./esp32-s3-devkitc/function-block-call-il.md) | `function-block-call-il` |
+| [Types, arithmetic and comparison in Function Block Diagram: a total and three bands](./esp32-s3-devkitc/types-arithmetic-comparison-fbd.md) | `types-arithmetic-comparison-fbd` |
+| [Instruction List: arithmetic, comparison and a jump on a rising edge](./esp32-s3-devkitc/types-arithmetic-comparison-il.md) | `types-arithmetic-comparison-il` |
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc <<< */}
 

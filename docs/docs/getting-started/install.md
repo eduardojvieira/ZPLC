@@ -13,12 +13,6 @@ This page gets ZPLC onto your computer: which file to download, how to check it,
 you open it, and how to update and remove it. ZPLC is a desktop application for Windows, macOS and Linux. There is no
 hosted or browser version.
 
-:::warning Evaluation release, unsigned installers
-The Windows installers carry no signature, and the macOS app is signed only ad hoc and is not notarized, so both
-systems ask you to confirm before the first launch. No paid certificate is used. Do not use ZPLC to control
-machinery: [Safety and limitations](../safety-and-limitations.md).
-:::
-
 ## Download
 
 Every installer is a file of a [GitHub release](https://github.com/eduardojvieira/ZPLC/releases). Find the line of
@@ -257,8 +251,9 @@ possibly the Linux keyring) may not carry the entries over, so a stored AI assis
 | Linux, DEB        | `sudo apt remove zplc`                                            |
 | Linux, AppImage   | Delete the file.                                                  |
 
-ZPLC keeps its preferences, recent projects, lesson progress and recovery copies in the user-data folder of the
-application for your account; removing the application does not remove it. Your project folders are never inside it.
+ZPLC keeps its preferences, recent projects, lesson progress, recovery copies and the program of the simulation
+(`native-simulation`) in the user-data folder of the application for your account; removing the application does not
+remove it. Your project folders are never inside it.
 
 ## Troubleshooting
 
@@ -276,3 +271,5 @@ application for your account; removing the application does not remove it. Your 
 
 If your problem is not here, open an issue from the bug report template of the
 [repository](https://github.com/eduardojvieira/ZPLC/issues). Do not put credentials or device identifiers in it.
+
+What ZPLC does not do, and what to test before it runs a machine: [Safety and limitations](../safety-and-limitations.md).

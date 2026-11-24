@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Scan cycle and one-scan memory",
   "summary": "Follow how one input produces the current output and a copy delayed by one scan.",
-  "scope": "Tests provide native POSIX host runtime evidence with one 10 ms task; they do not establish target timing, snapshots under physical interrupts, electrical bounce, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show target timing, snapshots under physical interrupts or electrical bounce.",
   "objectives": [
     "See that a variable keeps its value from one scan to the next.",
     "Build a one-scan delay and a one-scan pulse from a single memory."
@@ -24,12 +24,12 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then run: The starter has no one-scan memory; keep Previous, set Delayed from it, derive RisingPulse from Current and Delayed, and update Previous last.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "In Tests, choose the saved zplc.json and run only the ScanSnapshot scenario.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The required scenario is named ScanSnapshot and contains {{assertions}} assertions."
     },
     {
@@ -41,8 +41,8 @@
     {
       "key": "evidence",
       "title": "Evidence",
-      "body": "AT/RISING/FALLING/NEVER cover the scenario; hashes and trace belong to the host.",
-      "checkpoint": "Recorded evidence belongs to the executed host scenario."
+      "body": "AT/RISING/FALLING/NEVER cover the scenario; hashes and trace belong to the scenario that ran.",
+      "checkpoint": "Recorded evidence belongs to the executed scenario."
     },
     {
       "key": "reflect",

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Modbus in Function Block Diagram: write a coil and read it back",
   "summary": "Edit a Function Block Diagram so that MB_READ_COIL reads coil 4 back once MB_WRITE_COIL has written it, and Echo reports the coil read.",
-  "scope": "The Modbus server of this lesson is a loopback double that ZPLC starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real controller, drive or gateway accepts the same request, and it says nothing about wiring, network timing, a real device, HIL or certification.",
+  "scope": "The Modbus server of this lesson is a loopback double that ZPLC starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real controller, drive or gateway accepts the same request, and it says nothing about wiring, network timing or a real device.",
   "objectives": [
     "Call a Modbus client block in a Function Block Diagram, with its inputs fed from constants that both blocks share, so that the write and the read name the same server and coil.",
     "Chain two requests with a wire from the DONE output of the first block to the EN input of the second."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter writes coil 4 but the EN input of Rd is not wired, so Rd never reads the coil and Echo stays OFF; wire Wr.DONE to Rd.EN, so that the read runs once the write is done. Draw one wire, from the DONE output of Wr to the EN input of Rd, and leave the shared constants as they are.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

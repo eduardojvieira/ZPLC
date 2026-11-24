@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "ld-diagnosis-debugger",
-  "version": 1,
-  "order": 87,
+  "version": 2,
+  "order": 4,
   "module": 8,
   "level": "advanced",
   "prerequisites": ["ld-function-blocks"],

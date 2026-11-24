@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Lista de instrucciones: el resultado actual y el orden de las instrucciones",
   "summary": "Complete un programa en lista de instrucciones para que una alarma de puerta se mantenga encendida al cerrar la puerta y se silencie con un botón, y vea que el orden de las instrucciones decide el resultado.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran requisitos de alarmas, tiempos de sirena ni el comportamiento de una máquina real, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra requisitos de alarmas, tiempos de sirena ni el comportamiento de una máquina real.",
   "objectives": [
     "Lea un programa en lista de instrucciones como un resultado actual que cada instrucción combina con un operando, de arriba hacia abajo.",
     "Use LD, AND, OR, ANDN y ST, y vea que mover una instrucción cambia la lógica."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial carga Armed, le aplica AND con DoorOpen y guarda el resultado, así que Siren sigue a la puerta y se apaga a los {{t:30}} ms cuando la puerta se cierra; agregue OR Siren para que la sirena se mantenga encendida y luego ANDN Silence para que Silence la apague, en ese orden.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

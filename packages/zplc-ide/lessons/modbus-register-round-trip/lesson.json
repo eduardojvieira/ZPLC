@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "modbus-register-round-trip",
-  "version": 3,
+  "version": 4,
   "order": 27,
   "module": 10,
   "level": "advanced",

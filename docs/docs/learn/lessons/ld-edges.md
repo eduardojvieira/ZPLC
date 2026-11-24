@@ -39,7 +39,7 @@ Use a positive transition contact and a negative transition contact so that a bo
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish the debounce, the response time or the wiring of a real sensor, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the debounce, the response time or the wiring of a real sensor.
 
 ## On a board
 

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "edge-counter-pulses",
-  "version": 2,
-  "order": 7,
+  "version": 3,
+  "order": 17,
   "module": 3,
   "level": "foundation",
   "prerequisites": ["timers-on-delay-off-delay"],

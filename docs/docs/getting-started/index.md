@@ -12,12 +12,6 @@ tags: [quickstart]
 ZPLC is a free, open-source way to write, test and run PLC programs. This page says what it is, helps you pick a
 starting path, and gets a program running on your computer in about ten minutes. You need no PLC and no board.
 
-:::warning Evaluation release
-ZPLC 2.0 is for evaluation. No board has been tested on hardware, the installers are not signed with a paid
-identity, and ZPLC must not control machinery. Read [Safety and limitations](../safety-and-limitations.md) before you
-rely on it for anything beyond learning and simulation.
-:::
-
 ## What ZPLC is
 
 ZPLC has three parts, in the order you meet them:
@@ -100,3 +94,4 @@ ZPLC_NATIVE_SIM_BIN="$PWD/firmware/lib/zplc_core/build/zplc_runtime" \
 - [The ZPLC application](../ide/index.md): the editors, tests and tools of the workbench.
 - [Languages](../languages/index.md): Structured Text and the other four languages.
 - [Release notes](../release-notes/index.md): what is new in 2.0, what breaks and what is not verified.
+- [Safety and limitations](../safety-and-limitations.md): what ZPLC does not do, and what to test before it runs a machine.

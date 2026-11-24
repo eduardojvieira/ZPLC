@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Modbus TCP: escribir un registro y volver a leerlo",
   "summary": "Escriba un registro de retención con un bloque Modbus TCP, vuelva a leerlo cuando termine la escritura e informe si el valor recibido es el que usted envió.",
-  "scope": "El servidor Modbus de esta lección es un doble de loopback que ZPLC inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un controlador, un variador o una pasarela reales acepten la misma solicitud, y no dice nada sobre el cableado, los tiempos de una red, un dispositivo real, HIL ni certificación.",
+  "scope": "El servidor Modbus de esta lección es un doble de loopback que ZPLC inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un controlador, un variador o una pasarela reales acepten la misma solicitud, y no dice nada sobre el cableado, los tiempos de una red ni un dispositivo real.",
   "objectives": [
     "Escriba un registro de retención con MB_WRITE_HREG y vuelva a leerlo con MB_READ_HREG, en ese orden, usando la salida DONE del primer bloque como disparo del segundo.",
     "Compare el valor leído con el valor escrito, e informe un ERROR de cualquiera de los dos bloques.",
@@ -25,7 +25,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial escribe el registro 8 pero nunca vuelve a leerlo, así que Match sigue en OFF; llame a MB_READ_HREG sobre el mismo registro cuando Wr.DONE sea TRUE, ponga Match en ON cuando Rd.DONE sea TRUE y Rd.VALUE sea igual a 1234, y ponga Failed en ON cuando Wr.ERROR o Rd.ERROR sea TRUE.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

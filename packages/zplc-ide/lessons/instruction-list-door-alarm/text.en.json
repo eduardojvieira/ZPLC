@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Instruction List: the current result and the order of instructions",
   "summary": "Complete an Instruction List program so that a door alarm holds itself on after the door closes and is silenced by a button, and see that the order of the instructions decides the result.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish alarm requirements, siren timing or any real machine behaviour, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show alarm requirements, siren timing or any real machine behaviour.",
   "objectives": [
     "Read an Instruction List program as one current result that each instruction combines with an operand, from top to bottom.",
     "Use LD, AND, OR, ANDN and ST, and see that moving one instruction changes the logic."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter loads Armed, ANDs it with DoorOpen and stores the result, so Siren follows the door and drops at {{t:30}} ms when the door closes; add OR Siren so the siren holds itself on, then ANDN Silence so that Silence turns it off, in that order.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

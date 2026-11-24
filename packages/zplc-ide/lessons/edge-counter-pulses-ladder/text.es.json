@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Contar pulsos en escalera: un CTU cuenta los flancos por sí mismo",
   "summary": "Coloque un CTU en un peldaño para que CountReached se active en el tercer flanco ascendente de una entrada de pulsos y Reset borre la cuenta.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran la exactitud de conteo de una entrada real, el cableado, los tiempos del hardware, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la exactitud de conteo de una entrada real ni el cableado.",
   "objectives": [
     "Coloque un bloque contador en un peldaño y fije su preset y su reset.",
     "Explique que un contador suma uno en el flanco ascendente de su entrada, no en cada escaneo en que la entrada está en alto."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia el pulso a la bobina: CountReached está en ON a los {{t:10}} ms, con el primer pulso, en lugar de después del tercero; coloque un CTU con PV 3 y Reset en su entrada R entre PulseInput y CountReached. En el editor de escalera arrastre un bloque CTU entre el contacto y la bobina, asigne a su instancia el nombre Count y fije PV en 3 y R en Reset.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

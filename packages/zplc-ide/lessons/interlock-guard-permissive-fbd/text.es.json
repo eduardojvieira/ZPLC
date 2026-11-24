@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Enclavamientos y permisivos en diagrama de bloques de función: una protección que detiene el motor",
   "summary": "Conecte un permisivo al reinicio de un biestable RS para que el motor funcione solo mientras la protección esté cerrada, y compruébelo con la planta del motor y su realimentación de velocidad.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX para un modelo de planta de motor incorporado y una tarea de 10 ms; no demuestran una función de seguridad, el cableado de la protección ni el tiempo de parada, ni son evidencia de HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra una función de seguridad, el cableado de la protección ni el tiempo de parada.",
   "objectives": [
     "Distinga un permisivo, una condición que debe ser TRUE para que la salida esté en ON, de una orden.",
     "Conecte el permisivo al reinicio de un biestable RS, que es dominante al reinicio, para que una protección abierta suelte el motor y además impida que Start lo rearranque."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del diagrama inicial, guárdelo y pulse Comprobar: El diagrama inicial no tiene un permisivo en la protección, así que cuando la protección se abre a los {{t:50}} ms el motor sigue en marcha y Start puede rearrancarlo; reinicie el bloque RS siempre que la protección esté abierta. Coloque un bloque NOT sobre GuardClosed y un bloque OR con Stop y la salida del bloque NOT, y luego conecte la salida del OR a Hold.R1 en lugar del cable que viene de Stop.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexione",
       "body": "¿Por qué la protección llega al reinicio del bloque RS y no solo a Start? Ponga un bloque AND de Start y GuardClosed en S y deje R1 conectado solo a Stop, y vea qué aserción falla.",
-      "checkpoint": "Un permisivo que condiciona solo a Start deja que un motor en marcha ignore una protección abierta. El escenario muestra solo la lógica; no es una función de seguridad ni reemplaza un enclavamiento de protección certificado."
+      "checkpoint": "Un permisivo que condiciona solo a Start deja que un motor en marcha ignore una protección abierta. El escenario muestra solo la lógica; no es una función de seguridad ni reemplaza un enclavamiento de protección diseñado para seguridad."
     }
   ],
   "hints": [

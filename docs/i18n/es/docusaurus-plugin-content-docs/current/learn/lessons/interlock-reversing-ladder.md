@@ -39,7 +39,7 @@ Edite dos peldaños en diagrama de escalera para que un motor con inversión de 
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran una función de seguridad, contactores con enclavamiento mecánico, cableado, tiempos de hardware, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra una función de seguridad, contactores con enclavamiento mecánico ni cableado.
 
 ## Cableado
 

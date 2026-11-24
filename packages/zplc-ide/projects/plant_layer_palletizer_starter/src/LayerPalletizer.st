@@ -24,15 +24,24 @@ VAR_OUTPUT
     Green  AT %Q1.2 : BOOL;  (* StackLight1.green: all layers are on the pallet *)
 END_VAR
 
+VAR
+    Step  : INT;                    (* the sequence: a CASE over the steps of one layer *)
+    Layer : INT;                    (* layers already on the pallet, 0 to 3 *)
+    JogMs : ARRAY[0..2] OF INT;     (* per layer: the timed jog down from YMax, in ms; layer 0 goes to YMin *)
+    i     : INT;
+END_VAR
+
 (* Goal: on Start, stack three layers of four boxes on Pallet1.
    Raise the head first: it starts at its lowest and the boxes would meet it.
+   Fill JogMs with a FOR loop on Start: the second layer sets down 580 ms
+   below YMax and each layer after it is one box height (140 ms) higher.
    For each layer, load two pairs of boxes (one Emit1 and one Emit2 pulse
    makes a pair; count the pairs with EyeIn), run the Infeed until
    LayerReady, then Square the block and wait for Squared. Retract the
    pusher, lower the head a short timed jog, close the clamp, wait for
-   Gripped, raise the head all the way, travel to XMax, lower to YMin, and
-   for the second and third layer raise the head a timed jog of one box
-   height per layer already placed. Open the clamp, raise, travel back to
-   XMin. Amber while working, Green at the end. *)
+   Gripped, raise the head all the way, travel to XMax, lower to YMin for
+   the first layer or for JogMs[Layer] ms for the others. Open the clamp,
+   raise, travel back to XMin. Amber while working, Green at the end.
+   Keep the sequence in a CASE on Step. *)
 
 END_PROGRAM

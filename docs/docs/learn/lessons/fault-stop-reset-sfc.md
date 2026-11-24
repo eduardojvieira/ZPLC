@@ -39,7 +39,7 @@ Stop a feed and press cycle the moment a fault appears, and return it to IDLE on
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish a safe stop, a safety function, press behaviour, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a safe stop, a safety function or press behaviour.
 
 ## On a board
 

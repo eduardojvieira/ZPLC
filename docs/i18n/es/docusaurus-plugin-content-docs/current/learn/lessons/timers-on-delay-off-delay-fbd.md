@@ -39,7 +39,7 @@ Conecte un bloque TOF para mantener una luz encendida después de soltar un bot�
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el antirrebote eléctrico, la respuesta del sensor, el tiempo en el destino, ni son evidencia de HIL ni de certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el antirrebote eléctrico, la respuesta del sensor ni el tiempo en el destino.
 
 ## Cableado
 

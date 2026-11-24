@@ -39,7 +39,7 @@ Coloque un TOF y un TON entre un contacto y una bobina, y compruebe que un retar
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran los requisitos de filtrado de un sensor real, el cableado, los tiempos del hardware, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra los requisitos de filtrado de un sensor real ni el cableado.
 
 ## Cableado
 

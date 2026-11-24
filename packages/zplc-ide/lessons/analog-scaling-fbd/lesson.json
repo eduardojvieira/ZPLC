@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "analog-scaling-fbd",
-  "version": 2,
-  "order": 30,
+  "version": 3,
+  "order": 82,
   "module": 4,
   "level": "intermediate",
   "prerequisites": ["analog-scaling-integer", "counter-batch-fbd"],

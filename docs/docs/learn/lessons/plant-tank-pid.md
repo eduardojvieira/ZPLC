@@ -39,7 +39,7 @@ Hold the level of a tank at a set point with PID_Compact, keep it there when the
 
 ## What the evidence covers
 
-The grade is a headless run of the simulated tank on the native POSIX runtime. It tests where the level goes, not the values of the gains: several tunings pass. It does not establish the behaviour of a real tank or valve, hardware timing, HIL, or certification.
+The grade runs the simulated tank in the simulator on this computer. It tests where the level goes, not the values of the gains: several tunings pass. It says nothing about a real tank or valve, its timing or its safety.
 
 ## On a board
 

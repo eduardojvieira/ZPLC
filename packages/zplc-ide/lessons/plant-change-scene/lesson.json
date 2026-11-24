@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "plant-change-scene",
-  "version": 1,
+  "version": 2,
   "order": 192,
   "module": 19,
   "level": "advanced",

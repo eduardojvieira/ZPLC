@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Comparison and math boxes in Ladder: a tank alarm and a safe division",
   "summary": "Use comparison boxes as conditions and math boxes as calculations in Ladder, and guard a division so that a zero divisor can never reach it.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the behavior of a real level sensor, its wiring, the timing of a real tank, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the behavior of a real level sensor, its wiring or the timing of a real tank.",
   "objectives": [
     "Use a comparison box as a condition in series, and choose between GT and GE for a limit.",
     "Calculate with math boxes that run only while their rung has power, and guard a division with an NE comparison so that the divisor is never zero."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter has no rung for Percent, so Percent stays 0 and HighAlarm never turns ON at {{t:80}} ms; add one rung with an NE box (Capacity, 0), a MUL box (Level, 100, into Scaled) and a DIV box (Scaled, Capacity, into Percent), in that order. Insert each box from the Functions group of the Ladder palette and type its operands: a declared variable or a number.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

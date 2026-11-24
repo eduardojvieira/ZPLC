@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "function-block-pump-pair",
-  "version": 4,
-  "order": 21,
+  "version": 5,
+  "order": 22,
   "module": 7,
   "level": "intermediate",
   "prerequisites": ["types-arithmetic-comparison"],

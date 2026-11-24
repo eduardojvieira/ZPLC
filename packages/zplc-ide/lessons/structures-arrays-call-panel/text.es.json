@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Estructuras y arreglos: un panel de tres llamadas",
   "summary": "Guarde tres botones de llamada en un arreglo de estructuras y escriba un solo bucle FOR que retenga cada llamada hasta que se reconozca e informe si alguna llamada, o todas, están en espera.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el tiempo de respuesta de un panel de llamadas real ni tareas distintas de esa única tarea de 10 ms, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el tiempo de respuesta de un panel de llamadas real ni tareas distintas de esa única tarea de 10 ms.",
   "objectives": [
     "Declare una estructura con miembros con nombre y un arreglo de esa estructura, y llegue a un elemento con un índice y un nombre de miembro.",
     "Reemplace tres copias del mismo código por un solo bucle FOR sobre el arreglo."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia los tres botones al arreglo Calls pero no tiene bucle, así que Pending y AllCalling quedan en OFF; agregue un bucle FOR sobre los tres elementos que mantenga una llamada pulsada hasta Ack y active las dos salidas.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

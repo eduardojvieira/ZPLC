@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Your own function block in Ladder: two pumps, one block",
   "summary": "Call the project's function block PumpCtl from a second Ladder rung so that pump 2 has its own instance, with its own memory, beside pump 1.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish pump starting current, contactor wiring, suction line monitoring, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show pump starting current, contactor wiring or suction line monitoring.",
   "objectives": [
     "Place a function block that the project declares in Structured Text in a Ladder rung, and wire its inputs and its output.",
     "Explain that each instance of a function block keeps a memory of its own, so two pumps need two instances of one block."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press Check: The starter calls only the instance Pump1Ctl, so Pump2 never turns on and stays OFF at {{t:50}} ms; add a rung with Start2 and a PumpCtl block for Pump2Ctl, with Stop on Stop and Ready on Ready, and write its Run output to Pump2. PumpCtl is in the Project category of the Ladder toolbox. The instance Pump2Ctl is already declared, so only the rung is missing.",
-      "checkpoint": "The visible scenario must pass with saved host evidence."
+      "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

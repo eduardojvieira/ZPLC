@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "The same loop in function blocks",
   "summary": "Wire the level loop of a tank as a function block diagram: a PID_Compact block between the scaled level and set point and the inlet valve.",
-  "scope": "The grade is a headless run of the simulated tank on the native POSIX runtime. It tests where the level goes, not how the diagram is drawn or the values of the gains. It does not establish the behaviour of a real tank or valve, hardware timing, HIL, or certification.",
+  "scope": "The grade runs the simulated tank in the simulator on this computer. It tests where the level goes, not how the diagram is drawn or the values of the gains. It says nothing about a real tank or valve, its timing or its safety.",
   "objectives": [
     "Wire a PID_Compact function block in a diagram: set point, process value, gains, scan time and output limits on the left, the output on the right.",
     "Follow one value across the diagram, from the raw whole number of the level to metres and on to the inlet valve."
@@ -30,7 +30,7 @@
       "key": "run",
       "title": "Run",
       "body": "Press Check. ZPLC translates the diagram, runs it against the tank of scene tank-level-control, raises the set point, opens the drain and lowers the set point, and tests {{assertions}} assertions: the level in the band in two windows, out of it at the end, and no spill.",
-      "checkpoint": "The scenario is named tank-pid-fbd and contains {{assertions}} assertions and passes them all with saved host evidence."
+      "checkpoint": "The scenario is named tank-pid-fbd and contains {{assertions}} assertions and passes them all."
     },
     {
       "key": "observe",

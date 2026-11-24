@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Boolean logic: a two-hand control with a guard",
   "summary": "Combine AND, NOT and XOR so a press can only be enabled when both hands are on the buttons and the guard is closed.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the response time, redundancy or fault behaviour a real two-hand safety device needs, and they are not safety, HIL, or certification evidence.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Write a condition that is true only when several inputs are true together.",
     "Use NOT for a warning lamp and XOR for exactly one of two inputs."

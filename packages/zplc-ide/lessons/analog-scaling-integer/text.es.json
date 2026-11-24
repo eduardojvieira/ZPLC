@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Escalado analógico: de cuentas en bruto a un porcentaje",
   "summary": "Escale una cuenta en bruto de 0 a 1000 a un porcentaje con aritmética entera, y active una advertencia al 50 por ciento y una alarma al 80 por ciento.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran la exactitud, el ruido ni la calibración de una entrada analógica real, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la exactitud, el ruido ni la calibración de una entrada analógica real.",
   "objectives": [
     "Escale una cuenta en bruto a unidades de ingeniería con una multiplicación seguida de una división, en ese orden.",
     "Vea que la división entera descarta el resto, y elija un tipo entero con rango suficiente para el producto intermedio."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial divide antes de multiplicar, así que la división entera Raw / 1000 da 0 hasta que Raw llega a 1000 y el porcentaje queda en 0; multiplique primero por 100 y luego divida por 1000.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

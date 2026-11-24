@@ -2,34 +2,34 @@
   "schemaVersion": 1,
   "title": "Paletizar por capas",
   "summary": "Cargue cuatro cajas en una capa, escuádrela, llévela con un cabezal de pinza y apile tres capas sobre una tarima.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Formar una capa contando pares de cajas y escuadrarla antes de que la pinza la tome.",
-    "Colocar cada capa a su propia altura, una altura de caja más arriba que la inferior."
+    "Guardar el descenso de cada capa en un arreglo y llenarlo con un bucle FOR, de modo que cada capa se coloque una altura de caja más arriba que la inferior."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/LayerPalletizer.st, repita tres veces: cargue dos pares de cajas (Emit1 y Emit2 juntos forman un par, EyeIn los cuenta), espere LayerReady, escuadre, retraiga, tome la capa con la pinza, llévela a XMax, bájela una altura que dependa de Layer, suelte y regrese.",
-      "checkpoint": "Layer cuenta las capas terminadas y elige el descenso de cada una; los mismos estados se ejecutan para cada capa."
+      "body": "En src/LayerPalletizer.st, mantenga un CASE sobre Step como secuencia y repítala tres veces: cargue dos pares de cajas (Emit1 y Emit2 juntos forman un par, EyeIn los cuenta), espere LayerReady, escuadre, retraiga, tome la capa con la pinza, llévela a XMax, bájela, suelte y regrese. El descenso de cada capa vive en el arreglo JogMs: un bucle FOR lo llena al pulsar Start, y JogMs[Layer] dice cuánto tiempo baja el cabezal desde YMax.",
+      "checkpoint": "JogMs guarda un descenso por capa, un bucle FOR lo llena, Layer lo indexa y el CASE ejecuta los mismos pasos para cada capa."
     },
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, siga el cabezal: parte de su posición más baja y sube primero, la primera capa baja hasta YMin y cada capa posterior se detiene una altura de caja más arriba que la anterior.",
+      "body": "Antes de ejecutar, siga el cabezal: parte de su posición más baja y sube primero, la primera capa baja hasta YMin y cada capa posterior baja el descenso JogMs[Layer], menos que la inferior en una altura de caja, así que se detiene una altura de caja más arriba.",
       "checkpoint": "El empujador se retrae antes de que el cabezal se mueva; la pinza se abre solo sobre la tarima; Green se enciende tras la tercera capa."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que el cabezal nunca sube y no llega ninguna caja; cargue, escuadre, lleve y coloque tres capas de cuatro cajas sobre la tarima y encienda Green al final.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial declara el arreglo JogMs pero no lo llena ni gobierna ninguna salida, así que el cabezal nunca sube y no llega ninguna caja; llene JogMs con un bucle FOR, y luego cargue, escuadre, lleve y coloque tres capas de cuatro cajas sobre la tarima y encienda Green al final.",
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario layer-palletizer; observe la vista 3D mientras se ejecuta.",
+      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
       "checkpoint": "El escenario requerido se llama layer-palletizer y contiene {{assertions}} aserciones."
     },
     {
@@ -41,21 +41,21 @@
     {
       "key": "reflect",
       "title": "Reflexionar",
-      "body": "Un solo ciclo de estados atiende todas las capas porque Layer cambia lo único que difiere: el descenso. El escenario prueba que la pinza colocó elementos, que hay cajas en reposo sobre la tarima 0, que ninguna caja se cayó y que Green está encendido al final. Los hechos no cuentan exactamente tres capas de cuatro, y los tiempos de descenso son temporizados, no medidos.",
-      "checkpoint": "No establece la temporización física de la pinza, la velocidad de los ejes, la temporización de hardware, HIL ni certificación."
+      "body": "Una sola secuencia atiende todas las capas porque Layer elige lo único que difiere, el descenso, de un arreglo que un solo bucle FOR llenó. El escenario prueba que la pinza colocó elementos, que hay cajas en reposo sobre la tarima 0, que ninguna caja se cayó y que Green está encendido al final. Los hechos no cuentan exactamente tres capas de cuatro, y los tiempos de descenso son temporizados, no medidos.",
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Mantenga un contador de pares enviados y otro de pares vistos en EyeIn, para que la banda lleve solo dos pares; Layer dice qué capa sigue y gobierna el descenso."
+      "text": "Mantenga un contador de pares enviados y otro de pares vistos en EyeIn, para que la cinta lleve solo dos pares; Layer dice qué capa sigue y es el índice de JogMs."
     },
     {
       "level": 2,
-      "text": "Baje la primera capa hasta YMin; para las demás use un descenso temporizado desde YMax elegido por Layer, que se encuentra por prueba en la traza (la segunda capa necesita un descenso más largo que la tercera), de modo que cada capa se detenga una altura de caja más arriba que la anterior."
+      "text": "Declare JogMs : ARRAY[0..2] OF INT y un índice INT i. La posición 0 no se usa, porque la primera capa baja hasta YMin. Al pulsar Start, FOR i := 1 TO 2 DO JogMs[i] := 720 - 140 * i; END_FOR; da los descensos 580 y 440, de modo que cada capa se detenga una altura de caja más arriba que la anterior. Mientras Layer sea menor que 3, use INT_TO_TIME(JogMs[Layer]) como preselección del temporizador que corre mientras el cabezal baja sobre la tarima."
     }
   ],
   "faultCases": [
-    "El inicial no gobierna ninguna salida, así que el cabezal nunca sube y no llega ninguna caja; cargue, escuadre, lleve y coloque tres capas de cuatro cajas sobre la tarima y encienda Green al final."
+    "El inicial declara el arreglo JogMs pero no lo llena ni gobierna ninguna salida, así que el cabezal nunca sube y no llega ninguna caja; llene JogMs con un bucle FOR, y luego cargue, escuadre, lleve y coloque tres capas de cuatro cajas sobre la tarima y encienda Green al final."
   ]
 }

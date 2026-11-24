@@ -22,6 +22,18 @@ const bundled = readdirSync(PROJECTS)
 const signal = () => new AbortController().signal;
 
 /**
+ * CI runs this file in parts (tools/ci/test-shards.ts): ZPLC_PARITY_PART=i/n keeps every n-th bundled project from the i-th,
+ * and part 1 also keeps the two cases that belong to no project. Without the variable (or with it empty) every case runs.
+ */
+const partOption = process.env.ZPLC_PARITY_PART || '1/1';
+const [, part = 0, parts = 0] = (/^(\d+)\/(\d+)$/.exec(partOption) ?? []).map(Number);
+if (part < 1 || part > parts) throw new Error(`ZPLC_PARITY_PART must be i/n with 1 <= i <= n, not "${partOption}"`);
+const inThisPart = bundled.filter((_, index) => index % parts === part - 1);
+const itFirstPart = (...args: Parameters<typeof itNative>) => {
+  if (part === 1) itNative(...args);
+};
+
+/**
  * A project whose program talks to the Modbus server or the MQTT broker of its own simulation (COM-009). The runs of such
  * a project meet a real socket, so the bytes of a trace carry the timing of the traffic and two runs of the same project
  * do not hash alike: the verdict and the sampled values stay compared, the trace hashes are not.
@@ -81,7 +93,7 @@ async function viaMcp(root: string, tool: 'tests_run' | 'scenario_run', args: Re
 }
 
 describe('a project run through the Tool API, the CLI, the MCP tools and Studio gives one result (IDE-031)', () => {
-  itNative('covers every kind of temporal assertion the scenario format has', () => {
+  itFirstPart('covers every kind of temporal assertion the scenario format has', () => {
     const kinds = new Set<string>();
     for (const name of bundled) {
       for (const file of readdirSync(join(PROJECTS, name, 'tests'))) {
@@ -94,7 +106,7 @@ describe('a project run through the Tool API, the CLI, the MCP tools and Studio 
     expect([...kinds].sort()).toEqual(['ALWAYS', 'AT', 'EVENTUALLY', 'FALLING', 'FOR', 'NEVER', 'RISING', 'UNTIL', 'WITHIN']);
   });
 
-  for (const name of bundled) {
+  for (const name of inThisPart) {
     itNative(
       `${name}: tests`,
       async () => {
@@ -162,7 +174,7 @@ describe('a project run through the Tool API, the CLI, the MCP tools and Studio 
     );
   }
 
-  itNative(
+  itFirstPart(
     'a failing temporal assertion fails the same way from every entry point',
     async () => {
       const scratch = mkdtempSync(join(tmpdir(), 'zplc-parity-'));

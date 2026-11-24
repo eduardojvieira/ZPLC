@@ -39,7 +39,7 @@ Edit a Ladder rung so that a Start press keeps the motor on after the button is 
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish a safe stop function, wiring, hardware timing, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a safe stop function or wiring.
 
 ## Wiring
 

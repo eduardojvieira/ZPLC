@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "La misma clasificación en Lista de instrucciones",
   "summary": "Escriba la lógica de clasificación por color como una lista de instrucciones: un resultado actual, etiquetas y saltos, y dos temporizadores llamados con CAL.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Convertir los estados de una secuencia de clasificación en bloques de comparar y saltar.",
     "Llamar a un TON desde Lista de instrucciones con CAL y leer su salida Q."
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial solo memoriza Start y hace girar la banda de entrada, así que no se lee ni se clasifica ninguna pieza; añada los cuatro bloques de estado y gobierne las demás salidas.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial solo memoriza Start y hace girar la cinta de entrada, así que no se lee ni se clasifica ninguna pieza; añada los cuatro bloques de estado y gobierne las demás salidas.",
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario colour-separation; observe la vista 3D mientras se ejecuta.",
+      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
       "checkpoint": "El escenario requerido se llama colour-separation y contiene {{assertions}} aserciones."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "La calificación comprueba los contenedores, las lámparas y que nada cayó; no lee cómo está escrito el programa, así que el mismo comportamiento en otro lenguaje también pasa.",
-      "checkpoint": "No establece la temporización de ciclo de la lista de instrucciones, la respuesta del sensor, la temporización de hardware, HIL ni certificación."
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El inicial solo memoriza Start y hace girar la banda de entrada, así que no se lee ni se clasifica ninguna pieza; añada los cuatro bloques de estado y gobierne las demás salidas."
+    "El inicial solo memoriza Start y hace girar la cinta de entrada, así que no se lee ni se clasifica ninguna pieza; añada los cuatro bloques de estado y gobierne las demás salidas."
   ]
 }

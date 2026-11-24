@@ -39,7 +39,7 @@ Mantenga el nivel de un tanque en una consigna con PID_Compact, consérvelo cuan
 
 ## Qué cubre la evidencia
 
-La calificación es una ejecución sin interfaz del tanque simulado en el entorno de ejecución POSIX nativo. Comprueba hacia dónde va el nivel, no los valores de las ganancias: varios ajustes pasan. No establece el comportamiento de un tanque o una válvula reales, la temporización en hardware, HIL ni la certificación.
+La calificación ejecuta el tanque simulado en el simulador de esta computadora. Comprueba hacia dónde va el nivel, no los valores de las ganancias: varios ajustes pasan. No dice nada sobre un tanque o una válvula reales, sus tiempos ni su seguridad.
 
 ## En una placa
 

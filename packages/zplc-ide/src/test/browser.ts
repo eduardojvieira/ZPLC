@@ -16,6 +16,8 @@ import { teardown } from './teardown';
 import { Cdp, freePort, HOST, openPage, stop, waitFor, type OwnedProcess } from '../../scripts/cdpHarness';
 
 const PACKAGE = join(import.meta.dir, '..', '..');
+/** True once the page has loaded and its scripts have drawn a button. */
+const PAGE_DRAWN = `location.protocol === 'http:' && document.readyState === 'complete' && document.querySelectorAll('button').length > 0`;
 
 export interface AxNode {
   role: string;
@@ -225,13 +227,26 @@ export class BrowserApp {
     return (await this.ax()).find((node) => node.focused && node.role !== 'RootWebArea');
   }
 
-  /** Loads the page afresh, so that a test never sees the editor models, focus or settings of the one before it. */
+  /**
+   * Loads the page afresh, so that a test never sees the editor models, focus or settings of the one before it. Chromium aborts
+   * every request in flight when an interface of the host comes or goes (a container that restarts adds and drops one), and the
+   * page then never draws: a load that met that change is started again, twice at most. Any other failure waits out the timeout.
+   */
   async reload(): Promise<void> {
-    await this.cdp.command('Page.navigate', { url: this.url });
-    await this.until(
-      'the page',
-      `location.protocol === 'http:' && document.readyState === 'complete' && document.querySelectorAll('button').length > 0`,
-    );
+    for (let attempt = 1; ; attempt++) {
+      const seen = this.cdp.errors.length;
+      await this.cdp.command('Page.navigate', { url: this.url });
+      const outcome = await waitFor(
+        'the page',
+        async () => {
+          if (await this.cdp.evaluate(PAGE_DRAWN)) return 'drawn';
+          const aborted = this.cdp.errors.slice(seen).some((error) => error.includes('net::ERR_NETWORK_CHANGED'));
+          return aborted && attempt < 3 ? 'aborted' : undefined;
+        },
+        60_000,
+      );
+      if (outcome === 'drawn') return;
+    }
   }
 
   /**

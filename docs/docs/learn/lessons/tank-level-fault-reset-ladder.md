@@ -39,7 +39,7 @@ Control a tank pump with a seal-in, latch a fault with SET and RESET coils, and 
 
 ## What the evidence covers
 
-Tests provide deterministic native POSIX host evidence only; they are not physical-process, hardware, HIL, or certification evidence.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.
 
 ## On a board
 

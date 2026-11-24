@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Latching an alarm: set and reset, and which one wins",
   "summary": "Keep a fault in memory with the SR and RS blocks and see what each one does when the fault and the acknowledge arrive together.",
-  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish alarm handling requirements of a real machine, HIL, or certification.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show alarm handling requirements of a real machine.",
   "objectives": [
     "Hold an alarm after the fault has gone, until it is acknowledged.",
     "Tell the set-dominant block SR from the reset-dominant block RS."

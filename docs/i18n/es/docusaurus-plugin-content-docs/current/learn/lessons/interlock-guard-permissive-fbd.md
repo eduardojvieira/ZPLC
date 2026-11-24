@@ -39,7 +39,7 @@ Conecte un permisivo al reinicio de un biestable RS para que el motor funcione s
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX para un modelo de planta de motor incorporado y una tarea de 10 ms; no demuestran una función de seguridad, el cableado de la protección ni el tiempo de parada, ni son evidencia de HIL ni de certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra una función de seguridad, el cableado de la protección ni el tiempo de parada.
 
 ## En una placa
 

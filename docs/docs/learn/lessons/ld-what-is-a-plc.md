@@ -38,7 +38,7 @@ Meet the three parts of every PLC machine, inputs, a program and outputs, and fi
 
 ## What the evidence covers
 
-Tests provide deterministic native POSIX host evidence on your computer only; they are not hardware, electrical, HIL, or safety evidence.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.
 
 ## On a board
 

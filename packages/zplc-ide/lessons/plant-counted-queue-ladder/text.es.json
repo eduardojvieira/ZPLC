@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Cargar y descargar tres cajas en diagrama de escalera",
   "summary": "Cuente cajas con dos bloques CTU para ejecutar un lote fijo: cargue tres, descargue tres y encienda Done.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Contar elementos con un contador de valor preestablecido.",
     "Usar un contador para dejar de cargar y otro para saber que el lote terminó."
@@ -17,32 +17,32 @@
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, cuente las cajas: se cargan tres, una tras otra, y luego la banda las descarga.",
-      "checkpoint": "La banda corre y aparecen cajas hasta que tres han pasado por EyeIn; Done sigue apagada hasta que la tercera caja pasa por EyeOut, y entonces la banda se detiene."
+      "body": "Antes de ejecutar, cuente las cajas: se cargan tres, una tras otra, y luego la cinta las descarga.",
+      "checkpoint": "La cinta corre y aparecen cajas hasta que tres han pasado por EyeIn; Done sigue apagada hasta que la tercera caja pasa por EyeOut, y entonces la cinta se detiene."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños ni contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la banda.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños ni contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la cinta.",
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario counted-queue; observe la vista 3D mientras se ejecuta.",
+      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
       "checkpoint": "El escenario requerido se llama counted-queue y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observar",
       "body": "Observe las cajas entrar una a una y salir por el otro extremo; los contadores cambian una vez por caja, no una vez por ciclo.",
-      "checkpoint": "Las tres cajas se entregan, ninguna cae ni choca, y Done está encendida cuando la banda se detiene."
+      "checkpoint": "Las tres cajas se entregan, ninguna cae ni choca, y Done está encendida cuando la cinta se detiene."
     },
     {
       "key": "reflect",
       "title": "Reflexionar",
-      "body": "Un contador cuenta flancos ascendentes, así que una caja que permanece bajo un sensor cuenta una sola vez; la aserción AT final fija Done y la banda detenida.",
-      "checkpoint": "No establece la velocidad física de la banda, la respuesta del sensor, la temporización de hardware, HIL ni certificación."
+      "body": "Un contador cuenta flancos ascendentes, así que una caja que permanece bajo un sensor cuenta una sola vez; la aserción AT final fija Done y la cinta detenida.",
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El inicial no tiene peldaños ni contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la banda."
+    "El inicial no tiene peldaños ni contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la cinta."
   ]
 }

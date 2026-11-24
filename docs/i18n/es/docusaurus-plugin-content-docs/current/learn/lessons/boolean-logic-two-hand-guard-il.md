@@ -39,7 +39,7 @@ Lea un programa en lista de instrucciones como un resultado actual que cada lín
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el tiempo de respuesta, la redundancia ni el comportamiento ante fallas que necesita un dispositivo real de mando a dos manos, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el tiempo de respuesta, la redundancia ni el comportamiento ante fallas que necesita un dispositivo real de mando a dos manos.
 
 ## Cableado
 

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Flancos y contador de pulsos",
   "summary": "Use un contador CTU para contar tres pulsos discretos y poner la cuenta a cero.",
-  "scope": "Las pruebas aportan solo evidencia del host con el runtime nativo POSIX; no son evidencia de un sensor físico, de rebotes, de hardware, de HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": ["Cuente tres flancos ascendentes de PulseInput con un contador CTU.", "Ponga a cero la cuenta y CountReached con Reset."],
   "stages": [
     {
@@ -21,12 +21,12 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial nunca cuenta; agregue un CTU con PV=3 para que CountReached pase a ON en el tercer flanco ascendente y Reset lo devuelva a OFF.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario EdgeCounter.",
+      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario requerido se llama EdgeCounter y contiene {{assertions}} aserciones."
     },
     {
@@ -39,7 +39,7 @@
       "key": "reflect",
       "title": "Reflexione",
       "body": "Las aserciones AT/RISING/FALLING cubren esta secuencia lógica discreta.",
-      "checkpoint": "No demuestran rebotes, pulsos eléctricos, tiempos del hardware, HIL ni certificación."
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [

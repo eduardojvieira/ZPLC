@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "ld-compare-math",
-  "version": 1,
-  "order": 89,
+  "version": 2,
+  "order": 20,
   "module": 4,
   "level": "intermediate",
   "prerequisites": ["ld-variables-and-types"],

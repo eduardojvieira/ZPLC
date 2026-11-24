@@ -39,7 +39,7 @@ Llame a un contador CTU desde lista de instrucciones para contar tres pulsos dis
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran sensores físicos, rebote de contactos ni tiempos de hardware, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra sensores físicos ni rebote de contactos.
 
 ## Cableado
 

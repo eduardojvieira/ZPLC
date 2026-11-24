@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync,
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
+import { afterAll, afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
 
 import { compilerCompile } from '../cli/toolApi';
 import { createProjectFiles } from '../../electron/projectFiles';
@@ -51,6 +51,10 @@ let loadedExampleAssets: Array<{ path: string; content: string }> | null = null;
 await mock.module('../utils/projectLoader', () =>
   projectLoaderStub({ loadProject: () => loadedExample, loadProjectAssets: () => loadedExampleAssets }),
 );
+// A mock outlives its file: the files after this one get the shared stub back, not the last example a test copied.
+afterAll(async () => {
+  await mock.module('../utils/projectLoader', () => projectLoaderStub());
+});
 
 const { useIDEStore, onNativeTraceCleared } = await import('./useIDEStore');
 

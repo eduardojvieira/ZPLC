@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "blinky-ladder-timer-feedback",
-  "version": 4,
-  "order": 5,
+  "version": 5,
+  "order": 77,
   "module": 1,
   "level": "foundation",
   "prerequisites": ["scan-cycle-one-scan-memory"],

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "analog-scaling-integer",
-  "version": 3,
-  "order": 20,
+  "version": 4,
+  "order": 74,
   "module": 4,
   "level": "intermediate",
   "prerequisites": ["types-arithmetic-comparison"],

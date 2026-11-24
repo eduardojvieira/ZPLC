@@ -39,7 +39,7 @@ Escale con cuadros de función el nivel crudo de un tanque, un número entero de
 
 ## Qué cubre la evidencia
 
-La calificación es una ejecución sin interfaz del tanque simulado en el entorno de ejecución POSIX nativo, con un nivel analógico que sigue las reglas de escala del mapa de la planta. No establece la exactitud, el ruido ni la calibración de un transmisor de nivel real, la temporización en hardware, HIL ni la certificación.
+La calificación ejecuta el tanque simulado en el simulador de esta computadora, con un nivel analógico que sigue las reglas de escala del mapa de la planta. No dice nada sobre la exactitud, el ruido ni la calibración de un transmisor de nivel real, una máquina real, sus tiempos ni su seguridad.
 
 ## En una placa
 

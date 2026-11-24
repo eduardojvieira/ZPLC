@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "plant-assembler",
-  "version": 1,
+  "version": 2,
   "order": 152,
   "module": 15,
   "level": "advanced",

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "plant-lift-stacking",
-  "version": 1,
+  "version": 2,
   "order": 172,
   "module": 17,
   "level": "advanced",

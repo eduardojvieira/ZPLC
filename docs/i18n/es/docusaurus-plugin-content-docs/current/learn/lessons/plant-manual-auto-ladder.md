@@ -39,7 +39,7 @@ Añada un modo al ensamblaje de dos ejes: avance el brazo a mano en manual, ejec
 
 ## Qué cubre la evidencia
 
-Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.
 
 ## En una placa
 

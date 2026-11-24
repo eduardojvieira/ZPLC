@@ -39,7 +39,7 @@ Combine AND, NOT and XOR so a press can only be enabled when both hands are on t
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish the response time, redundancy or fault behaviour a real two-hand safety device needs, and they are not safety, HIL, or certification evidence.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.
 
 ## Wiring
 

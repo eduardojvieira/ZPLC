@@ -39,7 +39,7 @@ Walk through a motor with seal-in, stop, and overload handling using the Motor S
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence only; they are not hardware or HIL evidence.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.
 
 ## Wiring
 

@@ -103,7 +103,7 @@ function operations(overrides: Partial<McpOperations> = {}): McpOperations {
 
 describe('local MCP adapter', () => {
   test('exposes only the fixed safe tool allowlist', () => {
-    expect(MCP_SERVER_VERSION).toBe('2.0.0');
+    expect(MCP_SERVER_VERSION).toBe('2.0.1');
     expect(MCP_TOOL_NAMES).toEqual([
       'project_inspect',
       'project_validate',
@@ -209,14 +209,15 @@ describe('local MCP adapter', () => {
     await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual(progress());
     await writeFile(join(userData, 'zplc-learn-mastery.v1.json'), '{"schemaVersion":1,"mastered":["Not A Lesson Id"]}');
     await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual({ ok: false, error: 'MCP_INTERNAL_ERROR' });
-    // The current file wins over the file of the first release.
+    // The current file wins over the file of the first release. Mastered lessons come in course order, where the scan cycle now
+    // comes before the edge counter.
     const lesson = { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsShown: [], solutionShown: false };
     await writeFile(
       join(userData, 'zplc-learn-progress.v2.json'),
       JSON.stringify({ schemaVersion: 3, last: null, lessons: { 'edge-counter-pulses': lesson, 'scan-cycle-one-scan-memory': lesson } }),
     );
     await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual(
-      progress({ mastered: ['edge-counter-pulses', 'scan-cycle-one-scan-memory'], completed: 2 }),
+      progress({ mastered: ['scan-cycle-one-scan-memory', 'edge-counter-pulses'], completed: 2 }),
     );
     // LRN-024: a hardware-only lesson is passed by its passing hardware check, as the course counts it; a hardware run of a
     // lesson that has a simulation track does not pass it.

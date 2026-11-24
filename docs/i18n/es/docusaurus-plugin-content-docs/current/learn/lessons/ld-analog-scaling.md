@@ -39,7 +39,7 @@ Escale las cuentas crudas de una entrada analógica a un nivel en porcentaje con
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms, con bloques que reemplazan al sensor; no demuestran la precisión, el ruido ni la calibración de una entrada analógica real, el cableado, HIL ni certificación.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la precisión, el ruido, la calibración de una entrada analógica real ni el cableado.
 
 ## En una placa
 

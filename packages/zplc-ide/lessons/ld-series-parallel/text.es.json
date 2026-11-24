@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Serie y paralelo: AND y OR con contactos",
   "summary": "Combine contactos en serie para AND y en paralelo para OR, lea una tabla de verdad y termine un programa con una bocina que suena cuando se cumple cualquiera de dos condiciones.",
-  "scope": "Las pruebas aportan evidencia determinista del host con el runtime nativo POSIX, solo en su computadora; no son evidencia de hardware, eléctrica, HIL ni de seguridad.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Explique que los contactos en serie dejan pasar la energía solo cuando todos conducen (AND), y los contactos en paralelo cuando alguno conduce (OR).",
     "Agregue un camino en paralelo a un peldaño para que una bocina suene cuando la puerta está abierta o el motor se sobrecalienta, y compruébelo con cada fila de una tabla de verdad."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial lee solo DoorOpen en el peldaño de la bocina, así que Horn queda en OFF a los {{t:50}} ms aunque Overheat es TRUE; agregue un contacto normalmente abierto de Overheat en paralelo con el contacto DoorOpen. En el editor de escalera, ponga el cursor sobre el contacto DoorOpen y pulse B para iniciar una rama paralela.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

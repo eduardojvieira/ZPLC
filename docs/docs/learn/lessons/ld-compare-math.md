@@ -39,7 +39,7 @@ Use comparison boxes as conditions and math boxes as calculations in Ladder, and
 
 ## What the evidence covers
 
-Tests provide native POSIX host evidence with one 10 ms task; they do not establish the behavior of a real level sensor, its wiring, the timing of a real tank, HIL, or certification.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the behavior of a real level sensor, its wiring or the timing of a real tank.
 
 ## On a board
 

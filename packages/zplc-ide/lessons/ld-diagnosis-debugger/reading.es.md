@@ -70,7 +70,7 @@ Forzar una entrada es un buen experimento. Si fuerza `DoorClosed` a FALSE y la l
 
 ## La traza
 
-La **traza** registra muestras de los valores durante una ejecución en el simulador, para que usted lea lo ocurrido después. Es la herramienta para preguntas como "¿cuándo cambió la salida?" y "¿cambió en el mismo ciclo que la entrada?". La traza del simulador es solo evidencia del equipo anfitrión: no es evidencia de una placa real.
+La **traza** registra muestras de los valores durante una ejecución en el simulador, para que usted lea lo ocurrido después. Es la herramienta para preguntas como "¿cuándo cambió la salida?" y "¿cambió en el mismo ciclo que la entrada?". La traza del simulador muestra lo que ocurrió en el simulador de esta computadora, no en una placa real.
 
 ## Corregir, quitar los forzados y comprobar de nuevo
 

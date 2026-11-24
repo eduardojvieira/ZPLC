@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Reunir piezas en un cajón",
   "summary": "Lleve un cajón a un elevador, alimente cinco piezas dentro de él una por una y envíelo lleno.",
-  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Combinar un conteo, un elevador y un cajón en una sola secuencia de pasos.",
     "Mover el elevador solo con su superficie detenida y alimentar la pieza siguiente solo después de que la anterior haya aterrizado."
@@ -24,12 +24,12 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que nada se mueve; secuencie la estación: emita un cajón, suba el elevador, alimente y cuente cinco piezas una por una, baje el elevador y envíe el cajón, encendiendo Green cuando OutEye lo vea.",
-      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario lift-stacking; observe la vista 3D mientras se ejecuta.",
+      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
       "checkpoint": "El escenario requerido se llama lift-stacking y contiene {{assertions}} aserciones."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "El hecho loaded:crate:0 es TRUE cuando al menos una pieza reposa dentro del cajón, y el hecho delivered prueba que el cajón llegó a su depósito.",
-      "checkpoint": "La calificación no puede contar las piezas: no distingue cuatro de cinco, porque una expectativa no tiene comparación numérica; lea el conteo en los hechos. No establece la velocidad física del elevador, la temporización de hardware, HIL ni certificación."
+      "checkpoint": "La calificación no puede contar las piezas: no distingue cuatro de cinco, porque una expectativa no tiene comparación numérica; lea el conteo en los hechos."
     }
   ],
   "hints": [

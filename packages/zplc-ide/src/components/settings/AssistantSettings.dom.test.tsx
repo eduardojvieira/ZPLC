@@ -6,6 +6,7 @@ import { setupDom, stubProjectLoader } from '../../test/dom';
 const dom = await setupDom();
 await stubProjectLoader();
 const { AssistantSettings } = await import('./AssistantSettings');
+const { useAssistantProvider } = await import('../../shell/useSelection');
 
 type Answer = Promise<unknown>;
 interface Bridge {
@@ -16,6 +17,8 @@ interface Bridge {
 
 afterEach(() => {
   delete (window as unknown as { electronAPI?: unknown }).electronAPI;
+  // The form reads the provider status of the bridge into the shared store: the next file starts with no provider again.
+  useAssistantProvider.setState({ available: false });
 });
 
 function bridge(answers: Bridge) {

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Una secuencia en diagrama funcional secuencial: llenar y luego mezclar",
   "summary": "Complete un diagrama funcional secuencial de tres pasos agregando la transición temporizada que falta, y compruebe que la válvula y el mezclador nunca funcionan a la vez.",
-  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran volúmenes de proceso, calidad de mezcla ni tiempos de válvulas en equipos reales, HIL ni certificación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra volúmenes de proceso, calidad de mezcla ni tiempos de válvulas en equipos reales.",
   "objectives": [
     "Lea un diagrama funcional secuencial como pasos que se activan de uno en uno, acciones que se ejecutan mientras su paso está activo y transiciones que trasladan la actividad.",
     "Agregue una transición temporizada que use el tiempo transcurrido de un paso."
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial tiene los tres pasos y dos de las tres transiciones: FILL nunca termina, así que la válvula queda abierta y MIX nunca se ejecuta; agregue una transición de FILL a MIX cuya condición sea step_fill.T >= T#50ms.",
-      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

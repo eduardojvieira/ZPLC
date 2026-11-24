@@ -35,7 +35,7 @@ Cada uno de los cinco lenguajes se presenta en una lección cuyo objetivo lo nom
 | Lenguaje | Se presenta en                     | Nombre                         |
 | -------- | ---------------------------------- | ------------------------------ |
 | ST       | `first-blink-simulation`           | texto estructurado             |
-| LD       | `blinky-ladder-timer-feedback`     | diagrama de escalera           |
+| LD       | `ld-what-is-a-plc`                 | diagrama de escalera           |
 | FBD      | `boolean-logic-two-hand-guard-fbd` | diagrama de bloques de función |
 | SFC      | `sfc-fill-mix-sequence`            | diagrama funcional secuencial  |
 | IL       | `boolean-logic-two-hand-guard-il`  | lista de instrucciones         |
@@ -64,11 +64,11 @@ Un PLC repite un ciclo: leer las entradas, ejecutar el programa y escribir las s
 
 | Lección                                                                       | Estado     | Lenguajes | Rutas                | Planta | Minutos | Requiere                     |
 | ----------------------------------------------------------------------------- | ---------- | --------- | -------------------- | ------ | ------- | ---------------------------- |
+| `ld-what-is-a-plc` Qué es un PLC: su primer peldaño                           | Disponible | LD        | Simulación           | -      | 15      | -                            |
+| `ld-scan-cycle` El ciclo de escaneo: por qué importa el orden de los peldaños | Disponible | LD        | Simulación           | -      | 15      | `ld-what-is-a-plc`           |
 | `scan-cycle-one-scan-memory` Ciclo de escaneo y memoria de un ciclo           | Disponible | ST        | Simulación, Hardware | -      | 10      | `first-blink-simulation`     |
 | `blinky-ladder-timer-feedback` Oscilador TON y realimentación de salida       | Disponible | LD        | Simulación, Hardware | -      | 20      | `scan-cycle-one-scan-memory` |
 | `blink-structured-text` Escriba un parpadeador en texto estructurado          | Disponible | ST        | Simulación, Hardware | -      | 15      | `scan-cycle-one-scan-memory` |
-| `ld-what-is-a-plc` Qué es un PLC: su primer peldaño                           | Disponible | LD        | Simulación           | -      | 15      | -                            |
-| `ld-scan-cycle` El ciclo de escaneo: por qué importa el orden de los peldaños | Disponible | LD        | Simulación           | -      | 15      | `ld-what-is-a-plc`           |
 
 Objetivos de las lecciones disponibles:
 
@@ -86,6 +86,8 @@ La lógica booleana es el vocabulario de todo programa. Se enseña en diagrama d
 
 | Lección                                                                                                         | Estado     | Lenguajes | Rutas                | Planta | Minutos | Requiere                                                       |
 | --------------------------------------------------------------------------------------------------------------- | ---------- | --------- | -------------------- | ------ | ------- | -------------------------------------------------------------- |
+| `ld-no-nc-contacts` Contactos NA y NC: un botón de parada que falla en modo seguro                              | Disponible | LD        | Simulación           | -      | 20      | `blinky-ladder-timer-feedback`                                 |
+| `ld-series-parallel` Serie y paralelo: AND y OR con contactos                                                   | Disponible | LD        | Simulación           | -      | 20      | `ld-no-nc-contacts`                                            |
 | `boolean-logic-two-hand-guard` Lógica booleana: un mando a dos manos con protección                             | Disponible | ST        | Simulación, Hardware | -      | 15      | `blinky-ladder-timer-feedback`                                 |
 | `seal-in-ladder` Autorretención en diagrama de escalera: un motor que se mantiene encendido                     | Disponible | LD        | Simulación, Hardware | -      | 20      | `boolean-logic-two-hand-guard`                                 |
 | `set-reset-alarm-latch` Retener una alarma: set y reset, y cuál tiene prioridad                                 | Disponible | ST        | Simulación, Hardware | -      | 15      | `seal-in-ladder`                                               |
@@ -95,8 +97,6 @@ La lógica booleana es el vocabulario de todo programa. Se enseña en diagrama d
 | `boolean-logic-two-hand-guard-fbd` Diagrama de bloques de función: un mando a dos manos con protección          | Disponible | FBD       | Simulación, Hardware | -      | 20      | `boolean-logic-two-hand-guard`                                 |
 | `boolean-logic-two-hand-guard-il` Lista de instrucciones: el resultado actual en un mando a dos manos           | Disponible | IL        | Simulación, Hardware | -      | 15      | `boolean-logic-two-hand-guard`                                 |
 | `set-reset-alarm-latch-il` Lista de instrucciones: S y R, y la línea que va al final                            | Disponible | IL        | Simulación, Hardware | -      | 15      | `set-reset-alarm-latch`, `boolean-logic-two-hand-guard-il`     |
-| `ld-no-nc-contacts` Contactos NA y NC: un botón de parada que falla en modo seguro                              | Disponible | LD        | Simulación           | -      | 20      | `blinky-ladder-timer-feedback`                                 |
-| `ld-series-parallel` Serie y paralelo: AND y OR con contactos                                                   | Disponible | LD        | Simulación           | -      | 20      | `ld-no-nc-contacts`                                            |
 
 Objetivos de las lecciones disponibles:
 
@@ -121,6 +121,7 @@ El tiempo y los eventos vienen después de la lógica: los temporizadores retras
 | Lección                                                                                                                                                      | Estado     | Lenguajes | Rutas                | Planta | Minutos | Requiere                                                        |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- | --------- | -------------------- | ------ | ------- | --------------------------------------------------------------- |
 | `timers-on-delay-off-delay` Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión                                       | Disponible | ST        | Simulación, Hardware | -      | 15      | `motor-start-stop-safe`                                         |
+| `ld-edges` Flancos en escalera: contactos P y N y pulsos de un escaneo                                                                                       | Disponible | LD        | Simulación           | -      | 15      | `set-reset-alarm-latch-ladder`                                  |
 | `edge-counter-pulses` Flancos y contador de pulsos                                                                                                           | Disponible | ST        | Simulación, Hardware | -      | 15      | `timers-on-delay-off-delay`                                     |
 | `counter-batch-fbd` Contadores en diagrama de bloques de función: contar piezas hasta completar un lote                                                      | Disponible | FBD       | Simulación, Hardware | -      | 20      | `edge-counter-pulses`                                           |
 | `timers-on-delay-off-delay-ladder` Retardo a la conexión y a la desconexión en escalera: temporizadores como bloques en un peldaño                           | Disponible | LD        | Simulación, Hardware | -      | 20      | `timers-on-delay-off-delay`, `blinky-ladder-timer-feedback`     |
@@ -128,7 +129,6 @@ El tiempo y los eventos vienen después de la lógica: los temporizadores retras
 | `timers-on-delay-off-delay-fbd` Temporizadores en diagrama de bloques de función: una luz con retardo a la desconexión y un filtro con retardo a la conexión | Disponible | FBD       | Simulación, Hardware | -      | 20      | `timers-on-delay-off-delay`, `boolean-logic-two-hand-guard-fbd` |
 | `timers-on-delay-off-delay-il` Lista de instrucciones: llamar a un temporizador de retardo a la desconexión y a la conexión                                  | Disponible | IL        | Simulación, Hardware | -      | 15      | `timers-on-delay-off-delay`, `boolean-logic-two-hand-guard-il`  |
 | `edge-counter-pulses-il` Lista de instrucciones: contar pulsos con un CTU                                                                                    | Disponible | IL        | Simulación, Hardware | -      | 15      | `edge-counter-pulses`, `boolean-logic-two-hand-guard-il`        |
-| `ld-edges` Flancos en escalera: contactos P y N y pulsos de un escaneo                                                                                       | Disponible | LD        | Simulación           | -      | 15      | `set-reset-alarm-latch-ladder`                                  |
 
 Objetivos de las lecciones disponibles:
 
@@ -150,14 +150,14 @@ Las señales reales son números, no solo encendido y apagado. Los tipos, la ari
 
 | Lección                                                                                                                     | Estado     | Lenguajes | Rutas                | Planta | Minutos | Requiere                                                          |
 | --------------------------------------------------------------------------------------------------------------------------- | ---------- | --------- | -------------------- | ------ | ------- | ----------------------------------------------------------------- |
+| `ld-variables-and-types` Variables, tipos y direcciones en escalera: bits de memoria, valores TIME y el mapa de E/S         | Disponible | LD        | Simulación           | -      | 20      | `edge-counter-pulses-ladder`                                      |
+| `ld-compare-math` Bloques de comparación y de cálculo en escalera: una alarma de tanque y una división segura               | Disponible | LD        | Simulación           | -      | 25      | `ld-variables-and-types`                                          |
+| `ld-analog-scaling` Escalado analógico en escalera: de cuentas a porcentaje con MUL, DIV y LIMIT                            | Disponible | LD        | Simulación           | -      | 25      | `ld-compare-math`                                                 |
 | `types-arithmetic-comparison` Tipos, aritmética y comparación: un total y tres bandas                                       | Disponible | ST        | Simulación, Hardware | -      | 20      | `edge-counter-pulses`                                             |
 | `analog-scaling-integer` Escalado analógico: de cuentas en bruto a un porcentaje                                            | Disponible | ST        | Simulación, Hardware | -      | 20      | `types-arithmetic-comparison`                                     |
 | `analog-scaling-fbd` Escalado analógico en diagrama de bloques de función: una alarma de nivel alto                         | Disponible | FBD       | Simulación, Hardware | -      | 20      | `analog-scaling-integer`, `counter-batch-fbd`                     |
 | `types-arithmetic-comparison-fbd` Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres bandas | Disponible | FBD       | Simulación, Hardware | -      | 25      | `types-arithmetic-comparison`, `boolean-logic-two-hand-guard-fbd` |
 | `types-arithmetic-comparison-il` Lista de instrucciones: aritmética, comparación y un salto en un flanco ascendente         | Disponible | IL        | Simulación, Hardware | -      | 20      | `types-arithmetic-comparison`, `edge-counter-pulses-il`           |
-| `ld-variables-and-types` Variables, tipos y direcciones en escalera: bits de memoria, valores TIME y el mapa de E/S         | Disponible | LD        | Simulación           | -      | 20      | `edge-counter-pulses-ladder`                                      |
-| `ld-compare-math` Bloques de comparación y de cálculo en escalera: una alarma de tanque y una división segura               | Disponible | LD        | Simulación           | -      | 25      | `ld-variables-and-types`                                          |
-| `ld-analog-scaling` Escalado analógico en escalera: de cuentas a porcentaje con MUL, DIV y LIMIT                            | Disponible | LD        | Simulación           | -      | 25      | `ld-compare-math`                                                 |
 
 Objetivos de las lecciones disponibles:
 
@@ -178,6 +178,7 @@ Una máquina que hace cosas en orden es una máquina de estados. Las secuencias 
 
 | Lección                                                                                                              | Estado     | Lenguajes | Rutas                | Planta        | Minutos | Requiere                                              |
 | -------------------------------------------------------------------------------------------------------------------- | ---------- | --------- | -------------------- | ------------- | ------- | ----------------------------------------------------- |
+| `ld-sequence-step-bits` Una secuencia en escalera: los bits de paso llevan un tanque de llenado a mezcla y a vaciado | Disponible | LD        | Simulación           | -             | 25      | `ld-analog-scaling`                                   |
 | `pedestrian-crossing-states` Cruce peatonal y estados seguros                                                        | Disponible | ST        | Simulación           | pedestrian-v1 | 25      | `edge-counter-pulses`                                 |
 | `sfc-fill-mix-sequence` Una secuencia en diagrama funcional secuencial: llenar y luego mezclar                       | Disponible | SFC       | Simulación, Hardware | -             | 25      | `edge-counter-pulses`                                 |
 | `pedestrian-crossing-sfc` Cruce peatonal como diagrama funcional secuencial                                          | Disponible | SFC       | Simulación           | pedestrian-v1 | 25      | `pedestrian-crossing-states`, `sfc-fill-mix-sequence` |
@@ -185,7 +186,6 @@ Una máquina que hace cosas en orden es una máquina de estados. Las secuencias 
 | `simultaneous-branches-sfc` Ramas simultáneas: llenar y calentar a la vez                                            | Disponible | SFC       | Simulación           | -             | 30      | `sfc-fill-mix-sequence`                               |
 | `step-times-sfc` Tiempos de paso: una bocina antes de abrir la puerta                                                | Disponible | SFC       | Simulación           | -             | 20      | `sfc-fill-mix-sequence`                               |
 | `conveyor-sorting-sfc` Clasificación en un transportador como diagrama                                               | Disponible | SFC       | Simulación           | conveyor-v1   | 30      | `sfc-fill-mix-sequence`                               |
-| `ld-sequence-step-bits` Una secuencia en escalera: los bits de paso llevan un tanque de llenado a mezcla y a vaciado | Disponible | LD        | Simulación           | -             | 25      | `ld-analog-scaling`                                   |
 
 Objetivos de las lecciones disponibles:
 
@@ -236,11 +236,11 @@ Las lecciones siguientes cubren bloques de función, también llamados desde un 
 
 | Lección                                                                                                            | Estado     | Lenguajes | Rutas                | Planta | Minutos | Requiere                                                      |
 | ------------------------------------------------------------------------------------------------------------------ | ---------- | --------- | -------------------- | ------ | ------- | ------------------------------------------------------------- |
+| `ld-function-blocks` Su propio bloque de función en escalera: dos bombas, un bloque                                | Disponible | LD        | Simulación           | -      | 25      | `tank-level-fault-reset-ladder`                               |
 | `function-block-pump-pair` Bloques de función: un biestable, dos bombas                                            | Disponible | ST        | Simulación, Hardware | -      | 25      | `types-arithmetic-comparison`                                 |
 | `structures-arrays-call-panel` Estructuras y arreglos: un panel de tres llamadas                                   | Disponible | ST        | Simulación, Hardware | -      | 25      | `function-block-pump-pair`                                    |
 | `function-block-valves-fbd` Su propio bloque de función en diagrama de bloques de función: dos válvulas, un bloque | Disponible | FBD       | Simulación, Hardware | -      | 20      | `function-block-pump-pair`, `counter-batch-fbd`               |
 | `function-block-call-il` Lista de instrucciones: llamar a un bloque de función y leer sus salidas                  | Disponible | IL        | Simulación, Hardware | -      | 25      | `function-block-pump-pair`, `boolean-logic-two-hand-guard-il` |
-| `ld-function-blocks` Su propio bloque de función en escalera: dos bombas, un bloque                                | Disponible | LD        | Simulación           | -      | 25      | `tank-level-fault-reset-ladder`                               |
 
 Objetivos de las lecciones disponibles:
 
@@ -258,10 +258,10 @@ Las pruebas llegan cuando ya hay programas que vale la pena probar. Las pruebas 
 
 | Lección                                                                                                                           | Estado     | Lenguajes | Rutas      | Planta      | Minutos | Requiere                                         |
 | --------------------------------------------------------------------------------------------------------------------------------- | ---------- | --------- | ---------- | ----------- | ------- | ------------------------------------------------ |
+| `ld-diagnosis-debugger` Diagnóstico de un programa en escalera en simulación: observación, punto de interrupción, forzado y traza | Disponible | LD        | Simulación | -           | 40      | `ld-function-blocks`                             |
 | `conveyor-classification-jam` Cinta de clasificación y atasco seguro                                                              | Disponible | ST        | Simulación | conveyor-v1 | 25      | `motor-plant-feedback`, `tank-level-fault-reset` |
 | `temporal-assertions-jam-fault` Aserciones temporales y falla por atasco                                                          | Disponible | ST        | Simulación | -           | 25      | `conveyor-classification-jam`                    |
 | `conveyor-two-parts-diagnosis` Diagnóstico reproducible: dos piezas, una decisión                                                 | Disponible | ST        | Simulación | -           | 20      | `conveyor-classification-jam`                    |
-| `ld-diagnosis-debugger` Diagnóstico de un programa en escalera en simulación: observación, punto de interrupción, forzado y traza | Disponible | LD        | Simulación | -           | 40      | `ld-function-blocks`                             |
 
 Objetivos de las lecciones disponibles:
 
@@ -398,8 +398,8 @@ Los manipuladores añaden pasos que deben ocurrir en orden. Tomar, colocar y ens
 
 | Lección                                                                                 | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                                  |
 | --------------------------------------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | --------------------------------------------------------- |
-| `plant-belt-transfer` Tomar de una banda y dejar en otra                                | Disponible | ST        | Simulación | -      | 40      | `plant-counted-queue`                                     |
-| `plant-belt-transfer-ladder` Tomar de una banda y dejar en otra en diagrama de escalera | Disponible | LD        | Simulación | -      | 40      | `plant-counted-queue`                                     |
+| `plant-belt-transfer` Tomar de una cinta y dejar en otra                                | Disponible | ST        | Simulación | -      | 40      | `plant-counted-queue`                                     |
+| `plant-belt-transfer-ladder` Tomar de una cinta y dejar en otra en diagrama de escalera | Disponible | LD        | Simulación | -      | 40      | `plant-counted-queue`                                     |
 | `plant-assembler` Ensamblar tapas y bases                                               | Disponible | SFC       | Simulación | -      | 50      | `sfc-fill-mix-sequence`, `plant-belt-transfer`            |
 | `plant-assembler-numeric` Lo mismo con posiciones numéricas                             | Disponible | ST        | Simulación | -      | 40      | `plant-assembler`                                         |
 | `plant-layer-palletizer` Paletizar por capas                                            | Disponible | ST        | Simulación | -      | 50      | `structures-arrays-call-panel`, `plant-assembler-numeric` |
@@ -407,11 +407,11 @@ Los manipuladores añaden pasos que deben ocurrir en orden. Tomar, colocar y ens
 
 Objetivos de las lecciones disponibles:
 
-- **Tomar de una banda y dejar en otra**: Secuenciar un tomar y colocar con un estado por movimiento, cada uno a la espera de su final de carrera. Esperar la señal de agarre antes de elevar y mantener detenida la banda receptora mientras se deja una caja.
-- **Tomar de una banda y dejar en otra en diagrama de escalera**: Secuenciar un tomar y colocar con un estado por movimiento, cada uno a la espera de su final de carrera. Esperar la señal de agarre antes de elevar y mantener detenida la banda receptora mientras se deja una caja.
+- **Tomar de una cinta y dejar en otra**: Secuenciar un tomar y colocar con un estado por movimiento, cada uno a la espera de su final de carrera. Esperar la señal de agarre antes de elevar y mantener detenida la cinta receptora mientras se deja una caja.
+- **Tomar de una cinta y dejar en otra en diagrama de escalera**: Secuenciar un tomar y colocar con un estado por movimiento, cada uno a la espera de su final de carrera. Esperar la señal de agarre antes de elevar y mantener detenida la cinta receptora mientras se deja una caja.
 - **Ensamblar tapas y bases**: Coordinar dos ejes y una ventosa en una sola secuencia, con un paso por movimiento. Elegir entre dos pasos siguientes con condiciones de transición que se excluyen entre sí.
 - **Lo mismo con posiciones numéricas**: Enviar un eje a una posición con nombre mediante una consigna y leer su posición de vuelta. Decidir que un movimiento terminó cuando la posición está dentro de una tolerancia de la consigna, no cuando es igual a ella.
-- **Paletizar por capas**: Formar una capa contando pares de cajas y escuadrarla antes de que la pinza la tome. Colocar cada capa a su propia altura, una altura de caja más arriba que la inferior.
+- **Paletizar por capas**: Formar una capa contando pares de cajas y escuadrarla antes de que la pinza la tome. Guardar el descenso de cada capa en un arreglo y llenarlo con un bucle FOR, de modo que cada capa se coloque una altura de caja más arriba que la inferior.
 - **Paletizar con un pórtico**: Ordenar tres ejes con cuentas enteras y comparar cada posición con su orden con un margen de una cuenta. Elegir el lugar de cada caja a partir de su número: el hueco en la capa y la altura de la capa.
 
 ## Módulo 16: Clasificación: decidir una ruta según lo que informan los sensores
@@ -422,8 +422,8 @@ La clasificación convierte combinaciones de sensores en rutas. Reutiliza las ha
 
 | Lección                                                                                             | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                                 |
 | --------------------------------------------------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | -------------------------------------------------------- |
-| `plant-colour-separation` Enviar cada color a su banda                                              | Disponible | ST        | Simulación | -      | 45      | `plant-counted-queue`                                    |
-| `plant-colour-separation-ladder` Enviar cada color a su banda en diagrama de escalera               | Disponible | LD        | Simulación | -      | 45      | `plant-counted-queue`                                    |
+| `plant-colour-separation` Enviar cada color a su cinta                                              | Disponible | ST        | Simulación | -      | 45      | `plant-counted-queue`                                    |
+| `plant-colour-separation-ladder` Enviar cada color a su cinta en diagrama de escalera               | Disponible | LD        | Simulación | -      | 45      | `plant-counted-queue`                                    |
 | `plant-colour-separation-il` La misma clasificación en Lista de instrucciones                       | Disponible | IL        | Simulación | -      | 50      | `plant-colour-separation`, `instruction-list-door-alarm` |
 | `plant-weight-sorting` Clasificar por peso                                                          | Disponible | ST        | Simulación | -      | 50      | `plant-colour-separation`, `plant-tank-level-scaling`    |
 | `plant-weight-sorting-ladder` Clasificar por peso en diagrama de escalera                           | Disponible | LD        | Simulación | -      | 50      | `plant-colour-separation`, `plant-tank-level-scaling`    |
@@ -434,8 +434,8 @@ La clasificación convierte combinaciones de sensores en rutas. Reutiliza las ha
 
 Objetivos de las lecciones disponibles:
 
-- **Enviar cada color a su banda**: Decidir una ruta a partir del resultado de un sensor cuando la pieza está quieta. Ejecutar un empuje como una secuencia corta: extender hasta Extended, retraer hasta Retracted.
-- **Enviar cada color a su banda en diagrama de escalera**: Decidir una ruta a partir del resultado de un sensor cuando la pieza está quieta. Ejecutar un empuje como una secuencia corta: extender hasta Extended, retraer hasta Retracted.
+- **Enviar cada color a su cinta**: Decidir una ruta a partir del resultado de un sensor cuando la pieza está quieta. Ejecutar un empuje como una secuencia corta: extender hasta Extended, retraer hasta Retracted.
+- **Enviar cada color a su cinta en diagrama de escalera**: Decidir una ruta a partir del resultado de un sensor cuando la pieza está quieta. Ejecutar un empuje como una secuencia corta: extender hasta Extended, retraer hasta Retracted.
 - **La misma clasificación en Lista de instrucciones**: Convertir los estados de una secuencia de clasificación en bloques de comparar y saltar. Llamar a un TON desde Lista de instrucciones con CAL y leer su salida Q.
 - **Clasificar por peso**: Clasificar una pieza comparando un valor analógico con un límite. Leer el valor solo cuando la báscula indica que es estable.
 - **Clasificar por peso en diagrama de escalera**: Clasificar una pieza comparando un valor analógico con un límite. Leer el valor solo cuando la báscula indica que es estable.
@@ -459,7 +459,7 @@ Una estación agrupa clasificación, transferencia y secuencia en una sola unida
 
 Objetivos de las lecciones disponibles:
 
-- **Mover cajas entre tres niveles**: Describir cada elevador como su propia cadena de pasos que vuelve a su primer paso. Arrancar ambas cadenas con una sola transición y dejar que se encuentren solo en la banda entre los elevadores.
+- **Mover cajas entre tres niveles**: Describir cada elevador como su propia cadena de pasos que vuelve a su primer paso. Arrancar ambas cadenas con una sola transición y dejar que se encuentren solo en la cinta entre los elevadores.
 - **Reunir piezas en un cajón**: Combinar un conteo, un elevador y un cajón en una sola secuencia de pasos. Mover el elevador solo con su superficie detenida y alimentar la pieza siguiente solo después de que la anterior haya aterrizado.
 - **Almacenar y recuperar**: Escribir las secuencias de almacenar y de recuperar de un transelevador como cadenas de pasos. Llevar una tabla de celdas ocupadas y las peticiones que esperan, y elegir el trabajo siguiente a partir de ellas.
 - **Equilibrar una línea de producción**: Mover el control de una máquina a un bloque de función y usar una instancia para cada máquina. Equilibrar dos máquinas de distinta velocidad alternando las piezas entre ellas.
@@ -494,15 +494,15 @@ El curso termina construyendo la propia planta: piezas, señales y un programa q
 
 | Lección                                                                            | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                             |
 | ---------------------------------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | ---------------------------------------------------- |
-| `plant-build-belt-scene` Construir una escena de banda desde el suelo vacío        | Disponible | ST        | Simulación | -      | 25      | `plant-belt-to-sensor`, `plant-fault-actions`        |
-| `plant-build-belt-scene-ladder` Construir una escena de banda desde el suelo vacío | Disponible | LD        | Simulación | -      | 25      | `plant-belt-to-sensor`, `plant-fault-actions`        |
+| `plant-build-belt-scene` Construir una escena de cinta desde el suelo vacío        | Disponible | ST        | Simulación | -      | 25      | `plant-belt-to-sensor`, `plant-fault-actions`        |
+| `plant-build-belt-scene-ladder` Construir una escena de cinta desde el suelo vacío | Disponible | LD        | Simulación | -      | 25      | `plant-belt-to-sensor`, `plant-fault-actions`        |
 | `plant-change-scene` Modificar una escena: agregar el segundo emisor               | Disponible | ST        | Simulación | -      | 20      | `plant-build-belt-scene`, `plant-merge-lines`        |
 | `plant-change-scene-ladder` Modificar una escena: agregar el segundo emisor        | Disponible | LD        | Simulación | -      | 20      | `plant-build-belt-scene-ladder`, `plant-merge-lines` |
 
 Objetivos de las lecciones disponibles:
 
-- **Construir una escena de banda desde el suelo vacío**: Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa. Ejecutar un programa sobre la escena que usted construyó y ver que la Comprobación califica esa escena, no una copia.
-- **Construir una escena de banda desde el suelo vacío**: Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa. Ejecutar un programa sobre la escena que usted construyó y ver que la Comprobación califica esa escena, no una copia.
+- **Construir una escena de cinta desde el suelo vacío**: Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa. Ejecutar un programa sobre la escena que usted construyó y ver que la Comprobación califica esa escena, no una copia.
+- **Construir una escena de cinta desde el suelo vacío**: Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa. Ejecutar un programa sobre la escena que usted construyó y ver que la Comprobación califica esa escena, no una copia.
 - **Modificar una escena: agregar el segundo emisor**: Agregar una pieza a una escena existente y colocarla donde el resto de la escena la espera. Enlazar la señal de la pieza nueva en el mapa de la planta con la variable del programa que ya la gobierna, sin cambiar el programa.
 - **Modificar una escena: agregar el segundo emisor**: Agregar una pieza a una escena existente y colocarla donde el resto de la escena la espera. Enlazar la señal de la pieza nueva en el mapa de la planta con la variable del programa que ya la gobierna, sin cambiar el programa.
 

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "ld-series-parallel",
-  "version": 1,
-  "order": 80,
+  "version": 2,
+  "order": 12,
   "module": 2,
   "level": "foundation",
   "prerequisites": ["ld-no-nc-contacts"],

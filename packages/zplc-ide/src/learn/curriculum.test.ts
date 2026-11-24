@@ -207,7 +207,10 @@ describe('LRN-006 the course follows the curriculum table of the spec, in its or
     const tour = order.filter((lesson) => lesson.module === 0).map((lesson) => lesson.id);
     expect(tour[0]).toBe('first-blink-simulation');
     expect(ids.slice(0, tour.length)).toEqual(tour);
-    expect(ids.slice(tour.length, tour.length + 3)).toEqual([
+    // S-13: in the full course an explanation comes before the practice that uses it, so the two reading lessons open module 1.
+    expect(ids.slice(tour.length, tour.length + 5)).toEqual([
+      'ld-what-is-a-plc',
+      'ld-scan-cycle',
       'scan-cycle-one-scan-memory',
       'blinky-ladder-timer-feedback',
       'blink-structured-text',

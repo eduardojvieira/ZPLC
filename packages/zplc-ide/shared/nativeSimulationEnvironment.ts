@@ -13,14 +13,24 @@ export function withNativeCommunicationEnvironment(environment: NodeJS.ProcessEn
   return childEnvironment;
 }
 
+/**
+ * The environment of the native runtime that Studio starts. Studio keeps its programs and RETAIN records in
+ * `<userData>/native-simulation`, not in the `~/.zplc` that the command line and the development builds share. Only an
+ * unpackaged app honours a ZPLC_PERSIST_ROOT of its environment (the journeys and the desktop smoke set one): the
+ * packaging is the trust boundary, as it is for ZPLC_NATIVE_SIM_BIN.
+ */
 export function nativeSimulationEnvironment(
   environment: NodeJS.ProcessEnv,
   isDev: boolean,
   resourcesPath: string,
+  userDataPath: string,
   platform: NodeJS.Platform = process.platform,
 ): NodeJS.ProcessEnv {
   const childEnvironment = withNativeCommunicationEnvironment(environment);
   delete childEnvironment.ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK;
+  if (!isDev || !childEnvironment.ZPLC_PERSIST_ROOT) {
+    childEnvironment.ZPLC_PERSIST_ROOT = path.join(userDataPath, 'native-simulation');
+  }
   if (!isDev) {
     childEnvironment.ZPLC_NATIVE_SIM_BIN = path.join(
       resourcesPath,

@@ -76,6 +76,7 @@ describe('COM-009 the endpoints that the Studio session starts', () => {
           { ...process.env, ZPLC_NATIVE_SIM_BIN: nativeRuntimeBinary, ZPLC_PERSIST_ROOT: persist },
           true,
           '/unused',
+          '/unused',
         ),
         ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK: '1',
       };
