@@ -23,7 +23,9 @@ const twice = (pieces: readonly Piece[]) => {
 describe('composed part models (VIS-014)', () => {
   it('PRT-009 the pilot parts have a builder, no part kind is in two families, and any other kind keeps its single shape', async () => {
     const v = await plant.views();
-    expect(Object.keys(MODELS).sort()).toEqual(['belt', 'emitter', 'push-button', 'sensor']);
+    // Each family's test names the builders of its own file; here only that the families are all joined, and none twice.
+    expect(Object.keys(MODELS).sort()).toEqual(FAMILIES.flatMap((family) => Object.keys(family)).sort());
+    expect(Object.keys(MODELS)).toEqual(expect.arrayContaining(['belt', 'emitter', 'push-button', 'sensor']));
     expect(FAMILIES.reduce((n, family) => n + Object.keys(family).length, 0)).toBe(Object.keys(MODELS).length);
     for (const id of ['belt', 'eye-far', 'start', 'emitter']) expect(partModel(v[id]!)?.length).toBeGreaterThan(3);
     expect(partModel({ ...v.belt!, part: 'no-such-part' })).toBeNull();
