@@ -101,6 +101,9 @@ it waits ten seconds, you plug it back; it then reads `zplc sched status --json`
 
 ### The Owner's commands (Task H8 of specs/012-zplc-2-1-plant-simulation/plan-m6.md)
 
+[`BENCH-2.1.md`](BENCH-2.1.md) is the run sheet for the two learner boards: the build, flash and deploy commands, the
+port, the six runs, what the person sees at each prompt, the evidence files and what to have ready on the bench.
+
 1. Build the HIL firmware for the board with the command `firmware/app/boards/boards.json` gives in `build_command`
    (`west build -b rpi_pico/rp2040 firmware/app --pristine` for the Pico; read the entry of `esp32s3_devkitc`, whose
    N8R8 PSRAM requirement is in its `note`), and flash it as `docs/docs/development/firmware-testing.md` and the board's

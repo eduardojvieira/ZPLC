@@ -1,0 +1,303 @@
+{
+  "schema": 1,
+  "level": "fake",
+  "provisional": true,
+  "comment": "Provisional: made from the fake board of Studio tests, which answers every frame at once. It is not a measurement of any board, and qualify() offers no scene on it (G10, P6). It is made again from the HIL runs (H8).",
+  "rule": "R-M6-8: shortestPulseMs >= worstGapMs + scanMs on every learner board over usb-serial; only hil evidence qualifies",
+  "boards": [
+    "esp32s3_devkitc",
+    "rpi_pico"
+  ],
+  "transport": "usb-serial",
+  "evidence": [
+    {
+      "board": "esp32s3_devkitc",
+      "level": "fake",
+      "frame_ms": 20,
+      "worst_gap_ms": 20
+    },
+    {
+      "board": "rpi_pico",
+      "level": "fake",
+      "frame_ms": 20,
+      "worst_gap_ms": 20
+    }
+  ],
+  "subjects": [
+    {
+      "id": "belt-to-sensor",
+      "kind": "scene",
+      "shortest_pulse_ms": 800,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "latch-two-sensors",
+      "kind": "scene",
+      "shortest_pulse_ms": 800,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "timed-tank",
+      "kind": "scene",
+      "shortest_pulse_ms": 200,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "counted-queue",
+      "kind": "scene",
+      "shortest_pulse_ms": 800,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "two-axis-assembly",
+      "kind": "scene",
+      "shortest_pulse_ms": 400,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "two-axis-assembly-numeric",
+      "kind": "scene",
+      "shortest_pulse_ms": 400,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "stacker-crane-warehouse",
+      "kind": "scene",
+      "shortest_pulse_ms": 400,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "buffer-release",
+      "kind": "scene",
+      "shortest_pulse_ms": 800,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "merge-lines",
+      "kind": "scene",
+      "shortest_pulse_ms": 800,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "lift-stacking",
+      "kind": "scene",
+      "shortest_pulse_ms": 400,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "three-level-lifts",
+      "kind": "scene",
+      "shortest_pulse_ms": 800,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "tank-level-control",
+      "kind": "scene",
+      "shortest_pulse_ms": 200,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "layer-palletizer",
+      "kind": "scene",
+      "shortest_pulse_ms": 20,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "belt-to-belt-transfer",
+      "kind": "scene",
+      "shortest_pulse_ms": 330,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "three-axis-palletizing",
+      "kind": "scene",
+      "shortest_pulse_ms": 1300,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "balanced-production-line",
+      "kind": "scene",
+      "shortest_pulse_ms": 400,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "colour-separation",
+      "kind": "scene",
+      "shortest_pulse_ms": 40,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "height-sorting-turntable",
+      "kind": "scene",
+      "shortest_pulse_ms": 800,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "height-sorting-chain",
+      "kind": "scene",
+      "shortest_pulse_ms": 800,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "weight-sorting",
+      "kind": "scene",
+      "shortest_pulse_ms": 40,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "vision-sorting",
+      "kind": "scene",
+      "shortest_pulse_ms": 1000,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "motor-v1",
+      "kind": "plant",
+      "shortest_pulse_ms": 20,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "conveyor-v1",
+      "kind": "plant",
+      "shortest_pulse_ms": 10,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "tank-v1",
+      "kind": "plant",
+      "shortest_pulse_ms": 20,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    },
+    {
+      "id": "pedestrian-v1",
+      "kind": "plant",
+      "shortest_pulse_ms": 60,
+      "scan_ms": 10,
+      "qualifies": false,
+      "reason": {
+        "en": "The plant I/O evidence for esp32s3_devkitc is at level fake, not from a board on the bench (hil), so it cannot qualify a scene.",
+        "es": "La evidencia de E/S de planta de esp32s3_devkitc es de nivel fake, no de una placa en el banco (hil), así que no puede habilitar una escena."
+      }
+    }
+  ]
+}
