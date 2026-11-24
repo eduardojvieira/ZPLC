@@ -53,7 +53,7 @@ export function qualify(scene: { shortestPulseMs: number; scanMs: number }, evid
     if (pulse < gap + scan)
       return closed(
         `On ${board} over ${QUALIFYING_TRANSPORT} the worst gap between exchanges is ${ms(gap)} and one scan is ${ms(scan)}: a sensor pulse of ${ms(pulse)} can fall between two frames (it needs at least ${ms(gap + scan)}).`,
-        `En ${board} por ${QUALIFYING_TRANSPORT} el peor intervalo entre intercambios es de ${ms(gap)} y un ciclo es de ${ms(scan)}: un pulso de sensor de ${ms(pulse)} puede caer entre dos tramas (necesita al menos ${ms(gap + scan)}).`,
+        `En ${board} por ${QUALIFYING_TRANSPORT} el peor intervalo entre intercambios es de ${ms(gap)} y un ciclo es de ${ms(scan)}: un pulso de sensor de ${ms(pulse)} puede caer entre dos frames (necesita al menos ${ms(gap + scan)}).`,
       );
   }
   return { qualifies: true };
