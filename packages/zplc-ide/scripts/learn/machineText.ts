@@ -40,7 +40,8 @@ export const PART_TEXT: Readonly<Record<string, PartText>> = {
   belt: {
     plant: t(
       'A motor-driven belt that carries goods along a line, the base of most packing and sorting lines.',
-      'Una cinta movida por un motor que lleva la mercancía a lo largo de una línea, la base de casi toda línea de embalaje o clasificación.',
+      'Una cinta movida por un motor que lleva la mercancía a lo largo de una línea, ' +
+        'la base de casi toda línea de embalaje o clasificación.',
     ),
     signals: { run: t('TRUE runs the belt forward.', 'TRUE hace avanzar la cinta.') },
   },

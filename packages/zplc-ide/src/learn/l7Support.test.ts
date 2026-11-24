@@ -176,7 +176,15 @@ const CTUD_SCENARIO = {
 
 function stProgram(io: Declarations, locals: string, body: string): string {
   const list = (pairs: Array<[string, string]>) => pairs.map(([name, at]) => `${name} AT ${at} : BOOL;`).join(' ');
-  return `PROGRAM Probe\nVAR_INPUT ${list(io.inputs)} END_VAR\nVAR_OUTPUT ${list(io.outputs)} END_VAR\nVAR ${locals} END_VAR\n${body}\nEND_PROGRAM\n`;
+  return [
+    'PROGRAM Probe',
+    `VAR_INPUT ${list(io.inputs)} END_VAR`,
+    `VAR_OUTPUT ${list(io.outputs)} END_VAR`,
+    `VAR ${locals} END_VAR`,
+    body,
+    'END_PROGRAM',
+    '',
+  ].join('\n');
 }
 /** The same program in IL: `CAL` the block with its inputs, then load and store each output. */
 function ilBlockProgram(io: Declarations, locals: string, call: string, outputs: Array<[string, string]>): string {
@@ -596,7 +604,12 @@ const ST_PROBES: Probe[] = [
     source: stProgram(
       io(['Sum55', 'Sum10']),
       'I : INT; N : INT; Sum : INT;',
-      'IF Sel THEN N := 10; ELSE N := 4; END_IF;\nI := 0; Sum := 0;\nWHILE I < N DO\n  I := I + 1; Sum := Sum + I;\nEND_WHILE;\nSum55 := Sum = 55; Sum10 := Sum = 10;',
+      [
+        'IF Sel THEN N := 10; ELSE N := 4; END_IF;',
+        'I := 0; Sum := 0;',
+        'WHILE I < N DO I := I + 1; Sum := Sum + I; END_WHILE;',
+        'Sum55 := Sum = 55; Sum10 := Sum = 10;',
+      ].join('\n'),
     ),
     ...selScenario({ Sum55: false, Sum10: true }, { Sum55: true, Sum10: false }),
   },
@@ -607,7 +620,12 @@ const ST_PROBES: Probe[] = [
     source: stProgram(
       io(['Sum55', 'RanOnce']),
       'I : INT; N : INT; Sum : INT;',
-      'IF Sel THEN N := 10; ELSE N := 0; END_IF;\nI := 0; Sum := 0;\nREPEAT\n  I := I + 1; Sum := Sum + I;\nUNTIL I >= N\nEND_REPEAT;\nSum55 := Sum = 55; RanOnce := Sum = 1;',
+      [
+        'IF Sel THEN N := 10; ELSE N := 0; END_IF;',
+        'I := 0; Sum := 0;',
+        'REPEAT I := I + 1; Sum := Sum + I; UNTIL I >= N END_REPEAT;',
+        'Sum55 := Sum = 55; RanOnce := Sum = 1;',
+      ].join('\n'),
     ),
     ...selScenario({ Sum55: false, RanOnce: true }, { Sum55: true, RanOnce: false }),
   },
@@ -618,7 +636,14 @@ const ST_PROBES: Probe[] = [
     source: stProgram(
       io(['Sum55', 'Sum6', 'FourDown']),
       'I : INT; N : INT; Sum : INT; Turns : INT;',
-      'IF Sel THEN N := 10; ELSE N := 3; END_IF;\nSum := 0;\nFOR I := 1 TO N DO Sum := Sum + I; END_FOR;\nTurns := 0;\nFOR I := 10 TO 1 BY -3 DO Turns := Turns + 1; END_FOR;\nSum55 := Sum = 55; Sum6 := Sum = 6; FourDown := Turns = 4;',
+      [
+        'IF Sel THEN N := 10; ELSE N := 3; END_IF;',
+        'Sum := 0;',
+        'FOR I := 1 TO N DO Sum := Sum + I; END_FOR;',
+        'Turns := 0;',
+        'FOR I := 10 TO 1 BY -3 DO Turns := Turns + 1; END_FOR;',
+        'Sum55 := Sum = 55; Sum6 := Sum = 6; FourDown := Turns = 4;',
+      ].join('\n'),
     ),
     ...selScenario({ Sum55: false, Sum6: true, FourDown: true }, { Sum55: true, Sum6: false, FourDown: true }),
   },
@@ -628,7 +653,11 @@ const ST_PROBES: Probe[] = [
     source: stProgram(
       io(['Is25', 'Is4']),
       'Squares : ARRAY[1..5] OF INT; I : INT; Pick : INT;',
-      'FOR I := 1 TO 5 DO Squares[I] := I * I; END_FOR;\nIF Sel THEN Pick := 5; ELSE Pick := 2; END_IF;\nIs25 := Squares[Pick] = 25; Is4 := Squares[Pick] = 4;',
+      [
+        'FOR I := 1 TO 5 DO Squares[I] := I * I; END_FOR;',
+        'IF Sel THEN Pick := 5; ELSE Pick := 2; END_IF;',
+        'Is25 := Squares[Pick] = 25; Is4 := Squares[Pick] = 4;',
+      ].join('\n'),
     ),
     ...selScenario({ Is25: false, Is4: true }, { Is25: true, Is4: false }),
   },
@@ -650,7 +679,8 @@ const ST_PROBES: Probe[] = [
     // The global is declared in its own file, written by the program and read by a function block through VAR_EXTERNAL.
     libraries: { 'Globals.st': 'VAR_GLOBAL\n  Setpoint : INT;\nEND_VAR\n' },
     source:
-      'FUNCTION_BLOCK Watcher\nVAR_EXTERNAL Setpoint : INT; END_VAR\nVAR_OUTPUT High : BOOL; END_VAR\nHigh := Setpoint > 100;\nEND_FUNCTION_BLOCK\n' +
+      'FUNCTION_BLOCK Watcher\nVAR_EXTERNAL Setpoint : INT; END_VAR\nVAR_OUTPUT High : BOOL; END_VAR\n' +
+      'High := Setpoint > 100;\nEND_FUNCTION_BLOCK\n' +
       stProgram(
         io(['High', 'Seen']),
         'W : Watcher;',

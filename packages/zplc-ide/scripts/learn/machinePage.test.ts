@@ -19,10 +19,14 @@ describe('signal table', () => {
       [
         '| Part | What it is in a real plant | Signal | PLC variable | Direction | Type | Meaning |',
         '| --- | --- | --- | --- | --- | --- | --- |',
-        '| `Belt1` (Belt conveyor) | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines. | `Belt1.run` | `Run` | PLC output | BOOL | TRUE runs the belt forward. |',
-        '| `Emitter1` (Item emitter) | Stands for whatever feeds the line: the machine before it, an operator, or a magazine that releases one item. | `Emitter1.emit` | `Emit` | PLC output | BOOL | Each rising edge releases one item onto the line. |',
-        '| `EyeFar` (Diffuse optical sensor) | A photoelectric sensor that sends out light and sees it bounce back off an object in front of it. | `EyeFar.detect` | `EyeFar` | PLC input | BOOL | TRUE while an object is in the beam. |',
-        '| `StartButton` (Push button) | A button on the operator panel that is pressed only while a finger holds it. | `StartButton.pressed` | `Start` | PLC input | BOOL | TRUE while the button is held down. |',
+        '| `Belt1` (Belt conveyor) | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines. | ' +
+          '`Belt1.run` | `Run` | PLC output | BOOL | TRUE runs the belt forward. |',
+        '| `Emitter1` (Item emitter) | Stands for whatever feeds the line: the machine before it, an operator, or a magazine that ' +
+          'releases one item. | `Emitter1.emit` | `Emit` | PLC output | BOOL | Each rising edge releases one item onto the line. |',
+        '| `EyeFar` (Diffuse optical sensor) | A photoelectric sensor that sends out light and sees it bounce back off an object in ' +
+          'front of it. | `EyeFar.detect` | `EyeFar` | PLC input | BOOL | TRUE while an object is in the beam. |',
+        '| `StartButton` (Push button) | A button on the operator panel that is pressed only while a finger holds it. | ' +
+          '`StartButton.pressed` | `Start` | PLC input | BOOL | TRUE while the button is held down. |',
         '',
       ].join('\n'),
     );
