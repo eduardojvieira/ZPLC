@@ -52,7 +52,15 @@ const sidebars = {
           type: 'category',
           label: 'ZPLC application',
           collapsed: true,
-          items: ['ide/index', 'ide/features', 'ide/editors', 'ide/compiler', 'ide/migration-v1-to-v2'],
+          items: [
+            'ide/index',
+            'ide/features',
+            'ide/tests',
+            'ide/find-and-references',
+            'ide/editors',
+            'ide/compiler',
+            'ide/migration-v1-to-v2',
+          ],
         },
         {
           type: 'category',

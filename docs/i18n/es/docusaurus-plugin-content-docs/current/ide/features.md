@@ -24,10 +24,10 @@ Una barra de actividades y una barra lateral principal, a la izquierda, contiene
 
 De arriba abajo, la ventana tiene el menú de la aplicación, la barra de comandos (guardar, compilar, el selector de destino, los controles de ejecución, el nombre del proyecto y el botón de la paleta de comandos) y, una junto a otra, la **barra de actividades**, la **barra lateral principal**, el **área del editor** sobre el **panel de resultados** y la **barra lateral secundaria**; al final, la línea de estado.
 
-- **Barra de actividades.** Proyecto, Buscar, Pruebas y Aprender. Al elegir una, cambia la barra lateral principal; la elegida se marca con una barra en su borde y un botón relleno, no solo con el color. Pruebas muestra además el panel de resultados.
-- **Barra lateral principal.** Proyecto muestra el navegador, Buscar encuentra texto en el proyecto, Pruebas explica los escenarios y abre los resultados, y Aprender contiene las lecciones.
-- **Barra lateral secundaria.** El Inspector y, mientras haya un proveedor de IA configurado, el Asistente. Empieza oculta para que el editor conserve su ancho; se muestra o se oculta con el botón Inspector de la barra de comandos o con **Ver > Mostrar u ocultar la barra lateral secundaria**.
-- **Panel de resultados.** Se oculta con **Ver > Mostrar u ocultar el panel de resultados**.
+- **Barra de actividades.** Proyecto, Buscar, Pruebas y Aprender. Al elegir una, cambia la barra lateral principal; la elegida se marca con una barra en su borde y un botón relleno, no solo con el color. Pruebas muestra además la pestaña Resultados de las pruebas del panel de resultados.
+- **Barra lateral principal.** Proyecto muestra el navegador, Buscar encuentra texto y referencias en el proyecto ([Búsqueda y referencias](./find-and-references.md)), Pruebas lista las pruebas del proyecto y las ejecuta ([Pruebas y resultados](./tests.md)), y Aprender contiene las lecciones.
+- **Barra lateral secundaria.** El Inspector y, mientras haya un proveedor de IA configurado, el Asistente, una vista a la vez. El Inspector muestra el documento abierto, el elemento seleccionado en un diagrama o la prueba elegida en la actividad Pruebas; allí sus propiedades son de solo lectura y se cambian en el editor (**Mostrar el inspector**). La barra lateral empieza oculta para que el editor conserve su ancho; se muestra o se oculta con el botón Inspector de la barra de comandos o con **Ver > Mostrar u ocultar la barra lateral secundaria**.
+- **Panel de resultados.** Salida, Problemas, Resultados de las pruebas, Traza y Observación, cada una con su nombre a 1366 por 768 en inglés y en español, y Terminal mientras el destino es una placa o desde que usted la abre. El panel se oculta con **Ver > Mostrar u ocultar el panel de resultados**.
 
 La barra lateral principal es `Ctrl+Alt+B`, la secundaria `Ctrl+Alt+I` y el panel de resultados `Ctrl+Alt+J` (⌘⌥ en macOS). **Mostrar el navegador del proyecto** es `Ctrl+Mayús+E` y **Buscar en el proyecto** es `Ctrl+Mayús+F`. Las barras laterales visibles y la actividad elegida se conservan entre sesiones.
 
@@ -38,13 +38,15 @@ Un interruptor en el encabezado del navegador elige entre dos modos, y la elecci
 - **Objetos** (el modo por defecto) agrupa el proyecto como **Programas**, **Bloques de función**, **Funciones**, **Tipos de datos**, **Variables globales**, **Tareas**, **Mapeo de E/S**, **Comunicación** y **Dispositivo**. Los cinco primeros salen de la lectura que el compilador hace de los archivos de texto estructurado y, en el caso de Programas, también de los archivos de diagramas y de lista de instrucciones; un archivo que declara varios objetos aparece bajo cada tipo. Los demás salen de `zplc.json`. Al elegir un objeto se abre su archivo en su línea, o su editor de configuración.
 - **Archivos** es el árbol de archivos, con la sección Declaraciones y las carpetas de biblioteca.
 
+En el modo Objetos, el encabezado de cada grupo de objetos del proyecto tiene un botón **Nuevo** (**Nuevo en Programas**, **Nuevo en Funciones**, etc.), y un grupo vacío ofrece la acción en palabras en lugar de su línea vacía. **Nuevo programa** pregunta primero el lenguaje, uno de los cinco. El diálogo pide un nombre de letras, dígitos y guiones bajos que empiece con una letra, no sea una palabra reservada, tenga como mucho 63 caracteres y no se use ya en el proyecto, e indica qué regla no cumple un nombre. El objeto nuevo se abre con un esqueleto que compila. Una tarea nueva ejecuta el primer programa del proyecto hasta que usted la cambie. Cada objeto tiene un menú **Acciones** con **Cambiar el nombre**, **Mover el archivo**, **Duplicar** y **Eliminar**, que pregunta antes. Cerrar el proyecto es **Cerrar el proyecto** en el menú Archivo y en la paleta.
+
 ### Editores de configuración
 
-**Tareas**, **Mapeo de E/S**, **Red**, **Comunicación** y **Destino** se abren cada uno como una pestaña del área del editor, desde el navegador o desde la lista de la pestaña Configuración. Todas las pestañas editan un solo documento, `zplc.json`: **Guardar la configuración** lo escribe, y cerrar la última pestaña que lo muestra con ediciones sin guardar pregunta si desea guardar, descartar o seguir editando. La pestaña Configuración conserva los metadatos del proyecto y las preferencias de la aplicación.
+**Tareas**, **Mapeo de E/S**, **Red**, **Comunicación** y **Destino** se abren cada uno como una pestaña del área del editor, desde el navegador, desde la paleta o desde **Configuración del proyecto**. Todas las pestañas editan un solo documento, `zplc.json`: **Guardar la configuración** lo escribe, y cerrar la última pestaña que lo muestra con ediciones sin guardar pregunta si desea guardar, descartar o seguir editando. **Configuración del proyecto**, desde la raíz del navegador o desde la barra de comandos, conserva los metadatos del proyecto. Contiene solo lo que pertenece al proyecto: el tema, la densidad y el idioma están en las [Preferencias](#preferencias).
 
 ### Búsqueda
 
-La búsqueda halla texto en los archivos de texto estructurado y de lista de instrucciones del proyecto, incluidos los cambios sin guardar, distinguiendo o no mayúsculas de minúsculas, y lista las coincidencias por archivo. Al elegir una coincidencia se abre el archivo en esa línea. No busca en los diagramas, que se guardan como modelos.
+La búsqueda abarca los cinco lenguajes: el texto de los archivos de texto estructurado y de lista de instrucciones, y los nombres, variables, comentarios y expresiones de los diagramas de escalera, FBD y SFC, incluidos los cambios sin guardar. Su segundo modo lista las referencias de un nombre o de una dirección de E/S. Ambos están en [Búsqueda, todas las referencias y la ubicación de un documento](./find-and-references.md).
 
 ### Mover los separadores
 
@@ -53,6 +55,8 @@ Cada separador entre dos regiones se ilumina bajo el puntero, se rellena mientra
 ### Tamaños de ventana
 
 La ruta principal (abrir un proyecto, editar, compilar, simular, observar) cabe en una ventana de 1366 por 768 píxeles sin ningún control recortado. La ventana puede ser tan pequeña como 1024 por 768: por debajo de 1100 píxeles de ancho la barra de actividades muestra solo iconos, la barra lateral secundaria se oculta sola, y los comandos de tema, configuración y atajos pasan al menú **Más comandos** de la barra de comandos.
+
+**Restablecer el diseño** (paleta de comandos) devuelve las regiones a como estaban en el primer inicio: las barras laterales y sus tamaños, el panel de resultados abierto en Salida y un solo grupo en el área del editor. Luego dice "El diseño volvió a sus valores iniciales. Sus preferencias y archivos no se modificaron."
 
 Nivel de evidencia: host. Las pruebas unitarias (`packages/zplc-ide/src/layout/separatorSteps.test.ts`, `packages/zplc-ide/src/store/useShellLayout.test.ts`) y un recorrido de `bun run test:journeys` los cubren en el host de desarrollo. No se midió ninguna ventana empaquetada, de macOS ni de Windows.
 
@@ -133,7 +137,7 @@ Nivel de evidencia: host. `packages/zplc-ide/electron/recoveryStore.test.ts` cub
 
 ## Preferencias
 
-Las preferencias son suyas, no de un proyecto: se aplican a todos los proyectos y se guardan para su cuenta de usuario. Ábralas desde el desplegable **Preferencias** de la pantalla de bienvenida, o en la parte superior de la pestaña Configuración del proyecto dentro de un proyecto.
+Las preferencias son suyas, no de un proyecto: se aplican a todos los proyectos y se guardan para su cuenta de usuario. **Preferencias** es un documento propio, que se abre con o sin un proyecto: **Preferencias** en la pantalla de bienvenida, **Abrir las preferencias** en el menú Archivo (`Ctrl+,`, `Cmd+,` en macOS), o el nombre de una preferencia en la paleta de comandos, que abre el documento en ese ajuste. Contiene el único control del tema de ZPLC, el interruptor **Salida detallada** de la pestaña Salida, la preferencia **Antes de ejecutar y compilar** (**Guardar el proyecto primero** o **Preguntar antes de guardar**) y, bajo **Asistente**, el proveedor del asistente de IA opcional. Los campos del proyecto están en **Configuración del proyecto**.
 
 | Preferencia                                     | Opciones                                                       | Por defecto                                                                                             |
 | ----------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
@@ -164,20 +168,25 @@ Nivel de evidencia: host. `packages/zplc-ide/src/i18n/i18n.test.tsx` y `packages
 ZPLC mantiene una sola lista de comandos, y cada forma de iniciar un comando la lee: el menú de la aplicación, la paleta de comandos, los atajos de teclado, las indicaciones de las descripciones emergentes y la referencia de atajos. Un comando hace, por tanto, lo mismo se inicie desde donde se inicie.
 
 - **Menú de la aplicación.** Archivo, Edición, Ver, Proyecto, Compilación, En línea, Depurar y Ayuda, igual en Windows, Linux y macOS. El menú está en el idioma de la preferencia **Idioma**. Una compilación empaquetada no tiene elemento de recarga ni de herramientas de desarrollo. El menú Ver conserva el zoom de la página: Acercar, Alejar y Tamaño real, en `Ctrl` y más, menos y 0 (`Cmd` en macOS).
-- **Paleta de comandos.** Pulse `Ctrl+Mayús+P` (`Cmd+Mayús+P` en macOS), escriba unas letras de un comando, elija con las flechas y pulse Enter. La paleta lista todos los comandos, así que cada uno es accesible desde el teclado aunque no tenga atajo. Un comando que no se aplica ahora, como Cargar sin una conexión, se lista como no disponible y no se ejecuta.
+- **Paleta de comandos.** Pulse `Ctrl+Mayús+P` (`Cmd+Mayús+P` en macOS), escriba unas letras, elija con las flechas y pulse Enter. Sin letras lista los comandos. Con letras encuentra ocho tipos de cosas, en grupos y en este orden: **Comandos**, **Archivos**, **Objetos del PLC**, **Puntos de E/S**, **Editores de configuración**, **Lecciones**, **Preferencias** y **Escenas**. Un grupo muestra sus ocho mejores coincidencias y una fila como **Mostrar los 12 de Archivos** para el resto. Todos los comandos están en la paleta, así que cada uno es accesible desde el teclado aunque no tenga atajo. Un comando que no se aplica ahora, como Cargar sin una conexión, se lista como no disponible y no se ejecuta.
 - **Referencia de atajos.** Abra **Ayuda** > **Atajos de teclado**, o pulse `Ctrl+K` y luego `Ctrl+S`, para ver cada comando con su atajo.
 
-| Atajo                    | Comando                               |
-| ------------------------ | ------------------------------------- |
-| `Ctrl+S`                 | Guardar                               |
-| `Ctrl+B`                 | Compilar el proyecto                  |
-| `F5`                     | Ejecutar, o reanudar si está en pausa |
-| `Mayús+F5`               | Detener                               |
-| `F6`                     | Pausar                                |
-| `F10`                    | Avanzar un ciclo                      |
-| `F8`                     | Reiniciar el runtime                  |
-| `Ctrl+Mayús+P`           | Paleta de comandos                    |
-| `Ctrl+K`, luego `Ctrl+S` | Atajos de teclado                     |
+| Atajo                          | Comando                               |
+| ------------------------------ | ------------------------------------- |
+| `Ctrl+S`                       | Guardar                               |
+| `Ctrl+B`                       | Compilar el proyecto                  |
+| `F5`                           | Ejecutar, o reanudar si está en pausa |
+| `Mayús+F5`                     | Detener                               |
+| `F6`                           | Pausar                                |
+| `F10`                          | Avanzar un ciclo                      |
+| `F8`                           | Reiniciar el runtime                  |
+| `Ctrl+Mayús+P`                 | Paleta de comandos                    |
+| `Ctrl+,`                       | Abrir las preferencias                |
+| `Ctrl+Alt+T`                   | Ejecutar todas las pruebas            |
+| `F12`                          | Ir a la definición                    |
+| `Mayús+F12`                    | Buscar todas las referencias          |
+| `Alt+Izquierda`, `Alt+Derecha` | Ir atrás, Ir adelante                 |
+| `Ctrl+K`, luego `Ctrl+S`       | Atajos de teclado                     |
 
 `Cmd` reemplaza a `Ctrl` en macOS. Los atajos que actúan sobre un programa (`F5`, `F6`, `F10`, `F8`, `Mayús+F5`) dejan a un campo de texto sus propias teclas.
 
@@ -263,7 +272,8 @@ Nivel de evidencia: host. `packages/zplc-ide/src/cli/scenarioParity.test.ts` eje
 
 ## Notificaciones, mensajes y fallas
 
-- **Notificaciones.** El resultado de una compilación, un guardado, una carga, un cambio de conexión y una ejecución de pruebas aparece abajo a la derecha como una notificación. Cada una dice qué pasó y tiene **Detalles**, que abre el panel con la evidencia: **Salida** para un guardado, una compilación correcta, una carga y una conexión, **Problemas** para una compilación fallida, **Pruebas** para una ejecución de pruebas. Una operación larga muestra una barra de progreso, y una compilación y una ejecución de pruebas muestran además **Cancelar**: una compilación cancelada no conserva ningún artefacto, y una ejecución cancelada detiene su runtime nativo. Un éxito desaparece solo tras unos segundos; una falla, una advertencia y una cancelación permanecen hasta que usted las descarta.
+- **Notificaciones.** El resultado de una compilación, un guardado, una carga, un cambio de conexión y una ejecución de pruebas aparece abajo a la derecha como una notificación. Cada una dice qué pasó y tiene **Detalles**, que abre el panel con la evidencia: **Salida** para un guardado, una compilación correcta, una carga y una conexión, **Problemas** para una compilación fallida, **Resultados de las pruebas** para una ejecución de pruebas. Una falla dice qué hacer a continuación: una compilación fallida nombra el archivo y la línea y ofrece **Ir al problema**. Una operación larga muestra una barra de progreso, y una compilación y una ejecución de pruebas muestran además **Cancelar**: una compilación cancelada no conserva ningún artefacto, y una ejecución cancelada detiene su runtime nativo. Un éxito desaparece solo tras unos segundos; una falla, una advertencia y una cancelación permanecen hasta que usted las descarta.
+- **Salida.** Salida muestra una línea por cada paso que usted pidió: la compilación, la ejecución, un guardado. Los errores, las advertencias y los éxitos se muestran siempre. Las demás líneas se ocultan en este nivel normal, y la pestaña dice cuántas, por ejemplo "12 líneas de detalle ocultas". El interruptor **Salida detallada** lo muestra todo.
 - **Problemas.** La vista Problemas lista primero los errores, luego las advertencias y luego la información, y al activar un problema se abre su archivo en su línea y su columna. Un mensaje escrito en **Salida**, o un problema hallado, mientras otra vista está visible pone un contador en la pestaña de esa vista hasta que usted la abre.
 - **Estados vacío, de carga y de error.** Un panel sin nada que mostrar dice por qué y ofrece el paso siguiente. Un indicador de carga aparece solo cuando una operación tarda más de 300 ms. Un estado de error nombra lo que salió mal y tiene un botón de recuperación.
 - **Una falla se queda en su región.** Si el editor, el panel inferior o la barra de herramientas lanzan una excepción al dibujarse, esa región muestra qué se detuvo y un botón **Reintentar**, y el resto de la ventana sigue funcionando, así que todavía puede guardar. Si la falla está fuera de toda región, la ventana entera muestra el mismo mensaje con **Reintentar** y una forma de cerrar el proyecto.
@@ -288,3 +298,23 @@ El nivel de evidencia de estas comprobaciones es host: una ventana en Linux, no 
 Aprender es el curso interactivo dentro de la aplicación. Tiene un **inicio de Aprender**, una página que muestra el curso y se abre sin ningún proyecto abierto y sin red, y una vista **Aprender** en la barra lateral principal que contiene la lección en la que usted trabaja. Cada lección le da un proyecto inicial en el lenguaje de la lección, recorre las etapas Objetivo, Predecir, Editar, Ejecutar, Observar y Reflexionar, y evalúa su programa guardado contra el escenario de referencia de la lección en la simulación nativa, en un proceso propio que **Cancelar** detiene. Su progreso se guarda en un solo archivo del directorio de datos de usuario, y puede exportarlo e importarlo desde el inicio de Aprender.
 
 Un resultado en Aprender es evidencia de host de la simulación nativa, no evidencia de hardware, y Aprender nunca inicia una operación física. El curso, sus módulos y sus lecciones se describen en [Aprender](../learn/index.md); para el personal docente, vea [Educadores](../learn/educators.md).
+
+## Las palabras de la interfaz
+
+ZPLC usa una palabra para cada idea, en los dos idiomas, en la barra de comandos, la línea de estado, los avisos y los resultados. Los formatos de archivo conservan sus propios nombres: una prueba se guarda como un archivo de escenario.
+
+| Idea                                      | Inglés            | Español                 | En lugar de                                                    |
+| ----------------------------------------- | ----------------- | ----------------------- | -------------------------------------------------------------- |
+| Aquello en lo que usted trabaja           | Project           | Proyecto                | espacio de trabajo                                             |
+| Ejecutar en esta computadora              | Simulation        | Simulación              | sesión del simulador, runtime nativo, host                     |
+| Un controlador físico                     | Board             | Placa                   | hardware, dispositivo, controlador                             |
+| Adónde va Ejecutar                        | Target            | Destino                 | modo                                                           |
+| Convertir las fuentes en un programa      | Build             | Compilar                | compilación canónica                                           |
+| Enviar un programa a una placa            | Deploy            | Desplegar               | subir, cargar                                                  |
+| Una comprobación escrita de un programa   | Test              | Prueba                  | escenario                                                      |
+| La comprobación calificada de una lección | Check             | Comprobar               | evidencia de la lección                                        |
+| La máquina que un programa gobierna       | Plant             | Planta                  | laboratorio                                                    |
+| Un resultado obtenido en simulación       | Simulation result | Resultado en simulación | solo evidencia del host, no es evidencia de hardware ni de HIL |
+| Un resultado obtenido en una placa        | Board result      | Resultado en placa      |                                                                |
+
+Los términos de la implementación (POSIX, nativo, host, espacio de trabajo, adaptador, artefacto, bytecode, SHA-256, máquina virtual) van en **Detalles**, en el Inspector, en la Terminal y en la Salida detallada. Una comprobación de CI hace fallar la compilación cuando uno de ellos aparece en el texto de la barra de comandos, la línea de estado, un aviso o el veredicto de una prueba o de la comprobación de una lección, y cuando cualquier superficie que no sea la insignia de un resultado indica su límite.
