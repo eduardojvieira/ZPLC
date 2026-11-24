@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 import { LESSON_INDEX } from '../../generated/lessonIndex';
@@ -15,6 +16,17 @@ const run = (board: string, level: LinkEvidence['level'], worstGapMs: number, fr
   measurements: { gap_ms: { max: worstGapMs } },
 });
 const both = (level: LinkEvidence['level'], worstGapMs: number) => LEARNER_BOARDS.map((board) => run(board, level, worstGapMs));
+
+const VALIDATOR = resolve(import.meta.dir, '../../../../../tools/hil/validate_plant_io_evidence.py');
+/** The bench runs of `dir` at `frameMs` that the evidence validator accepts at level hil: a refused file never qualifies a scene. */
+function benchRuns(dir: string, frameMs: number): LinkEvidence[] {
+  return readdirSync(dir)
+    .filter((name) => /^plant-io-.*\.json$/.test(name) && name !== 'plant-io-qualification.json' && !name.endsWith('.schema.json'))
+    .map((name) => ({ path: join(dir, name), run: JSON.parse(readFileSync(join(dir, name), 'utf8')) as LinkEvidence }))
+    .filter(({ run }) => run.level === 'hil' && run.run?.frame_ms === frameMs)
+    .filter(({ path }) => Bun.spawnSync(['python3', '-B', VALIDATOR, '--level', 'hil', path]).exitCode === 0)
+    .map(({ run }) => run);
+}
 
 describe('qualify (R-M6-8, LNK-014)', () => {
   it('a scene whose pulse is above worstGap + scan qualifies', () => {
@@ -81,11 +93,19 @@ describe('the qualification table', () => {
   const file = join(evidenceDir, 'plant-io-qualification.json');
   const FRAME_MS = 20;
   const FAKE: LinkEvidence[] = LEARNER_BOARDS.map((board) => run(board, 'fake', FRAME_MS, FRAME_MS));
-  const hil = readdirSync(evidenceDir)
-    .filter((name) => /^plant-io-.*\.json$/.test(name) && name !== 'plant-io-qualification.json' && !name.endsWith('.schema.json'))
-    .map((name) => JSON.parse(readFileSync(join(evidenceDir, name), 'utf8')) as LinkEvidence)
-    .filter((evidence) => evidence.level === 'hil' && evidence.run.frame_ms === FRAME_MS);
+  const hil = benchRuns(evidenceDir, FRAME_MS);
   const evidence = hil.length > 0 ? hil : FAKE;
+
+  it('takes only the hil runs at the frame period that validate_plant_io_evidence.py accepts', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'qualify-'));
+    try {
+      const stopped = { ...run(LEARNER_BOARDS[0], 'hil', 0), run: { frames: 5000, frame_ms: FRAME_MS, timeout_ms: 500 } };
+      writeFileSync(join(dir, 'plant-io-esp32s3-usb-serial.json'), JSON.stringify(stopped));
+      expect(benchRuns(dir, FRAME_MS)).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 
   // The scan of a subject is the slowest task of the lesson solutions that run it (every lesson's scan today is 10 ms).
   const scanOf = (subject: string): number => {
