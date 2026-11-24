@@ -224,7 +224,8 @@ async function connectApp(
         `JSON.stringify({ url: location.href, readyState: document.readyState, h1: document.querySelector('h1')?.textContent ?? null })`,
       ).catch((reason: Error) => reason.message);
       throw new Error(
-        `${error.message}; the window: ${shown}; ${page.errors.length} renderer errors: ${[...new Set(page.errors)].slice(-5).join(' | ')}`,
+        `${error.message} (load ${attempt} of at most 3); the window: ${shown}; ${page.errors.length} renderer errors: ` +
+          `${[...new Set(page.errors)].slice(-5).join(' | ')}`,
       );
     });
     if (outcome === 'drawn') break;
