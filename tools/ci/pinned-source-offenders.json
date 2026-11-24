@@ -200,8 +200,6 @@
       "packages/zplc-ide/src/components/Console.tsx",
       "packages/zplc-ide/src/projectTests/useProjectTests.ts",
       "packages/zplc-ide/src/components/console/TestsTab.tsx",
-      "packages/zplc-ide/src/components/console/InterlocksTab.tsx",
-      "packages/zplc-ide/src/components/console/ChangesTab.tsx",
       "packages/zplc-ide/src/components/console/AgentTab.tsx",
       "packages/zplc-ide/src/components/console/useWorkspaceTestRunner.ts",
       "packages/zplc-ide/src/components/reviewFlow.ts",
@@ -211,7 +209,7 @@
       "packages/zplc-ide/src/components/WorkspaceTestResult.tsx"
     ],
     "replacement": "dom",
-    "reason": "Pins roving tab focus, the Tests/Problems/Trace ledgers and their fences as text of Console.tsx. Replace by render tests that drive the tablist with keyboard events once VF-007 provides the DOM environment. The manual review flow moved from Console.tsx to reviewFlow.ts in U2-H1 (982fca48); its pins moved with it."
+    "reason": "Pins roving tab focus, the Tests/Problems/Trace ledgers and their fences as text of Console.tsx. Replace by render tests that drive the tablist with keyboard events once VF-007 provides the DOM environment. The manual review flow moved from Console.tsx to reviewFlow.ts in U2-H1 (982fca48); its pins moved with it. The Interlocks, Changes and Agent tabs left the panel in U2-H6, and the pins of their code went with it."
   },
   {
     "file": "packages/zplc-ide/src/components/LearnPanel.test.ts",

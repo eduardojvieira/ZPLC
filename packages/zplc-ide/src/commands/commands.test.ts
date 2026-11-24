@@ -453,16 +453,6 @@ describe('plant view command contract (FND-002, VIS-002)', () => {
       ]);
     }
   });
-
-  it('VIS-002 the palette lists Fit scene only while a plant view has bound it', () => {
-    publishCommandState({ projectOpen: true });
-    const listed = () => listedCommands(COMMAND_LIST, isCommandBound).map((command) => command.id);
-    expect(listed()).not.toContain('view.fitPlantScene');
-    const unbind = bindCommands({ 'view.fitPlantScene': () => undefined });
-    expect(listed()).toContain('view.fitPlantScene');
-    unbind();
-    expect(listed()).not.toContain('view.fitPlantScene');
-  });
 });
 
 describe('milestone U2 command contract (FND-002)', () => {

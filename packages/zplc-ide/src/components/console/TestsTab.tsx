@@ -1,5 +1,5 @@
 /**
- * The Tests tab of the results panel: the controls to run the project's tests and the Test results (`TestResultsTab`). The tests are
+ * The Test results tab of the results panel: the controls to run the project's tests and the Test results (`TestResultsTab`). The tests are
  * listed and chosen in the Tests activity; there is no file to choose (TST-002).
  */
 import { CheckCircle, Info, LoaderCircle, Play } from 'lucide-react';

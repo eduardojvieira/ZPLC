@@ -12,24 +12,12 @@ const CONSOLE_MODULES = [
   'LiveNativeMotorControls.tsx',
   'WorkspaceTestResult.tsx',
   'console/TestsTab.tsx',
-  'console/InterlocksTab.tsx',
-  'console/ChangesTab.tsx',
   'console/AgentTab.tsx',
   'console/useWorkspaceTestRunner.ts',
   'reviewFlow.ts',
 ];
 const consoleSources = (): string =>
   CONSOLE_MODULES.map((file) => compactSource(readFileSync(join(import.meta.dir, file), 'utf8'))).join('\n');
-
-describe('the results panel after the plant left it (SHL-003)', () => {
-  it('SHL-003 the results panel has nine tabs and none of them is Lab', () => {
-    const source = readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8');
-    const start = source.indexOf('const tabs: ConsoleTabFace[] = [');
-    const list = source.slice(start, source.indexOf('\n  ];', start));
-    const ids = [...list.matchAll(/^ {4,6}(?:\{ )?id: '(\w+)'/gm)].map((match) => match[1]);
-    expect(ids).toEqual(['output', 'problems', 'tests', 'interlocks', 'changes', 'agent', 'trace', 'watch', 'terminal']);
-  });
-});
 
 describe('Console tab boundary', () => {
   it('excludes a concurrent motor command and clears a failure only after a newer sample', () => {
@@ -69,14 +57,13 @@ describe('Console tab boundary', () => {
     expect(source).toContain('scope="col"');
   });
 
+  // The Changes and Agent tabs left this panel for the review document and the Assistant view (SHL-004): their pins went with the
+  // code, and ReviewDocument.dom.test.tsx and ConsoleChangesTrace.dom.test.tsx render them there.
   it('keeps candidate review in the lower ledger with saved-file fences and no physical apply path', () => {
     const source = withEnglishMessages(consoleSources());
 
-    expect(source).toContain("id: 'changes'");
-    expect(source).toContain("activeConsoleTab === 'changes'");
     expect(source).toContain('<DiffEditor');
     expect(source).toContain('No file has been written.');
-    expect(source).toContain('workspaceManifestInputRef.current?.click()');
     expect(source.match(/data-workspace-manifest-input/g)).toHaveLength(1);
     expect(source).toContain('readFileContent(file.handle)');
     expect(source).toContain('sha256Text');
@@ -89,12 +76,7 @@ describe('Console tab boundary', () => {
     expect(source).toContain('current.activeFileId === snapshot.fileId');
     // one definition of a candidate path for the five languages (IDE-030), not the Structured Text rule
     expect(source).toContain('isCandidateSourcePath(file.path)');
-    expect(source).toContain('isCandidateSourcePath(activeFile.path)');
     expect(source).not.toContain('isCandidateSTPath');
-    expect(source).toContain('candidateChangeSet && workspaceTests');
-    expect(source).toContain('const candidateDesktopReady = Boolean(candidateChangeSet && workspaceTests);');
-    expect(source).toContain('!candidateDesktopReady');
-    expect(source).toContain('candidateDesktopReady &&');
     expect(source).toContain('Review · {path}');
     expect(source).toContain('Saved on disk');
     expect(source).toContain('Current editor buffer');
@@ -104,30 +86,21 @@ describe('Console tab boundary', () => {
     expect(source).toContain('scrollBeyondLastLine: false');
     expect(source).toContain('renderSideBySide: true');
     expect(source).toContain("review.kind === 'running' || review.kind === 'cancelling' ? { kind: 'stale' }");
-    expect(source).toContain('The change is no longer current. Review again.');
     expect(source).toContain("review: { kind: 'saving' }");
-    expect(source).toContain('Review itself does not write files.');
-    expect(source).toContain('Open a saved project folder to review a change.');
     expect(source).not.toContain('candidateChangeSet.apply');
     expect(source).not.toMatch(/candidateChangeSet\.(flash|deploy|force|run|stop)/);
-    expect(source).toContain("id: 'agent'");
-    expect(source).toContain("activeConsoleTab === 'agent'");
     expect(source).toContain('Provider response — not evidence');
     expect(source).toContain('Send request');
     expect(source).toContain('Cancel request');
     expect(source).toContain('Review proposed change');
-    expect(source).toContain('aiProvider.request(request)');
-    expect(source).toContain('aiProvider.cancel()');
     expect(source).toContain('onClick={() => { void sendAgentRequest(); }}');
     expect(source).not.toContain('useEffect(() => { void sendAgentRequest(); }');
     // an assistant's change set is saved only by the person's click, through the same store actions as their own save
     expect(source).toContain('saveChangeSet(snapshot, useIDEStore.getState)');
     expect(source).toContain("'files' in snapshot");
     expect(source).toContain('Proposed change is stale. Send a new request.');
-    expect(source).toContain("const agentBusy = agentState === 'sending' || agentState === 'cancelling';");
     expect(source).toContain('disabled={agentBusy}');
     expect(source).toContain('tabIndex={agentMode === mode ? 0 : -1}');
-    expect(source).toContain('agentStatus.enabled');
     expect(source).not.toMatch(/aiProvider\.(flash|deploy|force|run|stop|shell|serial)/);
     expect(source).toContain('Do not put secrets in the prompt.');
     expect(source).toContain('Known sensitive patterns in the prompt or context are rejected before network access; do not paste secrets.');
@@ -140,28 +113,6 @@ describe('Console tab boundary', () => {
     const source = withEnglishMessages(consoleSources());
 
     expect(source).toContain('stBufferDiagnostics.compilerRunId === compilerRunId');
-  });
-
-  // The copy of the view (its title, button, hints and the claim it does not make) is InterlockCoverage.test.tsx.
-  it('runs the declared interlock check from its own tab, with saved-session fences and no physical claim', () => {
-    const source = withEnglishMessages(consoleSources());
-    expect(source).toContain("id: 'interlocks'");
-    expect(source).toMatch(/activeConsoleTab === 'interlocks' && \(?<InterlocksTab/); // a formatter adds the parenthesis
-    expect(source).toContain('<InterlockCoverage');
-    expect(source).toContain('workspaceTests.safetyCheck({ workspaceId })');
-    expect(source).toContain('presentWorkspaceSafetyCheck(result)');
-    expect(source).toContain(
-      'isWorkspaceTestRunCurrent(latest, { projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId })',
-    );
-    expect(source).not.toContain('workspaceTests.safetyCheck({ workspaceId, path');
-    expect(source).not.toMatch(/safetyCheck\.(flash|deploy|force|run|stop|shell)/);
-    expect(source).toContain('let published = false;');
-    expect(source).toContain(
-      "setWorkspaceSafetyState({ status: 'running', projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, " +
-        'workspaceId })',
-    );
-    expect(source).toContain("'status' in workspaceSafetyState ? workspaceSafetyState.status : workspaceSafetyState");
-    expect(source).toContain("typeof state === 'object' && 'status' in state && state.status === 'running' ? 'idle' : state");
   });
 
   it('keeps workspace tests bound to the current local project session', () => {

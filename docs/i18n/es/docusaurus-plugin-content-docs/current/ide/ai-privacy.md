@@ -57,7 +57,7 @@ En el modo Editar una propuesta es un conjunto de cambios de como máximo cuatro
 - `zplc.json` se reescribe como lo escribe ZPLC. Se rechaza un cambio que fije un valor en un campo sensible, y también un archivo nuevo cuyo nombre la compilación lea como un programa existente.
 - El conjunto completo se compila y se ejecuta con los escenarios del proyecto sobre una copia del proyecto guardado, en la simulación del host. El proyecto en disco no se toca con esta ejecución.
 
-La pestaña Cambios muestra entonces una diferencia por archivo, marcada como modificada o nueva. El botón **Guardar cambio revisado** aparece solo cuando la ejecución aislada pasó. Un programa nuevo necesita su propia tarea en el cambio de `zplc.json` del mismo conjunto, porque una tarea ejecuta exactamente un programa. Se le dice así al asistente, pero un programa sin tarea sigue permitido.
+El documento de revisión del área del editor muestra entonces una diferencia por archivo, marcada como modificada o nueva. El botón **Guardar cambio revisado** aparece solo cuando la ejecución aislada pasó. Un programa nuevo necesita su propia tarea en el cambio de `zplc.json` del mismo conjunto, porque una tarea ejecuta exactamente un programa. Se le dice así al asistente, pero un programa sin tarea sigue permitido.
 
 ### No se escribe nada antes de guardar
 

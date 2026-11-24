@@ -1,25 +1,30 @@
 /**
  * The Assistant view of the secondary sidebar (SHL-004, SHL-008): the Agent block of the results panel moved here with its content
  * unchanged, provider settings form included until Preferences holds it (Task H2). Nothing here lets the provider act: a request
- * returns a proposal, a person reviews it, and the person's click is the only thing that writes (IDE-030).
+ * returns a proposal, a person reviews it, and the person's click is the only thing that writes (IDE-030). A reviewed proposal opens
+ * as the review document of the editor area, with one notice (SHL-004, SHL-010): the review is held once, by its store.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { isCandidateSourcePath } from '../ai/candidatePaths';
 import { shownProjectBridge } from '../ipc/shownProjectBridge';
 import { useT } from '../i18n';
 import { useAssistantProvider } from '../shell/useSelection';
 import { useIDEStore } from '../store/useIDEStore';
-import { useTheme } from '../hooks/useTheme';
+import { useReviewDocument } from '../store/useReviewDocument';
 import { presentAgentResponse } from './agent/agentResponse';
-import { reviewChangeSet, saveChangeSet } from './agent/changeSetReview';
 import { presentAiProviderStatus, type AiProviderMode, type AiProviderStatusPresentation } from './aiProviderPresentation';
 import { sha256Text } from './candidateSources';
 import { AgentTab } from './console/AgentTab';
-import { CandidateReviewResult, type AgentState, type CandidateReviewState } from './ConsoleReviewPanels';
+import { type AgentState, type CandidateReviewState } from './ConsoleReviewPanels';
+import { reviewProposal as reviewProposedChangeSet } from './reviewFlow';
+
+/** A new request or its cancel makes a reviewed proposal of an earlier answer stale. */
+const staleReview = (): void => {
+  if (useReviewDocument.getState().review.kind === 'result') useReviewDocument.setState({ review: { kind: 'stale' } });
+};
 
 export function AssistantView() {
   const { t } = useT();
-  const { effectiveTheme } = useTheme();
   const aiProvider = window.electronAPI?.aiProvider;
   const candidateChangeSet = window.electronAPI?.candidateChangeSet;
   const workspaceTests = shownProjectBridge(window.electronAPI?.workspaceTests);
@@ -35,9 +40,8 @@ export function AssistantView() {
   const [prompt, setPrompt] = useState('');
   const [agentState, setAgentState] = useState<AgentState>('idle');
   const [status, setStatus] = useState<AiProviderStatusPresentation>({ kind: 'invalid' });
-  const [review, setReview] = useState<CandidateReviewState>({ kind: 'idle' });
-  const [reviewBusy, setReviewBusy] = useState(false);
-  const reviewGeneration = useRef(0);
+  const review = useReviewDocument((state) => state.review) as CandidateReviewState;
+  const reviewBusy = useReviewDocument((state) => state.busy);
 
   const refresh = useCallback(async () => {
     await Promise.resolve();
@@ -120,7 +124,7 @@ export function AssistantView() {
       (mode === 'edit' && (!file || file !== editFile))
     )
       return;
-    setReview((state) => (state.kind === 'result' ? { kind: 'stale' } : state));
+    staleReview();
     setAgentState('sending');
     try {
       const sentFile = mode === 'edit' ? file : file && isCandidateSourcePath(file.path) && file.handle ? file : undefined;
@@ -189,40 +193,13 @@ export function AssistantView() {
       expectedEdit.workspaceId !== currentLink.workspaceId
     )
       return;
-    const generation = ++reviewGeneration.current;
-    setReviewBusy(true);
-    setReview({ kind: 'running' });
-    try {
-      // every file of the proposal is read from the disk and checked against what the host read, then the whole set is reviewed on a copy
-      const outcome = await reviewChangeSet(changes, {
-        workspaceId: currentLink.workspaceId,
-        bridge: candidateChangeSet,
-        getState: useIDEStore.getState,
-        isCurrent: () => generation === reviewGeneration.current,
-      });
-      if (generation === reviewGeneration.current) setReview(outcome);
-    } catch {
-      if (generation === reviewGeneration.current) setReview({ kind: 'error' });
-    } finally {
-      setReviewBusy(false);
-    }
-  };
-
-  const saveReviewed = async () => {
-    if (reviewBusy || review.kind !== 'result' || review.presentation.kind !== 'accepted' || !('files' in review.snapshot)) return;
-    const { snapshot } = review;
-    setReviewBusy(true);
-    setReview({ kind: 'saving' });
-    // the person's click is the only thing that writes the change set
-    const saved = await saveChangeSet(snapshot, useIDEStore.getState);
-    setReview({ kind: saved === 'saved' ? 'saved' : saved });
-    setReviewBusy(false);
+    await reviewProposedChangeSet(changes, currentLink.workspaceId, candidateChangeSet);
   };
 
   const cancel = async () => {
     if (!aiProvider || agentState !== 'sending') return;
     setAgentState('cancelling');
-    setReview((state) => (state.kind === 'result' ? { kind: 'stale' } : state));
+    staleReview();
     try {
       await aiProvider.cancel();
     } catch {
@@ -263,18 +240,6 @@ export function AssistantView() {
         {review.kind === 'no-change' && <p>{t('console.proposalNoChange')}</p>}
         {review.kind === 'unsaved' && <p>{t('console.proposalUnsaved', { path: review.path })}</p>}
       </div>
-      {review.kind === 'result' && (
-        <div className="p-3">
-          <CandidateReviewResult
-            state={review}
-            effectiveTheme={effectiveTheme}
-            onSave={() => {
-              void saveReviewed();
-            }}
-            busy={reviewBusy}
-          />
-        </div>
-      )}
     </div>
   );
 }

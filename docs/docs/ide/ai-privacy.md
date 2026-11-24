@@ -57,7 +57,7 @@ In Edit mode a proposal is one change set of at most four files. Each file repla
 - `zplc.json` is rewritten the way ZPLC writes it. A change that sets a value in a sensitive field is refused, and so is a new file whose name the build reads as an existing program.
 - The whole set is compiled and run against the project's scenarios on a copy of the saved project, on the host simulation. The project on disk is not touched by this run.
 
-The Changes tab then shows one difference per file, marked as changed or new. The **Save reviewed change** button appears only when the isolated run passed. A new program needs a task of its own in the `zplc.json` change of the same set, because a task runs exactly one program. The assistant is told so, but a program without a task is still allowed.
+The review document of the editor area then shows one difference per file, marked as changed or new. The **Save reviewed change** button appears only when the isolated run passed. A new program needs a task of its own in the `zplc.json` change of the same set, because a task runs exactly one program. The assistant is told so, but a program without a task is still allowed.
 
 ### Nothing is written before you save
 

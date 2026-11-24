@@ -67,9 +67,9 @@ The documentation check runs this scenario against the program above, so it is a
 
 ## 3. Run it
 
-**In ZPLC**, open the **Tests** tab and press **Run host scenarios**. Each scenario is listed as passed or failed, with its assertions and their times. A failed assertion shows the instant, the value expected and the value observed. A scenario does not run while a value is forced, so release your forces first ([Force a value](./force-values.md)).
+**In ZPLC**, open the **Test results** tab and press **Run host scenarios**. Each scenario is listed as passed or failed, with its assertions and their times. A failed assertion shows the instant, the value expected and the value observed. A scenario does not run while a value is forced, so release your forces first ([Force a value](./force-values.md)).
 
-![The Tests tab after Run host scenarios](/img/screens/guide-scenario-tests.png)
+![The Test results tab after Run host scenarios](/img/screens/guide-scenario-tests.png)
 
 **From a terminal**, with the command line of the project (build the runtime once with `bun run setup`):
 
@@ -81,7 +81,7 @@ It runs every scenario of the project headless, prints `test passed` or the fail
 
 ## 4. Make it useful
 
-- **State what must never happen** with `NEVER`. For two outputs that must not be on together, assert it. The **Interlocks** tab of ZPLC lists each pair you declared under `safety.incompatibleOutputs` as covered or not, from your `NEVER` expectations.
+- **State what must never happen** with `NEVER`. For two outputs that must not be on together, assert it. The **Interlocks** view of the Tests activity lists each pair you declared under `safety.incompatibleOutputs` as covered or not, from your `NEVER` expectations.
 - **Check an edge** with `RISING` and `FALLING` when the moment matters more than the level.
 - **Use a plant model** (`motor-v1`, `conveyor-v1`, `tank-v1`, `pedestrian-v1`) when the program needs feedback from the process. The model drives the program's inputs from its outputs, and it requires `tickMs` 10.
 - **Count in a plant scene.** A scenario that runs a plant scene may state a number for a plant fact: an exact whole number for a count (`"fact:delivered:Bin": 5`), or an inclusive range for a measure (`"fact:level:Tank": { "min": 0.4, "max": 0.6 }`, either bound alone is allowed). A number on a measure, a range on a count, and a number on a program signal or a true/false fact are refused with a message that names the line. Every other condition stays `true` or `false`.

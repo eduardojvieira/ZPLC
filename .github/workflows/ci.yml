@@ -166,6 +166,8 @@ jobs:
           ZPLC_NATIVE_SIM_BIN: ${{ runner.temp }}/zplc-native-sim-build/zplc_runtime
         run: |
           test -x "$ZPLC_NATIVE_SIM_BIN"
+          # Electron 45 has no install script: its binary is downloaded here, or a fresh install has no electron/dist.
+          bun run --cwd packages/zplc-ide electron:install
           bun run --cwd packages/zplc-ide electron:compile
 
       - name: Prepare development Electron sandbox

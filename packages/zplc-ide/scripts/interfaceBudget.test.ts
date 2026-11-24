@@ -94,13 +94,23 @@ const targets: BudgetTargets = {
   statusRailItems: 4,
   targetPlaces: 2,
   runControlSets: 1,
-  resultsTabs: { total: 9, reason: 'the five-tab target belongs to U2' },
+  resultsTabs: { total: 5, namedAtDefault: 5, reason: 'spec 013 row 2 and row 3' },
 };
+
+/** Five tabs, every one with its name inside the strip: the results panel of spec 013 section 5.3 at 1366 by 768. */
+const FIVE = ['output', 'problems', 'tests', 'trace', 'watch'].map((id, at) => ({
+  id,
+  name: id,
+  nameWidth: 40,
+  left: 382 + at * 100,
+  right: 472 + at * 100,
+}));
 
 describe('interface budget check (spec 013 section 8.2 item 2)', () => {
   it('passes a snapshot within every target', () => {
     const within: InterfaceSnapshot = {
       ...snapshot,
+      resultsTabs: FIVE,
       statusRail: [{ text: 'Simulation · native runtime' }, { text: 'Running' }],
     };
     expect(checkBudget([measure(within)], targets)).toEqual([]);
@@ -127,5 +137,19 @@ describe('interface budget check (spec 013 section 8.2 item 2)', () => {
     expect(bar).toContain('paused');
     expect(bar).toContain('es');
     expect(bar).toContain('Conectar');
+  });
+
+  it('SHL-003 the budget fails when a default results tab is unnamed or when there are more than five', () => {
+    const within: InterfaceSnapshot = { ...snapshot, resultsTabs: FIVE, statusRail: [{ text: 'Running' }] };
+    expect(checkBudget([measure(within)], targets)).toEqual([]);
+    const unnamed = { ...within, resultsTabs: FIVE.map((tab) => (tab.id === 'trace' ? { ...tab, nameWidth: 1 } : tab)) };
+    const short = checkBudget([measure(unnamed)], targets);
+    expect(short).toHaveLength(1);
+    expect(short[0]).toContain('with their name');
+    expect(short[0]).toContain('trace');
+    const six = { ...within, resultsTabs: [...FIVE, { id: 'terminal', name: 'Terminal', nameWidth: 50, left: 882, right: 972 }] };
+    const many = checkBudget([measure(six)], targets);
+    expect(many).toHaveLength(1);
+    expect(many[0]).toContain('results panel tabs has 6, over 5');
   });
 });

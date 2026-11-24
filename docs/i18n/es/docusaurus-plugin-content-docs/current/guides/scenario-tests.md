@@ -67,7 +67,7 @@ La comprobación de la documentación ejecuta este escenario contra el programa 
 
 ## 3. Ejecutarlo
 
-**En ZPLC**, abra la pestaña **Pruebas** y pulse **Ejecutar escenarios en el host**. Cada escenario aparece como aprobado o fallido, con sus aserciones y los tiempos de cada una. Una aserción fallida muestra el instante, el valor esperado y el valor observado. Un escenario no se ejecuta mientras haya un valor forzado, así que libere antes sus forzados ([Forzar un valor](./force-values.md)).
+**En ZPLC**, abra la pestaña **Resultados de las pruebas** y pulse **Ejecutar escenarios en el host**. Cada escenario aparece como aprobado o fallido, con sus aserciones y los tiempos de cada una. Una aserción fallida muestra el instante, el valor esperado y el valor observado. Un escenario no se ejecuta mientras haya un valor forzado, así que libere antes sus forzados ([Forzar un valor](./force-values.md)).
 
 ![La pestaña Tests después de Run host scenarios (interfaz en inglés)](/img/screens/guide-scenario-tests.png)
 
@@ -81,7 +81,7 @@ Ejecuta sin interfaz todos los escenarios del proyecto, imprime `test passed` o 
 
 ## 4. Hacerlo útil
 
-- **Declare lo que nunca debe ocurrir** con `NEVER`. Para dos salidas que no deben estar activas a la vez, afírmelo. La pestaña **Enclavamientos** de ZPLC enumera cada par que usted declaró en `safety.incompatibleOutputs` como cubierto o no, a partir de sus expectativas `NEVER`.
+- **Declare lo que nunca debe ocurrir** con `NEVER`. Para dos salidas que no deben estar activas a la vez, afírmelo. La vista **Enclavamientos** de la actividad Pruebas enumera cada par que usted declaró en `safety.incompatibleOutputs` como cubierto o no, a partir de sus expectativas `NEVER`.
 - **Compruebe un flanco** con `RISING` y `FALLING` cuando importa más el instante que el nivel.
 - **Use un modelo de planta** (`motor-v1`, `conveyor-v1`, `tank-v1`, `pedestrian-v1`) cuando el programa necesita la respuesta del proceso. El modelo genera las entradas del programa a partir de sus salidas, y exige `tickMs` 10.
 - **Cuente en una escena de planta.** Un escenario que ejecuta una escena de planta puede indicar un número para un hecho de la planta: un entero exacto para un conteo (`"fact:delivered:Bin": 5`), o un rango inclusivo para una medida (`"fact:level:Tank": { "min": 0.4, "max": 0.6 }`; basta con uno de los límites). Un número en una medida, un rango en un conteo y un número en una señal del programa o en un hecho verdadero/falso se rechazan con un mensaje que indica la línea. Cualquier otra condición sigue siendo `true` o `false`.

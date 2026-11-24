@@ -1,7 +1,8 @@
 /**
  * The registry of Studio surfaces (SHL-001, SHL-002): every place the shell shows something, with the one region it has
  * today and the command that shows it. The rail (`ActivityRail.tsx`) and the results tab strip (`Console.tsx`) keep their own
- * lists and a test compares them with this one, since tabs are still moving (spec 013, W3 and U2).
+ * lists and a test compares them with this one. Interlocks, Changes and Agent left the results panel in U2 (SHL-004): they are
+ * a view of the Tests activity, the review document and the Assistant view, each shown by the command of its 2.0 tab.
  */
 import type { MessageKey } from '../i18n';
 import type { CommandId } from '../commands/registry';
@@ -33,13 +34,12 @@ export const SURFACES: readonly Surface[] = [
   activity('search', 'view.showSearch'),
   activity('tests', 'view.tests'),
   activity('learn', 'view.showLearn'),
+  { id: 'activity.tests.interlocks', titleKey: 'u2Tests.view.interlocks', region: 'activity', command: 'view.interlocks' },
   { id: 'secondary.inspector', titleKey: 'shell.secondary.inspector', region: 'secondary', command: 'view.toggleSecondarySidebar' },
+  { id: 'secondary.assistant', titleKey: 'shell.secondary.assistant', region: 'secondary', command: 'view.agent' },
   tab('output', 'panel.output', 'view.output'),
   tab('problems', 'panel.problems', 'view.problems'),
-  tab('tests', 'panel.tests', 'view.tests'),
-  tab('interlocks', 'console.tab.interlocks', 'view.interlocks'),
-  tab('changes', 'console.tab.changes', 'view.changes'),
-  tab('agent', 'console.tab.agent', 'view.agent'),
+  tab('tests', 'u2Panel.testResults', 'view.testResults'),
   tab('trace', 'panel.trace', 'view.trace'),
   tab('watch', 'panel.watch', 'view.watch'),
   tab('terminal', 'console.tab.terminal', 'view.terminal'),

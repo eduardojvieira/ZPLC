@@ -1,6 +1,6 @@
 /**
- * The Changes and Agent tabs' pieces of the lower workbench: the reviewed-change result and the provider status line (IDE-014: split out of
- * Console.tsx).
+ * The pieces of the change review and of the assistant: the reviewed-change result and the provider status line (IDE-014: split out of
+ * Console.tsx; the review document and the Assistant view show them since U2-H6).
  */
 
 import { DiffEditor } from './monacoRuntime';
