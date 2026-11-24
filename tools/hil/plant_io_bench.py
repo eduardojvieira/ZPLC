@@ -14,8 +14,10 @@ sends RUN if the program is stopped, enters plant mode with a fixed synthetic ma
 INT at IPI 2, a REAL at IPI 4; outputs: 2 BOOL at OPI 0.0 and 0.1), streams `--frames` frames with a deterministic
 pattern and records the round trip (`rtt_ms`: request written to response read) and the exchange gap (`gap_ms`: time
 between two consecutive responses) per frame. Then three physical sequences, each announced and confirmed at the
-keyboard: mirror off (the LED stays off while the outputs toggle), mirror on (the LED follows), link loss (the cable is
-pulled for ten seconds: the board must be STOPPED with the output image reset, the LED off).
+keyboard: mirror off (the LED stays off while the outputs toggle), mirror on (the LED follows), link loss (with mirroring
+still on, the cable is pulled for ten seconds: the LED goes off as the board leaves the mode, and the board must be STOPPED
+with the output image reset). The device's uptime (`zplc sys info --json`) is read before the mode starts and after the
+cable is back, so a board that restarted because the pull cut its power is not taken for one that left the mode.
 
 The evidence file says its `level`: `hil` only for a real serial port. `--level native-sim` is the rehearsal against the
 native simulator (a /dev/pts port, no person, no physical sequence); it says nothing about hardware. Exit status: 0 the
@@ -208,6 +210,12 @@ class Bench:
         text = tester.send(f"zplc dbg peek 0x{OPI_BASE:04x} {length}")
         return "".join(re.findall(r"\b[0-9a-fA-F]{2}\b", text)[-length:]).lower()
 
+    def uptime(self, tester) -> tuple:
+        """(the device's `uptime_ms`, or None when it reports none; when the read was sent, by the bench clock; its round trip in ms)."""
+        sent = self.clock()
+        found = re.search(r'"uptime_ms"\s*:\s*(\d+)', tester.send("zplc sys info --json"))
+        return (int(found.group(1)) if found else None), sent, (self.clock() - sent) * 1000
+
     def confirm(self, text: str) -> bool:
         return self.ask(f"{text}\nType yes to confirm, anything else says no: ").strip().lower() == "yes"
 
@@ -236,6 +244,7 @@ class Bench:
             say("The program is stopped: sending RUN (plant mode needs a running program; the outputs stay safe in it).")
             link.call("RUN")
             self.sleep(0.3)
+        self.marker = self.uptime(tester)  # the start of the window the link-loss check spans (sequence 3)
         plant_id, in_bytes, out_bytes, max_slots, granted = struct.unpack("<HHHBH", link.call("PLANT_ENTER", encode_enter(INPUTS, OUTPUTS, args.timeout_ms)))
         evidence["run"].update(plant_id=plant_id, in_bytes=in_bytes, out_bytes=out_bytes, max_slots=max_slots, timeout_ms_granted=granted)
         say(f"Plant mode entered (entry {plant_id}, timeout {granted} ms); streaming {args.frames} frames every {args.frame_ms} ms.")
@@ -270,16 +279,17 @@ class Bench:
         step["confirmed"], step["confirmed_by"] = self.confirm("Did the LED stay off?"), "person"
         evidence["physical"].append(step)
         link.call("PLANT_MIRROR", b"\x01")
-        self.say("\n2. MIRROR ON. The LED must now follow the outputs.")
+        self.say("\n2. MIRROR ON. The LED must now follow the outputs. Mirroring stays on into the cable pull of sequence 3.")
         seen = self.stream(link, plant_id, phase)
         step = {"step": "mirror-on", "device_check": {"outputs_toggled": len(set(seen)) > 1, "mirror_flag": self.mirror_flag}}
         step["confirmed"], step["confirmed_by"] = self.confirm("Did the LED follow the outputs?"), "person"
         evidence["physical"].append(step)
-        link.call("PLANT_MIRROR", b"\x00")
 
     def physical_loss(self, tester, link, plant_id, evidence) -> bool:
         """True when the cable was pulled, so the mode ended by itself; False when the person declined."""
-        self.say("\n3. LINK LOSS. The script keeps streaming. UNPLUG THE USB CABLE now; it notices, waits %d s, then asks you to plug it back." % LOSS_WAIT_S)
+        self.say("\n3. LINK LOSS. Mirroring is still on, so the LED keeps following the outputs while the script streams. UNPLUG THE\n"
+                 "USB CABLE now: the LED must go off as the board leaves the mode. The script notices, waits %d s, then asks you to\n"
+                 "plug it back." % LOSS_WAIT_S)
         if not self.confirm("Ready to pull the cable?"):
             evidence["physical"].append({"step": "link-loss", "device_check": {}, "confirmed": False, "confirmed_by": "person"})
             return False
@@ -291,7 +301,8 @@ class Bench:
                 gone = True
                 break
             self.sleep(self.args.frame_ms / 1000)
-        check = {"cable_gone_detected": gone, "waited_s": LOSS_WAIT_S}
+        # the mirror flag of the last answered frame: the LED was following the outputs when the cable went out
+        check = {"cable_gone_detected": gone, "waited_s": LOSS_WAIT_S, "mirror_flag": self.mirror_flag}
         step = {"step": "link-loss", "device_check": check}
         if gone:
             self.sleep(LOSS_WAIT_S)
@@ -303,7 +314,14 @@ class Bench:
             tester = self.open_tester()
             check["state"] = self.shell_state(tester)
             check["output_image_hex"] = self.output_image(tester, 2)
-            step["confirmed"], step["confirmed_by"] = self.confirm("Is the LED off?"), "person"
+            before, before_at, before_rtt = self.marker
+            after, after_at, after_rtt = self.uptime(tester)
+            # the board samples its uptime somewhere inside each read: without a restart the uptime grows by the bench
+            # time between the two reads, less at most the first read's round trip (plus 50 ms for whole milliseconds)
+            # ponytail: a 32-bit uptime wraps after 49.7 days of running; a board on the bench never runs that long
+            check.update(uptime_before_ms=before, uptime_after_ms=after, host_elapsed_ms=round((after_at - before_at) * 1000),
+                         read_slack_ms=round(before_rtt + after_rtt + 50))
+            step["confirmed"], step["confirmed_by"] = self.confirm("Did the LED go off when the cable came out, and is it off now?"), "person"
         else:
             step["confirmed"], step["confirmed_by"] = False, "person"
         evidence["physical"].append(step)
