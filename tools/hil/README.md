@@ -95,9 +95,11 @@ unconfirmed. Known firmware answers it reports by name: ENTER is refused with `R
 negotiated payload, and a frame from a session that does not own the mode answers `STATE`.
 
 The three sequences (each announced, each confirmed by typing `yes`): **mirror off** (outputs toggle, the LED stays
-off), **mirror on** (the LED follows the outputs), **link loss** (the script keeps streaming, you pull the USB cable,
-it waits ten seconds, you plug it back; it then reads `zplc sched status --json` and the output image, which must be
-`idle` and all zero, and you confirm the LED is off).
+off), **mirror on** (the LED follows the outputs), **link loss** (mirroring stays on; the script keeps streaming, you
+pull the USB cable, it waits ten seconds, you plug it back; it then reads `zplc sched status --json` and the output image,
+which must be `idle` and all zero, and you confirm the LED went off when the cable came out and is off now). The script
+reads `uptime_ms` from `zplc sys info --json` before the mode and after the replug, and the validator refuses the run if
+the board restarted while the cable was out. [BENCH-2.1.md](BENCH-2.1.md) has the full run sheet for the two learner boards.
 
 ### The Owner's commands (Task H8 of specs/012-zplc-2-1-plant-simulation/plan-m6.md)
 
