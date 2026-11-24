@@ -327,6 +327,9 @@ export async function launchApp(
       '--headless',
       '--disable-gpu',
       '--lang=en-US',
+      // the X display the run was given (xvfb-run), where journey 53 finds the window with xdotool: in a Wayland session
+      // Electron would otherwise open its window on the person's own desktop
+      ...(process.platform === 'linux' ? ['--ozone-platform=x11'] : []),
       `--zplc-smoke-port=${harness.vitePort}`,
       `--remote-debugging-port=${cdpPort}`,
       `--user-data-dir=${join(root, 'profile')}`,
