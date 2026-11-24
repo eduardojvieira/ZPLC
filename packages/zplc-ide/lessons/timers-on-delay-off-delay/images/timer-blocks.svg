@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 220" role="img">
   <title>Two timer blocks, TON and TOF, each with the inputs IN and PT and the outputs Q and ET</title>
+  <rect width="100%" height="100%" rx="8" fill="#ffffff"/>
   <g font-family="sans-serif" fill="#123">
     <rect x="110" y="40" width="140" height="130" rx="6" fill="#e8f0fe" stroke="#335" stroke-width="2"/>
     <text x="180" y="30" text-anchor="middle" font-size="14" font-weight="bold">TON</text>
