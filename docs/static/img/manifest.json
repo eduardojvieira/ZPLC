@@ -2,135 +2,135 @@
   "schemaVersion": 1,
   "command": "bun run docs:screenshots",
   "journey": "56 Blink without hardware (the tutorial)",
-  "commit": "3ad1fddbf218f3e018f68a93f3cce308e5d7eb66",
-  "worktreeClean": false,
-  "productVersion": "2.0.0-rc.3",
+  "commit": "1f4e025ad397aae3a8384e480bb3a9fd6b46e2eb",
+  "worktreeClean": true,
+  "productVersion": "2.0.1",
   "images": [
     {
       "file": "tutorials/blink-1-welcome.png",
       "step": "The Welcome screen with the example list",
-      "sha256": "db05bb43dc33bf6f3bd1fcf9628aec2908613f44c0691f295e98be424ec44c7f",
-      "bytes": 126062,
+      "sha256": "74abab37cef85062e69111c7934fb013a918a163a12f000e8e0451be746c46e5",
+      "bytes": 117421,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-copied.png",
       "step": "The example copied into the folder and opened",
-      "sha256": "cb83b4ddc4cc6d71de124a8fefd84df1e9e448776428e76c8ef2c09bf24a2968",
-      "bytes": 153123,
+      "sha256": "63e99cae992493da770be0bb0741960bdcce9caf2a41d2487c59700241193cd1",
+      "bytes": 148798,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-2-program.png",
       "step": "The program open in the editor",
-      "sha256": "6eb40721e338b1675b139cbcb2504b41c5d19e64c01055a2facf6dfa386bc7e2",
-      "bytes": 140473,
+      "sha256": "a9f8063e737868f458e1892d0a14d37ddebb6b69f433d0226f308ecf64a90ef2",
+      "bytes": 132532,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-3-built.png",
       "step": "The build succeeded",
-      "sha256": "7b5e38d99fed7f59fd445c93bf284fd641830c04d156c8e01a1c66140e6bec2f",
-      "bytes": 163166,
+      "sha256": "10122afae8d749c283ae9e3c9a5ae1c618ebbd0022b5148679dcea98cc763d79",
+      "bytes": 152141,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-running.png",
       "step": "The simulator connected and running",
-      "sha256": "122427b677af4621433a2a73e4d16e806e891376bcb138c3d89409f1e04bda1f",
-      "bytes": 185118,
+      "sha256": "35cbe3eba572ef9c7b799c182ebe99115df635c7bd0e363da474e1a90639c986",
+      "bytes": 159587,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-4-output-true.png",
       "step": "The simulator runs and the output is TRUE",
-      "sha256": "fa2cee0aa851d003ecea9c4a393d58b594977ccd1223203b50e5c5d6fd600dad",
-      "bytes": 111071,
+      "sha256": "2bfd8e97fefcf1255239acae596dfd8261ac9244498006b2c43a09b4e3977564",
+      "bytes": 102157,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-5-output-false.png",
       "step": "The output is FALSE half a second later",
-      "sha256": "4ad71dc0498c779873d6e611fccc8af7946df1b44cb340ee3669f2a63b9be1f3",
-      "bytes": 111291,
+      "sha256": "4421d954d79fc586f71d66f60478eefe7d85b51c6bd0a4a7b4ddace93febdfac",
+      "bytes": 102262,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-6-scenario.png",
       "step": "The scenario test passed",
-      "sha256": "59f38e5b161a1720b61f22cf1ad0442ad7fb6e64fe22ca2e0939b524f923b316",
-      "bytes": 143419,
+      "sha256": "b57240b834b620bed2e0dcd59188f12463a7cf79c0a8be4f3897d94a31706c85",
+      "bytes": 105965,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-1-welcome-es.png",
       "step": "The Welcome screen with the example list, interface in Spanish",
-      "sha256": "6e885e1858f0e14c4523e433fb29781aa9798644c750933b51e8880c42bdaba0",
-      "bytes": 132474,
+      "sha256": "12a34adf48f50112bd06db69fe61a722315195a770d58b275f38115e0d021a30",
+      "bytes": 122466,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-copied-es.png",
       "step": "The example copied into the folder and opened, interface in Spanish",
-      "sha256": "3e0f97a2d944768dd260e27c9c67dffada667e2e6559cb5530175c53687ece54",
-      "bytes": 168007,
+      "sha256": "ef55c493288b73451391261e828dca0c71b48f585ea1b40288ba5fa2dda0c7f7",
+      "bytes": 157323,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-2-program-es.png",
       "step": "The program open in the editor, interface in Spanish",
-      "sha256": "71fc998e3dc346648cca9eacbab541d47dd1a54dfb0bd2c5ccf7885dc6f1f2df",
-      "bytes": 143648,
+      "sha256": "1028757d4ba4f3ead21cc1aa04d9f78a2a946f5a4c9dde1aaa4d4d4b3ed5593a",
+      "bytes": 138399,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-3-built-es.png",
       "step": "The build succeeded, interface in Spanish",
-      "sha256": "4d777a5df27a73433bacab1cf082670c7524ec8e619c8a7d75522b0202211edd",
-      "bytes": 169093,
+      "sha256": "0ee8d2d2c38abaac5d6c0e1ab0028ad25c653c3be7626e3ea593b9abafef4806",
+      "bytes": 159414,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-running-es.png",
       "step": "The simulator connected and running, interface in Spanish",
-      "sha256": "948885bea71f69d95c53282eedf1e7f25844f929eabfe619440653b52ac7b07f",
-      "bytes": 188129,
+      "sha256": "78160d7c8b1ac3b1df5ecac26af1716534d61312504972eb50835d2e0c59102a",
+      "bytes": 168021,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-4-output-true-es.png",
       "step": "The simulator runs and the output is TRUE, interface in Spanish",
-      "sha256": "7a5736aa202419fa70814642c51936b1e4144e059febd5ed3ea200bdb287bc13",
-      "bytes": 129083,
+      "sha256": "32ce706edcf55aeeeadb40a0e2217618621432646fdabb8bfda924224eb6dbb6",
+      "bytes": 110545,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-5-output-false-es.png",
       "step": "The output is FALSE half a second later, interface in Spanish",
-      "sha256": "7918f45a7b956b21712dc4210ff7ccc8d902a3b2adc05b7a137dd560f537ee68",
-      "bytes": 129425,
+      "sha256": "d195029b71d685c13b2cf51799d6e71e4996cacadf4832001eb70c826cf84ada",
+      "bytes": 110808,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-6-scenario-es.png",
       "step": "The scenario test passed, interface in Spanish",
-      "sha256": "6d743790eccb366553f851dd55741fca42d934450b875eb499efc7f7999309d4",
-      "bytes": 166376,
+      "sha256": "67aae9e99cc05543ddfdec70d3696f02506869335c742e368f4127b44d73cd38",
+      "bytes": 114846,
       "width": 1440,
       "height": 900
     },
@@ -353,146 +353,146 @@
     {
       "file": "screens/learn-path-en.png",
       "step": "The Ladder path of the Learn home, interface in English",
-      "sha256": "114102788a7085937f7e6b619427a6a5efbaffe9d3c73444d9c75f3c539ac50e",
-      "bytes": 124248,
+      "sha256": "cf6984fca8c2ce0402fd7c739d6aaad74d848469a907372366851458238bc3fe",
+      "bytes": 114350,
       "width": 1440,
       "height": 900,
-      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
+      "commit": "1f4e025ad397aae3a8384e480bb3a9fd6b46e2eb"
     },
     {
       "file": "screens/learn-path-es.png",
       "step": "The Ladder path of the Learn home, interface in Spanish",
-      "sha256": "01fd98ce77f82cc6ddf9a2c21bd7271e9cf4ac9250a4e70407a318bb14b60715",
-      "bytes": 135599,
+      "sha256": "60264c4a04e2a8250accdd01db87c5efc2da4998e3823f3c1543725d61473e8f",
+      "bytes": 123514,
       "width": 1440,
       "height": 900,
-      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
+      "commit": "1f4e025ad397aae3a8384e480bb3a9fd6b46e2eb"
     },
     {
       "file": "screens/learn-reading-en.png",
       "step": "The reading page of the first lesson of the Ladder path, interface in English",
-      "sha256": "73860d4214e19eabb5c5f64f12f8914cd4461f08a7c8b0b192699af4013b2ca3",
-      "bytes": 232182,
+      "sha256": "60f6e81b2018b6e78aa0d3e245396147a110ff36daf1bbbd9367d23b6958170a",
+      "bytes": 211522,
       "width": 1440,
       "height": 900,
-      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
+      "commit": "1f4e025ad397aae3a8384e480bb3a9fd6b46e2eb"
     },
     {
       "file": "screens/learn-reading-es.png",
       "step": "The reading page of the first lesson of the Ladder path, interface in Spanish",
-      "sha256": "96d8472b25001132758dadb9bdaa0ef3950f566fd5ee89ea2ed81e3f4e31a135",
-      "bytes": 247748,
+      "sha256": "71d25278316fc10d6642ba7cfa656c34ce61d816f05b9b5fd90a5655313987ed",
+      "bytes": 226729,
       "width": 1440,
       "height": 900,
-      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
+      "commit": "1f4e025ad397aae3a8384e480bb3a9fd6b46e2eb"
     },
     {
       "file": "screens/learn-lab-en.png",
       "step": "The try-it lab of the reading page, running, with its lamp lit, interface in English",
-      "sha256": "72d4f4e83ea0fd985745f00d360c18dc690f5d7db9beef2a7d50066deb6be9fe",
-      "bytes": 191327,
+      "sha256": "dcf93f8c4d03401c86b07e78291fcc276b6cbf39f75c32f8698b52f317328f69",
+      "bytes": 175831,
       "width": 1440,
       "height": 900,
-      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
+      "commit": "1f4e025ad397aae3a8384e480bb3a9fd6b46e2eb"
     },
     {
       "file": "screens/learn-lab-es.png",
       "step": "The try-it lab of the reading page, running, with its lamp lit, interface in Spanish",
-      "sha256": "d0c5ae0f092fabccc029cafc4d63ad2af13f71cd8c430de19c2318ce856dd270",
-      "bytes": 209132,
+      "sha256": "9bdcfb7d313f601e83da4ba917be019b347be6dc93d5d287f83f814d02ff4f10",
+      "bytes": 193163,
       "width": 1440,
       "height": 900,
-      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
+      "commit": "1f4e025ad397aae3a8384e480bb3a9fd6b46e2eb"
     },
     {
       "file": "screens/ld-function-box-en.png",
       "step": "A Ladder function box with its operands in the editor, interface in English",
-      "sha256": "86b98a0434cb45b4cd57cfb635795d90178e62ea83a10f15feb900efbcab1e89",
-      "bytes": 132120,
+      "sha256": "1205edd8261062f9df520647f07c57e04ba982df6d38ca963df1ca03e364fa20",
+      "bytes": 126526,
       "width": 1440,
       "height": 900,
-      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
+      "commit": "1f4e025ad397aae3a8384e480bb3a9fd6b46e2eb"
     },
     {
       "file": "screens/ld-function-box-es.png",
       "step": "A Ladder function box with its operands in the editor, interface in Spanish",
-      "sha256": "a70bef76d4f77f7745d5e7510e1e7beadc794467cf82b22389473e266bc2d607",
-      "bytes": 142842,
+      "sha256": "11df3c9b4a7e7df3fa439521292353b684864b1aa69efd4c079ea9e87fdefbab",
+      "bytes": 138163,
       "width": 1440,
       "height": 900,
-      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
+      "commit": "1f4e025ad397aae3a8384e480bb3a9fd6b46e2eb"
     },
     {
       "file": "screens/guide-watch.png",
       "step": "The Watch tab with a variable, while the program runs",
-      "sha256": "5e8ea65da92ede101d104b75e6cd47ebdeec1f69c851a59fdc0ee001ceeba527",
-      "bytes": 156957,
+      "sha256": "0a52b385f7f5e717d7b606d3442cdb4efe97e5e895c326405baff5eb4629c865",
+      "bytes": 151556,
       "width": 1440,
       "height": 900,
-      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
+      "commit": "1f4e025ad397aae3a8384e480bb3a9fd6b46e2eb"
     },
     {
       "file": "screens/guide-force.png",
       "step": "The Watch table with one forced variable and the banner of one active force",
-      "sha256": "0fa002e42ecaccff6fe319c8ee7ff607d18d8f48677cc40fad42aff1dd617177",
-      "bytes": 167289,
+      "sha256": "6dd8fe41e9b7c3bbb0a122d9a7601111c9bfa50e34b58a8bb358ab01d22b0161",
+      "bytes": 161872,
       "width": 1440,
       "height": 900,
-      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
+      "commit": "1f4e025ad397aae3a8384e480bb3a9fd6b46e2eb"
     },
     {
       "file": "screens/guide-scenario-tests.png",
-      "step": "The Tests tab after Run host scenarios",
-      "sha256": "64bfc799dea6a943fd74776c5bb10054cc28bfd68c1f524037a3b698d3f5acd8",
-      "bytes": 186624,
+      "step": "The Test results tab after a run of the tests, with its verdict",
+      "sha256": "20c88011fb15326fe5b5a7cc87221e681c1c69adac5f30e6db2acdbd94849b3f",
+      "bytes": 152306,
       "width": 1440,
       "height": 900,
-      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
+      "commit": "1f4e025ad397aae3a8384e480bb3a9fd6b46e2eb"
     },
     {
       "file": "screens/guide-breakpoint.png",
       "step": "The editor stopped at a breakpoint, with the Trace row that says paused",
-      "sha256": "6c5a80f67d8d3a0aafe2d765cea51353f0149a69e7e2b3224c29f9e63cd6a0f4",
-      "bytes": 188255,
+      "sha256": "16ac3cf806d7e544f06031f5baa8e1f1ccb485a21e992bf5ccf9ffa9789784a3",
+      "bytes": 169396,
       "width": 1440,
       "height": 900,
-      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
+      "commit": "1f4e025ad397aae3a8384e480bb3a9fd6b46e2eb"
     },
     {
       "file": "screens/guide-io-mapping.png",
       "step": "The I/O Mapping section of Project settings",
-      "sha256": "c00bf168567b9b01918b2c3a5db696638435fde635943a335d302f9fdae6df52",
-      "bytes": 157395,
+      "sha256": "8d54a74f7cad180e9ed550076faa99e6fce8f02e79cf302b46264ba28af61dd9",
+      "bytes": 147254,
       "width": 1440,
       "height": 900,
-      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
+      "commit": "1f4e025ad397aae3a8384e480bb3a9fd6b46e2eb"
     },
     {
       "file": "screens/first-board-hardware.png",
       "step": "The Raspberry Pi Pico example built, with Hardware chosen and no board connected",
-      "sha256": "9ce3b9acf7e99d78709fe7da5b4799b50675b8860f202da9b387afe44d17d1c4",
-      "bytes": 111644,
+      "sha256": "05531b90e4206e5ef47068f05f111387ee09ff201e3dcdb426bfdff30ec270bd",
+      "bytes": 100317,
       "width": 1440,
       "height": 900,
-      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
+      "commit": "1f4e025ad397aae3a8384e480bb3a9fd6b46e2eb"
     },
     {
       "file": "screens/first-board-connect.png",
       "step": "The Connect dialog that lists serial ports, with no board chosen",
-      "sha256": "7102e8a5df34a013168afb571332146e8d7463fd5a8789c5b894061e65100f80",
-      "bytes": 125719,
+      "sha256": "ce8bfb47c52175faa0fa1fb778090ada9a49dc1fe9b6121d3973d48c8f78b271",
+      "bytes": 176065,
       "width": 1440,
       "height": 900,
-      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
+      "commit": "1f4e025ad397aae3a8384e480bb3a9fd6b46e2eb"
     },
     {
       "file": "screens/guide-import-archive.png",
       "step": "The dialog of Import a project archive",
-      "sha256": "6f4dff865b9699b1c9160e8984bf28e62319bff4696e29b8eb1fa993688c45cd",
-      "bytes": 106197,
+      "sha256": "c2a7f16e3ceb2eba2b1ea6453771c85014ae0df667683aa94f8855ac22294890",
+      "bytes": 96875,
       "width": 1440,
       "height": 900,
-      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
+      "commit": "1f4e025ad397aae3a8384e480bb3a9fd6b46e2eb"
     }
   ]
 }
