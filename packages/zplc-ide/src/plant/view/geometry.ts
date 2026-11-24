@@ -1,5 +1,6 @@
 import type { BodyPose, PartView, Quat, Vec3 } from '../contracts';
 import type { Palette } from './displayModes';
+import { modelBounds, rotate } from './models';
 
 /** Shape descriptions generated in code (PRT-009): no asset is loaded. The renderer turns them into three geometry. */
 export type ShapeSpec =
@@ -161,6 +162,7 @@ export function gripperDecor(view: PartView): Decor[] {
 /** Parts that get edge lines in high contrast (VIS-009): sensors, blades and the M4 parts. */
 export const OUTLINED_PARTS: ReadonlySet<string> = new Set([
   'sensor',
+  'push-button',
   'stop-blade',
   'light-array',
   'scale',
@@ -334,13 +336,6 @@ export function crateBoxes(size: Vec3): readonly { centre: Vec3; size: Vec3 }[] 
   ];
 }
 
-const rotate = ([x, y, z, w]: Quat, [vx, vy, vz]: Vec3): Vec3 => {
-  const tx = 2 * (y * vz - z * vy);
-  const ty = 2 * (z * vx - x * vz);
-  const tz = 2 * (x * vy - y * vx);
-  return [vx + w * tx + (y * tz - z * ty), vy + w * ty + (z * tx - x * tz), vz + w * tz + (x * ty - y * tx)];
-};
-
 /** The world pose of one box of a crate (`index` into `crateBoxes`). */
 function crateBox(item: BodyPose, index: number): { p: Vec3; size: Vec3 } {
   const box = crateBoxes(item.size)[index]!;
@@ -370,23 +365,32 @@ export function shapeExtent(spec: ShapeSpec): Vec3 {
       : [spec.outerRadius * 2, spec.height, spec.outerRadius * 2]; // an arc lies inside the square of its outer radius around its origin
 }
 
-/** The box that holds every part view and every item of a snapshot (corners of each rotated box), or null for an empty one. */
+/**
+ * The box that holds every part view and every item of a snapshot (corners of each rotated box), or null for an empty one. A part
+ * drawn as a composed model counts with all of its pieces: legs and posts down to the floor, a beam to its end.
+ */
 export function snapshotBounds(snapshot: { parts: readonly PartView[]; items: readonly BodyPose[] }): { min: Vec3; max: Vec3 } | null {
   const min = [Infinity, Infinity, Infinity];
   const max = [-Infinity, -Infinity, -Infinity];
-  const add = (p: Vec3, q: Quat, size: Vec3) => {
-    for (const sx of [-0.5, 0.5])
-      for (const sy of [-0.5, 0.5])
-        for (const sz of [-0.5, 0.5]) {
-          const c = rotate(q, [size[0] * sx, size[1] * sy, size[2] * sz]);
+  const add = (p: Vec3, q: Quat, lo: Vec3, hi: Vec3) => {
+    for (const x of [lo[0], hi[0]])
+      for (const y of [lo[1], hi[1]])
+        for (const z of [lo[2], hi[2]]) {
+          const c = rotate(q, [x, y, z]);
           for (let i = 0; i < 3; i++) {
             min[i] = Math.min(min[i]!, p[i]! + c[i]!);
             max[i] = Math.max(max[i]!, p[i]! + c[i]!);
           }
         }
   };
-  for (const view of snapshot.parts) add(view.pose.p, view.pose.q, shapeExtent(partShape(view)));
-  for (const item of snapshot.items) add(item.p, item.q, item.size);
+  const centred = (p: Vec3, q: Quat, size: Vec3) =>
+    add(p, q, [-size[0] / 2, -size[1] / 2, -size[2] / 2], [size[0] / 2, size[1] / 2, size[2] / 2]);
+  for (const view of snapshot.parts) {
+    const model = modelBounds(view, snapshot.parts);
+    if (model) add(view.pose.p, view.pose.q, model.min, model.max);
+    else centred(view.pose.p, view.pose.q, shapeExtent(partShape(view)));
+  }
+  for (const item of snapshot.items) centred(item.p, item.q, item.size);
   return Number.isFinite(min[0]) ? { min: min as unknown as Vec3, max: max as unknown as Vec3 } : null;
 }
 
@@ -435,53 +439,22 @@ export function instanceMatrices(items: readonly BodyPose[], out?: Float32Array)
   return m;
 }
 
-/** Red and blue differ in lightness, and metal is a lighter neutral (VIS-009, open question 7: never colour alone). */
-const PROP_COLORS: Readonly<Record<'red' | 'blue' | 'metal', Vec3>> = {
-  red: [0.7, 0.1, 0.1],
-  blue: [0.45, 0.7, 1],
-  metal: [0.78, 0.8, 0.82],
-};
-
-const ITEM_COLORS: Readonly<Record<BodyPose['kind'], Vec3>> = {
-  box: [0.82, 0.58, 0.28],
-  pallet: [0.62, 0.48, 0.32],
-  item: [0.3, 0.6, 0.85],
-};
-
-/** Lids and bases (VIS-009) are told from a box by tone; a tagless item keeps its kind's colour. */
-const TAG_COLORS: Readonly<Record<'lid' | 'base', Vec3>> = {
-  lid: [0.85, 0.85, 0.9],
-  base: [0.2, 0.35, 0.3],
-};
-
-/** The tone of a tagged item under a palette: its three tags stay three different colours in every display mode. */
-export function itemTone(tag: BodyPose['tag'], palette: Palette): number {
-  return tag === 'lid' ? palette.sensorOn : tag === 'base' ? palette.belt : palette.item;
-}
-
-const mix = (c: number, t: number): number => {
-  const ch = (s: number): number => Math.round(((c >> s) & 255) * (1 - t) + 255 * t);
-  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
-};
-
 /**
- * The tone of an item under a palette: its tag, else its colour or metal. `palette.item` is the one spare tone, so red,
- * blue and metal are derived from it by lightness (darkest to lightest); high contrast uses grey steps plus the outline.
+ * The colour of an item under a palette (VIS-018): a lid or a base has its own; a metal item is metal; a red or blue item takes the
+ * palette's red or blue (each keeps its hue in light and dark); a pallet is wood; any other item has no colour named (a box, a crate,
+ * a box a person adds: a workpiece always carries a colour) and is cardboard.
  */
-export function itemToneOf(item: Pick<BodyPose, 'tag' | 'colour' | 'metal'>, palette: Palette): number {
-  if (item.tag === 'lid' || item.tag === 'base') return itemTone(item.tag, palette);
-  const kind = item.metal ? 'metal' : item.colour;
-  if (!kind) return palette.item;
-  if (palette.outline !== null) return { red: 0x909090, blue: 0xc8c8c8, metal: 0xffffff }[kind];
-  return mix(palette.item, { red: 0, blue: 0.35, metal: 0.7 }[kind]);
+export function itemToneOf(item: Partial<Pick<BodyPose, 'kind' | 'tag' | 'colour' | 'metal'>>, palette: Palette): number {
+  const tones = palette.items;
+  if (item.tag === 'lid' || item.tag === 'base') return tones[item.tag];
+  if (item.metal) return tones.metal;
+  if (item.colour === 'red' || item.colour === 'blue') return tones[item.colour];
+  if (item.kind === 'pallet') return tones.pallet;
+  return palette.item;
 }
 
-export function instanceColors(items: readonly BodyPose[], out?: Float32Array): Float32Array {
-  const c = out && out.length >= items.length * 3 ? out : new Float32Array(items.length * 3);
-  items.forEach((item, i) => {
-    const tagged = item.tag === 'lid' || item.tag === 'base' ? TAG_COLORS[item.tag] : undefined;
-    const prop = item.metal ? 'metal' : item.colour; // a metal part is drawn metal; its colour stays data
-    c.set(tagged ?? (prop ? PROP_COLORS[prop] : undefined) ?? ITEM_COLORS[item.kind] ?? ITEM_COLORS.item, i * 3);
-  });
-  return c;
+/** The surface of an item at the textured levels: an item with no colour, a crate or a pallet is cardboard; a coloured, metal, lid or
+ * base item is plastic. */
+export function itemSkin(item: Partial<Pick<BodyPose, 'kind' | 'tag' | 'colour' | 'metal'>>): 'cardboard' | 'plastic' {
+  return item.colour || item.metal || item.tag === 'lid' || item.tag === 'base' ? 'plastic' : 'cardboard';
 }

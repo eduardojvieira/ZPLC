@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import type { BodyPose, PartView } from '../contracts';
 import { cuesFor } from './cues';
 import { paletteFor } from './displayModes';
-import { instanceColors, itemTone, partDecor, partShape } from './geometry';
+import { itemToneOf, partDecor, partShape } from './geometry';
 
 const pose = (over: Partial<BodyPose> = {}): BodyPose => ({
   id: 'g',
@@ -62,12 +62,12 @@ describe('manipulator view', () => {
   });
 
   it('VIS-009 lids and bases are drawn with their own tone and an outline', () => {
-    const colors = instanceColors([pose({ tag: 'box' }), pose({ tag: 'lid' }), pose({ tag: 'base' }), pose({ kind: 'item' })]);
-    const rgb = (i: number): string => Array.from(colors.slice(i * 3, i * 3 + 3)).join();
-    expect(new Set([rgb(0), rgb(1), rgb(2)]).size).toBe(3);
+    for (const mode of ['light', 'dark', 'high-contrast'] as const) {
+      const palette = paletteFor({ mode, reducedMotion: false });
+      const tones = (['box', 'lid', 'base'] as const).map((tag) => itemToneOf(pose({ tag }), palette));
+      expect(new Set(tones).size).toBe(3);
+    }
     const hc = paletteFor({ mode: 'high-contrast', reducedMotion: false });
-    const tones = (['box', 'lid', 'base'] as const).map((t) => itemTone(t, hc));
-    expect(new Set(tones).size).toBe(3);
     expect(hc.outline).not.toBeNull(); // the shared wireframe pass outlines every item in high contrast
   });
 

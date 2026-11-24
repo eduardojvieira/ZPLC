@@ -221,3 +221,19 @@ describe('OperatePanel fault actions', () => {
     }
   });
 });
+
+describe('OperatePanel focus and the 3D view (VIS-003)', () => {
+  it('VIS-003 focusing the control of a part names that part, for the 3D view to mark; leaving it names none', () => {
+    const focused: Array<string | undefined> = [];
+    const core = { operate: () => undefined, act: () => undefined } as unknown as PlantCore;
+    const ui = dom.render(
+      <OperatePanel scene={scene} core={core} snapshot={snapshot()} onChange={() => undefined} onFocusPart={(id) => focused.push(id)} />,
+    );
+    const press = ui.container.querySelector<HTMLButtonElement>('[data-plant-press="Start"]')!;
+    dom.act(() => press.focus());
+    const slider = ui.container.querySelector<HTMLInputElement>('input[type="range"]')!;
+    dom.act(() => slider.focus());
+    dom.act(() => slider.blur());
+    expect(focused).toEqual(['b', undefined, 'p', undefined]);
+  });
+});

@@ -123,7 +123,7 @@ const PAGE =
 })()`;
 
 /** A second window of the application with software GL, on the development server the journeys already run. */
-async function withGlWindow<T>(root: string, runtime: string, body: (page: Cdp) => Promise<T>): Promise<T> {
+export async function withGlWindow<T>(root: string, runtime: string, body: (page: Cdp) => Promise<T>): Promise<T> {
   const port = smokeVitePort();
   const cdpPort = await freePort();
   const electronPath = join(packageRoot, 'node_modules', 'electron', 'dist', process.platform === 'win32' ? 'electron.exe' : 'electron');

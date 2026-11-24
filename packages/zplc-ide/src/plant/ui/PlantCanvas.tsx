@@ -4,9 +4,10 @@
  * document is visible (spec 013 PLS-010): a hidden canvas gets no snapshot and no resize, and the renderer draws only when it
  * has something new, so no frame is made. The plant core and the session never depend on it (P14).
  */
-import { useEffect, useRef, type KeyboardEvent, type PointerEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
+import { useT } from '../../i18n';
 import type { PlantSceneFile, Vec3 } from '../contracts';
-import type { Catalogue } from '../core/catalogue';
+import { catalogue as shippedCatalogue, type Catalogue } from '../core/catalogue';
 import { dragPlan, pointerToGround, type DragPlan } from '../editor/pointer';
 import type { SceneEditor } from '../editor/model';
 import { cameraKeyAction } from '../view/camera';
@@ -25,6 +26,8 @@ export interface PlantCanvasProps {
   quality: QualityLevel | undefined;
   display: DisplayPrefs;
   label: string;
+  /** The part whose control has the keyboard focus (operate panel): marked in the view with its signal names, like a hover (VIS-003). */
+  focusedPart?: string;
   timing?: CanvasTiming;
   /** While a scene is edited (SCN-008): a drag that starts on a part moves it, as one undo step, and the pointer does not orbit. */
   edit?: { editor: SceneEditor; catalogue: Catalogue; onEdited(): void };
@@ -36,13 +39,23 @@ export interface PlantCanvasProps {
 // V1's renderer has no palette or camera animation yet; `applyDisplayPrefs` calls them only where they exist.
 const show = (renderer: PlantRenderer, prefs: DisplayPrefs): void => applyDisplayPrefs(renderer as PlantRenderer & DisplayTarget, prefs);
 
-// ponytail: nearest part origin within 1.5 m of the pointer's ground point; the renderer has no picking API. Footprint hit tests if parts
-// overlap.
+// ponytail: while editing, a drag picks the nearest part origin within 1.5 m of the pointer's ground point (moving a part needs its
+// scene entry, not the drawn view); the hover label below picks with the renderer's raycaster.
 const PICK_M = 1.5;
+
+/** The scene part a drawn view belongs to: the same id, or `<part id>-<view>` for a secondary view (a gantry's frame). */
+const partOfView = (scene: PlantSceneFile, id: string) => scene.parts.find((p) => p.id === id || id.startsWith(`${p.id}-`));
 
 export function PlantCanvas(props: PlantCanvasProps) {
   const { engine, scene, feed, quality, timing = DEFAULT_TIMING } = props;
+  const { t } = useT();
   const canvas = useRef<HTMLCanvasElement>(null);
+  // The part under the pointer, and where its label goes (fractions of the canvas); the focused part shows when nothing is hovered.
+  const [hovered, setHovered] = useState<string | undefined>();
+  const [anchor, setAnchor] = useState<readonly [number, number] | null>(null);
+  // Bumped when a renderer is ready, so a part focused before it existed is marked once it does.
+  const [rendererReady, setRendererReady] = useState(0);
+  const shown = hovered ?? props.focusedPart;
   const live = useRef<PlantRenderer | undefined>(undefined);
   // What the effects read without restarting the renderer.
   const visible = useRef(props.visible);
@@ -67,6 +80,7 @@ export function PlantCanvas(props: PlantCanvasProps) {
       }
       renderer = result;
       live.current = result;
+      setRendererReady((n) => n + 1);
       callbacks.current.onRenderer(result);
       show(result, callbacks.current.display);
       const initial = feed.latest();
@@ -140,6 +154,19 @@ export function PlantCanvas(props: PlantCanvasProps) {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    const renderer = live.current;
+    renderer?.setHighlight?.(shown ?? null);
+    setAnchor(shown && renderer?.anchorOf ? renderer.anchorOf(shown) : null);
+  }, [shown, rendererReady]);
+  const shownPart = shown ? partOfView(scene, shown) : undefined;
+  const signals = shownPart ? ((props.edit?.catalogue ?? shippedCatalogue).get(shownPart.part)?.signals(shownPart) ?? []) : [];
+  const partLabel = shownPart
+    ? signals.length > 0
+      ? t('plant.view.partSignals', { name: shownPart.name, signals: signals.map((s) => s.name).join(', ') })
+      : t('plant.view.partNoSignals', { name: shownPart.name })
+    : undefined;
+
   const onKeyDown = (event: KeyboardEvent<HTMLCanvasElement>) => {
     const action = cameraKeyAction(event.key, event.shiftKey);
     const renderer = live.current;
@@ -191,49 +218,75 @@ export function PlantCanvas(props: PlantCanvasProps) {
     event.currentTarget.setPointerCapture?.(event.pointerId);
     return true;
   };
+  const hover = (event: PointerEvent<HTMLCanvasElement>) => {
+    const renderer = live.current;
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (!renderer?.pick || rect.width <= 0 || rect.height <= 0) return;
+    const ndc: [number, number] = [
+      ((event.clientX - rect.left) / rect.width) * 2 - 1,
+      -(((event.clientY - rect.top) / rect.height) * 2 - 1),
+    ];
+    setHovered(renderer.pick(ndc) ?? undefined);
+  };
   return (
-    <canvas
-      ref={canvas}
-      data-plant-canvas
-      tabIndex={0}
-      role="img"
-      aria-label={props.label}
-      className="h-full min-h-64 w-full touch-none bg-[var(--color-surface-800)]"
-      onKeyDown={(event) => {
-        if (event.key === 'Escape' && part.current) {
-          event.preventDefault();
-          endPart(false);
-        } else onKeyDown(event);
-      }}
-      onPointerDown={(event) => {
-        if (startPart(event)) return;
-        drag.current = { x: event.clientX, y: event.clientY };
-      }}
-      onPointerMove={(event) => {
-        if (part.current) {
-          const hit = ground(event);
-          if (!hit) return;
-          try {
-            part.current.move(hit);
-            live.current?.setGhost?.(part.current.preview()?.position ?? hit);
-          } catch {
+    <div className="relative h-full min-h-64 w-full">
+      <canvas
+        ref={canvas}
+        data-plant-canvas
+        tabIndex={0}
+        role="img"
+        aria-label={props.label}
+        className="h-full min-h-64 w-full touch-none bg-[var(--color-surface-800)]"
+        onKeyDown={(event) => {
+          if (event.key === 'Escape' && part.current) {
+            event.preventDefault();
             endPart(false);
+          } else onKeyDown(event);
+        }}
+        onPointerDown={(event) => {
+          if (startPart(event)) return;
+          drag.current = { x: event.clientX, y: event.clientY };
+        }}
+        onPointerMove={(event) => {
+          if (part.current) {
+            const hit = ground(event);
+            if (!hit) return;
+            try {
+              part.current.move(hit);
+              live.current?.setGhost?.(part.current.preview()?.position ?? hit);
+            } catch {
+              endPart(false);
+            }
+            return;
           }
-          return;
-        }
-        if (!drag.current) return;
-        live.current?.orbit((event.clientX - drag.current.x) * 0.4, (event.clientY - drag.current.y) * 0.4);
-        drag.current = { x: event.clientX, y: event.clientY };
-      }}
-      onPointerUp={() => {
-        endPart(true);
-        drag.current = null;
-      }}
-      onPointerCancel={() => {
-        endPart(false);
-        drag.current = null;
-      }}
-      onWheel={(event) => live.current?.zoom(event.deltaY < 0 ? 1.1 : 1 / 1.1)}
-    />
+          if (!drag.current) return hover(event);
+          live.current?.orbit((event.clientX - drag.current.x) * 0.4, (event.clientY - drag.current.y) * 0.4);
+          drag.current = { x: event.clientX, y: event.clientY };
+        }}
+        onPointerUp={() => {
+          endPart(true);
+          drag.current = null;
+        }}
+        onPointerCancel={() => {
+          endPart(false);
+          drag.current = null;
+        }}
+        onPointerLeave={() => setHovered(undefined)}
+        onWheel={(event) => live.current?.zoom(event.deltaY < 0 ? 1.1 : 1 / 1.1)}
+      />
+      {partLabel && (
+        <div
+          data-plant-part-label={shown}
+          className="pointer-events-none absolute rounded bg-[var(--color-surface-900)] px-2 py-1 text-sm text-[var(--text-primary)] shadow"
+          style={
+            anchor
+              ? { left: `${anchor[0] * 100}%`, top: `${anchor[1] * 100}%`, transform: 'translate(-50%, calc(-100% - 6px))' }
+              : { left: 8, top: 8 }
+          }
+        >
+          {partLabel}
+        </div>
+      )}
+    </div>
   );
 }

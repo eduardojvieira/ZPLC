@@ -109,6 +109,8 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
   // A failure belongs to the scene it was reported for.
   const [failed, setFailed] = useState<{ key: string; failure: CanvasFailure } | undefined>();
   const [renderer, setRenderer] = useState<PlantRenderer | undefined>();
+  // The part whose control in the operate panel has the keyboard focus: the 3D view marks it and names its signals (VIS-003).
+  const [focusedPart, setFocusedPart] = useState<string | undefined>();
   // The scene being edited (SCN-008) and, once editing ends, the edited scene the plant core is rebuilt from.
   const [editing, setEditing] = useState<{ editor: SceneEditor; mapEditor: MapEditor } | undefined>();
   const [edited, setEdited] = useState<{ key: string; texts: SceneOverride } | undefined>();
@@ -325,6 +327,7 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
                 visible={visible}
                 quality={qualityLevels.includes(quality as QualityLevel) ? (quality as QualityLevel) : undefined}
                 display={display}
+                {...(focusedPart ? { focusedPart } : {})}
                 label={t('plant.panel.canvas', { scene: ready.scene.name })}
                 {...(deps.timing ? { timing: deps.timing } : {})}
                 {...(editing ? { edit: { editor: editing.editor, catalogue, onEdited: () => setVersion((n) => n + 1) } } : {})}
@@ -335,7 +338,15 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
               <Schematic scene={ready.scene} />
             )}
           </div>
-          {!editing && <OperatePanel scene={ready.scene} core={ready.core} snapshot={snapshot} onChange={binding.publish} />}
+          {!editing && (
+            <OperatePanel
+              scene={ready.scene}
+              core={ready.core}
+              snapshot={snapshot}
+              onChange={binding.publish}
+              onFocusPart={setFocusedPart}
+            />
+          )}
           {!editing && !binding.bound && (
             <p data-plant-unbound className="px-2 text-sm text-[var(--text-secondary)]">
               {ready.map ? t('plant.panel.waitingRun') : t('plant.panel.noRuntime')}

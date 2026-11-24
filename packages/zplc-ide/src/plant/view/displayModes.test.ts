@@ -40,10 +40,9 @@ describe('display modes', () => {
   });
 
   for (const mode of modes) {
-    it(`VIS-009 the ${mode} palette meets a 4.5:1 contrast ratio for sensor on against sensor off and item against floor`, () => {
+    it(`VIS-009 the ${mode} palette meets a 4.5:1 contrast ratio for the beam and every item tone against the floor`, () => {
       const p = paletteFor({ mode, reducedMotion: false });
-      expect(contrast(p.sensorOn, p.sensorOff)).toBeGreaterThanOrEqual(4.5);
-      expect(contrast(p.item, p.floor)).toBeGreaterThanOrEqual(4.5);
+      for (const tone of [p.beam, p.item, ...Object.values(p.items)]) expect(contrast(tone, p.floor)).toBeGreaterThanOrEqual(4.5);
     });
   }
 });

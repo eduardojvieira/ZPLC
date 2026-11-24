@@ -142,3 +142,96 @@ describe('pointer placement on the 3D canvas (SCN-008, SCN-010, SCN-014)', () =>
     expect(r.log).toEqual(['orbit']);
   });
 });
+
+await import('../core/plantCore'); // registers the shipped parts, whose signals the hover label names
+
+describe('the part under the pointer and the focused part (VIS-003)', () => {
+  const belt: ScenePart = { id: 'b1', part: 'belt', name: 'Belt1', position: [0, 0.5, 0], rotationYDeg: 0, config: {} };
+  const shipped: PlantSceneFile = { schemaVersion: 1, name: 'Hover', parts: [belt], cameras: [] };
+  function hoverRig() {
+    const highlights: Array<string | null> = [];
+    const picks: Array<readonly [number, number]> = [];
+    const fake: PlantRenderer = {
+      webgl2: true,
+      setSnapshot: () => undefined,
+      setQuality: () => undefined,
+      setCameraPreset: () => undefined,
+      cameraState: () => CAMERA,
+      orbit: () => undefined,
+      pan: () => undefined,
+      zoom: () => undefined,
+      onContext: () => () => undefined,
+      fps: () => ({ current: 60, p5: 60 }),
+      resize: () => undefined,
+      dispose: () => undefined,
+      // The belt fills the left half of the canvas.
+      pick: (ndc) => (picks.push(ndc), ndc[0] < 0 ? 'b1' : null),
+      setHighlight: (id) => void highlights.push(id),
+      anchorOf: () => [0.25, 0.4],
+    };
+    const engine = { loadRenderer: async () => fake } as unknown as PlantEngine;
+    const feed: SnapshotFeed = { latest: () => undefined, subscribe: () => () => undefined, count: () => 0 };
+    const mount = async (focusedPart?: string) => {
+      dom.render(
+        <PlantCanvas
+          engine={engine}
+          scene={shipped}
+          feed={feed}
+          visible
+          quality={undefined}
+          display={{ mode: 'light', reducedMotion: false }}
+          label="canvas"
+          {...(focusedPart ? { focusedPart } : {})}
+          onRenderer={() => undefined}
+          onFailure={() => undefined}
+        />,
+      );
+      await dom.settle();
+      const canvas = document.querySelector<HTMLCanvasElement>('[data-plant-canvas]')!;
+      canvas.getBoundingClientRect = () => ({ left: 0, top: 0, width: 100, height: 100 }) as DOMRect;
+      return canvas;
+    };
+    const label = () => document.querySelector<HTMLElement>('[data-plant-part-label]');
+    return { highlights, picks, mount, label };
+  }
+
+  it('VIS-003 a pointer over a part marks it and shows its name and signal names; leaving the part removes both', async () => {
+    const r = hoverRig();
+    const canvas = await r.mount();
+    expect(r.label()).toBeNull();
+    dom.fireEvent.pointerMove(canvas, at(20, 50));
+    await dom.settle();
+    expect(r.picks.at(-1)![0]).toBeCloseTo(-0.6, 9);
+    expect(r.picks.at(-1)![1]).toBeCloseTo(0, 9);
+    expect(r.label()?.textContent).toBe('Belt1 · signals: Belt1.run');
+    expect(r.label()?.dataset.plantPartLabel).toBe('b1');
+    expect(r.label()?.style.left).toBe('25%');
+    expect(r.highlights.at(-1)).toBe('b1');
+    dom.fireEvent.pointerMove(canvas, at(80, 50)); // empty floor
+    await dom.settle();
+    expect(r.label()).toBeNull();
+    expect(r.highlights.at(-1)).toBeNull();
+    dom.fireEvent.pointerMove(canvas, at(20, 50));
+    dom.fireEvent.pointerLeave(canvas, at(20, 50));
+    await dom.settle();
+    expect(r.label()).toBeNull();
+  });
+
+  it('VIS-003 the part whose control has the keyboard focus is marked and named without a pointer', async () => {
+    const r = hoverRig();
+    await r.mount('b1');
+    await dom.settle();
+    expect(r.label()?.textContent).toBe('Belt1 · signals: Belt1.run');
+    expect(r.highlights.at(-1)).toBe('b1');
+  });
+
+  it('VIS-003 a drag still orbits and does not pick', async () => {
+    const r = hoverRig();
+    const canvas = await r.mount();
+    dom.fireEvent.pointerDown(canvas, at(20, 50));
+    const before = r.picks.length;
+    dom.fireEvent.pointerMove(canvas, at(30, 50));
+    dom.fireEvent.pointerUp(canvas, at(30, 50));
+    expect(r.picks.length).toBe(before);
+  });
+});

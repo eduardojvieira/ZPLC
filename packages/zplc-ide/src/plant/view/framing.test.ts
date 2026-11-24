@@ -116,9 +116,14 @@ function fakeThree() {
     set(v: number) {
       this.hex = v;
     }
+    copy(c: Color) {
+      this.hex = c.hex;
+      return this;
+    }
   }
   class Material {
     color = new Color();
+    emissive = new Color();
     dispose() {}
   }
   class Geometry {
@@ -149,7 +154,14 @@ function fakeThree() {
       aspect = 1;
       updateProjectionMatrix() {}
     },
-    HemisphereLight: Obj,
+    HemisphereLight: class extends Obj {
+      color = new Color();
+      groundColor = new Color();
+    },
+    Group: Obj,
+    Fog: class {
+      color = new Color();
+    },
     DirectionalLight: class extends Obj {
       shadow = { mapSize: { set() {} } };
     },

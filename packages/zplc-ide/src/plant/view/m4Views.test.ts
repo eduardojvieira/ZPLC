@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test';
 import type { PartView, PlantCore, ScenePart } from '../contracts';
 import { createPlantCore } from '../core/plantCore';
 import { cuesFor } from './cues';
-import { itemToneOf, instanceColors, OUTLINED_PARTS, partDecor, partShape } from './geometry';
+import { itemToneOf, OUTLINED_PARTS, partDecor, partShape } from './geometry';
 import { paletteFor } from './displayModes';
 
 // The view kinds V6 handles (the same list as sorting.test.ts); here they are compared with what the REAL parts publish.
@@ -133,10 +133,9 @@ describe('M4 views from a real snapshot', () => {
     ]);
     const p = paletteFor({ mode: 'light', reducedMotion: false });
     expect(new Set(items.map((i) => itemToneOf(i, p))).size).toBe(2);
-    expect(instanceColors(items)).toHaveLength(6);
   });
 
-  // Finding for V6: a real workpiece always carries a colour (red by default), and itemToneOf and instanceColors read
+  // Finding for V6: a real workpiece always carries a colour (red by default), and itemToneOf reads
   // `colour ?? (metal ? 'metal')`, so a metal workpiece is drawn in its colour and never in the metal tone (VIS-009).
   it('VIS-009 a real metal workpiece is drawn in the metal tone, not in its colour', async () => {
     const core = await make([part('workpiece', 'Red1', {}, 0), part('workpiece', 'Metal1', { material: 'metal' }, 3)]);
