@@ -112,8 +112,8 @@ describe('leg on a levelling foot (VIS-014)', () => {
     expect(top(stem)).toBeCloseTo(bottom(leg), 12); // the stem carries the leg
     expect(pieceExtent(stem)[0]).toBeLessThan(pieceExtent(leg)[0] / 2);
     expect(pieceExtent(pad)[0]).toBeGreaterThan(pieceExtent(leg)[0]);
-    // The pad stays inside the old square foot (0.08 m), so the bounds of a scene do not grow.
-    expect(pieceExtent(pad)[0]).toBeLessThanOrEqual(0.04);
+    // The pad spans the 0.08 m of the pilot's square foot plate, so the bounds of a scene, and its first view, stay as they were.
+    expect(pieceExtent(pad)[0]).toBe(0.04);
   });
 
   it('VIS-014 a short leg keeps half its height as profile: the foot rises at most half way', () => {

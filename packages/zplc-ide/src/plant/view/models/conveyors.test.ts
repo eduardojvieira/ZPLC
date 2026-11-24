@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'bun:test';
 import { levellingLeg, slotted, type Piece } from './shared';
 import { BELT, CONVEYORS } from './conveyors';
-import { partModel, pieceExtent } from './index';
+import { modelBounds, partModel, pieceExtent } from './index';
 import { beltToSensor, bottom, shown, slot } from './models.fixtures';
 
 const plant = beltToSensor();
@@ -78,6 +78,13 @@ describe('conveyor models (VIS-014)', () => {
       expect(brace.shape.kind).toBe('extrusion');
       expect(brace.role).toBe('frame');
     }
+    // The model fills the box the pilot's belt filled (the feet 0.04 m out from the rail's centre line), so the first view of every
+    // scene stays as it was (VIS-002).
+    const railZ = belt.pose.size[2] / 2 + rail.width / 2;
+    const bounds = modelBounds(belt)!;
+    const ends = length / 2 + 0.008; // the end caps, 8 mm wider than the drums
+    const expected = [-ends, ends, -belt.pose.p[1], -railZ - 0.04, railZ + 0.04];
+    [bounds.min[0], bounds.max[0], bounds.min[1], bounds.min[2], bounds.max[2]].forEach((v, i) => expect(v).toBeCloseTo(expected[i]!, 9));
   });
 
   it('VIS-014 a belt close to the floor has no legs', async () => {

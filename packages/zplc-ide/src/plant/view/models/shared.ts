@@ -137,7 +137,7 @@ export const MIN_STAND = 0.05;
  * The levelling foot under a leg: a rubber pad on the floor and a threaded stem up into the leg. Two meshes, as the plain leg's foot
  * plate was one more: every leg of a scene is drawn each frame.
  */
-export const LEVELLING_FOOT = { rise: 0.06, pad: 0.032, padHeight: 0.012, stem: 0.008 } as const;
+export const LEVELLING_FOOT = { rise: 0.06, pad: 0.04, padHeight: 0.012, stem: 0.008 } as const;
 
 /**
  * A leg of square slotted profile `size` from `top` down to a levelling foot that stands on the floor at `floor`, at (x, z) of the
