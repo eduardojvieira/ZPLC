@@ -219,7 +219,7 @@ The placeholder for control names is `{{ui:<catalogue key>}}`, for example `{{ui
 
 ### 6.2 The path "Structured Text from zero"
 
-Id `st`, focus language ST (LRN-043, CRS-022). It takes a learner who never programmed a PLC from what a PLC is to the tested program of a machine, with only a computer, as the `ladder` path does for Ladder diagram. Module 9 is the Instruction List module and has no ST lesson. A lesson marked "new" is proposed in 6.3 and is subject to the compiler support matrix. "Ends" marks the module's last practice, which CRS-018 asks to be written from the declarations.
+Id `st`, focus language ST (LRN-043, CRS-022). It takes a learner who never programmed a PLC from what a PLC is to the tested program of a machine, with only a computer, as the `ladder` path does for Ladder diagram. Module 9 is the Instruction List module and has no ST lesson. A lesson marked "new" is proposed in 6.3; the compiler support matrix marks the construct of each "Teach". "Ends" marks the module's last practice, which CRS-018 asks to be written from the declarations.
 
 | # | Lesson | Module | New | What it teaches |
 |---|---|---|---|---|
@@ -247,7 +247,7 @@ Id `st`, focus language ST (LRN-043, CRS-022). It takes a learner who never prog
 | 22 | `st-arrays-for` | 7 | new | ARRAY and FOR: one loop over five values. |
 | 23 | `st-while-repeat` | 7 | new | WHILE and REPEAT, and why every loop must end inside one scan. |
 | 24 | `st-structures` | 7 | new | A STRUCT type that groups the signals of one machine. |
-| 25 | `st-global-variables` | 7 | new | VAR_GLOBAL and VAR_EXTERNAL: one value shared by a program and its function blocks. |
+| 25 | `st-global-variables` | 7 | new | VAR_GLOBAL and VAR_EXTERNAL: one value shared by a program and its function blocks; what RETAIN declares. |
 | 26 | `structures-arrays-call-panel` | 7 | | An array of structures handled by one FOR loop. Ends. |
 | 27 | `conveyor-classification-jam` | 8 | | Classify parts and lock out a jam safely. |
 | 28 | `temporal-assertions-jam-fault` | 8 | | Prove a timing with AT, WITHIN, FOR, UNTIL, RISING and FALLING. |
@@ -261,24 +261,34 @@ The path changes no 2.0 lesson: 22 of its lessons exist and keep their starters.
 
 ### 6.3 Proposed new lessons for the gaps of L7
 
-Every row is subject to the compiler support matrix (`course-l7-support.md`, written by the course tools of step 2): a construct the compiler or the runtime does not support becomes a compiler gap, and its lesson is not written (CRS-023). Each new lesson is a package of its own, with a new starter and solution, a scenario with at least three assertions, a wrong-program set, a reading page and its text in English and Spanish.
+Reconciled on 2026-11-24 with the compiler support matrix, `course-l7-support.md`: its probes run each construct the way a lesson's Check runs a program, and every construct of this table is "Teach" in Structured Text. The column Matrix gives its verdict; the constructs it reports as compiler gaps are listed after the table and get no lesson (CRS-023). Each new lesson is a package of its own, with a new starter and solution, a scenario with at least three assertions, a wrong-program set, a reading page and its text in English and Spanish.
 
-| Construct (L7) | Proposed lesson | Module | Language | What the practice asks | Status |
+| Construct (L7) | Proposed lesson | Module | Language | What the practice asks | Matrix |
 |---|---|---|---|---|---|
-| IF, ELSIF, ELSE (used from lesson 1, never taught) | `st-if-then-else` | 1 | ST | A lamp that shows one of three states of a tank, written as one IF with two ELSIF branches. | Subject to the compiler support matrix |
-| TP | `timer-pulse-tp` | 3 | ST | A lubrication pulse of fixed length per press, that holding the button does not stretch. | Subject to the compiler support matrix |
-| CTD, CTUD | `counter-down-up-down` | 3 | ST | A car park that counts cars in and out and shows full and empty. | Subject to the compiler support matrix |
-| REAL (first used at `plant-tank-level-scaling`, never taught) | `st-real-numbers` | 4 | ST | A temperature in tenths of a degree turned into REAL, averaged and rounded back. | Subject to the compiler support matrix |
-| Bit and word operations | `st-bits-and-words` | 4 | ST | Eight lamp states packed into a status WORD, and one bit tested and set. | Subject to the compiler support matrix |
-| A user FUNCTION | `st-user-function` | 7 | ST | A function that limits a setpoint, called from two places. | Subject to the compiler support matrix |
-| FOR and ARRAY, apart from STRUCT | `st-arrays-for` | 7 | ST | The largest and the sum of five tank levels in one FOR loop. | Subject to the compiler support matrix |
-| WHILE, REPEAT | `st-while-repeat` | 7 | ST | The first free slot of a rack found with a bounded WHILE, and the same with REPEAT. | Subject to the compiler support matrix |
-| STRUCT, apart from ARRAY | `st-structures` | 7 | ST | The signals of one motor grouped in a STRUCT and passed as one value. | Subject to the compiler support matrix |
-| VAR_GLOBAL | `st-global-variables` | 7 | ST | A shared count written by the program and read by a function block. The grade runs one task and one program, so a global shared between two programs cannot be graded. | Subject to the compiler support matrix |
-| STRING | `st-strings` | 10 | ST | An alarm text built from a name and a number, and its length checked. | Subject to the compiler support matrix |
-| RETAIN | none proposed | | | The ZPLC programming skill states that source `RETAIN` is unsupported; if the matrix confirms it, this is a compiler gap and no lesson teaches it. | Subject to the compiler support matrix |
-| CASE | none: `pedestrian-crossing-states` explains it in its reading page | 5 | ST | | |
-| TP, CTD and CTUD in Ladder diagram | `timer-pulse-tp-ladder`, `counter-down-up-down-ladder` | 3 | LD | The same practice as the ST lesson, as sibling packages (A2) for the `ladder` path. Optional, recommended. | Subject to the compiler support matrix |
+| IF, ELSIF, ELSE (used from lesson 1, never taught) | `st-if-then-else` | 1 | ST | A lamp that shows one of three states of a tank, written as one IF with two ELSIF branches. | Not probed (used by 2.0 lessons) |
+| TP | `timer-pulse-tp` | 3 | ST | A lubrication pulse of fixed length per press, that holding the button does not stretch. | Teach (matrix) |
+| CTD, CTUD | `counter-down-up-down` | 3 | ST | A car park that counts cars in and out and shows full and empty. | Teach (matrix) |
+| REAL (first used at `plant-tank-level-scaling`, never taught) | `st-real-numbers` | 4 | ST | A temperature in tenths of a degree turned into REAL, averaged and rounded back. | Teach (matrix) |
+| Bit and word operations | `st-bits-and-words` | 4 | ST | Eight lamp states packed into a status WORD, and one bit tested and set. | Teach (matrix) |
+| A user FUNCTION | `st-user-function` | 7 | ST | A function that limits a setpoint, called from two places. | Teach (matrix) |
+| FOR and ARRAY, apart from STRUCT | `st-arrays-for` | 7 | ST | The largest and the sum of five tank levels in one FOR loop. | Teach (matrix) |
+| WHILE, REPEAT | `st-while-repeat` | 7 | ST | The first free slot of a rack found with a bounded WHILE, and the same with REPEAT. | Teach (matrix) |
+| STRUCT, apart from ARRAY | `st-structures` | 7 | ST | The signals of one motor grouped in a STRUCT and passed as one value. | Teach (matrix) |
+| VAR_GLOBAL | `st-global-variables` | 7 | ST | A shared count declared in its own file, written by the program and read by a function block through VAR_EXTERNAL, as the matrix's probe does. The grade runs one task and one program, so a global shared between two programs is not graded. | Teach (matrix) |
+| STRING | `st-strings` | 10 | ST | An alarm text built from a name and a number, and its length checked. | Teach (matrix) |
+| RETAIN | none: a section of the reading page of `st-global-variables` | 7 | ST | The declaration and where the value goes. Check cannot grade what RETAIN is for, keeping the value across a restart, because a scenario has no restart event: a gap of the scenario format, not of the compiler. | Teach, not gradable (matrix note 7) |
+| CASE | none: `pedestrian-crossing-states` explains it in its reading page | 5 | ST | | Not probed (used by 2.0 lessons) |
+| TP, CTD and CTUD in Ladder diagram | `timer-pulse-tp-ladder`, `counter-down-up-down-ladder` | 3 | LD | The same practice as the ST lesson, as sibling packages (A2) for the `ladder` path. Optional, recommended. | Teach (matrix) |
+
+Compiler gaps the matrix reports, with no lesson until the compiler closes them (each probe fails the day its gap closes, which is the day to write the lesson):
+
+| Construct | Languages without it | Diagnostic (matrix note) |
+|---|---|---|
+| A user FUNCTION | LD, IL | LD: a function box holds only its own table of functions (1); IL: no call of a function by its name (2). FBD and SFC have it. |
+| AND, OR, XOR, NOT on BYTE, WORD, DWORD | LD | The function box table has none of them (3). FBD, IL (untyped literal only, 4) and SFC have them. |
+| SHL, SHR, ROL, ROR | LD, FBD, IL | No function box (3); the FBD transpiler does not translate them (5); IL has no mnemonic (6). |
+
+The matrix also finds that `docs/docs/reference/language-ld.md` and `language-il.md` claim "Works" for two of these, and that the project skill still calls source `RETAIN` unsupported; neither is a lesson matter.
 
 Counts if every row is written: 111 packages become 122, or 124 with the two Ladder siblings. The counters, the tests that pin them and the generated pages change with them.
 

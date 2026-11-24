@@ -15,7 +15,7 @@ renamed or deleted, every changed package raises its `version`, and the 2.0 star
 | Branch | What it holds |
 |---|---|
 | `feat/course-step2` | The amendment (CRS-014 to CRS-025, outline section 6), the placeholder `{{ui:<catalogue key>}}` for control names, expanded when the lesson index is built and understood by the didactics check, and two pilot lessons in both languages: `timers-on-delay-off-delay` and `sfc-fill-mix-sequence`. |
-| `feat/course-l7-tools` | Being written: the compiler support matrix `course-l7-support.md` and the scripts that generate the labelled image and the signal table of a scene. |
+| `feat/course-l7-tools` | Merged: the compiler support matrix `course-l7-support.md` (every proposed ST construct "Teach"; gaps in LD, FBD and IL) and the scripts that generate the signal table and the labelled image of a scene. |
 | Pending | The third pilot lesson, `plant-belt-to-sensor`, which waits for those scripts. |
 
 Measured cost of the pilot: one writer session for the amendment, the placeholder and the two programming lessons, about 0.5 unit per
@@ -48,8 +48,8 @@ text and reading page in both languages), 1 unit.
 | — | Corrections the owner asks for at the stops (one round per stop expected). | | 3 to 6 |
 
 Total: about 63 to 66 units, 62 to 65 without T8. With three writers in parallel, about four working days of writer time, plus the
-owner's reviews at stops 3 and 4. Each construct the compiler support matrix declares unsupported removes its lesson and 1 unit; RETAIN
-already has none, and VAR_GLOBAL is the most likely to go, because a graded run has one task and one program.
+owner's reviews at stops 3 and 4. The compiler support matrix keeps every new lesson: all of them teach Structured Text constructs it
+marks "Teach". RETAIN gets a section of a reading page and no graded lesson, because a scenario has no restart event.
 
 ## 2.1.0 and 2.1.x
 
@@ -76,8 +76,8 @@ lessons would teach better than the lessons a learner meets first.
   a value: 99 feedback texts on 42 pages show only their first clause in Learn (for example "Yes. Rung 1 was already solved in this
   scan" on `ld-scan-cycle`, whose page goes on "so it only sees the new value one scan later"). The two pilot pages quote every value.
   T1 makes the parser refuse it; T2 and T4 quote the existing pages.
-- **The compiler support matrix** may remove lessons of 6.3 of the outline, or show that a construct needs compiler work first; the
-  outline's list is reconciled with `course-l7-support.md` before T3.
+- **The compiler support matrix** is a snapshot of 2026-11-24. Its probes run with the IDE tests (`src/learn/l7Support.test.ts`), so a change that breaks a taught construct
+  fails there, and a closed gap fails its gap probe, which is when the Ladder, FBD or IL lesson for it can be written (outline 6.3).
 - **The machine pages** depend on the image and table scripts of the course tools and on the images of the approved plant catalogue; T6
   moves with `plan-vis.md`.
 - **Shared generated files** conflict on every merge; the parent regenerates them, so a writer never edits the index, the table, the
