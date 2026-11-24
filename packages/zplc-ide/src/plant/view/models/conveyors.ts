@@ -3,11 +3,11 @@
  * step adds here.
  */
 import type { PartView } from '../../contracts';
-import { box, MIN_STAND, piece, rod, type ModelContext, type ModelFamily, type Piece } from './shared';
+import { box, levellingLeg, MIN_STAND, piece, rod, slotted, type ModelContext, type ModelFamily, type Piece } from './shared';
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Belt: a band that wraps a steel drum at each end, side frames that stop at the drum axes, round end caps that hold the
-// drums, legs with feet and cross braces, and direction marks that travel with the band
+// Belt: a band that wraps a steel drum at each end, side frames of slotted aluminium profile that stop at the drum axes, round
+// end caps that hold the drums, legs on levelling feet with cross braces, and direction marks that travel with the band
 // ---------------------------------------------------------------------------------------------------------------------
 
 export const BELT = {
@@ -33,8 +33,8 @@ function beltModel(view: PartView, context: ModelContext): Piece[] {
   const pieces: Piece[] = [
     piece('band', box([2 * axle, band, width], 0.002), [0, top - band / 2, 0], 'band'),
     piece('return', box([2 * axle, band, width], 0.002), [0, axleY - drum + band / 2, 0], 'band'),
-    piece('rail-a', box([2 * axle, rail.height, rail.width], 0.006), [0, top + rail.lip - rail.height / 2, -railZ], 'frame'),
-    piece('rail-b', box([2 * axle, rail.height, rail.width], 0.006), [0, top + rail.lip - rail.height / 2, railZ], 'frame'),
+    piece('rail-a', slotted(rail.width, rail.height, 2 * axle, 'x'), [0, top + rail.lip - rail.height / 2, -railZ], 'frame'),
+    piece('rail-b', slotted(rail.width, rail.height, 2 * axle, 'x'), [0, top + rail.lip - rail.height / 2, railZ], 'frame'),
   ];
   for (const [end, x] of [
     ['a', -axle],
@@ -57,11 +57,9 @@ function beltModel(view: PartView, context: ModelContext): Piece[] {
       for (const [side, z] of [
         ['a', -railZ],
         ['b', railZ],
-      ] as const) {
-        pieces.push(piece(`leg-${k}-${side}`, box([leg, legLength, leg]), [x, floor + legLength / 2, z], 'frame'));
-        pieces.push(piece(`foot-${k}-${side}`, box([0.08, 0.012, 0.08], 0.003), [x, floor + 0.006, z], 'steel'));
-      }
-      pieces.push(piece(`brace-${k}`, box([0.03, 0.03, 2 * railZ]), [x, floor + legLength * 0.3, 0], 'frame'));
+      ] as const)
+        pieces.push(...levellingLeg(`${k}-${side}`, x, z, railBottom, floor, leg));
+      pieces.push(piece(`brace-${k}`, slotted(0.03, 0.03, 2 * railZ, 'z'), [x, floor + legLength * 0.3, 0], 'frame'));
     }
   }
   // Direction marks: arrow heads on the flat top run, shown only while the band runs (shape, not colour, says "running"). They

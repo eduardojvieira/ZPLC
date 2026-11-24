@@ -20,7 +20,7 @@ export { BELT } from './conveyors';
 export { EMITTER } from './flow';
 export { PUSH_BUTTON } from './operator';
 export { SENSOR, sensorMount } from './sensors';
-export { pieceExtent, rotate, type ModelContext, type Piece, type PieceShape } from './shared';
+export { pieceExtent, rotate, type ModelContext, type Piece, type PieceShape, type Section } from './shared';
 
 /** The families in the order of plan-vis C1 to C7. */
 export const FAMILIES: readonly ModelFamily[] = [CONVEYORS, FLOW, SENSORS, OPERATOR, MANIPULATORS, STATIONS, PROCESS];

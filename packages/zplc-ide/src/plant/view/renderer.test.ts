@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-import type * as THREE from 'three';
+import * as THREE from 'three';
 import type { BodyPose, PartView, PlantSceneFile } from '../contracts';
-import { createFrameStats, createRenderer, loadRenderer, watchContext } from './renderer';
+import { createFrameStats, createRenderer, loadRenderer, pieceGeometry, watchContext } from './renderer';
 import { paletteFor } from './displayModes';
-import { partColour } from './look';
+import { partColour, roleLook } from './look';
+import { extrusion, piece, pieceExtent, slotted, slottedSection } from './models/shared';
 import { instanceMatrices, partDecor, partShape, boxShape, palletShape } from './geometry';
 
 const scene: PlantSceneFile = { schemaVersion: 1, name: 't', parts: [], cameras: [] };
@@ -186,7 +187,17 @@ function fakeThree() {
   class Geometry {
     dispose() {}
     rotateX() {}
+    rotateY() {}
     rotateZ() {}
+    translate() {}
+    getAttribute() {
+      return undefined;
+    }
+  }
+  /** The outline of an extruded profile; no arcs, so a curved conveyor still has no shape here. */
+  class Outline {
+    moveTo() {}
+    lineTo() {}
   }
   const drawn: { x: number; y: number; z: number }[] = [];
   const mesh = class extends Obj {
@@ -243,6 +254,8 @@ function fakeThree() {
       color = new Color(0);
     },
     CylinderGeometry: Geometry,
+    ExtrudeGeometry: Geometry,
+    Shape: Outline,
     DirectionalLight: class extends Obj {
       shadow = { mapSize: { set() {} } };
     },
@@ -380,10 +393,21 @@ describe('display preferences reach the renderer', () => {
     const colour = (name: string) => mats.find((m) => m.name === name)?.color.hex;
     expect(colour('floor')).toBe(0x000000);
     expect(scenes[0]?.background?.hex).toBe(0x000000);
-    // The belt's frame and the sensor's housing keep their own part colours (lightened for the black floor), never one palette tone.
-    expect(colour('frame:belt')).toBe(partColour('belt', hc));
+    // The belt's frame keeps its silver aluminium and the sensor's housing its part colour (each lightened for the black floor), never
+    // one palette tone.
+    expect(colour('frame:belt')).toBe(roleLook('frame', 'belt', hc).colour);
     expect(colour('housing:sensor')).toBe(partColour('sensor', hc));
     expect(colour('frame:belt')).not.toBe(colour('housing:sensor'));
+  });
+
+  it('VIS-014 the material of a slotted profile draws the shading of its slots; the other materials of a model do not', () => {
+    const { r, mats } = build();
+    r.setSnapshot(snapshot);
+    const shading = (name: string) =>
+      mats.filter((m) => m.name === name).map((m) => (m as { vertexColors?: boolean }).vertexColors === true);
+    expect(shading('frame:belt')).toEqual([true]); // rails, legs and braces are all slotted profile
+    expect(shading('steel:belt')).toEqual([false]);
+    expect(shading('housing:sensor')).toEqual([false]);
   });
 
   it('VIS-009 parts built after setPalette use the palette colours', () => {
@@ -632,5 +656,42 @@ describe('display preferences reach the renderer', () => {
     r.dispose();
     expect(() => r.setPalette?.(hc)).not.toThrow();
     expect(() => r.setSnapshot(withBlade)).not.toThrow();
+  });
+});
+
+describe('extruded pieces (VIS-014)', () => {
+  it('VIS-014 three draws an extruded profile in the box its piece declares, along each axis', () => {
+    for (const axis of ['x', 'y', 'z'] as const) {
+      const shape = slotted(0.03, 0.13, 2, axis);
+      const g = pieceGeometry(THREE, {}, shape);
+      g.computeBoundingBox();
+      const half = pieceExtent(piece('p', shape, [0, 0, 0], 'frame'));
+      const box = g.boundingBox!;
+      for (const [i, k] of (['x', 'y', 'z'] as const).entries()) {
+        expect(box.min[k]).toBeCloseTo(-half[i]!, 6); // three keeps positions in 32-bit floats
+        expect(box.max[k]).toBeCloseTo(half[i]!, 6);
+      }
+    }
+  });
+
+  it('VIS-014 the slots of a profile are drawn dark and its faces and ends in full; a plain extrusion has no shading', () => {
+    const g = pieceGeometry(THREE, {}, slotted(0.03, 0.13, 2, 'x'));
+    const pos = g.getAttribute('position');
+    const colour = g.getAttribute('color');
+    const ends = g.groups[0]!.count;
+    let [dark, lit] = [0, 0];
+    for (let i = 0; i < pos.count; i++) {
+      // Along x, the section lies across z (0.015 to the faces) and y (0.065).
+      const inside = Math.min(0.015 - Math.abs(pos.getZ(i)), 0.065 - Math.abs(pos.getY(i))) > 1e-6;
+      const shade = colour.getX(i);
+      expect([colour.getY(i), colour.getZ(i)]).toEqual([shade, shade]);
+      if (i < ends || !inside) expect(shade).toBe(1);
+      else expect(shade).toBeLessThan(0.5);
+      if (shade < 1) dark++;
+      else lit++;
+    }
+    expect(dark).toBeGreaterThan(0);
+    expect(lit).toBeGreaterThan(0);
+    expect(pieceGeometry(THREE, {}, extrusion(slottedSection(0.03, 0.13), 2, 'x')).getAttribute('color')).toBeUndefined();
   });
 });

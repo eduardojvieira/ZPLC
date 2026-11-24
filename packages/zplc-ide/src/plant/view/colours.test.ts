@@ -6,7 +6,7 @@ import { describe, expect, it } from 'bun:test';
 import type { BodyPose } from '../contracts';
 import { paletteFor, type DisplayMode } from './displayModes';
 import { itemToneOf } from './geometry';
-import { epoxyFloor, partColour } from './look';
+import { epoxyFloor, partColour, roleLook } from './look';
 
 const hsl = (hex: number) => {
   const [r, g, b] = [(hex >> 16) & 255, (hex >> 8) & 255, hex & 255].map((v) => v / 255) as [number, number, number];
@@ -65,5 +65,34 @@ describe('the floor of the medium and high levels (VIS-015)', () => {
       expect(new Set([f.floor, f.haze, f.wall]).size).toBe(3);
     }
     expect(epoxyFloor(paletteFor({ mode: 'high-contrast', reducedMotion: false }))).toBeNull(); // flat, as it was
+  });
+});
+
+describe('material roles of the composed models (VIS-014, VIS-015)', () => {
+  const light = paletteFor({ mode: 'light', reducedMotion: false });
+  const spread = (hex: number) => {
+    const [r, g, b] = [(hex >> 16) & 255, (hex >> 8) & 255, hex & 255];
+    return Math.max(r, g, b) - Math.min(r, g, b);
+  };
+
+  it('VIS-014 a frame is silver anodised aluminium on every part, satin beside the brushed steel of drums and plates', () => {
+    const frame = roleLook('frame', 'belt', light);
+    expect(frame.skin).toBe('brushed-metal');
+    expect(frame.metalness).toBe(1);
+    expect(spread(frame.colour)).toBeLessThanOrEqual(16); // silver, not a painted colour
+    expect(hsl(frame.colour).l).toBeGreaterThan(hsl(roleLook('steel', 'belt', light).colour).l);
+    expect(frame.roughness).toBeGreaterThan(roleLook('steel', 'belt', light).roughness);
+    for (const part of ['belt', 'gantry', 'stacker-crane']) expect(roleLook('frame', part, light)).toEqual(frame);
+  });
+
+  it('VIS-014 a painted part keeps its own colour on painted steel; a rubber pad is dark and not metallic', () => {
+    for (const mode of ['light', 'dark', 'high-contrast'] as const) {
+      const palette = paletteFor({ mode, reducedMotion: false });
+      expect(roleLook('painted', 'gantry', palette).colour).toBe(partColour('gantry', palette));
+    }
+    expect(roleLook('painted', 'gantry', light).skin).toBe('painted-steel');
+    const rubber = roleLook('rubber', 'belt', light);
+    expect(rubber.metalness).toBe(0);
+    expect(hsl(rubber.colour).l).toBeLessThan(0.2);
   });
 });

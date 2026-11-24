@@ -1,6 +1,6 @@
 /** The conveyor models (plan-vis C1; VIS-014, VIS-016): the belt of belt-to-sensor as the real plant core publishes it. */
 import { describe, expect, it } from 'bun:test';
-import type { Piece } from './shared';
+import { levellingLeg, slotted, type Piece } from './shared';
 import { BELT, CONVEYORS } from './conveyors';
 import { partModel, pieceExtent } from './index';
 import { beltToSensor, bottom, shown, slot } from './models.fixtures';
@@ -25,8 +25,9 @@ describe('conveyor models (VIS-014)', () => {
     ]);
     const legs = pieces.filter((p) => p.slot.startsWith('leg-'));
     expect(legs.length).toBe(6); // a 2.4 m belt: three pairs
-    for (const leg of legs) expect(bottom(leg)).toBeCloseTo(floor, 9);
-    expect(pieces.filter((p) => p.slot.startsWith('foot-')).length).toBe(legs.length);
+    const feet = pieces.filter((p) => p.slot.startsWith('foot-'));
+    expect(feet.length).toBe(legs.length);
+    for (const foot of feet) expect(bottom(foot)).toBeCloseTo(floor, 9);
     expect(pieces.filter((p) => p.slot.startsWith('brace-')).length).toBe(legs.length / 2);
     // The top of the band is the conveying surface the physics uses.
     const band = slot(pieces, 'band');
@@ -52,6 +53,31 @@ describe('conveyor models (VIS-014)', () => {
     const caps = pieces.filter((p) => p.slot.startsWith('cap-'));
     expect(caps.length).toBe(4);
     for (const cap of caps) expect(Math.abs(cap.at[2])).toBeGreaterThan(width / 2);
+  });
+
+  it('VIS-014 the frame of a belt is slotted aluminium profile on levelling feet, in the boxes the plain frame filled', async () => {
+    const belt = (await plant.views()).belt!;
+    const pieces = partModel(belt)!;
+    const [length, thickness] = belt.pose.size;
+    const { rail, drum, leg } = BELT;
+    const railBottom = thickness / 2 + rail.lip - rail.height;
+    for (const s of ['rail-a', 'rail-b']) {
+      const r = slot(pieces, s);
+      expect(r.shape).toEqual(slotted(rail.width, rail.height, length - 2 * drum, 'x'));
+      expect(r.role).toBe('frame');
+      expect(pieceExtent(r)).toEqual([length / 2 - drum, rail.height / 2, rail.width / 2]); // the sensor bracket and the bounds hold
+    }
+    for (const k of [0, 1, 2])
+      for (const side of ['a', 'b'] as const) {
+        const legPieces = pieces.filter((p) => p.slot.endsWith(`-${k}-${side}`) && /^(leg|stem|foot)-/.test(p.slot));
+        const at = slot(pieces, `leg-${k}-${side}`).at;
+        expect(legPieces).toEqual(levellingLeg(`${k}-${side}`, at[0], at[2], railBottom, -belt.pose.p[1], leg));
+      }
+    for (const k of [0, 1, 2]) {
+      const brace = slot(pieces, `brace-${k}`);
+      expect(brace.shape.kind).toBe('extrusion');
+      expect(brace.role).toBe('frame');
+    }
   });
 
   it('VIS-014 a belt close to the floor has no legs', async () => {
