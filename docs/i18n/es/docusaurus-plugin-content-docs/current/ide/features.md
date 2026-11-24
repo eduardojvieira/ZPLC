@@ -11,7 +11,7 @@ tags: [ide, user-guide]
 
 El entorno de trabajo es la ventana en la que usted trabaja. Esta página muestra dónde está cada cosa, cómo gestionar un proyecto y sus archivos, cómo ejecutar y observar un programa, y qué conserva la aplicación para usted entre sesiones. La edición propiamente dicha está en [Editores de texto y visuales](./editors.md).
 
-Una barra de actividades y una barra lateral principal, a la izquierda, contienen el navegador del proyecto, la búsqueda, las pruebas y las lecciones. Una barra lateral secundaria opcional, a la derecha, contiene el Inspector. Un panel de resultados bajo el editor contiene Salida, Problemas, Pruebas, Enclavamientos, Cambios, Agente, Traza, Observación y Terminal. La planta se abre como un documento en el área del editor, junto al programa (**Mostrar la planta** en la paleta de comandos).
+Una barra de actividades y una barra lateral principal, a la izquierda, contienen el navegador del proyecto, la búsqueda, las pruebas y las lecciones. Una barra lateral secundaria opcional, a la derecha, contiene el Inspector. Un panel de resultados bajo el editor contiene Salida, Problemas, Resultados de las pruebas, Traza y Observación, y Terminal mientras el destino es una placa o desde que usted la abre (**Mostrar la terminal**). Los enclavamientos son una vista de la actividad Pruebas (**Mostrar los enclavamientos**), la revisión de un cambio es un documento del área del editor (**Mostrar los cambios**) y el asistente es una vista de la barra lateral secundaria mientras haya un proveedor de IA configurado (**Mostrar el agente**). La planta se abre como un documento en el área del editor, junto al programa (**Mostrar la planta** en la paleta de comandos).
 
 ## Flujo diario
 
@@ -26,7 +26,7 @@ De arriba abajo, la ventana tiene el menú de la aplicación, la barra de comand
 
 - **Barra de actividades.** Proyecto, Buscar, Pruebas y Aprender. Al elegir una, cambia la barra lateral principal; la elegida se marca con una barra en su borde y un botón relleno, no solo con el color. Pruebas muestra además el panel de resultados.
 - **Barra lateral principal.** Proyecto muestra el navegador, Buscar encuentra texto en el proyecto, Pruebas explica los escenarios y abre los resultados, y Aprender contiene las lecciones.
-- **Barra lateral secundaria.** El Inspector. Empieza oculta para que el editor conserve su ancho; se muestra o se oculta con el botón Inspector de la barra de comandos o con **Ver > Mostrar u ocultar la barra lateral secundaria**.
+- **Barra lateral secundaria.** El Inspector y, mientras haya un proveedor de IA configurado, el Asistente. Empieza oculta para que el editor conserve su ancho; se muestra o se oculta con el botón Inspector de la barra de comandos o con **Ver > Mostrar u ocultar la barra lateral secundaria**.
 - **Panel de resultados.** Se oculta con **Ver > Mostrar u ocultar el panel de resultados**.
 
 La barra lateral principal es `Ctrl+Alt+B`, la secundaria `Ctrl+Alt+I` y el panel de resultados `Ctrl+Alt+J` (⌘⌥ en macOS). **Mostrar el navegador del proyecto** es `Ctrl+Mayús+E` y **Buscar en el proyecto** es `Ctrl+Mayús+F`. Las barras laterales visibles y la actividad elegida se conservan entre sesiones.
@@ -249,13 +249,13 @@ Las observaciones, las trazas, los puntos de parada y los forzados muestran solo
 
 ## Cobertura de enclavamientos declarados
 
-Un proyecto puede declarar pares de salidas que nunca deben estar activas a la vez, en `safety.incompatibleOutputs` de `zplc.json`. La pestaña **Enclavamientos** comprueba que los escenarios guardados afirmen cada par con un `NEVER` exacto, y lista cada par como **Cubierto** o **Falta la cobertura exacta de NEVER**. Necesita un proyecto guardado abierto en la aplicación de escritorio y dice qué hacer cuando no puede ejecutarse. Comprueba los escenarios, no la máquina: no establece seguridad física, tiempo ni certificación. `zplc-cli safety-check` y la herramienta MCP `safety_check` dan la misma respuesta.
+Un proyecto puede declarar pares de salidas que nunca deben estar activas a la vez, en `safety.incompatibleOutputs` de `zplc.json`. La vista **Enclavamientos** de la actividad Pruebas (**Mostrar los enclavamientos**) comprueba que los escenarios guardados afirmen cada par con un `NEVER` exacto, y lista cada par como **Cubierto** o **Falta la cobertura exacta de NEVER**. Necesita un proyecto guardado abierto en la aplicación de escritorio y dice qué hacer cuando no puede ejecutarse. Comprueba los escenarios, no la máquina: no establece seguridad física, tiempo ni certificación. `zplc-cli safety-check` y la herramienta MCP `safety_check` dan la misma respuesta.
 
 Nivel de evidencia: host. `packages/zplc-ide/src/components/InterlockCoverage.test.tsx` renderiza la vista, y el recorrido 33 de `bun run test:journeys` ejecuta la comprobación en la aplicación real.
 
 ## Un resultado desde la aplicación, la CLI y las herramientas MCP
 
-Una prueba de escenario da el mismo resultado se ejecute donde se ejecute. La pestaña **Pruebas**, `zplc-cli test`, `zplc-cli scenario-run` y las herramientas MCP `tests_run` y `scenario_run` llaman todas a la misma API de herramientas sobre el mismo runtime nativo con el mismo reloj virtual, de modo que una aserción temporal (`AT`, `WITHIN`, `FOR`, `EVENTUALLY`, `ALWAYS`, `NEVER`, `UNTIL`, `RISING`, `FALLING`) se juzga sobre las mismas muestras. El veredicto, el hash del programa compilado y el hash y la longitud de la traza registrada de cada escenario son iguales, y una aserción que falla falla igual desde cada una, con la CLI saliendo con el código 1.
+Una prueba de escenario da el mismo resultado se ejecute donde se ejecute. La actividad **Pruebas**, `zplc-cli test`, `zplc-cli scenario-run` y las herramientas MCP `tests_run` y `scenario_run` llaman todas a la misma API de herramientas sobre el mismo runtime nativo con el mismo reloj virtual, de modo que una aserción temporal (`AT`, `WITHIN`, `FOR`, `EVENTUALLY`, `ALWAYS`, `NEVER`, `UNTIL`, `RISING`, `FALLING`) se juzga sobre las mismas muestras. El veredicto, el hash del programa compilado y el hash y la longitud de la traza registrada de cada escenario son iguales, y una aserción que falla falla igual desde cada una, con la CLI saliendo con el código 1.
 
 Un escenario con un bloque `scene` se ejecuta del mismo modo, sin vista: el núcleo de la planta lee el `scene.json` y el `plant-map.json` del proyecto, como lo hace el Check de una lección, y nunca inicia el modo de E/S de planta ni toca una placa. Una escena sobre la que el escenario no puede ejecutarse (falta una pieza que nombra, o una señal no está conectada en el mapa) da un diagnóstico en `scene.json` o `plant-map.json` en lugar de un veredicto.
 

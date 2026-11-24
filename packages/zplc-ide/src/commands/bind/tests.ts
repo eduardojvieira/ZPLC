@@ -42,11 +42,8 @@ export function testCommandHandlers(): Partial<Record<CommandId, CommandHandler>
       showActivity('tests');
     },
     'view.testResults': showPanel('tests'),
-    // the 2.0 panel tab stays until task H6 removes it, so that its test and journeys hold; the activity is where the view lives now
-    'view.interlocks': () => {
-      showPanel('interlocks')();
-      showInterlocks();
-    },
+    // a view of the Tests activity since U2 (SHL-004); a stored `interlocks` tab of 2.0 is routed here (shell/shellRouting.ts)
+    'view.interlocks': showInterlocks,
     'build.runAllTests': async () => {
       await useProjectTests.getState().run();
       saidIfRefused();

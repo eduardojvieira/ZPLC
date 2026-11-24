@@ -6,6 +6,7 @@ await stubProjectLoader();
 await stubMonaco();
 const { useIDEStore } = await import('../store/useIDEStore');
 const { Console } = await import('./Console');
+const { publishCommandState, resetCommandsForTest } = await import('../commands/bus');
 
 function open(tab: string, over: Record<string, unknown> = {}) {
   dom.patchStore(useIDEStore, {
@@ -90,28 +91,38 @@ describe('Output, Problems and Tests tabs (IDE-020, IDE-031) in a DOM', () => {
     expect(dom.screen.getAllByRole('status').length).toBeGreaterThan(0);
   });
 
-  it('Changes, Agent and Trace each open a tab panel that is labelled by its tab', () => {
-    for (const id of ['changes', 'agent', 'trace']) {
-      open(id);
-      const { unmount } = dom.render(<Console />);
-      expect(document.getElementById(`console-tab-${id}`)?.getAttribute('aria-selected')).toBe('true');
-      expect(dom.screen.getByRole('tabpanel').getAttribute('aria-labelledby')).toBe(`console-tab-${id}`);
-      unmount();
+  it('Trace opens a tab panel that is labelled by its tab', () => {
+    open('trace');
+    dom.render(<Console />);
+    expect(document.getElementById('console-tab-trace')?.getAttribute('aria-selected')).toBe('true');
+    expect(dom.screen.getByRole('tabpanel').getAttribute('aria-labelledby')).toBe('console-tab-trace');
+  });
+});
+
+describe('the tabs of the results panel (SHL-003)', () => {
+  const names = () => dom.screen.getAllByRole('tab').map((tab) => tab.textContent?.trim());
+
+  it('SHL-003 the panel shows five tabs and Terminal only with a board or after the user opens it', async () => {
+    try {
+      open('output');
+      dom.render(<Console />);
+      const five = (['panel.output', 'panel.problems', 'u2Panel.testResults', 'panel.trace', 'panel.watch'] as const).map((key) =>
+        dom.t(key),
+      );
+      expect(names().map((name) => five.find((label) => name?.startsWith(label)))).toEqual(five);
+      // with a board as the target the Terminal is there, and it leaves with the board
+      await dom.act(async () => publishCommandState({ mode: 'hardware' }));
+      expect(names()).toContain(dom.t('console.tab.terminal'));
+      await dom.act(async () => publishCommandState({ mode: 'simulate' }));
+      expect(names()).toHaveLength(5);
+      // opened by the user (the command View > Terminal asks for its tab), it stays for the session
+      await dom.act(async () => useIDEStore.getState().setActiveConsoleTab('terminal'));
+      expect(document.getElementById('console-tab-terminal')?.getAttribute('aria-selected')).toBe('true');
+      await dom.act(async () => useIDEStore.getState().setActiveConsoleTab('output'));
+      expect(names()).toContain(dom.t('console.tab.terminal'));
+      expect(names()).toHaveLength(6);
+    } finally {
+      resetCommandsForTest();
     }
-  });
-
-  it('Agent offers its modes as a named radio group with exactly one checked', () => {
-    open('agent');
-    dom.render(<Console />);
-    const group = dom.screen.getByRole('radiogroup', { name: dom.t('console.agentMode') });
-    const radios = dom.within(group).getAllByRole('radio');
-    expect(radios).toHaveLength(4);
-    expect(radios.filter((radio) => radio.getAttribute('aria-checked') === 'true')).toHaveLength(1);
-  });
-
-  it('Changes says what it needs before a review can start, as a status', () => {
-    open('changes');
-    dom.render(<Console />);
-    expect(dom.within(dom.screen.getByRole('tabpanel')).getAllByRole('status').length).toBeGreaterThan(0);
   });
 });
