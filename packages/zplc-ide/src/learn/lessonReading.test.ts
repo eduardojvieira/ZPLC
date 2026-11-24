@@ -202,6 +202,19 @@ describe('a lesson package with a reading page (LRN-042)', () => {
     expect(reading.images).toEqual(['images/dot.png', 'images/panel.svg']);
     expect(existsSync(join(root, LESSON, 'reading', 'unused.ld.json'))).toBe(true);
   });
+
+  it('CRS-019 bundles a control named in the prose with its catalogue label in each language', () => {
+    const named = (text: string) => `${text}\nPress {{ui:learn.check}}.\n`;
+    const root = lessons((directory) => {
+      edit(directory, 'reading.en.md', named);
+      edit(directory, 'reading.es.md', named);
+    });
+    const { packages, problems } = loadLessonPackages(root);
+    expect(problems).toEqual([]);
+    const reading = buildIndex(packages, course).index.lessons[0]!.reading!;
+    expect(reading.en).toContain('Press Check.');
+    expect(reading.es).toContain('Press Comprobar.');
+  });
 });
 
 function scenarioId(): string {

@@ -26,7 +26,12 @@
  *   {{assertions}}                 the number of assertions of the reference scenario
  *   {{v:Sig=true,Sig2=false@30|X}} shows X; the scenario must assert those values at 30 ms (an AT assertion at 30 ms,
  *                                  or a FOR or ALWAYS assertion that covers it)
+ *   {{ui:learn.check}}             the label of a Studio control in the i18n catalogue of the text's language (CRS-019): a
+ *                                  control renamed in the catalogue is renamed in every lesson when the index is regenerated,
+ *                                  and the stale index fails CI; the key must name a label without `{markers}`
  */
+import { en } from '../i18n/en';
+import { es } from '../i18n/es';
 import type { PlantMap } from '../plants/plantMap';
 import { WIRING_FILE, type WiringFile } from '../boards/wiring/wiring';
 import type { CourseDefinition } from './courseDefinition';
@@ -484,7 +489,14 @@ export function canonicalJson(value: unknown): string {
   return JSON.stringify(sorted(value));
 }
 
-const MARKUP = /\{\{(assertions|t:\d+|v:[^|}]+\|[^}]*)\}\}/g;
+const MARKUP = /\{\{(assertions|t:\d+|ui:[\w.]+|v:[^|}]+\|[^}]*)\}\}/g;
+const UI_CATALOGUES: Record<LessonLocale, Readonly<Record<string, string>>> = { en, es };
+
+/** The label `{{ui:key}}` shows in a language: undefined for a key the catalogue lacks or a text with `{markers}`. */
+export function uiLabel(locale: LessonLocale, key: string): string | undefined {
+  const label = UI_CATALOGUES[locale][key];
+  return label === undefined || label.includes('{') ? undefined : label;
+}
 const FILE_CITATION = /\b(?:src|tests)\/[\w.-]*\w/g;
 
 /** Whether the scenario asserts all `pairs` at `at` ms: an AT there, or a FOR or ALWAYS that covers it. */
@@ -509,10 +521,17 @@ const onTimeline = (scenario: ScenarioFile, time: number): boolean => time <= sc
  * Expands the markup of one source string against the reference scenario. The plain text is what the generated index
  * carries. Problems name every quoted time or value the scenario does not contain, and any markup left unresolved.
  */
-export function expandQuotes(source: string, scenario: ScenarioFile): { text: string; problems: string[] } {
+export function expandQuotes(source: string, scenario: ScenarioFile, locale?: LessonLocale): { text: string; problems: string[] } {
   const problems: string[] = [];
   const text = source.replace(MARKUP, (_match, body: string) => {
     if (body === 'assertions') return String(scenario.expectations.length);
+    if (body.startsWith('ui:')) {
+      const key = body.slice(3);
+      const label = locale && uiLabel(locale, key);
+      if (!locale) problems.push(`control "${key}" needs the language of the text`);
+      else if (!label) problems.push(`control "${key}" is not a label of the ${locale} catalogue`);
+      return label || key;
+    }
     if (body.startsWith('t:')) {
       const time = Number(body.slice(2));
       if (!onTimeline(scenario, time))
@@ -593,10 +612,10 @@ const proseOf = (markdown: string): string[] => {
  * Expands the quoted-fact markup of a reading page against the reference scenario, in the prose only, with the same rules
  * as the lesson text: a time or value that the scenario lacks, markup left unresolved and a bare "N ms" are problems.
  */
-export function expandReading(markdown: string, scenario: ScenarioFile): { text: string; problems: string[] } {
+export function expandReading(markdown: string, scenario: ScenarioFile, locale?: LessonLocale): { text: string; problems: string[] } {
   const problems: string[] = [];
   const text = mapProse(markdown, (segment) => {
-    const result = expandQuotes(segment, scenario);
+    const result = expandQuotes(segment, scenario, locale);
     problems.push(...result.problems);
     for (const time of unmarkedTimes(segment)) problems.push(`quoted time "${time}" is not marked with {{t:N}}`);
     return result.text;
@@ -687,7 +706,7 @@ export function checkReading(source: ReadingSource, scenario: ScenarioFile): Rea
   const shapes: Partial<Record<LessonLocale, string>> = {};
   for (const locale of LESSON_LOCALES) {
     const file = `reading.${locale}.md`;
-    const result = expandReading(source[locale], scenario);
+    const result = expandReading(source[locale], scenario, locale);
     problems.push(...result.problems.map((problem) => `${file}: ${problem}`));
     expanded[locale] = result.text;
     const parsed = parseReading(result.text);
@@ -757,10 +776,14 @@ export interface LessonTextExpanded {
 }
 
 /** Expands every string of a text; the problems of all of them are returned together. */
-export function expandText(text: LessonText, scenario: ScenarioFile): { text: LessonTextExpanded; problems: string[] } {
+export function expandText(
+  text: LessonText,
+  scenario: ScenarioFile,
+  locale?: LessonLocale,
+): { text: LessonTextExpanded; problems: string[] } {
   const problems: string[] = [];
   const expand = (source: string): string => {
-    const result = expandQuotes(source, scenario);
+    const result = expandQuotes(source, scenario, locale);
     problems.push(...result.problems);
     return result.text;
   };

@@ -9,7 +9,8 @@
 //
 // The rules, per lesson (the owner's brief, ids are the baseline keys):
 //   reading     a reading page exists in English and in Spanish
-//   check       the Run stage names the Check control, by its label in the i18n catalogue (learn.check) in each language
+//   check       the Run stage names the Check control, by its label in the i18n catalogue (learn.check) in each language,
+//               written out or through the placeholder {{ui:learn.check}} (CRS-019), which the index expands to that label
 //   vocabulary  no learner-facing field (all that Learn shows, and the reading pages) uses the evidence vocabulary: VOCABULARY below,
 //               whole words, any case, both languages
 //   order       in courseOrder no lesson comes before the lesson that explains an idea it practises (tools/ci/lesson-ideas.json)
@@ -20,7 +21,7 @@ import { join, resolve } from 'node:path';
 
 import { learnEn, learnEs } from '../../packages/zplc-ide/src/i18n/catalog/learn';
 import { courseOrder } from '../../packages/zplc-ide/src/learn/course';
-import type { LessonText } from '../../packages/zplc-ide/src/learn/lessonPackage';
+import { uiLabel, type LessonText } from '../../packages/zplc-ide/src/learn/lessonPackage';
 import { buildIndex, loadCourse, loadLessonPackages } from '../../packages/zplc-ide/src/learn/lessonPackageFiles';
 
 const ROOT = resolve(import.meta.dir, '../..');
@@ -107,18 +108,22 @@ export function learnerText(text: LessonText): string {
   ].join('\n');
 }
 
-/** A `{{t:10}}` or `{{assertions}}` placeholder is filled in by Learn, so its name is not learner text. */
-const unplaced = (text: string): string => text.replace(/\{\{[^}]*\}\}/g, '');
+/**
+ * A `{{t:10}}` or `{{assertions}}` placeholder is filled in by Learn, so its name is not learner text; a `{{ui:key}}` control
+ * name is, as the label of the catalogue the index expands it to (a key the catalogue lacks is the lesson validator's problem).
+ */
+const unplaced = (text: string, lang: Lang): string =>
+  text.replace(/\{\{ui:([\w.]+)\}\}/g, (markup, key: string) => uiLabel(lang, key) ?? markup).replace(/\{\{[^}]*\}\}/g, '');
 
 const SEPARATOR = ', ';
 export function evaluate(input: Input): Row[] {
   const position = new Map(input.lessons.map((lesson, index) => [lesson.id, index]));
   return input.lessons.map((lesson, index) => {
     const offences: Partial<Record<Rule, string>> = {};
-    const full = (lang: Lang) => unplaced(`${learnerText(lesson.text[lang])}\n${lesson.readingText[lang]}`);
+    const full = (lang: Lang) => unplaced(`${learnerText(lesson.text[lang])}\n${lesson.readingText[lang]}`, lang);
     const run = (lang: Lang) => {
       const stage = lesson.text[lang].stages.find((candidate) => candidate.key === 'run');
-      return stage ? unplaced(`${stage.title}\n${stage.body}\n${stage.checkpoint}`) : '';
+      return stage ? unplaced(`${stage.title}\n${stage.body}\n${stage.checkpoint}`, lang) : '';
     };
     const namesCheck = Object.fromEntries(LANGS.map((lang) => [lang, hasWord(run(lang), input.checkLabel[lang], true)])) as Record<
       Lang,
