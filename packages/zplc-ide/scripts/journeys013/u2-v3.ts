@@ -53,17 +53,42 @@ export const journeysU2V3: Journey[] = [
     partly: ['MSG-004', 'MSG-005'],
     run: async (app, { project }) => {
       await openProject(app, project);
+      // An edit made in the moment after the program shows and before the editor is wired to the project is put back by the
+      // editor's own sync (CodeEditor.tsx, "A kept model can be older than the store"), and the build then compiles the program
+      // unbroken. The edit is made again until the tab marks the file as changed, the sign that the project holds it.
       const broken = await app.eval<boolean>(
         `(async () => { const monaco = await ${MONACO_MODULE}; const model = monaco.editor.getEditors()[0]?.getModel(); ` +
           `if (!model) return false; const text = model.getValue(); const next = text.replace('BeltCommand := Requested AND NOT ` +
           `Faulted;', 'BeltCommand := Requested AND ;'); model.setValue(next); return next !== text; })()`,
       );
       assert(broken, 'The journey could not edit the program in the editor');
+      await app.until('the tab to mark the edited file as changed', async () => {
+        if ((await app.eval<string>(`document.getElementById('editor-tab-file:src/Conveyor.st')?.textContent ?? ''`)).includes('*'))
+          return true;
+        await app.eval(
+          `(async () => { const monaco = await ${MONACO_MODULE}; const model = monaco.editor.getEditors()[0]?.getModel(); ` +
+            `const text = model?.getValue() ?? ''; if (!text.includes('BeltCommand := Requested AND ;')) model?.setValue(text.replace(` +
+            `'BeltCommand := Requested AND NOT Faulted;', 'BeltCommand := Requested AND ;')); })()`,
+        );
+        return undefined;
+      });
       await app.click(button('Build options'), 'the Build options button');
       await app.click(menuItem('Compile'), 'Compile');
       await app.click(css('#console-tab-problems'), 'the Problems tab');
       const row = `document.querySelector('section[aria-label="Latest build diagnostics"] button')`;
-      await app.until('a located build error', async () => (await app.eval<boolean>(`Boolean(${row})`)) || undefined, 40_000);
+      await app
+        .until('a located build error', async () => (await app.eval<boolean>(`Boolean(${row})`)) || undefined, 40_000)
+        .catch(async (error: Error) => {
+          const kept = await app.eval<string>(
+            `(async () => { const monaco = await ${MONACO_MODULE}; return JSON.stringify(monaco.editor.getEditors().map((editor) => ` +
+              `editor.getModel()?.getValue().includes('BeltCommand := Requested AND ;'))); })()`,
+          );
+          throw new Error(
+            `${error.message}: the broken line is in the editor models ${kept}; the window says ${JSON.stringify(
+              (await app.text()).replace(/\s+/g, ' ').slice(0, 300),
+            )}`,
+          );
+        });
       const text = await app.eval<string>(`${row}?.textContent ?? ''`);
       const place = /(src\/Conveyor\.st):(\d+)/.exec(text);
       assert(place !== null, `The build error does not name the file and the line: ${text}`);

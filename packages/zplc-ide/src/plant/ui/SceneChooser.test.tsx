@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'bun:test';
-import { setupDom } from '../../test/dom';
+import { setupDom, stubProjectLoader } from '../../test/dom';
 
 const dom = await setupDom();
+// The scene session reaches the store, whose example loader only exists under Vite: stub it before the first import.
+await stubProjectLoader();
 const { SceneChooser } = await import('./SceneChooser');
 const { refFromValue, refValue } = await import('./usePlantSession');
 

@@ -100,6 +100,16 @@ async function openFolder(app: App, folder: string): Promise<void> {
   await app.until('the project workbench to appear', async () => (await app.visible(toolbar)) || undefined);
 }
 
+/** Open Preferences, a document of its own since U2-H2 (Project settings no longer holds them), from the command palette. */
+async function openPreferences(app: App): Promise<void> {
+  await app.press('Ctrl+Shift+P');
+  await app.until('the palette field', async () => (await app.visible(css('[role="combobox"]'))) || undefined);
+  await app.type('Open preferences');
+  await app.until('the command in the palette', async () => (await app.visible(css('[role="option"]'))) || undefined);
+  await app.press('Enter');
+  await app.until('the preferences in their tab', async () => (await app.visible(css('[data-app-preferences]'))) || undefined);
+}
+
 /** A learner who turned on "Unlock all lessons" (the setting of the Learn home): stored, and the window started again from it. */
 async function unlockAllLessons(app: App): Promise<void> {
   await app.eval(
@@ -1101,12 +1111,21 @@ async function languageChain(app: App, { root, project, runtime }: JourneyContex
     60_000,
   );
   await app.click(button('Stop (Shift+F5)', 'prefix'), 'Stop'); // the simulator session is implicit: there is no Disconnect to press
+  // a target chosen while the stop is still under way asks "Change the target?" (a program is running), which nobody answers here
+  await app.until('the program to stop', async () => (await app.visible(button('Run (F5)', 'prefix'))) || undefined);
 
   // 4. deploy by a human action to the emulated device, run it there, and watch the same value change
   const device = await attachEmulatedDevice(app, runtime, CHAIN_BOARD);
   try {
     await chooseTarget(app, CHAIN_BOARD);
-    await app.click(button('Connect'), 'Connect');
+    await app.click(button('Connect'), 'Connect').catch(async (error: Error) => {
+      throw new Error(
+        `${error.message}: the toolbar offers ${await app.eval<string>(
+          `JSON.stringify([...document.querySelectorAll('[role="toolbar"] button')].map((item) => [item.getAttribute('aria-label') || ` +
+            `item.textContent?.trim(), item.disabled]))`,
+        )}; the window says ${JSON.stringify((await app.text()).replace(/\s+/g, ' ').slice(-500))}`,
+      );
+    });
     await app
       .until('the device to connect', async () => (await app.visible(button('Disconnect'))) || undefined)
       .catch(async (error: Error) => {
@@ -1837,14 +1856,19 @@ export const JOURNEYS: Journey[] = [
       const stateOf = (id: string) =>
         app.eval<string | null>(`document.querySelector('[data-learn-lesson="${id}"]')?.getAttribute('data-state') ?? null`);
       const homeText = () => app.eval<string>(`document.querySelector('[data-learn-home]')?.innerText ?? ''`);
+      // The counter counts an alternative pair of lessons once (1b4ebc8d): the total is the course's own, not the number of lessons.
+      const total = buildCourseView(LESSON_INDEX, null, { locale: 'en', unlockAll: false }).total;
 
       // 1. Learn on the Welcome screen opens the home with no project open: the course, the first lesson open, the second locked.
       await app.click(button('Learn', 'prefix'), 'the Learn button on the Welcome screen');
       await app.until('the Learn home', async () => (await app.visible(home)) || undefined);
       assert(!(await app.visible(toolbar)), 'A project is open behind the Learn home.');
+      // every module of the course file, however many it has (twelve until the plant modules came)
+      const course = JSON.parse(disk(join(packageRoot, 'lessons', 'course.json'))) as { modules: unknown[] };
+      const modules = await app.eval<number>(`document.querySelectorAll('[data-learn-module]').length`);
       assert(
-        (await app.eval<number>(`document.querySelectorAll('[data-learn-module]').length`)) === 12,
-        'The Learn home does not list the twelve modules.',
+        modules === course.modules.length,
+        `The Learn home lists ${modules} modules, not the ${course.modules.length} of lessons/course.json.`,
       );
       assert(
         (await stateOf(FIRST)) === 'available' && (await stateOf(SECOND)) === 'locked',
@@ -1974,7 +1998,7 @@ export const JOURNEYS: Journey[] = [
       await app.click(button('Learn', 'prefix'), 'the Learn button on the Welcome screen');
       await app.until(
         'the Learn home with the progress read',
-        async () => (await homeText()).includes(`1 of ${LESSON_INDEX.lessons.length} lessons passed`) || undefined,
+        async () => (await homeText()).includes(`1 of ${total} lessons passed`) || undefined,
       );
       assert(
         (await stateOf(FIRST)) === 'passed' && (await stateOf(SECOND)) === 'available',
@@ -2026,8 +2050,7 @@ export const JOURNEYS: Journey[] = [
       await app.until(
         'the import to be merged',
         async () =>
-          ((await homeText()).includes(`2 of ${LESSON_INDEX.lessons.length} lessons passed`) &&
-            (await homeText()).includes('Progress imported and merged.')) ||
+          ((await homeText()).includes(`2 of ${total} lessons passed`) && (await homeText()).includes('Progress imported and merged.')) ||
           undefined,
       );
       assert(disk(file).includes(SECOND), 'The merged progress was not saved.');
@@ -2041,7 +2064,7 @@ export const JOURNEYS: Journey[] = [
           (await homeText()).includes('The file is version 5, which this version of ZPLC cannot read. Your progress is unchanged.') ||
           undefined,
       );
-      assert((await homeText()).includes(`2 of ${LESSON_INDEX.lessons.length} lessons passed`), 'A refused file changed the progress.');
+      assert((await homeText()).includes(`2 of ${total} lessons passed`), 'A refused file changed the progress.');
 
       // 9. LRN-037, LRN-033: the whole home is reachable and operable from the keyboard. Tab walks the controls in reading order (Continue,
       // the
@@ -2293,7 +2316,10 @@ export const JOURNEYS: Journey[] = [
       }
       await app.cdp.command('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
 
-      // Exactly one control changes the theme, and it is the labelled "Theme" select.
+      // Exactly one control changes the theme, and it is the labelled "Theme" select of Preferences, which the Welcome screen
+      // opens (U2-H2 moved it there from the Welcome screen).
+      await app.click(css('[data-welcome-preferences]'), 'the Preferences button of the Welcome screen');
+      await app.until('Preferences', async () => (await app.visible(css('[data-app-preferences]'))) || undefined);
       const controls = await app.eval<string[]>(
         `[...document.querySelectorAll('button, select, input, [role="switch"], [role="combobox"]')].filter((control) => ` +
           `/theme|contrast/i.test([control.getAttribute('aria-label'), control.getAttribute('title'), ...[...(control.labels ?? ` +
@@ -2329,6 +2355,8 @@ export const JOURNEYS: Journey[] = [
         (await app.eval<string>(`document.querySelector('select[data-theme-control]').value`)) === 'light',
         'The theme control does not show the theme that applies.',
       );
+      await app.click(button('Back to the start'), 'Back to the start');
+      await app.until('the Welcome screen', async () => (await app.visible(button('Learn', 'prefix'))) || undefined);
 
       const shot = process.env.ZPLC_JOURNEY_WELCOME_SHOT;
       if (shot) {
@@ -4648,7 +4676,8 @@ export const JOURNEYS: Journey[] = [
       await app.click(button('Project settings'), 'the Project settings button');
       await app.until(
         'the settings',
-        async () => ((await has(SETTINGS)) && (await app.visible(css('[data-app-preferences]')))) || undefined,
+        // Project settings holds the project's fields only (U2-H2: the preferences are a document of their own)
+        async () => ((await has(SETTINGS)) && (await app.visible(css('[data-open-config-editor]')))) || undefined,
       );
     },
   },
@@ -5214,14 +5243,16 @@ export const JOURNEYS: Journey[] = [
       }
       await app.click(tab('Tests'));
       await app.click(button('Run host scenarios'));
+      // the Cancel of the notification is named by its title, from the catalog ("Running tests" since 8c67a06d)
+      const cancel = button(translate('en', 'notifications.cancelLabel', { title: ui('notices.tests.running') }));
       await app.until(
         'the running notification with progress and Cancel',
         async () =>
           ((await app.visible(css('[data-notification="tests"][data-status="running"] [role="progressbar"]'))) &&
-            (await app.visible(button('Cancel: Running host scenarios')))) ||
+            (await app.visible(cancel))) ||
           undefined,
       );
-      await app.click(button('Cancel: Running host scenarios'));
+      await app.click(cancel);
       await waitFor('the cancelled notification', 'tests', 'cancelled', 10_000);
       assert((await followDetails('tests', 'Watch')) === 'console-tab-tests', 'Details of a test run should open Tests.');
 
@@ -5875,23 +5906,22 @@ export const JOURNEYS: Journey[] = [
     proves: [],
     partly: ['LRN-013', 'LRN-014', 'LRN-015', 'LRN-024'],
     run: async (app, { root }) => {
-      const [FIRST] = courseOrder(LESSON_INDEX).map(({ id }) => id) as [string];
+      // Continue opens the first open simulation lesson of the course: the learner has passed every one before the first lesson
+      // with a board section, whatever the course order puts there (step 1 put the explaining lessons first).
+      const ordered = courseOrder(LESSON_INDEX);
+      const onBoard = ordered.find((lesson) => lesson.tracks.includes('simulation') && lesson.hardware)!;
+      const passed = ordered.slice(0, ordered.indexOf(onBoard)).filter((lesson) => lesson.tracks.includes('simulation'));
       writeFileSync(
         join(root, 'profile', 'zplc-learn-progress.v2.json'),
         JSON.stringify({
           schemaVersion: 4,
           last: null,
-          lessons: {
-            [FIRST]: {
-              state: 'passed',
-              grade: null,
-              passedAt: null,
-              startedAt: null,
-              hintsShown: [],
-              solutionShown: false,
-              hardware: null,
-            },
-          },
+          lessons: Object.fromEntries(
+            passed.map(({ id }) => [
+              id,
+              { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsShown: [], solutionShown: false, hardware: null },
+            ]),
+          ),
         }),
       );
       await app.eval(
@@ -6045,7 +6075,10 @@ export const JOURNEYS: Journey[] = [
         // Step 7: run the scenario test of the project.
         await app.click(tab(ui('panel.tests')));
         await app.click(button(ui('console.runHostScenarios')));
-        await app.until('the scenario to pass', async () => (await app.text()).includes(ui('testDiag.passedMany')) || undefined, 30_000);
+        // the result opens with its verdict (8a4c2726), "N of N tests passed" in the language of the window
+        const counts = ui('u2Tests.verdict.counts').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const verdict = new RegExp(`\\b${counts.replace('\\{passed\\}', '(\\d+)').replace('\\{total\\}', '\\1')}`);
+        await app.until('the scenario to pass', async () => verdict.test(await app.text()) || undefined, 30_000);
         assert(!(await app.text()).includes('scenario assertions failed'), 'The tutorial scenario reports a failed assertion.');
         await shot('blink-6-scenario');
       } finally {
@@ -6834,8 +6867,7 @@ export const JOURNEYS: Journey[] = [
       };
 
       for (const theme of ['light', 'dark', 'high-contrast'] as ThemeId[]) {
-        await app.click(button('Project settings'), 'the Project settings button');
-        await app.until('the preferences in the settings tab', async () => (await app.visible(css('[data-app-preferences]'))) || undefined);
+        await openPreferences(app);
         await selectOption(
           app,
           'select[data-theme-control]',
@@ -7401,9 +7433,12 @@ export const JOURNEYS: Journey[] = [
             await app.until('the editor again', async () => !(await app.visible(css('[data-learn-home]'))) || undefined);
           }
         }
+        // the settings are two documents since U2-H2: the project's fields, and the person's preferences
         await app.click(button('Project settings'), 'the Project settings button');
-        await app.until('the preferences', async () => (await app.visible(css('[data-app-preferences]'))) || undefined);
-        await audit('Settings');
+        await app.until('Project settings', async () => (await app.visible(css('[data-open-config-editor]'))) || undefined);
+        await audit('Project settings');
+        await openPreferences(app);
+        await audit('Preferences');
         await withDialog('The command palette', () => app.press('Ctrl+Shift+P'), css('[role="dialog"] [role="combobox"]'));
         await withDialog(
           'The shortcut reference',
@@ -7532,19 +7567,21 @@ export const JOURNEYS: Journey[] = [
       const inspector = await app.eval<string>(
         `document.querySelector('[aria-label="Inspector del entorno de trabajo"]')?.innerText ?? ''`,
       );
+      // the Inspector shows the selection since 6332fbfd: the open document, and the element selected in a diagram
       for (const phrase of [
-        'Archivo activo',
-        'Proyecto',
-        'Evidencia',
-        'La traza del equipo anfitrión no es evidencia de hardware ni de HIL',
-        'Sin forzados activos',
-        'Desconectado',
+        'Documento',
+        'Lenguaje',
+        'Tamaño',
+        'Estado',
+        'Guardado',
+        'Elemento seleccionado',
+        'Las propiedades son de solo lectura aquí',
       ])
         assert(
           inspector.toLowerCase().includes(phrase.toLowerCase()),
           `The Inspector does not say "${phrase}" in Spanish: ${inspector.slice(0, 400)}`,
         );
-      for (const phrase of ['Active file', 'Evidence', 'Diagnostics', 'No active forces', 'Not checked', 'Disconnected'])
+      for (const phrase of ['Language', 'Size', 'State', 'Saved', 'Selected element', 'Select an element', 'Properties are read-only'])
         assert(
           !inspector.toLowerCase().includes(phrase.toLowerCase()),
           `The Inspector still says "${phrase}" in English: ${inspector.slice(0, 400)}`,
@@ -7920,8 +7957,9 @@ export const JOURNEYS: Journey[] = [
             `height('[data-setting="density"]'), button: height('.ui-button:not([data-variant="bare"])') };
       })()`,
         );
-      await app.click(css('[data-welcome-preferences] summary'), 'the Preferences disclosure of the Welcome screen');
-      await app.until('the preferences on the Welcome screen', async () => (await app.visible(css('[data-app-preferences]'))) || undefined);
+      // the Preferences button of the Welcome screen opens the Preferences document (U2-H2), with no project open
+      await app.click(css('[data-welcome-preferences]'), 'the Preferences button of the Welcome screen');
+      await app.until('Preferences with no project open', async () => (await app.visible(css('[data-app-preferences]'))) || undefined);
       const comfortable = await measure();
       assert(comfortable.density === 'comfortable', `The density starts as ${comfortable.density}.`);
 
@@ -7933,6 +7971,7 @@ export const JOURNEYS: Journey[] = [
       }
 
       // The same setting reaches the other screen: the project workbench measures with the compact tokens.
+      await app.click(button('Back to the start'), 'Back to the start');
       await openFolder(app, project);
       const inProject = await measure();
       assert(
@@ -7965,18 +8004,21 @@ export const JOURNEYS: Journey[] = [
         );
         await app.cdp.command('Page.reload');
       }
-      // after a reload the old document answers for a moment: wait for the theme control and, in Spanish, the translated button
+      // after a reload the old document answers for a moment: wait for the Preferences button and, in Spanish, the translated button
       const welcome = () =>
         app.until(
           `the Welcome screen in ${locale}`,
           async () =>
             (await app.eval<boolean>(
-              `document.querySelector('select[data-theme-control]') !== null && ` +
+              `document.querySelector('[data-welcome-preferences]') !== null && ` +
                 `(document.querySelector('[data-welcome-learn]')?.textContent?.trim().startsWith('Learn') ?? false) === ${locale === 'en'}`,
             )) || undefined,
           45_000,
         );
       await welcome();
+      // the theme control is in Preferences, which the Welcome screen opens (U2-H2)
+      await app.click(css('[data-welcome-preferences]'), 'the Preferences button of the Welcome screen');
+      await app.until('the theme control', async () => (await app.visible(css('select[data-theme-control]'))) || undefined);
       const themes = await app.eval<string[]>(
         `[...document.querySelector('select[data-theme-control]').options].map((option) => option.value)`,
       );

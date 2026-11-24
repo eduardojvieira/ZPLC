@@ -20,10 +20,13 @@ describe('ci.yml triggers (VF-016)', () => {
 });
 
 describe('ci.yml expected-failure check (VF-027)', () => {
-  it.each(['test:compiler', 'test:ide'])('runs %s through the JUnit report and the expected-failure rule', (script) => {
-    const step = workflow.jobs.typescript!.steps.find((candidate) => candidate.run?.includes(`bun run ${script}`));
+  it.each([
+    ['test:compiler', 'typescript', 'tools/ci/check-expected-failures.ts'],
+    ['test:ide', 'ide-tests', 'tools/ci/test-shards.ts check'],
+  ])('runs %s in the %s job through the JUnit report and the expected-failure rule', (script, job, rule) => {
+    const step = workflow.jobs[job]!.steps.find((candidate) => candidate.run?.includes(`bun run ${script}`));
     expect(step?.run).toContain('--reporter=junit');
-    expect(step?.run).toContain('tools/ci/check-expected-failures.ts');
+    expect(step?.run).toContain(rule);
   });
 });
 
@@ -94,8 +97,10 @@ describe('the package manager cache is restored before the install', () => {
   };
   const sites: Array<[string, Job]> = [
     ['ci.yml typescript', workflow.jobs.typescript!],
+    ['ci.yml ide-tests', workflow.jobs['ide-tests']!],
     ['ci.yml docs-and-truth', workflow.jobs['docs-and-truth']!],
     ['nightly desktop-platforms', nightly.jobs['desktop-platforms']!],
+    ['nightly desktop-ide-tests', nightly.jobs['desktop-ide-tests']!],
   ];
 
   it.each(sites)('%s restores the bun install cache under a key of bun.lock, then installs frozen', (_name, job) => {
