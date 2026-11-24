@@ -136,6 +136,8 @@ async function withGlWindow<T>(root: string, runtime: string, body: (page: Cdp) 
       '--use-gl=angle',
       '--enable-unsafe-swiftshader',
       '--lang=en-US',
+      // the X display of the run, as the journey windows (journeyApp.ts): not the person's own Wayland desktop
+      ...(process.platform === 'linux' ? ['--ozone-platform=x11'] : []),
       `--zplc-smoke-port=${port}`,
       `--remote-debugging-port=${cdpPort}`,
       `--user-data-dir=${join(root, 'gl-profile')}`,
@@ -160,7 +162,8 @@ async function withGlWindow<T>(root: string, runtime: string, body: (page: Cdp) 
       )?.webSocketDebuggerUrl;
     });
     page = await Cdp.connect(target);
-    for (const method of ['Runtime.enable', 'Page.enable', 'Page.bringToFront']) await page.command(method);
+    // Log too: a load the host network aborted says so only there (net::ERR_NETWORK_CHANGED)
+    for (const method of ['Runtime.enable', 'Log.enable', 'Page.enable', 'Page.bringToFront']) await page.command(method);
     await page.command('Emulation.setFocusEmulationEnabled', { enabled: true });
     // A cold development server transforms the application on this first load: wait longer than a warm window needs.
     for (const deadline = Date.now() + 300_000; Date.now() < deadline; await Bun.sleep(250))
@@ -171,7 +174,8 @@ async function withGlWindow<T>(root: string, runtime: string, body: (page: Cdp) 
     );
     return await body(page);
   } catch (error) {
-    throw new Error(`${error instanceof Error ? error.message : String(error)}\n${output.join('').slice(-2_000)}`);
+    const errors = page ? `\n${page.errors.length} renderer errors: ${[...new Set(page.errors)].slice(-5).join(' | ')}` : '';
+    throw new Error(`${error instanceof Error ? error.message : String(error)}${errors}\n${output.join('').slice(-2_000)}`);
   } finally {
     if (page) void page.command('Browser.close').catch(() => undefined);
     await Promise.race([electron.exited, Bun.sleep(3_000)]);
