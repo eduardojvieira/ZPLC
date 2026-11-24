@@ -4,17 +4,19 @@
  *   bun scripts/plant/capture.ts [--out <dir>] [--scenes a,b] [--sizes 480x640,1280x720] [--modes light,dark] [--levels low,high]
  *                                [--no-states] [--no-looks]
  *   bun scripts/plant/capture.ts --fps [--scenes a,b] [--seconds 30]
+ *   bun scripts/plant/capture.ts --concepts <dir of the concept images> [--out <dir>]
  *
  * For each scene: one frame per size, display mode and quality level of the scene at work (belts running, an item on the way), a
  * contact sheet that labels each frame (`<scene>-looks.png`), and for belt-to-sensor the state pairs of VIS-016 in each display mode
- * (`belt-to-sensor-states.png`). It starts the development server and a window of the application with software GL (SwiftShader,
+ * (`belt-to-sensor-states.png`). `--concepts` instead draws the subjects of the concept images and sets each beside its concept
+ * (`concepts.png`). It starts the development server and a window of the application with software GL (SwiftShader,
  * headless): those frames are what the renderer draws, but their timing says nothing about a GPU.
  *
  * `--fps` instead opens a real window with the GPU on (it needs a display and port 3000 free, which the application's development
  * window uses) and measures the frame rate of each scene per quality level on a 1920 x 1080 canvas, with the 1-minute load average
  * before each run. Evidence level: the renderer and the plant core in a page of the development build, not the packaged application.
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { loadavg } from 'node:os';
 import { join, resolve } from 'node:path';
 import { trustedDevelopmentRendererUrl } from '../../electron/security';
@@ -180,6 +182,53 @@ async function captures(page: Cdp): Promise<void> {
   console.log(`  sheet ${save('belt-to-sensor-states.png', close)}`);
 }
 
+/**
+ * The subjects of the concept images (specs/012-zplc-2-1-plant-simulation/concepts), each drawn from belt-to-sensor at 1280 x 720 at
+ * the high level in light mode: the first view, and three close-ups from a camera of the capture's own.
+ */
+const SUBJECTS = [
+  { name: 'overview', image: 'concept-station.jpg', concept: 'station', state: 'working' },
+  {
+    name: 'belt-end',
+    image: 'concept-conveyor-detail.jpg',
+    concept: 'belt end',
+    state: 'working',
+    camera: { position: [1.85, 0.32, 0.95], target: [1.05, 0.38, 0.05] },
+  },
+  {
+    name: 'sensor-detecting',
+    image: 'concept-sensor.jpg',
+    concept: 'photoelectric sensor',
+    state: 'detecting',
+    camera: { position: [0.28, 0.78, -0.92], target: [0.74, 0.56, -0.38] },
+  },
+  {
+    name: 'push-button',
+    image: 'concept-controls.jpg',
+    concept: 'control station',
+    state: 'released',
+    camera: { position: [-1.62, 0.78, -1.32], target: [-0.82, 0.38, -0.42] },
+  },
+] as const;
+
+async function conceptSheet(page: Cdp, dir: string): Promise<void> {
+  const cells: Array<{ png: string; label: string }> = [];
+  for (const s of SUBJECTS) {
+    const camera = 'camera' in s ? s.camera : undefined;
+    const spec = { scene: 'belt-to-sensor', quality: 'high', mode: 'light', width: 1280, height: 720, state: s.state, camera };
+    const { png } = (await call(page, `m.shot(${JSON.stringify(spec)})`)) as { png: string };
+    console.log(`  ${save(`concept-${s.name}.png`, png)}`);
+    const jpeg = `data:image/jpeg;base64,${readFileSync(join(dir, s.image)).toString('base64')}`;
+    cells.push({ png: jpeg, label: `concept: ${s.concept}` }, { png, label: `pilot: ${s.name.replace('-', ' ')} (high)` });
+  }
+  const sheet = (await call(
+    page,
+    `m.sheet('belt-to-sensor beside the concept images (software GL, renderer in the page, 1280x720, high, light)', ` +
+      `${JSON.stringify(cells)}, 2, { w: 800, h: 450 })`,
+  )) as string;
+  console.log(`  sheet ${save('concepts.png', sheet)}`);
+}
+
 async function frameRates(page: Cdp): Promise<void> {
   const rows: Array<Record<string, unknown>> = [];
   for (const scene of scenes)
@@ -220,4 +269,5 @@ if (fps) {
   );
   assert(free, 'Port 3000 is in use: the development window of the application needs it for --fps.');
   await withWindow(true, frameRates);
-} else await withWindow(false, captures);
+} else if (flag('concepts')) await withWindow(false, (page) => conceptSheet(page, resolve(flag('concepts')!)));
+else await withWindow(false, captures);

@@ -2,6 +2,7 @@
  * Page side of scripts/plant/capture.ts: draws one scene in one state, display mode, quality level and size and returns the frame as
  * a PNG data URL, composes labelled contact sheets, and measures the frame rate of a scene left running. See stage.ts for the method.
  */
+import type { CameraPreset } from '../../src/plant/contracts';
 import type { DisplayMode } from '../../src/plant/view/displayModes';
 import type { QualityLevel } from '../../src/plant/view/quality';
 import { draw, frames, openStage, partRect, pngOf, type Rect, type Stage } from './stage';
@@ -17,6 +18,8 @@ export interface ShotSpec {
   state: string;
   /** A part view whose projected box is returned with the frame, for a close-up on a contact sheet. */
   focus?: string;
+  /** A camera of the capture's own, taken as an extra preset of the scene in the page (the file does not change); default the fitted view. */
+  camera?: Omit<CameraPreset, 'name'>;
 }
 
 const pulse = async (stage: Stage, signal: string) => {
@@ -79,6 +82,11 @@ export async function shot(spec: ShotSpec): Promise<{ png: string; width: number
     const state = STATES[spec.state];
     if (!state) throw new Error(`unknown state ${spec.state}`);
     await state(stage);
+    if (spec.camera) {
+      stage.scene.cameras.push({ name: 'capture', ...spec.camera });
+      stage.renderer.setCameraAnimation?.(false); // jump to it; the state has already moved the bands
+      stage.renderer.setCameraPreset('capture');
+    }
     const image = await draw(stage);
     const rect = spec.focus ? partRect(stage, spec.focus) : null;
     return { png: pngOf(image), width: image.width, height: image.height, ...(rect ? { rect } : {}) };
