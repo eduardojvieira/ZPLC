@@ -3,59 +3,54 @@
   "title": "Mover una caja hasta un sensor",
   "summary": "Arranque una cinta con un botón y deténgala cuando una caja llegue al sensor del extremo.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
-  "objectives": [
-    "Arrancar un actuador con la pulsación de un botón y recordar que está en marcha.",
-    "Detener el actuador cuando un sensor ve la caja."
-  ],
+  "objectives": ["Arrancar un actuador con la pulsación de un botón y recordar que está en marcha.", "Detener el actuador cuando un sensor ve la caja."],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/BeltToSensor.st, mantenga una memoria Running: actívela con Start, bórrela con EyeFar y conecte Run y Emit.",
-      "checkpoint": "Run sigue a la memoria; Emit pone una caja en la cinta cuando se pulsa Start."
+      "body": "En src/BeltToSensor.st están declaradas las entradas Start y EyeFar y las salidas Run y Emit, y el programa todavía no acciona nada. Una pulsación del pulsador de inicio debe poner una caja en la cinta y hacer avanzar la cinta, y la cinta debe detenerse cuando el sensor del extremo ve la caja.",
+      "checkpoint": "Usted puede decir qué señal arranca la cinta, cuál la detiene y por qué una pulsación corta necesita una memoria."
     },
     {
       "key": "predict",
-      "title": "Predecir",
-      "body": "Antes de ejecutar, siga la caja: el botón de inicio es solo una pulsación corta, pero la cinta debe seguir en marcha hasta que llegue la caja.",
-      "checkpoint": "Cinta apagada antes de la pulsación; encendida después, con una caja encima; apagada otra vez en cuanto EyeFar ve la caja, y así se queda."
+      "title": "Prediga",
+      "body": "El escenario pulsa el pulsador de inicio a los {{t:200}} ms y lo suelta a los {{t:400}} ms. Antes de ejecutar, siga la caja: prediga Run antes de la pulsación, después de soltar el pulsador mientras la caja avanza, y cuando EyeFar ve la caja.",
+      "checkpoint": "{{v:BeltToSensor.Run=false@100|Run en OFF}} a los {{t:100}} ms, antes de la pulsación; en ON después, también una vez suelto el pulsador; en OFF en cuanto EyeFar ve la caja, y {{v:BeltToSensor.Run=false@8000|todavía en OFF}} al final, a los {{t:8000}} ms."
     },
     {
       "key": "edit",
-      "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que la cinta nunca se mueve; arranque la cinta y ponga una caja con Start, y detenga la cinta cuando EyeFar vea la caja.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "title": "Edite",
+      "body": "Escriba el programa, guárdelo y pulse {{ui:learn.check}}. El programa inicial no acciona ninguna salida, así que la cinta nunca se mueve y no llega ninguna caja. Cada pulsación de Start debe poner una caja en la cinta y arrancar la cinta; la cinta debe seguir en marcha después de soltar el pulsador y detenerse en cuanto EyeFar ve la caja, para que la caja nunca caiga por el extremo. Declare lo que su programa necesite además.",
+      "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
       "key": "run",
-      "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
+      "title": "Ejecute",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la máquina, pulse {{ui:toolbar.run.label}} (F5) y abra la {{ui:plant.panel.view3d}}.",
       "checkpoint": "El escenario requerido se llama belt-to-sensor y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
-      "title": "Observar",
-      "body": "Observe la caja avanzar por la cinta en la vista 3D y detenerse bajo el sensor; compárelo con la salida Run en la traza.",
+      "title": "Observe",
+      "body": "Observe en la {{ui:plant.panel.view3d}} cómo la caja avanza por la cinta y se detiene delante del sensor; compárelo con la salida Run en la traza.",
       "checkpoint": "Run baja cuando el sensor se activa, no antes, y la caja nunca cae."
     },
     {
       "key": "reflect",
-      "title": "Reflexionar",
-      "body": "La aserción EVENTUALLY prueba que el sensor vio la caja en ocho segundos; las aserciones AT fijan el estado al inicio y al final.",
-      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
+      "title": "Reflexione",
+      "body": "El escenario prueba que el sensor vio la caja antes de los {{t:8000}} ms y que la cinta está detenida al final. ¿Qué haría una segunda pulsación de Start mientras la caja avanza? ¿Y con la caja todavía delante del sensor?",
+      "checkpoint": "Mientras la caja avanza, una segunda pulsación mantiene la cinta en marcha y pone una segunda caja en ella. Con la caja delante del sensor, y el borrado escrito después de la activación, la cinta sigue detenida hasta que se retira la caja, aunque la pulsación igual pone una caja nueva al comienzo de la cinta."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Start es un pulso, así que la cinta necesita una memoria: active Running cuando Start sea TRUE y bórrela cuando EyeFar sea TRUE."
+      "text": "Start está en TRUE solo mientras se mantiene el pulsador, así que la cinta necesita una memoria BOOL propia, declarada en VAR: actívela cuando Start sea TRUE, bórrela cuando EyeFar sea TRUE y haga que Run la siga. Un flanco ascendente de Emit suelta una caja."
     },
     {
       "level": 2,
-      "text": "Escriba el borrado después de la activación para que EyeFar gane cuando ambos sean TRUE; luego Run := Running y Emit := Start."
+      "text": "Declare Running : BOOL en VAR y escriba IF Start THEN Running := TRUE; END_IF; IF EyeFar THEN Running := FALSE; END_IF; Run := Running; Emit := Start;"
     }
   ],
-  "faultCases": [
-    "El inicial no gobierna ninguna salida, así que la cinta nunca se mueve; arranque la cinta y ponga una caja con Start, y detenga la cinta cuando EyeFar vea la caja."
-  ]
+  "faultCases": ["El programa inicial no acciona ninguna salida, así que la cinta nunca se mueve y no llega ninguna caja."]
 }

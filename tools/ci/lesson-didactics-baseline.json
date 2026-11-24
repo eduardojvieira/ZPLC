@@ -33,7 +33,6 @@
     "plant-assembler-numeric:reading",
     "plant-assembler:reading",
     "plant-belt-to-sensor-ladder:reading",
-    "plant-belt-to-sensor:reading",
     "plant-belt-transfer-ladder:reading",
     "plant-belt-transfer:reading",
     "plant-buffer-release:reading",

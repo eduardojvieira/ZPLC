@@ -19,7 +19,7 @@ Arranque una cinta con un botón y deténgala cuando una caja llegue al sensor d
 - Tiempo estimado: 20 minutos
 - Lenguajes: ST
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Cinta hasta un sensor](../../plant/scenes/belt-to-sensor.md)
 - Requisitos previos: [motor-start-stop-safe](./motor-start-stop-safe.md)
 
@@ -31,11 +31,11 @@ Arranque una cinta con un botón y deténgala cuando una caja llegue al sensor d
 ## Etapas
 
 1. **Objetivo**
-2. **Predecir**
-3. **Editar**
-4. **Ejecutar**
-5. **Observar**
-6. **Reflexionar**
+2. **Prediga**
+3. **Edite**
+4. **Ejecute**
+5. **Observe**
+6. **Reflexione**
 
 ## Qué cubre la evidencia
 
@@ -43,7 +43,7 @@ Aprobar significa que su programa se comportó correctamente en el simulador de 
 
 ## En una placa
 
-La lección necesita una banda, una caja que la recorra y un sensor en el extremo; una placa del estudiante no tiene ninguno, y la escena aporta los tres. Complétela en Simulación, donde la escena y sus cajas forman parte del escenario.
+La lección necesita una cinta, una caja que la recorra y un sensor en el extremo; una placa del estudiante no tiene ninguno de los tres, y la escena los aporta. Complétela en Simulación, donde la escena y sus cajas forman parte del escenario.
 
 {/* <<< END GENERATED: learn/lessons/plant-belt-to-sensor <<< */}
 
