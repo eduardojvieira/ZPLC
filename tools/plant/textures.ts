@@ -32,13 +32,15 @@ export interface Material {
   metalness: number | 'mask';
 }
 
+// Painted steel, brushed metal, plastic and the epoxy floor are smooth, satin surfaces (the owner's review of the pilot, 2026-11-24): a
+// faint relief blurred over a few pixels; the parts' roughness is a narrow band near 1 that the renderer's own roughness scales.
 export const MATERIALS: Readonly<Record<string, Material>> = {
-  'painted-steel': { tinted: true, heightBlur: 2, normalStrength: 0.6, roughness: [0.55, 0.4], metalness: 0 },
-  'brushed-metal': { tinted: false, heightBlur: 0, normalStrength: 0.3, roughness: [0.45, 0.25], metalness: 'mask' },
+  'painted-steel': { tinted: true, heightBlur: 4, normalStrength: 0.08, roughness: [0.95, 0.88], metalness: 0 },
+  'brushed-metal': { tinted: false, heightBlur: 0, normalStrength: 0.06, roughness: [0.9, 0.7], metalness: 'mask' },
   'rubber-belt': { tinted: false, heightBlur: 2, normalStrength: 0.6, roughness: [0.95, 0.8], metalness: 0 },
-  plastic: { tinted: true, heightBlur: 1, normalStrength: 0.5, roughness: [0.6, 0.45], metalness: 0 },
+  plastic: { tinted: true, heightBlur: 3, normalStrength: 0.08, roughness: [0.95, 0.88], metalness: 0 },
   cardboard: { tinted: false, heightBlur: 1, normalStrength: 0.6, roughness: [0.95, 0.85], metalness: 0 },
-  floor: { tinted: false, heightBlur: 2, normalStrength: 0.4, roughness: [0.75, 0.55], metalness: 0 },
+  floor: { tinted: false, heightBlur: 3, normalStrength: 0.06, roughness: [0.75, 0.55], metalness: 0 },
 };
 
 /** A float image, 0 to 1, row-major, `channels` per pixel. */
