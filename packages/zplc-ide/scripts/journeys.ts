@@ -1111,12 +1111,21 @@ async function languageChain(app: App, { root, project, runtime }: JourneyContex
     60_000,
   );
   await app.click(button('Stop (Shift+F5)', 'prefix'), 'Stop'); // the simulator session is implicit: there is no Disconnect to press
+  // a target chosen while the stop is still under way asks "Change the target?" (a program is running), which nobody answers here
+  await app.until('the program to stop', async () => (await app.visible(button('Run (F5)', 'prefix'))) || undefined);
 
   // 4. deploy by a human action to the emulated device, run it there, and watch the same value change
   const device = await attachEmulatedDevice(app, runtime, CHAIN_BOARD);
   try {
     await chooseTarget(app, CHAIN_BOARD);
-    await app.click(button('Connect'), 'Connect');
+    await app.click(button('Connect'), 'Connect').catch(async (error: Error) => {
+      throw new Error(
+        `${error.message}: the toolbar offers ${await app.eval<string>(
+          `JSON.stringify([...document.querySelectorAll('[role="toolbar"] button')].map((item) => [item.getAttribute('aria-label') || ` +
+            `item.textContent?.trim(), item.disabled]))`,
+        )}; the window says ${JSON.stringify((await app.text()).replace(/\s+/g, ' ').slice(-500))}`,
+      );
+    });
     await app
       .until('the device to connect', async () => (await app.visible(button('Disconnect'))) || undefined)
       .catch(async (error: Error) => {
