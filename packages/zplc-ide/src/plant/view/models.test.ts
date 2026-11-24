@@ -139,6 +139,10 @@ describe('composed part models (VIS-014)', () => {
     for (const p of pieces.filter((x) => x.role === 'beam')) expect(2 * pieceExtent(p)[1]).toBeLessThanOrEqual(0.006);
     // No belt frame in reach: the sensor keeps a post to the floor.
     expect(sensorMount(eye, [eye, v.start!])).toBeNull();
+    // Nor does a bracket rise to a sensor far above the rail, as the stacked sensors of a height check are (height-sorting-chain: 0.24
+    // and 0.34 m above it): on posts their feet differ, where two brackets on one spot would be drawn twice.
+    for (const y of [0.75, 0.85])
+      expect(sensorMount({ ...eye, pose: { ...eye.pose, p: [eye.pose.p[0], y, eye.pose.p[2]] } }, Object.values(v))).toBeNull();
   });
 
   it('VIS-014 the sensor body is a neutral grey, its own colour in every display mode', () => {

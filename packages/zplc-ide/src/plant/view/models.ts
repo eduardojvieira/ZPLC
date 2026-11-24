@@ -151,8 +151,11 @@ function beltModel(view: PartView, context: ModelContext): Piece[] {
 /** The beam: a 6 mm line, solid while the sensor detects; while it is clear, a dash every `dash` metres, a quarter of it long. */
 export const SENSOR = { dash: 0.06, beamRadius: 0.003, dashRadius: 0.0018 } as const;
 
-/** How far a belt frame may lie ahead of a sensor's lens, and below it, for the sensor's bracket to reach it. */
-const MOUNT_REACH = 0.35;
+/**
+ * How far a belt frame may lie ahead of a sensor's lens, and below it, for the sensor's bracket to reach it. A sensor higher above the
+ * rail stands on a post (the stacked sensors of a height check: two brackets on one spot of the rail would be drawn twice).
+ */
+const MOUNT_REACH = { ahead: 0.35, below: 0.15 } as const;
 
 const conjugate = ([x, y, z, w]: Quat): Quat => [-x, -y, -z, w];
 const minus = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
@@ -176,7 +179,7 @@ export function sensorMount(view: PartView, parts: readonly PartView[]): Vec3 | 
     const railTop = thickness / 2 + BELT.rail.lip;
     const gap = Math.abs(lens[2]) - face;
     const drop = lens[1] - railTop;
-    if (Math.abs(lens[0]) > length / 2 - BELT.drum || gap <= 0 || gap > MOUNT_REACH || drop < 0 || drop > MOUNT_REACH) continue;
+    if (Math.abs(lens[0]) > length / 2 - BELT.drum || gap <= 0 || gap > MOUNT_REACH.ahead || drop < 0 || drop > MOUNT_REACH.below) continue;
     if (along[2] * side > -0.9) continue; // the beam must cross the belt
     const at = rotate(belt.pose.q, [lens[0], railTop, side * face]);
     const local = rotate(
