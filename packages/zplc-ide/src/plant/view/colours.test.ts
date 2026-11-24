@@ -6,7 +6,7 @@ import { describe, expect, it } from 'bun:test';
 import type { BodyPose } from '../contracts';
 import { paletteFor, type DisplayMode } from './displayModes';
 import { itemToneOf } from './geometry';
-import { partColour } from './look';
+import { epoxyFloor, partColour } from './look';
 
 const hsl = (hex: number) => {
   const [r, g, b] = [(hex >> 16) & 255, (hex >> 8) & 255, hex & 255].map((v) => v / 255) as [number, number, number];
@@ -55,5 +55,15 @@ describe('part colours (VIS-018)', () => {
       const p = paletteFor({ mode, reducedMotion: false });
       expect(new Set(['belt', 'tank', 'stack-light', 'pusher', 'sensor'].map((part) => partColour(part, p))).size).toBe(5);
     }
+  });
+});
+
+describe('the floor of the medium and high levels (VIS-015)', () => {
+  it('VIS-015 in light and dark the floor fades into a haze of another tone at the horizon, under a wall of a third tone', () => {
+    for (const mode of ['light', 'dark'] as const) {
+      const f = epoxyFloor(paletteFor({ mode, reducedMotion: false }))!;
+      expect(new Set([f.floor, f.haze, f.wall]).size).toBe(3);
+    }
+    expect(epoxyFloor(paletteFor({ mode: 'high-contrast', reducedMotion: false }))).toBeNull(); // flat, as it was
   });
 });

@@ -24,7 +24,7 @@ import {
   type Decor,
   type ShapeSpec,
 } from './geometry';
-import { partColour, roleLook, type Role, type Skin } from './look';
+import { epoxyFloor, partColour, roleLook, type Role, type Skin } from './look';
 import { partModel, type Piece, type PieceShape } from './models';
 import { chooseInitialQuality, lookFor, qualitySettings, type Look, type QualityLevel } from './quality';
 import { MAP_NAMES, textureUrl, TILE_M, type MapName } from './textures';
@@ -373,8 +373,8 @@ export function createRenderer(
         };
         const texture = loader.load(url, done, undefined, () => done());
         texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-        const tiles = skin === 'floor' ? 200 / TILE_M.floor : 1 / TILE_M[skin];
-        texture.repeat.set(tiles, tiles);
+        // Texture coordinates are metres (projectUv), the floor's included: one tile per TILE_M metres.
+        texture.repeat.set(1 / TILE_M[skin], 1 / TILE_M[skin]);
         if (name === 'basecolor') texture.colorSpace = THREE.SRGBColorSpace;
         texture.anisotropy = maxAnisotropy();
       });
@@ -571,7 +571,10 @@ export function createRenderer(
   const paintFloor = (): void => {
     const set = look.textures ? textureSet('floor') : null;
     if (set) withUv(floorGeometry);
-    floorMaterial.color.copy(tinted(palette.floor, set));
+    // A textured floor is an epoxy coat whose finish shows (epoxyFloor); a plain one stays matt, in the palette's floor colour.
+    const epoxy = set ? epoxyFloor(palette) : null;
+    floorMaterial.color.copy(tinted(epoxy?.floor ?? palette.floor, set));
+    floorMaterial.roughness = epoxy?.roughness ?? 0.9;
     setMaps(floorMaterial, set?.maps ?? null);
   };
   /** Colours, surfaces and maps of everything drawn, for the current palette and look. */
@@ -635,8 +638,10 @@ export function createRenderer(
     sun.intensity = lights.sun;
     world.environment = look.environment ? environmentMap() : null;
     world.environmentIntensity = 'environment' in lights ? lights.environment : 1;
-    world.background = new THREE.Color(palette.floor);
-    world.fog?.color.set(palette.floor);
+    // The floor fades into a haze at the horizon and the far wall stands above it (medium and high); otherwise one plain colour.
+    const horizon = look.environment ? epoxyFloor(palette) : null;
+    world.background = new THREE.Color(horizon?.wall ?? palette.floor);
+    world.fog?.color.set(horizon?.haze ?? palette.floor);
     for (const maps of [...[...textureSets.values()].map((set) => set.maps), ...bandMaps.values()])
       for (const texture of Object.values(maps))
         if (texture && texture.anisotropy !== maxAnisotropy()) {

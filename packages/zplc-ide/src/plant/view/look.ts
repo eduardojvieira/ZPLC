@@ -54,6 +54,23 @@ export function partColour(part: string, palette: Palette): number {
   return palette.outline === null ? own : lighten(own, 0.4);
 }
 
+/**
+ * The floor of the medium and high levels (VIS-015): an epoxy coat whose finish shows under the light (satin and a little deeper in tone
+ * than the plain floor in light mode; matt in dark mode, where a sheen would lift the dark floor to grey), which fades into a haze at
+ * the horizon with a far wall of another tone above it, so the scene stands on a floor that ends instead of floating in one colour.
+ * `roughness` is scaled by the floor's roughness map. Low and high contrast keep the plain floor as their background: null.
+ */
+export function epoxyFloor(palette: Palette): { floor: number; haze: number; wall: number; roughness: number } | null {
+  switch (palette.mode) {
+    case 'light':
+      return { floor: 0xd8dce1, haze: 0xcbd1d8, wall: 0xe9ecef, roughness: 0.45 };
+    case 'dark':
+      return { floor: palette.floor, haze: 0x263142, wall: 0x0d1421, roughness: 0.9 };
+    case 'high-contrast':
+      return null;
+  }
+}
+
 /** The bundled texture sets (src/plant/assets/textures). */
 export type Skin = 'painted-steel' | 'brushed-metal' | 'rubber-belt' | 'plastic' | 'cardboard' | 'floor';
 
