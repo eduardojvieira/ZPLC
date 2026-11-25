@@ -200,8 +200,19 @@ describe('describeFailure with numeric values', () => {
 });
 
 describe('numeric checks of a failed assertion', () => {
-  const failedAt = (checks: Array<{ signal: string; expected: boolean | number | { min?: number; max?: number }; observed?: boolean | number }>) =>
-    failedAssertionsOf(scenario, [{ kind: 'AT', passed: false, atMs: 20, checks }, { kind: 'FOR', passed: true }, { kind: 'NEVER', passed: true }], trace, TRACE)[0]!;
+  const failedAt = (
+    checks: Array<{ signal: string; expected: boolean | number | { min?: number; max?: number }; observed?: boolean | number }>,
+  ) =>
+    failedAssertionsOf(
+      scenario,
+      [
+        { kind: 'AT', passed: false, atMs: 20, checks },
+        { kind: 'FOR', passed: true },
+        { kind: 'NEVER', passed: true },
+      ],
+      trace,
+      TRACE,
+    )[0]!;
   it('keeps an expected number and the observed number, and describes both in English and Spanish', () => {
     const failure = failedAt([{ signal: 'fact:count:EyeFar', expected: 99, observed: 3 }]);
     expect(failure.expected['fact:count:EyeFar']).toBe(99);
