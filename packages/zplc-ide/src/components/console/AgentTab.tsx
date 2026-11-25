@@ -4,7 +4,7 @@ import { useT } from '../../i18n';
 import { usePreferencesDocument } from '../../store/usePreferencesDocument';
 import { AgentProposals } from '../agent/AgentProposals';
 import { AgentStatus, type AgentState } from '../ConsoleReviewPanels';
-import type { AiProviderMode, AiProviderStatusPresentation } from '../aiProviderPresentation';
+import { providerErrorText, type AiProviderMode, type AiProviderStatusPresentation } from '../aiProviderPresentation';
 
 export interface AgentTabProps {
   agentMode: AiProviderMode;
@@ -51,7 +51,8 @@ export function AgentTab({
   cancelAgentRequest,
   reviewAgentProposal,
 }: AgentTabProps) {
-  const { t } = useT();
+  const translator = useT();
+  const { t } = translator;
   return (
     <div className="min-h-full p-3 font-sans text-sm text-[var(--color-surface-200)]">
       <section
@@ -190,7 +191,7 @@ export function AgentTab({
               {agentState.presentation.kind === 'answer' || agentState.presentation.kind === 'refused'
                 ? agentState.presentation.answer
                 : agentState.presentation.kind === 'error'
-                  ? t('console.providerRequestFailed', { code: agentState.presentation.code })
+                  ? providerErrorText(translator, agentState.presentation.code, agentState.presentation.retryAfter)
                   : t('console.providerResponseCouldNot')}
             </p>
             <p className="text-xs text-[var(--color-surface-400)]">{t('console.providerResponseNotEvidence2')}</p>

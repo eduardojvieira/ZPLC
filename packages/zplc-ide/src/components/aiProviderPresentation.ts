@@ -1,3 +1,5 @@
+import type { Translator } from '../i18n';
+
 export type AiProviderMode = 'ask' | 'plan' | 'edit' | 'debug';
 
 export type AiProviderStatusPresentation =
@@ -20,10 +22,33 @@ export const ERROR_CODES = new Set([
   'AI_TIMEOUT',
   'AI_CANCELLED',
   'AI_PROVIDER_UNAVAILABLE',
+  'AI_PROVIDER_AUTH',
+  'AI_PROVIDER_MODEL',
+  'AI_PROVIDER_RATE_LIMIT',
+  'AI_PROVIDER_SERVER',
+  'AI_PROVIDER_UNREACHABLE',
   'AI_RESPONSE_INVALID',
   'AI_RESPONSE_LIMIT',
   'AI_CONTEXT_REJECTED',
 ]);
+
+const PROVIDER_ERROR_KEYS = {
+  AI_PROVIDER_AUTH: 'console.providerAuth',
+  AI_PROVIDER_MODEL: 'console.providerModel',
+  AI_PROVIDER_SERVER: 'console.providerServer',
+  AI_PROVIDER_UNREACHABLE: 'console.providerUnreachable',
+} as const;
+
+/** One sentence with the cause and the next step for a provider failure; the other codes keep the generic line. */
+export function providerErrorText(translator: Translator, code: string, retryAfter?: number): string {
+  if (code === 'AI_PROVIDER_RATE_LIMIT')
+    return retryAfter
+      ? translator.t('console.providerRateLimitSeconds', { seconds: retryAfter })
+      : translator.t('console.providerRateLimit');
+  return code in PROVIDER_ERROR_KEYS
+    ? translator.t(PROVIDER_ERROR_KEYS[code as keyof typeof PROVIDER_ERROR_KEYS])
+    : translator.t('console.providerRequestFailed', { code });
+}
 
 export function record(value: unknown): Record<string, unknown> | null {
   try {

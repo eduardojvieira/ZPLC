@@ -35,16 +35,16 @@ describe('a provider failure says its cause and the next step (AI-16)', () => {
   const en = translatorFor('en');
   const es = translatorFor('es');
   it('has one sentence per code, in English and Spanish', () => {
-    expect(providerErrorText(en, 'AI_PROVIDER_AUTH')).toBe('The provider refused the key. Check the key in Preferences → Assistant.');
+    expect(providerErrorText(en, 'AI_PROVIDER_AUTH')).toBe('The provider refused the key. Check the key in "Preferences" → "Assistant".');
     expect(providerErrorText(en, 'AI_PROVIDER_MODEL')).toBe(
-      'The provider does not know this model. Choose another model in Preferences → Assistant.',
+      'The provider does not know this model. Choose another model in "Preferences" → "Assistant".',
     );
     expect(providerErrorText(en, 'AI_PROVIDER_SERVER')).toBe('The provider had an error. Try again later.');
     expect(providerErrorText(en, 'AI_PROVIDER_UNREACHABLE')).toBe(
       'The provider could not be reached. Check the network or the provider address.',
     );
-    expect(providerErrorText(es, 'AI_PROVIDER_AUTH')).toContain('Preferencias → Asistente');
-    expect(providerErrorText(es, 'AI_PROVIDER_MODEL')).toContain('Preferencias → Asistente');
+    expect(providerErrorText(es, 'AI_PROVIDER_AUTH')).toContain('"Preferencias" → "Asistente"');
+    expect(providerErrorText(es, 'AI_PROVIDER_MODEL')).toContain('"Preferencias" → "Asistente"');
   });
   it('says when to try again after a rate limit, or "in a minute" without a number', () => {
     expect(providerErrorText(en, 'AI_PROVIDER_RATE_LIMIT', 30)).toBe('The provider is limiting requests. Try again in 30 s.');

@@ -12,7 +12,7 @@ import { ERROR_CODES, record, text } from '../aiProviderPresentation';
 export type AgentResponsePresentation =
   | { kind: 'answer'; answer: string; changes?: ProposedChange[]; proposals?: AiProposal[] }
   | { kind: 'refused'; answer: string; reason: 'invalid-file' | 'sensitive-field'; path: string; violations: string[] }
-  | { kind: 'error'; code: string }
+  | { kind: 'error'; code: string; retryAfter?: number }
   | { kind: 'invalid' };
 
 /** The program a request sent: the host answers with the same identity, and with the baseline it read when the request needs one. */
@@ -54,8 +54,19 @@ function proposedChanges(value: unknown): ProposedChange[] | null {
 export function presentAgentResponse(value: unknown, expected?: AgentSentProgram): AgentResponsePresentation {
   const item = record(value);
   if (!item) return { kind: 'invalid' };
-  if (item.ok === false && Object.keys(item).length === 2 && typeof item.code === 'string' && ERROR_CODES.has(item.code))
-    return { kind: 'error', code: item.code };
+  if (item.ok === false && typeof item.code === 'string' && ERROR_CODES.has(item.code)) {
+    const keys = Object.keys(item);
+    if (keys.length === 2) return { kind: 'error', code: item.code };
+    // only a rate limit carries a number: the seconds the provider asked to wait
+    if (
+      keys.length === 3 &&
+      item.code === 'AI_PROVIDER_RATE_LIMIT' &&
+      Number.isInteger(item.retryAfter) &&
+      (item.retryAfter as number) >= 1 &&
+      (item.retryAfter as number) <= 86_400
+    )
+      return { kind: 'error', code: item.code, retryAfter: item.retryAfter as number };
+  }
   const keys = Object.keys(item);
   const hasIdentity = IDENTITY.some((key) => keys.includes(key));
   const allowed = new Set<string>(['ok', 'answer', ...IDENTITY, 'changes', 'proposals']);
