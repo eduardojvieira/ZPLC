@@ -984,7 +984,10 @@ describe('NativeSimulationSupervisor', () => {
   });
 
   it('keeps a packaged native runtime pinned despite inherited development overrides', () => {
-    const environmentSource = readFileSync(path.join(ELECTRON_DIR, '..', 'shared', 'nativeSimulationEnvironment.ts'), 'utf8').replaceAll('\r\n', '\n');
+    const environmentSource = readFileSync(path.join(ELECTRON_DIR, '..', 'shared', 'nativeSimulationEnvironment.ts'), 'utf8').replaceAll(
+      '\r\n',
+      '\n',
+    );
     const bundledRuntime = '/tmp/zplc-packaged-app/resources/native-runtime/zplc_runtime';
     const repoRuntime = '/workspace/ZPLC/firmware/lib/zplc_core/build/zplc_runtime';
 
