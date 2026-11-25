@@ -13,7 +13,7 @@ import { join } from 'node:path';
 import { createServer, type ViteDevServer } from 'vite';
 import { releaseStaleDom } from './isolate';
 import { teardown } from './teardown';
-import { Cdp, freePort, HOST, openPage, stop, waitFor, type OwnedProcess } from '../../scripts/cdpHarness';
+import { Cdp, freePort, HOST, killTree, openPage, stop, waitFor, type OwnedProcess } from '../../scripts/cdpHarness';
 
 const PACKAGE = join(import.meta.dir, '..', '..');
 /** True once the page has loaded and its scripts have drawn a button. */
@@ -331,7 +331,7 @@ export function browserApp(): Promise<BrowserApp> {
     const { browser, cdp } = await openPage(url, join(scratch, 'profile'));
     process.once('exit', () => {
       try {
-        browser.kill('SIGKILL');
+        killTree(browser, 'SIGKILL');
       } catch {
         /* already gone */
       }
