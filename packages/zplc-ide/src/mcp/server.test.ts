@@ -1226,9 +1226,7 @@ describe('a failed start says why and what to do (AIX-007, AI-10)', () => {
     const empty = folder();
     const r = run('--workspace', BLINKY, '--repository', empty);
     expect(r.code).toBe(1);
-    expect(r.err).toBe(
-      `ZPLC MCP: repository is unavailable: ${empty} is not a ZPLC checkout: it has no firmware/app/boards/boards.json\n`,
-    );
+    expect(r.err).toBe(`ZPLC MCP: repository is unavailable: ${empty} is not a ZPLC checkout: it has no firmware/app/boards/boards.json\n`);
   });
 
   test('AIX-007 a client that opens with initialize of 2025-11-25 lists the tools', async () => {

@@ -87,7 +87,8 @@ export async function runMcpEntrypoint(args = Bun.argv.slice(2)): Promise<number
     return 1;
   }
   if (parsed.repository && !repository) {
-    process.stderr.write(`ZPLC MCP: repository is unavailable: ${await whyUnavailable('repository', parsed.repository, 'firmware/app/boards/boards.json')}\n`);
+    const why = await whyUnavailable('repository', parsed.repository, 'firmware/app/boards/boards.json');
+    process.stderr.write(`ZPLC MCP: repository is unavailable: ${why}\n`);
     return 1;
   }
   if (parsed.userData && !userData) {
@@ -96,7 +97,7 @@ export async function runMcpEntrypoint(args = Bun.argv.slice(2)): Promise<number
   }
   const handle = serveStdio(
     () => buildMcpServer({ ...workspace, ...(repository ? { repository } : {}), ...(userData ? { userData } : {}) }),
-    { onerror: () => process.stderr.write('ZPLC MCP transport error\n') },
+    { legacy: 'serve', onerror: () => process.stderr.write('ZPLC MCP transport error\n') },
   );
   const close = async () => {
     try {

@@ -29,7 +29,17 @@ AI inside ZPLC follows the same boundary and has its own data rules: see [AI, pr
 
 ## 1. Start the server for one folder
 
-The server serves the one folder you name, and nothing outside it. The folder is the absolute path of a ZPLC project, a real directory and not a link. On any other folder the server prints `ZPLC MCP workspace is unavailable` and exits with 1.
+The server serves the one folder you name, and nothing outside it. The folder is the absolute path of a ZPLC project, a real directory and not a link. A start that fails says why on standard error and exits with 1, or with 2 when the command line is wrong:
+
+| What went wrong                       | Message                                                                                         | Exit |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------- | ---- |
+| No arguments                          | `ZPLC MCP: no arguments given; start it with a project folder.` and the usage                   | 2    |
+| A relative path                       | `ZPLC MCP: the workspace folder must be an absolute path: <path>`                               | 2    |
+| A folder that does not exist          | `ZPLC MCP: <path> does not exist`                                                               | 1    |
+| A folder that is not a project        | `ZPLC MCP: <path> is not a ZPLC project: it has no zplc.json`                                   | 1    |
+| A bad `--repository` or `--user-data` | `ZPLC MCP: repository is unavailable: <cause>` or `ZPLC MCP: user data is unavailable: <cause>` | 1    |
+
+`zplc-mcp --version` prints the version and exits with 0.
 
 ```bash
 zplc-mcp --workspace /home/me/plants/line-3
@@ -63,7 +73,7 @@ Most clients that run a local MCP server take a command and its arguments in a c
 
 ### The protocol revision
 
-The server speaks one revision of the protocol, 2026-07-28, and no older one. Its entry point starts the transport with `legacy: 'reject'`, where the SDK it uses would serve the 2025 handshake by default. The repository records no reason for that choice, so read it as how the server is today and not as a promise. A client has no `initialize` step: it names the revision and its capabilities in the `_meta` of every request.
+The server serves both eras of the protocol, as the SDK it uses does by default. A client of revision 2026-07-28 has no `initialize` step: it names the revision and its capabilities in the `_meta` of every request.
 
 ```json
 {
@@ -79,21 +89,7 @@ The server speaks one revision of the protocol, 2026-07-28, and no older one. It
 }
 ```
 
-A client that opens with `initialize` of an older revision gets this answer. The connection stays open for a request of the supported revision.
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 1,
-  "error": {
-    "code": -32022,
-    "message": "Unsupported protocol version: 2025-06-18",
-    "data": { "supported": ["2026-07-28"], "requested": "2025-06-18" }
-  }
-}
-```
-
-A request that names no revision gets the same code and the message `Unsupported protocol version: the request did not name a protocol version`. A request that names the revision but leaves out `io.modelcontextprotocol/clientCapabilities` gets `-32602` and `Invalid _meta envelope for protocol revision 2026-07-28: io.modelcontextprotocol/clientCapabilities: missing`. In each case the client is the one to update. The server does not change.
+A client of the 2025 era, such as 2025-11-25, opens with `initialize`, then `notifications/initialized`, and lists the tools as before. The server answers with the revision the client asked for. A request that names no revision is served as a request of that older era.
 
 ## 3. Ask for evidence
 
@@ -126,15 +122,15 @@ AI inside ZPLC reads the open program and a project summary, and proposes a chan
 
 ## What is verified, and what is not
 
-| Part                                                                                                                                                                                                                                                                                                                 | Verified                                                                                                                                                                                      | Level |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
-| The server lists 15 tools when asked; `project_validate`, `compiler_check` and `tests_run` pass on a bundled project; `boards_list` answers with `--repository`; an `initialize` of revision 2025-06-18 and a request with no revision are refused with `-32022`, and one without `clientCapabilities` with `-32602` | Run by hand with a script that sends the requests over standard input and output, through `bun run --cwd=packages/zplc-ide mcp`, on the bundled project `pico_blinky_ton`; not repeated by CI | Host  |
-| The built executable starts and lists its tools the way a 2026-07-28 client asks                                                                                                                                                                                                                                     | The release build starts the executable and counts the tools                                                                                                                                  | Host  |
-| No tool reaches a device, a socket or a serial port                                                                                                                                                                                                                                                                  | A test lists the registered tools and resources of the live server and traps every socket and serial entry point                                                                              | Host  |
-| The two program resources return the text and language of each of the five languages, and refuse a name that is not a program of `src`, a link and an oversized file; the server has no tool that writes                                                                                                             | `packages/zplc-ide/src/mcp/server.test.ts` and `deviceLink.test.ts`                                                                                                                           | Host  |
-| The course resource reports passed lessons and writes nothing                                                                                                                                                                                                                                                        | `packages/zplc-ide/src/mcp/server.test.ts`                                                                                                                                                    | Host  |
-| A named assistant product works with the entry above                                                                                                                                                                                                                                                                 | Not verified: no client product was run for this page                                                                                                                                         | None  |
-| An assistant's change is correct                                                                                                                                                                                                                                                                                     | Never implied: only the build and the scenarios say so                                                                                                                                        | None  |
+| Part                                                                                                                                                                                                                                          | Verified                                                                                                                                                                                      | Level |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| The server lists 15 tools when asked; `project_validate`, `compiler_check` and `tests_run` pass on a bundled project; `boards_list` answers with `--repository`; a client that opens with `initialize` of revision 2025-11-25 lists the tools | Run by hand with a script that sends the requests over standard input and output, through `bun run --cwd=packages/zplc-ide mcp`, on the bundled project `pico_blinky_ton`; not repeated by CI | Host  |
+| The built executable starts and lists its tools the way a 2026-07-28 client asks                                                                                                                                                              | The release build starts the executable and counts the tools                                                                                                                                  | Host  |
+| No tool reaches a device, a socket or a serial port                                                                                                                                                                                           | A test lists the registered tools and resources of the live server and traps every socket and serial entry point                                                                              | Host  |
+| The two program resources return the text and language of each of the five languages, and refuse a name that is not a program of `src`, a link and an oversized file; the server has no tool that writes                                      | `packages/zplc-ide/src/mcp/server.test.ts` and `deviceLink.test.ts`                                                                                                                           | Host  |
+| The course resource reports passed lessons and writes nothing                                                                                                                                                                                 | `packages/zplc-ide/src/mcp/server.test.ts`                                                                                                                                                    | Host  |
+| A named assistant product works with the entry above                                                                                                                                                                                          | Not verified: no client product was run for this page                                                                                                                                         | None  |
+| An assistant's change is correct                                                                                                                                                                                                              | Never implied: only the build and the scenarios say so                                                                                                                                        | None  |
 
 ## See also
 
