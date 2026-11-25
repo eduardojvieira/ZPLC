@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'bun:test';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join, win32 } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { cellLocation, loadCases, parseExpectation } from './cases';
+import { caseId, cellLocation, loadCases, parseExpectation } from './cases';
 
 const conformanceRoot = fileURLToPath(new URL('../../../../conformance', import.meta.url));
 
@@ -324,7 +324,7 @@ describe('loadCases', () => {
 
   it('lets a case bring extra source files and rejects one that is missing', () => {
     const [found] = load({ 'p.st': 'x', 'lib.st': 'x', 'p.expect.json': runtime({ files: ['lib.st'] }) });
-    expect(found!.extras.map((path) => path.split('/').pop())).toEqual(['lib.st']);
+    expect(found!.extras.map((path) => basename(path))).toEqual(['lib.st']);
     expect(() => load({ 'p.st': 'x', 'p.expect.json': runtime({ files: ['lib.st'] }) })).toThrow('lib.st');
   });
 
@@ -341,12 +341,17 @@ describe('loadCases', () => {
       'lib.st': 'x',
       'p.expect.json': JSON.stringify({ requirement: 'CMP-035', title: 'x', build: 'fails', files: ['lib.st'] }),
     });
-    expect(found!.extras.map((path) => path.split('/').pop())).toEqual(['lib.st']);
+    expect(found!.extras.map((path) => basename(path))).toEqual(['lib.st']);
   });
 
   it('knows each case by its path under the root, without the extension', () => {
     const [found] = load({ 'cmp/cmp-011-x.st': 'x', 'cmp/cmp-011-x.expect.json': runtime() });
     expect(found!.id).toBe('cmp/cmp-011-x');
+  });
+
+  it('knows a case by the same id on every platform: a path joined with backslashes gives the id with slashes', () => {
+    expect(caseId(win32.join('cmp', 'cmp-011-x'))).toBe('cmp/cmp-011-x');
+    expect(caseId('cmp/cmp-011-x')).toBe('cmp/cmp-011-x');
   });
 
   it('refuses a matrix row that the matrix of the same root does not have, and accepts one it has', () => {

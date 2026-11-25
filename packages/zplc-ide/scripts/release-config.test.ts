@@ -1,6 +1,7 @@
 // Structural checks on the release configuration. The files are parsed, never matched as text.
 // A hosted run of the release workflow is the only proof that electron-builder honours them.
 import { describe, expect, it } from 'bun:test';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -435,7 +436,10 @@ describe('the .deb and the .rpm install the udev rule of the boards (REL-013)', 
 
   it.each(['deb', 'rpm'] as const)('maps the generated rule into the vendor rules folder of the %s', async (target) => {
     const { args } = await udevRulesCommand('/repo/packages/zplc-ide');
-    const written = args[args.indexOf('--out') + 1]!.replace('/repo/packages/zplc-ide/', '');
+    const written = path
+      .relative(path.resolve('/repo/packages/zplc-ide'), args[args.indexOf('--out') + 1]!)
+      .split(path.sep)
+      .join('/');
     expect(mapping(builder[target].fpm)).toEqual([`${written}=${RULE_TARGET}`]);
     expect(RULE_TARGET).toBe(`/usr/lib/udev/rules.d/${RULE_FILE_NAME}`);
   });
@@ -447,7 +451,7 @@ describe('the .deb and the .rpm install the udev rule of the boards (REL-013)', 
     const scripts = (platform: string) =>
       hook
         .packCommands({ packager: { projectDir: '/repo/packages/zplc-ide' }, electronPlatformName: platform })
-        .map((command) => command.args[0]!.split('/').at(-1));
+        .map((command) => command.args[0]!.split(/[\\/]/).at(-1));
     expect(scripts('linux')).toEqual(['licenses.ts', 'udev-rules.ts']);
     expect(scripts('darwin')).toEqual(['licenses.ts']);
     expect(scripts('win32')).toEqual(['licenses.ts']);
@@ -465,7 +469,7 @@ describe('the .deb and the .rpm install the udev rule of the boards (REL-013)', 
 
   it('generates the rule from the identifier files, before the packages are made', async () => {
     const { command, args } = await udevRulesCommand('/repo/packages/zplc-ide');
-    expect({ command, script: args[0] }).toEqual({ command: 'bun', script: '/repo/scripts/release/udev-rules.ts' });
+    expect({ command, script: args[0] }).toEqual({ command: 'bun', script: path.resolve('/repo/scripts/release/udev-rules.ts') });
   });
 });
 
@@ -619,11 +623,11 @@ describe('third-party notices are generated at packaging time and ship in every 
     expect(command).toEqual({
       command: 'bun',
       args: [
-        '/repo/scripts/release/licenses.ts',
+        path.resolve('/repo/scripts/release/licenses.ts'),
         '--package',
         'packages/zplc-ide',
         '--out',
-        '/repo/packages/zplc-ide/build/THIRD-PARTY-NOTICES.txt',
+        path.resolve('/repo/packages/zplc-ide/build/THIRD-PARTY-NOTICES.txt'),
       ],
     });
   });

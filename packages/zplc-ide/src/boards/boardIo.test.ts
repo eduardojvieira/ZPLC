@@ -99,7 +99,7 @@ describe('LRN-029 the Spanish twins of the human text of a channel', () => {
 });
 
 describe('the manifest read by Studio is the one the docs are generated from (IO-012)', () => {
-  const docs = readFileSync(join(import.meta.dir, '../../../../docs/docs/reference/boards.md'), 'utf8');
+  const docs = readFileSync(join(import.meta.dir, '../../../../docs/docs/reference/boards.md'), 'utf8').replaceAll('\r\n', '\n');
 
   test('every board has a description and its hash is the one printed in the generated reference', () => {
     for (const entry of manifest as Array<{ board_id: string; display_name: string; io: unknown }>) {

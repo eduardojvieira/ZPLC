@@ -91,7 +91,7 @@ describe('signal table', () => {
     const out = mkdtempSync(join(tmpdir(), 'zplc-signal-table-'));
     try {
       const { files } = tablesOf(['belt-to-sensor']);
-      expect(staleTables(files, out)).toEqual(['belt-to-sensor/signals.en.md', 'belt-to-sensor/signals.es.md']);
+      expect(staleTables(files, out)).toEqual([join('belt-to-sensor', 'signals.en.md'), join('belt-to-sensor', 'signals.es.md')]);
       const cli = (...args: string[]) =>
         Bun.spawnSync([process.execPath, join(import.meta.dir, 'signal-table.ts'), '--out', out, '--scenes', 'belt-to-sensor', ...args]);
       expect(cli().exitCode).toBe(0);

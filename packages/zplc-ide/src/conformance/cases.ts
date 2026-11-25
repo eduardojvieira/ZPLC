@@ -351,6 +351,11 @@ function matrixRows(root: string): Set<string> | undefined {
   return new Set(rows.map((row) => row.id));
 }
 
+/** A case id is a path under the root written with `/` on every platform, so a report and a CI log name a case alike. */
+export function caseId(path: string): string {
+  return path.replaceAll('\\', '/');
+}
+
 /** Every case under `root`: each .expect.json with the source of the same name beside it. */
 export function loadCases(root: string): ConformanceCase[] {
   const all = (readdirSync(root, { recursive: true }) as string[]).map((path) => join(root, path)).sort();
@@ -380,7 +385,7 @@ export function loadCases(root: string): ConformanceCase[] {
       const name = `${expectation.requirement} ${expectation.title}`;
       if (names.has(name)) fail(shown, `duplicate case name "${name}"; the name identifies the test`);
       names.add(name);
-      return { name, id: relative(root, stem), source: stem + found[0], extension: found[0]!, extras, expectation };
+      return { name, id: caseId(relative(root, stem)), source: stem + found[0], extension: found[0]!, extras, expectation };
     });
   const orphans = all.filter((path) => isSource(path) && !claimed.has(path)).map((path) => relative(root, path));
   if (orphans.length > 0) fail(root, `source files with no .expect.json (an orphan asserts nothing): ${orphans.join(', ')}`);
