@@ -25,7 +25,7 @@ The status line under the command bar always says what ZPLC is attached to, with
 | Indicator                     | Icon and colour       | Meaning                                                                                                                               |
 | ----------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | Not connected                 | Unplugged, grey       | Nothing is running.                                                                                                                   |
-| Simulation · native runtime   | Monitor, blue         | The program runs in the native simulator on this computer.                                                                            |
+| Simulation   | Monitor, blue         | The program runs in the native simulator on this computer.                                                                            |
 | Simulation · software runtime | Globe, blue           | The program runs in the software runtime (WebAssembly), which is degraded. The bar lists what it lacks.                               |
 | Connecting to hardware        | Spinner, amber        | ZPLC is opening the link to a device.                                                                                                 |
 | Real hardware · board · link  | Chip, amber           | ZPLC is attached to a real device. The board is the one the device reported, and the link is the framed link or the older text shell. |

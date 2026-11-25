@@ -120,7 +120,7 @@ sets no input: it checks that the output is off for the first 490 ms, on until 1
 seconds of simulated time. The [scenario file format](../reference/scenario-file.md) lists every field.
 
 1. Open the **Test results** tab. ZPLC links the `zplc.json` of the open project by itself.
-2. Press **Run host scenarios**.
+2. Press **Run tests**.
 
 The tab says **1 of 1 tests passed**, with the **Simulation result** badge beside it. If a test fails, the tab lists it
 under **Failed tests** with what each check expected and what it observed. The **Details** disclosure, closed by default,
