@@ -36,6 +36,7 @@ class FakeNativeAdapter {
   readonly calls: string[] = [];
   readonly memory = new Map<number, Uint8Array>();
   forced = false;
+  shortRead = false;
 
   async loadProgram(bytes: Uint8Array): Promise<void> {
     this.calls.push(`load:${bytes.length}`);
@@ -53,7 +54,10 @@ class FakeNativeAdapter {
   }
   async peek(address: number, length: number): Promise<Uint8Array> {
     this.calls.push(`peek:${address}:${length}`);
-    return this.memory.get(address) ?? new Uint8Array([0]);
+    // one byte per address in the sparse map; `shortRead` simulates an adapter that returns too few bytes
+    const out = new Uint8Array(this.shortRead ? length - 1 : length);
+    for (let i = 0; i < out.length; i++) out[i] = this.memory.get(address + i)?.[0] ?? 0;
+    return out;
   }
   async poke(address: number, value: number): Promise<void> {
     this.calls.push(`poke:${address}:${value}`);
@@ -82,9 +86,12 @@ describe('createNativeScenarioRuntime', () => {
 
     await runtime.setInput(0, 0, true);
     await runtime.setInput(0, 4, false);
+    // the writes land in the shadow; the sibling bits only reach the adapter at the step, in one range
+    expect([...adapter.memory.get(0)!]).toEqual([0b0101_0010]);
+    await runtime.step(0);
 
     expect([...adapter.memory.get(0)!]).toEqual([0b0100_0011]);
-    expect(adapter.calls).toEqual(['peek:0:1', 'poke:0:83', 'peek:0:1', 'poke:0:67']);
+    expect(adapter.calls).toEqual(['peek:0:64', 'poke:0:67', 'scenario-step:0']);
   });
 
   it('reads the requested bit from one OPI byte', async () => {
@@ -94,7 +101,7 @@ describe('createNativeScenarioRuntime', () => {
 
     await expect(runtime.readOutput(0x1000, 5)).resolves.toBe(true);
     await expect(runtime.readOutput(0x1000, 0)).resolves.toBe(false);
-    expect(adapter.calls).toEqual(['peek:4096:1', 'peek:4096:1']);
+    expect(adapter.calls).toEqual(['peek:4096:64']); // both reads come from one chunk read
   });
 
   it('fails closed before adapter calls for invalid addresses, bits, and reads', async () => {
@@ -107,11 +114,10 @@ describe('createNativeScenarioRuntime', () => {
     await expect(runtime.readOutput(0x1000, -1)).rejects.toThrow('bitOffset');
     expect(adapter.calls).toEqual([]);
 
-    adapter.memory.set(0, new Uint8Array());
-    await expect(runtime.setInput(0, 0, true)).rejects.toThrow('exactly one byte');
-    adapter.memory.set(0x1000, new Uint8Array());
-    await expect(runtime.readOutput(0x1000, 0)).rejects.toThrow('exactly one byte');
-    expect(adapter.calls).toEqual(['peek:0:1', 'peek:4096:1']);
+    adapter.shortRead = true;
+    await expect(runtime.setInput(0, 0, true)).rejects.toThrow('exactly 64 bytes');
+    await expect(runtime.readOutput(0x1000, 0)).rejects.toThrow('exactly 64 bytes');
+    expect(adapter.calls).toEqual(['peek:0:64', 'peek:4096:64']);
     expect(adapter.calls.some((call) => call.startsWith('poke:'))).toBe(false);
   });
 });
@@ -123,7 +129,7 @@ describe('a scene scenario on the native scenario runtime', () => {
     // any other method of the adapter would be a hardware or session call: the proxy throws on it
     const strict = new Proxy(adapter, {
       get: (target, key) => {
-        if (typeof key === 'string' && !allowed.has(key) && !['calls', 'memory', 'forced', 'then'].includes(key))
+        if (typeof key === 'string' && !allowed.has(key) && !['calls', 'memory', 'forced', 'shortRead', 'then'].includes(key))
           throw new Error(`unexpected adapter call ${key}`);
         return Reflect.get(target, key) as unknown;
       },

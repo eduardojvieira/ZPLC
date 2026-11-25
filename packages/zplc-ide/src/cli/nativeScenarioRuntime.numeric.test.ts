@@ -9,7 +9,7 @@ function fakeAdapter(withPokeN = true) {
   const adapter = {
     loadProgram: async () => undefined,
     reset: async () => undefined,
-    scenarioStep: async () => undefined,
+    scenarioStep: async () => void calls.push('step'),
     listForcedValues: async () => [],
     peek: async (address: number, length: number) => (calls.push(`peek:${address}:${length}`), memory.slice(address, address + length)),
     poke: async () => undefined,
@@ -33,10 +33,13 @@ describe('the numeric native scenario runtime', () => {
       const { adapter, memory, calls } = fakeAdapter();
       const runtime = createNativeScenarioRuntime(adapter);
       await runtime.setInputNumber!(0x10, 'INT', -2);
-      expect([...memory.slice(0x10, 0x13)]).toEqual([0xfe, 0xff, 0]);
       await runtime.setInputNumber!(0x20, 'REAL', 1.5);
+      // the values land in the image when the tick steps, as one write over the touched range of the chunk
+      expect([...memory.slice(0x10, 0x13)]).toEqual([0, 0, 0]);
+      await runtime.step(0);
+      expect([...memory.slice(0x10, 0x13)]).toEqual([0xfe, 0xff, 0]);
       expect([...memory.slice(0x20, 0x24)]).toEqual([0x00, 0x00, 0xc0, 0x3f]);
-      expect(calls.filter((call) => call.startsWith('pokeN'))).toEqual(['pokeN:16:2', 'pokeN:32:4']);
+      expect(calls.filter((call) => call.startsWith('pokeN'))).toEqual(['pokeN:16:20']);
       // the last slot that still fits, then one byte past the image, a negative and a fractional address
       await runtime.setInputNumber!(0x0ffe, 'INT', 1);
       await runtime.setInputNumber!(0x0ffc, 'REAL', 1);
@@ -60,7 +63,8 @@ describe('the numeric native scenario runtime', () => {
         [0x2000, 'INT'],
       ] as const)
         expect(runtime.readOutputNumber!(address, type)).rejects.toThrow('Scenario OPI address is invalid');
-      expect(calls.filter((call) => call.startsWith('peek'))).toEqual(['peek:4096:2', 'peek:4100:4']);
+      // both reads (and the refused ones) are served from one 64-byte chunk read
+      expect(calls.filter((call) => call.startsWith('peek:4096'))).toEqual(['peek:4096:64']);
     },
   );
 

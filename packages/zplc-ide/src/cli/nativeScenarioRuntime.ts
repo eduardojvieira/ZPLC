@@ -90,7 +90,7 @@ export function createNativeScenarioRuntime(adapter: NativeScenarioAdapter): Sce
   const flush = async () => {
     for (const [base, [lo, hi]] of dirty) {
       const bytes = shadow.get(base)!.slice(lo, hi + 1);
-      if (adapter.pokeN) await adapter.pokeN(base + lo, bytes);
+      if ('pokeN' in adapter) await adapter.pokeN!(base + lo, bytes);
       else for (let i = 0; i < bytes.length; i++) await adapter.poke(base + lo + i, bytes[i]!);
     }
     dirty.clear();
