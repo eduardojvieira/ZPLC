@@ -152,7 +152,7 @@ describe('FND-002 the command inventory in a DOM', () => {
 
   it('FND-002 every activity of the rail names its command', () => {
     const { container } = dom.render(<ActivityRail active="project" density="regular" onSelect={noop} />);
-    expect(container.querySelectorAll('[data-activity]').length).toBe(4);
+    expect(container.querySelectorAll('[data-activity]').length).toBe(5);
     expect(uncommanded(container)).toEqual([]);
   });
 

@@ -82,6 +82,7 @@ export function useShellCommands(): void {
         'view.toggleSecondarySidebar': () => useShellLayout.getState().toggleSecondary(),
         'view.showProject': () => showActivity('project'),
         'view.showSearch': () => showActivity('search'),
+        'view.showPlant': () => showActivity('plant'),
         'view.showLearn': () => showActivity('learn'),
         'view.plant': showPlant,
         'view.fitPlantScene': fitPlantScene,

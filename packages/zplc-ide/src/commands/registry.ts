@@ -236,6 +236,7 @@ export const COMMANDS = [
   { id: 'edit.undo', titleKey: 'command.edit.undo', category: 'edit', pending: true },
   { id: 'edit.redo', titleKey: 'command.edit.redo', category: 'edit', pending: true },
   { id: 'plant.feedBoard', titleKey: 'command.plant.feedBoard', category: 'online', physical: true, pending: true },
+  { id: 'view.showPlant', titleKey: 'command.view.showPlant', category: 'view', enabled: open },
 ] as const satisfies readonly CommandDefinition[];
 
 export type CommandId = (typeof COMMANDS)[number]['id'];

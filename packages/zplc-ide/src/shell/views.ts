@@ -13,6 +13,7 @@ import { useIDEStore } from '../store/useIDEStore';
 import { LearnPanel } from '../components/LearnPanel';
 import { ProjectExplorer } from '../components/ProjectExplorer';
 import { WorkbenchInspector } from '../components/WorkbenchInspector';
+import { PlantActivityView } from '../plant/ui/PlantActivityView';
 import { GuideView } from '../components/guide/GuideView';
 import { lessonSurface } from './shellRouting';
 import { useWorkspaceTestResult } from './workspaceTestResult';
@@ -44,6 +45,7 @@ export const PRIMARY_VIEWS: Record<ActivityView, SidebarView> = {
   project: { surface: 'activity.project', titleKey: 'shell.activity.project', command: 'view.showProject', Body: ProjectExplorer },
   search: { surface: 'activity.search', titleKey: 'shell.activity.search', command: 'view.showSearch', Body: SearchView },
   tests: { surface: 'activity.tests', titleKey: 'shell.activity.tests', command: 'view.tests', Body: TestsView },
+  plant: { surface: 'activity.plant', titleKey: 'shell.activity.plant', command: 'view.showPlant', Body: PlantActivityView },
   learn: { surface: 'activity.learn', titleKey: 'shell.activity.learn', command: 'view.showLearn', Body: LearnBody },
 };
 

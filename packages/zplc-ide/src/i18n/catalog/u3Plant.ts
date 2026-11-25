@@ -6,6 +6,8 @@ export const u3PlantEn = {
   'command.edit.undo': 'Undo',
   'command.edit.redo': 'Redo',
   'command.plant.feedBoard': 'Feed the board from the plant',
+  'shell.activity.plant': 'Plant',
+  'command.view.showPlant': 'Show the plant',
 } as const;
 export const u3PlantEs: Record<keyof typeof u3PlantEn, string> = {
   'command.plant.edit': 'Editar la planta',
@@ -14,4 +16,6 @@ export const u3PlantEs: Record<keyof typeof u3PlantEn, string> = {
   'command.edit.undo': 'Deshacer',
   'command.edit.redo': 'Rehacer',
   'command.plant.feedBoard': 'Alimentar la placa desde la planta',
+  'shell.activity.plant': 'Planta',
+  'command.view.showPlant': 'Mostrar la planta',
 };
