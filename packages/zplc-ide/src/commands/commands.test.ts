@@ -409,7 +409,9 @@ describe('lane W command contract (FND-002)', () => {
 
   it('FND-002 keeps the 38 commands of 2.0 and the plant I/O one, in their order, ahead of the new ones', () => {
     const ids = COMMAND_LIST.map((command) => command.id);
-    const old = ids.filter((id) => !(id in LANE_W_COMMANDS) && !(id in U2_COMMANDS) && !(id in PLANT_VIEW_COMMANDS) && !(id in U3_COMMANDS));
+    const old = ids.filter(
+      (id) => !(id in LANE_W_COMMANDS) && !(id in U2_COMMANDS) && !(id in PLANT_VIEW_COMMANDS) && !(id in U3_COMMANDS),
+    );
     expect(old.length).toBe(39);
     expect(old.slice(0, 5)).toEqual(['file.save', 'file.open', 'file.new', 'file.export', 'view.commandPalette']);
     expect(old.at(-1)).toBe('help.learn');
@@ -534,11 +536,7 @@ describe('milestone U2 command contract (FND-002)', () => {
     const ids = COMMAND_LIST.map((command) => command.id as string);
     const firstU2 = ids.findIndex((id) => id in U2_COMMANDS);
     expect(ids.slice(0, firstU2).length).toBe(39 + Object.keys(LANE_W_COMMANDS).length);
-    expect(ids.slice(firstU2)).toEqual([
-      ...Object.keys(U2_COMMANDS),
-      ...Object.keys(PLANT_VIEW_COMMANDS),
-      ...Object.keys(U3_COMMANDS),
-    ]);
+    expect(ids.slice(firstU2)).toEqual([...Object.keys(U2_COMMANDS), ...Object.keys(PLANT_VIEW_COMMANDS), ...Object.keys(U3_COMMANDS)]);
     expect(ids[firstU2 - 1]).toBe('help.learn');
     expect(ids.slice(0, 5)).toEqual(['file.save', 'file.open', 'file.new', 'file.export', 'view.commandPalette']);
   });
