@@ -2,6 +2,7 @@
  * A small Chromium DevTools driver for the smokes that need no Electron. It starts a headless Chromium on a
  * private profile, speaks the DevTools protocol over its WebSocket and collects every page error and console error.
  */
+import { spawnSync } from 'node:child_process';
 import { accessSync, constants, existsSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { join } from 'node:path';
@@ -75,12 +76,23 @@ export async function waitFor<T>(
   throw new Error(`Timed out waiting for ${description}${lastError instanceof Error ? `: ${lastError.message}` : ''}`);
 }
 
+/** Ends `child`. On Windows `kill` reaches only the parent, so the whole tree goes with `taskkill /T /F`. */
+export function killTree(
+  child: OwnedProcess,
+  signal: NodeJS.Signals = 'SIGTERM',
+  platform: NodeJS.Platform = process.platform,
+  spawn: typeof spawnSync = spawnSync,
+): void {
+  if (platform === 'win32') spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
+  else child.kill(signal);
+}
+
 export async function stop(process: OwnedProcess | undefined): Promise<void> {
   if (!process || process.exitCode !== null) return;
-  process.kill();
+  killTree(process);
   await Promise.race([process.exited, Bun.sleep(3_000)]);
   if (process.exitCode === null) {
-    process.kill('SIGKILL');
+    killTree(process, 'SIGKILL');
     await Promise.race([process.exited, Bun.sleep(5_000)]);
     if (process.exitCode === null) throw new Error(`process ${process.pid} is still running 5 s after SIGKILL`);
   }
