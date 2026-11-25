@@ -3,6 +3,7 @@
  * serialised as before, and the trace evidence of a failed run keeps the bytes (and the hash) it had.
  */
 import { createHash } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -13,7 +14,7 @@ import { createMcpDispatcher, openMcpWorkspace } from '../mcp/server';
 import { itNative } from './nativeRuntimeGuard';
 import { testsRun } from './toolApi';
 
-const BLINKY = new URL('../../projects/blinky_st/', import.meta.url).pathname;
+const BLINKY = fileURLToPath(new URL('../../projects/blinky_st/', import.meta.url));
 const SCENARIO = 'tests/blinky-st.scenario.json';
 const scratch = mkdtempSync(join(tmpdir(), 'zplc-failure-detail-'));
 afterAll(() => rmSync(scratch, { recursive: true, force: true }));
@@ -80,7 +81,7 @@ describe('failure detail in the Tool API preview (TST-003, IDE-031)', () => {
   });
 });
 
-const BELT = new URL('../../projects/plant_belt_to_sensor/', import.meta.url).pathname;
+const BELT = fileURLToPath(new URL('../../projects/plant_belt_to_sensor/', import.meta.url));
 const BELT_SCENARIO = 'tests/belt-to-sensor.scenario.json';
 function numericProject(extra: unknown[]): string {
   const root = join(scratch, `numeric-${Math.random().toString(36).slice(2)}`);

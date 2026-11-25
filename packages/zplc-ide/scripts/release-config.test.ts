@@ -1,6 +1,7 @@
 // Structural checks on the release configuration. The files are parsed, never matched as text.
 // A hosted run of the release workflow is the only proof that electron-builder honours them.
 import { describe, expect, it } from 'bun:test';
+import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { RULE_FILE_NAME, RULE_TARGET } from '../../../scripts/release/udev-rules';
@@ -205,7 +206,7 @@ describe('the AppImage stays published beside the .deb and the .rpm (REL-012)', 
 
 describe('Linux packages declare what Electron needs and are installed in clean containers (REL-011)', () => {
   const job = workflow.jobs['build-linux']!;
-  const script = new URL('./check-linux-package.sh', import.meta.url).pathname;
+  const script = fileURLToPath(new URL('./check-linux-package.sh', import.meta.url));
 
   // electron-builder's defaults (getDefaultDepends of app-builder-lib 26) leave out ALSA, which Electron links: a clean
   // Debian 13 or Ubuntu 24.04 has no libasound.so.2 (release rehearsal 40109115910). Since t64 the Debian package is

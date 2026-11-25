@@ -1,11 +1,12 @@
 import { readFileSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { assert } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
 import type { Journey } from '../journeys';
 import { runFromPalette } from './w3';
 
-const projects = (path: string): string => new URL(`../../projects/${path}`, import.meta.url).pathname;
+const projects = (path: string): string => fileURLToPath(new URL(`../../projects/${path}`, import.meta.url));
 type Model = { variables: { inputs: Array<{ name: string }> }; blocks?: Array<{ id: string; variableName?: string }> };
 
 /** A bundled diagram whose `from` is renamed `Start` and left undeclared in its tables, so that it names the project's global. */
