@@ -44,7 +44,11 @@ const Host = () => {
   return null;
 };
 
-afterEach(() => resetCommandsForTest());
+// SHL-004 shows the interlocks view of the Tests activity; the next file of the shard starts on the tests
+afterEach(() => {
+  resetCommandsForTest();
+  useProjectTests.getState().setView('tests');
+});
 
 describe('surface registry (SHL-001, SHL-002, SHL-004)', () => {
   it('SHL-002 every surface has one region and a registered command', () => {
