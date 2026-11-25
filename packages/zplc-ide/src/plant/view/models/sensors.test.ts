@@ -319,7 +319,7 @@ describe('limit switch (VIS-014, VIS-016)', () => {
     const pivot = (pieces: ReturnType<typeof model>) => {
       const arm = slot(pieces, 'arm');
       const a = angle(arm);
-      const h = pieceExtent(arm)[0];
+      const h = arm.shape.kind === 'box' ? arm.shape.size[0] / 2 : 0;
       return [arm.at[0] - h * Math.cos(a), arm.at[2] + h * Math.sin(a)];
     };
     pivot(made).forEach((v, i) => expect(v).toBeCloseTo(pivot(free)[i]!, 9));

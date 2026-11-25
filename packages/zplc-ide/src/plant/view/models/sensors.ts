@@ -373,7 +373,7 @@ function visionModel(view: PartView, context: ModelContext): Piece[] {
 // ---------------------------------------------------------------------------------------------------------------------
 
 /** The lever's swing while the switch makes contact, in radians, and the radius of its roller. */
-export const LIMIT_SWITCH = { swing: 0.45, roller: 0.012 } as const;
+export const LIMIT_SWITCH = { swing: (25 * Math.PI) / 180, roller: 0.012 } as const;
 
 function limitSwitchModel(view: PartView, context: ModelContext): Piece[] {
   const reach = view.pose.size[0]; // the contact zone runs reach metres along +x from the switch's face; the origin is its middle
@@ -383,10 +383,12 @@ function limitSwitchModel(view: PartView, context: ModelContext): Piece[] {
   const arm = reach + 0.02 - roller; // from the head's axis to the roller's: the roller ends at the far end of the zone
   const yaw = contact ? swing : 0;
   const [c, s] = [Math.cos(yaw), Math.sin(yaw)];
+  const lever: Piece = piece('arm', box([arm, 0.006, 0.01], 0.001), [x + (arm / 2) * c, 0.004, (-arm / 2) * s], 'steel', true, yaw);
+  lever.q = [0, Math.sin(yaw / 2), 0, Math.cos(yaw / 2)]; // the lever turns about its pivot at the head
   return [
     piece('body', box([0.04, 0.06, 0.035], 0.003), [x, -0.04, 0], 'housing'),
     piece('head', rod(0.014, 0.02, 'y'), [x, 0, 0], 'collar'),
-    piece('arm', box([arm, 0.006, 0.01], 0.001), [x + (arm / 2) * c, 0.004, (-arm / 2) * s], 'steel', true, yaw),
+    lever,
     piece('roller', rod(roller, 0.012, 'y'), [x + arm * c, 0, -arm * s], 'rubber'),
     piece('lamp', rod(0.006, 0.004, 'y'), [x - 0.012, -0.008, 0.011], lit(contact)),
     ...stand(context.mount, x, x - 0.02, -0.07, -view.pose.p[1]),

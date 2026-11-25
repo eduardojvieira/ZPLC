@@ -368,6 +368,8 @@ function turntableModel(view: PartView, context: ModelContext): Piece[] {
   const a = (num(view.state.angleDeg, 0) * Math.PI) / 180;
   const [c, s] = [Math.cos(a), Math.sin(a)];
   for (const p of fixed) pieces.push({ ...p, at: [p.at[0] * c + p.at[2] * s, p.at[1], -p.at[0] * s + p.at[2] * c], yaw: p.yaw + a });
+  // One arrow along the rollers, on the deck's frame: it turns with the table, so left and right differ at a glance.
+  pieces.push(piece('arrow', arrow(0.2), [0, top + 0.002, 0], 'mark', true, Math.PI / 2));
   return [...pieces, ...directionMarks(size, top + 0.002, speedOf(view), context.travel)];
 }
 
