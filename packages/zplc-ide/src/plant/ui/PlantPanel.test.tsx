@@ -534,7 +534,8 @@ describe('the plant panel (VIS-001, VIS-006, VIS-010, PLS-003, PLS-004, PLS-010)
     const r = rig();
     dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
     const toolbar = () => document.querySelector('[role="toolbar"]')!;
-    const place = (selector: string) => [...toolbar().children].findIndex((child) => child.matches(selector) || child.querySelector(selector));
+    const place = (selector: string) =>
+      [...toolbar().children].findIndex((child) => child.matches(selector) || child.querySelector(selector));
     const before = (selector: string) => [...toolbar().children].slice(0, place(selector)).map((child) => child.textContent);
     expect(document.querySelector('[data-command="view.fitPlantScene"]')).toBeNull();
     const reset = [place('[data-plant-reset]'), before('[data-plant-reset]')];
