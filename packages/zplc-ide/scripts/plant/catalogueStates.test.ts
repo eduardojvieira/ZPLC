@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test';
+import { gripperDecor } from '../../src/plant/view/geometry';
 import { MODELS, partModel } from '../../src/plant/view/models';
 import { CATALOGUE, catalogueView, ITEMS } from './catalogueStates';
 
@@ -21,8 +22,10 @@ describe('the catalogue sheet', () => {
 
   it('builds a view of every state that its model draws, and the states of a stateful kind do not draw the same pieces', () => {
     for (const kind of CATALOGUE) {
-      const drawn = kind.states.map((s) => JSON.stringify(partModel(catalogueView(kind, s), { travel: 0 })));
-      expect(drawn.every((d) => d !== 'null')).toBe(true);
+      const views = kind.states.map((s) => catalogueView(kind, s));
+      expect(views.every((v) => partModel(v) !== null)).toBe(true);
+      // A state changes the pieces, the gripper the renderer adds, or (a diverter arm, a door) the pose.
+      const drawn = views.map((v) => JSON.stringify([partModel(v), gripperDecor(v), v.pose.p, v.pose.q]));
       if (kind.stateful) expect({ id: kind.id, distinct: new Set(drawn).size }).toEqual({ id: kind.id, distinct: kind.states.length });
     }
   });
