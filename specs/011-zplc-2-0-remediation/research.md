@@ -191,7 +191,7 @@ Not verified [N]: the exact udev rule ordering (to be confirmed against the syst
 
 - Attestations give "unfalsifiable provenance and integrity guarantees" and "are not a guarantee that an artifact is secure" [P]. They do not change Gatekeeper, SmartScreen or Smart App Control behaviour [I], and the docs must say so.
 - CI already cross-builds all six boards and discards the results (`.github/workflows/ci.yml:281`). Publishing them removes the Zephyr toolchain from a newcomer's first hour.
-- Web Serial is available in Chrome and Edge on all desktop systems [P], so an ESP32-S3 can be flashed from a docs page by a person's click, which satisfies `AGENTS.md` rule 7. The Pico needs only a file copy in boot mode.
+- Web Serial is available in Chrome and Edge on all desktop systems [P], so an ESP32-S3 can be flashed from a docs page by a person's click, which satisfies `AGENTS.md` rule 8. The Pico needs only a file copy in boot mode.
 - macOS automatic update requires a signed application, and an ad-hoc signature has no stable identity; Homebrew, the Store and the AUR update their own packages. A notice is about thirty lines, works for every format, and has no signing requirement.
 
 ### Alternatives considered

@@ -244,7 +244,7 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 ### HIL-010.01 El flasheo lo hace una persona; la herramienta nunca flashea
 
 - **Placas:** Raspberry Pi Pico, ESP32-S3-DevKitC-1
-- **Código:** `tools/hil/run_chain.py:150` Chain (flash step); `packages/zplc-hil/src/guard.ts:38` confirmPhysicalStep; `AGENTS.md` rule 7
+- **Código:** `tools/hil/run_chain.py:150` Chain (flash step); `packages/zplc-hil/src/guard.ts:38` confirmPhysicalStep; `AGENTS.md` rule 8
 - **Simulación:**
   - tools/hil/test_hil_chain.py GuardTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_chain.py' -k physical_step`
 - **Solo el silicio:** el cargador real: unidad BOOTSEL en el Pico, modo de descarga y esptool en el ESP32-S3

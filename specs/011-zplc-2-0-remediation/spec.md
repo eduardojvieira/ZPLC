@@ -95,7 +95,7 @@ Every workstream obeys these. A requirement that conflicts with a principle is a
 | P4 | Nothing descoped | No feature, function block, IEC language or HIL asset is removed in 2.0. Broken means repair. |
 | P5 | Zero recurring cost | No paid certificate, subscription or hosted service is needed to build, sign, distribute, verify or teach. |
 | P6 | Claims match evidence | Public text states only what a recorded run at the stated evidence level supports. |
-| P7 | Physical operations are human-initiated | Flash, deploy, force, RUN/STOP, raw serial and shell are started by a person. AI and MCP cannot start them (`AGENTS.md` rule 7; constitution rules 5 and 9). |
+| P7 | Physical operations are human-initiated | Flash, deploy, force, RUN/STOP, raw serial and shell are started by a person. AI and MCP cannot start them (`AGENTS.md` rule 8; constitution rules 5 and 9). |
 | P8 | A learner reaches a first working program without hardware | Install, press Learn, blink a simulated output, with no terminal and no board. |
 | P9 | Outputs default safe and off | No reboot, fault, watchdog reset, communication loss or invalid artifact resumes physical control by itself (constitution rule 4). |
 | P10 | One source of truth per fact | Opcodes, lesson IDs, the board table, the version, inter-process communication (IPC) channel names and the product name are each defined once and generated elsewhere. |

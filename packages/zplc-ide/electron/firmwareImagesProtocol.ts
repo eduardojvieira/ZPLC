@@ -5,7 +5,7 @@
  *
  * The answer is data. It carries what the release manifest says (scripts/release/firmware-images.ts) and whether each
  * file is inside this installation with the checksum the manifest states. Nothing here opens a port, copies a file to a
- * board or runs a flasher: a person starts the flash (AGENTS.md rule 7).
+ * board or runs a flasher: a person starts the flash (AGENTS.md rule 8).
  */
 
 export { FIRMWARE_IMAGES_CHANNEL } from './ipcContract.js';

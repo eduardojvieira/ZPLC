@@ -1,5 +1,5 @@
 // The browser flasher of the flashing page (REL-024): what can be tested without a board. Nothing here opens a serial port;
-// a flash is started by a person in a browser, and no test, tool or assistant does it (AGENTS.md rule 7).
+// a flash is started by a person in a browser, and no test, tool or assistant does it (AGENTS.md rule 8).
 import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 

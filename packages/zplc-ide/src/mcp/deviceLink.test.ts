@@ -92,7 +92,7 @@ async function registered(): Promise<Registered> {
   return record;
 }
 
-describe('IDE-030: the tools an assistant can call are a closed list that names no physical operation (AGENTS.md rule 7)', () => {
+describe('IDE-030: the tools an assistant can call are a closed list that names no physical operation (AGENTS.md rule 8)', () => {
   test('the list is the one below, and no name flashes, deploys, forces, stops, resets or opens a serial line or a shell', () => {
     expect([...MCP_TOOL_NAMES]).toEqual([
       'project_inspect',

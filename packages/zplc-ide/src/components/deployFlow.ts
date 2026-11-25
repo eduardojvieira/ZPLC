@@ -2,7 +2,7 @@
  * The deploy to a real device, from the checked program to the result (COM-028): preflight against what the device
  * reports, the confirmation dialog (UX-019), the check that nothing changed while the person decided, the transfer and
  * its outcome. The toolbar, the menu, the palette and the keyboard all reach it through one handler, and the dialog is
- * the only way past the preflight: no other path starts a transfer (AGENTS.md rule 7).
+ * the only way past the preflight: no other path starts a transfer (AGENTS.md rule 8).
  */
 import { t } from '../i18n';
 import type { DebugMap } from '../compiler';

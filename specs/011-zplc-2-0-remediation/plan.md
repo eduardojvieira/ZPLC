@@ -49,7 +49,7 @@ The spec says what must be true at GA. This plan adds what the spec does not con
 3. Work test-first where a runnable deterministic test exists: write the test, watch it fail for the stated reason, then make it pass. The "failing test first" column of section 5 says whether such a test exists. Where it does not (a spike, a manual check, a one-off repository operation), the feature document names the check that replaces it.
 4. Deliver as work-unit commits on a feature branch, each commit carrying its tests and docs, and as chained pull requests when the package is large. About 400 authored changed lines (additions plus deletions) per task or pull-request slice is a planning heuristic. It is not an acceptance criterion, a hard cap or a reason to split artificially. When the correct solution is larger, say why in the feature document and continue.
 5. Tick a task only after its check was observed. Record the commit identity and the observed result in the feature document.
-6. Flash, deploy, RUN/STOP, force and serial actions are started by a person, never by an agent (`AGENTS.md` rule 7). Packages that need them say so in the "only the owner can" column.
+6. Flash, deploy, RUN/STOP, force and serial actions are started by a person, never by an agent (`AGENTS.md` rule 8). Packages that need them say so in the "only the owner can" column.
 7. Agents that work in parallel each use their own git worktree.
 
 **Conventions.**
@@ -1003,7 +1003,7 @@ The parts follow from the items of HIL-010. The exact list is written by WP-84 a
 | Course kit | WP-101 | Logic-level, low-voltage parts only (LRN-016). The bill of materials is an output of WP-101 (LRN-014). |
 
 ### 8.3 Rules for every bench session
-- A person starts every flash, deploy, RUN, STOP, force and power interruption. An agent may prepare the command and read the record afterwards (`AGENTS.md` rule 7, HIL-003).
+- A person starts every flash, deploy, RUN, STOP, force and power interruption. An agent may prepare the command and read the record afterwards (`AGENTS.md` rule 8, HIL-003).
 - One command per board runs the chain and prompts the person for each physical step (HIL-012, under D-08's default). The scenario and bench commands refuse to run without an interactive terminal and require the person to type the board identity the device reports for each physical step; started without a terminal they exit with an error (HIL-003, HIL-012, COM-030).
 - Every run that is cited writes a record (HIL-009). An informal run, such as the smoke, is never cited as evidence.
 - Forces are released by the tool at the end and on abort, and by the device when the link or the tool is lost (COM-020); the board is left in STOP with outputs safe.

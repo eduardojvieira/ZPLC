@@ -1,4 +1,4 @@
-// Learn starts no physical operation by itself (LRN-015; AGENTS.md rule 7).
+// Learn starts no physical operation by itself (LRN-015; AGENTS.md rule 8).
 //
 //   bun tools/ci/learn-physical-guard.ts
 //

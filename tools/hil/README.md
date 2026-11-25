@@ -2,7 +2,7 @@
 
 Scripts that run a program on a board, or on a stand-in for one, and say whether it did what it should.
 A board is a physical thing: **a person runs every command here that touches one**. Neither AI tools nor MCP
-start a flash, a deploy, a force, a RUN or STOP, or a raw serial session (AGENTS.md rule 7, HIL-003).
+start a flash, a deploy, a force, a RUN or STOP, or a raw serial session (AGENTS.md rule 8, HIL-003).
 
 Nothing here is compiled ahead of time and checked in: a run compiles the fixtures with the repository compiler into
 a temporary directory that it removes (HIL-006).

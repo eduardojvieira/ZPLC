@@ -91,7 +91,7 @@ El rechazo de patrones conocidos es una salvaguarda, no una garantía. Un litera
 
 ## Límite físico
 
-La IA y el servidor MCP local pueden inspeccionar, validar, compilar, probar, simular y leer trazas y evidencia acotadas. No pueden grabar firmware, cargar un programa en el hardware, forzar valores, cambiar RUN o STOP, hacer una recuperación, abrir un puerto serie sin procesar ni ejecutar un shell (regla 7 de AGENTS.md). Esas acciones siguen siendo flujos humanos explícitos de la interfaz de ZPLC.
+La IA y el servidor MCP local pueden inspeccionar, validar, compilar, probar, simular y leer trazas y evidencia acotadas. No pueden grabar firmware, cargar un programa en el hardware, forzar valores, cambiar RUN o STOP, hacer una recuperación, abrir un puerto serie sin procesar ni ejecutar un shell (regla 8 de AGENTS.md). Esas acciones siguen siendo flujos humanos explícitos de la interfaz de ZPLC.
 
 ### Sin camino hacia el enlace con el dispositivo
 

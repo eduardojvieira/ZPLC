@@ -299,7 +299,7 @@ For each one, the silicon fact that a person checks at a bench:
 - **Given:** run_chain.py started on a terminal for a board
 - **When:** the flash step is reached
 - **Then:** the tool prints the flash instructions and waits for the person; no code path of the tool writes the image to the board
-- **Code:** `tools/hil/run_chain.py:150` Chain (flash step); `packages/zplc-hil/src/guard.ts:38` confirmPhysicalStep; `AGENTS.md` rule 7
+- **Code:** `tools/hil/run_chain.py:150` Chain (flash step); `packages/zplc-hil/src/guard.ts:38` confirmPhysicalStep; `AGENTS.md` rule 8
 - **Simulation:**
   - tools/hil/test_hil_chain.py GuardTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_chain.py' -k physical_step`
 - **Only silicon:** the real bootloader: BOOTSEL drive on the Pico, download mode and esptool on the ESP32-S3

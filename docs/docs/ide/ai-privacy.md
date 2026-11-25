@@ -91,7 +91,7 @@ Known-pattern rejection is a safeguard, not a guarantee. An arbitrary secret lit
 
 ## Physical boundary
 
-AI and the local MCP server can inspect, validate, compile, test, simulate and read bounded trace and evidence. They cannot flash firmware, deploy a program to hardware, force values, change RUN or STOP, perform recovery, open a raw serial port or run a shell (AGENTS.md rule 7). Those actions stay explicit human flows in the ZPLC interface.
+AI and the local MCP server can inspect, validate, compile, test, simulate and read bounded trace and evidence. They cannot flash firmware, deploy a program to hardware, force values, change RUN or STOP, perform recovery, open a raw serial port or run a shell (AGENTS.md rule 8). Those actions stay explicit human flows in the ZPLC interface.
 
 ### No path to the device link
 

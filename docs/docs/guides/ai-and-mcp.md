@@ -12,7 +12,7 @@ tags: [how-to, ai, mcp, safety]
 `zplc-mcp` is a local server of the Model Context Protocol. It lets an AI assistant inspect one project, read the source of its programs, compile it, run its scenario tests and read the evidence, so the assistant works from what the build and the simulator say and not from a guess. It runs on your computer and talks to the assistant over standard input and output. It opens no network port and no serial port.
 
 :::danger The assistant cannot touch a machine
-No tool of the server flashes a board, deploys a program, forces a value, starts or stops a device, opens a serial port or runs a shell (AGENTS.md rule 7). Those actions stay in ZPLC, where a person chooses them. The only tool that is not read-only, `firmware_build`, runs a local cross-build and stops there.
+No tool of the server flashes a board, deploys a program, forces a value, starts or stops a device, opens a serial port or runs a shell (AGENTS.md rule 8). Those actions stay in ZPLC, where a person chooses them. The only tool that is not read-only, `firmware_build`, runs a local cross-build and stops there.
 :::
 
 ## What the assistant may and may not do

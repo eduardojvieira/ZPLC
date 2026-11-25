@@ -144,7 +144,7 @@ describe('local MCP adapter', () => {
 
   test(
     "has no tool that sets a simulation input or writes memory: the faceplate is the person's control, not the agent's (LRN-017, " +
-      'AGENTS rule 7)',
+      'AGENTS rule 8)',
     () => {
       expect(MCP_TOOL_NAMES.filter((name) => /input|memory|poke|faceplate|hold|press/.test(name))).toEqual([]);
     },
