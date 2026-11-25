@@ -210,7 +210,7 @@ function readout(prefix: string, text: string, cells: number, at: Vec3, h: numbe
 // beam crosses (or on a post to the floor when no belt frame is in reach), and its fine beam
 // ---------------------------------------------------------------------------------------------------------------------
 
-/** The beam: a 6 mm line, solid while the sensor detects; while it is clear, a dash every `dash` metres, a quarter of it long. */
+/** The beam: a 6 mm line, solid while the sensor detects; while it is clear, a dash every `dash` metres, a sixth of it long. */
 export const SENSOR = { dash: 0.06, beamRadius: 0.003, dashRadius: 0.0018 } as const;
 
 function sensorModel(view: PartView, context: ModelContext): Piece[] {
@@ -222,6 +222,7 @@ function sensorModel(view: PartView, context: ModelContext): Piece[] {
   const pieces: Piece[] = [
     piece('housing', box([0.07, 0.048, 0.04], 0.005), [back, 0, 0], 'housing'),
     piece('lens', rod(0.013, 0.004, 'x'), [-0.0005, 0, 0], 'lens'),
+    piece('bezel', box([0.003, 0.044, 0.036], 0.0005), [-0.0015, 0, 0], lit(detecting)), // a face plate round the lens that glows while the sensor detects
     piece('lamp', box([0.05, 0.004, 0.032], 0.001), [back, 0.026, 0], lit(detecting)), // a lit window over the top of the housing
     ...stand(context.mount, back, back - 0.035, under, -view.pose.p[1]),
   ];
@@ -229,7 +230,7 @@ function sensorModel(view: PartView, context: ModelContext): Piece[] {
   pieces.push(piece('beam', rod(SENSOR.beamRadius, length, 'x'), [length / 2, 0, 0], 'beam', detecting));
   const dashes = Math.max(1, Math.floor(length / SENSOR.dash));
   for (let k = 0; k < dashes; k++)
-    pieces.push(piece(`dash-${k}`, rod(SENSOR.dashRadius, SENSOR.dash / 4, 'x'), [(k + 0.5) * SENSOR.dash, 0, 0], 'beam', !detecting));
+    pieces.push(piece(`dash-${k}`, rod(SENSOR.dashRadius, SENSOR.dash / 6, 'x'), [(k + 0.5) * SENSOR.dash, 0, 0], 'beam', !detecting));
   return pieces;
 }
 
