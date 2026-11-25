@@ -22,15 +22,12 @@ function fakeWorkbench(initial: ConsoleTab) {
 }
 
 describe('where the open lesson is shown (LRN-004)', () => {
-  it(
-    'LRN-004 keeps an open lesson beside the editor whatever the rail selects: in the primary sidebar on Learn, in the secondary one ' +
-      'elsewhere',
-    () => {
-      expect(lessonSurface('learn', true)).toBe('primary');
-      for (const view of ['project', 'search', 'tests'] as const) expect(lessonSurface(view, true)).toBe('secondary');
-      for (const view of ['project', 'search', 'tests', 'learn'] as const) expect(lessonSurface(view, false)).toBe('none');
-    },
-  );
+  // Changed for GDE-001: the old test froze the layout of 2.0, where the lesson filled the primary sidebar on the Learn rail. The
+  // lesson is the Guide of the secondary sidebar on every activity now, so Learn answers 'secondary' like the others.
+  it('GDE-001 keeps an open lesson in the secondary sidebar whatever the rail selects, Learn included', () => {
+    for (const view of ['project', 'search', 'tests', 'learn'] as const) expect(lessonSurface(view, true)).toBe('secondary');
+    for (const view of ['project', 'search', 'tests', 'learn'] as const) expect(lessonSurface(view, false)).toBe('none');
+  });
 });
 
 describe('requests for the views that left the lower panel (UX-011)', () => {
