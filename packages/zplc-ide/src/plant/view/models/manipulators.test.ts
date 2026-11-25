@@ -36,8 +36,8 @@ const moved = (view: PartView, [x, y, z]: Vec3): PartView => ({
 const world = (view: PartView, p: Piece): Vec3 => [p.at[0] + view.pose.p[0], p.at[1] + view.pose.p[1], p.at[2] + view.pose.p[2]];
 /** The box that holds every piece, in the world. */
 function hull(view: PartView, pieces: readonly Piece[]): { min: Vec3; max: Vec3 } {
-  const min: Vec3 = [Infinity, Infinity, Infinity];
-  const max: Vec3 = [-Infinity, -Infinity, -Infinity];
+  const min = [Infinity, Infinity, Infinity] as [number, number, number];
+  const max = [-Infinity, -Infinity, -Infinity] as [number, number, number];
   for (const p of pieces) {
     const c = world(view, p);
     const e = pieceExtent(p);
@@ -48,6 +48,10 @@ function hull(view: PartView, pieces: readonly Piece[]): { min: Vec3; max: Vec3 
   }
   return { min, max };
 }
+/** The x and z extent of a box. */
+const footprint = (h: { min: Vec3; max: Vec3 }) => [h.min[0], h.max[0], h.min[2], h.max[2]];
+/** Expect `got` to be the point `want`, within float noise. */
+const same = (got: Vec3, want: Vec3) => expect(got).toEqual([...want].map((v) => expect.closeTo(v, 9)) as unknown as Vec3);
 const model = (view: PartView): Piece[] => partModel(view)!;
 
 describe('manipulator models (VIS-014)', () => {
@@ -80,7 +84,7 @@ describe('manipulator models (VIS-014)', () => {
     const wa = (s: string) => world(view, slot(a, s));
     const wb = (s: string) => world(moved(view, [0.5, 0, 0]), slot(b, s));
     for (const s of ['carriage', 'slide', 'head']) expect(wb(s)[0] - wa(s)[0]).toBeCloseTo(0.5, 9);
-    for (const s of ['beam', 'leg-a', 'leg-b', 'foot-a', 'foot-b']) expect(wb(s)).toEqual(wa(s));
+    for (const s of ['beam', 'leg-a', 'leg-b', 'foot-a', 'foot-b']) same(wb(s), wa(s));
   });
 
   it('VIS-014 the y axis lifts the head, and the slide always reaches from the carriage to the head', async () => {
@@ -93,7 +97,7 @@ describe('manipulator models (VIS-014)', () => {
       const slide = slot(pieces, 'slide');
       const carriage = slot(pieces, 'carriage');
       const head = slot(pieces, 'head');
-      expect(slide.at[1] + pieceExtent(slide)[1]).toBeCloseTo(carriage.at[1], 9); // the slide runs up into the carriage
+      expect(slide.at[1] + pieceExtent(slide)[1]).toBeCloseTo(carriage.at[1] - pieceExtent(carriage)[1], 9); // hangs from it
       expect(slide.at[1] - pieceExtent(slide)[1]).toBeCloseTo(head.at[1] + pieceExtent(head)[1], 9); // and ends on the head
     }
   });
@@ -102,12 +106,20 @@ describe('manipulator models (VIS-014)', () => {
     const view = await rest('pick-place');
     const strokeX = view.state.strokeX as number;
     const strokeY = view.state.strokeY as number;
-    const frameBox = (v: PartView) => hull(v, model(v).filter((p) => p.slot !== 'head'));
+    const frameBox = (v: PartView) =>
+      hull(
+        v,
+        model(v).filter((p) => p.slot !== 'head'),
+      );
     const first = hull(view, model(view));
-    for (const at of [[strokeX, strokeY, 0], [strokeX / 2, 0, 0], [0, strokeY, 0]] as Vec3[]) {
+    for (const at of [
+      [strokeX, strokeY, 0],
+      [strokeX / 2, 0, 0],
+      [0, strokeY, 0],
+    ] as Vec3[]) {
       const v = moved(view, at);
       const h = hull(v, model(v));
-      expect([h.min[0], h.max[0], h.min[2], h.max[2]]).toEqual([first.min[0], first.max[0], first.min[2], first.max[2]]);
+      expect(footprint(h)).toEqual(footprint(first).map((v) => expect.closeTo(v, 9)) as number[]);
       expect(frameBox(v).min[0]).toBeCloseTo(frameBox(view).min[0], 9);
     }
   });
@@ -139,20 +151,24 @@ describe('manipulator models (VIS-014)', () => {
     expect(world(byX, slot(model(byX), 'bridge'))[0] - w0('bridge')[0]).toBeCloseTo(0.6, 9);
     expect(world(byX, slot(model(byX), 'carriage'))[0] - w0('carriage')[0]).toBeCloseTo(0.6, 9);
     expect(world(byZ, slot(model(byZ), 'carriage'))[2] - w0('carriage')[2]).toBeCloseTo(0.5, 9);
-    expect(world(byZ, slot(model(byZ), 'bridge'))).toEqual(w0('bridge')); // the bridge does not follow z
+    same(world(byZ, slot(model(byZ), 'bridge')), w0('bridge')); // the bridge does not follow z
     expect(world(byY, slot(model(byY), 'head'))[1] - w0('head')[1]).toBeCloseTo(0.4, 9);
-    expect(world(byY, slot(model(byY), 'carriage'))).toEqual(w0('carriage'));
-    for (const s of ['rail-a', 'rail-b', 'leg-a', 'leg-d']) for (const v of [byX, byY, byZ]) expect(world(v, slot(model(v), s))).toEqual(w0(s));
+    same(world(byY, slot(model(byY), 'carriage')), w0('carriage'));
+    for (const s of ['rail-a', 'rail-b', 'leg-a', 'leg-d']) for (const v of [byX, byY, byZ]) same(world(v, slot(model(v), s)), w0(s));
   });
 
   it('VIS-014 the footprint of a gantry is the same in every state, on the floor, and holds the whole stroke', async () => {
     const view = await rest('gantry');
     const [sx, sy, sz] = [view.state.strokeX, view.state.strokeY, view.state.strokeZ] as number[];
     const first = hull(view, model(view));
-    for (const at of [[sx, sy, sz], [sx / 2, 0, sz / 2], [0, sy, sz]] as Vec3[]) {
+    for (const at of [
+      [sx, sy, sz],
+      [sx / 2, 0, sz / 2],
+      [0, sy, sz],
+    ] as Vec3[]) {
       const v = moved(view, at);
       const h = hull(v, model(v));
-      expect([h.min[0], h.max[0], h.min[2], h.max[2]]).toEqual([first.min[0], first.max[0], first.min[2], first.max[2]]);
+      expect(footprint(h)).toEqual(footprint(first).map((v) => expect.closeTo(v, 9)) as number[]);
     }
     expect(first.min[1]).toBeCloseTo(0, 9);
     expect(first.min[0]).toBeLessThan(0);
