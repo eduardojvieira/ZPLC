@@ -11,7 +11,12 @@ function rows(path: string): string[][] {
   return readFileSync(path, 'utf8')
     .split('\n')
     .filter((line) => line.startsWith('|'))
-    .map((line) => line.split('|').slice(1, -1).map((cell) => cell.trim()));
+    .map((line) =>
+      line
+        .split('|')
+        .slice(1, -1)
+        .map((cell) => cell.trim()),
+    );
 }
 
 describe('the interface vocabulary table', () => {
