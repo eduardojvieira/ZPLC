@@ -34,8 +34,15 @@ const twice = (pieces: readonly { at: unknown; shape: unknown; yaw: number }[]) 
 const deg = (rad: number) => (rad * 180) / Math.PI;
 
 describe('operator panel models (VIS-014)', () => {
-  it('PRT-009 the operator panel family draws the four operator parts', () => {
-    expect(Object.keys(OPERATOR)).toEqual(['push-button', 'selector-switch', 'emergency-stop', 'indicator-light']);
+  it('PRT-009 the operator panel family draws the six operator parts', () => {
+    expect(Object.keys(OPERATOR)).toEqual([
+      'push-button',
+      'selector-switch',
+      'emergency-stop',
+      'indicator-light',
+      'stack-light',
+      'potentiometer',
+    ]);
   });
 
   it('VIS-016 the head of a pressed push button travels into its collar', async () => {
@@ -132,5 +139,45 @@ describe('operator panel models (VIS-014)', () => {
     expect(slot(lit, 'lens').role).toBe('lamp');
     expect(pieceExtent(slot(lit, 'halo'))[0]).toBeGreaterThan(pieceExtent(slot(lit, 'lens'))[0]);
     expect(twice(lit)).toEqual([]);
+  });
+
+  it('VIS-016 a lit stack light segment lights up and grows; one segment per signal, red on top, green at the bottom', async () => {
+    const core = await coreOf(lone('stack-light'));
+    const pieces = () => partModel(viewOf(core, 'it'))!;
+    const off = pieces();
+    const segs = ['red', 'amber', 'green'].map((c) => slot(off, `segment-${c}`));
+    expect(segs.map((p) => p.role)).toEqual(['lampOff', 'lampOff', 'lampOff']);
+    expect(segs[0]!.at[1]).toBeGreaterThan(segs[1]!.at[1]);
+    expect(segs[1]!.at[1]).toBeGreaterThan(segs[2]!.at[1]);
+    const bounds = modelBounds(viewOf(core, 'it'))!;
+    for (const c of ['red', 'amber', 'green']) {
+      core.apply({ [`It.${c}`]: true });
+      core.advance(5);
+      const lit = slot(pieces(), `segment-${c}`);
+      expect(lit.role).toBe('lamp');
+      expect(pieceExtent(lit)[0]).toBeGreaterThan(pieceExtent(slot(off, `segment-${c}`))[0]);
+      const b = modelBounds(viewOf(core, 'it'))!;
+      for (const i of [0, 2]) {
+        expect(b.min[i]!).toBeCloseTo(bounds.min[i]!, 9);
+        expect(b.max[i]!).toBeCloseTo(bounds.max[i]!, 9);
+      }
+      core.apply({ [`It.${c}`]: false });
+      core.advance(5);
+    }
+  });
+
+  it('VIS-016 the pointer of a potentiometer turns from -135 degrees at the minimum to +135 at the maximum', async () => {
+    const core = await coreOf(lone('potentiometer', { min: 0, max: 100 }));
+    const pointer = () => slot(partModel(viewOf(core, 'it'))!, 'pointer');
+    expect(pointer().role).toBe('mark');
+    for (const [value, angle] of [
+      [0, -135],
+      [50, 0],
+      [100, 135],
+    ] as const) {
+      core.operate('It.value', value);
+      core.advance(5);
+      expect(deg(pointer().yaw)).toBeCloseTo(angle, 9);
+    }
   });
 });
