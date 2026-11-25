@@ -305,3 +305,16 @@ describe('LRN-012 every Foundation and Intermediate lesson can be completed in s
     },
   );
 });
+
+describe('CRS-008 every lesson states its languages', () => {
+  it('CRS-008 gives every lesson a non-empty list of known languages, and the new modules use ST, LD, FBD and SFC', () => {
+    for (const lesson of LESSON_INDEX.lessons) {
+      expect([lesson.id, lesson.languages.length > 0]).toEqual([lesson.id, true]);
+      for (const language of lesson.languages) expect([lesson.id, ALL.includes(language)]).toEqual([lesson.id, true]);
+    }
+    const used = new Set(LESSON_INDEX.lessons.filter((lesson) => lesson.module >= 12).flatMap((lesson) => lesson.languages));
+    for (const language of ['ST', 'LD', 'FBD', 'SFC']) expect([language, used.has(language as never)]).toEqual([language, true]);
+    // Instruction List is a SHOULD: nothing is asserted for it.
+    console.log(`CRS-008: IL ${used.has('IL' as never) ? 'is' : 'is not'} used in modules 12 and up`);
+  });
+});
