@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, win32 } from 'node:path';
+import { basename, join, win32 } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { caseId, cellLocation, loadCases, parseExpectation } from './cases';
@@ -324,7 +324,7 @@ describe('loadCases', () => {
 
   it('lets a case bring extra source files and rejects one that is missing', () => {
     const [found] = load({ 'p.st': 'x', 'lib.st': 'x', 'p.expect.json': runtime({ files: ['lib.st'] }) });
-    expect(found!.extras.map((path) => path.split('/').pop())).toEqual(['lib.st']);
+    expect(found!.extras.map((path) => basename(path))).toEqual(['lib.st']);
     expect(() => load({ 'p.st': 'x', 'p.expect.json': runtime({ files: ['lib.st'] }) })).toThrow('lib.st');
   });
 
@@ -341,7 +341,7 @@ describe('loadCases', () => {
       'lib.st': 'x',
       'p.expect.json': JSON.stringify({ requirement: 'CMP-035', title: 'x', build: 'fails', files: ['lib.st'] }),
     });
-    expect(found!.extras.map((path) => path.split('/').pop())).toEqual(['lib.st']);
+    expect(found!.extras.map((path) => basename(path))).toEqual(['lib.st']);
   });
 
   it('knows each case by its path under the root, without the extension', () => {

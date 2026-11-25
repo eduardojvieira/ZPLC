@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { builderFilePatterns, packagedByPatterns } from './electronBuilderFiles';
 import { DEV_ONLY_VARIABLE, assertAsarHasNoDevOnlyCode, listAsarFiles, packagedAsarPath } from './run-packaged-desktop-smoke';
 
-const read = (relative: string) => readFileSync(join(import.meta.dir, relative), 'utf8');
+const read = (relative: string) => readFileSync(join(import.meta.dir, relative), 'utf8').replaceAll('\r\n', '\n');
 
 type AsarEntry = { files?: Record<string, AsarEntry>; size?: number; offset?: string };
 

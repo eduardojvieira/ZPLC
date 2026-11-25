@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 // installs those guards on the window, and that nothing else in it reloads or relaxes the permission handler. The real
 // key press and the real window close are journeys 10 and 53.
 const electronDir = path.dirname(fileURLToPath(import.meta.url));
-const mainSource = readFileSync(path.join(electronDir, 'main.ts'), 'utf8');
+const mainSource = readFileSync(path.join(electronDir, 'main.ts'), 'utf8').replaceAll('\r\n', '\n');
 
 describe('close guard window wiring', () => {
   it('installs the close veto and the reload chord guard on the window, and reloads only through the guard', () => {

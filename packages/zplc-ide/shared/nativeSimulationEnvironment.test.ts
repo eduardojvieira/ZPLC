@@ -23,7 +23,7 @@ describe('native simulation child environment', () => {
     });
     expect(nativeSimulationEnvironment(inherited, false, '/resources', USER_DATA, 'win32')).toEqual({
       PATH: '/safe/bin',
-      ZPLC_NATIVE_SIM_BIN: '/resources/native-runtime/zplc_runtime.exe',
+      ZPLC_NATIVE_SIM_BIN: path.join('/resources', 'native-runtime', 'zplc_runtime.exe'),
       ZPLC_PERSIST_ROOT: STUDIO_STORE,
       ...LOOPBACK,
     });

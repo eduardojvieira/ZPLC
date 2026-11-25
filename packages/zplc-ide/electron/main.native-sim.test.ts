@@ -970,8 +970,8 @@ describe('NativeSimulationSupervisor', () => {
 
   it('keeps packaged native runtime lookup ahead of repo build fallbacks', () => {
     const supervisorSource = readFileSync(path.join(ELECTRON_DIR, '..', 'shared', 'nativeSimulationSupervisor.ts'), 'utf8');
-    const packagedRuntimePath = '/tmp/zplc-packaged-app/Contents/Resources/native-runtime/zplc_runtime';
-    const repoRuntimePath = '/workspace/ZPLC/firmware/lib/zplc_core/build/zplc_runtime';
+    const packagedRuntimePath = path.resolve('/tmp/zplc-packaged-app/Contents/Resources/native-runtime/zplc_runtime');
+    const repoRuntimePath = path.resolve('/workspace/ZPLC/firmware/lib/zplc_core/build/zplc_runtime');
     const resolvedPath = resolveDefaultSimulatorBinaryPathForTests({
       cwd: '/workspace/ZPLC/packages/zplc-ide',
       resourcesPath: '/tmp/zplc-packaged-app/Contents/Resources',
@@ -984,7 +984,7 @@ describe('NativeSimulationSupervisor', () => {
   });
 
   it('keeps a packaged native runtime pinned despite inherited development overrides', () => {
-    const environmentSource = readFileSync(path.join(ELECTRON_DIR, '..', 'shared', 'nativeSimulationEnvironment.ts'), 'utf8');
+    const environmentSource = readFileSync(path.join(ELECTRON_DIR, '..', 'shared', 'nativeSimulationEnvironment.ts'), 'utf8').replaceAll('\r\n', '\n');
     const bundledRuntime = '/tmp/zplc-packaged-app/resources/native-runtime/zplc_runtime';
     const repoRuntime = '/workspace/ZPLC/firmware/lib/zplc_core/build/zplc_runtime';
 

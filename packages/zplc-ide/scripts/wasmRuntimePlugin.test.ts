@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { buildWasmRuntime, isCi, runtimeModuleSource, WASM_RUNTIME_MODULE_ID, type Spawned } from './wasmRuntimePlugin';
 
@@ -47,7 +48,7 @@ describe('the build of the browser runtime inside the IDE build (IDE-025)', () =
         return wrote(command);
       },
     });
-    expect(seen[1]).toBe('/repo/tools/wasm-core/build.ts');
+    expect(seen[1]).toBe(join('/repo', 'tools', 'wasm-core', 'build.ts'));
     expect(seen[seen.indexOf('--out') + 1]).toMatch(/zplc-ide-wasm-.*\/zplc-runtime\.wasm$/);
     expect(seen[seen.indexOf('--manifest') + 1]).toMatch(/zplc-runtime\.json$/);
   });

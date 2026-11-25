@@ -173,7 +173,7 @@ describe('COM-030: the MCP server cannot open the device link', () => {
     // manager, the upload and deploy protocol, the handshake, and the Electron main process that owns the
     // port selection. None of them is in the graph.
     const deviceLink = new RegExp(
-      String.raw`(?:^|\/)(?:runtime\/(?:serialAdapter|serialConsole|connectionManager|deviceHandshake|uploadProtocol|uploadTrace|` +
+      String.raw`(?:^|[\\/])(?:runtime\/(?:serialAdapter|serialConsole|connectionManager|deviceHandshake|uploadProtocol|uploadTrace|` +
         String.raw`provisioningCommands)|uploader\/|electron\/(?:main|preload|serialPort))`,
     );
     expect(modules.filter((path) => deviceLink.test(path))).toEqual([]);
@@ -215,7 +215,7 @@ describe('COM-030: the MCP server cannot open the device link', () => {
     const importing = (target: RegExp) =>
       modules.filter((path) => metafile.inputs[path]!.imports.some((edge) => target.test(edge.path))).sort();
     expect(importing(/^(?:node:)?child_process$/)).toEqual(['shared/spawnAllowList.ts', 'src/cli/firmwareBuildRunner.ts']);
-    expect(importing(/(?:^|\/)spawnAllowList(?:\.(?:js|ts))?$/)).toEqual([
+    expect(importing(/(?:^|[\\/])spawnAllowList(?:\.(?:js|ts))?$/)).toEqual([
       'shared/nativeSimulationSupervisor.ts',
       'src/cli/firmwareBuildRunner.ts',
       'src/cli/toolApiToolchain.ts',
