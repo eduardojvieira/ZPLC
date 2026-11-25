@@ -4,7 +4,13 @@
  * way the model tests build views): the size and state of the part as the plant core publishes it in the reference scenes, with
  * the keys a state changes. A kind that never changes its look has one state.
  */
-import type { BodyPose, FactValue, PartView, Vec3 } from '../../src/plant/contracts';
+import type { BodyPose, FactValue, PartView, ScenePart, Vec3 } from '../../src/plant/contracts';
+import { loadJolt } from '../../src/plant/core/jolt';
+import { itemParts, type PartRuntime, type RuntimePartDefinition } from '../../src/plant/core/parts/items';
+import { stationParts } from '../../src/plant/core/parts/layerPalletizer';
+import { machiningParts } from '../../src/plant/core/parts/machining';
+import { stackerParts } from '../../src/plant/core/parts/stackerCrane';
+import { createWorld } from '../../src/plant/core/world';
 
 type Facts = Readonly<Record<string, FactValue>>;
 type Signals = Readonly<Record<string, boolean | number>>;
@@ -17,6 +23,17 @@ export interface CatalogueState {
   yawDeg?: number;
   /** How far the part is raised above where it stands, in metres, for a part whose state is its pose (a machining door). */
   rise?: number;
+  /** For a machine: what the commands do to the part in the core, as [commands by short name, milliseconds to run], in order. */
+  steps?: readonly (readonly [Signals, number])[];
+}
+/** A part kind that publishes several views is drawn whole: the real part, in a one-part scene, driven through the core. */
+export interface CatalogueMachine {
+  /** Every part id the core part publishes, the kind's own first. */
+  views: readonly string[];
+  scene: readonly ScenePart[];
+  defs: readonly RuntimePartDefinition[];
+  /** Run before the steps of every state (a machining centre is fed its blank). */
+  setup?: readonly (readonly [Signals, number])[];
 }
 export interface CatalogueKind {
   id: string;
@@ -31,6 +48,7 @@ export interface CatalogueKind {
   /** True when the model shows a different look in some state. */
   stateful: boolean;
   states: readonly CatalogueState[];
+  machine?: CatalogueMachine;
 }
 
 const still = (label = 'as published'): CatalogueState[] => [{ label }];
@@ -52,11 +70,17 @@ const kind = (
   stateful: states.length > 1,
   states,
 });
+const machine = (
+  k: CatalogueKind,
+  views: readonly string[],
+  scene: readonly ScenePart[],
+  defs: readonly RuntimePartDefinition[],
+  setup?: CatalogueMachine['setup'],
+): CatalogueKind => ({ ...k, machine: { views, scene, defs, ...(setup ? { setup } : {}) } });
 const pick = (label: string, key: string, ...values: FactValue[]): CatalogueState[] =>
   values.map((v) => ({ label: `${label} ${String(v)}`, state: { [key]: v } }));
 
 const BELT_STATE = { speedMps: 0, stalled: false, jammed: false };
-const CRANE_RACK = { columns: 3, levels: 2, bayPitchM: 1, levelPitchM: 0.6 };
 const ARM_AXES = {
   x: 0,
   y: 0,
@@ -192,32 +216,50 @@ export const CATALOGUE: readonly CatalogueKind[] = [
     { label: 'moved on X, Y, Z', state: { x: 0.9, y: 0.6, z: 0.6 } },
   ]),
   // stations
-  kind('stacker-crane', [0.6, 0.04, 0.16], 0.05, { fraction: 0, bay: 0, level: 0 }, [
-    { label: 'fork centre' },
-    { label: 'fork left', state: { fraction: -1 } },
-    { label: 'fork right', state: { fraction: 1 } },
-  ]),
-  kind('stacker-mast', [0.1, 1.7, 0.1], 0.85, {}, still()),
-  kind('stacker-rack', [2.4, 1.3, 0.05], 0.65, CRANE_RACK, still()),
-  kind('layer-palletizer', [0.8, 0.03, 0.6], 0.555, { closeFraction: 0 }, [
-    { label: 'jaws open' },
-    { label: 'jaws closed', state: { closeFraction: 1 } },
-  ]),
-  kind('manipulator-frame', [1.5, 0.06, 0.06], 1.52, {}, still()),
-  kind('manipulator-beam', [0.08, 0.08, 0.08], 1.42, {}, still()),
-  kind('layer-pusher', [0.8, 0.5, 0.05], 0.79, {}, still()),
-  kind('layer-plate', [0.05, 0.5, 0.7], 0.79, {}, still()),
-  kind('machining-centre', [1, 0.5, 0.6], 0.75, { fraction: 0, text: 'idle', busy: false }, [
-    { label: 'idle' },
-    { label: 'busy', state: { text: 'busy', busy: true, fraction: 0.5 } },
-    { label: 'done', state: { text: 'done', busy: false, fraction: 1 } },
-  ]),
-  // The core lowers a door under the belt (fraction 0, open) and raises it to close the chamber (fraction 1): its pose moves 0.32 m.
-  kind('machining-door', [0.05, 0.3, 0.6], 0.33, { fraction: 0 }, [
-    { label: 'lowered (open)' },
-    { label: 'half risen', state: { fraction: 0.5 }, rise: 0.16 },
-    { label: 'risen (closed)', state: { fraction: 1 }, rise: 0.32 },
-  ]),
+  machine(
+    kind('stacker-crane', [0.6, 0.04, 0.16], 0.05, { fraction: 0, bay: 0, level: 0 }, [
+      { label: 'fork centre' },
+      { label: 'fork left', steps: [[{ forkLeft: true }, 2500]] },
+      { label: 'fork right', steps: [[{ forkRight: true }, 2500]] },
+      { label: 'raised, bay 2, level 2', steps: [[{ raise: true, bay: 2, level: 2 }, 5000]] },
+    ]),
+    ['stacker-crane', 'stacker-mast', 'stacker-rack'],
+    [{ id: 'crane', part: 'stacker-crane', name: 'Crane1', position: [0, 0, 0], rotationYDeg: 0, config: {} }],
+    [stackerParts[0]!],
+  ),
+  machine(
+    kind('layer-palletizer', [0.8, 0.03, 0.6], 0.555, { closeFraction: 0 }, [
+      { label: 'jaws open' },
+      { label: 'jaws closed', steps: [[{ grip: true }, 1000]] },
+      { label: 'pad raised, jaws closed', steps: [[{ grip: true, ySet: 0.6 }, 2000]] },
+    ]),
+    ['layer-palletizer', 'manipulator-frame', 'manipulator-beam', 'layer-pusher', 'layer-plate'],
+    [{ id: 'pal', part: 'layer-palletizer', name: 'Pal1', position: [0, 0, 0], rotationYDeg: 0, config: { variant: 'numeric' } }],
+    [stationParts[0]!],
+  ),
+  machine(
+    kind('machining-centre', [1, 0.5, 0.6], 0.75, { fraction: 0, text: 'idle', busy: false }, [
+      { label: 'idle, doors open' },
+      { label: 'busy, doors closed', steps: [[{ feed: true, start: true }, 500]] },
+      {
+        label: 'done, doors open',
+        steps: [
+          [{ feed: true, start: true }, 500],
+          [{}, 2500],
+        ],
+      },
+    ]),
+    ['machining-centre', 'machining-door'],
+    [
+      { id: 'mc', part: 'machining-centre', name: 'Mc1', position: [0, 0.45, 0], rotationYDeg: 0, config: { cycleMs: 1000 } },
+      { id: 'w1', part: 'workpiece', name: 'W1', position: [-0.3, 0.45, 0], rotationYDeg: 0, config: { colour: 'red' } },
+    ],
+    [machiningParts[0]!, ...itemParts],
+    [
+      [{ feed: true }, 600],
+      [{}, 600],
+    ],
+  ),
   // process
   kind('tank', [0.4, 1, 0.25], 0.5, { level: 0, heightM: 1, fraction: 0, spilling: false }, [
     { label: 'empty' },
@@ -247,6 +289,46 @@ export function catalogueView(kind: CatalogueKind, state: CatalogueState): PartV
     state: { ...kind.state, ...state.state },
     signals: { ...kind.signals, ...state.signals },
   };
+}
+
+/**
+ * The views a kind publishes in a state: one for a plain kind; for a machine, every view of the real part after its steps have run
+ * in the core (5 ms a step, as the core tests drive it).
+ */
+export async function catalogueViews(k: CatalogueKind, state: CatalogueState): Promise<PartView[]> {
+  const m = k.machine;
+  if (!m) return [catalogueView(k, state)];
+  const world = createWorld(await loadJolt());
+  try {
+    world.addBody({
+      id: 'floor',
+      kind: 'box',
+      half: [10, 0.5, 5],
+      position: [0, -0.5, 0],
+      rotationYDeg: 0,
+      massKg: 0,
+      friction: 0.6,
+      motion: 'static',
+      layer: 'static',
+    });
+    const runtimes: PartRuntime[] = m.scene.map((p) => {
+      const rt = m.defs.find((d) => d.id === p.part)!.runtime(p, () => 0.5);
+      rt.build(world, p);
+      return rt;
+    });
+    const name = m.scene.find((p) => p.part === k.id)!.name;
+    for (const [short, ms] of [...(m.setup ?? []), ...(state.steps ?? [])]) {
+      const commands = Object.fromEntries(Object.entries(short).map(([key, v]) => [`${name}.${key}`, v]));
+      for (let i = 0; i < ms / 5; i += 1) {
+        for (const rt of runtimes) rt.beforeStep(commands);
+        world.step(5);
+        for (const rt of runtimes) rt.afterStep();
+      }
+    }
+    return runtimes.flatMap((rt) => rt.views()).filter((v) => m.views.includes(v.part));
+  } finally {
+    world.dispose();
+  }
 }
 
 export interface CatalogueItem {

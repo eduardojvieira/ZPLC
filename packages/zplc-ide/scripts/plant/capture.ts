@@ -28,7 +28,7 @@ import { trustedDevelopmentRendererUrl } from '../../electron/security';
 import type { BodyPose, PlantSnapshot, Vec3 } from '../../src/plant/contracts';
 import { fitCamera } from '../../src/plant/view/camera';
 import { snapshotBounds } from '../../src/plant/view/geometry';
-import { CATALOGUE, catalogueView, ITEMS } from './catalogueStates';
+import { CATALOGUE, catalogueViews, ITEMS } from './catalogueStates';
 import { assert, Cdp, drain, freePort, HOST, packageRoot, stop, waitFor, type OwnedProcess } from '../run-desktop-smoke';
 
 const flag = (name: string): string | undefined => {
@@ -267,16 +267,18 @@ const emptySnapshot = (parts: PlantSnapshot['parts'], items: PlantSnapshot['item
 
 /**
  * The catalogue (plan-vis C8). A stage of belt-to-sensor stays open per display mode and quality level and is handed one snapshot per
- * cell: the part view of a kind in a state, alone on the floor, or one item. The frame is what the product's renderer draws from it.
+ * cell: the part views of a kind in a state, alone on the floor (a machine whole), or one item. The frame is what the product's renderer draws from it.
  */
 async function catalogue(page: Cdp): Promise<void> {
   const cells = [
-    ...CATALOGUE.flatMap((kind) =>
-      kind.states.map((state) => ({
-        label: `${kind.id}: ${state.label}`,
-        ...catalogueCell(emptySnapshot([catalogueView(kind, state)], [])),
-      })),
-    ),
+    ...(await Promise.all(
+      CATALOGUE.flatMap((kind) =>
+        kind.states.map(async (state) => ({
+          label: `${kind.id}: ${state.label}`,
+          ...catalogueCell(emptySnapshot(await catalogueViews(kind, state), [])),
+        })),
+      ),
+    )),
     ...ITEMS.map((item) => {
       const [, h] = item.pose.size;
       const pose: BodyPose = { id: item.id, part: 'box', q: [0, 0, 0, 1], p: [0, h / 2, 0], ...item.pose };
