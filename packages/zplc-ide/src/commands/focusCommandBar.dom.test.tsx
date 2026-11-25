@@ -56,4 +56,3 @@ describe('view.focusCommandBar', () => {
     await dom.waitFor(() => expect(dom.screen.getByRole('toolbar').contains(document.activeElement)).toBe(true));
   });
 });
-

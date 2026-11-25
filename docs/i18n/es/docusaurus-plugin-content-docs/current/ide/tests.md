@@ -54,15 +54,15 @@ Cuando una ejecución no puede empezar, la pestaña y la notificación dicen por
 
 Cada acción anterior es un comando de la paleta, y las que se usan a menudo tienen un atajo. Ninguna actúa sobre una placa: una prueba siempre se ejecuta en la simulación de esta computadora.
 
-| Comando                                   | Atajo                      | Qué hace                                                                                                  |
-| ----------------------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------- |
-| **Mostrar las pruebas**                   | ninguno                    | Muestra la actividad Pruebas.                                                                             |
-| **Mostrar los resultados de las pruebas** | ninguno                    | Muestra la pestaña Resultados de las pruebas.                                                             |
+| Comando                                   | Atajo                          | Qué hace                                                                                                  |
+| ----------------------------------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| **Mostrar las pruebas**                   | ninguno                        | Muestra la actividad Pruebas.                                                                             |
+| **Mostrar los resultados de las pruebas** | ninguno                        | Muestra la pestaña Resultados de las pruebas.                                                             |
 | **Ejecutar todas las pruebas**            | `Ctrl+Shift+T` (`Cmd+Shift+T`) | Ejecuta todas las pruebas.                                                                                |
-| **Ejecutar las pruebas que fallaron**     | ninguno                    | Ejecuta las pruebas cuyo último resultado falló.                                                          |
-| **Ejecutar la prueba seleccionada**       | ninguno                    | Ejecuta el archivo de escenario del documento activo o, si no, la prueba elegida en la actividad Pruebas. |
-| **Nueva prueba**                          | ninguno                    | Escribe una primera prueba para el primer programa.                                                       |
-| **Comprobar los enclavamientos**          | ninguno                    | Ejecuta la comprobación de cobertura de enclavamientos.                                                   |
+| **Ejecutar las pruebas que fallaron**     | ninguno                        | Ejecuta las pruebas cuyo último resultado falló.                                                          |
+| **Ejecutar la prueba seleccionada**       | ninguno                        | Ejecuta el archivo de escenario del documento activo o, si no, la prueba elegida en la actividad Pruebas. |
+| **Nueva prueba**                          | ninguno                        | Escribe una primera prueba para el primer programa.                                                       |
+| **Comprobar los enclavamientos**          | ninguno                        | Ejecuta la comprobación de cobertura de enclavamientos.                                                   |
 
 Un escenario se ejecuta completo, así que **Ejecutar la prueba seleccionada** nunca ejecuta una sola expectativa. Sin un archivo de escenario abierto y sin una prueba elegida, dice "No hay una prueba que ejecutar aquí" y no ejecuta nada.
 

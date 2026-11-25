@@ -29,15 +29,15 @@ export function useGuideCommands(): void {
   useEffect(() => {
     const unbind = bindCommands({ 'view.focusCommandBar': focusCommandBar });
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape' && !event.defaultPrevented && origin && commandBar()?.contains(document.activeElement)) {
+      if (event.key === 'Escape' && origin && commandBar()?.contains(document.activeElement)) {
         event.preventDefault();
         giveFocusBack();
       }
     };
-    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keydown', onKeyDown, true);
     return () => {
       unbind();
-      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keydown', onKeyDown, true);
     };
   }, []);
 }

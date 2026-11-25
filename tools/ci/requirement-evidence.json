@@ -2707,6 +2707,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"48 The main screens pass the rendered accessibility check in light, dark and high contrast"}
   ],
   "UX-025": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/commands/focusCommandBar.dom.test.tsx","test":"UX-025 view.focusCommandBar works inside the code editor without Ctrl+M"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/InstanceMonitor.dom.test.tsx","test":"Function-block instance monitor (UX-001, UX-025) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/shell/claimLostFocus.test.ts","test":"the focus that a closed screen leaves behind (UX-025, UX-028)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit dialogs (UX-001, UX-025 stopgap)","partial":true},

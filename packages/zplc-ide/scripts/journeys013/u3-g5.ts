@@ -16,17 +16,21 @@ export const journeysU3G5: Journey[] = [
       await app.click(button('Open project', 'contains'), 'the Open project button');
       await app.until('the workbench', async () => (await app.visible(css('[role="toolbar"]'))) || undefined);
       await app.press('Ctrl+Shift+E');
-      await app.until('the Motor.st row', async () =>
-        (await app.eval<boolean>(
-          `(() => { const row = [...document.querySelectorAll('button, [role="treeitem"], [role="row"]')].find((el) => (el.textContent ?? '').includes('src/Motor.st')); if (!row) return false; row.click(); return true; })()`,
-        )) || undefined,
+      await app.until(
+        'the Motor.st row',
+        async () =>
+          (await app.eval<boolean>(
+            `(() => { const row = [...document.querySelectorAll('button, [role="treeitem"], [role="row"]')]` +
+              `.find((el) => (el.textContent ?? '').includes('src/Motor.st')); if (!row) return false; row.click(); return true; })()`,
+          )) || undefined,
       );
-      await app.until('the code editor', async () => (await app.visible(css('.monaco-editor textarea'))) || undefined);
-      await app.eval(`document.querySelector('.monaco-editor textarea').focus()`);
+      await app.until('the code editor', async () => (await app.visible(css('.monaco-editor textarea.inputarea'))) || undefined);
+      await app.eval(`document.querySelector('.monaco-editor textarea.inputarea').focus()`);
       assert(await app.eval<boolean>(inEditor), 'The focus should be in the code editor before the shortcut');
       await app.press('Ctrl+Alt+C');
-      await app.until('the focus in the command bar', async () =>
-        (await app.eval<boolean>(`Boolean(document.activeElement?.closest('[data-command-bar]'))`)) || undefined,
+      await app.until(
+        'the focus in the command bar',
+        async () => (await app.eval<boolean>(`Boolean(document.activeElement?.closest('[data-command-bar]'))`)) || undefined,
       );
       await app.press('Escape');
       await app.until('the focus back in the code editor', async () => (await app.eval<boolean>(inEditor)) || undefined);
