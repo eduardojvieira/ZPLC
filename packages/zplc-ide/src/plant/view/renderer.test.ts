@@ -455,28 +455,33 @@ describe('display preferences reach the renderer', () => {
     expect(drawn[drawn.length - 1]?.z).toBeCloseTo(0, 1);
   });
 
-  it('VIS-003 the tank fill changes with the snapshot and allocates no new mesh per frame', () => {
+  it('VIS-003 the tank liquid inside the glass vessel changes with the snapshot and allocates no new mesh per frame', () => {
     const { r, mats, scenes } = build();
     const snap = (fraction: number) =>
       ({ items: [], parts: [{ ...view('tank', { size: [1, 2, 0.5] }, { fraction }), id: 'tk' }] }) as unknown as Parameters<
         typeof r.setSnapshot
       >[0];
-    type Node = { children: Node[]; scale: { y: number }; position: { y: number }; visible: boolean; userData: { part?: string } };
+    type Node = {
+      children: Node[];
+      visible: boolean;
+      userData: { part?: string; slot?: string; shape?: { length?: number } };
+    };
     const count = (o: Node): number => 1 + o.children.reduce((n, c) => n + count(c), 0);
     const world = scenes[0] as unknown as Node;
     r.setSnapshot(snap(0.4));
-    const tankMesh = world.children.find((c) => c.userData.part === 'tank');
-    const fill = tankMesh?.children[0];
-    expect(tankMesh?.children).toHaveLength(1);
-    expect(fill?.scale.y).toBeCloseTo(0.8, 9);
-    expect(fill?.position.y).toBeCloseTo(-0.6, 9);
+    const tankMesh = world.children.find((c) => c.userData.part === 'tank')!;
+    const liquid = tankMesh.children.find((c) => c.userData.slot === 'liquid')!;
+    const vessel = tankMesh.children.find((c) => c.userData.slot === 'vessel')!;
+    const height = (m: Node): number => (m.userData.shape as { length?: number }).length ?? NaN;
+    const body = (vessel.userData.shape as unknown as { length: number }).length;
+    expect(height(liquid)).toBeCloseTo(0.4 * body, 2);
     const nodes = count(world);
     const materials = mats.length;
     for (const f of [0.1, 0.9, 0, 1]) r.setSnapshot(snap(f));
-    expect(fill?.scale.y).toBeCloseTo(2, 9);
-    expect(fill?.visible).toBe(true);
+    expect(height(liquid)).toBeCloseTo(body, 2);
+    expect(liquid.visible).toBe(true);
     r.setSnapshot(snap(0));
-    expect(fill?.visible).toBe(false);
+    expect(liquid.visible).toBe(false);
     expect(count(world)).toBe(nodes);
     expect(mats.length).toBe(materials);
     expect(world.children.find((c) => c.userData.part === 'tank')).toBe(tankMesh);
