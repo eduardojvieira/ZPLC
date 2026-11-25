@@ -7097,8 +7097,17 @@ export const JOURNEYS: Journey[] = [
         'the tab of Motor.st to show the paste as unsaved',
         async () => (await app.eval<string>(`${editorTab('file:src/Motor.st')}?.textContent ?? ''`)).includes('*') || undefined,
       );
-      await app.press('Ctrl+S');
-      await app.until('the save to be announced', async () => /Saved/.test(await live('polite')) || undefined);
+      // A save that meets a late change of the editor's model is refused, the file stays modified and the tab keeps its mark ("Could not
+      // save", spoken assertively): a person presses Ctrl+S again. Each attempt waits for the announcement, never longer than 15 s.
+      for (let attempt = 1; ; attempt++) {
+        await app.press('Ctrl+S');
+        try {
+          await app.until('the save to be announced', async () => /Saved/.test(await live('polite')) || undefined, 15_000);
+          break;
+        } catch (error) {
+          if (attempt === 3) throw new Error(`${(error as Error).message} (assertive: "${await live('assertive')}")`);
+        }
+      }
 
       // no keyboard trap in the code editor: Tab types a tab there, and Ctrl+M (Monaco's Tab focus mode) makes Tab and Shift+Tab move the
       // focus
