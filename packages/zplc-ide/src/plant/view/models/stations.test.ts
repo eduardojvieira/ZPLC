@@ -105,7 +105,7 @@ describe('stacker crane models (VIS-014)', () => {
       const context = { travel: 0, scenePart: part };
       const rest = partModel(mast, context)!;
       expect(slot(rest, 'rail-floor').role).toBe('steel');
-      expect(slot(rest, 'rail-top').role).toBe('steel');
+      expect(rest.some((p) => p.slot === 'rail-top')).toBe(false);
       expect(slot(rest, 'mast').role).toBe('painted');
       const railsAt = (dx: number) => {
         const v = mastAt(mast, dx);
@@ -288,7 +288,12 @@ describe('machining centre models (VIS-014)', () => {
     expect(slot(pieces, 'spindle').role).toBe('steel');
     expect(slot(pieces, 'table').role).toBe('steel');
     expect(slot(pieces, 'pendant').role).toBe('housing');
-    expect(slot(pieces, 'wall-back').role).toBe('painted');
+    expect(slot(pieces, 'wall-back').role).toBe('housing');
+    // The body is inset so neighbouring machines stand apart, and its roof is a darker panel than the walls.
+    const body = pieces.filter((p) => !p.slot.startsWith('light-') && p.slot !== 'pendant');
+    for (const p of body) expect(Math.abs(p.at[2]) + pieceExtent(p)[2]).toBeLessThanOrEqual(0.85 * (centre.pose.size[2] / 2) + 1e-9);
+    expect(slot(pieces, 'roof').role).toBe('frame');
+    expect(slot(pieces, 'roof').role).not.toBe(slot(pieces, 'wall-back').role);
     expect(slotsOf(pieces, 'plinth').length).toBeGreaterThan(0);
     expect(new Set(slotsOf(pieces, 'plinth').map((p) => p.role))).toEqual(new Set(['frame']));
     expect(slotsOf(pieces, 'light-').length).toBe(3);
