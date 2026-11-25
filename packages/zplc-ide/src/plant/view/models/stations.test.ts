@@ -260,3 +260,72 @@ describe('layer palletizer models (VIS-014)', () => {
     expect(partModel(pad)!.length).toBeGreaterThan(0);
   });
 });
+
+const machiningPart: ScenePart = {
+  id: 'mc',
+  part: 'machining-centre',
+  name: 'Mc1',
+  position: [0, 0.5, 0],
+  rotationYDeg: 0,
+  config: {},
+};
+
+/** The machining centre and its two doors, as the real core publishes them at rest. */
+async function machining(): Promise<readonly PartView[]> {
+  const core = await createPlantCore({ schemaVersion: 1, name: 'mc', parts: [machiningPart], cameras: [] });
+  cores.push(core);
+  return core.snapshot().parts;
+}
+
+describe('machining centre models (VIS-014)', () => {
+  it('VIS-014 the housing has its window, spindle, table, pendant and stack light, and leaves the door openings clear', async () => {
+    const views = await machining();
+    const centre = views.find((v) => v.part === 'machining-centre')!;
+    const doors = views.filter((v) => v.part === 'machining-door');
+    expect(doors.length).toBe(2);
+    const pieces = partModel(centre)!;
+    expect(slot(pieces, 'window').role).toBe('glass');
+    expect(slot(pieces, 'spindle').role).toBe('steel');
+    expect(slot(pieces, 'table').role).toBe('steel');
+    expect(slot(pieces, 'pendant').role).toBe('housing');
+    expect(slot(pieces, 'wall-back').role).toBe('painted');
+    expect(slotsOf(pieces, 'plinth').length).toBeGreaterThan(0);
+    expect(new Set(slotsOf(pieces, 'plinth').map((p) => p.role))).toEqual(new Set(['frame']));
+    expect(slotsOf(pieces, 'light-').length).toBe(3);
+    // No piece reaches into the volume of a door at its closed pose.
+    for (const p of pieces)
+      for (const d of doors) {
+        const reach = Math.abs(p.at[0] + centre.pose.p[0] - d.pose.p[0]) - pieceExtent(p)[0] - d.pose.size[0] / 2;
+        expect(reach).toBeGreaterThanOrEqual(-1e-9);
+      }
+  });
+
+  it('VIS-014 the stack light shows running (green) and done (amber); red stays off, as no fault state is published', async () => {
+    const centre = (await machining()).find((v) => v.part === 'machining-centre')!;
+    const roles = (state: PartView['state']) =>
+      slotsOf(partModel({ ...centre, state: { ...centre.state, ...state } })!, 'light-').map((p) => p.role);
+    expect(roles({ busy: false, text: 'idle' })).toEqual(['signalGreenOff', 'signalAmberOff', 'signalRedOff']);
+    expect(roles({ busy: true, text: 'busy 1.0 s' })).toEqual(['signalGreen', 'signalAmberOff', 'signalRedOff']);
+    expect(roles({ busy: false, text: 'done' })).toEqual(['signalGreenOff', 'signalAmber', 'signalRedOff']);
+  });
+
+  it('VIS-014 the spindle head is lowered toward the table while a cycle runs and raised otherwise', async () => {
+    const centre = (await machining()).find((v) => v.part === 'machining-centre')!;
+    const y = (busy: boolean) => slot(partModel({ ...centre, state: { ...centre.state, busy } })!, 'spindle').at[1];
+    expect(y(true)).toBeLessThan(y(false));
+    expect(y(false) - y(true)).toBeCloseTo(0.1, 9);
+  });
+
+  it('VIS-014 the door is a panel with a glass window and a handle, drawn once per view, and does not depend on its travel', async () => {
+    const doors = (await machining()).filter((v) => v.part === 'machining-door');
+    for (const door of doors) {
+      const pieces = partModel(door)!;
+      expect(slot(pieces, 'panel').role).toBe('painted');
+      expect(slot(pieces, 'window').role).toBe('glass');
+      expect(slot(pieces, 'handle').role).toBe('steel');
+      expect(partModel({ ...door, state: { fraction: 0.5 } })).toEqual(pieces);
+      expect(pieces.every((p) => p.visible)).toBe(true);
+    }
+    expect(doors.length).toBe(2);
+  });
+});
