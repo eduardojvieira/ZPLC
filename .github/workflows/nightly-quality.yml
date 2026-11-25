@@ -166,7 +166,10 @@ jobs:
           bun run build:compiler
           build="${RUNNER_TEMP}/zplc-native-sim-build"
           cmake -S firmware/lib/zplc_core -B "${build}" -DCMAKE_BUILD_TYPE=Release
-          cmake --build "${build}" --target zplc_runtime zplc_loopback --config Release
+          # zplc_loopback exists only where the host has the sockets it uses (CMakeLists.txt: if(NOT WIN32)).
+          targets=(zplc_runtime)
+          [ "${RUNNER_OS}" = Windows ] || targets+=(zplc_loopback)
+          cmake --build "${build}" --target "${targets[@]}" --config Release
           runtime=''
           for candidate in "${build}/zplc_runtime" "${build}/zplc_runtime.exe" "${build}/Release/zplc_runtime.exe"; do
             if [ -f "${candidate}" ]; then runtime="${candidate}"; break; fi
@@ -253,7 +256,10 @@ jobs:
           bun run build:compiler
           build="${RUNNER_TEMP}/zplc-native-sim-build"
           cmake -S firmware/lib/zplc_core -B "${build}" -DCMAKE_BUILD_TYPE=Release
-          cmake --build "${build}" --target zplc_runtime zplc_loopback --config Release
+          # zplc_loopback exists only where the host has the sockets it uses (CMakeLists.txt: if(NOT WIN32)).
+          targets=(zplc_runtime)
+          [ "${RUNNER_OS}" = Windows ] || targets+=(zplc_loopback)
+          cmake --build "${build}" --target "${targets[@]}" --config Release
           runtime=''
           for candidate in "${build}/zplc_runtime" "${build}/zplc_runtime.exe" "${build}/Release/zplc_runtime.exe"; do
             if [ -f "${candidate}" ]; then runtime="${candidate}"; break; fi

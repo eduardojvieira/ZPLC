@@ -156,7 +156,7 @@ describe('native simulator builds for the IDE suite (COM-009)', () => {
     Object.values(flow.jobs)
       .flatMap((job) => job.steps)
       .map((step) => step.run ?? '')
-      .filter((run) => /--target zplc_runtime/.test(run));
+      .filter((run) => /--target zplc_runtime|targets=\(zplc_runtime\)/.test(run));
 
   it.each([
     ['ci.yml', workflow],
@@ -164,7 +164,11 @@ describe('native simulator builds for the IDE suite (COM-009)', () => {
   ] as const)('%s builds zplc_loopback with every zplc_runtime it gives the IDE suite', (_name, flow) => {
     const builds = runtimeBuilds(flow);
     expect(builds.length).toBeGreaterThan(0);
-    for (const run of builds.filter((text) => !/zplc-docs-runtime/.test(text))) expect(run).toMatch(/--target zplc_runtime zplc_loopback/);
+    // zplc_loopback exists only where the host has its sockets (CMakeLists.txt: if(NOT WIN32)), so a job that also runs on
+    // Windows adds it on every other system.
+    for (const run of builds.filter((text) => !/zplc-docs-runtime/.test(text))) {
+      expect(run).toMatch(/--target zplc_runtime zplc_loopback|\[ "\$\{RUNNER_OS\}" = Windows \] \|\| targets\+=\(zplc_loopback\)/);
+    }
   });
 });
 
