@@ -157,7 +157,7 @@ const feetOnFloor = (view: PartView, pieces: readonly Piece[]) => {
 const running = (view: PartView, speedMps = 0.5): PartView => ({ ...view, state: { ...view.state, speedMps } });
 
 describe('roller conveyor model (VIS-014, VIS-016)', () => {
-  it('VIS-014 a roller conveyor is a row of steel rollers between two slotted side frames that they stand proud of, on levelling legs', async () => {
+  it('VIS-014 a roller conveyor is steel rollers standing proud of two slotted side frames, on levelling legs', async () => {
     const view = await viewOf(lineScene, 'roller');
     const pieces = partModel(view)!;
     const [length, thickness, width] = view.pose.size;
@@ -194,7 +194,7 @@ describe('roller conveyor model (VIS-014, VIS-016)', () => {
     expect(shown(partModel(running(view, -0.5))!, 'mark-').every((m) => m.yaw === -Math.PI / 2)).toBe(true);
   });
 
-  it('VIS-016 a running roller conveyor shows marks bigger than a belt\'s, so the change reads from the scene\'s first view', async () => {
+  it("VIS-016 a running roller conveyor shows marks bigger than a belt's, so the change reads from the scene's first view", async () => {
     const view = await viewOf(lineScene, 'roller');
     const marks = shown(partModel(running(view))!, 'mark-');
     expect(marks.length).toBeGreaterThanOrEqual(5);
@@ -263,7 +263,7 @@ describe('curved conveyor model (VIS-014, VIS-016)', () => {
 });
 
 describe('chain transfer model (VIS-014, VIS-016)', () => {
-  it('VIS-014 a chain transfer is a roller bed with dark chain strands between its rollers, in a slotted frame on levelling legs', async () => {
+  it('VIS-014 a chain transfer is a roller bed with dark chain strands, in a slotted frame on levelling legs', async () => {
     const view = await viewOf(chainScene, 'chain');
     expect(view.state.text).toBe('lowered');
     const pieces = partModel(view)!;
@@ -299,7 +299,7 @@ describe('chain transfer model (VIS-014, VIS-016)', () => {
     expect(lift('strand-0')).toBeCloseTo(CHAIN.lift + CHAIN.sink, 9);
   });
 
-  it('VIS-016 a running chain transfer shows marks along its rollers while lowered, and across along its strands while raised', async () => {
+  it('VIS-016 a running chain transfer shows marks along its rollers lowered, and across along its strands raised', async () => {
     const lowered = await viewOf(chainScene, 'chain', { 'Chain1.run': true }, 600);
     const along = shown(partModel(lowered)!, 'mark-');
     expect(along.length).toBeGreaterThanOrEqual(2);
@@ -328,7 +328,9 @@ describe('turntable model (VIS-014, VIS-016)', () => {
     expect(slot(pieces, 'ring').role).toBe('steel');
     feetOnFloor(view, pieces);
     const bounds = modelBounds(view)!;
-    [bounds.min[0], bounds.max[0], bounds.min[2], bounds.max[2]].forEach((v, i) => expect(v).toBeCloseTo([-1, 1, -1, 1][i]! * (size / 2), 9));
+    [bounds.min[0], bounds.max[0], bounds.min[2], bounds.max[2]].forEach((v, i) =>
+      expect(v).toBeCloseTo([-1, 1, -1, 1][i]! * (size / 2), 9),
+    );
   });
 
   it('VIS-016 a turned turntable turns its rollers with the platform, while its base frame and legs stay in place', async () => {

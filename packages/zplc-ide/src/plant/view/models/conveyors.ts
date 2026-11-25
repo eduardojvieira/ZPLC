@@ -190,13 +190,19 @@ function sector(slot: string, inner: number, outer: number, from: number, to: nu
     const t = from + ((to - from) * i) / n;
     return [r * Math.cos(t), -r * Math.sin(t)];
   };
-  const outline = [
-    ...Array.from({ length: n + 1 }, (_, i) => at(outer, i)),
-    ...Array.from({ length: n + 1 }, (_, i) => at(inner, n - i)),
-  ];
+  const outline = [...Array.from({ length: n + 1 }, (_, i) => at(outer, i)), ...Array.from({ length: n + 1 }, (_, i) => at(inner, n - i))];
   const mid = (k: 0 | 1) => (Math.min(...outline.map((p) => p[k])) + Math.max(...outline.map((p) => p[k]))) / 2;
   const [cx, cz] = [mid(0), mid(1)];
-  return piece(slot, extrusion(outline.map(([x, z]) => [x - cx, z - cz] as const), height, 'y'), [cx, top - height / 2, cz], 'band');
+  return piece(
+    slot,
+    extrusion(
+      outline.map(([x, z]) => [x - cx, z - cz] as const),
+      height,
+      'y',
+    ),
+    [cx, top - height / 2, cz],
+    'band',
+  );
 }
 
 function curvedModel(view: PartView, context: ModelContext): Piece[] {
