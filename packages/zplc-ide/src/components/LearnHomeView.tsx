@@ -74,6 +74,7 @@ export function LearnHomeView(props: LearnHomeViewProps) {
   const { t } = useT();
   const heading = useRef<HTMLHeadingElement>(null);
   const importRef = useRef<HTMLInputElement>(null);
+  const root = useRef<HTMLElement>(null);
   // The page takes the keyboard when it opens (UX-025); Escape closes it (bound by `LearnHome`, which owns the state).
   useEffect(() => {
     heading.current?.focus();
@@ -144,12 +145,13 @@ export function LearnHomeView(props: LearnHomeViewProps) {
 
   return (
     <section
+      ref={root}
       aria-labelledby="learn-home-title"
       data-learn-home
       className="h-full min-h-0 overflow-y-auto bg-[var(--color-surface-900)] px-4 py-6 font-sans text-sm text-[var(--color-surface-200)]"
     >
-      <div className="mx-auto max-w-4xl space-y-6">
-        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--color-surface-600)] pb-4">
+      <div className="relative mx-auto max-w-4xl space-y-6">
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b pr-24 border-[var(--color-surface-600)] pb-4">
           <div className="min-w-0">
             <h1
               id="learn-home-title"
@@ -165,10 +167,6 @@ export function LearnHomeView(props: LearnHomeViewProps) {
               {loaded ? t('learn.home.progress', { passed: view.passed, total: view.total }) : t('learn.home.loading')}
             </p>
           </div>
-          <Button variant="secondary" size="sm" data-learn-close onClick={onClose}>
-            <X size={14} aria-hidden="true" />
-            {t('learn.home.close')}
-          </Button>
         </div>
 
         {failed && (
@@ -197,6 +195,24 @@ export function LearnHomeView(props: LearnHomeViewProps) {
               {loaded ? t('learn.home.continue.done') : ''}
             </p>
           )}
+          <a
+            href="#learn-switches"
+            data-learn-skip
+            className="text-xs text-[var(--color-accent-blue)] underline"
+            onClick={(event) => {
+              event.preventDefault();
+              root.current?.querySelector<HTMLElement>('[data-learn-unlock-all]')?.focus();
+            }}
+          >
+            {t('learn.home.skipToSwitches')}
+          </a>
+        </div>
+        {/* After Continue and the skip link in the Tab order, so the first stops of the page are the ones a learner needs. */}
+        <div className="absolute right-0 top-0">
+          <Button variant="secondary" size="sm" data-learn-close onClick={onClose}>
+            <X size={14} aria-hidden="true" />
+            {t('learn.home.close')}
+          </Button>
         </div>
 
         {view.paths.length > 0 && (
@@ -207,60 +223,66 @@ export function LearnHomeView(props: LearnHomeViewProps) {
             {view.paths.map((path) => {
               const next = pathContinueTarget(path);
               return (
-                <section
+                <details
                   key={path.id}
+                  role="region"
                   aria-labelledby={`learn-path-${path.id}`}
                   data-learn-path={path.id}
-                  className="mt-3 space-y-2 rounded border border-[var(--color-surface-600)] p-3"
+                  open={path.lessons.some((lesson) => lesson.id === continueId)}
+                  className="mt-3 rounded border border-[var(--color-surface-600)] p-3"
                 >
-                  <h3 id={`learn-path-${path.id}`} className="font-medium text-[var(--color-surface-100)]">
-                    {path.title}
-                  </h3>
-                  <p className="max-w-[68ch] leading-5 text-[var(--color-surface-300)]">{path.summary}</p>
-                  <p className="max-w-[68ch] text-xs leading-5 text-[var(--color-surface-300)]">{path.rationale}</p>
-                  <p className="text-xs text-[var(--color-surface-400)]">
-                    {t('learnReading.path.progress', { passed: path.passed, total: path.total })}
-                  </p>
-                  {next && (
-                    <Button
-                      variant="primary"
-                      data-learn-path-continue
-                      disabled={busy || !folderAccess || !loaded}
-                      onClick={() => onStart(next)}
-                    >
-                      {t('learnReading.path.continue', { title: view.titles[next] ?? next })}
-                    </Button>
-                  )}
-                  <ol aria-label={t('learnReading.path.lessons', { title: path.title })} className="space-y-2">
-                    {path.lessons.map((lesson) => (
-                      <li
-                        key={lesson.id}
-                        data-learn-path-lesson={lesson.id}
-                        data-state={lesson.state}
-                        className="flex flex-wrap items-center justify-between gap-2 rounded border border-[var(--color-surface-700)] p-2"
+                  <summary className="cursor-pointer select-none">
+                    <h3 id={`learn-path-${path.id}`} className="inline font-medium text-[var(--color-surface-100)]">
+                      {path.title}
+                    </h3>{' '}
+                    <span className="text-xs text-[var(--color-surface-400)]">
+                      {t('learnReading.path.progress', { passed: path.passed, total: path.total })}
+                    </span>
+                  </summary>
+                  <div className="mt-2 space-y-2">
+                    <p className="max-w-[68ch] leading-5 text-[var(--color-surface-300)]">{path.summary}</p>
+                    <p className="max-w-[68ch] text-xs leading-5 text-[var(--color-surface-300)]">{path.rationale}</p>
+                    {next && (
+                      <Button
+                        variant="primary"
+                        data-learn-path-continue
+                        disabled={busy || !folderAccess || !loaded}
+                        onClick={() => onStart(next)}
                       >
-                        <div className="min-w-0">
-                          <p className="flex items-center gap-2 font-medium text-[var(--color-surface-100)]">
-                            {STATE_ICON[lesson.state]}
-                            {lesson.title}
-                            <span className="text-xs font-normal text-[var(--color-surface-300)]">
-                              {t(`learn.state.${lesson.state}` as MessageKey)}
-                            </span>
-                          </p>
-                          <p className="mt-1 text-xs text-[var(--color-surface-400)]">
-                            {t('learnReading.path.module', { number: lesson.module })}
-                          </p>
-                          {lesson.state === 'locked' && (
-                            <p className="mt-1 text-xs leading-5 text-[var(--color-surface-300)]">
-                              {t('learn.home.lockedBecause', { lessons: lesson.missing.map((id) => view.titles[id] ?? id).join(', ') })}
+                        {t('learnReading.path.continue', { title: view.titles[next] ?? next })}
+                      </Button>
+                    )}
+                    <ol aria-label={t('learnReading.path.lessons', { title: path.title })} className="space-y-2">
+                      {path.lessons.map((lesson) => (
+                        <li
+                          key={lesson.id}
+                          data-learn-path-lesson={lesson.id}
+                          data-state={lesson.state}
+                          className="flex flex-wrap items-center justify-between gap-2 rounded border border-[var(--color-surface-700)] p-2"
+                        >
+                          <div className="min-w-0">
+                            <p className="flex items-center gap-2 font-medium text-[var(--color-surface-100)]">
+                              {STATE_ICON[lesson.state]}
+                              {lesson.title}
+                              <span className="text-xs font-normal text-[var(--color-surface-300)]">
+                                {t(`learn.state.${lesson.state}` as MessageKey)}
+                              </span>
                             </p>
-                          )}
-                        </div>
-                        {actionFor(lesson, 'data-learn-path-start')}
-                      </li>
-                    ))}
-                  </ol>
-                </section>
+                            <p className="mt-1 text-xs text-[var(--color-surface-400)]">
+                              {t('learnReading.path.module', { number: lesson.module })}
+                            </p>
+                            {lesson.state === 'locked' && (
+                              <p className="mt-1 text-xs leading-5 text-[var(--color-surface-300)]">
+                                {t('learn.home.lockedBecause', { lessons: lesson.missing.map((id) => view.titles[id] ?? id).join(', ') })}
+                              </p>
+                            )}
+                          </div>
+                          {actionFor(lesson, 'data-learn-path-start')}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                </details>
               );
             })}
           </section>
@@ -275,21 +297,7 @@ export function LearnHomeView(props: LearnHomeViewProps) {
           </p>
         </section>
 
-        <section aria-labelledby="learn-tracks-title">
-          <h2 id="learn-tracks-title" className="font-semibold text-[var(--color-surface-100)]">
-            {t('learn.home.tracks')}
-          </h2>
-          <ul className="mt-2 space-y-1">
-            {view.tracks.map((track) => (
-              <li key={track.id} data-learn-track={track.id} className="leading-5">
-                <span className="font-medium text-[var(--color-surface-100)]">{track.title}.</span>{' '}
-                <span className="text-[var(--color-surface-300)]">{track.summary}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section aria-labelledby="learn-progress-title" className="space-y-2">
+        <section id="learn-switches" aria-labelledby="learn-progress-title" className="space-y-2">
           <h2 id="learn-progress-title" className="font-semibold text-[var(--color-surface-100)]">
             {t('learn.home.transfer')}
           </h2>
@@ -399,6 +407,20 @@ export function LearnHomeView(props: LearnHomeViewProps) {
               </li>
             ))}
           </ol>
+        </section>
+
+        <section aria-labelledby="learn-tracks-title">
+          <h2 id="learn-tracks-title" className="font-semibold text-[var(--color-surface-100)]">
+            {t('learn.home.tracks')}
+          </h2>
+          <ul className="mt-2 space-y-1">
+            {view.tracks.map((track) => (
+              <li key={track.id} data-learn-track={track.id} className="leading-5">
+                <span className="font-medium text-[var(--color-surface-100)]">{track.title}.</span>{' '}
+                <span className="text-[var(--color-surface-300)]">{track.summary}</span>
+              </li>
+            ))}
+          </ul>
         </section>
       </div>
     </section>
