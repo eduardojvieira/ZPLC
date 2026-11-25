@@ -48,7 +48,7 @@ async function ask(messages: object[]): Promise<Array<Record<string, any>>> {
   return answers;
 }
 
-describe('MCP guide: the protocol revisions of the server are the ones the page shows (DOC-009, D-35)', () => {
+describe('MCP guide: the protocol revision of the server is the one the page shows (DOC-009)', () => {
   it('accepts the 2025-11-25 handshake of the guide and lists the tools, in English and in Spanish', async () => {
     for (const guide of GUIDES) {
       const [request] = jsonFences(guide).filter((fence) => fence.method === 'tools/list');
