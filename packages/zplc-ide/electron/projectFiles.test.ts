@@ -36,7 +36,7 @@ let root: string;
 let outside: string;
 
 beforeEach(() => {
-  sandbox = realpathSync(mkdtempSync(path.join(tmpdir(), 'zplc-project-files-')));
+  sandbox = realpathSync.native(mkdtempSync(path.join(tmpdir(), 'zplc-project-files-')));
   root = path.join(sandbox, 'project');
   outside = path.join(sandbox, 'outside');
   mkdirSync(path.join(root, 'src'), { recursive: true });
