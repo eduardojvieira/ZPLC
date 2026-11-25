@@ -24,10 +24,10 @@ An activity rail and a primary sidebar on the left hold the project navigator, s
 
 From the top, the window has the application menu, the command bar (save, build, the target selector, the run controls, the project name and the command palette button), then side by side the **activity rail**, the **primary sidebar**, the **editor area** over the **results panel**, and the **secondary sidebar**, and last the status line.
 
-- **Activity rail.** Project, Search, Tests and Learn. Choosing one swaps the primary sidebar; the chosen one is marked by a bar at its edge and a filled button, not by colour alone. Tests also shows the results panel.
-- **Primary sidebar.** Project shows the navigator, Search finds text in the project, Tests explains the scenarios and opens the results, and Learn holds the lessons.
-- **Secondary sidebar.** The Inspector, and the Assistant while an AI provider is configured. It starts hidden so that the editor keeps its width; show or hide it with the Inspector button of the command bar or **View > Show or hide the secondary sidebar**.
-- **Results panel.** Hide it with **View > Show or hide the results panel**.
+- **Activity rail.** Project, Search, Tests and Learn. Choosing one swaps the primary sidebar; the chosen one is marked by a bar at its edge and a filled button, not by colour alone. Tests also shows the Test results tab of the results panel.
+- **Primary sidebar.** Project shows the navigator, Search finds text and references in the project ([Search and references](./find-and-references.md)), Tests lists the tests of the project and runs them ([Tests and results](./tests.md)), and Learn holds the lessons.
+- **Secondary sidebar.** The Inspector, and the Assistant while an AI provider is configured, one view at a time. The Inspector shows the open document, the element selected in a diagram or the test selected in the Tests activity; its properties are read-only there and change in the editor (**Show the inspector**). The sidebar starts hidden so that the editor keeps its width; show or hide it with the Inspector button of the command bar or **View > Show or hide the secondary sidebar**.
+- **Results panel.** Output, Problems, Test results, Trace and Watch, each with its name at 1366 by 768 in English and Spanish, and Terminal while the target is a board or once you open it. Hide the panel with **View > Show or hide the results panel**.
 
 The primary sidebar is `Ctrl+Alt+B`, the secondary sidebar `Ctrl+Alt+I` and the results panel `Ctrl+Alt+J` (⌘⌥ on macOS). **Show the project navigator** is `Ctrl+Shift+E` and **Search in the project** is `Ctrl+Shift+F`. Which sidebars are shown and which activity is selected are kept between sessions.
 
@@ -38,13 +38,15 @@ A toggle in the header of the navigator chooses between two modes, and the choic
 - **Objects** (the default) groups the project as **Programs**, **Function blocks**, **Functions**, **Data types**, **Global variables**, **Tasks**, **I/O mapping**, **Communication** and **Device**. The first five come from the compiler's reading of the Structured Text files, and for Programs also from the diagram and instruction list files; a file that declares several objects is listed under each kind. The others come from `zplc.json`. Choosing an object opens its file at its line, or its configuration editor.
 - **Files** is the file tree, with the Declarations section and the library folders.
 
+In the Objects mode, the header of each group of the project's objects has a **New** button (**New in Programs**, **New in Functions** and so on), and an empty group offers the action in words in place of its empty line. **New program** asks for the language first, one of the five. The dialog asks for a name of letters, digits and underscores that starts with a letter, is not a reserved word, has at most 63 characters and is not already in use in the project, and says which rule a name breaks. The new object opens with a skeleton that builds. A new task runs the first program of the project until you change it. Each object has an **Actions** menu with **Rename**, **Move the file**, **Duplicate** and **Delete**, which asks first. Closing the project is **Close the project** in the File menu and the palette.
+
 ### Configuration editors
 
-**Tasks**, **I/O mapping**, **Network**, **Communication** and **Target** each open as a tab of the editor area, from the navigator or from the list in the Settings tab. All the tabs edit one document, `zplc.json`: **Save configuration** writes it, and closing the last tab that shows it with unsaved edits asks whether to save, discard or keep editing. The Settings tab keeps the project metadata and the application preferences.
+**Tasks**, **I/O mapping**, **Network**, **Communication** and **Target** each open as a tab of the editor area, from the navigator, from the palette or from **Project settings**. All the tabs edit one document, `zplc.json`: **Save configuration** writes it, and closing the last tab that shows it with unsaved edits asks whether to save, discard or keep editing. **Project settings**, from the root of the navigator or the command bar, keeps the project metadata. It holds only what belongs to the project: theme, density and language are in [Preferences](#preferences).
 
 ### Search
 
-Search looks for text in the Structured Text and instruction list files of the project, including unsaved changes, with or without matching case, and lists the matches by file. Choosing a match opens the file at that line. It does not search diagrams, which are stored as models.
+Search looks in the five languages: the text of the Structured Text and Instruction List files, and the names, variables, comments and expressions of the Ladder, FBD and SFC diagrams, including unsaved changes. Its second mode lists the references of a name or an I/O address. Both are on [Search, find all references and the place of a document](./find-and-references.md).
 
 ### Moving the separators
 
@@ -53,6 +55,8 @@ Each separator between two regions lights up under the pointer, fills while you 
 ### Window sizes
 
 The main path (open a project, edit, build, simulate, watch) fits a window of 1366 by 768 pixels with no clipped control. The window can be as small as 1024 by 768: below 1100 pixels wide the rail shows icons only, the secondary sidebar hides itself, and the theme, settings and shortcut commands move into the **More commands** menu of the command bar.
+
+**Reset the layout** (command palette) puts the regions back as they were at the first start: the sidebars and their sizes, the results panel open on Output, and one group in the editor area. It then says "The layout is back to its defaults. Your preferences and files were not changed."
 
 Evidence level: host. Unit tests (`packages/zplc-ide/src/layout/separatorSteps.test.ts`, `packages/zplc-ide/src/store/useShellLayout.test.ts`) and a journey of `bun run test:journeys` cover them on the development host. No packaged, macOS or Windows window was measured.
 
@@ -133,7 +137,7 @@ Evidence level: host. `packages/zplc-ide/electron/recoveryStore.test.ts` covers 
 
 ## Preferences
 
-Preferences belong to you, not to a project: they apply to every project and are kept for your user account. Open them from the **Preferences** disclosure of the Welcome screen, or at the top of the Project Settings tab inside a project.
+Preferences belong to you, not to a project: they apply to every project and are kept for your user account. **Preferences** is a document of its own, open with or without a project: **Preferences** on the Welcome screen, **Open preferences** in the File menu (`Ctrl+,`, `Cmd+,` on macOS), or the name of a preference in the command palette, which opens the document at that setting. It holds the only theme control of ZPLC, the **Detailed output** switch of the Output tab, the preference **Before running and building** (**Save the project first** or **Ask before saving**) and, under **Assistant**, the provider of the optional AI assistant. The fields of the project are in **Project settings**.
 
 | Preference                                 | Choices                                              | Default                                                                                                    |
 | ------------------------------------------ | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
@@ -164,7 +168,7 @@ Evidence level: host. `packages/zplc-ide/src/i18n/i18n.test.tsx` and `packages/z
 ZPLC keeps one list of commands, and every way to start a command reads it: the application menu, the command palette, the keyboard shortcuts, the hints in the tooltips and the shortcut reference. A command therefore does the same thing wherever you start it.
 
 - **Application menu.** File, Edit, View, Project, Build, Online, Debug and Help, on Windows, Linux and macOS alike. The menu is in the language of the **Language** preference. A packaged build has no reload or developer-tools item. The View menu keeps page zoom: Zoom in, Zoom out and Actual size, on `Ctrl` and plus, minus and 0 (`Cmd` on macOS).
-- **Command palette.** Press `Ctrl+Shift+P` (`Cmd+Shift+P` on macOS), type a few letters of a command, choose with the arrow keys and press Enter. The palette lists every command, so each one is reachable from the keyboard even when it has no shortcut. A command that does not apply now, such as Deploy without a connection, is listed as not available and does not run.
+- **Command palette.** Press `Ctrl+Shift+P` (`Cmd+Shift+P` on macOS), type a few letters, choose with the arrow keys and press Enter. With no letters it lists the commands. With letters it finds eight kinds of thing, in groups in this order: **Commands**, **Files**, **PLC objects**, **I/O points**, **Configuration editors**, **Lessons**, **Preferences** and **Scenes** (the `scene.json` and the `scenes/*.scene.json` of the open project folder). A group shows its best eight matches and a row such as **Show all 12 in Files** for the rest. Every command is in the palette, so each one is reachable from the keyboard even when it has no shortcut. A command that does not apply now, such as Deploy without a connection, is listed as not available and does not run.
 - **Shortcut reference.** Open **Help** > **Keyboard shortcuts**, or press `Ctrl+K` and then `Ctrl+S`, to see every command with its shortcut.
 
 | Shortcut                | Command                    |
@@ -177,6 +181,11 @@ ZPLC keeps one list of commands, and every way to start a command reads it: the 
 | `F10`                   | Step one cycle             |
 | `F8`                    | Reset the runtime          |
 | `Ctrl+Shift+P`          | Command palette            |
+| `Ctrl+,`                | Open preferences           |
+| `Ctrl+Alt+T`            | Run all tests              |
+| `F12`                   | Go to definition           |
+| `Shift+F12`             | Find all references        |
+| `Alt+Left`, `Alt+Right` | Go back, Go forward        |
 | `Ctrl+K`, then `Ctrl+S` | Keyboard shortcuts         |
 
 `Cmd` replaces `Ctrl` on macOS. The shortcuts that act on a program (`F5`, `F6`, `F10`, `F8`, `Shift+F5`) leave a text field its own keys.
@@ -263,7 +272,8 @@ Evidence level: host. `packages/zplc-ide/src/cli/scenarioParity.test.ts` runs ev
 
 ## Notifications, messages and failures
 
-- **Notifications.** The result of a build, a save, a deploy, a connection change and a test run appears at the bottom right as a notification. Each says what happened and has **Details**, which opens the panel that holds the evidence: **Output** for a save, a successful build, a deploy and a connection, **Problems** for a failed build, **Tests** for a test run. A long operation shows a progress bar, and a build and a test run also show **Cancel**: a cancelled build keeps no artifact, and a cancelled run stops its native runtime. A success goes by itself after a few seconds; a failure, a warning and a cancellation stay until you dismiss them.
+- **Notifications.** The result of a build, a save, a deploy, a connection change and a test run appears at the bottom right as a notification. Each says what happened and has **Details**, which opens the panel that holds the evidence: **Output** for a save, a successful build, a deploy and a connection, **Problems** for a failed build, **Test results** for a test run. A failure says what to do next: a failed build names the file and the line and offers **Go to the problem**. A long operation shows a progress bar, and a build and a test run also show **Cancel**: a cancelled build keeps no artifact, and a cancelled run stops its native runtime. A success goes by itself after a few seconds; a failure, a warning and a cancellation stay until you dismiss them.
+- **Output.** Output shows one line per step you asked for: the build, the run, a save. Errors, warnings and successes are always shown. The other lines are hidden at this normal level, and the tab says how many, for example "12 detailed lines hidden". The **Detailed output** switch shows everything.
 - **Problems.** The Problems view lists errors first, then warnings, then information, and activating a problem opens its file at its line and column. A message written to **Output**, or a problem found, while another view is visible puts a count on that view's tab until you open it.
 - **Empty, loading and error states.** A panel with nothing to show says why and offers the next step. A loading indicator appears only when an operation takes longer than 300 ms. An error state names what went wrong and has a recovery button.
 - **A failure stays in its region.** If the editor, the lower panel or the toolbar throws while it draws, that region shows what stopped and a **Retry** button, and the rest of the window keeps working, so you can still save. If the failure is outside every region, the whole window shows the same message with **Retry** and a way to close the project.
@@ -288,3 +298,23 @@ The evidence level of these checks is host: a window on Linux, not Windows or ma
 Learn is the interactive course inside the application. It has a **Learn home**, a page that shows the course and opens with no project open and no network, and a **Learn** view in the primary sidebar that holds the lesson you are working on. Each lesson gives you a starter project in the language of the lesson, goes through the stages Objective, Predict, Edit, Run, Observe and Reflect, and grades your saved program against the lesson's reference scenario on the native simulation, in a process of its own that **Cancel** stops. Your progress is kept in one file in the user-data directory, and you can export and import it from the Learn home.
 
 A result in Learn is host evidence from the native simulation, not hardware evidence, and Learn never starts a physical operation. The course, its modules and its lessons are described in [Learn](../learn/index.md); for educators, see [Educators](../learn/educators.md).
+
+## The words of the interface
+
+ZPLC uses one word for each idea, in both languages, on the command bar, the status line, the notices and the results. The file formats keep their own names: a test is stored as a scenario file.
+
+| Idea                            | English           | Spanish                 | Instead of                                       |
+| ------------------------------- | ----------------- | ----------------------- | ------------------------------------------------ |
+| What you work on                | Project           | Proyecto                | workspace                                        |
+| Running on this computer        | Simulation        | Simulación              | simulator session, native runtime, host          |
+| A physical controller           | Board             | Placa                   | hardware, device, controller                     |
+| Where Run goes                  | Target            | Destino                 | mode                                             |
+| Turning sources into a program  | Build             | Compilar                | compile                                          |
+| Sending a program to a board    | Deploy            | Desplegar               | upload, load                                     |
+| A scripted check of a program   | Test              | Prueba                  | scenario                                         |
+| The graded check of a lesson    | Check             | Comprobar               | lesson evidence                                  |
+| The machine a program drives    | Plant             | Planta                  | lab                                              |
+| A result obtained in simulation | Simulation result | Resultado en simulación | host evidence only, not hardware or HIL evidence |
+| A result obtained on a board    | Board result      | Resultado en placa      |                                                  |
+
+Terms of the implementation (POSIX, native, host, workspace, adapter, artifact, bytecode, SHA-256, VM) belong under **Details**, in the Inspector, in the Terminal and in the detailed Output. A CI check fails the build when one of them appears in the text of the command bar, the status line, a notice or the verdict of a test or a lesson check, and when any surface but the badge of a result states its boundary.

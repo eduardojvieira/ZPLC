@@ -8,7 +8,9 @@ simulator file is never accepted as hardware), and hold: every frame answered, n
 applied sequence never going backwards, every output the echo of the frame it latched, and the worst exchange gap within
 the limit the file records (`--max-gap-ms` replaces it). `late` is information, not an error: it counts every board scan
 that found no new frame. A `hil` file also holds the three physical sequences, each confirmed by a person, with the
-device-side checks (outputs toggled, mirror flag, STOPPED with the output image reset). Exit 0 all hold, 1 a file does not.
+device-side checks (outputs toggled, mirror flag, STOPPED with the output image reset), mirroring on when the cable went
+out, and an uptime marker that shows the board did not restart while the cable was out (a power cut is not a link loss).
+Exit 0 all hold, 1 a file does not.
 """
 from __future__ import annotations
 
@@ -63,6 +65,14 @@ def problems_of(record, level: str | None = None, max_gap_ms: float | None = Non
         loss = check("link-loss")
         if loss and not (loss.get("cable_gone_detected") and loss.get("state") == "idle" and set(loss.get("output_image_hex", "x")) == {"0"}):
             found.append("link-loss: the board is not STOPPED with the output image reset after the cable came back")
+        if loss and loss.get("mirror_flag") != 1:
+            found.append("link-loss: mirroring was not on when the cable went out, so the LED could not show the board leaving the mode")
+        marker = [loss.get(key) for key in ("uptime_before_ms", "uptime_after_ms", "host_elapsed_ms", "read_slack_ms")] if loss else []
+        if loss and not all(isinstance(value, int) and not isinstance(value, bool) for value in marker):
+            found.append("link-loss: no uptime marker before and after the pull, so a restart cannot be told from a link loss")
+        elif loss and marker[1] - marker[0] < marker[2] - marker[3]:
+            found.append(f"link-loss: the board restarted while the cable was out (uptime {marker[0]} ms before, {marker[1]} ms after, "
+                         f"{marker[2]} ms later by the bench clock): a power cut is not a link loss")
     elif record["physical"]:
         found.append("only a hil file holds physical sequences")
     return found

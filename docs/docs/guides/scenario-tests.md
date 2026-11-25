@@ -67,9 +67,9 @@ The documentation check runs this scenario against the program above, so it is a
 
 ## 3. Run it
 
-**In ZPLC**, open the **Test results** tab and press **Run host scenarios**. Each scenario is listed as passed or failed, with its assertions and their times. A failed assertion shows the instant, the value expected and the value observed. A scenario does not run while a value is forced, so release your forces first ([Force a value](./force-values.md)).
+**In ZPLC**, choose **Tests** in the activity rail and press **Run all**, or **Run** on the row of one test. The **Test results** tab opens with the verdict in one sentence, such as "1 of 1 tests passed", then the failed tests: for each failed expectation its time, the value expected and the value observed, with links to the scenario step and to that time in the trace. The full record of the run is behind **Details**, and [Tests and test results](../ide/tests.md) explains every part. A scenario does not run while a value is forced, so release your forces first ([Force a value](./force-values.md)).
 
-![The Test results tab after Run host scenarios](/img/screens/guide-scenario-tests.png)
+![The Test results tab after a run, with its verdict and the Simulation result badge](/img/screens/guide-scenario-tests.png)
 
 **From a terminal**, with the command line of the project (build the runtime once with `bun run setup`):
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import {
   checkBudget,
+  checkMeasures,
   commandBarCounts,
   measure,
   resultsTabCounts,
@@ -8,6 +9,8 @@ import {
   targetPlaces,
   type BudgetTargets,
   type InterfaceSnapshot,
+  type LocaleMeasures,
+  type ProductMeasures,
 } from './interfaceBudget';
 
 /** A stored snapshot of the 2.0.0 running state at 1366 by 768, shortened: the shape the capture in the page produces. */
@@ -38,7 +41,7 @@ const snapshot: InterfaceSnapshot = {
   ],
   runControlSets: 1,
   statusRail: [
-    { text: 'Simulation · native runtime' },
+    { text: 'Simulation' },
     { text: 'Mode\nSIMULATION' },
     { text: 'Runtime\nNative POSIX' },
     { text: 'Target\nLocal POSIX' },
@@ -63,7 +66,7 @@ describe('interface budget counting (spec 013 section 8.1)', () => {
   it('counts every place the target is shown', () => {
     expect(targetPlaces(snapshot)).toEqual([
       'command bar: target selector',
-      'status rail: Simulation · native runtime',
+      'status rail: Simulation',
       'status rail: Mode',
       'status rail: Target',
     ]);
@@ -74,18 +77,13 @@ describe('interface budget counting (spec 013 section 8.1)', () => {
       ...snapshot,
       locale: 'es',
       commandBar: { ...snapshot.commandBar, controls: [control('Adónde va la ejecución: Simulación', 252, 88)] },
-      statusRail: [
-        { text: 'Simulación · runtime nativo' },
-        { text: 'Modo\nSIMULACIÓN' },
-        { text: 'Destino\nPOSIX local' },
-        { text: 'En ejecución' },
-      ],
+      statusRail: [{ text: 'Simulación' }, { text: 'Modo\nSIMULACIÓN' }, { text: 'Destino\nPOSIX local' }, { text: 'En ejecución' }],
     };
     expect(targetPlaces(spanish).length).toBe(4);
   });
 
   it('lists the items of the status rail by their first line', () => {
-    expect(statusRailItems(snapshot)).toEqual(['Simulation · native runtime', 'Mode', 'Runtime', 'Target', 'Running']);
+    expect(statusRailItems(snapshot)).toEqual(['Simulation', 'Mode', 'Runtime', 'Target', 'Running']);
   });
 });
 
@@ -95,6 +93,11 @@ const targets: BudgetTargets = {
   targetPlaces: 2,
   runControlSets: 1,
   resultsTabs: { total: 5, namedAtDefault: 5, reason: 'spec 013 row 2 and row 3' },
+  paletteKinds: 7,
+  searchLanguages: 5,
+  boundaryStatements: 1,
+  themeControls: 1,
+  implementationTerms: 0,
 };
 
 /** Five tabs, every one with its name inside the strip: the results panel of spec 013 section 5.3 at 1366 by 768. */
@@ -111,7 +114,7 @@ describe('interface budget check (spec 013 section 8.2 item 2)', () => {
     const within: InterfaceSnapshot = {
       ...snapshot,
       resultsTabs: FIVE,
-      statusRail: [{ text: 'Simulation · native runtime' }, { text: 'Running' }],
+      statusRail: [{ text: 'Simulation' }, { text: 'Running' }],
     };
     expect(checkBudget([measure(within)], targets)).toEqual([]);
   });
@@ -151,5 +154,46 @@ describe('interface budget check (spec 013 section 8.2 item 2)', () => {
     const many = checkBudget([measure(six)], targets);
     expect(many).toHaveLength(1);
     expect(many[0]).toContain('results panel tabs has 6, over 5');
+  });
+});
+
+/** What milestone U2 measures once per language (rows 10, 12 and 13) and once for the product (rows 11 and 17), within target. */
+const KINDS = ['commands', 'files', 'objects', 'io', 'editors', 'lessons', 'preferences', 'scenes'];
+const english: LocaleMeasures = { locale: 'en', paletteKinds: KINDS, boundaryStatements: 1, themeControls: 1 };
+const product: ProductMeasures = { searchLanguages: ['ST', 'IL', 'LD', 'FBD', 'SFC'], implementationTerms: 0 };
+
+describe('interface budget check of milestone U2 (spec 013 section 8.1 rows 10 to 13 and 17)', () => {
+  it('passes the measures of U2 within their targets', () => {
+    expect(checkMeasures([english, { ...english, locale: 'es' }], product, targets)).toEqual([]);
+  });
+
+  it('FND-001 the budget fails when the palette finds fewer than seven kinds of thing', () => {
+    const violations = checkMeasures([{ ...english, locale: 'es', paletteKinds: KINDS.slice(0, 6) }], product, targets);
+    expect(violations).toHaveLength(1);
+    expect(violations[0]).toContain('es');
+    expect(violations[0]).toContain('palette finds 6 kinds, under 7');
+  });
+
+  it('FND-003 the budget fails when search reads fewer than the five languages', () => {
+    const violations = checkMeasures([english], { ...product, searchLanguages: ['ST', 'IL'] }, targets);
+    expect(violations).toEqual(['search reads 2 of the languages (ST, IL), under 5']);
+  });
+
+  it('MSG-003 the budget fails when a result states its boundary other than once', () => {
+    expect(checkMeasures([{ ...english, boundaryStatements: 2 }], product, targets)).toEqual([
+      'en: the boundary is stated 2 times on one result, not 1',
+    ]);
+    expect(checkMeasures([{ ...english, boundaryStatements: 0 }], product, targets)).toHaveLength(1);
+  });
+
+  it('SHL-012 the budget fails when the theme has other than one control', () => {
+    expect(checkMeasures([{ ...english, themeControls: 3 }], product, targets)).toEqual(['en: the theme has 3 controls, not 1']);
+    expect(checkMeasures([{ ...english, themeControls: 0 }], product, targets)).toHaveLength(1);
+  });
+
+  it('MSG-002 the budget fails when a main-path surface holds an implementation term', () => {
+    expect(checkMeasures([english], { ...product, implementationTerms: 2 }, targets)).toEqual([
+      'implementation terms on the main-path surfaces: 2, over 0',
+    ]);
   });
 });

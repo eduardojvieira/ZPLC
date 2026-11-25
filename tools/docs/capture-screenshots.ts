@@ -78,7 +78,7 @@ export const GUIDE_JOURNEYS = [
     pictures: [
       { file: 'guide-watch.png', step: 'The Watch tab with a variable, while the program runs' },
       { file: 'guide-force.png', step: 'The Watch table with one forced variable and the banner of one active force' },
-      { file: 'guide-scenario-tests.png', step: 'The Tests tab after Run host scenarios' },
+      { file: 'guide-scenario-tests.png', step: 'The Test results tab after a run of the tests, with its verdict' },
     ],
   },
   {

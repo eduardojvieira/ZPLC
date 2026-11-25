@@ -216,6 +216,34 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
             setFailure(undefined);
           }}
         />
+        <Button
+          data-plant-reset
+          disabled={!ready || !stopped}
+          onClick={() => {
+            ready?.core.reset();
+            binding.publish();
+          }}
+        >
+          {t('plant.panel.resetPlant')}
+        </Button>
+        {editing ? (
+          <>
+            <Button data-plant-undo disabled={!stopped} onClick={() => history(true)}>
+              {t('plantEditor.undo')}
+            </Button>
+            <Button data-plant-redo disabled={!stopped} onClick={() => history(false)}>
+              {t('plantEditor.redo')}
+            </Button>
+            <Button data-plant-edit-done disabled={!stopped} onClick={finishEditing}>
+              {t('plantEditor.done')}
+            </Button>
+          </>
+        ) : (
+          <Button data-plant-edit-scene disabled={!stopped || !ready} onClick={startEditing}>
+            {t('plant.panel.editScene')}
+          </Button>
+        )}
+        {/* Controls that appear with the scene come last: appending never moves the ones already there. */}
         {ready && view === '3d' && ready.scene.cameras.length > 0 && (
           <Select
             label={t('plant.panel.camera')}
@@ -235,16 +263,6 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
             {t('command.view.fitPlantScene')}
           </Button>
         )}
-        <Button
-          data-plant-reset
-          disabled={!ready || !stopped}
-          onClick={() => {
-            ready?.core.reset();
-            binding.publish();
-          }}
-        >
-          {t('plant.panel.resetPlant')}
-        </Button>
         {handle && ready && ref.kind === 'project' && !editing && (
           <Button data-plant-save-scene onClick={() => void saveProject()}>
             {t('plant.panel.saveToProject')}
@@ -252,23 +270,6 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
         )}
         {handle && ready && ref.kind !== 'file' && ref.kind !== 'project' && !editing && (
           <SaveSceneButton initialName={saveName(ready.scene.name)} existing={saved.names} onSave={saveToProject} />
-        )}
-        {editing ? (
-          <>
-            <Button data-plant-undo disabled={!stopped} onClick={() => history(true)}>
-              {t('plantEditor.undo')}
-            </Button>
-            <Button data-plant-redo disabled={!stopped} onClick={() => history(false)}>
-              {t('plantEditor.redo')}
-            </Button>
-            <Button data-plant-edit-done disabled={!stopped} onClick={finishEditing}>
-              {t('plantEditor.done')}
-            </Button>
-          </>
-        ) : (
-          <Button data-plant-edit-scene disabled={!stopped || !ready} onClick={startEditing}>
-            {t('plant.panel.editScene')}
-          </Button>
         )}
       </div>
       {editing && (

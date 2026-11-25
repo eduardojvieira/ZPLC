@@ -7,7 +7,18 @@ export const scenesProvider = (snapshot: PaletteSnapshot): PaletteProvider => ({
   group: 'scenes',
   titleKey: 'palette.group.scenes',
   items: () =>
-    fileNodes(snapshot.fileTree)
-      .filter((node) => isSceneFile(node.path))
-      .map((node) => ({ key: `scene:${node.path}`, group: 'scenes', title: node.name, detail: node.path, run: snapshot.open.scenes })),
+    [
+      ...new Set([
+        ...fileNodes(snapshot.fileTree)
+          .map((node) => node.path)
+          .filter(isSceneFile),
+        ...(snapshot.scenePaths ?? []),
+      ]),
+    ].map((path) => ({
+      key: `scene:${path}`,
+      group: 'scenes',
+      title: path.split('/').pop() ?? path,
+      detail: path,
+      run: snapshot.open.scenes,
+    })),
 });

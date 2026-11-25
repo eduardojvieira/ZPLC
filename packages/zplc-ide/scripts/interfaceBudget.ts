@@ -2,10 +2,13 @@
  * The interface budget of spec 013, section 8.1: how many controls the command bar holds, how many tabs of the results panel
  * show their name, how many items the status rail has and how many times the target is shown, counted on the running
  * application. Task W0 of the M1 plan writes it and records the 2.0.0 baseline with it; Task W10 turns the counts into a CI
- * check against the targets (interfaceBudget.targets.json).
+ * check against the targets (interfaceBudget.targets.json). Task Q1 of the U2 plan adds rows 10, 12 and 13 (the kinds the palette
+ * finds, the statements of the boundary on one result, the theme controls), measured once per language, and rows 11 and 17 (the
+ * languages Search reads, the implementation terms on the main-path keys), read from the product.
  *
  *   bun scripts/interfaceBudget.ts --out <file.json>        measure Blinky at 1366 by 768 and 1440 by 900, in English and in
- *                                                           Spanish, open, built, running in simulation and paused
+ *                                                           Spanish, open, built, running in simulation and paused; then run
+ *                                                           its test, search the palette and open Preferences
  *   bun scripts/interfaceBudget.ts --check                  the same measurement, then exit 1 naming every count over its target
  *                                                           (the state, the language, the viewport and the control)
  *
@@ -16,6 +19,7 @@
  */
 import { translate } from '../src/i18n/translate';
 import type { Locale } from '../src/i18n/locale';
+import { SEARCHABLE_LANGUAGES } from '../src/shell/projectSearch';
 
 export type BudgetState = 'open' | 'built' | 'running' | 'paused';
 
@@ -177,8 +181,8 @@ export function measure(snapshot: InterfaceSnapshot): BudgetSample {
   };
 }
 
-async function runLocale(locale: Locale): Promise<BudgetSample[]> {
-  const { cpSync, mkdtempSync } = await import('node:fs');
+async function runLocale(locale: Locale): Promise<{ samples: BudgetSample[]; measures: LocaleMeasures }> {
+  const { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } = await import('node:fs');
   const { join } = await import('node:path');
   const { button, css, launchApp, menuItem, startHarness } = await import('./journeyApp');
   const { packageRoot } = await import('./run-desktop-smoke');
@@ -187,9 +191,35 @@ async function runLocale(locale: Locale): Promise<BudgetSample[]> {
   const root = mkdtempSync(join(scratch, 'budget-'));
   const project = join(root, 'project');
   cpSync(join(packageRoot, 'projects', 'blinky'), project, { recursive: true });
+  // the two kinds of thing that Blinky lacks for row 10: an I/O point (its own LED) and a scene, which nothing else here opens
+  const config = JSON.parse(readFileSync(join(project, 'zplc.json'), 'utf8')) as Record<string, unknown>;
+  config.io = { inputs: [], outputs: [{ name: 'LED_Output', address: '%Q0.0', type: 'BOOL' }] };
+  writeFileSync(join(project, 'zplc.json'), `${JSON.stringify(config, null, 2)}\n`);
+  mkdirSync(join(project, 'scenes'));
+  cpSync(join(packageRoot, 'projects', 'plant_assembler', 'scene.json'), join(project, 'scenes', 'station.scene.json'));
   const launched = await launchApp(harness, root);
   const app = launched.app;
   const samples: BudgetSample[] = [];
+  const count = (selector: string) => app.eval<number>(`document.querySelectorAll(${JSON.stringify(selector)}).length`);
+  const paletteOpen = () => app.eval<boolean>(`Boolean(document.querySelector('[role="dialog"] [role="combobox"]'))`);
+  /** The groups the palette lists for a query, by the suffix of their heading's id (`<list id>-<group>`). */
+  const paletteGroups = async (query: string): Promise<string[]> => {
+    await app.press('Ctrl+Shift+P');
+    await app.until('the command palette to open', async () => (await paletteOpen()) || undefined);
+    await app.type(query);
+    await app.until(
+      `the palette to list matches for "${query}"`,
+      async () => (await count('[role="listbox"] [role="group"]')) > 0 || undefined,
+    );
+    await new Promise((resolve) => setTimeout(resolve, 300)); // every provider answered
+    const groups = await app.eval<string[]>(
+      `[...document.querySelectorAll('[role="listbox"] [role="group"]')]` +
+        `.map((g) => (g.getAttribute('aria-labelledby') ?? '').split('-').pop())`,
+    );
+    await app.press('Escape');
+    await app.until('the command palette to close', async () => !(await paletteOpen()) || undefined);
+    return groups;
+  };
   const sample = async (state: BudgetState) => {
     for (const viewport of VIEWPORTS) {
       await app.cdp.command('Emulation.setDeviceMetricsOverride', { ...viewport, deviceScaleFactor: 1, mobile: false });
@@ -211,6 +241,7 @@ async function runLocale(locale: Locale): Promise<BudgetSample[]> {
       await app.cdp.command('Page.reload');
     }
     await app.until('the Welcome screen', async () => (await app.visible(button(ui('welcome.open.title'), 'contains'))) || undefined);
+    const welcomeThemeControls = await count('[data-theme-control]');
     app.answer(project);
     await app.click(button(ui('welcome.open.title'), 'contains'), 'the Open project button');
     await app.until('the project workbench', async () => (await app.visible(css('[role="toolbar"]'))) || undefined);
@@ -239,11 +270,37 @@ async function runLocale(locale: Locale): Promise<BudgetSample[]> {
       60_000,
     );
     await sample('paused');
+
+    // row 12: one run of the project's test, then the boundary badges of its result
+    await app.click(button(`${ui('toolbar.stop.label')} (`, 'prefix'), 'Stop');
+    await app.until(
+      'the program to stop',
+      async () => (await app.visible(button(`${ui('toolbar.run.label')} (F5)`, 'prefix'))) || undefined,
+    );
+    await app.click(css('[data-activity="tests"]'), 'the Tests activity');
+    await app.until('the test in the list', async () => (await app.visible(css('[data-test-row]'))) || undefined);
+    await app.click(button(ui('u2Tests.runAll')), 'Run all');
+    await app.until('the verdict', async () => (await app.visible(css('[data-test-verdict-sentence]'))) || undefined, 60_000);
+    const boundaryStatements = await count('[data-boundary-badge]');
+
+    // row 10: the kinds of thing the palette finds
+    const kinds = new Set<string>();
+    for (const query of PALETTE_QUERIES) for (const group of await paletteGroups(query)) kinds.add(group);
+
+    // row 13: the theme controls of the workbench and of Preferences, with those of the Welcome screen
+    await app.press('Ctrl+Shift+P');
+    await app.until('the command palette to open', async () => (await paletteOpen()) || undefined);
+    await app.type(ui('command.file.preferences'));
+    const preferences = css('[role="option"][data-command="file.preferences"]');
+    await app.until('the palette to list Open preferences', async () => (await app.visible(preferences)) || undefined);
+    await app.click(preferences, 'Open preferences');
+    await app.until('the Preferences document', async () => (await app.visible(css('[data-app-preferences]'))) || undefined);
+    const themeControls = welcomeThemeControls + (await count('[data-theme-control]'));
+    return { samples, measures: { locale, paletteKinds: [...kinds], boundaryStatements, themeControls } };
   } finally {
     await launched.stop();
     await stop();
   }
-  return samples;
 }
 
 export interface BudgetTargets {
@@ -253,6 +310,66 @@ export interface BudgetTargets {
   runControlSets: number;
   /** `namedAtDefault`: how many of the default tabs must show their name (spec 013 row 3: all of them). */
   resultsTabs: { total: number; namedAtDefault: number; reason: string };
+  /** Row 10: the palette finds at least this many kinds of thing. */
+  paletteKinds: number;
+  /** Row 11: Search reads at least this many of the five languages. */
+  searchLanguages: number;
+  /** Row 12: one result states its boundary exactly this many times. */
+  boundaryStatements: number;
+  /** Row 13: the theme has exactly this many controls. */
+  themeControls: number;
+  /** Row 17: at most this many implementation terms on the main-path surfaces. */
+  implementationTerms: number;
+}
+
+/** Rows 10, 12 and 13 of spec 013 section 8.1, measured once per language on the running application. */
+export interface LocaleMeasures {
+  locale: Locale;
+  /** The groups the palette listed for the letters of PALETTE_QUERIES in the budget's project (FND-001). */
+  paletteKinds: string[];
+  /** The boundary badges on the Test results tab after one run of the project's test (MSG-003). */
+  boundaryStatements: number;
+  /** The theme controls of the Welcome screen, the workbench and the Preferences document together (SHL-012). */
+  themeControls: number;
+}
+
+/**
+ * Rows 11 and 17, read from the product: the languages the Search view reads (FND-003; journey U2-R3 opens a match of each kind
+ * of diagram in the running application) and the main-path keys that still hold an implementation term (MSG-002: the ratchet
+ * list of tools/ci/i18n-guard.ts, which fails CI on any other).
+ */
+export interface ProductMeasures {
+  searchLanguages: string[];
+  implementationTerms: number;
+}
+
+/** One letter each: every kind of thing in the budget's project has a name or a path with at least one of them. */
+export const PALETTE_QUERIES = ['a', 'e', 'i', 'o', 'u'] as const;
+
+/** Every measure of U2 off its target, one line each, naming the language where it was measured. */
+export function checkMeasures(locales: LocaleMeasures[], product: ProductMeasures, targets: BudgetTargets): string[] {
+  const violations: string[] = [];
+  for (const measured of locales) {
+    const kinds = measured.paletteKinds.length;
+    if (kinds < targets.paletteKinds)
+      violations.push(
+        `${measured.locale}: the palette finds ${kinds} kinds, under ${targets.paletteKinds} (${measured.paletteKinds.join(', ')})`,
+      );
+    if (measured.boundaryStatements !== targets.boundaryStatements)
+      violations.push(
+        `${measured.locale}: the boundary is stated ${measured.boundaryStatements} times on one result, not ${targets.boundaryStatements}`,
+      );
+    if (measured.themeControls !== targets.themeControls)
+      violations.push(`${measured.locale}: the theme has ${measured.themeControls} controls, not ${targets.themeControls}`);
+  }
+  if (product.searchLanguages.length < targets.searchLanguages)
+    violations.push(
+      `search reads ${product.searchLanguages.length} of the languages (${product.searchLanguages.join(', ')}), ` +
+        `under ${targets.searchLanguages}`,
+    );
+  if (product.implementationTerms > targets.implementationTerms)
+    violations.push(`implementation terms on the main-path surfaces: ${product.implementationTerms}, over ${targets.implementationTerms}`);
+  return violations;
 }
 
 /** Every count over its target, one line each, naming the state, the language, the viewport and the controls that make it. */
@@ -283,8 +400,10 @@ export function checkBudget(samples: BudgetSample[], targets: BudgetTargets): st
   return violations;
 }
 
-/** The numbers of rows 2, 3, 4, 6, 7 and 8 of spec 013 section 8.1, from the samples at 1366 by 768. */
-export function budgetRows(samples: BudgetSample[]) {
+/** The numbers of rows 2, 3, 4, 6, 7, 8, 10 to 13 and 17 of spec 013 section 8.1; the screen counts are those at 1366 by 768. */
+export function budgetRows(samples: BudgetSample[], locales: LocaleMeasures[], product: ProductMeasures) {
+  const per = (pick: (measured: LocaleMeasures) => number | string) =>
+    Object.fromEntries(locales.map((measured) => [measured.locale, pick(measured)]));
   const at = (locale: Locale, state: BudgetState) =>
     samples.find((sample) => sample.locale === locale && sample.state === state && sample.viewport.width === 1366)!;
   const en = at('en', 'running');
@@ -297,6 +416,11 @@ export function budgetRows(samples: BudgetSample[]) {
     '6 controls in the command bar while a simulation runs': en.commandBar.total,
     '7 items in the status rail while a simulation runs': en.statusRail.count,
     '8 times the target is shown': en.targetPlaces.length,
+    '10 kinds of thing the palette finds': per((measured) => measured.paletteKinds.length),
+    '11 languages covered by search': `${product.searchLanguages.length} of 5`,
+    '12 statements of the boundary on one result': per((measured) => measured.boundaryStatements),
+    '13 controls for the theme': per((measured) => measured.themeControls),
+    '17 implementation terms on the main-path surfaces': product.implementationTerms,
   };
 }
 
@@ -304,14 +428,24 @@ async function main(): Promise<void> {
   const { parseArgs } = await import('node:util');
   const { values } = parseArgs({ args: Bun.argv.slice(2), options: { out: { type: 'string' }, check: { type: 'boolean' } } });
   const samples: BudgetSample[] = [];
-  for (const locale of LOCALES) samples.push(...(await runLocale(locale)));
+  const locales: LocaleMeasures[] = [];
+  for (const locale of LOCALES) {
+    const run = await runLocale(locale);
+    samples.push(...run.samples);
+    locales.push(run.measures);
+  }
+  const terms = (await Bun.file(new URL('../../../tools/ci/i18n-terms-offenders.json', import.meta.url)).json()) as unknown[];
+  const product: ProductMeasures = { searchLanguages: [...SEARCHABLE_LANGUAGES], implementationTerms: terms.length };
   const record = {
     what:
-      'The interface of the M1 state (U0 and U1) against spec 013 section 8.1 (rows 2, 3, 4, 6, 7 and 8), ' +
-      'measured on the running application by scripts/interfaceBudget.ts',
-    runtime: 'Electron development host, headless, native POSIX runtime; example Blinky; Linux only (no macOS or Windows evidence)',
+      'The interface of the U2 state against spec 013 section 8.1 (rows 2, 3, 4, 6, 7, 8, 10 to 13 and 17), ' +
+      'measured on the running application by scripts/interfaceBudget.ts; rows 11 and 17 are read from the product',
+    runtime:
+      'Electron development host, headless, native POSIX runtime; example Blinky with one I/O point and one scene added for ' +
+      'row 10; Linux only (no macOS or Windows evidence)',
     measuredOn: new Date().toISOString().slice(0, 10),
-    rows: budgetRows(samples),
+    rows: budgetRows(samples, locales, product),
+    measures: { locales, product },
     samples,
   };
   const text = `${JSON.stringify(record, null, 2)}\n`;
@@ -319,8 +453,8 @@ async function main(): Promise<void> {
   else if (!values.check) console.log(text);
   if (values.check) {
     const targets = (await Bun.file(new URL('./interfaceBudget.targets.json', import.meta.url)).json()) as BudgetTargets;
-    const violations = checkBudget(samples, targets);
-    console.log(`interface budget: ${samples.length} samples, ${violations.length} over their target`);
+    const violations = [...checkBudget(samples, targets), ...checkMeasures(locales, product, targets)];
+    console.log(`interface budget: ${samples.length} samples and ${locales.length} languages, ${violations.length} off their target`);
     for (const violation of violations) console.error(`  over budget: ${violation}`);
     process.exit(violations.length === 0 ? 0 : 1);
   }

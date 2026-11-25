@@ -23,7 +23,7 @@ describe('UX-018 connection indicator presentation', () => {
   it('UX-018 names the native and the browser simulation, whatever the selected mode says', () => {
     expect(present({ adapterType: 'native', connected: true })).toMatchObject({
       state: 'simulation-native',
-      label: 'Simulation · native runtime',
+      label: 'Simulation',
       tone: 'info',
       icon: 'monitor',
     });
@@ -131,8 +131,8 @@ describe('UX-018 force banner stays in the status bar', () => {
   it('UX-018 shows the connection indicator first in the operational status region', () => {
     const out = view(0, false);
     expect(out).toContain('aria-label="Operational status"');
-    expect(out.indexOf('Simulation · native runtime')).toBeGreaterThan(0);
-    expect(out.indexOf('Simulation · native runtime')).toBeLessThan(out.indexOf('Running'));
+    expect(out.indexOf('Simulation')).toBeGreaterThan(0);
+    expect(out.indexOf('Simulation')).toBeLessThan(out.indexOf('Running'));
   });
 
   it('UX-018 keeps the amber banner for active forces', () => {

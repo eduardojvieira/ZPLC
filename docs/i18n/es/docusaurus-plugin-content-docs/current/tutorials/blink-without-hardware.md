@@ -123,7 +123,7 @@ apagada otra vez, y así durante 2,1 segundos de tiempo simulado. El [formato de
 enumera cada campo.
 
 1. Abra la pestaña **Resultados de las pruebas**. ZPLC vincula por sí mismo el `zplc.json` del proyecto abierto.
-2. Pulse **Ejecutar escenarios en el host**.
+2. Pulse **Ejecutar pruebas**.
 
 La pestaña dice **1 de 1 pruebas pasaron**, con la insignia **Resultado en simulación** al lado. Si una prueba falla, la
 pestaña la lista en **Pruebas que fallaron** con lo que esperaba y lo que observó cada comprobación. El desplegable **Detalles**,

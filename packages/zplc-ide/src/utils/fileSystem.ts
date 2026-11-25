@@ -75,6 +75,21 @@ function isZplcSourceFile(name: string): boolean {
   return PROGRAM_SOURCE_FILE.test(name) || GVL_FILE.test(name) || SCENARIO_FILE.test(name);
 }
 
+/**
+ * The scenes of a project, as paths from its root: `scene.json`, then `scenes/*.scene.json` by name. The file tree keeps
+ * its own rule (programs, global lists, tests), so the palette reads the scenes from the project folder.
+ */
+export async function listSceneFiles(root: FileSystemDirectoryHandle): Promise<string[]> {
+  const found: string[] = [];
+  for await (const entry of root.values()) if (entry.kind === 'file' && entry.name === 'scene.json') found.push('scene.json');
+  const folder = await root.getDirectoryHandle('scenes').catch(() => undefined);
+  const saved: string[] = [];
+  if (folder)
+    for await (const entry of folder.values())
+      if (entry.kind === 'file' && /\.scene\.json$/.test(entry.name)) saved.push(`scenes/${entry.name}`);
+  return [...found, ...saved.sort()];
+}
+
 const IGNORED_DIRS = ['node_modules', '.git', 'build', 'dist', '.vscode'];
 
 /**

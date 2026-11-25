@@ -1,6 +1,6 @@
 import { useIDEStore } from '../store/useIDEStore';
 import { useT } from '../i18n';
-import { describeElement } from '../models/sourceElements';
+import { describeElementInUi } from '../models/sourceElements';
 import { statusOf, useProjectTests } from '../projectTests/useProjectTests';
 import { useSelection } from '../shell/useSelection';
 import { PanelEmptyState } from './panelStates';
@@ -64,7 +64,7 @@ export function WorkbenchInspector() {
         <h2 id="inspector-element">{t('inspector.element')}</h2>
         {element ? (
           <dl>
-            <Row label={t('inspector.elementKind')} value={describeElement(element.element)} />
+            <Row label={t('inspector.elementKind')} value={describeElementInUi(element.element)} />
             {element.names.length > 0 && <Row label={t('inspector.elementNames')} value={element.names.join(', ')} mono />}
             <Row label={t('inspector.elementFile')} value={element.file} mono />
           </dl>

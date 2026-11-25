@@ -13,6 +13,7 @@ import os
 import struct
 import sys
 import tempfile
+import time
 import unittest
 import zlib
 from contextlib import redirect_stderr, redirect_stdout
@@ -36,19 +37,24 @@ class FakeBoard(ShellDevice):
 
     kind = "serial"
 
-    def __init__(self, program=PROGRAM, enter_status=0, exit_after=None, stale_session=False):
+    def __init__(self, program=PROGRAM, enter_status=0, exit_after=None, stale_session=False, powered_by_usb=False):
         super().__init__()
         self.crc, self.enter_status, self.exit_after, self.stale = zlib.crc32(program) & 0xFFFFFFFF, enter_status, exit_after, stale_session
         self.running, self.active, self.mirror, self.frames, self.applied, self.image = True, False, 0, 0, 0, b"\x00\x00"
         self.plugged, self.pull_in, self.event_sequence = True, None, 0
         self.deaf = False  # answers nothing
+        # the board's own clock (`uptime_ms` of `zplc sys info --json`); a board powered by the cable restarts when it comes back
+        self.powered_by_usb, self.booted, self.mirror_at_pull = powered_by_usb, time.monotonic() - 120.0, None
 
     # the person's hands ---------------------------------------------------------------------------
     def pull_cable(self):
-        self.plugged, self.running, self.active, self.image = False, False, False, b"\x00\x00"
+        self.mirror_at_pull = self.mirror
+        self.plugged, self.running, self.active, self.image, self.mirror = False, False, False, b"\x00\x00", 0
 
     def plug(self):
         self.plugged = True
+        if self.powered_by_usb:
+            self.booted = time.monotonic()
 
     def write(self, data):
         if not self.plugged:
@@ -68,6 +74,8 @@ class FakeBoard(ShellDevice):
             return "".join(f"ZF:{frame.hex()}\r\n" for frame in self.link(decoder.frames[0])) if not self.deaf else ""
         if line == "zplc version":
             return "ZPLC 2.1.0-test\r\n"
+        if line == "zplc sys info --json":
+            return '{"uptime_ms":%d}\r\n' % ((time.monotonic() - self.booted) * 1000)
         if line.startswith("zplc sys"):
             return ""
         if line == "zplc sched status --json":
@@ -240,6 +248,27 @@ class RunTests(BenchCase):
         self.assertEqual(sorted(evidence), sorted({"schema", "level", "board", "transport", "date", "repository", "tools", "run", "device", "firmware",
                                                     "program", "measurements", "limits", "events", "physical"}))
 
+    def test_mirroring_stays_on_into_the_cable_pull(self):
+        device = FakeBoard()
+        code, _, person = self.run_bench(device)
+        self.assertEqual(code, 0)
+        self.assertEqual(device.mirror_at_pull, 1)  # the LED followed the outputs when the cable went out
+        self.assertEqual(self.evidence()["physical"][2]["device_check"]["mirror_flag"], 1)
+        self.assertTrue(any("LED" in prompt and "go off" in prompt for prompt in person.prompts))
+
+    def test_an_uptime_marker_spans_the_cable_pull(self):
+        self.run_bench()
+        check = self.evidence()["physical"][2]["device_check"]
+        marker = [check.get(key) for key in ("uptime_before_ms", "uptime_after_ms", "host_elapsed_ms", "read_slack_ms")]
+        self.assertTrue(all(isinstance(value, int) for value in marker), marker)
+        before, after, elapsed, slack = marker
+        self.assertGreaterEqual(after - before, elapsed - slack)
+
+    def test_a_board_that_restarted_during_the_pull_is_not_a_link_loss(self):
+        code, _, _ = self.run_bench(FakeBoard(powered_by_usb=True))
+        self.assertEqual(code, 1)
+        self.assertTrue(any("restarted" in problem for problem in validator.problems_of(self.evidence(), "hil")))
+
     def test_the_three_confirmations_are_required(self):
         for refused in range(3):
             with self.subTest(refused=refused):
@@ -313,6 +342,16 @@ class ValidatorTests(BenchCase):
         self.out.write_text(json.dumps(evidence))
         self.assertEqual(validator.main(["--level", "hil", str(self.out)]), 1)
         self.assertEqual(validator.main(["--max-gap-ms", str(evidence["measurements"]["gap_ms"]["max"]), str(self.out)]), 0)
+
+    def test_a_link_loss_without_the_marker_or_without_mirroring_is_refused(self):
+        self.run_bench()
+        evidence = self.evidence()
+        self.assertEqual(validator.problems_of(evidence, "hil"), [])
+        for key, value, words in (("uptime_after_ms", None, "uptime marker"), ("mirror_flag", 0, "mirroring was not on")):
+            with self.subTest(key=key):
+                broken = json.loads(json.dumps(evidence))
+                broken["physical"][2]["device_check"][key] = value
+                self.assertTrue(any(words in problem for problem in validator.problems_of(broken, "hil")))
 
     def test_a_file_with_a_level_other_than_hil_is_refused_by_level_hil(self):
         device = FakeBoard()

@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react';
 import { requestElementSelection } from '../editors/elementSelectionRequests';
 import { useT } from '../i18n';
-import { describeElement } from '../models/sourceElements';
+import { describeElementInUi } from '../models/sourceElements';
 import { ReferencesPanel } from '../refs/ReferencesPanel';
 import { useReferences } from '../refs/useReferences';
 import { useIDEStore } from '../store/useIDEStore';
@@ -65,7 +65,7 @@ export function SearchView() {
   // what is shown is the last search that finished for this very text; until then the search is running
   const results = blank || settled.key !== key ? EMPTY_RESULTS : settled.results;
   const place = (match: SearchMatch): string | undefined =>
-    match.element ? describeElement(match.element) : match.table !== undefined ? t('search.table', { name: match.table }) : undefined;
+    match.element ? describeElementInUi(match.element) : match.table !== undefined ? t('search.table', { name: match.table }) : undefined;
   const searching = !blank && settled.key !== key;
 
   return (

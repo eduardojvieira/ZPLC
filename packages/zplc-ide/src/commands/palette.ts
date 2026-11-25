@@ -97,6 +97,8 @@ export function rankGroups<E extends GroupedEntry>(
 /** What the providers read, taken once when the palette opens; the actions are what choosing an item does. */
 export interface PaletteSnapshot {
   fileTree: FileTreeNode | null;
+  /** The scenes of the project folder, by path: the file tree lists none. */
+  scenePaths?: readonly string[];
   declarations: readonly Declaration[];
   globals: readonly GlobalVariable[];
   config: ZPLCProjectConfig | null;

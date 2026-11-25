@@ -18,6 +18,7 @@
  * Ids written by the author are percent-encoded where they hold `:`, `/` or `,`, so the form is unambiguous.
  */
 
+import { t } from '../i18n';
 import type { DebugMonitorEntry, DebugPowerExpr } from '@zplc/compiler';
 
 export type SourceElementId = string;
@@ -279,5 +280,32 @@ export class ElementError extends Error {
     super(message);
     this.name = 'ElementError';
     this.element = element;
+  }
+}
+
+/** `describeElement` in the interface language, for what the author reads in the Studio (search results, the place bar). */
+export function describeElementInUi(element: SourceElementId): string {
+  const parsed = parseElement(element);
+  if (!parsed) return element;
+  const { id } = parsed;
+  switch (parsed.kind) {
+    case 'line':
+      return t('place.ilLine', { id });
+    case 'rung':
+      return t('place.rung', { id });
+    case 'cell':
+      return t('place.cell', { rung: parsed.rung ?? '', row: parsed.row ?? 0, col: parsed.col ?? 0 });
+    case 'element':
+      return t('place.element', { rung: parsed.rung ?? '', id });
+    case 'block':
+      return t('place.block', { id });
+    case 'connection':
+      return t('place.wire', { id });
+    case 'step':
+      return t('place.step', { id });
+    case 'transition':
+      return t('place.transition', { id });
+    case 'action':
+      return t('place.action', { id });
   }
 }

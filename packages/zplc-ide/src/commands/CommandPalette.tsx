@@ -3,8 +3,10 @@
  * letters to filter it, the arrow keys choose and Enter runs. It is the keyboard route to every command, including the
  * ones without a shortcut. A command the state does not offer is listed, marked, and not run.
  */
-import { useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useT } from '../i18n';
+import { useIDEStore } from '../store/useIDEStore';
+import { listSceneFiles } from '../utils/fileSystem';
 import { Dialog, TextField, cx } from '../ui';
 import { listedCommands, runCommand, useCommandState } from './bus';
 import { nextIndex, rankGroups, type GroupedEntry } from './palette';
@@ -36,7 +38,12 @@ function PaletteBody() {
   const listId = useId();
   const input = useRef<HTMLInputElement>(null);
   // Read once when the palette opens: the files, objects and points of the project as they are now.
-  const snapshot = useMemo(() => buildPaletteSnapshot(locale), [locale]);
+  const [scenePaths, setScenePaths] = useState<readonly string[]>([]);
+  useEffect(() => {
+    const handle = useIDEStore.getState().directoryHandle;
+    if (handle) void listSceneFiles(handle).then(setScenePaths, () => undefined);
+  }, []);
+  const snapshot = useMemo(() => buildPaletteSnapshot(locale, scenePaths), [locale, scenePaths]);
   const rows = useMemo(
     (): Row[] => [
       ...listedCommands(COMMAND_LIST).map((command): Row => {
