@@ -19,7 +19,7 @@ Complete a Sequential Function Chart with three steps by adding the missing time
 - Estimated time: 25 minutes
 - Languages: SFC
 - Tracks: Simulation, Hardware
-- Reading page: no
+- Reading page: yes
 - Plant: none
 - Prerequisites: [edge-counter-pulses](./edge-counter-pulses.md)
 
@@ -39,7 +39,7 @@ Complete a Sequential Function Chart with three steps by adding the missing time
 
 ## What the evidence covers
 
-Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show process volumes, mixing quality or valve timing on real equipment.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how much a real tank holds, how well it mixes or how fast a real valve moves.
 
 ## Wiring
 

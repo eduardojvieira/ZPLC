@@ -19,14 +19,14 @@ Use un temporizador TOF para mantener una luz encendida después de soltar un bo
 - Tiempo estimado: 15 minutos
 - Lenguajes: ST
 - Rutas: Simulación, Hardware
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [motor-start-stop-safe](./motor-start-stop-safe.md)
 
 ## Objetivos
 
-- Mantenga una salida encendida durante un tiempo fijo después de que su entrada caiga, con TOF.
-- Ignore una entrada que permanezca en ON menos de un tiempo fijo, con TON.
+- Mantenga una salida encendida durante un tiempo fijo después de que su entrada caiga, con una instancia de TOF que se llama en cada ciclo.
+- Ignore una entrada que permanezca en ON menos de un tiempo fijo, con una instancia de TON.
 
 ## Etapas
 
@@ -39,7 +39,7 @@ Use un temporizador TOF para mantener una luz encendida después de soltar un bo
 
 ## Qué cubre la evidencia
 
-Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el antirrebote eléctrico, la respuesta del sensor ni los tiempos en el dispositivo de destino.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un botón real ni con qué rapidez responde un sensor real.
 
 ## Cableado
 

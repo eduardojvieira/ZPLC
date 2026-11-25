@@ -38,7 +38,7 @@ function readable(text: LessonTextExpanded): string[] {
   ];
 }
 
-const spanish = packages.map((lesson) => ({ id: lesson.id, strings: readable(expandText(lesson.texts.es, lesson.scenario).text) }));
+const spanish = packages.map((lesson) => ({ id: lesson.id, strings: readable(expandText(lesson.texts.es, lesson.scenario, 'es').text) }));
 
 /**
  * A whole word, in any case, that is not part of a longer word, a code token or a file path: `ScanSnapshot` is not
@@ -376,7 +376,7 @@ describe('LRN-012 the first lesson leads to a blink with the controls Studio sho
     const first = packages.find((lesson) => lesson.id === 'first-blink-simulation')!;
     for (const locale of ['en', 'es'] as const) {
       const { t } = translatorFor(locale);
-      const run = expandText(first.texts[locale], first.scenario).text.stages.find((stage) => stage.key === 'run')!;
+      const run = expandText(first.texts[locale], first.scenario, locale).text.stages.find((stage) => stage.key === 'run')!;
       const labels = [`${t('toolbar.run.label')} (F5)`, t('panel.watch'), t('learn.check')];
       expect({ locale, missing: labels.filter((label) => !run.body.includes(label)) }).toEqual({ locale, missing: [] });
     }

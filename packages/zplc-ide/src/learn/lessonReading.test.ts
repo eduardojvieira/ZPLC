@@ -81,6 +81,62 @@ describe('a lesson package with a reading page (LRN-042)', () => {
     expect(problemsOf(lessons())).toEqual([]);
   });
 
+  // A labelled picture has words, so each page may show the picture of its own language: images/x.en.png beside images/x.es.png.
+  it('CRS-016 lets a page pair use the image of its own language, images/<name>.en and images/<name>.es, and nothing looser', () => {
+    const pair = (en: string, es: string) =>
+      problemsOf(
+        lessons((directory) => {
+          cpSync(join(directory, 'images', 'dot.png'), join(directory, 'images', 'dot.en.png'));
+          cpSync(join(directory, 'images', 'dot.png'), join(directory, 'images', 'dot.es.png'));
+          edit(directory, 'reading.en.md', (text) => text.replace('images/dot.png', en));
+          edit(directory, 'reading.es.md', (text) => text.replace('images/dot.png', es));
+        }),
+      );
+    const shape = `${LESSON}: the English and Spanish reading pages do not have the same structure`;
+    expect(pair('images/dot.en.png', 'images/dot.es.png')).toEqual([]);
+    // the languages swapped, another name, or a language suffix on one page only
+    expect(pair('images/dot.es.png', 'images/dot.en.png')).toEqual([shape]);
+    expect(pair('images/dot.en.png', 'images/panel.es.png')).toEqual([
+      `${LESSON}/reading.es.md: "images/panel.es.png" is not in the package`,
+      shape,
+    ]);
+    expect(pair('images/dot.en.png', 'images/dot.png')).toEqual([shape]);
+  });
+
+  // The owner's rule: the two files of a pair always go together, with the same size, and each page has its own alt text.
+  it('CRS-016 requires the two files of an image pair, the same pixel size, and an alt text of its own in each page', () => {
+    const pair = (change: (directory: string) => void) =>
+      problemsOf(
+        lessons((directory) => {
+          cpSync(join(directory, 'images', 'dot.png'), join(directory, 'images', 'dot.en.png'));
+          cpSync(join(directory, 'images', 'dot.png'), join(directory, 'images', 'dot.es.png'));
+          edit(directory, 'reading.en.md', (text) => text.replace('images/dot.png', 'images/dot.en.png'));
+          edit(directory, 'reading.es.md', (text) => text.replace('images/dot.png', 'images/dot.es.png'));
+          change(directory);
+        }),
+      );
+    expect(pair(() => {})).toEqual([]);
+    // a size that differs: the width in the IHDR chunk, bytes 16 to 19
+    const wider = (directory: string) => {
+      const bytes = readFileSync(join(directory, 'images', 'dot.es.png'));
+      bytes[19] = bytes[19]! + 1;
+      writeFileSync(join(directory, 'images', 'dot.es.png'), bytes);
+    };
+    const [problem] = pair(wider);
+    expect(problem).toMatch(
+      /^first-blink-simulation\/images\/dot\.en\.png and images\/dot\.es\.png: have different sizes \(\d+ x \d+ and \d+ x \d+\)$/,
+    );
+    // a file without its pair
+    expect(pair((directory) => rmSync(join(directory, 'images', 'dot.es.png')))).toEqual([
+      `${LESSON}/reading.es.md: "images/dot.es.png" is not in the package`,
+      `${LESSON}/images/dot.en.png: has no images/dot.es.png beside it`,
+    ]);
+    // the same alt text on both pages
+    expect(pair((directory) => edit(directory, 'reading.es.md', (text) => text.replace('Un punto', 'A dot')))).toEqual([
+      `${LESSON}/reading.es.md: "images/dot.es.png" needs an alt text of its own, not the English one`,
+    ]);
+  });
+
   it('refuses English and Spanish pages that quote different facts', () => {
     const swapped = lessons((directory) => edit(directory, 'reading.es.md', (text) => text.replace('{{assertions}}', 'diez')));
     expect(problemsOf(swapped)).toEqual([`${LESSON}: the English and Spanish reading pages do not quote the same facts`]);
@@ -201,6 +257,19 @@ describe('a lesson package with a reading page (LRN-042)', () => {
     expect(reading.files['reading/try.ld.json']).toBe(readFileSync(join(FIXTURE, 'reading', 'try.ld.json'), 'utf8'));
     expect(reading.images).toEqual(['images/dot.png', 'images/panel.svg']);
     expect(existsSync(join(root, LESSON, 'reading', 'unused.ld.json'))).toBe(true);
+  });
+
+  it('CRS-019 bundles a control named in the prose with its catalogue label in each language', () => {
+    const named = (text: string) => `${text}\nPress {{ui:learn.check}}.\n`;
+    const root = lessons((directory) => {
+      edit(directory, 'reading.en.md', named);
+      edit(directory, 'reading.es.md', named);
+    });
+    const { packages, problems } = loadLessonPackages(root);
+    expect(problems).toEqual([]);
+    const reading = buildIndex(packages, course).index.lessons[0]!.reading!;
+    expect(reading.en).toContain('Press Check.');
+    expect(reading.es).toContain('Press Comprobar.');
   });
 });
 

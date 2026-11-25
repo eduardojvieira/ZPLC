@@ -149,11 +149,11 @@ for (const lesson of packages) {
 
     for (const locale of LOCALES) {
       it(`${locale}: every time and value it quotes exists in the reference scenario`, () => {
-        expect(expandText(lesson.texts[locale], scenario).problems).toEqual([]);
+        expect(expandText(lesson.texts[locale], scenario, locale).problems).toEqual([]);
       });
 
       it(`${locale}: every file it cites exists in the starter`, () => {
-        const { text } = expandText(lesson.texts[locale], scenario);
+        const { text } = expandText(lesson.texts[locale], scenario, locale);
         const strings = [
           text.title,
           text.summary,
@@ -168,14 +168,14 @@ for (const lesson of packages) {
       });
 
       it(`${locale}: states the real number of assertions in its Run stage`, () => {
-        const { text } = expandText(lesson.texts[locale], scenario);
+        const { text } = expandText(lesson.texts[locale], scenario, locale);
         const run = text.stages.find((stage) => stage.key === 'run')!;
         expect(run.checkpoint).toContain(String(scenario.expectations.length));
       });
     }
 
     it('LRN-029 es: addresses the learner as usted, never with voseo', () => {
-      const { text } = expandText(lesson.texts.es, scenario);
+      const { text } = expandText(lesson.texts.es, scenario, 'es');
       const strings = [
         text.title,
         text.summary,

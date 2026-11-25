@@ -91,7 +91,10 @@ export type ReadingBlock =
   | { type: 'table'; header: ReadingInline[][]; align: ReadingAlign[]; rows: ReadingInline[][][] }
   | { type: 'callout'; kind: ReadingCalloutKind; children: ReadingBlock[] }
   | { type: 'code'; lang: string; value: string }
-  /** An image alone on its line; `src` is package-relative, e.g. `images/relay-panel.svg`. */
+  /**
+   * An image alone on its line; `src` is package-relative, e.g. `images/relay-panel.svg`. The two pages of a lesson show the same
+   * images, except that a picture with words may come in a language pair, `images/<name>.en.png` and `images/<name>.es.png`.
+   */
   | { type: 'image'; src: string; alt: string }
   | { type: 'directive'; directive: ReadingDirective; line: number }
   | { type: 'rule' };

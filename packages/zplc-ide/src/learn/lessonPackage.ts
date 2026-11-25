@@ -10,7 +10,8 @@
  *   wiring.json     a lesson on the hardware track: the parts and the board channels they connect to (src/boards/wiring)
  *   checks.json     optional: wrong programs that must stay RED and other correct programs that must be GREEN
  *   reading.en.md   optional, with reading.es.md (both or neither): the reading page, Markdown in the subset of readingMarkdown.ts
- *   reading/        the files its live blocks use (Ladder programs as .ld.json); images/ holds its .svg and .png images
+ *   reading/        the files its live blocks use (Ladder programs as .ld.json); images/ holds its .svg and .png images, and a
+ *                   picture with words may come as a language pair, images/<name>.en.png and images/<name>.es.png
  *
  * The starter and the reference solution are example projects of `projects/` that the manifest names, because the
  * example loader and the workspace copy already serve them from there.
@@ -26,7 +27,12 @@
  *   {{assertions}}                 the number of assertions of the reference scenario
  *   {{v:Sig=true,Sig2=false@30|X}} shows X; the scenario must assert those values at 30 ms (an AT assertion at 30 ms,
  *                                  or a FOR or ALWAYS assertion that covers it)
+ *   {{ui:learn.check}}             the label of a Studio control in the i18n catalogue of the text's language (CRS-019): a
+ *                                  control renamed in the catalogue is renamed in every lesson when the index is regenerated,
+ *                                  and the stale index fails CI; the key must name a label without `{markers}`
  */
+import { en } from '../i18n/en';
+import { es } from '../i18n/es';
 import type { PlantMap } from '../plants/plantMap';
 import { WIRING_FILE, type WiringFile } from '../boards/wiring/wiring';
 import type { CourseDefinition } from './courseDefinition';
@@ -484,7 +490,14 @@ export function canonicalJson(value: unknown): string {
   return JSON.stringify(sorted(value));
 }
 
-const MARKUP = /\{\{(assertions|t:\d+|v:[^|}]+\|[^}]*)\}\}/g;
+const MARKUP = /\{\{(assertions|t:\d+|ui:[\w.]+|v:[^|}]+\|[^}]*)\}\}/g;
+const UI_CATALOGUES: Record<LessonLocale, Readonly<Record<string, string>>> = { en, es };
+
+/** The label `{{ui:key}}` shows in a language: undefined for a key the catalogue lacks or a text with `{markers}`. */
+export function uiLabel(locale: LessonLocale, key: string): string | undefined {
+  const label = UI_CATALOGUES[locale][key];
+  return label === undefined || label.includes('{') ? undefined : label;
+}
 const FILE_CITATION = /\b(?:src|tests)\/[\w.-]*\w/g;
 
 /** Whether the scenario asserts all `pairs` at `at` ms: an AT there, or a FOR or ALWAYS that covers it. */
@@ -509,10 +522,17 @@ const onTimeline = (scenario: ScenarioFile, time: number): boolean => time <= sc
  * Expands the markup of one source string against the reference scenario. The plain text is what the generated index
  * carries. Problems name every quoted time or value the scenario does not contain, and any markup left unresolved.
  */
-export function expandQuotes(source: string, scenario: ScenarioFile): { text: string; problems: string[] } {
+export function expandQuotes(source: string, scenario: ScenarioFile, locale?: LessonLocale): { text: string; problems: string[] } {
   const problems: string[] = [];
   const text = source.replace(MARKUP, (_match, body: string) => {
     if (body === 'assertions') return String(scenario.expectations.length);
+    if (body.startsWith('ui:')) {
+      const key = body.slice(3);
+      const label = locale && uiLabel(locale, key);
+      if (!locale) problems.push(`control "${key}" needs the language of the text`);
+      else if (!label) problems.push(`control "${key}" is not a label of the ${locale} catalogue`);
+      return label || key;
+    }
     if (body.startsWith('t:')) {
       const time = Number(body.slice(2));
       if (!onTimeline(scenario, time))
@@ -593,10 +613,10 @@ const proseOf = (markdown: string): string[] => {
  * Expands the quoted-fact markup of a reading page against the reference scenario, in the prose only, with the same rules
  * as the lesson text: a time or value that the scenario lacks, markup left unresolved and a bare "N ms" are problems.
  */
-export function expandReading(markdown: string, scenario: ScenarioFile): { text: string; problems: string[] } {
+export function expandReading(markdown: string, scenario: ScenarioFile, locale?: LessonLocale): { text: string; problems: string[] } {
   const problems: string[] = [];
   const text = mapProse(markdown, (segment) => {
-    const result = expandQuotes(segment, scenario);
+    const result = expandQuotes(segment, scenario, locale);
     problems.push(...result.problems);
     for (const time of unmarkedTimes(segment)) problems.push(`quoted time "${time}" is not marked with {{t:N}}`);
     return result.text;
@@ -642,14 +662,16 @@ export interface ReadingSource {
 export interface ReadingWalk {
   directives: ReadingDirective[];
   images: string[];
+  /** The alt text of each image, by its src. */
+  alts: Record<string, string>;
 }
 
 /** Every live block and image of a page, in reading order, inside lists and callouts too. */
 export function walkReading(blocks: readonly ReadingBlock[]): ReadingWalk {
-  const found: ReadingWalk = { directives: [], images: [] };
+  const found: ReadingWalk = { directives: [], images: [], alts: {} };
   const visit = (block: ReadingBlock): void => {
     if (block.type === 'directive') found.directives.push(block.directive);
-    else if (block.type === 'image') found.images.push(block.src);
+    else if (block.type === 'image') (found.images.push(block.src), (found.alts[block.src] = block.alt));
     else if (block.type === 'callout') block.children.forEach(visit);
     else if (block.type === 'list') block.items.forEach((item) => item.forEach(visit));
   };
@@ -663,6 +685,30 @@ export const directiveFiles = (directives: readonly ReadingDirective[]): string[
     directives.filter((each) => each.kind === 'ld-figure' || each.kind === 'ld-try').map((each) => (each.data as { src: string }).src),
   ),
 ];
+
+const pixelSize = (bytes: Uint8Array): string => {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  return bytes.length < 24 ? '?' : `${view.getUint32(16)} x ${view.getUint32(20)}`;
+};
+
+/** The language pairs `images/x.en.png` and `images/x.es.png` go together, with the same pixel size and an alt text per page. */
+function imagePairProblems(images: ReadingSource['images'], walks: Record<LessonLocale, ReadingWalk>): string[] {
+  const problems: string[] = [];
+  for (const [path, bytes] of Object.entries(images)) {
+    const match = /^(.*)\.(en|es)\.png$/.exec(path);
+    if (!match || match[2] !== 'en') {
+      if (match && !(`${match[1]}.en.png` in images)) problems.push(`${path}: has no ${match[1]}.en.png beside it`);
+      continue;
+    }
+    const other = `${match[1]}.es.png`;
+    if (!(other in images)) problems.push(`${path}: has no ${other} beside it`);
+    else if (pixelSize(bytes) !== pixelSize(images[other]!))
+      problems.push(`${path} and ${other}: have different sizes (${pixelSize(bytes)} and ${pixelSize(images[other]!)})`);
+    else if (walks.en.alts[path] !== undefined && walks.en.alts[path] === walks.es.alts[other])
+      problems.push(`reading.es.md: "${other}" needs an alt text of its own, not the English one`);
+  }
+  return problems;
+}
 
 export interface ReadingChecked {
   problems: string[];
@@ -683,17 +729,20 @@ export interface ReadingChecked {
 export function checkReading(source: ReadingSource, scenario: ScenarioFile): ReadingChecked {
   const problems: string[] = [];
   const expanded = { en: '', es: '' };
-  const walks: Record<LessonLocale, ReadingWalk> = { en: { directives: [], images: [] }, es: { directives: [], images: [] } };
+  const walks: Record<LessonLocale, ReadingWalk> = {
+    en: { directives: [], images: [], alts: {} },
+    es: { directives: [], images: [], alts: {} },
+  };
   const shapes: Partial<Record<LessonLocale, string>> = {};
   for (const locale of LESSON_LOCALES) {
     const file = `reading.${locale}.md`;
-    const result = expandReading(source[locale], scenario);
+    const result = expandReading(source[locale], scenario, locale);
     problems.push(...result.problems.map((problem) => `${file}: ${problem}`));
     expanded[locale] = result.text;
     const parsed = parseReading(result.text);
     problems.push(...parsed.errors.map((error) => `${file}:${error.line}: ${error.message}`));
     if (parsed.errors.length > 0) continue;
-    shapes[locale] = JSON.stringify(readingShape(parsed.blocks));
+    shapes[locale] = JSON.stringify(readingShape(parsed.blocks, locale));
     walks[locale] = walkReading(parsed.blocks);
     const wanted = [...directiveFiles(walks[locale].directives), ...walks[locale].images];
     for (const path of new Set(wanted)) {
@@ -706,6 +755,7 @@ export function checkReading(source: ReadingSource, scenario: ScenarioFile): Rea
     else if (readingMarkup(source.en).join(' ') !== readingMarkup(source.es).join(' '))
       problems.push('the English and Spanish reading pages do not quote the same facts');
   }
+  problems.push(...imagePairProblems(source.images, walks));
   for (const [path, bytes] of Object.entries(source.images)) {
     if (bytes.length > MAX_READING_IMAGE_BYTES) problems.push(`${path}: is over the ${MAX_READING_IMAGE_BYTES / 1024} KB limit`);
     if (path.endsWith('.png') && !PNG_SIGNATURE.every((byte, index) => bytes[index] === byte)) problems.push(`${path}: is not a PNG file`);
@@ -757,10 +807,14 @@ export interface LessonTextExpanded {
 }
 
 /** Expands every string of a text; the problems of all of them are returned together. */
-export function expandText(text: LessonText, scenario: ScenarioFile): { text: LessonTextExpanded; problems: string[] } {
+export function expandText(
+  text: LessonText,
+  scenario: ScenarioFile,
+  locale?: LessonLocale,
+): { text: LessonTextExpanded; problems: string[] } {
   const problems: string[] = [];
   const expand = (source: string): string => {
-    const result = expandQuotes(source, scenario);
+    const result = expandQuotes(source, scenario, locale);
     problems.push(...result.problems);
     return result.text;
   };

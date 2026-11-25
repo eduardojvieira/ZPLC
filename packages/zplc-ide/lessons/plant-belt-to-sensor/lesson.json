@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "plant-belt-to-sensor",
-  "version": 2,
+  "version": 3,
   "order": 121,
   "module": 12,
   "level": "advanced",
@@ -12,7 +12,7 @@
     "hardware": {
       "reason": {
         "en": "The lesson needs a belt, a box that rides it and a sensor at the far end; a learner board has none of them, and the scene supplies all three.",
-        "es": "La lección necesita una banda, una caja que la recorra y un sensor en el extremo; una placa del estudiante no tiene ninguno, y la escena aporta los tres."
+        "es": "La lección necesita una cinta, una caja que la recorra y un sensor en el extremo; una placa del estudiante no tiene ninguno de los tres, y la escena los aporta."
       },
       "instead": {
         "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",

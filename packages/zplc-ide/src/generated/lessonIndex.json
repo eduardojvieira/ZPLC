@@ -1090,7 +1090,7 @@
     },
     {
       "id": "timers-on-delay-off-delay",
-      "version": 4,
+      "version": 5,
       "order": 7,
       "module": 3,
       "level": "foundation",
@@ -1181,17 +1181,17 @@
         "en": {
           "title": "Timers: an off-delay light and an on-delay filter",
           "summary": "Use a TOF timer to keep a light on after a button is released, and a TON timer to ignore a sensor blip that is too short.",
-          "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show electrical debounce, sensor response or target timing.",
+          "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real button bounces or how fast a real sensor answers.",
           "objectives": [
-            "Keep an output on for a fixed time after its input drops, using TOF.",
-            "Ignore an input that is on for less than a fixed time, using TON."
+            "Keep an output on for a fixed time after its input drops, with a TOF instance called on every scan.",
+            "Ignore an input that is on for less than a fixed time, with a TON instance."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objective",
-              "body": "In src/Delays.st the timers HoldTimer (TOF) and FilterTimer (TON) are declared but not used. Light must stay ON for 300 ms after Button is released. Confirmed must turn ON only after Sensor has stayed ON for 200 ms.",
-              "checkpoint": "You can say which timer keeps an output on and which one waits before turning it on."
+              "body": "In src/Delays.st two timers are declared, HoldTimer (TOF) and FilterTimer (TON), and the program copies Button to Light and Sensor to Confirmed. Make Light stay ON for 300 ms after Button is released, and make Confirmed turn ON only after Sensor has stayed ON for 200 ms.",
+              "checkpoint": "You can say which of the two timers keeps an output on after its input falls, and which one waits before it turns its output on."
             },
             {
               "key": "predict",
@@ -1202,13 +1202,13 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this flaw of the starting program, save it, then press Check: The starting program copies the inputs to the outputs, so Light is already OFF at 450 ms and Confirmed turns ON for the 100 ms blip. Call HoldTimer with Button as IN and a preset of T#300ms, and set Light from its Q output. Do the same with FilterTimer, Sensor and T#200ms for Confirmed. Save the file.",
-              "checkpoint": "Both timers are called every scan and each output comes from its timer's Q."
+              "body": "Correct the starting program, save it, then press Check. The starting program copies the inputs to the outputs, so Light is already OFF at 450 ms and Confirmed turns ON with the short blip at 100 ms. Change it so that Light stays ON until 300 ms after Button is released, and Confirmed turns ON only when Sensor has been ON for 200 ms without a break. Write the statements yourself: the declarations are already there.",
+              "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
               "checkpoint": "The scenario is named Delays and contains 10 assertions."
             },
             {
@@ -1220,14 +1220,14 @@
             {
               "key": "reflect",
               "title": "Reflect",
-              "body": "Swap the two timers in your head: what would a TON on Button and a TOF on Sensor do with this scenario?",
-              "checkpoint": "TON delays the start and TOF delays the end; each answers a different question about a signal."
+              "body": "Swap the two timers in your head: what would a TON on Button and a TOF on Sensor do with this scenario? Then imagine the two calls inside IF Button THEN ... END_IF: what would Confirmed do?",
+              "checkpoint": "TON delays the start and TOF delays the end; each answers a different question about a signal. A timer that is not called keeps its clock and its Q as they were, so Light would never fall and Confirmed would never rise."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "TOF keeps its Q on for the preset time after IN falls, and TON raises Q only after IN has been on for the preset time."
+              "text": "Light must stay on after its input falls, so it needs the TOF; Confirmed must wait before it turns on, so it needs the TON. Call each instance on every scan with its input and its preset, then read its Q."
             },
             {
               "level": 2,
@@ -1235,23 +1235,23 @@
             }
           ],
           "faultCases": [
-            "The starting program copies the inputs to the outputs, so Light is already OFF at 450 ms and Confirmed turns ON for the 100 ms blip."
+            "The starting program copies the inputs to the outputs, so Light is already OFF at 450 ms and Confirmed turns ON with the short blip at 100 ms."
           ]
         },
         "es": {
           "title": "Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión",
           "summary": "Use un temporizador TOF para mantener una luz encendida después de soltar un botón, y un TON para ignorar un pulso de sensor demasiado corto.",
-          "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el antirrebote eléctrico, la respuesta del sensor ni los tiempos en el dispositivo de destino.",
+          "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un botón real ni con qué rapidez responde un sensor real.",
           "objectives": [
-            "Mantenga una salida encendida durante un tiempo fijo después de que su entrada caiga, con TOF.",
-            "Ignore una entrada que permanezca en ON menos de un tiempo fijo, con TON."
+            "Mantenga una salida encendida durante un tiempo fijo después de que su entrada caiga, con una instancia de TOF que se llama en cada ciclo.",
+            "Ignore una entrada que permanezca en ON menos de un tiempo fijo, con una instancia de TON."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/Delays.st los temporizadores HoldTimer (TOF) y FilterTimer (TON) están declarados pero no se usan. Light debe seguir en ON durante 300 ms después de soltar Button. Confirmed debe pasar a ON solo después de que Sensor haya estado en ON durante 200 ms.",
-              "checkpoint": "Usted puede decir qué temporizador mantiene una salida encendida y cuál espera antes de encenderla."
+              "body": "En src/Delays.st están declarados dos temporizadores, HoldTimer (TOF) y FilterTimer (TON), y el programa copia Button en Light y Sensor en Confirmed. Haga que Light siga en ON durante 300 ms después de soltar Button, y que Confirmed pase a ON solo después de que Sensor haya estado en ON durante 200 ms.",
+              "checkpoint": "Usted puede decir cuál de los dos temporizadores mantiene una salida encendida después de que su entrada cae, y cuál espera antes de encender su salida."
             },
             {
               "key": "predict",
@@ -1262,13 +1262,13 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia las entradas a las salidas, así que Light ya está en OFF a los 450 ms y Confirmed pasa a ON con el pulso de 100 ms. Llame a HoldTimer con Button como IN y un valor preestablecido de T#300ms, y asigne a Light su salida Q. Haga lo mismo con FilterTimer, Sensor y T#200ms para Confirmed. Guarde el archivo.",
-              "checkpoint": "Los dos temporizadores se llaman en cada ciclo y cada salida proviene de la Q de su temporizador."
+              "body": "Corrija el programa inicial, guárdelo y pulse Comprobar. El programa inicial copia las entradas a las salidas, así que Light ya está en OFF a los 450 ms y Confirmed pasa a ON con el pulso breve de los 100 ms. Cámbielo para que Light siga en ON hasta 300 ms después de soltar Button, y Confirmed pase a ON solo cuando Sensor lleve 200 ms en ON sin interrupción. Escriba usted las instrucciones: las declaraciones ya están.",
+              "checkpoint": "Comprobar informa que el escenario de esta lección pasó."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
               "checkpoint": "El escenario se llama Delays y contiene 10 aserciones."
             },
             {
@@ -1280,14 +1280,14 @@
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "Intercambie los dos temporizadores mentalmente: ¿qué haría un TON sobre Button y un TOF sobre Sensor con este escenario?",
-              "checkpoint": "TON retrasa el inicio y TOF retrasa el final; cada uno responde una pregunta distinta sobre una señal."
+              "body": "Intercambie los dos temporizadores mentalmente: ¿qué haría un TON sobre Button y un TOF sobre Sensor con este escenario? Después imagine las dos llamadas dentro de IF Button THEN ... END_IF: ¿qué haría Confirmed?",
+              "checkpoint": "TON retrasa el inicio y TOF retrasa el final; cada uno responde una pregunta distinta sobre una señal. Un temporizador que no se llama conserva su reloj y su Q como estaban, así que Light nunca bajaría y Confirmed nunca subiría."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "TOF mantiene su Q en ON durante el tiempo preestablecido después de que IN cae, y TON pone Q en ON solo cuando IN lleva ese tiempo en ON."
+              "text": "Light debe seguir encendida después de que su entrada cae, así que necesita el TOF; Confirmed debe esperar antes de encenderse, así que necesita el TON. Llame a cada instancia en cada ciclo con su entrada y su valor preestablecido, y después lea su Q."
             },
             {
               "level": 2,
@@ -1295,9 +1295,17 @@
             }
           ],
           "faultCases": [
-            "El programa inicial copia las entradas a las salidas, así que Light ya está en OFF a los 450 ms y Confirmed pasa a ON con el pulso de 100 ms."
+            "El programa inicial copia las entradas a las salidas, así que Light ya está en OFF a los 450 ms y Confirmed pasa a ON con el pulso breve de los 100 ms."
           ]
         }
+      },
+      "reading": {
+        "en": "## Waiting without stopping\n\nA PLC program never waits. Every scan it reads the inputs, runs every statement from top to bottom and writes the outputs, a few milliseconds later it does it all again, and nothing in between may pause. Yet machines need time all the time: a fan that keeps blowing for a moment after the heater stops, a pump that starts only if the tank stays empty, a sensor that must see a part for a moment before the program believes it.\n\nA **timer** gives a program time without stopping it. It is a function block: a small piece of program that keeps its own memory from one scan to the next. On every scan you give it the newest value of its input, it looks at its clock and it answers with an output. The program goes on with the next statement at once.\n\n## A timer is an instance you call\n\nIn Structured Text a timer is a variable. You declare an **instance** of the timer type in `VAR`, with a name of its own, and from then on that name is the timer:\n\n```st\nVAR\n  FanDelay : TOF;\nEND_VAR\n```\n\nThen you **call** the instance, once on every scan, with its two inputs, and read its outputs after the call:\n\n![Two timer blocks side by side, TON and TOF, each with the inputs IN and PT on the left and the outputs Q and ET on the right.](images/timer-blocks.svg)\n\n- **IN** is the signal the timer watches, a BOOL.\n- **PT** is the preset, how long the timer counts. It is a value of type TIME, written with `T#`: `T#300ms`, `T#2s`, `T#1m30s`.\n- **Q** is the answer, a BOOL. You read it as `FanDelay.Q`.\n- **ET** is the elapsed time, how far the clock has counted, also a TIME. You read it as `FanDelay.ET`.\n\nA call names each input with `:=`, as in `FanDelay(IN := HeaterOn, PT := T#5s);`. The call updates the clock and Q; the statements after it see the new Q in the same scan.\n\n## TON delays the rise, TOF delays the fall\n\nThere are two timers you will use in almost every program, and they are mirror images.\n\n- **TON**, the **on-delay timer**. When IN turns on, the clock starts. Q turns on only when IN has stayed on for the whole preset. If IN falls earlier, the clock goes back to zero and Q never rises. When IN falls, Q falls at once.\n- **TOF**, the **off-delay timer**. When IN turns on, Q turns on at once. When IN falls, the clock starts, and Q stays on until the preset is over. If IN comes back first, Q never falls.\n\nThe timing diagram shows both timers watching the same input. Time runs to the right; a line is up while its signal is ON.\n\n```timing\nspan: 5000\nsignals:\n  - { name: IN, edges: [1000, 3000] }\n  - { name: TON.Q, edges: [2000, 3000] }\n  - { name: TOF.Q, edges: [1000, 4000] }\nmarks:\n  - { from: 1000, to: 2000, label: PT }\n  - { from: 3000, to: 4000, label: PT }\ncaption: The same input fed to a TON and to a TOF with the same preset\n```\n\nThe TON adds the preset after the rise of IN, the TOF after its fall. One question picks the timer: must the output wait before it turns on (TON), or stay on after its input is gone (TOF)?\n\n## Worked example\n\nA hand dryer has a sensor, `HandsSeen`, that flickers while hands move under it. The fan must start only when hands have been seen for `T#300ms`, so that a sleeve passing by does not start it, and it must keep blowing for `T#2s` after the hands leave.\n\nThe two needs are one of each: \"wait before turning on\" is a TON, \"stay on after\" is a TOF. The output of the first becomes the input of the second.\n\n```st\nPROGRAM HandDryer\nVAR_INPUT HandsSeen : BOOL; END_VAR\nVAR_OUTPUT Fan : BOOL; END_VAR\nVAR\n  StartDelay : TON;\n  RunOn : TOF;\nEND_VAR\nStartDelay(IN := HandsSeen, PT := T#300ms);\nRunOn(IN := StartDelay.Q, PT := T#2s);\nFan := RunOn.Q;\nEND_PROGRAM\n```\n\nFollow it on the diagram. The first flicker of `HandsSeen` is too short: StartDelay starts counting, the hands are gone before the preset is over, and nothing happens. The second time the hands stay, so StartDelay.Q rises after the preset, RunOn.Q rises with it, and the fan runs. When the hands leave, StartDelay.Q falls at once, and RunOn keeps the fan on for its own preset.\n\n```timing\nspan: 5000\nsignals:\n  - { name: HandsSeen, edges: [500, 600, 1000, 2500] }\n  - { name: StartDelay.Q, edges: [1300, 2500] }\n  - { name: Fan, edges: [1300, 4500] }\nmarks:\n  - { from: 1000, to: 1300, label: 'T#300ms' }\n  - { from: 2500, to: 4500, label: 'T#2s' }\ncaption: The short flicker never reaches the fan; the fan runs on after the hands leave\n```\n\nBoth instances are called on every scan, whatever the inputs are doing, and the program never asks a timer to wait: it only reads its Q.\n\n## Common mistakes\n\n- Calling a timer inside an IF. When the condition is FALSE the instance is not called, so its clock and its Q freeze where they were. Call every timer on every scan and put the condition in IN.\n- Reading Q before the call. A statement above the call sees the Q of the previous scan, one scan late.\n- Calling one instance twice in a scan with different inputs. Each delay needs its own instance, declared once.\n- Writing the wrong unit: `T#300s` is five minutes, not a third of a second.\n- Expecting a TON to remember a short pulse. If IN falls before the preset, the count is lost.\n\n> [!WARNING]\n> A timer delays a signal in the program. It does not make a machine safe: a stop that protects people is wired in hardware and never waits for a timer in a program.\n\n## Check yourself\n\n```quiz\nquestion: A program calls a timer only inside IF Enable THEN ... END_IF. Its Q is TRUE when Enable turns FALSE. What does Q do then?\noptions:\n  - { text: 'It stays TRUE, because the instance is no longer called', correct: true, feedback: 'Yes. An instance changes only when it is called, so its clock and Q freeze.' }\n  - { text: 'It turns FALSE at once', feedback: 'Nothing turns it off. The call that would update Q no longer runs.' }\n  - { text: 'It turns FALSE when the preset is over', feedback: 'The clock only moves while the instance is called.' }\n```\n\n```quiz\nquestion: A level switch splashes ON for a moment as the liquid moves. A pump must start only when the switch stays ON for a full second. Which timer do you need?\noptions:\n  - { text: 'A TON with PT := T#1s', correct: true, feedback: 'Right. A TON raises Q only after IN has stayed ON for the whole preset, so a splash never starts the pump.' }\n  - { text: 'A TOF with PT := T#1s', feedback: 'A TOF passes every splash at once and stretches it by a second.' }\n  - { text: 'No timer: the switch is enough', feedback: 'Then every splash starts the pump.' }\n```\n\n## What you will do in the practice\n\nThe starting program declares two timers, HoldTimer (TOF) and FilterTimer (TON), and copies the button and the sensor straight to their outputs. You will make Light stay on after Button is released, and make Confirmed ignore the short Sensor blip that starts at 100 ms but believe the Sensor when it stays on from 500 ms. Then press Check.\n",
+        "es": "## Esperar sin detenerse\n\nUn programa de PLC nunca espera. En cada ciclo lee las entradas, ejecuta todas las instrucciones de arriba abajo y escribe las salidas; unos milisegundos después lo hace todo otra vez, y nada en el medio puede hacer una pausa. Sin embargo, las máquinas necesitan tiempo todo el tiempo: un ventilador que sigue soplando un momento después de que se apaga el calefactor, una bomba que arranca solo si el tanque sigue vacío, un sensor que debe ver una pieza un momento antes de que el programa le crea.\n\nUn **temporizador** le da tiempo a un programa sin detenerlo. Es un bloque de función: una pequeña parte del programa que guarda su propia memoria de un ciclo al siguiente. En cada ciclo usted le da el valor más reciente de su entrada, el bloque mira su reloj y responde con una salida. El programa sigue enseguida con la instrucción siguiente.\n\n## Un temporizador es una instancia que se llama\n\nEn texto estructurado un temporizador es una variable. Se declara una **instancia** del tipo de temporizador en `VAR`, con un nombre propio, y desde entonces ese nombre es el temporizador:\n\n```st\nVAR\n  FanDelay : TOF;\nEND_VAR\n```\n\nDespués se **llama** a la instancia, una vez en cada ciclo, con sus dos entradas, y se leen sus salidas después de la llamada:\n\n![Dos bloques temporizadores uno al lado del otro, TON y TOF, cada uno con las entradas IN y PT a la izquierda y las salidas Q y ET a la derecha.](images/timer-blocks.svg)\n\n- **IN** es la señal que vigila el temporizador, un BOOL.\n- **PT** es el valor preestablecido, cuánto tiempo cuenta el temporizador. Es un valor de tipo TIME y se escribe con `T#`: `T#300ms`, `T#2s`, `T#1m30s`.\n- **Q** es la respuesta, un BOOL. Se lee como `FanDelay.Q`.\n- **ET** es el tiempo transcurrido, cuánto lleva contado el reloj, también un TIME. Se lee como `FanDelay.ET`.\n\nUna llamada nombra cada entrada con `:=`, como en `FanDelay(IN := HeaterOn, PT := T#5s);`. La llamada actualiza el reloj y Q; las instrucciones que siguen ven la Q nueva en el mismo ciclo.\n\n## TON retrasa la subida, TOF retrasa la bajada\n\nHay dos temporizadores que usará en casi todos los programas, y son uno el reflejo del otro.\n\n- **TON**, el **temporizador con retardo a la conexión**. Cuando IN pasa a ON, el reloj arranca. Q pasa a ON solo cuando IN se mantuvo en ON durante todo el valor preestablecido. Si IN cae antes, el reloj vuelve a cero y Q nunca sube. Cuando IN cae, Q cae enseguida.\n- **TOF**, el **temporizador con retardo a la desconexión**. Cuando IN pasa a ON, Q pasa a ON enseguida. Cuando IN cae, el reloj arranca, y Q sigue en ON hasta que termina el valor preestablecido. Si IN vuelve antes, Q nunca cae.\n\nEl diagrama de tiempos muestra los dos temporizadores vigilando la misma entrada. El tiempo avanza hacia la derecha; una línea está arriba mientras su señal está en ON.\n\n```timing\nspan: 5000\nsignals:\n  - { name: IN, edges: [1000, 3000] }\n  - { name: TON.Q, edges: [2000, 3000] }\n  - { name: TOF.Q, edges: [1000, 4000] }\nmarks:\n  - { from: 1000, to: 2000, label: PT }\n  - { from: 3000, to: 4000, label: PT }\ncaption: La misma entrada en un TON y en un TOF con el mismo valor preestablecido\n```\n\nEl TON agrega el valor preestablecido después de la subida de IN, el TOF después de su bajada. Una pregunta elige el temporizador: ¿la salida debe esperar antes de pasar a ON (TON), o seguir en ON después de que su entrada se fue (TOF)?\n\n## Ejemplo resuelto\n\nUn secador de manos tiene un sensor, `HandsSeen`, que parpadea mientras las manos se mueven debajo. El ventilador debe arrancar solo cuando las manos se vieron durante `T#300ms`, para que una manga que pasa no lo arranque, y debe seguir soplando `T#2s` después de que las manos se retiran.\n\nLas dos necesidades son una de cada tipo: \"esperar antes de encender\" es un TON, \"seguir encendido después\" es un TOF. La salida del primero es la entrada del segundo.\n\n```st\nPROGRAM HandDryer\nVAR_INPUT HandsSeen : BOOL; END_VAR\nVAR_OUTPUT Fan : BOOL; END_VAR\nVAR\n  StartDelay : TON;\n  RunOn : TOF;\nEND_VAR\nStartDelay(IN := HandsSeen, PT := T#300ms);\nRunOn(IN := StartDelay.Q, PT := T#2s);\nFan := RunOn.Q;\nEND_PROGRAM\n```\n\nSígalo en el diagrama. El primer parpadeo de `HandsSeen` es demasiado corto: StartDelay empieza a contar, las manos se van antes de que termine el valor preestablecido y no pasa nada. La segunda vez las manos se quedan, así que StartDelay.Q sube después del valor preestablecido, RunOn.Q sube con ella y el ventilador funciona. Cuando las manos se retiran, StartDelay.Q cae enseguida y RunOn mantiene el ventilador encendido durante su propio valor preestablecido.\n\n```timing\nspan: 5000\nsignals:\n  - { name: HandsSeen, edges: [500, 600, 1000, 2500] }\n  - { name: StartDelay.Q, edges: [1300, 2500] }\n  - { name: Fan, edges: [1300, 4500] }\nmarks:\n  - { from: 1000, to: 1300, label: 'T#300ms' }\n  - { from: 2500, to: 4500, label: 'T#2s' }\ncaption: El parpadeo corto nunca llega al ventilador; el ventilador sigue después de que las manos se retiran\n```\n\nLas dos instancias se llaman en cada ciclo, hagan lo que hagan las entradas, y el programa nunca le pide a un temporizador que espere: solo lee su Q.\n\n## Errores comunes\n\n- Llamar a un temporizador dentro de un IF. Cuando la condición es FALSE la instancia no se llama, así que su reloj y su Q quedan congelados donde estaban. Llame a cada temporizador en cada ciclo y ponga la condición en IN.\n- Leer Q antes de la llamada. Una instrucción que está arriba de la llamada ve la Q del ciclo anterior, un ciclo tarde.\n- Llamar a una misma instancia dos veces en un ciclo con entradas distintas. Cada retardo necesita su propia instancia, declarada una vez.\n- Escribir la unidad equivocada: `T#300s` son cinco minutos, no un tercio de segundo.\n- Esperar que un TON recuerde un pulso corto. Si IN cae antes del valor preestablecido, la cuenta se pierde.\n\n> [!WARNING]\n> Un temporizador retrasa una señal en el programa. No hace segura una máquina: una parada que protege a las personas se cablea en hardware y nunca espera a un temporizador de un programa.\n\n## Compruébelo usted\n\n```quiz\nquestion: Un programa llama a un temporizador solo dentro de IF Enable THEN ... END_IF. Su Q está en TRUE cuando Enable pasa a FALSE. ¿Qué hace Q entonces?\noptions:\n  - { text: 'Sigue en TRUE, porque la instancia ya no se llama', correct: true, feedback: 'Sí. Una instancia cambia solo cuando se la llama, así que su reloj y su Q quedan congelados.' }\n  - { text: 'Pasa a FALSE enseguida', feedback: 'Nada la apaga. La llamada que actualizaría Q ya no se ejecuta.' }\n  - { text: 'Pasa a FALSE cuando termina el valor preestablecido', feedback: 'El reloj solo avanza mientras se llama a la instancia.' }\n```\n\n```quiz\nquestion: Un interruptor de nivel salpica a ON por un momento cuando el líquido se mueve. Una bomba debe arrancar solo cuando el interruptor se mantiene en ON durante un segundo entero. ¿Qué temporizador necesita?\noptions:\n  - { text: 'Un TON con PT := T#1s', correct: true, feedback: 'Correcto. Un TON pone Q en ON solo después de que IN se mantuvo en ON durante todo el valor preestablecido, así que una salpicadura nunca arranca la bomba.' }\n  - { text: 'Un TOF con PT := T#1s', feedback: 'Un TOF deja pasar cada salpicadura enseguida y la alarga un segundo.' }\n  - { text: 'Ningún temporizador: el interruptor alcanza', feedback: 'Entonces cada salpicadura arranca la bomba.' }\n```\n\n## Qué hará en la práctica\n\nEl programa inicial declara dos temporizadores, HoldTimer (TOF) y FilterTimer (TON), y copia el botón y el sensor directamente a sus salidas. Usted hará que Light siga encendida después de soltar Button, y que Confirmed ignore el pulso breve de Sensor que empieza a los 100 ms pero le crea a Sensor cuando se mantiene en ON desde los 500 ms. Después pulse Comprobar.\n",
+        "files": {},
+        "images": [
+          "images/timer-blocks.svg"
+        ]
       }
     },
     {
@@ -8278,7 +8286,7 @@
     },
     {
       "id": "sfc-fill-mix-sequence",
-      "version": 4,
+      "version": 5,
       "order": 60,
       "module": 5,
       "level": "intermediate",
@@ -8360,7 +8368,7 @@
         "en": {
           "title": "A sequence in Sequential Function Chart: fill, then mix",
           "summary": "Complete a Sequential Function Chart with three steps by adding the missing timed transition, and check that the valve and the mixer never run together.",
-          "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show process volumes, mixing quality or valve timing on real equipment.",
+          "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how much a real tank holds, how well it mixes or how fast a real valve moves.",
           "objectives": [
             "Read a Sequential Function Chart as steps that are active one at a time, actions that run while their step is active, and transitions that move the activity.",
             "Add a timed transition that uses the elapsed time of a step."
@@ -8369,7 +8377,7 @@
             {
               "key": "objective",
               "title": "Objective",
-              "body": "In src/FillMix.sfc.json the steps IDLE, FILL and MIX, their actions and the transitions IDLE to FILL (Start) and MIX to IDLE (after a delay) are drawn. Add the missing transition from FILL to MIX with the condition step_fill.T >= T#50ms, where T is how long the step has been active.",
+              "body": "In src/FillMix.sfc.json the steps IDLE, FILL and MIX are drawn with their actions, and so are the transitions from IDLE to FILL (Start) and from MIX back to IDLE (after a time). The transition out of FILL is missing. Make the sequence leave FILL for MIX once FILL has been active for 50 ms.",
               "checkpoint": "The sequence runs IDLE, FILL, MIX and back to IDLE on each Start, with one step active at a time."
             },
             {
@@ -8381,13 +8389,13 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then press Check: The starter has the three steps and two of the three transitions: FILL never leaves, so the valve stays open and MIX never runs; add a transition from FILL to MIX whose condition is step_fill.T >= T#50ms.",
+              "body": "Complete the chart, save it, then press Check. The starting chart has the three steps and two of the three transitions, so FILL never ends: the valve stays open and MIX never runs. The valve must close and the mixer must start once FILL has been active for 50 ms, and the rest of the sequence must stay as it is: MIX still returns to IDLE, which waits for the next Start.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
               "checkpoint": "The scenario is named FillMix and contains 12 assertions."
             },
             {
@@ -8399,14 +8407,14 @@
             {
               "key": "reflect",
               "title": "Reflect",
-              "body": "Which step is active while the valve is open, and why can only one be active at a time? Change the MIX action to open the valve too and see which assertion fails.",
-              "checkpoint": "Each action sets both outputs, so a step defines the whole output state and the sequence cannot leave an output on by accident. The scenario shows the sequence logic only; it does not show process feedback such as a level switch."
+              "body": "Which step is active while the valve is open, and why can only one be active at a time? A real tank leaves FILL when a level switch says it is full, not after a time: what would change in the chart?",
+              "checkpoint": "Each action writes both outputs, so a step defines the whole output state and the sequence cannot leave an output on by accident. With a level switch only the condition of the transition out of FILL changes: it reads the switch instead of the clock of the step."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "A transition has a source step, a target step and a condition. The transition from IDLE to FILL is already there; copy its shape for FILL to MIX."
+              "text": "A transition has a source step, a target step and a condition. The transition out of MIX already leaves after a time, because its condition reads the clock of its own step, step_mix.T. FILL needs the same kind of transition, to MIX."
             },
             {
               "level": 2,
@@ -8414,13 +8422,13 @@
             }
           ],
           "faultCases": [
-            "The starter has the three steps and two of the three transitions: FILL never leaves, so the valve stays open and MIX never runs; add a transition from FILL to MIX whose condition is step_fill.T >= T#50ms."
+            "The starting chart has the three steps and two of the three transitions, so FILL never ends: the valve stays open and MIX never runs."
           ]
         },
         "es": {
           "title": "Una secuencia en diagrama funcional secuencial: llenar y luego mezclar",
           "summary": "Complete un diagrama funcional secuencial de tres pasos agregando la transición temporizada que falta, y compruebe que la válvula y el mezclador nunca funcionan a la vez.",
-          "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra volúmenes de proceso, calidad de mezcla ni tiempos de válvulas en equipos reales.",
+          "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cuánto contiene un tanque real, qué tan bien mezcla ni con qué rapidez se mueve una válvula real.",
           "objectives": [
             "Lea un diagrama funcional secuencial como pasos que se activan de uno en uno, acciones que se ejecutan mientras su paso está activo y transiciones que trasladan la actividad.",
             "Agregue una transición temporizada que use el tiempo transcurrido de un paso."
@@ -8429,7 +8437,7 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/FillMix.sfc.json están dibujados los pasos IDLE, FILL y MIX, sus acciones y las transiciones de IDLE a FILL (Start) y de MIX a IDLE (tras un retardo). Agregue la transición que falta de FILL a MIX con la condición step_fill.T >= T#50ms, donde T es el tiempo que el paso lleva activo.",
+              "body": "En src/FillMix.sfc.json están dibujados los pasos IDLE, FILL y MIX con sus acciones, y también las transiciones de IDLE a FILL (Start) y de MIX de vuelta a IDLE (tras un tiempo). Falta la transición que sale de FILL. Haga que la secuencia pase de FILL a MIX cuando FILL lleve 50 ms activo.",
               "checkpoint": "La secuencia recorre IDLE, FILL, MIX y vuelve a IDLE en cada Start, con un solo paso activo a la vez."
             },
             {
@@ -8441,13 +8449,13 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial tiene los tres pasos y dos de las tres transiciones: FILL nunca termina, así que la válvula queda abierta y MIX nunca se ejecuta; agregue una transición de FILL a MIX cuya condición sea step_fill.T >= T#50ms.",
-              "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+              "body": "Complete el diagrama, guárdelo y pulse Comprobar. El diagrama inicial tiene los tres pasos y dos de las tres transiciones, así que FILL nunca termina: la válvula queda abierta y MIX nunca se ejecuta. La válvula debe cerrarse y el mezclador debe arrancar cuando FILL lleve 50 ms activo, y el resto de la secuencia debe quedar como está: MIX sigue volviendo a IDLE, que espera el Start siguiente.",
+              "checkpoint": "Comprobar informa que el escenario de esta lección pasó."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
               "checkpoint": "El escenario se llama FillMix y contiene 12 aserciones."
             },
             {
@@ -8459,14 +8467,14 @@
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "¿Qué paso está activo mientras la válvula está abierta, y por qué solo uno puede estarlo a la vez? Cambie la acción de MIX para que también abra la válvula y vea qué aserción falla.",
-              "checkpoint": "Cada acción escribe las dos salidas, así que un paso define todo el estado de salida y la secuencia no puede dejar una salida encendida por descuido. El escenario muestra solo la lógica de la secuencia; no muestra realimentación del proceso, como un interruptor de nivel."
+              "body": "¿Qué paso está activo mientras la válvula está abierta, y por qué solo uno puede estarlo a la vez? Un tanque real sale de FILL cuando un interruptor de nivel indica que está lleno, no tras un tiempo: ¿qué cambiaría en el diagrama?",
+              "checkpoint": "Cada acción escribe las dos salidas, así que un paso define todo el estado de salida y la secuencia no puede dejar una salida encendida por descuido. Con un interruptor de nivel solo cambia la condición de la transición que sale de FILL: lee el interruptor en lugar del reloj del paso."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "Una transición tiene un paso de origen, un paso de destino y una condición. La transición de IDLE a FILL ya está; copie su forma para FILL a MIX."
+              "text": "Una transición tiene un paso de origen, un paso de destino y una condición. La transición que sale de MIX ya sale tras un tiempo, porque su condición lee el reloj de su propio paso, step_mix.T. FILL necesita la misma clase de transición, hacia MIX."
             },
             {
               "level": 2,
@@ -8474,9 +8482,17 @@
             }
           ],
           "faultCases": [
-            "El programa inicial tiene los tres pasos y dos de las tres transiciones: FILL nunca termina, así que la válvula queda abierta y MIX nunca se ejecuta; agregue una transición de FILL a MIX cuya condición sea step_fill.T >= T#50ms."
+            "El diagrama inicial tiene los tres pasos y dos de las tres transiciones, así que FILL nunca termina: la válvula queda abierta y MIX nunca se ejecuta."
           ]
         }
+      },
+      "reading": {
+        "en": "## A machine that works in steps\n\nMany machines do one thing after another. A car wash soaps, then rinses, then waits for the next car. A mixing tank fills, then mixes, then waits. Each phase is a **step**, and the machine moves to the next step when something tells it to: a button, a sensor, or enough time spent in the step.\n\nYou can write such a machine with IF statements and memory bits, as the Ladder lesson on step bits did. A **sequential function chart**, SFC for short, draws the steps instead, so the order of the machine is the picture you see.\n\n## Steps, actions and transitions\n\nA chart has three kinds of element.\n\n- A **step** is a phase of the machine. A step is either active or not. The **initial step**, drawn with a double border, is the one that is active when the program starts.\n- An **action** belongs to a step and runs on every scan while its step is active. In ZPLC an action is a few statements of Structured Text, and the qualifier `N` means \"while the step is active\". When the step ends, its action stops running.\n- A **transition** joins one step to the next and holds a **condition**. While the step before it is active, the condition is evaluated on every scan; when it is TRUE, the step before it ends and the step after it becomes active.\n\nIn a simple sequence exactly one step is active at a time. The activity moves down the chart, one transition at a time, and the last transition leads back to the top.\n\nEvery step also has its own clock: how long it has been active. You read it as the step's name followed by `.T`, for example `SOAP.T`; the step's id works too, as in `step_soap.T`. It is a value of type TIME, it starts from zero each time the step becomes active, and a condition such as `SOAP.T >= T#30s` is TRUE once the step has been active for thirty seconds. A timed step needs no timer block.\n\n## Worked example\n\nA small car wash starts when a coin drops. It soaps for thirty seconds, rinses for twenty seconds and then waits for the next coin. The outputs are `Soap` and `Water`, the input is `Coin`.\n\nThree phases give three steps: WAIT, which is the initial step, SOAP and RINSE. Three changes give three transitions: a coin, the end of the soap time and the end of the rinse time. Each action writes both outputs, so each step says the whole state of the machine.\n\n![A chart of three steps one above the other, WAIT with a double border, SOAP and RINSE. Each has an N action that writes Soap and Water. The transitions are Coin, SOAP.T >= T#30s and RINSE.T >= T#20s, and the last one leads back to WAIT.](images/car-wash-chart.svg)\n\nFollow a coin through the chart. WAIT is active and writes both outputs FALSE. The coin makes the first condition TRUE, so on the next scan SOAP becomes active and its action turns the soap on. Thirty seconds later `SOAP.T >= T#30s` is TRUE, SOAP ends and RINSE begins. After twenty seconds of RINSE the chart is back in WAIT, which turns the water off.\n\n```timing\nspan: 60000\nsignals:\n  - { name: Coin, edges: [1000, 2000] }\n  - { name: WAIT, edges: [0, 1000, 51000] }\n  - { name: SOAP, edges: [1000, 31000] }\n  - { name: RINSE, edges: [31000, 51000] }\nmarks:\n  - { from: 1000, to: 31000, label: 'T#30s' }\n  - { from: 31000, to: 51000, label: 'T#20s' }\ncaption: One coin moves the activity from WAIT to SOAP, RINSE and back to WAIT\n```\n\nA step changes on the scan after its condition becomes TRUE. At a scan of a few milliseconds that delay is invisible in a car wash, but a lesson that checks every scan sees it, so remember it when you predict.\n\n## Common mistakes\n\n- Forgetting a transition, or writing a condition that never becomes TRUE. The step before it stays active for ever, and its action keeps running.\n- Writing an output only in the step that turns it on. When the step ends its action stops running, and the output keeps its last value. Let every action write every output the sequence drives, or turn the output off in the next step.\n- Expecting the next step in the same scan as the condition. The chart moves on the following scan.\n- Using the clock of the wrong step. `SOAP.T` counts only while SOAP is active, and it starts from zero each time SOAP begins.\n\n> [!NOTE]\n> A chart shows the order of a machine, not its safety. A guard or an emergency stop is wired so that it stops the machine whatever step is active.\n\n## Check yourself\n\n```quiz\nquestion: SOAP is active and its condition SOAP.T >= T#30s becomes TRUE on this scan. When does RINSE become active?\noptions:\n  - { text: 'On the next scan', correct: true, feedback: 'Yes. The chart sees the condition on this scan and moves the activity on the next one.' }\n  - { text: 'On this same scan', feedback: 'The condition is evaluated on this scan; the step changes on the following one.' }\n  - { text: 'Thirty seconds later', feedback: 'The thirty seconds are already over: that is what the condition says.' }\n```\n\n```quiz\nquestion: The action of SOAP writes Soap := TRUE and nothing else, and the action of RINSE writes Water := TRUE and nothing else. What is Soap while RINSE is active?\noptions:\n  - { text: 'TRUE, because nothing turned it off', correct: true, feedback: 'Right. The action of SOAP stopped running but Soap kept its last value. Each action should write every output.' }\n  - { text: 'FALSE, because SOAP is no longer active', feedback: 'An output is not reset when its step ends; it keeps the value it was given.' }\n  - { text: 'It changes on every scan', feedback: 'No action writes Soap while RINSE is active, so it does not change.' }\n```\n\n## What you will do in the practice\n\nThe chart of the practice already has the steps IDLE, FILL and MIX, their actions, and the transitions out of IDLE and out of MIX. The transition out of FILL is missing, so the valve never closes. You will make the sequence leave FILL for MIX once FILL has been active for 50 ms, then press Check.\n",
+        "es": "## Una máquina que trabaja por pasos\n\nMuchas máquinas hacen una cosa después de otra. Un lavadero de autos enjabona, después enjuaga y después espera el auto siguiente. Un tanque de mezcla se llena, después mezcla y después espera. Cada fase es un **paso**, y la máquina pasa al paso siguiente cuando algo se lo indica: un botón, un sensor o el tiempo suficiente dentro del paso.\n\nUna máquina así se puede escribir con instrucciones IF y bits de memoria, como hizo la lección de bits de paso en diagrama de escalera. Un **diagrama funcional secuencial**, SFC por sus siglas, dibuja en cambio los pasos, de modo que el orden de la máquina es el dibujo que usted ve.\n\n## Pasos, acciones y transiciones\n\nUn diagrama tiene tres clases de elemento.\n\n- Un **paso** es una fase de la máquina. Un paso está activo o no lo está. El **paso inicial**, dibujado con doble borde, es el que está activo cuando el programa arranca.\n- Una **acción** pertenece a un paso y se ejecuta en cada ciclo mientras su paso está activo. En ZPLC una acción es unas pocas instrucciones de texto estructurado, y el calificador `N` significa \"mientras el paso está activo\". Cuando el paso termina, su acción deja de ejecutarse.\n- Una **transición** une un paso con el siguiente y contiene una **condición**. Mientras el paso anterior está activo, la condición se evalúa en cada ciclo; cuando es TRUE, el paso anterior termina y el paso siguiente pasa a estar activo.\n\nEn una secuencia simple hay exactamente un paso activo a la vez. La actividad baja por el diagrama, una transición por vez, y la última transición vuelve arriba.\n\nCada paso tiene además su propio reloj: cuánto tiempo lleva activo. Se lee como el nombre del paso seguido de `.T`, por ejemplo `SOAP.T`; el id del paso también sirve, como en `step_soap.T`. Es un valor de tipo TIME, empieza de cero cada vez que el paso se activa, y una condición como `SOAP.T >= T#30s` es TRUE cuando el paso lleva treinta segundos activo. Un paso temporizado no necesita un bloque temporizador.\n\n## Ejemplo resuelto\n\nUn lavadero de autos pequeño arranca cuando cae una moneda. Enjabona durante treinta segundos, enjuaga durante veinte segundos y después espera la moneda siguiente. Las salidas son `Soap` y `Water`, la entrada es `Coin`.\n\nTres fases dan tres pasos: WAIT, que es el paso inicial, SOAP y RINSE. Tres cambios dan tres transiciones: una moneda, el fin del tiempo de jabón y el fin del tiempo de enjuague. Cada acción escribe las dos salidas, así que cada paso dice el estado completo de la máquina.\n\n![Un diagrama de tres pasos uno debajo del otro, WAIT con doble borde, SOAP y RINSE. Cada uno tiene una acción N que escribe Soap y Water. Las transiciones son Coin, SOAP.T >= T#30s y RINSE.T >= T#20s, y la última vuelve a WAIT.](images/car-wash-chart.svg)\n\nSiga una moneda por el diagrama. WAIT está activo y escribe FALSE en las dos salidas. La moneda hace TRUE la primera condición, así que en el ciclo siguiente SOAP pasa a estar activo y su acción enciende el jabón. Treinta segundos después `SOAP.T >= T#30s` es TRUE, SOAP termina y empieza RINSE. Tras veinte segundos de RINSE el diagrama vuelve a WAIT, que apaga el agua.\n\n```timing\nspan: 60000\nsignals:\n  - { name: Coin, edges: [1000, 2000] }\n  - { name: WAIT, edges: [0, 1000, 51000] }\n  - { name: SOAP, edges: [1000, 31000] }\n  - { name: RINSE, edges: [31000, 51000] }\nmarks:\n  - { from: 1000, to: 31000, label: 'T#30s' }\n  - { from: 31000, to: 51000, label: 'T#20s' }\ncaption: Una moneda lleva la actividad de WAIT a SOAP, a RINSE y de vuelta a WAIT\n```\n\nUn paso cambia en el ciclo siguiente a aquel en que su condición se hace TRUE. Con un ciclo de unos pocos milisegundos esa demora no se nota en un lavadero, pero una lección que comprueba cada ciclo la ve, así que recuérdela cuando haga su predicción.\n\n## Errores comunes\n\n- Olvidar una transición, o escribir una condición que nunca se hace TRUE. El paso anterior queda activo para siempre y su acción sigue ejecutándose.\n- Escribir una salida solo en el paso que la enciende. Cuando el paso termina su acción deja de ejecutarse, y la salida conserva su último valor. Haga que cada acción escriba todas las salidas que maneja la secuencia, o apague la salida en el paso siguiente.\n- Esperar el paso siguiente en el mismo ciclo que la condición. El diagrama avanza en el ciclo siguiente.\n- Usar el reloj del paso equivocado. `SOAP.T` cuenta solo mientras SOAP está activo, y empieza de cero cada vez que SOAP comienza.\n\n> [!NOTE]\n> Un diagrama muestra el orden de una máquina, no su seguridad. Una protección o una parada de emergencia se cablea para que detenga la máquina sea cual sea el paso activo.\n\n## Compruébelo usted\n\n```quiz\nquestion: SOAP está activo y su condición SOAP.T >= T#30s se hace TRUE en este ciclo. ¿Cuándo pasa RINSE a estar activo?\noptions:\n  - { text: 'En el ciclo siguiente', correct: true, feedback: 'Sí. El diagrama ve la condición en este ciclo y traslada la actividad en el siguiente.' }\n  - { text: 'En este mismo ciclo', feedback: 'La condición se evalúa en este ciclo; el paso cambia en el siguiente.' }\n  - { text: 'Treinta segundos después', feedback: 'Los treinta segundos ya pasaron: eso es lo que dice la condición.' }\n```\n\n```quiz\nquestion: La acción de SOAP escribe Soap := TRUE y nada más, y la acción de RINSE escribe Water := TRUE y nada más. ¿Qué vale Soap mientras RINSE está activo?\noptions:\n  - { text: 'TRUE, porque nada lo apagó', correct: true, feedback: 'Correcto. La acción de SOAP dejó de ejecutarse pero Soap conservó su último valor. Cada acción debería escribir todas las salidas.' }\n  - { text: 'FALSE, porque SOAP ya no está activo', feedback: 'Una salida no se pone a cero cuando su paso termina; conserva el valor que se le dio.' }\n  - { text: 'Cambia en cada ciclo', feedback: 'Ninguna acción escribe Soap mientras RINSE está activo, así que no cambia.' }\n```\n\n## Qué hará en la práctica\n\nEl diagrama de la práctica ya tiene los pasos IDLE, FILL y MIX, sus acciones y las transiciones que salen de IDLE y de MIX. Falta la transición que sale de FILL, así que la válvula nunca se cierra. Usted hará que la secuencia pase de FILL a MIX cuando FILL lleve 50 ms activo, y después pulsará Comprobar.\n",
+        "files": {},
+        "images": [
+          "images/car-wash-chart.svg"
+        ]
       }
     },
     {
@@ -13476,7 +13492,7 @@
     },
     {
       "id": "plant-belt-to-sensor",
-      "version": 2,
+      "version": 3,
       "order": 121,
       "module": 12,
       "level": "advanced",
@@ -13493,7 +13509,7 @@
         "hardware": {
           "reason": {
             "en": "The lesson needs a belt, a box that rides it and a sensor at the far end; a learner board has none of them, and the scene supplies all three.",
-            "es": "La lección necesita una banda, una caja que la recorra y un sensor en el extremo; una placa del estudiante no tiene ninguno, y la escena aporta los tres."
+            "es": "La lección necesita una cinta, una caja que la recorra y un sensor en el extremo; una placa del estudiante no tiene ninguno de los tres, y la escena los aporta."
           },
           "instead": {
             "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",
@@ -13564,52 +13580,52 @@
             {
               "key": "objective",
               "title": "Objective",
-              "body": "In src/BeltToSensor.st, keep a Running memory: set it with Start, clear it with EyeFar, and wire Run and Emit.",
-              "checkpoint": "Run follows the memory; Emit puts one box on the belt when Start is pressed."
+              "body": "In src/BeltToSensor.st the inputs Start and EyeFar and the outputs Run and Emit are declared, and the program drives nothing yet. A press of the start button must put one box on the belt and run the belt, and the belt must stop when the sensor at the far end sees the box.",
+              "checkpoint": "You can say which signal starts the belt, which one stops it, and why a short press needs a memory."
             },
             {
               "key": "predict",
               "title": "Predict",
-              "body": "Before running, follow the box: the start button is only a short press, but the belt has to keep running until the box arrives.",
-              "checkpoint": "Belt off before the press; on after it, with one box on it; off again as soon as EyeFar sees the box, and it stays off."
+              "body": "The scenario presses the start button at 200 ms and releases it at 400 ms. Before running, follow the box: predict Run before the press, after the release while the box travels, and once EyeFar sees the box.",
+              "checkpoint": "Run OFF at 100 ms, before the press; ON after it, also once the button is released; OFF as soon as EyeFar sees the box, and still OFF at the end, at 8000 ms."
             },
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter drives no output, so the belt never moves; start the belt and put a box on it with Start, and stop the belt when EyeFar sees the box.",
+              "body": "Write the program, save it, then press Check. The starting program drives no output, so the belt never moves and no box arrives. Each press of Start must put one box on the belt and start the belt; the belt must keep running after the button is released and stop as soon as EyeFar sees the box, so that the box never falls off the end. Declare whatever else your program needs.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the machine move, press Run (F5) and open the 3D view.",
               "checkpoint": "The required scenario is named belt-to-sensor and contains 4 assertions."
             },
             {
               "key": "observe",
               "title": "Observe",
-              "body": "Watch the box ride the belt in the 3D view and stop under the sensor; compare it with the Run output in the trace.",
+              "body": "Watch the box ride the belt in the 3D view and stop in front of the sensor; compare it with the Run output in the trace.",
               "checkpoint": "Run falls when the sensor turns on, not before, and the box is never dropped."
             },
             {
               "key": "reflect",
               "title": "Reflect",
-              "body": "The EVENTUALLY assertion proves the sensor saw the box within eight seconds; the AT assertions pin the state at the start and at the end.",
-              "checkpoint": "What the assertions check is tested; nothing else is."
+              "body": "The scenario proves that the sensor saw the box within 8000 ms and that the belt is stopped at the end. What would a second press of Start do while the box travels? And with the box still standing in front of the sensor?",
+              "checkpoint": "While the box travels, a second press keeps the belt running and puts a second box on it. With the box in front of the sensor, and the clear written after the set, the belt stays stopped until the box is taken away, although the press still puts a new box at the start of the belt."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "Start is a pulse, so the belt needs a memory: set Running when Start is TRUE and clear it when EyeFar is TRUE."
+              "text": "Start is TRUE only while the button is held, so the belt needs a BOOL memory of its own, declared in VAR: set it when Start is TRUE, clear it when EyeFar is TRUE, and let Run follow it. A rising edge of Emit releases one box."
             },
             {
               "level": 2,
-              "text": "Write the clear after the set so EyeFar wins when both are TRUE, then Run := Running and Emit := Start."
+              "text": "Declare Running : BOOL in VAR, then write IF Start THEN Running := TRUE; END_IF; IF EyeFar THEN Running := FALSE; END_IF; Run := Running; Emit := Start;"
             }
           ],
           "faultCases": [
-            "The starter drives no output, so the belt never moves; start the belt and put a box on it with Start, and stop the belt when EyeFar sees the box."
+            "The starting program drives no output, so the belt never moves and no box arrives."
           ]
         },
         "es": {
@@ -13624,54 +13640,63 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/BeltToSensor.st, mantenga una memoria Running: actívela con Start, bórrela con EyeFar y conecte Run y Emit.",
-              "checkpoint": "Run sigue a la memoria; Emit pone una caja en la cinta cuando se pulsa Start."
+              "body": "En src/BeltToSensor.st están declaradas las entradas Start y EyeFar y las salidas Run y Emit, y el programa todavía no acciona nada. Una pulsación del pulsador de inicio debe poner una caja en la cinta y hacer avanzar la cinta, y la cinta debe detenerse cuando el sensor del extremo ve la caja.",
+              "checkpoint": "Usted puede decir qué señal arranca la cinta, cuál la detiene y por qué una pulsación corta necesita una memoria."
             },
             {
               "key": "predict",
-              "title": "Predecir",
-              "body": "Antes de ejecutar, siga la caja: el botón de inicio es solo una pulsación corta, pero la cinta debe seguir en marcha hasta que llegue la caja.",
-              "checkpoint": "Cinta apagada antes de la pulsación; encendida después, con una caja encima; apagada otra vez en cuanto EyeFar ve la caja, y así se queda."
+              "title": "Prediga",
+              "body": "El escenario pulsa el pulsador de inicio a los 200 ms y lo suelta a los 400 ms. Antes de ejecutar, siga la caja: prediga Run antes de la pulsación, después de soltar el pulsador mientras la caja avanza, y cuando EyeFar ve la caja.",
+              "checkpoint": "Run en OFF a los 100 ms, antes de la pulsación; en ON después, también una vez suelto el pulsador; en OFF en cuanto EyeFar ve la caja, y todavía en OFF al final, a los 8000 ms."
             },
             {
               "key": "edit",
-              "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que la cinta nunca se mueve; arranque la cinta y ponga una caja con Start, y detenga la cinta cuando EyeFar vea la caja.",
-              "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+              "title": "Edite",
+              "body": "Escriba el programa, guárdelo y pulse Comprobar. El programa inicial no acciona ninguna salida, así que la cinta nunca se mueve y no llega ninguna caja. Cada pulsación de Start debe poner una caja en la cinta y arrancar la cinta; la cinta debe seguir en marcha después de soltar el pulsador y detenerse en cuanto EyeFar ve la caja, para que la caja nunca caiga por el extremo. Declare lo que su programa necesite además.",
+              "checkpoint": "Comprobar informa que el escenario de esta lección pasó."
             },
             {
               "key": "run",
-              "title": "Ejecutar",
-              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la máquina, pulse Ejecutar (F5) y abra la Vista 3D.",
               "checkpoint": "El escenario requerido se llama belt-to-sensor y contiene 4 aserciones."
             },
             {
               "key": "observe",
-              "title": "Observar",
-              "body": "Observe la caja avanzar por la cinta en la vista 3D y detenerse bajo el sensor; compárelo con la salida Run en la traza.",
+              "title": "Observe",
+              "body": "Observe en la Vista 3D cómo la caja avanza por la cinta y se detiene delante del sensor; compárelo con la salida Run en la traza.",
               "checkpoint": "Run baja cuando el sensor se activa, no antes, y la caja nunca cae."
             },
             {
               "key": "reflect",
-              "title": "Reflexionar",
-              "body": "La aserción EVENTUALLY prueba que el sensor vio la caja en ocho segundos; las aserciones AT fijan el estado al inicio y al final.",
-              "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
+              "title": "Reflexione",
+              "body": "El escenario prueba que el sensor vio la caja antes de los 8000 ms y que la cinta está detenida al final. ¿Qué haría una segunda pulsación de Start mientras la caja avanza? ¿Y con la caja todavía delante del sensor?",
+              "checkpoint": "Mientras la caja avanza, una segunda pulsación mantiene la cinta en marcha y pone una segunda caja en ella. Con la caja delante del sensor, y el borrado escrito después de la activación, la cinta sigue detenida hasta que se retira la caja, aunque la pulsación igual pone una caja nueva al comienzo de la cinta."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "Start es un pulso, así que la cinta necesita una memoria: active Running cuando Start sea TRUE y bórrela cuando EyeFar sea TRUE."
+              "text": "Start está en TRUE solo mientras se mantiene el pulsador, así que la cinta necesita una memoria BOOL propia, declarada en VAR: actívela cuando Start sea TRUE, bórrela cuando EyeFar sea TRUE y haga que Run la siga. Un flanco ascendente de Emit suelta una caja."
             },
             {
               "level": 2,
-              "text": "Escriba el borrado después de la activación para que EyeFar gane cuando ambos sean TRUE; luego Run := Running y Emit := Start."
+              "text": "Declare Running : BOOL en VAR y escriba IF Start THEN Running := TRUE; END_IF; IF EyeFar THEN Running := FALSE; END_IF; Run := Running; Emit := Start;"
             }
           ],
           "faultCases": [
-            "El inicial no gobierna ninguna salida, así que la cinta nunca se mueve; arranque la cinta y ponga una caja con Start, y detenga la cinta cuando EyeFar vea la caja."
+            "El programa inicial no acciona ninguna salida, así que la cinta nunca se mueve y no llega ninguna caja."
           ]
         }
+      },
+      "reading": {
+        "en": "## The machine\n\nThis is the first machine of the course, and the smallest station of a packing line: a box is put on a belt, the belt carries it to the far end, and a sensor there tells the program that the box has arrived. Real lines are long chains of stations like this one, and each of them starts and stops a belt from what its sensors see.\n\n![The belt-to-sensor scene seen from the front. A belt conveyor on legs runs from left to right. On the left, four cyan corner marks show where the emitter puts a box on the belt, and behind the belt stands the start button on a pedestal. At the far right end a sensor on a post looks across the belt. Each part has a label with its name, its kind and its wired signal.](images/machine.en.png)\n\nThe station has four parts. The table says what each one is in a real plant and what its signal means to your program. The PLC variable is the name the program uses: the plant map of the lesson binds each signal of the scene to it.\n\n| Part                              | What it is in a real plant                                                                                    | Signal                | PLC variable | Direction  | Type | Meaning                                           |\n| --------------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------- | ------------ | ---------- | ---- | ------------------------------------------------- |\n| `Belt1` (Belt conveyor)           | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines.              | `Belt1.run`           | `Run`        | PLC output | BOOL | TRUE runs the belt forward.                       |\n| `Emitter1` (Item emitter)         | Stands for whatever feeds the line: the machine before it, an operator, or a magazine that releases one item. | `Emitter1.emit`       | `Emit`       | PLC output | BOOL | Each rising edge releases one item onto the line. |\n| `EyeFar` (Diffuse optical sensor) | A photoelectric sensor that sends out light and sees it bounce back off an object in front of it.             | `EyeFar.detect`       | `EyeFar`     | PLC input  | BOOL | TRUE while an object is in the beam.              |\n| `StartButton` (Push button)       | A button on the operator panel that is pressed only while a finger holds it.                                  | `StartButton.pressed` | `Start`      | PLC input  | BOOL | TRUE while the button is held down.               |\n\nA PLC output drives a part of the machine; a PLC input is what a part reports. Your program sees only the four variables: it never sees the box itself, only what the sensor says about it.\n\n## A press is short, the job is long\n\nA push button is TRUE only while a finger holds it, for a fraction of a second. The belt, though, must keep running for several seconds, until the box reaches the sensor. If Run simply copied Start, the belt would move only while the button is held and stop with the box in the middle.\n\nSo the program needs a **memory**: a BOOL variable of its own, not wired to any part, that remembers \"the belt should be running\". One condition sets it, another clears it, and the output follows it.\n\n```timing\nspan: 6000\nsignals:\n  - { name: Start, edges: [200, 400] }\n  - { name: Memory, edges: [200, 4800] }\n  - { name: EyeFar, edges: [4800, 6000] }\n  - { name: Run, edges: [200, 4800] }\ncaption: A short press sets the memory, the sensor clears it, and the belt follows the memory\n```\n\nThe sensor stays TRUE while the box stands in front of it, so it keeps the memory cleared. That is what you want: the box waits at the end of the belt until someone takes it away.\n\nWhen the set and the clear are both TRUE in the same scan, the statement written last wins, because the statements run from top to bottom. Decide which one should win: here a stop from the sensor matters more than a start.\n\n## Worked example\n\nA roller shutter over a loading door has an Open button and a top limit switch. A short press must open the shutter all the way: the motor runs until the limit switch says the shutter is up. This is the same problem as the belt, solved here with a seal-in, the form you met in Ladder diagram and in the motor lesson:\n\n```st\nPROGRAM Shutter\nVAR_INPUT OpenButton : BOOL; TopLimit : BOOL; END_VAR\nVAR_OUTPUT Motor : BOOL; END_VAR\nVAR Opening : BOOL; END_VAR\nOpening := (OpenButton OR Opening) AND NOT TopLimit;\nMotor := Opening;\nEND_PROGRAM\n```\n\nRead the assignment from the right. `OpenButton OR Opening` stays TRUE after the button is released, because Opening holds itself. `AND NOT TopLimit` breaks the hold as soon as the limit switch closes, and it also wins when both are TRUE. Two IF statements, one that sets Opening and one after it that clears it, do the same thing in a form many programmers find easier to read.\n\n## Common mistakes\n\n- Driving the belt straight from the button. The belt moves only while the button is held, and the box stops halfway.\n- Setting the memory and never clearing it. The belt carries the box past the sensor and off the end of the belt.\n- Clearing before setting, so that a held button restarts the belt while the box is still in front of the sensor.\n- Forgetting to declare the memory. Every variable the program uses is declared, and a memory of the program goes in `VAR`.\n\n> [!NOTE]\n> The sensor sees the box only while the box is in its beam. A box that moves fast past a sensor can be in the beam for a short time, and a program that reads it too late misses it. Here the belt stops the box in the beam, so the signal stays TRUE.\n\n## Check yourself\n\n```quiz\nquestion: Why does the belt need a memory variable when Start is wired straight to the program?\noptions:\n  - { text: 'Because Start is TRUE only while the button is held, and the belt must keep running after that', correct: true, feedback: 'Yes. The memory remembers the press after the finger is gone.' }\n  - { text: 'Because an output cannot be written from an input', feedback: 'An output can copy an input. The belt would then stop as soon as the button is released.' }\n  - { text: 'Because the sensor needs a memory to see the box', feedback: 'The sensor is TRUE while the box is in its beam; it needs nothing from the program.' }\n```\n\n```quiz\nquestion: In the same scan Start and EyeFar are both TRUE. The program sets the memory first and clears it in the next statement. What is the memory at the end of the scan?\noptions:\n  - { text: 'FALSE', correct: true, feedback: 'Right. The statements run from top to bottom, so the clear, written last, wins.' }\n  - { text: 'TRUE', feedback: 'The set ran first, but the clear ran after it in the same scan.' }\n  - { text: 'It changes on every scan', feedback: 'Both conditions give the same result on every scan: the clear always comes last.' }\n```\n\n## What you will do in the practice\n\nThe starting program declares the inputs Start and EyeFar and the outputs Run and Emit, and drives nothing. You will write the program of the station: a press of the start button, which the scenario gives at 200 ms, puts one box on the belt and runs it, and the belt stops when EyeFar sees the box. Then press Check.\n",
+        "es": "## La máquina\n\nEsta es la primera máquina del curso y la estación más pequeña de una línea de embalaje: se pone una caja en una cinta, la cinta la lleva hasta el extremo, y un sensor allí le avisa al programa que la caja llegó. Las líneas reales son largas cadenas de estaciones como esta, y cada una arranca y detiene una cinta según lo que ven sus sensores.\n\n![La escena de la cinta al sensor vista de frente. Una cinta transportadora sobre patas va de izquierda a derecha. A la izquierda, cuatro marcas cian en las esquinas muestran dónde el emisor pone una caja en la cinta, y detrás de la cinta está el pulsador de inicio sobre un pedestal. En el extremo derecho un sensor sobre un poste mira a través de la cinta. Cada elemento tiene una etiqueta con su nombre, su tipo y su señal conectada.](images/machine.es.png)\n\nLa estación tiene cuatro elementos. La tabla dice qué es cada uno en una planta real y qué significa su señal para su programa. La variable del PLC es el nombre que usa el programa: el mapa de planta de la lección une cada señal de la escena con ella.\n\n| Pieza                           | Qué es en una planta real                                                                                                             | Señal                 | Variable del PLC | Dirección       | Tipo | Significado                                          |\n| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | --------------------- | ---------------- | --------------- | ---- | ---------------------------------------------------- |\n| `Belt1` (Cinta transportadora)  | Una cinta movida por un motor que lleva la mercancía a lo largo de una línea, la base de casi toda línea de embalaje o clasificación. | `Belt1.run`           | `Run`            | Salida del PLC  | BOOL | TRUE hace avanzar la cinta.                          |\n| `Emitter1` (Emisor de piezas)   | Representa lo que alimenta la línea: la máquina anterior, un operario o un cargador que suelta una pieza.                             | `Emitter1.emit`       | `Emit`           | Salida del PLC  | BOOL | Cada flanco ascendente suelta una pieza en la línea. |\n| `EyeFar` (Sensor óptico difuso) | Un sensor fotoeléctrico que emite luz y la ve rebotar en un objeto que tiene delante.                                                 | `EyeFar.detect`       | `EyeFar`         | Entrada del PLC | BOOL | TRUE mientras hay un objeto en el haz.               |\n| `StartButton` (Pulsador)        | Un pulsador del panel del operador, presionado solo mientras un dedo lo mantiene.                                                     | `StartButton.pressed` | `Start`          | Entrada del PLC | BOOL | TRUE mientras el pulsador se mantiene presionado.    |\n\nUna salida del PLC acciona un elemento de la máquina; una entrada del PLC es lo que informa un elemento. Su programa solo ve las cuatro variables: nunca ve la caja misma, solo lo que el sensor dice de ella.\n\n## Una pulsación es corta, el trabajo es largo\n\nUn pulsador está en TRUE solo mientras un dedo lo mantiene, una fracción de segundo. La cinta, en cambio, debe seguir en marcha varios segundos, hasta que la caja llegue al sensor. Si Run simplemente copiara Start, la cinta se movería solo mientras se mantiene el pulsador y se detendría con la caja a mitad de camino.\n\nPor eso el programa necesita una **memoria**: una variable BOOL propia, no conectada a ningún elemento, que recuerda \"la cinta debe estar en marcha\". Una condición la activa, otra la borra, y la salida la sigue.\n\n```timing\nspan: 6000\nsignals:\n  - { name: Start, edges: [200, 400] }\n  - { name: Memory, edges: [200, 4800] }\n  - { name: EyeFar, edges: [4800, 6000] }\n  - { name: Run, edges: [200, 4800] }\ncaption: Una pulsación corta activa la memoria, el sensor la borra y la cinta sigue a la memoria\n```\n\nEl sensor sigue en TRUE mientras la caja está delante de él, así que mantiene la memoria borrada. Eso es lo que se busca: la caja espera al final de la cinta hasta que alguien la retire.\n\nCuando la activación y el borrado están los dos en TRUE en el mismo ciclo, gana la instrucción escrita al final, porque las instrucciones se ejecutan de arriba abajo. Decida cuál debe ganar: aquí una parada del sensor importa más que un arranque.\n\n## Ejemplo resuelto\n\nUna cortina enrollable sobre una puerta de carga tiene un botón Open y un final de carrera superior. Una pulsación corta debe abrir la cortina del todo: el motor funciona hasta que el final de carrera indica que la cortina está arriba. Es el mismo problema que el de la cinta, resuelto aquí con una autorretención, la forma que vio en diagrama de escalera y en la lección del motor:\n\n```st\nPROGRAM Shutter\nVAR_INPUT OpenButton : BOOL; TopLimit : BOOL; END_VAR\nVAR_OUTPUT Motor : BOOL; END_VAR\nVAR Opening : BOOL; END_VAR\nOpening := (OpenButton OR Opening) AND NOT TopLimit;\nMotor := Opening;\nEND_PROGRAM\n```\n\nLea la asignación desde la derecha. `OpenButton OR Opening` sigue en TRUE después de soltar el botón, porque Opening se mantiene a sí misma. `AND NOT TopLimit` corta esa retención en cuanto el final de carrera se cierra, y también gana cuando los dos están en TRUE. Dos instrucciones IF, una que activa Opening y otra después que la borra, hacen lo mismo de una forma que a muchos programadores les resulta más fácil de leer.\n\n## Errores comunes\n\n- Accionar la cinta directamente desde el pulsador. La cinta se mueve solo mientras se mantiene el pulsador, y la caja se detiene a mitad de camino.\n- Activar la memoria y no borrarla nunca. La cinta lleva la caja más allá del sensor y la hace caer por el extremo.\n- Borrar antes de activar, de modo que un pulsador mantenido vuelve a arrancar la cinta mientras la caja sigue delante del sensor.\n- Olvidar declarar la memoria. Toda variable que usa el programa se declara, y una memoria del programa va en `VAR`.\n\n> [!NOTE]\n> El sensor ve la caja solo mientras la caja está en su haz. Una caja que pasa rápido delante de un sensor puede estar en el haz poco tiempo, y un programa que lo lee tarde no la ve. Aquí la cinta detiene la caja dentro del haz, así que la señal sigue en TRUE.\n\n## Compruébelo usted\n\n```quiz\nquestion: ¿Por qué la cinta necesita una variable de memoria si Start llega directamente al programa?\noptions:\n  - { text: 'Porque Start está en TRUE solo mientras se mantiene el pulsador, y la cinta debe seguir en marcha después', correct: true, feedback: 'Sí. La memoria recuerda la pulsación después de que el dedo se fue.' }\n  - { text: 'Porque una salida no se puede escribir desde una entrada', feedback: 'Una salida puede copiar una entrada. La cinta se detendría entonces en cuanto se suelta el pulsador.' }\n  - { text: 'Porque el sensor necesita una memoria para ver la caja', feedback: 'El sensor está en TRUE mientras la caja está en su haz; no necesita nada del programa.' }\n```\n\n```quiz\nquestion: En el mismo ciclo Start y EyeFar están los dos en TRUE. El programa activa la memoria primero y la borra en la instrucción siguiente. ¿Qué vale la memoria al final del ciclo?\noptions:\n  - { text: 'FALSE', correct: true, feedback: 'Correcto. Las instrucciones se ejecutan de arriba abajo, así que gana el borrado, escrito al final.' }\n  - { text: 'TRUE', feedback: 'La activación se ejecutó primero, pero el borrado se ejecutó después en el mismo ciclo.' }\n  - { text: 'Cambia en cada ciclo', feedback: 'Las dos condiciones dan el mismo resultado en cada ciclo: el borrado siempre va al final.' }\n```\n\n## Qué hará en la práctica\n\nEl programa inicial declara las entradas Start y EyeFar y las salidas Run y Emit, y no acciona nada. Usted escribirá el programa de la estación: una pulsación del pulsador de inicio, que el escenario da a los 200 ms, pone una caja en la cinta y la hace avanzar, y la cinta se detiene cuando EyeFar ve la caja. Después pulse Comprobar.\n",
+        "files": {},
+        "images": [
+          "images/machine.en.png",
+          "images/machine.es.png"
+        ]
       }
     },
     {

@@ -522,24 +522,31 @@ export function parseReading(markdown: string): ReadingParseResult {
 
 // ------------------------------------------------------------------------------------------------------------------ parity
 
-const listShape = (blocks: ReadingBlock[]): unknown[] => blocks.map(blockShape);
+const listShape = (blocks: ReadingBlock[], locale?: string): unknown[] => blocks.map((block) => blockShape(block, locale));
 
-function blockShape(block: ReadingBlock): unknown {
+/**
+ * The image a page shows, as its pair must show it: `images/x.en.png` on the English page and `images/x.es.png` on the Spanish one
+ * are the same picture in two languages (CRS-016, a labelled machine). Only the suffix of the page's own language counts.
+ */
+const pictureOf = (src: string, locale?: string): string =>
+  locale ? src.replace(new RegExp(`\\.${locale}(\\.(?:png|svg))$`), '.<lang>$1') : src;
+
+function blockShape(block: ReadingBlock, locale?: string): unknown {
   switch (block.type) {
     case 'heading':
       return ['heading', block.depth];
     case 'paragraph':
       return ['paragraph'];
     case 'list':
-      return [block.ordered ? 'ol' : 'ul', block.items.map(listShape)];
+      return [block.ordered ? 'ol' : 'ul', block.items.map((item) => listShape(item, locale))];
     case 'table':
       return ['table', block.header.length, block.rows.length, block.align];
     case 'callout':
-      return ['callout', block.kind, listShape(block.children)];
+      return ['callout', block.kind, listShape(block.children, locale)];
     case 'code':
       return ['code', block.lang];
     case 'image':
-      return ['image', block.src];
+      return ['image', pictureOf(block.src, locale)];
     case 'rule':
       return ['rule'];
     case 'directive':
@@ -563,9 +570,10 @@ function directiveShape(directive: ReadingDirective): unknown {
 
 /**
  * A JSON-comparable shape of a page, for the English and Spanish pages to be equal in: the sequence of block kinds and
- * heading depths, list nesting and item counts, table size and alignment, callout kinds, code languages, image sources,
- * and every field of a live block that is not text. Prose, captions, questions, option texts and feedback are left out.
+ * heading depths, list nesting and item counts, table size and alignment, callout kinds, code languages, image sources
+ * (with `locale`, the page's own `.en` or `.es` before the extension stands for either language), and every field of a live block
+ * that is not text. Prose, captions, questions, option texts and feedback are left out.
  */
-export function readingShape(blocks: ReadingBlock[]): unknown {
-  return JSON.parse(JSON.stringify(listShape(blocks)));
+export function readingShape(blocks: ReadingBlock[], locale?: string): unknown {
+  return JSON.parse(JSON.stringify(listShape(blocks, locale)));
 }
