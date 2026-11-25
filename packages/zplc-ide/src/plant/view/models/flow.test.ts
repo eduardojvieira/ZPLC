@@ -1,15 +1,16 @@
 /** The flow control, source and sink models (plan-vis C2; VIS-014): the emitter of belt-to-sensor as the real plant core publishes it. */
 import { describe, expect, it } from 'bun:test';
 import type { PartView, ScenePart } from '../../contracts';
-import { ARM, BLADE, EMITTER, FLOW, PUSHER } from './flow';
+import { rotate } from './shared';
+import { ALIGNER, ARM, BLADE, EMITTER, FLOW, PUSHER } from './flow';
 import { partModel, pieceExtent } from './index';
 import { beltToSensor, bottom, slot } from './models.fixtures';
 
 const plant = beltToSensor();
 
 describe('flow control, source and sink models (VIS-014)', () => {
-  it('PRT-009 the flow family draws the emitter, stop blade, pusher and diverter arm', () => {
-    expect(Object.keys(FLOW)).toEqual(['emitter', 'stop-blade', 'pusher', 'diverter-arm']);
+  it('PRT-009 the flow family draws the emitter, stop blade, pusher, diverter arm, aligner, chute and remover', () => {
+    expect(Object.keys(FLOW)).toEqual(['emitter', 'stop-blade', 'pusher', 'diverter-arm', 'aligner', 'chute', 'remover']);
   });
 
   it('VIS-014 the emitter marks the zone where items appear with four flat corner marks, not a cage', async () => {
@@ -136,4 +137,120 @@ describe('the pusher takes its stroke from the scene (VIS-014)', () => {
       expect(world(pusher(1, stroke), slot(out, 'plate'), 2) - world(pusher(0, stroke), slot(back, 'plate'), 2)).toBeCloseTo(stroke, 9);
       expect(pieceExtent(slot(out, 'rod'))[2] - pieceExtent(slot(back, 'rod'))[2]).toBeCloseTo(stroke / 2, 9);
     });
+});
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Aligner, chute and remover
+// ---------------------------------------------------------------------------------------------------------------------
+
+/** The x/z half extents, in the part's frame, of all its pieces. */
+const reach = (pieces: ReturnType<typeof partModel> & {}) => {
+  const out = [0, 0];
+  for (const p of pieces)
+    for (const [k, i] of [
+      [0, 0],
+      [1, 2],
+    ] as const)
+      out[k] = Math.max(out[k]!, Math.abs(p.at[i]!) + pieceExtent(p)[i]!);
+  return out;
+};
+const GUIDE = { height: 0.15, thickness: 0.05 };
+/** The aligner as the plant core publishes it: its guides `f` closed from `width` apart to `gap` apart. */
+const aligner = (f: number, width = 0.7, gap = 0.35, length = 0.4) =>
+  view('aligner', [length, GUIDE.height, width + GUIDE.thickness * 2], [0, SURFACE + GUIDE.height / 2, 0], {
+    fraction: f,
+    gapM: width - (width - gap) * f,
+    widthM: width,
+    lengthM: length,
+  });
+/** The chute as the plant core publishes it: the plate tilted `tilt` degrees, descending towards +x, its top surface at `top`. */
+const chute = (tilt = 20, length = 1, width = 0.6, top = 1) => {
+  const t = (-tilt * Math.PI) / 360;
+  const thick = 0.02;
+  const tau = (-tilt * Math.PI) / 180;
+  const v = view('chute', [length, thick, width], [(thick / 2) * Math.sin(tau), top - (thick / 2) * Math.cos(tau), 0], {
+    tiltDeg: tilt,
+    lengthM: length,
+    widthM: width,
+  });
+  v.pose.q = [0, 0, Math.sin(t), Math.cos(t)];
+  return v;
+};
+/** The remover: a volume of the declared size whose bottom is `lift` over the floor. */
+const remover = (size: PartView['pose']['size'] = [0.6, 0.6, 0.6], lift = 0.1) =>
+  view('remover', size, [0, lift + size[1] / 2, 0], { delivered: 0 });
+
+describe('aligner, chute and remover models (VIS-014)', () => {
+  it('VIS-014 an aligner is two slotted rails with a rubber strip on their inner faces, held on brackets from the belt sides', () => {
+    const pieces = partModel(aligner(0))!;
+    for (const s of ['a', 'b']) {
+      expect(slot(pieces, `rail-${s}`).role).toBe('frame');
+      expect(slot(pieces, `rail-${s}`).shape.kind).toBe('extrusion');
+      expect(slot(pieces, `strip-${s}`).role).toBe('rubber');
+    }
+    const brackets = pieces.filter((p) => p.slot.startsWith('bracket'));
+    expect(brackets.length).toBeGreaterThanOrEqual(2);
+    expect(brackets.every((p) => p.role === 'frame' && p.shape.kind === 'extrusion')).toBe(true);
+    // The strip is on the inner face: it lies between the rails.
+    expect(Math.abs(slot(pieces, 'strip-a').at[2])).toBeLessThan(Math.abs(slot(pieces, 'rail-a').at[2]));
+  });
+
+  it('VIS-014 the aligner bounds are its declared size, and its rails close by (width - gap) / 2 each, brackets standing still', () => {
+    const [open, shut] = [partModel(aligner(0))!, partModel(aligner(1))!];
+    const [rx, rz] = reach(open);
+    expect(rx).toBeCloseTo(0.2, 9);
+    expect(rz).toBeCloseTo(0.35 + GUIDE.thickness, 9);
+    for (const s of ['a', 'b']) {
+      const moved = Math.abs(slot(open, `rail-${s}`).at[2]) - Math.abs(slot(shut, `rail-${s}`).at[2]);
+      expect(moved).toBeCloseTo((0.7 - 0.35) / 2, 9);
+      expect(Math.abs(slot(shut, `strip-${s}`).at[2]) - 0.006).toBeCloseTo(0.35 / 2, 9); // the strip face is the gap
+    }
+    for (const p of open.filter((q) => q.slot.startsWith('bracket'))) expect(slot(shut, p.slot).at).toEqual(p.at);
+    expect(ALIGNER.strip).toBeGreaterThan(0);
+  });
+
+  it('VIS-014 a chute is a steel slide with two low side walls on a slotted stand with levelling feet, falling the way items move', () => {
+    const v = chute();
+    const pieces = partModel(v)!;
+    expect(slot(pieces, 'slide').role).toBe('steel');
+    expect(slot(pieces, 'wall-a').role).toBe('steel');
+    expect(slot(pieces, 'wall-b').role).toBe('steel');
+    expect(pieces.some((p) => p.slot.startsWith('leg-') && p.role === 'frame' && p.shape.kind === 'extrusion')).toBe(true);
+    expect(pieces.some((p) => p.slot.startsWith('foot-') && p.role === 'rubber')).toBe(true);
+    // The pose carries the incline: the +x end of the slide, where items go, is lower than its -x end in the world.
+    const end = (sign: number) => v.pose.p[1] + rotate(v.pose.q, [sign * 0.5, 0, 0])[1];
+    expect(end(1)).toBeLessThan(end(-1));
+    expect(end(-1) - end(1)).toBeCloseTo(Math.sin((20 * Math.PI) / 180), 9);
+    const walls = [slot(pieces, 'wall-a'), slot(pieces, 'wall-b')];
+    expect(walls.every((w) => w.at[1] > slot(pieces, 'slide').at[1])).toBe(true); // the walls stand up from the surface
+    expect(reach(pieces)).toEqual([0.5, 0.3].map((x) => expect.closeTo(x, 9)));
+  });
+
+  it('VIS-014 a remover is an open-top bin of its declared size on four feet: painted walls, a housing floor', () => {
+    const v = remover([0.8, 0.5, 0.6], 0.1);
+    const pieces = partModel(v)!;
+    const walls = pieces.filter((p) => p.slot.startsWith('wall-'));
+    expect(walls.length).toBe(4);
+    expect(walls.every((p) => p.role === 'painted')).toBe(true);
+    expect(slot(pieces, 'floor').role).toBe('housing');
+    expect(pieces.filter((p) => p.slot.startsWith('foot-')).length).toBe(4);
+    expect(reach(pieces)).toEqual([0.4, 0.3].map((x) => expect.closeTo(x, 9)));
+    // Open top: nothing covers the bin above the floor, and the feet reach the floor of the world.
+    expect(Math.max(...pieces.map((p) => p.at[1] + pieceExtent(p)[1]))).toBeCloseTo(0.25, 9);
+    expect(Math.min(...pieces.map((p) => world(v, p, 1) - pieceExtent(p)[1]))).toBeCloseTo(0, 9);
+  });
+
+  it('VIS-014 the aligner, chute and remover draw in Low quality and High contrast: every piece visible and above the floor', () => {
+    for (const v of [aligner(0), aligner(1), remover()])
+      for (const p of partModel(v)!) {
+        expect(p.visible).toBe(true);
+        expect(world(v, p, 1) - pieceExtent(p)[1]).toBeGreaterThanOrEqual(-1e-9);
+      }
+    // A chute's stand is drawn in the tilted frame: a foot centre stays over the floor of the world, give or take its pad radius.
+    for (const v of [chute(), chute(35, 2, 1, 1.4)])
+      for (const p of partModel(v)!) {
+        expect(p.visible).toBe(true);
+        if (p.slot.startsWith('foot-')) expect(v.pose.p[1] + rotate(v.pose.q, p.at)[1]).toBeGreaterThanOrEqual(-1e-9);
+      }
+  });
 });

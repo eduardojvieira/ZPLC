@@ -149,9 +149,136 @@ function diverterArmModel(view: PartView): Piece[] {
   return pieces;
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+// Aligner: two slotted-profile guide rails over the belt with a rubber strip on their inner faces, on short brackets from the belt
+// sides. The core publishes the gap between the guides, and the rails follow it; the brackets stand still
+// ---------------------------------------------------------------------------------------------------------------------
+
+/** The plant core's guide is 0.05 thick and 0.15 high: a `strip` of rubber on the inner face, a rail of the rest, brackets under it. */
+export const ALIGNER = { thickness: 0.05, strip: 0.012, bracket: 0.03, bracketLength: 0.1 } as const;
+
+function alignerModel(view: PartView): Piece[] {
+  const { thickness, strip, bracket, bracketLength } = ALIGNER;
+  const [length, height, span] = view.pose.size;
+  const width = span - 2 * thickness; // the belt width the guides sit on: open, their inner faces are this far apart
+  const gap = Math.min(width, Math.max(0, num(view.state.gapM, width)));
+  const railHeight = height - bracket; // the brackets take the lowest part of the guide's height
+  const railY = bracket / 2;
+  const pieces: Piece[] = [];
+  for (const [side, sign] of [
+    ['a', 1],
+    ['b', -1],
+  ] as const) {
+    pieces.push(
+      piece(
+        `rail-${side}`,
+        slotted(thickness - strip, railHeight, length, 'x'),
+        [0, railY, sign * (gap / 2 + strip + (thickness - strip) / 2)],
+        'frame',
+      ),
+      piece(`strip-${side}`, box([length - 0.02, railHeight * 0.7, strip], 0.002), [0, railY, sign * (gap / 2 + strip / 2)], 'rubber'),
+    );
+    for (const [end, x] of [
+      ['0', -(length / 2 - bracket)],
+      ['1', length / 2 - bracket],
+    ] as const)
+      pieces.push(
+        piece(
+          `bracket-${side}-${end}`,
+          slotted(bracket, bracket, bracketLength, 'z'),
+          [x, -height / 2 + bracket / 2, sign * (width / 2)],
+          'frame',
+        ),
+      );
+  }
+  return pieces;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Chute: an inclined steel slide with two low side walls, on a slotted-profile stand with levelling feet. The pose tilts the part, so the
+// slide is flat in its frame and the stand is drawn square to it, down to the floor
+// ---------------------------------------------------------------------------------------------------------------------
+
+export const CHUTE = { wall: 0.05, wallThickness: 0.012, rail: 0.04, leg: 0.04 } as const;
+
+function chuteModel(view: PartView): Piece[] {
+  const { wall, wallThickness, rail, leg } = CHUTE;
+  const [length, thickness, width] = view.pose.size;
+  const tilt = (num(view.state.tiltDeg, 20) * Math.PI) / 180; // the slide descends towards +x
+  const pieces: Piece[] = [
+    piece('slide', box([length, thickness, width], 0.003), [0, 0, 0], 'steel'),
+    ...(['a', 'b'] as const).map((side, i) =>
+      piece(
+        `wall-${side}`,
+        box([length, wall, wallThickness], 0.002),
+        [0, thickness / 2 + wall / 2, (i ? -1 : 1) * (width / 2 - wallThickness / 2)],
+        'steel',
+      ),
+    ),
+  ];
+  const railY = -thickness / 2 - rail / 2;
+  for (const [end, x] of [
+    ['0', -length * 0.35],
+    ['1', length * 0.35],
+  ] as const) {
+    pieces.push(piece(`stand-rail-${end}`, slotted(rail, rail, width - 2 * leg, 'z'), [x, railY, 0], 'frame'));
+    // The foot meets the floor along the slide's normal: its height there is where the leg's axis reaches the world's y = 0.
+    const floor = -(view.pose.p[1] - x * Math.sin(tilt)) / Math.cos(tilt) + 0.03;
+    for (const [side, z] of [
+      ['a', width / 2 - leg],
+      ['b', -(width / 2 - leg)],
+    ] as const) {
+      if (railY - rail / 2 - floor > MIN_STAND) pieces.push(...levellingLeg(`${end}${side}`, x, z, railY - rail / 2, floor, leg));
+    }
+  }
+  return pieces;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Remover: an open-top collection bin of the part's declared size, painted walls and a housing floor, on four short feet that reach the
+// floor of the world
+// ---------------------------------------------------------------------------------------------------------------------
+
+export const REMOVER = { wall: 0.02, foot: 0.05 } as const;
+
+function removerModel(view: PartView): Piece[] {
+  const { wall, foot } = REMOVER;
+  const [width, height, depth] = view.pose.size;
+  const base = -height / 2;
+  const wallHeight = height - wall;
+  const wallY = base + wall + wallHeight / 2;
+  const pieces: Piece[] = [
+    piece('floor', box([width, wall, depth], 0.002), [0, base + wall / 2, 0], 'housing'),
+    piece('wall-n', box([width, wallHeight, wall], 0.002), [0, wallY, -(depth / 2 - wall / 2)], 'painted'),
+    piece('wall-s', box([width, wallHeight, wall], 0.002), [0, wallY, depth / 2 - wall / 2], 'painted'),
+    piece('wall-w', box([wall, wallHeight, depth - 2 * wall], 0.002), [-(width / 2 - wall / 2), wallY, 0], 'painted'),
+    piece('wall-e', box([wall, wallHeight, depth - 2 * wall], 0.002), [width / 2 - wall / 2, wallY, 0], 'painted'),
+  ];
+  const reachDown = base - -view.pose.p[1]; // from the bottom of the bin to the floor of the world
+  if (reachDown > 0.005)
+    for (const [i, sx, sz] of [
+      [0, -1, -1],
+      [1, 1, -1],
+      [2, -1, 1],
+      [3, 1, 1],
+    ] as const)
+      pieces.push(
+        piece(
+          `foot-${i}`,
+          box([foot, reachDown, foot], 0.002),
+          [sx * (width / 2 - foot), base - reachDown / 2, sz * (depth / 2 - foot)],
+          'rubber',
+        ),
+      );
+  return pieces;
+}
+
 export const FLOW: ModelFamily = {
   emitter: emitterModel,
   'stop-blade': stopBladeModel,
   pusher: pusherModel,
   'diverter-arm': diverterArmModel,
+  aligner: alignerModel,
+  chute: chuteModel,
+  remover: removerModel,
 };
