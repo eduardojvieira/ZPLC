@@ -1,7 +1,9 @@
 #!/usr/bin/env bun
+import { stat } from 'node:fs/promises';
+import { isAbsolute, join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
-import { buildMcpServer, openMcpRepository, openMcpUserData, openMcpWorkspace } from './server';
+import { buildMcpServer, MCP_SERVER_VERSION, openMcpRepository, openMcpUserData, openMcpWorkspace } from './server';
 
 export function parseMcpWorkspaceArgument(args: string[]): { workspace: string; repository?: string; userData?: string } | undefined {
   if (args.length === 1 && args[0] === '--help') return undefined;
@@ -31,33 +33,71 @@ export function parseMcpWorkspaceArgument(args: string[]): { workspace: string; 
   }
 }
 
+const USAGE =
+  'Usage: zplc-mcp --workspace <absolute-path-of-a-project> [--repository <absolute-path-of-a-checkout>] [--user-data ' +
+  '<absolute-path-of-a-folder>]\n';
+
+/** Why a folder given on the command line cannot be served: the cause and the next step, in one line. */
+async function whyUnavailable(option: string, path: string, needsFile?: string): Promise<string> {
+  if (!isAbsolute(path)) return `the ${option} folder must be an absolute path: ${path}`;
+  const info = await stat(path).catch((error: NodeJS.ErrnoException) => error);
+  if (info instanceof Error) {
+    return info.code === 'ENOENT' ? `${path} does not exist` : `${path} cannot be read (${info.code ?? 'error'})`;
+  }
+  if (!info.isDirectory()) return `${path} is not a folder`;
+  if (needsFile && !(await stat(join(path, needsFile)).catch(() => undefined))?.isFile()) {
+    return `${path} is not a ZPLC ${option === 'workspace' ? 'project' : 'checkout'}: it has no ${needsFile}`;
+  }
+  return `${path} cannot be served: it must be a real folder, not a link, ${
+    option === 'workspace' ? 'with a project ZPLC can inspect' : option === 'repository' ? 'holding a ZPLC checkout' : 'you can read'
+  }`;
+}
+
 export async function runMcpEntrypoint(args = Bun.argv.slice(2)): Promise<number> {
   if (args.length === 1 && args[0] === '--help') {
-    process.stderr.write(
-      'Usage: zplc-mcp --workspace <absolute-real-directory> [--repository <absolute-real-directory>] [--user-data ' +
-        '<absolute-real-directory>]\n',
-    );
+    process.stderr.write(USAGE);
+    return 0;
+  }
+  if (args.length === 1 && args[0] === '--version') {
+    process.stdout.write(`zplc-mcp ${MCP_SERVER_VERSION}\n`);
     return 0;
   }
   const parsed = parseMcpWorkspaceArgument(args);
-  const workspace = parsed ? await openMcpWorkspace(parsed.workspace) : undefined;
-  const repository = parsed ? await openMcpRepository(parsed.repository) : undefined;
-  const userData = parsed ? await openMcpUserData(parsed.userData) : undefined;
+  if (!parsed) {
+    process.stderr.write(
+      `ZPLC MCP: ${args.length === 0 ? 'no arguments given' : 'the arguments are not valid'}; start it with a project folder.\n${USAGE}`,
+    );
+    return 2;
+  }
+  for (const [option, path] of [
+    ['workspace', parsed.workspace],
+    ['repository', parsed.repository],
+    ['user-data', parsed.userData],
+  ] as const) {
+    if (path !== undefined && !isAbsolute(path)) {
+      process.stderr.write(`ZPLC MCP: ${await whyUnavailable(option, path)}\n`);
+      return 2;
+    }
+  }
+  const workspace = await openMcpWorkspace(parsed.workspace);
+  const repository = await openMcpRepository(parsed.repository);
+  const userData = await openMcpUserData(parsed.userData);
   if (!workspace) {
-    process.stderr.write('ZPLC MCP workspace is unavailable\n');
+    process.stderr.write(`ZPLC MCP: ${await whyUnavailable('workspace', parsed.workspace, 'zplc.json')}\n`);
     return 1;
   }
-  if (parsed?.repository && !repository) {
-    process.stderr.write('ZPLC MCP repository is unavailable\n');
+  if (parsed.repository && !repository) {
+    const why = await whyUnavailable('repository', parsed.repository, 'firmware/app/boards/boards.json');
+    process.stderr.write(`ZPLC MCP: repository is unavailable: ${why}\n`);
     return 1;
   }
-  if (parsed?.userData && !userData) {
-    process.stderr.write('ZPLC MCP user data is unavailable\n');
+  if (parsed.userData && !userData) {
+    process.stderr.write(`ZPLC MCP: user data is unavailable: ${await whyUnavailable('user-data', parsed.userData)}\n`);
     return 1;
   }
   const handle = serveStdio(
     () => buildMcpServer({ ...workspace, ...(repository ? { repository } : {}), ...(userData ? { userData } : {}) }),
-    { legacy: 'reject', onerror: () => process.stderr.write('ZPLC MCP transport error\n') },
+    { legacy: 'serve', onerror: () => process.stderr.write('ZPLC MCP transport error\n') },
   );
   const close = async () => {
     try {

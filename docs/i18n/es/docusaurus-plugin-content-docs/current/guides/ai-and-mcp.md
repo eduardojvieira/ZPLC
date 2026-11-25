@@ -29,7 +29,19 @@ La IA dentro de ZPLC sigue el mismo límite y tiene sus propias reglas de datos:
 
 ## 1. Iniciar el servidor para una carpeta
 
-El servidor sirve la única carpeta que usted nombra, y nada fuera de ella. La carpeta es la ruta absoluta de un proyecto ZPLC, un directorio real y no un enlace. Con cualquier otra carpeta, el servidor imprime `ZPLC MCP workspace is unavailable` y termina con 1.
+El servidor sirve la única carpeta que usted nombra, y nada fuera de ella. La carpeta es la ruta absoluta de un proyecto ZPLC, un directorio real y no un enlace. Un inicio que falla dice por qué en la salida de error y termina con 1, o con 2 cuando la línea de comandos es incorrecta:
+
+| Qué falló                                    | Mensaje                                                                                        | Salida |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------ |
+| Sin argumentos                               | `ZPLC MCP: no arguments given; start it with a project folder.` y el uso                       | 2      |
+| Una ruta relativa                            | `ZPLC MCP: the workspace folder must be an absolute path: <ruta>`                              | 2      |
+| Una carpeta que no existe                    | `ZPLC MCP: <ruta> does not exist`                                                              | 1      |
+| Una carpeta que no es un proyecto            | `ZPLC MCP: <ruta> is not a ZPLC project: it has no zplc.json`                                  | 1      |
+| Un `--repository` o `--user-data` incorrecto | `ZPLC MCP: repository is unavailable: <causa>` o `ZPLC MCP: user data is unavailable: <causa>` | 1      |
+
+`zplc-mcp --version` imprime la versión y termina con 0.
+
+Los mensajes de la consola de comandos están en inglés.
 
 ```bash
 zplc-mcp --workspace /home/me/plants/line-3
@@ -63,7 +75,7 @@ La mayoría de los clientes que ejecutan un servidor MCP local reciben un comand
 
 ### La revisión del protocolo
 
-El servidor habla una sola revisión del protocolo, la 2026-07-28, y ninguna anterior. Su punto de entrada inicia el transporte con `legacy: 'reject'`, donde el SDK que usa serviría por defecto el protocolo de enlace inicial de 2025. El repositorio no registra el motivo de esa elección, así que tómela como el estado actual del servidor y no como una promesa. Un cliente no tiene paso `initialize`: nombra la revisión y sus capacidades en el `_meta` de cada solicitud.
+El servidor atiende las dos eras del protocolo, como lo hace por defecto el SDK que usa. Un cliente de la revisión 2026-07-28 no tiene paso `initialize`: nombra la revisión y sus capacidades en el `_meta` de cada solicitud.
 
 ```json
 {
@@ -79,21 +91,7 @@ El servidor habla una sola revisión del protocolo, la 2026-07-28, y ninguna ant
 }
 ```
 
-Un cliente que abre con `initialize` de una revisión anterior recibe esta respuesta. La conexión sigue abierta para una solicitud de la revisión admitida.
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 1,
-  "error": {
-    "code": -32022,
-    "message": "Unsupported protocol version: 2025-06-18",
-    "data": { "supported": ["2026-07-28"], "requested": "2025-06-18" }
-  }
-}
-```
-
-Una solicitud que no nombra ninguna revisión recibe el mismo código y el mensaje `Unsupported protocol version: the request did not name a protocol version`. Una solicitud que nombra la revisión pero omite `io.modelcontextprotocol/clientCapabilities` recibe `-32602` y `Invalid _meta envelope for protocol revision 2026-07-28: io.modelcontextprotocol/clientCapabilities: missing`. En cada caso, quien debe actualizarse es el cliente. El servidor no cambia.
+Un cliente de la era 2025, como la 2025-11-25, abre con `initialize`, luego `notifications/initialized`, y enumera las herramientas como antes. El servidor responde con la revisión que el cliente pidió. Una solicitud que no nombra ninguna revisión se atiende como una de esa era anterior.
 
 ## 3. Pedir evidencia
 
@@ -126,15 +124,15 @@ La IA dentro de ZPLC lee el programa abierto y un resumen del proyecto, y propon
 
 ## Qué está verificado y qué no
 
-| Parte                                                                                                                                                                                                                                                                                                                       | Verificado                                                                                                                                                                                                                    | Nivel   |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| El servidor enumera 15 herramientas al pedírselo; `project_validate`, `compiler_check` y `tests_run` pasan en un proyecto incluido; `boards_list` responde con `--repository`; un `initialize` de la revisión 2025-06-18 y una solicitud sin revisión se rechazan con `-32022`, y una sin `clientCapabilities` con `-32602` | Ejecutado a mano con un script que envía las solicitudes por la entrada y la salida estándar, mediante `bun run --cwd=packages/zplc-ide mcp`, en el proyecto incluido `pico_blinky_ton`; la integración continua no lo repite | Host    |
-| El ejecutable compilado inicia y enumera sus herramientas como lo pide un cliente 2026-07-28                                                                                                                                                                                                                                | La compilación de publicación inicia el ejecutable y cuenta las herramientas                                                                                                                                                  | Host    |
-| Ninguna herramienta llega a un dispositivo, un socket o un puerto serie                                                                                                                                                                                                                                                     | Una prueba enumera las herramientas y recursos registrados del servidor activo y atrapa cada punto de entrada de sockets y de puerto serie                                                                                    | Host    |
-| Los dos recursos de programas devuelven el texto y el lenguaje de cada uno de los cinco lenguajes, y rechazan un nombre que no es un programa de `src`, un enlace y un archivo demasiado grande; el servidor no tiene ninguna herramienta que escriba                                                                       | `packages/zplc-ide/src/mcp/server.test.ts` y `deviceLink.test.ts`                                                                                                                                                             | Host    |
-| El recurso del curso informa las lecciones aprobadas y no escribe nada                                                                                                                                                                                                                                                      | `packages/zplc-ide/src/mcp/server.test.ts`                                                                                                                                                                                    | Host    |
-| Un producto de asistente concreto funciona con la entrada de arriba                                                                                                                                                                                                                                                         | Sin verificar: no se ejecutó ningún producto cliente para esta página                                                                                                                                                         | Ninguno |
-| El cambio de un asistente es correcto                                                                                                                                                                                                                                                                                       | Nunca se da por supuesto: solo la compilación y los escenarios lo dicen                                                                                                                                                       | Ninguno |
+| Parte                                                                                                                                                                                                                                                                  | Verificado                                                                                                                                                                                                                    | Nivel   |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| El servidor enumera 15 herramientas al pedírselo; `project_validate`, `compiler_check` y `tests_run` pasan en un proyecto incluido; `boards_list` responde con `--repository`; un cliente que abre con `initialize` de la revisión 2025-11-25 enumera las herramientas | Ejecutado a mano con un script que envía las solicitudes por la entrada y la salida estándar, mediante `bun run --cwd=packages/zplc-ide mcp`, en el proyecto incluido `pico_blinky_ton`; la integración continua no lo repite | Host    |
+| El ejecutable compilado inicia y enumera sus herramientas como lo pide un cliente 2026-07-28                                                                                                                                                                           | La compilación de publicación inicia el ejecutable y cuenta las herramientas                                                                                                                                                  | Host    |
+| Ninguna herramienta llega a un dispositivo, un socket o un puerto serie                                                                                                                                                                                                | Una prueba enumera las herramientas y recursos registrados del servidor activo y atrapa cada punto de entrada de sockets y de puerto serie                                                                                    | Host    |
+| Los dos recursos de programas devuelven el texto y el lenguaje de cada uno de los cinco lenguajes, y rechazan un nombre que no es un programa de `src`, un enlace y un archivo demasiado grande; el servidor no tiene ninguna herramienta que escriba                  | `packages/zplc-ide/src/mcp/server.test.ts` y `deviceLink.test.ts`                                                                                                                                                             | Host    |
+| El recurso del curso informa las lecciones aprobadas y no escribe nada                                                                                                                                                                                                 | `packages/zplc-ide/src/mcp/server.test.ts`                                                                                                                                                                                    | Host    |
+| Un producto de asistente concreto funciona con la entrada de arriba                                                                                                                                                                                                    | Sin verificar: no se ejecutó ningún producto cliente para esta página                                                                                                                                                         | Ninguno |
+| El cambio de un asistente es correcto                                                                                                                                                                                                                                  | Nunca se da por supuesto: solo la compilación y los escenarios lo dicen                                                                                                                                                       | Ninguno |
 
 ## Vea también
 
