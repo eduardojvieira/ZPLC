@@ -301,7 +301,7 @@ function runtime(part: ScenePart): PartRuntime {
           id: part.id,
           part: 'stacker-crane',
           name,
-          pose: pose(part.id, 'stacker-crane', [PLATE_L, PLATE_T, PLATE_W], [cx, py + forkTop() - PLATE_T / 2, cz]),
+          pose: pose(part.id, 'stacker-crane', [PLATE_W, PLATE_T, PLATE_L], [cx, py + forkTop() - PLATE_T / 2, cz]),
           state: {
             fraction: z / stroke,
             text: `bay ${bayNow}, level ${levelNow}, ${fork}`,
