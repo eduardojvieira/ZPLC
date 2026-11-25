@@ -331,3 +331,52 @@ describe('the Learn progress document (LRN-031, LRN-032)', () => {
     expect(parseImport('x'.repeat(300 * 1024))).toEqual({ ok: false, reason: 'too-large' });
   });
 });
+
+describe('a failed assertion keeps numeric expected and observed values', () => {
+  const withFailure = (expected: unknown, observed: unknown): unknown => {
+    const record = JSON.parse(JSON.stringify(failed())) as GradeRecord;
+    record.failedAssertions[0]!.expected = expected as never;
+    record.failedAssertions[0]!.observed = observed as never;
+    return record;
+  };
+
+  it('round-trips a number, a range and a numeric observation through the reader unchanged', () => {
+    for (const [expected, observed] of [
+      [{ 'Tank.Level': 50 }, { 'Tank.Level': 47.5 }],
+      [
+        { 'Tank.Level': { min: 10, max: 20 }, 'Motor.Forward': true },
+        { 'Tank.Level': 25, 'Motor.Forward': null },
+      ],
+      [{ 'Tank.Level': { min: 10 } }, { 'Tank.Level': 3 }],
+      [{ 'Tank.Level': { max: 10 } }, { 'Tank.Level': 30 }],
+      [{ 'Tank.Level': { min: 5, max: 5 } }, { 'Tank.Level': null }],
+    ] as const) {
+      const record = withFailure(expected, observed);
+      expect(parseGradeRecord(record)).toEqual(record as GradeRecord);
+      expect(JSON.parse(JSON.stringify(parseGradeRecord(record)))).toEqual(record);
+    }
+  });
+
+  it('rejects NaN, Infinity, a string, an empty or inverted range and an extra key', () => {
+    for (const expected of [
+      { s: Number.NaN },
+      { s: Number.POSITIVE_INFINITY },
+      { s: '5' },
+      { s: {} },
+      { s: { min: 3, max: 1 } },
+      { s: { min: 1, extra: 2 } },
+      { s: { min: Number.NaN } },
+      { s: { max: Number.NEGATIVE_INFINITY } },
+      { s: { min: '1' } },
+      { s: null },
+    ])
+      expect(parseGradeRecord(withFailure(expected, { s: 1 }))).toBeUndefined();
+    for (const observed of [{ s: Number.NaN }, { s: Number.POSITIVE_INFINITY }, { s: '5' }, { s: { min: 1 } }])
+      expect(parseGradeRecord(withFailure({ s: 1 }, observed))).toBeUndefined();
+  });
+
+  it('still writes progress files of schema 4, because numeric failures never reach the file', () => {
+    expect(JSON.parse(serializeProgress(emptyProgress()))).toMatchObject({ schemaVersion: 4 });
+    expect(parseGradeRecord(failed())).toEqual(failed());
+  });
+});

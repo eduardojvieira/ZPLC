@@ -52,9 +52,10 @@ export interface FailedAssertion {
   kind: string;
   /** The instant at which the engine found the assertion failing; null when it reports none. */
   atMs: number | null;
-  expected: Record<string, boolean>;
+  /** Numbers and ranges are accepted at every schema version: a stored grade is always a pass, so they never reach the file. */
+  expected: Record<string, boolean | NumericExpect>;
   /** The value of each expected signal at that instant; null where the trace does not hold it. */
-  observed: Record<string, boolean | null>;
+  observed: Record<string, boolean | number | null>;
   trace: TraceLink | null;
 }
 
@@ -155,13 +156,29 @@ function parseTrace(value: unknown): TraceLink | null | undefined {
   return { scenarioId, traceSha256, cursor, atMs, uri };
 }
 
-function parseSignalMap<T extends boolean | null>(value: unknown, allowNull: boolean): Record<string, T> | undefined {
+/** A number, or a range of numbers; the shape the test engine reports for a numeric check. */
+export type NumericExpect = number | { min?: number; max?: number };
+
+const isRange = (item: unknown): item is { min?: number; max?: number } => {
+  if (!isObject(item)) return false;
+  const keys = Object.keys(item);
+  if (keys.length === 0 || !keys.every((key) => key === 'min' || key === 'max')) return false;
+  if (!keys.every((key) => Number.isFinite(item[key]))) return false;
+  return !(keys.length === 2 && (item.min as number) > (item.max as number));
+};
+
+function parseSignalMap<T>(value: unknown, allowNull: boolean, ranges: boolean): Record<string, T> | undefined {
   if (!isObject(value)) return undefined;
   const entries = Object.entries(value);
   if (entries.length > 64) return undefined;
   const result: Record<string, T> = {};
   for (const [signal, item] of entries) {
-    if (signal.length === 0 || signal.length > 128 || !(typeof item === 'boolean' || (allowNull && item === null))) return undefined;
+    const ok =
+      typeof item === 'boolean' ||
+      (allowNull && item === null) ||
+      (typeof item === 'number' && Number.isFinite(item)) ||
+      (ranges && isRange(item));
+    if (signal.length === 0 || signal.length > 128 || !ok) return undefined;
     result[signal] = item as T;
   }
   return result;
@@ -169,8 +186,8 @@ function parseSignalMap<T extends boolean | null>(value: unknown, allowNull: boo
 
 function parseFailed(value: unknown): FailedAssertion | undefined {
   if (!isObject(value) || !hasExactKeys(value, ['index', 'kind', 'atMs', 'expected', 'observed', 'trace'])) return undefined;
-  const expected = parseSignalMap<boolean>(value.expected, false);
-  const observed = parseSignalMap<boolean | null>(value.observed, true);
+  const expected = parseSignalMap<boolean | NumericExpect>(value.expected, false, true);
+  const observed = parseSignalMap<boolean | number | null>(value.observed, true, false);
   const trace = parseTrace(value.trace);
   if (!isInt(value.index, 0, 255) || typeof value.kind !== 'string' || !(SCENARIO_KINDS as readonly string[]).includes(value.kind))
     return undefined;
