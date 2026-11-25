@@ -12,6 +12,11 @@ export const u3GuideEn = {
   'u3Guide.back': 'Back',
   'u3Guide.next': 'Next',
   'u3Guide.solution': 'Solution',
+  'u3Guide.files.title': 'Files and record of this lesson',
+  'u3Guide.files.scenario': 'Scenario: {scenario}',
+  'u3Guide.files.record': 'Last check: {result} on {time}',
+  'u3Guide.files.noRecord': 'No check recorded yet.',
+  'u3Guide.nextLesson': 'Next lesson',
 } as const;
 export const u3GuideEs: Record<keyof typeof u3GuideEn, string> = {
   'command.view.guide': 'Mostrar la guía',
@@ -26,4 +31,9 @@ export const u3GuideEs: Record<keyof typeof u3GuideEn, string> = {
   'u3Guide.back': 'Atrás',
   'u3Guide.next': 'Siguiente',
   'u3Guide.solution': 'Solución',
+  'u3Guide.files.title': 'Archivos y registro de esta lección',
+  'u3Guide.files.scenario': 'Escenario: {scenario}',
+  'u3Guide.files.record': 'Última comprobación: {result} el {time}',
+  'u3Guide.files.noRecord': 'Aún no hay ninguna comprobación registrada.',
+  'u3Guide.nextLesson': 'Siguiente lección',
 };

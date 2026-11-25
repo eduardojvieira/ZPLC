@@ -27,6 +27,8 @@ import {
   type LearnLessonId,
   type LearnLocale,
 } from '../learnLesson';
+import { ConnectionIndicator } from '../ConnectionIndicator';
+import { presentConnection } from '../connectionPresentation';
 import { LearnBoardLesson } from '../LearnBoardLesson';
 import { TestVerdict } from '../TestVerdict';
 import type { WorkspaceTestPresentation } from '../workspaceTestPresentation';
@@ -126,6 +128,11 @@ export function Guide({ workspaceTestPresentation }: { workspaceTestPresentation
     : lessonCheck.failed(lesson.id)
       ? t('learn.checkDidNotFinish')
       : '';
+  const startNext = async (id: string) => {
+    if (starting || !folderAccess) return;
+    setResetStatus('idle');
+    await useLearnUi.getState().startLesson(id);
+  };
   const solutionFile = lesson.solutionProgram.slice('src/'.length);
   const solutionText = /\.(st|il)$/i.test(solutionFile) ? getFileContent(lesson.referenceExampleId, solutionFile) : null;
   const solutionShown = progress?.lessons[lesson.id]?.solutionShown === true || shownHere.has(lesson.id);
@@ -137,8 +144,23 @@ export function Guide({ workspaceTestPresentation }: { workspaceTestPresentation
       ? t('learn.hardware.lesson.notPassed')
       : '';
   // R-G3: the place in the first path that holds the lesson, else in its module.
+  const record = progress?.lessons[lesson.id]?.grade ?? null;
+  const connectionStatus = useIDEStore((state) => state.connection.status);
+  const boardLink = presentConnection(
+    {
+      mode: 'hardware',
+      adapterType: 'serial',
+      connected: connectionStatus === 'connected',
+      connecting: connectionStatus === 'connecting',
+      faulted: connectionStatus === 'error',
+    },
+    t,
+  );
   const path = view.paths.find((candidate) => candidate.lessons.some((item) => item.id === lesson.id));
   const siblings = path?.lessons ?? view.modules.find((module) => module.id === lessonView?.module)?.lessons ?? ordered;
+  const passedNow = alreadyPassed || shownGrade.kind === 'passed';
+  // GDE-008: on the last lesson of a path there is nothing to offer; the course is the Learn activity's, one click away.
+  const nextLesson = passedNow ? siblings[siblings.findIndex((item) => item.id === lesson.id) + 1] : undefined;
   const position = {
     n: siblings.findIndex((item) => item.id === lesson.id) + 1,
     total: siblings.length,
@@ -293,16 +315,26 @@ export function Guide({ workspaceTestPresentation }: { workspaceTestPresentation
           </div>
         </section>
 
-        {/* G1b: the file paths and the starter sentence go into the "Files and record of this lesson" disclosure (GDE-005). */}
-        <div>
-          <p className="break-words font-mono text-xs text-[var(--color-surface-400)]">
+        <details data-guide-files className="border-b border-[var(--color-surface-700)] pb-3 text-xs text-[var(--color-surface-400)]">
+          <summary className="cursor-pointer select-none font-medium text-[var(--color-accent-blue)]">{t('u3Guide.files.title')}</summary>
+          <p className="mt-1 break-words font-mono">
             {lesson.sourcePath} · {lesson.scenarioPath}
           </p>
-          <p className="mt-1 text-xs leading-5 text-[var(--color-surface-400)]">{t('learn.theStarterFailsThis')}</p>
-        </div>
-        {/* G1b: the board track becomes a section closed until opened, with the connection indicator (GDE-009). */}
-        <LearnBoardLesson lessonId={lesson.id} />
-        {/* G1b: after a pass, "Next lesson" (GDE-008) goes here or in the action bar. */}
+          <p className="mt-1 break-words font-mono">{t('u3Guide.files.scenario', { scenario })}</p>
+          <p className="mt-1 leading-5">{t('learn.theStarterFailsThis')}</p>
+          <p className="mt-1 leading-5">
+            {record ? t('u3Guide.files.record', { result: record.result, time: record.time }) : t('u3Guide.files.noRecord')}
+          </p>
+        </details>
+        {lessonEntry?.hardware && (
+          <details data-guide-board className="border-b border-[var(--color-surface-700)] pb-3">
+            <summary className="flex cursor-pointer select-none flex-wrap items-center gap-2 font-medium text-[var(--color-accent-blue)]">
+              {t('learn.hardware.lesson.title')}
+              <ConnectionIndicator indicator={boardLink} />
+            </summary>
+            <LearnBoardLesson lessonId={lesson.id} />
+          </details>
+        )}
 
         <p role="status" data-learn-workspace-status className="text-xs text-[var(--color-surface-400)]">
           {!folderAccess
@@ -347,6 +379,11 @@ export function Guide({ workspaceTestPresentation }: { workspaceTestPresentation
         resetRef={resetButton}
         reset={{ enabled: workspaceOpen, working: resetStatus === 'working', onReset: () => setConfirm('reset') }}
         onReadAgain={lessonEntry?.reading ? () => useLearnUi.getState().openReading(lesson.id) : null}
+        next={
+          nextLesson
+            ? { title: nextLesson.title, disabled: nextLesson.state === 'locked' || starting, onNext: () => void startNext(nextLesson.id) }
+            : null
+        }
         onSolution={hideSolutions || solutionShown ? null : () => setConfirm('solution')}
       />
     </section>
