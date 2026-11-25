@@ -27,6 +27,12 @@ import { journeysU2P3 } from './journeys013/u2-p3';
 import { journeysU2R3 } from './journeys013/u2-r3';
 import { journeysU2V3 } from './journeys013/u2-v3';
 import { journeysU2Q1 } from './journeys013/u2-q1';
+import { journeysU3G1 } from './journeys013/u3-g1';
+import { journeysU3G4 } from './journeys013/u3-g4';
+import { journeysU3G5 } from './journeys013/u3-g5';
+import { journeysU3G6 } from './journeys013/u3-g6';
+import { journeysU3P } from './journeys013/u3-p';
+import { journeysU3Q1 } from './journeys013/u3-q1';
 
 export const JOURNEYS_013: Journey[] = [
   ...journeysW2,
@@ -52,4 +58,10 @@ export const JOURNEYS_013: Journey[] = [
   ...journeysU2R3,
   ...journeysU2V3,
   ...journeysU2Q1,
+  ...journeysU3G1,
+  ...journeysU3G4,
+  ...journeysU3G5,
+  ...journeysU3G6,
+  ...journeysU3P,
+  ...journeysU3Q1,
 ];

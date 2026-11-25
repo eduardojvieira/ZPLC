@@ -9,7 +9,7 @@ import { toAccelerator } from './shortcuts';
 import { translate } from '../i18n/translate';
 import type { Locale } from '../i18n/locale';
 
-export const menuCommands = COMMAND_LIST.map((command) => ({
+export const menuCommands = COMMAND_LIST.filter((command) => !command.pending).map((command) => ({
   id: command.id as string,
   titleKey: command.titleKey as string,
   category: command.category as string,
