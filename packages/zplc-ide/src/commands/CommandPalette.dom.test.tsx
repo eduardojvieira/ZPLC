@@ -95,10 +95,12 @@ describe('the command palette in a DOM (FND-001)', () => {
     await user.type(dom.screen.getByRole('combobox'), 'scene');
     const group = await dom.screen.findByRole('group', { name: 'Scenes' });
     await dom.waitFor(() =>
-      expect(dom.within(group).getAllByRole('option').map((option) => option.textContent)).toEqual([
-        expect.stringContaining('scene.json'),
-        expect.stringContaining('scenes/line.scene.json'),
-      ]),
+      expect(
+        dom
+          .within(group)
+          .getAllByRole('option')
+          .map((option) => option.textContent),
+      ).toEqual([expect.stringContaining('scene.json'), expect.stringContaining('scenes/line.scene.json')]),
     );
     expect(dom.screen.queryByRole('option', { name: /notes\.txt/ })).toBeNull();
     dom.act(() => closeSurfaces());
