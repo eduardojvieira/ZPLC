@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { mkdtempSync } from 'node:fs';
 import { hardwareGradeRecordOf } from '../learn/hardwareCheck';
 import { mkdtemp, mkdir, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -1181,5 +1182,93 @@ describe('read-only program source resources (IDE-030)', () => {
 
   test('is a read of the project: no tool writes a program, and the tool names did not change', () => {
     expect(MCP_TOOL_NAMES.filter((name) => /write|save|edit|create|apply|propose/.test(name))).toEqual([]);
+  });
+});
+
+describe('a failed start says why and what to do (AIX-007, AI-10)', () => {
+  const ENTRY = fileURLToPath(new URL('./index.ts', import.meta.url));
+  const BLINKY = fileURLToPath(new URL('../../projects/blinky_st/', import.meta.url));
+  const run = (...args: string[]) => {
+    const done = Bun.spawnSync([process.execPath, ENTRY, ...args], { stdout: 'pipe', stderr: 'pipe' });
+    return { code: done.exitCode, out: done.stdout.toString(), err: done.stderr.toString() };
+  };
+  const folder = () => mkdtempSync(join(tmpdir(), 'zplc-mcp-start-'));
+
+  test('no arguments prints the usage and exits with 2', () => {
+    const r = run();
+    expect(r.code).toBe(2);
+    expect(r.err).toContain('no arguments given');
+    expect(r.err).toContain('Usage: zplc-mcp --workspace <absolute-path-of-a-project>');
+  });
+  test('--version prints the version on stdout and exits with 0', () => {
+    const r = run('--version');
+    expect(r.code).toBe(0);
+    expect(r.out).toBe(`zplc-mcp ${MCP_SERVER_VERSION}\n`);
+  });
+  test('a relative path says it must be absolute and exits with 2', () => {
+    const r = run('--workspace', 'plants/line-3');
+    expect(r.code).toBe(2);
+    expect(r.err).toBe('ZPLC MCP: the workspace folder must be an absolute path: plants/line-3\n');
+  });
+  test('a missing folder says it does not exist and exits with 1', () => {
+    const missing = join(folder(), 'nope');
+    const r = run('--workspace', missing);
+    expect(r.code).toBe(1);
+    expect(r.err).toBe(`ZPLC MCP: ${missing} does not exist\n`);
+  });
+  test('a folder that is not a project says it has no zplc.json and exits with 1', () => {
+    const empty = folder();
+    const r = run('--workspace', empty);
+    expect(r.code).toBe(1);
+    expect(r.err).toBe(`ZPLC MCP: ${empty} is not a ZPLC project: it has no zplc.json\n`);
+  });
+  test('a bad repository keeps its line and adds the cause', () => {
+    const empty = folder();
+    const r = run('--workspace', BLINKY, '--repository', empty);
+    expect(r.code).toBe(1);
+    expect(r.err).toBe(
+      `ZPLC MCP: repository is unavailable: ${empty} is not a ZPLC checkout: it has no firmware/app/boards/boards.json\n`,
+    );
+  });
+
+  test('AIX-007 a client that opens with initialize of 2025-11-25 lists the tools', async () => {
+    const child = Bun.spawn([process.execPath, ENTRY, '--workspace', BLINKY], { stdin: 'pipe', stdout: 'pipe', stderr: 'pipe' });
+    const lines = child.stdout.pipeThrough(new TextDecoderStream()).getReader();
+    let buffer = '';
+    const next = async (id: number) => {
+      for (;;) {
+        const at = buffer.indexOf('\n');
+        if (at >= 0) {
+          const message = JSON.parse(buffer.slice(0, at));
+          buffer = buffer.slice(at + 1);
+          if (message.id === id) return message;
+          continue;
+        }
+        const chunk = await lines.read();
+        if (chunk.done) throw new Error('server closed before answering');
+        buffer += chunk.value;
+      }
+    };
+    const send = (message: object) => {
+      child.stdin.write(`${JSON.stringify(message)}\n`);
+      child.stdin.flush();
+    };
+    try {
+      send({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: { protocolVersion: '2025-11-25', capabilities: {}, clientInfo: { name: 'old-client', version: '1' } },
+      });
+      const init = await next(1);
+      expect(init.error).toBeUndefined();
+      expect(init.result.protocolVersion).toBe('2025-11-25');
+      send({ jsonrpc: '2.0', method: 'notifications/initialized' });
+      send({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} });
+      const listed = await next(2);
+      expect(listed.result.tools.map((tool: { name: string }) => tool.name).sort()).toEqual([...MCP_TOOL_NAMES].sort());
+    } finally {
+      child.kill();
+    }
   });
 });
