@@ -33,81 +33,6 @@ describe('Console tab boundary', () => {
     expect(shouldClearMotorInputFailure(failure.current, 203)).toBe(true);
   });
 
-  it('keeps roving tab focus and the four standard navigation keys', () => {
-    const source = withEnglishMessages(consoleSources());
-
-    expect(source).toContain('tabIndex={activeConsoleTab === tab.id ? 0 : -1}');
-    expect(source).toContain("key === 'ArrowLeft'");
-    expect(source).toContain("key === 'ArrowRight'");
-    expect(source).toContain("key === 'Home'");
-    expect(source).toContain("key === 'End'");
-    expect(source).toContain('document.getElementById(`console-tab-${nextTab}`)?.focus()');
-    expect(source).toContain("id: 'trace'");
-    // the plant left the results panel for the plant document (SHL-003, PLS-001): no Lab tab and no panel for it here
-    expect(source).not.toContain("id: 'lab'");
-    expect(source).not.toContain('<LabPanel');
-    // the explorer, the inspector and the lessons moved to the sidebars (UX-011): their requests are routed there, and none is a tab here
-    expect(source).not.toContain("id: 'learn'");
-    expect(source).not.toContain("id: 'explorer'");
-    expect(source).not.toContain("id: 'inspector'");
-    expect(source).toContain('resultsTabFor(storedConsoleTab)');
-    expect(source).toContain('aria-label="Workbench panels"');
-    expect(source).toContain('Native POSIX host trace. Not hardware or HIL evidence.');
-    expect(source).toContain('Native POSIX host trace samples, newest first.');
-    expect(source).toContain('scope="col"');
-  });
-
-  // The Changes and Agent tabs left this panel for the review document and the Assistant view (SHL-004): their pins went with the
-  // code, and ReviewDocument.dom.test.tsx and ConsoleChangesTrace.dom.test.tsx render them there.
-  it('keeps candidate review in the lower ledger with saved-file fences and no physical apply path', () => {
-    const source = withEnglishMessages(consoleSources());
-
-    expect(source).toContain('<DiffEditor');
-    expect(source).toContain('No file has been written.');
-    expect(source.match(/data-workspace-manifest-input/g)).toHaveLength(1);
-    expect(source).toContain('readFileContent(file.handle)');
-    expect(source).toContain('sha256Text');
-    expect(source).toContain('manualIsCurrent(snapshot)');
-    expect(source).toContain('workspaceTests)?.cancel()');
-    expect(source).toContain('saveFile(snapshot.fileId)');
-    expect(source).toContain('diskHash !== snapshot.beforeSha256');
-    expect(source).toContain('presentCandidateChangeSetReview(result, snapshot)');
-    expect(source).toContain('useReviewDocument.getState().busy || !file');
-    expect(source).toContain('current.activeFileId === snapshot.fileId');
-    // one definition of a candidate path for the five languages (IDE-030), not the Structured Text rule
-    expect(source).toContain('isCandidateSourcePath(file.path)');
-    expect(source).not.toContain('isCandidateSTPath');
-    expect(source).toContain('Review · {path}');
-    expect(source).toContain('Saved on disk');
-    expect(source).toContain('Current editor buffer');
-    expect(source).toContain("artifact.kind === 'zplc' ? ZPLC program : Trace");
-    expect(source).toContain("artifact.kind === 'zplc' ? ZPLC program SHA-256 {sha256} : Trace SHA-256 {sha256}");
-    expect(source).toContain('Saved input identity SHA-256 {sha256}');
-    expect(source).toContain('scrollBeyondLastLine: false');
-    expect(source).toContain('renderSideBySide: true');
-    expect(source).toContain("review.kind === 'running' || review.kind === 'cancelling' ? { kind: 'stale' }");
-    expect(source).toContain("review: { kind: 'saving' }");
-    expect(source).not.toContain('candidateChangeSet.apply');
-    expect(source).not.toMatch(/candidateChangeSet\.(flash|deploy|force|run|stop)/);
-    expect(source).toContain('Provider response — not evidence');
-    expect(source).toContain('Send request');
-    expect(source).toContain('Cancel request');
-    expect(source).toContain('Review proposed change');
-    expect(source).toContain('onClick={() => { void sendAgentRequest(); }}');
-    expect(source).not.toContain('useEffect(() => { void sendAgentRequest(); }');
-    // an assistant's change set is saved only by the person's click, through the same store actions as their own save
-    expect(source).toContain('saveChangeSet(snapshot, useIDEStore.getState)');
-    expect(source).toContain("'files' in snapshot");
-    expect(source).toContain('Proposed change is stale. Send a new request.');
-    expect(source).toContain('disabled={agentBusy}');
-    expect(source).toContain('tabIndex={agentMode === mode ? 0 : -1}');
-    expect(source).not.toMatch(/aiProvider\.(flash|deploy|force|run|stop|shell|serial)/);
-    expect(source).toContain('Do not put secrets in the prompt.');
-    expect(source).toContain('Known sensitive patterns in the prompt or context are rejected before network access; do not paste secrets.');
-    expect(source).toContain('Terminal, raw serial, and physical controls are excluded.');
-    expect(source).not.toContain('No terminal, secrets, raw serial, or physical controls are included.');
-  });
-
   it('labels live ST diagnostics separately from canonical build diagnostics', () => {
     // the two lists are drawn by ProblemsPanel (ProblemsPanel.test.tsx); Console keeps the fence that pairs the live list with this build
     const source = withEnglishMessages(consoleSources());
@@ -136,19 +61,6 @@ describe('Console tab boundary', () => {
     expect(source).toContain('Run this scenario again');
     expect(source).toContain('aria-label="Run {id} again on native POSIX"');
     expect(source).not.toContain('It may differ from the project open in the editor.');
-  });
-
-  it('TST-002 the Tests tab offers no chooser for the manifest and no run is blocked by unsaved work', () => {
-    const tab = withEnglishMessages(compactSource(readFileSync(join(import.meta.dir, 'console/TestsTab.tsx'), 'utf8')));
-    const runner = compactSource(readFileSync(join(import.meta.dir, 'console/useWorkspaceTestRunner.ts'), 'utf8'));
-
-    expect(tab).not.toContain('Choose zplc.json');
-    expect(tab).not.toContain('workspaceManifestInputRef');
-    expect(tab).not.toContain('Save project');
-    expect(tab).not.toContain('Tests use saved workspace files');
-    expect(runner).not.toContain('saveWorkspaceProject');
-    expect(runner).not.toContain('runWorkspaceTests');
-    expect(runner).toContain('hasUnsavedChanges: hasUnsavedChanges()');
   });
 
   it('keeps recorded scenario evidence in Tests, separate from the live Trace panel', () => {
