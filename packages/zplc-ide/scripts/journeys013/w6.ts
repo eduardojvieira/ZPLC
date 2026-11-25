@@ -25,11 +25,13 @@ async function openProject(app: App, project: string): Promise<void> {
 /** Open a file of the Explorer tree and wait until its tab is the selected one. */
 async function openFile(app: App, path: string): Promise<void> {
   await app.click(css('[data-activity="project"]'), 'the Project activity of the rail');
-  await app
-    .until('the Files tree', async () => (await app.visible(treeItem(`dir:${path.split('/')[0]}`))) || undefined)
-    .catch(async () => {
-      await app.click(css('[aria-label="Navigator view"] button:nth-of-type(2), [aria-label="Vista del navegador"] button:nth-of-type(2)'));
-    });
+  // The navigator opens in its first mode; the Files mode is the second button.
+  // Select it at once rather than wait for a tree that is not shown.
+  await app.click(
+    css('[aria-label="Navigator view"] button:nth-of-type(2), [aria-label="Vista del navegador"] button:nth-of-type(2)'),
+    'the Files mode of the navigator',
+  );
+  await app.until('the Files tree', async () => (await app.visible(treeItem(`dir:${path.split('/')[0]}`))) || undefined);
   const folder = path.split('/')[0]!;
   if (await app.eval(`${treeItem(`dir:${folder}`)}?.getAttribute('aria-expanded') === 'false'`)) await app.click(treeItem(`dir:${folder}`));
   await app.click(treeItem(`file:${path}`));
@@ -46,6 +48,10 @@ async function openFile(app: App, path: string): Promise<void> {
 
 /** Types a comment at the start of the active file, as an edit a person has not saved. */
 async function editActiveFile(app: App, text: string): Promise<void> {
+  await app.until(
+    'the editor to hold the file',
+    async () => (await monacoEval<boolean>(app, 'return Boolean(editor?.getValue());')) || undefined,
+  );
   await monacoEval(app, 'editor.focus(); editor.setPosition({ lineNumber: 1, column: 1 });');
   await app.type(text);
 }
