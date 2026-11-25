@@ -320,6 +320,11 @@ describe('stacker crane', () => {
     }
   });
 
+  it('PRT-009 the fork view has the size of the fork body: narrow across x, long along z', async () => {
+    const r = await rig();
+    expect(r.rt.views()[0]!.pose.size).toEqual([0.16, 0.04, 0.6]);
+  });
+
   it('PRT-003 X and Y are held while the fork is out and blocked counts one rising edge per refused request', async () => {
     const r = await rig();
     r.set({ forkRight: true });
