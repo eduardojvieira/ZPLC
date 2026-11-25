@@ -273,7 +273,8 @@ function fakeThree() {
     ExtrudeGeometry: Geometry,
     Shape: Outline,
     DirectionalLight: class extends Obj {
-      shadow = { mapSize: { set() {} } };
+      shadow = { mapSize: { set() {} }, camera: { updateProjectionMatrix() {} } as Record<string, unknown>, bias: 0 };
+      target = new Obj();
     },
     Mesh: mesh,
     InstancedMesh: class extends Obj {
@@ -742,5 +743,68 @@ describe('extruded pieces (VIS-014)', () => {
     expect(dark).toBeGreaterThan(0);
     expect(lit).toBeGreaterThan(0);
     expect(pieceGeometry(THREE, {}, extrusion(slottedSection(0.03, 0.13), 2, 'x')).getAttribute('color')).toBeUndefined();
+  });
+});
+
+describe('items look like what they are', () => {
+  const saved = { raf: globalThis.requestAnimationFrame, caf: globalThis.cancelAnimationFrame };
+  beforeEach(() => {
+    globalThis.requestAnimationFrame = (() => 1) as unknown as typeof requestAnimationFrame;
+    globalThis.cancelAnimationFrame = (() => {}) as typeof cancelAnimationFrame;
+  });
+  afterEach(() => {
+    globalThis.requestAnimationFrame = saved.raf;
+    globalThis.cancelAnimationFrame = saved.caf;
+  });
+  const build = (quality: 'low' | 'medium') => {
+    const f = fakeThree();
+    const r = createRenderer(fakeCanvas({}).canvas, scene, { quality }, f.THREE);
+    if ('unavailable' in r) throw new Error(r.unavailable);
+    const meshes = (): { count: number; instanceMatrix: { array: Float32Array } }[] => {
+      const out: { count: number; instanceMatrix: { array: Float32Array } }[] = [];
+      const visit = (o: { children?: unknown[]; instanceMatrix?: unknown }): void => {
+        if (o.instanceMatrix) out.push(o as never);
+        for (const c of o.children ?? []) visit(c as never);
+      };
+      visit(f.scenes[0] as never);
+      return out;
+    };
+    return { ...f, r, meshes };
+  };
+  const snap = (items: BodyPose[]) => ({ items, parts: [] }) as unknown as Parameters<ReturnType<typeof build>['r']['setSnapshot']>[0];
+
+  it('a metal item has a metal material with no texture map at the textured level', () => {
+    const { r, mats } = build('medium');
+    r.setSnapshot(snap([pose({ metal: true })]));
+    const m = mats.find((x) => x.name === 'item:metal') as unknown as { metalness: number; map?: unknown };
+    expect(m.metalness).toBeGreaterThanOrEqual(0.7);
+    expect(m.map ?? null).toBeNull();
+  });
+
+  it('a pallet is drawn as eight pieces whose bounds are its size, built once', () => {
+    const { r, mats, meshes } = build('low');
+    const pallet = pose({ kind: 'pallet', size: [1.2, 0.15, 0.8], p: [0, 0, 0] });
+    r.setSnapshot(snap([pallet]));
+    const bars = meshes().find((m) => m.count === 8)!;
+    expect(bars).toBeDefined();
+    const [lo, hi] = [
+      [Infinity, Infinity, Infinity],
+      [-Infinity, -Infinity, -Infinity],
+    ];
+    for (let i = 0; i < 8; i++) {
+      const a = bars.instanceMatrix.array.subarray(i * 16, i * 16 + 16);
+      for (let k = 0; k < 3; k++) {
+        const half = a[k * 5]! / 2; // scale on the diagonal: the pose is not rotated
+        lo[k] = Math.min(lo[k]!, a[12 + k]! - half);
+        hi[k] = Math.max(hi[k]!, a[12 + k]! + half);
+      }
+    }
+    pallet.size.forEach((s, k) => {
+      expect(lo[k]).toBeCloseTo(-s / 2, 5);
+      expect(hi[k]).toBeCloseTo(s / 2, 5);
+    });
+    const [meshCount, matCount] = [meshes().length, mats.length];
+    r.setSnapshot(snap([pallet]));
+    expect([meshes().length, mats.length]).toEqual([meshCount, matCount]);
   });
 });

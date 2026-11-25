@@ -356,6 +356,33 @@ export function crateWallMatrices(items: readonly BodyPose[], out?: Float32Array
   return m;
 }
 
+/** The eight boards of a pallet (five top deck boards, three bottom runners), their union exactly the body's box. */
+export function palletBoxes(size: Vec3): readonly { centre: Vec3; size: Vec3 }[] {
+  const [l, h, w] = size;
+  const deck = h * 0.25;
+  const runner = h - deck;
+  const board = l / 5 - l * 0.04; // a gap of 4 percent of the length between two boards
+  const rw = w * 0.15;
+  const out: { centre: Vec3; size: Vec3 }[] = [];
+  for (let i = 0; i < 5; i++)
+    out.push({ centre: [-l / 2 + board / 2 + (i * (l - board)) / 4, h / 2 - deck / 2, 0], size: [board, deck, w] });
+  for (const z of [-(w / 2 - rw / 2), 0, w / 2 - rw / 2]) out.push({ centre: [0, -h / 2 + runner / 2, z], size: [l, runner, rw] });
+  return out;
+}
+
+/** The eight boards of every pallet item, in item order (eight consecutive matrices per pallet). */
+export function palletPieceMatrices(items: readonly BodyPose[], out?: Float32Array): Float32Array {
+  const pallets = items.filter((i) => i.kind === 'pallet');
+  const m = out && out.length >= pallets.length * 128 ? out : new Float32Array(pallets.length * 128);
+  pallets.forEach((p, i) =>
+    palletBoxes(p.size).forEach((b, k) => {
+      const o = rotate(p.q, b.centre);
+      composeMatrix([p.p[0] + o[0], p.p[1] + o[1], p.p[2] + o[2]], p.q, b.size, m, (i * 8 + k) * 16);
+    }),
+  );
+  return m;
+}
+
 /** The size of the box that holds a shape: what a fit of the camera needs to know of it. */
 export function shapeExtent(spec: ShapeSpec): Vec3 {
   return spec.shape === 'box'
@@ -453,8 +480,9 @@ export function itemToneOf(item: Partial<Pick<BodyPose, 'kind' | 'tag' | 'colour
   return palette.item;
 }
 
-/** The surface of an item at the textured levels: an item with no colour, a crate or a pallet is cardboard; a coloured, metal, lid or
- * base item is plastic. */
-export function itemSkin(item: Partial<Pick<BodyPose, 'kind' | 'tag' | 'colour' | 'metal'>>): 'cardboard' | 'plastic' {
-  return item.colour || item.metal || item.tag === 'lid' || item.tag === 'base' ? 'plastic' : 'cardboard';
+/** The surface of an item at the textured levels: an item with no colour, a crate or a pallet is cardboard; a coloured, lid or
+ * base item is plastic; a metal item is metal. */
+export function itemSkin(item: Partial<Pick<BodyPose, 'kind' | 'tag' | 'colour' | 'metal'>>): 'cardboard' | 'plastic' | 'metal' {
+  if (item.metal) return 'metal';
+  return item.colour || item.tag === 'lid' || item.tag === 'base' ? 'plastic' : 'cardboard';
 }
