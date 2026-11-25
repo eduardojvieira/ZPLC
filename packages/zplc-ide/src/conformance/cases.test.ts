@@ -349,6 +349,11 @@ describe('loadCases', () => {
     expect(found!.id).toBe('cmp/cmp-011-x');
   });
 
+  it('knows a case by the same id on every platform: a path joined with backslashes gives the id with slashes', () => {
+    expect(caseId(win32.join('cmp', 'cmp-011-x'))).toBe('cmp/cmp-011-x');
+    expect(caseId('cmp/cmp-011-x')).toBe('cmp/cmp-011-x');
+  });
+
   it('refuses a matrix row that the matrix of the same root does not have, and accepts one it has', () => {
     const matrix = JSON.stringify({ schemaVersion: 1, rows: [{ id: 'data-types.dint' }] });
     expect(load({ 'a.st': 'x', 'a.expect.json': runtime({ matrix: ['data-types.dint'] }), 'matrix.json': matrix })).toHaveLength(1);
