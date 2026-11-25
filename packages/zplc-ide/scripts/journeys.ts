@@ -37,6 +37,7 @@ import { findTextOutOfBox } from './textFit';
 import { JOURNEYS_013 } from './journeys013';
 import { journeysManipulator } from './journeys/plantManipulator';
 import { journeysSorting } from './journeys/plantSorting';
+import { journeysStations } from './journeys/plantStations';
 import { journeysCourse } from './journeys/plantCourse';
 import { journeysOperator } from './journeys/plantOperator';
 
@@ -8444,6 +8445,7 @@ export const JOURNEYS: Journey[] = [
   ...journeysOperator,
   ...journeysManipulator,
   ...journeysSorting,
+  ...journeysStations,
   ...journeysCourse,
 ];
 
