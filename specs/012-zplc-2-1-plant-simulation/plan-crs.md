@@ -14,7 +14,7 @@ renamed or deleted, every changed package raises its `version`, and the 2.0 star
 
 | Branch | What it holds |
 |---|---|
-| `feat/course-step2` | The amendment (CRS-014 to CRS-025, outline section 6), the placeholder `{{ui:<catalogue key>}}` for control names, expanded when the lesson index is built and understood by the didactics check, the parity rule that lets a page pair show `images/<name>.en.png` and `images/<name>.es.png`, and the three pilot lessons in both languages: `timers-on-delay-off-delay`, `sfc-fill-mix-sequence` and `plant-belt-to-sensor`. |
+| `feat/course-step2` | The amendment (CRS-014 to CRS-025, outline section 6), the placeholder `{{ui:<catalogue key>}}` for control names, expanded when the lesson index is built and understood by the didactics check, the parity rule that lets a page pair show `images/<name>.en.png` and `images/<name>.es.png` (the validator refuses a file without its pair, two sizes that differ, and the same alt text on both pages), and the three pilot lessons in both languages: `timers-on-delay-off-delay`, `sfc-fill-mix-sequence` and `plant-belt-to-sensor`. |
 | `feat/course-l7-tools` | Merged: the compiler support matrix `course-l7-support.md` (every proposed ST construct "Teach"; gaps in LD, FBD and IL) and the scripts that generate the signal table and the labelled image of a scene. |
 
 Measured cost of the pilot: one writer session for the amendment, the placeholder and the two programming lessons, about 0.5 unit per
