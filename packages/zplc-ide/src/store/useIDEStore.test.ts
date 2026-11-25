@@ -1125,37 +1125,71 @@ describe('useIDEStore project close admission', () => {
 });
 
 describe('useIDEStore deferred saves', () => {
-  it('preserves an edit made while a physical file write is in flight', async () => {
-    const closeStarted = deferred<void>();
-    const completeWrite = deferred<void>();
-    const handle = {
-      createWritable: async () => ({
-        write: async () => {},
-        close: () => {
-          closeStarted.resolve();
-          return completeWrite.promise;
+  describe('a save while the store changes the file during the write', () => {
+    // a handle whose Nth close() awaits onClose(N); records every written text
+    const setup = (onClose: (write: number, id: string) => void) => {
+      const writes: string[] = [];
+      const handle = {
+        createWritable: async () => {
+          let text = '';
+          return {
+            write: async (t: string) => {
+              text = t;
+            },
+            close: async () => {
+              writes.push(text);
+              onClose(writes.length, 'file-src-main-st');
+              await Promise.resolve();
+            },
+          };
         },
-      }),
-    } as unknown as FileSystemFileHandle;
-    const file = {
-      id: 'file-src-main-st',
-      name: 'main.st',
-      path: 'src/main.st',
-      parentPath: 'src',
-      language: 'ST' as const,
-      content: 'old',
-      isModified: true,
-      handle,
+      } as unknown as FileSystemFileHandle;
+      const file = {
+        id: 'file-src-main-st',
+        name: 'main.st',
+        path: 'src/main.st',
+        parentPath: 'src',
+        language: 'ST' as const,
+        content: 'old',
+        isModified: true,
+        handle,
+      };
+      useIDEStore.setState({ isProjectOpen: true, projectSession: 300, loadedFiles: new Map([[file.id, file]]) });
+      return { writes, file };
     };
-    useIDEStore.setState({ isProjectOpen: true, projectSession: 300, loadedFiles: new Map([[file.id, file]]) });
+    const patch = (id: string, change: object) => {
+      const files = new Map(useIDEStore.getState().loadedFiles);
+      files.set(id, { ...files.get(id)!, ...change });
+      useIDEStore.setState({ loadedFiles: files });
+    };
+    const current = (id: string) => useIDEStore.getState().loadedFiles.get(id) as unknown as Record<string, unknown>;
 
-    const saving = useIDEStore.getState().saveFile(file.id);
-    await closeStarted.promise;
-    useIDEStore.getState().updateFileContent(file.id, 'new');
-    completeWrite.resolve();
+    it('succeeds when only a flag of the file changed', async () => {
+      const { writes, file } = setup((n, id) => n === 1 && patch(id, { hasDiagnostics: true }));
+      await expect(useIDEStore.getState().saveFile(file.id)).resolves.toBe(true);
+      expect(writes).toEqual(['old']);
+      expect(current(file.id)).toMatchObject({ isModified: false, diskContent: 'old', hasDiagnostics: true });
+    });
 
-    await expect(saving).resolves.toBe(false);
-    expect(useIDEStore.getState().loadedFiles.get(file.id)).toMatchObject({ content: 'new', isModified: true });
+    it('writes again once when the content changed during the write', async () => {
+      const { writes, file } = setup((n, id) => n === 1 && useIDEStore.getState().updateFileContent(id, 'new'));
+      await expect(useIDEStore.getState().saveFile(file.id)).resolves.toBe(true);
+      expect(writes).toEqual(['old', 'new']);
+      expect(current(file.id)).toMatchObject({ content: 'new', isModified: false, diskContent: 'new' });
+    });
+
+    it('gives up after 3 writes when the content changes during every one', async () => {
+      const { writes, file } = setup((n, id) => useIDEStore.getState().updateFileContent(id, `v${n}`));
+      await expect(useIDEStore.getState().saveFile(file.id)).resolves.toBe(false);
+      expect(writes).toEqual(['old', 'v1', 'v2']);
+      expect(current(file.id)).toMatchObject({ content: 'v3', isModified: true, diskContent: 'v2' });
+    });
+
+    it('returns false without writing again when the project session changed', async () => {
+      const { writes, file } = setup((n) => n === 1 && useIDEStore.setState({ projectSession: 301 }));
+      await expect(useIDEStore.getState().saveFile(file.id)).resolves.toBe(false);
+      expect(writes).toEqual(['old']);
+    });
   });
 
   it('clears a migration preview only after saving its current configuration', async () => {
