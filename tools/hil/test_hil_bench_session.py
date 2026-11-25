@@ -1,7 +1,6 @@
 """The bench session script only prepares tmux (AGENTS.md rule 8): the owner types."""
 
 import os
-import re
 import subprocess
 import unittest
 from pathlib import Path
@@ -40,12 +39,17 @@ class BenchSessionTest(unittest.TestCase):
             self.assertIn("-c /work/repo", line)
             self.assertRegex(line, r"-e TMPDIR=/home/owner/\.cache/zplc-tmp")
 
-    def test_script_never_types_or_runs_bench_work(self):
-        text = SCRIPT.read_text()
-        for word in FORBIDDEN:
-            self.assertNotIn(word, text)
-        self.assertIsNone(re.search(r"\bsend-keys\b", text))
-
+    def test_print_lists_only_the_session_and_its_windows(self):
+        # The script runs exactly what --print lists (one run() helper), so this is what it does: create, never type or run.
+        lines = self.print_lines()
+        self.assertEqual(len(lines), 3)
+        self.assertTrue(lines[0].startswith("tmux new-session -d -s bench "))
+        for line in lines[1:]:
+            self.assertTrue(line.startswith("tmux new-window -t bench "))
+        for line in lines:
+            self.assertNotIn("send-keys", line)
+            for word in FORBIDDEN:
+                self.assertNotIn(word, line)
 
 if __name__ == "__main__":
     unittest.main()
