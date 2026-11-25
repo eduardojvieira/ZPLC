@@ -200,7 +200,7 @@ export const COMMANDS = [
   { id: 'file.closeProject', titleKey: 'command.file.closeProject', category: 'file', enabled: open },
   { id: 'file.preferences', titleKey: 'command.file.preferences', category: 'file', shortcut: 'Mod+Comma' },
   { id: 'file.exportProjectJson', titleKey: 'command.file.exportProjectJson', category: 'file', enabled: open },
-  { id: 'build.runAllTests', titleKey: 'command.build.runAllTests', category: 'build', shortcut: 'Mod+Alt+T', enabled: open },
+  { id: 'build.runAllTests', titleKey: 'command.build.runAllTests', category: 'build', shortcut: 'Mod+Shift+T', enabled: open },
   { id: 'build.runFailedTests', titleKey: 'command.build.runFailedTests', category: 'build', enabled: open },
   { id: 'build.runTestAtCursor', titleKey: 'command.build.runTestAtCursor', category: 'build', enabled: open },
   { id: 'build.newTest', titleKey: 'command.build.newTest', category: 'build', enabled: open },
@@ -226,7 +226,7 @@ export const COMMANDS = [
   // Milestone U3 (plan-u3.md, Task X1a): the ids only; each is bound, and given its `enabled` rule, by the task that owns the behaviour.
   { id: 'view.guide', titleKey: 'command.view.guide', category: 'view', pending: true },
   { id: 'view.lessonLayout', titleKey: 'command.view.lessonLayout', category: 'view', pending: true },
-  { id: 'view.focusCommandBar', titleKey: 'command.view.focusCommandBar', category: 'view', pending: true },
+  { id: 'view.focusCommandBar', titleKey: 'command.view.focusCommandBar', category: 'view', shortcut: 'Mod+Alt+C' },
   { id: 'learn.guide.next', titleKey: 'command.learn.guide.next', category: 'help', pending: true },
   { id: 'learn.guide.back', titleKey: 'command.learn.guide.back', category: 'help', pending: true },
   { id: 'learn.check', titleKey: 'command.learn.check', category: 'build', pending: true },
