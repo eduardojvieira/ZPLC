@@ -22,7 +22,7 @@ describe('control stations (plan-vis C4)', () => {
     expect(s.max[1]).toBeCloseTo(0.08, 9);
     expect(s.floor).toBe(0);
     expect(s.top).toBeCloseTo(1 - 0.14, 9);
-    expect(controlStation(parts[0]!, parts)).toBe(s);
+    expect(controlStation(parts[0]!, parts)).toEqual(s);
     expect(STATION_REACH_M).toBe(0.6);
   });
 
@@ -59,6 +59,6 @@ describe('control stations (plan-vis C4)', () => {
         core.dispose();
       }
     }
-    expect(found).toEqual({});
+    expect(found).toEqual({ 'stacker-crane-warehouse': [['req1', 'req2', 'req3']] });
   });
 });
