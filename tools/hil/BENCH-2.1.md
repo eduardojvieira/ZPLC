@@ -4,15 +4,26 @@ The run sheet for the HIL evidence of plant I/O mode on the two learner boards (
 ESP32-S3-DevKitC-1 and the Raspberry Pi Pico. Until these runs exist, no board has hardware evidence for plant I/O
 mode (P6), and `plant-io-qualification.json` offers no scene.
 
-Who does what. The owner authorized the agent to build, flash, deploy and run the bench scripts on boards the owner
-connects ("los hil los haces vos, yo solo te conecto las placas", 2026-11-13; "Cuando conecte la ESP32-S3 y la Pico,
-corrés vos con la excepción que ya autoricé", 2026-11-24). That is an exception to AGENTS.md rule 7 and to "a person
-runs both" of `tools/hil/README.md`, for this owner's bench only. Every step below is marked:
+Who does what. The owner, a person, types every command at the bench, in the tmux session `bench`
+(`tmux attach -t bench`): building firmware, flashing, deploying, running the bench scripts and making the hardware
+record. The owner, 2026-11-25: "Banco HIL: escribo yo, con tmux attach -t bench. Vos preparás la sesión y no tipeás
+respuestas ni iniciás un flasheo: el registro de hardware lo hace una persona (regla 8)." This is AGENTS.md rule 8
+(physical operations, and the hardware record, are a person's). The earlier exception (2026-11-13 and 2026-11-24) was
+withdrawn on 2026-11-25. Every step below is marked:
 
-- **[agent]**: the agent runs it, under that exception. Studio's AI and MCP still never start plant I/O mode (LNK-009).
-- **[person]**: only a person can do it: a button, a cable, a wire, or looking at an LED.
+- **[agent]**: the agent's only step, preparing the session with `tools/hil/bench-session.sh`. Studio's AI and MCP still
+  never start plant I/O mode (LNK-009).
+- **[person]**: the owner types it or does it: a command, a button, a cable, a wire, or looking at an LED.
 
-## Before the bench (agent, once)
+**[agent]** Prepare the session. It creates a detached tmux session `bench` with the windows `esp32s3`, `pico` and
+`record`, each in `REPO` with `TMPDIR` set. It types nothing in them; if the session exists it only names it
+(`--print` shows the tmux commands and runs nothing):
+
+```bash
+REPO=<the clean checkout under test> tools/hil/bench-session.sh
+```
+
+## Before the bench (person, once)
 
 The native-simulator rehearsal must pass first (it did: L192, and again on 2026-11-24 at 20, 10 and 50 ms, all
 `ok` under `validate_plant_io_evidence.py --level native-sim`). Then, from a clean checkout of the commit under test
@@ -25,7 +36,7 @@ mkdir -p "$BENCH" && cd "$REPO" && . tools/firmware-test/env.sh
 ln -sfn "$REPO" "$ZPLC_FW_WS/zplc"   # what run.sh does; the workspace is shared state (rule G9): one build at a time
 ```
 
-**[agent]** The echo program the bench checks against (the one of `tools/hil/README.md`, step 2):
+**[person]** The echo program the bench checks against (the one of `tools/hil/README.md`, step 2):
 
 ```bash
 cat > "$BENCH/echo.st" <<'EOF'
@@ -72,7 +83,7 @@ identifiers: do not plug it in during the Pico runs.
 
 1. **[person]** Wire the two LEDs, plug the power cable into the port marked **UART** and the data cable into the port
    marked **USB** (see the checklist at the end).
-2. **[agent]** Build:
+2. **[person]** Build:
 
    ```bash
    (cd "$ZPLC_FW_WS" && west build -p always -b esp32s3_devkitc/esp32s3/procpu zplc/firmware/app -d "$ZPLC_FW_WS/out/bench/esp32s3_devkitc")
@@ -80,22 +91,21 @@ identifiers: do not plug it in during the Pico runs.
 
    This is the `build_command` of `firmware/app/boards/boards.json` in the workspace form `run.sh` uses.
 
-3. **[agent]** Flash (the port is the `303A:1001` device; `eza -l /dev/serial/by-id/` names it):
+3. **[person]** Flash (the port is the `303A:1001` device; `eza -l /dev/serial/by-id/` names it):
 
    ```bash
    "$ZPLC_FW_WS/.venv/bin/esptool" --chip esp32s3 --port /dev/ttyACM<n> write-flash 0x0 "$ZPLC_FW_WS/out/bench/esp32s3_devkitc/zephyr/zephyr.bin"
    ```
 
-   **[person]** Only if esptool cannot connect: hold BOOT, press and release RST, release BOOT, and the agent runs it
-   again. **[person]** If the console stays silent afterwards, press RST.
+   Only if esptool cannot connect: hold BOOT, press and release RST, release BOOT, and run it again. If the console stays silent afterwards, press RST.
 
-4. **[agent]** Deploy the echo program (it is stored in flash and survives a reset, which restores it stopped):
+4. **[person]** Deploy the echo program (it is stored in flash and survives a reset, which restores it stopped):
 
    ```bash
    python3 -B -c 'import sys; sys.path.insert(0, "tools/hil"); from zplc_tester import ZPLCTester; t = ZPLCTester(board=sys.argv[1]); t.upload_bytecode(open(sys.argv[2], "rb").read()); print(t.send("zplc version")); t.close()' esp32s3_devkitc "$BENCH/echo.zplc"
    ```
 
-5. **[agent + person]** The three runs (see "How a run goes" for the prompts):
+5. **[person]** The three runs (see "How a run goes" for the prompts):
 
    ```bash
    python3 tools/hil/plant_io_bench.py --board esp32s3_devkitc --transport usb-serial --program "$BENCH/echo.zplc" \
@@ -112,7 +122,7 @@ the bench default `--timeout-ms`): the mode ends with `TIMEOUT` (Findings 3 of t
 ## Raspberry Pi Pico
 
 1. **[person]** Wire the two LEDs (and, preferably, the second power path of the checklist).
-2. **[agent]** Build:
+2. **[person]** Build:
 
    ```bash
    (cd "$ZPLC_FW_WS" && west build -p always -b rpi_pico/rp2040 zplc/firmware/app -d "$ZPLC_FW_WS/out/bench/rpi_pico")
@@ -120,7 +130,7 @@ the bench default `--timeout-ms`): the mode ends with `TIMEOUT` (Findings 3 of t
 
 3. **[person]** Unplug the Pico, hold BOOTSEL, plug the USB cable in with it held, release it. A drive named `RPI-RP2`
    appears.
-4. **[agent]** Flash by copying the image (there is no picotool here; the boot ROM takes the file):
+4. **[person]** Flash by copying the image (there is no picotool here; the boot ROM takes the file):
 
    ```bash
    udisksctl mount -b /dev/disk/by-label/RPI-RP2   # only if the desktop did not mount it
@@ -129,8 +139,8 @@ the bench default `--timeout-ms`): the mode ends with `TIMEOUT` (Findings 3 of t
 
    The board writes it, restarts by itself and comes back as `/dev/ttyACM<n>`.
 
-5. **[agent]** Deploy, as for the ESP32-S3 with `rpi_pico` for the board.
-6. **[agent + person]** The three runs:
+5. **[person]** Deploy, as for the ESP32-S3 with `rpi_pico` for the board.
+6. **[person]** The three runs:
 
    ```bash
    python3 tools/hil/plant_io_bench.py --board rpi_pico --transport usb-serial --program "$BENCH/echo.zplc" \
@@ -157,25 +167,17 @@ starts again from zero. The validator refuses a run whose uptime grew less than 
 the first read): a power cut is not a link loss.
 
 The bench needs an interactive terminal (rule G7): it refuses when stdin is not a terminal, and it starts only when
-the board id is typed. The agent's shell has none, so the agent runs it in tmux and relays: it types the board id only
-after the person says the board is connected and its outputs are safe to drive, and each `yes` or `no` only as the
-person answered it. The person may instead type in that terminal (`tmux attach -t bench`).
+the board id is typed. The owner types in the `bench` window (`tmux attach -t bench`), after checking that the board is
+connected and its outputs are safe to drive. The agent types no board id and no answer.
 
-```bash
-tmux new-session -d -s bench -x 220 -y 50 -c "$REPO"
-tmux send-keys -t bench "<one bench command from above>" Enter
-tmux capture-pane -p -t bench | tail -20          # read the prompt, tell the person, wait for the answer
-tmux send-keys -t bench "<the board id, or yes / no as the person answered>" Enter
-```
-
-| Prompt of the bench                                              | Who answers                                    | What the person sees or does                                                                                                                                                                                                                                                                                                                            |
-| ---------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Type the board id (...) to start`                               | **[person]** says go; **[agent]** types the id | Nothing yet. The bench sends RUN if the program is stopped, enters the mode and streams for about 5000 frame periods (100 s at 20 ms, 250 s at 50 ms; at 10 ms it goes as fast as the link answers). The LEDs stay off.                                                                                                                                 |
-| `1. MIRROR OFF ... Did the LED stay off?`                        | **[person]**                                   | For 5 s the program's outputs toggle in the image, but both LEDs stay **off**: the pins are held at their safe level. Answer `yes` only if they stayed off.                                                                                                                                                                                             |
-| `2. MIRROR ON ... Did the LED follow the outputs?`               | **[person]**                                   | For 5 s both LEDs **light and flicker**: DO0 toggles every frame and DO1 every second frame (at 10 and 20 ms DO0 looks dimmed rather than blinking; at 50 ms both visibly blink).                                                                                                                                                                       |
-| `3. LINK LOSS ... Ready to pull the cable?`                      | **[person]**                                   | The LEDs still flicker (mirroring is on). Answer `yes`, then **pull the data cable** (ESP32-S3: the one in the port marked USB; Pico: its USB cable). Watch the LEDs: they must go **off** as the board leaves the mode (on the Pico when it sees the line drop, on the ESP32-S3 within the 500 ms timeout). The bench notices the pull and waits 10 s. |
-| `Plug the cable back, then press Enter`                          | **[person]** plugs it; **[agent]** sends Enter | The bench opens the port again and reads `zplc sched status --json` (must be `idle`, that is STOPPED), the output image (must be all zero) and the uptime (must have counted on).                                                                                                                                                                       |
-| `Did the LED go off when the cable came out, and is it off now?` | **[person]**                                   | Answer `yes` only if both LEDs went off when the cable came out and are still off.                                                                                                                                                                                                                                                                      |
+| Prompt of the bench                                              | Who answers                                     | What the person sees or does                                                                                                                                                                                                                                                                                                                            |
+| ---------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Type the board id (...) to start`                               | **[person]** says go; **[person]** types the id | Nothing yet. The bench sends RUN if the program is stopped, enters the mode and streams for about 5000 frame periods (100 s at 20 ms, 250 s at 50 ms; at 10 ms it goes as fast as the link answers). The LEDs stay off.                                                                                                                                 |
+| `1. MIRROR OFF ... Did the LED stay off?`                        | **[person]**                                    | For 5 s the program's outputs toggle in the image, but both LEDs stay **off**: the pins are held at their safe level. Answer `yes` only if they stayed off.                                                                                                                                                                                             |
+| `2. MIRROR ON ... Did the LED follow the outputs?`               | **[person]**                                    | For 5 s both LEDs **light and flicker**: DO0 toggles every frame and DO1 every second frame (at 10 and 20 ms DO0 looks dimmed rather than blinking; at 50 ms both visibly blink).                                                                                                                                                                       |
+| `3. LINK LOSS ... Ready to pull the cable?`                      | **[person]**                                    | The LEDs still flicker (mirroring is on). Answer `yes`, then **pull the data cable** (ESP32-S3: the one in the port marked USB; Pico: its USB cable). Watch the LEDs: they must go **off** as the board leaves the mode (on the Pico when it sees the line drop, on the ESP32-S3 within the 500 ms timeout). The bench notices the pull and waits 10 s. |
+| `Plug the cable back, then press Enter`                          | **[person]** plugs it; **[person]** sends Enter | The bench opens the port again and reads `zplc sched status --json` (must be `idle`, that is STOPPED), the output image (must be all zero) and the uptime (must have counted on).                                                                                                                                                                       |
+| `Did the LED go off when the cable came out, and is it off now?` | **[person]**                                    | Answer `yes` only if both LEDs went off when the cable came out and are still off.                                                                                                                                                                                                                                                                      |
 
 The run ends with `PASSED: <file>` or `FAILED: <file>` and the reasons. A failed file is evidence too: never edit it,
 never run over it (the bench refuses an existing `--out`), and report it. A run that stops before it streams (for
@@ -191,7 +193,7 @@ commit and dirty state of the checkout, the firmware identity and its `zplc vers
 versions, the program size and CRC-32, `rtt_ms` and `gap_ms` (count, p50, p95, p99, max), `late`, `rejected`, the
 bench's own counts, the exit (`closed`) or the board's own exit events, the gap limit, and the three physical
 sequences with `confirmed_by: "person"`. The link-loss sequence also holds the mirror flag when the cable went out and
-the uptime marker: `uptime_before_ms`, `uptime_after_ms`, `host_elapsed_ms` and `read_slack_ms`. Then, **[agent]**:
+the uptime marker: `uptime_before_ms`, `uptime_after_ms`, `host_elapsed_ms` and `read_slack_ms`. Then, **[person]**:
 
 ```bash
 python3 tools/hil/validate_plant_io_evidence.py --level hil $EV/plant-io-*-usb-serial*.json
