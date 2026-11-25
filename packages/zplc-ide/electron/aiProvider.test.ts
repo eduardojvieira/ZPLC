@@ -712,3 +712,57 @@ describe('optional AI provider (IDE-030)', () => {
     });
   });
 });
+
+describe('each provider failure has its own cause and next step (AI-16)', () => {
+  const KEY = 'sk-fake-key-123456';
+  const MARKER = 'LEAK-MARKER-from-provider-body';
+  async function failing(fetchImpl: () => Promise<Response>) {
+    const directory = await fixture();
+    const provider = createAiProvider({ userDataPath: directory, vault: vault(), fetch: fetchImpl });
+    await provider.saveConfig({ enabled: true, endpoint: 'https://api.example.test', model: 'gpt-test' });
+    await provider.storeKey(KEY);
+    return provider.request(join(directory, 'workspace'), request, new AbortController().signal);
+  }
+  const status = (code: number, headers?: Record<string, string>) => async () =>
+    new Response(`${MARKER} ${KEY}`, { status: code, headers });
+
+  it('tells a refused key, an unknown model, a rate limit and a server error apart', async () => {
+    expect(await failing(status(401))).toEqual({ ok: false, code: 'AI_PROVIDER_AUTH' });
+    expect(await failing(status(403))).toEqual({ ok: false, code: 'AI_PROVIDER_AUTH' });
+    expect(await failing(status(404))).toEqual({ ok: false, code: 'AI_PROVIDER_MODEL' });
+    expect(await failing(status(429))).toEqual({ ok: false, code: 'AI_PROVIDER_RATE_LIMIT' });
+    expect(await failing(status(500))).toEqual({ ok: false, code: 'AI_PROVIDER_SERVER' });
+    expect(await failing(status(503))).toEqual({ ok: false, code: 'AI_PROVIDER_SERVER' });
+    expect(await failing(status(418))).toEqual({ ok: false, code: 'AI_PROVIDER_UNAVAILABLE' });
+  });
+
+  it('keeps the Retry-After seconds of a rate limit, and nothing else it says', async () => {
+    expect(await failing(status(429, { 'Retry-After': '42' }))).toEqual({ ok: false, code: 'AI_PROVIDER_RATE_LIMIT', retryAfter: 42 });
+    expect(await failing(status(429, { 'Retry-After': 'Wed, 21 Oct 2026 07:28:00 GMT' }))).toEqual({
+      ok: false,
+      code: 'AI_PROVIDER_RATE_LIMIT',
+    });
+    expect(await failing(status(429, { 'Retry-After': '0' }))).toEqual({ ok: false, code: 'AI_PROVIDER_RATE_LIMIT' });
+  });
+
+  it('reports a network failure as an unreachable provider', async () => {
+    expect(
+      await failing(async () => {
+        throw new TypeError('fetch failed');
+      }),
+    ).toEqual({ ok: false, code: 'AI_PROVIDER_UNREACHABLE' });
+  });
+
+  it('puts neither the key nor the provider response in what it answers', async () => {
+    for (const answer of [await failing(status(401)), await failing(status(429, { 'Retry-After': '7' })), await failing(status(500))]) {
+      const text = JSON.stringify(answer);
+      expect(text).not.toContain(KEY);
+      expect(text).not.toContain(MARKER);
+    }
+    const thrown = await failing(async () => {
+      throw new Error(`${MARKER} ${KEY}`);
+    });
+    expect(JSON.stringify(thrown)).not.toContain(KEY);
+    expect(JSON.stringify(thrown)).not.toContain(MARKER);
+  });
+});

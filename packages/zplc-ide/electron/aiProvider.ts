@@ -17,6 +17,11 @@ export type AiErrorCode =
   | 'AI_TIMEOUT'
   | 'AI_CANCELLED'
   | 'AI_PROVIDER_UNAVAILABLE'
+  | 'AI_PROVIDER_AUTH'
+  | 'AI_PROVIDER_MODEL'
+  | 'AI_PROVIDER_RATE_LIMIT'
+  | 'AI_PROVIDER_SERVER'
+  | 'AI_PROVIDER_UNREACHABLE'
   | 'AI_RESPONSE_INVALID'
   | 'AI_RESPONSE_LIMIT'
   | 'AI_CONTEXT_REJECTED';
@@ -104,8 +109,19 @@ function manifestIsAllowed(text: string): boolean {
   }
 }
 const ANSWER_SHAPES = [['answer'], ['answer', 'changes'], ['answer', 'proposals'], ['answer', 'changes', 'proposals']] as const;
-function code(code: AiErrorCode): { ok: false; code: AiErrorCode } {
-  return { ok: false, code };
+function code(code: AiErrorCode, retryAfter?: number): { ok: false; code: AiErrorCode; retryAfter?: number } {
+  return { ok: false, code, ...(retryAfter ? { retryAfter } : {}) };
+}
+/** The provider's status says the cause; only the status and a Retry-After number leave here, never its text (AI-16). */
+function httpFailure(response: Response): { ok: false; code: AiErrorCode; retryAfter?: number } {
+  const { status } = response;
+  if (status === 401 || status === 403) return code('AI_PROVIDER_AUTH');
+  if (status === 404) return code('AI_PROVIDER_MODEL');
+  if (status >= 500) return code('AI_PROVIDER_SERVER');
+  if (status !== 429) return code('AI_PROVIDER_UNAVAILABLE');
+  const header = response.headers.get('Retry-After')?.trim() ?? '';
+  const seconds = /^\d{1,6}$/.test(header) ? Number(header) : 0;
+  return code('AI_PROVIDER_RATE_LIMIT', seconds >= 1 && seconds <= 86_400 ? seconds : undefined);
 }
 function hasKnownSecretPattern(value: string): boolean {
   return KNOWN_SECRET_PATTERNS.some((pattern) => pattern.test(value));
@@ -503,7 +519,7 @@ export function createAiProvider(options: { userDataPath: string; vault: SafeSto
           headers: { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/json' },
           body,
         });
-        if (!response.ok) return code('AI_PROVIDER_UNAVAILABLE');
+        if (!response.ok) return httpFailure(response);
         const raw = await boundedBody(response, controller.signal);
         if (raw === null)
           return code(
@@ -591,7 +607,7 @@ export function createAiProvider(options: { userDataPath: string; vault: SafeSto
             ? gatewaySignal.aborted || activeCancelled
               ? 'AI_CANCELLED'
               : 'AI_TIMEOUT'
-            : 'AI_PROVIDER_UNAVAILABLE',
+            : 'AI_PROVIDER_UNREACHABLE',
         );
       } finally {
         clearTimeout(timeout);
