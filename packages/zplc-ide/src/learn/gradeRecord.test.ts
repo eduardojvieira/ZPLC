@@ -171,3 +171,30 @@ describe('grade record (LRN-023)', () => {
     expect(parseGradeRecord(first)).toEqual(first);
   });
 });
+
+describe('describeFailure with numeric values', () => {
+  const failure = (expected: Record<string, number | { min?: number; max?: number }>, observed: Record<string, number | null>) => ({
+    index: 0,
+    kind: 'AT',
+    atMs: 20,
+    expected,
+    observed,
+    trace: null,
+  });
+  const cases: Array<[Record<string, number | { min?: number; max?: number }>, string, string]> = [
+    [{ L: 50 }, 'L = 50', 'L = 50'],
+    [{ L: { min: 10, max: 20 } }, 'L = between 10 and 20', 'L = entre 10 y 20'],
+    [{ L: { min: 10 } }, 'L = at least 10', 'L = al menos 10'],
+    [{ L: { max: 20 } }, 'L = at most 20', 'L = como máximo 20'],
+  ];
+  it('renders a number as itself and each range form in English and Spanish, never as an object', () => {
+    for (const [expected, en, es] of cases) {
+      const text = describeFailure(failure(expected, { L: 47.5 }), undefined, 'en');
+      expect(text).toContain(`expected ${en}; observed L = 47.5`);
+      expect(text).not.toContain('[object');
+      const texto = describeFailure(failure(expected, { L: 47.5 }), undefined, 'es');
+      expect(texto).toContain(`se esperaba ${es}; se observó L = 47.5`);
+    }
+    expect(describeFailure(failure({ L: 1 }, { L: null }), undefined, 'en')).toContain('observed L = unknown');
+  });
+});

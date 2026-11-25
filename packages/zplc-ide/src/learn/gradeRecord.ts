@@ -5,7 +5,7 @@
  * A record is a function of the program and of the scenario: running the same program against the same scenario gives
  * the same record, whatever the time of day, except for `time`, which the caller passes in.
  */
-import type { FailedAssertion, GradeRecord } from '../../shared/learnProgressModel';
+import type { FailedAssertion, GradeRecord, NumericExpect } from '../../shared/learnProgressModel';
 import type { ScenarioExpectation, ScenarioFile } from './lessonPackage';
 
 export interface ObservedAssertion {
@@ -82,9 +82,18 @@ export function failedAssertionsOf(
   return result;
 }
 
-const valuesText = (values: Record<string, boolean | null>, unknown: string): string =>
+const valueText = (value: boolean | number | NumericExpect | null, unknown: string, locale: 'en' | 'es'): string => {
+  if (value === null) return unknown;
+  if (typeof value !== 'object') return String(value);
+  const { min, max } = value;
+  if (min !== undefined && max !== undefined) return locale === 'es' ? `entre ${min} y ${max}` : `between ${min} and ${max}`;
+  if (min !== undefined) return locale === 'es' ? `al menos ${min}` : `at least ${min}`;
+  return locale === 'es' ? `como máximo ${max}` : `at most ${max}`;
+};
+
+const valuesText = (values: Record<string, boolean | number | NumericExpect | null>, unknown: string, locale: 'en' | 'es'): string =>
   Object.entries(values)
-    .map(([signal, value]) => `${signal} = ${value === null ? unknown : value}`)
+    .map(([signal, value]) => `${signal} = ${valueText(value, unknown, locale)}`)
     .join(', ');
 
 /** One failed assertion as a sentence for the learner: what it required, at which instant, and what the trace holds. */
@@ -95,8 +104,10 @@ export function describeFailure(failure: FailedAssertion, expectation: ScenarioE
     ? `${what} · ${when}se esperaba ${valuesText(
         failure.expected,
         'desconocido',
-      )}; se observó ${valuesText(failure.observed, 'desconocido')}`
-    : `${what} · ${when}expected ${valuesText(failure.expected, 'unknown')}; observed ${valuesText(failure.observed, 'unknown')}`;
+        locale,
+      )}; se observó ${valuesText(failure.observed, 'desconocido', locale)}`
+    : `${what} · ${when}expected ${valuesText(failure.expected, 'unknown', locale)}; ` +
+        `observed ${valuesText(failure.observed, 'unknown', locale)}`;
 }
 
 export interface GradeInput {

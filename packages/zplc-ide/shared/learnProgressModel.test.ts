@@ -343,7 +343,10 @@ describe('a failed assertion keeps numeric expected and observed values (schema 
   it('round-trips a number, a range and a numeric observation through the reader unchanged', () => {
     for (const [expected, observed] of [
       [{ 'Tank.Level': 50 }, { 'Tank.Level': 47.5 }],
-      [{ 'Tank.Level': { min: 10, max: 20 }, 'Motor.Forward': true }, { 'Tank.Level': 25, 'Motor.Forward': null }],
+      [
+        { 'Tank.Level': { min: 10, max: 20 }, 'Motor.Forward': true },
+        { 'Tank.Level': 25, 'Motor.Forward': null },
+      ],
       [{ 'Tank.Level': { min: 10 } }, { 'Tank.Level': 3 }],
       [{ 'Tank.Level': { max: 10 } }, { 'Tank.Level': 30 }],
       [{ 'Tank.Level': { min: 5, max: 5 } }, { 'Tank.Level': null }],
