@@ -35,6 +35,7 @@ export const SURFACES: readonly Surface[] = [
   activity('tests', 'view.tests'),
   activity('learn', 'view.showLearn'),
   { id: 'activity.tests.interlocks', titleKey: 'u2Tests.view.interlocks', region: 'activity', command: 'view.interlocks' },
+  { id: 'secondary.guide', titleKey: 'shell.secondary.lesson', region: 'secondary', command: 'view.guide' },
   { id: 'secondary.inspector', titleKey: 'shell.secondary.inspector', region: 'secondary', command: 'view.toggleSecondarySidebar' },
   { id: 'secondary.assistant', titleKey: 'shell.secondary.assistant', region: 'secondary', command: 'view.agent' },
   tab('output', 'panel.output', 'view.output'),
