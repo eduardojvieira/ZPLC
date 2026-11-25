@@ -198,3 +198,37 @@ describe('describeFailure with numeric values', () => {
     expect(describeFailure(failure({ L: 1 }, { L: null }), undefined, 'en')).toContain('observed L = unknown');
   });
 });
+
+describe('numeric checks of a failed assertion', () => {
+  const failedAt = (checks: Array<{ signal: string; expected: boolean | number | { min?: number; max?: number }; observed?: boolean | number }>) =>
+    failedAssertionsOf(scenario, [{ kind: 'AT', passed: false, atMs: 20, checks }, { kind: 'FOR', passed: true }, { kind: 'NEVER', passed: true }], trace, TRACE)[0]!;
+  it('keeps an expected number and the observed number, and describes both in English and Spanish', () => {
+    const failure = failedAt([{ signal: 'fact:count:EyeFar', expected: 99, observed: 3 }]);
+    expect(failure.expected['fact:count:EyeFar']).toBe(99);
+    expect(failure.observed['fact:count:EyeFar']).toBe(3);
+    expect(failure.expected['Motor.Forward']).toBe(true);
+    expect(describeFailure(failure, undefined, 'en')).toContain('fact:count:EyeFar = 99');
+    expect(describeFailure(failure, undefined, 'en')).toContain('fact:count:EyeFar = 3');
+    expect(describeFailure(failure, undefined, 'es')).toContain('se esperaba Motor.Forward = true, fact:count:EyeFar = 99');
+  });
+  it('keeps an expected range', () => {
+    const failure = failedAt([{ signal: 'fact:count:EyeFar', expected: { min: 2, max: 5 }, observed: 7 }]);
+    expect(failure.expected['fact:count:EyeFar']).toEqual({ min: 2, max: 5 });
+    expect(failure.observed['fact:count:EyeFar']).toBe(7);
+    expect(describeFailure(failure, undefined, 'en')).toContain('fact:count:EyeFar = between 2 and 5');
+  });
+  it('records null when the engine observed no number', () => {
+    expect(failedAt([{ signal: 'fact:count:EyeFar', expected: 99 }]).observed['fact:count:EyeFar']).toBeNull();
+  });
+  it('leaves a boolean-only failure exactly as it was', () => {
+    const failure = failedAt([{ signal: 'Motor.Forward', expected: true, observed: false }]);
+    expect(failure).toEqual({
+      index: 0,
+      kind: 'AT',
+      atMs: 20,
+      expected: { 'Motor.Forward': true },
+      observed: { 'Motor.Forward': false },
+      trace: { scenarioId: 'Motor', traceSha256: TRACE, cursor: 2, atMs: 20, uri: snapshotUri('Motor', 2, TRACE) },
+    });
+  });
+});
