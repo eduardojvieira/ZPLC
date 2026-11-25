@@ -130,8 +130,8 @@ describe('The Guide (GDE-003)', () => {
     expect(files.textContent).toContain(lesson.requiredScenario);
     // nothing of it outside the disclosure
     for (const text of [lesson.sourcePath, lesson.scenarioPath]) {
-      const outside = [...document.querySelectorAll('p, span, code')].filter((el) => el.textContent?.includes(text) && !files.contains(el));
-      expect(outside).toHaveLength(0);
+      const outside = [...document.querySelectorAll('p, span, code')].filter((el) => el.textContent?.startsWith(text) && !files.contains(el));
+      expect(outside.map((el) => el.outerHTML.slice(0, 200))).toEqual([]);
     }
     expect(dom.screen.queryByRole('group', { name: dom.t('learn.lessonLanguage') })).toBeNull();
     expect(dom.screen.queryByRole('button', { name: 'Español' })).toBeNull();

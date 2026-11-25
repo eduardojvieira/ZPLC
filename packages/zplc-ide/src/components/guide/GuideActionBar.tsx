@@ -1,4 +1,4 @@
-import { BookOpen, Eye, FlaskConical, RotateCcw } from 'lucide-react';
+import { BookOpen, Eye, FlaskConical, RotateCcw, SkipForward } from 'lucide-react';
 import type { Ref } from 'react';
 import { useT } from '../../i18n';
 import { Button } from '../../ui';
@@ -12,10 +12,12 @@ export interface GuideActionBarProps {
   onReadAgain: (() => void) | null;
   /** `null` when the learner turned solutions off or the solution is already shown. */
   onSolution: (() => void) | null;
+  /** After a pass, the next lesson of the path (GDE-008); `null` when there is none. */
+  next?: { title: string; disabled: boolean; onNext(): void } | null;
 }
 
 /** Fixed at the bottom edge of the sidebar: Check first (primary), then Reset, Read again and Solution (GDE-003). */
-export function GuideActionBar({ check, onOpenTests, resetRef, reset, onReadAgain, onSolution }: GuideActionBarProps) {
+export function GuideActionBar({ check, onOpenTests, resetRef, reset, onReadAgain, onSolution, next }: GuideActionBarProps) {
   const { t } = useT();
   return (
     <section
@@ -73,6 +75,12 @@ export function GuideActionBar({ check, onOpenTests, resetRef, reset, onReadAgai
           <Button variant="secondary" size="sm" data-learn-show-solution onClick={onSolution}>
             <Eye size={14} aria-hidden="true" />
             {t('u3Guide.solution')}
+          </Button>
+        )}
+        {next && (
+          <Button variant="primary" size="sm" data-guide-next-lesson disabled={next.disabled} onClick={next.onNext}>
+            <SkipForward size={14} aria-hidden="true" />
+            {t('u3Guide.nextLesson')}: {next.title}
           </Button>
         )}
       </div>
