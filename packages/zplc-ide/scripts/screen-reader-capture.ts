@@ -472,7 +472,12 @@ async function stepLearn({ app, recorder: rec, language }: Session): Promise<voi
   order.push('continue');
   await rec.shot('8-learn-home');
   // the path-first home puts "Continue the path" and one Start per lesson between Continue and the switches
-  await rec.reach('the Unlock all lessons switch', `el.hasAttribute('data-learn-unlock-all')`, 'Tab', 40);
+  await rec.reach('the skip link', `el.hasAttribute('data-learn-skip')`, 'Tab', 2);
+  await rec.key('Enter', 'Skip to the switches');
+  rec.check(
+    'the skip link puts the focus on the Unlock all lessons switch within 4 key presses',
+    await app.eval<boolean>(`document.activeElement?.hasAttribute('data-learn-unlock-all') ?? false`),
+  );
   const pathStops = await app.eval<string>(
     `String(document.querySelectorAll('[data-learn-path-continue], [data-learn-path-start]').length)`,
   );
@@ -497,7 +502,7 @@ async function stepLearn({ app, recorder: rec, language }: Session): Promise<voi
   await rec.key('Space', 'flip Unlock all lessons');
   await rec.expectAnnounced('the switch change is announced', /unlocked|desbloquead/i);
   // start the course
-  await rec.reach('Continue', `el.hasAttribute('data-learn-continue')`, 'Shift+Tab', 40);
+  await rec.reach('Continue', `el.hasAttribute('data-learn-continue')`, 'Shift+Tab', 8);
   await rec.key('Enter', 'Start the course', true);
   await app.until(
     'the lesson beside the editor',
