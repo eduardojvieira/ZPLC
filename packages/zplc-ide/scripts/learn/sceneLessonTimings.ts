@@ -37,7 +37,8 @@ export function compareTimings(before: TimingsFile, after: TimingsFile): string[
       for (const key of ['grade', 'traceSha256'] as const)
         if (old[name][key] !== now[name][key]) problems.push(`${old.id} ${name}: ${key} ${old[name][key]} -> ${now[name][key]}`);
   }
-  for (const now of after.lessons) if (!before.lessons.some((lesson) => lesson.id === now.id)) problems.push(`${now.id}: missing from the old run`);
+  for (const now of after.lessons)
+    if (!before.lessons.some((lesson) => lesson.id === now.id)) problems.push(`${now.id}: missing from the old run`);
   return problems;
 }
 
