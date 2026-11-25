@@ -8,7 +8,7 @@ const render = (active: 'project' | 'search' | 'tests' | 'plant' | 'learn', dens
   renderToStaticMarkup(<ActivityRail active={active} density={density} onSelect={() => undefined} />);
 
 describe('activity rail (UX-011)', () => {
-  it('UX-011 offers Project, Search, Tests, Plant and Learn as named buttons, in that order', () => {
+  it('UX-011 offers Project, Search, Tests and Learn as named buttons, in that order', () => {
     const out = render('project', 'regular');
     const names = [...out.matchAll(/<button[^>]*aria-label="([^"]+)"/g)].map((match) => match[1]);
     expect(names).toEqual(['Project', 'Search', 'Tests', 'Plant', 'Learn']);
