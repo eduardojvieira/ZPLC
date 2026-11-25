@@ -18,7 +18,8 @@
 // requirement `mapped` when the table "Spec 013 (milestones U0 and U1)" of the M1 plan delivers it. One that is not mapped
 // (milestones U2 and U3, which have no plan yet) and has no check is `pending`, not `uncovered`: nobody owes it a check yet.
 // Its recorded conditions are in tools/ci/requirement-evidence-013.json (a gate on the U3 task that delivers a requirement's
-// last leg), read and kept the same way as those of spec 012. The report of either spec has a `pending` column only when one of its requirements can be pending.
+// last leg), read and kept the same way as those of spec 012. The report of either spec has a `pending` column only when
+// one of its requirements can be pending.
 //
 // A check names its requirement in its own metadata, so adding a check needs no edit to a registry:
 //   conformance  the "requirement" of a conformance/**/*.expect.json (VF-002)
