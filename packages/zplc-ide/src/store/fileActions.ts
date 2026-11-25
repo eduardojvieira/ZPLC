@@ -123,14 +123,22 @@ export const createFileActions: StateCreator<
     }
 
     try {
-      await writeFileContent(file.handle, file.content);
-      const latest = get();
-      const latestFile = latest.loadedFiles.get(fileId);
-      if (latest.projectSession !== expectedProjectSession || latestFile !== file) return false;
-
-      const newLoadedFiles = new Map(latest.loadedFiles);
-      newLoadedFiles.set(fileId, { ...latestFile, isModified: false, diskContent: file.content });
-      set({ loadedFiles: newLoadedFiles });
+      // The store may update the file while it is written: a flag or a late editor change keeps
+      // the save good; changed content is written again, up to 3 writes in all.
+      let written = file.content;
+      let saved = false;
+      for (let attempt = 0; attempt < 3 && !saved; attempt++) {
+        await writeFileContent(file.handle, written);
+        const latest = get();
+        const latestFile = latest.loadedFiles.get(fileId);
+        if (latest.projectSession !== expectedProjectSession || !latestFile) return false;
+        saved = latestFile.content === written;
+        const newLoadedFiles = new Map(latest.loadedFiles);
+        newLoadedFiles.set(fileId, { ...latestFile, isModified: !saved, diskContent: written });
+        set({ loadedFiles: newLoadedFiles });
+        if (!saved) written = latestFile.content;
+      }
+      if (!saved) return false;
 
       if (!options.quiet) {
         get().addConsoleEntry({
