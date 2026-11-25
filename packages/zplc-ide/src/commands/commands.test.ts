@@ -15,8 +15,15 @@ import {
 import { menuCategories, menuCommands, menuTranslator } from './menuEntry';
 import { filterEntries, fuzzyScore, nextIndex } from './palette';
 import { COMMAND_CATEGORIES, COMMAND_LIST, INITIAL_COMMAND_STATE, commandById, isCommandEnabled, isCommandId } from './registry';
+import { AI_COMMAND_PROPOSALS } from '../ai/proposals';
 import { studioCommandsEn, studioCommandsEs } from '../i18n/catalog/studioCommands';
 import { u2CommandsEn, u2CommandsEs } from '../i18n/catalog/u2Commands';
+import { u3FaceplateEn, u3FaceplateEs } from '../i18n/catalog/u3Faceplate';
+import { u3GuideEn, u3GuideEs } from '../i18n/catalog/u3Guide';
+import { u3IoModeEn, u3IoModeEs } from '../i18n/catalog/u3IoMode';
+import { u3LearnEn, u3LearnEs } from '../i18n/catalog/u3Learn';
+import { u3PlantEn, u3PlantEs } from '../i18n/catalog/u3Plant';
+import { u3ReadingEn, u3ReadingEs } from '../i18n/catalog/u3Reading';
 import {
   CHORD_TIMEOUT_MS,
   chordMatches,
@@ -125,6 +132,7 @@ describe('command registry (UX-015)', () => {
       'online.disconnect',
       'online.feedBoardFromPlant',
       'online.restartSimulator',
+      'plant.feedBoard',
     ]);
   });
 
@@ -401,7 +409,7 @@ describe('lane W command contract (FND-002)', () => {
 
   it('FND-002 keeps the 38 commands of 2.0 and the plant I/O one, in their order, ahead of the new ones', () => {
     const ids = COMMAND_LIST.map((command) => command.id);
-    const old = ids.filter((id) => !(id in LANE_W_COMMANDS) && !(id in U2_COMMANDS) && !(id in PLANT_VIEW_COMMANDS));
+    const old = ids.filter((id) => !(id in LANE_W_COMMANDS) && !(id in U2_COMMANDS) && !(id in PLANT_VIEW_COMMANDS) && !(id in U3_COMMANDS));
     expect(old.length).toBe(39);
     expect(old.slice(0, 5)).toEqual(['file.save', 'file.open', 'file.new', 'file.export', 'view.commandPalette']);
     expect(old.at(-1)).toBe('help.learn');
@@ -441,6 +449,58 @@ const U2_COMMANDS = {
 /** The commands of the 3D plant view (spec 012), registered after those of milestone U2. */
 const PLANT_VIEW_COMMANDS = { 'view.fitPlantScene': ['view', 'Fit scene', 'Encuadrar la escena'] } as const;
 
+/** The ids of the contract of milestone U3 (plan-u3.md, "Contract extensions"), with their category. */
+const U3_COMMANDS = {
+  'view.guide': 'view',
+  'view.lessonLayout': 'view',
+  'view.focusCommandBar': 'view',
+  'learn.guide.next': 'help',
+  'learn.guide.back': 'help',
+  'learn.check': 'build',
+  'plant.edit': 'edit',
+  'plant.endEdit': 'edit',
+  'plant.createDeclarations': 'project',
+  'edit.undo': 'edit',
+  'edit.redo': 'edit',
+  'plant.feedBoard': 'online',
+} as const;
+
+describe('milestone U3 command contract (FND-002)', () => {
+  it('FND-002 every command id declared by U3 has a title in English and Spanish', () => {
+    for (const [id, category] of Object.entries(U3_COMMANDS)) {
+      expect([id, isCommandId(id)]).toEqual([id, true]);
+      const command = commandById(id as never);
+      expect([id, command.category]).toEqual([id, category]);
+      const english = (en as Record<string, string>)[command.titleKey];
+      const spanish = (es as Record<string, string>)[command.titleKey];
+      expect([id, typeof english, typeof spanish]).toEqual([id, 'string', 'string']);
+      expect(english).not.toBe(spanish);
+    }
+    expect(commandById('view.focusCommandBar').shortcut).toBeUndefined();
+  });
+
+  it('FND-002 plant.feedBoard is physical and is absent from the AI and MCP command list', () => {
+    expect(commandById('plant.feedBoard').physical).toBe(true);
+    expect(COMMAND_LIST.filter((command) => command.id in U3_COMMANDS && command.physical).map((command) => command.id)).toEqual([
+      'plant.feedBoard',
+    ]);
+    expect(Object.values(AI_COMMAND_PROPOSALS)).not.toContain('plant.feedBoard');
+    expect(Object.keys(AI_COMMAND_PROPOSALS)).not.toContain('plant.feedBoard');
+  });
+
+  it('FND-002 the six U3 catalogs have the same keys in both languages', () => {
+    const pairs = [
+      [u3GuideEn, u3GuideEs],
+      [u3LearnEn, u3LearnEs],
+      [u3ReadingEn, u3ReadingEs],
+      [u3PlantEn, u3PlantEs],
+      [u3FaceplateEn, u3FaceplateEs],
+      [u3IoModeEn, u3IoModeEs],
+    ] as const;
+    for (const [english, spanish] of pairs) expect(Object.keys(spanish).sort()).toEqual(Object.keys(english).sort());
+  });
+});
+
 describe('plant view command contract (FND-002, VIS-002)', () => {
   it('VIS-002 Fit scene is a registered view command, not a physical one, with its title in English and Spanish', () => {
     for (const [id, [category, english, spanish]] of Object.entries(PLANT_VIEW_COMMANDS)) {
@@ -474,7 +534,7 @@ describe('milestone U2 command contract (FND-002)', () => {
     const ids = COMMAND_LIST.map((command) => command.id as string);
     const firstU2 = ids.findIndex((id) => id in U2_COMMANDS);
     expect(ids.slice(0, firstU2).length).toBe(39 + Object.keys(LANE_W_COMMANDS).length);
-    expect(ids.slice(firstU2)).toEqual([...Object.keys(U2_COMMANDS), ...Object.keys(PLANT_VIEW_COMMANDS)]);
+    expect(ids.slice(firstU2)).toEqual([...Object.keys(U2_COMMANDS), ...Object.keys(PLANT_VIEW_COMMANDS), ...Object.keys(U3_COMMANDS)]);
     expect(ids[firstU2 - 1]).toBe('help.learn');
     expect(ids.slice(0, 5)).toEqual(['file.save', 'file.open', 'file.new', 'file.export', 'view.commandPalette']);
   });
