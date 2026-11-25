@@ -82,7 +82,7 @@ describe('a hardware run is kept apart from a simulation pass (LRN-024)', () => 
     const failedOnBoard = withGrade(emptyProgress(), { ...failed(), track: 'hardware' });
     expect(failedOnBoard.lessons[ID]).toMatchObject({ state: 'in-progress', hardware: null, startedAt: failed().time });
     expect(parseProgress(serializeProgress(both))).toEqual(both);
-    expect(JSON.parse(serializeProgress(both))).toMatchObject({ schemaVersion: 4 });
+    expect(JSON.parse(serializeProgress(both))).toMatchObject({ schemaVersion: 5 });
   });
 
   it('LRN-024 keeps the newest hardware grade on a merge, in either order', () => {
@@ -139,7 +139,7 @@ describe('a hardware run is kept apart from a simulation pass (LRN-024)', () => 
         solutionShown: false,
         hardware: hardware(),
       });
-      expect(JSON.parse(serializeProgress(parseProgress(v3(grade()))!))).toMatchObject({ schemaVersion: 4 });
+      expect(JSON.parse(serializeProgress(parseProgress(v3(grade()))!))).toMatchObject({ schemaVersion: 5 });
       const imported = parseImport(JSON.stringify({ ...JSON.parse(v3(grade())), kind: 'zplc-learn-progress' }));
       expect(imported.ok && imported.progress.lessons[ID]!.hardware).toBeNull();
     },
@@ -248,7 +248,7 @@ describe('the Learn progress document (LRN-031, LRN-032)', () => {
     expect(parseProgress(v2(1))!.lessons['edge-counter-pulses']).toMatchObject({ hintsShown: [1] });
     expect(parseProgress(v2(0))!.lessons['edge-counter-pulses']).toMatchObject({ hintsShown: [] });
     expect(parseProgress(v2(3))).toBeUndefined();
-    expect(JSON.parse(serializeProgress(parseProgress(v2(2))!))).toMatchObject({ schemaVersion: 4 });
+    expect(JSON.parse(serializeProgress(parseProgress(v2(2))!))).toMatchObject({ schemaVersion: 5 });
     const exported = JSON.stringify({ ...JSON.parse(v2(1)), kind: 'zplc-learn-progress' });
     const imported = parseImport(exported);
     expect(imported.ok && imported.progress.lessons['edge-counter-pulses']!.hintsShown).toEqual([1]);
@@ -329,5 +329,55 @@ describe('the Learn progress document (LRN-031, LRN-032)', () => {
     expect(parseImport('{')).toEqual({ ok: false, reason: 'not-json' });
     expect(parseImport(JSON.stringify({ ...JSON.parse(exported), lessons: { x: {} } }))).toEqual({ ok: false, reason: 'invalid' });
     expect(parseImport('x'.repeat(300 * 1024))).toEqual({ ok: false, reason: 'too-large' });
+  });
+});
+
+describe('a failed assertion keeps numeric expected and observed values (schema 5)', () => {
+  const withFailure = (expected: unknown, observed: unknown): unknown => {
+    const record = JSON.parse(JSON.stringify(failed())) as GradeRecord;
+    record.failedAssertions[0]!.expected = expected as never;
+    record.failedAssertions[0]!.observed = observed as never;
+    return record;
+  };
+
+  it('round-trips a number, a range and a numeric observation through the reader unchanged', () => {
+    for (const [expected, observed] of [
+      [{ 'Tank.Level': 50 }, { 'Tank.Level': 47.5 }],
+      [{ 'Tank.Level': { min: 10, max: 20 }, 'Motor.Forward': true }, { 'Tank.Level': 25, 'Motor.Forward': null }],
+      [{ 'Tank.Level': { min: 10 } }, { 'Tank.Level': 3 }],
+      [{ 'Tank.Level': { max: 10 } }, { 'Tank.Level': 30 }],
+      [{ 'Tank.Level': { min: 5, max: 5 } }, { 'Tank.Level': null }],
+    ] as const) {
+      const record = withFailure(expected, observed);
+      expect(parseGradeRecord(record)).toEqual(record as GradeRecord);
+      expect(JSON.parse(JSON.stringify(parseGradeRecord(record)))).toEqual(record);
+    }
+  });
+
+  it('rejects NaN, Infinity, a string, an empty or inverted range and an extra key', () => {
+    for (const expected of [
+      { s: Number.NaN },
+      { s: Number.POSITIVE_INFINITY },
+      { s: '5' },
+      { s: {} },
+      { s: { min: 3, max: 1 } },
+      { s: { min: 1, extra: 2 } },
+      { s: { min: Number.NaN } },
+      { s: { max: Number.NEGATIVE_INFINITY } },
+      { s: { min: '1' } },
+      { s: null },
+    ])
+      expect(parseGradeRecord(withFailure(expected, { s: 1 }))).toBeUndefined();
+    for (const observed of [{ s: Number.NaN }, { s: Number.POSITIVE_INFINITY }, { s: '5' }, { s: { min: 1 } }])
+      expect(parseGradeRecord(withFailure({ s: 1 }, observed))).toBeUndefined();
+  });
+
+  it('keeps reading the boolean failures of schema 2, 3 and 4, and refuses a number in them', () => {
+    for (const version of [2, 3, 4]) {
+      expect(parseGradeRecord(failed(), version)).toEqual(failed());
+      expect(parseGradeRecord(withFailure({ s: 1 }, { s: true }), version)).toBeUndefined();
+      expect(parseGradeRecord(withFailure({ s: true }, { s: 1 }), version)).toBeUndefined();
+    }
+    expect(parseGradeRecord(withFailure({ s: 1 }, { s: 2 }), 5)).toBeDefined();
   });
 });
