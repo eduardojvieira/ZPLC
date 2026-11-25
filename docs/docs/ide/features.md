@@ -182,7 +182,8 @@ ZPLC keeps one list of commands, and every way to start a command reads it: the 
 | `F8`                    | Reset the runtime          |
 | `Ctrl+Shift+P`          | Command palette            |
 | `Ctrl+,`                | Open preferences           |
-| `Ctrl+Alt+T`            | Run all tests              |
+| `Ctrl+Shift+T`          | Run all tests              |
+| `Ctrl+Alt+C`            | Go to the command bar, and back |
 | `F12`                   | Go to definition           |
 | `Shift+F12`             | Find all references        |
 | `Alt+Left`, `Alt+Right` | Go back, Go forward        |

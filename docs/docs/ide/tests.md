@@ -58,7 +58,7 @@ Every action above is a command of the palette, and the ones that are run often 
 | ------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------- |
 | **Show tests**            | none                       | Shows the Tests activity.                                                                       |
 | **Show test results**     | none                       | Shows the Test results tab.                                                                     |
-| **Run all tests**         | `Ctrl+Alt+T` (`Cmd+Alt+T`) | Runs every test.                                                                                |
+| **Run all tests**         | `Ctrl+Shift+T` (`Cmd+Shift+T`) | Runs every test.                                                                                |
 | **Run the failed tests**  | none                       | Runs the tests whose last result failed.                                                        |
 | **Run the selected test** | none                       | Runs the scenario file of the active document, or else the test selected in the Tests activity. |
 | **New test**              | none                       | Writes a first test for the first program.                                                      |
