@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'bun:test';
+import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
 import type { FileTreeNode, ProjectFileWithHandle } from '../types';
 import { referenceIndexFor, readReferenceInputFrom } from './sources';
 import { summarize, useReferences } from './useReferences';
@@ -34,6 +34,8 @@ const load = async () =>
 
 describe('useReferences', () => {
   beforeEach(() => useReferences.getState().clear());
+  // the store is shared by the files after this one (the Search view reads its mode)
+  afterAll(() => useReferences.getState().clear());
 
   test('FND-004 finding references of a variable fills the result and the header counts', async () => {
     const target = { kind: 'symbol', scope: 'src/Main.st#Main', name: 'Start' } as const;
