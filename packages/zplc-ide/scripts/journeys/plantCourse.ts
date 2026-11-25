@@ -248,7 +248,7 @@ async function plantEditorWait(app: App): Promise<void> {
           `focus: attrs(document.activeElement), dialogs: [...document.querySelectorAll('[role="dialog"],[role="alertdialog"],dialog[open]')].map((d) => (d.textContent ?? '').trim().slice(0, 160)), ` +
           `notices: [...document.querySelectorAll('[role="alert"],[role="status"],[aria-live]')].map((d) => (d.textContent ?? '').trim().slice(0, 120)).filter(Boolean), ` +
           `learn: [...document.querySelectorAll('[data-learn-check],[data-learn-check-status],[data-learn-grade],[data-learn-panel],[data-learn-layout],[data-learn-reading]')].map((e) => attrs(e) + ' :: ' + (e.textContent ?? '').trim().slice(0, 100)), ` +
-          `bodyHead: document.body.innerText.slice(0, 600) }; })()`,
+          `toolbarLog: window.__q7, bodyHead: document.body.innerText.slice(0, 300) }; })()`,
       )
       .catch((failure) => `eval failed: ${String(failure)}`);
     const shot = (await app.cdp.command('Page.captureScreenshot', { format: 'png' }).catch(() => undefined)) as { data?: string } | undefined;
@@ -310,7 +310,14 @@ journeysCourse.push(
       );
       // the scene is built in the editor, with the names of the lesson, and saved to the project
       await openProjectSceneInLesson(app);
+      // Q7 diagnosis: records the toolbar of the plant panel on every frame, to see whether it moves around the click
+      await app.eval(
+        `(() => { const log = (window.__q7 = []); const t0 = performance.now(); const tick = () => { const bar = document.querySelector('[data-plant-panel] [role="toolbar"]'); ` +
+          `const row = bar ? [...bar.querySelectorAll('button,select')].map((b) => (b.getAttribute('data-plant-edit-scene') !== null ? 'EDIT' : (b.textContent || b.tagName).trim().slice(0, 14)) + '@' + Math.round(b.getBoundingClientRect().x) + (b.disabled ? 'd' : '')).join(' ') : 'none'; ` +
+          `if (log[log.length - 1]?.row !== row) log.push({ t: Math.round(performance.now() - t0), row }); if (performance.now() - t0 < 20000) requestAnimationFrame(tick); }; tick(); })()`,
+      );
       await app.click(css('[data-plant-edit-scene]'), 'Edit scene');
+      await app.eval(`(window.__q7 ??= []).push({ t: -1, row: 'CLICK DISPATCHED' })`);
       await plantEditorWait(app);
       await addPart(app, 'keyboard', 'Belt conveyor');
       await addPart(app, 'keyboard', 'Item emitter');
