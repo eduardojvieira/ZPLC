@@ -49,8 +49,9 @@ function directionMarks(length: number, y: number, speed: number, travel: number
   for (let i = 0; i < marks; i++) {
     const u = ((((i + 0.5) * step + travel) % length) + length) % length;
     const shown = running && u > margin + radius && u < length - margin - radius;
+    if (!shown) continue; // a stopped part carries no mark, so its bounds stay its declared size (VIS-002)
     const along = -length / 2 + u;
-    out.push(piece(`mark-${i}`, arrow(radius), axis === 'x' ? [along, y, 0] : [0, y, along], 'mark', shown, yaw));
+    out.push(piece(`mark-${i}`, arrow(radius), axis === 'x' ? [along, y, 0] : [0, y, along], 'mark', true, yaw));
   }
   return out;
 }
