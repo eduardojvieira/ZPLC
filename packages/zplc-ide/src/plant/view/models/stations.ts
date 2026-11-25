@@ -1,7 +1,7 @@
 /**
  * Stations (plan-vis C6): the stacker crane with its mast and its high-bay rack, and the layer palletizer, and the machining centre with
  * its doors. The three views of the crane are drawn once each: the rack as uprights and load beams with the cell rails between
- * them (cells stay open, so stored items show), the mast on a floor rail with a top guide rail, the carriage with its forks.
+ * them (cells stay open, so stored items show), the mast on a floor rail, the carriage with its forks.
  *
  * The mast and the crane are posed where they are, so the rails (the aisle) are drawn at the offset of the part's own origin from the
  * pose, which needs the scene part: they stay put in the world while the mast and the carriage move.
@@ -33,7 +33,7 @@ export const STACKER = {
   aisleMargin: 0.3, // the aisle rails reach this far beyond the first and the last bay
   rail: { width: 0.08, height: 0.04 },
   truck: { size: 0.3, height: 0.08 },
-  mastTopGap: 0.04, // the mast column ends under the top guide rail
+  mastTopGap: 0, // the mast column reaches the top of the view
   carriage: { size: 0.22, height: 0.3 },
   fork: { width: 0.05, thickness: 0.04, length: 0.6, offset: 0.055 }, // the fork plate of the core: 0.16 wide, 0.6 long, 0.04 thick
   slide: { width: 0.1, thickness: 0.03 },
@@ -92,7 +92,7 @@ function aisleOrigin(view: PartView, part: ScenePart | null | undefined): Vec3 {
   return rotate([-qx, -qy, -qz, qw], [x - view.pose.p[0], 0, z - view.pose.p[2]]);
 }
 
-/** The mast on its truck, between the floor rail and the top guide rail of the aisle, which do not move. */
+/** The mast on its truck, on the floor rail of the aisle, which does not move. */
 const mast: ModelBuilder = (view, context) => {
   const { rail, truck, mastTopGap, aisleMargin } = STACKER;
   const [w, h] = view.pose.size;
@@ -105,7 +105,6 @@ const mast: ModelBuilder = (view, context) => {
   const columnTop = top - mastTopGap;
   return [
     piece('rail-floor', box([length, rail.height, rail.width]), [cx, floor + rail.height / 2, oz], 'steel'),
-    piece('rail-top', box([length, rail.height, rail.width]), [cx, top - rail.height / 2, oz], 'steel'),
     piece('truck', box([truck.size, truck.height, truck.size]), [0, floor + rail.height + truck.height / 2, 0], 'housing'),
     piece('mast', box([w, columnTop - columnBottom, w]), [0, (columnTop + columnBottom) / 2, 0], 'painted'),
   ];
@@ -217,6 +216,8 @@ const palletizerHead: ModelBuilder = (view) => {
 /** The sizes of the machining centre's housing, in metres; its length, height and width are the view's. */
 export const MACHINING = {
   wall: 0.02,
+  inset: 0.76, // the body's share of the view's width: neighbouring machines on adjacent lines stand apart
+  roof: { thickness: 0.03, overhang: 0.02 },
   plinth: { height: 0.04, depth: 0.03 },
   sill: 0.1, // the solid strip of the front under the window
   header: 0.08, // and over it
@@ -235,20 +236,21 @@ const lamp = (colour: 'green' | 'amber' | 'red', on: boolean): Role =>
  * The spindle lowers while a cycle runs; the stack light is green while it runs and amber when done (no fault state is published).
  */
 const machiningCentre: ModelBuilder = (view) => {
-  const { wall, plinth, sill, header, spindle, table, pendant } = MACHINING;
+  const { wall, inset, roof, plinth, sill, header, spindle, table, pendant } = MACHINING;
   const { segment, off, lit, cap } = STACK_LIGHT;
-  const [length, h, width] = view.pose.size;
+  const [length, h, viewWidth] = view.pose.size;
+  const width = viewWidth * inset;
   const [lo, hi] = [-h / 2, h / 2];
   const front = width / 2 - wall / 2;
   const busy = view.state.busy === true;
   const done = !busy && view.state.text === 'done';
   const glassH = h - sill - header;
-  const head = hi - wall - spindle.length / 2 - (busy ? spindle.drop : 0);
+  const head = hi - roof.thickness - spindle.length / 2 - (busy ? spindle.drop : 0);
   const out: Piece[] = [
-    piece('wall-back', box([length, h, wall]), [0, 0, -front], 'painted'),
-    piece('roof', box([length, wall, width]), [0, hi - wall / 2, 0], 'painted'),
-    piece('sill', box([length, sill, wall]), [0, lo + sill / 2, front], 'painted'),
-    piece('header', box([length, header, wall]), [0, hi - header / 2, front], 'painted'),
+    piece('wall-back', box([length, h - roof.thickness, wall]), [0, -roof.thickness / 2, -front], 'housing'),
+    piece('roof', box([length, roof.thickness, width + 2 * roof.overhang]), [0, hi - roof.thickness / 2, 0], 'frame'),
+    piece('sill', box([length, sill, wall]), [0, lo + sill / 2, front], 'housing'),
+    piece('header', box([length, header, wall]), [0, hi - header / 2, front], 'housing'),
     piece('window', box([length - 0.04, glassH, wall / 2]), [0, lo + sill + glassH / 2, front], 'glass'),
     piece('plinth-front', box([length, plinth.height, plinth.depth]), [0, lo + plinth.height / 2, front - plinth.depth / 2], 'frame'),
     piece('plinth-back', box([length, plinth.height, plinth.depth]), [0, lo + plinth.height / 2, -front + plinth.depth / 2], 'frame'),
