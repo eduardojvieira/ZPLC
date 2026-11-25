@@ -66,6 +66,7 @@ export const MAIN_PATH_PREFIXES: readonly string[] = [
   'console.tests',
   'console.runHostScenarios',
   'console.runningHost',
+  'console.cancellingHost',
   'console.tab.',
   'connection.simulation.',
   'u2Tests.',
