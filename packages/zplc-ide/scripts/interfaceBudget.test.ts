@@ -77,12 +77,7 @@ describe('interface budget counting (spec 013 section 8.1)', () => {
       ...snapshot,
       locale: 'es',
       commandBar: { ...snapshot.commandBar, controls: [control('Adónde va la ejecución: Simulación', 252, 88)] },
-      statusRail: [
-        { text: 'Simulación' },
-        { text: 'Modo\nSIMULACIÓN' },
-        { text: 'Destino\nPOSIX local' },
-        { text: 'En ejecución' },
-      ],
+      statusRail: [{ text: 'Simulación' }, { text: 'Modo\nSIMULACIÓN' }, { text: 'Destino\nPOSIX local' }, { text: 'En ejecución' }],
     };
     expect(targetPlaces(spanish).length).toBe(4);
   });
