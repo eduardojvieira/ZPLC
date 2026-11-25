@@ -97,7 +97,8 @@ describe('surface registry (SHL-001, SHL-002, SHL-004)', () => {
     for (const view of ACTIVITY_VIEWS) {
       useShellLayout.setState({ activityView: view });
       const { unmount } = dom.render(createElement(SecondarySidebar));
-      expect([view, dom.screen.getByRole('heading', { level: 2 }).textContent]).toEqual([view, dom.t('shell.secondary.lesson')]);
+      const title = dom.screen.getByRole('complementary', { name: dom.t('shell.secondary.label') }).querySelector('h2');
+      expect([view, title?.textContent]).toEqual([view, dom.t('shell.secondary.lesson')]);
       unmount();
     }
     useLearnUi.setState({ workspace: null });
@@ -108,10 +109,12 @@ describe('surface registry (SHL-001, SHL-002, SHL-004)', () => {
     useAssistantProvider.setState({ available: true, refresh: async () => {} });
     useSecondaryView.getState().show('assistant');
     dom.render(createElement(SecondarySidebar));
-    expect(dom.screen.getAllByRole('heading', { level: 2 })).toHaveLength(1);
-    expect(dom.screen.queryByRole('complementary', { name: dom.t('workbench.inspector.region') })).toBeNull();
+    const frame = dom.screen.getByRole('complementary', { name: dom.t('shell.secondary.label') });
+    expect(frame.querySelector(':scope > h2')?.textContent).toBe(dom.t('shell.secondary.assistant'));
+    const inspector = dom.screen.queryByRole('complementary', { name: dom.t('workbench.inspector.region') });
     useSecondaryView.setState({ choice: null, inPrimary: false });
     useAssistantProvider.setState({ available: false });
+    expect(inspector).toBeNull();
   });
 
   it('SHL-003 the results panel registry lists Problems, Output, Test results, Watch, Trace and the conditional Terminal', () => {

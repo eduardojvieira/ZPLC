@@ -27,11 +27,10 @@ export const resultsTabFor = (tab: ConsoleTab): ConsoleTab =>
   isSidebarConsoleTab(tab) || tab === 'lab' || MOVED_TABS[tab] !== undefined ? 'output' : tab;
 
 /**
- * Where the lesson of the open lesson workspace is shown (LRN-004). On the Learn rail it fills the primary sidebar; on any other
- * rail the primary sidebar is the Explorer, Search or Tests, so the lesson moves to the secondary sidebar instead of hiding.
+ * Where the lesson of the open lesson workspace is shown: the Guide of the secondary sidebar on every activity, Learn included
+ * (GDE-001); the Learn rail keeps the course outline in the primary sidebar.
  */
-export const lessonSurface = (view: ActivityView, lessonOpen: boolean): 'primary' | 'secondary' | 'none' =>
-  !lessonOpen ? 'none' : view === 'learn' ? 'primary' : 'secondary';
+export const lessonSurface = (_view: ActivityView, lessonOpen: boolean): 'secondary' | 'none' => (lessonOpen ? 'secondary' : 'none');
 
 /**
  * `lab` is the tab 2.0 stored for the plant: it is a document of the editor area now (PLS-002), and the value stays so that a stored
