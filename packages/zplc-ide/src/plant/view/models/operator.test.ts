@@ -183,6 +183,21 @@ describe('operator panel models (VIS-014)', () => {
       expect(deg(pointer().yaw)).toBeCloseTo(angle, 9);
     }
   });
+
+  it('VIS-016 a potentiometer is a black rotary knob with a white pointer and a printed scale of three ticks', async () => {
+    const core = await coreOf(lone('potentiometer', { min: 0, max: 100 }));
+    const at = (value: number) => {
+      core.operate('It.value', value);
+      core.advance(5);
+      return partModel(viewOf(core, 'it'))!;
+    };
+    const [low, high] = [at(0), at(100)];
+    expect(slot(low, 'knob').role).toBe('rubber');
+    expect(Math.abs(deg(slot(high, 'pointer').yaw - slot(low, 'pointer').yaw))).toBeGreaterThanOrEqual(180);
+    const ticks = low.filter((p) => p.slot.startsWith('tick-'));
+    expect(ticks.map((p) => Math.round(deg(p.yaw))).sort((a, b) => a - b)).toEqual([-135, 0, 135]);
+    expect(ticks.every((p) => p.role === 'mark')).toBe(true);
+  });
 });
 
 describe('numeric display model (VIS-014, F5)', () => {
