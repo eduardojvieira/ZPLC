@@ -7,7 +7,8 @@ const [LADDER, PLANT] = LESSON_INDEX.course.paths!;
 const LADDER_FIRST = LADDER!.lessons[0]!;
 const marker = (app: App) =>
   app.eval<string>(
-    `(() => { const el = document.activeElement; return el ? [...el.getAttributeNames()].filter((name) => name.startsWith('data-learn-')).join(' ') : ''; })()`,
+    `(() => { const el = document.activeElement; ` +
+      `return el ? [...el.getAttributeNames()].filter((name) => name.startsWith('data-learn-')).join(' ') : ''; })()`,
   );
 const pathOpen = (app: App, id: string) => app.eval<boolean | null>(`document.querySelector('[data-learn-path="${id}"]')?.open ?? null`);
 
@@ -17,6 +18,7 @@ export const journeysU3G5: Journey[] = [
     name: 'U3-G5 The Learn home reaches the switches in a few keys, and opens the path of the lesson started',
     example: 'none',
     proves: ['GDE-011'],
+    partly: [],
     run: async (app) => {
       await app.cdp.command('Emulation.setFocusEmulationEnabled', { enabled: true });
       await app.click(button('Learn', 'prefix'), 'the Learn button on the Welcome screen');
