@@ -82,7 +82,7 @@ describe('a hardware run is kept apart from a simulation pass (LRN-024)', () => 
     const failedOnBoard = withGrade(emptyProgress(), { ...failed(), track: 'hardware' });
     expect(failedOnBoard.lessons[ID]).toMatchObject({ state: 'in-progress', hardware: null, startedAt: failed().time });
     expect(parseProgress(serializeProgress(both))).toEqual(both);
-    expect(JSON.parse(serializeProgress(both))).toMatchObject({ schemaVersion: 5 });
+    expect(JSON.parse(serializeProgress(both))).toMatchObject({ schemaVersion: 4 });
   });
 
   it('LRN-024 keeps the newest hardware grade on a merge, in either order', () => {
@@ -139,7 +139,7 @@ describe('a hardware run is kept apart from a simulation pass (LRN-024)', () => 
         solutionShown: false,
         hardware: hardware(),
       });
-      expect(JSON.parse(serializeProgress(parseProgress(v3(grade()))!))).toMatchObject({ schemaVersion: 5 });
+      expect(JSON.parse(serializeProgress(parseProgress(v3(grade()))!))).toMatchObject({ schemaVersion: 4 });
       const imported = parseImport(JSON.stringify({ ...JSON.parse(v3(grade())), kind: 'zplc-learn-progress' }));
       expect(imported.ok && imported.progress.lessons[ID]!.hardware).toBeNull();
     },
@@ -248,7 +248,7 @@ describe('the Learn progress document (LRN-031, LRN-032)', () => {
     expect(parseProgress(v2(1))!.lessons['edge-counter-pulses']).toMatchObject({ hintsShown: [1] });
     expect(parseProgress(v2(0))!.lessons['edge-counter-pulses']).toMatchObject({ hintsShown: [] });
     expect(parseProgress(v2(3))).toBeUndefined();
-    expect(JSON.parse(serializeProgress(parseProgress(v2(2))!))).toMatchObject({ schemaVersion: 5 });
+    expect(JSON.parse(serializeProgress(parseProgress(v2(2))!))).toMatchObject({ schemaVersion: 4 });
     const exported = JSON.stringify({ ...JSON.parse(v2(1)), kind: 'zplc-learn-progress' });
     const imported = parseImport(exported);
     expect(imported.ok && imported.progress.lessons['edge-counter-pulses']!.hintsShown).toEqual([1]);
@@ -332,7 +332,7 @@ describe('the Learn progress document (LRN-031, LRN-032)', () => {
   });
 });
 
-describe('a failed assertion keeps numeric expected and observed values (schema 5)', () => {
+describe('a failed assertion keeps numeric expected and observed values', () => {
   const withFailure = (expected: unknown, observed: unknown): unknown => {
     const record = JSON.parse(JSON.stringify(failed())) as GradeRecord;
     record.failedAssertions[0]!.expected = expected as never;
@@ -375,12 +375,8 @@ describe('a failed assertion keeps numeric expected and observed values (schema 
       expect(parseGradeRecord(withFailure({ s: 1 }, observed))).toBeUndefined();
   });
 
-  it('keeps reading the boolean failures of schema 2, 3 and 4, and refuses a number in them', () => {
-    for (const version of [2, 3, 4]) {
-      expect(parseGradeRecord(failed(), version)).toEqual(failed());
-      expect(parseGradeRecord(withFailure({ s: 1 }, { s: true }), version)).toBeUndefined();
-      expect(parseGradeRecord(withFailure({ s: true }, { s: 1 }), version)).toBeUndefined();
-    }
-    expect(parseGradeRecord(withFailure({ s: 1 }, { s: 2 }), 5)).toBeDefined();
+  it('still writes progress files of schema 4, because numeric failures never reach the file', () => {
+    expect(JSON.parse(serializeProgress(emptyProgress()))).toMatchObject({ schemaVersion: 4 });
+    expect(parseGradeRecord(failed())).toEqual(failed());
   });
 });

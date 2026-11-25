@@ -16,13 +16,11 @@
 /**
  * Version 3 records every hint level shown (`hintsShown`), where version 2 kept only the highest (`hintsUsed`) (LRN-010).
  * Version 4 adds `hardware` to each lesson, the newest passing run on a board, kept apart from the pass of the course (LRN-024).
- * Version 5 lets a failed assertion hold numeric expected values (a number or a `{ min?, max? }` range) and numeric observed values.
- * A stored or imported version 2, 3 or 4 document is read and becomes version 5 the next time it is written; the file keeps its name.
- * Version 5 only widens the types a failed assertion may hold, so no migration code exists: older files hold booleans, which stay valid.
+ * A stored or imported version 2 or 3 document is read and becomes version 4 the next time it is written; the file keeps its name.
  */
-export const LEARN_PROGRESS_SCHEMA_VERSION = 5 as const;
+export const LEARN_PROGRESS_SCHEMA_VERSION = 4 as const;
 /** The earlier versions this build reads and migrates. */
-export const LEARN_PROGRESS_PREVIOUS_SCHEMA_VERSIONS: readonly number[] = [2, 3, 4];
+export const LEARN_PROGRESS_PREVIOUS_SCHEMA_VERSIONS: readonly number[] = [2, 3];
 export const LEARN_PROGRESS_FILENAME = 'zplc-learn-progress.v2.json';
 /** The file of the first release of Learn: `{ schemaVersion: 1, mastered: [lesson ids] }`. Read for migration, never written. */
 export const LEARN_PROGRESS_LEGACY_FILENAME = 'zplc-learn-mastery.v1.json';
@@ -54,6 +52,7 @@ export interface FailedAssertion {
   kind: string;
   /** The instant at which the engine found the assertion failing; null when it reports none. */
   atMs: number | null;
+  /** Numbers and ranges are accepted at every schema version: a stored grade is always a pass, so they never reach the file. */
   expected: Record<string, boolean | NumericExpect>;
   /** The value of each expected signal at that instant; null where the trace does not hold it. */
   observed: Record<string, boolean | number | null>;
@@ -168,7 +167,7 @@ const isRange = (item: unknown): item is { min?: number; max?: number } => {
   return !(keys.length === 2 && (item.min as number) > (item.max as number));
 };
 
-function parseSignalMap<T>(value: unknown, allowNull: boolean, numeric: boolean, ranges: boolean): Record<string, T> | undefined {
+function parseSignalMap<T>(value: unknown, allowNull: boolean, ranges: boolean): Record<string, T> | undefined {
   if (!isObject(value)) return undefined;
   const entries = Object.entries(value);
   if (entries.length > 64) return undefined;
@@ -177,7 +176,7 @@ function parseSignalMap<T>(value: unknown, allowNull: boolean, numeric: boolean,
     const ok =
       typeof item === 'boolean' ||
       (allowNull && item === null) ||
-      (numeric && typeof item === 'number' && Number.isFinite(item)) ||
+      (typeof item === 'number' && Number.isFinite(item)) ||
       (ranges && isRange(item));
     if (signal.length === 0 || signal.length > 128 || !ok) return undefined;
     result[signal] = item as T;
@@ -185,10 +184,10 @@ function parseSignalMap<T>(value: unknown, allowNull: boolean, numeric: boolean,
   return result;
 }
 
-function parseFailed(value: unknown, version: number): FailedAssertion | undefined {
+function parseFailed(value: unknown): FailedAssertion | undefined {
   if (!isObject(value) || !hasExactKeys(value, ['index', 'kind', 'atMs', 'expected', 'observed', 'trace'])) return undefined;
-  const expected = parseSignalMap<boolean | NumericExpect>(value.expected, false, version >= 5, version >= 5);
-  const observed = parseSignalMap<boolean | number | null>(value.observed, true, version >= 5, false);
+  const expected = parseSignalMap<boolean | NumericExpect>(value.expected, false, true);
+  const observed = parseSignalMap<boolean | number | null>(value.observed, true, false);
   const trace = parseTrace(value.trace);
   if (!isInt(value.index, 0, 255) || typeof value.kind !== 'string' || !(SCENARIO_KINDS as readonly string[]).includes(value.kind))
     return undefined;
@@ -196,8 +195,8 @@ function parseFailed(value: unknown, version: number): FailedAssertion | undefin
   return { index: value.index, kind: value.kind, atMs: value.atMs as number | null, expected, observed, trace };
 }
 
-/** A grade record, or undefined for anything that is not exactly one; `version` is the schema of the file that holds it. */
-export function parseGradeRecord(value: unknown, version: number = LEARN_PROGRESS_SCHEMA_VERSION): GradeRecord | undefined {
+/** A grade record, or undefined for anything that is not exactly one. */
+export function parseGradeRecord(value: unknown): GradeRecord | undefined {
   if (
     !isObject(value) ||
     !hasExactKeys(value, [
@@ -244,7 +243,7 @@ export function parseGradeRecord(value: unknown, version: number = LEARN_PROGRES
   if (!Array.isArray(value.failedAssertions) || value.failedAssertions.length > 64) return undefined;
   const failedAssertions: FailedAssertion[] = [];
   for (const item of value.failedAssertions) {
-    const failed = parseFailed(item, version);
+    const failed = parseFailed(item);
     if (!failed) return undefined;
     failedAssertions.push(failed);
   }
@@ -288,13 +287,13 @@ function parseLesson(id: string, value: unknown, version: number): LessonProgres
   const hintsShown = version === 2 ? levelsOfHighest(value.hintsUsed) : parseHintLevels(value.hintsShown);
   if (!hintsShown || typeof value.solutionShown !== 'boolean') return undefined;
   if (!(value.passedAt === null || isTime(value.passedAt)) || !(value.startedAt === null || isTime(value.startedAt))) return undefined;
-  const grade = value.grade === null ? null : parseGradeRecord(value.grade, version);
+  const grade = value.grade === null ? null : parseGradeRecord(value.grade);
   if (grade === undefined) return undefined;
   if (grade !== null && (grade.lessonId !== id || grade.result !== 'passed' || value.state !== 'passed' || value.passedAt !== grade.time))
     return undefined;
   if (value.state === 'in-progress' && (grade !== null || value.passedAt !== null)) return undefined;
   if (value.state === 'passed' && value.passedAt === null && grade !== null) return undefined;
-  const hardware = version >= 4 && value.hardware !== null ? parseGradeRecord(value.hardware, version) : null;
+  const hardware = version >= 4 && value.hardware !== null ? parseGradeRecord(value.hardware) : null;
   if (
     hardware === undefined ||
     (hardware !== null && (hardware.lessonId !== id || hardware.result !== 'passed' || hardware.track !== 'hardware'))
