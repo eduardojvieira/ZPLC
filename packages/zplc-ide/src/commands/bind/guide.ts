@@ -5,7 +5,7 @@ import { bindCommands } from '../bus';
 /** The control that had the focus when the person jumped to the command bar; a second press, or Escape, gives it back. */
 let origin: HTMLElement | null = null;
 
-const commandBar = (): HTMLElement | null => document.querySelector<HTMLElement>('[role="toolbar"]');
+const commandBar = (): HTMLElement | null => document.querySelector<HTMLElement>('[data-command-bar]');
 
 const giveFocusBack = (): void => {
   const target = origin;

@@ -12,7 +12,7 @@ function Harness() {
   useGuideCommands();
   return (
     <>
-      <div role="toolbar" aria-label="Command bar">
+      <div role="toolbar" data-command-bar aria-label="Command bar">
         <button type="button">Build</button>
         <button type="button">Run</button>
       </div>
