@@ -143,8 +143,11 @@ describe('SCN-005 numeric conditions end to end (plant_belt_to_sensor)', () => {
         const tests = await dispatch('tests_run', {}, signal);
         expect((tests.structuredContent as { code?: string }).code).toBeUndefined();
         expect(tests.structuredContent).toMatchObject({ ok: false, evidence: { outcome: 'failed' } });
-        // pre-existing at ffff8361: the MCP public result drops `preview` (server.ts publicResult), so no checks reach MCP
-        expect(Object.keys(tests.structuredContent as object)).not.toContain('preview');
+        // AI-01: the MCP result carries the Tool API's failure detail, checks included
+        const mcpPreview = (tests.structuredContent as { preview?: typeof run.preview }).preview;
+        expect(mcpPreview).toBeDefined();
+        expect(mcpPreview!.scenarios[0]!.assertions).toEqual(assertions as never);
+        expect((mcpPreview!.scenarios[0]!.assertions[6] as { checks?: unknown }).checks).toEqual(assertions[6]!.checks);
       } finally {
         rmSync(root, { recursive: true, force: true });
       }
