@@ -12,6 +12,7 @@ const { ReviewDocument } = await import('./ReviewDocument');
 const { AssistantView } = await import('./AssistantView');
 const { useReviewDocument } = await import('../store/useReviewDocument');
 const { useNotifications } = await import('../store/notifications');
+const { useAssistantProvider } = await import('../shell/useSelection');
 const { translatorFor } = await import('../i18n');
 const { tn } = translatorFor('en');
 
@@ -21,6 +22,8 @@ afterEach(() => {
   // the review is held once for the tab and the document: a test must not inherit it
   useReviewDocument.setState({ open: false, active: false, requests: 0, review: { kind: 'idle' }, busy: false });
   useNotifications.setState({ items: [] });
+  // the Assistant view reads the provider into this store; the files after this one start without a provider
+  useAssistantProvider.setState({ available: false });
 });
 
 function open(tab: string, over: Record<string, unknown> = {}) {
