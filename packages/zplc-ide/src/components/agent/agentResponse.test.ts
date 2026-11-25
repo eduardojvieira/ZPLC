@@ -13,6 +13,15 @@ describe("what the host answers is shown as the assistant's answer and a change 
     expect(presentAgentResponse({ ok: true, answer: 'Words' }, expected)).toEqual({ kind: 'answer', answer: 'Words' });
     expect(presentAgentResponse({ ok: true, answer: 'Words', ...identity }, expected)).toEqual({ kind: 'answer', answer: 'Words' });
     expect(presentAgentResponse({ ok: false, code: 'AI_TIMEOUT' })).toEqual({ kind: 'error', code: 'AI_TIMEOUT' });
+    for (const code of ['AI_PROVIDER_AUTH', 'AI_PROVIDER_MODEL', 'AI_PROVIDER_RATE_LIMIT', 'AI_PROVIDER_SERVER', 'AI_PROVIDER_UNREACHABLE'])
+      expect(presentAgentResponse({ ok: false, code })).toEqual({ kind: 'error', code });
+    expect(presentAgentResponse({ ok: false, code: 'AI_PROVIDER_RATE_LIMIT', retryAfter: 30 })).toEqual({
+      kind: 'error',
+      code: 'AI_PROVIDER_RATE_LIMIT',
+      retryAfter: 30,
+    });
+    expect(presentAgentResponse({ ok: false, code: 'AI_PROVIDER_RATE_LIMIT', retryAfter: '30' })).toEqual({ kind: 'invalid' });
+    expect(presentAgentResponse({ ok: false, code: 'AI_PROVIDER_AUTH', retryAfter: 30 })).toEqual({ kind: 'invalid' });
   });
 
   it('takes a change set of up to four files bound to the program that was sent, and keeps what each replaces', () => {
