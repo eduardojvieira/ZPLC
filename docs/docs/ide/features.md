@@ -303,18 +303,18 @@ A result in Learn is host evidence from the native simulation, not hardware evid
 
 ZPLC uses one word for each idea, in both languages, on the command bar, the status line, the notices and the results. The file formats keep their own names: a test is stored as a scenario file.
 
-| Idea                            | English           | Spanish                 | Instead of                                       |
-| ------------------------------- | ----------------- | ----------------------- | ------------------------------------------------ |
-| What you work on                | Project           | Proyecto                | workspace                                        |
-| Running on this computer        | Simulation        | Simulación              | simulator session, native runtime, host          |
-| A physical controller           | Board             | Placa                   | hardware, device, controller                     |
-| Where Run goes                  | Target            | Destino                 | mode                                             |
-| Turning sources into a program  | Build             | Compilar                | compile                                          |
-| Sending a program to a board    | Deploy            | Desplegar               | upload, load                                     |
-| A scripted check of a program   | Test              | Prueba                  | scenario                                         |
-| The graded check of a lesson    | Check             | Comprobar               | lesson evidence                                  |
-| The machine a program drives    | Plant             | Planta                  | lab                                              |
-| A result obtained in simulation | Simulation result | Resultado en simulación | host evidence only, not hardware or HIL evidence |
-| A result obtained on a board    | Board result      | Resultado en placa      |                                                  |
+| Idea                            | English           | Spanish                 | Instead of                                           |
+| ------------------------------- | ----------------- | ----------------------- | ---------------------------------------------------- |
+| What you work on                | Project           | Proyecto                | workspace, saved workspace                           |
+| Running on this computer        | Simulation        | Simulación              | simulator session, native runtime, host, Local POSIX |
+| A physical controller           | Board             | Placa                   | hardware, device, controller                         |
+| Where Run goes                  | Target            | Destino                 | mode                                                 |
+| Turning sources into a program  | Build             | Compilar                | compile, canonical build                             |
+| Sending a program to a board    | Deploy            | Desplegar               | upload, load                                         |
+| A scripted check of a program   | Test              | Prueba                  | scenario, host scenario, workspace test              |
+| The graded check of a lesson    | Check             | Comprobar               | scenario verified, lesson evidence                   |
+| The machine a program drives    | Plant             | Planta                  | lab                                                  |
+| A result obtained in simulation | Simulation result | Resultado en simulación | host evidence only, not hardware or HIL evidence     |
+| A result obtained on a board    | Board result      | Resultado en placa      |                                                      |
 
 Terms of the implementation (POSIX, native, host, workspace, adapter, artifact, bytecode, SHA-256, VM) belong under **Details**, in the Inspector, in the Terminal and in the detailed Output. A CI check fails the build when one of them appears in the text of the command bar, the status line, a notice or the verdict of a test or a lesson check, and when any surface but the badge of a result states its boundary.

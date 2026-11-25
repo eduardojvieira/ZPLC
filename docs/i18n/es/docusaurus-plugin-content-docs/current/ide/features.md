@@ -305,14 +305,14 @@ ZPLC usa una palabra para cada idea, en los dos idiomas, en la barra de comandos
 
 | Idea                                      | Inglés            | Español                 | En lugar de                                                    |
 | ----------------------------------------- | ----------------- | ----------------------- | -------------------------------------------------------------- |
-| Aquello en lo que usted trabaja           | Project           | Proyecto                | espacio de trabajo                                             |
-| Ejecutar en esta computadora              | Simulation        | Simulación              | sesión del simulador, runtime nativo, host                     |
+| Aquello en lo que usted trabaja           | Project           | Proyecto                | espacio de trabajo, espacio de trabajo guardado                |
+| Ejecutar en esta computadora              | Simulation        | Simulación              | sesión del simulador, runtime nativo, host, POSIX local        |
 | Un controlador físico                     | Board             | Placa                   | hardware, dispositivo, controlador                             |
 | Adónde va Ejecutar                        | Target            | Destino                 | modo                                                           |
 | Convertir las fuentes en un programa      | Build             | Compilar                | compilación canónica                                           |
 | Enviar un programa a una placa            | Deploy            | Desplegar               | subir, cargar                                                  |
-| Una comprobación escrita de un programa   | Test              | Prueba                  | escenario                                                      |
-| La comprobación calificada de una lección | Check             | Comprobar               | evidencia de la lección                                        |
+| Una comprobación escrita de un programa   | Test              | Prueba                  | escenario, escenario del host, prueba del espacio de trabajo   |
+| La comprobación calificada de una lección | Check             | Comprobar               | escenario verificado, evidencia de la lección                  |
 | La máquina que un programa gobierna       | Plant             | Planta                  | laboratorio                                                    |
 | Un resultado obtenido en simulación       | Simulation result | Resultado en simulación | solo evidencia del host, no es evidencia de hardware ni de HIL |
 | Un resultado obtenido en una placa        | Board result      | Resultado en placa      |                                                                |
