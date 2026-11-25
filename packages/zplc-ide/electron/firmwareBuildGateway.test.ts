@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test';
-import { mkdtemp, mkdir, rm, symlink } from 'node:fs/promises';
+import { mkdtemp, mkdir, realpath, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -13,7 +13,7 @@ const ready = (boards = [{ ideId: 'nucleo_h743zi', zephyrBoard: 'nucleo_h743zi',
 });
 const attention = () => ({ ok: false, summary: { ready: false, boards: [] }, evidence: { diagnostics: [] } });
 async function root(): Promise<string> {
-  const value = await mkdtemp(join(tmpdir(), 'zplc-firmware-gateway-'));
+  const value = await realpath(await mkdtemp(join(tmpdir(), 'zplc-firmware-gateway-')));
   roots.push(value);
   return value;
 }

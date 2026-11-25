@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test';
-import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -8,7 +8,7 @@ import { createWorkspaceTestGateway, rootGeneration } from './workspaceTestGatew
 const temporaryRoots: string[] = [];
 
 async function workspace(): Promise<string> {
-  const root = await mkdtemp(join(tmpdir(), 'zplc-workspace-gateway-'));
+  const root = await realpath(await mkdtemp(join(tmpdir(), 'zplc-workspace-gateway-')));
   temporaryRoots.push(root);
   return root;
 }

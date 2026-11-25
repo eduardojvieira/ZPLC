@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readdir, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
@@ -18,7 +18,7 @@ const previousTemp = process.env.TMPDIR;
 let privateTemp = '';
 
 beforeAll(async () => {
-  privateTemp = await mkdtemp(join(sharedTemp, 'zplc-scenario-suite-'));
+  privateTemp = await realpath(await mkdtemp(join(sharedTemp, 'zplc-scenario-suite-')));
   process.env.TMPDIR = privateTemp;
 });
 
