@@ -26,7 +26,9 @@ afterEach(() => {
 
 function open(withCheck = true) {
   host.electronAPI = { ...before, ...(withCheck ? { workspaceTests: { lessonCheck: async () => ({ status: 'unavailable' }) } } : {}) };
-  dom.patchStore(useAppSettings, { settings: { ...useAppSettings.getState().settings, unlockAllLessons: true, hideSolutions: false } } as never);
+  dom.patchStore(useAppSettings, {
+    settings: { ...useAppSettings.getState().settings, unlockAllLessons: true, hideSolutions: false },
+  } as never);
   dom.patchStore(useLearnProgress, { document: null, loaded: true, failed: false } as never);
   dom.patchStore(useLearnUi, {
     selected: lesson.id,
@@ -77,14 +79,23 @@ describe('The Guide (GDE-003)', () => {
   it('PLT-013 the grade states and the data-learn attributes of 2.0 are unchanged', () => {
     open();
     const names = (root: ParentNode) =>
-      new Set([...root.querySelectorAll('*')].flatMap((element) => element.getAttributeNames().filter((name) => name.startsWith('data-learn-'))));
+      new Set(
+        [...root.querySelectorAll('*')].flatMap((element) => element.getAttributeNames().filter((name) => name.startsWith('data-learn-'))),
+      );
     const panel = dom.render(<LearnPanel />);
     const old = names(document);
     const oldGrade = document.querySelector('[data-learn-grade]')!.getAttribute('data-learn-grade');
     panel.unmount();
     dom.render(<Guide />);
     const now = names(document);
-    for (const name of ['data-learn-grade', 'data-learn-check', 'data-learn-check-status', 'data-learn-reset', 'data-learn-read-again', 'data-learn-show-solution']) {
+    for (const name of [
+      'data-learn-grade',
+      'data-learn-check',
+      'data-learn-check-status',
+      'data-learn-reset',
+      'data-learn-read-again',
+      'data-learn-show-solution',
+    ]) {
       expect(old.has(name)).toBe(true);
       expect(now.has(name)).toBe(true);
     }
