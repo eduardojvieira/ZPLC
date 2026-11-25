@@ -756,7 +756,7 @@ async function main(): Promise<void> {
     // The project is linked to the runner when the tests run: there is no manifest to choose (TST-002).
     await waitFor('ready host scenario action', async () =>
       (await cdp!.evaluate(
-        `(() => { const run = [...document.querySelectorAll('button')].find((item) => item.textContent?.includes('Run host scenarios')); ` +
+        `(() => { const run = [...document.querySelectorAll('button')].find((item) => item.textContent?.includes('Run tests')); ` +
           `return run && !run.disabled ? true : undefined; })()`,
       )) === true
         ? true
@@ -978,7 +978,7 @@ async function main(): Promise<void> {
         ? true
         : undefined,
     );
-    assert((await cdp.evaluate(click('Run host scenarios'))) === true, 'Run host scenarios is not actionable for the linked manifest.');
+    assert((await cdp.evaluate(click('Run tests'))) === true, 'Run tests is not actionable for the linked manifest.');
     const scenarioEvidence = await waitFor('native POSIX scenario evidence', async () => {
       const value = (await cdp!.evaluate(
         `(() => ({ text: document.body.innerText, hashes: [...document.querySelectorAll('[aria-label^="SHA-256 "]')].map((node) => ` +

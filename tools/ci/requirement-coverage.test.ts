@@ -661,6 +661,28 @@ describe('requirement coverage of spec 013', () => {
     expect(states.get('FND-002')).toBe('covered');
   });
 
+  // The legs of U2's requirements that U3 delivers (plan-u2 Task Q1): a gate each, read from requirement-evidence-013.json.
+  it('gates the four requirements whose last leg U3 delivers on the task that closes it, and reports them pending', () => {
+    const records = JSON.parse(readFileSync(new URL('./requirement-evidence-013.json', import.meta.url), 'utf8')) as Record<
+      string,
+      Check[]
+    >;
+    expect(Object.keys(records).sort()).toEqual(['FND-005', 'SHL-005', 'SHL-008', 'SHL-009']);
+    const known = new Set(index013().map((entry) => entry.id));
+    for (const [id, checks] of Object.entries(records))
+      for (const check of checks) {
+        expect({ id, known: known.has(id), kind: check.kind }).toEqual({ id, known: true, kind: 'gate' });
+        expect({ id, task: /plan-u3 Tasks? [A-Z]\d/.test(check.note ?? '') }).toEqual({ id, task: true });
+        expect({ id, ref: existsSync(new URL(`../../${check.ref}`, import.meta.url)) }).toEqual({ id, ref: true });
+      }
+    const result = run('--spec', '013', '--list');
+    expect(result.exitCode).toBe(0);
+    for (const id of Object.keys(records)) {
+      expect(text(result)).toContain(`  ${id} pending: `);
+      for (const check of records[id]!) expect(text(result)).toContain(`        gate: ${check.note}`);
+    }
+  });
+
   it('spec 013 does not change the output or the exit code of spec 011 or 012', () => {
     const report = run();
     expect(text(report)).not.toContain('SHL');

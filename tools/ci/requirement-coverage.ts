@@ -17,7 +17,9 @@
 // Spec 013 is reported the same way (tools/ci/requirement-index-013.json, spec 013 section 8.2 item 1). Its index marks each
 // requirement `mapped` when the table "Spec 013 (milestones U0 and U1)" of the M1 plan delivers it. One that is not mapped
 // (milestones U2 and U3, which have no plan yet) and has no check is `pending`, not `uncovered`: nobody owes it a check yet.
-// The report of either spec has a `pending` column only when one of its requirements can be pending.
+// Its recorded conditions are in tools/ci/requirement-evidence-013.json (a gate on the U3 task that delivers a requirement's
+// last leg), read and kept the same way as those of spec 012. The report of either spec has a `pending` column only when
+// one of its requirements can be pending.
 //
 // A check names its requirement in its own metadata, so adding a check needs no edit to a registry:
 //   conformance  the "requirement" of a conformance/**/*.expect.json (VF-002)
@@ -308,8 +310,11 @@ export function groups(index: Requirement[], states: Map<string, State>) {
 const INDEX_011 = 'tools/ci/requirements-index.json';
 const INDEX_012 = 'tools/ci/requirement-index-012.json';
 const INDEX_013 = 'tools/ci/requirement-index-013.json';
-/** The conditions a person recorded for spec 012: hand-written records only, read for `--spec 012` and nothing else. */
-const RECORDS_012 = 'tools/ci/requirement-evidence-012.json';
+/** The conditions a person recorded for a report-only spec, by its index: hand-written records only, read for its `--spec` alone. */
+const REPORT_ONLY_RECORDS: Record<string, string> = {
+  [INDEX_012]: 'tools/ci/requirement-evidence-012.json',
+  [INDEX_013]: 'tools/ci/requirement-evidence-013.json',
+};
 /** The specs reported alone and never gating: the number given to --spec, and its index. */
 const REPORT_ONLY_INDEX: Record<string, string> = { '012': INDEX_012, '013': INDEX_013 };
 
@@ -328,7 +333,8 @@ function load(indexFile = INDEX_011) {
   const recorded = indexFile === INDEX_011 ? (JSON.parse(read('tools/ci/requirement-evidence.json')) as Evidence) : {};
   const prefixes = new Set(index.map((entry) => entry.workstream));
   const workflows = files.filter((file) => /^\.github\/workflows\/[^/]+\.ya?ml$/.test(file)).map(read);
-  const hand = indexFile === INDEX_012 ? handWritten(JSON.parse(read(RECORDS_012)) as Evidence) : handWritten(recorded);
+  const records = REPORT_ONLY_RECORDS[indexFile];
+  const hand = handWritten(records ? (JSON.parse(read(records)) as Evidence) : recorded);
   const evidence = mergeEvidence(scanFiles(files, read, inventory, prefixes, pythonFilesRunInCi(files, workflows)), hand);
   return { index, evidence, recorded, listed: [...entries.map((entry) => entry.test), ...knownGaps] };
 }
@@ -362,7 +368,8 @@ const row = (name: string, counts: Counts) =>
 /**
  * The report of a report-only spec (012, 013): the table of spec 011, then with `list` every requirement that has no passing
  * complete check. A requirement is `pending` when nobody owes it a check yet (spec 013: one the milestone plan does not map, with
- * no check) or when a gate holds it (spec 012: evidence that no test gives, printed under it). It counts in the pending column
+ * no check) or when a gate holds it (spec 012: evidence that no test gives; spec 013: a leg a U3 task delivers; the gate's note is
+ * printed under it). It counts in the pending column
  * alone, and the column is printed only when a requirement can be pending.
  */
 export function reportOnlyLines(

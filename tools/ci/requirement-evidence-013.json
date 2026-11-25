@@ -1,0 +1,30 @@
+{
+  "FND-005": [
+    {
+      "kind": "gate",
+      "ref": "specs/013-zplc-2-1-studio-experience/plan-u3.md",
+      "note": "References in the plant map wait for the plant map to be a configuration editor of the project (PLS-006, plan-u3 Task P4). The watch table and the scenarios are covered by the scanned checks of U2."
+    }
+  ],
+  "SHL-005": [
+    {
+      "kind": "gate",
+      "ref": "specs/013-zplc-2-1-studio-experience/plan-u3.md",
+      "note": "The Plant activity on the rail (plan-u3 Task X1b), with the catalogue and the signal list as its sidebar (plan-u3 Task P2). Project, Search, Tests and Learn are covered by the scanned checks of U2."
+    }
+  ],
+  "SHL-008": [
+    {
+      "kind": "gate",
+      "ref": "specs/013-zplc-2-1-studio-experience/plan-u3.md",
+      "note": "The Guide view of the secondary sidebar (GDE-001, plan-u3 Tasks X1b and G1). Inspector and Assistant, the switch and the compact-shell offer are covered by the scanned checks of U2."
+    }
+  ],
+  "SHL-009": [
+    {
+      "kind": "gate",
+      "ref": "specs/013-zplc-2-1-studio-experience/plan-u3.md",
+      "note": "The selected plant part in the Inspector (PLS-005, plan-u3 Task P3). The active document, the selected element, the selected test and the connected board are covered by the scanned checks of U2."
+    }
+  ]
+}

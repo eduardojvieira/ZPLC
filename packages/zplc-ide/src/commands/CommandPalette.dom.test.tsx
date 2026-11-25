@@ -18,9 +18,36 @@ const tree: FileTreeNode = {
   children: [{ id: 'src/Motor.st', name: 'Motor.st', type: 'file', path: 'src/Motor.st', language: 'ST' }],
 };
 
+/** A project folder as the File System Access API hands it over: only what the scene listing reads. */
+type Entry = { kind: 'file'; name: string } | FakeFolder;
+interface FakeFolder {
+  kind: 'directory';
+  name: string;
+  values: () => AsyncGenerator<Entry>;
+  getFileHandle: (name: string) => Promise<Entry>;
+  getDirectoryHandle: (name: string) => Promise<Entry>;
+}
+const folder = (name: string, entries: Entry[]): FakeFolder => {
+  const find = async (kind: Entry['kind'], wanted: string) => {
+    const entry = entries.find((item) => item.kind === kind && item.name === wanted);
+    if (!entry) throw new DOMException(`${wanted} was not found`, 'NotFoundError');
+    return entry;
+  };
+  return {
+    kind: 'directory',
+    name,
+    values: async function* () {
+      yield* entries;
+    },
+    getFileHandle: (wanted) => find('file', wanted),
+    getDirectoryHandle: (wanted) => find('directory', wanted),
+  };
+};
+
 function prepare(): string[] {
   const opened: string[] = [];
   dom.patchStore(useIDEStore, {
+    directoryHandle: null,
     fileTree: tree,
     projectConfig: { tasks: [], io: { inputs: [{ name: 'StartPB', address: '%I0.0' }] } } as unknown as ZPLCProjectConfig,
     navigateToCompilerDiagnostic: async (path: string) => {
@@ -55,6 +82,27 @@ describe('the command palette in a DOM (FND-001)', () => {
     await user.keyboard('{ArrowDown}');
     await user.click(await dom.screen.findByRole('option', { name: /Motor\.st/ }));
     await dom.waitFor(() => expect(opened).toEqual(['src/Motor.st']));
+    dom.act(() => closeSurfaces());
+  });
+
+  // The file tree lists no scene (it keeps programs, global lists and tests), so the scenes come from the project folder.
+  it('FND-001 the palette lists the scenes of the open project folder in the Scenes group', async () => {
+    prepare();
+    const file = (name: string): Entry => ({ kind: 'file', name });
+    const project = folder('P', [file('zplc.json'), file('scene.json'), folder('scenes', [file('line.scene.json'), file('notes.txt')])]);
+    dom.patchStore(useIDEStore, { directoryHandle: project } as never);
+    const { user } = await show();
+    await user.type(dom.screen.getByRole('combobox'), 'scene');
+    const group = await dom.screen.findByRole('group', { name: 'Scenes' });
+    await dom.waitFor(() =>
+      expect(
+        dom
+          .within(group)
+          .getAllByRole('option')
+          .map((option) => option.textContent),
+      ).toEqual([expect.stringContaining('scene.json'), expect.stringContaining('scenes/line.scene.json')]),
+    );
+    expect(dom.screen.queryByRole('option', { name: /notes\.txt/ })).toBeNull();
     dom.act(() => closeSurfaces());
   });
 
