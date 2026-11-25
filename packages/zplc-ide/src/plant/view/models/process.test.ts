@@ -109,4 +109,27 @@ describe('process models (VIS-014)', () => {
       expect(slot(build(tank(1, true)), 'overflow').role).toBe('liquid');
     }
   });
+
+  it('VIS-014 the vessel has a steel rim at its foot, and four level marks at 25, 50, 75 and 100 % of it, outside the glass', () => {
+    for (const build of [digital, numeric]) {
+      const pieces = build(tank());
+      const vessel = slot(pieces, 'vessel');
+      const length = vessel.shape.kind === 'cylinder' ? vessel.shape.length : NaN;
+      const radius = vessel.shape.kind === 'cylinder' ? vessel.shape.radius : NaN;
+      const rim = slot(pieces, 'rim-lower');
+      expect(rim.role).toBe('steel');
+      expect(bottom(rim)).toBeCloseTo(bottom(vessel), 9);
+      let previous = 0;
+      for (const f of [0.25, 0.5, 0.75, 1]) {
+        const mark = slot(pieces, `mark-${f * 100}`);
+        expect(mark.role).toBe('mark');
+        expect((mark.at[1] - bottom(vessel)) / length).toBeCloseTo(f, 9);
+        expect(mark.at[2] - pieceExtent(mark)[2]).toBeGreaterThanOrEqual(radius); // in front of the glass, never inside it
+        const width = pieceExtent(mark)[0];
+        expect(width).toBeGreaterThan(previous);
+        if (f < 1) previous = width;
+        else expect(width).toBeGreaterThan(previous);
+      }
+    }
+  });
 });

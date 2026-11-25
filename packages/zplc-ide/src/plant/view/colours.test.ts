@@ -95,4 +95,16 @@ describe('material roles of the composed models (VIS-014, VIS-015)', () => {
     expect(rubber.metalness).toBe(0);
     expect(hsl(rubber.colour).l).toBeLessThan(0.2);
   });
+
+  it('VIS-014 the glass of a tank is present enough to see empty, and the liquid is more opaque, in every display mode', () => {
+    for (const mode of MODES) {
+      const palette = paletteFor({ mode, reducedMotion: false });
+      const glass = roleLook('glass', 'tank', palette);
+      const liquid = roleLook('liquid', 'tank', palette);
+      expect(glass.opacity).toBeGreaterThanOrEqual(0.45);
+      expect(glass.castShadow).toBe(false);
+      expect(liquid.opacity).toBeGreaterThan(glass.opacity);
+      expect(glass.colour).not.toBe(liquid.colour);
+    }
+  });
 });
