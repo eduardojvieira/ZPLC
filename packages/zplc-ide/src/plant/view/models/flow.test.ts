@@ -168,13 +168,17 @@ const chute = (tilt = 20, length = 1, width = 0.6, top = 1) => {
   const t = (-tilt * Math.PI) / 360;
   const thick = 0.02;
   const tau = (-tilt * Math.PI) / 180;
-  const v = view('chute', [length, thick, width], [0, top - (thick / 2) * Math.cos(tau), 0], { tiltDeg: tilt, lengthM: length, widthM: width });
+  const v = view('chute', [length, thick, width], [(thick / 2) * Math.sin(tau), top - (thick / 2) * Math.cos(tau), 0], {
+    tiltDeg: tilt,
+    lengthM: length,
+    widthM: width,
+  });
   v.pose.q = [0, 0, Math.sin(t), Math.cos(t)];
-  v.pose.p[0] = (thick / 2) * Math.sin(tau);
   return v;
 };
 /** The remover: a volume of the declared size whose bottom is `lift` over the floor. */
-const remover = (size: PartView['pose']['size'] = [0.6, 0.6, 0.6], lift = 0.1) => view('remover', size, [0, lift + size[1] / 2, 0], { delivered: 0 });
+const remover = (size: PartView['pose']['size'] = [0.6, 0.6, 0.6], lift = 0.1) =>
+  view('remover', size, [0, lift + size[1] / 2, 0], { delivered: 0 });
 
 describe('aligner, chute and remover models (VIS-014)', () => {
   it('VIS-014 an aligner is two slotted rails with a rubber strip on their inner faces, held on brackets from the belt sides', () => {
@@ -237,10 +241,16 @@ describe('aligner, chute and remover models (VIS-014)', () => {
   });
 
   it('VIS-014 the aligner, chute and remover draw in Low quality and High contrast: every piece visible and above the floor', () => {
-    for (const v of [aligner(0), aligner(1), chute(), chute(35, 2, 1, 1.4), remover()])
+    for (const v of [aligner(0), aligner(1), remover()])
       for (const p of partModel(v)!) {
         expect(p.visible).toBe(true);
-        expect(world(v, p, 1) - pieceExtent(p)[1]).toBeGreaterThanOrEqual(-0.06); // a tilted foot pad may dip by its radius
+        expect(world(v, p, 1) - pieceExtent(p)[1]).toBeGreaterThanOrEqual(-1e-9);
+      }
+    // A chute's stand is drawn in the tilted frame: a foot centre stays over the floor of the world, give or take its pad radius.
+    for (const v of [chute(), chute(35, 2, 1, 1.4)])
+      for (const p of partModel(v)!) {
+        expect(p.visible).toBe(true);
+        if (p.slot.startsWith('foot-')) expect(v.pose.p[1] + rotate(v.pose.q, p.at)[1]).toBeGreaterThanOrEqual(-1e-9);
       }
   });
 });
