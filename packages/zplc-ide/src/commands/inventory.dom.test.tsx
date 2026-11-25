@@ -255,6 +255,7 @@ describe('FND-002 the command inventory in a DOM', () => {
       'online.disconnect',
       'online.feedBoardFromPlant',
       'online.restartSimulator',
+      'plant.feedBoard',
     ]);
   });
 });

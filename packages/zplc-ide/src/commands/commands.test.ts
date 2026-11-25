@@ -481,6 +481,13 @@ describe('milestone U3 command contract (FND-002)', () => {
     expect(commandById('view.focusCommandBar').shortcut).toBeUndefined();
   });
 
+  it('FND-002 a command declared for a later task stays out of the menu until it is bound', () => {
+    const pending = COMMAND_LIST.filter((command) => command.pending).map((command) => command.id);
+    expect(pending.sort()).toEqual(Object.keys(U3_COMMANDS).sort());
+    const listed = menuCommands.map((command) => command.id);
+    for (const id of pending) expect([id, listed.includes(id)]).toEqual([id, false]);
+  });
+
   it('FND-002 plant.feedBoard is physical and is absent from the AI and MCP command list', () => {
     expect(commandById('plant.feedBoard').physical).toBe(true);
     expect(COMMAND_LIST.filter((command) => command.id in U3_COMMANDS && command.physical).map((command) => command.id)).toEqual([
@@ -558,7 +565,7 @@ describe('milestone U2 command contract (FND-002)', () => {
     }
     const edit = (template[1]!.submenu ?? []) as MenuItemConstructorOptions[];
     expect(edit.slice(0, 4).map((item) => item.label)).toEqual(['Go to definition', 'Find all references', 'Go back', 'Go forward']);
-    expect(edit.slice(-7).map((item) => item.role)).toEqual(['undo', 'redo', undefined, 'cut', 'copy', 'paste', 'selectAll']);
+    expect(edit.slice(5).map((item) => item.role)).toEqual(['undo', 'redo', undefined, 'cut', 'copy', 'paste', 'selectAll']);
   });
 
   it('UX-015 gives the new shortcuts no clash', () => {
