@@ -8148,6 +8148,7 @@ export const JOURNEYS: Journey[] = [
       await app.until('the Learn home', async () => (await app.visible(css('[data-learn-home]'))) || undefined);
       // the Ladder path of the home, then its first lesson, which opens on its reading page
       await app.eval(`document.querySelector('[data-learn-paths]')?.scrollIntoView({ block: 'start' })`);
+      await app.click(css('[data-learn-path] summary'), 'the Ladder path');
       await app.until('the Ladder path', async () => (await app.visible(css('[data-learn-path-start]'))) || undefined);
       await docShot(app, `learn-path-${locale}`);
       await app.click(css('[data-learn-path-start]'), 'the first lesson of the Ladder path');
