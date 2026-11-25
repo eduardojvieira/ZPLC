@@ -730,7 +730,8 @@ describe('requirement coverage of spec 014', () => {
     expect(result.exitCode).toBe(0);
     for (const entry of index014().filter((e) => e.mapped === false)) expect(text(result)).not.toContain(`${entry.id} uncovered`);
     expect(index014().filter((entry) => entry.mapped === undefined)).toEqual([]);
-    expect(text(result)).toContain('FRZ-001 pending');
+    // BAR-001 (the reviewer's bar.md) stays pending longest; FRZ-001 is covered since the scope list.
+    expect(text(result)).toContain('BAR-001 pending');
   });
 
   it('spec 014 does not change the output of specs 011, 012 or 013', () => {

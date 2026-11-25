@@ -12,8 +12,8 @@ Each change that closes or adds an item updates this list in the same change (FR
 | E1, E2, E3 and the thread A verifier (STOP 4) | 012 VIS-012, VIS-016, VIS-018; plan-vis E1, E2, E3 | not started | owner: approval of stop 3 |
 | U2 complete | 013 FND-001..007 | done (59f645de, bfb01f36) | none |
 | U3 X1a, X1b-1 (view table, Guide place) | 013 FND-002, SHL-002, SHL-005; plan-u3 X1a, X1b | done (f72e7386, 42466ba7) | none |
-| U3 X1b-2 (Plant activity on the rail) | 013 SHL-002, SHL-005, PLS-005; plan-u3 X1b | in progress | journey 45 PASS (rerun running) |
-| U3 G1-G6, P1-P8, D1, D2, Q1 and the verifier (STOP: usable Guide) | 013 GDE-001..012, PLS-001, PLS-004, PLS-008, PLS-009, PLS-010; plan-u3 G1, P1, D1, Q1 | not started | writer slots |
+| U3 X1b-2 (Plant activity on the rail) | 013 SHL-002, SHL-005, PLS-005; plan-u3 X1b | done (5b216fab) | none |
+| U3 G1-G6, P1-P8, D1, D2, Q1 and the verifier (STOP: usable Guide) | 013 GDE-001..012, PLS-001, PLS-004, PLS-008, PLS-009, PLS-010; plan-u3 G1, P1, D1, Q1 | in progress | G1a merged (411e1e5d); G1b running |
 | U3 G7 first-use sessions | 013 GDE-013; plan-u3 G7 | not started | owner: runs the G7 sessions |
 | Course step 2 pilot (STOP), done on feat/course-step2 075ee7bc | 012 CRS-001..008 | waiting | owner: approval of step 2; owner: statement on the T4, T5, T8 2.1.x proposal |
 | Course steps 3-4, lesson images with the new plant look, four scenarios strengthened | 012 CRS-003, CRS-005, CRS-012 | not started | owner: approval of step 2 |
