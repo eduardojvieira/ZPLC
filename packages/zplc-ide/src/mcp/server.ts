@@ -431,6 +431,46 @@ const assertionSchema = z
     atMs: z.number().int().min(0).max(3_600_000).optional(),
   })
   .strict();
+const checkSchema = z
+  .object({
+    signal: z.string().min(1).max(256),
+    expected: z.union([z.boolean(), z.number(), z.object({ min: z.number().optional(), max: z.number().optional() }).strict()]),
+    observed: z.union([z.boolean(), z.number()]).optional(),
+  })
+  .strict();
+// the Tool API's TestRunPreview: the failure detail (checks) of tests_run and scenario_run
+const previewSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    backend: z.literal('native-posix'),
+    mode: z.literal('logical-cyclic-task-set-scan'),
+    traceEvidenceSha256: z.string().regex(/^[0-9a-f]{64}$/),
+    totalScenarioCount: z.number().int().min(1).max(8),
+    scenarios: z
+      .array(
+        z
+          .object({
+            id: z.string().max(128),
+            path: logicalPathSchema,
+            passed: z.boolean(),
+            totalSamples: z.number().int().nonnegative(),
+            totalSignals: z.number().int().nonnegative(),
+            totalAssertions: z.number().int().nonnegative(),
+            truncated: z.boolean(),
+            assertions: z
+              .array(
+                assertionSchema
+                  .extend({ index: z.number().int().nonnegative().optional(), checks: z.array(checkSchema).max(8).optional() })
+                  .strict(),
+              )
+              .max(32),
+            samples: z.array(traceSampleSchema).max(24),
+          })
+          .strict(),
+      )
+      .max(8),
+  })
+  .strict();
 const aggregateScenarioSchema = z
   .object({
     id: z
@@ -639,6 +679,8 @@ function publicResult(tool: McpToolName, value: unknown, execution?: unknown): R
     if (summary !== undefined) output.summary = safeJson(summary);
     const saved = ownValue(value, 'savedTestInputIdentity');
     if (saved !== undefined) output.savedTestInputIdentity = safeJson(saved);
+    const preview = ownValue(value, 'preview');
+    if (preview !== undefined && (tool === 'tests_run' || tool === 'scenario_run')) output.preview = safeJson(preview);
     if (Object.values(output).some((item) => item === undefined)) return undefined;
     if (execution !== undefined) output.execution = safeJson(execution);
     if (Object.values(output).some((item) => item === undefined)) return undefined;
@@ -648,6 +690,7 @@ function publicResult(tool: McpToolName, value: unknown, execution?: unknown): R
         summary: summarySchema(tool).optional(),
         evidence: evidenceSchema,
         savedTestInputIdentity: savedInputSchema.optional(),
+        preview: previewSchema.optional(),
         execution: executionSchema.optional(),
       })
       .strict();
