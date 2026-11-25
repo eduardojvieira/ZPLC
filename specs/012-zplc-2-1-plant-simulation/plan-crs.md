@@ -14,13 +14,13 @@ renamed or deleted, every changed package raises its `version`, and the 2.0 star
 
 | Branch | What it holds |
 |---|---|
-| `feat/course-step2` | The amendment (CRS-014 to CRS-025, outline section 6), the placeholder `{{ui:<catalogue key>}}` for control names, expanded when the lesson index is built and understood by the didactics check, and two pilot lessons in both languages: `timers-on-delay-off-delay` and `sfc-fill-mix-sequence`. |
+| `feat/course-step2` | The amendment (CRS-014 to CRS-025, outline section 6), the placeholder `{{ui:<catalogue key>}}` for control names, expanded when the lesson index is built and understood by the didactics check, the parity rule that lets a page pair show `images/<name>.en.png` and `images/<name>.es.png`, and the three pilot lessons in both languages: `timers-on-delay-off-delay`, `sfc-fill-mix-sequence` and `plant-belt-to-sensor`. |
 | `feat/course-l7-tools` | Merged: the compiler support matrix `course-l7-support.md` (every proposed ST construct "Teach"; gaps in LD, FBD and IL) and the scripts that generate the signal table and the labelled image of a scene. |
-| Pending | The third pilot lesson, `plant-belt-to-sensor`, which waits for those scripts. |
 
 Measured cost of the pilot: one writer session for the amendment, the placeholder and the two programming lessons, about 0.5 unit per
 lesson (a reading page in two languages with one figure and one or two timing diagrams, the text rewritten, the checks run), +839/−147
-lines over 36 files, most of them prose.
+lines over 36 files, most of them prose. The plant lesson took about 0.6 unit, with the machine page from the generated table and
+images.
 
 ## Tasks and estimate
 
@@ -79,7 +79,13 @@ lessons would teach better than the lessons a learner meets first.
 - **The compiler support matrix** is a snapshot of 2026-11-24. Its probes run with the IDE tests (`src/learn/l7Support.test.ts`), so a change that breaks a taught construct
   fails there, and a closed gap fails its gap probe, which is when the Ladder, FBD or IL lesson for it can be written (outline 6.3).
 - **The machine pages** depend on the image and table scripts of the course tools and on the images of the approved plant catalogue; T6
-  moves with `plan-vis.md`.
+  moves with `plan-vis.md`. The pilot found two layout problems in Learn at 1440 × 900: the labels of the machine image are about
+  5 px high once the 1773 px image is fitted to the reading column, and the seven-column signal table is wider than the column, so
+  its last column is cut. The table still carries every fact. The scripts' owner fixes both before T6 (larger labels or a narrower
+  layout; two tables, the parts and the signals).
+- **The pasted signal table can go stale.** The reading page holds the table as `signal-table.ts` wrote it, aligned by the
+  formatter. `signal-table.ts --check` checks a folder of table files, not a reading page; T1's rule `machine` compares the table of
+  each plant reading with the script's output (`tablesOf` in `scripts/learn/signal-table.ts`), cell by cell.
 - **Shared generated files** conflict on every merge; the parent regenerates them, so a writer never edits the index, the table, the
   baseline or a generated page by hand.
 - **The course-outline docs page** of modules 0 to 11 is hand-kept, and its lesson order is the order before step 1; running
