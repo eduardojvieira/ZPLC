@@ -61,6 +61,7 @@ A sequence of lift moves with a count, in which the program waits for each posit
 | always | `fact:itemsDropped = false` |
 | from 0 ms, within 60000 ms | `fact:loaded:crate:0 = true` |
 | from 0 ms, within 60000 ms | `fact:delivered:CrateBin = true` |
+| at 60000 ms | `fact:delivered:CrateBin = 6` |
 | at 60000 ms | `LiftStacking.Green = true` |
 
 ## Lessons that use this scene

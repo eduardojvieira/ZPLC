@@ -67,6 +67,7 @@ Coordinating two lifts that hand over a box, and an emergency stop that stops ev
 | always | `fact:itemsDropped = false` |
 | at 16000 ms | `ThreeLevelLifts.Red = true` |
 | from 0 ms, within 95000 ms | `fact:delivered:TopBin = true` |
+| at 95000 ms | `fact:delivered:TopBin = 5` |
 | at 95000 ms | `ThreeLevelLifts.Green = true` |
 
 ## Lessons that use this scene

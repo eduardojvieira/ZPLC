@@ -67,6 +67,7 @@ Coordinar dos elevadores que se entregan una caja y un paro de emergencia que de
 | siempre | `fact:itemsDropped = false` |
 | a los 16000 ms | `ThreeLevelLifts.Red = true` |
 | desde 0 ms, dentro de 95000 ms | `fact:delivered:TopBin = true` |
+| a los 95000 ms | `fact:delivered:TopBin = 5` |
 | a los 95000 ms | `ThreeLevelLifts.Green = true` |
 
 ## Lecciones que usan esta escena

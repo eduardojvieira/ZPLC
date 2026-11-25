@@ -64,6 +64,7 @@ One function block used for two machines, and sharing the work of machines with 
 | --- | --- |
 | always | `fact:itemsDropped = false`, `fact:misfires:MachineA = false`, `fact:misfires:MachineB = false` |
 | from 0 ms, within 80000 ms | `fact:produced:MachineA = true`, `fact:produced:MachineB = true`, `fact:delivered:LidBin = true`, `fact:delivered:BaseBin = true` |
+| at 80000 ms | `fact:produced:MachineA = 4`, `fact:produced:MachineB = 4`, `fact:delivered:LidBin = 4`, `fact:delivered:BaseBin = 4` |
 | at 80000 ms | `ProductionLine.Green = true` |
 
 ## Lessons that use this scene

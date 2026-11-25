@@ -64,6 +64,7 @@ Un bloque de función usado para dos máquinas y el reparto del trabajo entre m�
 | --- | --- |
 | siempre | `fact:itemsDropped = false`, `fact:misfires:MachineA = false`, `fact:misfires:MachineB = false` |
 | desde 0 ms, dentro de 80000 ms | `fact:produced:MachineA = true`, `fact:produced:MachineB = true`, `fact:delivered:LidBin = true`, `fact:delivered:BaseBin = true` |
+| a los 80000 ms | `fact:produced:MachineA = 4`, `fact:produced:MachineB = 4`, `fact:delivered:LidBin = 4`, `fact:delivered:BaseBin = 4` |
 | a los 80000 ms | `ProductionLine.Green = true` |
 
 ## Lecciones que usan esta escena

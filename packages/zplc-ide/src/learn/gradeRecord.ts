@@ -7,6 +7,7 @@
  */
 import type { FailedAssertion, GradeRecord, NumericExpect } from '../../shared/learnProgressModel';
 import type { ScenarioExpectation, ScenarioFile } from './lessonPackage';
+import { translate } from '../i18n/translate';
 
 export interface ObservedAssertion {
   kind: string;
@@ -94,9 +95,9 @@ const valueText = (value: boolean | number | NumericExpect | null, unknown: stri
   if (value === null) return unknown;
   if (typeof value !== 'object') return String(value);
   const { min, max } = value;
-  if (min !== undefined && max !== undefined) return locale === 'es' ? `entre ${min} y ${max}` : `between ${min} and ${max}`;
-  if (min !== undefined) return locale === 'es' ? `al menos ${min}` : `at least ${min}`;
-  return locale === 'es' ? `como máximo ${max}` : `at most ${max}`;
+  if (min !== undefined && max !== undefined) return translate(locale, 'learn.grade.range.between', { min, max });
+  if (min !== undefined) return translate(locale, 'learn.grade.range.atLeast', { min });
+  return translate(locale, 'learn.grade.range.atMost', { max: max ?? '' });
 };
 
 const valuesText = (values: Record<string, boolean | number | NumericExpect | null>, unknown: string, locale: 'en' | 'es'): string =>
