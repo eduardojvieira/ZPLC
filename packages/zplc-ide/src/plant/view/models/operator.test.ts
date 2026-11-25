@@ -217,7 +217,14 @@ describe('numeric display model (VIS-014, F5)', () => {
   });
 
   it('VIS-014 controls that stand together share one station body instead of a pedestal each', async () => {
-    const pair = (part: string, id: string, x: number) => ({ id, part, name: id, position: [x, 0.5, 0] as [number, number, number], rotationYDeg: 0, config: {} });
+    const pair = (part: string, id: string, x: number) => ({
+      id,
+      part,
+      name: id,
+      position: [x, 0.5, 0] as [number, number, number],
+      rotationYDeg: 0,
+      config: {},
+    });
     const scene: PlantSceneFile = {
       schemaVersion: 1,
       name: 'station',

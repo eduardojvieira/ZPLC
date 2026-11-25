@@ -7,6 +7,7 @@
  * about the vertical axis, so the floor is at `-pose.p[1]` in the part's frame.
  */
 import type { PartView, Quat, Vec3 } from '../../contracts';
+import type { ControlStation } from '../controlStations';
 import type { Role } from '../look';
 
 export type Axis = 'x' | 'y' | 'z';
@@ -47,6 +48,8 @@ export interface Piece {
 export interface ModelContext {
   travel: number;
   mount?: Vec3 | null;
+  /** The control station an operator control stands in (`controlStation`), if any: the stand is then the station's one body. */
+  station?: ControlStation | null;
 }
 
 export type ModelBuilder = (view: PartView, context: ModelContext) => Piece[];

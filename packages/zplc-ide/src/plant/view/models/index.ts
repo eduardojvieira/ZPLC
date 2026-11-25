@@ -12,6 +12,7 @@ import { FLOW } from './flow';
 import { MANIPULATORS } from './manipulators';
 import { OPERATOR } from './operator';
 import { PROCESS } from './process';
+import { controlStation } from '../controlStations';
 import { SENSORS, sensorMount } from './sensors';
 import { pieceExtent, type ModelContext, type ModelFamily, type Piece } from './shared';
 import { STATIONS } from './stations';
@@ -40,7 +41,7 @@ export function partModel(view: PartView, context: ModelContext = STILL): Piece[
  * other parts of the snapshot, a sensor is measured on the bracket that mounts it to a belt.
  */
 export function modelBounds(view: PartView, parts: readonly PartView[] = []): { min: Vec3; max: Vec3 } | null {
-  const pieces = partModel(view, { travel: 0, mount: sensorMount(view, parts) });
+  const pieces = partModel(view, { travel: 0, mount: sensorMount(view, parts), station: controlStation(view, parts) });
   if (!pieces || pieces.length === 0) return null;
   const min = [Infinity, Infinity, Infinity];
   const max = [-Infinity, -Infinity, -Infinity];

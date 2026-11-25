@@ -10,8 +10,9 @@
  * and low, so each state moves or shows something that stands up from the box, not only a change on its top face.
  */
 import type { PartView, Vec3 } from '../../contracts';
+import type { ControlStation } from '../controlStations';
 import type { Role } from '../look';
-import { box, MIN_STAND, piece, rod, type ModelFamily, type Piece } from './shared';
+import { box, MIN_STAND, piece, rod, rotate, type ModelContext, type ModelFamily, type Piece } from './shared';
 
 /** The slots of a control's stand start with this. */
 export const STAND = 'stand-';
@@ -46,10 +47,33 @@ function pedestal(floor: number, top: number): Piece[] {
   ];
 }
 
-/** A control box in `role`, and its pedestal. */
-const controlBox = (view: PartView, role: Role = 'housing'): Piece[] => [
+/**
+ * The body a station's leader draws for all its members: one steel box over the station footprint from the floor up to the lowest
+ * control box, and a plate at the floor, in the leader's frame (the footprint and heights are in world space).
+ */
+function stationBody(view: PartView, station: ControlStation): Piece[] {
+  const [q0, q1, q2, q3] = view.pose.q;
+  const local = (x: number, y: number, z: number) =>
+    rotate([-q0, -q1, -q2, q3], [x - view.pose.p[0], y - view.pose.p[1], z - view.pose.p[2]]);
+  // The body is square to the world: in the leader's frame it turns back by the leader's own yaw.
+  const yaw = -2 * Math.atan2(view.pose.q[1], view.pose.q[3]);
+  const plate = 0.01;
+  const cx = (station.min[0] + station.max[0]) / 2;
+  const cz = (station.min[1] + station.max[1]) / 2;
+  const [w, d] = [station.max[0] - station.min[0], station.max[1] - station.min[1]];
+  const height = station.top - station.floor - plate;
+  return [
+    ...(height > 0
+      ? [piece('station-body', box([w, height, d], 0.004), local(cx, station.floor + plate + height / 2, cz), 'steel', true, yaw)]
+      : []),
+    piece('station-plate', box([w + 0.04, plate, d + 0.04], 0.003), local(cx, station.floor + plate / 2, cz), 'steel', true, yaw),
+  ];
+}
+
+/** A control box in `role`, and its pedestal, or the station body when it leads a station (none when it follows one). */
+const controlBox = (view: PartView, role: Role = 'housing', station: ControlStation | null = null): Piece[] => [
   piece('enclosure', box(ENCLOSURE.size, 0.01), [0, ENCLOSURE.top - ENCLOSURE.size[1] / 2, 0], role),
-  ...pedestal(-view.pose.p[1], enclosureBottom),
+  ...(station ? (station.id === view.id ? stationBody(view, station) : []) : pedestal(-view.pose.p[1], enclosureBottom)),
 ];
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -58,11 +82,11 @@ const controlBox = (view: PartView, role: Role = 'housing'): Piece[] => [
 
 export const PUSH_BUTTON = { collarTop: -0.006, released: 0.024, pressed: -0.003, head: 0.034, radius: 0.03 } as const;
 
-function pushButtonModel(view: PartView): Piece[] {
+function pushButtonModel(view: PartView, context: ModelContext): Piece[] {
   const pressed = view.state.pressed === true;
   const { collarTop, head } = PUSH_BUTTON;
   const headTop = pressed ? PUSH_BUTTON.pressed : PUSH_BUTTON.released;
-  const [enclosure, ...stand] = controlBox(view);
+  const [enclosure, ...stand] = controlBox(view, 'housing', context.station);
   return [
     piece('head', rod(PUSH_BUTTON.radius, head, 'y'), [0, headTop - head / 2, 0], 'head'),
     enclosure!,
@@ -80,14 +104,14 @@ export const SELECTOR = { turn: Math.PI / 2, lever: [0.024, 0.04, 0.1] as Vec3, 
 /** The turn of position `k` of `n`: from an eighth of a turn left of straight ahead (position 0) to as far right (the last). */
 const selectorYaw = (k: number, n: number): number => SELECTOR.turn / 2 - (SELECTOR.turn * k) / Math.max(1, n - 1);
 
-function selectorModel(view: PartView): Piece[] {
+function selectorModel(view: PartView, context: ModelContext): Piece[] {
   const n = typeof view.state.positions === 'number' ? Math.max(2, Math.round(view.state.positions)) : 3;
   const at = typeof view.state.position === 'number' ? Math.min(n - 1, Math.max(0, Math.round(view.state.position))) : 0;
   const yaw = selectorYaw(at, n);
   const { lever, knobTop } = SELECTOR;
   const collarTop = ENCLOSURE.top + 0.012;
   return [
-    ...controlBox(view),
+    ...controlBox(view, 'housing', context.station),
     piece('collar', rod(0.037, 0.012, 'y'), [0, ENCLOSURE.top + 0.006, 0], 'collar'),
     piece('knob', rod(0.028, knobTop - collarTop, 'y'), [0, (knobTop + collarTop) / 2, 0], 'rubber'),
     piece('lever', box(lever, 0.006), [0, knobTop + lever[1] / 2, 0], 'rubber', true, yaw),
@@ -107,12 +131,12 @@ function selectorModel(view: PartView): Piece[] {
 
 export const EMERGENCY_STOP = { released: 0.05, travel: 0.02, head: 0.03, radius: 0.045, stem: 0.012 } as const;
 
-function emergencyStopModel(view: PartView): Piece[] {
+function emergencyStopModel(view: PartView, context: ModelContext): Piece[] {
   const { released, travel, head, radius, stem } = EMERGENCY_STOP;
   const headTop = view.state.pressed === true ? released - travel : released;
   const headBottom = headTop - head;
   return [
-    ...controlBox(view, 'safety'),
+    ...controlBox(view, 'safety', context.station),
     piece('collar', rod(0.036, 0.012, 'y'), [0, ENCLOSURE.top + 0.006, 0], 'collar'),
     piece('stem', rod(stem, headBottom - ENCLOSURE.top, 'y'), [0, (headBottom + ENCLOSURE.top) / 2, 0], 'steel'),
     piece('head', rod(radius, head, 'y'), [0, headTop - head / 2, 0], 'painted'),
@@ -125,11 +149,11 @@ function emergencyStopModel(view: PartView): Piece[] {
 
 export const INDICATOR = { lens: 0.03, lensRadius: 0.032, haloRadius: 0.05, haloThick: 0.004 } as const;
 
-function indicatorModel(view: PartView): Piece[] {
+function indicatorModel(view: PartView, context: ModelContext): Piece[] {
   const lit = view.state.lit === true;
   const collarTop = ENCLOSURE.top + 0.012;
   return [
-    ...controlBox(view),
+    ...controlBox(view, 'housing', context.station),
     piece('collar', rod(0.04, 0.012, 'y'), [0, ENCLOSURE.top + 0.006, 0], 'collar'),
     // The ring lies on the collar behind the lens, wider than it: lit shows a shape the unlit light does not have.
     ...(lit
@@ -182,13 +206,13 @@ function stackLightModel(view: PartView): Piece[] {
 
 export const POTENTIOMETER = { sweep: (270 * Math.PI) / 180, knob: 0.03, radius: 0.03 } as const;
 
-function potentiometerModel(view: PartView): Piece[] {
+function potentiometerModel(view: PartView, context: ModelContext): Piece[] {
   const f = typeof view.state.fraction === 'number' ? Math.min(1, Math.max(0, view.state.fraction)) : 0;
   const yaw = (f - 0.5) * POTENTIOMETER.sweep;
   const collarTop = ENCLOSURE.top + 0.012;
   const knobTop = collarTop + POTENTIOMETER.knob;
   return [
-    ...controlBox(view),
+    ...controlBox(view, 'housing', context.station),
     piece('collar', rod(0.04, 0.012, 'y'), [0, ENCLOSURE.top + 0.006, 0], 'collar'),
     piece('knob', rod(POTENTIOMETER.radius, POTENTIOMETER.knob, 'y'), [0, collarTop + POTENTIOMETER.knob / 2, 0], 'head'),
     piece('pointer', box([0.006, 0.002, 0.03], 0), toward(yaw, 0.015, knobTop + 0.001), 'mark', true, yaw),
@@ -234,7 +258,7 @@ function segment(cell: number, name: string, x: number, y: number, z: number): P
   return piece(`d${cell}-${name}`, box(size, 0), [x + dx, y + dy, z], 'signalRed');
 }
 
-function numericDisplayModel(view: PartView): Piece[] {
+function numericDisplayModel(view: PartView, context: ModelContext): Piece[] {
   const { window: win, pitch, maxCells } = NUMERIC_DISPLAY;
   const { value, min, max } = view.state;
   const range = typeof min === 'number' && typeof max === 'number' ? { min, max } : { min: 0, max: 100 };
@@ -246,7 +270,7 @@ function numericDisplayModel(view: PartView): Piece[] {
   const face = ENCLOSURE.size[2] / 2;
   const y = ENCLOSURE.top - ENCLOSURE.size[1] / 2;
   return [
-    ...controlBox(view),
+    ...controlBox(view, 'housing', context.station),
     piece('window', box([win[0], win[1], 0.002], 0), [0, y, face + 0.001], 'lens'),
     ...[...text].flatMap((ch, i) =>
       [...(SEGMENTS[ch] ?? '')].map((name) => segment(i, name, (i - (cells - 1) / 2) * pitch, y, face + 0.003)),
