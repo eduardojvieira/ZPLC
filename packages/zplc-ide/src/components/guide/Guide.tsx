@@ -293,7 +293,7 @@ export function Guide({ workspaceTestPresentation }: { workspaceTestPresentation
           </div>
         </section>
 
-        {/* G1b: the file paths and the starter sentence go into the "Files and record of this lesson" disclosure (GDE-005), and the language control goes. */}
+        {/* G1b: the file paths and the starter sentence go into the "Files and record of this lesson" disclosure (GDE-005). */}
         <div>
           <p className="break-words font-mono text-xs text-[var(--color-surface-400)]">
             {lesson.sourcePath} · {lesson.scenarioPath}
