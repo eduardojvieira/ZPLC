@@ -220,6 +220,20 @@ export const COMMANDS = [
 
   // The 3D plant view (spec 012 VIS-002): the shell binds it in every state; it fits the 3D view on screen (`bind/plant.ts`).
   { id: 'view.fitPlantScene', titleKey: 'command.view.fitPlantScene', category: 'view', enabled: open },
+
+  // Milestone U3 (plan-u3.md, Task X1a): the ids only; each is bound, and given its `enabled` rule, by the task that owns the behaviour.
+  { id: 'view.guide', titleKey: 'command.view.guide', category: 'view' },
+  { id: 'view.lessonLayout', titleKey: 'command.view.lessonLayout', category: 'view' },
+  { id: 'view.focusCommandBar', titleKey: 'command.view.focusCommandBar', category: 'view' },
+  { id: 'learn.guide.next', titleKey: 'command.learn.guide.next', category: 'help' },
+  { id: 'learn.guide.back', titleKey: 'command.learn.guide.back', category: 'help' },
+  { id: 'learn.check', titleKey: 'command.learn.check', category: 'build' },
+  { id: 'plant.edit', titleKey: 'command.plant.edit', category: 'edit' },
+  { id: 'plant.endEdit', titleKey: 'command.plant.endEdit', category: 'edit' },
+  { id: 'plant.createDeclarations', titleKey: 'command.plant.createDeclarations', category: 'project' },
+  { id: 'edit.undo', titleKey: 'command.edit.undo', category: 'edit' },
+  { id: 'edit.redo', titleKey: 'command.edit.redo', category: 'edit' },
+  { id: 'plant.feedBoard', titleKey: 'command.plant.feedBoard', category: 'online', physical: true },
 ] as const satisfies readonly CommandDefinition[];
 
 export type CommandId = (typeof COMMANDS)[number]['id'];

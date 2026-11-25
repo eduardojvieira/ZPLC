@@ -51,6 +51,12 @@ import { u2NavigatorEs } from './catalog/u2Navigator';
 import { u2LayoutEs } from './catalog/u2Layout';
 import { u2PreferencesEs } from './catalog/u2Preferences';
 import { u2PanelEs } from './catalog/u2Panel';
+import { u3GuideEs } from './catalog/u3Guide';
+import { u3LearnEs } from './catalog/u3Learn';
+import { u3ReadingEs } from './catalog/u3Reading';
+import { u3PlantEs } from './catalog/u3Plant';
+import { u3FaceplateEs } from './catalog/u3Faceplate';
+import { u3IoModeEs } from './catalog/u3IoMode';
 
 /**
  * The Spanish catalog (UX-029, UX-030): neutral Latin American Spanish with impersonal or "usted" forms, as in
@@ -687,4 +693,10 @@ export const es: Record<MessageKey, string> = {
   ...u2LayoutEs,
   ...u2PreferencesEs,
   ...u2PanelEs,
+  ...u3GuideEs,
+  ...u3LearnEs,
+  ...u3ReadingEs,
+  ...u3PlantEs,
+  ...u3FaceplateEs,
+  ...u3IoModeEs,
 };

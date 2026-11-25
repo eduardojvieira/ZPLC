@@ -556,7 +556,7 @@ describe('milestone U2 command contract (FND-002)', () => {
     }
     const edit = (template[1]!.submenu ?? []) as MenuItemConstructorOptions[];
     expect(edit.slice(0, 4).map((item) => item.label)).toEqual(['Go to definition', 'Find all references', 'Go back', 'Go forward']);
-    expect(edit.slice(5).map((item) => item.role)).toEqual(['undo', 'redo', undefined, 'cut', 'copy', 'paste', 'selectAll']);
+    expect(edit.slice(-7).map((item) => item.role)).toEqual(['undo', 'redo', undefined, 'cut', 'copy', 'paste', 'selectAll']);
   });
 
   it('UX-015 gives the new shortcuts no clash', () => {
