@@ -997,6 +997,7 @@ export function createRenderer(
           travel: travel.get(view.id) ?? 0,
           mount: sensorMount(view, snapshot.parts),
           station: controlStation(view, snapshot.parts),
+          scenePart: scene.parts.find((p) => p.id === view.id),
         });
         if (pieces) drawModel(view, pieces);
         else drawShape(view);

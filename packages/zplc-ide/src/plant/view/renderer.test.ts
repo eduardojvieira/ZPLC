@@ -5,6 +5,7 @@ import { createFrameStats, createRenderer, loadRenderer, pieceGeometry, watchCon
 import { paletteFor } from './displayModes';
 import { partColour, roleLook } from './look';
 import { extrusion, piece, pieceExtent, slotted, slottedSection } from './models/shared';
+import { partModel } from './models';
 import { instanceMatrices, partDecor, partShape, boxShape, palletShape } from './geometry';
 
 const scene: PlantSceneFile = { schemaVersion: 1, name: 't', parts: [], cameras: [] };
@@ -535,7 +536,8 @@ describe('display preferences reach the renderer', () => {
     r.setSnapshot({ items: [], parts: [blade] } as unknown as Parameters<typeof r.setSnapshot>[0]);
     r.setPalette?.(hc);
     expect(mats.some((m) => m.color.hex === partColour('stop-blade', hc))).toBe(true); // the blade keeps its own colour under a palette
-    expect(outlinesOf(scenes[0]).filter((o) => o.kind === 'line').length).toBe(1); // the blade (the fake three has no Shape for the arc)
+    // High contrast outlines every piece of the blade (the fake three has no Shape for the arc).
+    expect(outlinesOf(scenes[0]).filter((o) => o.kind === 'line').length).toBe(partModel(blade)!.length);
   });
 
   it('PRT-003 a real curved conveyor of radius 1.2 is drawn as an arc whose radii and angle follow its config', async () => {
