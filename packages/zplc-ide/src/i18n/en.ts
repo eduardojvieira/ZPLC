@@ -300,7 +300,7 @@ export const baseEn = {
   'errorBoundary.stopped': '{region} stopped working',
   // Operational status bar
   'connection.disconnected': 'Not connected',
-  'connection.simulation.native': 'Simulation · native runtime',
+  'connection.simulation.native': 'Simulation',
   'connection.simulation.wasm': 'Simulation · software runtime',
   'connection.hardware.connecting': 'Connecting to hardware',
   'connection.hardware.connected': 'Real hardware',

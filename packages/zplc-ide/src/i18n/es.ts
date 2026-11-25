@@ -302,7 +302,7 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'errorBoundary.stopped': '{region} dejó de funcionar',
   // Operational status bar
   'connection.disconnected': 'Sin conexión',
-  'connection.simulation.native': 'Simulación · runtime nativo',
+  'connection.simulation.native': 'Simulación',
   'connection.simulation.wasm': 'Simulación · runtime de software',
   'connection.hardware.connecting': 'Conectando con el hardware',
   'connection.hardware.connected': 'Hardware real',
