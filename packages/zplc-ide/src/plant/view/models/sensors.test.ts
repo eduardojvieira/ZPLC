@@ -304,6 +304,26 @@ describe('limit switch (VIS-014, VIS-016)', () => {
     expect(Math.hypot(dx!, dz!)).toBeGreaterThan(0.03);
     expect(slot(made, 'lamp').role).toBe('lamp');
   });
+
+  it('VIS-016 the lever turns at least 20 degrees about its pivot in contact, and its pivot end stays where it is', async () => {
+    const { core, view, model } = await open(beside);
+    const free = model(view('lim'));
+    core.act('Lim1', 'stuckOn');
+    core.advance(5);
+    const made = model(view('lim'));
+    const angle = (p: { q?: readonly number[]; yaw: number }) => (p.q ? 2 * Math.atan2(p.q[1]!, p.q[3]!) : p.yaw);
+    expect(Math.abs((angle(slot(made, 'arm')) - angle(slot(free, 'arm'))) * (180 / Math.PI))).toBeGreaterThanOrEqual(20);
+    expect(slot(made, 'arm').q).toBeDefined();
+    expect(slot(made, 'head').at).toEqual(slot(free, 'head').at);
+    // The arm's pivot end: its centre less half its length along its own axis.
+    const pivot = (pieces: ReturnType<typeof model>) => {
+      const arm = slot(pieces, 'arm');
+      const a = angle(arm);
+      const h = arm.shape.kind === 'box' ? arm.shape.size[0] / 2 : 0;
+      return [arm.at[0] - h * Math.cos(a), arm.at[2] + h * Math.sin(a)];
+    };
+    pivot(made).forEach((v, i) => expect(v).toBeCloseTo(pivot(free)[i]!, 9));
+  });
 });
 
 describe('sensor bounds (VIS-017)', () => {

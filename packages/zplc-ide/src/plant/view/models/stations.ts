@@ -136,7 +136,7 @@ const carriage: ModelBuilder = (view, context) => {
 /** The sizes of the layer palletizer's parts that its views do not give, in metres (the core's pad, clamp window and rails). */
 export const PALLETIZER = {
   padThickness: 0.03,
-  jaw: { thickness: 0.02, depth: 0.25, open: 0.05 }, // open: how far a jaw stands off the layer when the clamp is open
+  jaw: { thickness: 0.02, depth: 0.25, open: 0.14 }, // open: how far a jaw stands off the layer when the clamp is open
   railGap: 0.12, // each of the two rails lies this far from the line the column follows
   rail: 0.05,
   carriage: { length: 0.14, height: 0.1, width: 0.3 },

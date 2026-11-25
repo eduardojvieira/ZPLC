@@ -351,6 +351,14 @@ describe('turntable model (VIS-014, VIS-016)', () => {
     expect(Math.abs(turned)).toBeCloseTo(Math.PI / 2, 2);
   });
 
+  it('VIS-016 a turntable carries one arrow along its rollers, so the turned platform shows its quarter turn', async () => {
+    const centre = await viewOf(tableScene, 'table');
+    const right = await viewOf(tableScene, 'table', { 'Table1.toRight': true }, 2000);
+    const yawOf = (view: PartView) => 2 * Math.atan2(view.pose.q[1], view.pose.q[3]) + slot(partModel(view)!, 'arrow').yaw;
+    expect(slot(partModel(centre)!, 'arrow').role).toBe('mark');
+    expect(Math.abs(yawOf(right) - yawOf(centre))).toBeCloseTo(Math.PI / 2, 2);
+  });
+
   it('VIS-016 a stopped turntable shows no direction mark; a running one shows marks along its platform', async () => {
     const view = await viewOf(tableScene, 'table');
     expect(shown(partModel(view)!, 'mark-')).toEqual([]);

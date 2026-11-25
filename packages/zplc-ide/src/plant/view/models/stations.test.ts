@@ -256,6 +256,7 @@ describe('layer palletizer models (VIS-014)', () => {
       const { pieces } = at(0, 0, f);
       return Math.abs(slot(pieces, 'jaw-a').at[2] - slot(pieces, 'jaw-b').at[2]);
     };
+    expect(gap(0) - gap(1)).toBeGreaterThanOrEqual(0.1);
     expect(gap(1)).toBeLessThan(gap(0));
     expect(partModel(pad)!.length).toBeGreaterThan(0);
   });

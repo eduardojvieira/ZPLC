@@ -214,8 +214,13 @@ function potentiometerModel(view: PartView, context: ModelContext): Piece[] {
   return [
     ...controlBox(view, 'housing', context.station),
     piece('collar', rod(0.04, 0.012, 'y'), [0, ENCLOSURE.top + 0.006, 0], 'collar'),
-    piece('knob', rod(POTENTIOMETER.radius, POTENTIOMETER.knob, 'y'), [0, collarTop + POTENTIOMETER.knob / 2, 0], 'head'),
-    piece('pointer', box([0.006, 0.002, 0.03], 0), toward(yaw, 0.015, knobTop + 0.001), 'mark', true, yaw),
+    piece('knob', rod(POTENTIOMETER.radius, POTENTIOMETER.knob, 'y'), [0, collarTop + POTENTIOMETER.knob / 2, 0], 'rubber'),
+    piece('pointer', box([0.008, 0.002, 0.03], 0), toward(yaw, 0.015, knobTop + 0.001), 'mark', true, yaw),
+    // The printed scale on the box around the collar: a tick at the minimum, the middle and the maximum.
+    ...[-1, 0, 1].map((k) => {
+      const a = (k * 3 * Math.PI) / 4;
+      return piece(`tick-${k + 1}`, box([0.004, 0.002, 0.014], 0), toward(a, 0.058, ENCLOSURE.top + 0.001), 'mark', true, a);
+    }),
   ];
 }
 
