@@ -1,12 +1,14 @@
 /**
- * Stations (plan-vis C6): the stacker crane with its mast and its high-bay rack, and the layer palletizer; the machining centre comes
- * in a later unit. The three views of the crane are drawn once each: the rack as uprights and load beams with the cell rails between
+ * Stations (plan-vis C6): the stacker crane with its mast and its high-bay rack, and the layer palletizer, and the machining centre with
+ * its doors. The three views of the crane are drawn once each: the rack as uprights and load beams with the cell rails between
  * them (cells stay open, so stored items show), the mast on a floor rail with a top guide rail, the carriage with its forks.
  *
  * The mast and the crane are posed where they are, so the rails (the aisle) are drawn at the offset of the part's own origin from the
  * pose, which needs the scene part: they stay put in the world while the mast and the carriage move.
  */
 import type { PartView, ScenePart, Vec3 } from '../../contracts';
+import type { Role } from '../look';
+import { STACK_LIGHT } from './operator';
 import {
   box,
   levellingLeg,
@@ -212,6 +214,78 @@ const palletizerHead: ModelBuilder = (view) => {
   return out;
 };
 
+/** The sizes of the machining centre's housing, in metres; its length, height and width are the view's. */
+export const MACHINING = {
+  wall: 0.02,
+  plinth: { height: 0.04, depth: 0.03 },
+  sill: 0.1, // the solid strip of the front under the window
+  header: 0.08, // and over it
+  spindle: { radius: 0.03, length: 0.12, drop: 0.1 }, // drop: how far a running cycle lowers the head
+  table: { height: 0.04, depth: 0.16 },
+  pendant: { size: [0.1, 0.14, 0.04] },
+} as const;
+
+/** The signal role of a stack light lamp, lit or not. */
+const lamp = (colour: 'green' | 'amber' | 'red', on: boolean): Role =>
+  `signal${colour[0]!.toUpperCase()}${colour.slice(1)}${on ? '' : 'Off'}` as Role;
+
+/**
+ * The enclosed machine, open at both ends where the doors are (the housing stays inside the view's length): a back wall, a roof, a
+ * front with a glass window over a sill, the spindle head over the work table, a pendant on the back and a stack light on the roof.
+ * The spindle lowers while a cycle runs; the stack light is green while it runs and amber when done (no fault state is published).
+ */
+const machiningCentre: ModelBuilder = (view) => {
+  const { wall, plinth, sill, header, spindle, table, pendant } = MACHINING;
+  const { segment, off, lit, cap } = STACK_LIGHT;
+  const [length, h, width] = view.pose.size;
+  const [lo, hi] = [-h / 2, h / 2];
+  const front = width / 2 - wall / 2;
+  const busy = view.state.busy === true;
+  const done = !busy && view.state.text === 'done';
+  const glassH = h - sill - header;
+  const head = hi - wall - spindle.length / 2 - (busy ? spindle.drop : 0);
+  const out: Piece[] = [
+    piece('wall-back', box([length, h, wall]), [0, 0, -front], 'painted'),
+    piece('roof', box([length, wall, width]), [0, hi - wall / 2, 0], 'painted'),
+    piece('sill', box([length, sill, wall]), [0, lo + sill / 2, front], 'painted'),
+    piece('header', box([length, header, wall]), [0, hi - header / 2, front], 'painted'),
+    piece('window', box([length - 0.04, glassH, wall / 2]), [0, lo + sill + glassH / 2, front], 'glass'),
+    piece('plinth-front', box([length, plinth.height, plinth.depth]), [0, lo + plinth.height / 2, front - plinth.depth / 2], 'frame'),
+    piece('plinth-back', box([length, plinth.height, plinth.depth]), [0, lo + plinth.height / 2, -front + plinth.depth / 2], 'frame'),
+    piece(
+      'table',
+      box([length / 2, table.height, table.depth]),
+      [0, lo + plinth.height + table.height / 2, -front + table.depth / 2 + wall],
+      'steel',
+    ),
+    piece('spindle', rod(spindle.radius, spindle.length, 'y'), [0, head, -front + 0.1], 'steel'),
+    piece('pendant', box([...pendant.size]), [length / 2 - 0.15, 0.05, -front - wall / 2 - pendant.size[2] / 2], 'housing'),
+  ];
+  for (const [k, colour] of (['green', 'amber', 'red'] as const).entries()) {
+    const on = colour === 'green' ? busy : colour === 'amber' ? done : false;
+    const base = hi + k * segment;
+    out.push(
+      piece(
+        `light-${colour}`,
+        rod(on ? lit : off, segment - cap, 'y'),
+        [length / 2 - 0.1, base + cap + (segment - cap) / 2, front - 0.1],
+        lamp(colour, on),
+      ),
+    );
+  }
+  return out;
+};
+
+/** The door panel with its glass window and a handle on its +x face; it follows the pose the core moves. */
+const machiningDoor: ModelBuilder = (view) => {
+  const [t, h, w] = view.pose.size;
+  return [
+    piece('panel', box(view.pose.size), [0, 0, 0], 'painted'),
+    piece('window', box([t + 0.004, h * 0.4, w * 0.6]), [0, h * 0.15, 0], 'glass'),
+    piece('handle', box([0.02, h * 0.3, 0.02]), [t / 2 + 0.01, -h * 0.1, w * 0.4], 'steel'),
+  ];
+};
+
 export const STATIONS: ModelFamily = {
   'stacker-crane': carriage,
   'stacker-mast': mast,
@@ -221,4 +295,6 @@ export const STATIONS: ModelFamily = {
   'manipulator-beam': palletizerColumn,
   'layer-pusher': palletizerPusher,
   'layer-plate': palletizerPlate,
+  'machining-centre': machiningCentre,
+  'machining-door': machiningDoor,
 };

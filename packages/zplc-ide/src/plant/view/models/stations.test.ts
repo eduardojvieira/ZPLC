@@ -271,7 +271,7 @@ const machiningPart: ScenePart = {
 };
 
 /** The machining centre and its two doors, as the real core publishes them at rest. */
-async function machining(): Promise<PartView[]> {
+async function machining(): Promise<readonly PartView[]> {
   const core = await createPlantCore({ schemaVersion: 1, name: 'mc', parts: [machiningPart], cameras: [] });
   cores.push(core);
   return core.snapshot().parts;
@@ -302,7 +302,7 @@ describe('machining centre models (VIS-014)', () => {
 
   it('VIS-014 the stack light shows running (green) and done (amber); red stays off, as no fault state is published', async () => {
     const centre = (await machining()).find((v) => v.part === 'machining-centre')!;
-    const roles = (state: Record<string, unknown>) =>
+    const roles = (state: PartView['state']) =>
       slotsOf(partModel({ ...centre, state: { ...centre.state, ...state } })!, 'light-').map((p) => p.role);
     expect(roles({ busy: false, text: 'idle' })).toEqual(['signalGreenOff', 'signalAmberOff', 'signalRedOff']);
     expect(roles({ busy: true, text: 'busy 1.0 s' })).toEqual(['signalGreen', 'signalAmberOff', 'signalRedOff']);
