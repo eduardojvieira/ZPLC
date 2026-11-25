@@ -153,7 +153,7 @@ function stackLightModel(view: PartView): Piece[] {
   return [
     ...(rise ? [piece(`${STAND}pole`, rod(pole, rise, 'y'), [0, floor + rise / 2, 0], 'steel')] : []),
     ...(rise ? [piece(`${STAND}base`, box([0.12, 0.012, 0.12], 0.003), [0, floor + 0.006, 0], 'steel')] : []),
-    // A ring (the segment's colour, in the housing look) at the foot of each segment is as wide as a lit one: the footprint is the same lit or not.
+    // A ring at the foot of each segment is as wide as a lit one, so the footprint is the same lit or not.
     ...STACK_COLOURS.flatMap((colour, k) => {
       const base = k * segment;
       const on = view.state[colour] === true;
