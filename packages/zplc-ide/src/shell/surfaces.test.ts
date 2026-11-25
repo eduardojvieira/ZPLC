@@ -89,6 +89,9 @@ describe('surface registry (SHL-001, SHL-002, SHL-004)', () => {
       expect(runCommand(PRIMARY_VIEWS[view].command)).toBe('ran');
       expect(useShellLayout.getState().activityView).toBe(view);
     }
+    expect(ACTIVITY_VIEWS).toContain('plant');
+    expect(PRIMARY_VIEWS.plant.command).toBe('view.showPlant');
+    expect(commandById('view.showPlant').pending).toBeUndefined();
     expect(commandById('view.guide').pending).toBe(true);
   });
 
