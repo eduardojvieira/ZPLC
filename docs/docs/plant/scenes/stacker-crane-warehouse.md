@@ -68,6 +68,7 @@ Keeping a table of occupied cells and a queue of requests, positioning two axes 
 | from 0 ms, within 90000 ms | `fact:cell:Crane1:1:1 = true` |
 | from 0 ms, within 90000 ms | `fact:cell:Crane1:2:1 = true` |
 | from 0 ms, within 90000 ms | `fact:delivered:OutBin = true` |
+| at 90000 ms | `fact:stored:Crane1 = 1`, `fact:delivered:OutBin = 2` |
 | at 90000 ms | `Warehouse.Green = true` |
 
 ## Lessons that use this scene

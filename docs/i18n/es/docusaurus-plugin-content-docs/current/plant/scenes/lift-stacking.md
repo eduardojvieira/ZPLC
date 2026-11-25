@@ -61,6 +61,7 @@ Una secuencia de movimientos del elevador con una cuenta, en la que el programa 
 | siempre | `fact:itemsDropped = false` |
 | desde 0 ms, dentro de 60000 ms | `fact:loaded:crate:0 = true` |
 | desde 0 ms, dentro de 60000 ms | `fact:delivered:CrateBin = true` |
+| a los 60000 ms | `fact:delivered:CrateBin = 6` |
 | a los 60000 ms | `LiftStacking.Green = true` |
 
 ## Lecciones que usan esta escena

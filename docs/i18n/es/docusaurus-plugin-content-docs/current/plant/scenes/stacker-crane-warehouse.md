@@ -68,6 +68,7 @@ Llevar una tabla de celdas ocupadas y una cola de solicitudes, posicionar dos ej
 | desde 0 ms, dentro de 90000 ms | `fact:cell:Crane1:1:1 = true` |
 | desde 0 ms, dentro de 90000 ms | `fact:cell:Crane1:2:1 = true` |
 | desde 0 ms, dentro de 90000 ms | `fact:delivered:OutBin = true` |
+| a los 90000 ms | `fact:stored:Crane1 = 1`, `fact:delivered:OutBin = 2` |
 | a los 90000 ms | `Warehouse.Green = true` |
 
 ## Lecciones que usan esta escena
