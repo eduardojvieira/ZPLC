@@ -50,6 +50,8 @@ export interface CommandDefinition {
   /** It acts on a device or on the running program; it is run by a person, through the same gates as its button. */
   readonly physical?: boolean;
   /** Whether the menu and the palette offer it now; absent means always. The handler keeps its own checks and messages. */
+  /** Declared for a later U3 task; kept out of the menu until that task binds it and removes this flag. */
+  readonly pending?: true;
   readonly enabled?: (state: CommandState) => boolean;
 }
 
@@ -222,18 +224,18 @@ export const COMMANDS = [
   { id: 'view.fitPlantScene', titleKey: 'command.view.fitPlantScene', category: 'view', enabled: open },
 
   // Milestone U3 (plan-u3.md, Task X1a): the ids only; each is bound, and given its `enabled` rule, by the task that owns the behaviour.
-  { id: 'view.guide', titleKey: 'command.view.guide', category: 'view' },
-  { id: 'view.lessonLayout', titleKey: 'command.view.lessonLayout', category: 'view' },
-  { id: 'view.focusCommandBar', titleKey: 'command.view.focusCommandBar', category: 'view' },
-  { id: 'learn.guide.next', titleKey: 'command.learn.guide.next', category: 'help' },
-  { id: 'learn.guide.back', titleKey: 'command.learn.guide.back', category: 'help' },
-  { id: 'learn.check', titleKey: 'command.learn.check', category: 'build' },
-  { id: 'plant.edit', titleKey: 'command.plant.edit', category: 'edit' },
-  { id: 'plant.endEdit', titleKey: 'command.plant.endEdit', category: 'edit' },
-  { id: 'plant.createDeclarations', titleKey: 'command.plant.createDeclarations', category: 'project' },
-  { id: 'edit.undo', titleKey: 'command.edit.undo', category: 'edit' },
-  { id: 'edit.redo', titleKey: 'command.edit.redo', category: 'edit' },
-  { id: 'plant.feedBoard', titleKey: 'command.plant.feedBoard', category: 'online', physical: true },
+  { id: 'view.guide', titleKey: 'command.view.guide', category: 'view', pending: true },
+  { id: 'view.lessonLayout', titleKey: 'command.view.lessonLayout', category: 'view', pending: true },
+  { id: 'view.focusCommandBar', titleKey: 'command.view.focusCommandBar', category: 'view', pending: true },
+  { id: 'learn.guide.next', titleKey: 'command.learn.guide.next', category: 'help', pending: true },
+  { id: 'learn.guide.back', titleKey: 'command.learn.guide.back', category: 'help', pending: true },
+  { id: 'learn.check', titleKey: 'command.learn.check', category: 'build', pending: true },
+  { id: 'plant.edit', titleKey: 'command.plant.edit', category: 'edit', pending: true },
+  { id: 'plant.endEdit', titleKey: 'command.plant.endEdit', category: 'edit', pending: true },
+  { id: 'plant.createDeclarations', titleKey: 'command.plant.createDeclarations', category: 'project', pending: true },
+  { id: 'edit.undo', titleKey: 'command.edit.undo', category: 'edit', pending: true },
+  { id: 'edit.redo', titleKey: 'command.edit.redo', category: 'edit', pending: true },
+  { id: 'plant.feedBoard', titleKey: 'command.plant.feedBoard', category: 'online', physical: true, pending: true },
 ] as const satisfies readonly CommandDefinition[];
 
 export type CommandId = (typeof COMMANDS)[number]['id'];

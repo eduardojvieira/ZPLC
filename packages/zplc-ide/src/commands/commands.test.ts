@@ -160,7 +160,11 @@ describe('application menu from the registry (UX-014, UX-015)', () => {
   it('UX-014 lists every registered command in the menu of its category, once', () => {
     clicks.length = 0;
     for (const item of flat(template).filter((entry) => entry.click !== undefined)) item.click?.({} as never, undefined, {} as never);
-    expect([...clicks].sort()).toEqual(COMMAND_LIST.map((command) => command.id).sort());
+    expect([...clicks].sort()).toEqual(
+      COMMAND_LIST.filter((command) => !command.pending)
+        .map((command) => command.id)
+        .sort(),
+    );
     expect(clicks.every(isCommandId)).toBe(true);
   });
 
