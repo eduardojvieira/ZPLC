@@ -139,9 +139,62 @@ function indicatorModel(view: PartView): Piece[] {
   ];
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+// Stack light: a steel pole from the floor with three segments, red on top, amber, green; a lit one is lamp and wider
+// ---------------------------------------------------------------------------------------------------------------------
+
+export const STACK_LIGHT = { segment: 0.07, off: 0.034, lit: 0.04, cap: 0.006, pole: 0.012 } as const;
+const STACK_COLOURS = ['green', 'amber', 'red'] as const; // bottom to top
+
+function stackLightModel(view: PartView): Piece[] {
+  const { segment, off, lit, cap, pole } = STACK_LIGHT;
+  const floor = -view.pose.p[1];
+  const rise = -floor > MIN_STAND ? -floor : 0;
+  return [
+    ...(rise ? [piece(`${STAND}pole`, rod(pole, rise, 'y'), [0, floor + rise / 2, 0], 'steel')] : []),
+    ...(rise ? [piece(`${STAND}base`, box([0.12, 0.012, 0.12], 0.003), [0, floor + 0.006, 0], 'steel')] : []),
+    // A ring (the segment's colour, in the housing look) at the foot of each segment is as wide as a lit one: the footprint is the same lit or not.
+    ...STACK_COLOURS.flatMap((colour, k) => {
+      const base = k * segment;
+      const on = view.state[colour] === true;
+      return [
+        piece(`ring-${colour}`, rod(lit, cap, 'y'), [0, base + cap / 2, 0], 'housing'),
+        piece(
+          `segment-${colour}`,
+          rod(on ? lit : off, segment - cap, 'y'),
+          [0, base + cap + (segment - cap) / 2, 0],
+          on ? 'lamp' : 'lampOff',
+        ),
+      ];
+    }),
+    piece('cap', rod(lit, cap, 'y'), [0, STACK_COLOURS.length * segment + cap / 2, 0], 'housing'),
+  ];
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Potentiometer: a knob on a control box; a white pointer turns from -135 degrees at the minimum to +135 at the maximum
+// ---------------------------------------------------------------------------------------------------------------------
+
+export const POTENTIOMETER = { sweep: (270 * Math.PI) / 180, knob: 0.03, radius: 0.03 } as const;
+
+function potentiometerModel(view: PartView): Piece[] {
+  const f = typeof view.state.fraction === 'number' ? Math.min(1, Math.max(0, view.state.fraction)) : 0;
+  const yaw = (f - 0.5) * POTENTIOMETER.sweep;
+  const collarTop = ENCLOSURE.top + 0.012;
+  const knobTop = collarTop + POTENTIOMETER.knob;
+  return [
+    ...controlBox(view),
+    piece('collar', rod(0.04, 0.012, 'y'), [0, ENCLOSURE.top + 0.006, 0], 'collar'),
+    piece('knob', rod(POTENTIOMETER.radius, POTENTIOMETER.knob, 'y'), [0, collarTop + POTENTIOMETER.knob / 2, 0], 'head'),
+    piece('pointer', box([0.006, 0.002, 0.03], 0), toward(yaw, 0.015, knobTop + 0.001), 'mark', true, yaw),
+  ];
+}
+
 export const OPERATOR: ModelFamily = {
   'push-button': pushButtonModel,
   'selector-switch': selectorModel,
   'emergency-stop': emergencyStopModel,
   'indicator-light': indicatorModel,
+  'stack-light': stackLightModel,
+  potentiometer: potentiometerModel,
 };
