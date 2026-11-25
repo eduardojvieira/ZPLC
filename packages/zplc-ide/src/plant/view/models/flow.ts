@@ -3,7 +3,8 @@
  * the catalogue step adds here.
  */
 import type { PartView } from '../../contracts';
-import { box, levellingLeg, MIN_STAND, piece, rod, slotted, type ModelFamily, type Piece } from './shared';
+import { catalogue } from '../../core/catalogue';
+import { box, levellingLeg, MIN_STAND, piece, rod, slotted, type ModelContext, type ModelFamily, type Piece } from './shared';
 
 const num = (v: unknown, fallback: number): number => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
 const clamp01 = (x: number): number => Math.min(1, Math.max(0, x));
@@ -82,11 +83,21 @@ function stopBladeModel(view: PartView): Piece[] {
 // moves by the stroke; its pose carries it, so the cylinder and the stand are drawn back by the travel
 // ---------------------------------------------------------------------------------------------------------------------
 
-/** `stroke` is the catalogue default of strokeM: the view carries the fraction of the stroke, not the stroke. */
+/** `stroke` is the last resort of strokeM: the view carries the fraction of the stroke, not the stroke (see `strokeOf`). */
 export const PUSHER = { stroke: 0.6, cylinder: { radius: 0.04, length: 0.35 }, rod: 0.012, gap: 0.05, leg: 0.04, rail: 0.04 } as const;
 
-function pusherModel(view: PartView): Piece[] {
-  const { stroke, cylinder, rod: rodRadius, gap, leg, rail } = PUSHER;
+/** The stroke of a pusher: its scene part's strokeM, else the default the catalogue declares, else `PUSHER.stroke`. */
+function strokeOf(context: ModelContext): number {
+  const set = context.scenePart?.config.strokeM;
+  if (typeof set === 'number' && set > 0) return set;
+  const field = catalogue.get('pusher')?.config.strokeM;
+  // ponytail: a view without a scene part (the scene bounds) draws the default stroke; pass the scene to `snapshotBounds` if that matters.
+  return field?.default !== undefined && typeof field.default === 'number' ? field.default : PUSHER.stroke;
+}
+
+function pusherModel(view: PartView, context: ModelContext): Piece[] {
+  const stroke = strokeOf(context);
+  const { cylinder, rod: rodRadius, gap, leg, rail } = PUSHER;
   const [width, height, thickness] = view.pose.size;
   const travel = clamp01(num(view.state.fraction, 0)) * stroke;
   const floor = -view.pose.p[1];

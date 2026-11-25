@@ -6,7 +6,7 @@
  * Pieces that stand on the floor reach down to y = 0 of the world, so a builder needs the height of its pose: parts only turn
  * about the vertical axis, so the floor is at `-pose.p[1]` in the part's frame.
  */
-import type { PartView, Quat, Vec3 } from '../../contracts';
+import type { PartView, Quat, ScenePart, Vec3 } from '../../contracts';
 import type { ControlStation } from '../controlStations';
 import type { Role } from '../look';
 
@@ -50,6 +50,8 @@ export interface ModelContext {
   mount?: Vec3 | null;
   /** The control station an operator control stands in (`controlStation`), if any: the stand is then the station's one body. */
   station?: ControlStation | null;
+  /** The scene part this view is drawn for, where the renderer has the scene: its config holds what a view does not publish. */
+  scenePart?: ScenePart | null;
 }
 
 export type ModelBuilder = (view: PartView, context: ModelContext) => Piece[];
