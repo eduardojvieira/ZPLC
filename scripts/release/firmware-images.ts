@@ -16,7 +16,7 @@
 // `stage` copies the manifest and the two learner-board images for the installers (REL-025), and `build` runs the
 // west builds on this machine and then the two steps above.
 //
-// Flashing is never done here (AGENTS.md rule 7): the manifest says which image, which checksum and which runner
+// Flashing is never done here (AGENTS.md rule 8): the manifest says which image, which checksum and which runner
 // and address the build itself names; a person starts the flash.
 import { createHash } from 'node:crypto';
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';

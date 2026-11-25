@@ -12,7 +12,7 @@ tags: [how-to, ai, mcp, safety]
 `zplc-mcp` es un servidor local del Model Context Protocol. Permite que un asistente de IA inspeccione un proyecto, lea el código fuente de sus programas, lo compile, ejecute sus pruebas de escenario y lea la evidencia, de modo que el asistente trabaja con lo que dicen la compilación y el simulador y no con una conjetura. Se ejecuta en su computadora y habla con el asistente por la entrada y la salida estándar. No abre ningún puerto de red ni puerto serie.
 
 :::danger El asistente no puede tocar una máquina
-Ninguna herramienta del servidor graba una placa, carga un programa, fuerza un valor, inicia o detiene un dispositivo, abre un puerto serie ni ejecuta un shell (regla 7 de AGENTS.md). Esas acciones quedan en ZPLC, donde las elige una persona. La única herramienta que no es de solo lectura, `firmware_build`, ejecuta una compilación cruzada local y se detiene ahí.
+Ninguna herramienta del servidor graba una placa, carga un programa, fuerza un valor, inicia o detiene un dispositivo, abre un puerto serie ni ejecuta un shell (regla 8 de AGENTS.md). Esas acciones quedan en ZPLC, donde las elige una persona. La única herramienta que no es de solo lectura, `firmware_build`, ejecuta una compilación cruzada local y se detiene ahí.
 :::
 
 ## Qué puede y qué no puede hacer el asistente

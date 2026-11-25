@@ -41,7 +41,7 @@
 | QEMU Cortex-M3 | Yes | `run.sh qemu-m3` | The core suites on a 32-bit ARM target (not the application) | Board behaviour |
 | Application on `native_sim` with the Pico channel map on `gpio_emul` | Yes | `run.sh app-native` (**emulation only**) | The pin side of the hold: outputs are driven to safe through the real HAL path with plant mode on | Hardware |
 | Target build for every catalogued board | Yes | `run.sh size` (seven boards, `west build`, flash and RAM against `tools/firmware-test/size-budget.json`) | The code builds and fits on all seven boards | That it runs |
-| HIL on ESP32-S3-DevKitC-1 and Raspberry Pi Pico | **No** (no `/dev/ttyACM*` or `/dev/ttyUSB*` present, and AGENTS.md rule 7) | Owner, Task E1 commands | Latency per transport, link-loss behaviour, safe pins | Other boards (D-17: they stay at target-build level) |
+| HIL on ESP32-S3-DevKitC-1 and Raspberry Pi Pico | **No** (no `/dev/ttyACM*` or `/dev/ttyUSB*` present, and AGENTS.md rule 8) | Owner, Task E1 commands | Latency per transport, link-loss behaviour, safe pins | Other boards (D-17: they stay at target-build level) |
 
 ## Requirement mapping
 Requirements that M6 does not deliver are in the last table so nothing is silently dropped.

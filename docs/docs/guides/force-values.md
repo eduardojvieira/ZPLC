@@ -14,7 +14,7 @@ A force holds a variable at a value you choose, whatever the program assigns to 
 :::danger Forcing is a human action
 In the simulator a force is harmless. On a controller that is connected to a plant, a force can start a motor. It needs a person with the authority to do it and a site procedure for it.
 
-AI assistants and the MCP server never force a value, on a simulator or on a device (AGENTS.md rule 7). A force always starts from a person's click or a person's command at the console. See [AI, privacy and human review](../ide/ai-privacy.md).
+AI assistants and the MCP server never force a value, on a simulator or on a device (AGENTS.md rule 8). A force always starts from a person's click or a person's command at the console. See [AI, privacy and human review](../ide/ai-privacy.md).
 :::
 
 ## In the simulator

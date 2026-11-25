@@ -2,7 +2,7 @@
 """Plant I/O mode on a board: latency, continuity and the three physical checks (LNK-011, LNK-014, LNK-016).
 
 A PERSON runs this at the bench. It refuses to start unless stdin is a terminal and the person types the board id
-(G7); no agent, no MCP tool and no CI job runs it (AGENTS.md rule 7). It never flashes and never deploys: the person
+(G7); no agent, no MCP tool and no CI job runs it (AGENTS.md rule 8). It never flashes and never deploys: the person
 deploys the echo program first (tools/hil/README.md) and passes the compiled file as --program, whose CRC-32 must be
 the one the board reports.
 

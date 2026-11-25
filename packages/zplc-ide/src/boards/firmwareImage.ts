@@ -3,7 +3,7 @@
  * is, the evidence level of the board and the steps that a person follows to flash it. It is built from the release
  * manifest of the installation (REL-022, read by the main process) and the board the project targets.
  *
- * Studio never flashes (AGENTS.md rule 7: build, flash, deploy and run are separate human actions). Every step below is
+ * Studio never flashes (AGENTS.md rule 8: build, flash, deploy and run are separate human actions). Every step below is
  * text for a person; nothing in this module, or in the card that shows it, copies a file to a board or runs a tool.
  */
 import type { FirmwareEvidenceLevel, FirmwareImage, FirmwareImagesResult } from '../../electron/firmwareImagesProtocol';

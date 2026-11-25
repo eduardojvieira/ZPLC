@@ -1,6 +1,6 @@
 /**
  * The firmware image of the selected board (REL-025): the file, its checksum, where it is and the steps to flash it.
- * It lists and explains. It has no button that writes to a board: a person flashes (AGENTS.md rule 7).
+ * It lists and explains. It has no button that writes to a board: a person flashes (AGENTS.md rule 8).
  */
 import { useEffect, useState } from 'react';
 import { useT } from '../../i18n';

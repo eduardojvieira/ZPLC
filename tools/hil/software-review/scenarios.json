@@ -470,7 +470,7 @@
           "code_paths": [
             "tools/hil/run_chain.py:150 Chain (flash step)",
             "packages/zplc-hil/src/guard.ts:38 confirmPhysicalStep",
-            "AGENTS.md rule 7"
+            "AGENTS.md rule 8"
           ],
           "simulation_evidence": [
             {
