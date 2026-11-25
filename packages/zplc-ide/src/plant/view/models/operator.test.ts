@@ -4,6 +4,7 @@
  */
 import { afterEach, describe, expect, it } from 'bun:test';
 import type { PartView, PlantCore, PlantSceneFile } from '../../contracts';
+import { controlStation } from '../controlStations';
 import { createPlantCore } from '../../core/plantCore';
 import { modelBounds, partModel, pieceExtent } from './index';
 import { beltToSensor, bottom, slot, top } from './models.fixtures';
@@ -213,5 +214,29 @@ describe('numeric display model (VIS-014, F5)', () => {
     expect((await lit(range, 500)).sort()).toEqual(['d0-g', 'd1-g', 'd2-g']);
     const signed = { ...range, min: -10, max: 10 };
     expect((await lit(signed, -5)).sort()).toEqual(['d1-g', 'd2-a', 'd2-c', 'd2-d', 'd2-f', 'd2-g'].sort());
+  });
+
+  it('VIS-014 controls that stand together share one station body instead of a pedestal each', async () => {
+    const pair = (part: string, id: string, x: number) => ({ id, part, name: id, position: [x, 0.5, 0] as [number, number, number], rotationYDeg: 0, config: {} });
+    const scene: PlantSceneFile = {
+      schemaVersion: 1,
+      name: 'station',
+      parts: [pair('push-button', 'a', 0), pair('push-button', 'b', 0.4), pair('push-button', 'far', 5)],
+      cameras: [],
+    };
+    const core = await coreOf(scene);
+    const parts = core.snapshot().parts;
+    const build = (id: string) => partModel(viewOf(core, id), { travel: 0, station: controlStation(viewOf(core, id), parts) })!;
+    const [a, b, far] = [build('a'), build('b'), build('far')];
+    expect(b.filter((p) => isStand(p.slot))).toEqual([]);
+    expect(b.some((p) => p.slot === 'station-body')).toBe(false);
+    expect(far.some((p) => p.slot === 'stand-post')).toBe(true);
+    const body = slot(a, 'station-body');
+    expect(a.filter((p) => isStand(p.slot))).toEqual([]);
+    expect(body.role).toBe('steel');
+    expect(body.at[0] - pieceExtent(body)[0]).toBeLessThan(0);
+    expect(body.at[0] + pieceExtent(body)[0]).toBeGreaterThan(0.4);
+    expect(bottom(slot(a, 'station-plate'))).toBeCloseTo(-0.5, 9);
+    expect(top(body)).toBeCloseTo(bottom(slot(a, 'enclosure')), 9);
   });
 });
