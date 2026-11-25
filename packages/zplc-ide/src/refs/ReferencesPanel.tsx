@@ -5,7 +5,7 @@
 import type { KeyboardEvent } from 'react';
 import { lookUp } from '../commands/bind/find';
 import { useT } from '../i18n';
-import { describeElement } from '../models/sourceElements';
+import { describeElementInUi } from '../models/sourceElements';
 import { isCompileResultCurrent } from '../components/debugSessionState';
 import { inputAddressLabel } from '../runtime/declaredInputs';
 import { listIoMap, outputAddressLabel } from '../runtime/ioMap';
@@ -45,7 +45,7 @@ export function ReferencesPanel() {
       case 'text':
         return t('refs.place.line', { line: place.line });
       case 'element':
-        return describeElement(place.element);
+        return describeElementInUi(place.element);
       case 'table':
         return t('search.table', { name: place.name });
       case 'config':

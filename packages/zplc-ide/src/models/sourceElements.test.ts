@@ -13,7 +13,7 @@ afterEach(() => setLanguage('auto'));
 describe('the place of a diagram element', () => {
   it('reads in the interface language, and stays English for the CLI, MCP and logs', () => {
     setLanguage('es');
-    expect(describeElementInUi("rung:rung_1/cell:0,3")).toBe("Peldaño LD 'rung_1', celda 0,3");
+    expect(describeElementInUi('rung:rung_1/cell:0,3')).toBe("Peldaño LD 'rung_1', celda 0,3");
     expect(describeElementInUi('step:s1')).toBe("Paso SFC 's1'");
     expect(describeElement('rung:rung_1/cell:0,3')).toBe("LD rung 'rung_1', cell 0,3");
     setLanguage('en');
