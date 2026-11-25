@@ -211,7 +211,7 @@ function readout(prefix: string, text: string, cells: number, at: Vec3, h: numbe
 // ---------------------------------------------------------------------------------------------------------------------
 
 /** The beam: a 6 mm line, solid while the sensor detects; while it is clear, a dash every `dash` metres, a quarter of it long. */
-export const SENSOR = { dash: 0.06, beamRadius: 0.006, dashRadius: 0.0018 } as const;
+export const SENSOR = { dash: 0.06, beamRadius: 0.003, dashRadius: 0.0018 } as const;
 
 function sensorModel(view: PartView, context: ModelContext): Piece[] {
   const cues = cuesFor(view);
