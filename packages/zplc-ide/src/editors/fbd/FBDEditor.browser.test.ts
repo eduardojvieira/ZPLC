@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterAll, describe, expect, setDefaultTimeout, test } from 'bun:test';
 import { translatorFor } from '../../i18n';
-import { browserApp, closeBrowserApp, handleCentre, nodeCentre, openDocument, type BrowserApp } from '../../test/browser';
+import { browserApp, closeBrowserApp, handleCentre, openDocument, type BrowserApp } from '../../test/browser';
 
 // VF-007: the function block diagram editor (React Flow) in headless Chromium, with real key and pointer events.
 setDefaultTimeout(180_000);
@@ -18,8 +18,9 @@ interface Diagram {
 const openBlinky = (app: BrowserApp, locale: 'en' | 'es' = 'en') =>
   app.open({ name: 'main.fbd.json', language: 'FBD', content: BLINKY }, locale);
 const select = async (app: BrowserApp, id: string) => {
-  const at = await nodeCentre(app, id);
-  await app.clickAt(at.x, at.y);
+  // `click` waits until the block has stopped moving: measured the moment the node exists, its centre is where the workbench
+  // layout and React Flow's first measurement have not yet put it, and on a slow runner (macOS) the click landed beside it.
+  await app.click(`.react-flow__node[data-id="${id}"]`);
   await app.until(`${id} selected`, `document.querySelector('.react-flow__node[data-id="${id}"]')?.classList.contains('selected')`);
 };
 const selected = (app: BrowserApp): Promise<string[]> =>
