@@ -10,11 +10,12 @@ import { runCommand } from '../bus';
 import type { PaletteSnapshot } from '../palette';
 import { setPreferenceAnchor } from '../preferenceAnchor';
 
-export function buildPaletteSnapshot(locale: Locale): PaletteSnapshot {
+export function buildPaletteSnapshot(locale: Locale, scenePaths: readonly string[] = []): PaletteSnapshot {
   const ide = useIDEStore.getState();
   const sources = useProjectSources.getState();
   return {
     fileTree: ide.fileTree,
+    scenePaths,
     declarations: sources.declarations.flatMap((group) => group.declarations),
     globals: projectGlobalVariables(sources.sources),
     config: ide.projectConfig,
