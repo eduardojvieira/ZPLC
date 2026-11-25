@@ -222,7 +222,7 @@ function sensorModel(view: PartView, context: ModelContext): Piece[] {
   const pieces: Piece[] = [
     piece('housing', box([0.07, 0.048, 0.04], 0.005), [back, 0, 0], 'housing'),
     piece('lens', rod(0.013, 0.004, 'x'), [-0.0005, 0, 0], 'lens'),
-    piece('lamp', rod(0.008, 0.004, 'y'), [back - 0.02, 0.025, 0], lit(detecting)),
+    piece('lamp', box([0.05, 0.004, 0.032], 0.001), [back, 0.026, 0], lit(detecting)), // a lit window over the top of the housing
     ...stand(context.mount, back, back - 0.035, under, -view.pose.p[1]),
   ];
   // The beam: a solid line while the sensor detects, a dashed one while it is clear (VIS-003, VIS-016); fine, like light.
