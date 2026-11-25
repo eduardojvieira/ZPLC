@@ -93,6 +93,12 @@ describe('sensor models (VIS-014)', () => {
     expect(bottom(slot(detecting, 'base'))).toBeCloseTo(-eye.pose.p[1], 9);
   });
 
+  it('VIS-016 the output lamp of a sensor is a lit window over the top of its housing, so detection shows from the first view (2 % of the part box)', async () => {
+    const v = await plant.views();
+    const [x, , z] = pieceExtent(slot(partModel(v['eye-far']!)!, 'lamp'));
+    expect(4 * x * z).toBeGreaterThanOrEqual(0.0015); // m2: at least half of the 0.07 x 0.04 top face
+  });
+
   it('VIS-014 a sensor beside a belt sits on a bracket bolted to the belt frame, with a fine beam and no post to the floor', async () => {
     const v = await plant.views();
     const eye = v['eye-far']!;
