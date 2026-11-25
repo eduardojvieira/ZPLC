@@ -693,6 +693,53 @@ describe('requirement coverage of spec 013', () => {
   });
 });
 
+// Spec 014 (2.1 release quality) is reported like 012 and 013: report only until FRZ-004 makes it gate. It has no plan yet, so
+// every requirement without a check is pending, never uncovered.
+describe('requirement coverage of spec 014', () => {
+  const run = (...args: string[]) =>
+    Bun.spawnSync(['bun', 'tools/ci/requirement-coverage.ts', ...args], { cwd: new URL('../../', import.meta.url).pathname });
+  const text = (result: ReturnType<typeof run>) => result.stdout.toString();
+  const index014 = () =>
+    JSON.parse(readFileSync(new URL('./requirement-index-014.json', import.meta.url), 'utf8')) as Array<{
+      id: string;
+      workstream: string;
+      title: string;
+      level?: string;
+      mapped?: boolean;
+    }>;
+
+  it('the index has 69 requirements in ten workstreams, each with a level', () => {
+    const counts: Record<string, number> = {};
+    for (const { workstream } of index014()) counts[workstream] = (counts[workstream] ?? 0) + 1;
+    expect(index014().length).toBe(69);
+    expect(counts).toEqual({ FRZ: 4, BAR: 7, JRN: 8, REV: 6, AIX: 15, UXV: 9, FIX: 4, OSS: 5, PUB: 5, RCN: 6 });
+    for (const { id, level } of index014()) expect({ id, level: ['MUST', 'SHOULD'].includes(level ?? '') }).toEqual({ id, level: true });
+  });
+
+  it('spec 014 is reported with every prefix and exits 0', () => {
+    const result = run('--spec', '014');
+    expect(result.exitCode).toBe(0);
+    expect(text(result)).toContain('spec 014');
+    for (const prefix of ['FRZ', 'BAR', 'JRN', 'REV', 'AIX', 'UXV', 'FIX', 'OSS', 'PUB', 'RCN']) expect(text(result)).toContain(prefix);
+    expect(text(result)).toMatch(/overall\s+\d+ \/\s+69/);
+    expect(text(result)).toContain('pending');
+  });
+
+  it('a requirement of spec 014 with no check is pending, never uncovered', () => {
+    const result = run('--spec', '014', '--list');
+    expect(result.exitCode).toBe(0);
+    for (const entry of index014().filter((e) => e.mapped === false)) expect(text(result)).not.toContain(`${entry.id} uncovered`);
+    expect(index014().filter((entry) => entry.mapped === undefined)).toEqual([]);
+    expect(text(result)).toContain('FRZ-001 pending');
+  });
+
+  it('spec 014 does not change the output of specs 011, 012 or 013', () => {
+    expect(text(run())).not.toContain('FRZ');
+    expect(text(run('--spec', '013'))).not.toContain('FRZ');
+    expect(run('--check').exitCode).toBe(0);
+  });
+});
+
 describe('the index of spec 013 from the plan mapping table', () => {
   const plan = [
     '### Spec 013 (milestones U0 and U1)',
