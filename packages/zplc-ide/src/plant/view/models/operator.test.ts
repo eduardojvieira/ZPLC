@@ -146,7 +146,8 @@ describe('operator panel models (VIS-014)', () => {
     const pieces = () => partModel(viewOf(core, 'it'))!;
     const off = pieces();
     const segs = ['red', 'amber', 'green'].map((c) => slot(off, `segment-${c}`));
-    expect(segs.map((p) => p.role)).toEqual(['lampOff', 'lampOff', 'lampOff']);
+    // Each segment keeps its own colour, lit or not: a dim cover when off, a coloured light when on.
+    expect(segs.map((p) => p.role)).toEqual(['signalRedOff', 'signalAmberOff', 'signalGreenOff']);
     expect(segs[0]!.at[1]).toBeGreaterThan(segs[1]!.at[1]);
     expect(segs[1]!.at[1]).toBeGreaterThan(segs[2]!.at[1]);
     const bounds = modelBounds(viewOf(core, 'it'))!;
@@ -154,7 +155,7 @@ describe('operator panel models (VIS-014)', () => {
       core.apply({ [`It.${c}`]: true });
       core.advance(5);
       const lit = slot(pieces(), `segment-${c}`);
-      expect(lit.role).toBe('lamp');
+      expect(String(lit.role)).toBe(`signal${c[0]!.toUpperCase()}${c.slice(1)}`);
       expect(pieceExtent(lit)[0]).toBeGreaterThan(pieceExtent(slot(off, `segment-${c}`))[0]);
       const b = modelBounds(viewOf(core, 'it'))!;
       for (const i of [0, 2]) {

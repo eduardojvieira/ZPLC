@@ -77,7 +77,8 @@ export type Skin = 'painted-steel' | 'brushed-metal' | 'rubber-belt' | 'plastic'
 /**
  * What a piece of a composed part is made of; the model builders name roles, never colours. `frame` is the silver anodised aluminium
  * of slotted profiles, the same on every part; `painted` is painted steel in the part's own colour (a machine body); `steel` is the
- * brushed steel of drums, plates and bolts; `rubber` a pad or a tyre; `safety` the yellow enclosure of an emergency stop.
+ * brushed steel of drums, plates and bolts; `rubber` a pad or a tyre; `safety` the yellow enclosure of an emergency stop;
+ * `signal*` the lit and unlit segments of a stack light.
  */
 export type Role =
   | 'frame'
@@ -88,6 +89,12 @@ export type Role =
   | 'mark'
   | 'housing'
   | 'safety'
+  | 'signalRed'
+  | 'signalAmber'
+  | 'signalGreen'
+  | 'signalRedOff'
+  | 'signalAmberOff'
+  | 'signalGreenOff'
   | 'lens'
   | 'lamp'
   | 'lampOff'
@@ -139,6 +146,19 @@ export function roleLook(role: Role, part: string, palette: Palette): RoleLook {
       return surface('plastic', partColour(part, palette), 0.45);
     case 'safety':
       return surface('plastic', tone(0xeab308), 0.45);
+    case 'signalRed':
+      return light(flat ? 0xff0000 : 0xef4444);
+    case 'signalAmber':
+      return light(flat ? 0xffaa00 : 0xf59e0b);
+    case 'signalGreen':
+      return light(flat ? 0x00ff00 : 0x22c55e);
+    // An unlit segment still shows its coloured cover, dimmed, as a real stack light does.
+    case 'signalRedOff':
+      return surface(null, tone(0x7f1d1d), 0.35);
+    case 'signalAmberOff':
+      return surface(null, tone(0x78350f), 0.35);
+    case 'signalGreenOff':
+      return surface(null, tone(0x14532d), 0.35);
     case 'lens':
       return surface(null, tone(0x0b0f14), 0.12);
     case 'lamp':

@@ -145,6 +145,11 @@ function indicatorModel(view: PartView): Piece[] {
 
 export const STACK_LIGHT = { segment: 0.07, off: 0.034, lit: 0.04, cap: 0.006, pole: 0.012 } as const;
 const STACK_COLOURS = ['green', 'amber', 'red'] as const; // bottom to top
+const SIGNAL_ROLE: Record<(typeof STACK_COLOURS)[number], readonly [Role, Role]> = {
+  green: ['signalGreen', 'signalGreenOff'],
+  amber: ['signalAmber', 'signalAmberOff'],
+  red: ['signalRed', 'signalRedOff'],
+};
 
 function stackLightModel(view: PartView): Piece[] {
   const { segment, off, lit, cap, pole } = STACK_LIGHT;
@@ -163,7 +168,7 @@ function stackLightModel(view: PartView): Piece[] {
           `segment-${colour}`,
           rod(on ? lit : off, segment - cap, 'y'),
           [0, base + cap + (segment - cap) / 2, 0],
-          on ? 'lamp' : 'lampOff',
+          SIGNAL_ROLE[colour][on ? 0 : 1],
         ),
       ];
     }),
