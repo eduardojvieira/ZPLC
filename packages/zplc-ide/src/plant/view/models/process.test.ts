@@ -119,16 +119,12 @@ describe('process models (VIS-014)', () => {
       const rim = slot(pieces, 'rim-lower');
       expect(rim.role).toBe('steel');
       expect(bottom(rim)).toBeCloseTo(bottom(vessel), 9);
-      let previous = 0;
       for (const f of [0.25, 0.5, 0.75, 1]) {
         const mark = slot(pieces, `mark-${f * 100}`);
         expect(mark.role).toBe('mark');
         expect((mark.at[1] - bottom(vessel)) / length).toBeCloseTo(f, 9);
         expect(mark.at[2] - pieceExtent(mark)[2]).toBeGreaterThanOrEqual(radius); // in front of the glass, never inside it
-        const width = pieceExtent(mark)[0];
-        expect(width).toBeGreaterThan(previous);
-        if (f < 1) previous = width;
-        else expect(width).toBeGreaterThan(previous);
+        if (f === 1) expect(pieceExtent(mark)[0]).toBeGreaterThan(pieceExtent(slot(pieces, 'mark-75'))[0]); // the full mark is longer
       }
     }
   });

@@ -4,7 +4,7 @@
  *
  * The tank is a glass vessel inscribed in the pose box on four levelling legs, with a dished cap, an inlet pipe into the cap and
  * an outlet pipe near the bottom, each with a valve. A composed model replaces the renderer's single pose box and its liquid box, so the
- * vessel is `glass` (clear, 0.3 opacity) with the `liquid` column inside it, and an overflow ring of liquid shows at the rim.
+ * vessel is `glass` (clear, 0.45 opacity, with a steel rim at its foot and level marks on its front) with the `liquid` column inside it, and an overflow ring of liquid shows at the rim.
  * The valves' openings are not published, so a valve looks the same open or shut. Pieces stay within the pose box except the pipe stubs,
  * which reach `STUB` m beyond the vessel along x.
  */
@@ -66,6 +66,10 @@ function tankModel(view: PartView, context: ModelContext): Piece[] {
     piece('vessel', rod(r, body, 'y'), [0, bodyBottom + body / 2, 0], 'glass'),
     piece('cap-lower', rod(r, cap / 2, 'y'), [0, bodyTop + cap / 4, 0], 'steel'),
     piece('cap-upper', rod(0.6 * r, cap / 2, 'y'), [0, bodyTop + (3 * cap) / 4, 0], 'steel'),
+    piece('rim-lower', rod(r + 0.006, cap / 2, 'y'), [0, bodyBottom + cap / 4, 0], 'steel'),
+    ...[0.25, 0.5, 0.75, 1].map((f) =>
+      piece(`mark-${f * 100}`, box([f === 1 ? 0.16 : 0.1, 0.006, 0.006], 0.001), [0, bodyBottom + f * body, r + 0.004], 'mark'),
+    ),
     pipe('inlet-pipe', -end, -0.3 * r, inletY),
     pipe('outlet-pipe', r - 0.01, end, outletY),
     ...valve('inlet', -(r + 0.09), inletY, numeric),
