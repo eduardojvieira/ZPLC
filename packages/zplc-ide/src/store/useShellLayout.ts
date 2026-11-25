@@ -12,7 +12,7 @@ import { useIDEStore } from './useIDEStore';
 export const SHELL_STATE_VERSION = 1;
 export const SHELL_STATE_KEY = 'zplc-ide.shell';
 
-export const ACTIVITY_VIEWS = ['project', 'search', 'tests', 'learn'] as const;
+export const ACTIVITY_VIEWS = ['project', 'search', 'tests', 'plant', 'learn'] as const;
 export type ActivityView = (typeof ACTIVITY_VIEWS)[number];
 export const NAVIGATOR_MODES = ['objects', 'files'] as const;
 export type NavigatorMode = (typeof NAVIGATOR_MODES)[number];

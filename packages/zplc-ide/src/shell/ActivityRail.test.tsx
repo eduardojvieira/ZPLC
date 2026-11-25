@@ -4,15 +4,23 @@ import { COMMANDS } from '../commands/registry';
 import { auditMarkup } from '../ui/audit';
 import { ActivityRail } from './ActivityRail';
 
-const render = (active: 'project' | 'search' | 'tests' | 'learn', density: 'regular' | 'compact') =>
+const render = (active: 'project' | 'search' | 'tests' | 'plant' | 'learn', density: 'regular' | 'compact') =>
   renderToStaticMarkup(<ActivityRail active={active} density={density} onSelect={() => undefined} />);
 
 describe('activity rail (UX-011)', () => {
   it('UX-011 offers Project, Search, Tests and Learn as named buttons, in that order', () => {
     const out = render('project', 'regular');
     const names = [...out.matchAll(/<button[^>]*aria-label="([^"]+)"/g)].map((match) => match[1]);
-    expect(names).toEqual(['Project', 'Search', 'Tests', 'Learn']);
+    expect(names).toEqual(['Project', 'Search', 'Tests', 'Plant', 'Learn']);
     expect(auditMarkup(out)).toEqual([]);
+  });
+
+  it('SHL-005 the Plant activity is on the rail with a title and a command', () => {
+    const out = render('project', 'regular');
+    expect(out).toMatch(/<button[^>]*aria-label="Plant"[^>]*>/);
+    expect(out).toContain('data-activity="plant"');
+    expect(out).toContain('data-command="view.showPlant"');
+    expect(COMMANDS.find((command) => command.id === 'view.showPlant')).toBeDefined();
   });
 
   it('UX-011 marks the selected activity with aria-current and a data mark that the stylesheet draws as a bar, not by colour alone', () => {

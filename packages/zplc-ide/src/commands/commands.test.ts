@@ -469,6 +469,7 @@ const U3_COMMANDS = {
   'edit.undo': 'edit',
   'edit.redo': 'edit',
   'plant.feedBoard': 'online',
+  'view.showPlant': 'view', // bound by X1b: the Plant activity of the rail
 } as const;
 
 describe('milestone U3 command contract (FND-002)', () => {
@@ -487,7 +488,11 @@ describe('milestone U3 command contract (FND-002)', () => {
 
   it('FND-002 a command declared for a later task stays out of the menu until it is bound', () => {
     const pending = COMMAND_LIST.filter((command) => command.pending).map((command) => command.id);
-    expect(pending.sort()).toEqual(Object.keys(U3_COMMANDS).sort());
+    expect(pending.sort()).toEqual(
+      Object.keys(U3_COMMANDS)
+        .filter((id) => id !== 'view.showPlant')
+        .sort(),
+    );
     const listed = menuCommands.map((command) => command.id);
     for (const id of pending) expect([id, listed.includes(id)]).toEqual([id, false]);
   });

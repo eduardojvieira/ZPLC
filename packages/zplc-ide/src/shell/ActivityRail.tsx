@@ -1,10 +1,10 @@
 /**
- * The activity rail (UX-011): Project, Search, Tests and Learn, as icon buttons with an accessible name and a tooltip.
+ * The activity rail (UX-011): Project, Search, Tests, Plant and Learn, as icon buttons with an accessible name and a tooltip.
  * Selecting one swaps the primary sidebar. The selected one is marked by a bar at its edge, a filled background and
  * `aria-current`, not by its colour alone; in the compact shell (UX-023) the labels go and the icons stay.
  */
 import type { ReactNode } from 'react';
-import { BookOpen, FlaskConical, FolderOpen, Search } from 'lucide-react';
+import { BookOpen, Factory, FlaskConical, FolderOpen, Search } from 'lucide-react';
 import { useT, type MessageKey } from '../i18n';
 import { withShortcut } from '../commands/shortcutLabels';
 import type { CommandId } from '../commands/registry';
@@ -23,6 +23,7 @@ const ACTIVITIES: readonly ActivitySpec[] = [
   { view: 'project', titleKey: 'shell.activity.project', icon: <FolderOpen size={20} />, command: 'view.showProject' },
   { view: 'search', titleKey: 'shell.activity.search', icon: <Search size={20} />, command: 'view.showSearch' },
   { view: 'tests', titleKey: 'shell.activity.tests', icon: <FlaskConical size={20} />, command: 'view.tests' },
+  { view: 'plant', titleKey: 'shell.activity.plant', icon: <Factory size={20} />, command: 'view.showPlant' },
   { view: 'learn', titleKey: 'shell.activity.learn', icon: <BookOpen size={20} />, command: 'view.showLearn' },
 ];
 

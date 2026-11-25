@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { useIDEStore } from '../../store/useIDEStore';
 import { t } from '../../i18n';
 import { useNotifications } from '../../store/notifications';
-import { resetLayout, useShellLayout } from '../../store/useShellLayout';
+import { resetLayout, useShellLayout, type ActivityView } from '../../store/useShellLayout';
 import type { ConsoleTab } from '../../types';
 import { bindCommands } from '../bus';
 
@@ -23,7 +23,7 @@ export const showPanel = (tab: ConsoleTab) => (): void => {
   focusSoon(`#console-tab-${tab}`);
 };
 
-export const showActivity = (view: 'project' | 'search' | 'learn' | 'tests'): void => {
+export const showActivity = (view: ActivityView): void => {
   useShellLayout.getState().showActivity(view);
   focusSoon(`[data-activity="${view}"]`);
 };
