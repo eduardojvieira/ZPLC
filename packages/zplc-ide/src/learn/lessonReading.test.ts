@@ -123,7 +123,9 @@ describe('a lesson package with a reading page (LRN-042)', () => {
       writeFileSync(join(directory, 'images', 'dot.es.png'), bytes);
     };
     const [problem] = pair(wider);
-    expect(problem).toMatch(/^first-blink-simulation\/images\/dot\.en\.png and images\/dot\.es\.png: have different sizes \(\d+ x \d+ and \d+ x \d+\)$/);
+    expect(problem).toMatch(
+      /^first-blink-simulation\/images\/dot\.en\.png and images\/dot\.es\.png: have different sizes \(\d+ x \d+ and \d+ x \d+\)$/,
+    );
     // a file without its pair
     expect(pair((directory) => rmSync(join(directory, 'images', 'dot.es.png')))).toEqual([
       `${LESSON}/reading.es.md: "images/dot.es.png" is not in the package`,

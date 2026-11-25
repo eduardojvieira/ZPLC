@@ -729,7 +729,10 @@ export interface ReadingChecked {
 export function checkReading(source: ReadingSource, scenario: ScenarioFile): ReadingChecked {
   const problems: string[] = [];
   const expanded = { en: '', es: '' };
-  const walks: Record<LessonLocale, ReadingWalk> = { en: { directives: [], images: [], alts: {} }, es: { directives: [], images: [], alts: {} } };
+  const walks: Record<LessonLocale, ReadingWalk> = {
+    en: { directives: [], images: [], alts: {} },
+    es: { directives: [], images: [], alts: {} },
+  };
   const shapes: Partial<Record<LessonLocale, string>> = {};
   for (const locale of LESSON_LOCALES) {
     const file = `reading.${locale}.md`;
