@@ -2,7 +2,7 @@
  * The two sidebars of the shell (UX-011): the primary one swaps its view with the activity rail, the secondary one holds one of its views
  * at a time (SHL-008).
  */
-import { lazy, Suspense, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useT } from '../i18n';
 import { useLearnUi } from '../learn/learnUi';
 import { useIDEStore } from '../store/useIDEStore';
@@ -11,13 +11,8 @@ import { lessonSurface } from './shellRouting';
 import { useShellDensity } from './shellDensity';
 import { useAssistantProvider, useSecondaryView, type SecondaryView } from './useSelection';
 import { ErrorBoundary } from '../components/ErrorBoundary';
-import { LearnPanel } from '../components/LearnPanel';
-import { ProjectExplorer } from '../components/ProjectExplorer';
-import { WorkbenchInspector } from '../components/WorkbenchInspector';
 import { useShellLayout, type ActivityView } from '../store/useShellLayout';
-import { useWorkspaceTestResult } from './workspaceTestResult';
-import { SearchView } from './SearchView';
-import { TestsView } from './TestsView';
+import { PRIMARY_VIEWS, SECONDARY_VIEWS } from './views';
 
 function SidebarFrame({
   kind,
@@ -51,25 +46,9 @@ function SidebarFrame({
   );
 }
 
-const TITLE_KEYS = {
-  project: 'shell.activity.project',
-  search: 'shell.activity.search',
-  tests: 'shell.activity.tests',
-  learn: 'shell.activity.learn',
-} as const;
-
 function ActivityBody({ view }: { view: ActivityView }) {
-  const presentation = useWorkspaceTestResult((state) => state.presentation);
-  switch (view) {
-    case 'project':
-      return <ProjectExplorer />;
-    case 'search':
-      return <SearchView />;
-    case 'tests':
-      return <TestsView />;
-    case 'learn':
-      return <LearnPanel workspaceTestPresentation={presentation} />;
-  }
+  const { Body } = PRIMARY_VIEWS[view];
+  return <Body />;
 }
 
 /**
@@ -92,24 +71,9 @@ function useShownSecondaryView(): { shown: SecondaryView; available: SecondaryVi
   return { shown: chosen ?? (lesson ? 'lesson' : 'inspector'), available };
 }
 
-// A chunk of its own: the Assistant holds the review panels and, through them, Monaco, which the Welcome screen must not load (IDE-015).
-const AssistantView = lazy(() => import('../components/AssistantView').then((module) => ({ default: module.AssistantView })));
-
-const VIEW_KEYS = {
-  lesson: 'shell.secondary.lesson',
-  inspector: 'shell.secondary.inspector',
-  assistant: 'shell.secondary.assistant',
-} as const;
-
 function SecondaryBody({ view }: { view: SecondaryView }) {
-  const presentation = useWorkspaceTestResult((state) => state.presentation);
-  if (view === 'lesson') return <LearnPanel workspaceTestPresentation={presentation} />;
-  if (view !== 'assistant') return <WorkbenchInspector />;
-  return (
-    <Suspense fallback={null}>
-      <AssistantView />
-    </Suspense>
-  );
+  const { Body } = SECONDARY_VIEWS[view];
+  return <Body />;
 }
 
 function SecondarySwitch({ shown, available, label }: { shown: SecondaryView; available: SecondaryView[]; label: string }) {
@@ -122,7 +86,7 @@ function SecondarySwitch({ shown, available, label }: { shown: SecondaryView; av
         label={label}
         value={shown}
         onValueChange={(next) => show(next as SecondaryView)}
-        options={available.map((value) => ({ value, label: t(VIEW_KEYS[value]) }))}
+        options={available.map((value) => ({ value, label: t(SECONDARY_VIEWS[value].titleKey) }))}
       />
     </div>
   );
@@ -135,7 +99,7 @@ export function PrimarySidebar() {
   const offered = useSecondaryView((state) => state.inPrimary) && compact;
   const setInPrimary = useSecondaryView((state) => state.setInPrimary);
   const { shown, available } = useShownSecondaryView();
-  const title = offered ? t(VIEW_KEYS[shown]) : t(TITLE_KEYS[view]);
+  const title = offered ? t(SECONDARY_VIEWS[shown].titleKey) : t(PRIMARY_VIEWS[view].titleKey);
   return (
     <SidebarFrame kind="primary" label={t('shell.primary.label')} title={title}>
       {compact && (
@@ -145,8 +109,8 @@ export function PrimarySidebar() {
             value={offered ? 'secondary' : 'primary'}
             onValueChange={(next) => setInPrimary(next === 'secondary')}
             options={[
-              { value: 'primary', label: t(TITLE_KEYS[view]) },
-              { value: 'secondary', label: t(VIEW_KEYS[shown]) },
+              { value: 'primary', label: t(PRIMARY_VIEWS[view].titleKey) },
+              { value: 'secondary', label: t(SECONDARY_VIEWS[shown].titleKey) },
             ]}
           />
         </div>
@@ -167,7 +131,7 @@ export function SecondarySidebar() {
     void refreshAvailability();
   }, [refreshAvailability]);
   return (
-    <SidebarFrame kind="secondary" label={t('shell.secondary.label')} title={t(VIEW_KEYS[shown])}>
+    <SidebarFrame kind="secondary" label={t('shell.secondary.label')} title={t(SECONDARY_VIEWS[shown].titleKey)}>
       <SecondarySwitch shown={shown} available={available} label={t('shell.secondary.view')} />
       <ErrorBoundary region="Sidebar" resetKey={shown}>
         <SecondaryBody view={shown} />

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'bun:test';
 import { createElement } from 'react';
-import { setupDom } from '../test/dom';
+import { setupDom, stubMonaco } from '../test/dom';
 import { en } from '../i18n/en';
 import { es } from '../i18n/es';
 import type { ConsoleTab } from '../types';
@@ -8,6 +8,7 @@ import type { Region } from './surfaces';
 
 const dom = await setupDom();
 await (await import('../test/dom')).stubProjectLoader();
+await stubMonaco();
 const { useIDEStore } = await import('../store/useIDEStore');
 const { CONFIG_EDITOR_KINDS } = await import('../navigator/configEditors');
 const { getCommandState, listedCommands, resetCommandsForTest, runCommand } = await import('../commands/bus');
@@ -19,6 +20,10 @@ const { useReviewDocument } = await import('../store/useReviewDocument');
 const { usePreferencesDocument } = await import('../store/usePreferencesDocument');
 const { useShellCommands } = await import('../commands/useCommandHost');
 const { useProjectTests } = await import('../projectTests/useProjectTests');
+const { useLearnUi } = await import('../learn/learnUi');
+const { useAssistantProvider, useSecondaryView } = await import('./useSelection');
+const { PRIMARY_VIEWS, SECONDARY_VIEWS } = await import('./views');
+const { SecondarySidebar } = await import('./Sidebars');
 
 const REGIONS: readonly Region[] = ['commandBar', 'activity', 'editor', 'secondary', 'results', 'status', 'dialog'];
 
@@ -67,6 +72,49 @@ describe('surface registry (SHL-001, SHL-002, SHL-004)', () => {
     for (const id of ['secondary.inspector', 'editor.settings', 'editor.learn', 'editor.plant', 'dialog.palette', 'dialog.shortcuts']) {
       expect(ids).toContain(id);
     }
+  });
+
+  it('SHL-002 every surface of the table has a command and the command opens it', () => {
+    const entries = [...Object.values(PRIMARY_VIEWS), ...Object.values(SECONDARY_VIEWS)];
+    expect(entries.length).toBe(ACTIVITY_VIEWS.length + 3);
+    for (const entry of entries) {
+      const surface = SURFACES.find((candidate) => candidate.id === entry.surface);
+      expect([entry.surface, surface?.command, surface?.titleKey]).toEqual([entry.surface, entry.command, entry.titleKey]);
+      expect(isCommandId(entry.command)).toBe(true);
+    }
+    // the commands that are not pending open their view; view.guide is declared and gets its handler with the Guide (G1)
+    dom.render(createElement(Host));
+    for (const view of ACTIVITY_VIEWS) {
+      useShellLayout.setState({ activityView: view === 'project' ? 'search' : 'project' });
+      expect(runCommand(PRIMARY_VIEWS[view].command)).toBe('ran');
+      expect(useShellLayout.getState().activityView).toBe(view);
+    }
+    expect(commandById('view.guide').pending).toBe(true);
+  });
+
+  it('GDE-001 with a lesson project open the lesson is the Guide of the secondary sidebar on every activity, Learn included', () => {
+    useLearnUi.setState({ workspace: { lessonId: 'x', session: useIDEStore.getState().projectSession } } as never);
+    for (const view of ACTIVITY_VIEWS) {
+      useShellLayout.setState({ activityView: view });
+      const { unmount } = dom.render(createElement(SecondarySidebar));
+      const title = dom.screen.getByRole('complementary', { name: dom.t('shell.secondary.label') }).querySelector('h2');
+      expect([view, title?.textContent]).toEqual([view, dom.t('shell.secondary.lesson')]);
+      unmount();
+    }
+    useLearnUi.setState({ workspace: null });
+    useShellLayout.setState({ activityView: 'project' });
+  });
+
+  it('SHL-008 the secondary sidebar shows one view at a time', () => {
+    useAssistantProvider.setState({ available: true, refresh: async () => {} });
+    useSecondaryView.getState().show('assistant');
+    dom.render(createElement(SecondarySidebar));
+    const frame = dom.screen.getByRole('complementary', { name: dom.t('shell.secondary.label') });
+    expect(frame.querySelector(':scope > h2')?.textContent).toBe(dom.t('shell.secondary.assistant'));
+    const inspector = dom.screen.queryByRole('complementary', { name: dom.t('workbench.inspector.region') });
+    useSecondaryView.setState({ choice: null, inPrimary: false });
+    useAssistantProvider.setState({ available: false });
+    expect(inspector).toBeNull();
   });
 
   it('SHL-003 the results panel registry lists Problems, Output, Test results, Watch, Trace and the conditional Terminal', () => {
