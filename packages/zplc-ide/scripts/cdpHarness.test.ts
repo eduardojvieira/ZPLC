@@ -15,6 +15,9 @@ for (const platform of ['linux', 'darwin'] as const) {
     const spawner = (() => calls.push('spawned')) as never;
     killTree(fake(calls), 'SIGTERM', platform, spawner);
     killTree(fake(calls), 'SIGKILL', platform, spawner);
-    expect(calls).toEqual([['kill', 'SIGTERM'], ['kill', 'SIGKILL']]);
+    expect(calls).toEqual([
+      ['kill', 'SIGTERM'],
+      ['kill', 'SIGKILL'],
+    ]);
   });
 }
