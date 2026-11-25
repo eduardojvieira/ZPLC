@@ -5,9 +5,9 @@
 import { afterEach, describe, expect, it } from 'bun:test';
 import type { PartView, PlantCore, PlantSceneFile } from '../../contracts';
 import { createPlantCore } from '../../core/plantCore';
-import { partModel, pieceExtent } from './index';
+import { modelBounds, partModel, pieceExtent } from './index';
 import { beltToSensor, bottom, slot, top } from './models.fixtures';
-import { isStand, OPERATOR, PUSH_BUTTON } from './operator';
+import { EMERGENCY_STOP, isStand, OPERATOR, PUSH_BUTTON } from './operator';
 
 const plant = beltToSensor();
 
@@ -27,11 +27,15 @@ const lone = (part: string, config: Record<string, number | string> = {}, y = 0.
   parts: [{ id: 'it', part, name: 'It', position: [0, y, 0], rotationYDeg: 0, config }],
   cameras: [],
 });
+const twice = (pieces: readonly { at: unknown; shape: unknown; yaw: number }[]) => {
+  const keys = pieces.map((p) => JSON.stringify([p.at, p.shape, p.yaw]));
+  return keys.filter((k, i) => keys.indexOf(k) !== i);
+};
 const deg = (rad: number) => (rad * 180) / Math.PI;
 
 describe('operator panel models (VIS-014)', () => {
-  it('PRT-009 the operator panel family draws the push button and the selector switch', () => {
-    expect(Object.keys(OPERATOR)).toEqual(['push-button', 'selector-switch']);
+  it('PRT-009 the operator panel family draws the four operator parts', () => {
+    expect(Object.keys(OPERATOR)).toEqual(['push-button', 'selector-switch', 'emergency-stop', 'indicator-light']);
   });
 
   it('VIS-016 the head of a pressed push button travels into its collar', async () => {
@@ -92,5 +96,41 @@ describe('operator panel models (VIS-014)', () => {
       expect(yaws.at(-1)!).toBeCloseTo(-45, 9);
       for (const m of marks) expect(Math.atan2(-m.at[0], -m.at[2])).toBeCloseTo(m.yaw, 9);
     }
+  });
+
+  it('VIS-016 the emergency stop is modelled; latched, its mushroom head sits lower by its travel, not only another colour', async () => {
+    expect(Object.keys(OPERATOR)).toContain('emergency-stop');
+    const core = await coreOf(lone('emergency-stop'));
+    const pieces = () => partModel(viewOf(core, 'it'))!;
+    const up = slot(pieces(), 'head');
+    const upBounds = modelBounds(viewOf(core, 'it'))!;
+    core.operate('It.pressed', true);
+    core.advance(5);
+    const down = slot(pieces(), 'head');
+    expect(up.at[1] - down.at[1]).toBeCloseTo(EMERGENCY_STOP.travel, 9);
+    expect(up.role).toBe(down.role);
+    // The footprint of the model does not change with the state.
+    const downBounds = modelBounds(viewOf(core, 'it'))!;
+    for (const i of [0, 2]) {
+      expect(downBounds.min[i]!).toBeCloseTo(upBounds.min[i]!, 9);
+      expect(downBounds.max[i]!).toBeCloseTo(upBounds.max[i]!, 9);
+    }
+  });
+
+  it('VIS-016 a lit indicator light adds a halo behind its lens and lights the lens; unlit it has neither', async () => {
+    expect(Object.keys(OPERATOR)).toContain('indicator-light');
+    const core = await coreOf(lone('indicator-light'));
+    const pieces = () => partModel(viewOf(core, 'it'))!;
+    const unlit = pieces();
+    expect(unlit.some((p) => p.slot === 'halo')).toBe(false);
+    expect(slot(unlit, 'lens').role).toBe('lampOff');
+    core.apply({ 'It.lit': true });
+    core.advance(5);
+    const lit = pieces();
+    expect(lit.length).toBe(unlit.length + 1);
+    expect(slot(lit, 'halo').role).toBe('lamp');
+    expect(slot(lit, 'lens').role).toBe('lamp');
+    expect(pieceExtent(slot(lit, 'halo'))[0]).toBeGreaterThan(pieceExtent(slot(lit, 'lens'))[0]);
+    expect(twice(lit)).toEqual([]);
   });
 });
