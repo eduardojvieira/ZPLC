@@ -530,6 +530,20 @@ describe('the plant panel (VIS-001, VIS-006, VIS-010, PLS-003, PLS-004, PLS-010)
     },
   );
 
+  it('VIS-002 the plant toolbar keeps the place of Reset plant and Edit scene when the scene becomes ready', async () => {
+    const r = rig();
+    dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+    const toolbar = () => document.querySelector('[role="toolbar"]')!;
+    const place = (selector: string) => [...toolbar().children].findIndex((child) => child.matches(selector) || child.querySelector(selector));
+    const before = (selector: string) => [...toolbar().children].slice(0, place(selector));
+    expect(document.querySelector('[data-command="view.fitPlantScene"]')).toBeNull();
+    const reset = [place('[data-plant-reset]'), before('[data-plant-reset]')];
+    const edit = [place('[data-plant-edit-scene]'), before('[data-plant-edit-scene]')];
+    await dom.waitFor(() => expect(document.querySelector('[data-command="view.fitPlantScene"]')).toBeTruthy());
+    expect([place('[data-plant-reset]'), before('[data-plant-reset]')]).toEqual(reset);
+    expect([place('[data-plant-edit-scene]'), before('[data-plant-edit-scene]')]).toEqual(edit);
+  });
+
   it('VIS-002 the keyboard moves the camera and the preset chooser sets a preset', async () => {
     const r = rig();
     dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
