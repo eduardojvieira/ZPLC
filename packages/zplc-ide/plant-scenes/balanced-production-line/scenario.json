@@ -32,6 +32,7 @@
         "fact:delivered:BaseBin": true
       }
     },
+    { "kind": "AT", "atMs": 80000, "condition": { "fact:produced:MachineA": 4, "fact:produced:MachineB": 4, "fact:delivered:LidBin": 4, "fact:delivered:BaseBin": 4 } },
     { "kind": "AT", "atMs": 80000, "condition": { "ProductionLine.Green": true } }
   ]
 }

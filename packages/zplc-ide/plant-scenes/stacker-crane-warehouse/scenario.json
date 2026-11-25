@@ -22,6 +22,7 @@
     { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 90000, "condition": { "fact:cell:Crane1:1:1": true } },
     { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 90000, "condition": { "fact:cell:Crane1:2:1": true } },
     { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 90000, "condition": { "fact:delivered:OutBin": true } },
+    { "kind": "AT", "atMs": 90000, "condition": { "fact:stored:Crane1": 1, "fact:delivered:OutBin": 2 } },
     { "kind": "AT", "atMs": 90000, "condition": { "Warehouse.Green": true } }
   ]
 }
