@@ -27,7 +27,7 @@ import { createPlantCore } from '../plant/core/plantCore';
 import { compileScenario, runScenario } from '../test-engine';
 import { resolveProgramSource } from '../utils/programSourceResolution';
 import { loadSceneContext, sceneBindingProblem } from './sceneRun';
-import { gradeRecordOf, type TraceSample } from './gradeRecord';
+import { gradeRecordOf, type ObservedAssertion, type TraceSample } from './gradeRecord';
 import { parseScenarioFile, type LessonIndexEntry } from './lessonPackage';
 
 /**
@@ -114,7 +114,7 @@ function compileLessonProject(workspace: WorkspaceProject): {
 }
 
 /** What a run of a lesson hands the grade record: either a finished run, or the evidence of why there is none. */
-type LessonRunAssertions = Array<{ kind: string; passed: boolean; atMs?: number }>;
+type LessonRunAssertions = Array<{ kind: string; passed: boolean; atMs?: number; checks?: ObservedAssertion['checks'] }>;
 type LessonRun =
   | { finished: false; evidence: ToolEvidence }
   | {

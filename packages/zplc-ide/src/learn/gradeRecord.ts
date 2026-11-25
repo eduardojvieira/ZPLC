@@ -12,6 +12,8 @@ export interface ObservedAssertion {
   kind: string;
   passed: boolean;
   atMs?: number;
+  /** The numeric and boolean checks the engine reports on a failed assertion. */
+  checks?: ReadonlyArray<{ signal: string; expected: boolean | NumericExpect; observed?: boolean | number }>;
 }
 export interface TraceSample {
   atMs: number;
@@ -67,14 +69,20 @@ export function failedAssertionsOf(
     const onTimeline = atMs !== null && atMs % scenario.tickMs === 0 && atMs <= scenario.durationMs;
     const cursor = onTimeline ? atMs / scenario.tickMs : -1;
     const sample = onTimeline ? trace.find((item) => item.atMs === atMs) : undefined;
-    const observed: Record<string, boolean | null> = {};
+    const observed: Record<string, boolean | number | null> = {};
     for (const signal of Object.keys(expected))
       observed[signal] = sample && typeof sample.outputs[signal] === 'boolean' ? sample.outputs[signal]! : null;
+    const required: Record<string, boolean | NumericExpect> = { ...expected };
+    for (const check of assertion.checks ?? []) {
+      if (typeof check.expected === 'boolean') continue;
+      required[check.signal] = check.expected;
+      observed[check.signal] = typeof check.observed === 'number' ? check.observed : null;
+    }
     result.push({
       index,
       kind: assertion.kind,
       atMs,
-      expected: { ...expected },
+      expected: required,
       observed,
       trace: onTimeline ? { scenarioId: scenario.id, traceSha256, cursor, atMs, uri: snapshotUri(scenario.id, cursor, traceSha256) } : null,
     });
