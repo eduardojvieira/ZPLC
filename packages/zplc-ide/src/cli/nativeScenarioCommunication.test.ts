@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect } from 'bun:test';
 
-import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';
+import { itNativeLoopback, nativeRuntimeBinary } from './nativeRuntimeGuard';
 import { createNativeScenarioSession } from './nativeScenarioRuntime';
 import { compilerCompile } from './toolApi';
 
@@ -45,7 +45,7 @@ END_PROGRAM
 afterAll(() => rm(root, { recursive: true, force: true }));
 
 describe('the scenario session of the command line', () => {
-  itNative(
+  itNativeLoopback(
     'answers a communication block with the simulation answer, not "no handler"',
     async () => {
       const compiled = await compilerCompile(root);

@@ -5071,6 +5071,7 @@ export const JOURNEYS: Journey[] = [
     proves: ['IDE-012'],
     partly: [],
     run: async (app, { project, root }) => {
+      if (process.platform !== 'linux') notPossible('the process tree of the app is read from /proc, which only Linux has');
       // Three scenarios of the longest allowed length (10,000 samples each): seconds of work in the runtime.
       for (const name of ['LongA', 'LongB', 'LongC']) {
         const scenario = {

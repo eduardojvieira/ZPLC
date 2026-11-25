@@ -30,7 +30,8 @@ function fakeDeb(content: string | null): string {
   return deb;
 }
 
-describe.skipIf(!have('ar') || !have('tar'))('the udev rule inside a .deb (REL-013)', () => {
+// Linux packaging: needs ar and tar, and the Windows runners have no GNU ar (nightly 45636849073).
+describe.skipIf(process.platform === 'win32' || !have('ar') || !have('tar'))('the udev rule inside a .deb (REL-013)', () => {
   it('reads the file at its installed path, and nothing for a path the package does not hold', () => {
     const deb = fakeDeb('TAG+="uaccess"\n');
     expect(fileOfPackage(deb, RULE_TARGET)?.toString()).toBe('TAG+="uaccess"\n');

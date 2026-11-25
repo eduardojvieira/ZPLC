@@ -261,13 +261,17 @@ describe('Linux packages declare what Electron needs and are installed in clean 
     }
   });
 
-  it('is valid bash, refuses to install anything outside the CI container, and keeps the Electron sandbox on', () => {
-    expect(spawnSync('bash', ['-n', script]).status).toBe(0);
-    const refused = spawnSync('bash', [script, 'package.deb'], { env: { PATH: process.env.PATH! }, encoding: 'utf8' });
-    expect(refused.status).toBe(2);
-    expect(refused.stderr).toContain('outside the CI container');
-    expect(readFileSync(script, 'utf8')).not.toContain('--no-sandbox');
-  });
+  // Runs the CI container script with bash: the Windows runner's bash is a stub that exits 127 (nightly 45636849073).
+  it.skipIf(process.platform === 'win32')(
+    'is valid bash, refuses to install anything outside the CI container, and keeps the Electron sandbox on',
+    () => {
+      expect(spawnSync('bash', ['-n', script]).status).toBe(0);
+      const refused = spawnSync('bash', [script, 'package.deb'], { env: { PATH: process.env.PATH! }, encoding: 'utf8' });
+      expect(refused.status).toBe(2);
+      expect(refused.stderr).toContain('outside the CI container');
+      expect(readFileSync(script, 'utf8')).not.toContain('--no-sandbox');
+    },
+  );
 
   // The AppImage is extracted as root, and the unprivileged user that starts it got "/tmp/squashfs-root/zplc: Permission
   // denied" (release rehearsal 40125534053): the extracted tree must be readable and its folders searchable by that user.
