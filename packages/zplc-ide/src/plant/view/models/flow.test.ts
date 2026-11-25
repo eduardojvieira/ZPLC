@@ -37,13 +37,17 @@ const view = (part: string, size: PartView['pose']['size'], p: PartView['pose'][
 });
 /** The stop blade as the plant core publishes it: `f` of its 0.4 s travel, 0 retracted. */
 const blade = (f: number) =>
-  view('stop-blade', [0.05, 0.3, 0.6], [0, SURFACE + 0.15 - (1 - f) * (0.3 + BLADE.sink), 0], { travelMs: f * BLADE.travelMs, stuck: false });
+  view('stop-blade', [0.05, 0.3, 0.6], [0, SURFACE + 0.15 - (1 - f) * (0.3 + BLADE.sink), 0], {
+    travelMs: f * BLADE.travelMs,
+    stuck: false,
+  });
 /** The pusher: its plate has moved `f` of the 0.6 m stroke along +z. */
 const pusher = (f: number) => view('pusher', [0.4, 0.25, 0.05], [0, SURFACE + 0.005 + 0.125, f * PUSHER.stroke], { fraction: f });
 const arm = (f: number) => view('diverter-arm', [0.8, 0.25, 0.05], [0.4, SURFACE + 0.13, 0], { fraction: f });
 const world = (v: PartView, p: { at: readonly number[] }, i: number) => v.pose.p[i]! + p.at[i]!;
+/** The x/z box, in the world, of the pieces that stand still (all but the moving plate and rod of a pusher). */
 const footprint = (v: PartView) => {
-  const pieces = partModel(v)!;
+  const pieces = partModel(v)!.filter((p) => p.slot !== 'plate' && p.slot !== 'rod');
   const lo = [Infinity, Infinity];
   const hi = [-Infinity, -Infinity];
   for (const p of pieces)
@@ -58,7 +62,7 @@ const footprint = (v: PartView) => {
 };
 
 describe('stop blade, pusher and diverter arm models (VIS-014)', () => {
-  it('VIS-014 a stop blade is a steel blade on a pneumatic cylinder under the belt, raised or lowered by its height, not its colour', () => {
+  it('VIS-014 a stop blade is a steel blade on a cylinder under the belt, raised or lowered by its height, not its colour', () => {
     const [down, up] = [partModel(blade(0))!, partModel(blade(1))!];
     expect(slot(down, 'blade').role).toBe('steel');
     expect(slot(down, 'cylinder').role).toBe('housing');
