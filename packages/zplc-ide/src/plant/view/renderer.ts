@@ -914,7 +914,13 @@ export function createRenderer(
       mesh.userData = { slot: piece.slot, key, shape: piece.shape };
       mesh.material = material;
       mesh.position.set(...piece.at);
-      mesh.rotation.y = piece.yaw;
+      // In three the Euler angles and the quaternion are one rotation, so each branch leaves no trace of the other.
+      if (piece.q) mesh.quaternion.set(...piece.q);
+      else {
+        mesh.rotation.x = 0;
+        mesh.rotation.y = piece.yaw;
+        mesh.rotation.z = 0;
+      }
       mesh.visible = piece.visible;
       mesh.castShadow = roleLook(piece.role, view.part, palette).castShadow;
       mesh.receiveShadow = true;

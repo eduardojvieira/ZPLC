@@ -161,8 +161,23 @@ function fakeThree() {
     position = new Vec();
     scale = new Vec();
     visible = true;
-    rotation = { x: 0 };
-    quaternion = { set() {} };
+    // As in three, the two are one rotation: setting either one rewrites the other.
+    rotation = new Proxy({ x: 0, y: 0, z: 0 } as Record<string, number>, {
+      set: (t, k: string, v: number) => {
+        t[k] = v;
+        [this.quaternion.x, this.quaternion.y, this.quaternion.z, this.quaternion.w] = [0, Math.sin(t.y! / 2), 0, Math.cos(t.y! / 2)];
+        return true;
+      },
+    });
+    quaternion = {
+      x: 0,
+      y: 0,
+      z: 0,
+      w: 1,
+      set: (x: number, y: number, z: number, w: number) => {
+        [this.quaternion.x, this.quaternion.y, this.quaternion.z, this.quaternion.w] = [x, y, z, w];
+      },
+    };
     children: unknown[] = [];
     add(...o: unknown[]) {
       this.children.push(...o);
@@ -485,6 +500,33 @@ describe('display preferences reach the renderer', () => {
     expect(count(world)).toBe(nodes);
     expect(mats.length).toBe(materials);
     expect(world.children.find((c) => c.userData.part === 'tank')).toBe(tankMesh);
+  });
+
+  it('VIS-014 a piece with its own rotation gets that quaternion on its mesh, and a yaw-only piece after it keeps no tilt', () => {
+    const { r, scenes } = build();
+    type Node = {
+      children: Node[];
+      userData: { part?: string; slot?: string };
+      quaternion: Record<string, number>;
+      rotation: Record<string, number>;
+    };
+    const tilted = (tiltDeg: number) => {
+      const t = (-tiltDeg * Math.PI) / 360;
+      return {
+        items: [],
+        parts: [{ ...view('chute', { size: [1, 0.02, 0.6], p: [0, 1, 0], q: [0, 0, Math.sin(t), Math.cos(t)] }, { tiltDeg }), id: 'c' }],
+      } as unknown as Parameters<typeof r.setSnapshot>[0];
+    };
+    r.setSnapshot(tilted(30));
+    const group = (scenes[0] as unknown as Node).children.find((c) => c.userData.part === 'chute')!;
+    const leg = group.children.find((c) => c.userData.slot?.startsWith('leg-'))!;
+    const t = (30 * Math.PI) / 360; // the conjugate of the pose's turn about z
+    expect(leg.quaternion.x).toBeCloseTo(0, 9);
+    expect(leg.quaternion.z).toBeCloseTo(Math.sin(t), 9);
+    expect(leg.quaternion.w).toBeCloseTo(Math.cos(t), 9);
+    r.setSnapshot(tilted(0)); // an untilted chute has no piece rotation: the same slot is yaw-only again
+    expect([leg.rotation.x, leg.rotation.y, leg.rotation.z]).toEqual([0, 0, 0]);
+    expect([leg.quaternion.x, leg.quaternion.z, leg.quaternion.w]).toEqual([0, 0, 1]);
   });
 
   it('VIS-009 setPalette and setCameraAnimation do not throw after dispose', () => {

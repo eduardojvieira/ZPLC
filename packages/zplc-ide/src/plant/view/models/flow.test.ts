@@ -1,7 +1,7 @@
 /** The flow control, source and sink models (plan-vis C2; VIS-014): the emitter of belt-to-sensor as the real plant core publishes it. */
 import { describe, expect, it } from 'bun:test';
 import type { PartView, ScenePart } from '../../contracts';
-import { rotate } from './shared';
+import { LEVELLING_FOOT, rotate } from './shared';
 import { ALIGNER, ARM, BLADE, EMITTER, FLOW, PUSHER } from './flow';
 import { partModel, pieceExtent } from './index';
 import { beltToSensor, bottom, slot } from './models.fixtures';
@@ -223,7 +223,27 @@ describe('aligner, chute and remover models (VIS-014)', () => {
     expect(end(-1) - end(1)).toBeCloseTo(Math.sin((20 * Math.PI) / 180), 9);
     const walls = [slot(pieces, 'wall-a'), slot(pieces, 'wall-b')];
     expect(walls.every((w) => w.at[1] > slot(pieces, 'slide').at[1])).toBe(true); // the walls stand up from the surface
-    expect(reach(pieces)).toEqual([0.5, 0.3].map((x) => expect.closeTo(x, 9)));
+    // The slide, walls and rails stay in the declared box; the stand is upright in the world, so it hangs from the tilted slide.
+    expect(reach(pieces.filter((p) => !p.q))).toEqual([0.5, 0.3].map((x) => expect.closeTo(x, 9)));
+  });
+
+  it('VIS-014 the chute stand stands upright in the world at any tilt: legs vertical, feet on the floor', () => {
+    for (const tilt of [0, 20, 35]) {
+      const v = chute(tilt, 1, 0.6, 1.2);
+      const pieces = partModel(v)!;
+      const stand = pieces.filter((p) => /^(leg|stem|foot)-/.test(p.slot));
+      expect(stand.length).toBeGreaterThan(0);
+      for (const p of stand) {
+        const axis = rotate(v.pose.q, rotate(p.q ?? [0, 0, 0, 1], [0, 1, 0]));
+        expect(axis[0]).toBeCloseTo(0, 9);
+        expect(axis[1]).toBeCloseTo(1, 9);
+        expect(axis[2]).toBeCloseTo(0, 9);
+      }
+      for (const p of stand.filter((q) => q.slot.startsWith('foot-'))) {
+        const y = v.pose.p[1] + rotate(v.pose.q, p.at)[1];
+        expect(y - LEVELLING_FOOT.padHeight / 2).toBeCloseTo(0, 9); // the pad is a vertical disc: its bottom is half its height down
+      }
+    }
   });
 
   it('VIS-014 a remover is an open-top bin of its declared size on four feet: painted walls, a housing floor', () => {
