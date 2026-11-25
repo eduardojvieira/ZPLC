@@ -356,6 +356,32 @@ static int persist_ensure_dir(void) {
   return 0;
 }
 
+/* Replace `to` with `from`.  POSIX rename() replaces an existing file; the
+ * Windows C runtime rename() fails with EEXIST, so use MoveFileExA there. */
+static int zplc_replace_file(const char *from, const char *to) {
+#ifdef _WIN32
+  if (MoveFileExA(from, to, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0) {
+    return 0;
+  }
+  switch (GetLastError()) {
+  case ERROR_ACCESS_DENIED:
+  case ERROR_SHARING_VIOLATION:
+    errno = EACCES;
+    break;
+  case ERROR_FILE_NOT_FOUND:
+  case ERROR_PATH_NOT_FOUND:
+    errno = ENOENT;
+    break;
+  default:
+    errno = EIO;
+    break;
+  }
+  return -1;
+#else
+  return rename(from, to);
+#endif
+}
+
 /* Linux fsync() provides the directory-entry durability contract required
  * after rename().  Other host platforms retain the pre-existing semantics
  * until their corresponding directory-sync contract is verified. */
@@ -490,7 +516,7 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data, size_
   }
 
   /* Atomic rename: tmp -> final */
-  if (rename(tmp_path, path) != 0) {
+  if (zplc_replace_file(tmp_path, path) != 0) {
     zplc_hal_log("[HAL] Failed to rename %s -> %s: %s\n", tmp_path, path, strerror(errno));
     zplc_unlink(tmp_path);
     return ZPLC_HAL_ERROR;
