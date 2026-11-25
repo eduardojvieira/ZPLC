@@ -639,7 +639,8 @@ describe('requirement coverage of spec 013', () => {
   it('a requirement of U2 or U3 is pending, not uncovered', () => {
     const result = run('--spec', '013', '--list');
     expect(result.exitCode).toBe(0);
-    expect(text(result)).toContain('GDE-001 pending');
+    // GDE-013 (the first-use sessions) stays pending until the owner's step G7; GDE-001 is covered since U3-X1b.
+    expect(text(result)).toContain('GDE-013 pending');
     // every requirement the plan does not deliver is listed as pending, never as uncovered
     for (const entry of index013().filter((e) => !e.mapped)) expect(text(result)).not.toContain(`${entry.id} uncovered`);
     expect(text(result)).not.toContain('TST-003 uncovered');
