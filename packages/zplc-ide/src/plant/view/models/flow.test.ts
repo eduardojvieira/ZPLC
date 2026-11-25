@@ -1,6 +1,6 @@
 /** The flow control, source and sink models (plan-vis C2; VIS-014): the emitter of belt-to-sensor as the real plant core publishes it. */
 import { describe, expect, it } from 'bun:test';
-import type { PartView } from '../../contracts';
+import type { PartView, ScenePart } from '../../contracts';
 import { ARM, BLADE, EMITTER, FLOW, PUSHER } from './flow';
 import { partModel, pieceExtent } from './index';
 import { beltToSensor, bottom, slot } from './models.fixtures';
@@ -42,7 +42,8 @@ const blade = (f: number) =>
     stuck: false,
   });
 /** The pusher: its plate has moved `f` of the 0.6 m stroke along +z. */
-const pusher = (f: number) => view('pusher', [0.4, 0.25, 0.05], [0, SURFACE + 0.005 + 0.125, f * PUSHER.stroke], { fraction: f });
+const pusher = (f: number, stroke: number = PUSHER.stroke) =>
+  view('pusher', [0.4, 0.25, 0.05], [0, SURFACE + 0.005 + 0.125, f * stroke], { fraction: f });
 const arm = (f: number) => view('diverter-arm', [0.8, 0.25, 0.05], [0.4, SURFACE + 0.13, 0], { fraction: f });
 const world = (v: PartView, p: { at: readonly number[] }, i: number) => v.pose.p[i]! + p.at[i]!;
 /** The x/z box, in the world, of the pieces that stand still (all but the moving plate and rod of a pusher). */
@@ -113,4 +114,26 @@ describe('stop blade, pusher and diverter arm models (VIS-014)', () => {
         expect(world(v, p, 1) - pieceExtent(p)[1]).toBeGreaterThanOrEqual(-1e-9);
       }
   });
+});
+
+describe('the pusher takes its stroke from the scene (VIS-014)', () => {
+  const scenePart = (strokeM: number): ScenePart => ({
+    id: 'pusher',
+    part: 'pusher',
+    name: 'pusher',
+    position: [0, SURFACE, 0],
+    rotationYDeg: 0,
+    config: { strokeM },
+  });
+  for (const stroke of [1, 0.8])
+    it(`VIS-014 with strokeM ${stroke} the cylinder and stand stand still and the plate travels the stroke`, () => {
+      const context = { travel: 0, scenePart: scenePart(stroke) };
+      const [back, out] = [partModel(pusher(0, stroke), context)!, partModel(pusher(1, stroke), context)!];
+      for (const p of back.filter((q) => q.slot !== 'plate' && q.slot !== 'rod')) {
+        const q = slot(out, p.slot);
+        expect(world(pusher(1, stroke), q, 2)).toBeCloseTo(world(pusher(0, stroke), p, 2), 9);
+      }
+      expect(world(pusher(1, stroke), slot(out, 'plate'), 2) - world(pusher(0, stroke), slot(back, 'plate'), 2)).toBeCloseTo(stroke, 9);
+      expect(pieceExtent(slot(out, 'rod'))[2] - pieceExtent(slot(back, 'rod'))[2]).toBeCloseTo(stroke / 2, 9);
+    });
 });
