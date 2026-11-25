@@ -16,6 +16,7 @@ import {
   crateWallMatrices,
   instanceMatrices,
   itemSkin,
+  palletPieceMatrices,
   itemToneOf,
   OUTLINED_PARTS,
   partDecor,
@@ -296,7 +297,7 @@ interface TextureSet {
 }
 
 interface ItemLayer {
-  skin: 'cardboard' | 'plastic';
+  skin: 'cardboard' | 'plastic' | 'metal';
   material: THREE_NS.MeshStandardMaterial;
   geometry: THREE_NS.BufferGeometry;
   mesh: THREE_NS.InstancedMesh;
@@ -458,7 +459,10 @@ export function createRenderer(
   // Items: one instanced mesh per surface (cardboard boxes, plastic workpieces), each scaled per item.
   const unitBox = new THREE.BoxGeometry(1, 1, 1);
   const makeLayer = (skin: ItemLayer['skin']): ItemLayer => {
-    const material = new THREE.MeshStandardMaterial({ roughness: skin === 'cardboard' ? 0.85 : 0.45, ...NO_Z_FIGHT });
+    const material = new THREE.MeshStandardMaterial({
+      roughness: skin === 'cardboard' ? 0.85 : skin === 'metal' ? 0.35 : 0.45,
+      ...NO_Z_FIGHT,
+    });
     material.name = `item:${skin}`;
     // A unit box whose faces each hold one tile of the texture, rounded when the add-on is there.
     const geometry = addons.RoundedBoxGeometry ? new addons.RoundedBoxGeometry(1, 1, 1, 2, 0.04) : unitBox;
@@ -471,7 +475,7 @@ export function createRenderer(
     world.add(mesh);
     return { skin, material, geometry, mesh, capacity: 64, items: [] };
   };
-  const layers: ItemLayer[] = [makeLayer('cardboard'), makeLayer('plastic')];
+  const layers: ItemLayer[] = [makeLayer('cardboard'), makeLayer('plastic'), makeLayer('metal')];
   const cardboard = layers[0]!;
   // The four wall bars of every crate (an item drawn open, VIS-003): cardboard, matrices from `crateWallMatrices`.
   let wallCapacity = 16;
@@ -483,6 +487,8 @@ export function createRenderer(
   world.add(walls);
   let wallOutline: THREE_NS.InstancedMesh | undefined;
   let crates: BodyPose[] = [];
+  // A pallet is eight more bars of the same mesh (five deck boards, three runners), after the crates' walls.
+  let pallets: BodyPose[] = [];
 
   const partEntries = new Map<string, PartEntry>();
   const decorMaterials = new Map<string, THREE_NS.MeshStandardMaterial>();
@@ -589,7 +595,7 @@ export function createRenderer(
 
   const paintItems = (): void => {
     for (const layer of layers) {
-      const set = look.textures ? textureSet(layer.skin) : null;
+      const set = look.textures && layer.skin !== 'metal' ? textureSet(layer.skin) : null;
       layer.items.forEach((item, i) => layer.mesh.setColorAt(i, tinted(itemToneOf(item, palette), set)));
       if (layer.mesh.instanceColor) layer.mesh.instanceColor.needsUpdate = true;
     }
@@ -599,6 +605,10 @@ export function createRenderer(
     for (const crate of crates) {
       const tone = tinted(itemToneOf(crate, palette), set);
       for (let k = 0; k < 4; k++) walls.setColorAt(w++, tone);
+    }
+    for (const pallet of pallets) {
+      const tone = tinted(itemToneOf(pallet, palette), set);
+      for (let k = 0; k < 8; k++) walls.setColorAt(w++, tone);
     }
     if (walls.instanceColor) walls.instanceColor.needsUpdate = true;
   };
@@ -620,7 +630,11 @@ export function createRenderer(
     paintFloor();
     partMaterials.forEach((m, part) => paintPart(part, m));
     roleMaterials.forEach(paintRole);
-    for (const layer of layers) setMaps(layer.material, look.textures ? (textureSet(layer.skin)?.maps ?? null) : null);
+    for (const layer of layers) {
+      setMaps(layer.material, look.textures && layer.skin !== 'metal' ? (textureSet(layer.skin)?.maps ?? null) : null);
+      // Bare metal shines under the environment; a flat or low look keeps the plain tone.
+      if (layer.skin === 'metal') layer.material.metalness = look.environment ? 0.8 : 0;
+    }
     paintItems();
   };
 
@@ -968,7 +982,8 @@ export function createRenderer(
       const dt = now !== null && lastTimeMs !== null ? Math.min(1, Math.max(0, (now - lastTimeMs) / 1000)) : 0;
       lastTimeMs = now;
       for (const layer of layers) layer.items = [];
-      for (const item of snapshot.items) layers[itemSkin(item) === 'cardboard' ? 0 : 1]!.items.push(item);
+      for (const item of snapshot.items)
+        if (item.kind !== 'pallet') layers[{ cardboard: 0, plastic: 1, metal: 2 }[itemSkin(item)]]!.items.push(item);
       for (const layer of layers) {
         if (layer.items.length > layer.capacity) growLayer(layer, layer.items.length);
         instanceMatrices(layer.items, layer.mesh.instanceMatrix.array as Float32Array);
@@ -976,9 +991,13 @@ export function createRenderer(
         layer.mesh.instanceMatrix.needsUpdate = true;
       }
       crates = snapshot.items.filter((i) => i.tag === 'crate');
-      if (crates.length * 4 > wallCapacity) growWalls(crates.length * 4);
-      crateWallMatrices(crates, walls.instanceMatrix.array as Float32Array);
-      walls.count = crates.length * 4;
+      pallets = snapshot.items.filter((i) => i.kind === 'pallet');
+      const bars = crates.length * 4 + pallets.length * 8;
+      if (bars > wallCapacity) growWalls(bars);
+      const barMatrices = walls.instanceMatrix.array as Float32Array;
+      crateWallMatrices(crates, barMatrices);
+      palletPieceMatrices(pallets, barMatrices.subarray(crates.length * 64));
+      walls.count = bars;
       walls.instanceMatrix.needsUpdate = true;
       paintItems();
 

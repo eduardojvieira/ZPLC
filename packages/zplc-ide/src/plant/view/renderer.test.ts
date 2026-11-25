@@ -273,7 +273,8 @@ function fakeThree() {
     ExtrudeGeometry: Geometry,
     Shape: Outline,
     DirectionalLight: class extends Obj {
-      shadow = { mapSize: { set() {} } };
+      shadow = { mapSize: { set() {} }, camera: { updateProjectionMatrix() {} } as Record<string, unknown>, bias: 0 };
+      target = new Obj();
     },
     Mesh: mesh,
     InstancedMesh: class extends Obj {
@@ -786,7 +787,10 @@ describe('items look like what they are', () => {
     r.setSnapshot(snap([pallet]));
     const bars = meshes().find((m) => m.count === 8)!;
     expect(bars).toBeDefined();
-    const [lo, hi] = [[Infinity, Infinity, Infinity], [-Infinity, -Infinity, -Infinity]];
+    const [lo, hi] = [
+      [Infinity, Infinity, Infinity],
+      [-Infinity, -Infinity, -Infinity],
+    ];
     for (let i = 0; i < 8; i++) {
       const a = bars.instanceMatrix.array.subarray(i * 16, i * 16 + 16);
       for (let k = 0; k < 3; k++) {
