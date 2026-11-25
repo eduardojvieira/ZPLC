@@ -112,7 +112,7 @@ function emergencyStopModel(view: PartView): Piece[] {
   const headTop = view.state.pressed === true ? released - travel : released;
   const headBottom = headTop - head;
   return [
-    ...controlBox(view),
+    ...controlBox(view, 'safety'),
     piece('collar', rod(0.036, 0.012, 'y'), [0, ENCLOSURE.top + 0.006, 0], 'collar'),
     piece('stem', rod(stem, headBottom - ENCLOSURE.top, 'y'), [0, (headBottom + ENCLOSURE.top) / 2, 0], 'steel'),
     piece('head', rod(radius, head, 'y'), [0, headTop - head / 2, 0], 'painted'),

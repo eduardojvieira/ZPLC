@@ -61,4 +61,5 @@ export function groupControls(parts: readonly PartView[]): ReadonlyMap<string, C
 }
 
 /** The station of `view` among `parts`, or null when it stands alone or is no operator control. */
-export const controlStation = (view: PartView, parts: readonly PartView[]): ControlStation | null => groupControls(parts).get(view.id) ?? null;
+export const controlStation = (view: PartView, parts: readonly PartView[]): ControlStation | null =>
+  groupControls(parts).get(view.id) ?? null;

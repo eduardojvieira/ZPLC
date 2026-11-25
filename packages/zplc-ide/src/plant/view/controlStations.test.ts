@@ -59,6 +59,12 @@ describe('control stations (plan-vis C4)', () => {
         core.dispose();
       }
     }
-    expect(found).toEqual({ 'stacker-crane-warehouse': [['req1', 'req2', 'req3']] });
+    // The emergency stop and the indicator light (C4) join the push buttons and selectors they stand beside.
+    expect(found).toEqual({
+      'buffer-release': [['done', 'fault']],
+      'stacker-crane-warehouse': [['req1', 'req2', 'req3']],
+      'three-level-lifts': [['estop', 'start']],
+      'timed-tank': [['estop', 'start']],
+    });
   });
 });
