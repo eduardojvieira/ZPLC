@@ -1,6 +1,6 @@
 /** The journeys of the learner scene editor and the industrial automation course (spec 012, plan-m7 Tasks Q6 and Q7). */
 import { join } from 'node:path';
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { assert, packageRoot } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
 import type { Journey } from '../journeys';
@@ -224,6 +224,43 @@ async function openProjectSceneInLesson(app: App): Promise<void> {
   await app.until('the scene panel', async () => (await app.visible(css('[data-plant-edit-scene]'))) || undefined, 30_000);
 }
 
+/** Q7 diagnosis: when the plant editor does not show, says why (state of the editor, the panel, the focus, the dialogs, the layout) and saves a screenshot. */
+async function plantEditorWait(app: App): Promise<void> {
+  try {
+    await app.until('the plant editor', async () => (await app.visible(css('[data-plant-editor]'))) || undefined);
+  } catch (error) {
+    const dir = join(process.env.TMPDIR ?? '/tmp', 'q7-diag');
+    mkdirSync(dir, { recursive: true });
+    const report = await app
+      .eval<unknown>(
+        `(() => { const box = (el) => { if (!el) return null; const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); ` +
+          `return { w: r.width, h: r.height, x: r.x, y: r.y, display: cs.display, visibility: cs.visibility, opacity: cs.opacity }; }; ` +
+          `const ed = document.querySelector('[data-plant-editor]'); const hidden = []; for (let n = ed; n; n = n.parentElement) { ` +
+          `const cs = getComputedStyle(n); if (cs.display === 'none' || cs.visibility === 'hidden' || n.hidden || n.inert || ` +
+          `n.getAttribute('aria-hidden') === 'true' || n.getBoundingClientRect().width === 0) hidden.push(n.tagName + '.' + String(n.className).slice(0, 60) + '[' + ` +
+          `[...n.attributes].map((a) => a.name).join(',').slice(0, 80) + ']'); } ` +
+          `const attrs = (el) => el && el.tagName + '|' + [...el.attributes].map((a) => a.name + '=' + a.value.slice(0, 40)).join(' '); ` +
+          `return { editorExists: Boolean(ed), editor: box(ed), hiddenAncestors: hidden, editScene: { exists: Boolean(document.querySelector('[data-plant-edit-scene]')), ` +
+          `box: box(document.querySelector('[data-plant-edit-scene]')), disabled: document.querySelector('[data-plant-edit-scene]')?.disabled }, ` +
+          `doneButton: Boolean(document.querySelector('[data-plant-edit-done]')), plantDocuments: document.querySelectorAll('[data-plant-document]').length, ` +
+          `plantDocument: box(document.querySelector('[data-plant-document]')), ` +
+          `tabs: [...document.querySelectorAll('[role="tab"]')].map((t) => (t.textContent ?? '').trim().slice(0, 40) + (t.getAttribute('aria-selected') === 'true' ? ' *' : '')), ` +
+          `focus: attrs(document.activeElement), dialogs: [...document.querySelectorAll('[role="dialog"],[role="alertdialog"],dialog[open]')].map((d) => (d.textContent ?? '').trim().slice(0, 160)), ` +
+          `notices: [...document.querySelectorAll('[role="alert"],[role="status"],[aria-live]')].map((d) => (d.textContent ?? '').trim().slice(0, 120)).filter(Boolean), ` +
+          `learn: [...document.querySelectorAll('[data-learn-check],[data-learn-check-status],[data-learn-grade],[data-learn-panel],[data-learn-layout],[data-learn-reading]')].map((e) => attrs(e) + ' :: ' + (e.textContent ?? '').trim().slice(0, 100)), ` +
+          `bodyHead: document.body.innerText.slice(0, 600) }; })()`,
+      )
+      .catch((failure) => `eval failed: ${String(failure)}`);
+    const shot = (await app.cdp.command('Page.captureScreenshot', { format: 'png' }).catch(() => undefined)) as { data?: string } | undefined;
+    const stamp = Date.now();
+    if (shot?.data) writeFileSync(join(dir, `q7-${stamp}.png`), Buffer.from(shot.data, 'base64'));
+    writeFileSync(join(dir, `q7-${stamp}.json`), JSON.stringify({ report, errors: app.errors }, null, 2));
+    console.log(`Q7-DIAG ${JSON.stringify(report)}`);
+    console.log(`Q7-DIAG screenshot ${join(dir, `q7-${stamp}.png`)}`);
+    throw error;
+  }
+}
+
 journeysCourse.push(
   {
     name: 'Q7 Lesson 12.1 is read beside its plant, its program is edited, Check passes',
@@ -274,7 +311,7 @@ journeysCourse.push(
       // the scene is built in the editor, with the names of the lesson, and saved to the project
       await openProjectSceneInLesson(app);
       await app.click(css('[data-plant-edit-scene]'), 'Edit scene');
-      await app.until('the plant editor', async () => (await app.visible(css('[data-plant-editor]'))) || undefined);
+      await plantEditorWait(app);
       await addPart(app, 'keyboard', 'Belt conveyor');
       await addPart(app, 'keyboard', 'Item emitter');
       await addPart(app, 'keyboard', 'Diffuse optical sensor');
