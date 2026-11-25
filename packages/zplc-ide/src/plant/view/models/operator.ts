@@ -1,6 +1,6 @@
 /**
- * Operator panel (plan-vis C4): the push button, selector switch, emergency stop, indicator light, stack light, potentiometer and
- * numeric display. One control box draws one control, because each control is one signal of the scene.
+ * Operator panel (plan-vis C4): the push button, selector switch, emergency stop, indicator light, stack light, potentiometer
+ * and numeric display. One control box draws one control, because each control is one signal of the scene.
  *
  * What a control stands on (a pedestal to the floor, a stack light's pole) is its stand: the pieces whose slot starts with `STAND`.
  * The model keeps them, so the bounds of a scene hold them; the view draws them as the control's station instead, one shared stand
@@ -17,7 +17,8 @@ import { box, MIN_STAND, piece, rod, type ModelFamily, type Piece } from './shar
 export const STAND = 'stand-';
 export const isStand = (slot: string): boolean => slot.startsWith(STAND);
 
-/** The control box of a push button, selector switch, emergency stop, indicator light and potentiometer: its top is 20 mm below the pose. */
+/** The control box of a push button, selector switch, emergency stop, indicator light and potentiometer: its top is 20 mm
+ * below the pose. */
 const ENCLOSURE = { size: [0.14, 0.12, 0.11] as Vec3, top: -0.02 } as const;
 const enclosureBottom = ENCLOSURE.top - ENCLOSURE.size[1];
 
@@ -94,9 +95,53 @@ function selectorModel(view: PartView): Piece[] {
     piece('pointer', box([0.006, 0.002, 0.04], 0), toward(yaw, 0.025, knobTop + lever[1] + 0.001), 'mark', true, yaw),
     ...Array.from({ length: n }, (_, k) => {
       const turn = selectorYaw(k, n);
-      return piece(`detent-${k}`, box([0.005, 0.002, 0.012], 0), toward(turn, SELECTOR.detentRadius, ENCLOSURE.top + 0.001), 'mark', true, turn);
+      const at = toward(turn, SELECTOR.detentRadius, ENCLOSURE.top + 0.001);
+      return piece(`detent-${k}`, box([0.005, 0.002, 0.012], 0), at, 'mark', true, turn);
     }),
   ];
 }
 
-export const OPERATOR: ModelFamily = { 'push-button': pushButtonModel, 'selector-switch': selectorModel };
+// ---------------------------------------------------------------------------------------------------------------------
+// Emergency stop: a red mushroom head on a stem; latched, the head sits lower by its travel
+// ---------------------------------------------------------------------------------------------------------------------
+
+export const EMERGENCY_STOP = { released: 0.05, travel: 0.02, head: 0.03, radius: 0.045, stem: 0.012 } as const;
+
+function emergencyStopModel(view: PartView): Piece[] {
+  const { released, travel, head, radius, stem } = EMERGENCY_STOP;
+  const headTop = view.state.pressed === true ? released - travel : released;
+  const headBottom = headTop - head;
+  return [
+    ...controlBox(view),
+    piece('collar', rod(0.036, 0.012, 'y'), [0, ENCLOSURE.top + 0.006, 0], 'collar'),
+    piece('stem', rod(stem, headBottom - ENCLOSURE.top, 'y'), [0, (headBottom + ENCLOSURE.top) / 2, 0], 'steel'),
+    piece('head', rod(radius, head, 'y'), [0, headTop - head / 2, 0], 'painted'),
+  ];
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Indicator light: a round lens in a collar; lit, it takes the lamp look and a halo ring stands behind it
+// ---------------------------------------------------------------------------------------------------------------------
+
+export const INDICATOR = { lens: 0.03, lensRadius: 0.032, haloRadius: 0.05, haloThick: 0.004 } as const;
+
+function indicatorModel(view: PartView): Piece[] {
+  const lit = view.state.lit === true;
+  const collarTop = ENCLOSURE.top + 0.012;
+  return [
+    ...controlBox(view),
+    piece('collar', rod(0.04, 0.012, 'y'), [0, ENCLOSURE.top + 0.006, 0], 'collar'),
+    // The ring lies on the collar behind the lens, wider than it: lit shows a shape the unlit light does not have.
+    ...(lit
+      ? [piece('halo', rod(INDICATOR.haloRadius, INDICATOR.haloThick, 'y'), [0, collarTop + INDICATOR.haloThick / 2, 0], 'lamp')]
+      : []),
+    piece('lens', rod(INDICATOR.lensRadius, INDICATOR.lens, 'y'), [0, collarTop + INDICATOR.lens / 2, 0], lit ? 'lamp' : 'lampOff'),
+  ];
+}
+
+export const OPERATOR: ModelFamily = {
+  'push-button': pushButtonModel,
+  'selector-switch': selectorModel,
+  'emergency-stop': emergencyStopModel,
+  'indicator-light': indicatorModel,
+};
