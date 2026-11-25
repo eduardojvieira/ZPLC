@@ -182,3 +182,37 @@ describe('operator panel models (VIS-014)', () => {
     }
   });
 });
+
+describe('numeric display model (VIS-014, F5)', () => {
+  const lit = async (config: Record<string, number | string>, value: number): Promise<string[]> => {
+    const core = await coreOf(lone('numeric-display', config));
+    // The core refuses a value outside the range, so the view is the core's with the value set by hand.
+    const view = viewOf(core, 'it');
+    const pieces = partModel({ ...view, state: { ...view.state, value } })!;
+    return pieces.filter((p) => p.slot.startsWith('d') && p.slot.includes('-')).map((p) => p.slot);
+  };
+  const range = { type: 'INT', min: 0, max: 100, unit: '%' };
+
+  it('is modelled under its catalogue id, a dark window on a control box', async () => {
+    expect(OPERATOR['numeric-display']).toBeDefined();
+    const core = await coreOf(lone('numeric-display', range));
+    const pieces = partModel(viewOf(core, 'it'))!;
+    expect(slot(pieces, 'window').role).toBe('lens');
+  });
+
+  it('lights the segments of each digit, right-aligned in as many digits as the range needs', async () => {
+    expect((await lit(range, 0)).sort()).toEqual(['d2-a', 'd2-b', 'd2-c', 'd2-d', 'd2-e', 'd2-f']);
+    expect((await lit(range, 42)).sort()).toEqual(
+      ['d1-f', 'd1-g', 'd1-b', 'd1-c', 'd2-a', 'd2-b', 'd2-g', 'd2-e', 'd2-d'].sort(),
+    );
+    expect((await lit(range, 100)).sort()).toEqual(
+      ['d0-b', 'd0-c', 'd1-a', 'd1-b', 'd1-c', 'd1-d', 'd1-e', 'd1-f', 'd2-a', 'd2-b', 'd2-c', 'd2-d', 'd2-e', 'd2-f'].sort(),
+    );
+  });
+
+  it('shows dashes on every digit outside the range, and a minus segment for a negative', async () => {
+    expect((await lit(range, 500)).sort()).toEqual(['d0-g', 'd1-g', 'd2-g']);
+    const signed = { ...range, min: -10, max: 10 };
+    expect((await lit(signed, -5)).sort()).toEqual(['d0-g', 'd1-a', 'd1-c', 'd1-d', 'd1-f', 'd1-g'].sort());
+  });
+});
