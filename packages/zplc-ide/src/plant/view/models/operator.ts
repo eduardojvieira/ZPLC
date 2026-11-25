@@ -195,6 +195,65 @@ function potentiometerModel(view: PartView): Piece[] {
   ];
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+// Numeric display: a dark window on the face of a control box, and in front of it red seven-segment digits (lit segments only)
+// ---------------------------------------------------------------------------------------------------------------------
+
+export const NUMERIC_DISPLAY = {
+  window: [0.12, 0.06] as const,
+  pitch: 0.022,
+  width: 0.014,
+  height: 0.034,
+  bar: 0.004,
+  maxCells: 5,
+} as const;
+
+/** The lit segments of each digit, a to g: top, upper right, lower right, bottom, lower left, upper left, middle. */
+const SEGMENTS: Readonly<Record<string, string>> = {
+  '0': 'abcdef',
+  '1': 'bc',
+  '2': 'abdeg',
+  '3': 'abcdg',
+  '4': 'bcfg',
+  '5': 'acdfg',
+  '6': 'acdefg',
+  '7': 'abc',
+  '8': 'abcdefg',
+  '9': 'abcdfg',
+  '-': 'g',
+};
+
+/** The segment `name` of the cell centred at `x`, on the window at `z`. */
+function segment(cell: number, name: string, x: number, y: number, z: number): Piece {
+  const { width: w, height: h, bar } = NUMERIC_DISPLAY;
+  const k = 'abcdefg'.indexOf(name);
+  const horizontal = k === 0 || k === 3 || k === 6;
+  const size: Vec3 = horizontal ? [w, bar, 0.002] : [bar, h / 2 - bar, 0.002];
+  const dx = horizontal ? 0 : k === 1 || k === 2 ? w / 2 - bar / 2 : -w / 2 + bar / 2;
+  const dy = k === 0 ? h / 2 - bar / 2 : k === 3 ? -h / 2 + bar / 2 : k === 6 ? 0 : k === 1 || k === 5 ? h / 4 : -h / 4;
+  return piece(`d${cell}-${name}`, box(size, 0), [x + dx, y + dy, z], 'signalRed');
+}
+
+function numericDisplayModel(view: PartView): Piece[] {
+  const { window: win, pitch, maxCells } = NUMERIC_DISPLAY;
+  const { value, min, max } = view.state;
+  const range = typeof min === 'number' && typeof max === 'number' ? { min, max } : { min: 0, max: 100 };
+  const places = Math.max(String(Math.round(Math.abs(range.min))).length, String(Math.round(Math.abs(range.max))).length);
+  const cells = Math.min(maxCells, places + (range.min < 0 ? 1 : 0));
+  const v = typeof value === 'number' ? Math.round(value) : NaN;
+  // Outside the range (or no number): a dash in every cell. Otherwise the digits, right-aligned, with the minus just before them.
+  const text = v >= Math.round(range.min) && v <= Math.round(range.max) ? String(v).padStart(cells) : '-'.repeat(cells);
+  const face = ENCLOSURE.size[2] / 2;
+  const y = ENCLOSURE.top - ENCLOSURE.size[1] / 2;
+  return [
+    ...controlBox(view),
+    piece('window', box([win[0], win[1], 0.002], 0), [0, y, face + 0.001], 'lens'),
+    ...[...text].flatMap((ch, i) =>
+      [...(SEGMENTS[ch] ?? '')].map((name) => segment(i, name, (i - (cells - 1) / 2) * pitch, y, face + 0.003)),
+    ),
+  ];
+}
+
 export const OPERATOR: ModelFamily = {
   'push-button': pushButtonModel,
   'selector-switch': selectorModel,
@@ -202,4 +261,5 @@ export const OPERATOR: ModelFamily = {
   'indicator-light': indicatorModel,
   'stack-light': stackLightModel,
   potentiometer: potentiometerModel,
+  'numeric-display': numericDisplayModel,
 };

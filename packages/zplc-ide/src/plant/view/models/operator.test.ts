@@ -34,7 +34,7 @@ const twice = (pieces: readonly { at: unknown; shape: unknown; yaw: number }[]) 
 const deg = (rad: number) => (rad * 180) / Math.PI;
 
 describe('operator panel models (VIS-014)', () => {
-  it('PRT-009 the operator panel family draws the six operator parts', () => {
+  it('PRT-009 the operator panel family draws the seven operator parts', () => {
     expect(Object.keys(OPERATOR)).toEqual([
       'push-button',
       'selector-switch',
@@ -42,6 +42,7 @@ describe('operator panel models (VIS-014)', () => {
       'indicator-light',
       'stack-light',
       'potentiometer',
+      'numeric-display',
     ]);
   });
 
@@ -202,9 +203,7 @@ describe('numeric display model (VIS-014, F5)', () => {
 
   it('lights the segments of each digit, right-aligned in as many digits as the range needs', async () => {
     expect((await lit(range, 0)).sort()).toEqual(['d2-a', 'd2-b', 'd2-c', 'd2-d', 'd2-e', 'd2-f']);
-    expect((await lit(range, 42)).sort()).toEqual(
-      ['d1-f', 'd1-g', 'd1-b', 'd1-c', 'd2-a', 'd2-b', 'd2-g', 'd2-e', 'd2-d'].sort(),
-    );
+    expect((await lit(range, 42)).sort()).toEqual(['d1-f', 'd1-g', 'd1-b', 'd1-c', 'd2-a', 'd2-b', 'd2-g', 'd2-e', 'd2-d'].sort());
     expect((await lit(range, 100)).sort()).toEqual(
       ['d0-b', 'd0-c', 'd1-a', 'd1-b', 'd1-c', 'd1-d', 'd1-e', 'd1-f', 'd2-a', 'd2-b', 'd2-c', 'd2-d', 'd2-e', 'd2-f'].sort(),
     );
@@ -213,6 +212,6 @@ describe('numeric display model (VIS-014, F5)', () => {
   it('shows dashes on every digit outside the range, and a minus segment for a negative', async () => {
     expect((await lit(range, 500)).sort()).toEqual(['d0-g', 'd1-g', 'd2-g']);
     const signed = { ...range, min: -10, max: 10 };
-    expect((await lit(signed, -5)).sort()).toEqual(['d0-g', 'd1-a', 'd1-c', 'd1-d', 'd1-f', 'd1-g'].sort());
+    expect((await lit(signed, -5)).sort()).toEqual(['d1-g', 'd2-a', 'd2-c', 'd2-d', 'd2-f', 'd2-g'].sort());
   });
 });
