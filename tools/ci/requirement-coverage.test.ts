@@ -713,7 +713,7 @@ describe('requirement coverage of spec 014', () => {
     for (const { workstream } of index014()) counts[workstream] = (counts[workstream] ?? 0) + 1;
     expect(index014().length).toBe(69);
     expect(counts).toEqual({ FRZ: 4, BAR: 7, JRN: 8, REV: 6, AIX: 15, UXV: 9, FIX: 4, OSS: 5, PUB: 5, RCN: 6 });
-    for (const entry of index014()) expect({ id: entry.id, level: ['MUST', 'SHOULD'].includes(entry.level ?? '') }).toEqual({ id: entry.id, level: true });
+    for (const { id, level } of index014()) expect({ id, level: ['MUST', 'SHOULD'].includes(level ?? '') }).toEqual({ id, level: true });
   });
 
   it('spec 014 is reported with every prefix and exits 0', () => {

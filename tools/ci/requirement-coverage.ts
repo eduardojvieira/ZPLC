@@ -310,13 +310,15 @@ export function groups(index: Requirement[], states: Map<string, State>) {
 const INDEX_011 = 'tools/ci/requirements-index.json';
 const INDEX_012 = 'tools/ci/requirement-index-012.json';
 const INDEX_013 = 'tools/ci/requirement-index-013.json';
+const INDEX_014 = 'tools/ci/requirement-index-014.json';
 /** The conditions a person recorded for a report-only spec, by its index: hand-written records only, read for its `--spec` alone. */
 const REPORT_ONLY_RECORDS: Record<string, string> = {
   [INDEX_012]: 'tools/ci/requirement-evidence-012.json',
   [INDEX_013]: 'tools/ci/requirement-evidence-013.json',
+  [INDEX_014]: 'tools/ci/requirement-evidence-014.json',
 };
 /** The specs reported alone and never gating: the number given to --spec, and its index. */
-const REPORT_ONLY_INDEX: Record<string, string> = { '012': INDEX_012, '013': INDEX_013 };
+const REPORT_ONLY_INDEX: Record<string, string> = { '012': INDEX_012, '013': INDEX_013, '014': INDEX_014 };
 
 function load(indexFile = INDEX_011) {
   const read = (file: string) => readFileSync(new URL(file, ROOT), 'utf8');
@@ -418,7 +420,7 @@ if (import.meta.main) {
     },
   });
   if (values.spec !== undefined && !(values.spec in REPORT_ONLY_INDEX)) {
-    console.error(`requirement-coverage: --spec knows only 012 and 013, not ${values.spec}`);
+    console.error(`requirement-coverage: --spec knows only 012, 013 and 014, not ${values.spec}`);
     process.exit(1);
   }
   const { index, evidence, listed, recorded } = load(values.spec === undefined ? INDEX_011 : REPORT_ONLY_INDEX[values.spec]);

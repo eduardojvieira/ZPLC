@@ -12,6 +12,8 @@
 //                                                        in section 6; --plan names plan-m1.md, whose table "Spec 013 (milestones
 //                                                        U0 and U1)" marks each requirement it delivers `mapped: true`; the others
 //                                                        (U2, U3) get `mapped: false`
+//   --section 6 --unplanned                              spec 014 (tools/ci/requirement-index-014.json): no plan yet, so every
+//                                                        requirement is `mapped: false` and carries its `level` (MUST or SHOULD)
 //
 // Regenerate whenever a requirement is added, removed or reworded in the spec, and commit the result.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -27,6 +29,8 @@ export interface Requirement {
   alsoAdvancedBy?: string[];
   /** Spec 013 only: whether the plan of milestone M1 delivers it (a row of its mapping table); false is for U2 and U3. */
   mapped?: boolean;
+  /** Spec 014 only: the strength of the statement, the first of MUST and SHOULD in its text. */
+  level?: 'MUST' | 'SHOULD';
 }
 
 export const ID_PATTERN = /^[A-Z]{2,4}-[0-9]{3}$/;
@@ -46,13 +50,13 @@ function title(text: string): string {
 }
 
 /** The requirement bullets of section 5, in spec order. */
-export function parseSpec(spec: string, sectionNumber = 5): Array<{ id: string; workstream: string; title: string }> {
+export function parseSpec(spec: string, sectionNumber = 5): Requirement[] {
   const start = spec.search(new RegExp(`^## ${sectionNumber}\\. `, 'm'));
   if (start < 0) throw new Error(`the spec has no "## ${sectionNumber}." section`);
   const after = spec.slice(start + 1);
   const end = after.search(/^## /m);
   const section = end < 0 ? after : after.slice(0, end);
-  const found: Array<{ id: string; workstream: string; title: string }> = [];
+  const found: Requirement[] = [];
   const seen = new Set<string>();
   let heading = '';
   for (const line of section.split('\n')) {
@@ -114,10 +118,18 @@ export interface IndexOptions {
   section?: number;
   /** Read `plan` as plan-m1.md and mark each requirement `mapped`, instead of reading the coverage appendix of spec 011's plan. */
   mapped?: boolean;
+  /** Spec 014: no plan maps its requirements yet, so each is `mapped: false` (pending) and keeps its `level`. */
+  unplanned?: boolean;
 }
 
 export function buildIndex(spec: string, plan?: string, options: IndexOptions = {}): Requirement[] {
   const requirements = parseSpec(spec, options.section);
+  if (options.unplanned)
+    return requirements.map((requirement) => ({
+      ...requirement,
+      level: new RegExp(`^- \\*\\*${requirement.id}\\*\\*.*\\bMUST\\b`, 'm').test(spec) ? 'MUST' : 'SHOULD',
+      mapped: false,
+    }));
   if (options.mapped) {
     if (plan === undefined) throw new Error('--mapped needs the plan');
     const mapped = parseMapped(plan);
@@ -193,12 +205,17 @@ if (import.meta.main) {
       out: { type: 'string' },
       section: { type: 'string' },
       mapped: { type: 'boolean', default: false },
+      unplanned: { type: 'boolean', default: false },
     },
   });
   const specFile = values.spec ?? new URL(`${SPEC_DIR}spec.md`, ROOT).pathname;
   const planFile = values.plan ?? new URL(`${SPEC_DIR}plan.md`, ROOT).pathname;
   const outFile = values.out ?? INDEX_FILE.pathname;
-  const options: IndexOptions = { ...(values.section !== undefined && { section: Number(values.section) }), mapped: values.mapped };
+  const options: IndexOptions = {
+    ...(values.section !== undefined && { section: Number(values.section) }),
+    mapped: values.mapped,
+    unplanned: values.unplanned,
+  };
   const sources =
     existsSync(specFile) && existsSync(planFile)
       ? { spec: readFileSync(specFile, 'utf8'), plan: readFileSync(planFile, 'utf8') }
