@@ -1,42 +1,102 @@
 /**
- * Operator panel (plan-vis C4): the push button, and the selector switch, emergency stop, indicator light, stack light,
- * potentiometer and numeric display the catalogue step adds here. One control box draws one control, because each control is one
- * signal of the scene; several controls side by side are a station.
+ * Operator panel (plan-vis C4): the push button, selector switch, emergency stop, indicator light, stack light, potentiometer and
+ * numeric display. One control box draws one control, because each control is one signal of the scene.
+ *
+ * What a control stands on (a pedestal to the floor, a stack light's pole) is its stand: the pieces whose slot starts with `STAND`.
+ * The model keeps them, so the bounds of a scene hold them; the view draws them as the control's station instead, one shared stand
+ * for the controls that stand together (view/stations.ts).
+ *
+ * Every control faces up and toward +z of its pose, where an operator stands; the first view of a scene looks at it from the front
+ * and low, so each state moves or shows something that stands up from the box, not only a change on its top face.
  */
-import type { PartView } from '../../contracts';
+import type { PartView, Vec3 } from '../../contracts';
+import type { Role } from '../look';
 import { box, MIN_STAND, piece, rod, type ModelFamily, type Piece } from './shared';
 
+/** The slots of a control's stand start with this. */
+export const STAND = 'stand-';
+export const isStand = (slot: string): boolean => slot.startsWith(STAND);
+
+/** The control box of a push button, selector switch, emergency stop, indicator light and potentiometer: its top is 20 mm below the pose. */
+const ENCLOSURE = { size: [0.14, 0.12, 0.11] as Vec3, top: -0.02 } as const;
+const enclosureBottom = ENCLOSURE.top - ENCLOSURE.size[1];
+
+/** A point `r` from the vertical axis in the direction a piece turned by `yaw` points (yaw 0: straight ahead, away from +z), at `y`. */
+const toward = (yaw: number, r: number, y: number): Vec3 => [-Math.sin(yaw) * r, y, -Math.cos(yaw) * r];
+
+/**
+ * The pedestal under a control (concept-station): a square column on a base plate bolted to the floor at `floor`, up to `top`; none
+ * when the control sits too low for a column.
+ */
+function pedestal(floor: number, top: number): Piece[] {
+  const plate = 0.012;
+  const column = top - floor - plate;
+  if (column <= MIN_STAND) return [];
+  const bolts = [
+    [-0.07, -0.07],
+    [0.07, -0.07],
+    [-0.07, 0.07],
+    [0.07, 0.07],
+  ] as const;
+  return [
+    piece(`${STAND}post`, box([0.06, column, 0.06], 0.004), [0, floor + plate + column / 2, 0], 'steel'),
+    piece(`${STAND}base`, box([0.2, plate, 0.2], 0.003), [0, floor + plate / 2, 0], 'steel'),
+    ...bolts.map(([x, z], k) => piece(`${STAND}bolt-${k}`, rod(0.009, 0.008, 'y'), [x, floor + plate + 0.004, z], 'steel')),
+  ];
+}
+
+/** A control box in `role`, and its pedestal. */
+const controlBox = (view: PartView, role: Role = 'housing'): Piece[] => [
+  piece('enclosure', box(ENCLOSURE.size, 0.01), [0, ENCLOSURE.top - ENCLOSURE.size[1] / 2, 0], role),
+  ...pedestal(-view.pose.p[1], enclosureBottom),
+];
+
 // ---------------------------------------------------------------------------------------------------------------------
-// Push button: a control box on a pedestal (a square column on a base plate bolted to the floor); the head travels into its
-// collar while pressed
+// Push button: the head travels into its collar while pressed
 // ---------------------------------------------------------------------------------------------------------------------
 
 export const PUSH_BUTTON = { collarTop: -0.006, released: 0.024, pressed: -0.003, head: 0.034, radius: 0.03 } as const;
 
 function pushButtonModel(view: PartView): Piece[] {
   const pressed = view.state.pressed === true;
-  const floor = -view.pose.p[1];
   const { collarTop, head } = PUSH_BUTTON;
   const headTop = pressed ? PUSH_BUTTON.pressed : PUSH_BUTTON.released;
-  const pieces: Piece[] = [
+  const [enclosure, ...stand] = controlBox(view);
+  return [
     piece('head', rod(PUSH_BUTTON.radius, head, 'y'), [0, headTop - head / 2, 0], 'head'),
-    piece('enclosure', box([0.14, 0.12, 0.11], 0.01), [0, -0.08, 0], 'housing'),
+    enclosure!,
     piece('collar', rod(PUSH_BUTTON.radius + 0.007, 0.014, 'y'), [0, collarTop - 0.007, 0], 'collar'),
+    ...stand,
   ];
-  const plate = 0.012;
-  const column = -0.14 - floor - plate;
-  if (column > MIN_STAND) {
-    pieces.push(piece('post', box([0.06, column, 0.06], 0.004), [0, floor + plate + column / 2, 0], 'steel'));
-    pieces.push(piece('base', box([0.2, plate, 0.2], 0.003), [0, floor + plate / 2, 0], 'steel'));
-    for (const [k, x, z] of [
-      [0, -0.07, -0.07],
-      [1, 0.07, -0.07],
-      [2, -0.07, 0.07],
-      [3, 0.07, 0.07],
-    ] as const)
-      pieces.push(piece(`bolt-${k}`, rod(0.009, 0.008, 'y'), [x, floor + plate + 0.004, z], 'steel'));
-  }
-  return pieces;
 }
 
-export const OPERATOR: ModelFamily = { 'push-button': pushButtonModel };
+// ---------------------------------------------------------------------------------------------------------------------
+// Selector switch: a black lever on a knob turns to the selected position; a white mark on the box per position
+// ---------------------------------------------------------------------------------------------------------------------
+
+export const SELECTOR = { turn: Math.PI / 2, lever: [0.024, 0.04, 0.1] as Vec3, knobTop: 0.006, detentRadius: 0.047 } as const;
+
+/** The turn of position `k` of `n`: from an eighth of a turn left of straight ahead (position 0) to as far right (the last). */
+const selectorYaw = (k: number, n: number): number => SELECTOR.turn / 2 - (SELECTOR.turn * k) / Math.max(1, n - 1);
+
+function selectorModel(view: PartView): Piece[] {
+  const n = typeof view.state.positions === 'number' ? Math.max(2, Math.round(view.state.positions)) : 3;
+  const at = typeof view.state.position === 'number' ? Math.min(n - 1, Math.max(0, Math.round(view.state.position))) : 0;
+  const yaw = selectorYaw(at, n);
+  const { lever, knobTop } = SELECTOR;
+  const collarTop = ENCLOSURE.top + 0.012;
+  return [
+    ...controlBox(view),
+    piece('collar', rod(0.037, 0.012, 'y'), [0, ENCLOSURE.top + 0.006, 0], 'collar'),
+    piece('knob', rod(0.028, knobTop - collarTop, 'y'), [0, (knobTop + collarTop) / 2, 0], 'rubber'),
+    piece('lever', box(lever, 0.006), [0, knobTop + lever[1] / 2, 0], 'rubber', true, yaw),
+    // A white line on the lever from its pivot to the end that points, as on a real selector's handle.
+    piece('pointer', box([0.006, 0.002, 0.04], 0), toward(yaw, 0.025, knobTop + lever[1] + 0.001), 'mark', true, yaw),
+    ...Array.from({ length: n }, (_, k) => {
+      const turn = selectorYaw(k, n);
+      return piece(`detent-${k}`, box([0.005, 0.002, 0.012], 0), toward(turn, SELECTOR.detentRadius, ENCLOSURE.top + 0.001), 'mark', true, turn);
+    }),
+  ];
+}
+
+export const OPERATOR: ModelFamily = { 'push-button': pushButtonModel, 'selector-switch': selectorModel };
