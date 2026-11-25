@@ -662,14 +662,16 @@ export interface ReadingSource {
 export interface ReadingWalk {
   directives: ReadingDirective[];
   images: string[];
+  /** The alt text of each image, by its src. */
+  alts: Record<string, string>;
 }
 
 /** Every live block and image of a page, in reading order, inside lists and callouts too. */
 export function walkReading(blocks: readonly ReadingBlock[]): ReadingWalk {
-  const found: ReadingWalk = { directives: [], images: [] };
+  const found: ReadingWalk = { directives: [], images: [], alts: {} };
   const visit = (block: ReadingBlock): void => {
     if (block.type === 'directive') found.directives.push(block.directive);
-    else if (block.type === 'image') found.images.push(block.src);
+    else if (block.type === 'image') (found.images.push(block.src), (found.alts[block.src] = block.alt));
     else if (block.type === 'callout') block.children.forEach(visit);
     else if (block.type === 'list') block.items.forEach((item) => item.forEach(visit));
   };
@@ -683,6 +685,30 @@ export const directiveFiles = (directives: readonly ReadingDirective[]): string[
     directives.filter((each) => each.kind === 'ld-figure' || each.kind === 'ld-try').map((each) => (each.data as { src: string }).src),
   ),
 ];
+
+const pixelSize = (bytes: Uint8Array): string => {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  return bytes.length < 24 ? '?' : `${view.getUint32(16)} x ${view.getUint32(20)}`;
+};
+
+/** The language pairs `images/x.en.png` and `images/x.es.png` go together, with the same pixel size and an alt text per page. */
+function imagePairProblems(images: ReadingSource['images'], walks: Record<LessonLocale, ReadingWalk>): string[] {
+  const problems: string[] = [];
+  for (const [path, bytes] of Object.entries(images)) {
+    const match = /^(.*)\.(en|es)\.png$/.exec(path);
+    if (!match || match[2] !== 'en') {
+      if (match && !(`${match[1]}.en.png` in images)) problems.push(`${path}: has no ${match[1]}.en.png beside it`);
+      continue;
+    }
+    const other = `${match[1]}.es.png`;
+    if (!(other in images)) problems.push(`${path}: has no ${other} beside it`);
+    else if (pixelSize(bytes) !== pixelSize(images[other]!))
+      problems.push(`${path} and ${other}: have different sizes (${pixelSize(bytes)} and ${pixelSize(images[other]!)})`);
+    else if (walks.en.alts[path] !== undefined && walks.en.alts[path] === walks.es.alts[other])
+      problems.push(`reading.es.md: "${other}" needs an alt text of its own, not the English one`);
+  }
+  return problems;
+}
 
 export interface ReadingChecked {
   problems: string[];
@@ -703,7 +729,7 @@ export interface ReadingChecked {
 export function checkReading(source: ReadingSource, scenario: ScenarioFile): ReadingChecked {
   const problems: string[] = [];
   const expanded = { en: '', es: '' };
-  const walks: Record<LessonLocale, ReadingWalk> = { en: { directives: [], images: [] }, es: { directives: [], images: [] } };
+  const walks: Record<LessonLocale, ReadingWalk> = { en: { directives: [], images: [], alts: {} }, es: { directives: [], images: [], alts: {} } };
   const shapes: Partial<Record<LessonLocale, string>> = {};
   for (const locale of LESSON_LOCALES) {
     const file = `reading.${locale}.md`;
@@ -726,6 +752,7 @@ export function checkReading(source: ReadingSource, scenario: ScenarioFile): Rea
     else if (readingMarkup(source.en).join(' ') !== readingMarkup(source.es).join(' '))
       problems.push('the English and Spanish reading pages do not quote the same facts');
   }
+  problems.push(...imagePairProblems(source.images, walks));
   for (const [path, bytes] of Object.entries(source.images)) {
     if (bytes.length > MAX_READING_IMAGE_BYTES) problems.push(`${path}: is over the ${MAX_READING_IMAGE_BYTES / 1024} KB limit`);
     if (path.endsWith('.png') && !PNG_SIGNATURE.every((byte, index) => bytes[index] === byte)) problems.push(`${path}: is not a PNG file`);
