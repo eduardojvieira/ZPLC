@@ -2,9 +2,9 @@
  * Process and items (plan-vis C7): the tank with its pipes, on/off and proportional valves, level meter and flow meter. Items are
  * drawn by the renderer's item layers, not here.
  *
- * The tank is a stainless vessel inscribed in the pose box on four levelling legs, with a dished cap, an inlet pipe into the cap and
+ * The tank is a glass vessel inscribed in the pose box on four levelling legs, with a dished cap, an inlet pipe into the cap and
  * an outlet pipe near the bottom, each with a valve. A composed model replaces the renderer's single pose box and its liquid box, so the
- * liquid is shown by the sight glass on the front face (the role `zone`, the only liquid-like one) and an overflow ring at the rim.
+ * vessel is `glass` (clear, 0.3 opacity) with the `liquid` column inside it, and an overflow ring of liquid shows at the rim.
  * The valves' openings are not published, so a valve looks the same open or shut. Pieces stay within the pose box except the pipe stubs,
  * which reach `STUB` m beyond the vessel along x.
  */
@@ -63,7 +63,7 @@ function tankModel(view: PartView, context: ModelContext): Piece[] {
   const outletY = bodyBottom + 0.05;
   const end = r + stub;
   const pieces: Piece[] = [
-    piece('vessel', rod(r, body, 'y'), [0, bodyBottom + body / 2, 0], 'steel'),
+    piece('vessel', rod(r, body, 'y'), [0, bodyBottom + body / 2, 0], 'glass'),
     piece('cap-lower', rod(r, cap / 2, 'y'), [0, bodyTop + cap / 4, 0], 'steel'),
     piece('cap-upper', rod(0.6 * r, cap / 2, 'y'), [0, bodyTop + (3 * cap) / 4, 0], 'steel'),
     pipe('inlet-pipe', -end, -0.3 * r, inletY),
@@ -71,7 +71,7 @@ function tankModel(view: PartView, context: ModelContext): Piece[] {
     ...valve('inlet', -(r + 0.09), inletY, numeric),
     ...valve('outlet', r + 0.09, outletY, numeric),
     // Overflow: a thin ring at the rim, drawn only while the tank spills.
-    piece('overflow', rod(r + 0.012, 0.01, 'y'), [0, bodyTop + 0.005, 0], 'zone', spilling),
+    piece('overflow', rod(r + 0.012, 0.01, 'y'), [0, bodyTop + 0.005, 0], 'liquid', spilling),
   ];
   for (const [id, sx, sz] of [
     ['a', -1, -1],
@@ -81,20 +81,9 @@ function tankModel(view: PartView, context: ModelContext): Piece[] {
   ] as const)
     pieces.push(...levellingLeg(id, sx * 0.65 * r, sz * 0.65 * r, bodyBottom, floor));
 
-  // Sight glass on the front (+z) face: two rails and two end blocks, and the liquid column between them.
-  const z = r + 0.01;
-  for (const [id, x] of [
-    ['a', -0.02],
-    ['b', 0.02],
-  ] as const)
-    pieces.push(piece(`sight-rail-${id}`, box([0.01, body, 0.012], 0.002), [x, bodyBottom + body / 2, z], 'frame'));
-  pieces.push(
-    piece('sight-block-bottom', box([0.06, 0.012, 0.02], 0.002), [0, bodyBottom, z], 'frame'),
-    piece('sight-block-top', box([0.06, 0.012, 0.02], 0.002), [0, bodyTop, z], 'frame'),
-  );
   // ponytail: the column height is quantised to `steps`, so a changing level makes at most steps + 1 geometries, not one per frame.
   const column = Math.max(fraction * body, 0.001);
-  pieces.push(piece('sight-liquid', box([0.024, column, 0.012], 0), [0, bodyBottom + column / 2, z], 'zone', fraction > 0));
+  pieces.push(piece('liquid', rod(0.96 * r, column, 'y'), [0, bodyBottom + column / 2, 0], 'liquid', fraction > 0));
 
   if (numeric) {
     pieces.push(

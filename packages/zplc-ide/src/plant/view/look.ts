@@ -101,7 +101,9 @@ export type Role =
   | 'beam'
   | 'head'
   | 'collar'
-  | 'zone';
+  | 'zone'
+  | 'glass'
+  | 'liquid';
 
 export interface RoleLook {
   skin: Skin | null;
@@ -171,6 +173,11 @@ export function roleLook(role: Role, part: string, palette: Palette): RoleLook {
       return surface('plastic', tone(0x16a34a), 0.35);
     case 'collar':
       return surface('plastic', tone(0x27272a), 0.5);
+    // Clear and neutral, as the old translucent tank box was; the liquid inside shows through.
+    case 'glass':
+      return { ...surface(null, tone(0xcbd5e1), 0.2), opacity: 0.3, castShadow: false };
+    case 'liquid':
+      return { ...surface(null, tone(0x2563eb), 0.3), opacity: 0.85, castShadow: false };
     case 'zone':
       return light(flat ? 0x00ffff : 0x22d3ee, flat ? 1 : 0.9);
   }
