@@ -3,7 +3,7 @@ import { describe, expect, it } from 'bun:test';
 import type { PartView, ScenePart } from '../../contracts';
 import { PROCESS } from './process';
 import { partModel, pieceExtent } from './index';
-import { bottom, shown, slot } from './models.fixtures';
+import { bottom, slot } from './models.fixtures';
 
 const SIZE: PartView['pose']['size'] = [0.4, 1, 0.25];
 const tank = (fraction = 0.5, spilling = false): PartView => ({
@@ -31,11 +31,11 @@ describe('process models (VIS-014)', () => {
     expect(Object.keys(PROCESS)).toEqual(['tank']);
   });
 
-  it('VIS-014 the tank is a steel vessel with a dished cap on four legs, an inlet and an outlet pipe, each with a valve', () => {
+  it('VIS-014 the tank is a glass vessel with a dished cap on four legs, an inlet and an outlet pipe, each with a valve', () => {
     for (const pieces of [digital(tank()), numeric(tank())]) {
       for (const name of ['vessel', 'cap-lower', 'cap-upper', 'inlet-pipe', 'outlet-pipe', 'inlet-valve', 'outlet-valve'])
         expect(pieces.some((p) => p.slot === name)).toBe(true);
-      expect(slot(pieces, 'vessel').role).toBe('steel');
+      expect(slot(pieces, 'vessel').role).toBe('glass');
       expect(slot(pieces, 'inlet-valve').role).toBe('housing');
       expect(pieces.filter((p) => p.slot.startsWith('leg-')).length).toBe(4);
     }
@@ -85,18 +85,20 @@ describe('process models (VIS-014)', () => {
     expect(has(partModel(tank())!, 'transmitter')).toBe(true);
   });
 
-  it('VIS-003 the sight glass liquid is as tall as the fraction of the vessel, and hidden when empty', () => {
+  it('VIS-003 the liquid inside the glass vessel is as tall as the fraction of the vessel, and hidden when empty', () => {
     for (const build of [digital, numeric]) {
       const vessel = slot(build(tank()), 'vessel');
       const length = vessel.shape.kind === 'cylinder' ? vessel.shape.length : NaN;
       for (const f of [0, 0.5, 1]) {
-        const liquid = slot(build(tank(f)), 'sight-liquid');
-        const height = liquid.shape.kind === 'box' ? liquid.shape.size[1] : NaN;
+        const pieces = build(tank(f));
+        const liquid = slot(pieces, 'liquid');
+        const height = liquid.shape.kind === 'cylinder' ? liquid.shape.length : NaN;
+        expect(liquid.role).toBe('liquid');
         expect(liquid.visible).toBe(f > 0);
         expect(height).toBeCloseTo(Math.max(f * length, 0.001), 3);
         if (f > 0) expect(bottom(liquid)).toBeCloseTo(bottom(vessel), 9);
+        expect(has(pieces, 'sight')).toBe(false);
       }
-      expect(shown(build(tank(0.5)), 'sight-rail').length).toBe(2);
     }
   });
 
@@ -104,6 +106,7 @@ describe('process models (VIS-014)', () => {
     for (const build of [digital, numeric]) {
       expect(slot(build(tank(1, false)), 'overflow').visible).toBe(false);
       expect(slot(build(tank(1, true)), 'overflow').visible).toBe(true);
+      expect(slot(build(tank(1, true)), 'overflow').role).toBe('liquid');
     }
   });
 });

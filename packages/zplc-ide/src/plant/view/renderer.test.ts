@@ -455,7 +455,7 @@ describe('display preferences reach the renderer', () => {
     expect(drawn[drawn.length - 1]?.z).toBeCloseTo(0, 1);
   });
 
-  it('VIS-003 the tank sight glass liquid changes with the snapshot and allocates no new mesh per frame', () => {
+  it('VIS-003 the tank liquid inside the glass vessel changes with the snapshot and allocates no new mesh per frame', () => {
     const { r, mats, scenes } = build();
     const snap = (fraction: number) =>
       ({ items: [], parts: [{ ...view('tank', { size: [1, 2, 0.5] }, { fraction }), id: 'tk' }] }) as unknown as Parameters<
@@ -464,15 +464,15 @@ describe('display preferences reach the renderer', () => {
     type Node = {
       children: Node[];
       visible: boolean;
-      userData: { part?: string; slot?: string; shape?: { size: number[] } };
+      userData: { part?: string; slot?: string; shape?: { length?: number } };
     };
     const count = (o: Node): number => 1 + o.children.reduce((n, c) => n + count(c), 0);
     const world = scenes[0] as unknown as Node;
     r.setSnapshot(snap(0.4));
     const tankMesh = world.children.find((c) => c.userData.part === 'tank')!;
-    const liquid = tankMesh.children.find((c) => c.userData.slot === 'sight-liquid')!;
+    const liquid = tankMesh.children.find((c) => c.userData.slot === 'liquid')!;
     const vessel = tankMesh.children.find((c) => c.userData.slot === 'vessel')!;
-    const height = (m: Node): number => (m.userData.shape as { length?: number; size?: number[] }).size?.[1] ?? NaN;
+    const height = (m: Node): number => (m.userData.shape as { length?: number }).length ?? NaN;
     const body = (vessel.userData.shape as unknown as { length: number }).length;
     expect(height(liquid)).toBeCloseTo(0.4 * body, 2);
     const nodes = count(world);
