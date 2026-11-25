@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'bun:test';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, win32 } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { cellLocation, loadCases, parseExpectation } from './cases';
+import { caseId, cellLocation, loadCases, parseExpectation } from './cases';
 
 const conformanceRoot = fileURLToPath(new URL('../../../../conformance', import.meta.url));
 
