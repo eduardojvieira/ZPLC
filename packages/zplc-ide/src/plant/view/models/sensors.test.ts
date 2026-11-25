@@ -99,6 +99,16 @@ describe('sensor models (VIS-014)', () => {
     expect(4 * x * z).toBeGreaterThanOrEqual(0.0015); // m2: at least half of the 0.07 x 0.04 top face
   });
 
+  it('VIS-016 a bezel round the lens glows while the sensor detects and is dark while it is clear (the change a 1 m beam alone leaves under 2 %)', async () => {
+    const v = await plant.views();
+    expect(slot(partModel(v['eye-far']!)!, 'bezel').role).toBe('lampOff');
+    const core = plant.core();
+    core.act('EyeFar', 'stuckOn');
+    core.advance(5);
+    const lit = partModel(core.snapshot().parts.find((p) => p.id === 'eye-far')!)!;
+    expect(slot(lit, 'bezel').role).toBe('lamp');
+  });
+
   it('VIS-014 a sensor beside a belt sits on a bracket bolted to the belt frame, with a fine beam and no post to the floor', async () => {
     const v = await plant.views();
     const eye = v['eye-far']!;
