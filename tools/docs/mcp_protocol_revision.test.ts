@@ -48,37 +48,35 @@ async function ask(messages: object[]): Promise<Array<Record<string, any>>> {
   return answers;
 }
 
-describe('MCP guide: the protocol revision of the server is the one the page shows (DOC-009)', () => {
-  it('answers the request and the older handshake of the guide as the guide says, in English and in Spanish', async () => {
+describe('MCP guide: the protocol revisions of the server are the ones the page shows (DOC-009, D-35)', () => {
+  it('accepts the 2025-11-25 handshake of the guide and lists the tools, in English and in Spanish', async () => {
     for (const guide of GUIDES) {
-      const [request, error] = jsonFences(guide).filter((fence) => fence.method === 'tools/list' || fence.error !== undefined);
+      const [request] = jsonFences(guide).filter((fence) => fence.method === 'tools/list');
       expect(request?.params?._meta?.['io.modelcontextprotocol/protocolVersion']).toBe('2026-07-28');
-      expect(error?.error?.code).toBe(-32022);
       const older = {
         jsonrpc: '2.0',
         id: 1,
         method: 'initialize',
-        params: { protocolVersion: error!.error.data.requested, capabilities: {}, clientInfo: { name: 'docs-check', version: '0' } },
+        params: { protocolVersion: '2025-11-25', capabilities: {}, clientInfo: { name: 'docs-check', version: '0' } },
       };
-      const [refused, listed] = await ask([older, request!]);
-      expect({ guide, refused }).toEqual({ guide, refused: { jsonrpc: '2.0', id: 1, error: error!.error } });
+      const [accepted, listed] = await ask([older, request!]);
+      expect({ guide, version: accepted?.result?.protocolVersion }).toEqual({ guide, version: '2025-11-25' });
       expect({ guide, tools: Array.isArray(listed?.result?.tools) && listed!.result.tools.length > 0 }).toEqual({ guide, tools: true });
     }
   });
 
-  it('answers a request without a revision, and one without the capabilities, with the codes the guide names', async () => {
+  it('serves a request without a revision, and one without the capabilities, as the guide says', async () => {
     const [withoutRevision, withoutCapabilities] = await ask([
       { jsonrpc: '2.0', id: 2, method: 'tools/list' },
       { jsonrpc: '2.0', id: 3, method: 'tools/list', params: { _meta: { 'io.modelcontextprotocol/protocolVersion': '2026-07-28' } } },
     ]);
-    expect(withoutRevision?.error?.code).toBe(-32022);
-    expect(withoutRevision?.error?.message).toBe('Unsupported protocol version: the request did not name a protocol version');
-    expect(withoutCapabilities?.error?.code).toBe(-32602);
-    expect(withoutCapabilities?.error?.message).toBe(
-      'Invalid _meta envelope for protocol revision 2026-07-28: io.modelcontextprotocol/clientCapabilities: missing',
-    );
+    expect(withoutRevision?.error).toBeUndefined();
+    expect(withoutRevision?.result?.tools?.length).toBeGreaterThan(0);
+    expect(withoutCapabilities?.error).toBeUndefined();
+    expect(withoutCapabilities?.result?.tools?.length).toBeGreaterThan(0);
     const text = readFileSync(join(ROOT, GUIDES[0]!), 'utf8').replace(/\s+/g, ' ');
-    expect(text).toContain(withoutRevision!.error.message);
-    expect(text).toContain(withoutCapabilities!.error.message);
+    expect(text).toContain('A request that names no revision is served as a request of that older era.');
+    const spanish = readFileSync(join(ROOT, GUIDES[1]!), 'utf8').replace(/\s+/g, ' ');
+    expect(spanish).toContain('Una solicitud que no nombra ninguna revisión se atiende como una de esa era anterior.');
   });
 });
