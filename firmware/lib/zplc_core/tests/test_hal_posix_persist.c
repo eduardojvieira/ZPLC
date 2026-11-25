@@ -192,11 +192,38 @@ static void test_parent_sync_failure_is_reported_after_rename(void) {
 }
 #endif
 
+static void test_save_same_key_twice_keeps_second_value(void) {
+  char temp_dir[256];
+  uint8_t first[3] = {1U, 2U, 3U};
+  uint8_t second[3] = {9U, 8U, 7U};
+  uint8_t loaded[3] = {0U, 0U, 0U};
+
+  printf("\n=== Test: POSIX HAL saving the same key twice ===\n");
+
+  TEST_ASSERT(create_temp_dir(temp_dir, sizeof(temp_dir)) == 0, "temporary directory created for repeated save");
+  if (access(temp_dir, F_OK) != 0) {
+    return;
+  }
+
+  TEST_ASSERT(setenv("ZPLC_PERSIST_ROOT", temp_dir, 1) == 0, "ZPLC_PERSIST_ROOT override applied for repeated save");
+  TEST_ASSERT(zplc_hal_init() == ZPLC_HAL_OK, "HAL initialized for repeated save");
+  TEST_ASSERT(zplc_hal_persist_save("twice", first, sizeof(first)) == ZPLC_HAL_OK, "first save succeeds");
+  TEST_ASSERT(zplc_hal_persist_save("twice", second, sizeof(second)) == ZPLC_HAL_OK, "second save of the same key succeeds");
+  TEST_ASSERT(zplc_hal_persist_load("twice", loaded, sizeof(loaded)) == ZPLC_HAL_OK, "load after the second save succeeds");
+  TEST_ASSERT(memcmp(second, loaded, sizeof(second)) == 0, "the second value is the one loaded back");
+  TEST_ASSERT(zplc_hal_persist_delete("twice") == ZPLC_HAL_OK, "repeated-save payload deleted");
+  TEST_ASSERT(zplc_hal_shutdown() == ZPLC_HAL_OK, "HAL shutdown succeeds after repeated save");
+
+  remove_tree(temp_dir);
+  (void)unsetenv("ZPLC_PERSIST_ROOT");
+}
+
 int main(void) {
   test_persist_roundtrip();
   test_key_sanitization();
   test_empty_record_is_corrupt();
   test_oversized_record_is_rejected();
+  test_save_same_key_twice_keeps_second_value();
 #if defined(__linux__)
   test_parent_sync_failure_is_reported_after_rename();
 #endif
