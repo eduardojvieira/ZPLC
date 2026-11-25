@@ -1248,8 +1248,8 @@ describe('a failed start says why and what to do (AIX-007, AI-10)', () => {
       }
     };
     const send = (message: object) => {
-      child.stdin.write(`${JSON.stringify(message)}\n`);
-      child.stdin.flush();
+      void child.stdin.write(`${JSON.stringify(message)}\n`);
+      void child.stdin.flush();
     };
     try {
       send({
