@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from 'bun:test';
 import type { PartView, PlantCore, PlantSceneFile, ScenePart, Vec3 } from '../../contracts';
 import { createPlantCore } from '../../core/plantCore';
 import { partModel, pieceExtent, rotate } from './index';
-import { slot } from './models.fixtures';
+import { bottom, slot } from './models.fixtures';
 import type { Piece } from './shared';
 import { STATIONS } from './stations';
 
@@ -155,5 +155,103 @@ describe('stacker crane models (VIS-014)', () => {
     const b = partModel({ ...rack, state: { ...rack.state, stored: 3 } }, { travel: 0, scenePart: part })!;
     expect(b).toEqual(a);
     expect(a.every((p) => p.visible)).toBe(true);
+  });
+});
+
+const PALLETIZER_IDS = ['palletizer', 'palletizer-frame', 'palletizer-beam', 'palletizer-pusher', 'palletizer-plate-far', 'palletizer-plate-side'];
+const palletizerPart: ScenePart = {
+  id: 'palletizer',
+  part: 'layer-palletizer',
+  name: 'Palletizer1',
+  position: [0, 0.54, 0],
+  rotationYDeg: 0,
+  config: { variant: 'digital', strokeXM: 1.6, strokeYM: 1, speedMps: 1.5, accelMps2: 2, columns: 2, rows: 2 },
+};
+
+/** The views of a layer palletizer at rest, by id, as the real core publishes them. */
+async function palletizer(): Promise<Record<string, PartView>> {
+  const scene: PlantSceneFile = { schemaVersion: 1, name: 'palletizer', parts: [palletizerPart], cameras: [] };
+  const core = await createPlantCore(scene);
+  cores.push(core);
+  return Object.fromEntries(core.snapshot().parts.map((p) => [p.id, p]));
+}
+/** `view` moved by (dx, dy, dz) in the part's frame (the part is not turned). */
+const moved = (view: PartView, dx: number, dy: number, dz: number): PartView => ({
+  ...view,
+  pose: { ...view.pose, p: [view.pose.p[0] + dx, view.pose.p[1] + dy, view.pose.p[2] + dz] },
+});
+const worldOf = (view: PartView) => (pieces: readonly Piece[]) => pieces.map((p) => world(view, p).map((v) => Math.round(v * 1e6) / 1e6));
+
+describe('layer palletizer models (VIS-014)', () => {
+  it('PRT-009 every view the layer palletizer publishes has a model, drawn once', async () => {
+    const views = await palletizer();
+    expect(Object.keys(views)).toEqual(expect.arrayContaining(PALLETIZER_IDS));
+    for (const id of PALLETIZER_IDS) expect(partModel(views[id]!, { travel: 0, scenePart: palletizerPart })?.length).toBeGreaterThan(0);
+  });
+
+  it('VIS-014 the rails and their legs stay where they are in the world and the feet reach the floor', async () => {
+    const view = (await palletizer())['palletizer-frame']!;
+    const rest = partModel(view)!;
+    expect(slotsOf(rest, 'rail').map((p) => p.role)).toEqual(['frame', 'frame']);
+    expect(slotsOf(rest, 'foot').length).toBe(4);
+    for (const f of slotsOf(rest, 'foot')) close(bottom(f), -view.pose.p[1]);
+    // The same view in another pose (the part never moves it) is drawn as the same pieces.
+    expect(partModel({ ...view, state: { x: 1 } })).toEqual(rest);
+  });
+
+  it('VIS-014 the column carries a carriage on the rail that follows the pose of the column', async () => {
+    const view = (await palletizer())['palletizer-beam']!;
+    expect(slot(partModel(view)!, 'column').role).toBe('frame');
+    for (const dx of [0, 0.5, 1.2]) {
+      const v = moved(view, dx, 0, 0);
+      const carriage = slot(partModel(v)!, 'carriage');
+      expect(carriage.role).toBe('housing');
+      expect(world(v, carriage)[0]).toBeCloseTo(view.pose.p[0] + dx, 9);
+      expect(world(v, carriage)[1]).toBeCloseTo(view.pose.p[1] + view.pose.size[1] / 2, 9);
+    }
+  });
+
+  it('VIS-014 the pusher bar with its rubber face and guide rods follows its pose, and the plates have a rim', async () => {
+    const views = await palletizer();
+    const pusher = views['palletizer-pusher']!;
+    const rest = partModel(pusher)!;
+    expect(slot(rest, 'bar').role).toBe('painted');
+    expect(slot(rest, 'face').role).toBe('rubber');
+    expect(slotsOf(rest, 'guide').map((p) => p.role)).toEqual(['steel', 'steel']);
+    const out = moved(pusher, 0, 0, 0.15);
+    expect(partModel(out)).toEqual(rest);
+    close(world(out, slot(rest, 'face'))[2] - world(pusher, slot(rest, 'face'))[2], 0.15);
+    for (const id of ['palletizer-plate-far', 'palletizer-plate-side']) {
+      const pieces = partModel(views[id]!)!;
+      expect(slot(pieces, 'plate').role).toBe('steel');
+      expect(slot(pieces, 'rim')).toBeDefined();
+    }
+  });
+
+  it('VIS-014 the pad, its clamp jaws and the base: the base stays in the world, the jaws close with the grip', async () => {
+    const pad = (await palletizer())['palletizer']!;
+    const context = { travel: 0, scenePart: palletizerPart };
+    const at = (dx: number, dy: number, closeFraction: number) => {
+      const v = { ...moved(pad, dx, dy, 0), state: { ...pad.state, closeFraction } };
+      return { v, pieces: partModel(v, context)! };
+    };
+    const home = at(0, 0, 0);
+    expect(slot(home.pieces, 'pad').role).toBe('steel');
+    expect(slotsOf(home.pieces, 'base').every((p) => p.role === 'frame')).toBe(true);
+    for (const [dx, dy] of [
+      [0.8, 0.3],
+      [1.6, 1],
+    ] as const) {
+      const there = at(dx, dy, 1);
+      expect(worldOf(there.v)(slotsOf(there.pieces, 'base'))).toEqual(worldOf(home.v)(slotsOf(home.pieces, 'base')));
+      expect(world(there.v, slot(there.pieces, 'pad'))[0]).toBeCloseTo(dx, 9);
+    }
+    const gap = (f: number) => {
+      const { pieces } = at(0, 0, f);
+      return Math.abs(slot(pieces, 'jaw-a').at[2] - slot(pieces, 'jaw-b').at[2]);
+    };
+    expect(gap(1)).toBeLessThan(gap(0));
+    for (const p of slotsOf(home.pieces, 'foot')) close(bottom(p), -pad.pose.p[1]);
+    expect(partModel(pad)!.length).toBeGreaterThan(0);
   });
 });
