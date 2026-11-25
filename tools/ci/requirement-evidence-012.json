@@ -1,4 +1,12 @@
 {
+  "CRS-001": [
+    {
+      "kind": "manual",
+      "ref": "specs/012-zplc-2-1-plant-simulation/course-outline.md",
+      "test": "Approved by the owner on 2026-11-13 (CRS-001)",
+      "note": "The owner's approval of the course outline is a person's act. The outline records it with its date in its own Status line (approved 2026-11-13, amended 2026-11-23 under decision S-13); it lists every module's lessons with scene, language, tracks and skill. No test can give the approval."
+    }
+  ],
   "LNK-016": [
     {
       "kind": "gate",
