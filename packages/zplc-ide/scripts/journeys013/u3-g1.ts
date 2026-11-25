@@ -1,6 +1,8 @@
 import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { learnLessonCatalog } from '../../src/components/learnLesson';
+import { LESSON_INDEX } from '../../src/generated/lessonIndex';
+import { buildCourseView } from '../../src/learn/course';
 import { translate } from '../../src/i18n/translate';
 import { assert, MONACO_MODULE, packageRoot } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
@@ -8,7 +10,12 @@ import type { Journey } from '../journeys';
 
 const en = (key: Parameters<typeof translate>[1]) => translate('en', key);
 const GUIDE = '[data-sidebar-kind="secondary"]';
-const LESSON = 'motor-start-stop-safe';
+const lessonOf = learnLessonCatalog.en.find(({ title }) => title === 'Safe motor start-stop')!;
+const LESSON = lessonOf.id;
+// the lesson that follows it in its module, as the Guide computes it
+const course = buildCourseView(LESSON_INDEX, null, { locale: 'en', unlockAll: true });
+const siblings = course.modules.find((module) => module.lessons.some(({ id }) => id === LESSON))!.lessons;
+const NEXT = siblings[siblings.findIndex(({ id }) => id === LESSON) + 1]!;
 
 const inGuide = (app: App, expression: string) =>
   app.eval<boolean>(`(() => { const guide = document.querySelector('${GUIDE}'); return ${expression}; })()`);
@@ -21,7 +28,7 @@ export const journeysU3G1: Journey[] = [
     proves: ['GDE-003', 'GDE-008'],
     partly: ['GDE-005', 'GDE-009'],
     run: async (app, { root }) => {
-      const lesson = learnLessonCatalog.en.find(({ id }) => id === LESSON)!;
+      const lesson = lessonOf;
       const solution = readFileSync(join(packageRoot, 'projects', lesson.referenceExampleId, lesson.solutionProgram), 'utf8');
       const folder = join(root, 'guide-lesson-g1');
       mkdirSync(folder);
@@ -62,7 +69,8 @@ export const journeysU3G1: Journey[] = [
         30_000,
       );
       await app.eval(
-        `(async () => { const monaco = await ${MONACO_MODULE}; monaco.editor.getEditors()[0].getModel().setValue(${JSON.stringify(solution)}); })()`,
+        `(async () => { const monaco = await ${MONACO_MODULE}; ` +
+          `monaco.editor.getEditors()[0].getModel().setValue(${JSON.stringify(solution)}); })()`,
       );
       await app.press('Ctrl+S');
 
@@ -78,7 +86,7 @@ export const journeysU3G1: Journey[] = [
       );
 
       // Next lesson: the lesson after this one in the module opens in the Guide
-      const next = learnLessonCatalog.en.find(({ id }) => id === 'boolean-logic-two-hand-guard-ladder')!;
+      const next = NEXT;
       await app.until('Next lesson', async () => (await app.visible(css(`${GUIDE} [data-guide-next-lesson]`))) || undefined);
       assert(
         await inGuide(app, `guide.querySelector('[data-guide-next-lesson]').textContent.includes(${JSON.stringify(next.title)})`),
@@ -90,7 +98,8 @@ export const journeysU3G1: Journey[] = [
       await app
         .until(
           'the next lesson in the Guide',
-          async () => (await inGuide(app, `guide.querySelector('#learn-title')?.textContent.trim() === ${JSON.stringify(next.title)}`)) || undefined,
+          async () =>
+            (await inGuide(app, `guide.querySelector('#learn-title')?.textContent.trim() === ${JSON.stringify(next.title)}`)) || undefined,
           30_000,
         )
         .catch(async (error: Error) => {
