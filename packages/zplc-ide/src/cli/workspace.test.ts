@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readdir, rename, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, realpath, rename, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
@@ -6,7 +6,8 @@ import { readWorkspace, readWorkspaceScenarios, __workspaceReadTestHooks } from 
 
 const manifest = JSON.stringify({ name: 'test', version: '1.0.0', tasks: [{ name: 'Main', file: 'Main.st' }] });
 async function workspace(): Promise<string> {
-  const root = await mkdtemp(join(tmpdir(), 'zplc-cli-'));
+  // The reader canonicalizes the root, so the hooks compare against the canonical path (Windows tmpdir is an 8.3 short name).
+  const root = await realpath(await mkdtemp(join(tmpdir(), 'zplc-cli-')));
   await mkdir(join(root, 'src'));
   await writeFile(join(root, 'zplc.json'), manifest);
   await writeFile(join(root, 'src', 'Main.st'), 'PROGRAM Main\nEND_PROGRAM');
@@ -118,7 +119,11 @@ describe('readWorkspace', () => {
     }, 'PROJECT_INVALID');
     const root = await workspace();
     try {
-      await writeFile(join(root, 'src', 'main.ST'), 'PROGRAM Main\nEND_PROGRAM');
+      // Names that differ only by case cannot coexist on a case-insensitive disk, so Windows uses the legacy main.ld twin.
+      if (process.platform === 'win32') {
+        await writeFile(join(root, 'src', 'main.ld'), '{}');
+        await writeFile(join(root, 'src', 'main.ld.json'), '{}');
+      } else await writeFile(join(root, 'src', 'main.ST'), 'PROGRAM Main\nEND_PROGRAM');
       const result = await readWorkspace(root);
       expect(result).toMatchObject({ ok: false, diagnostics: [{ code: 'WORKSPACE_DUPLICATE_SOURCE' }] });
       expect(JSON.stringify(result)).not.toContain(root);

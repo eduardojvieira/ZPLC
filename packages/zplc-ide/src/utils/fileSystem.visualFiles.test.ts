@@ -227,7 +227,9 @@ describe('a name that the build already reads as an existing file (LX-7b)', () =
   ];
 
   // The table above has to say what the build reader says, or the guard and the build would drift apart.
-  it.each(PAIRS.filter((pair) => pair[0] !== pair[3]))(
+  // Two names that differ only by case cannot both exist on a case-insensitive disk (Windows), so those pairs are POSIX-only.
+  const coexist = (pair: (typeof PAIRS)[number]) => process.platform !== 'win32' || pair[0].toLowerCase() !== pair[3];
+  it.each(PAIRS.filter((pair) => pair[0] !== pair[3] && coexist(pair)))(
     'the build reads %s and the file made from "%s" (%s) as %s the same name: %s',
     async (existing, _typed, _language, wouldBe, twin) => {
       seed({ [existing]: '{}', [wouldBe]: '{}' });
@@ -305,6 +307,8 @@ describe('folders written by earlier versions and by hand', () => {
 
     rmSync(path.join(project, 'src', 'main.ld'));
     expect((await readWorkspace(project)).ok).toBe(true);
+    // A case-only twin cannot be created on a case-insensitive disk (Windows).
+    if (process.platform === 'win32') return;
     seed({ 'Main.LD.JSON': '{}' });
     expect(await readWorkspace(project)).toMatchObject({ ok: false, diagnostics: [{ code: 'WORKSPACE_DUPLICATE_SOURCE' }] });
   });
