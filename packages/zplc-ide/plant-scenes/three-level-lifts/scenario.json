@@ -20,6 +20,7 @@
     { "kind": "ALWAYS", "condition": { "fact:itemsDropped": false } },
     { "kind": "AT", "atMs": 16000, "condition": { "ThreeLevelLifts.Red": true } },
     { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 95000, "condition": { "fact:delivered:TopBin": true } },
+    { "kind": "AT", "atMs": 95000, "condition": { "fact:delivered:TopBin": 5 } },
     { "kind": "AT", "atMs": 95000, "condition": { "ThreeLevelLifts.Green": true } }
   ]
 }

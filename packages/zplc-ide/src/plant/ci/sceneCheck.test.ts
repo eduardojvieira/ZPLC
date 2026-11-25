@@ -256,3 +256,39 @@ describe('the shipped scenes', () => {
         expect(existsSync(resolve(import.meta.dir, '../../..', entry.dir, file))).toBe(true);
   });
 });
+
+/** SCN-005 (N10): scenes 7, 10, 11 and 16 state the exact count of their facts; each number is active, one more fails. */
+describe('the tightened scenes grade exact counts (SCN-005)', () => {
+  for (const id of ['stacker-crane-warehouse', 'lift-stacking', 'three-level-lifts', 'balanced-production-line']) {
+    nativeIt(
+      `SCN-005 ${id}: the reference passes its exact counts and fails when one count is one more`,
+      async () => {
+        const dir = resolve(import.meta.dir, '../../../plant-scenes', id);
+        const scenario = JSON.parse(readFileSync(join(dir, 'scenario.json'), 'utf8')) as {
+          expectations: Array<{ condition: Record<string, unknown> }>;
+        };
+        const counts = scenario.expectations.flatMap((e) =>
+          Object.entries(e.condition).filter(([key, value]) => key.startsWith('fact:') && typeof value === 'number'),
+        );
+        expect(counts.length).toBeGreaterThan(0);
+        const copy = (name: string, body: unknown) => {
+          const out = join(root, name);
+          mkdirSync(out);
+          for (const file of ['scene.json', 'plant-map.json', 'reference.st', 'starter.st'])
+            writeFileSync(join(out, file), readFileSync(join(dir, file)));
+          writeFileSync(join(out, 'scenario.json'), JSON.stringify(body));
+          return out;
+        };
+        expect((await runSceneCheck(copy(`${id}-exact`, scenario), 'native')).solution).toBe('pass');
+        for (const [fact] of counts) {
+          const bumped = structuredClone(scenario);
+          for (const e of bumped.expectations) if (typeof e.condition[fact] === 'number') (e.condition[fact] as number) += 1;
+          const result = await runSceneCheck(copy(`${id}-${fact.replace(/\W/g, '_')}-plus-one`, bumped), 'native');
+          expect(result.solution).toBe('fail');
+          expect(result.problems.join('\n')).toContain('reference.st: the reference program does not pass');
+        }
+      },
+      600_000,
+    );
+  }
+});

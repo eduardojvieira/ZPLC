@@ -16,6 +16,7 @@
     { "kind": "ALWAYS", "condition": { "fact:itemsDropped": false } },
     { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 60000, "condition": { "fact:loaded:crate:0": true } },
     { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 60000, "condition": { "fact:delivered:CrateBin": true } },
+    { "kind": "AT", "atMs": 60000, "condition": { "fact:delivered:CrateBin": 6 } },
     { "kind": "AT", "atMs": 60000, "condition": { "LiftStacking.Green": true } }
   ]
 }
