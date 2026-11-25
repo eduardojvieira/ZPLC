@@ -34,7 +34,8 @@ test('discovers exactly one real platform executable and rejects unsafe candidat
       const executable =
         platform === 'darwin' ? join(app, 'Contents', 'MacOS', 'ZPLC') : join(app, platform === 'win32' ? 'zplc.exe' : 'zplc');
       expect(discoverPackagedExecutable(root, platform)).toBe(executable);
-      if (platform !== 'win32') {
+      // The executable bit is POSIX: a Windows host keeps no mode, so this check needs a POSIX host.
+      if (platform !== 'win32' && process.platform !== 'win32') {
         chmodSync(executable, 0o644);
         expect(() => discoverPackagedExecutable(root, platform)).toThrow('not executable');
         chmodSync(executable, 0o755);
@@ -67,8 +68,11 @@ test('names an installed application by its executable, and refuses a missing fi
     expect(() => installedExecutable(root, 'linux')).toThrow('not a real file');
     symlinkSync(executable, join(root, 'link'));
     expect(() => installedExecutable(join(root, 'link'), 'linux')).toThrow('not a real file');
-    chmodSync(executable, 0o644);
-    expect(() => installedExecutable(executable, 'linux')).toThrow('not executable');
+    // The executable bit is POSIX: a Windows host keeps no mode, so this check needs a POSIX host.
+    if (process.platform !== 'win32') {
+      chmodSync(executable, 0o644);
+      expect(() => installedExecutable(executable, 'linux')).toThrow('not executable');
+    }
     // Windows has no executable bit: the file is enough
     expect(installedExecutable(executable, 'win32')).toBe(executable);
   } finally {

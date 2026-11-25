@@ -1,5 +1,4 @@
-import { describe, expect, it } from 'bun:test';
-import { existsSync } from 'node:fs';
+import { describe, expect } from 'bun:test';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -7,7 +6,7 @@ import { join } from 'node:path';
 import productManifest from '../../../../package.json';
 import { nativeSimulationEnvironment } from '../../shared/nativeSimulationEnvironment';
 import { NativeSimulationSupervisor } from '../../shared/nativeSimulationSupervisor';
-import { nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
+import { itNativeLoopback, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
 import { compilerCompile } from '../cli/toolApi';
 import { cellLocation } from '../conformance/cases';
 import { NativeAdapter } from './nativeAdapter';
@@ -16,16 +15,7 @@ import { NativeAdapter } from './nativeAdapter';
 // program names neither a port nor a broker. The environment is the one Studio builds (nativeSimulationEnvironment);
 // the runtime is the native one. This is evidence against protocol doubles on 127.0.0.1, not against a plant.
 
-const found = existsSync(nativeRuntimeBinary);
-const inCi = !['', '0', 'false'].includes(process.env.CI ?? '');
-const itSimulated = (
-  found || !inCi
-    ? it.skipIf(!found)
-    : (name: string) =>
-        it(name, () => {
-          throw new Error(`zplc_runtime not found (${nativeRuntimeBinary}); CI is set`);
-        })
-) as ReturnType<typeof it.skipIf>;
+const itSimulated = itNativeLoopback;
 
 const PROGRAM = `PROGRAM Demo
 VAR

@@ -1,14 +1,14 @@
-import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
+import { afterAll, beforeAll, describe, expect } from 'bun:test';
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { connect, type Socket } from 'node:net';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 
 import productManifest from '../../../../package.json';
 import { NativeSimulationSupervisor } from '../../shared/nativeSimulationSupervisor';
-import { nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
+import { itNativeLoopback, loopbackBinary, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
 import { compilerCompile } from '../cli/toolApi';
 import { NativeAdapter } from '../runtime/nativeAdapter';
 import { cellLocation } from './cases';
@@ -19,17 +19,8 @@ import { cellLocation } from './cases';
 // it back, joins the broker, publishes, and receives a message; a block of a cloud service answers "not
 // available". Without ZPLC_NATIVE_COMM the same program is answered "no handler", as it always was.
 
-const loopbackBinary = process.env.ZPLC_LOOPBACK_BIN ?? join(dirname(nativeRuntimeBinary), 'zplc_loopback');
 const found = existsSync(nativeRuntimeBinary) && existsSync(loopbackBinary);
-const inCi = !['', '0', 'false'].includes(process.env.CI ?? '');
-const itSimulated = (
-  found || !inCi
-    ? it.skipIf(!found)
-    : (name: string) =>
-        it(name, () => {
-          throw new Error(`zplc_runtime or zplc_loopback not found (${nativeRuntimeBinary}, ${loopbackBinary}); CI is set`);
-        })
-) as ReturnType<typeof it.skipIf>;
+const itSimulated = itNativeLoopback;
 
 const REGISTER_VALUE = 0xcafe;
 const STATUS_NO_HANDLER = 3;

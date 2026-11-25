@@ -1,8 +1,11 @@
 import { chmodSync, mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { expect, test } from 'bun:test';
+import { expect, test as bunTest } from 'bun:test';
 import { verifyReproducibleLinuxPayloads } from './verify-reproducible-linux-payload';
+
+// Linux payload check: it reads the POSIX executable bit, which Windows files do not have (nightly 45636849073).
+const test = bunTest.skipIf(process.platform === 'win32');
 
 function writePayload(root: string, suffix: string, app = 'app', runtimeTail = 0): void {
   const resources = join(root, 'dist-electron', `zplc-ide-linux-x64-${suffix}-unpacked`, 'resources');

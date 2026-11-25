@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { it } from 'bun:test';
 
@@ -28,4 +29,25 @@ export const itNative = (
             `native runtime binary not found: ${nativeRuntimeBinary} (CI is set); build zplc_runtime and export ZPLC_NATIVE_SIM_BIN`,
           );
         })
+) as ReturnType<typeof it.skipIf>;
+
+// The loopback peers (Modbus server, MQTT broker) of a simulation are the zplc_loopback program built next to zplc_runtime.
+export const loopbackBinary = process.env.ZPLC_LOOPBACK_BIN ?? join(dirname(nativeRuntimeBinary), 'zplc_loopback');
+const loopbackFound = found && existsSync(loopbackBinary);
+
+// Registers a test that needs zplc_runtime and zplc_loopback. Windows does not build zplc_loopback (its sockets are
+// POSIX: CMakeLists.txt, if(NOT WIN32)), so there the test is skipped and says why; elsewhere a missing binary is
+// skipped on a developer machine and fails in CI, as for itNative.
+export const itNativeLoopback = (
+  loopbackFound
+    ? it
+    : process.platform === 'win32'
+      ? (name: string, ...rest: unknown[]) =>
+          (it.skip as (...args: unknown[]) => unknown)(`${name} (zplc_loopback is not built on this platform)`, ...rest)
+      : inCi
+        ? (name: string) =>
+            it(name, () => {
+              throw new Error(`zplc_runtime or zplc_loopback not found (${nativeRuntimeBinary}, ${loopbackBinary}); CI is set`);
+            })
+        : it.skip
 ) as ReturnType<typeof it.skipIf>;
