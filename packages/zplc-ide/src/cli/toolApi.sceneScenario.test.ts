@@ -3,6 +3,7 @@
  * code the Learn Check uses, and reports it like any scenario. Scenarios without the block keep their result.
  */
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect } from 'bun:test';
@@ -10,7 +11,7 @@ import { afterAll, beforeAll, describe, expect } from 'bun:test';
 import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';
 import { testsRun } from './toolApi';
 
-const PROJECTS = new URL('../../projects/', import.meta.url).pathname;
+const PROJECTS = fileURLToPath(new URL('../../projects/', import.meta.url));
 let scratch = '';
 let previousBinary: string | undefined;
 beforeAll(() => {

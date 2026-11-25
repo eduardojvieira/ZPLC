@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test';
+import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
@@ -243,7 +244,7 @@ describe('kinematic belts in the physics world', () => {
     // The four core pins are the guard of the M1 to M3 traces: this task must not touch them.
     const pins = readFileSync(new URL('./hashes.json', import.meta.url), 'utf8');
     const head = spawnSync('git', ['show', 'HEAD:packages/zplc-ide/src/plant/core/hashes.json'], {
-      cwd: new URL('.', import.meta.url).pathname,
+      cwd: fileURLToPath(new URL('.', import.meta.url)),
     });
     expect(pins).toBe(head.stdout.toString());
   });

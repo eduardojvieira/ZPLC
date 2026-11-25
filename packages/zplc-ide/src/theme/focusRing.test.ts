@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test';
+import { fileURLToPath } from 'node:url';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { contrastRatio } from './color';
@@ -62,7 +63,7 @@ describe('focus ring in the visual editors (UX-005)', () => {
       const path = join(dir, name);
       return statSync(path).isDirectory() ? walk(path) : [path];
     });
-  const editorsDir = new URL('../editors', import.meta.url).pathname;
+  const editorsDir = fileURLToPath(new URL('../editors', import.meta.url));
   const sources = walk(editorsDir).filter((path) => /\.tsx?$/.test(path) && !/\.test\.tsx?$/.test(path));
   // a class that removes the ring or draws a second one
   const OWN_FOCUS =

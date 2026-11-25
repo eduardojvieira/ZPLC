@@ -1,4 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { translate } from '../../src/i18n/translate';
 import { assert, MONACO_MODULE } from '../run-desktop-smoke';
@@ -6,7 +7,7 @@ import { button, css, type App } from '../journeyApp';
 import type { Journey } from '../journeys';
 import { runFromPalette } from './w3';
 
-const projects = (path: string): string => new URL(`../../projects/${path}`, import.meta.url).pathname;
+const projects = (path: string): string => fileURLToPath(new URL(`../../projects/${path}`, import.meta.url));
 type Model = { variables: { inputs: Array<{ name: string }> } };
 
 /** A bundled diagram whose `from` becomes the project's global `Permit`, left out of its own table so that it names the global. */

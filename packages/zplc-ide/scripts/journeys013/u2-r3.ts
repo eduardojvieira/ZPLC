@@ -1,10 +1,11 @@
 import { copyFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { assert } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
 import type { Journey } from '../journeys';
 
-const projects = (path: string): string => new URL(`../../projects/${path}`, import.meta.url).pathname;
+const projects = (path: string): string => fileURLToPath(new URL(`../../projects/${path}`, import.meta.url));
 
 async function search(app: App, text: string): Promise<void> {
   await app.click(css('[data-activity="search"]'), 'the Search activity');

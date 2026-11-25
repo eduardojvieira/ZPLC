@@ -5,6 +5,7 @@
  * through all of them, and so is a project whose assertion fails.
  */
 import { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect } from 'bun:test';
@@ -15,7 +16,7 @@ import { main } from './index';
 import { itNative } from './nativeRuntimeGuard';
 import { scenarioRun, testsRun, type TestRunResult } from './toolApi';
 
-const PROJECTS = new URL('../../projects/', import.meta.url).pathname;
+const PROJECTS = fileURLToPath(new URL('../../projects/', import.meta.url));
 const bundled = readdirSync(PROJECTS)
   .filter((name) => readdirSync(join(PROJECTS, name)).includes('tests'))
   .sort();

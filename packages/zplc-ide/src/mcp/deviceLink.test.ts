@@ -14,6 +14,7 @@
 // bench commands of tools/hil (the chain of HIL-012 and the comparison of HIL-015), started without an interactive
 // terminal, exit with an error before they open anything.
 import { afterEach, describe, expect, test } from 'bun:test';
+import { fileURLToPath } from 'node:url';
 import dgram from 'node:dgram';
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import net from 'node:net';
@@ -284,7 +285,7 @@ describe('COM-030: the MCP server cannot open the device link', () => {
   // command, and exit with an error when there is no interactive terminal (stdin here is not one). A serial port
   // may not be opened by any of them in this run (ZPLC_HIL_FORBID_SERIAL).
   test('the hardware scenario and bench commands (HIL-003, HIL-012) exit with an error without an interactive terminal', () => {
-    const root = new URL('../../../../', import.meta.url).pathname;
+    const root = fileURLToPath(new URL('../../../../', import.meta.url));
     const python = Bun.which('python3');
     const project = join(root, 'packages/zplc-ide/projects/motor_start_stop');
     const commands: string[][] = [
