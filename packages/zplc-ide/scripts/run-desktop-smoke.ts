@@ -748,7 +748,7 @@ async function main(): Promise<void> {
     await waitFor('Test results tab', async () =>
       (await cdp!.evaluate(
         `(() => { const tab = [...document.querySelectorAll('button')].find((item) => ` +
-          `item.getAttribute('aria-label')?.startsWith('Test results,')); if (!tab) return false; tab.click(); return true; })()`,
+          `item.getAttribute('aria-label') === 'Test results'); if (!tab) return false; tab.click(); return true; })()`,
       )) === true
         ? true
         : undefined,
@@ -859,7 +859,7 @@ async function main(): Promise<void> {
     await waitFor('Test results tab after Learn', async () =>
       (await cdp!.evaluate(
         `(() => { const tab = [...document.querySelectorAll('button')].find((item) => ` +
-          `item.getAttribute('aria-label')?.startsWith('Test results,')); if (!tab) return false; tab.click(); return true; })()`,
+          `item.getAttribute('aria-label') === 'Test results'); if (!tab) return false; tab.click(); return true; })()`,
       )) === true
         ? true
         : undefined,
@@ -973,7 +973,7 @@ async function main(): Promise<void> {
     await waitFor('Test results tab', async () =>
       (await cdp!.evaluate(
         `(() => { const tab = [...document.querySelectorAll('button')].find((item) => ` +
-          `item.getAttribute('aria-label')?.startsWith('Test results,')); if (!tab) return false; tab.click(); return true; })()`,
+          `item.getAttribute('aria-label') === 'Test results'); if (!tab) return false; tab.click(); return true; })()`,
       )) === true
         ? true
         : undefined,
