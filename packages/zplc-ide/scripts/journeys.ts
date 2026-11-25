@@ -6703,9 +6703,9 @@ export const JOURNEYS: Journey[] = [
       assert(
         await app.eval<boolean>(
           `[...document.querySelectorAll('[data-activity-rail] button')].map((button) => button.getAttribute('aria-label')).join() === ` +
-            `'Project,Search,Tests,Learn'`,
+            `'Project,Search,Tests,Plant,Learn'`,
         ),
-        'The activity rail does not offer Project, Search, Tests and Learn.',
+        'The activity rail does not offer Project, Search, Tests, Plant and Learn.',
       );
       assert(
         await app.eval<boolean>(`document.querySelector('[data-activity="project"]')?.getAttribute('aria-current') === 'true'`),
