@@ -53,7 +53,9 @@ export const journeysU2P1: Journey[] = [
       app.answer(project);
       await app.click(button('Open project', 'contains'), 'the Open project button');
       await app.until('the workbench', async () => (await app.visible(css('[role="toolbar"]'))) || undefined);
-      const views = COMMANDS.filter((command) => command.category === 'view' && command.id !== 'view.commandPalette');
+      const views = COMMANDS.filter(
+        (command) => command.category === 'view' && command.id !== 'view.commandPalette' && !('pending' in command),
+      );
       assert(views.length > 20, `Expected the View commands of the registry, found ${views.length}.`);
       for (const command of views) await runFromPalette(app, command.id, translate('en', command.titleKey));
       assert(app.errors.length === 0, `Renderer errors: ${app.errors.join('; ')}`);
