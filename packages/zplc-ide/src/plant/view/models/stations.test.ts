@@ -187,7 +187,6 @@ const moved = (view: PartView, dx: number, dy: number, dz: number): PartView => 
   ...view,
   pose: { ...view.pose, p: [view.pose.p[0] + dx, view.pose.p[1] + dy, view.pose.p[2] + dz] },
 });
-const worldOf = (view: PartView) => (pieces: readonly Piece[]) => pieces.map((p) => world(view, p).map((v) => Math.round(v * 1e6) / 1e6));
 
 describe('layer palletizer models (VIS-014)', () => {
   it('PRT-009 every view the layer palletizer publishes has a model, drawn once', async () => {
@@ -235,7 +234,7 @@ describe('layer palletizer models (VIS-014)', () => {
     }
   });
 
-  it('VIS-014 the pad, its clamp jaws and the base: the base stays in the world, the jaws close with the grip', async () => {
+  it('VIS-014 the pad and its clamp jaws: the jaws close with the grip and nothing is drawn below them', async () => {
     const pad = (await palletizer())['palletizer']!;
     const context = { travel: 0, scenePart: palletizerPart };
     const at = (dx: number, dy: number, closeFraction: number) => {
@@ -244,21 +243,20 @@ describe('layer palletizer models (VIS-014)', () => {
     };
     const home = at(0, 0, 0);
     expect(slot(home.pieces, 'pad').role).toBe('steel');
-    expect(slotsOf(home.pieces, 'base').every((p) => p.role === 'frame')).toBe(true);
     for (const [dx, dy] of [
       [0.8, 0.3],
       [1.6, 1],
     ] as const) {
       const there = at(dx, dy, 1);
-      expect(worldOf(there.v)(slotsOf(there.pieces, 'base'))).toEqual(worldOf(home.v)(slotsOf(home.pieces, 'base')));
       expect(world(there.v, slot(there.pieces, 'pad'))[0]).toBeCloseTo(dx, 9);
     }
+    // Nothing hangs lower than the jaws: no base under the forming zone (it would lie in the infeed belt).
+    for (const p of home.pieces) expect(bottom(p)).toBeGreaterThanOrEqual(-0.03 / 2 - 0.25 - 1e-9);
     const gap = (f: number) => {
       const { pieces } = at(0, 0, f);
       return Math.abs(slot(pieces, 'jaw-a').at[2] - slot(pieces, 'jaw-b').at[2]);
     };
     expect(gap(1)).toBeLessThan(gap(0));
-    for (const p of slotsOf(home.pieces, 'foot')) close(bottom(p), -pad.pose.p[1]);
     expect(partModel(pad)!.length).toBeGreaterThan(0);
   });
 });

@@ -139,9 +139,6 @@ export const PALLETIZER = {
   railGap: 0.12, // each of the two rails lies this far from the line the column follows
   rail: 0.05,
   carriage: { length: 0.14, height: 0.1, width: 0.3 },
-  baseMargin: 0.1,
-  baseDrop: 0.1, // the top of the base frame lies this far under the belt surface of the forming zone
-  beltHeight: 0.54, // the belt surface of the scenes, when there is no scene part to say
   pusher: { face: 0.012, rod: 0.012, rodLength: 0.3 },
   rim: { thickness: 0.03, height: 0.04 },
 } as const;
@@ -195,11 +192,11 @@ const palletizerPlate: ModelBuilder = (view) => {
 };
 
 /**
- * The pad of the clamp head with its two jaws, which close on the layer by the grip's close fraction, over the base frame under the
- * forming zone. The base is world-fixed: it is placed through the scene part and the pose of the view, and stands on levelling legs.
+ * The pad of the clamp head with its two jaws, which close on the layer by the grip's close fraction. No base is drawn: this view
+ * is the moving head, and the forming zone lies over the infeed belt.
  */
-const palletizerHead: ModelBuilder = (view, context) => {
-  const { padThickness, jaw, rail, baseMargin, baseDrop, beltHeight } = PALLETIZER;
+const palletizerHead: ModelBuilder = (view) => {
+  const { padThickness, jaw } = PALLETIZER;
   const [w, , d] = view.pose.size;
   const close = Math.max(0, Math.min(1, num(view.state.closeFraction)));
   const out: Piece[] = [piece('pad', box([w, padThickness, d]), [0, 0, 0], 'steel')];
@@ -212,16 +209,6 @@ const palletizerHead: ModelBuilder = (view, context) => {
         'painted',
       ),
     );
-  const [ox, , oz] = aisleOrigin(view, context.scenePart);
-  const floor = -view.pose.p[1];
-  const top = (context.scenePart?.position[1] ?? beltHeight) - view.pose.p[1] - baseDrop; // the pad's own y is its centre
-  const [hx, hz] = [w / 2 + baseMargin, d / 2 + baseMargin];
-  for (const [i, z] of [-hz, hz].entries())
-    out.push(piece(`base-rail-${'ab'[i]}`, slotted(rail, rail, 2 * hx + rail, 'x'), [ox, top - rail / 2, oz + z], 'frame'));
-  for (const [i, x] of [-hx, hx].entries())
-    out.push(piece(`base-cross-${'ab'[i]}`, slotted(rail, rail, 2 * hz, 'z'), [ox + x, top - rail / 2, oz], 'frame'));
-  for (const [i, x] of [-hx, hx].entries())
-    for (const [j, z] of [-hz, hz].entries()) out.push(...levellingLeg(`${'ab'[i]}${'ab'[j]}`, ox + x, oz + z, top - rail, floor, rail));
   return out;
 };
 
