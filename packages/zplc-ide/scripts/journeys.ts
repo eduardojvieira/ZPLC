@@ -1925,13 +1925,14 @@ export const JOURNEYS: Journey[] = [
           )) || undefined,
       );
       assert(
-        await app.eval<boolean>(`!!document.querySelector('[aria-label="Primary sidebar"] [data-learn-reset]')`),
+        // GDE-001 (U3-X1b): the open lesson is the Guide of the secondary sidebar on every activity, Learn included.
+        await app.eval<boolean>(`!!document.querySelector('[aria-label="Secondary sidebar"] [data-learn-reset]')`),
         'The lesson surface does not offer to restore the starter once its workspace is open.',
       );
       assert(!(await app.text()).includes('The project could not be opened'), 'The workbench shows an open error.');
 
-      // 3b. LRN-004: the lesson stays beside the editor when the rail leaves Learn (it moves to the secondary sidebar), and comes back with
-      // it.
+      // 3b. LRN-004 and GDE-001: the lesson stays beside the editor, in the secondary sidebar, whether the rail shows Project or Learn
+      // (U3-X1b; in 2.0 it moved back to the primary sidebar on Learn).
       await app.click(css('[data-activity="project"]'), 'the Project item of the rail');
       await app.until(
         'the lesson in the secondary sidebar',
@@ -1944,11 +1945,11 @@ export const JOURNEYS: Journey[] = [
       await app.click(css('[data-activity="learn"]'), 'the Learn item of the rail');
       await app.press('Escape');
       await app.until(
-        'the lesson in the primary sidebar again',
+        'the lesson still in the secondary sidebar on Learn',
         async () =>
           (await app.eval<boolean>(
-            `!!document.querySelector('[aria-label="Primary sidebar"] [data-learn-reset]') && ` +
-              `!document.querySelector('[aria-label="Secondary sidebar"] [data-learn-reset]')`,
+            `!!document.querySelector('[aria-label="Secondary sidebar"] [data-learn-reset]') && ` +
+              `!document.querySelector('[aria-label="Primary sidebar"] [data-learn-reset]')`,
           )) || undefined,
       );
 

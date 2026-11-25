@@ -3,7 +3,18 @@
  * files and nothing else, an import rebuilds an equal folder byte for byte, and a refused archive writes nothing.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  statSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 
@@ -53,7 +64,7 @@ const archive = () =>
   });
 
 beforeEach(() => {
-  scratch = mkdtempSync(join(tmpdir(), 'zplc-archive-'));
+  scratch = realpathSync.native(mkdtempSync(join(tmpdir(), 'zplc-archive-')));
   project = join(scratch, 'motor');
   mkdirSync(join(project, 'src', 'drivers'), { recursive: true });
   mkdirSync(join(project, 'empty'));
