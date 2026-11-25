@@ -267,7 +267,8 @@ const emptySnapshot = (parts: PlantSnapshot['parts'], items: PlantSnapshot['item
 
 /**
  * The catalogue (plan-vis C8). A stage of belt-to-sensor stays open per display mode and quality level and is handed one snapshot per
- * cell: the part views of a kind in a state, alone on the floor (a machine whole), or one item. The frame is what the product's renderer draws from it.
+ * cell: the part views of a kind in a state, alone on the floor (a machine whole), or one item. The frame is what the
+ * product's renderer draws from it.
  */
 async function catalogue(page: Cdp): Promise<void> {
   const cells = [
