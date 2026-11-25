@@ -148,7 +148,14 @@ function beltModel(view: PartView, context: ModelContext): Piece[] {
 // Roller conveyor: a row of steel rollers that stand proud of two slotted side frames, on levelling legs
 // ---------------------------------------------------------------------------------------------------------------------
 
-export const ROLLER = { radius: 0.025, pitch: 0.1, rail: { width: 0.03, height: 0.1 }, proud: 0.01 } as const;
+export const ROLLER = {
+  radius: 0.025,
+  pitch: 0.1,
+  rail: { width: 0.03, height: 0.1 },
+  proud: 0.01,
+  /** Direction marks bigger than a belt's: they lie across the gaps between rollers and still read from the first view (VIS-016). */
+  mark: { radius: 0.15, pitch: 0.3 },
+} as const;
 
 function rollerModel(view: PartView, context: ModelContext): Piece[] {
   const [length, thickness, width] = view.pose.size;
@@ -161,7 +168,7 @@ function rollerModel(view: PartView, context: ModelContext): Piece[] {
     piece('rail-a', slotted(rail.width, rail.height, length, 'x'), [0, railTop - rail.height / 2, -railZ], 'frame'),
     piece('rail-b', slotted(rail.width, rail.height, length, 'x'), [0, railTop - rail.height / 2, railZ], 'frame'),
     ...frameLegs(length, railZ, railTop - rail.height, -view.pose.p[1]),
-    ...directionMarks(length, top + 0.002, speedOf(view), context.travel),
+    ...directionMarks(length, top + 0.002, speedOf(view), context.travel, ROLLER.mark),
   ];
 }
 

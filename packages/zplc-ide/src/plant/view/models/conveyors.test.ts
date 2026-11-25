@@ -193,6 +193,14 @@ describe('roller conveyor model (VIS-014, VIS-016)', () => {
     expect(x(at1, 'mark-2') - x(at0, 'mark-2')).toBeCloseTo(0.1, 9);
     expect(shown(partModel(running(view, -0.5))!, 'mark-').every((m) => m.yaw === -Math.PI / 2)).toBe(true);
   });
+
+  it('VIS-016 a running roller conveyor shows marks bigger than a belt\'s, so the change reads from the scene\'s first view', async () => {
+    const view = await viewOf(lineScene, 'roller');
+    const marks = shown(partModel(running(view))!, 'mark-');
+    expect(marks.length).toBeGreaterThanOrEqual(5);
+    for (const m of marks) expect(m.shape).toMatchObject({ radius: ROLLER.mark.radius });
+    expect(ROLLER.mark.radius).toBeGreaterThanOrEqual(1.5 * BELT.markRadius);
+  });
 });
 
 describe('curved conveyor model (VIS-014, VIS-016)', () => {
