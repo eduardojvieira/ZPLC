@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'bun:test';
 import { bottom, top } from './models.fixtures';
-import { extrusion, LEVELLING_FOOT, levellingLeg, pieceExtent, piece, slotted, slottedSection, type Section } from './shared';
+import { box, extrusion, LEVELLING_FOOT, levellingLeg, pieceExtent, piece, slotted, slottedSection, type Section } from './shared';
 
 /** Twice the signed area of a closed outline: positive when it runs counter-clockwise. */
 const area = (s: Section) => s.reduce((sum, [a, b], i) => sum + a * s[(i + 1) % s.length]![1] - s[(i + 1) % s.length]![0] * b, 0) / 2;
@@ -122,5 +122,22 @@ describe('leg on a levelling foot (VIS-014)', () => {
     expect(bottom(slotOf(pieces, 'foot-'))).toBeCloseTo(0, 12);
     expect(bottom(leg)).toBeCloseTo(0.03, 12);
     expect(top(leg)).toBeCloseTo(0.06, 12);
+  });
+});
+
+describe('a piece with its own rotation (VIS-014)', () => {
+  const turn = (deg: number): [number, number, number, number] => [0, 0, Math.sin((deg * Math.PI) / 360), Math.cos((deg * Math.PI) / 360)];
+  it('VIS-014 the extent of a box turned 90 degrees about z swaps its x and y half extents', () => {
+    const p = { ...piece('p', box([0.2, 0.6, 0.4]), [0, 0, 0], 'frame'), q: turn(90) };
+    const e = pieceExtent(p);
+    expect([e[0], e[1], e[2]]).toEqual([expect.closeTo(0.3, 9), expect.closeTo(0.1, 9), expect.closeTo(0.2, 9)]);
+  });
+  it('VIS-014 a 45 degree turn gives the axis-aligned box of the turned corners', () => {
+    const p = { ...piece('p', box([0.2, 0.6, 0.4]), [0, 0, 0], 'frame'), q: turn(45) };
+    const e = pieceExtent(p);
+    const k = Math.SQRT1_2;
+    expect(e[0]).toBeCloseTo(0.1 * k + 0.3 * k, 9);
+    expect(e[1]).toBeCloseTo(0.1 * k + 0.3 * k, 9);
+    expect(e[2]).toBeCloseTo(0.2, 9);
   });
 });

@@ -226,6 +226,25 @@ describe('aligner, chute and remover models (VIS-014)', () => {
     expect(reach(pieces)).toEqual([0.5, 0.3].map((x) => expect.closeTo(x, 9)));
   });
 
+  it('VIS-014 the chute stand stands upright in the world at any tilt: legs vertical, feet on the floor', () => {
+    for (const tilt of [0, 20, 35]) {
+      const v = chute(tilt, 1, 0.6, 1.2);
+      const pieces = partModel(v)!;
+      const stand = pieces.filter((p) => /^(leg|stem|foot)-/.test(p.slot));
+      expect(stand.length).toBeGreaterThan(0);
+      for (const p of stand) {
+        const axis = rotate(v.pose.q, rotate(p.q ?? [0, 0, 0, 1], [0, 1, 0]));
+        expect(axis[0]).toBeCloseTo(0, 9);
+        expect(axis[1]).toBeCloseTo(1, 9);
+        expect(axis[2]).toBeCloseTo(0, 9);
+      }
+      for (const p of stand.filter((q) => q.slot.startsWith('foot-'))) {
+        const y = v.pose.p[1] + rotate(v.pose.q, p.at)[1];
+        expect(y - pieceExtent(p)[1]).toBeCloseTo(0, 9);
+      }
+    }
+  });
+
   it('VIS-014 a remover is an open-top bin of its declared size on four feet: painted walls, a housing floor', () => {
     const v = remover([0.8, 0.5, 0.6], 0.1);
     const pieces = partModel(v)!;
