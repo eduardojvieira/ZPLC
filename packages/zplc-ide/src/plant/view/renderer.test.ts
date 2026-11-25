@@ -162,15 +162,13 @@ function fakeThree() {
     scale = new Vec();
     visible = true;
     // As in three, the two are one rotation: setting either one rewrites the other.
-    rotation = {
-      x: 0,
-      y: 0,
-      z: 0,
-      set: (x: number, y: number, z: number) => {
-        [this.rotation.x, this.rotation.y, this.rotation.z] = [x, y, z];
-        [this.quaternion.x, this.quaternion.y, this.quaternion.z, this.quaternion.w] = [0, Math.sin(y / 2), 0, Math.cos(y / 2)];
+    rotation = new Proxy({ x: 0, y: 0, z: 0 } as Record<string, number>, {
+      set: (t, k: string, v: number) => {
+        t[k] = v;
+        [this.quaternion.x, this.quaternion.y, this.quaternion.z, this.quaternion.w] = [0, Math.sin(t.y! / 2), 0, Math.cos(t.y! / 2)];
+        return true;
       },
-    };
+    });
     quaternion = {
       x: 0,
       y: 0,
@@ -178,7 +176,6 @@ function fakeThree() {
       w: 1,
       set: (x: number, y: number, z: number, w: number) => {
         [this.quaternion.x, this.quaternion.y, this.quaternion.z, this.quaternion.w] = [x, y, z, w];
-        [this.rotation.x, this.rotation.y, this.rotation.z] = [NaN, NaN, NaN]; // some Euler angles, not the ones set before
       },
     };
     children: unknown[] = [];
@@ -507,7 +504,12 @@ describe('display preferences reach the renderer', () => {
 
   it('VIS-014 a piece with its own rotation gets that quaternion on its mesh, and a yaw-only piece after it keeps no tilt', () => {
     const { r, scenes } = build();
-    type Node = { children: Node[]; userData: { part?: string; slot?: string }; quaternion: number[] & Record<string, number>; rotation: Record<string, number> };
+    type Node = {
+      children: Node[];
+      userData: { part?: string; slot?: string };
+      quaternion: Record<string, number>;
+      rotation: Record<string, number>;
+    };
     const tilted = (tiltDeg: number) => {
       const t = (-tiltDeg * Math.PI) / 360;
       return {

@@ -4,7 +4,7 @@
  */
 import type { PartView } from '../../contracts';
 import { catalogue } from '../../core/catalogue';
-import { box, levellingLeg, MIN_STAND, piece, rod, slotted, type ModelContext, type ModelFamily, type Piece } from './shared';
+import { box, levellingLeg, MIN_STAND, piece, rod, rotate, slotted, type ModelContext, type ModelFamily, type Piece } from './shared';
 
 const num = (v: unknown, fallback: number): number => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
 const clamp01 = (x: number): number => Math.min(1, Math.max(0, x));
@@ -196,7 +196,7 @@ function alignerModel(view: PartView): Piece[] {
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Chute: an inclined steel slide with two low side walls, on a slotted-profile stand with levelling feet. The pose tilts the part, so the
-// slide is flat in its frame and the stand is drawn square to it, down to the floor
+// slide is flat in its frame and the stand is turned back by the pose's conjugate, so its legs stand vertical in the world
 // ---------------------------------------------------------------------------------------------------------------------
 
 export const CHUTE = { wall: 0.05, wallThickness: 0.012, rail: 0.04, leg: 0.04 } as const;
@@ -204,7 +204,6 @@ export const CHUTE = { wall: 0.05, wallThickness: 0.012, rail: 0.04, leg: 0.04 }
 function chuteModel(view: PartView): Piece[] {
   const { wall, wallThickness, rail, leg } = CHUTE;
   const [length, thickness, width] = view.pose.size;
-  const tilt = (num(view.state.tiltDeg, 20) * Math.PI) / 180; // the slide descends towards +x
   const pieces: Piece[] = [
     piece('slide', box([length, thickness, width], 0.003), [0, 0, 0], 'steel'),
     ...(['a', 'b'] as const).map((side, i) =>
@@ -217,18 +216,24 @@ function chuteModel(view: PartView): Piece[] {
     ),
   ];
   const railY = -thickness / 2 - rail / 2;
+  const q = view.pose.q;
+  const back = [-q[0], -q[1], -q[2], q[3]] as const; // the conjugate: world to part
+  const turned = Math.abs(q[3]) < 1 - 1e-12;
   for (const [end, x] of [
     ['0', -length * 0.35],
     ['1', length * 0.35],
   ] as const) {
     pieces.push(piece(`stand-rail-${end}`, slotted(rail, rail, width - 2 * leg, 'z'), [x, railY, 0], 'frame'));
-    // The foot meets the floor along the slide's normal: its height there is where the leg's axis reaches the world's y = 0.
-    const floor = -(view.pose.p[1] - x * Math.sin(tilt)) / Math.cos(tilt) + 0.03;
     for (const [side, z] of [
       ['a', width / 2 - leg],
       ['b', -(width / 2 - leg)],
     ] as const) {
-      if (railY - rail / 2 - floor > MIN_STAND) pieces.push(...levellingLeg(`${end}${side}`, x, z, railY - rail / 2, floor, leg));
+      // Each leg runs vertically in the world from the rail's underside to the floor, y = 0 in the world.
+      const [wx, wy, wz] = rotate(q, [x, railY - rail / 2, z]);
+      const floor = -view.pose.p[1];
+      if (wy - floor > MIN_STAND)
+        for (const p of levellingLeg(`${end}${side}`, wx, wz, wy, floor, leg))
+          pieces.push(turned ? { ...p, at: rotate(back, p.at), q: back } : p);
     }
   }
   return pieces;

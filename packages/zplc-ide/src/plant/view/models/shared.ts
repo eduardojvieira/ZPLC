@@ -37,6 +37,8 @@ export interface Piece {
   at: Vec3;
   /** Turn about the vertical axis, in radians. */
   yaw: number;
+  /** The piece's full rotation in the part's frame: when present the piece turns by it and `yaw` is ignored. */
+  q?: Quat;
   role: Role;
   visible: boolean;
 }
@@ -173,6 +175,16 @@ export function pieceExtent(p: Piece): Vec3 {
         ? [s.radius, s.radius]
         : [Math.max(...s.section.map((p) => Math.abs(p[0]))), Math.max(...s.section.map((p) => Math.abs(p[1])))];
     half = s.axis === 'x' ? [along, b, a] : s.axis === 'y' ? [a, along, b] : [a, b, along];
+  }
+  if (p.q) {
+    const out = [0, 0, 0];
+    for (const sx of [-1, 1])
+      for (const sy of [-1, 1])
+        for (const sz of [-1, 1]) {
+          const c = rotate(p.q, [sx * half[0], sy * half[1], sz * half[2]]);
+          for (let i = 0; i < 3; i++) out[i] = Math.max(out[i]!, Math.abs(c[i]!));
+        }
+    return [out[0]!, out[1]!, out[2]!];
   }
   if (p.yaw === 0) return half;
   const flat = Math.hypot(half[0], half[2]);
