@@ -205,3 +205,31 @@ describe('course outline pages (LRN-007)', () => {
     });
   }
 });
+
+/**
+ * CRS-007: the outline of the plant course covers ten topics. This table is the claim: each topic maps to the lessons of
+ * `specs/012-zplc-2-1-plant-simulation/course-outline.md` (the row cited) that teach it, and each must exist in the index.
+ */
+const CRS_007_TOPICS: Record<string, string[]> = {
+  'sequences with set and reset': ['plant-latch-two-sensors'], // 12.2
+  timers: ['plant-timed-tank'], // 13.1
+  counters: ['plant-counted-queue'], // 12.3
+  'analog scaling': ['plant-tank-level-scaling'], // 13.2
+  'PID level control with PID_Compact': ['plant-tank-pid', 'plant-tank-pid-fbd'], // 13.3, 13.4
+  'state machines for stations': ['plant-buffer-release', 'plant-three-level-lifts', 'plant-warehouse'], // 14.1, 17.1, 17.3
+  'sorting logic': ['plant-colour-separation', 'plant-weight-sorting', 'plant-height-chain'], // 16.1, 16.3, 16.4
+  'interlocks and emergency stop': ['plant-estop-interlocks'], // 18.1
+  'manual and automatic modes': ['plant-manual-auto'], // 18.2
+  'fault diagnosis with fault actions': ['plant-fault-actions'], // 18.3
+};
+
+describe('CRS-007 the outline covers the required topics', () => {
+  it('CRS-007 maps each of the ten topics to at least one lesson that exists in the index', () => {
+    const ids = new Set(LESSON_INDEX.lessons.map((lesson) => lesson.id));
+    expect(Object.keys(CRS_007_TOPICS)).toHaveLength(10);
+    for (const [topic, lessons] of Object.entries(CRS_007_TOPICS)) {
+      expect([topic, lessons.length > 0]).toEqual([topic, true]);
+      for (const id of lessons) expect([topic, id, ids.has(id)]).toEqual([topic, id, true]);
+    }
+  });
+});
