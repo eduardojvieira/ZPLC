@@ -92,9 +92,9 @@ describe('hardware runs are not reachable from MCP or AI tools (HIL-003, COM-030
         ]);
         expect(probe.loaded.some((path) => path.replaceAll('\\', '/').endsWith('/packages/zplc-ide/src/mcp/server.ts'))).toBe(true);
         expect(probe.loaded.length).toBeGreaterThan(20);
-        const reaches = probe.loaded.map((path) => path.replaceAll('\\', '/')).filter((path) =>
-          /\/packages\/zplc-hil\/|\/node_modules\/(@?serialport|@serialport)|\/tools\/hil\//.test(path),
-        );
+        const reaches = probe.loaded
+          .map((path) => path.replaceAll('\\', '/'))
+          .filter((path) => /\/packages\/zplc-hil\/|\/node_modules\/(@?serialport|@serialport)|\/tools\/hil\//.test(path));
         expect(reaches).toEqual([]);
       } finally {
         await rm(workspace, { recursive: true, force: true });

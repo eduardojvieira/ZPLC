@@ -432,7 +432,10 @@ describe('the .deb and the .rpm install the udev rule of the boards (REL-013)', 
 
   it.each(['deb', 'rpm'] as const)('maps the generated rule into the vendor rules folder of the %s', async (target) => {
     const { args } = await udevRulesCommand('/repo/packages/zplc-ide');
-    const written = path.relative(path.resolve('/repo/packages/zplc-ide'), args[args.indexOf('--out') + 1]!).split(path.sep).join('/');
+    const written = path
+      .relative(path.resolve('/repo/packages/zplc-ide'), args[args.indexOf('--out') + 1]!)
+      .split(path.sep)
+      .join('/');
     expect(mapping(builder[target].fpm)).toEqual([`${written}=${RULE_TARGET}`]);
     expect(RULE_TARGET).toBe(`/usr/lib/udev/rules.d/${RULE_FILE_NAME}`);
   });
