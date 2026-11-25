@@ -534,7 +534,11 @@ describe('milestone U2 command contract (FND-002)', () => {
     const ids = COMMAND_LIST.map((command) => command.id as string);
     const firstU2 = ids.findIndex((id) => id in U2_COMMANDS);
     expect(ids.slice(0, firstU2).length).toBe(39 + Object.keys(LANE_W_COMMANDS).length);
-    expect(ids.slice(firstU2)).toEqual([...Object.keys(U2_COMMANDS), ...Object.keys(PLANT_VIEW_COMMANDS), ...Object.keys(U3_COMMANDS)]);
+    expect(ids.slice(firstU2)).toEqual([
+      ...Object.keys(U2_COMMANDS),
+      ...Object.keys(PLANT_VIEW_COMMANDS),
+      ...Object.keys(U3_COMMANDS),
+    ]);
     expect(ids[firstU2 - 1]).toBe('help.learn');
     expect(ids.slice(0, 5)).toEqual(['file.save', 'file.open', 'file.new', 'file.export', 'view.commandPalette']);
   });
