@@ -1961,7 +1961,7 @@ async function main(): Promise<void> {
     assert(!(await text()).includes('do-not-render'), 'Malformed declared interlock payload leaked into Problems');
 
     await click('Test results');
-    await click('Run host scenarios');
+    await click('Run tests');
     await waitFor('passed host scenarios', async () => (PASSED_VERDICT.test(await text()) ? true : undefined));
     await openDetails();
     assert(
@@ -2025,7 +2025,7 @@ async function main(): Promise<void> {
     await waitFor('motor plant workspace link registration', async () =>
       (await page().evaluate(`window.__zplcSmoke.registerCalls === 1`)) === true ? true : undefined,
     );
-    await click('Run host scenarios');
+    await click('Run tests');
     await waitFor('recorded motor plant', async () => {
       await openDetails();
       const visible = `document.querySelector('[data-recorded-motor-plant]')?.checkVisibility() ? true : undefined`;
@@ -2092,7 +2092,7 @@ async function main(): Promise<void> {
     await waitFor('conveyor workspace link registration', async () =>
       (await page().evaluate(`window.__zplcSmoke.registerCalls === 1`)) === true ? true : undefined,
     );
-    await click('Run host scenarios');
+    await click('Run tests');
     await waitFor('recorded conveyor plant', async () => {
       await openDetails();
       const visible = `document.querySelector('[data-recorded-conveyor-plant]')?.checkVisibility() ? true : undefined`;
@@ -2148,7 +2148,7 @@ async function main(): Promise<void> {
     await waitFor('pedestrian crossing workspace link registration', async () =>
       (await page().evaluate(`window.__zplcSmoke.registerCalls === 1`)) === true ? true : undefined,
     );
-    await click('Run host scenarios');
+    await click('Run tests');
     await waitFor('recorded pedestrian crossing', async () => {
       await openDetails();
       const visible = `document.querySelector('[data-recorded-pedestrian-crossing]')?.checkVisibility() ? true : undefined`;
@@ -2213,7 +2213,7 @@ async function main(): Promise<void> {
     await waitFor('tank level workspace link registration', async () =>
       (await page().evaluate(`window.__zplcSmoke.registerCalls === 1`)) === true ? true : undefined,
     );
-    await click('Run host scenarios');
+    await click('Run tests');
     await waitFor('recorded tank level', async () => {
       await openDetails();
       const visible = `document.querySelector('[data-recorded-tank-level]')?.checkVisibility() ? true : undefined`;
@@ -2262,7 +2262,7 @@ async function main(): Promise<void> {
     // A modified document does not block the run (FLW-006): the run saves it first. What the edit does is withdraw the old evidence.
     assert(
       (await page().evaluate(
-        `(() => { const run = [...document.querySelectorAll('button')].find((item) => item.textContent?.includes('Run host scenarios')); ` +
+        `(() => { const run = [...document.querySelectorAll('button')].find((item) => item.textContent?.includes('Run tests')); ` +
           `return Boolean(run) && !run.disabled && ` +
           `!/\\b(\\d+) of \\1 tests passed|Host POSIX scenarios? passed\\./.test(document.body.innerText); })()`,
       )) === true,
@@ -2272,7 +2272,7 @@ async function main(): Promise<void> {
     assert(!PASSED_ANY(await text()), 'Saving must not revive stale evidence');
 
     await page().evaluate(`window.__zplcSmoke.mode = 'malformed'`);
-    await click('Run host scenarios');
+    await click('Run tests');
     await waitFor('base pass with redacted preview', async () => (PASSED_NO_COUNTS.test(await text()) ? true : undefined));
     await openDetails();
     const malformedText = await text();
@@ -2284,7 +2284,7 @@ async function main(): Promise<void> {
     );
 
     await page().evaluate(`window.__zplcSmoke.mode = 'failed'`);
-    await click('Run host scenarios');
+    await click('Run tests');
     await waitFor('failed scenario preview', async () =>
       (await text()).includes('One or more scenario assertions failed.') ? true : undefined,
     );

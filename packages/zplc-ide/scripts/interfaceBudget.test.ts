@@ -41,7 +41,7 @@ const snapshot: InterfaceSnapshot = {
   ],
   runControlSets: 1,
   statusRail: [
-    { text: 'Simulation · native runtime' },
+    { text: 'Simulation' },
     { text: 'Mode\nSIMULATION' },
     { text: 'Runtime\nNative POSIX' },
     { text: 'Target\nLocal POSIX' },
@@ -66,7 +66,7 @@ describe('interface budget counting (spec 013 section 8.1)', () => {
   it('counts every place the target is shown', () => {
     expect(targetPlaces(snapshot)).toEqual([
       'command bar: target selector',
-      'status rail: Simulation · native runtime',
+      'status rail: Simulation',
       'status rail: Mode',
       'status rail: Target',
     ]);
@@ -78,7 +78,7 @@ describe('interface budget counting (spec 013 section 8.1)', () => {
       locale: 'es',
       commandBar: { ...snapshot.commandBar, controls: [control('Adónde va la ejecución: Simulación', 252, 88)] },
       statusRail: [
-        { text: 'Simulación · runtime nativo' },
+        { text: 'Simulación' },
         { text: 'Modo\nSIMULACIÓN' },
         { text: 'Destino\nPOSIX local' },
         { text: 'En ejecución' },
@@ -88,7 +88,7 @@ describe('interface budget counting (spec 013 section 8.1)', () => {
   });
 
   it('lists the items of the status rail by their first line', () => {
-    expect(statusRailItems(snapshot)).toEqual(['Simulation · native runtime', 'Mode', 'Runtime', 'Target', 'Running']);
+    expect(statusRailItems(snapshot)).toEqual(['Simulation', 'Mode', 'Runtime', 'Target', 'Running']);
   });
 });
 
@@ -119,7 +119,7 @@ describe('interface budget check (spec 013 section 8.2 item 2)', () => {
     const within: InterfaceSnapshot = {
       ...snapshot,
       resultsTabs: FIVE,
-      statusRail: [{ text: 'Simulation · native runtime' }, { text: 'Running' }],
+      statusRail: [{ text: 'Simulation' }, { text: 'Running' }],
     };
     expect(checkBudget([measure(within)], targets)).toEqual([]);
   });

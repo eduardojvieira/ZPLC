@@ -5124,7 +5124,7 @@ export const JOURNEYS: Journey[] = [
           `(async () => { const started = performance.now(); await window.electronAPI.getAppInfo(); return performance.now() - started; ` +
             `})()`,
         );
-      const run = button('Run host scenarios');
+      const run = button('Run tests');
       const cancel = button('Cancel scenarios');
 
       await openFolder(app, project);
@@ -5157,7 +5157,7 @@ export const JOURNEYS: Journey[] = [
 
       await app.click(cancel);
       await app.until(
-        'the run to end and Run host scenarios to come back',
+        'the run to end and Run tests to come back',
         async () => (!(await app.visible(cancel)) && (await app.clickable(run))) || undefined,
         10_000,
       );
@@ -5256,7 +5256,7 @@ export const JOURNEYS: Journey[] = [
         writeFileSync(join(project, 'tests', `${name}.scenario.json`), JSON.stringify(scenario));
       }
       await app.click(tab('Test results'));
-      await app.click(button('Run host scenarios'));
+      await app.click(button('Run tests'));
       // the Cancel of the notification is named by its title, from the catalog ("Running tests" since 8c67a06d)
       const cancel = button(translate('en', 'notifications.cancelLabel', { title: ui('notices.tests.running') }));
       await app.until(
@@ -6456,7 +6456,7 @@ export const JOURNEYS: Journey[] = [
           `Boolean(el?.querySelector('svg[aria-hidden="true"]')) }; })()`,
       );
       assert(
-        indicator.state === 'simulation-native' && indicator.text === 'Simulation · native runtime' && indicator.icon,
+        indicator.state === 'simulation-native' && indicator.text === 'Simulation' && indicator.icon,
         `The status bar must say that Studio is attached to the native simulation: ${JSON.stringify(indicator)}`,
       );
 
@@ -7562,7 +7562,7 @@ export const JOURNEYS: Journey[] = [
           );
         assert(!new RegExp(RAW_KEY).test(body), `The ${tab} panel shows a raw catalog key: ${body.match(new RegExp(RAW_KEY))?.[0]}`);
       };
-      await walk('tests', ['Ejecutar escenarios en el host'], ['Choose zplc.json', 'Run host scenarios', 'Select the saved']);
+      await walk('tests', ['Ejecutar pruebas'], ['Choose zplc.json', 'Run tests', 'Select the saved']);
       // Interlocks, Changes and Agent left the results panel (SHL-004): their places read in Spanish too. With no AI provider the
       // command of the Agent opens Preferences at the section where one is configured.
       await walk('interlocks', ['Cobertura de enclavamientos declarados'], ['Declared interlock coverage', 'Check declared interlocks'], {
@@ -7924,7 +7924,7 @@ export const JOURNEYS: Journey[] = [
 
       // 5. The recorded run stays, and says it is a replay.
       await app.click(tab('Test results', 'prefix'), 'the Tests tab');
-      await app.click(button('Run host scenarios'), 'Run host scenarios');
+      await app.click(button('Run tests'), 'Run tests');
       await app.click(button('Replay'), 'the Replay view of the plant document');
       await patiently(
         'the replay of the recorded run',
@@ -8208,7 +8208,7 @@ export const JOURNEYS: Journey[] = [
   },
   {
     // DOC-013: pictures for the guides "Simulate and debug", "Force values" and "Write and run scenario tests": the Watch tab with a
-    // variable, the Watch table with a forced variable and its banner, and the Tests tab after Run host scenarios.
+    // variable, the Watch table with a forced variable and its banner, and the Tests tab after Run tests.
     name: '68 The Watch table, a force and a scenario run, for the pictures of the guides',
     example: 'motor_start_stop',
     proves: [],
