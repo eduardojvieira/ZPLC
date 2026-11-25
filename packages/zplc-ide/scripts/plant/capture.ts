@@ -3,6 +3,7 @@
  *
  *   bun scripts/plant/capture.ts [--out <dir>] [--scenes a,b] [--sizes 480x640,1280x720] [--modes light,dark] [--levels low,high]
  *                                [--no-states] [--no-looks]
+ *   bun scripts/plant/capture.ts --catalogue [--out <dir>] [--modes light,dark] [--levels low,high]
  *   bun scripts/plant/capture.ts --fps [--uncapped] [--scenes a,b] [--seconds 30]
  *   bun scripts/plant/capture.ts --concepts <dir of the concept images> [--out <dir>]
  *
@@ -12,6 +13,10 @@
  * (`concepts.png`). It starts the development server and a window of the application with software GL (SwiftShader,
  * headless): those frames are what the renderer draws, but their timing says nothing about a GPU.
  *
+ * `--catalogue` instead draws every part kind that has a model in each of its states, and each item look, one small frame each at a
+ * camera that frames the part's bounds (scripts/plant/catalogueStates.ts), and sets them on one contact sheet per display mode and
+ * quality level (`catalogue-<mode>-<level>.png`), each cell labelled with the kind and the state.
+ *
  * `--fps` instead opens a real window with the GPU on (it needs a display and port 3000 free, which the application's development
  * window uses) and measures the frame rate of each scene per quality level on a 1920 x 1080 canvas, with the 1-minute load average
  * before each run. Evidence level: the renderer and the plant core in a page of the development build, not the packaged application.
@@ -20,6 +25,10 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { loadavg } from 'node:os';
 import { join, resolve } from 'node:path';
 import { trustedDevelopmentRendererUrl } from '../../electron/security';
+import type { BodyPose, PlantSnapshot, Vec3 } from '../../src/plant/contracts';
+import { fitCamera } from '../../src/plant/view/camera';
+import { snapshotBounds } from '../../src/plant/view/geometry';
+import { CATALOGUE, catalogueView, ITEMS } from './catalogueStates';
 import { assert, Cdp, drain, freePort, HOST, packageRoot, stop, waitFor, type OwnedProcess } from '../run-desktop-smoke';
 
 const flag = (name: string): string | undefined => {
@@ -27,6 +36,7 @@ const flag = (name: string): string | undefined => {
   return at >= 0 ? process.argv[at + 1] : undefined;
 };
 const fps = process.argv.includes('--fps');
+const catalogueMode = process.argv.includes('--catalogue');
 /** Frame rate with no display cap: frames do not wait for vsync or for the compositor, which also holds back a window it does not show. */
 const uncapped = process.argv.includes('--uncapped');
 const out = resolve(flag('out') ?? join(packageRoot, '..', '..', '.cache', 'claude-ux-review', 'plant-pilot'));
@@ -236,6 +246,80 @@ async function conceptSheet(page: Cdp, dir: string): Promise<void> {
   console.log(`  sheet ${save('concepts.png', sheet)}`);
 }
 
+/** One small frame of the catalogue: its camera frames the bounds of what is drawn, from the same direction for every cell. */
+const CELL = { width: 400, height: 300 } as const;
+function catalogueCell(snapshot: PlantSnapshot) {
+  const bounds = snapshotBounds(snapshot)!;
+  const fit = fitCamera({ target: [0, 0, 0], azimuthDeg: 35, polarDeg: 62, distance: 1 }, bounds, CELL.width / CELL.height);
+  const [az, po] = [(fit.azimuthDeg * Math.PI) / 180, (fit.polarDeg * Math.PI) / 180];
+  const position = [0, 1, 2].map(
+    (i) => fit.target[i]! + fit.distance * [Math.sin(po) * Math.sin(az), Math.cos(po), Math.sin(po) * Math.cos(az)][i]!,
+  ) as unknown as Vec3;
+  return { snapshot, camera: { position, target: fit.target } };
+}
+const emptySnapshot = (parts: PlantSnapshot['parts'], items: PlantSnapshot['items']): PlantSnapshot => ({
+  timeMs: 0,
+  scans: 0,
+  parts,
+  items,
+  facts: {},
+});
+
+/**
+ * The catalogue (plan-vis C8). A stage of belt-to-sensor stays open per display mode and quality level and is handed one snapshot per
+ * cell: the part view of a kind in a state, alone on the floor, or one item. The frame is what the product's renderer draws from it.
+ */
+async function catalogue(page: Cdp): Promise<void> {
+  const cells = [
+    ...CATALOGUE.flatMap((kind) =>
+      kind.states.map((state) => ({
+        label: `${kind.id}: ${state.label}`,
+        ...catalogueCell(emptySnapshot([catalogueView(kind, state)], [])),
+      })),
+    ),
+    ...ITEMS.map((item) => {
+      const [, h] = item.pose.size;
+      const pose: BodyPose = { id: item.id, part: 'box', q: [0, 0, 0, 1], p: [0, h / 2, 0], ...item.pose };
+      return { label: `item: ${item.label}`, ...catalogueCell(emptySnapshot([], [pose])) };
+    }),
+  ];
+  for (const mode of MODES)
+    for (const quality of LEVELS) {
+      const frames: Array<{ png: string; label: string }> = [];
+      for (const cell of cells) {
+        const spec = { mode, quality, ...CELL, snapshot: cell.snapshot, camera: cell.camera };
+        const png = (await page.evaluate(
+          `import('/scripts/plant/stage.ts').then(async (s) => {
+            const spec = ${JSON.stringify(spec)};
+            const key = spec.mode + '/' + spec.quality;
+            if (window.__cat?.key !== key) {
+              window.__cat?.stage.dispose();
+              window.__cat = { key, stage: await s.openStage('belt-to-sensor', spec) };
+            }
+            const { stage } = window.__cat;
+            stage.scene.cameras.splice(1);
+            stage.scene.cameras.push({ name: 'catalogue', ...spec.camera });
+            stage.renderer.setCameraAnimation?.(false);
+            stage.renderer.setSnapshot(spec.snapshot);
+            stage.renderer.setCameraPreset('catalogue');
+            await stage.renderer.ready?.();
+            stage.renderer.setSnapshot(spec.snapshot);
+            await s.frames(3);
+            return stage.canvas.toDataURL('image/png');
+          })`,
+        )) as string;
+        frames.push({ png, label: cell.label });
+      }
+      const sheet = (await call(
+        page,
+        `m.sheet(${JSON.stringify(`catalogue: every part in every state, ${mode}, ${quality} (software GL, renderer in the page)`)}, ` +
+          `${JSON.stringify(frames)}, 8, { w: 300, h: 225 })`,
+      )) as string;
+      console.log(`  sheet ${save(`catalogue-${mode}-${quality}.png`, sheet)} (${frames.length} cells)`);
+    }
+  await page.evaluate(`(window.__cat?.stage.dispose(), true)`);
+}
+
 async function frameRates(page: Cdp): Promise<void> {
   const rows: Array<Record<string, unknown>> = [];
   for (const scene of scenes)
@@ -276,5 +360,6 @@ if (fps) {
   );
   assert(free, 'Port 3000 is in use: the development window of the application needs it for --fps.');
   await withWindow(true, frameRates);
-} else if (flag('concepts')) await withWindow(false, (page) => conceptSheet(page, resolve(flag('concepts')!)));
+} else if (catalogueMode) await withWindow(false, catalogue);
+else if (flag('concepts')) await withWindow(false, (page) => conceptSheet(page, resolve(flag('concepts')!)));
 else await withWindow(false, captures);
