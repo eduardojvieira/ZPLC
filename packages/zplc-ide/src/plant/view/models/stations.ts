@@ -1,5 +1,5 @@
 /**
- * Stations (plan-vis C6): the stacker crane with its mast and its high-bay rack; the layer palletizer and the machining centre come
+ * Stations (plan-vis C6): the stacker crane with its mast and its high-bay rack, and the layer palletizer; the machining centre comes
  * in a later unit. The three views of the crane are drawn once each: the rack as uprights and load beams with the cell rails between
  * them (cells stay open, so stored items show), the mast on a floor rail with a top guide rail, the carriage with its forks.
  *
@@ -7,7 +7,18 @@
  * pose, which needs the scene part: they stay put in the world while the mast and the carriage move.
  */
 import type { PartView, ScenePart, Vec3 } from '../../contracts';
-import { box, piece, rotate, type ModelBuilder, type ModelContext, type ModelFamily, type Piece } from './shared';
+import {
+  box,
+  levellingLeg,
+  piece,
+  rod,
+  rotate,
+  slotted,
+  type ModelBuilder,
+  type ModelContext,
+  type ModelFamily,
+  type Piece,
+} from './shared';
 
 /** The sizes of the stacker crane's frame, in metres; the cell rail sizes are the core's (they hold the stored items). */
 export const STACKER = {
@@ -121,4 +132,106 @@ const carriage: ModelBuilder = (view, context) => {
   return out;
 };
 
-export const STATIONS: ModelFamily = { 'stacker-crane': carriage, 'stacker-mast': mast, 'stacker-rack': rack };
+/** The sizes of the layer palletizer's parts that its views do not give, in metres (the core's pad, clamp window and rails). */
+export const PALLETIZER = {
+  padThickness: 0.03,
+  jaw: { thickness: 0.02, depth: 0.25, open: 0.05 }, // open: how far a jaw stands off the layer when the clamp is open
+  railGap: 0.12, // each of the two rails lies this far from the line the column follows
+  rail: 0.05,
+  carriage: { length: 0.14, height: 0.1, width: 0.3 },
+  baseMargin: 0.1,
+  baseDrop: 0.1, // the top of the base frame lies this far under the belt surface of the forming zone
+  beltHeight: 0.54, // the belt surface of the scenes, when there is no scene part to say
+  pusher: { face: 0.012, rod: 0.012, rodLength: 0.3 },
+  rim: { thickness: 0.03, height: 0.04 },
+} as const;
+
+/** The two rails of the manipulator on their columns: the view is the rail line, fixed in the world; its legs stand on the floor. */
+const palletizerRails: ModelBuilder = (view) => {
+  const { rail, railGap } = PALLETIZER;
+  const [length] = view.pose.size;
+  const floor = -view.pose.p[1];
+  const out: Piece[] = [];
+  for (const [i, z] of [-railGap, railGap].entries())
+    out.push(piece(`rail-${'ab'[i]}`, slotted(rail, rail, length, 'x'), [0, 0, z], 'frame'));
+  for (const [i, x] of [-1, 1].entries())
+    for (const [j, z] of [-railGap, railGap].entries())
+      out.push(...levellingLeg(`${'ab'[i]}${'ab'[j]}`, x * (length / 2 - rail / 2), z, -rail / 2, floor, rail));
+  return out;
+};
+
+/** The column the pad hangs from, with the carriage that rides on the rails at its top. */
+const palletizerColumn: ModelBuilder = (view) => {
+  const { carriage: car } = PALLETIZER;
+  const [w, h] = view.pose.size;
+  return [
+    piece('column', slotted(w, w, h, 'y'), [0, 0, 0], 'frame'),
+    piece('carriage', box([car.length, car.height, car.width]), [0, h / 2, 0], 'housing'),
+  ];
+};
+
+/** The squaring pusher: a bar with a rubber face toward the layer (-z) on two guide rods behind it, all moving with the pose. */
+const palletizerPusher: ModelBuilder = (view) => {
+  const { face, rod: r, rodLength } = PALLETIZER.pusher;
+  const [w, h, t] = view.pose.size;
+  const out: Piece[] = [
+    piece('bar', box([w, h, t - face]), [0, 0, face / 2], 'painted'),
+    piece('face', box([w - 0.04, h - 0.06, face]), [0, 0, -(t - face) / 2], 'rubber'),
+  ];
+  for (const [i, side] of [-1, 1].entries())
+    out.push(piece(`guide-${'ab'[i]}`, rod(r, rodLength, 'z'), [side * (w / 4), 0, t / 2 + rodLength / 2], 'steel'));
+  return out;
+};
+
+/** A fixed forming plate with a low rim along its top on the side of the layer (-x for the far plate, +z for the side plate). */
+const palletizerPlate: ModelBuilder = (view) => {
+  const { thickness, height } = PALLETIZER.rim;
+  const [w, h, d] = view.pose.size;
+  const rim =
+    d > w
+      ? piece('rim', box([thickness, height, d]), [-(w + thickness) / 2, h / 2 - height / 2, 0], 'steel')
+      : piece('rim', box([w, height, thickness]), [0, h / 2 - height / 2, (d + thickness) / 2], 'steel');
+  return [piece('plate', box(view.pose.size), [0, 0, 0], 'steel'), rim];
+};
+
+/**
+ * The pad of the clamp head with its two jaws, which close on the layer by the grip's close fraction, over the base frame under the
+ * forming zone. The base is world-fixed: it is placed through the scene part and the pose of the view, and stands on levelling legs.
+ */
+const palletizerHead: ModelBuilder = (view, context) => {
+  const { padThickness, jaw, rail, baseMargin, baseDrop, beltHeight } = PALLETIZER;
+  const [w, , d] = view.pose.size;
+  const close = Math.max(0, Math.min(1, num(view.state.closeFraction)));
+  const out: Piece[] = [piece('pad', box([w, padThickness, d]), [0, 0, 0], 'steel')];
+  for (const [i, side] of [-1, 1].entries())
+    out.push(
+      piece(
+        `jaw-${'ab'[i]}`,
+        box([w - 0.04, jaw.depth, jaw.thickness]),
+        [0, -(padThickness + jaw.depth) / 2, side * (d / 2 + jaw.thickness / 2 + jaw.open * (1 - close))],
+        'painted',
+      ),
+    );
+  const [ox, , oz] = aisleOrigin(view, context.scenePart);
+  const floor = -view.pose.p[1];
+  const top = (context.scenePart?.position[1] ?? beltHeight) - view.pose.p[1] - baseDrop; // the pad's own y is its centre
+  const [hx, hz] = [w / 2 + baseMargin, d / 2 + baseMargin];
+  for (const [i, z] of [-hz, hz].entries())
+    out.push(piece(`base-rail-${'ab'[i]}`, slotted(rail, rail, 2 * hx + rail, 'x'), [ox, top - rail / 2, oz + z], 'frame'));
+  for (const [i, x] of [-hx, hx].entries())
+    out.push(piece(`base-cross-${'ab'[i]}`, slotted(rail, rail, 2 * hz, 'z'), [ox + x, top - rail / 2, oz], 'frame'));
+  for (const [i, x] of [-hx, hx].entries())
+    for (const [j, z] of [-hz, hz].entries()) out.push(...levellingLeg(`${'ab'[i]}${'ab'[j]}`, ox + x, oz + z, top - rail, floor, rail));
+  return out;
+};
+
+export const STATIONS: ModelFamily = {
+  'stacker-crane': carriage,
+  'stacker-mast': mast,
+  'stacker-rack': rack,
+  'layer-palletizer': palletizerHead,
+  'manipulator-frame': palletizerRails,
+  'manipulator-beam': palletizerColumn,
+  'layer-pusher': palletizerPusher,
+  'layer-plate': palletizerPlate,
+};

@@ -158,7 +158,14 @@ describe('stacker crane models (VIS-014)', () => {
   });
 });
 
-const PALLETIZER_IDS = ['palletizer', 'palletizer-frame', 'palletizer-beam', 'palletizer-pusher', 'palletizer-plate-far', 'palletizer-plate-side'];
+const PALLETIZER_IDS = [
+  'palletizer',
+  'palletizer-frame',
+  'palletizer-beam',
+  'palletizer-pusher',
+  'palletizer-plate-far',
+  'palletizer-plate-side',
+];
 const palletizerPart: ScenePart = {
   id: 'palletizer',
   part: 'layer-palletizer',
