@@ -93,6 +93,14 @@ describe('sensor models (VIS-014)', () => {
     expect(bottom(slot(detecting, 'base'))).toBeCloseTo(-eye.pose.p[1], 9);
   });
 
+  it('VIS-016 the solid beam of a detecting sensor is at least 12 mm across, so the change shows from the first view (2 % of the part box)', async () => {
+    const core = plant.core();
+    core.act('EyeFar', 'stuckOn');
+    core.advance(5);
+    const detecting = partModel(core.snapshot().parts.find((p) => p.id === 'eye-far')!)!;
+    expect(pieceExtent(slot(detecting, 'beam'))[1] * 2).toBeGreaterThanOrEqual(0.012);
+  });
+
   it('VIS-014 a sensor beside a belt sits on a bracket bolted to the belt frame, with a fine beam and no post to the floor', async () => {
     const v = await plant.views();
     const eye = v['eye-far']!;
