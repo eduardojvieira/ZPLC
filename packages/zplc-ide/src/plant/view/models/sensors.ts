@@ -104,9 +104,7 @@ function stand(mount: Vec3 | null | undefined, x: number, rear: number, under: n
     return [
       piece('bracket-arm', box([mount[0] - rear, t, 0.044], 0.001), [(rear + mount[0]) / 2, under - t / 2, 0], 'steel'),
       piece('bracket-plate', box([t, under - low, 0.044], 0.001), [mount[0] - t / 2, (under + low) / 2, 0], 'steel'),
-      ...[-0.012, 0.012].map((z) =>
-        piece(`bolt-${z > 0 ? 'b' : 'a'}`, rod(0.006, 0.005, 'x'), [mount[0] - t - 0.0025, bolt, z], 'steel'),
-      ),
+      ...[-0.012, 0.012].map((z) => piece(`bolt-${z > 0 ? 'b' : 'a'}`, rod(0.006, 0.005, 'x'), [mount[0] - t - 0.0025, bolt, z], 'steel')),
     ];
   }
   const pieces = [piece('bracket', box([0.04, 0.005, 0.05], 0.0015), [x, under - 0.0025, 0], 'steel')];
@@ -222,7 +220,7 @@ function sensorModel(view: PartView, context: ModelContext): Piece[] {
   const pieces: Piece[] = [
     piece('housing', box([0.07, 0.048, 0.04], 0.005), [back, 0, 0], 'housing'),
     piece('lens', rod(0.013, 0.004, 'x'), [-0.0005, 0, 0], 'lens'),
-    piece('bezel', box([0.003, 0.044, 0.036], 0.0005), [-0.0015, 0, 0], lit(detecting)), // a face plate round the lens that glows while the sensor detects
+    piece('bezel', box([0.003, 0.044, 0.036], 0.0005), [-0.0015, 0, 0], lit(detecting)), // a face plate that glows while it detects
     piece('lamp', box([0.05, 0.004, 0.032], 0.001), [back, 0.026, 0], lit(detecting)), // a lit window over the top of the housing
     ...stand(context.mount, back, back - 0.035, under, -view.pose.p[1]),
   ];

@@ -69,7 +69,7 @@ const readout = (pieces: readonly Piece[], prefix: string, cells: number) =>
 const rounded = (v: readonly number[]) => v.map((c) => Number(c.toFixed(6)) + 0);
 
 describe('sensor models (VIS-014)', () => {
-  it('PRT-009 the sensor family draws the diffuse photoelectric sensor, the light array, the scale, the vision sensor and the limit switch', () => {
+  it('PRT-009 the sensor family draws the diffuse sensor, the light array, the scale, the vision sensor and the limit switch', () => {
     expect(Object.keys(SENSORS)).toEqual(['sensor', 'light-array', 'scale', 'vision-sensor', 'limit-switch']);
   });
 
@@ -93,13 +93,13 @@ describe('sensor models (VIS-014)', () => {
     expect(bottom(slot(detecting, 'base'))).toBeCloseTo(-eye.pose.p[1], 9);
   });
 
-  it('VIS-016 the output lamp of a sensor is a lit window over the top of its housing, so detection shows from the first view (2 % of the part box)', async () => {
+  it('VIS-016 the output lamp of a sensor is a lit window over the top of its housing (2 % of the part box)', async () => {
     const v = await plant.views();
     const [x, , z] = pieceExtent(slot(partModel(v['eye-far']!)!, 'lamp'));
     expect(4 * x * z).toBeGreaterThanOrEqual(0.0015); // m2: at least half of the 0.07 x 0.04 top face
   });
 
-  it('VIS-016 a bezel round the lens glows while the sensor detects and is dark while it is clear (the change a 1 m beam alone leaves under 2 %)', async () => {
+  it('VIS-016 a bezel round the lens glows while the sensor detects and is dark while it is clear', async () => {
     const v = await plant.views();
     expect(slot(partModel(v['eye-far']!)!, 'bezel').role).toBe('lampOff');
     const core = plant.core();
@@ -143,7 +143,7 @@ describe('sensor models (VIS-014)', () => {
 });
 
 describe('light array (VIS-014, VIS-016)', () => {
-  it('VIS-014 a column at each end of the beams, the beams at the heights the core casts them, each column on a stand to the floor', async () => {
+  it('VIS-014 a column at each end of the beams, at the heights the core casts them, each on a stand to the floor', async () => {
     const { view, model } = await open('height-sorting-turntable');
     const v = view('array');
     const [beams, pitch, span] = [v.state.beams as number, v.state.pitchM as number, v.pose.size[2]];
@@ -165,7 +165,7 @@ describe('light array (VIS-014, VIS-016)', () => {
     for (const end of ['a', 'b']) expect(bottom(slot(pieces, `base-${end}`))).toBeCloseTo(-v.pose.p[1], 9);
   });
 
-  it('VIS-016 every beam is dashed while clear; a box breaks the beams up to its height, which turn solid, and the lamp lights', async () => {
+  it('VIS-016 every beam is dashed while clear; a box turns the beams up to its height solid and lights the lamp', async () => {
     const { core, view, model, runUntil } = await open('height-sorting-turntable');
     const clear = model(view('array'));
     const beams = view('array').state.beams as number;
@@ -223,7 +223,7 @@ describe('scale (VIS-014, VIS-016)', () => {
 });
 
 describe('vision sensor (VIS-014, VIS-016)', () => {
-  it('VIS-014 a camera above the middle of its field, on an arm from a post bolted to the back rail, the field marked on the belt', async () => {
+  it('VIS-014 a camera above the middle of its field, on an arm from a post on the back rail, the field marked on the belt', async () => {
     const { view, model } = await open('vision-sorting');
     const v = view('eye');
     expect(rounded(sensorMount(v, [v, view('infeed')])!)).toEqual([0, 0.012, -0.33]);
@@ -300,13 +300,14 @@ describe('limit switch (VIS-014, VIS-016)', () => {
     core.advance(5);
     const made = model(view('lim'));
     expect(Math.abs(slot(made, 'arm').yaw)).toBeGreaterThan(0.3);
-    expect(Math.hypot(slot(made, 'roller').at[0] - slot(open_, 'roller').at[0], slot(made, 'roller').at[2] - slot(open_, 'roller').at[2])).toBeGreaterThan(0.03);
+    const [dx, dz] = [0, 2].map((i) => slot(made, 'roller').at[i]! - slot(open_, 'roller').at[i]!);
+    expect(Math.hypot(dx!, dz!)).toBeGreaterThan(0.03);
     expect(slot(made, 'lamp').role).toBe('lamp');
   });
 });
 
 describe('sensor bounds (VIS-017)', () => {
-  it('VIS-017 each model is measured on the pieces it draws at rest, from the floor or the rail up, and the same in every state', async () => {
+  it('VIS-017 each model is measured on the pieces it draws at rest, from the floor or the rail up, in every state', async () => {
     const { view, runUntil } = await open('height-sorting-turntable');
     const v = view('array');
     const rest = modelBounds(v, [])!;
