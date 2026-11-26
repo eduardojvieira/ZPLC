@@ -17,7 +17,7 @@
     {
       "key": "predict",
       "title": "Prediga",
-      "body": "El escenario pulsa el pulsador de inicio a los {{t:200}} ms y lo suelta a los {{t:400}} ms. Antes de ejecutar, siga la caja: prediga Run antes de la pulsación, después de soltar el pulsador mientras la caja avanza, y cuando EyeFar ve la caja.",
+      "body": "El escenario acciona el pulsador de inicio a los {{t:200}} ms y lo suelta a los {{t:400}} ms. Antes de ejecutar, siga la caja: prediga Run antes de la pulsación, después de soltar el pulsador mientras la caja avanza, y cuando EyeFar ve la caja.",
       "checkpoint": "{{v:BeltToSensor.Run=false@100|Run en OFF}} a los {{t:100}} ms, antes de la pulsación; en ON después, también una vez suelto el pulsador; en OFF en cuanto EyeFar ve la caja, y {{v:BeltToSensor.Run=false@8000|todavía en OFF}} al final, a los {{t:8000}} ms."
     },
     {

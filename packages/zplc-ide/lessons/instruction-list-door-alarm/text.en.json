@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter makes Siren follow the door, so Siren drops at {{t:30}} ms when the door closes. Siren must stay on after the door closes, until Silence is pressed.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter makes Siren follow the door, so Siren drops at {{t:30}} ms when the door closes. Siren must stay on after the door closes, until Silence is pressed.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Look at what the current result holds just before ST Siren: only Armed and DoorOpen. Siren holds itself on when its own previous value is part of the condition."
+      "text": "Look at what the current result holds just before ST Siren: only Armed and DoorOpen."
     },
     {
       "level": 2,
-      "text": "LD Armed, AND DoorOpen, OR Siren, ANDN Silence, ST Siren: five lines, one operand each."
+      "text": "LD Armed, AND DoorOpen, OR Siren, ANDN Silence, ST Siren: five lines, one operand each. Siren holds itself on because its own previous value is part of the condition."
     }
   ],
   "faultCases": ["The starter makes Siren follow the door, so Siren drops at {{t:30}} ms when the door closes."]

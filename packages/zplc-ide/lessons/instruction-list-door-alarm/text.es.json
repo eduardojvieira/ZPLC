@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial hace que Siren siga a la puerta, así que Siren se apaga a los {{t:30}} ms cuando la puerta se cierra. Siren debe seguir encendida después de que la puerta se cierra, hasta que se pulse Silence.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial hace que Siren siga a la puerta, así que Siren se apaga a los {{t:30}} ms cuando la puerta se cierra. Siren debe seguir encendida después de que la puerta se cierra, hasta que se pulse Silence.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Mire qué contiene el resultado actual justo antes de ST Siren: solo Armed y DoorOpen. Siren se mantiene encendida cuando su propio valor anterior forma parte de la condición."
+      "text": "Mire qué contiene el resultado actual justo antes de ST Siren: solo Armed y DoorOpen."
     },
     {
       "level": 2,
-      "text": "LD Armed, AND DoorOpen, OR Siren, ANDN Silence, ST Siren: cinco líneas, un operando cada una."
+      "text": "LD Armed, AND DoorOpen, OR Siren, ANDN Silence, ST Siren: cinco líneas, un operando cada una. Siren se mantiene encendida porque su propio valor anterior forma parte de la condición."
     }
   ],
   "faultCases": [

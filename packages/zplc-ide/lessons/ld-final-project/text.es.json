@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial tiene solo el peldaño de la cinta, de modo que un lote lleno nunca detiene la cinta y un sensor bloqueado nunca activa Fault. El programa debe cumplir los cinco requisitos del objetivo. Planifique primero: escriba las entradas y salidas en una tabla, luego los pasos y luego las pruebas.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial tiene solo el peldaño de la cinta, de modo que un lote lleno nunca detiene la cinta y un sensor bloqueado nunca activa Fault. El programa debe cumplir los cinco requisitos del objetivo. Planifique primero: escriba las entradas y salidas en una tabla, luego los pasos y luego las pruebas.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {

@@ -12,13 +12,13 @@ Lea la descripción despacio y subraye todo lo que se puede detectar o pulsar (u
 
 Esta es la tabla de un contador de cajas que cuenta piezas y enciende una lámpara cuando la caja está llena.
 
-| Nombre  | Tipo    | Significado                                    |
-| ------- | ------- | ---------------------------------------------- |
-| Sensor  | Entrada | TRUE mientras una pieza pasa por el sensor     |
-| Reset   | Entrada | TRUE mientras se pulsa el pulsador de reinicio |
-| BoxFull | Salida  | Lámpara, TRUE cuando se cuentan cuatro piezas  |
+| Nombre  | Tipo    | Significado                                      |
+| ------- | ------- | ------------------------------------------------ |
+| Sensor  | Entrada | TRUE mientras una pieza pasa por el sensor       |
+| Reset   | Entrada | TRUE mientras se acciona el pulsador de reinicio |
+| BoxFull | Salida  | Lámpara, TRUE cuando se cuentan cuatro piezas    |
 
-Observe cómo se describen los pulsadores. Un pulsador de paro suele cablearse **normalmente cerrado**: conduce en reposo, de modo que un cable roto detiene la máquina en lugar de dejarla funcionando. Entonces el programa lee TRUE en reposo y FALSE mientras se pulsa el pulsador. Nombre esas entradas de modo que lo recuerde, por ejemplo `StopOK`.
+Observe cómo se describen los pulsadores. Un pulsador de paro suele cablearse **normalmente cerrado**: conduce en reposo, de modo que un cable roto detiene la máquina en lugar de dejarla funcionando. Entonces el programa lee TRUE en reposo y FALSE mientras se acciona el pulsador. Nombre esas entradas de modo que lo recuerde, por ejemplo `StopOK`.
 
 ## Paso 2: planifique los pasos
 
@@ -48,7 +48,7 @@ outputs: [BoxFull]
 caption: "Cuatro pulsaciones llenan la caja; Reset la vacía"
 ```
 
-Note que mantener el pulsador pulsado cuenta una sola pieza. El contador reacciona al flanco, no al nivel. Es el tipo de detalle que una descripción suele no decir y que una prueba debe detectar.
+Note que mantener presionado el pulsador cuenta una sola pieza. El contador reacciona al flanco, no al nivel. Es el tipo de detalle que una descripción suele no decir y que una prueba debe detectar.
 
 ```timing
 span: 4000
@@ -83,7 +83,7 @@ El escenario de la práctica sigue esta idea. La mayoría de sus comprobaciones 
 ```quiz
 question: "El pulsador de paro está cableado normalmente cerrado. ¿Qué lee el programa mientras nadie lo pulsa?"
 options:
-  - { text: "TRUE", correct: true, feedback: "El contacto conduce en reposo, así que la entrada está encendida hasta que alguien pulsa el pulsador." }
+  - { text: "TRUE", correct: true, feedback: "El contacto conduce en reposo, así que la entrada está encendida hasta que alguien acciona el pulsador." }
   - { text: "FALSE", feedback: "Eso sería un pulsador normalmente abierto. Aquí pulsarlo pone la entrada en FALSE." }
 ```
 

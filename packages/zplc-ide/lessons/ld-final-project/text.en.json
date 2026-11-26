@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter has only the belt rung, so a full batch never stops the belt and a blocked sensor never raises Fault. The program must meet the five requirements of the objective. Plan first: write the inputs and outputs in a table, then the steps, then the tests.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter has only the belt rung, so a full batch never stops the belt and a blocked sensor never raises Fault. The program must meet the five requirements of the objective. Plan first: write the inputs and outputs in a table, then the steps, then the tests.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

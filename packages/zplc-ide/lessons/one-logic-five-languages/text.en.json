@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/Gate.st the output Open follows Request only while the button is pressed. Make it hold: Open is on when Request is pressed or Open is already on, and never while Close is pressed. Once it passes, the same condition can be written in each of the other four languages; the last hint shows all four.",
+      "body": "In src/Gate.st the output Open follows Request only while the button is pressed. Make it hold: Request opens it, it stays open after Request is released, and Close always wins. Once it passes, the same condition can be written in each of the other four languages; the last hint shows all four.",
       "checkpoint": "The gate opens when Request is pressed, stays open after Request is released, and closes when Close is pressed."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter makes Open follow Request, so Open drops the moment Request is released at {{t:40}} ms. Open must stay on after Request is released, and Close must still switch it off.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter makes Open follow Request, so Open drops the moment Request is released at {{t:40}} ms. Open must stay on after Request is released, and Close must still switch it off.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

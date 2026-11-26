@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/Gate.st la salida Open sigue a Request solo mientras el pulsador está pulsado. Haga que se mantenga: Open está encendida cuando se pulsa Request o cuando Open ya está encendida, y nunca mientras se pulsa Close. Una vez que pase, la misma condición puede escribirse en cada uno de los otros cuatro lenguajes; la última pista muestra los cuatro.",
+      "body": "En src/Gate.st la salida Open sigue a Request solo mientras se mantiene Request. Haga que se mantenga: Request la abre, sigue abierta después de soltar Request, y Close siempre tiene prioridad. Una vez que pase, la misma condición puede escribirse en cada uno de los otros cuatro lenguajes; la última pista muestra los cuatro.",
       "checkpoint": "El portón se abre cuando se pulsa Request, sigue abierto después de soltar Request y se cierra cuando se pulsa Close."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial hace que Open siga a Request, de modo que Open cae en cuanto se suelta Request a los {{t:40}} ms. Open debe seguir encendida después de soltar Request, y Close todavía debe poder apagarla.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial hace que Open siga a Request, de modo que Open cae en cuanto se suelta Request a los {{t:40}} ms. Open debe seguir encendida después de soltar Request, y Close todavía debe poder apagarla.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
