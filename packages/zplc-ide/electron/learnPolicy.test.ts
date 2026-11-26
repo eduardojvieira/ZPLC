@@ -99,18 +99,21 @@ describe('the classroom setting the main process holds (AIX-002, D-32)', () => {
     expect(await store.solutionsHidden()).toBe(true);
   });
 
-  it('when the old policy cannot be removed either, the process holds solutions hidden in memory and reports it', async () => {
-    const userData = await scratch();
-    const store = createLearnPolicyStore(userData);
-    await store.save({ hideSolutions: false });
-    // A read-only folder: neither the new file nor the removal of the old one can be written.
-    await chmod(userData, 0o500);
-    await expect(store.save({ hideSolutions: true })).rejects.toThrow();
-    expect(await readSolutionsHidden(userData)).toBe(false);
-    expect(await store.solutionsHidden()).toBe(true);
-    // The hold in memory ends only when a later save succeeds.
-    await chmod(userData, 0o700);
-    await store.save({ hideSolutions: false });
-    expect(await store.solutionsHidden()).toBe(false);
-  });
+  // Off Windows only: a read-only folder needs POSIX mode bits; chmod on Windows sets only the read-only attribute.
+  if (process.platform !== 'win32') {
+    it('when the old policy cannot be removed either, the process holds solutions hidden in memory and reports it', async () => {
+      const userData = await scratch();
+      const store = createLearnPolicyStore(userData);
+      await store.save({ hideSolutions: false });
+      // A read-only folder: neither the new file nor the removal of the old one can be written.
+      await chmod(userData, 0o500);
+      await expect(store.save({ hideSolutions: true })).rejects.toThrow();
+      expect(await readSolutionsHidden(userData)).toBe(false);
+      expect(await store.solutionsHidden()).toBe(true);
+      // The hold in memory ends only when a later save succeeds.
+      await chmod(userData, 0o700);
+      await store.save({ hideSolutions: false });
+      expect(await store.solutionsHidden()).toBe(false);
+    });
+  }
 });
