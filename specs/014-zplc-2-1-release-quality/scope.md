@@ -17,7 +17,7 @@ Each change that closes or adds an item updates this list in the same change (FR
 | U3 G1-G6, P1-P8, D1, D2, Q1 and the verifier (STOP: usable Guide) | 013 GDE-001..012, PLS-001, PLS-004, PLS-008, PLS-009, PLS-010; plan-u3 G1, P1, D1, Q1 | in progress | G1 done and verified (0f47e67a), G5a done (f619a1c1), G5b in progress; G2-G4, G6, P1-P8, D1, D2, Q1 not started |
 | U3 G7 first-use sessions (protocol and record sheet ready, 57b4d50d) | 013 GDE-013; plan-u3 G7 | waiting | owner: runs the G7 sessions |
 | Course step 2 pilot: approved by the owner on 2026-11-25 as the standard for every module; T4, T5, T8 stay in 2.1.0 | 012 CRS-001..008 | done (420ff8ed) | none |
-| Course steps 3-4: first CP-01 (signal table) and CP-02 (image labels), then modules 0-4 and the ST path with CP-03 to CP-05 and the glossary terms of decision 5; lesson images with the new plant look; four scenarios strengthened | 012 CRS-003, CRS-005, CRS-012 | not started | none |
+| Course steps 3-4: CP-01 (<=4-col signal tables), CP-02 (>=12 px machine labels) and pilot CP-04/CP-05 done (80a313e9); next T1 didactics, modules 0-4 and the ST path with CP-03 to CP-05 and decision-5 glossary terms; lesson images after C9; four scenarios strengthened | 012 CRS-003, CRS-005, CRS-012 | in progress | T1, modules 0-4, ST path, scenarios; machine images wait for C9 |
 | Runtime batching (answer 6) | 012 LNK-003, LNK-015 | done (17efa73c) | none |
 | MCP preview (answer 7), AI-01, AI-02 | 014 AIX-001 | done (a36e1d9e) | none |
 | Grade keeps numeric failures (schema stays 4) | 012 SCN-004, SCN-005 | done (fc419393, d449e779) | none |
