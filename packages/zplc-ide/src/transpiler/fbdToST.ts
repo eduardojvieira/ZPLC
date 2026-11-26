@@ -17,6 +17,7 @@ import { getFB, parseIOAddress } from '@zplc/compiler';
 import type { FBDModel, FBDBlock, FBDConnection } from '../models/fbd';
 import { isFunctionBlock, isLogicGate, isComparison, isMathOperator, validateFBDModel } from '../models/fbd';
 import { findProjectBlock, type ProjectBlock } from '../models/projectBlocks';
+import { INTEGER_LITERAL, pinTypeProblem } from '../models/pinTypes';
 import { stdFunction } from '../catalog/stdFunctions';
 import {
   ElementError,
@@ -405,6 +406,9 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
           const operands = sources as Source[];
           const data = block.type === 'SEL' ? operands.slice(1) : operands;
           const type = unify(block, data);
+          if (block.type === 'SEL' && type === 'STRING') {
+            fail(block, 'SEL does not select STRING values: the code generator selects numbers, BOOL and TIME only');
+          }
           if (block.type === 'SEL' && operands[0].type && operands[0].type !== 'BOOL') {
             fail(block, `its selector 'G' is ${operands[0].type}, not BOOL`);
           }
@@ -457,15 +461,40 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
           for (const input of inputMap.get(block.id) ?? []) {
             if (!pins.includes(input.port)) fail(block, `input '${input.port}' is not a parameter of ${block.type}`);
           }
+          if (record.variadic && (pins.length < record.inputs.length || pins.slice(1).some((pin, index) => pin !== `IN${index}`))) {
+            fail(block, `its inputs are ${pins.join(', ')}; ${block.type} takes ${first![0]}, then IN0, IN1 and more inputs in order`);
+            return '';
+          }
           const sources = pins.map((pin) => required(block, pin));
           if (sources.some((s) => !s)) return '';
           const operands = sources as Source[];
+          // a pin the call writes has to be a variable: a temporary or a constant there would be written and lost
+          for (const pin of record.written) {
+            const input = (inputMap.get(block.id) ?? []).find((i) => i.port === pin)!;
+            const kind = kinds.get(input.sourceBlock);
+            if (kind !== 'read' && kind !== 'variable') {
+              const from = operands[pins.indexOf(pin)]!.origin;
+              fail(block, `input '${pin}' is written by ${block.type}, so it has to be wired from a variable block, not from ${from}`);
+            }
+          }
           // the generic pins of one call share one type, which a generic result takes (as MAX and MIN do)
           const generic = pins.filter((pin) => pinTypeOf(pin) in GENERIC_CLASSES);
           const operandOf = (pin: string): Source => operands[pins.indexOf(pin)]!;
           const genericType = generic.length > 0 ? unify(block, generic.map(operandOf)) : undefined;
           if (generic.length > 0 && genericType === undefined) return '';
+          for (const pin of generic) {
+            const wanted = GENERIC_CLASSES[pinTypeOf(pin)]!;
+            const type = operandOf(pin).type;
+            const odd = wanted.types ? (type && !wanted.types.includes(type) ? type : undefined) : type === 'STRING' ? type : undefined;
+            if (odd) fail(block, `input '${pin}' is ${odd}, and ${block.type} takes ${wanted.takes} there`);
+          }
           const typeOf = (pin: string): string => (pinTypeOf(pin) in GENERIC_CLASSES ? genericType! : pinTypeOf(pin).toUpperCase());
+          pins.forEach((pin, index) => {
+            const source = operands[index]!;
+            if (pinTypeOf(pin) in GENERIC_CLASSES || !source.type) return;
+            const problem = pinTypeProblem(source.adaptable ? INTEGER_LITERAL : source.type, typeOf(pin));
+            if (problem) fail(block, `input '${pin}': ${problem}`);
+          });
           if (record.returns !== 'VOID') typed('OUT', record.returns in GENERIC_CLASSES ? genericType : record.returns.toUpperCase());
           const call = `${block.type}(${operands.map((source, index) => render(source, typeOf(pins[index]!))).join(', ')})`;
           // a result nobody uses is still a call, and a function that returns nothing is always one
