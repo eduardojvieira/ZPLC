@@ -3,6 +3,8 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { getAllFnNames } from '@zplc/compiler';
+
 import productManifest from '../../../../package.json';
 import { NativeSimulationSupervisor } from '../../shared/nativeSimulationSupervisor';
 import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
@@ -418,11 +420,22 @@ function fbdProgram(type: string): { content: string; output: 'Lamp' | 'Count' |
   return { content: JSON.stringify({ name: 'Palette', variables, blocks, connections }), output };
 }
 
+/** The functions FBD placed before D-37; the other registered functions are run by the native differential of LNG-029. */
+const FBD_FUNCTIONS_BEFORE_D37 = ['MAX', 'MIN', 'LIMIT', 'SEL', 'NAND', 'NOR', 'ABS', 'MOD'];
+
 describe('LNG-007 every block of the FBD palette is placed, built and run', () => {
-  const types = fbdPaletteBlocks().filter((type) => !['constant', 'variable', 'input', 'output'].includes(type));
+  const offered = fbdPaletteBlocks().filter((type) => !['constant', 'variable', 'input', 'output'].includes(type));
+  const functions = new Set(getAllFnNames());
+  const types = offered.filter((type) => !functions.has(type) || FBD_FUNCTIONS_BEFORE_D37.includes(type));
 
   it('offers blocks, of every family', () => {
-    for (const family of ['AND', 'EQ', 'ADD', 'TON', 'CTU', 'MAX', 'BLINK']) expect(types).toContain(family);
+    for (const family of ['AND', 'EQ', 'ADD', 'TON', 'CTU', 'MAX', 'BLINK', 'SQRT', 'INT_TO_REAL', 'MUX'])
+      expect(offered).toContain(family);
+  });
+
+  it('runs the 64 blocks of before D-37 here; every other block it offers is a registered function, for the differential', () => {
+    expect(types.length + 4).toBe(64);
+    for (const type of offered) if (!types.includes(type)) expect([type, functions.has(type)]).toEqual([type, true]);
   });
 
   for (const type of types) {
@@ -453,15 +466,14 @@ describe('LNG-007 every block of the FBD palette is placed, built and run', () =
     );
   }
 
-  // The catalogue also names functions of the library and blocks of the runtime that no diagram can place. They are not
-  // offered; and a catalogue block that is not offered is one a diagram cannot build, so the palette hides nothing that works.
+  // The catalogue also names blocks of the runtime that no diagram can place. They are not offered; and a catalogue block
+  // that is not offered is one a diagram cannot build, so the palette hides nothing that works.
   const withheld = getBlockCategories()
     .flatMap((category) => category.blocks)
     .filter((block) => !fbdPaletteBlocks().includes(block));
 
-  it('withholds the functions of the library and the communication blocks that a diagram cannot build', () => {
-    expect(withheld.length).toBeGreaterThan(30);
-    for (const name of ['SQRT', 'SIN', 'LEN', 'CONCAT', 'INT_TO_REAL', 'COMM_PUBLISH', 'SHL']) expect(withheld).toContain(name);
+  it('withholds only the communication blocks that a diagram cannot build: every function of the library is placed (D-37)', () => {
+    expect(withheld.sort()).toEqual(['COMM_CONNECT', 'COMM_MODBUS', 'COMM_PUBLISH', 'COMM_SUBSCRIBE']);
   });
 
   for (const type of withheld) {

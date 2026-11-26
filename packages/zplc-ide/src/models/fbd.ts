@@ -9,6 +9,7 @@ import { getFB } from '@zplc/compiler';
 import { ElementError, blockElement, connectionElement } from './sourceElements';
 import { serializeVisualDocument } from './visualFileFormat';
 import { findProjectBlock, type ProjectBlock } from './projectBlocks';
+import { stdFunction } from '../catalog/stdFunctions';
 
 // =============================================================================
 // Variable Definitions
@@ -601,6 +602,14 @@ export function getDefaultPorts(type: string, blocks?: readonly ProjectBlock[]):
         return {
           inputs: library.members.filter((member) => member.isInput && !member.isInternal).map(port),
           outputs: library.members.filter((member) => member.isOutput && !member.isInternal).map(port),
+        };
+      }
+      // a standard function has the pins of the compiler's table, and no output when it returns nothing (LNG-029)
+      const fn = stdFunction(type);
+      if (fn) {
+        return {
+          inputs: fn.inputs.map(([name, pinType]) => ({ name, type: pinType })),
+          outputs: fn.returns === 'VOID' ? [] : [{ name: 'OUT', type: fn.returns }],
         };
       }
       return {

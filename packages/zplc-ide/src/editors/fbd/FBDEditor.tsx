@@ -58,7 +58,7 @@ import { useMonitor } from '../../monitoring/useMonitor';
 import type { Reading, SignalFlags } from '../../monitoring/elementStates';
 import { pinFlagsOf, pinValuesOf } from './pinState';
 import { useProjectBlocks } from '../useProjectBlocks';
-import { fbdCanvasCommands } from './keyboard';
+import { fbdCanvasCommands, fbdInputMenuItems } from './keyboard';
 import { useCanvasKeyboard } from '../useCanvasKeyboard';
 import { useElementSelection } from '../elementSelection';
 import { useElementBreakpoints } from '../elementBreakpoints';
@@ -507,6 +507,11 @@ function FBDEditorInner({
     instanceMonitorOf,
   });
 
+  // the menu of a block that takes more inputs (MUX) also adds and removes one (LNG-029)
+  const menuItems = menu.items.some((item) => item.id === 'bindVariable')
+    ? [...menu.items, ...fbdInputMenuItems(nodes, readOnly, keyboard.run)]
+    : menu.items;
+
   // A double click on a block asks what it holds, as F2 does
   const onNodeDoubleClick = useCallback(
     (_event: React.MouseEvent, node: Node) => {
@@ -524,7 +529,7 @@ function FBDEditorInner({
   return (
     <>
       {!readOnly && <FBDToolbox onInsert={(type) => keyboard.run('insertElement', { blockType: type })} />}
-      <ContextMenu label={t('editor.menu.canvas')} items={menu.items} className="flex flex-1 h-full">
+      <ContextMenu label={t('editor.menu.canvas')} items={menuItems} className="flex flex-1 h-full">
         <div
           ref={wrapperRef}
           className="relative flex-1 h-full"

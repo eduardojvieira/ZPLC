@@ -135,6 +135,19 @@ Limits: a project keeps copies of at most 64 files and about 64 MB of text, and 
 
 Evidence level: host. `packages/zplc-ide/electron/recoveryStore.test.ts` covers the store, the messages and the timing, and journey 19 of `bun run test:journeys` kills the real application with SIGKILL, starts it again and restores the file.
 
+## Where ZPLC keeps sessions and recovery copies
+
+The list of recent projects, the session of each project and the recovery copies live in the user-data folder of ZPLC for your account (`%APPDATA%\ZPLC` on Windows), never in the project folder. They matter because a recovery copy holds the text of a modified file as you typed it, and a project file such as `zplc.json` can hold passwords. Each system keeps them from the other users of the computer in its own way:
+
+| System          | How the files are protected                                                                                                                                                                                |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Linux and macOS | ZPLC writes the files with mode `0600` and their folders with mode `0700`: only your account can read them.                                                                                                |
+| Windows         | Windows has no such modes. The files live inside your user profile and inherit its access list, which gives no access to the other users who are not administrators. ZPLC does not change the access list. |
+
+On both, an administrator of the computer can still read them.
+
+Evidence level: host on Linux; on Windows, the Windows runner of CI, where a measurement listed only `SYSTEM`, `Administrators` and the account itself. `packages/zplc-ide/electron/sessionStore.test.ts`, `recentProjects.test.ts` and `recoveryStore.test.ts` check the modes on Linux and macOS; on Windows they check that each file is inside `USERPROFILE` and that the list `icacls` prints gives no read right to `Users`, `Everyone` or `Authenticated Users`. They only read the list.
+
 ## Preferences
 
 Preferences belong to you, not to a project: they apply to every project and are kept for your user account. **Preferences** is a document of its own, open with or without a project: **Preferences** on the Welcome screen, **Open preferences** in the File menu (`Ctrl+,`, `Cmd+,` on macOS), or the name of a preference in the command palette, which opens the document at that setting. It holds the only theme control of ZPLC, the **Detailed output** switch of the Output tab, the preference **Before running and building** (**Save the project first** or **Ask before saving**) and, under **Assistant**, the provider of the optional AI assistant. The fields of the project are in **Project settings**.
