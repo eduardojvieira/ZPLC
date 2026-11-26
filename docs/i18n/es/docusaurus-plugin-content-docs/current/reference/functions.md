@@ -73,7 +73,7 @@ Resultado tras un ciclo: `Result` = `10`.
 
 `SEL(G : BOOL, IN0 : ANY, IN1 : ANY) : ANY`
 
-Devuelve IN0 cuando G es FALSE e IN1 cuando G es TRUE.
+Devuelve IN0 cuando G es FALSE e IN1 cuando G es TRUE. IN0 e IN1 admiten cualquier tipo elemental salvo STRING: SEL no selecciona cadenas, en ningún lenguaje; para elegir entre cadenas, use un IF en texto estructurado.
 
 ```pascal runnable expect="Result=20"
 PROGRAM Example
@@ -92,7 +92,7 @@ Resultado tras un ciclo: `Result` = `20`.
 
 `MUX(K : INT, IN0 : ANY, IN1 : ANY, ...) : ANY`
 
-Devuelve la entrada que selecciona K: IN0 para 0, IN1 para 1, y así hasta ocho entradas.
+Devuelve la entrada que selecciona K: IN0 para 0, IN1 para 1, y así hasta ocho entradas. Las entradas admiten cualquier tipo elemental salvo STRING: MUX no selecciona cadenas, en ningún lenguaje; para elegir entre cadenas, use un IF en texto estructurado.
 
 ```pascal runnable expect="Result=30"
 PROGRAM Example

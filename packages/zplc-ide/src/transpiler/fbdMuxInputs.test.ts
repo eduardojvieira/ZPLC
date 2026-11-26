@@ -99,4 +99,24 @@ describe('LNG-029 a person adds and removes inputs of MUX', () => {
     ]);
     expect(fbdInputMenuItems([{ ...mux(), data: { type: 'SQRT' } }], false, () => undefined)).toEqual([]);
   });
+
+  it('stops at the eight inputs of MUX: Add input is disabled there and says why, and the build refuses a ninth', () => {
+    const eight = [ports.inputs[0]!, ...Array.from({ length: 8 }, (_, index) => ({ name: `IN${index}`, type: 'ANY' }))];
+    const items = fbdInputMenuItems([mux(eight)], false, () => undefined);
+    expect(items[0]).toMatchObject({ id: 'addInput', disabled: true, disabledReason: 'MUX takes at most 8 inputs.' });
+    const refused = runFBDCommand(empty, { nodes: [mux(eight)], edges: [] }, 'addInput');
+    expect([refused.refused, refused.changed]).toEqual([true, false]);
+    const nine = [...eight, { name: 'IN8', type: 'ANY' }];
+    const feeds = Object.fromEntries(nine.map((port) => [port.name, `V:${port.name === 'K' ? 'K' : 'A'}`]));
+    const model = diagram(
+      'MUX',
+      feeds,
+      [
+        ['K', 'INT'],
+        ['A', 'INT'],
+      ],
+      { inputs: nine, result: 'INT' },
+    );
+    expect(transpileFBDToST(model).errors).toEqual(["FBD block 'fn' (MUX): it has 9 inputs after K; MUX takes at most 8"]);
+  });
 });

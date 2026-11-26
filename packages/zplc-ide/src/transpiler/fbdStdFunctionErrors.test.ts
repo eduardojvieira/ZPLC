@@ -50,6 +50,9 @@ function refused(model: FBDModel): string[] {
   return result.errors;
 }
 
+/** What the owner's decision of 2026-11-26 has MUX and SEL say of a STRING. */
+const ADVICE = 'does not select STRING values; use an IF in Structured Text to choose between strings';
+
 describe('LNG-029 a standard function is a call with no instance', () => {
   it('emits OUT := NAME(args), with a generic result typed by its inputs', () => {
     const result = transpileFBDToST(diagram('SHL', { IN: 'V:W', N: 'C:2' }, [['W', 'WORD']], { result: 'WORD' }));
@@ -110,11 +113,12 @@ describe('LNG-002, LNG-003 the errors of a standard function name the block and 
       ['K', 'INT'],
     ];
     expect(refused(diagram('MUX', { K: 'V:K', IN0: 'V:A', IN1: 'V:B' }, strings, { result: 'STRING' }))).toEqual([
-      "FBD block 'fn' (MUX): input 'IN0' is STRING, and MUX takes any elementary type but a STRING there",
-      "FBD block 'fn' (MUX): input 'IN1' is STRING, and MUX takes any elementary type but a STRING there",
+      "FBD block 'fn' (MUX): input 'IN0' is STRING: MUX " + ADVICE,
+      "FBD block 'fn' (MUX): input 'IN1' is STRING: MUX " + ADVICE,
     ]);
     expect(refused(diagram('SEL', { G: 'V:G', IN0: 'V:A', IN1: 'V:B' }, strings, { result: 'STRING' }))).toEqual([
-      "FBD block 'fn' (SEL): SEL does not select STRING values: the code generator selects numbers, BOOL and TIME only",
+      "FBD block 'fn' (SEL): input 'IN0' is STRING: SEL " + ADVICE,
+      "FBD block 'fn' (SEL): input 'IN1' is STRING: SEL " + ADVICE,
     ]);
   });
 

@@ -5,7 +5,7 @@
 
 import { t } from '../../i18n';
 import type { LDElement, LDToolboxItem } from '../../models/ld';
-import { LD_FUNCTIONS, ldFunctionSpec, type LDFunctionSpec } from '../../models/ldSupport';
+import { LD_FUNCTIONS, ldFunctionHasOutput, ldFunctionPins, ldFunctionSpec, type LDFunctionSpec } from '../../models/ldSupport';
 
 /** An entry of the toolbox: a contact, a coil, a block, or one of the functions. */
 export type LDPaletteEntry = Omit<LDToolboxItem, 'category'> & {
@@ -31,19 +31,25 @@ export function functionItems(): LDPaletteEntry[] {
   })) as LDPaletteEntry[];
 }
 
-/** The slots of a box in order: its operand pins, then OUT unless it is a comparison. */
-export function functionSlots(element: Pick<LDElement, 'functionName'>): string[] {
+/** The operand pins of a box: those of its function, and as many inputs as it has for one that takes more (MUX). */
+export function functionPins(element: Pick<LDElement, 'functionName' | 'operands'>): readonly string[] {
   const spec = ldFunctionSpec(element.functionName);
-  return spec ? [...spec.pins, ...(spec.kind === 'compare' ? [] : ['OUT'])] : [];
+  return spec ? ldFunctionPins(spec, element.operands?.length) : [];
 }
 
-/** A new box of a function: every operand empty, and an empty output unless it is a comparison. */
+/** The slots of a box in order: its operand pins, then OUT unless it is a comparison or returns nothing. */
+export function functionSlots(element: Pick<LDElement, 'functionName' | 'operands'>): string[] {
+  const spec = ldFunctionSpec(element.functionName);
+  return spec ? [...functionPins(element), ...(ldFunctionHasOutput(spec) ? ['OUT'] : [])] : [];
+}
+
+/** A new box of a function: every operand empty, and an empty output unless it is a comparison or returns nothing. */
 export function emptyFunction(functionName: string): Pick<LDElement, 'functionName' | 'operands' | 'output'> {
   const spec = ldFunctionSpec(functionName);
   return {
     functionName,
     operands: (spec?.pins ?? []).map(() => ''),
-    ...(spec && spec.kind !== 'compare' ? { output: '' } : {}),
+    ...(spec && ldFunctionHasOutput(spec) ? { output: '' } : {}),
   };
 }
 
@@ -57,7 +63,7 @@ export function withFunction(element: LDElement, functionName: string): LDElemen
 
 /** The box with a slot set: operands are numbered from 0, and the slot after the last pin is the output. */
 export function withSlot(element: LDElement, slot: number, value: string): LDElement {
-  const pins = ldFunctionSpec(element.functionName)?.pins.length ?? 0;
+  const pins = functionPins(element).length;
   if (slot >= pins) return { ...element, output: value };
   const operands = [...(element.operands ?? [])];
   operands[slot] = value;
@@ -66,6 +72,29 @@ export function withSlot(element: LDElement, slot: number, value: string): LDEle
 
 /** The value in a slot of the box, '' when empty. */
 export const slotValue = (element: LDElement, slot: number): string => {
-  const pins = ldFunctionSpec(element.functionName)?.pins.length ?? 0;
+  const pins = functionPins(element).length;
   return (slot >= pins ? element.output : element.operands?.[slot]) ?? '';
 };
+
+/** Whether a box takes more inputs (MUX), so that an input can be added and removed. */
+export const takesMoreOperands = (element: Pick<LDElement, 'functionName'>): boolean =>
+  ldFunctionSpec(element.functionName)?.record?.variadic === true;
+
+/** The box with one more input `IN<n>`, empty; undefined for a box whose function has a fixed set of operands, or at its most. */
+export function withOperandAdded(element: LDElement): LDElement | undefined {
+  const max = ldFunctionSpec(element.functionName)?.record?.maxInputs;
+  const operands = element.operands ?? [];
+  if (!takesMoreOperands(element) || (max !== undefined && operands.length - 1 >= max)) return undefined;
+  return { ...element, operands: [...operands, ''] };
+}
+
+/** The most inputs after the selector of a box that takes more, or undefined. */
+export const maxOperandInputs = (element: Pick<LDElement, 'functionName'>): number | undefined =>
+  ldFunctionSpec(element.functionName)?.record?.maxInputs;
+
+/** The box without its last input; undefined when it has a fixed set of operands, or only the inputs the table requires. */
+export function withOperandRemoved(element: LDElement): LDElement | undefined {
+  const required = ldFunctionSpec(element.functionName)?.pins.length ?? 0;
+  const operands = element.operands ?? [];
+  return takesMoreOperands(element) && operands.length > required ? { ...element, operands: operands.slice(0, -1) } : undefined;
+}

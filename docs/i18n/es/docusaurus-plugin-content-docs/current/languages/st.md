@@ -256,3 +256,5 @@ Ningún caso de conformidad de esta área figura en la lista de fallas esperadas
 {/* <<< END GENERATED: known-limits-language <<< */}
 
 No se admiten en esta versión y se rechazan con un mensaje, por la decisión D-04: arreglos de arreglos, enumeraciones con tipo base, subrangos, `POINTER TO` y `ADR` (use `REF_TO` y `REF()`), `VAR_ACCESS`, una `CONFIGURATION` textual, `NAMESPACE`, `PROPERTY`, bloques `ACTION` en un programa, llamadas posicionales a bloques de función y las formas de función de los operadores, como `ADD(a, b)`. Los casos `cmp-006-*-is-rejected` fijan el rechazo, de modo que un programa que usa alguno no se compila.
+
+`SEL` y `MUX` no seleccionan valores `STRING`, en ningún lenguaje. El compilador rechaza `Text := SEL(G, A, B);` con "it is not a string" cuando `A` y `B` son cadenas, y los editores FBD y Ladder rechazan una cadena en esas entradas con un error que nombra el bloque y la entrada. Para elegir entre cadenas, escriba un `IF` en texto estructurado: `IF G THEN Text := B; ELSE Text := A; END_IF;`. Comprobado en el host por las pruebas del compilador y de los transpiladores; el generador de código de 2.1 no cambia.

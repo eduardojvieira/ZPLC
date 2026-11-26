@@ -246,6 +246,39 @@ describe('LNG-013 judging a wire of the diagram', () => {
     );
   });
 
+  it('judges a generic pin of a standard function by the class the build checks (LNG-029)', () => {
+    // the ports come from the function table, as a placed block has them: SHL.IN is ANY_BIT, NEG.IN is ANY_NUM, MUX.IN0 is ANY
+    const std = diagram([
+      { id: 'shl', type: 'SHL', position: { x: 0, y: 0 } },
+      { id: 'neg', type: 'NEG', position: { x: 0, y: 0 } },
+      { id: 'mux', type: 'MUX', position: { x: 0, y: 0 } },
+      block('start', 'variable', { variableName: 'Start' }),
+      block('count', 'variable', { variableName: 'Count' }),
+      block('tmr', 'TON'),
+      block('text', 'constant', { value: 'abc' }),
+      block('sum', 'ADD'),
+    ]);
+    expect(judgeConnection(std, { block: 'start', port: 'OUT' }, { block: 'shl', port: 'IN' }).reason).toBe(
+      "'start.OUT' cannot feed 'shl.IN': input 'IN' is BOOL; SHL takes a bit string (BYTE, WORD, DWORD or LWORD)",
+    );
+    expect(judgeConnection(std, { block: 'count', port: 'OUT' }, { block: 'shl', port: 'IN' }).reason).toContain(
+      "input 'IN' is INT; SHL takes a bit string",
+    );
+    expect(judgeConnection(std, { block: 'tmr', port: 'ET' }, { block: 'neg', port: 'IN' }).reason).toContain('NEG takes a number');
+    expect(judgeConnection(std, { block: 'text', port: 'OUT' }, { block: 'mux', port: 'IN0' }).reason).toBe(
+      "'text.OUT' cannot feed 'mux.IN0': MUX does not select STRING values; use an IF in Structured Text to choose between strings",
+    );
+    // SEL keeps its own path in the build, and refuses a STRING there as well
+    const sel = diagram([{ id: 'sel', type: 'SEL', position: { x: 0, y: 0 } }, block('text', 'constant', { value: 'abc' })]);
+    expect(judgeConnection(sel, { block: 'text', port: 'OUT' }, { block: 'sel', port: 'IN1' }).reason).toBe(
+      "'text.OUT' cannot feed 'sel.IN1': SEL does not select STRING values; use an IF in Structured Text to choose between strings",
+    );
+    expect(judgeConnection(std, { block: 'count', port: 'OUT' }, { block: 'neg', port: 'IN' }).reason).toBeUndefined();
+    expect(judgeConnection(std, { block: 'count', port: 'OUT' }, { block: 'mux', port: 'IN0' }).reason).toBeUndefined();
+    // the blocks that keep their own path keep their rule: ADD takes a TIME
+    expect(judgeConnection(std, { block: 'tmr', port: 'ET' }, { block: 'sum', port: 'IN1' }).reason).toBeUndefined();
+  });
+
   it('does not judge a pin whose type it cannot know', () => {
     const unknown = diagram([block('member', 'variable', { variableName: 'Timer1.Q' }), block('sum', 'ADD')]);
     expect(judgeConnection(unknown, { block: 'member', port: 'OUT' }, { block: 'sum', port: 'IN1' }).reason).toBeUndefined();

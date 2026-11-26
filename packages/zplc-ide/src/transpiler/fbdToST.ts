@@ -13,11 +13,11 @@
  *    nothing is replaced by a comment or by a constant
  */
 
-import { getFB, parseIOAddress } from '@zplc/compiler';
+import { getFB, parseIOAddress, parseTimeLiteral } from '@zplc/compiler';
 import type { FBDModel, FBDBlock, FBDConnection } from '../models/fbd';
 import { isFunctionBlock, isLogicGate, isComparison, isMathOperator, validateFBDModel } from '../models/fbd';
 import { findProjectBlock, type ProjectBlock } from '../models/projectBlocks';
-import { INTEGER_LITERAL, pinTypeProblem } from '../models/pinTypes';
+import { FBD_FUNCTION_BLOCKS, GENERIC_CLASSES, INTEGER_LITERAL, outsideClass, pinTypeProblem, selectsNoString } from '../models/pinTypes';
 import { stdFunction } from '../catalog/stdFunctions';
 import {
   ElementError,
@@ -126,24 +126,12 @@ const FB_INPUT_ORDER: Record<string, string[]> = {
   CTUD: ['CU', 'CD', 'R', 'LD', 'PV'],
 };
 
-/** Functions of several inputs of one numeric type (ABS is a math operator of one input). */
-const FUNCTION_BLOCKS = new Set(['MAX', 'MIN', 'LIMIT', 'SEL']);
 const SIGNED = ['SINT', 'INT', 'DINT', 'LINT'];
 const UNSIGNED = ['USINT', 'UINT', 'UDINT', 'ULINT'];
 const BIT_STRING = ['BYTE', 'WORD', 'DWORD', 'LWORD'];
 const REALS = ['REAL', 'LREAL'];
 /** A logic gate does not take these. */
 const NOT_BOOLEAN = [...REALS, 'TIME', 'LTIME', 'STRING'];
-/**
- * The elementary types a generic pin of a standard function takes (LNG-029). The compiler accepts `SHL(REAL)` and a `MUX` of mixed
- * types, so the transpiler checks the class itself; `ANY` takes anything but a STRING, which the code generator does not select.
- */
-const GENERIC_CLASSES: Record<string, { types?: readonly string[]; takes: string }> = {
-  ANY: { takes: 'any elementary type but a STRING' },
-  ANY_NUM: { types: [...SIGNED, ...UNSIGNED, ...REALS], takes: 'a number (an integer or a real type)' },
-  ANY_INT: { types: [...SIGNED, ...UNSIGNED], takes: 'an integer' },
-  ANY_BIT: { types: BIT_STRING, takes: 'a bit string (BYTE, WORD, DWORD or LWORD)' },
-};
 
 // =============================================================================
 // Transpiler
@@ -407,7 +395,9 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
           const data = block.type === 'SEL' ? operands.slice(1) : operands;
           const type = unify(block, data);
           if (block.type === 'SEL' && type === 'STRING') {
-            fail(block, 'SEL does not select STRING values: the code generator selects numbers, BOOL and TIME only');
+            data.forEach(
+              (source, index) => source.type === 'STRING' && fail(block, `input 'IN${index}' is STRING: ${selectsNoString('SEL')}`),
+            );
           }
           if (block.type === 'SEL' && operands[0].type && operands[0].type !== 'BOOL') {
             fail(block, `its selector 'G' is ${operands[0].type}, not BOOL`);
@@ -465,6 +455,10 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
             fail(block, `its inputs are ${pins.join(', ')}; ${block.type} takes ${first![0]}, then IN0, IN1 and more inputs in order`);
             return '';
           }
+          if (record.maxInputs !== undefined && pins.length - 1 > record.maxInputs) {
+            fail(block, `it has ${pins.length - 1} inputs after ${first![0]}; ${block.type} takes at most ${record.maxInputs}`);
+            return '';
+          }
           const sources = pins.map((pin) => required(block, pin));
           if (sources.some((s) => !s)) return '';
           const operands = sources as Source[];
@@ -483,10 +477,10 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
           const genericType = generic.length > 0 ? unify(block, generic.map(operandOf)) : undefined;
           if (generic.length > 0 && genericType === undefined) return '';
           for (const pin of generic) {
+            const odd = outsideClass(pinTypeOf(pin), operandOf(pin).type);
             const wanted = GENERIC_CLASSES[pinTypeOf(pin)]!;
-            const type = operandOf(pin).type;
-            const odd = wanted.types ? (type && !wanted.types.includes(type) ? type : undefined) : type === 'STRING' ? type : undefined;
-            if (odd) fail(block, `input '${pin}' is ${odd}, and ${block.type} takes ${wanted.takes} there`);
+            if (odd && !wanted.types) fail(block, `input '${pin}' is STRING: ${selectsNoString(block.type)}`);
+            else if (odd) fail(block, `input '${pin}' is ${odd}, and ${block.type} takes ${wanted.takes} there`);
           }
           const typeOf = (pin: string): string => (pinTypeOf(pin) in GENERIC_CLASSES ? genericType! : pinTypeOf(pin).toUpperCase());
           pins.forEach((pin, index) => {
@@ -707,7 +701,7 @@ function classify(block: FBDBlock, blocks?: readonly ProjectBlock[]): Kind | und
   if (isLogicGate(type)) return 'gate';
   if (isComparison(type)) return 'compare';
   if (isMathOperator(type)) return 'math';
-  if (FUNCTION_BLOCKS.has(type)) return 'function';
+  if (FBD_FUNCTION_BLOCKS.has(type)) return 'function';
   if (type in MODBUS_HELPERS) return 'modbus';
   if (VM_COMM_BLOCKS.has(type)) return 'comm';
   if (isFunctionBlock(type)) return 'standard';
@@ -901,6 +895,8 @@ function validateText(model: FBDModel, problems: Problems): void {
         problems.push(`${label}: the type '${String(v.type)}' is not a type name`);
       if (v.comment !== undefined && (typeof v.comment !== 'string' || COMMENT_DELIMITER.test(v.comment)))
         problems.push(`${label}: the comment must not contain ST comment delimiters`);
+      if (!passedAsTime(v.initialValue))
+        problems.push(`${label}: its initial value '${String(v.initialValue)}' starts as a TIME literal and is not one`);
       if (v.address !== undefined) {
         try {
           parseIOAddress(String(v.address));
@@ -921,6 +917,19 @@ function validateText(model: FBDModel, problems: Problems): void {
       problems.push(`${label}: the variable name '${String(block.variableName)}' is not a variable`, at);
     if (block.type === 'constant' && (block.value === undefined || block.value === null || typeof block.value === 'object'))
       problems.push(`${label}: it has no value`, at);
+    if (block.type === 'constant' && !passedAsTime(block.value))
+      problems.push(`${label}: its value '${String(block.value)}' starts as a TIME literal and is not one`, at);
+  }
+}
+
+/** Whether a value that `formatValue` writes as it is (a text that starts with T#) is a TIME literal: anything else would be ST text. */
+function passedAsTime(value: unknown): boolean {
+  if (typeof value !== 'string' || !value.startsWith('T#')) return true;
+  try {
+    parseTimeLiteral(value);
+    return /^T#-?[0-9A-Za-z_.]+$/.test(value);
+  } catch {
+    return false;
   }
 }
 
