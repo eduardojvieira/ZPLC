@@ -14,12 +14,18 @@ afterEach(() => {
   for (const path of temporary.splice(0)) rmSync(path, { recursive: true, force: true });
 });
 
-/** A lessons directory holding only the lesson, with the fixture reading page when `withReading`; `edit` gets the lesson directory. */
+/** The reading files of a lesson directory: the two pages and the folders only a page uses. */
+const READING_FILES = ['reading.en.md', 'reading.es.md', 'reading', 'images'];
+/**
+ * A lessons directory holding only the lesson, with the fixture reading page when `withReading`; `edit` gets the lesson directory.
+ * The copy drops the shipped reading of the lesson first, so the test does not depend on whether the lesson ships one.
+ */
 function lessons(edit: (directory: string) => void = () => {}, withReading = true): string {
   const root = mkdtempSync(join(tmpdir(), 'zplc-reading-'));
   temporary.push(root);
   const directory = join(root, LESSON);
   cpSync(join(LESSONS_DIRECTORY, LESSON), directory, { recursive: true });
+  for (const file of READING_FILES) rmSync(join(directory, file), { recursive: true, force: true });
   if (withReading) cpSync(FIXTURE, directory, { recursive: true });
   edit(directory);
   return root;

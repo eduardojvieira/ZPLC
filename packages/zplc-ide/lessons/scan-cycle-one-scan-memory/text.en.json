@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Scan cycle and one-scan memory",
   "summary": "Follow how one input produces the current output and a copy delayed by one scan.",
-  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show target timing, snapshots under physical interrupts or electrical bounce.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how fast a real controller scans or how a real button bounces.",
   "objectives": [
     "See that a variable keeps its value from one scan to the next.",
     "Build a one-scan delay and a one-scan pulse from a single memory."
@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/ScanSnapshot.st, use Button, Current, Delayed, and RisingPulse and add the Previous memory.",
-      "checkpoint": "Previous updates at the end of the scan."
+      "body": "In src/ScanSnapshot.st, Button is the input and Current, Delayed and RisingPulse are the outputs. Current already copies Button; Delayed and RisingPulse need to know what Button was on the previous scan.",
+      "checkpoint": "You can say which value a memory variable holds when a scan starts."
     },
     {
       "key": "predict",
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter has no one-scan memory; keep Previous, set Delayed from it, derive RisingPulse from Current and Delayed, and update Previous last.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starter has no one-scan memory, so RisingPulse stays FALSE at {{t:10}} ms and Delayed stays FALSE at {{t:20}} ms. Make Delayed show Button one scan late, and make RisingPulse TRUE only on the scan in which Button turns on. Declare the memory you need yourself.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The required scenario is named ScanSnapshot and contains {{assertions}} assertions."
     },
     {
@@ -40,15 +40,15 @@
     },
     {
       "key": "evidence",
-      "title": "Evidence",
-      "body": "AT/RISING/FALLING/NEVER cover the scenario; hashes and trace belong to the scenario that ran.",
-      "checkpoint": "Recorded evidence belongs to the executed scenario."
+      "title": "What Check looks at",
+      "body": "The scenario looks at the three outputs at {{t:0}}, {{t:10}}, {{t:20}} and {{t:30}} ms, at the scan in which RisingPulse and Delayed turn on and off, and at one combination that must never happen: Delayed and RisingPulse TRUE in the same scan.",
+      "checkpoint": "You can say why Delayed and RisingPulse are never TRUE in the same scan."
     },
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Updating Previous first would break the edge detector.",
-      "checkpoint": "Memory must retain the prior value until the end of the scan."
+      "body": "What would RisingPulse do if the memory were updated first, at the top of the program?",
+      "checkpoint": "The memory would already hold the Button of this scan, so RisingPulse would never turn on: a memory keeps the previous value only until the line that updates it."
     }
   ],
   "hints": [
@@ -61,7 +61,5 @@
       "text": "Write the statements in this order: Current := Button; Delayed := Previous; RisingPulse := Current AND NOT Delayed; and only then Previous := Button."
     }
   ],
-  "faultCases": [
-    "The starter has no one-scan memory; keep Previous, set Delayed from it, derive RisingPulse from Current and Delayed, and update Previous last."
-  ]
+  "faultCases": ["The starter has no one-scan memory, so RisingPulse stays FALSE at {{t:10}} ms and Delayed stays FALSE at {{t:20}} ms."]
 }
