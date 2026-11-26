@@ -9,9 +9,13 @@ import { SURFACES } from '../../packages/zplc-ide/src/shell/surfaces';
 
 const ROOT = resolve(import.meta.dir, '../..');
 const INVENTORY = 'specs/014-zplc-2-1-release-quality/screens.md';
-// views.ts imports React components; its surface ids are read from the text so the test loads no UI.
-const VIEWS_SOURCE = readFileSync(resolve(ROOT, 'packages/zplc-ide/src/shell/views.ts'), 'utf8');
-const VIEW_SURFACES = [...VIEWS_SOURCE.matchAll(/surface: '([^']+)'/g)].map((match) => match[1]);
+// views.ts imports the React views; they load in a DOM with the project loader and Monaco stubbed, as surfaces.test.ts does.
+const { setupDom, stubMonaco, stubProjectLoader } = await import('../../packages/zplc-ide/src/test/dom');
+await setupDom();
+await stubProjectLoader();
+await stubMonaco();
+const { PRIMARY_VIEWS, SECONDARY_VIEWS } = await import('../../packages/zplc-ide/src/shell/views');
+const VIEW_SURFACES = [...Object.values(PRIMARY_VIEWS), ...Object.values(SECONDARY_VIEWS)].map((view) => view.surface);
 
 interface Row {
   id: string;
