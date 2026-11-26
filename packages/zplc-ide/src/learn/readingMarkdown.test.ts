@@ -275,7 +275,10 @@ describe('the live-block limits (LRN-040)', () => {
   it('quiz: an option it cannot read whole is refused, as an unquoted comma that cuts the feedback', () => {
     expect(
       problem(quiz('  - { text: A, correct: true, feedback: Yes. It was solved, so it waits }\n  - { text: B, feedback: no }')),
-    ).toEqual(['quiz: option 1 cannot be read whole ("so it waits" is not text, correct or feedback): quote its values']);
+    ).toEqual(['quiz: option 1 cannot be read whole: its feedback ends at a comma and "so it waits" is left over: quote its values']);
+    expect(problem(quiz('  - { text: A, B, correct: true, feedback: yes }\n  - { text: C, feedback: no }'))).toEqual([
+      'quiz: option 1 cannot be read whole: its text ends at a comma and "B" is left over: quote its values',
+    ]);
     expect(
       problem(quiz("  - { text: A, correct: true, feedback: 'Yes. It was solved, so it waits' }\n  - { text: B, feedback: no }")),
     ).toEqual([]);

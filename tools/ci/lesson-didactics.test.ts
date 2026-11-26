@@ -45,6 +45,7 @@ const lesson = (id: string, patch: Partial<LessonFacts> = {}): LessonFacts => ({
   readingSource: PAGES,
   addedLines: ['A := 1;', 'B := 2;'],
   addedStatements: [],
+  starterSource: '',
   starter: { statements: 0, graphic: false },
   machine: null,
   hasWrongSet: true,
@@ -117,6 +118,14 @@ describe('rules, each failing when broken', () => {
     expect(offending(base([lesson('explain'), lesson('early'), lesson('late')], { ideas }))).toEqual([]);
   });
 
+  test('glossary: a forbidden word right before a {{ui:}} placeholder names a Studio control, not the concept', () => {
+    const terms = [{ concept: 'push button', en: 'push button', es: 'pulsador', forbidden: { en: [], es: ['botón'] } }];
+    const es = (body: string) => ({ text: { en: text(), es: text({ summary: body }, 'Pulse Comprobar.') } });
+    expect(offending(base([lesson('a', es('Pulse el botón {{ui:learn.check}}.'))], { terms }))).toEqual([]);
+    expect(offending(base([lesson('a', es('Pulse el botón de marcha.'))], { terms }))).toEqual(['a:glossary']);
+    expect(offending(base([lesson('a', es('El botón de marcha y el botón {{ui:learn.check}}.'))], { terms }))).toEqual(['a:glossary']);
+  });
+
   test('glossary: a forbidden synonym in the text of its language only', () => {
     const terms = [{ concept: 'belt', en: 'belt', es: 'banda', forbidden: { en: ['strap'], es: ['cinta'] } }];
     const es = (body: string) => text({ summary: body }, 'Pulse Comprobar.');
@@ -165,7 +174,37 @@ describe('rules, each failing when broken', () => {
       ),
     ).toEqual(['a:answer']);
     expect(offending(base([lesson('a', en({ objectives: ['Q := A AND B;'] }))]))).toEqual(['a:answer']);
-    expect(offending(base([lesson('a', en({ faultCases: ['q := a and b;'] }))]))).toEqual(['a:answer']);
+    // Code is matched case-sensitively: the operator words count only in their code form.
+    expect(offending(base([lesson('a', en({ faultCases: ['q := a and b;'] }))]))).toEqual([]);
+    expect(offending(base([lesson('a', en({ faultCases: ['Q := A AND B;'] }))]))).toEqual(['a:answer']);
+    const il = (objective: string) => ({
+      addedLines: ['ADD 5'],
+      text: { en: text({ objectives: [objective] }), es: text({}, 'Pulse Comprobar.') },
+    });
+    expect(offending(base([lesson('a', il('Then add 5 to Total.'))]))).toEqual([]);
+    expect(offending(base([lesson('a', il('Then ADD 5 to it.'))]))).toEqual(['a:answer']);
+    // A Reflect stage is read before the pass by a learner who reads ahead: it is checked like any stage.
+    const reflect = { key: 'reflect', title: 'Reflect', body: 'You wrote Q := A AND B; there.', checkpoint: 'ok' };
+    expect(
+      offending(
+        base([
+          lesson('a', { ...added, text: { en: { ...text(), stages: [...text().stages, reflect] }, es: text({}, 'Pulse Comprobar.') } }),
+        ]),
+      ),
+    ).toEqual(['a:answer']);
+    // Code inside {{v:…|X}} or around {{t:N}} is read as the learner sees it.
+    expect(offending(base([lesson('a', en({ objectives: ['Write {{v:Q=true@30|Q := A AND B;}} now.'] }))]))).toEqual(['a:answer']);
+    const timed = { addedLines: ['CAL HoldTimer(IN := Button, PT := T#300ms)'] };
+    expect(
+      offending(
+        base([
+          lesson('a', {
+            ...timed,
+            text: { en: text({ objectives: ['CAL HoldTimer(IN := Button, PT := T#{{t:300}}ms)'] }), es: text({}, 'Pulse Comprobar.') },
+          }),
+        ]),
+      ),
+    ).toEqual(['a:answer']);
     expect(evaluate(base([lesson('a', en({ objectives: ['Q := A AND B;'] }))]))[0]!.offences.answer).toBe('Q:=A AND B; (en)');
     // The last hint may hold the answer; a longer name around the line is not the line; LD, FBD and SFC are not checked.
     expect(
@@ -199,12 +238,18 @@ describe('rules, each failing when broken', () => {
     expect(offending(base([lesson('a', { ...en({ objectives: ['Q := A AND B;'] }), addedLines: null })]))).toEqual([]);
   });
 
-  test('answer: a solution statement or a right-hand side of 6 or more characters, printed alone, is a leak too', () => {
-    const facts = (objective: string) => ({
+  test('answer: a solution statement or a right-hand side of more than 6 characters, printed alone, is a leak too', () => {
+    const facts = (objective: string, starterSource = '') => ({
       addedLines: [],
-      addedStatements: ['Level := (Raw * 100) / 1000', 'Ok := A + B'],
+      addedStatements: ['Level := (Raw * 100) / 1000', 'Ok := A + B', 'Run := A OR B', 'Go := A OR Bc'],
+      starterSource,
       text: { en: text({ objectives: [objective] }), es: text({}, 'Pulse Comprobar.') },
     });
+    // 6 normalised characters (A OR B) is not a candidate, 7 (A OR Bc) is.
+    expect(offending(base([lesson('a', facts('Press A OR B.'))]))).toEqual([]);
+    expect(offending(base([lesson('a', facts('Press A OR Bc.'))]))).toEqual(['a:answer']);
+    // A candidate the starter already holds gives nothing away.
+    expect(offending(base([lesson('a', facts('Compute (Raw*100) / 1000.', 'Shown := (Raw * 100) / 1000;'))]))).toEqual([]);
     expect(offending(base([lesson('a', facts('Compute (Raw*100) / 1000 and store it.'))]))).toEqual(['a:answer']);
     expect(evaluate(base([lesson('a', facts('Compute (Raw*100) / 1000.'))]))[0]!.offences.answer).toBe('(Raw*100)/1000 (en)');
     expect(offending(base([lesson('a', facts('Write Level:=(Raw*100)/1000 here.'))]))).toEqual(['a:answer']);
@@ -258,7 +303,12 @@ describe('rules, each failing when broken', () => {
     });
     expect(offending(base([lesson('a', at('It passes in the Simulator.', 'ok'))]))).toEqual(['a:scope']);
     expect(offending(base([lesson('a', at('ok', 'No en la máquina real.'))]))).toEqual(['a:scope']);
-    expect(offending(base([lesson('a', at('ok', 'Sin placa.'))]))).toEqual(['a:scope']);
+    expect(offending(base([lesson('a', at('ok', 'Sin placa de desarrollo.'))]))).toEqual(['a:scope']);
+    // "placa" alone is also the plate of a pusher.
+    expect(offending(base([lesson('a', at('ok', 'La placa del empujador avanza.'))]))).toEqual([]);
+    // verify-my-board is about the board itself: the board term is exempt there, the other terms are not.
+    expect(offending(base([lesson('verify-my-board', at('The board blinks.', 'La placa de desarrollo parpadea.'))]))).toEqual([]);
+    expect(offending(base([lesson('verify-my-board', at('For safety.', 'ok'))]))).toEqual(['verify-my-board:scope']);
     expect(offending(base([lesson('a', at('For safety.', 'ok'))]))).toEqual(['a:scope']);
     // The scope may say it; another language's word is not checked; a checkpoint without the words holds.
     expect(
