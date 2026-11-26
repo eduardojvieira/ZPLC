@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter fault, save it, then press Check: The starter divides before it multiplies, so the integer division Raw / 1000 gives 0 until Raw reaches 1000 and the percentage stays at 0; multiply by 100 first, then divide by 1000.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program divides before it multiplies, so the integer division Raw / 1000 gives 0 until Raw reaches 1000 and the percentage stays at 0. Change the scaling so that Percent is the right percentage of Raw at every step, not only at full scale. Leave the stand-in for Raw and the two comparisons as they are.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The scenario is named Scaling and contains {{assertions}} assertions."
     },
     {
@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Why is DINT used here? Raw times 100 reaches 100000, more than a 16-bit integer holds, so the intermediate product needs a wide type. Check the width of INT on your target before you rely on it.",
+      "body": "Why is DINT used here? Raw times 100 reaches 100000, more than a 16-bit INT holds, so the intermediate product needs a wider type. What would adding half the divisor before the division change, and for which values of Raw?",
       "checkpoint": "The product is formed before the division, so its range decides the type, not the range of Raw. The scenario checks the two thresholds only; it does not check the rounding of other values."
     }
   ],

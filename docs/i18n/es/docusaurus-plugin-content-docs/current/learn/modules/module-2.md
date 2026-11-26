@@ -20,7 +20,7 @@ La lógica booleana es el vocabulario de todo programa. Se enseña en diagrama d
 
 | Lección | Id | Lenguajes | minutos |
 | --- | --- | --- | --- |
-| [Contactos NA y NC: un botón de parada que falla en modo seguro](../lessons/ld-no-nc-contacts.md) | `ld-no-nc-contacts` | LD | 20 |
+| [Contactos NA y NC: un pulsador de parada que falla en modo seguro](../lessons/ld-no-nc-contacts.md) | `ld-no-nc-contacts` | LD | 20 |
 | [Serie y paralelo: AND y OR con contactos](../lessons/ld-series-parallel.md) | `ld-series-parallel` | LD | 20 |
 | [Lógica booleana: un mando a dos manos con protección](../lessons/boolean-logic-two-hand-guard.md) | `boolean-logic-two-hand-guard` | ST | 15 |
 | [Autorretención en diagrama de escalera: un motor que se mantiene encendido](../lessons/seal-in-ladder.md) | `seal-in-ladder` | LD | 20 |

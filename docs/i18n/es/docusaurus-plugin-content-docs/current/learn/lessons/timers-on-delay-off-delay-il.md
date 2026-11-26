@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/timers-on-delay-off-delay-il. Do not edit. >>> */}
 
-Llame a un temporizador TOF con CAL para mantener una luz encendida después de soltar un botón, y a un temporizador TON para ignorar un pulso corto de un sensor, y lea cada salida del temporizador con LD.
+Llame a un temporizador TOF con CAL para mantener una luz encendida después de soltar un pulsador, y a un temporizador TON para ignorar un pulso de sensor demasiado corto, y lea la salida de cada temporizador después de su llamada.
 
 ## Datos
 
@@ -19,14 +19,14 @@ Llame a un temporizador TOF con CAL para mantener una luz encendida después de 
 - Tiempo estimado: 15 minutos
 - Lenguajes: IL
 - Rutas: Simulación, Hardware
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [timers-on-delay-off-delay](./timers-on-delay-off-delay.md), [boolean-logic-two-hand-guard-il](./boolean-logic-two-hand-guard-il.md)
 
 ## Objetivos
 
-- Llame a una instancia de temporizador con CAL, pasándole su entrada y su valor preestablecido, y lea su salida con LD.
-- Mantenga una salida encendida un tiempo fijo después de que su entrada baja, con TOF, e ignore una entrada que está en ON menos de un tiempo fijo, con TON.
+- Llame a una instancia de temporizador con CAL en cada ciclo, pasándole su entrada y su valor preestablecido, y lea su salida después de la llamada.
+- Mantenga una salida en ON durante un tiempo fijo después de que su entrada cae, con un TOF, e ignore una entrada que está en ON menos de un tiempo fijo, con un TON.
 
 ## Etapas
 
@@ -39,7 +39,7 @@ Llame a un temporizador TOF con CAL para mantener una luz encendida después de 
 
 ## Qué cubre la evidencia
 
-Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el antirrebote eléctrico, la respuesta de un sensor ni los tiempos en un dispositivo de destino.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un pulsador real ni con qué rapidez responde un sensor real.
 
 ## Cableado
 

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Boolean logic in Ladder: a two-hand guard",
   "summary": "Draw AND, NOT and exclusive-or as contacts in series and in parallel, and enable a press only with both hands on the buttons and the guard closed.",
-  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a two-hand safety control, any safety function or wiring.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real two-hand control or guard switch is built or wired.",
   "objectives": [
     "Read series contacts as AND, a normally closed contact as NOT and two parallel paths as OR.",
     "Build an exclusive-or (exactly one hand) from two parallel paths of two contacts each."
@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/TwoHandLd.ld.json three rungs are drawn: PressEnable, GuardLamp and OneHandWarning. The PressEnable rung checks the two hands but not the guard. Add the guard so that the press is enabled only with both hands on the buttons and the guard closed.",
-      "checkpoint": "PressEnable needs three contacts in series."
+      "body": "In src/TwoHandLd.ld.json three rungs are drawn: PressEnable, GuardLamp and OneHandWarning. The PressEnable rung checks the two hands but not the guard, so the press is enabled with the guard open. Make the press enabled only with both hands on the buttons and the guard closed.",
+      "checkpoint": "You can name the three conditions that must all be TRUE for PressEnable, and say whether they combine as AND or as OR."
     },
     {
       "key": "predict",
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter enables the press without looking at the guard: PressEnable is ON at {{t:30}} ms although GuardClosed is FALSE; add a normally open contact on GuardClosed in series with the two hand contacts of the PressEnable rung. In the Ladder editor add a contact after RightHand in the first rung and name it GuardClosed.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program enables the press without looking at the guard: PressEnable is ON at {{t:30}} ms although GuardClosed is FALSE. Change it so that PressEnable is ON only while LeftHand, RightHand and GuardClosed are all TRUE: ON at {{t:20}} ms, OFF at {{t:30}} ms. Leave the GuardLamp and OneHandWarning rungs as they are.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The scenario is named TwoHandLd and contains {{assertions}} assertions."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "Swap the series of the PressEnable rung for two parallel paths and see which assertion fails. Why is series AND and parallel OR?",
-      "checkpoint": "With the hands in parallel, one hand enables the press, which is what a two-hand control must prevent. The scenario shows the logic of one recorded run; it does not prove a safety function."
+      "checkpoint": "With the contacts in parallel, any one of them enables the press: one hand alone, or the guard alone, is enough, which is exactly what a two-hand control must prevent. Series needs every contact, so it is AND; parallel needs any path, so it is OR."
     }
   ],
   "hints": [
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "The starter enables the press without looking at the guard: PressEnable is ON at {{t:30}} ms although GuardClosed is FALSE; add a normally open contact on GuardClosed in series with the two hand contacts of the PressEnable rung."
+    "The starting program enables the press without looking at the guard: PressEnable is ON at {{t:30}} ms although GuardClosed is FALSE."
   ]
 }

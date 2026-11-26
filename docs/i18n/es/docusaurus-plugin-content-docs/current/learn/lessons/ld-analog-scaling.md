@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/ld-analog-scaling. Do not edit. >>> */}
 
-Escale las cuentas crudas de una entrada analógica a un nivel en porcentaje con una caja MUL y luego una caja DIV, mantenga el resultado en rango con LIMIT y gobierne dos lámparas de nivel con cajas de comparación.
+Escale las cuentas crudas de una entrada analógica a un nivel en porcentaje con un bloque MUL y luego un bloque DIV, mantenga el resultado en rango con LIMIT y gobierne dos lámparas de nivel con cajas de comparación.
 
 ## Datos
 
@@ -26,7 +26,7 @@ Escale las cuentas crudas de una entrada analógica a un nivel en porcentaje con
 ## Objetivos
 
 - Escale cuentas analógicas crudas a unidades de ingeniería multiplicando por el rango de las unidades y luego dividiendo entre el rango de las cuentas, en un tipo donde quepa el producto.
-- Mantenga un valor dentro de su rango con una caja LIMIT y compare el valor escalado, no las cuentas crudas, con los umbrales de las alarmas.
+- Mantenga un valor dentro de su rango con un bloque LIMIT y compare el valor escalado, no las cuentas crudas, con los umbrales de las alarmas.
 
 ## Etapas
 
@@ -39,7 +39,7 @@ Escale las cuentas crudas de una entrada analógica a un nivel en porcentaje con
 
 ## Qué cubre la evidencia
 
-Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la precisión, el ruido, la calibración de una entrada analógica real ni el cableado.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad. El escenario solo fija entradas BOOL, así que la lección no lee una entrada analógica real, y no muestra cuán preciso, ruidoso o bien calibrado es un sensor real, ni cómo se cablea.
 
 ## En una placa
 

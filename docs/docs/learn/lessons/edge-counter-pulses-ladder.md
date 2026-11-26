@@ -39,7 +39,7 @@ Place a CTU in a rung so that CountReached turns on at the third rising edge of 
 
 ## What the evidence covers
 
-Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the counting accuracy of a real input or wiring.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real sensor bounces, how many pulses a real input misses or how it is wired.
 
 ## Wiring
 

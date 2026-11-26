@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/boolean-logic-two-hand-guard-fbd. Do not edit. >>> */}
 
-Lea un diagrama de bloques de función (FBD) y conecte bloques AND, NOT y XOR para que una prensa solo se habilite con las dos manos en los botones y la protección cerrada.
+Lea un diagrama de bloques de función (FBD) y conecte bloques AND, NOT y XOR para que una prensa solo se habilite con las dos manos en los pulsadores y la protección cerrada.
 
 ## Datos
 
@@ -19,13 +19,13 @@ Lea un diagrama de bloques de función (FBD) y conecte bloques AND, NOT y XOR pa
 - Tiempo estimado: 20 minutos
 - Lenguajes: FBD
 - Rutas: Simulación, Hardware
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [boolean-logic-two-hand-guard](./boolean-logic-two-hand-guard.md)
 
 ## Objetivos
 
-- Lea un diagrama de bloques de función (FBD): los bloques se unen con cables desde un puerto de salida hasta un puerto de entrada, y cada salida muestra el resultado de los bloques conectados a ella.
+- Lea un diagrama de bloques de función (FBD): los bloques se unen con conexiones desde un puerto de salida hasta un puerto de entrada, y cada salida muestra el resultado de los bloques conectados a ella.
 - Conecte bloques AND, NOT y XOR para que una salida esté en ON solo cuando varias entradas estén en ON a la vez, cuando una entrada esté en OFF o cuando exactamente una de dos entradas esté en ON.
 
 ## Etapas

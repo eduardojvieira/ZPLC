@@ -39,7 +39,7 @@ Use a positive transition contact and a negative transition contact so that a bo
 
 ## What the evidence covers
 
-Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the debounce, the response time or the wiring of a real sensor.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real sensor bounces, how fast it answers or how it is wired.
 
 ## On a board
 

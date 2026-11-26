@@ -14,7 +14,7 @@ The owner said on 2026-11-25: "documenta todo, el agente va a seguir trabajando 
 
 | File | What it is | Who writes it |
 |---|---|---|
-| `spec.md` | The specification: 69 requirements, statements S-14 to S-22, decisions D-28 to D-36 | The reviewer and the owner |
+| `spec.md` | The specification: 71 requirements, statements S-14 to S-23, decisions D-28 to D-37 | The reviewer and the owner |
 | `reviews/ai.md` | The AI baseline of 2026-11-24: findings AI-01 to AI-22 | The reviewer |
 | `handoff.md` | This brief | The reviewer |
 | `bar.md` | The commercial bar (BAR-001). Not written yet | The reviewer |

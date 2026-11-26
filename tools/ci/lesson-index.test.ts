@@ -201,11 +201,24 @@ describe('lesson ids have one source (LRN-028)', () => {
 describe('the reading pages in the generated index (LRN-042)', () => {
   const FIXTURE = join(ROOT, 'packages/zplc-ide/src/learn/fixtures/reading/valid');
   const LESSON = 'first-blink-simulation';
-  const withReading = (): string => {
+  /** A copy of the lessons in which LESSON has no reading page, whether or not the shipped lesson has one. */
+  const withoutReading = (): string => {
     const lessons = copyOfLessons();
+    for (const file of ['reading.en.md', 'reading.es.md', 'reading', 'images'])
+      rmSync(join(lessons, LESSON, file), { recursive: true, force: true });
+    return lessons;
+  };
+  /** A copy of the lessons in which LESSON has the fixture reading page instead of its own. */
+  const withReading = (): string => {
+    const lessons = withoutReading();
     cpSync(FIXTURE, join(lessons, LESSON), { recursive: true });
     return lessons;
   };
+  /** The lessons of a copy that hold a reading page. */
+  const readingIds = (lessons: string): string[] =>
+    readdirSync(lessons)
+      .filter((id) => existsSync(join(lessons, id, 'reading.en.md')))
+      .sort();
 
   it('bundles the reading of a lesson that has one, and the data differs from the committed file, which `--check` refuses', () => {
     const lessons = withReading();
@@ -213,14 +226,14 @@ describe('the reading pages in the generated index (LRN-042)', () => {
     expect(problems).toEqual([]);
     const entries = (JSON.parse(data) as { lessons: Array<{ id: string; reading?: { en: string; images: string[] } }> }).lessons;
     expect(entries.find((entry) => entry.id === LESSON)?.reading?.images).toEqual(['images/dot.png', 'images/panel.svg']);
-    // the lessons that already ship a reading page keep it; the fixture adds one more
-    const shipped = LESSON_INDEX.lessons.filter((entry) => 'reading' in entry).map((entry) => entry.id);
+    // every lesson of the copy that holds a reading page is bundled with it, the fixture lesson among them
+    expect(readingIds(lessons)).toContain(LESSON);
     expect(
       entries
         .filter((entry) => entry.reading)
         .map((entry) => entry.id)
         .sort(),
-    ).toEqual([...shipped, LESSON].sort());
+    ).toEqual(readingIds(lessons));
     expect(readFileSync(join(ROOT, 'packages/zplc-ide/src/generated/lessonIndex.json'), 'utf8')).not.toBe(data);
   });
 
@@ -228,7 +241,9 @@ describe('the reading pages in the generated index (LRN-042)', () => {
     const plain = generate(copyOfLessons());
     expect(plain.problems).toEqual([]);
     expect(plain.data).toBe(readFileSync(join(ROOT, 'packages/zplc-ide/src/generated/lessonIndex.json'), 'utf8'));
-    const entries = (JSON.parse(plain.data) as { lessons: Array<{ id: string }> }).lessons;
+    const bare = generate(withoutReading());
+    expect(bare.problems).toEqual([]);
+    const entries = (JSON.parse(bare.data) as { lessons: Array<{ id: string }> }).lessons;
     expect(entries.find((entry) => entry.id === LESSON)).not.toHaveProperty('reading');
   });
 

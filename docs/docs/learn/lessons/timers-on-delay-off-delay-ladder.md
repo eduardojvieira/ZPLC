@@ -39,7 +39,7 @@ Place a TOF and a TON between a contact and a coil, and see that an off-delay ke
 
 ## What the evidence covers
 
-Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show real sensor filtering requirements or wiring.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real sensor flickers or how a real lamp is wired.
 
 ## Wiring
 

@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/boolean-logic-two-hand-guard. Do not edit. >>> */}
 
-Combine AND, NOT y XOR para que una prensa solo se habilite con las dos manos en los botones y la protección cerrada.
+Combine AND, NOT y XOR para que una prensa solo se habilite con las dos manos en los pulsadores y la protección cerrada.
 
 ## Datos
 
@@ -19,7 +19,7 @@ Combine AND, NOT y XOR para que una prensa solo se habilite con las dos manos en
 - Tiempo estimado: 15 minutos
 - Lenguajes: ST
 - Rutas: Simulación, Hardware
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
 

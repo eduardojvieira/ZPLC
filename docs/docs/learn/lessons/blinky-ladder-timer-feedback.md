@@ -39,7 +39,7 @@ Complete a 500 ms Ladder blinker made of two TON timers and SET and RESET coils,
 
 ## What the evidence covers
 
-Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show electrical period or brightness.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how bright a real lamp is or how exactly a real controller keeps the period.
 
 ## Wiring
 

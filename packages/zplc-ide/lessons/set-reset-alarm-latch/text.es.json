@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia Fault a las dos salidas, así que pasan a OFF a los {{t:20}} ms cuando la falla ya desapareció. Llame a SetLatch con Fault como S1 y Ack como R, y a ResetLatch con Fault como S y Ack como R1. Copie cada Q1 a su salida y guarde el archivo.",
-      "checkpoint": "Cada salida es la Q1 de su propio biestable."
+      "body": "Corrija el programa inicial, guárdelo y después pulse {{ui:learn.check}}. El programa inicial copia Fault a las dos salidas, así que pasan a OFF a los {{t:20}} ms cuando la falla ya desapareció. Cámbielo para que cada salida la mantenga su propio biestable: SetFirst, el bloque que hace ganar a Fault cuando Fault y Ack llegan juntos, y ResetFirst, el bloque que hace ganar a Ack. Escriba usted las llamadas: las declaraciones ya están.",
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario se llama AlarmLatch y contiene {{assertions}} aserciones."
     },
     {

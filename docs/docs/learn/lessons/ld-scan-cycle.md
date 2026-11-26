@@ -39,7 +39,7 @@ Learn that a PLC reads its inputs, solves the rungs from top to bottom and then 
 
 ## What the evidence covers
 
-Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not measure how long a scan takes on a real controller.
 
 ## On a board
 

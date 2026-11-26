@@ -19,13 +19,13 @@ Call a CTU counter from Instruction List to count three discrete pulses, read it
 - Estimated time: 15 minutes
 - Languages: IL
 - Tracks: Simulation, Hardware
-- Reading page: no
+- Reading page: yes
 - Plant: none
 - Prerequisites: [edge-counter-pulses](./edge-counter-pulses.md), [boolean-logic-two-hand-guard-il](./boolean-logic-two-hand-guard-il.md)
 
 ## Objectives
 
-- Call a CTU counter with CAL and read its output with LD Count.Q.
+- Call a CTU instance with CAL on every scan, passing its inputs, and read its output after the call.
 - Count the rising edges of PulseInput up to a preset of 3, and clear the count with Reset.
 
 ## Stages
@@ -39,7 +39,7 @@ Call a CTU counter from Instruction List to count three discrete pulses, read it
 
 ## What the evidence covers
 
-Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show physical sensors or contact bounce.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real sensor bounces or what a real input does with a pulse shorter than a scan.
 
 ## Wiring
 
