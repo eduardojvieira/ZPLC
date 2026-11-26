@@ -30,6 +30,8 @@ and version when the release is cut (see `RELEASING.md`).
 - An AI agent reads a long simulation trace in pieces: `trace_get` answers the changes, a window of samples or a
   summary per signal, and a whole trace over 512 KiB is refused with the modes to use instead. A trace file over
   16 MiB is refused before it is read. A plain `trace_get` call answers as in 2.0.
+- Every MCP reply that carries `execution` also carries `audit` with its job id, permission and duration, and a wrong
+  scenario, signal or mode is answered with the valid values. The 2.0 fields keep their shape and values.
 
 ### Known limits
 
