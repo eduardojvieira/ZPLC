@@ -4,7 +4,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { spawnVector } from '../../shared/spawnAllowList';
 import { lstat, mkdir, mkdtemp, open, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 export type FirmwareBuildFailure =
   'unavailable' | 'cancelled' | 'timeout' | 'output-limit' | 'failed' | 'artifact-invalid' | 'cleanup-failed';
@@ -97,9 +97,12 @@ export async function readArtifact(root: string): Promise<FirmwareBuildArtifact 
   const elf = resolve(root, 'zephyr/zephyr.elf');
   if (!inside(root, elf)) return undefined;
   try {
+    const build = await lstat(root);
     const parent = await lstat(join(root, 'zephyr'));
     const initial = await lstat(elf);
     if (
+      build.isSymbolicLink() ||
+      !build.isDirectory() ||
       parent.isSymbolicLink() ||
       !parent.isDirectory() ||
       initial.isSymbolicLink() ||
@@ -108,9 +111,10 @@ export async function readArtifact(root: string): Promise<FirmwareBuildArtifact 
       initial.size > ELF_MAX_BYTES
     )
       return undefined;
-    // Compare canonical with canonical: the temporary root itself may sit behind a link (/var -> /private/var on macOS).
+    // Compare canonical with canonical: the temporary root may sit behind a link (/var -> /private/var on macOS),
+    // but the build directory itself may not, so only its parent is resolved.
     const canonical = await realpath(elf);
-    if (!inside(await realpath(root), canonical)) return undefined;
+    if (!inside(join(await realpath(dirname(root)), basename(root)), canonical)) return undefined;
     const handle = await open(elf, constants.O_RDONLY | (process.platform === 'win32' ? 0 : constants.O_NOFOLLOW));
     try {
       const before = await handle.stat();
