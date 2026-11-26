@@ -116,9 +116,16 @@ export function trackProjectSources(
     if (!stopped && mine === generation) publish(sources, unlisted, projectSession ?? 0);
   };
 
+  const runNow = () => {
+    clearTimeout(timer);
+    timer = undefined;
+    void run();
+  };
+
   const schedule = () => {
     clearTimeout(timer);
     timer = setTimeout(() => {
+      timer = undefined;
       void run();
     }, delay);
   };
@@ -127,15 +134,19 @@ export function trackProjectSources(
     if (
       state.isProjectOpen !== previous.isProjectOpen ||
       state.fileTree !== previous.fileTree ||
-      state.loadedFiles !== previous.loadedFiles ||
-      state.projectConfig !== previous.projectConfig
-    )
+      state.projectConfig !== previous.projectConfig ||
+      state.projectSession !== previous.projectSession
+    ) {
+      runNow();
+    } else if (state.loadedFiles !== previous.loadedFiles) {
       schedule();
+    }
   });
-  schedule();
+  runNow();
   return () => {
     stopped = true;
     clearTimeout(timer);
+    timer = undefined;
     unsubscribe();
     publish([]);
   };
