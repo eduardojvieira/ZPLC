@@ -55,7 +55,5 @@
       "text": "IF Reset THEN Total := 0; ELSIF Step AND NOT StepWas THEN Total := Total + 5; END_IF; StepWas := Step; Put it before the three comparison lines."
     }
   ],
-  "faultCases": [
-    "The starter declares Total and writes the three bands but never changes Total, so Low stays ON for ever."
-  ]
+  "faultCases": ["The starter declares Total and writes the three bands but never changes Total, so Low stays ON for ever."]
 }
