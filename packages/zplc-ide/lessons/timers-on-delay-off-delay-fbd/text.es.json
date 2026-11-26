@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "title": "Temporizadores en diagrama de bloques de función: una luz con retardo a la desconexión y un filtro con retardo a la conexión",
-  "summary": "Conecte un bloque TOF para mantener una luz encendida después de soltar un botón, y un bloque TON para ignorar un pulso de sensor demasiado corto.",
-  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el antirrebote eléctrico, la respuesta del sensor ni el tiempo en el destino.",
+  "summary": "Conecte un bloque TOF para mantener una luz encendida después de soltar un pulsador, y un bloque TON para ignorar un pulso de sensor demasiado corto.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un pulsador real ni con qué rapidez responde un sensor real.",
   "objectives": [
     "Mantenga una salida en ON durante un tiempo fijo después de que su entrada cae, con un bloque TOF cuya entrada PT está conectada a una constante TIME.",
     "Ignore una entrada que está en ON menos de un tiempo fijo, con un bloque TON, y diga qué temporizador retrasa el inicio y cuál retrasa el final."
@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/Delays.fbd.json Button está conectado directamente a Light y Sensor directamente a Confirmed. Light debe quedar en ON durante {{t:300}} ms después de soltar Button. Confirmed debe pasar a ON solo después de que Sensor haya estado en ON durante {{t:200}} ms.",
+      "body": "En src/Delays.fbd.json Button está conectado directamente a Light y Sensor directamente a Confirmed. Haga que Light siga en ON durante {{t:300}} ms después de soltar Button, y que Confirmed pase a ON solo después de que Sensor estuvo en ON durante {{t:200}} ms.",
       "checkpoint": "Usted puede decir qué bloque temporizador mantiene una salida en ON y cuál espera antes de ponerla en ON."
     },
     {
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta falla del diagrama inicial, guárdelo y pulse Comprobar: El diagrama inicial conecta las entradas directamente a las salidas, así que Light ya está en OFF a los {{t:450}} ms y Confirmed pasa a ON con el pulso de {{t:100}} ms. Coloque un bloque TOF llamado HoldTimer, conecte Button a su IN y una constante TIME T#300ms a su PT, y conecte su Q a Light en lugar del cable que viene de Button. Haga lo mismo con un bloque TON llamado FilterTimer, Sensor y T#200ms para Confirmed. Guarde el archivo.",
-      "checkpoint": "Los dos bloques temporizadores están en el diagrama y cada salida está conectada a la Q de su temporizador."
+      "body": "Corrija el diagrama inicial, guárdelo y pulse {{ui:learn.check}}. El diagrama inicial conecta las entradas directamente a las salidas, así que Light ya está en OFF a los {{t:450}} ms y Confirmed pasa a ON con el pulso breve de los {{t:100}} ms. Cámbielo para que Light siga en ON hasta {{t:300}} ms después de soltar Button, y Confirmed pase a ON solo cuando Sensor estuvo en ON durante {{t:200}} ms sin interrupción. Elija y coloque usted los bloques.",
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario se llama Delays y contiene {{assertions}} aserciones."
     },
     {
@@ -41,8 +41,8 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "Intercambie los dos bloques temporizadores mentalmente: ¿qué haría un TON sobre Button y un TOF sobre Sensor con este escenario?",
-      "checkpoint": "TON retrasa el inicio y TOF retrasa el final; cada uno responde una pregunta distinta sobre una señal."
+      "body": "Intercambie mentalmente los dos bloques temporizadores: ¿qué haría un TON sobre Button y un TOF sobre Sensor con este escenario? Después imagine que se quita la constante TIME de FilterTimer, de modo que nada llega a su PT: ¿qué haría Confirmed con el pulso breve?",
+      "checkpoint": "TON retrasa el inicio y TOF retrasa el final; cada uno responde una pregunta distinta sobre una señal. Sin nada en PT el valor preestablecido es cero, así que Confirmed seguiría a Sensor y pasaría a ON con el pulso breve."
     }
   ],
   "hints": [
@@ -52,10 +52,10 @@
     },
     {
       "level": 2,
-      "text": "Coloque un bloque TOF llamado HoldTimer con Button en IN y la constante T#300ms en PT, y su Q en Light. Coloque un bloque TON llamado FilterTimer con Sensor en IN y la constante T#200ms en PT, y su Q en Confirmed."
+      "text": "Coloque un bloque TOF llamado HoldTimer con Button conectado a IN y una constante TIME T#300ms a PT, y conecte su Q a Light. Coloque un bloque TON llamado FilterTimer con Sensor en IN y una constante TIME T#200ms en PT, y conecte su Q a Confirmed. Elimine las dos conexiones directas de las entradas a las salidas."
     }
   ],
   "faultCases": [
-    "El diagrama inicial conecta las entradas directamente a las salidas, así que Light ya está en OFF a los {{t:450}} ms y Confirmed pasa a ON con el pulso de {{t:100}} ms."
+    "El diagrama inicial conecta las entradas directamente a las salidas, así que Light ya está en OFF a los {{t:450}} ms y Confirmed pasa a ON con el pulso breve de los {{t:100}} ms."
   ]
 }
