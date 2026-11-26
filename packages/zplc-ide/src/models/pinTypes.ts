@@ -72,6 +72,17 @@ export function outsideClass(generic: string, type: string | undefined): string 
   return wanted.types ? (wanted.types.includes(type) ? undefined : type) : type === 'STRING' ? type : undefined;
 }
 
+/**
+ * Whether the elementary types of the generic operands of one call can be one type: there is at most one, or they are all of one
+ * family (signed integers, unsigned integers, bit strings, reals), which widens to the widest.
+ */
+export function oneGenericType(types: readonly string[]): boolean {
+  const distinct = new Set(types);
+  return (
+    distinct.size <= 1 || [SIGNED, UNSIGNED, BIT_STRINGS, REALS].some((family) => [...distinct].every((type) => family.includes(type)))
+  );
+}
+
 /** The standard functions FBD places as functions of their own, before LNG-029: they keep their path and their type rules. */
 export const FBD_FUNCTION_BLOCKS: ReadonlySet<string> = new Set(['MAX', 'MIN', 'LIMIT', 'SEL']);
 

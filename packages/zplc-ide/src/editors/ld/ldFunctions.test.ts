@@ -27,7 +27,7 @@ const insertFn = (functionName: string) =>
 describe('LNG-028 LNG-012 the Functions group of the palette', () => {
   it('lists every function of the table with its kind, and the keyboard palette finds them by name and by kind', () => {
     expect(functionItems().map((item) => item.functionName)).toEqual(Object.keys(LD_FUNCTIONS));
-    expect(new Set(functionItems().map((item) => item.kind))).toEqual(new Set(['compare', 'math', 'move', 'select']));
+    expect(new Set(functionItems().map((item) => item.kind))).toEqual(new Set(['compare', 'math', 'move', 'select', 'function']));
     const palette = paletteItems([]);
     expect(palette.find((item) => item.id === 'function:GT')?.insert).toEqual({
       type: 'function',

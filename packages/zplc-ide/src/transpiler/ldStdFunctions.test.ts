@@ -158,7 +158,7 @@ describe('LNG-030 LNG-002 LNG-003 the box of a standard function: every fault na
 
   it.each([
     ['a STRING literal that is not closed', box('f1', 'LEN', ["'AB"], 'Count'), "Function 'f1' (LEN) operand S ''AB' is neither"],
-    ['a quote inside a STRING literal', box('f1', 'LEN', ["'A'B'"], 'Count'), "Function 'f1' (LEN) operand S ''A'B' is neither"],
+    ['a quote inside a STRING literal', box('f1', 'LEN', ["'A'B'"], 'Count'), "Function 'f1' (LEN) operand S ''A'B'' is neither"],
     [
       'a literal where the call writes',
       box('f1', 'COPY', ["'HI'", "'X'"], 'Text'),
@@ -180,7 +180,11 @@ describe('LNG-030 LNG-002 LNG-003 the box of a standard function: every fault na
       box('f1', 'SHL', ['Start', '2'], 'Mask'),
       "Function 'f1' (SHL) operand IN is BOOL, and SHL takes a bit string (BYTE, WORD, DWORD or LWORD) there",
     ],
-    ['a REAL into an integer pin', box('f1', 'MOD', ['Level', 'B'], 'Count'), "Function 'f1' (MOD) operand IN1 is REAL"],
+    [
+      'a STRING into a numeric pin',
+      box('f1', 'NEG', ['Text'], 'Count'),
+      "Function 'f1' (NEG) operand IN is STRING, and NEG takes a number",
+    ],
     ['a typed literal of the wrong class', box('f1', 'NEG', ['T#5s'], 'Count'), "Function 'f1' (NEG) operand IN is TIME"],
     [
       'generic operands of different types',

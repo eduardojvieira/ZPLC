@@ -8,7 +8,16 @@ import { DataType, getFB, parseIOAddress, parseTimeLiteral, TokenType } from '@z
 import { getFunctionBlockNamesForVisualEditors } from '../catalog/blockCatalog';
 import { getDefaultPorts } from '../models/fbd';
 import { findProjectBlock, type ProjectBlock } from '../models/projectBlocks';
-import { LD_COIL_TYPES, LD_CONTACT_TYPES, LD_MODBUS_HELPERS, ldFunctionSpec } from '../models/ldSupport';
+import {
+  LD_COIL_TYPES,
+  LD_CONTACT_TYPES,
+  LD_MODBUS_HELPERS,
+  ldFunctionHasOutput,
+  ldFunctionPins,
+  ldFunctionSpec,
+} from '../models/ldSupport';
+import { GENERIC_CLASSES, oneGenericType, outsideClass } from '../models/pinTypes';
+import type { StdFunction } from '../catalog/stdFunctions';
 import { walkRung } from './ldPower';
 import { Problems, cellElement, rungElement, rungItemElement, type SourceElementId } from '../models/sourceElements';
 
@@ -324,8 +333,15 @@ function validateModbusHelper(
   }
 }
 
-/** A literal an operand of a function box may be (LNG-028): a number, a based or typed number, TRUE or FALSE. TIME is read apart. */
-const OPERAND_LITERAL = /^(?:-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|\d{1,2}#[0-9A-Fa-f_]+|[A-Za-z_]+#-?\d+(?:\.\d+)?|TRUE|FALSE)$/;
+/**
+ * A literal an operand of a function box may be (LNG-028, LNG-030): a number, a based or typed number, TRUE or FALSE, or a STRING
+ * in the strict IEC form, whose quote and dollar are escaped with `$`. TIME is read apart.
+ */
+const OPERAND_LITERAL =
+  /^(?:-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|\d{1,2}#[0-9A-Fa-f_]+|[A-Za-z_]+#-?\d+(?:\.\d+)?|TRUE|FALSE|'(?:[^'$]|\$.)*')$/;
+const STRING_LITERAL = /^'(?:[^'$]|\$.)*'$/;
+const REAL_LITERAL = /^-?\d+(?:\.\d+(?:[eE][+-]?\d+)?|[eE][+-]?\d+)$/;
+const TYPED_LITERAL = /^([A-Za-z_]+)#/;
 
 /** A function block type: its variable holds state, not a value that an operand or the output of a function can be. */
 const isBlockType = (type: unknown): boolean => typeof type === 'string' && (Boolean(getFB(type)) || Boolean(projectBlock(type)));
@@ -356,6 +372,59 @@ function validateOperand(operand: unknown, pin: string, subject: string, symbols
   errors.push(`${subject} operand ${pin} '${operand}' is neither a declared variable nor a literal`);
 }
 
+/** The elementary type of an operand when the transpiler can know it: a declared variable, or a literal that says its type. */
+function operandType(operand: unknown, symbols: Map<string, SymbolInfo>): string | undefined {
+  if (typeof operand !== 'string') return undefined;
+  const symbol = symbols.get(key(operand));
+  if (symbol) return key(String(symbol.variable.type));
+  if (STRING_LITERAL.test(operand)) return 'STRING';
+  if (operand === 'TRUE' || operand === 'FALSE') return 'BOOL';
+  if (isTimeLiteral(operand)) return 'TIME';
+  const typed = operand.match(TYPED_LITERAL)?.[1];
+  if (typed && SUPPORTED_DATA_TYPES.has(key(typed))) return key(typed);
+  return REAL_LITERAL.test(operand) ? 'REAL' : undefined;
+}
+
+/**
+ * What the compiler does not check in the call of a standard function (LNG-030), as FBD checks it (LNG-029): an operand the call
+ * writes is a declared variable, and the generic operands are of their class and of one type.
+ */
+function validateCall(
+  record: StdFunction,
+  operands: readonly unknown[],
+  pins: readonly string[],
+  named: string,
+  symbols: Map<string, SymbolInfo>,
+  errors: Problems,
+): void {
+  const pinType = (pin: string): string => record.inputs.find(([name]) => name === pin)?.[1] ?? record.inputs[record.inputs.length - 1]![1];
+  operands.forEach((operand, index) => {
+    const pin = pins[index]!;
+    if (!record.written.includes(pin) || typeof operand !== 'string' || symbols.has(key(operand))) return;
+    if (OPERAND_LITERAL.test(operand) || isTimeLiteral(operand))
+      errors.push(`${named} operand ${pin} '${operand}' is written by ${record.name}, so it has to be a declared variable, not a literal`);
+  });
+  const generic: string[] = [];
+  let odd = false;
+  operands.forEach((operand, index) => {
+    const pin = pins[index]!;
+    const wanted = GENERIC_CLASSES[pinType(pin)];
+    const type = operandType(operand, symbols);
+    if (!wanted || !type) return;
+    generic.push(type);
+    const outside = outsideClass(pinType(pin), type);
+    if (outside) {
+      odd = true;
+      errors.push(`${named} operand ${pin} is ${outside}, and ${record.name} takes ${wanted.takes} there`);
+    }
+  });
+  if (!odd && !oneGenericType(generic))
+    errors.push(
+      `${named}: its operands have different types (${[...new Set(generic)].join(', ')}); the box keeps the type of its operands, ` +
+        'so convert one of them',
+    );
+}
+
 /** The `function` element (LNG-028): a known function, one operand per pin, and an output for all but a comparison. */
 function validateFunction(
   value: UnknownRecord,
@@ -375,14 +444,18 @@ function validateFunction(
     errors.push(`${subject} operands must be a list`);
     return;
   }
-  if (value.operands.length !== spec.pins.length) {
-    errors.push(`${named} takes ${spec.pins.length} operands, found ${value.operands.length}`);
+  // a function that takes more inputs (MUX) has its fixed pins and at least the extra inputs of the table; any other, its pins
+  const variadic = spec.record?.variadic === true;
+  if (variadic ? value.operands.length < spec.pins.length : value.operands.length !== spec.pins.length) {
+    errors.push(`${named} takes ${variadic ? 'at least ' : ''}${spec.pins.length} operands, found ${value.operands.length}`);
   } else {
-    value.operands.forEach((operand, index) => validateOperand(operand, spec.pins[index], named, symbols, errors));
+    const pins = ldFunctionPins(spec, value.operands.length);
+    value.operands.forEach((operand, index) => validateOperand(operand, pins[index]!, named, symbols, errors));
+    if (spec.record) validateCall(spec.record, value.operands, pins, named, symbols, errors);
   }
   const hasOutput = value.output !== undefined && value.output !== '';
-  if (spec.kind === 'compare') {
-    if (hasOutput) errors.push(`${named} is a comparison and has no output`);
+  if (!ldFunctionHasOutput(spec)) {
+    if (hasOutput) errors.push(`${named} ${spec.kind === 'compare' ? 'is a comparison' : 'returns nothing'} and has no output`);
     return;
   }
   if (!hasOutput) {

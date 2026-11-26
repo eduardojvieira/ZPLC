@@ -5,6 +5,7 @@
 
 import { getFB } from '@zplc/compiler';
 import { getFunctionBlockNamesForVisualEditors } from '../catalog/blockCatalog';
+import { stdFunctions, type StdFunction } from '../catalog/stdFunctions';
 import { findProjectBlock, type ProjectBlock } from './projectBlocks';
 import type { LDElement, LDElementType } from './ld';
 import { t } from '../i18n';
@@ -16,15 +17,20 @@ export const LD_COIL_TYPES = ['coil', 'coil_negated', 'coil_set', 'coil_reset', 
 export const LD_MODBUS_HELPERS: ReadonlySet<string> = new Set(['MB_COIL', 'MB_DISCRETE_INPUT', 'MB_INPUT_REGISTER', 'MB_HOLDING_REGISTER']);
 
 /**
- * How an IEC function is placed in a rung as a `function` element (LNG-028): the pins its operands bind to, in order, and
+ * How an IEC function is placed in a rung as a `function` element (LNG-028, LNG-030): the pins its operands bind to, in order, and
  * how it reads as Structured Text. A comparison has no output: it passes power when it holds. The palette, the validation and
  * the transpiler read this one table.
  */
 export interface LDFunctionSpec {
-  /** `compare` passes power; the others store a result in the output of the box while power reaches it. */
-  kind: 'compare' | 'math' | 'move' | 'select';
-  /** The operand pins, in order. */
+  /**
+   * `compare` passes power; the others store a result in the output of the box while power reaches it. `function` is a standard
+   * function of the compiler's table (LNG-030), called with its operands in the table's order.
+   */
+  kind: 'compare' | 'math' | 'move' | 'select' | 'function';
+  /** The operand pins, in order; a variadic function lists its fixed part and its first extra inputs. */
   pins: readonly string[];
+  /** The record of a `function` box: its pin types, its return type, whether it takes more inputs and the pins it writes. */
+  record?: StdFunction;
   /** The expression for operands that are already written as ST. */
   expression(operands: readonly string[]): string;
 }
@@ -40,7 +46,7 @@ const call = (name: string, pins: readonly string[]): LDFunctionSpec => ({
   expression: (operands) => `${name}(${operands.join(', ')})`,
 });
 
-export const LD_FUNCTIONS: Readonly<Record<string, LDFunctionSpec>> = {
+const BOXES: Readonly<Record<string, LDFunctionSpec>> = {
   GT: infix('compare', '>'),
   GE: infix('compare', '>='),
   EQ: infix('compare', '='),
@@ -58,9 +64,38 @@ export const LD_FUNCTIONS: Readonly<Record<string, LDFunctionSpec>> = {
   MAX: call('MAX', ['IN1', 'IN2']),
 };
 
+const stdCall = (record: StdFunction): LDFunctionSpec => ({
+  kind: 'function',
+  pins: record.inputs.map(([pin]) => pin),
+  record,
+  expression: (operands) => `${record.name}(${operands.join(', ')})`,
+});
+
+/** The 15 boxes of LNG-028 as they were, then every other function the compiler registers, from its record (LNG-030). */
+export const LD_FUNCTIONS: Readonly<Record<string, LDFunctionSpec>> = {
+  ...BOXES,
+  ...Object.fromEntries(
+    [...stdFunctions().values()].filter((record) => !Object.hasOwn(BOXES, record.name)).map((record) => [record.name, stdCall(record)]),
+  ),
+};
+
 /** The function of this name, or undefined when a box cannot hold it. Own names only: `constructor` is not a function. */
 export const ldFunctionSpec = (name: unknown): LDFunctionSpec | undefined =>
   typeof name === 'string' && Object.hasOwn(LD_FUNCTIONS, name) ? LD_FUNCTIONS[name] : undefined;
+
+/** Whether a box of this function stores a result: all but a comparison and a function that returns nothing. */
+export const ldFunctionHasOutput = (spec: LDFunctionSpec): boolean => spec.kind !== 'compare' && spec.record?.returns !== 'VOID';
+
+/**
+ * The operand pins of a box with `count` operands: the pins of the function, and for one that takes more inputs (MUX) its
+ * selector and as many `IN<n>` as the box has, never fewer than the table's.
+ */
+export function ldFunctionPins(spec: LDFunctionSpec, count = 0): readonly string[] {
+  if (!spec.record?.variadic) return spec.pins;
+  const [selector] = spec.pins;
+  const inputs = Math.max(spec.pins.length - 1, count - 1);
+  return [selector!, ...Array.from({ length: inputs }, (_, index) => `IN${index}`)];
+}
 
 /** A function box for someone who cannot see it, as the function is written: `ADD(Level, 3) -> Sum`; an operand not bound yet is `_`. */
 export function ldFunctionLabel(element: LDElement): string {

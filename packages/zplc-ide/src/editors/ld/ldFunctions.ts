@@ -5,7 +5,7 @@
 
 import { t } from '../../i18n';
 import type { LDElement, LDToolboxItem } from '../../models/ld';
-import { LD_FUNCTIONS, ldFunctionSpec, type LDFunctionSpec } from '../../models/ldSupport';
+import { LD_FUNCTIONS, ldFunctionHasOutput, ldFunctionPins, ldFunctionSpec, type LDFunctionSpec } from '../../models/ldSupport';
 
 /** An entry of the toolbox: a contact, a coil, a block, or one of the functions. */
 export type LDPaletteEntry = Omit<LDToolboxItem, 'category'> & {
@@ -31,19 +31,25 @@ export function functionItems(): LDPaletteEntry[] {
   })) as LDPaletteEntry[];
 }
 
-/** The slots of a box in order: its operand pins, then OUT unless it is a comparison. */
-export function functionSlots(element: Pick<LDElement, 'functionName'>): string[] {
+/** The operand pins of a box: those of its function, and as many inputs as it has for one that takes more (MUX). */
+export function functionPins(element: Pick<LDElement, 'functionName' | 'operands'>): readonly string[] {
   const spec = ldFunctionSpec(element.functionName);
-  return spec ? [...spec.pins, ...(spec.kind === 'compare' ? [] : ['OUT'])] : [];
+  return spec ? ldFunctionPins(spec, element.operands?.length) : [];
 }
 
-/** A new box of a function: every operand empty, and an empty output unless it is a comparison. */
+/** The slots of a box in order: its operand pins, then OUT unless it is a comparison or returns nothing. */
+export function functionSlots(element: Pick<LDElement, 'functionName' | 'operands'>): string[] {
+  const spec = ldFunctionSpec(element.functionName);
+  return spec ? [...functionPins(element), ...(ldFunctionHasOutput(spec) ? ['OUT'] : [])] : [];
+}
+
+/** A new box of a function: every operand empty, and an empty output unless it is a comparison or returns nothing. */
 export function emptyFunction(functionName: string): Pick<LDElement, 'functionName' | 'operands' | 'output'> {
   const spec = ldFunctionSpec(functionName);
   return {
     functionName,
     operands: (spec?.pins ?? []).map(() => ''),
-    ...(spec && spec.kind !== 'compare' ? { output: '' } : {}),
+    ...(spec && ldFunctionHasOutput(spec) ? { output: '' } : {}),
   };
 }
 
@@ -57,7 +63,7 @@ export function withFunction(element: LDElement, functionName: string): LDElemen
 
 /** The box with a slot set: operands are numbered from 0, and the slot after the last pin is the output. */
 export function withSlot(element: LDElement, slot: number, value: string): LDElement {
-  const pins = ldFunctionSpec(element.functionName)?.pins.length ?? 0;
+  const pins = functionPins(element).length;
   if (slot >= pins) return { ...element, output: value };
   const operands = [...(element.operands ?? [])];
   operands[slot] = value;
@@ -66,6 +72,6 @@ export function withSlot(element: LDElement, slot: number, value: string): LDEle
 
 /** The value in a slot of the box, '' when empty. */
 export const slotValue = (element: LDElement, slot: number): string => {
-  const pins = ldFunctionSpec(element.functionName)?.pins.length ?? 0;
+  const pins = functionPins(element).length;
   return (slot >= pins ? element.output : element.operands?.[slot]) ?? '';
 };
