@@ -38,7 +38,7 @@ Meet the three parts of every PLC machine, inputs, a program and outputs, and fi
 
 ## What the evidence covers
 
-Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real button is wired to a PLC.
 
 ## On a board
 

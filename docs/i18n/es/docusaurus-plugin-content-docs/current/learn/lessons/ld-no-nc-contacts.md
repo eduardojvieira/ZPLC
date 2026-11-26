@@ -1,16 +1,16 @@
 ---
-title: "Contactos NA y NC: un botón de parada que falla en modo seguro"
+title: "Contactos NA y NC: un pulsador de parada que falla en modo seguro"
 sidebar_label: "ld-no-nc-contacts"
 description: "La lección ld-no-nc-contacts: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Contactos NA y NC: un botón de parada que falla en modo seguro
+# Contactos NA y NC: un pulsador de parada que falla en modo seguro
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/ld-no-nc-contacts. Do not edit. >>> */}
 
-Aprenda los contactos normalmente abierto y normalmente cerrado, por qué un botón de parada se cablea normalmente cerrado, y lea correctamente una señal de parada de campo en un programa que además enciende una lámpara cuando el circuito de parada está abierto.
+Aprenda los contactos normalmente abierto y normalmente cerrado, por qué un pulsador de parada se cablea normalmente cerrado, y lea correctamente una señal de parada de campo en un programa que además enciende una lámpara cuando el circuito de parada está abierto.
 
 ## Datos
 
@@ -25,7 +25,7 @@ Aprenda los contactos normalmente abierto y normalmente cerrado, por qué un bot
 
 ## Objetivos
 
-- Explique por qué un botón de parada se cablea normalmente cerrado, y cómo ve el programa un botón NC de campo: TRUE en reposo, FALSE al pulsarlo o si se rompe el cable.
+- Explique por qué un pulsador de parada se cablea normalmente cerrado, y cómo ve el programa un pulsador NC de campo: TRUE en reposo, FALSE al pulsarlo o si se rompe el cable.
 - Elija el tipo correcto de contacto en un peldaño: un contacto normalmente abierto deja pasar la energía cuando su variable es TRUE, y uno normalmente cerrado cuando es FALSE.
 
 ## Etapas
@@ -39,7 +39,7 @@ Aprenda los contactos normalmente abierto y normalmente cerrado, por qué un bot
 
 ## Qué cubre la evidencia
 
-Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra una función de parada segura ni el cableado. El escenario ajusta la señal de parada por usted.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo se cablea un pulsador de parada real: el escenario ajusta la señal de parada por usted.
 
 ## En una placa
 

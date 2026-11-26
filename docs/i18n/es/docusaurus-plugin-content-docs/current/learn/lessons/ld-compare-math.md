@@ -39,7 +39,7 @@ Use bloques de comparación como condiciones y bloques matemáticos como cálcul
 
 ## Qué cubre la evidencia
 
-Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el comportamiento de un sensor de nivel real, su cableado ni los tiempos de un tanque real.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo mide un sensor de nivel real, cómo se cablea ni con qué rapidez se llena un tanque real.
 
 ## En una placa
 

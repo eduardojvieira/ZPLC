@@ -39,7 +39,7 @@ Draw AND, NOT and exclusive-or as contacts in series and in parallel, and enable
 
 ## What the evidence covers
 
-Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a two-hand safety control, any safety function or wiring.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real two-hand control or guard switch is built or wired.
 
 ## Wiring
 

@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/boolean-logic-two-hand-guard-ladder. Do not edit. >>> */}
 
-Dibuje AND, NOT y OR exclusivo como contactos en serie y en paralelo, y habilite una prensa solo con las dos manos en los botones y la protección cerrada.
+Dibuje AND, NOT y OR exclusivo como contactos en serie y en paralelo, y habilite una prensa solo con las dos manos en los pulsadores y la protección cerrada.
 
 ## Datos
 
@@ -39,7 +39,7 @@ Dibuje AND, NOT y OR exclusivo como contactos en serie y en paralelo, y habilite
 
 ## Qué cubre la evidencia
 
-Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra un mando bimanual de seguridad, una función de seguridad ni el cableado.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo se construye o se cablea un mando a dos manos o un interruptor de protección reales.
 
 ## Cableado
 
