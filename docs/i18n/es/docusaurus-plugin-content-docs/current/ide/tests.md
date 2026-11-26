@@ -58,7 +58,7 @@ Cada acción anterior es un comando de la paleta, y las que se usan a menudo tie
 | ----------------------------------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------- |
 | **Mostrar las pruebas**                   | ninguno                        | Muestra la actividad Pruebas.                                                                             |
 | **Mostrar los resultados de las pruebas** | ninguno                        | Muestra la pestaña Resultados de las pruebas.                                                             |
-| **Ejecutar todas las pruebas**            | `Ctrl+Shift+T` (`Cmd+Shift+T`) | Ejecuta todas las pruebas.                                                                                |
+| **Ejecutar todas las pruebas**            | `Ctrl+Mayús+T` (`Cmd+Mayús+T`) | Ejecuta todas las pruebas.                                                                                |
 | **Ejecutar las pruebas que fallaron**     | ninguno                        | Ejecuta las pruebas cuyo último resultado falló.                                                          |
 | **Ejecutar la prueba seleccionada**       | ninguno                        | Ejecuta el archivo de escenario del documento activo o, si no, la prueba elegida en la actividad Pruebas. |
 | **Nueva prueba**                          | ninguno                        | Escribe una primera prueba para el primer programa.                                                       |

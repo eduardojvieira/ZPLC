@@ -7,6 +7,10 @@ let origin: HTMLElement | null = null;
 
 const commandBar = (): HTMLElement | null => document.querySelector<HTMLElement>('[data-command-bar]');
 
+/** An open menu or popup in the bar owns Escape: it closes first, and the next Escape goes back. */
+const popupOwnsEscape = (active: Element | null): boolean =>
+  Boolean(active?.closest('[role="menu"], [role="listbox"], [role="dialog"]')) || active?.getAttribute('aria-expanded') === 'true';
+
 const giveFocusBack = (): void => {
   const target = origin;
   origin = null;
@@ -29,7 +33,8 @@ export function useGuideCommands(): void {
   useEffect(() => {
     const unbind = bindCommands({ 'view.focusCommandBar': focusCommandBar });
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape' && origin && commandBar()?.contains(document.activeElement)) {
+      const active = document.activeElement;
+      if (event.key === 'Escape' && origin && commandBar()?.contains(active) && !popupOwnsEscape(active)) {
         event.preventDefault();
         giveFocusBack();
       }
