@@ -147,6 +147,7 @@ endif()
 add_executable(zplc_runtime
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/main.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/host_stdio.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/host_line_buffer.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/native_runtime_session.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/native_program_store.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/native_device_link.c
@@ -1060,6 +1061,7 @@ add_test(NAME test_sched_equivalence COMMAND test_sched_equivalence)
 add_executable(test_host_stdio
     tests/test_host_stdio.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/host_stdio.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/host_line_buffer.c
 )
 
 target_include_directories(test_host_stdio PRIVATE
