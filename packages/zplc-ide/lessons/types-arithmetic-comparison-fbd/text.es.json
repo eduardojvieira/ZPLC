@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Total es un INT, así que Total + 5 es un INT. SEL da IN0 mientras G es FALSE e IN1 mientras G es TRUE, y R_TRIG.Q es TRUE durante un ciclo en cada flanco ascendente."
+      "text": "Mire qué llega a IN0 del bloque SEL que borra Total: el propio Total, así que nada le suma nunca. Total es un INT, así que Total + 5 es un INT, y un bloque R_TRIG convierte una pulsación en un pulso de un ciclo."
     },
     {
       "level": 2,

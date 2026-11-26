@@ -95,4 +95,4 @@ options:
 
 ## What you will do in the practice
 
-The scenario sets only BOOL inputs, so the starting program makes its own raw count: Raw grows by 100 on each scan while Enable is TRUE, up to 1000, and goes back to 0 when Enable is FALSE. It then scales Raw to Percent, from 0 to 100, but it divides before it multiplies, so Percent stays at 0 until full scale. You will make Percent the right percentage, so that Warn turns ON at 50 percent and Alarm at 80 percent. Enable rises at {{t:10}} ms and falls at {{t:110}} ms. Then press {{ui:learn.check}}.
+The scenario sets only BOOL inputs, so the starting program makes its own raw count: Raw grows by 100 on each scan while Enable is TRUE, up to 1000, and goes back to 0 when Enable is FALSE. It then scales Raw to Percent, from 0 to 100, but Percent stays at 0 until full scale. You will make Percent the right percentage, so that Warn turns ON at 50 percent and Alarm at 80 percent. Enable rises at {{t:10}} ms and falls at {{t:110}} ms. Then press {{ui:learn.check}}.

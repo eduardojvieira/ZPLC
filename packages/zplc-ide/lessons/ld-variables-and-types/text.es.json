@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial mantiene WarnTime en T#500ms y no tiene bobina para Motor, así que Motor está en OFF a los {{t:100}} ms en lugar de en ON. Cámbielo para que el período de aviso guardado en WarnTime dure T#50ms, y Motor pase a ON cuando termine el período de aviso y a OFF con Stop. Mantenga Requested como bit de memoria, sin dirección.",
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial nunca pone Motor en ON, así que Motor está en OFF a los {{t:100}} ms en lugar de en ON. Cámbielo para que el período de aviso dure T#50ms, y Motor pase a ON cuando termine el período de aviso y a OFF con Stop. Mantenga Requested como bit de memoria, sin dirección.",
       "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
@@ -55,7 +55,5 @@
       "text": "Cambie el valor de WarnTime a T#50ms. Luego agregue un peldaño con un contacto normalmente abierto sobre WarnTimer.Q y una bobina sobre Motor."
     }
   ],
-  "faultCases": [
-    "El programa inicial mantiene WarnTime en T#500ms y no tiene bobina para Motor, así que Motor está en OFF a los {{t:100}} ms en lugar de en ON."
-  ]
+  "faultCases": ["El programa inicial nunca pone Motor en ON, así que Motor está en OFF a los {{t:100}} ms en lugar de en ON."]
 }

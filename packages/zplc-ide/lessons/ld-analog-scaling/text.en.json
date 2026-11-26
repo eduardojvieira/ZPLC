@@ -41,14 +41,14 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Why must the rung multiply before it divides, and why is Scaled a DINT? Work out, with whole numbers, what dividing first would give for Raw = 3280. What would the LIMIT box protect against if the sensor reported a value outside 0..4095?",
+      "body": "Does the order of the multiplication and the division matter? Work out, with whole numbers, what each order gives for Raw = 3280. Why is Scaled a DINT? What would the LIMIT box protect against if the sensor reported a value outside 0..4095?",
       "checkpoint": "Dividing Raw by 4095 first gives 0 for every Raw below 4095, so the level would stay 0 until full scale. At full scale the product is far above the 32767 that an INT holds, and an INT would wrap with no error. LIMIT keeps Raw inside 0..4095 whatever the input does, so Level stays inside 0..100."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Multiply before you divide, so that the division drops as little as possible, and hold the product in a DINT, where it fits at full scale. What is the span of the counts, and what is the span of the result?"
+      "text": "Look at what stands between Raw and Quot: nothing yet. What is the span of the counts, what is the span of the result, and how large can an intermediate value get at full scale?"
     },
     {
       "level": 2,

@@ -62,4 +62,4 @@ options:
 
 ## Qué hará en la práctica
 
-El escenario solo da entradas BOOL, así que los bloques de arriba del diagrama inicial fabrican su propia cuenta en bruto: Raw crece 410 cuentas en cada ciclo mientras Enable está en TRUE, hasta 4095. Los bloques de abajo multiplican Raw por 100 y limitan el resultado a 0..100 antes de comparar Level con 75, pero nada divide por 4095, así que HighLevel se enciende enseguida. Usted hará que Level sea el nivel en porcentaje, para que HighLevel pase a ON solo cuando Level llegue a 75. Enable sube a los {{t:10}} ms y baja a los {{t:110}} ms. Después pulse {{ui:learn.check}}.
+El escenario solo da entradas BOOL, así que los bloques de arriba del diagrama inicial fabrican su propia cuenta en bruto: Raw crece 410 cuentas en cada ciclo mientras Enable está en TRUE, hasta 4095. Los bloques de abajo multiplican Raw por 100 y limitan el resultado a 0..100 antes de comparar Level con 75, pero HighLevel se enciende enseguida. Usted hará que Level sea el nivel en porcentaje, para que HighLevel pase a ON solo cuando Level llegue a 75. Enable sube a los {{t:10}} ms y baja a los {{t:110}} ms. Después pulse {{ui:learn.check}}.

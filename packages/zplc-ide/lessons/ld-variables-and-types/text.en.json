@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program keeps WarnTime at T#500ms and has no coil for Motor, so Motor is OFF at {{t:100}} ms instead of ON. Change it so that the warning period kept in WarnTime lasts T#50ms, and Motor turns ON when the warning period is over and OFF with Stop. Keep Requested a memory bit, with no address.",
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program never turns Motor ON, so Motor is OFF at {{t:100}} ms instead of ON. Change it so that the warning period lasts T#50ms, and Motor turns ON when the warning period is over and OFF with Stop. Keep Requested a memory bit, with no address.",
       "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
@@ -55,5 +55,5 @@
       "text": "Change the value of WarnTime to T#50ms. Then add a rung with a normally open contact on WarnTimer.Q and a coil on Motor."
     }
   ],
-  "faultCases": ["The starting program keeps WarnTime at T#500ms and has no coil for Motor, so Motor is OFF at {{t:100}} ms instead of ON."]
+  "faultCases": ["The starting program never turns Motor ON, so Motor is OFF at {{t:100}} ms instead of ON."]
 }

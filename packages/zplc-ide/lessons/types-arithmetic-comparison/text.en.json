@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Total is an INT, so adding an INT constant to it gives an INT. A rising edge is Step TRUE now and StepWas FALSE on the previous scan."
+      "text": "Look for the statement that changes Total: there is none. Total is an INT, so adding an INT constant to it gives an INT, and StepWas is declared to remember Step from one scan to the next."
     },
     {
       "level": 2,

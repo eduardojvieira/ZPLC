@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial divide antes de multiplicar, así que la división entera Raw / 1000 da 0 hasta que Raw llega a 1000 y el porcentaje queda en 0. Cambie el escalado para que Percent sea el porcentaje correcto de Raw en cada paso, no solo en el tope de la escala. Deje como están el sustituto de Raw y las dos comparaciones.",
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial deja Percent en 0 hasta que Raw llega a 1000, así que Warn y Alarm siguen en OFF mientras Raw sube y pasan a ON juntas en el tope de la escala. Cambie el escalado para que Percent sea el porcentaje correcto de Raw en cada paso, no solo en el tope de la escala. Deje como están el sustituto de Raw y las dos comparaciones.",
       "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "La división entera da un número entero: 500 / 1000 es 0. ¿Qué operación debe ir primero para no perder el resto?"
+      "text": "Mire la línea que escribe Percent y calcúlela a mano para Raw = 500, solo con números enteros: una división entera descarta el resto, así que 500 / 1000 es 0."
     },
     {
       "level": 2,
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial divide antes de multiplicar, así que la división entera Raw / 1000 da 0 hasta que Raw llega a 1000 y el porcentaje queda en 0."
+    "El programa inicial deja Percent en 0 hasta que Raw llega a 1000, así que Warn y Alarm siguen en OFF mientras Raw sube y pasan a ON juntas en el tope de la escala."
   ]
 }

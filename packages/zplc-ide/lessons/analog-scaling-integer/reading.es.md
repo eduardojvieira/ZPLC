@@ -95,4 +95,4 @@ options:
 
 ## Qué hará en la práctica
 
-El escenario solo da entradas BOOL, así que el programa inicial fabrica su propia cuenta en bruto: Raw crece 100 en cada ciclo mientras Enable está en TRUE, hasta 1000, y vuelve a 0 cuando Enable está en FALSE. Después escala Raw a Percent, de 0 a 100, pero divide antes de multiplicar, así que Percent queda en 0 hasta el tope de la escala. Usted hará que Percent sea el porcentaje correcto, para que Warn pase a ON al 50 por ciento y Alarm al 80 por ciento. Enable sube a los {{t:10}} ms y baja a los {{t:110}} ms. Después pulse {{ui:learn.check}}.
+El escenario solo da entradas BOOL, así que el programa inicial fabrica su propia cuenta en bruto: Raw crece 100 en cada ciclo mientras Enable está en TRUE, hasta 1000, y vuelve a 0 cuando Enable está en FALSE. Después escala Raw a Percent, de 0 a 100, pero Percent queda en 0 hasta el tope de la escala. Usted hará que Percent sea el porcentaje correcto, para que Warn pase a ON al 50 por ciento y Alarm al 80 por ciento. Enable sube a los {{t:10}} ms y baja a los {{t:110}} ms. Después pulse {{ui:learn.check}}.

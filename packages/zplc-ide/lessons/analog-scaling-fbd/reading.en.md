@@ -62,4 +62,4 @@ options:
 
 ## What you will do in the practice
 
-The scenario sets only BOOL inputs, so the blocks at the top of the starting diagram make their own raw count: Raw grows by 410 counts on each scan while Enable is TRUE, up to 4095. The blocks below multiply Raw by 100 and limit the result to 0..100 before they compare Level with 75, but nothing divides by 4095, so HighLevel lights at once. You will make Level the level in percent, so that HighLevel turns ON only when Level reaches 75. Enable rises at {{t:10}} ms and falls at {{t:110}} ms. Then press {{ui:learn.check}}.
+The scenario sets only BOOL inputs, so the blocks at the top of the starting diagram make their own raw count: Raw grows by 410 counts on each scan while Enable is TRUE, up to 4095. The blocks below multiply Raw by 100 and limit the result to 0..100 before they compare Level with 75, but HighLevel lights at once. You will make Level the level in percent, so that HighLevel turns ON only when Level reaches 75. Enable rises at {{t:10}} ms and falls at {{t:110}} ms. Then press {{ui:learn.check}}.

@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Total es un INT, así que sumarle una constante INT da un INT. Un flanco ascendente es Step en TRUE ahora y StepWas en FALSE en el ciclo anterior."
+      "text": "Busque la instrucción que cambia Total: no hay ninguna. Total es un INT, así que sumarle una constante INT da un INT, y StepWas está declarada para recordar Step de un ciclo al siguiente."
     },
     {
       "level": 2,

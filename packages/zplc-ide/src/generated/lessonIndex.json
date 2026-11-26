@@ -3457,7 +3457,7 @@
     },
     {
       "id": "ld-variables-and-types",
-      "version": 3,
+      "version": 4,
       "order": 19,
       "module": 4,
       "level": "intermediate",
@@ -3529,7 +3529,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct the starting program, save it, then press Check. The starting program keeps WarnTime at T#500ms and has no coil for Motor, so Motor is OFF at 100 ms instead of ON. Change it so that the warning period kept in WarnTime lasts T#50ms, and Motor turns ON when the warning period is over and OFF with Stop. Keep Requested a memory bit, with no address.",
+              "body": "Correct the starting program, save it, then press Check. The starting program never turns Motor ON, so Motor is OFF at 100 ms instead of ON. Change it so that the warning period lasts T#50ms, and Motor turns ON when the warning period is over and OFF with Stop. Keep Requested a memory bit, with no address.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -3562,7 +3562,7 @@
             }
           ],
           "faultCases": [
-            "The starting program keeps WarnTime at T#500ms and has no coil for Motor, so Motor is OFF at 100 ms instead of ON."
+            "The starting program never turns Motor ON, so Motor is OFF at 100 ms instead of ON."
           ]
         },
         "es": {
@@ -3589,7 +3589,7 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija el programa inicial, guárdelo y pulse Comprobar. El programa inicial mantiene WarnTime en T#500ms y no tiene bobina para Motor, así que Motor está en OFF a los 100 ms en lugar de en ON. Cámbielo para que el período de aviso guardado en WarnTime dure T#50ms, y Motor pase a ON cuando termine el período de aviso y a OFF con Stop. Mantenga Requested como bit de memoria, sin dirección.",
+              "body": "Corrija el programa inicial, guárdelo y pulse Comprobar. El programa inicial nunca pone Motor en ON, así que Motor está en OFF a los 100 ms en lugar de en ON. Cámbielo para que el período de aviso dure T#50ms, y Motor pase a ON cuando termine el período de aviso y a OFF con Stop. Mantenga Requested como bit de memoria, sin dirección.",
               "checkpoint": "Comprobar informa que el escenario de esta lección pasó."
             },
             {
@@ -3622,7 +3622,7 @@
             }
           ],
           "faultCases": [
-            "El programa inicial mantiene WarnTime en T#500ms y no tiene bobina para Motor, así que Motor está en OFF a los 100 ms en lugar de en ON."
+            "El programa inicial nunca pone Motor en ON, así que Motor está en OFF a los 100 ms en lugar de en ON."
           ]
         }
       },
@@ -5359,7 +5359,7 @@
     },
     {
       "id": "ld-analog-scaling",
-      "version": 3,
+      "version": 4,
       "order": 30,
       "module": 4,
       "level": "intermediate",
@@ -5449,14 +5449,14 @@
             {
               "key": "reflect",
               "title": "Reflect",
-              "body": "Why must the rung multiply before it divides, and why is Scaled a DINT? Work out, with whole numbers, what dividing first would give for Raw = 3280. What would the LIMIT box protect against if the sensor reported a value outside 0..4095?",
+              "body": "Does the order of the multiplication and the division matter? Work out, with whole numbers, what each order gives for Raw = 3280. Why is Scaled a DINT? What would the LIMIT box protect against if the sensor reported a value outside 0..4095?",
               "checkpoint": "Dividing Raw by 4095 first gives 0 for every Raw below 4095, so the level would stay 0 until full scale. At full scale the product is far above the 32767 that an INT holds, and an INT would wrap with no error. LIMIT keeps Raw inside 0..4095 whatever the input does, so Level stays inside 0..100."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "Multiply before you divide, so that the division drops as little as possible, and hold the product in a DINT, where it fits at full scale. What is the span of the counts, and what is the span of the result?"
+              "text": "Look at what stands between Raw and Quot: nothing yet. What is the span of the counts, what is the span of the result, and how large can an intermediate value get at full scale?"
             },
             {
               "level": 2,
@@ -5509,14 +5509,14 @@
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "¿Por qué el peldaño debe multiplicar antes de dividir, y por qué Scaled es un DINT? Calcule, con números enteros, qué daría dividir primero para Raw = 3280. ¿De qué protegería el bloque LIMIT si el sensor informara un valor fuera de 0..4095?",
+              "body": "¿Importa el orden de la multiplicación y la división? Calcule, con números enteros, qué da cada orden para Raw = 3280. ¿Por qué Scaled es un DINT? ¿De qué protegería el bloque LIMIT si el sensor informara un valor fuera de 0..4095?",
               "checkpoint": "Dividir Raw entre 4095 primero da 0 para todo Raw menor que 4095, así que el nivel se quedaría en 0 hasta la plena escala. A plena escala el producto supera con mucho los 32767 que guarda un INT, y un INT daría la vuelta sin ningún error. LIMIT mantiene Raw dentro de 0..4095 haga lo que haga la entrada, así que Level queda dentro de 0..100."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "Multiplique antes de dividir, para que la división descarte lo menos posible, y guarde el producto en un DINT, donde cabe a plena escala. ¿Cuál es el rango de las cuentas y cuál el rango del resultado?"
+              "text": "Mire qué hay entre Raw y Quot: todavía nada. ¿Cuál es el rango de las cuentas, cuál el rango del resultado y cuánto puede crecer un valor intermedio a plena escala?"
             },
             {
               "level": 2,
@@ -7929,7 +7929,7 @@
     },
     {
       "id": "types-arithmetic-comparison",
-      "version": 6,
+      "version": 7,
       "order": 52,
       "module": 4,
       "level": "intermediate",
@@ -8077,7 +8077,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "Total is an INT, so adding an INT constant to it gives an INT. A rising edge is Step TRUE now and StepWas FALSE on the previous scan."
+              "text": "Look for the statement that changes Total: there is none. Total is an INT, so adding an INT constant to it gives an INT, and StepWas is declared to remember Step from one scan to the next."
             },
             {
               "level": 2,
@@ -8137,7 +8137,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "Total es un INT, así que sumarle una constante INT da un INT. Un flanco ascendente es Step en TRUE ahora y StepWas en FALSE en el ciclo anterior."
+              "text": "Busque la instrucción que cambia Total: no hay ninguna. Total es un INT, así que sumarle una constante INT da un INT, y StepWas está declarada para recordar Step de un ciclo al siguiente."
             },
             {
               "level": 2,
@@ -10496,7 +10496,7 @@
     },
     {
       "id": "analog-scaling-integer",
-      "version": 6,
+      "version": 7,
       "order": 74,
       "module": 4,
       "level": "intermediate",
@@ -10599,7 +10599,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct the starting program, save it, then press Check. The starter divides before it multiplies, so the integer division Raw / 1000 gives 0 until Raw reaches 1000 and the percentage stays at 0. Change the scaling so that Percent is the right percentage of Raw at every step, not only at full scale. Leave the stand-in for Raw and the two comparisons as they are.",
+              "body": "Correct the starting program, save it, then press Check. The starter keeps Percent at 0 until Raw reaches 1000, so Warn and Alarm stay OFF while Raw rises and turn ON together at full scale. Change the scaling so that Percent is the right percentage of Raw at every step, not only at full scale. Leave the stand-in for Raw and the two comparisons as they are.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -10624,7 +10624,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "Integer division gives a whole number: 500 / 1000 is 0. Which operation should come first so that the remainder is not lost?"
+              "text": "Look at the line that writes Percent and work it out by hand for Raw = 500, with whole numbers only: an integer division drops the remainder, so 500 / 1000 is 0."
             },
             {
               "level": 2,
@@ -10632,7 +10632,7 @@
             }
           ],
           "faultCases": [
-            "The starter divides before it multiplies, so the integer division Raw / 1000 gives 0 until Raw reaches 1000 and the percentage stays at 0."
+            "The starter keeps Percent at 0 until Raw reaches 1000, so Warn and Alarm stay OFF while Raw rises and turn ON together at full scale."
           ]
         },
         "es": {
@@ -10659,7 +10659,7 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija el programa inicial, guárdelo y pulse Comprobar. El programa inicial divide antes de multiplicar, así que la división entera Raw / 1000 da 0 hasta que Raw llega a 1000 y el porcentaje queda en 0. Cambie el escalado para que Percent sea el porcentaje correcto de Raw en cada paso, no solo en el tope de la escala. Deje como están el sustituto de Raw y las dos comparaciones.",
+              "body": "Corrija el programa inicial, guárdelo y pulse Comprobar. El programa inicial deja Percent en 0 hasta que Raw llega a 1000, así que Warn y Alarm siguen en OFF mientras Raw sube y pasan a ON juntas en el tope de la escala. Cambie el escalado para que Percent sea el porcentaje correcto de Raw en cada paso, no solo en el tope de la escala. Deje como están el sustituto de Raw y las dos comparaciones.",
               "checkpoint": "Comprobar informa que el escenario de esta lección pasó."
             },
             {
@@ -10684,7 +10684,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "La división entera da un número entero: 500 / 1000 es 0. ¿Qué operación debe ir primero para no perder el resto?"
+              "text": "Mire la línea que escribe Percent y calcúlela a mano para Raw = 500, solo con números enteros: una división entera descarta el resto, así que 500 / 1000 es 0."
             },
             {
               "level": 2,
@@ -10692,13 +10692,13 @@
             }
           ],
           "faultCases": [
-            "El programa inicial divide antes de multiplicar, así que la división entera Raw / 1000 da 0 hasta que Raw llega a 1000 y el porcentaje queda en 0."
+            "El programa inicial deja Percent en 0 hasta que Raw llega a 1000, así que Warn y Alarm siguen en OFF mientras Raw sube y pasan a ON juntas en el tope de la escala."
           ]
         }
       },
       "reading": {
-        "en": "## From a signal to a number\n\nA level sensor, a thermometer or a pressure transmitter does not give the program litres, degrees or bars. It gives an electrical signal, a current or a voltage, and the analog input of the controller turns that signal into a whole number of **raw counts**: for example 0 for the lowest signal and 4000 for the highest. The program sees only the counts.\n\n**Scaling** turns raw counts into **engineering units**, the units a person reads and a limit is written in. When both ranges start at zero, the rule is one line: the value is the raw count times the top of the units, divided by the top of the counts.\n\n| Raw counts | Fraction of the range | Percent |\n| ---------- | --------------------- | ------- |\n| 0          | none                  | 0       |\n| 1000       | a quarter             | 25      |\n| 4000       | all                   | 100     |\n\nWhen the units start elsewhere, for example a thermometer from −50 to 250 °C, subtract the low end of the counts first, scale by the width of each range and add the low end of the units at the end.\n\n## Order, rounding and range with whole numbers\n\nThe scaling of this lesson uses only whole numbers, INT or DINT. Whole numbers are exact and fast, but three things decide whether the result is right.\n\n**The order.** Division of whole numbers drops the remainder, so divide last. Dividing first throws the information away before the multiplication can use it. Take a speed dial that gives 0 to 4000 counts for 0 to 250 revolutions per minute, read in `Dial` and scaled into `Rpm`:\n\n| Dial | `(Dial / 4000) * 250` | `(Dial * 250) / 4000` |\n| ---- | --------------------- | --------------------- |\n| 1800 | 0                     | 112                   |\n| 3999 | 0                     | 249                   |\n| 4000 | 250                   | 250                   |\n\n**The rounding.** Even in the right order the division cuts, it does not round: 3999 counts give 249, not 249.9. For values that are never negative, add half the divisor before you divide to round to the nearest: `(Dial * 250 + 2000) / 4000` gives 250 for 3999 counts.\n\n**The range of the product.** The largest number in the computation is the product before the division, not the raw count and not the result. Here it is 4000 × 250 = 1000000, far above 32767, the largest INT. Choose the type for that product: declare the variables DINT and the product fits.\n\n## Worked example\n\nAn oven has a thermometer whose input gives 0 counts at −50 °C and 4000 counts at 250 °C. A lamp `Ready` must light from 180 °C, when the oven may be loaded, and a lamp `OverTemp` from 240 °C.\n\nThe units are 300 °C wide and the counts 4000 wide, and the low end of the units is −50. The product reaches 4000 × 300 = 1200000, so every variable of the computation is a DINT. Adding 2000, half of 4000, rounds to the nearest degree; the division comes last, and −50 is added after it, so the rounding only ever sees positive numbers.\n\n```st\nPROGRAM Oven\nVAR_INPUT Raw : DINT; END_VAR\nVAR_OUTPUT Ready : BOOL; OverTemp : BOOL; END_VAR\nVAR Temp : DINT; END_VAR\nTemp := (Raw * 300 + 2000) / 4000 - 50;\nReady := Temp >= 180;\nOverTemp := Temp >= 240;\nEND_PROGRAM\n```\n\n| Raw  | Exact value | Temp |\n| ---- | ----------- | ---- |\n| 0    | −50 °C      | −50  |\n| 1013 | 25.975 °C   | 26   |\n| 2000 | 100 °C      | 100  |\n| 4000 | 250 °C      | 250  |\n\nWithout the 2000, 1013 counts would give 25 °C. The two lamps compare the scaled value, in degrees, with limits written in degrees, so a person can check them against the oven's dial.\n\n```timing\nspan: 5000\nsignals:\n  - { name: Heater, edges: [200, 3400] }\n  - { name: Ready, edges: [1800, 4600] }\n  - { name: OverTemp, edges: [3000, 3800] }\nmarks:\n  - { from: 1800, to: 3000, label: 'Temp 180..239' }\n  - { from: 3000, to: 3800, label: 'Temp >= 240' }\ncaption: The oven heats and cools; each lamp is a comparison of the temperature in degrees\n```\n\n## Common mistakes\n\n- Dividing before multiplying. The result stays 0 until the input reaches full scale.\n- Expecting the division to round. `/` cuts the remainder; add half the divisor first when you need the nearest value.\n- Choosing the type from the raw count. An INT holds 4000, but `Dial * 250` reaches 1000000, which does not fit in 16 bits.\n- Comparing raw counts with a limit in units. `Dial >= 200` is not 200 revolutions per minute; scale first, then compare.\n- Trusting a value outside the range. A broken wire or a short circuit gives counts below 0 or above full scale; keep the result inside its range with LIMIT, or raise a fault.\n- Dividing by a span that can be zero. When the counts' range comes from a setting, test it first: a division by zero stops the program.\n\n## Check yourself\n\n```quiz\nquestion: Dial is 1800 counts of a range from 0 to 4000. The program has Rpm := (Dial / 4000) * 250; with DINT variables. What is Rpm?\noptions:\n  - { text: '0', correct: true, feedback: 'Yes. 1800 / 4000 is 0 with whole numbers, and 0 times 250 is still 0.' }\n  - { text: '112', feedback: 'That is what multiplying first gives. Dividing first loses the 1800 before it is multiplied.' }\n  - { text: '11', feedback: 'There is no remainder left to make 11: the division gives 0 at once.' }\n```\n\n```quiz\nquestion: A flow meter gives 0 to 2000 counts for 0 to 600 litres per minute, and the program computes Flow * 600 before it divides by 2000. Which type do the variables of the computation need?\noptions:\n  - { text: 'DINT', correct: true, feedback: 'Right. The product reaches 1200000, far above 32767, and a DINT holds it.' }\n  - { text: 'INT, because the result is at most 600', feedback: 'The result fits, but the product is formed first, and it does not fit in an INT.' }\n  - { text: 'INT, because the count is at most 2000', feedback: 'The count fits, but the product of 2000 and 600 does not.' }\n```\n\n## What you will do in the practice\n\nThe scenario sets only BOOL inputs, so the starting program makes its own raw count: Raw grows by 100 on each scan while Enable is TRUE, up to 1000, and goes back to 0 when Enable is FALSE. It then scales Raw to Percent, from 0 to 100, but it divides before it multiplies, so Percent stays at 0 until full scale. You will make Percent the right percentage, so that Warn turns ON at 50 percent and Alarm at 80 percent. Enable rises at 10 ms and falls at 110 ms. Then press Check.\n",
-        "es": "## De una señal a un número\n\nUn sensor de nivel, un termómetro o un transmisor de presión no le dan al programa litros, grados ni bares. Dan una señal eléctrica, una corriente o una tensión, y la entrada analógica del controlador convierte esa señal en un número entero de **cuentas en bruto**: por ejemplo 0 para la señal más baja y 4000 para la más alta. El programa ve solo las cuentas.\n\nEl **escalado** convierte las cuentas en bruto en **unidades de ingeniería**, las unidades que lee una persona y en las que se escribe un límite. Cuando los dos rangos empiezan en cero, la regla es una línea: el valor es la cuenta en bruto por el tope de las unidades, dividido por el tope de las cuentas.\n\n| Cuentas en bruto | Fracción del rango | Porcentaje |\n| ---------------- | ------------------ | ---------- |\n| 0                | nada               | 0          |\n| 1000             | un cuarto          | 25         |\n| 4000             | todo               | 100        |\n\nCuando las unidades empiezan en otro valor, por ejemplo un termómetro de −50 a 250 °C, reste primero el extremo bajo de las cuentas, escale por el ancho de cada rango y sume al final el extremo bajo de las unidades.\n\n## Orden, redondeo y rango con números enteros\n\nEl escalado de esta lección usa solo números enteros, INT o DINT. Los números enteros son exactos y rápidos, pero tres cosas deciden si el resultado es correcto.\n\n**El orden.** La división de números enteros descarta el resto, así que divida al final. Dividir primero tira la información antes de que la multiplicación pueda usarla. Tome un selector de velocidad que da de 0 a 4000 cuentas para 0 a 250 revoluciones por minuto, leído en `Dial` y escalado en `Rpm`:\n\n| Dial | `(Dial / 4000) * 250` | `(Dial * 250) / 4000` |\n| ---- | --------------------- | --------------------- |\n| 1800 | 0                     | 112                   |\n| 3999 | 0                     | 249                   |\n| 4000 | 250                   | 250                   |\n\n**El redondeo.** Aun en el orden correcto la división corta, no redondea: 3999 cuentas dan 249, no 249,9. Para valores que nunca son negativos, sume la mitad del divisor antes de dividir para redondear al más cercano: `(Dial * 250 + 2000) / 4000` da 250 para 3999 cuentas.\n\n**El rango del producto.** El número más grande del cálculo es el producto antes de la división, no la cuenta en bruto ni el resultado. Aquí es 4000 × 250 = 1000000, muy por encima de 32767, el mayor INT. Elija el tipo para ese producto: declare las variables DINT y el producto cabe.\n\n## Ejemplo resuelto\n\nUn horno tiene un termómetro cuya entrada da 0 cuentas a −50 °C y 4000 cuentas a 250 °C. Una lámpara `Ready` debe encenderse desde 180 °C, cuando el horno se puede cargar, y una lámpara `OverTemp` desde 240 °C.\n\nLas unidades tienen 300 °C de ancho y las cuentas 4000, y el extremo bajo de las unidades es −50. El producto llega a 4000 × 300 = 1200000, así que cada variable del cálculo es un DINT. Sumar 2000, la mitad de 4000, redondea al grado más cercano; la división va al final y el −50 se suma después, así que el redondeo solo ve números positivos.\n\n```st\nPROGRAM Oven\nVAR_INPUT Raw : DINT; END_VAR\nVAR_OUTPUT Ready : BOOL; OverTemp : BOOL; END_VAR\nVAR Temp : DINT; END_VAR\nTemp := (Raw * 300 + 2000) / 4000 - 50;\nReady := Temp >= 180;\nOverTemp := Temp >= 240;\nEND_PROGRAM\n```\n\n| Raw  | Valor exacto | Temp |\n| ---- | ------------ | ---- |\n| 0    | −50 °C       | −50  |\n| 1013 | 25,975 °C    | 26   |\n| 2000 | 100 °C       | 100  |\n| 4000 | 250 °C       | 250  |\n\nSin el 2000, 1013 cuentas darían 25 °C. Las dos lámparas comparan el valor escalado, en grados, con límites escritos en grados, así que una persona puede verificarlos con el indicador del horno.\n\n```timing\nspan: 5000\nsignals:\n  - { name: Heater, edges: [200, 3400] }\n  - { name: Ready, edges: [1800, 4600] }\n  - { name: OverTemp, edges: [3000, 3800] }\nmarks:\n  - { from: 1800, to: 3000, label: 'Temp 180..239' }\n  - { from: 3000, to: 3800, label: 'Temp >= 240' }\ncaption: El horno se calienta y se enfría; cada lámpara es una comparación de la temperatura en grados\n```\n\n## Errores comunes\n\n- Dividir antes de multiplicar. El resultado queda en 0 hasta que la entrada llega al tope de la escala.\n- Esperar que la división redondee. `/` corta el resto; sume antes la mitad del divisor cuando necesite el valor más cercano.\n- Elegir el tipo según la cuenta en bruto. Un INT guarda 4000, pero `Dial * 250` llega a 1000000, que no cabe en 16 bits.\n- Comparar cuentas en bruto con un límite en unidades. `Dial >= 200` no son 200 revoluciones por minuto; primero escale, después compare.\n- Confiar en un valor fuera del rango. Un cable cortado o un cortocircuito dan cuentas por debajo de 0 o por encima del tope; mantenga el resultado dentro de su rango con LIMIT, o señale una falla.\n- Dividir por un ancho que puede valer cero. Cuando el rango de las cuentas viene de un ajuste, pruébelo antes: una división por cero detiene el programa.\n\n## Compruébelo usted\n\n```quiz\nquestion: Dial vale 1800 cuentas de un rango de 0 a 4000. El programa tiene Rpm := (Dial / 4000) * 250; con variables DINT. ¿Cuánto vale Rpm?\noptions:\n  - { text: '0', correct: true, feedback: 'Sí. 1800 / 4000 es 0 con números enteros, y 0 por 250 sigue siendo 0.' }\n  - { text: '112', feedback: 'Eso da multiplicar primero. Dividir primero pierde el 1800 antes de multiplicarlo.' }\n  - { text: '11', feedback: 'No queda resto con el que formar 11: la división da 0 de entrada.' }\n```\n\n```quiz\nquestion: Un caudalímetro da de 0 a 2000 cuentas para 0 a 600 litros por minuto, y el programa calcula Flow * 600 antes de dividir por 2000. ¿Qué tipo necesitan las variables del cálculo?\noptions:\n  - { text: 'DINT', correct: true, feedback: 'Correcto. El producto llega a 1200000, muy por encima de 32767, y un DINT lo guarda.' }\n  - { text: 'INT, porque el resultado es como máximo 600', feedback: 'El resultado cabe, pero el producto se forma primero y no cabe en un INT.' }\n  - { text: 'INT, porque la cuenta es como máximo 2000', feedback: 'La cuenta cabe, pero el producto de 2000 por 600 no.' }\n```\n\n## Qué hará en la práctica\n\nEl escenario solo da entradas BOOL, así que el programa inicial fabrica su propia cuenta en bruto: Raw crece 100 en cada ciclo mientras Enable está en TRUE, hasta 1000, y vuelve a 0 cuando Enable está en FALSE. Después escala Raw a Percent, de 0 a 100, pero divide antes de multiplicar, así que Percent queda en 0 hasta el tope de la escala. Usted hará que Percent sea el porcentaje correcto, para que Warn pase a ON al 50 por ciento y Alarm al 80 por ciento. Enable sube a los 10 ms y baja a los 110 ms. Después pulse Comprobar.\n",
+        "en": "## From a signal to a number\n\nA level sensor, a thermometer or a pressure transmitter does not give the program litres, degrees or bars. It gives an electrical signal, a current or a voltage, and the analog input of the controller turns that signal into a whole number of **raw counts**: for example 0 for the lowest signal and 4000 for the highest. The program sees only the counts.\n\n**Scaling** turns raw counts into **engineering units**, the units a person reads and a limit is written in. When both ranges start at zero, the rule is one line: the value is the raw count times the top of the units, divided by the top of the counts.\n\n| Raw counts | Fraction of the range | Percent |\n| ---------- | --------------------- | ------- |\n| 0          | none                  | 0       |\n| 1000       | a quarter             | 25      |\n| 4000       | all                   | 100     |\n\nWhen the units start elsewhere, for example a thermometer from −50 to 250 °C, subtract the low end of the counts first, scale by the width of each range and add the low end of the units at the end.\n\n## Order, rounding and range with whole numbers\n\nThe scaling of this lesson uses only whole numbers, INT or DINT. Whole numbers are exact and fast, but three things decide whether the result is right.\n\n**The order.** Division of whole numbers drops the remainder, so divide last. Dividing first throws the information away before the multiplication can use it. Take a speed dial that gives 0 to 4000 counts for 0 to 250 revolutions per minute, read in `Dial` and scaled into `Rpm`:\n\n| Dial | `(Dial / 4000) * 250` | `(Dial * 250) / 4000` |\n| ---- | --------------------- | --------------------- |\n| 1800 | 0                     | 112                   |\n| 3999 | 0                     | 249                   |\n| 4000 | 250                   | 250                   |\n\n**The rounding.** Even in the right order the division cuts, it does not round: 3999 counts give 249, not 249.9. For values that are never negative, add half the divisor before you divide to round to the nearest: `(Dial * 250 + 2000) / 4000` gives 250 for 3999 counts.\n\n**The range of the product.** The largest number in the computation is the product before the division, not the raw count and not the result. Here it is 4000 × 250 = 1000000, far above 32767, the largest INT. Choose the type for that product: declare the variables DINT and the product fits.\n\n## Worked example\n\nAn oven has a thermometer whose input gives 0 counts at −50 °C and 4000 counts at 250 °C. A lamp `Ready` must light from 180 °C, when the oven may be loaded, and a lamp `OverTemp` from 240 °C.\n\nThe units are 300 °C wide and the counts 4000 wide, and the low end of the units is −50. The product reaches 4000 × 300 = 1200000, so every variable of the computation is a DINT. Adding 2000, half of 4000, rounds to the nearest degree; the division comes last, and −50 is added after it, so the rounding only ever sees positive numbers.\n\n```st\nPROGRAM Oven\nVAR_INPUT Raw : DINT; END_VAR\nVAR_OUTPUT Ready : BOOL; OverTemp : BOOL; END_VAR\nVAR Temp : DINT; END_VAR\nTemp := (Raw * 300 + 2000) / 4000 - 50;\nReady := Temp >= 180;\nOverTemp := Temp >= 240;\nEND_PROGRAM\n```\n\n| Raw  | Exact value | Temp |\n| ---- | ----------- | ---- |\n| 0    | −50 °C      | −50  |\n| 1013 | 25.975 °C   | 26   |\n| 2000 | 100 °C      | 100  |\n| 4000 | 250 °C      | 250  |\n\nWithout the 2000, 1013 counts would give 25 °C. The two lamps compare the scaled value, in degrees, with limits written in degrees, so a person can check them against the oven's dial.\n\n```timing\nspan: 5000\nsignals:\n  - { name: Heater, edges: [200, 3400] }\n  - { name: Ready, edges: [1800, 4600] }\n  - { name: OverTemp, edges: [3000, 3800] }\nmarks:\n  - { from: 1800, to: 3000, label: 'Temp 180..239' }\n  - { from: 3000, to: 3800, label: 'Temp >= 240' }\ncaption: The oven heats and cools; each lamp is a comparison of the temperature in degrees\n```\n\n## Common mistakes\n\n- Dividing before multiplying. The result stays 0 until the input reaches full scale.\n- Expecting the division to round. `/` cuts the remainder; add half the divisor first when you need the nearest value.\n- Choosing the type from the raw count. An INT holds 4000, but `Dial * 250` reaches 1000000, which does not fit in 16 bits.\n- Comparing raw counts with a limit in units. `Dial >= 200` is not 200 revolutions per minute; scale first, then compare.\n- Trusting a value outside the range. A broken wire or a short circuit gives counts below 0 or above full scale; keep the result inside its range with LIMIT, or raise a fault.\n- Dividing by a span that can be zero. When the counts' range comes from a setting, test it first: a division by zero stops the program.\n\n## Check yourself\n\n```quiz\nquestion: Dial is 1800 counts of a range from 0 to 4000. The program has Rpm := (Dial / 4000) * 250; with DINT variables. What is Rpm?\noptions:\n  - { text: '0', correct: true, feedback: 'Yes. 1800 / 4000 is 0 with whole numbers, and 0 times 250 is still 0.' }\n  - { text: '112', feedback: 'That is what multiplying first gives. Dividing first loses the 1800 before it is multiplied.' }\n  - { text: '11', feedback: 'There is no remainder left to make 11: the division gives 0 at once.' }\n```\n\n```quiz\nquestion: A flow meter gives 0 to 2000 counts for 0 to 600 litres per minute, and the program computes Flow * 600 before it divides by 2000. Which type do the variables of the computation need?\noptions:\n  - { text: 'DINT', correct: true, feedback: 'Right. The product reaches 1200000, far above 32767, and a DINT holds it.' }\n  - { text: 'INT, because the result is at most 600', feedback: 'The result fits, but the product is formed first, and it does not fit in an INT.' }\n  - { text: 'INT, because the count is at most 2000', feedback: 'The count fits, but the product of 2000 and 600 does not.' }\n```\n\n## What you will do in the practice\n\nThe scenario sets only BOOL inputs, so the starting program makes its own raw count: Raw grows by 100 on each scan while Enable is TRUE, up to 1000, and goes back to 0 when Enable is FALSE. It then scales Raw to Percent, from 0 to 100, but Percent stays at 0 until full scale. You will make Percent the right percentage, so that Warn turns ON at 50 percent and Alarm at 80 percent. Enable rises at 10 ms and falls at 110 ms. Then press Check.\n",
+        "es": "## De una señal a un número\n\nUn sensor de nivel, un termómetro o un transmisor de presión no le dan al programa litros, grados ni bares. Dan una señal eléctrica, una corriente o una tensión, y la entrada analógica del controlador convierte esa señal en un número entero de **cuentas en bruto**: por ejemplo 0 para la señal más baja y 4000 para la más alta. El programa ve solo las cuentas.\n\nEl **escalado** convierte las cuentas en bruto en **unidades de ingeniería**, las unidades que lee una persona y en las que se escribe un límite. Cuando los dos rangos empiezan en cero, la regla es una línea: el valor es la cuenta en bruto por el tope de las unidades, dividido por el tope de las cuentas.\n\n| Cuentas en bruto | Fracción del rango | Porcentaje |\n| ---------------- | ------------------ | ---------- |\n| 0                | nada               | 0          |\n| 1000             | un cuarto          | 25         |\n| 4000             | todo               | 100        |\n\nCuando las unidades empiezan en otro valor, por ejemplo un termómetro de −50 a 250 °C, reste primero el extremo bajo de las cuentas, escale por el ancho de cada rango y sume al final el extremo bajo de las unidades.\n\n## Orden, redondeo y rango con números enteros\n\nEl escalado de esta lección usa solo números enteros, INT o DINT. Los números enteros son exactos y rápidos, pero tres cosas deciden si el resultado es correcto.\n\n**El orden.** La división de números enteros descarta el resto, así que divida al final. Dividir primero tira la información antes de que la multiplicación pueda usarla. Tome un selector de velocidad que da de 0 a 4000 cuentas para 0 a 250 revoluciones por minuto, leído en `Dial` y escalado en `Rpm`:\n\n| Dial | `(Dial / 4000) * 250` | `(Dial * 250) / 4000` |\n| ---- | --------------------- | --------------------- |\n| 1800 | 0                     | 112                   |\n| 3999 | 0                     | 249                   |\n| 4000 | 250                   | 250                   |\n\n**El redondeo.** Aun en el orden correcto la división corta, no redondea: 3999 cuentas dan 249, no 249,9. Para valores que nunca son negativos, sume la mitad del divisor antes de dividir para redondear al más cercano: `(Dial * 250 + 2000) / 4000` da 250 para 3999 cuentas.\n\n**El rango del producto.** El número más grande del cálculo es el producto antes de la división, no la cuenta en bruto ni el resultado. Aquí es 4000 × 250 = 1000000, muy por encima de 32767, el mayor INT. Elija el tipo para ese producto: declare las variables DINT y el producto cabe.\n\n## Ejemplo resuelto\n\nUn horno tiene un termómetro cuya entrada da 0 cuentas a −50 °C y 4000 cuentas a 250 °C. Una lámpara `Ready` debe encenderse desde 180 °C, cuando el horno se puede cargar, y una lámpara `OverTemp` desde 240 °C.\n\nLas unidades tienen 300 °C de ancho y las cuentas 4000, y el extremo bajo de las unidades es −50. El producto llega a 4000 × 300 = 1200000, así que cada variable del cálculo es un DINT. Sumar 2000, la mitad de 4000, redondea al grado más cercano; la división va al final y el −50 se suma después, así que el redondeo solo ve números positivos.\n\n```st\nPROGRAM Oven\nVAR_INPUT Raw : DINT; END_VAR\nVAR_OUTPUT Ready : BOOL; OverTemp : BOOL; END_VAR\nVAR Temp : DINT; END_VAR\nTemp := (Raw * 300 + 2000) / 4000 - 50;\nReady := Temp >= 180;\nOverTemp := Temp >= 240;\nEND_PROGRAM\n```\n\n| Raw  | Valor exacto | Temp |\n| ---- | ------------ | ---- |\n| 0    | −50 °C       | −50  |\n| 1013 | 25,975 °C    | 26   |\n| 2000 | 100 °C       | 100  |\n| 4000 | 250 °C       | 250  |\n\nSin el 2000, 1013 cuentas darían 25 °C. Las dos lámparas comparan el valor escalado, en grados, con límites escritos en grados, así que una persona puede verificarlos con el indicador del horno.\n\n```timing\nspan: 5000\nsignals:\n  - { name: Heater, edges: [200, 3400] }\n  - { name: Ready, edges: [1800, 4600] }\n  - { name: OverTemp, edges: [3000, 3800] }\nmarks:\n  - { from: 1800, to: 3000, label: 'Temp 180..239' }\n  - { from: 3000, to: 3800, label: 'Temp >= 240' }\ncaption: El horno se calienta y se enfría; cada lámpara es una comparación de la temperatura en grados\n```\n\n## Errores comunes\n\n- Dividir antes de multiplicar. El resultado queda en 0 hasta que la entrada llega al tope de la escala.\n- Esperar que la división redondee. `/` corta el resto; sume antes la mitad del divisor cuando necesite el valor más cercano.\n- Elegir el tipo según la cuenta en bruto. Un INT guarda 4000, pero `Dial * 250` llega a 1000000, que no cabe en 16 bits.\n- Comparar cuentas en bruto con un límite en unidades. `Dial >= 200` no son 200 revoluciones por minuto; primero escale, después compare.\n- Confiar en un valor fuera del rango. Un cable cortado o un cortocircuito dan cuentas por debajo de 0 o por encima del tope; mantenga el resultado dentro de su rango con LIMIT, o señale una falla.\n- Dividir por un ancho que puede valer cero. Cuando el rango de las cuentas viene de un ajuste, pruébelo antes: una división por cero detiene el programa.\n\n## Compruébelo usted\n\n```quiz\nquestion: Dial vale 1800 cuentas de un rango de 0 a 4000. El programa tiene Rpm := (Dial / 4000) * 250; con variables DINT. ¿Cuánto vale Rpm?\noptions:\n  - { text: '0', correct: true, feedback: 'Sí. 1800 / 4000 es 0 con números enteros, y 0 por 250 sigue siendo 0.' }\n  - { text: '112', feedback: 'Eso da multiplicar primero. Dividir primero pierde el 1800 antes de multiplicarlo.' }\n  - { text: '11', feedback: 'No queda resto con el que formar 11: la división da 0 de entrada.' }\n```\n\n```quiz\nquestion: Un caudalímetro da de 0 a 2000 cuentas para 0 a 600 litros por minuto, y el programa calcula Flow * 600 antes de dividir por 2000. ¿Qué tipo necesitan las variables del cálculo?\noptions:\n  - { text: 'DINT', correct: true, feedback: 'Correcto. El producto llega a 1200000, muy por encima de 32767, y un DINT lo guarda.' }\n  - { text: 'INT, porque el resultado es como máximo 600', feedback: 'El resultado cabe, pero el producto se forma primero y no cabe en un INT.' }\n  - { text: 'INT, porque la cuenta es como máximo 2000', feedback: 'La cuenta cabe, pero el producto de 2000 por 600 no.' }\n```\n\n## Qué hará en la práctica\n\nEl escenario solo da entradas BOOL, así que el programa inicial fabrica su propia cuenta en bruto: Raw crece 100 en cada ciclo mientras Enable está en TRUE, hasta 1000, y vuelve a 0 cuando Enable está en FALSE. Después escala Raw a Percent, de 0 a 100, pero Percent queda en 0 hasta el tope de la escala. Usted hará que Percent sea el porcentaje correcto, para que Warn pase a ON al 50 por ciento y Alarm al 80 por ciento. Enable sube a los 10 ms y baja a los 110 ms. Después pulse Comprobar.\n",
         "files": {},
         "images": []
       }
@@ -12173,7 +12173,7 @@
     },
     {
       "id": "analog-scaling-fbd",
-      "version": 5,
+      "version": 6,
       "order": 82,
       "module": 4,
       "level": "intermediate",
@@ -12254,7 +12254,7 @@
             {
               "key": "objective",
               "title": "Objective",
-              "body": "The scenario sets only BOOL inputs, so this lesson does not read a real analog input: in src/LevelScale.fbd.json the blocks at the top stand in for a potentiometer on AI0, raising Raw by 410 counts on each scan while Enable is TRUE, up to 4095, and turning it back to 0 when Enable is FALSE. The blocks below multiply Raw by 100 and limit the result to 0..100 before they compare it with 75. Add the division by 4095, so that Level is the level in percent.",
+              "body": "The scenario sets only BOOL inputs, so this lesson does not read a real analog input: in src/LevelScale.fbd.json the blocks at the top stand in for a potentiometer on AI0, raising Raw by 410 counts on each scan while Enable is TRUE, up to 4095, and turning it back to 0 when Enable is FALSE. The blocks below multiply Raw by 100 and limit the result to 0..100 before they compare it with 75. Level must be the level in percent: 0 when Raw is 0 and 100 when Raw is 4095.",
               "checkpoint": "Level follows Raw in percent, and HighLevel turns ON once Level reaches 75 percent."
             },
             {
@@ -12266,7 +12266,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct the starting diagram, save it, then press Check. The starter multiplies Raw by 100 but never divides by 4095, so LIMIT clamps the product to 100 from the first scan and HighLevel lights at 10 ms. Change it so that Level is the level in percent, from 0 to 100, before the LIMIT and the comparison with 75. Place and connect the missing block yourself: the stand-in for Raw, the MUL, the LIMIT and the comparison are already there.",
+              "body": "Correct the starting diagram, save it, then press Check. The starter shows the level at 100 percent from the first scan, while Raw is still low, so HighLevel lights at 10 ms. Change it so that Level is the level in percent, from 0 to 100, before the LIMIT and the comparison with 75. Place and connect the missing block yourself: the stand-in for Raw, the MUL, the LIMIT and the comparison are already there.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -12291,7 +12291,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "The level in percent is Raw times 100 divided by 4095. Which block is missing from the starter, and between which two blocks does it go?"
+              "text": "Look at the value that leaves the MUL block on the first scans and compare it with the range that LIMIT lets through. What must happen to it before the LIMIT?"
             },
             {
               "level": 2,
@@ -12299,7 +12299,7 @@
             }
           ],
           "faultCases": [
-            "The starter multiplies Raw by 100 but never divides by 4095, so LIMIT clamps the product to 100 from the first scan and HighLevel lights at 10 ms."
+            "The starter shows the level at 100 percent from the first scan, while Raw is still low, so HighLevel lights at 10 ms."
           ]
         },
         "es": {
@@ -12314,7 +12314,7 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "Las entradas del escenario son BOOL, así que esta lección no lee una entrada analógica real: en src/LevelScale.fbd.json los bloques de arriba sustituyen a un potenciómetro en AI0, suman 410 cuentas a Raw en cada ciclo mientras Enable es TRUE, hasta 4095, y lo devuelven a 0 cuando Enable es FALSE. Los bloques de abajo multiplican Raw por 100 y limitan el resultado a 0..100 antes de compararlo con 75. Agregue la división por 4095 para que Level sea el nivel en porcentaje.",
+              "body": "Las entradas del escenario son BOOL, así que esta lección no lee una entrada analógica real: en src/LevelScale.fbd.json los bloques de arriba sustituyen a un potenciómetro en AI0, suman 410 cuentas a Raw en cada ciclo mientras Enable es TRUE, hasta 4095, y lo devuelven a 0 cuando Enable es FALSE. Los bloques de abajo multiplican Raw por 100 y limitan el resultado a 0..100 antes de compararlo con 75. Level debe ser el nivel en porcentaje: 0 cuando Raw es 0 y 100 cuando Raw es 4095.",
               "checkpoint": "Level sigue a Raw en porcentaje, y HighLevel pasa a ON cuando Level llega al 75 por ciento."
             },
             {
@@ -12326,7 +12326,7 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija el diagrama inicial, guárdelo y pulse Comprobar. El diagrama inicial multiplica Raw por 100 pero nunca divide por 4095, así que LIMIT recorta el producto a 100 desde el primer ciclo y HighLevel se enciende a los 10 ms. Cámbielo para que Level sea el nivel en porcentaje, de 0 a 100, antes del LIMIT y de la comparación con 75. Coloque y conecte usted el bloque que falta: el sustituto de Raw, el MUL, el LIMIT y la comparación ya están.",
+              "body": "Corrija el diagrama inicial, guárdelo y pulse Comprobar. El diagrama inicial muestra el nivel al 100 por ciento desde el primer ciclo, cuando Raw todavía es bajo, así que HighLevel se enciende a los 10 ms. Cámbielo para que Level sea el nivel en porcentaje, de 0 a 100, antes del LIMIT y de la comparación con 75. Coloque y conecte usted el bloque que falta: el sustituto de Raw, el MUL, el LIMIT y la comparación ya están.",
               "checkpoint": "Comprobar informa que el escenario de esta lección pasó."
             },
             {
@@ -12351,7 +12351,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "El nivel en porcentaje es Raw por 100 dividido por 4095. ¿Qué bloque falta en el programa inicial, y entre qué dos bloques va?"
+              "text": "Mire el valor que sale del bloque MUL en los primeros ciclos y compárelo con el rango que deja pasar LIMIT. ¿Qué le tiene que pasar antes del LIMIT?"
             },
             {
               "level": 2,
@@ -12359,13 +12359,13 @@
             }
           ],
           "faultCases": [
-            "El diagrama inicial multiplica Raw por 100 pero nunca divide por 4095, así que LIMIT recorta el producto a 100 desde el primer ciclo y HighLevel se enciende a los 10 ms."
+            "El diagrama inicial muestra el nivel al 100 por ciento desde el primer ciclo, cuando Raw todavía es bajo, así que HighLevel se enciende a los 10 ms."
           ]
         }
       },
       "reading": {
-        "en": "## Scaling with blocks\n\nAn analog input gives the program **raw counts**, a whole number such as 0 to 2000, and a limit is written in **engineering units**, such as percent or bar. Scaling turns one into the other: multiply the counts by the top of the units, then divide by the top of the counts. In a Function Block Diagram each step of that rule is a block, and the connection from one block to the next carries the number.\n\n| Block  | Inputs     | Output                                           |\n| ------ | ---------- | ------------------------------------------------ |\n| MUL    | IN1, IN2   | the product IN1 × IN2                            |\n| DIV    | IN1, IN2   | IN1 ÷ IN2, the remainder dropped                 |\n| LIMIT  | MN, IN, MX | IN, kept between MN and MX                       |\n| GE, LT | IN1, IN2   | a BOOL: is IN1 more or equal, or less, than IN2? |\n\nThree rules decide whether the result is right. Put the DIV after the MUL, because a whole-number division drops the remainder. Choose DINT connections and constants, because the product, 2000 × 100 in the example below, is far above 32767, the largest INT. And compare the scaled value with the limit, never the raw counts.\n\n## Worked example\n\nA compressed-air tank has a pressure transmitter that gives 0 counts at 0 bar and 2000 counts at 10 bar. A lamp `LowAir` must light while the pressure is below 6.0 bar.\n\nA whole number cannot hold 6.0, but it can hold 60 tenths of a bar. So the diagram scales to tenths, from 0 to 100, and the limit becomes 60:\n\n- a MUL block with `Raw` on IN1 and the DINT constant 100 on IN2;\n- a DIV block with MUL.OUT on IN1 and the DINT constant 2000 on IN2;\n- a LIMIT block with 0 on MN, DIV.OUT on IN and 100 on MX, whose output writes `Pressure`;\n- an LT block with `Pressure` on IN1 and the constant 60 on IN2, whose output writes `LowAir`.\n\nAt 1200 counts the MUL gives 120000, the DIV gives 60 and the lamp goes out. The LIMIT keeps a broken transmitter, which may report more than 2000 counts, from showing more than 10 bar.\n\n```timing\nspan: 5000\nsignals:\n  - { name: Compressor, edges: [500, 3000] }\n  - { name: LowAir, edges: [0, 1800, 3800] }\nmarks:\n  - { from: 1800, to: 3800, label: 'Pressure >= 60' }\ncaption: The lamp follows the scaled pressure, in tenths of a bar, not the raw counts\n```\n\n## Common mistakes\n\n- Placing the DIV before the MUL. The result stays 0 until full scale.\n- Using INT constants or connections. The product of 2000 and 100 does not fit in an INT.\n- Connecting the raw counts to the comparison. 75 counts are not 75 percent.\n- Leaving the LIMIT out, or putting it before the DIV, where it clamps the product instead of the scaled value.\n- Swapping IN1 and IN2 of the DIV, which divides the top of the counts by the product.\n\n## Check yourself\n\n```quiz\nquestion: A diagram connects Raw to MUL with 100, then to LIMIT 0..100, and only then to DIV by 2000. Raw is 300. What reaches the comparison?\noptions:\n  - { text: '0', correct: true, feedback: 'Yes. MUL gives 30000, LIMIT clamps it to 100, and 100 divided by 2000 is 0 with whole numbers.' }\n  - { text: '15', feedback: 'That is what MUL, DIV and LIMIT give in that order. The LIMIT before the DIV clamps the product.' }\n  - { text: '100', feedback: 'That is the output of the LIMIT; the DIV after it still divides by 2000.' }\n```\n\n```quiz\nquestion: Why does a scaled value of 6.0 bar become the constant 60 in the worked example?\noptions:\n  - { text: 'Because the diagram scales to tenths of a bar, and a whole number holds 60 but not 6.0', correct: true, feedback: 'Right. Scaling to a smaller unit keeps a decimal place with whole numbers.' }\n  - { text: 'Because 60 is the raw count at 6.0 bar', feedback: 'The raw count at 6.0 bar is 1200; the comparison uses the scaled value.' }\n  - { text: 'Because LIMIT multiplies by 10', feedback: 'LIMIT only keeps a value inside MN and MX; it does not change it otherwise.' }\n```\n\n## What you will do in the practice\n\nThe scenario sets only BOOL inputs, so the blocks at the top of the starting diagram make their own raw count: Raw grows by 410 counts on each scan while Enable is TRUE, up to 4095. The blocks below multiply Raw by 100 and limit the result to 0..100 before they compare Level with 75, but nothing divides by 4095, so HighLevel lights at once. You will make Level the level in percent, so that HighLevel turns ON only when Level reaches 75. Enable rises at 10 ms and falls at 110 ms. Then press Check.\n",
-        "es": "## Escalar con bloques\n\nUna entrada analógica le da al programa **cuentas en bruto**, un número entero como 0 a 2000, y un límite se escribe en **unidades de ingeniería**, como porcentaje o bar. El escalado convierte unas en otras: multiplique las cuentas por el tope de las unidades y después divida por el tope de las cuentas. En un diagrama de bloques de función cada paso de esa regla es un bloque, y la conexión de un bloque al siguiente lleva el número.\n\n| Bloque | Entradas   | Salida                                            |\n| ------ | ---------- | ------------------------------------------------- |\n| MUL    | IN1, IN2   | el producto IN1 × IN2                             |\n| DIV    | IN1, IN2   | IN1 ÷ IN2, sin el resto                           |\n| LIMIT  | MN, IN, MX | IN, mantenido entre MN y MX                       |\n| GE, LT | IN1, IN2   | un BOOL: ¿IN1 es mayor o igual, o menor, que IN2? |\n\nTres reglas deciden si el resultado es correcto. Ponga el DIV después del MUL, porque una división de números enteros descarta el resto. Elija conexiones y constantes DINT, porque el producto, 2000 × 100 en el ejemplo que sigue, está muy por encima de 32767, el mayor INT. Y compare con el límite el valor escalado, nunca las cuentas en bruto.\n\n## Ejemplo resuelto\n\nUn tanque de aire comprimido tiene un transmisor de presión que da 0 cuentas a 0 bar y 2000 cuentas a 10 bar. Una lámpara `LowAir` debe encenderse mientras la presión está por debajo de 6,0 bar.\n\nUn número entero no puede guardar 6,0, pero sí 60 décimas de bar. Por eso el diagrama escala a décimas, de 0 a 100, y el límite pasa a ser 60:\n\n- un bloque MUL con `Raw` en IN1 y la constante DINT 100 en IN2;\n- un bloque DIV con MUL.OUT en IN1 y la constante DINT 2000 en IN2;\n- un bloque LIMIT con 0 en MN, DIV.OUT en IN y 100 en MX, cuya salida escribe `Pressure`;\n- un bloque LT con `Pressure` en IN1 y la constante 60 en IN2, cuya salida escribe `LowAir`.\n\nCon 1200 cuentas el MUL da 120000, el DIV da 60 y la lámpara se apaga. El LIMIT impide que un transmisor dañado, que puede informar más de 2000 cuentas, muestre más de 10 bar.\n\n```timing\nspan: 5000\nsignals:\n  - { name: Compressor, edges: [500, 3000] }\n  - { name: LowAir, edges: [0, 1800, 3800] }\nmarks:\n  - { from: 1800, to: 3800, label: 'Pressure >= 60' }\ncaption: La lámpara sigue a la presión escalada, en décimas de bar, no a las cuentas en bruto\n```\n\n## Errores comunes\n\n- Colocar el DIV antes del MUL. El resultado queda en 0 hasta el tope de la escala.\n- Usar constantes o conexiones INT. El producto de 2000 por 100 no cabe en un INT.\n- Conectar las cuentas en bruto a la comparación. 75 cuentas no son el 75 por ciento.\n- Omitir el LIMIT, o ponerlo antes del DIV, donde recorta el producto en lugar del valor escalado.\n- Intercambiar IN1 e IN2 del DIV, que entonces divide el tope de las cuentas por el producto.\n\n## Compruébelo usted\n\n```quiz\nquestion: Un diagrama conecta Raw a MUL con 100, después a LIMIT 0..100, y solo después a DIV por 2000. Raw vale 300. ¿Qué llega a la comparación?\noptions:\n  - { text: '0', correct: true, feedback: 'Sí. MUL da 30000, LIMIT lo recorta a 100, y 100 dividido por 2000 es 0 con números enteros.' }\n  - { text: '15', feedback: 'Eso dan MUL, DIV y LIMIT en ese orden. El LIMIT antes del DIV recorta el producto.' }\n  - { text: '100', feedback: 'Esa es la salida del LIMIT; el DIV que le sigue todavía divide por 2000.' }\n```\n\n```quiz\nquestion: ¿Por qué un valor escalado de 6,0 bar pasa a ser la constante 60 en el ejemplo resuelto?\noptions:\n  - { text: 'Porque el diagrama escala a décimas de bar, y un número entero guarda 60 pero no 6,0', correct: true, feedback: 'Correcto. Escalar a una unidad más pequeña conserva un decimal con números enteros.' }\n  - { text: 'Porque 60 es la cuenta en bruto a 6,0 bar', feedback: 'La cuenta en bruto a 6,0 bar es 1200; la comparación usa el valor escalado.' }\n  - { text: 'Porque LIMIT multiplica por 10', feedback: 'LIMIT solo mantiene un valor entre MN y MX; fuera de eso no lo cambia.' }\n```\n\n## Qué hará en la práctica\n\nEl escenario solo da entradas BOOL, así que los bloques de arriba del diagrama inicial fabrican su propia cuenta en bruto: Raw crece 410 cuentas en cada ciclo mientras Enable está en TRUE, hasta 4095. Los bloques de abajo multiplican Raw por 100 y limitan el resultado a 0..100 antes de comparar Level con 75, pero nada divide por 4095, así que HighLevel se enciende enseguida. Usted hará que Level sea el nivel en porcentaje, para que HighLevel pase a ON solo cuando Level llegue a 75. Enable sube a los 10 ms y baja a los 110 ms. Después pulse Comprobar.\n",
+        "en": "## Scaling with blocks\n\nAn analog input gives the program **raw counts**, a whole number such as 0 to 2000, and a limit is written in **engineering units**, such as percent or bar. Scaling turns one into the other: multiply the counts by the top of the units, then divide by the top of the counts. In a Function Block Diagram each step of that rule is a block, and the connection from one block to the next carries the number.\n\n| Block  | Inputs     | Output                                           |\n| ------ | ---------- | ------------------------------------------------ |\n| MUL    | IN1, IN2   | the product IN1 × IN2                            |\n| DIV    | IN1, IN2   | IN1 ÷ IN2, the remainder dropped                 |\n| LIMIT  | MN, IN, MX | IN, kept between MN and MX                       |\n| GE, LT | IN1, IN2   | a BOOL: is IN1 more or equal, or less, than IN2? |\n\nThree rules decide whether the result is right. Put the DIV after the MUL, because a whole-number division drops the remainder. Choose DINT connections and constants, because the product, 2000 × 100 in the example below, is far above 32767, the largest INT. And compare the scaled value with the limit, never the raw counts.\n\n## Worked example\n\nA compressed-air tank has a pressure transmitter that gives 0 counts at 0 bar and 2000 counts at 10 bar. A lamp `LowAir` must light while the pressure is below 6.0 bar.\n\nA whole number cannot hold 6.0, but it can hold 60 tenths of a bar. So the diagram scales to tenths, from 0 to 100, and the limit becomes 60:\n\n- a MUL block with `Raw` on IN1 and the DINT constant 100 on IN2;\n- a DIV block with MUL.OUT on IN1 and the DINT constant 2000 on IN2;\n- a LIMIT block with 0 on MN, DIV.OUT on IN and 100 on MX, whose output writes `Pressure`;\n- an LT block with `Pressure` on IN1 and the constant 60 on IN2, whose output writes `LowAir`.\n\nAt 1200 counts the MUL gives 120000, the DIV gives 60 and the lamp goes out. The LIMIT keeps a broken transmitter, which may report more than 2000 counts, from showing more than 10 bar.\n\n```timing\nspan: 5000\nsignals:\n  - { name: Compressor, edges: [500, 3000] }\n  - { name: LowAir, edges: [0, 1800, 3800] }\nmarks:\n  - { from: 1800, to: 3800, label: 'Pressure >= 60' }\ncaption: The lamp follows the scaled pressure, in tenths of a bar, not the raw counts\n```\n\n## Common mistakes\n\n- Placing the DIV before the MUL. The result stays 0 until full scale.\n- Using INT constants or connections. The product of 2000 and 100 does not fit in an INT.\n- Connecting the raw counts to the comparison. 75 counts are not 75 percent.\n- Leaving the LIMIT out, or putting it before the DIV, where it clamps the product instead of the scaled value.\n- Swapping IN1 and IN2 of the DIV, which divides the top of the counts by the product.\n\n## Check yourself\n\n```quiz\nquestion: A diagram connects Raw to MUL with 100, then to LIMIT 0..100, and only then to DIV by 2000. Raw is 300. What reaches the comparison?\noptions:\n  - { text: '0', correct: true, feedback: 'Yes. MUL gives 30000, LIMIT clamps it to 100, and 100 divided by 2000 is 0 with whole numbers.' }\n  - { text: '15', feedback: 'That is what MUL, DIV and LIMIT give in that order. The LIMIT before the DIV clamps the product.' }\n  - { text: '100', feedback: 'That is the output of the LIMIT; the DIV after it still divides by 2000.' }\n```\n\n```quiz\nquestion: Why does a scaled value of 6.0 bar become the constant 60 in the worked example?\noptions:\n  - { text: 'Because the diagram scales to tenths of a bar, and a whole number holds 60 but not 6.0', correct: true, feedback: 'Right. Scaling to a smaller unit keeps a decimal place with whole numbers.' }\n  - { text: 'Because 60 is the raw count at 6.0 bar', feedback: 'The raw count at 6.0 bar is 1200; the comparison uses the scaled value.' }\n  - { text: 'Because LIMIT multiplies by 10', feedback: 'LIMIT only keeps a value inside MN and MX; it does not change it otherwise.' }\n```\n\n## What you will do in the practice\n\nThe scenario sets only BOOL inputs, so the blocks at the top of the starting diagram make their own raw count: Raw grows by 410 counts on each scan while Enable is TRUE, up to 4095. The blocks below multiply Raw by 100 and limit the result to 0..100 before they compare Level with 75, but HighLevel lights at once. You will make Level the level in percent, so that HighLevel turns ON only when Level reaches 75. Enable rises at 10 ms and falls at 110 ms. Then press Check.\n",
+        "es": "## Escalar con bloques\n\nUna entrada analógica le da al programa **cuentas en bruto**, un número entero como 0 a 2000, y un límite se escribe en **unidades de ingeniería**, como porcentaje o bar. El escalado convierte unas en otras: multiplique las cuentas por el tope de las unidades y después divida por el tope de las cuentas. En un diagrama de bloques de función cada paso de esa regla es un bloque, y la conexión de un bloque al siguiente lleva el número.\n\n| Bloque | Entradas   | Salida                                            |\n| ------ | ---------- | ------------------------------------------------- |\n| MUL    | IN1, IN2   | el producto IN1 × IN2                             |\n| DIV    | IN1, IN2   | IN1 ÷ IN2, sin el resto                           |\n| LIMIT  | MN, IN, MX | IN, mantenido entre MN y MX                       |\n| GE, LT | IN1, IN2   | un BOOL: ¿IN1 es mayor o igual, o menor, que IN2? |\n\nTres reglas deciden si el resultado es correcto. Ponga el DIV después del MUL, porque una división de números enteros descarta el resto. Elija conexiones y constantes DINT, porque el producto, 2000 × 100 en el ejemplo que sigue, está muy por encima de 32767, el mayor INT. Y compare con el límite el valor escalado, nunca las cuentas en bruto.\n\n## Ejemplo resuelto\n\nUn tanque de aire comprimido tiene un transmisor de presión que da 0 cuentas a 0 bar y 2000 cuentas a 10 bar. Una lámpara `LowAir` debe encenderse mientras la presión está por debajo de 6,0 bar.\n\nUn número entero no puede guardar 6,0, pero sí 60 décimas de bar. Por eso el diagrama escala a décimas, de 0 a 100, y el límite pasa a ser 60:\n\n- un bloque MUL con `Raw` en IN1 y la constante DINT 100 en IN2;\n- un bloque DIV con MUL.OUT en IN1 y la constante DINT 2000 en IN2;\n- un bloque LIMIT con 0 en MN, DIV.OUT en IN y 100 en MX, cuya salida escribe `Pressure`;\n- un bloque LT con `Pressure` en IN1 y la constante 60 en IN2, cuya salida escribe `LowAir`.\n\nCon 1200 cuentas el MUL da 120000, el DIV da 60 y la lámpara se apaga. El LIMIT impide que un transmisor dañado, que puede informar más de 2000 cuentas, muestre más de 10 bar.\n\n```timing\nspan: 5000\nsignals:\n  - { name: Compressor, edges: [500, 3000] }\n  - { name: LowAir, edges: [0, 1800, 3800] }\nmarks:\n  - { from: 1800, to: 3800, label: 'Pressure >= 60' }\ncaption: La lámpara sigue a la presión escalada, en décimas de bar, no a las cuentas en bruto\n```\n\n## Errores comunes\n\n- Colocar el DIV antes del MUL. El resultado queda en 0 hasta el tope de la escala.\n- Usar constantes o conexiones INT. El producto de 2000 por 100 no cabe en un INT.\n- Conectar las cuentas en bruto a la comparación. 75 cuentas no son el 75 por ciento.\n- Omitir el LIMIT, o ponerlo antes del DIV, donde recorta el producto en lugar del valor escalado.\n- Intercambiar IN1 e IN2 del DIV, que entonces divide el tope de las cuentas por el producto.\n\n## Compruébelo usted\n\n```quiz\nquestion: Un diagrama conecta Raw a MUL con 100, después a LIMIT 0..100, y solo después a DIV por 2000. Raw vale 300. ¿Qué llega a la comparación?\noptions:\n  - { text: '0', correct: true, feedback: 'Sí. MUL da 30000, LIMIT lo recorta a 100, y 100 dividido por 2000 es 0 con números enteros.' }\n  - { text: '15', feedback: 'Eso dan MUL, DIV y LIMIT en ese orden. El LIMIT antes del DIV recorta el producto.' }\n  - { text: '100', feedback: 'Esa es la salida del LIMIT; el DIV que le sigue todavía divide por 2000.' }\n```\n\n```quiz\nquestion: ¿Por qué un valor escalado de 6,0 bar pasa a ser la constante 60 en el ejemplo resuelto?\noptions:\n  - { text: 'Porque el diagrama escala a décimas de bar, y un número entero guarda 60 pero no 6,0', correct: true, feedback: 'Correcto. Escalar a una unidad más pequeña conserva un decimal con números enteros.' }\n  - { text: 'Porque 60 es la cuenta en bruto a 6,0 bar', feedback: 'La cuenta en bruto a 6,0 bar es 1200; la comparación usa el valor escalado.' }\n  - { text: 'Porque LIMIT multiplica por 10', feedback: 'LIMIT solo mantiene un valor entre MN y MX; fuera de eso no lo cambia.' }\n```\n\n## Qué hará en la práctica\n\nEl escenario solo da entradas BOOL, así que los bloques de arriba del diagrama inicial fabrican su propia cuenta en bruto: Raw crece 410 cuentas en cada ciclo mientras Enable está en TRUE, hasta 4095. Los bloques de abajo multiplican Raw por 100 y limitan el resultado a 0..100 antes de comparar Level con 75, pero HighLevel se enciende enseguida. Usted hará que Level sea el nivel en porcentaje, para que HighLevel pase a ON solo cuando Level llegue a 75. Enable sube a los 10 ms y baja a los 110 ms. Después pulse Comprobar.\n",
         "files": {},
         "images": []
       }
@@ -13152,7 +13152,7 @@
     },
     {
       "id": "types-arithmetic-comparison-fbd",
-      "version": 5,
+      "version": 6,
       "order": 89,
       "module": 4,
       "level": "intermediate",
@@ -13301,7 +13301,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "Total is an INT, so Total + 5 is an INT. SEL gives IN0 while G is FALSE and IN1 while G is TRUE, and R_TRIG.Q is TRUE for one scan on each rising edge."
+              "text": "Look at what reaches IN0 of the SEL block that clears Total: Total itself, so nothing ever adds to it. Total is an INT, so Total + 5 is an INT, and an R_TRIG block turns a press into a pulse of one scan."
             },
             {
               "level": 2,
@@ -13361,7 +13361,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "Total es un INT, así que Total + 5 es un INT. SEL da IN0 mientras G es FALSE e IN1 mientras G es TRUE, y R_TRIG.Q es TRUE durante un ciclo en cada flanco ascendente."
+              "text": "Mire qué llega a IN0 del bloque SEL que borra Total: el propio Total, así que nada le suma nunca. Total es un INT, así que Total + 5 es un INT, y un bloque R_TRIG convierte una pulsación en un pulso de un ciclo."
             },
             {
               "level": 2,
@@ -13382,7 +13382,7 @@
     },
     {
       "id": "types-arithmetic-comparison-il",
-      "version": 5,
+      "version": 6,
       "order": 90,
       "module": 4,
       "level": "intermediate",
@@ -13494,7 +13494,7 @@
             {
               "key": "objective",
               "title": "Objective",
-              "body": "In src/TypedSteps.il the three comparisons at the end are written: LD Total loads the INT, LT 10 compares it and leaves a BOOL, and ST Low stores it. Write the arithmetic above them: on each rising edge of Step (Step ON now and StepWas OFF on the previous scan) add 5 to Total, and while Reset is TRUE set Total to 0.",
+              "body": "In src/TypedSteps.il the three comparisons at the end are written: LD Total loads the INT, LT 10 compares it and leaves a BOOL, and ST Low stores it. Write the arithmetic above them: on each rising edge of Step add 5 to Total, and while Reset is TRUE set Total to 0.",
               "checkpoint": "Total goes 0, 5, 10, 15, and the three outputs show which band it is in."
             },
             {
@@ -13531,7 +13531,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "Total is an INT, and ADD on an INT in the current result keeps it an INT. Compute the rising edge first, Step now and not StepWas, and jump over the addition with JMPCN when it is FALSE. Store Step in StepWas only after that condition, and clear Total with a second jump on Reset."
+              "text": "Look at the first lines: StepWas takes the value of Step before any condition could read the value of the previous scan, and no line loads Total or adds to it. ADD on an INT in the current result keeps it an INT, and JMPCN jumps over lines when the current result is FALSE."
             },
             {
               "level": 2,
@@ -13554,8 +13554,8 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/TypedSteps.il están escritas las tres comparaciones del final: LD Total carga el INT, LT 10 lo compara y deja un BOOL, y ST Low lo guarda. Escriba la aritmética encima: en cada flanco ascendente de Step (Step en ON ahora y StepWas en OFF en el ciclo anterior) sume 5 a Total, y mientras Reset sea TRUE ponga Total en 0.",
-              "checkpoint": "Total pasa por 0, 5, 10, 15, y las tres salidas muestran en qué cinta está."
+              "body": "En src/TypedSteps.il están escritas las tres comparaciones del final: LD Total carga el INT, LT 10 lo compara y deja un BOOL, y ST Low lo guarda. Escriba la aritmética encima: en cada flanco ascendente de Step sume 5 a Total, y mientras Reset sea TRUE ponga Total en 0.",
+              "checkpoint": "Total pasa por 0, 5, 10, 15, y las tres salidas muestran en qué rango está."
             },
             {
               "key": "predict",
@@ -13591,7 +13591,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "Total es un INT, y ADD sobre un INT en el resultado actual lo mantiene como INT. Calcule primero el flanco ascendente, Step ahora y no StepWas, y salte por encima de la suma con JMPCN cuando sea FALSE. Guarde Step en StepWas solo después de esa condición, y borre Total con un segundo salto según Reset."
+              "text": "Mire las primeras líneas: StepWas toma el valor de Step antes de que ninguna condición pueda leer el valor del ciclo anterior, y ninguna línea carga Total ni le suma. ADD sobre un INT en el resultado actual lo mantiene como INT, y JMPCN salta líneas cuando el resultado actual es FALSE."
             },
             {
               "level": 2,

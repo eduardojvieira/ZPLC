@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starter divides before it multiplies, so the integer division Raw / 1000 gives 0 until Raw reaches 1000 and the percentage stays at 0. Change the scaling so that Percent is the right percentage of Raw at every step, not only at full scale. Leave the stand-in for Raw and the two comparisons as they are.",
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starter keeps Percent at 0 until Raw reaches 1000, so Warn and Alarm stay OFF while Raw rises and turn ON together at full scale. Change the scaling so that Percent is the right percentage of Raw at every step, not only at full scale. Leave the stand-in for Raw and the two comparisons as they are.",
       "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Integer division gives a whole number: 500 / 1000 is 0. Which operation should come first so that the remainder is not lost?"
+      "text": "Look at the line that writes Percent and work it out by hand for Raw = 500, with whole numbers only: an integer division drops the remainder, so 500 / 1000 is 0."
     },
     {
       "level": 2,
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "The starter divides before it multiplies, so the integer division Raw / 1000 gives 0 until Raw reaches 1000 and the percentage stays at 0."
+    "The starter keeps Percent at 0 until Raw reaches 1000, so Warn and Alarm stay OFF while Raw rises and turn ON together at full scale."
   ]
 }
