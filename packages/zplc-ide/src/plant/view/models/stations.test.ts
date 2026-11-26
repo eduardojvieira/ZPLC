@@ -415,7 +415,7 @@ describe('machining centre models (VIS-014)', () => {
 });
 
 describe('stacker crane, rack and fork (C10)', () => {
-  it('C10 in stacker-crane-warehouse the mast stands between two upright frames of the rack all along the aisle, no taller than it', async () => {
+  it('C10 warehouse: the mast stands between two rack frames at every bay, no taller than the rack', async () => {
     const core = await createPlantCore(warehouse as unknown as PlantSceneFile);
     cores.push(core);
     const parts = core.snapshot().parts;
@@ -450,7 +450,7 @@ describe('stacker crane, rack and fork (C10)', () => {
     expect(where).toEqual([]);
   });
 
-  it('C10 no operator device of stacker-crane-warehouse meets the crane, its mast, carriage or fork anywhere along their travel', async () => {
+  it('C10 warehouse: no operator device meets the crane, mast, carriage or fork along their travel', async () => {
     const core = await createPlantCore(warehouse as unknown as PlantSceneFile);
     cores.push(core);
     const parts = core.snapshot().parts;

@@ -363,7 +363,7 @@ describe('operator devices in their scenes (C10)', () => {
     expect(far).toEqual([]);
   });
 
-  it('C10 in the opening view of stacker-crane-warehouse no operator device stands in front of the infeed or the outfeed belt', async () => {
+  it('C10 stacker-crane-warehouse opening view: no operator device stands in front of a belt', async () => {
     const scene = JSON.parse(
       readFileSync(join(import.meta.dir, '../../../../plant-scenes/stacker-crane-warehouse/scene.json'), 'utf8'),
     ) as PlantSceneFile;
