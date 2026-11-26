@@ -12,7 +12,7 @@ import { partColour } from '../look';
 import { modelBounds, partModel, pieceExtent } from './index';
 import { beltToSensor, bottom, shown, slot, top } from './models.fixtures';
 import type { Piece } from './shared';
-import { sensorMount, SENSORS } from './sensors';
+import { LIMIT_SWITCH, sensorMount, SENSORS } from './sensors';
 
 const plant = beltToSensor();
 const SCENES = join(import.meta.dir, '../../../../plant-scenes');
@@ -220,6 +220,36 @@ describe('scale (VIS-014, VIS-016)', () => {
     const heavy = { ...view('scale'), signals: { ...view('scale').signals, 'Scale1.weight': 187.25 } };
     expect(readout(model(heavy), 'digit-', 5)).toBe('187.25');
   });
+
+  it(
+    'VIS-016 the scale stable signal lights a prominent top beacon and front status band comparable to the diffuse sensor ' + 'lamp',
+    async () => {
+      const { view, model } = await open('weight-sorting');
+      const base = view('scale');
+      const unstable = model({ ...base, signals: { ...base.signals, 'Scale1.weight': 12.5, 'Scale1.stable': false } });
+      const settled = model({ ...base, signals: { ...base.signals, 'Scale1.weight': 12.5, 'Scale1.stable': true } });
+      expect(readout(unstable, 'digit-', 5)).toBe(' 12.50');
+      expect(readout(settled, 'digit-', 5)).toBe(' 12.50');
+
+      expect(slot(unstable, 'stable').role).toBe('lampOff');
+      expect(slot(settled, 'stable').role).toBe('lamp');
+      const beaconOff = slot(unstable, 'stable-beacon');
+      const beaconOn = slot(settled, 'stable-beacon');
+      expect(beaconOff).toBeDefined();
+      expect(beaconOn).toBeDefined();
+      expect(beaconOff.role).toBe('lampOff');
+      expect(beaconOn.role).toBe('lamp');
+      expect(bottom(beaconOn)).toBeGreaterThanOrEqual(top(slot(settled, 'indicator')) - 1e-9);
+
+      // Front status band (>= 0.16 m wide x >= 0.02 m tall) plus top beacon meet and exceed the diffuse sensor lamp benchmark.
+      const [sx, sy] = pieceExtent(slot(settled, 'stable'));
+      expect(2 * sx).toBeGreaterThanOrEqual(0.16);
+      expect(2 * sy).toBeGreaterThanOrEqual(0.02);
+      const [bx, by, bz] = pieceExtent(beaconOn);
+      expect(4 * bx * bz).toBeGreaterThanOrEqual(0.003);
+      expect(4 * sx * sy + 4 * bx * by).toBeGreaterThanOrEqual(0.004);
+    },
+  );
 });
 
 describe('vision sensor (VIS-014, VIS-016)', () => {
@@ -323,6 +353,38 @@ describe('limit switch (VIS-014, VIS-016)', () => {
       return [arm.at[0] - h * Math.cos(a), arm.at[2] + h * Math.sin(a)];
     };
     pivot(made).forEach((v, i) => expect(v).toBeCloseTo(pivot(free)[i]!, 9));
+  });
+
+  it('VIS-016 a limit switch swings at least 45 degrees with a bright tip flag and lights a scene-scale lamp and bezel', async () => {
+    expect(LIMIT_SWITCH.swing).toBeGreaterThanOrEqual((45 * Math.PI) / 180);
+    const { core, view, model } = await open(beside);
+    const free = model(view('lim'));
+    expect(slot(free, 'lamp').role).toBe('lampOff');
+    expect(slot(free, 'bezel').role).toBe('lampOff');
+    const freeFlag = slot(free, 'flag');
+    expect(freeFlag).toBeDefined();
+    expect(freeFlag.role).toBe('mark');
+
+    core.act('Lim1', 'stuckOn');
+    core.advance(5);
+    const made = model(view('lim'));
+    const armMade = slot(made, 'arm');
+    const angle = armMade.q ? 2 * Math.atan2(armMade.q[1], armMade.q[3]) : armMade.yaw;
+    expect(Math.abs(angle * (180 / Math.PI))).toBeGreaterThanOrEqual(45);
+    expect(2 * pieceExtent(armMade)[1]).toBeGreaterThanOrEqual(0.01);
+
+    const madeFlag = slot(made, 'flag');
+    expect(Math.hypot(madeFlag.at[0] - freeFlag.at[0], madeFlag.at[2] - freeFlag.at[2])).toBeGreaterThanOrEqual(0.1);
+
+    // Lamp and glowing bezel match the diffuse sensor scene-visibility benchmark.
+    const lamp = slot(made, 'lamp');
+    const bezel = slot(made, 'bezel');
+    expect(lamp.role).toBe('lamp');
+    expect(bezel.role).toBe('lamp');
+    const [lx, , lz] = pieceExtent(lamp);
+    expect(4 * lx * lz).toBeGreaterThanOrEqual(0.0015);
+    const [bx, by] = pieceExtent(bezel);
+    expect(4 * bx * by).toBeGreaterThanOrEqual(0.001);
   });
 });
 

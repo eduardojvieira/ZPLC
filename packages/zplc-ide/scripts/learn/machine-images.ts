@@ -4,10 +4,10 @@
  *   bun scripts/learn/machine-images.ts [--out <dir>] [--scenes a,b]
  *
  * For each scene of plant-scenes/ (all of them by default) it draws the first view of the scene with the plant renderer, at the medium
- * level, in light mode, 1280 x 720, and sets a label beside the frame for each part, with its name, its kind and its wired signals,
+ * level, in light mode, 960 x 540, and sets a label around the frame for each part, with its name, its kind and its wired signals,
  * joined to the part by a leader line: `<out>/<scene>/machine.en.png` and `machine.es.png`, and `machine.layout.json` with where
- * each part and each label is. It exits 1 if a scene has missing text or a label overlaps another, leaves the image or covers
- * the frame. The default `<out>` is the review folder .cache/claude-ux-review/course/machine-pages of the repository.
+ * each part and each label is. It exits 1 if a scene has missing text, a label overlaps another, leaves the image or covers
+ * the frame, or text shrinks below 12 px at reading-column width. The default `<out>` is .cache/claude-ux-review/course/machine-pages.
  *
  * Like scripts/plant/capture.ts it starts the development server and an application window with software GL (SwiftShader,
  * headless), and the page draws with scripts/plant/stage.ts. Evidence level: the renderer and the plant core in a page of the
@@ -19,7 +19,18 @@ import { fileURLToPath } from 'node:url';
 
 import { trustedDevelopmentRendererUrl } from '../../electron/security';
 import { assert, Cdp, drain, freePort, HOST, packageRoot, stop, waitFor, type OwnedProcess } from '../run-desktop-smoke';
-import { crossings, layoutProblems, type LabelLayout } from './labelLayout';
+import {
+  COMPACT_COLUMN_WIDTH_PX,
+  FRAME_HEIGHT,
+  FRAME_WIDTH,
+  LEGEND_FONT_PX,
+  LINE_FONT_PX,
+  MIN_DISPLAY_TEXT_PX,
+  crossings,
+  effectiveLabelTextPx,
+  layoutProblems,
+  type LabelLayout,
+} from './labelLayout';
 import { LEGEND, LOCALES, machineRows, partLabels, readMachine, SCENES_DIR } from './machinePage';
 
 const flag = (name: string): string | undefined => {
@@ -106,7 +117,7 @@ await withWindow(async (page) => {
     const pages = Object.fromEntries(
       LOCALES.map((locale) => [locale, { title: names[locale]!.name, legend: LEGEND[locale], labels: partLabels(rows, locale) }]),
     );
-    const spec = { scene: id, width: 1280, height: 720, pages };
+    const spec = { scene: id, width: FRAME_WIDTH, height: FRAME_HEIGHT, pages };
     const shot = (await page.evaluate(`import('/scripts/learn/labelShot.ts').then((m) => m.machineShot(${JSON.stringify(spec)}))`)) as Shot;
     mkdirSync(join(out, id), { recursive: true });
     const layouts: Record<string, unknown> = {};
@@ -115,6 +126,9 @@ await withWindow(async (page) => {
       writeFileSync(join(out, id, `machine.${locale}.png`), Buffer.from(png.slice(png.indexOf(',') + 1), 'base64'));
       images++;
       for (const problem of layoutProblems(layout)) problems.push(`${id} ${locale}: ${problem}`);
+      const renderedPx = effectiveLabelTextPx(layout.width, COMPACT_COLUMN_WIDTH_PX, Math.min(LINE_FONT_PX, LEGEND_FONT_PX));
+      if (renderedPx < MIN_DISPLAY_TEXT_PX)
+        problems.push(`${id} ${locale}: label text is ${renderedPx.toFixed(1)} px at ${COMPACT_COLUMN_WIDTH_PX} px width (< 12 px)`);
       for (const [part, at] of Object.entries(anchors)) if (!at) problems.push(`${id}: part ${part} has no position on the frame`);
       layouts[locale] = {
         width: layout.width,
