@@ -18,6 +18,9 @@ const ROOT = resolve(import.meta.dir, '../../../..');
 const GOLDEN = join(import.meta.dir, 'golden', 'st-golden.json');
 const SCANNED = ['packages/zplc-ide/lessons', 'packages/zplc-ide/projects', 'conformance/lng', 'tools/hil'];
 
+/** Files that were refused only because FBD did not place a standard function: D-37 turns them into diagrams that translate. */
+const NOW_TRANSLATED = new Set(['conformance/lng/lng-002-fbd-function-not-translated.fbd.json']);
+
 interface Entry {
   sha256: string;
   success: boolean;
@@ -179,6 +182,11 @@ describe('LNG-029, LNG-030: the ST of every existing diagram and rung is identic
 
   for (const [key, value] of Object.entries(golden)) {
     it(key, () => {
+      if (NOW_TRANSLATED.has(key)) {
+        // it was refused because FBD placed no SQRT; by D-37 it translates now, and nothing that translated before changes
+        expect([value.success, now[key]?.success]).toEqual([false, true]);
+        return;
+      }
       expect(now[key]?.text).toBe(value.text);
       expect(now[key]?.sha256).toBe(value.sha256);
     });
