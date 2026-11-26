@@ -2,7 +2,9 @@ import { afterEach, describe, expect, it, mock } from 'bun:test';
 import { projectLoaderStub } from '../test/projectLoaderStub';
 
 await mock.module('../utils/projectLoader', () => projectLoaderStub());
-const { checkOpenFiles, followExternalChange, restoreExternal, showChanges, useExternalConflicts } = await import('./externalChangeWatch');
+const { checkOpenFiles, followExternalChange, resolveConflict, restoreExternal, showChanges, useExternalConflicts } =
+  await import('./externalChangeWatch');
+const { saveProjectScene } = await import('../plant/persistence/sceneFiles');
 const { useIDEStore } = await import('./useIDEStore');
 const { useProjectSources } = await import('./projectSources');
 const { useProjectTests } = await import('../projectTests/useProjectTests');
@@ -195,10 +197,27 @@ describe('Studio follows external edits (AIX-012)', () => {
       await followExternalChange({ paths: ['tests/run.scenario.json'], overflow: false });
       expect(refresh).toHaveBeenCalledTimes(1);
 
-      // Unsaved Project Settings are never replaced.
+      // Unsaved Project Settings are never replaced: the conflict prompt asks, with both versions to compare.
       useIDEStore.setState({ projectConfig: config, projectName: config.name, projectConfigDirty: true });
       await followExternalChange({ paths: ['zplc.json'], overflow: false });
       expect(useIDEStore.getState().projectConfig?.name).toBe(config.name);
+      const [conflict] = useExternalConflicts.getState().conflicts;
+      expect(conflict?.path).toBe('zplc.json');
+      expect(conflict?.name).toBe('zplc.json');
+      expect(conflict?.disk).toContain('"name": "Renamed outside"');
+      expect(conflict?.settings?.mine).toBe(JSON.stringify(config, null, 2));
+
+      resolveConflict('zplc.json', 'mine');
+      expect(useIDEStore.getState().projectConfig?.name).toBe(config.name);
+      expect(useIDEStore.getState().projectConfigDirty).toBe(true);
+      expect(useExternalConflicts.getState().conflicts).toEqual([]);
+
+      await followExternalChange({ paths: ['zplc.json'], overflow: false });
+      resolveConflict('zplc.json', 'disk');
+      expect(useIDEStore.getState().projectConfig?.name).toBe('Renamed outside');
+      expect(useIDEStore.getState().projectName).toBe('Renamed outside');
+      expect(useIDEStore.getState().projectConfigDirty).toBe(false);
+      expect(useExternalConflicts.getState().conflicts).toEqual([]);
     } finally {
       useProjectTests.setState({ refresh: realRefresh });
       useIDEStore.setState({ projectConfig: null, projectConfigDirty: false, directoryHandle: null, isProjectOpen: false });
@@ -226,5 +245,53 @@ describe('Studio follows external edits (AIX-012)', () => {
     expect(useExternalConflicts.getState().notices).toEqual([]);
     expect(useExternalConflicts.getState().conflicts).toEqual([]);
     expect(drive()?.content).toBe('x := 5;');
+  });
+});
+
+describe('what an outside change leaves behind (AIX-012)', () => {
+  const realRefreshFileTree = useIDEStore.getState().refreshFileTree;
+  afterEach(() =>
+    useIDEStore.setState({ refreshFileTree: realRefreshFileTree, directoryHandle: null, isProjectOpen: false, compilerMessages: [] }),
+  );
+
+  it('clears the compiler markers of an open file reloaded from outside, and keeps those of the other files', async () => {
+    const { file, handle } = diskFile('x := 1;');
+    const at = (path: string) => ({ type: 'error', message: 'bad', file: path, line: 3, column: 1, timestamp: new Date(0) });
+    useIDEStore.setState({
+      refreshFileTree: async () => undefined,
+      loadedFiles: new Map([loaded(ID, 'src/Drive.st', 'x := 1;', handle)]) as never,
+      compilerMessages: [at('src/Drive.st'), at('src/Other.st')] as never,
+    });
+    const runId = useIDEStore.getState().compilerRunId;
+    file.text = 'x := 2;';
+    await followExternalChange({ paths: ['src/Drive.st'], overflow: false });
+    expect(drive()?.content).toBe('x := 2;');
+    expect(useIDEStore.getState().compilerMessages.map((message) => message.file)).toEqual(['src/Other.st']);
+    expect(useIDEStore.getState().compilerRunId).toBe(runId + 1);
+  });
+
+  it('a scene the plant panel saves is its own write: no notice and no reload; an outside write still reloads', async () => {
+    const files = new Map<string, string>();
+    const root = {
+      getFileHandle: async (name: string) => {
+        if (!files.has(name)) files.set(name, '');
+        return {
+          getFile: async () => ({ size: files.get(name)!.length, text: async () => files.get(name)! }),
+          createWritable: async () => ({ write: async (text: string) => void files.set(name, text), close: async () => undefined }),
+        };
+      },
+    };
+    useIDEStore.setState({ refreshFileTree: async () => undefined, directoryHandle: root as never, isProjectOpen: true });
+    const before = usePlantDocument.getState().sceneRevision;
+
+    await saveProjectScene(root as never, { name: 'line' } as never, '{"map":1}');
+    await followExternalChange({ paths: ['scene.json', 'plant-map.json'], overflow: false });
+    expect(usePlantDocument.getState().sceneRevision).toBe(before);
+    expect(useExternalConflicts.getState().notices).toEqual([]);
+
+    files.set('scene.json', '{"name":"outside"}');
+    await followExternalChange({ paths: ['scene.json'], overflow: false });
+    expect(usePlantDocument.getState().sceneRevision).toBe(before + 1);
+    expect(useExternalConflicts.getState().notices).toEqual([{ path: 'scene.json', name: 'scene.json', kind: 'plant' }]);
   });
 });

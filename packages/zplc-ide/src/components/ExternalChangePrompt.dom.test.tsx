@@ -104,4 +104,30 @@ describe('the notice of a file replaced from outside (AIX-012, bar criterion AI-
     // Comparing decides nothing: the buffer stays as the person left it.
     expect(useIDEStore.getState().loadedFiles.get(ID)?.content).toBe('x := 9;');
   });
+
+  it('unsaved project settings changed on disk are compared and kept or loaded through the same prompt', async () => {
+    const { useIDEStore: store } = await import('../store/useIDEStore');
+    const mine = { name: 'Mine' } as never;
+    const disk = { name: 'Disk' } as never;
+    store.setState({ projectConfig: mine, projectName: 'Mine', projectConfigDirty: true });
+    useExternalConflicts.setState({
+      conflicts: [
+        {
+          path: 'zplc.json',
+          name: 'zplc.json',
+          disk: JSON.stringify(disk, null, 2),
+          settings: { mine: JSON.stringify(mine, null, 2), config: disk },
+        },
+      ],
+    });
+    const { user } = dom.render(<ExternalChangePrompt />);
+    await user.click(dom.screen.getByRole('button', { name: dom.t('studio.notice.compareLabel', { name: 'zplc.json' }) }));
+    const lines = [...dom.screen.getByRole('dialog').querySelectorAll('[data-diff-line]')].map((line) => line.textContent);
+    expect(lines).toContain('-   "name": "Mine"');
+    expect(lines).toContain('+   "name": "Disk"');
+    await user.click(dom.screen.getByRole('button', { name: dom.t('externalChange.loadLabel', { name: 'zplc.json' }) }));
+    expect(store.getState().projectName).toBe('Disk');
+    expect(store.getState().projectConfigDirty).toBe(false);
+    store.setState({ projectConfig: null, projectName: '', projectConfigDirty: false });
+  });
 });
