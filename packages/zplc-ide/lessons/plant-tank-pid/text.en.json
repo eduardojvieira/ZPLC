@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Pid(SP := SetM, PV := LevelM, KP := 400.0, KI := 0.0, KD := 0.0, DT := 0.01, OUT_MIN := 0.0, OUT_MAX := 100.0); FillCmd := Pid.OUT; With KP at 100.0 the drain leaves the level under the band; 400.0 holds it."
+      "text": "Look at what PID_Compact needs: the set point and the process value in the same unit, the three gains, the scan time DT and the output limits; its output OUT is the opening of the inlet. With KP at 100.0 the drain leaves the level under the band; 400.0 holds it."
     },
     {
       "level": 2,
-      "text": "The reference tuning is KP := 800.0, KI := 10.0, KD := 150.0: a large KP holds the level under the drain, KI slowly removes the offset and KD stops the integral term from making the level overshoot. Then DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
+      "text": "Pid(SP := SetM, PV := LevelM, KP := 800.0, KI := 10.0, KD := 150.0, DT := 0.01, OUT_MIN := 0.0, OUT_MAX := 100.0); FillCmd := Pid.OUT; is the reference tuning: a large KP holds the level under the drain, KI slowly removes the offset and KD stops the integral term from making the level overshoot. Then DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
     }
   ],
   "faultCases": ["The starter never calls the loop: FillCmd stays at 0 percent and the tank stays empty."]

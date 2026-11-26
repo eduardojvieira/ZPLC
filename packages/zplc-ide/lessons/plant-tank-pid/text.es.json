@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Pid(SP := SetM, PV := LevelM, KP := 400.0, KI := 0.0, KD := 0.0, DT := 0.01, OUT_MIN := 0.0, OUT_MAX := 100.0); FillCmd := Pid.OUT; Con KP en 100.0 el vaciado deja el nivel por debajo de la banda; con 400.0 se mantiene."
+      "text": "Mire qué necesita PID_Compact: la consigna y la variable de proceso en la misma unidad, las tres ganancias, el tiempo de ciclo DT y los límites de la salida; su salida OUT es la apertura de la entrada. Con KP en 100.0 el vaciado deja el nivel por debajo de la banda; con 400.0 se mantiene."
     },
     {
       "level": 2,
-      "text": "El ajuste de referencia es KP := 800.0, KI := 10.0, KD := 150.0: un KP grande mantiene el nivel frente al vaciado, KI quita despacio el desvío y KD evita que el término integral haga que el nivel se pase. Luego DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
+      "text": "Pid(SP := SetM, PV := LevelM, KP := 800.0, KI := 10.0, KD := 150.0, DT := 0.01, OUT_MIN := 0.0, OUT_MAX := 100.0); FillCmd := Pid.OUT; es el ajuste de referencia: un KP grande mantiene el nivel frente al vaciado, KI quita despacio el desvío y KD evita que el término integral haga que el nivel se pase. Luego DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
     }
   ],
   "faultCases": ["El código inicial nunca llama al lazo: FillCmd se queda en 0 por ciento y el tanque permanece vacío."]

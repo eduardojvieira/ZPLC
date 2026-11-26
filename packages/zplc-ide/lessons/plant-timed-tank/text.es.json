@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "El código inicial no tiene lógica: ninguna válvula se abre nunca, así que el ciclo no se ejecuta. Declara las entradas y las salidas. Mantenga un número de paso (0 reposo, 1 llenado, 2 espera, 3 vaciado), un TON para cada paso temporizado, y escriba las salidas a partir del paso al final del programa. El llenado dura 3,5 segundos: un TON con PT := T#3500ms.",
+      "body": "El código inicial no tiene lógica: ninguna válvula se abre nunca, así que el ciclo no se ejecuta. Declara las entradas y las salidas. Mantenga un número de paso (0 reposo, 1 llenado, 2 espera, 3 vaciado), un TON para cada paso temporizado, y escriba las salidas a partir del paso al final del programa. El llenado dura 3,5 segundos.",
       "checkpoint": "El programa tiene una variable de paso, tres temporizadores y una asignación para cada salida."
     },
     {
@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Cada temporizador lo arranca su paso: FillT(IN := Step = 1, PT := T#3500ms). Cuando su Q es TRUE, pase al paso siguiente."
+      "text": "Mire los pasos del objetivo de uno en uno: cada paso temporizado hace correr su propio temporizador solo mientras es el paso activo, y el paso termina cuando ese temporizador acaba."
     },
     {
       "level": 2,
-      "text": "Empiece con IF NOT EStopOk THEN Step := 0; ELSIF Step = 0 AND Start THEN Step := 1; END_IF; y luego un bloque para cada paso: HoldT para dos segundos, DrainT para veinte segundos con la condición de salida LevelLow OR DrainT.Q. Por último Fill := Step = 1; Drain := Step = 3; Amber := Step <> 0; Red := NOT EStopOk, y Green es TRUE tras un ciclo terminado."
+      "text": "Empiece con IF NOT EStopOk THEN Step := 0; ELSIF Step = 0 AND Start THEN Step := 1; END_IF; y luego un bloque para cada paso: FillT(IN := Step = 1, PT := T#3500ms) y el paso a 2 cuando FillT.Q es TRUE, HoldT para dos segundos, DrainT para veinte segundos con la condición de salida LevelLow OR DrainT.Q. Por último Fill := Step = 1; Drain := Step = 3; Amber := Step <> 0; Red := NOT EStopOk, y Green es TRUE tras un ciclo terminado."
     }
   ],
   "faultCases": ["El código inicial no tiene lógica: ninguna válvula se abre nunca, así que el ciclo no se ejecuta."]

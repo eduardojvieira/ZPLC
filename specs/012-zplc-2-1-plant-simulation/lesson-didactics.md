@@ -10,7 +10,7 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 - `order`: 0 of 111 lessons break it
 - `glossary`: 25 of 111 lessons break it
 - `reading-parts`: 7 of 111 lessons break it
-- `answer`: 8 of 111 lessons break it
+- `answer`: 5 of 111 lessons break it
 - `grows`: 14 of 111 lessons break it
 - `scope`: 13 of 111 lessons break it
 - `machine`: 0 of 111 lessons break it
@@ -92,11 +92,11 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 | 72 | `plant-latch-two-sensors-ladder` | 12 | LD | 20 | no |  | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 73 | `plant-counted-queue` | 12 | ST | 30 | no | 15 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 74 | `plant-counted-queue-ladder` | 12 | LD | 30 | no |  | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 75 | `plant-timed-tank` | 13 | ST | 30 | no | 32 | 0 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | FillT(IN:=Step=1,PT:=T#3500ms) (en), FillT(IN:=Step=1,PT:=T#3500ms) (es) | ok | ok | ok |
+| 75 | `plant-timed-tank` | 13 | ST | 30 | no | 32 | 0 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
 | 76 | `plant-timed-tank-ladder` | 13 | LD | 30 | no |  | 0 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
-| 77 | `plant-tank-level-scaling` | 13 | ST | 30 | no | 16 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | LevelM:=INT_TO_REAL(LevelRaw)/27648.0; (en), SetM:=INT_TO_REAL(SetPointRaw)/1000.0; (en), LevelM:=INT_TO_REAL(LevelRaw)/27648.0 (en), INT_TO_REAL(LevelRaw)/27648.0 (en), SetM:=INT_TO_REAL(SetPointRaw)/1000.0 (en), INT_TO_REAL(SetPointRaw)/1000.0 (en), LevelM:=INT_TO_REAL(LevelRaw)/27648.0; (es), SetM:=INT_TO_REAL(SetPointRaw)/1000.0; (es), LevelM:=INT_TO_REAL(LevelRaw)/27648.0 (es), INT_TO_REAL(LevelRaw)/27648.0 (es), SetM:=INT_TO_REAL(SetPointRaw)/1000.0 (es), INT_TO_REAL(SetPointRaw)/1000.0 (es) | ok | ok | ok |
+| 77 | `plant-tank-level-scaling` | 13 | ST | 30 | no | 16 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 78 | `plant-tank-level-scaling-ladder` | 13 | LD | 30 | no |  | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 79 | `plant-tank-pid` | 13 | ST | 40 | no | 8 | 2 | yes | yes | no en, es | ok | ok | ok | ok | ok | FillCmd:=Pid.OUT; (en), FillCmd:=Pid.OUT (en), FillCmd:=Pid.OUT; (es), FillCmd:=Pid.OUT (es) | ok | ok | ok |
+| 79 | `plant-tank-pid` | 13 | ST | 40 | no | 8 | 2 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 80 | `plant-tank-pid-fbd` | 13 | FBD | 40 | no |  | 20 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 81 | `plant-buffer-release` | 14 | SFC | 45 | no |  | 2 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
 | 82 | `plant-merge-lines` | 14 | ST | 45 | no | 55 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |

@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "The starter has no logic: no valve ever opens, so the cycle never runs. It declares the inputs and outputs. Keep a step number (0 idle, 1 fill, 2 hold, 3 drain), one TON for each timed step, and write the outputs from the step at the end of the program. The fill lasts 3.5 seconds: a TON with PT := T#3500ms.",
+      "body": "The starter has no logic: no valve ever opens, so the cycle never runs. It declares the inputs and outputs. Keep a step number (0 idle, 1 fill, 2 hold, 3 drain), one TON for each timed step, and write the outputs from the step at the end of the program. The fill lasts 3.5 seconds.",
       "checkpoint": "The program has a step variable, three timers and one assignment for each output."
     },
     {
@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Each timer is started by its step: FillT(IN := Step = 1, PT := T#3500ms). When its Q is TRUE, move to the next step."
+      "text": "Look at the steps of the objective one at a time: each timed step runs its own timer only while it is the active step, and the step ends when that timer is done."
     },
     {
       "level": 2,
-      "text": "Start with IF NOT EStopOk THEN Step := 0; ELSIF Step = 0 AND Start THEN Step := 1; END_IF; then one block for each step: HoldT for two seconds, DrainT for twenty seconds with the exit condition LevelLow OR DrainT.Q. Finally Fill := Step = 1; Drain := Step = 3; Amber := Step <> 0; Red := NOT EStopOk, and Green is TRUE after a finished cycle."
+      "text": "Start with IF NOT EStopOk THEN Step := 0; ELSIF Step = 0 AND Start THEN Step := 1; END_IF; then one block for each step: FillT(IN := Step = 1, PT := T#3500ms) and the move to step 2 when FillT.Q is TRUE, HoldT for two seconds, DrainT for twenty seconds with the exit condition LevelLow OR DrainT.Q. Finally Fill := Step = 1; Drain := Step = 3; Amber := Step <> 0; Red := NOT EStopOk, and Green is TRUE after a finished cycle."
     }
   ],
   "faultCases": ["The starter has no logic: no valve ever opens, so the cycle never runs."]

@@ -14227,7 +14227,7 @@
     },
     {
       "id": "plant-timed-tank",
-      "version": 2,
+      "version": 3,
       "order": 131,
       "module": 13,
       "level": "advanced",
@@ -14352,7 +14352,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "The starter has no logic: no valve ever opens, so the cycle never runs. It declares the inputs and outputs. Keep a step number (0 idle, 1 fill, 2 hold, 3 drain), one TON for each timed step, and write the outputs from the step at the end of the program. The fill lasts 3.5 seconds: a TON with PT := T#3500ms.",
+              "body": "The starter has no logic: no valve ever opens, so the cycle never runs. It declares the inputs and outputs. Keep a step number (0 idle, 1 fill, 2 hold, 3 drain), one TON for each timed step, and write the outputs from the step at the end of the program. The fill lasts 3.5 seconds.",
               "checkpoint": "The program has a step variable, three timers and one assignment for each output."
             },
             {
@@ -14377,11 +14377,11 @@
           "hints": [
             {
               "level": 1,
-              "text": "Each timer is started by its step: FillT(IN := Step = 1, PT := T#3500ms). When its Q is TRUE, move to the next step."
+              "text": "Look at the steps of the objective one at a time: each timed step runs its own timer only while it is the active step, and the step ends when that timer is done."
             },
             {
               "level": 2,
-              "text": "Start with IF NOT EStopOk THEN Step := 0; ELSIF Step = 0 AND Start THEN Step := 1; END_IF; then one block for each step: HoldT for two seconds, DrainT for twenty seconds with the exit condition LevelLow OR DrainT.Q. Finally Fill := Step = 1; Drain := Step = 3; Amber := Step <> 0; Red := NOT EStopOk, and Green is TRUE after a finished cycle."
+              "text": "Start with IF NOT EStopOk THEN Step := 0; ELSIF Step = 0 AND Start THEN Step := 1; END_IF; then one block for each step: FillT(IN := Step = 1, PT := T#3500ms) and the move to step 2 when FillT.Q is TRUE, HoldT for two seconds, DrainT for twenty seconds with the exit condition LevelLow OR DrainT.Q. Finally Fill := Step = 1; Drain := Step = 3; Amber := Step <> 0; Red := NOT EStopOk, and Green is TRUE after a finished cycle."
             }
           ],
           "faultCases": [
@@ -14412,7 +14412,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "El código inicial no tiene lógica: ninguna válvula se abre nunca, así que el ciclo no se ejecuta. Declara las entradas y las salidas. Mantenga un número de paso (0 reposo, 1 llenado, 2 espera, 3 vaciado), un TON para cada paso temporizado, y escriba las salidas a partir del paso al final del programa. El llenado dura 3,5 segundos: un TON con PT := T#3500ms.",
+              "body": "El código inicial no tiene lógica: ninguna válvula se abre nunca, así que el ciclo no se ejecuta. Declara las entradas y las salidas. Mantenga un número de paso (0 reposo, 1 llenado, 2 espera, 3 vaciado), un TON para cada paso temporizado, y escriba las salidas a partir del paso al final del programa. El llenado dura 3,5 segundos.",
               "checkpoint": "El programa tiene una variable de paso, tres temporizadores y una asignación para cada salida."
             },
             {
@@ -14437,11 +14437,11 @@
           "hints": [
             {
               "level": 1,
-              "text": "Cada temporizador lo arranca su paso: FillT(IN := Step = 1, PT := T#3500ms). Cuando su Q es TRUE, pase al paso siguiente."
+              "text": "Mire los pasos del objetivo de uno en uno: cada paso temporizado hace correr su propio temporizador solo mientras es el paso activo, y el paso termina cuando ese temporizador acaba."
             },
             {
               "level": 2,
-              "text": "Empiece con IF NOT EStopOk THEN Step := 0; ELSIF Step = 0 AND Start THEN Step := 1; END_IF; y luego un bloque para cada paso: HoldT para dos segundos, DrainT para veinte segundos con la condición de salida LevelLow OR DrainT.Q. Por último Fill := Step = 1; Drain := Step = 3; Amber := Step <> 0; Red := NOT EStopOk, y Green es TRUE tras un ciclo terminado."
+              "text": "Empiece con IF NOT EStopOk THEN Step := 0; ELSIF Step = 0 AND Start THEN Step := 1; END_IF; y luego un bloque para cada paso: FillT(IN := Step = 1, PT := T#3500ms) y el paso a 2 cuando FillT.Q es TRUE, HoldT para dos segundos, DrainT para veinte segundos con la condición de salida LevelLow OR DrainT.Q. Por último Fill := Step = 1; Drain := Step = 3; Amber := Step <> 0; Red := NOT EStopOk, y Green es TRUE tras un ciclo terminado."
             }
           ],
           "faultCases": [
@@ -14452,7 +14452,7 @@
     },
     {
       "id": "plant-tank-level-scaling",
-      "version": 2,
+      "version": 3,
       "order": 132,
       "module": 13,
       "level": "advanced",
@@ -14610,7 +14610,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "The starter has no logic: the inlet never opens, so the tank stays empty and never reaches its band. It declares the inputs and outputs. Declare two REAL variables for the level and the set point in metres. Divide the level by 27648.0 and the set point by 1000.0 after INT_TO_REAL: an integer division would give 0 for every level below 1 m. Then write FillCmd from the error and limit it with two IF statements.",
+              "body": "The starter has no logic: the inlet never opens, so the tank stays empty and never reaches its band. It declares the inputs and outputs. Scale the level and the set point to metres once, before any other line uses them, in a type that keeps the fraction: an integer division would give 0 for every level below 1 m. Then write FillCmd from the error, limited to 0 to 100 percent.",
               "checkpoint": "The program has two REAL variables, the limited FillCmd and one assignment for each of the other three outputs."
             },
             {
@@ -14635,11 +14635,11 @@
           "hints": [
             {
               "level": 1,
-              "text": "LevelM := INT_TO_REAL(LevelRaw) / 27648.0; SetM := INT_TO_REAL(SetPointRaw) / 1000.0; the error is SetM - LevelM, in metres."
+              "text": "Look at the types: LevelRaw and SetPointRaw are INT, and an INT divided by an INT drops the fraction. The plant map gives the raw span of each signal, and the error is the set point minus the level, in metres."
             },
             {
               "level": 2,
-              "text": "FillCmd := 800.0 * (SetM - LevelM); IF FillCmd > 100.0 THEN FillCmd := 100.0; END_IF; IF FillCmd < 0.0 THEN FillCmd := 0.0; END_IF; DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
+              "text": "Declare LevelM : REAL and SetM : REAL in VAR, then write LevelM := INT_TO_REAL(LevelRaw) / 27648.0; SetM := INT_TO_REAL(SetPointRaw) / 1000.0; FillCmd := 800.0 * (SetM - LevelM); IF FillCmd > 100.0 THEN FillCmd := 100.0; END_IF; IF FillCmd < 0.0 THEN FillCmd := 0.0; END_IF; DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
             }
           ],
           "faultCases": [
@@ -14670,7 +14670,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "El código inicial no tiene lógica: la entrada nunca se abre, así que el tanque permanece vacío y nunca llega a su banda. Declara las entradas y las salidas. Declare dos variables REAL para el nivel y la consigna en metros. Divida el nivel por 27648.0 y la consigna por 1000.0 después de INT_TO_REAL: una división entera daría 0 para cualquier nivel inferior a 1 m. Luego escriba FillCmd a partir del error y limítela con dos sentencias IF.",
+              "body": "El código inicial no tiene lógica: la entrada nunca se abre, así que el tanque permanece vacío y nunca llega a su banda. Declara las entradas y las salidas. Escale el nivel y la consigna a metros una sola vez, antes de que otra línea los use, en un tipo que conserve la fracción: una división entera daría 0 para cualquier nivel inferior a 1 m. Luego escriba FillCmd a partir del error, limitada de 0 a 100 por ciento.",
               "checkpoint": "El programa tiene dos variables REAL, FillCmd limitada y una asignación para cada una de las otras tres salidas."
             },
             {
@@ -14695,11 +14695,11 @@
           "hints": [
             {
               "level": 1,
-              "text": "LevelM := INT_TO_REAL(LevelRaw) / 27648.0; SetM := INT_TO_REAL(SetPointRaw) / 1000.0; el error es SetM - LevelM, en metros."
+              "text": "Mire los tipos: LevelRaw y SetPointRaw son INT, y un INT dividido por un INT descarta la fracción. El mapa de la planta da el rango bruto de cada señal, y el error es la consigna menos el nivel, en metros."
             },
             {
               "level": 2,
-              "text": "FillCmd := 800.0 * (SetM - LevelM); IF FillCmd > 100.0 THEN FillCmd := 100.0; END_IF; IF FillCmd < 0.0 THEN FillCmd := 0.0; END_IF; DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
+              "text": "Declare LevelM : REAL y SetM : REAL en VAR, y luego escriba LevelM := INT_TO_REAL(LevelRaw) / 27648.0; SetM := INT_TO_REAL(SetPointRaw) / 1000.0; FillCmd := 800.0 * (SetM - LevelM); IF FillCmd > 100.0 THEN FillCmd := 100.0; END_IF; IF FillCmd < 0.0 THEN FillCmd := 0.0; END_IF; DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
             }
           ],
           "faultCases": [
@@ -14710,7 +14710,7 @@
     },
     {
       "id": "plant-tank-pid",
-      "version": 2,
+      "version": 3,
       "order": 133,
       "module": 13,
       "level": "advanced",
@@ -14892,11 +14892,11 @@
           "hints": [
             {
               "level": 1,
-              "text": "Pid(SP := SetM, PV := LevelM, KP := 400.0, KI := 0.0, KD := 0.0, DT := 0.01, OUT_MIN := 0.0, OUT_MAX := 100.0); FillCmd := Pid.OUT; With KP at 100.0 the drain leaves the level under the band; 400.0 holds it."
+              "text": "Look at what PID_Compact needs: the set point and the process value in the same unit, the three gains, the scan time DT and the output limits; its output OUT is the opening of the inlet. With KP at 100.0 the drain leaves the level under the band; 400.0 holds it."
             },
             {
               "level": 2,
-              "text": "The reference tuning is KP := 800.0, KI := 10.0, KD := 150.0: a large KP holds the level under the drain, KI slowly removes the offset and KD stops the integral term from making the level overshoot. Then DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
+              "text": "Pid(SP := SetM, PV := LevelM, KP := 800.0, KI := 10.0, KD := 150.0, DT := 0.01, OUT_MIN := 0.0, OUT_MAX := 100.0); FillCmd := Pid.OUT; is the reference tuning: a large KP holds the level under the drain, KI slowly removes the offset and KD stops the integral term from making the level overshoot. Then DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
             }
           ],
           "faultCases": [
@@ -14952,11 +14952,11 @@
           "hints": [
             {
               "level": 1,
-              "text": "Pid(SP := SetM, PV := LevelM, KP := 400.0, KI := 0.0, KD := 0.0, DT := 0.01, OUT_MIN := 0.0, OUT_MAX := 100.0); FillCmd := Pid.OUT; Con KP en 100.0 el vaciado deja el nivel por debajo de la banda; con 400.0 se mantiene."
+              "text": "Mire qué necesita PID_Compact: la consigna y la variable de proceso en la misma unidad, las tres ganancias, el tiempo de ciclo DT y los límites de la salida; su salida OUT es la apertura de la entrada. Con KP en 100.0 el vaciado deja el nivel por debajo de la banda; con 400.0 se mantiene."
             },
             {
               "level": 2,
-              "text": "El ajuste de referencia es KP := 800.0, KI := 10.0, KD := 150.0: un KP grande mantiene el nivel frente al vaciado, KI quita despacio el desvío y KD evita que el término integral haga que el nivel se pase. Luego DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
+              "text": "Pid(SP := SetM, PV := LevelM, KP := 800.0, KI := 10.0, KD := 150.0, DT := 0.01, OUT_MIN := 0.0, OUT_MAX := 100.0); FillCmd := Pid.OUT; es el ajuste de referencia: un KP grande mantiene el nivel frente al vaciado, KI quita despacio el desvío y KD evita que el término integral haga que el nivel se pase. Luego DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
             }
           ],
           "faultCases": [

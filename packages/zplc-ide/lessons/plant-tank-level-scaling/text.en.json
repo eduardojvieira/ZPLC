@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "The starter has no logic: the inlet never opens, so the tank stays empty and never reaches its band. It declares the inputs and outputs. Declare two REAL variables for the level and the set point in metres. Divide the level by 27648.0 and the set point by 1000.0 after INT_TO_REAL: an integer division would give 0 for every level below 1 m. Then write FillCmd from the error and limit it with two IF statements.",
+      "body": "The starter has no logic: the inlet never opens, so the tank stays empty and never reaches its band. It declares the inputs and outputs. Scale the level and the set point to metres once, before any other line uses them, in a type that keeps the fraction: an integer division would give 0 for every level below 1 m. Then write FillCmd from the error, limited to 0 to 100 percent.",
       "checkpoint": "The program has two REAL variables, the limited FillCmd and one assignment for each of the other three outputs."
     },
     {
@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "LevelM := INT_TO_REAL(LevelRaw) / 27648.0; SetM := INT_TO_REAL(SetPointRaw) / 1000.0; the error is SetM - LevelM, in metres."
+      "text": "Look at the types: LevelRaw and SetPointRaw are INT, and an INT divided by an INT drops the fraction. The plant map gives the raw span of each signal, and the error is the set point minus the level, in metres."
     },
     {
       "level": 2,
-      "text": "FillCmd := 800.0 * (SetM - LevelM); IF FillCmd > 100.0 THEN FillCmd := 100.0; END_IF; IF FillCmd < 0.0 THEN FillCmd := 0.0; END_IF; DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
+      "text": "Declare LevelM : REAL and SetM : REAL in VAR, then write LevelM := INT_TO_REAL(LevelRaw) / 27648.0; SetM := INT_TO_REAL(SetPointRaw) / 1000.0; FillCmd := 800.0 * (SetM - LevelM); IF FillCmd > 100.0 THEN FillCmd := 100.0; END_IF; IF FillCmd < 0.0 THEN FillCmd := 0.0; END_IF; DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
     }
   ],
   "faultCases": ["The starter has no logic: the inlet never opens, so the tank stays empty and never reaches its band."]
