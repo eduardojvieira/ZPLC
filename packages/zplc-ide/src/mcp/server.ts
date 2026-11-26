@@ -71,8 +71,8 @@ const REPLAY_INPUT = z
   .strict();
 const PLANT_INSPECT_INPUT = z
   .object({
-    sceneFile: z.string().max(256).refine(logicalPath).optional(),
-    mapFile: z.string().max(256).refine(logicalPath).optional(),
+    sceneFile: z.string().max(256).refine(logicalPath).optional().describe('Scene path in the project; scene.json when omitted.'),
+    mapFile: z.string().max(256).refine(logicalPath).optional().describe('Plant map path in the project; plant-map.json when omitted.'),
   })
   .strict();
 const FIRMWARE_BUILD_INPUT = z

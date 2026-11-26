@@ -123,7 +123,8 @@ export async function runMcpEntrypoint(args = Bun.argv.slice(2)): Promise<number
     ['repository', parsed.repository],
     ['user-data', parsed.userData],
   ] as const) {
-    if (path !== undefined && !isAbsolute(path)) {
+    // the self-check answers a relative path in its report, with the cause and the next step (AIX-007)
+    if (path !== undefined && !isAbsolute(path) && !parsed.selfCheck) {
       process.stderr.write(`ZPLC MCP: ${await whyUnavailable(option, path)}\n`);
       return 2;
     }

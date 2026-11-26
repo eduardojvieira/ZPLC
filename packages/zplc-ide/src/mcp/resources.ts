@@ -20,7 +20,7 @@ import { FORMATS, type FormatId } from '../formats';
 import { scenarioFormat } from '../formats/scenario';
 import '../plant/core/plantCore'; // registers the shipped parts in the catalogue
 import { catalogue } from '../plant/core/catalogue';
-import { parseScene, sceneSignals } from '../plant/core/scene';
+import { parseScene, sceneSignals, validateScene } from '../plant/core/scene';
 import { LESSON_INDEX } from '../generated/lessonIndex';
 import { courseCounts, passedIn } from '../learn/course';
 import type { LessonIndex } from '../learn/lessonPackage';
@@ -222,6 +222,12 @@ function okBody(fields: Body): Body {
   return { ok: true, ...(value as Body), ...(truncated ? { truncated: true } : {}) };
 }
 
+/** `{ ok: false, error, ...fields }` cut to the caps, with `truncated: true` when something was cut: errors say so too. */
+function errorBody(error: string, fields: Body): Body {
+  const { value, truncated } = bounded(fields);
+  return { ok: false, error, ...(value as Body), ...(truncated ? { truncated: true } : {}) };
+}
+
 const sameIdentity = sameDirectoryIdentity;
 
 async function unchanged(workspace: McpWorkspace): Promise<boolean> {
@@ -269,18 +275,18 @@ export async function plantInspect(
     [mapRead, args.mapFile !== undefined, mapFile],
   ] as const) {
     if (read === 'missing' && explicit) return { ok: false, error: 'MCP_NOT_FOUND', cause: `${file} is not in the project` };
-    if (typeof read === 'object' && 'diagnostics' in read)
-      return { ok: false, error: 'MCP_WORKSPACE_UNREADABLE', diagnostics: bounded(read.diagnostics).value };
+    if (typeof read === 'object' && 'diagnostics' in read) return errorBody('MCP_WORKSPACE_UNREADABLE', { diagnostics: read.diagnostics });
   }
   const diagnostics: Diagnostic[] = [];
   let scene: unknown;
   if (typeof sceneRead === 'object' && 'text' in sceneRead) {
+    // the structure (parseScene), then the catalogue: a part id, a config key or value it does not have (validateScene)
     const parsed = parseScene(sceneRead.text);
-    if ('problems' in parsed)
-      diagnostics.push(
-        ...parsed.problems.map((problem) => ({ code: 'SCENE_INVALID', path: sceneFile, message: `${problem.path}: ${problem.message}` })),
-      );
-    else scene = parsed.scene;
+    const problems = 'problems' in parsed ? parsed.problems : validateScene(parsed.scene, catalogue);
+    diagnostics.push(
+      ...problems.map((problem) => ({ code: 'SCENE_INVALID', path: sceneFile, message: `${problem.path}: ${problem.message}` })),
+    );
+    if (!('problems' in parsed) && problems.length === 0) scene = parsed.scene;
   }
   let map: unknown;
   if (typeof mapRead === 'object' && 'text' in mapRead) {
@@ -291,7 +297,7 @@ export async function plantInspect(
       diagnostics.push({ code: 'SCENE_MAP_INVALID', path: mapFile, message: 'The plant map is not valid JSON' });
     }
   }
-  if (diagnostics.length > 0) return { ok: false, error: 'MCP_VALIDATION_FAILED', diagnostics: bounded(diagnostics).value };
+  if (diagnostics.length > 0) return errorBody('MCP_VALIDATION_FAILED', { diagnostics });
   const bindingProblems: string[] = [];
   const mapSignals = (map as { signals?: unknown } | undefined)?.signals;
   if (mapSignals && typeof mapSignals === 'object' && !Array.isArray(mapSignals)) {
@@ -366,7 +372,7 @@ async function scenarioFiles(workspace: McpWorkspace): Promise<Array<{ path: str
     diagnostics[0]!.path === 'tests'
   )
     return [];
-  return { ok: false, error: 'MCP_WORKSPACE_UNREADABLE', diagnostics: bounded(diagnostics).value };
+  return errorBody('MCP_WORKSPACE_UNREADABLE', { diagnostics });
 }
 
 /** Every scenario with its id, timing, scene and a summary of each expectation (the signals and facts it reads). */
@@ -392,7 +398,7 @@ export async function scenarioResource(workspace: McpWorkspace, scenarioId: stri
   // A scenario file is at most 128 KiB (cli/workspace.ts), so the definition is served whole: an agent edits it.
   if (found) return { ok: true, path: found.path, scenario: found.input };
   const ids = files.map((file) => idOf(file.input)).filter((id): id is string => typeof id === 'string');
-  return { ok: false, error: 'MCP_NOT_FOUND', validValues: bounded(ids).value };
+  return errorBody('MCP_NOT_FOUND', { validValues: ids });
 }
 
 /**
