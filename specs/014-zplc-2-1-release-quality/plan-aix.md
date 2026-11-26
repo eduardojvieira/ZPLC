@@ -48,12 +48,36 @@ From `AGENTS.md` lines 44–49 (always cited by number **rule 8**, never rule 7)
 
 *(Note: `firmware_build` remains the single pre-existing local ephemeral cross-build tool in `zplc-mcp` when explicitly started with `--repository`, producing only a temporary host ELF hash with no flash or deploy path; no new firmware or hardware tool is added.)*
 
+**Why rule 8 itself must change.** Rule 8 says an AI assistant or MCP never initiates "forcing I/O, RUN/STOP", with no limit to hardware, and `docs/docs/guides/force-values.md:17` says AI assistants and the MCP server "never force a value, on a simulator or on a device". `debug_set_inputs` and `debug_step` (§3.2 Group D) set inputs and step a program on a simulator. D-31 and AIX-014 put a simulator private to the agent inside the boundary, and AIX-010 asks that rule 8 and the pages that cite it say exactly where the line is. So the sentence of rule 8 and of that page changes, and that change is the owner's (§2.1a).
+
+### 2.1a Proposed Rule 8 Sentence (PROPOSED, NEEDS THE OWNER'S APPROVAL)
+
+**Status: proposed, needs the owner's approval.** No unit edits `AGENTS.md`, `docs/docs/guides/force-values.md`, `docs/i18n/es/docusaurus-plugin-content-docs/current/guides/force-values.md` or any other page, and the server instructions and refusals in `src/mcp` and the assistant policy do not carry the new boundary text, until the owner approves it. Until then they keep the wording of 2.0, and no tool of Group D (§3.2) ships.
+
+Rule 8 of `AGENTS.md`, English (replaces its second sentence, "An AI assistant or MCP never initiates them."):
+
+> An AI assistant or MCP never initiates them on hardware or on a session a person runs: it never forces I/O, changes RUN/STOP, flashes, deploys or opens a serial port there. It may set inputs and step a simulator that is private to it, one the MCP server starts for that agent alone (D-31, AIX-014).
+
+Rule 8 of `AGENTS.md`, Spanish (for the Spanish pages that quote the rule):
+
+> Un asistente de IA o un MCP nunca las inicia en un equipo físico ni en una sesión que maneja una persona: allí nunca fuerza E/S, nunca cambia RUN/STOP, nunca graba firmware, nunca despliega y nunca abre un puerto serie. Puede fijar entradas y avanzar paso a paso un simulador privado suyo, uno que el servidor MCP arranca solo para ese agente (D-31, AIX-014).
+
+`docs/docs/guides/force-values.md:17`, English (replaces "AI assistants and the MCP server never force a value, on a simulator or on a device (AGENTS.md rule 8).", the rest of the paragraph stays):
+
+> AI assistants and the MCP server never force a value, change RUN/STOP, flash, deploy or open a serial port on a device or on a session a person runs (AGENTS.md rule 8). An agent may set inputs and step a simulator that is private to it, one the MCP server starts for that agent alone; that is not a force, and it never reaches your simulator or your controller.
+
+Same line in the Spanish twin:
+
+> Los asistentes de IA y el servidor MCP nunca fuerzan un valor, nunca cambian RUN/STOP, nunca graban firmware, nunca despliegan y nunca abren un puerto serie en un equipo ni en una sesión que maneja una persona (regla 8 de AGENTS.md). Un agente puede fijar entradas y avanzar paso a paso un simulador privado suyo, uno que el servidor MCP arranca solo para ese agente; eso no es un forzado y nunca llega a tu simulador ni a tu controlador.
+
+After approval, `AIX-U13` (§10.1) applies these sentences to `AGENTS.md` and both pages, and the surfaces of §2.2 adopt the same line in the same unit as the tools that need it.
+
 ### 2.2 Required Wording Across All Four Surfaces
 
-Every surface states the exact same boundary in plain language and cites **`AGENTS.md` rule 8**:
+Every surface states the exact same boundary in plain language and cites **`AGENTS.md` rule 8**. The line is the one of §2.1a, never a narrower one: an agent never forces I/O, changes RUN/STOP, flashes, deploys or opens a serial port **on hardware or on a session a person runs**, and it may set inputs and step only a simulator private to it. The texts below are the target wording; they ship only after the owner approves §2.1a.
 
 1. **MCP Server Instructions** (`McpServer` constructor `instructions` field):
-   > "Physical boundary (AGENTS.md rule 8): this server operates only inside the workspace folder and in private host simulations. No tool or resource flashes a board, deploys a program, forces I/O on hardware, starts or stops a board, opens a serial port or shell, enters plant I/O mode, or attaches to a user's running Studio session. If the user asks for any hardware action, refuse in plain words and tell them to perform that step manually in ZPLC Studio."
+   > "Physical boundary (AGENTS.md rule 8): this server operates only inside the workspace folder and in private host simulations it starts for you alone. In those private simulations you may set inputs and step the program. No tool or resource forces I/O, changes RUN/STOP, flashes a board, deploys a program, opens a serial port or shell, or enters plant I/O mode on hardware or on a session a person runs, and no tool attaches to a user's running Studio session. If the user asks for any of these, refuse in plain words and tell them to perform that step themselves in ZPLC Studio."
 2. **MCP Refusal Messages** (returned whenever an unsupported or out-of-boundary action is attempted, e.g. sensitive manifest fields, out-of-workspace paths, or forbidden arguments):
    - Always includes: `error` code, `cause` in plain English, `boundary: "AGENTS.md rule 8"` where applicable, and `nextStep` naming the safe manual action in Studio (e.g., *"Perform flashing, deployment, forcing, or RUN/STOP manually from ZPLC Studio's Hardware / Controller bar."*).
 3. **Documentation** (`docs/docs/guides/ai-and-mcp.md`, `docs/docs/reference/mcp.md`, `docs/docs/ide/ai-privacy.md`, and their `docs/i18n/es/` twins):
@@ -61,7 +85,7 @@ Every surface states the exact same boundary in plain language and cites **`AGEN
    - Updates the 2.0 "writes nothing" statement per Spec 014 §10.2 to state clearly: MCP may validate and write project files inside the confined workspace and run private host simulations/debugging, and may never touch a board, serial port, plant I/O mode, shell, or a user's running Studio session.
    - Matches every field sent by `electron/aiProvider.ts` to `docs/docs/ide/ai-privacy.md`.
 4. **Assistant System Policy** (`SYSTEM_POLICY` in `packages/zplc-ide/electron/aiProvider.ts`):
-   > "You are ZPLC Assistant. Respect AGENTS.md rule 8: never claim hardware action, never request tools, and never initiate or propose flashing, deploying to a board, forcing I/O on hardware, RUN/STOP/reset on a board, recovery, serial port access, plant I/O mode, shell execution, or attaching to a running hardware session. Direct the user to perform physical operations manually in ZPLC Studio."
+   > "You are ZPLC Assistant. Respect AGENTS.md rule 8: never claim hardware action, never request tools, and never initiate or propose forcing I/O, RUN/STOP/reset, flashing, deploying, recovery, serial port access, plant I/O mode, or shell execution on hardware or on a session a person runs, and never attach to a running session. Direct the user to perform physical operations manually in ZPLC Studio."
 
 ### 2.3 Allowlist vs Forbidden Surface Matrix
 
@@ -80,7 +104,7 @@ No PR in the AIX workstream may weaken these automated gates; they are updated i
 1. **`packages/zplc-ide/src/mcp/deviceLink.test.ts`**:
    - **Closed registration list**: Enumerates live `buildMcpServer()` calls; `tools` MUST exactly match `MCP_TOOL_NAMES` (26 tools) and `resources` MUST exactly match `MCP_RESOURCE_URIS` (22 fixed) + 4 templates.
    - **Forbidden verb regex**: Every tool name MUST NOT match `/flash|deploy|force|upload|connect|serial|shell|poke|erase|provision|board_|plant_io|mirror|attach|delete|remove|progress_write|unlock|solution/`.
-   - **Annotation invariants**: Every tool has `openWorldHint: false` and `destructiveHint: false`. `readOnlyHint: false` is permitted ONLY on the closed list: `['workspace_write', 'debug_session_start', 'debug_session_stop', 'debug_set_inputs', 'debug_breakpoints', 'debug_step', 'firmware_build']`.
+   - **Annotation invariants**: Every tool has `openWorldHint: false`. `destructiveHint: true` is declared ONLY by `workspace_write`, which replaces existing files (a client reads the hint to decide whether to ask the person); the test pins the closed list `['workspace_write']` for `destructiveHint: true` and asserts `destructiveHint: false` on every other tool. `readOnlyHint: false` is permitted ONLY on the closed list: `['workspace_write', 'debug_session_start', 'debug_session_stop', 'debug_set_inputs', 'debug_breakpoints', 'debug_step', 'firmware_build']`.
    - **Strict input argument fence**: Every tool uses Zod `.strict()`. Every tool rejects all forbidden keys: `port`, `serialPort`, `device`, `baud`, `host`, `address`, `studioSession`, `deploy`, `flash`, `force`, `command`, `shell`, `boardRun`, `boardStop`, `plantIo`, `mirror`.
    - **Bundler module graph (`Bun.build` metafile)**: Bundle of `src/mcp/index.ts` MUST contain ZERO imports of `serialAdapter`, `serialConsole`, `connectionManager`, `deviceHandshake`, `uploadProtocol`, `uploadTrace`, `provisioningCommands`, `uploader/`, `electron/main`, `electron/preload`, `electron/serialPort`, `plant/board/`, or Node/network modules (`net`, `dgram`, `tls`, `http`, `https`, `http2`, `serialport`, `ws`, `usb`, `worker_threads`, `cluster`). Exact allowlist of `child_process` and `spawnAllowList` callers stays pinned.
    - **Runtime socket/serial trap**: Runs read, check, write, and private simulation tools with poisoned `net.connect`, `dgram.createSocket`, `tls.connect`, `Bun.connect`, `Bun.listen`, `navigator.serial` -> zero trap hits.
@@ -108,7 +132,7 @@ Every successful tool result carries a single top-level `evidenceLevel` field in
 - `'repository-metadata'` — Declared board catalogue or local toolchain check (`boards_list`, `toolchain_inspect`, `server_self_check`).
 
 To close **AI-12** while keeping MCP SDK compatibility:
-- `structuredContent` holds the concise result payload (no duplicate `note` prose on every call; `execution` is compacted to `{ jobId, permission, durationMs }` rather than full verbose schema+actor+two ISO timestamps, while full timestamps remain in the server's internal audit log if enabled).
+- `structuredContent` holds the concise result payload (no duplicate `note` prose on every call). `execution` keeps its 2.0 shape through 2.1, so 2.0 clients keep working; the compact `audit: { jobId, permission, durationMs }` is added beside it (§8.3).
 - `content` contains one concise text block (`JSON.stringify(structuredContent)`) sized strictly below `MAX_OUTPUT_BYTES` (512 KiB; target `< 64 KiB` on default calls).
 
 #### Standardized Error Envelope (AIX-015)
@@ -154,7 +178,7 @@ Every tool error returns `isError: true` with:
 
 ### 3.2 Complete MCP Tool Catalogue (26 Tools: 15 Existing + 11 New)
 
-All tools have `openWorldHint: false` and `destructiveHint: false`.
+All tools have `openWorldHint: false`. Every tool has `destructiveHint: false` except `workspace_write`, which replaces existing files and declares `destructiveHint: true` (§2.4).
 
 #### Group A: Project, Plant, Scenario & Server Inspection (9 Read-Only Tools)
 
@@ -224,7 +248,7 @@ All tools have `openWorldHint: false` and `destructiveHint: false`.
 | # | Tool Name | Status | `readOnlyHint` | Purpose (Plain Words) |
 |---|---|---|---|---|
 | 10 | `workspace_check_write` | **NEW (`AIX-011`)** | `true` | Dry-run validate 1 to 8 proposed file creations or replacements (`src/*`, `zplc.json`, `tests/*.scenario.json`, `scene.json`, `plant-map.json`) without modifying any file on disk. Returns loadability/schema violations with accepted values, canonicalized diff stats, and optional full compile check on an isolated copy. |
-| 11 | `workspace_write` | **NEW (`AIX-011`)** | `false` | Validate, canonicalize (LD/FBD/SFC/manifest), and atomically write 1 to 8 allowed workspace files. Refuses the entire batch and leaves existing files untouched if any file fails validation, escapes the workspace, follows a symlink, or sets a sensitive field. |
+| 11 | `workspace_write` | **NEW (`AIX-011`)** | `false` (`destructiveHint: true`) | Validate, canonicalize (LD/FBD/SFC/manifest), and write 1 to 8 allowed workspace files, each atomically (§4.3). Refuses the entire batch and leaves existing files untouched if any file fails validation, escapes the workspace, follows a symlink, or sets a sensitive field. |
 
 **Detailed Parameter & Return Contracts — Group B**:
 
@@ -437,10 +461,12 @@ Evidence:
 - Every tool result declares evidenceLevel once (host-static, host-simulation, local-cross-build, or repository-metadata). Host simulation is never hardware or HIL proof.
 
 Physical boundary (AGENTS.md rule 8):
-- This server operates only inside the workspace folder and private host simulations.
-- No tool flashes a board, deploys a program, forces I/O on hardware, runs/stops a board, opens a serial port or shell, enters plant I/O mode, or attaches to a user's running Studio session.
-- Refuse any request for physical hardware operations in plain words and instruct the user to perform them manually in ZPLC Studio.
+- This server operates only inside the workspace folder and in private host simulations it starts for you alone; there you may set inputs and step the program.
+- No tool forces I/O, changes RUN/STOP, flashes a board, deploys a program, opens a serial port or shell, or enters plant I/O mode on hardware or on a session a person runs, and no tool attaches to a user's running Studio session.
+- Refuse any such request in plain words and tell the user to perform it themselves in ZPLC Studio.
 ```
+
+The "Physical boundary" block above is the target text of §2.1a: it is proposed and needs the owner's approval. Until the owner approves it, `src/mcp` keeps the boundary text of 2.0 and does not ship Group D (§3.2).
 
 #### Registered Prompts (4)
 
@@ -470,7 +496,7 @@ Physical boundary (AGENTS.md rule 8):
 | `plant-map.json` *(SHOULD)* | Plant Map | 128 KiB | JSON + `validatePlantMap` (schema v2 for scenes) + `resolvePlantMap` (when compilable) | 2-space JSON + trailing `\n` |
 
 **Explicitly refused**:
-- Deleting or renaming files (out of scope for AIX-011; prevents destructive surprises).
+- Deleting or renaming files (out of scope for AIX-011; prevents destructive surprises). **Known limit, stated in the pages**: no tool deletes or renames a file. `AIX-U13` writes it in `docs/docs/reference/mcp.md` and `docs/docs/guides/ai-and-mcp.md` and their Spanish twins, and the description of `workspace_write` says it: an agent that needs a file gone or renamed asks the person to do it in Studio or on disk.
 - Writing to any other path (`README.md`, `.git/*`, `boards.json`, `specs/*`, dotfiles, nested subdirectories outside `src/`/`tests/`).
 - Case-insensitive or `.ld`/`.ld.json` name collisions (checked via `sourceNameKey` matching `packages/zplc-ide/src/cli/toolApi.ts:713`).
 
@@ -499,9 +525,17 @@ Implemented in a dedicated module `packages/zplc-ide/src/mcp/workspaceWrite.ts` 
 3. **Stage 3 — Atomic temp-write + rename (`workspace_write` only)**:
    - Ensure target subdirectory (`src` or `tests`) exists as a real non-symlink directory (`mkdir(..., { recursive: false })` if missing).
    - Capture existing file bytes in memory for rollback.
-   - Write every target file to a sibling temporary file named `.<basename>.<12hex>.tmp` (matching `TEMPORARY` in `electron/projectWatcher.ts:16` so Studio's watcher ignores temporary files) with `{ flag: 'wx', mode: 0o600 }`.
+   - Capture the mode of every existing target (`lstat(target).mode & 0o7777`). A replaced file keeps that mode; a new file gets the mode a plain `writeFile` would give it (`0o666` minus the umask).
+   - Write every target file to a sibling temporary file named `.<basename>.<12hex>.tmp` (matching `TEMPORARY` in `electron/projectWatcher.ts:16` so Studio's watcher ignores temporary files) with `{ flag: 'wx', mode: 0o600 }`, so no other user reads the file before it is complete, then `fchmod` the temporary file to the captured mode before the rename (the umask does not apply to `fchmod`). On Windows `fchmod` sets only the read-only bit; the test below asserts the file stays writable there.
    - Re-verify workspace identity and target `lstat` (no TOCTOU symlink swap).
    - `rename(tempPath, targetPath)` for each file. If any rename fails, unlink remaining temp files and restore already-renamed files from memory backups (best-effort rollback).
+
+**What "atomic" covers.** Each file is atomic: a reader sees the old bytes or the new bytes of that file, never a mix, because the rename replaces it in one step. A batch of several files is not atomic as a set: the renames happen one after another, and if one fails the files already renamed are restored from the in-memory copies at best effort (a crash or a full disk during the restore can leave part of the batch written). The reply and the docs say this in those words, and a failed restore names the files it could not put back in `cause` (`MCP_INTERNAL_ERROR`, with `nextStep` to compare with `expectedBaseSha256` and re-run).
+
+**Tests of Stage 3** (`packages/zplc-ide/src/mcp/workspaceWrite.test.ts`, unit `AIX-U6`):
+- Replace keeps the mode: a target at `0o644` (and one at `0o640`) stays at that mode after `workspace_write` replaces it; a new file gets `0o666 & ~umask`. POSIX only; skipped on Windows, where the next test covers what the platform has.
+- **Replace on Windows**: `workspace_write` replaces an existing `src/Main.st` and an existing `tests/belt.scenario.json` in one batch; both hold the new bytes, no `.*.tmp` file is left in the folder, and the files stay writable (not read-only). Replace-by-rename is the operation that failed in the C runtime on Windows (`zplc_hal_posix.c:493` in the failed run, fixed in 2.1 with `MoveFileExA`, now `zplc_hal_posix.c:359-381`); Node's `fs.rename` uses `MoveFileExW` with `MOVEFILE_REPLACE_EXISTING`, and this test proves it on the runner rather than assuming it. It runs on every platform, and on Windows in the nightly's **`desktop-ide-tests`** job, matrix entry **"Windows x64"** (`windows-2025`, `.github/workflows/nightly-quality.yml:197-208`), in whichever of its 8 shards `tools/ci/test-shards.ts` assigns `workspaceWrite.test.ts`; a second case holds the target open for reading during the rename and asserts either success or a clean `MCP_INTERNAL_ERROR` with the old bytes intact (`EBUSY`/`EPERM` on Windows).
+- A forced failure of the second rename of a batch of three restores the first file's old bytes and mode and leaves the third untouched.
 
 ---
 
@@ -621,9 +655,23 @@ McpDebugSessionManager (src/mcp/debugSession.ts)  [max 2 sessions, 300 s idle TT
 
 **Prerequisite compiler plumbing (bounded, shared with Studio)**:
 - `compileMultiTaskProject` already produces transpiler `sourceMap` (`SourceMapRange[]`) for IL/LD/FBD/SFC during transpilation (`src/compiler/`). Persist the compact `elementMap?: SourceMapRange[]` on `DebugPOUInfo` (or return alongside `debugMap` from `compilerCompile`) so both Studio and `McpDebugSessionManager` resolve element <-> PC deterministically without re-transpiling.
-- **Pre-implementation check on `posix_host` (`firmware/apps/posix_host/`)**: Before coding `debug_step`, verify whether `scenario.step` in `zplc_runtime` honors armed VM breakpoints (`breakpoint.add`) and returns `state: "paused"` at the breakpoint PC mid-scan.
-  - If `scenario.step` already honors breakpoints and supports resuming the remainder of the scan: use `scenario.step` directly.
-  - If `scenario.step` bypasses breakpoints or runs a whole cycle atomically: extend `posix_host` with a clean virtual-clock breakpoint-aware step option (or use `simulation.clock.set('virtual')` + `execution.step` / `scenario.step` breakpoint handling with a C unit test in `firmware/lib/zplc_core` / `posix_host`) so breakpoints halt accurately mid-cycle in both plain and scene-coupled debug sessions without touching Zephyr hardware targets.
+- **Check on `posix_host` (`firmware/apps/posix_host/`), answered 2026-11-26: the C runtime does not need to change.** Under the virtual clock, `scenario.step` honors an armed breakpoint and stops the scan mid-scan, at the breakpoint PC; the next `scenario.step` with the same `at_ms` runs the rest of that scan.
+  - **By reading**: `handle_scenario_step` (`native_runtime_session.c:1859-1957`) runs the batch with the tick override; when the VM stopped at a breakpoint, `session_complete_scan` (`:552-570`) marks `scan_in_flight`, does not count the cycle and keeps the staged input pulses. The next step must repeat the held timestamp (`"scenario at_ms must repeat the held timestamp while a scan is held"`, `:1893-1899`), so a hold costs the program no virtual time. Studio's plant session already drives this: `plantSession.ts:96-108` counts held steps and repeats the held `at_ms`.
+  - **By one host run** (throwaway script under `$TMPDIR`, never committed; `ZPLC_NATIVE_SIM_BIN=$HOME/.cache/zplc-tmp/runs/seam/sim-build/zplc_runtime`, `taskset -c 8-9 bun run probe.ts 100`): the program `x := x + 1; y := x * 2; z := z + 1;` (lines 3-5), compiled with `compileToBinary(src, { generateDebugMap: true })`, a breakpoint on line 4 (`pc 23`), then `simulation.clock.set {mode:"virtual"}`, `program.load`, `breakpoint.add {pc:23}` and `scenario.step` over the IDE's line-delimited JSON session (`NativeSimulationSupervisor.request`):
+
+    ```text
+    bp.add {"breakpoints":[23]}
+    step at 0       {"state":"paused","cycles":0,"pc":23} x 1 y 0 z 0
+    step at 0 again {"state":"paused","cycles":1,"pc":42} x 1 y 2 z 1
+    step at iv      {"state":"paused","cycles":1,"pc":23} x 2 y 2 z 1
+    step at iv again {"state":"paused","cycles":2,"pc":42} x 2 y 4 z 2
+    ```
+
+    The first step stops at `pc 23` with `x` written and `y`, `z` not yet, and the cycle not counted: a mid-scan stop, not a scan boundary. Repeating `at_ms` finishes the scan (`cycles: 1`). The next scan, at `iv` = 100 ms, stops at the same place again.
+  - **Two facts the run showed that W4 must handle in TypeScript**:
+    1. The virtual-clock interval of a single-file program with no task table is the session default, 100 ms (`native_runtime_session.c:2182`), while `status.get` reports the focused task at `interval_us: 10000`; a step at 10 ms is refused with `"scenario at_ms must advance by the task interval"`. `debug_session_start` takes `scanIntervalMs` from the `simulation.clock.set` answer after the load (or from the project's task), never from `status.get`'s task line.
+    2. The runtime refuses every `breakpoint.*` request on a session with more than one task (`"breakpoint operation requires an unambiguous task"`, `native_runtime_session.c:2263-2265`). `debug_breakpoints` on a multi-task project returns `MCP_INVALID_ARGUMENTS` naming the limit, as Studio does today; `debug_step` and `debug_inspect` still work there. Lifting the limit is C work and is not part of 2.1.
+  - **Consequence for W4**: W4 does not touch C. `AIX-U8` shrinks to the compiler element-to-PC map (`debug-map.ts`, `IDE/src/compiler/index.ts`) and its tests, **0.5–1.0 d** instead of 1.0–1.5 d, and drops `firmware/apps/posix_host/` from its surface. If a later finding does put C in W4 (for example per-task breakpoints), that C work is its own unit for a high-risk writer, with a C unit test in `firmware/apps/posix_host` and an independent verifier, never folded into a TypeScript unit.
 
 ### 7.3 Inspecting Variables, Function Blocks, SFC State & Plant Facts
 
@@ -672,7 +720,8 @@ McpDebugSessionManager (src/mcp/debugSession.ts)  [max 2 sessions, 300 s idle TT
 ### 8.3 Trimming Envelope Noise (`AI-12`) & Actionable Errors (`AIX-015`)
 
 - State `evidenceLevel` once at top level; drop repeated boilerplate `note` and `scope` strings from every reply.
-- Compact `execution` to `audit: { jobId, permission, durationMs }` (reducing ~300 bytes/call to ~70 bytes/call) while keeping `tests_run` / `scenario_run` backward-compatible where existing tests assert `execution` or migrating those tests cleanly in the same wave.
+- **Keep `execution` through 2.1.** Every reply that carried `execution` in 2.0 still carries it, with the 2.0 shape and values, so a 2.0 client that reads it does not break. New tools and every reply add the compact `audit: { jobId, permission, durationMs }` beside it. The ~300 bytes/call of `execution` stay in 2.1; trimming them is a 2.2 decision, announced as a deprecation in 2.1. A test asserts that the replies of `tests_run`, `scenario_run` and every other 2.0 tool still parse with the 2.0 `executionSchema` (`server.ts:231`), and that `audit` matches `execution` (same job, same permission).
+- **Record the change.** `AIX-U5` adds to `CHANGELOG.md` under `## Unreleased`: "MCP replies add an `audit` field (`jobId`, `permission`, `durationMs`) beside `execution`. `execution` is unchanged in 2.1 and is deprecated; a later release may remove it." `AIX-U13` states the same in `docs/docs/reference/mcp.md` and its Spanish twin, field by field.
 - Every wrong-name error (`scenarioId`, `source` file name, `ideId`, `signal`, `sessionId`) includes `validValues` sorted alphabetically (capped at 32 entries with `more` count).
 
 ---
@@ -785,7 +834,7 @@ Each unit is sized to **1 behavior / ~3–6 files**, follows strict **TDD (RED c
 | **W2** | `AIX-U5` | Agent-sized `trace_get` (`changes`/`window`/`summary`), 16 MiB internal parse cap (`AI-03`), `includeInputs` + `watchSignals` sidecar preserving 2.0 `traceSha256` (`AI-08`), compact envelope (`AI-12`), actionable errors with `validValues` (`AIX-015`) | `IDE/src/test-engine/index.ts`, `IDE/src/cli/toolApi.ts`, `IDE/src/mcp/traceView.ts`, `IDE/src/mcp/server.ts`, tests (incl. 43-lesson sweep) | `AIX-U4` | 1.5 d |
 | **W3: MCP Write & Studio Live Reload** | `AIX-U6` | `workspace_check_write` + `workspace_write` (5 languages, `zplc.json`, scenarios, scene, plant-map), symlink/confinement, sensitive-field refusal, atomic temp+rename (`AIX-011`) | `IDE/src/mcp/workspaceWrite.ts`, `IDE/src/mcp/server.ts`, `IDE/src/mcp/workspaceWrite.test.ts`, `deviceLink.test.ts` | `AIX-U2`, `AIX-U4` | 1.5 d |
 | **W3** | `AIX-U7` | Studio follows external edits: visible toasts naming file, `zplc.json`/`src/`/`tests/` reload, live 3D Plant view reload (`sceneRevision`), `ExternalChangePrompt` diff view, watcher fallback (`AIX-012`) | `IDE/electron/projectWatcher.ts`, `IDE/src/store/externalChangeWatch.ts`, `IDE/src/store/usePlantDocument.ts`, `IDE/src/shell/PlantDocument.tsx`, `IDE/src/components/ExternalChangePrompt.tsx`, tests | None (parallel with `AIX-U6`) | 1.5 d |
-| **W4: Private Simulation Debugger** | `AIX-U8` | Compiler element-to-PC source map export + `posix_host` virtual-clock breakpoint verification/plumbing (`AIX-014` prereq) | `packages/zplc-compiler/src/compiler/debug-map.ts`, `IDE/src/compiler/index.ts`, `firmware/apps/posix_host/` (only if `scenario.step` ignores breakpoints), tests | None (can start early) | 1.0–1.5 d |
+| **W4: Private Simulation Debugger** | `AIX-U8` | Compiler element-to-PC source map export (`AIX-014` prereq). No C: `scenario.step` already stops mid-scan at a breakpoint under the virtual clock (§7.2) | `packages/zplc-compiler/src/compiler/debug-map.ts`, `IDE/src/compiler/index.ts`, tests | None (can start early) | 0.5–1.0 d |
 | **W4** | `AIX-U9` | `McpDebugSessionManager` + 6 `debug_*` tools (all 5 languages breakpoints, stepping, inputs/plantActions, FB & SFC monitor inspection, max 2 sessions, 300 s TTL, isolation tests) (`AIX-014`) | `IDE/src/mcp/debugSession.ts`, `IDE/src/mcp/server.ts`, `IDE/src/mcp/debugSession.test.ts`, `deviceLink.test.ts` | `AIX-U4`, `AIX-U8` | 2.0 d |
 | **W5: Studio Assistant & Setup Polish** | `AIX-U10` | Assistant rich context (`projectContext`, failed scenarios/plant facts, diagnostic messages, lesson goal/D-32 stance), key-free loopback, `testConnection`, upgraded `SYSTEM_POLICY` & `isAllowedAiProviderRequest` (`AIX-001`, `AIX-002`, `AIX-005`, `AIX-006`, `AI-15`, `AI-17`, `AI-21`) | `IDE/electron/aiProvider.ts`, `IDE/electron/security.ts`, `IDE/electron/ipcContract.ts`, `IDE/electron/ipcHandlers.ts`, `IDE/electron/preload.ts`, `aiDeviceLink.test.ts`, `aiProvider.test.ts` | `AIX-U3` | 1.5 d |
 | **W5** | `AIX-U11` | Assistant UI polish: unified "Assistant"/"Asistente" naming, localized mode buttons, clickable file/line/element links, 4 entry points with attached context, bounded follow-up turns, Settings connection test + examples (`AIX-003`, `AIX-004`, `AIX-006`, `AI-18`, `AI-20`) | `IDE/src/store/useAssistantEntry.ts`, `IDE/src/components/AssistantView.tsx`, `AgentTab.tsx`, `AssistantSettings.tsx`, `Problems`/`TestResultsTab`/`LearnPanel`/editor actions, `i18n/{en,es}` | `AIX-U10` | 1.5 d |
@@ -793,7 +842,7 @@ Each unit is sized to **1 behavior / ~3–6 files**, follows strict **TDD (RED c
 | **W6: Docs, Task Set & Journeys** | `AIX-U13` | Generated & authored EN+ES documentation updates: 6 format refs, regenerated `reference/mcp.md`, updated `guides/ai-and-mcp.md` (3 clients + `learn-workspaces`) and `ide/ai-privacy.md` (`AIX-006`, `AIX-007`, `AIX-010`, `AIX-013`) | `tools/docs/generate_source_references.ts`, `docs/docs/**`, `docs/i18n/es/**`, `docs/capability-claims.json` | `AIX-U4`..`AIX-U12` | 1.5 d |
 | **W6** | `AIX-U14` | Fixed 15-task repo eval set + automated scripted Journeys 4 & 5 (`JRN-005`) + owner-launched Claude Code & Assistant scripts (`AIX-009`, `JRN-007`) | `tools/ai-eval/{tasks.json,run-claude-code-mcp.ts,run-assistant-eval.ts}`, `IDE/scripts/journeys/` (JRN-4/JRN-5 scripted), `specs/014-zplc-2-1-release-quality/scope.md` | `AIX-U13` | 1.5 d |
 
-**Total Estimate**: **14 bounded writer units**, **~18.5–19.0 engineer-days** sequential (~10–12 calendar days with parallel Wave 1/2/3/4/5 tracks), plus **1 owner-launched real-run stop** (`JRN-007` with Claude Code and a real model) and **1 external reviewer pass** (`REV-001` / `BAR-007`).
+**Total Estimate**: **14 bounded writer units**, **~18.0–18.5 engineer-days** sequential (~10–12 calendar days with parallel Wave 1/2/3/4/5 tracks), plus **1 owner-launched real-run stop** (`JRN-007` with Claude Code and a real model) and **1 external reviewer pass** (`REV-001` / `BAR-007`).
 
 ### 10.2 Independent Verifier Checkpoints & Required Commands
 
@@ -825,3 +874,19 @@ Before authorizing implementation of `AIX-U1`..`AIX-U14`, reviewer and owner con
 3. **Write & reload contract** (§4–§5): Validate-before-write, canonical LD/FBD/SFC serialization, atomic temp+rename, and live Studio/3D-plant reload with conflict diff prompt meet `AIX-011` and `AIX-012`.
 4. **Private debugger & trace sizing** (§7–§8): 2-session cap, 300 s TTL, 5-language element/line breakpoints, and default `'changes'` trace mode preserve 2.0 trace hashes while unblocking all 43/43 plant lessons.
 5. **Delivery plan** (§10): 14 bounded units across 6 waves with 3 verifier checkpoints and an owner-launched `JRN-007` real-model run.
+6. **Proposed rule 8 sentence** (§2.1a): the owner approves, changes or refuses the new sentence of rule 8 of `AGENTS.md` and of `docs/docs/guides/force-values.md`, in English and Spanish. Until then nothing in `AGENTS.md`, the pages or `src/mcp` carries it, and Group D does not ship.
+
+---
+
+## 12. Review of 2026-11-26
+
+The external review of 2026-11-26 (section "The AIX plan") found six points. Each is answered here:
+
+| # | Point of the review | Where the plan answers it |
+|---|---|---|
+| 1 | `workspace_write` replaces files and was declared `destructiveHint: false`. | §2.4 (invariant: `destructiveHint: true` only on the closed list `['workspace_write']`, false on every other tool), §3.2 (catalogue note and Group B row). |
+| 2 | The rule 8 sentence: rule 8 and `force-values.md:17` forbid forcing on a simulator too, and §2.2 narrowed it to "on hardware". | §2 intro and §2.1a (proposed sentence for rule 8 and for `force-values.md`, EN and ES, needs the owner's approval; no page or `src/mcp` text changes before), §2.2 and §3.4 (the line is "on hardware or on a session a person runs", with private simulators inside), §11 item 6. |
+| 3 | Does the C runtime have to change so a breakpoint stops a scan under the virtual clock? | §7.2: no. Read in `native_runtime_session.c` and shown by one host run: `scenario.step` stops mid-scan at the breakpoint and repeats the held `at_ms` to finish the scan. W4 does not touch C; `AIX-U8` is 0.5–1.0 d (§10.1). Any later C work is its own high-risk unit. |
+| 4 | A test of `workspace_write` replacing an existing file on the Windows runner. | §4.3 "Tests of Stage 3": replace on Windows, in the nightly's `desktop-ide-tests` job, "Windows x64" (`windows-2025`). |
+| 5 | The temporary file is 0600 and its rename changes the mode of a replaced file; what "atomic" covers with several files. | §4.3: the captured mode is set on the temporary file before the rename, with a test; "What atomic covers": each file is atomic, the set is restored at best effort. §4.1: known limit, no tool deletes or renames a file, stated in the pages. |
+| 6 | Renaming `execution` to `audit` breaks a 2.0 client. | §8.3 and §3.1: `execution` stays unchanged through 2.1, `audit` is added beside it, a test pins the 2.0 shape, and the change goes into `CHANGELOG.md` and `docs/docs/reference/mcp.md`. |
