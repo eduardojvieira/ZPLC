@@ -1,6 +1,7 @@
 import { mkdir, mkdtemp, readFile, readdir, rm, stat, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, test } from 'bun:test';
 
 import { RECOVERY_DIRECTORY, createRecoveryStore } from './recoveryStore';
@@ -19,6 +20,16 @@ async function fixture(): Promise<string> {
 
 const PROJECT = '/home/ana/plant';
 const projectDirectory = (userData: string, realPath = PROJECT) => join(userData, RECOVERY_DIRECTORY, projectKey(realPath));
+
+/** Owner decision 7, phase 1: reads (never changes) the ACL of a store file and its directory with icacls, for the CI log. */
+function measureAcl(store: string, file: string): void {
+  const icacls = (target: string) => spawnSync('icacls', [target], { encoding: 'utf8', shell: false });
+  const fileAcl = icacls(file);
+  const dirAcl = icacls(dirname(file));
+  const profile = process.env.USERPROFILE;
+  console.log('ZPLC-ACL', JSON.stringify({ store, path: file, profile, fileAcl: fileAcl.stdout, dirAcl: dirAcl.stdout }));
+  expect([fileAcl.status, dirAcl.status]).toEqual([0, 0]);
+}
 
 describe('recovery store (IDE-006)', () => {
   test('has nothing for a project it never saw', async () => {
@@ -62,6 +73,15 @@ describe('recovery store (IDE-006)', () => {
     expect((await store.list(PROJECT)).map((entry) => entry.content)).toEqual(['v7']);
     expect(await readdir(projectDirectory(userData))).toHaveLength(1);
     expect((await stat(projectDirectory(userData))).mode & 0o777).toBe(0o700);
+  });
+
+  // Studio writes this under app.getPath('userData')\recovery\<project> (%APPDATA%\ZPLC on Windows); the test uses os.tmpdir()
+  // (%TEMP%, under %LOCALAPPDATA%), also inside the user profile, so both inherit the profile's ACL; the logged path shows which.
+  test.skipIf(process.platform !== 'win32')('measures the Windows ACL of the recovery file (owner decision 7, phase 1)', async () => {
+    const userData = await fixture();
+    await createRecoveryStore(userData).write(PROJECT, 'src/Motor.st', 'a');
+    const [entry] = await readdir(projectDirectory(userData));
+    measureAcl('recovery', join(projectDirectory(userData), entry!));
   });
 
   test('discards one entry or all of them, and discarding what is not there is not an error', async () => {

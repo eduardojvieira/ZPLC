@@ -1,6 +1,7 @@
 import { mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, test } from 'bun:test';
 
 import { RECENT_PROJECTS_FILENAME, RECENT_PROJECTS_LIMITS, createRecentProjects, parseRecentProjects, projectKey } from './recentProjects';
@@ -13,6 +14,16 @@ async function fixture(): Promise<string> {
   const directory = await mkdtemp(join(tmpdir(), 'zplc-recent-'));
   directories.push(directory);
   return directory;
+}
+
+/** Owner decision 7, phase 1: reads (never changes) the ACL of a store file and its directory with icacls, for the CI log. */
+function measureAcl(store: string, file: string): void {
+  const icacls = (target: string) => spawnSync('icacls', [target], { encoding: 'utf8', shell: false });
+  const fileAcl = icacls(file);
+  const dirAcl = icacls(dirname(file));
+  const profile = process.env.USERPROFILE;
+  console.log('ZPLC-ACL', JSON.stringify({ store, path: file, profile, fileAcl: fileAcl.stdout, dirAcl: dirAcl.stdout }));
+  expect([fileAcl.status, dirAcl.status]).toEqual([0, 0]);
 }
 
 /** A clock that moves forward by one second at each reading, so that "most recent first" is observable. */
@@ -87,6 +98,17 @@ describe('recent projects store', () => {
     const { statSync } = await import('node:fs');
     expect(statSync(join(directory, RECENT_PROJECTS_FILENAME)).mode & 0o777).toBe(0o600);
   });
+
+  // Studio writes this directly in app.getPath('userData') (%APPDATA%\ZPLC on Windows); the test uses os.tmpdir()
+  // (%TEMP%, under %LOCALAPPDATA%), also inside the user profile, so both inherit the profile's ACL; the logged path shows which.
+  test.skipIf(process.platform !== 'win32')(
+    'measures the Windows ACL of the recent projects file (owner decision 7, phase 1)',
+    async () => {
+      const directory = await fixture();
+      await createRecentProjects(directory).record('/home/ana/plant');
+      measureAcl('recent projects', join(directory, RECENT_PROJECTS_FILENAME));
+    },
+  );
 
   test('serialises concurrent records so none is lost', async () => {
     const directory = await fixture();
