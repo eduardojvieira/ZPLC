@@ -9,7 +9,19 @@ import type { PartView, Quat, Vec3 } from '../../contracts';
 import { cuesFor } from '../cues';
 import type { Role } from '../look';
 import { BELT } from './conveyors';
-import { box, MIN_STAND, piece, rod, rotate, slotted, type ModelContext, type ModelFamily, type Piece } from './shared';
+import {
+  box,
+  extrusion,
+  MIN_STAND,
+  piece,
+  rod,
+  rotate,
+  slotted,
+  type ModelContext,
+  type ModelFamily,
+  type Piece,
+  type Section,
+} from './shared';
 
 const conjugate = ([x, y, z, w]: Quat): Quat => [-x, -y, -z, w];
 const minus = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
@@ -234,32 +246,40 @@ function sensorBody(kind: unknown, on: boolean, length: number, floor: number): 
       };
     }
     case 'capacitive': {
-      // A thick plastic barrel with a flat dark face and a sensitivity knob on top; the lamp is a ring at its rear end.
-      const x = -0.035;
+      // A thick plastic barrel closed by a wider flat face cap, with a tall sensitivity knob on top; the lamp is a ring at its rear.
+      const x = -0.04;
       return {
         x,
-        under: -0.015,
+        under: -0.024,
         pieces: [
-          piece('barrel', rod(0.015, 0.07, 'x'), [x, 0, 0], 'housing'),
-          piece('face', rod(0.014, 0.003, 'x'), [-0.0015, 0, 0], 'collar'),
-          piece('knob', rod(0.005, 0.008, 'y'), [-0.05, 0.019, 0], 'steel'),
-          piece('bezel', rod(0.0155, 0.003, 'x'), [-0.0045, 0, 0], lit(on)),
-          piece('lamp', rod(0.0155, 0.01, 'x'), [-0.075, 0, 0], lit(on)),
+          piece('barrel', rod(0.02, 0.07, 'x'), [x, 0, 0], 'housing'),
+          piece('face', rod(0.024, 0.006, 'x'), [-0.004, 0, 0], 'collar'),
+          piece('knob', rod(0.007, 0.024, 'y'), [-0.055, 0.032, 0], 'steel'),
+          piece('bezel', rod(0.021, 0.002, 'x'), [-0.008, 0, 0], lit(on)),
+          piece('lamp', rod(0.0205, 0.01, 'x'), [-0.08, 0, 0], lit(on)),
         ],
       };
     }
     case 'colour': {
-      // A taller housing with two lenses, one over the other: the light it sends and the eye that reads the colour.
-      const back = -0.036;
+      // A wide head with a sloped top and two lenses, one over the other (the light it sends and the eye that reads the colour), on a
+      // slimmer housing behind it.
+      const back = -0.06;
+      const head: Section = [
+        [-0.015, -0.036],
+        [0.015, -0.036],
+        [0.015, 0.036],
+        [-0.015, 0.012],
+      ];
       return {
         x: back,
-        under: -0.03,
+        under: -0.036,
         pieces: [
-          piece('housing', box([0.07, 0.06, 0.04], 0.005), [back, 0, 0], 'housing'),
-          piece('bezel', box([0.003, 0.056, 0.036], 0.0005), [-0.0015, 0, 0], lit(on)),
-          piece('lens-a', rod(0.009, 0.004, 'x'), [-0.0005, 0.014, 0], 'lens'),
-          piece('lens-b', rod(0.009, 0.004, 'x'), [-0.0005, -0.014, 0], 'lens'),
-          piece('lamp', box([0.05, 0.004, 0.032], 0.001), [back, 0.032, 0], lit(on)),
+          piece('head', extrusion(head, 0.07, 'z'), [-0.0165, 0, 0], 'housing'),
+          piece('housing', box([0.05, 0.04, 0.036], 0.004), [back, -0.012, 0], 'housing'),
+          piece('bezel', box([0.003, 0.068, 0.064], 0.0005), [-0.0015, 0, 0], lit(on)),
+          piece('lens-a', rod(0.011, 0.004, 'x'), [-0.0005, 0.017, 0], 'lens'),
+          piece('lens-b', rod(0.011, 0.004, 'x'), [-0.0005, -0.017, 0], 'lens'),
+          piece('lamp', box([0.04, 0.004, 0.03], 0.001), [back, 0.01, 0], lit(on)),
         ],
       };
     }
