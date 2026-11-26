@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter has no interlock, so pressing RevPB at {{t:30}} ms while Forward runs closes Reverse as well and both contactors are ON. Each direction must stay OFF while the other one runs, and the stop, the permissive and the seal-in of each rung must keep working as they do. Make the change in the Ladder editor.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter has no interlock, so pressing RevPB at {{t:30}} ms while Forward runs closes Reverse as well and both contactors are ON. Each direction must stay OFF while the other one runs, and the stop, the permissive and the seal-in of each rung must keep working as they do. Make the change in the Ladder editor.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -41,8 +41,8 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Why does the interlock use the other coil and not the other pushbutton? And why must LubeOk sit in series before the coil and not only in the start path? Move LubeOk into the start branch and see which assertion fails.",
-      "checkpoint": "The coil says what the motor is doing, a pushbutton only what someone asks: an interlock on RevPB would let Forward close while Reverse is held in. A permissive in the start path only lets a running motor ignore it. The scenario shows the logic only; real reversing starters also use mechanically interlocked contactors, and this is not a safety function."
+      "body": "Once it passes, ask why the interlock reads what the motor is doing and not what someone asks for. And why must LubeOk sit in series before the coil and not only in the start path? Move LubeOk into the start branch and see which assertion fails.",
+      "checkpoint": "A pushbutton only says what someone asks, not what the motor is doing: an interlock on RevPB would let Forward close while Reverse is held in. A permissive in the start path only lets a running motor ignore it. The scenario shows the logic only; real reversing starters also use mechanically interlocked contactors, and this is not a safety function."
     }
   ],
   "hints": [

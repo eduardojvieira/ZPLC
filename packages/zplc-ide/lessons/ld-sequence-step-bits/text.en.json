@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter never leaves the mix step: Mixer stays ON at {{t:100}} ms and DrainValve stays OFF. The sequence must go from mixing to draining when the mix time is over, and Mixer and DrainValve must never be ON together. Draw the change in the Ladder editor.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter never leaves the mix step: Mixer stays ON at {{t:100}} ms and DrainValve stays OFF. The sequence must go from mixing to draining when the mix time is over, and Mixer and DrainValve must never be ON together. Draw the change in the Ladder editor.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -41,8 +41,8 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Delete only the rung that resets StepMix and run again. Which assertions fail, and why?",
-      "checkpoint": "StepMix stays on after the transition, so the mixer keeps running next to the drain valve: the assertions that forbid two outputs together fail, and so does the one that expects Mixer OFF at {{t:100}} ms. A transition is two actions, setting the next step and resetting the current one, and both must happen in the same scan."
+      "body": "Once it passes, imagine two step bits ON in the same scan. Which assertions would fail, and why?",
+      "checkpoint": "The mixer would keep running next to the drain valve: the assertions that forbid two outputs together would fail, and so would the one that expects Mixer OFF at {{t:100}} ms. A sequence keeps exactly one step bit ON at a time."
     }
   ],
   "hints": [

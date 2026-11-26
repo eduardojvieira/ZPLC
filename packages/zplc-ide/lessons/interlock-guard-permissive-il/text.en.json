@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starting program ignores the guard, so when the guard opens at {{t:50}} ms the motor keeps running and Start can restart it. Command must be ON only while the guard is closed, whatever Start and Stop do.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starting program ignores the guard, so when the guard opens at {{t:50}} ms the motor keeps running and Start can restart it. Command must be ON only while the guard is closed, whatever Start and Stop do.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Why is a permissive on the whole condition safer than a permissive only on Start? Move the guard line up, right after the line that loads Start, and see which assertion fails.",
+      "body": "Once it passes, ask what an open guard must do to a motor that is already running, and to a press of Start. Where in the list of lines must the guard sit to do both?",
       "checkpoint": "A permissive that gates only Start lets a running motor ignore an open guard. In IL the position of the line is its scope: everything above it is in the condition. The scenario shows the logic only; it is not a safety function and does not replace a safety-rated guard interlock."
     }
   ],

@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Mire la transición que sale de MIX: sale tras un tiempo, y su condición lee el reloj de su propio paso. Una transición tiene un paso de origen, un paso de destino y una condición."
+      "text": "Busque el paso que nunca termina, y mire lo que tiene cada transición del diagrama: un paso de origen, un paso de destino y una condición."
     },
     {
       "level": 2,
-      "text": "Agregue una transición con fromStep step_fill, toStep step_mix y la condición step_fill.T >= T#50ms."
+      "text": "Como la transición que sale de MIX, la nueva lee el reloj de su propio paso. Agregue una transición con fromStep step_fill, toStep step_mix y la condición step_fill.T >= T#50ms."
     }
   ],
   "faultCases": [

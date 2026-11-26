@@ -79,7 +79,7 @@ marks:
 caption: El jabón y el enjuague se suceden. Go se puede soltar enseguida, porque el bit de paso sostiene la secuencia.
 ```
 
-Observe que `Go` se suelta mucho antes de que termine el paso de jabón. El bit de paso recuerda que la secuencia está en marcha, así que no hace falta mantener el pulsador pulsado.
+Observe que `Go` se suelta mucho antes de que termine el paso de jabón. El bit de paso recuerda que la secuencia está en marcha, así que no hace falta mantener presionado el pulsador.
 
 ## Errores frecuentes
 
@@ -107,7 +107,7 @@ options:
 question: ¿Por qué se puede soltar Go pronto sin detener la secuencia?
 options:
   - { text: 'El bit de paso recuerda que la secuencia está en marcha.', correct: true, feedback: 'Correcto. Una bobina set mantiene su bit en ON después de que desaparece la energía que lo activó.' }
-  - { text: 'El temporizador mantiene pulsado el pulsador.', feedback: 'Un temporizador no actúa sobre las entradas. Solo mide el tiempo de su propia entrada.' }
+  - { text: 'El temporizador mantiene presionado el pulsador.', feedback: 'Un temporizador no actúa sobre las entradas. Solo mide el tiempo de su propia entrada.' }
 ```
 
 ## Lo que hará en la práctica

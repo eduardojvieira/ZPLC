@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Look at the transition out of MIX: it leaves after a time, and its condition reads the clock of its own step. A transition has a source step, a target step and a condition."
+      "text": "Look for the step that never ends, and at what every transition of the chart has: a source step, a target step and a condition."
     },
     {
       "level": 2,
-      "text": "Add a transition with fromStep step_fill, toStep step_mix and the condition step_fill.T >= T#50ms."
+      "text": "Like the transition out of MIX, the new one reads the clock of its own step. Add a transition with fromStep step_fill, toStep step_mix and the condition step_fill.T >= T#50ms."
     }
   ],
   "faultCases": [

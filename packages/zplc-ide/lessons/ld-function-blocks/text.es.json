@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial solo hace funcionar la bomba 1, así que Pump2 nunca pasa a ON y queda en OFF a los {{t:50}} ms. La bomba 2 debe arrancar con Start2, detenerse con Stop y funcionar solo mientras Ready esté en TRUE, con una memoria propia. PumpCtl está en la categoría Proyecto de la caja de herramientas de escalera. La instancia Pump2Ctl ya está declarada, así que solo falta el peldaño.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial solo hace funcionar la bomba 1, así que Pump2 nunca pasa a ON y queda en OFF a los {{t:50}} ms. La bomba 2 debe arrancar con Start2, detenerse con Stop y funcionar solo mientras Ready esté en TRUE, con una memoria propia. PumpCtl está en la categoría Proyecto de la caja de herramientas de escalera. La instancia Pump2Ctl ya está declarada, así que solo falta el peldaño.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {

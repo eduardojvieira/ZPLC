@@ -26,9 +26,9 @@ El cableado de la lección [Su propio bloque de función en diagrama de bloques 
 
 ## Tarjeta de cableado
 
-1. Botón de llenado: pulsador entre GPIO5 (pin 5 del conector J1, DI0) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
-2. Botón de vaciado: pulsador entre GPIO6 (pin 6 del conector J1, DI1) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
-3. Botón de parada: pulsador entre GPIO7 (pin 7 del conector J1, DI2) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+1. Pulsador de llenado: pulsador entre GPIO5 (pin 5 del conector J1, DI0) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+2. Pulsador de vaciado: pulsador entre GPIO6 (pin 6 del conector J1, DI1) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+3. Pulsador de parada: pulsador entre GPIO7 (pin 7 del conector J1, DI2) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
 4. Suministro de aire correcto (permisivo sostenido: deje el cable puente conectado y retírelo un momento para simular una falla del suministro de aire): cable puente desde GPIO8 (pin 12 del conector J1, DI3) hasta GND (GND · J1-22); conectado significa activado.
 5. Válvula de llenado: LED verde con una resistencia de 330 Ω en serie, desde GPIO15 (pin 8 del conector J1, DO0) hasta GND (GND · J1-22).
 6. Válvula de vaciado: LED amarillo con una resistencia de 330 Ω en serie, desde GPIO16 (pin 9 del conector J1, DO1) hasta GND (GND · J1-22).

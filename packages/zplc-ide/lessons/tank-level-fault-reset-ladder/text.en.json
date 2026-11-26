@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter forgets the fault: Alarm drops as soon as PumpFault goes away at {{t:90}} ms instead of staying ON until a Reset. The alarm must stay ON after EStop or PumpFault until Reset is pressed after the fault has gone; a Reset held down through the fault must not clear it.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter forgets the fault: Alarm drops as soon as PumpFault goes away at {{t:90}} ms instead of staying ON until a Reset. The alarm must stay ON after EStop or PumpFault until Reset is pressed after the fault has gone; a Reset held down through the fault must not clear it.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

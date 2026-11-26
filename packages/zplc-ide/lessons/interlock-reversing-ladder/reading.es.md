@@ -30,7 +30,7 @@ caption: Un peldaño con autorretención y dos condiciones en serie. La tapa es 
 
 Lea el peldaño de izquierda a derecha. La energía parte del riel izquierdo. Puede pasar por `StartButton`, o por el contacto del propio `Motor` en la rama inferior, que es la autorretención que mantiene el motor en ON. Después debe pasar por `LidClosed` y por el pulsador de paro antes de llegar a la bobina.
 
-En este laboratorio, `StopButton` está en `TRUE` mientras el pulsador se pulsa, así que el peldaño usa un contacto **normalmente cerrado** (NC) sobre él. Ese contacto conduce mientras su bit está en OFF, es decir, mientras nadie pulsa el pulsador. Al pulsar el pulsador, el contacto se abre y corta la energía.
+En este laboratorio, `StopButton` está en `TRUE` mientras el pulsador se pulsa, así que el peldaño usa un contacto **normalmente cerrado** (NC) sobre él. Ese contacto conduce mientras su bit está en OFF, es decir, mientras nadie acciona el pulsador. Al accionar el pulsador, el contacto se abre y corta la energía.
 
 ## Pruébelo
 
@@ -47,7 +47,7 @@ timing: [StartButton, LidClosed, Motor]
 caption: Pulse LidClosed para cerrar la tapa y luego pulse StartButton. Pulse LidClosed otra vez para abrirla.
 ```
 
-Pruebe también a pulsar el pulsador de arranque con la tapa abierta. No pasa nada, porque falta el permisivo.
+Pruebe también a accionar el pulsador de arranque con la tapa abierta. No pasa nada, porque falta el permisivo.
 
 ## Qué pasa con el tiempo
 

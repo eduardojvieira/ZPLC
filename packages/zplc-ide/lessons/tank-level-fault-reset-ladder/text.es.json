@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial olvida la falla: Alarm cae en cuanto PumpFault desaparece a los {{t:90}} ms en lugar de seguir en ON hasta un Reset. La alarma debe seguir en ON después de EStop o PumpFault hasta que se pulse Reset una vez desaparecida la falla; un Reset mantenido durante la falla no debe borrarla.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial olvida la falla: Alarm cae en cuanto PumpFault desaparece a los {{t:90}} ms en lugar de seguir en ON hasta un Reset. La alarma debe seguir en ON después de EStop o PumpFault hasta que se pulse Reset una vez desaparecida la falla; un Reset mantenido durante la falla no debe borrarla.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {

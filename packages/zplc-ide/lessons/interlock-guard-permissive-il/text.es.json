@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial ignora la protección, así que cuando la protección se abre a los {{t:50}} ms el motor sigue funcionando y Start puede reiniciarlo. Command debe estar en ON solo mientras la protección está cerrada, hagan lo que hagan Start y Stop.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial ignora la protección, así que cuando la protección se abre a los {{t:50}} ms el motor sigue funcionando y Start puede reiniciarlo. Command debe estar en ON solo mientras la protección está cerrada, hagan lo que hagan Start y Stop.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "¿Por qué un permisivo sobre toda la condición es más seguro que un permisivo solo sobre Start? Suba la línea de la protección justo después de la línea que carga Start y vea qué aserción falla.",
+      "body": "Una vez que pase, piense qué debe hacer una protección abierta con un motor que ya está en marcha, y con una pulsación de Start. ¿En qué lugar de la lista de líneas debe ir la protección para lograr ambas cosas?",
       "checkpoint": "Un permisivo que solo condiciona Start deja que un motor en marcha ignore una protección abierta. En IL la posición de la línea es su alcance: todo lo que está encima queda dentro de la condición. El escenario muestra solo la lógica; no es una función de seguridad ni reemplaza un enclavamiento de protección diseñado para seguridad."
     }
   ],

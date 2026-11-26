@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter runs only pump 1, so Pump2 never turns on and stays OFF at {{t:50}} ms. Pump 2 must start on Start2, stop on Stop and run only while Ready is TRUE, with a memory of its own. PumpCtl is in the Project category of the Ladder toolbox. The instance Pump2Ctl is already declared, so only the rung is missing.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter runs only pump 1, so Pump2 never turns on and stays OFF at {{t:50}} ms. Pump 2 must start on Start2, stop on Stop and run only while Ready is TRUE, with a memory of its own. PumpCtl is in the Project category of the Ladder toolbox. The instance Pump2Ctl is already declared, so only the rung is missing.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

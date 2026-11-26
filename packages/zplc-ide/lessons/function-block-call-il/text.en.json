@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starting program runs pump A only, so RunB never rises and stays OFF at {{t:30}} ms. RunB must follow StartB and StopB the way RunA follows StartA and StopA.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starting program runs pump A only, so RunB never rises and stays OFF at {{t:30}} ms. RunB must follow StartB and StopB the way RunA follows StartA and StopA.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
