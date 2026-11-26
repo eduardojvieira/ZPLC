@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test';
-import { lstat, mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
+import { lstat, mkdtemp, mkdir, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -7,7 +7,8 @@ import { createAiProvider } from './aiProvider';
 
 const directories: string[] = [];
 async function fixture() {
-  const directory = await mkdtemp(join(tmpdir(), 'zplc-ai-'));
+  // the gateway hands the provider the real path of a project; the temporary folder of macOS (/var) and Windows (8.3 names) is not one
+  const directory = await realpath(await mkdtemp(join(tmpdir(), 'zplc-ai-')));
   directories.push(directory);
   await mkdir(join(directory, 'workspace', 'src'), { recursive: true });
   await writeFile(join(directory, 'workspace', 'src', 'Main.st'), 'PROGRAM Main\nEND_PROGRAM\n');
@@ -30,20 +31,29 @@ const request = {
 };
 
 describe('optional AI provider (IDE-030)', () => {
-  it('is unconfigured by default and never uses a plaintext Linux fallback', async () => {
-    const directory = await fixture();
-    const provider = createAiProvider({ userDataPath: directory, vault: vault('basic_text') });
-    expect(await provider.getStatus()).toEqual({
-      configured: false,
-      enabled: false,
-      keyStored: false,
-      vaultAvailable: false,
-      vaultReason: 'insecure-backend',
-    });
-    expect(await provider.request(join(directory, 'workspace'), request, new AbortController().signal)).toEqual({
-      ok: false,
-      code: 'AI_VAULT_UNAVAILABLE',
-    });
+  // the plaintext backend exists only on Linux; macOS and Windows keep the key in the OS keychain through safeStorage
+  const unconfigured = 'is unconfigured by default and never uses a plaintext Linux fallback (%s)';
+  it.each(['linux', 'darwin', 'win32'] as const)(unconfigured, async (platform) => {
+    const original = Object.getOwnPropertyDescriptor(process, 'platform')!;
+    Object.defineProperty(process, 'platform', { ...original, value: platform });
+    try {
+      const directory = await fixture();
+      const provider = createAiProvider({ userDataPath: directory, vault: vault('basic_text') });
+      const linux = platform === 'linux';
+      expect(await provider.getStatus()).toEqual({
+        configured: false,
+        enabled: false,
+        keyStored: false,
+        vaultAvailable: !linux,
+        ...(linux ? { vaultReason: 'insecure-backend' } : {}),
+      });
+      expect(await provider.request(join(directory, 'workspace'), request, new AbortController().signal)).toEqual({
+        ok: false,
+        code: linux ? 'AI_VAULT_UNAVAILABLE' : 'AI_UNCONFIGURED',
+      });
+    } finally {
+      Object.defineProperty(process, 'platform', original);
+    }
   });
 
   it('normalizes only HTTPS or loopback endpoints, encrypts the key, and exposes neither', async () => {
@@ -298,10 +308,12 @@ describe('optional AI provider (IDE-030)', () => {
     });
     await provider.saveConfig({ enabled: true, endpoint: 'https://api.example.test', model: 'gpt-test' });
     await provider.storeKey('secret');
+    // every wait is bounded: a request that settles before the fetch, or a cancel that never lands, fails here instead of hanging the shard
+    const bound = (label: string) => Bun.sleep(2_000).then(() => ({ unsettled: label }));
     const pending = provider.request(join(directory, 'workspace'), request, new AbortController().signal);
-    await startedFetch;
+    expect(await Promise.race([startedFetch.then(() => 'fetch started'), pending, bound('fetch')])).toBe('fetch started');
     expect(provider.cancel()).toEqual({ requested: true });
-    expect(await pending).toEqual({ ok: false, code: 'AI_CANCELLED' });
+    expect(await Promise.race([pending, bound('cancel')])).toEqual({ ok: false, code: 'AI_CANCELLED' });
   });
 
   it('accepts a normal OpenAI envelope but rejects malformed JSON and malformed parsed edits', async () => {
