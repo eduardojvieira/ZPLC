@@ -331,8 +331,12 @@ describe('optional AI provider (IDE-030)', () => {
       ok: false,
       code: 'AI_RESPONSE_INVALID',
     });
-    const extra = await setup(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ answer: 'x', extra: true }) } }] }));
-    expect(await extra.request(join(directory, 'workspace'), request, new AbortController().signal)).toEqual({
+    const malformedEdit = await setup(
+      JSON.stringify({
+        choices: [{ message: { content: JSON.stringify({ answer: 'x', changes: [{ path: 'src/Main.st' }] }) } }],
+      }),
+    );
+    expect(await malformedEdit.request(join(directory, 'workspace'), request, new AbortController().signal)).toEqual({
       ok: false,
       code: 'AI_RESPONSE_INVALID',
     });
@@ -764,5 +768,226 @@ describe('each provider failure has its own cause and next step (AI-16)', () => 
     });
     expect(JSON.stringify(thrown)).not.toContain(KEY);
     expect(JSON.stringify(thrown)).not.toContain(MARKER);
+  });
+});
+
+describe('assistant answer shapes (AI-14 / AIX-006)', () => {
+  const UPDATED_ST = 'PROGRAM Main\nEND_PROGRAM\n// ai-14\n';
+  const VALID_EDIT = {
+    answer: 'Added comment to Main.st',
+    changes: [{ path: 'src/Main.st', content: UPDATED_ST }],
+  };
+
+  async function replyWith(content: unknown, mode: 'ask' | 'plan' | 'edit' | 'debug' = 'edit') {
+    const directory = await fixture();
+    const provider = createAiProvider({
+      userDataPath: directory,
+      vault: vault(),
+      fetch: async () => new Response(JSON.stringify({ choices: [{ message: { content } }] })),
+    });
+    await provider.saveConfig({ enabled: true, endpoint: 'https://api.example.test', model: 'gpt-test' });
+    await provider.storeKey('secret');
+    return provider.request(join(directory, 'workspace'), { ...request, mode }, new AbortController().signal);
+  }
+
+  it('extracts a reviewable change set from raw JSON and Markdown fenced JSON blocks', async () => {
+    const raw = await replyWith(JSON.stringify(VALID_EDIT));
+    expect(raw).toMatchObject({
+      ok: true,
+      answer: VALID_EDIT.answer,
+      changes: [{ path: 'src/Main.st', kind: 'modify', content: UPDATED_ST }],
+    });
+
+    const fencedJson = await replyWith(`\`\`\`json\n${JSON.stringify(VALID_EDIT, null, 2)}\n\`\`\``);
+    expect(fencedJson).toMatchObject({
+      ok: true,
+      answer: VALID_EDIT.answer,
+      changes: [{ path: 'src/Main.st', kind: 'modify', content: UPDATED_ST }],
+    });
+
+    const fencedPlain = await replyWith(`\`\`\`\n${JSON.stringify(VALID_EDIT)}\n\`\`\``);
+    expect(fencedPlain).toMatchObject({
+      ok: true,
+      answer: VALID_EDIT.answer,
+      changes: [{ path: 'src/Main.st', kind: 'modify', content: UPDATED_ST }],
+    });
+
+    const stWithBackticks = 'PROGRAM Main\n(* ``` *)\nEND_PROGRAM\n';
+    const fencedWithEmbeddedTicks = await replyWith(
+      `\`\`\`json\n${JSON.stringify({ answer: 'Kept comment', changes: [{ path: 'src/Main.st', content: stWithBackticks }] })}\n\`\`\``,
+    );
+    expect(fencedWithEmbeddedTicks).toMatchObject({
+      ok: true,
+      answer: 'Kept comment',
+      changes: [{ path: 'src/Main.st', kind: 'modify', content: stWithBackticks }],
+    });
+  });
+
+  it('extracts a reviewable change set after prose, both fenced and bare JSON, preserving prose when answer is omitted', async () => {
+    const proseBare = await replyWith(`I updated Main.st as requested.\n\n${JSON.stringify(VALID_EDIT)}`);
+    expect(proseBare).toMatchObject({
+      ok: true,
+      answer: VALID_EDIT.answer,
+      changes: [{ path: 'src/Main.st', kind: 'modify', content: UPDATED_ST }],
+    });
+
+    const proseFenced = await replyWith(`Here is the proposed edit.\n\n\`\`\`json\n${JSON.stringify(VALID_EDIT)}\n\`\`\``);
+    expect(proseFenced).toMatchObject({
+      ok: true,
+      answer: VALID_EDIT.answer,
+      changes: [{ path: 'src/Main.st', kind: 'modify', content: UPDATED_ST }],
+    });
+
+    const proseWithBraces = await replyWith(`Checked {Main} and prepared the change:\n${JSON.stringify(VALID_EDIT)}`);
+    expect(proseWithBraces).toMatchObject({
+      ok: true,
+      answer: VALID_EDIT.answer,
+      changes: [{ path: 'src/Main.st', kind: 'modify', content: UPDATED_ST }],
+    });
+
+    const proseFallbackOmitted = await replyWith(
+      `Updated Main.st with a trailing comment.\n\n${JSON.stringify({ changes: VALID_EDIT.changes })}`,
+    );
+    expect(proseFallbackOmitted).toMatchObject({
+      ok: true,
+      answer: 'Updated Main.st with a trailing comment.',
+      changes: [{ path: 'src/Main.st', kind: 'modify', content: UPDATED_ST }],
+    });
+
+    const proseFallbackEmpty = await replyWith(
+      `Updated Main.st with a trailing comment.\n\`\`\`json\n${JSON.stringify({ answer: '   ', changes: VALID_EDIT.changes })}\n\`\`\``,
+    );
+    expect(proseFallbackEmpty).toMatchObject({
+      ok: true,
+      answer: 'Updated Main.st with a trailing comment.',
+      changes: [{ path: 'src/Main.st', kind: 'modify', content: UPDATED_ST }],
+    });
+  });
+
+  it('allows harmless top-level metadata keys on JSON answers without forwarding them', async () => {
+    const result = (await replyWith(
+      JSON.stringify({
+        ...VALID_EDIT,
+        notes: 'Reviewed timers',
+        reasoning: 'Minimal comment edit',
+        confidence: 0.92,
+      }),
+    )) as Record<string, unknown>;
+    expect(result).toMatchObject({
+      ok: true,
+      answer: VALID_EDIT.answer,
+      changes: [{ path: 'src/Main.st', kind: 'modify', content: UPDATED_ST }],
+    });
+    expect(result).not.toHaveProperty('notes');
+    expect(result).not.toHaveProperty('reasoning');
+    expect(result).not.toHaveProperty('confidence');
+  });
+
+  it('accepts OpenAI-style content parts arrays and rejects unsafe or malformed parts', async () => {
+    const singlePart = await replyWith([{ type: 'text', text: JSON.stringify(VALID_EDIT) }]);
+    expect(singlePart).toMatchObject({
+      ok: true,
+      answer: VALID_EDIT.answer,
+      changes: [{ path: 'src/Main.st', kind: 'modify', content: UPDATED_ST }],
+    });
+
+    const multiPart = await replyWith([
+      { type: 'text', text: 'Here is the proposed change:' },
+      { type: 'text', text: `\`\`\`json\n${JSON.stringify(VALID_EDIT)}\n\`\`\`` },
+    ]);
+    expect(multiPart).toMatchObject({
+      ok: true,
+      answer: VALID_EDIT.answer,
+      changes: [{ path: 'src/Main.st', kind: 'modify', content: UPDATED_ST }],
+    });
+
+    for (const badParts of [
+      [],
+      ['plain string'],
+      [null],
+      [{ type: 'text', text: 123 }],
+      [{ type: 'tool_use', id: '1', name: 'deploy' }],
+      [{ type: 'text', text: 'ok', tool_call: { name: 'deploy' } }],
+      [{ type: 'text', text: 'ok', tool_calls: [] }],
+      [{ type: 'text', text: 'ok', function_call: { name: 'deploy' } }],
+    ]) {
+      expect(await replyWith(badParts), JSON.stringify(badParts)).toEqual({
+        ok: false,
+        code: 'AI_RESPONSE_INVALID',
+      });
+    }
+  });
+
+  it('refuses empty or whitespace-only content instead of returning an empty answer', async () => {
+    for (const empty of [
+      '',
+      '   \n\t  ',
+      [{ type: 'text', text: '' }],
+      [{ type: 'text', text: '   \n  ' }],
+      JSON.stringify({ answer: '' }),
+      JSON.stringify({ answer: '   \t\n ' }),
+    ]) {
+      expect(await replyWith(empty), JSON.stringify(empty)).toEqual({
+        ok: false,
+        code: 'AI_RESPONSE_INVALID',
+      });
+    }
+  });
+
+  it('keeps plain-text explanations containing example JSON snippets inert', async () => {
+    const snippet = 'A minimal manifest looks like:\n```json\n{"name":"Demo","version":"1.0.0"}\n```';
+    const result = await replyWith(snippet, 'ask');
+    expect(result).toMatchObject({
+      ok: true,
+      answer: snippet,
+    });
+    expect(result).not.toHaveProperty('changes');
+  });
+
+  it('preserves security boundaries for fenced and prose-wrapped JSON payloads', async () => {
+    const fencedToolCall = `\`\`\`json\n${JSON.stringify({ answer: 'x', tool_calls: [{ name: 'deploy' }] })}\n\`\`\``;
+    expect(await replyWith(fencedToolCall)).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+
+    const proseNestedToolCall = `Sure.\n${JSON.stringify({ answer: 'x', meta: { tool_calls: [{ name: 'flash' }] } })}`;
+    expect(await replyWith(proseNestedToolCall)).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+
+    const fencedFunctionCall = `\`\`\`json\n${JSON.stringify({ answer: 'x', function_call: { name: 'run' } })}\n\`\`\``;
+    expect(await replyWith(fencedFunctionCall)).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+
+    const fencedExtraChangeField = `\`\`\`json\n${JSON.stringify({
+      answer: 'x',
+      changes: [{ path: 'src/Main.st', content: UPDATED_ST, extra: true }],
+    })}\n\`\`\``;
+    expect(await replyWith(fencedExtraChangeField)).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+
+    const fencedAskChanges = `\`\`\`json\n${JSON.stringify(VALID_EDIT)}\n\`\`\``;
+    expect(await replyWith(fencedAskChanges, 'ask')).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+
+    const proseAskChanges = `Here is a fix:\n${JSON.stringify(VALID_EDIT)}`;
+    expect(await replyWith(proseAskChanges, 'ask')).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+
+    const fencedTraversal = `\`\`\`json\n${JSON.stringify({
+      answer: 'x',
+      changes: [{ path: 'src/../zplc.json', content: '{}' }],
+    })}\n\`\`\``;
+    expect(await replyWith(fencedTraversal)).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+
+    const proseTraversal = `Fixed:\n${JSON.stringify({
+      answer: 'x',
+      changes: [{ path: '../outside.st', content: UPDATED_ST }],
+    })}`;
+    expect(await replyWith(proseTraversal)).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+
+    const fencedPhysicalProposal = `\`\`\`json\n${JSON.stringify({
+      answer: 'x',
+      proposals: [{ type: 'deploy' }],
+    })}\n\`\`\``;
+    expect(await replyWith(fencedPhysicalProposal)).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+
+    const fencedLegacyReplacement = `\`\`\`json\n${JSON.stringify({
+      answer: 'x',
+      replacement: { path: 'src/Main.st', content: UPDATED_ST },
+    })}\n\`\`\``;
+    expect(await replyWith(fencedLegacyReplacement)).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
   });
 });
