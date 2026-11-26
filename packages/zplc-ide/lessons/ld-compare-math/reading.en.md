@@ -1,6 +1,6 @@
 ## What this is for
 
-Picture a water tank in a small factory. A float sensor tells the PLC how full the tank is, and the PLC has to do three things with that number: light a lamp when the tank is nearly full, work out how full it is in percent, and keep the last value when nothing changes. In the earlier lessons your rungs only asked yes-or-no questions: is the button pressed, is the timer finished. A tank level is not yes or no. It is a **number**, and numbers need two new tools: boxes that **compare** and boxes that **calculate**.
+Picture a water tank in a small factory. A float sensor tells the PLC how full the tank is, and the PLC has to do three things with that number: light a lamp when the tank is nearly full, work out how full it is in percent, and keep the last value when nothing changes. So far the rungs have only asked yes-or-no questions: is the button pressed, is the timer finished. A tank level is not yes or no. It is a **number**, and numbers need two new tools: boxes that **compare** and boxes that **calculate**.
 
 In Ladder both kinds are drawn as a small box in the rung, next to your contacts and coils. This page explains how a box behaves, and one mistake that can stop the whole machine.
 
@@ -16,8 +16,6 @@ A comparison box behaves like a contact. It sits in series with the other elemen
 src: reading/tank-alarm.ld.json
 caption: The GT box of rung 4 is a condition in series with the coil
 ```
-
-## Try it
 
 Each press of Fill adds 25 liters, and each press of Drain takes 25. Press Fill four times and watch the alarm lamp, then press it a fifth time, then press Drain once.
 
@@ -51,7 +49,9 @@ Now the dangerous box. Dividing by zero has no answer, and the ZPLC runtime does
 > [!WARNING]
 > A divisor that can be zero must be guarded. Put a comparison in series, before the `DIV`: `NE(Bottles, 0)` conducts only when `Bottles` is not zero, so the `DIV` gets no power while the divisor is zero. Without it, one scan with a zero divisor stops the program.
 
-This figure shows the guard in rung 5 of another program. A case of bottles has an average weight, which is the total weight divided by the number of bottles. When the case is empty, the number of bottles is zero, and the guard keeps the average from being computed.
+## Worked example
+
+A case of bottles has an average weight, which is the total weight divided by the number of bottles. A light bottle weighs 280 g and a heavy one 360 g, and the lamp `Heavy` must light when the average is above 300 g. When the case is empty, the number of bottles is zero, so rung 5 puts the guard in front of the division.
 
 ```ld-figure
 src: reading/case-average.ld.json
@@ -68,7 +68,7 @@ outputs: [Heavy, Empty]
 caption: A light bottle weighs 280 g and a heavy one 360 g
 ```
 
-In the lab, the lamp `Empty` is on until the first bottle. Add one light bottle: the average is 280 and `Heavy` stays off. Add a heavy one: 640 divided by 2 is 320, which is above 300, and `Heavy` turns on. The division gives a whole number: it drops the decimals, so 7 divided by 2 is 3.
+In the lab, the lamp `Empty` is on until the first bottle, and no division runs. Add one light bottle: the average is 280 and `Heavy` stays off. Add a heavy one: 640 divided by 2 is 320, which is above 300, and `Heavy` turns on. The division gives a whole number: it drops the decimals, so 7 divided by 2 is 3.
 
 ## Common mistakes
 
@@ -79,26 +79,26 @@ In the lab, the lamp `Empty` is on until the first bottle. Add one light bottle:
 - Using a type that does not fit. A box that writes text into a number does not compile, and the editor shows the error at the box.
 
 > [!WARNING]
-> A high level lamp on the screen is information, not protection. A float switch or an overflow stop that protects people or equipment is wired in hardware and never depends on the PLC program. ZPLC makes no safety claim about any lesson.
+> A high level lamp on the screen is information, not protection. A float switch or an overflow stop that protects people or equipment is wired in hardware and never depends on the PLC program.
 
 ## Check yourself
 
 ```quiz
 question: The rung Fill and ADD(Filled, 25) -> Filled has no power because Fill is released. What is Filled?
 options:
-  - { text: 'It keeps the value it had', correct: true, feedback: Right. A math box writes only while it has power, and a variable keeps its value between scans. }
-  - { text: 'It goes back to 0', feedback: Only a coil is switched off without power. A variable written by a box stays as it was. }
-  - { text: 'The program stops with an error', feedback: Nothing is wrong with an idle box. Only a division by zero faults the program. }
+  - { text: 'It keeps the value it had', correct: true, feedback: 'Right. A math box writes only while it has power, and a variable keeps its value between scans.' }
+  - { text: 'It goes back to 0', feedback: 'Only a coil is switched off without power. A variable written by a box stays as it was.' }
+  - { text: 'The program stops with an error', feedback: 'Nothing is wrong with an idle box. Only a division by zero faults the program.' }
 ```
 
 ```quiz
 question: Capacity can be 0 before the setup. How do you protect DIV(Scaled, Capacity)?
 options:
-  - { text: 'Put NE(Capacity, 0) in series, to the left of the DIV', correct: true, feedback: Right. The DIV gets power only when Capacity is not zero. }
-  - { text: 'Put NE(Capacity, 0) after the DIV', feedback: By then the division has already happened and the program has faulted. }
-  - { text: 'Do nothing: the DIV by zero gives 0', feedback: It does not. On the ZPLC runtime a division by zero faults the virtual machine. }
+  - { text: 'Put NE(Capacity, 0) in series, to the left of the DIV', correct: true, feedback: 'Right. The DIV gets power only when Capacity is not zero.' }
+  - { text: 'Put NE(Capacity, 0) after the DIV', feedback: 'By then the division has already happened and the program has faulted.' }
+  - { text: 'Do nothing: the DIV by zero gives 0', feedback: 'It does not. On the ZPLC runtime a division by zero faults the virtual machine.' }
 ```
 
 ## What you will do in the practice
 
-In the practice you get a tank monitor. Setup copies the capacity of 200 liters, Fill and Drain move the level in steps of 25, and the lamp `Configured` shows that the capacity is known. The percentage rung is missing. You will add three boxes in one rung, `NE`, `MUL` and `DIV`, so that `Percent` is the level multiplied by 100 and divided by the capacity, and the alarm rung that already exists lights `HighAlarm` at {{t:80}} ms.
+In the practice you get a tank monitor. Setup copies the capacity of 200 liters, Fill and Drain move the level in steps of 25, and the lamp `Configured` shows that the capacity is known. The percentage rung is missing. You will add the rung that makes `Percent` the level in percent of the capacity, without ever dividing by a zero capacity, so that the alarm rung that already exists lights `HighAlarm` at {{t:80}} ms. Then press {{ui:learn.check}}.

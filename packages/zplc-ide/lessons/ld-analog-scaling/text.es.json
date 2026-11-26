@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
   "title": "Escalado analógico en escalera: de cuentas a porcentaje con MUL, DIV y LIMIT",
-  "summary": "Escale las cuentas crudas de una entrada analógica a un nivel en porcentaje con una caja MUL y luego una caja DIV, mantenga el resultado en rango con LIMIT y gobierne dos lámparas de nivel con cajas de comparación.",
-  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la precisión, el ruido, la calibración de una entrada analógica real ni el cableado.",
+  "summary": "Escale las cuentas crudas de una entrada analógica a un nivel en porcentaje con un bloque MUL y luego un bloque DIV, mantenga el resultado en rango con LIMIT y gobierne dos lámparas de nivel con cajas de comparación.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad. El escenario solo fija entradas BOOL, así que la lección no lee una entrada analógica real, y no muestra cuán preciso, ruidoso o bien calibrado es un sensor real, ni cómo se cablea.",
   "objectives": [
     "Escale cuentas analógicas crudas a unidades de ingeniería multiplicando por el rango de las unidades y luego dividiendo entre el rango de las cuentas, en un tipo donde quepa el producto.",
-    "Mantenga un valor dentro de su rango con una caja LIMIT y compare el valor escalado, no las cuentas crudas, con los umbrales de las alarmas."
+    "Mantenga un valor dentro de su rango con un bloque LIMIT y compare el valor escalado, no las cuentas crudas, con los umbrales de las alarmas."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "El escenario solo fija entradas BOOL, así que esta lección no lee una entrada analógica real. En src/AnalogLevel.ld.json los bloques de la parte superior ocupan el lugar de un potenciómetro: mientras Enable esté en ON, Ramp crece 410 cuentas en cada ciclo, y Raw es Ramp limitado a 0..4095. Level debe ser Raw en porcentaje, de 0 a 100, y Warn y HighLevel deben encenderse al 50 y al 75 por ciento. Falta el peldaño que convierte Raw en porcentaje. Agréguelo.",
+      "body": "En src/AnalogLevel.ld.json los bloques de la parte superior ocupan el lugar de un potenciómetro: mientras Enable esté en ON, Ramp crece 410 cuentas en cada ciclo, y Raw es Ramp limitado a 0..4095. Level debe ser Raw en porcentaje, de 0 a 100, y Warn y HighLevel deben encenderse al 50 y al 75 por ciento. Falta el peldaño que convierte Raw en porcentaje. Agréguelo.",
       "checkpoint": "Level sigue a Raw en porcentaje, Warn pasa a ON al 50 por ciento y HighLevel al 75 por ciento."
     },
     {
@@ -23,26 +23,26 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene peldaño entre Raw y Level, así que Level se queda en 0 y Warn y HighLevel nunca pasan a ON a los {{t:50}} ms y {{t:80}} ms; agregue un peldaño con una caja MUL (Raw, 100, hacia Scaled) y una caja DIV (Scaled, 4095, hacia Quot), en ese orden. Inserte cada caja desde el grupo Funciones de la paleta de escalera y escriba sus operandos: una variable declarada o un número.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial no tiene peldaño entre Raw y Level, así que Level se queda en 0 y Warn y HighLevel nunca pasan a ON a los {{t:50}} ms y {{t:80}} ms. Agregue un peldaño que ponga Raw en porcentaje, Raw por 100 dividido entre 4095, en Quot, con el DINT Scaled para el producto intermedio, y sin perder la parte del valor que la división descarta. Los peldaños de abajo ya leen Quot.",
+      "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta el programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario se llama AnalogLevel y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Abra la pestaña Watch y compare Ramp, Raw y Level a los {{t:80}} y {{t:100}} ms. Level sube cerca de un 10 por ciento por ciclo, y HighLevel sube a los {{t:80}} ms. A los {{t:100}} ms Ramp vale 4100 pero Raw está limitado a 4095, y Level vale 100. Enable cae a los {{t:120}} ms, pero nada escribe en Ramp, así que el sustituto conserva su posición y las lámparas siguen en ON.",
+      "body": "Abra la pestaña {{ui:panel.watch}} y compare Ramp, Raw y Level a los {{t:80}} y {{t:100}} ms. Level sube cerca de un 10 por ciento por ciclo, y HighLevel sube a los {{t:80}} ms. A los {{t:100}} ms Ramp vale 4100 pero Raw está limitado a 4095, y Level vale 100. Enable cae a los {{t:120}} ms, pero nada escribe en Ramp, así que el sustituto conserva su posición y las lámparas siguen en ON.",
       "checkpoint": "Warn sube una vez a los {{t:50}} ms y HighLevel sube una vez a los {{t:80}} ms; ambas siguen en ON hasta el final, porque el sustituto no vuelve a bajar."
     },
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "¿Por qué multiplicar por 100 antes de dividir entre 4095, y por qué Scaled es un DINT? Calcule Raw / 4095 * 100 para Raw = 3280, con números enteros, y compárelo con Raw * 100 / 4095. ¿De qué protegería la caja LIMIT si el sensor informara un valor fuera de 0..4095?",
-      "checkpoint": "Raw / 4095 vale 0 para todo Raw menor que 4095, así que el nivel se quedaría en 0 hasta la plena escala. El producto 4095 por 100 es 409500, más de los 32767 que guarda un INT, y un INT daría la vuelta sin ningún error. LIMIT mantiene el valor dentro de 0..100 haga lo que haga la entrada; el escenario comprueba solo las dos lámparas, no el límite, el redondeo ni un potenciómetro real."
+      "body": "¿Por qué multiplicar por 100 antes de dividir entre 4095, y por qué Scaled es un DINT? Calcule Raw / 4095 * 100 para Raw = 3280, con números enteros, y compárelo con Raw * 100 / 4095. ¿De qué protegería el bloque LIMIT si el sensor informara un valor fuera de 0..4095?",
+      "checkpoint": "Raw / 4095 vale 0 para todo Raw menor que 4095, así que el nivel se quedaría en 0 hasta la plena escala. El producto 4095 por 100 es 409500, más de los 32767 que guarda un INT, y un INT daría la vuelta sin ningún error. LIMIT mantiene Raw dentro de 0..4095 haga lo que haga la entrada, así que Level queda dentro de 0..100."
     }
   ],
   "hints": [
@@ -52,10 +52,10 @@
     },
     {
       "level": 2,
-      "text": "Inserte una caja MUL con Raw y 100 hacia Scaled, y una caja DIV con Scaled y 4095 hacia Quot, ambas en el mismo peldaño y en ese orden. Los peldaños de abajo ya leen Quot."
+      "text": "Inserte un bloque MUL con Raw y 100 hacia Scaled, y un bloque DIV con Scaled y 4095 hacia Quot, ambos en el mismo peldaño y en ese orden. Los peldaños de abajo ya leen Quot."
     }
   ],
   "faultCases": [
-    "El programa inicial no tiene peldaño entre Raw y Level, así que Level se queda en 0 y Warn y HighLevel nunca pasan a ON a los {{t:50}} ms y {{t:80}} ms; agregue un peldaño con una caja MUL (Raw, 100, hacia Scaled) y una caja DIV (Scaled, 4095, hacia Quot), en ese orden."
+    "El programa inicial no tiene peldaño entre Raw y Level, así que Level se queda en 0 y Warn y HighLevel nunca pasan a ON a los {{t:50}} ms y {{t:80}} ms."
   ]
 }
