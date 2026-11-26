@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial divide antes de multiplicar, así que la división entera Raw / 1000 da 0 hasta que Raw llega a 1000 y el porcentaje queda en 0; multiplique primero por 100 y luego divida por 1000.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial divide antes de multiplicar, así que la división entera Raw / 1000 da 0 hasta que Raw llega a 1000 y el porcentaje queda en 0. Cambie el escalado para que Percent sea el porcentaje correcto de Raw en cada paso, no solo en el tope de la escala. Deje como están el sustituto de Raw y las dos comparaciones.",
+      "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta el programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario se llama Scaling y contiene {{assertions}} aserciones."
     },
     {
@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "¿Por qué se usa DINT en esta lección? Raw por 100 llega a 100000, más de lo que cabe en un entero de 16 bits, así que el producto intermedio necesita un tipo de mayor rango. Compruebe el tamaño de INT en su dispositivo de destino antes de confiar en él.",
+      "body": "¿Por qué se usa DINT en esta lección? Raw por 100 llega a 100000, más de lo que cabe en un INT de 16 bits, así que el producto intermedio necesita un tipo de mayor rango. ¿Qué cambiaría sumar la mitad del divisor antes de la división, y para qué valores de Raw?",
       "checkpoint": "El producto se forma antes de la división, así que su rango decide el tipo, no el rango de Raw. El escenario comprueba solo los dos umbrales; no comprueba el redondeo de otros valores."
     }
   ],

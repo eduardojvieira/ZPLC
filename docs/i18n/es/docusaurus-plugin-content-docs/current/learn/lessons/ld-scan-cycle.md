@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/ld-scan-cycle. Do not edit. >>> */}
 
-Aprenda que un PLC lee sus entradas, resuelve los peldaños de arriba hacia abajo y luego escribe sus salidas, y corrija un programa cuya lámpara sigue al botón un ciclo demasiado tarde.
+Aprenda que un PLC lee sus entradas, resuelve los peldaños de arriba hacia abajo y luego escribe sus salidas, y corrija un programa cuya lámpara sigue al pulsador un ciclo demasiado tarde.
 
 ## Datos
 
@@ -39,7 +39,7 @@ Aprenda que un PLC lee sus entradas, resuelve los peldaños de arriba hacia abaj
 
 ## Qué cubre la evidencia
 
-Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no mide cuánto dura un ciclo en un controlador real.
 
 ## En una placa
 

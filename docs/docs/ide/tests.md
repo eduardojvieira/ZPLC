@@ -54,15 +54,15 @@ When a run cannot start, the tab and the notification say why and what to do, fo
 
 Every action above is a command of the palette, and the ones that are run often have a shortcut. None of them acts on a board: a test always runs on the simulation of this computer.
 
-| Command                   | Shortcut                   | What it does                                                                                    |
-| ------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------- |
-| **Show tests**            | none                       | Shows the Tests activity.                                                                       |
-| **Show test results**     | none                       | Shows the Test results tab.                                                                     |
-| **Run all tests**         | `Ctrl+Alt+T` (`Cmd+Alt+T`) | Runs every test.                                                                                |
-| **Run the failed tests**  | none                       | Runs the tests whose last result failed.                                                        |
-| **Run the selected test** | none                       | Runs the scenario file of the active document, or else the test selected in the Tests activity. |
-| **New test**              | none                       | Writes a first test for the first program.                                                      |
-| **Check the interlocks**  | none                       | Runs the interlock coverage check.                                                              |
+| Command                   | Shortcut                       | What it does                                                                                    |
+| ------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------- |
+| **Show tests**            | none                           | Shows the Tests activity.                                                                       |
+| **Show test results**     | none                           | Shows the Test results tab.                                                                     |
+| **Run all tests**         | `Ctrl+Shift+T` (`Cmd+Shift+T`) | Runs every test.                                                                                |
+| **Run the failed tests**  | none                           | Runs the tests whose last result failed.                                                        |
+| **Run the selected test** | none                           | Runs the scenario file of the active document, or else the test selected in the Tests activity. |
+| **New test**              | none                           | Writes a first test for the first program.                                                      |
+| **Check the interlocks**  | none                           | Runs the interlock coverage check.                                                              |
 
 A scenario runs whole, so **Run the selected test** never runs one expectation alone. With no scenario file open and no test selected it says "No test to run here" and runs nothing.
 

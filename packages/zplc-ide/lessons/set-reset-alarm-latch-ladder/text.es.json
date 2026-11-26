@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Enclavar una alarma en escalera: bobinas SET y RESET, y el orden de los peldaños",
   "summary": "Mantenga una falla en memoria con bobinas SET y RESET, y compruebe que en escalera el peldaño que va al final decide cuál gana.",
-  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra los requisitos de manejo de alarmas de una máquina real ni el cableado.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo una planta real debe manejar y reconocer sus alarmas.",
   "objectives": [
     "Mantenga una alarma después de que la falla desaparezca con una bobina SET y bórrela solo con una bobina RESET.",
     "Decida la prioridad entre set y reset por el orden de los peldaños: gana el último que se escanea."
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial acciona ambas salidas con bobinas simples desde Fault, así que se apagan a los {{t:20}} ms cuando la falla desaparece; use una bobina SET para Fault y una bobina RESET para Ack en cada salida. Ponga el peldaño RESET de SetFirst antes de su peldaño SET, y el peldaño SET de ResetFirst antes de su peldaño RESET.",
-      "checkpoint": "Cada salida tiene un peldaño SET y un peldaño RESET, en el orden que da la prioridad pedida."
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial acciona ambas salidas con bobinas simples desde Fault, así que se apagan a los {{t:20}} ms cuando la falla desaparece. Cámbielo para que cada salida pase a ON con Fault, siga en ON cuando Fault cae y pase a OFF solo con Ack; y cuando Fault y Ack llegan juntas a los {{t:50}} ms, SetFirst termine en ON y ResetFirst termine en OFF.",
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta el programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario se llama AlarmLatchLd y contiene {{assertions}} aserciones."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial acciona ambas salidas con bobinas simples desde Fault, así que se apagan a los {{t:20}} ms cuando la falla desaparece; use una bobina SET para Fault y una bobina RESET para Ack en cada salida."
+    "El programa inicial acciona ambas salidas con bobinas simples desde Fault, así que se apagan a los {{t:20}} ms cuando la falla desaparece."
   ]
 }

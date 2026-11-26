@@ -39,7 +39,7 @@ Keep a request in a memory bit, store a duration in a TIME variable, and see whi
 
 ## What the evidence covers
 
-Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the wiring, the electrical levels or the timing of real inputs and outputs.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how real inputs and outputs are wired, what voltages they use or how fast they answer.
 
 ## On a board
 

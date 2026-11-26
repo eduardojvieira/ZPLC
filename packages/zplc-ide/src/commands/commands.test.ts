@@ -431,7 +431,7 @@ const U2_COMMANDS = {
   'file.closeProject': ['file'],
   'file.preferences': ['file', 'Mod+Comma'],
   'file.exportProjectJson': ['file'],
-  'build.runAllTests': ['build', 'Mod+Alt+T'],
+  'build.runAllTests': ['build', 'Mod+Shift+T'],
   'build.runFailedTests': ['build'],
   'build.runTestAtCursor': ['build'],
   'build.newTest': ['build'],
@@ -483,14 +483,21 @@ describe('milestone U3 command contract (FND-002)', () => {
       expect([id, typeof english, typeof spanish]).toEqual([id, 'string', 'string']);
       expect(english).not.toBe(spanish);
     }
-    expect(commandById('view.focusCommandBar').shortcut).toBeUndefined();
+    expect(commandById('view.focusCommandBar').shortcut).toBe('Mod+Alt+C');
+  });
+
+  it('FND-002 run all tests is Mod+Shift+T and no command uses Mod+Alt+T, which Ubuntu keeps for its terminal', () => {
+    expect(commandById('build.runAllTests').shortcut).toBe('Mod+Shift+T');
+    expect(COMMAND_LIST.filter((command) => command.shortcut === 'Mod+Alt+T')).toEqual([]);
+    const taken = COMMAND_LIST.filter((command) => command.shortcut === 'Mod+Shift+T' || command.shortcut === 'Mod+Alt+C');
+    expect(taken.map((command) => command.id).sort()).toEqual(['build.runAllTests', 'view.focusCommandBar']);
   });
 
   it('FND-002 a command declared for a later task stays out of the menu until it is bound', () => {
     const pending = COMMAND_LIST.filter((command) => command.pending).map((command) => command.id);
     expect(pending.sort()).toEqual(
       Object.keys(U3_COMMANDS)
-        .filter((id) => id !== 'view.showPlant')
+        .filter((id) => id !== 'view.showPlant' && id !== 'view.focusCommandBar')
         .sort(),
     );
     const listed = menuCommands.map((command) => command.id);

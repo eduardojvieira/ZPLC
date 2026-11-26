@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/ld-edges. Do not edit. >>> */}
 
-Use un contacto de transición positiva y un contacto de transición negativa para que una caja en un transportador dé un pulso al llegar y otro al salir, sin importar cuánto tiempo siga activo el sensor.
+Use un contacto de flanco ascendente y un contacto de flanco descendente para que una caja en un transportador dé un pulso al llegar y otro al salir, sin importar cuánto tiempo siga activo el sensor.
 
 ## Datos
 
@@ -25,7 +25,7 @@ Use un contacto de transición positiva y un contacto de transición negativa pa
 
 ## Objetivos
 
-- Use un contacto de transición positiva (P) y un contacto de transición negativa (N) para convertir un nivel en un pulso de un escaneo.
+- Use un contacto de flanco ascendente (P) y un contacto de flanco descendente (N) para convertir un nivel en un pulso de un escaneo.
 - Explique por qué una entrada retenida debe contarse una sola vez y qué escaneo ve el pulso.
 
 ## Etapas
@@ -39,7 +39,7 @@ Use un contacto de transición positiva y un contacto de transición negativa pa
 
 ## Qué cubre la evidencia
 
-Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el antirrebote, el tiempo de respuesta ni el cableado de un sensor real.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un sensor real, con qué rapidez responde ni cómo se cablea.
 
 ## En una placa
 

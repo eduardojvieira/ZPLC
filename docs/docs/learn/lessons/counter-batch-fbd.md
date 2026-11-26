@@ -19,14 +19,14 @@ Edit a Function Block Diagram so that a CTU counter counts three parts, lights B
 - Estimated time: 20 minutes
 - Languages: FBD
 - Tracks: Simulation, Hardware
-- Reading page: no
+- Reading page: yes
 - Plant: none
 - Prerequisites: [edge-counter-pulses](./edge-counter-pulses.md)
 
 ## Objectives
 
-- Read a Function Block Diagram as blocks whose output ports are wired to the input ports of other blocks.
-- Wire a CTU counter: a rising edge on CU counts, R clears it, and Q is TRUE when the count reaches the preset PV.
+- Read a counter in a Function Block Diagram as a block with a memory: an instance whose input ports receive connections and whose outputs Q and CV can be connected on.
+- Make a CTU count rising edges up to its preset, and clear it with a reset input.
 
 ## Stages
 
@@ -39,7 +39,7 @@ Edit a Function Block Diagram so that a CTU counter counts three parts, lights B
 
 ## What the evidence covers
 
-Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show sensor wiring, debounce or counting accuracy at machine speed.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real photocell bounces or how fast a real line can be counted.
 
 ## Wiring
 

@@ -2,44 +2,47 @@
   "schemaVersion": 1,
   "title": "Flancos y contador de pulsos",
   "summary": "Use un contador CTU para contar tres pulsos discretos y poner la cuenta a cero.",
-  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
-  "objectives": ["Cuente tres flancos ascendentes de PulseInput con un contador CTU.", "Ponga a cero la cuenta y CountReached con Reset."],
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un sensor real ni qué hace una entrada real con un pulso más corto que un ciclo.",
+  "objectives": [
+    "Cuente los flancos ascendentes de una entrada con una instancia de CTU llamada en cada ciclo, para que un pulso largo cuente una vez.",
+    "Pase una salida a ON cuando la cuenta llega a su valor preestablecido, y ponga la cuenta a cero con una entrada de puesta a cero."
+  ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/EdgeCounter.st, use PulseInput, Reset y CountReached y agregue una instancia Count (CTU) con PV=3.",
-      "checkpoint": "CTU cuenta una vez cada flanco ascendente de PulseInput, sin importar cuánto tiempo siga en alto el pulso; Reset borra la cuenta."
+      "body": "En src/EdgeCounter.st están declaradas las entradas PulseInput y Reset y la salida CountReached, y el programa escribe FALSE en CountReached. Haga que CountReached pase a ON en el tercer flanco ascendente de PulseInput y siga en ON hasta que Reset ponga la cuenta a cero. El contador lo declara usted.",
+      "checkpoint": "Usted puede decir por qué un contador cuenta flancos ascendentes y no los ciclos en que su entrada está en TRUE, y qué hacen su valor preestablecido PV y su puesta a cero R."
     },
     {
       "key": "predict",
       "title": "Prediga",
-      "body": "Antes de ejecutar, prediga cuándo el contador alcanza PV=3.",
+      "body": "El escenario da a PulseInput tres pulsos, que suben a los {{t:10}}, {{t:30}} y {{t:50}} ms, y pulsa Reset a los {{t:70}} ms. Prediga CountReached a los {{t:0}}, {{t:10}}, {{t:30}}, {{t:50}} y {{t:70}} ms.",
       "checkpoint": "CountReached permanece en OFF a los {{v:EdgeCounter.CountReached=false@0|0}}, {{v:EdgeCounter.CountReached=false@10|10}} y {{v:EdgeCounter.CountReached=false@30|30}} ms; pasa a ON a los {{v:EdgeCounter.CountReached=true@50|50}}, tras el tercer flanco, y vuelve a OFF a los {{v:EdgeCounter.CountReached=false@70|70}} con Reset."
     },
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial nunca cuenta; agregue un CTU con PV=3 para que CountReached pase a ON en el tercer flanco ascendente y Reset lo devuelva a OFF.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial nunca cuenta: escribe FALSE en CountReached, así que CountReached sigue en OFF después del tercer pulso. Cámbielo para que CountReached pase a ON en el tercer flanco ascendente de PulseInput y Reset la vuelva a OFF. Escriba usted la declaración y las instrucciones.",
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
-      "checkpoint": "El escenario requerido se llama EdgeCounter y contiene {{assertions}} aserciones."
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
+      "checkpoint": "El escenario se llama EdgeCounter y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Compare los eventos de {{t:10}}, {{t:30}}, {{t:50}} y {{t:70}} ms con la salida CountReached.",
-      "checkpoint": "El tercer pulso alcanza PV=3; Reset domina y devuelve CountReached a OFF."
+      "body": "Siga PulseInput y CountReached en la traza: nada cambia con los dos primeros pulsos, CountReached sube con el tercero a los {{t:50}} ms y cae cuando Reset sube a los {{t:70}} ms.",
+      "checkpoint": "CountReached sube una vez, en el tercer flanco ascendente, y cae una vez, con Reset."
     },
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "Las aserciones AT/RISING/FALLING cubren esta secuencia lógica discreta.",
-      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
+      "body": "Imagine que el tercer pulso sigue en TRUE hasta el final del escenario. ¿Cambia CountReached? Después imagine el contador llamado solo dentro de IF PulseInput THEN ... END_IF: ¿qué cuenta?",
+      "checkpoint": "Un pulso largo tiene un solo flanco ascendente, así que cuenta una vez y CountReached es la misma. Dentro del IF el contador se llama solo mientras PulseInput está en TRUE, así que nunca ve PulseInput en FALSE, nunca ve un flanco ascendente después del primero y deja de contar."
     }
   ],
   "hints": [
@@ -53,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial nunca cuenta; agregue un CTU con PV=3 para que CountReached pase a ON en el tercer flanco ascendente y Reset lo devuelva a OFF."
+    "El programa inicial nunca cuenta: escribe FALSE en CountReached, así que CountReached sigue en OFF después del tercer pulso."
   ]
 }

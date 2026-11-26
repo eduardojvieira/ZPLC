@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/boolean-logic-two-hand-guard. Do not edit. >>> */}
 
-Combine AND, NOT and XOR so a press can only be enabled when both hands are on the buttons and the guard is closed.
+Combine AND, NOT and XOR so a press can only be enabled when both hands are on the push buttons and the guard is closed.
 
 ## Facts
 
@@ -19,7 +19,7 @@ Combine AND, NOT and XOR so a press can only be enabled when both hands are on t
 - Estimated time: 15 minutes
 - Languages: ST
 - Tracks: Simulation, Hardware
-- Reading page: no
+- Reading page: yes
 - Plant: none
 - Prerequisites: [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
 

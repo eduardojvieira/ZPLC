@@ -44,7 +44,7 @@ describe('the test commands (TST-010)', () => {
       expect(isCommandEnabled(command, { ...INITIAL_COMMAND_STATE, projectOpen: true })).toBe(true);
       expect('physical' in command && command.physical).toBeFalsy();
     }
-    expect(COMMAND_LIST.find((command) => command.id === 'build.runAllTests')?.shortcut).toBe('Mod+Alt+T');
+    expect(COMMAND_LIST.find((command) => command.id === 'build.runAllTests')?.shortcut).toBe('Mod+Shift+T');
     await testCommandHandlers()['build.runAllTests']!();
     expect(runs).toEqual([undefined]);
     // a failed test runs alone, by its path

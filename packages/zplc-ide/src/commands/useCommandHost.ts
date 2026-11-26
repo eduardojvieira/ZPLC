@@ -23,7 +23,7 @@ import { focusSoon, showActivity, showPanel } from './bind/layout';
 import { fitPlantScene } from './bind/plant';
 
 /** Commands that also work while the focus is in a text field: the others leave a field its own keys. */
-const WORKS_IN_TEXT_FIELDS: ReadonlySet<string> = new Set<CommandId>(['view.commandPalette', 'help.shortcuts']);
+const WORKS_IN_TEXT_FIELDS: ReadonlySet<string> = new Set<CommandId>(['view.commandPalette', 'help.shortcuts', 'view.focusCommandBar']);
 
 const isTextField = (target: EventTarget | null): boolean => {
   const tag = (target as HTMLElement | null)?.tagName;

@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import type * as THREE from 'three';
 import type { PlantSceneFile, PlantSnapshot, Quat } from '../contracts';
 import '../core/plantCore'; // registers the shipped parts before the catalogue is read
-import { cameraFromPreset, cameraPosition, type CameraState } from './camera';
+import { cameraFromPreset, cameraPosition, FIRST_VIEW_POLAR_MAX_DEG, type CameraState } from './camera';
 import { partShape } from './geometry';
 import { createRenderer, type PlantRenderer } from './renderer';
 
@@ -263,7 +263,32 @@ describe('the first view fits the whole scene (VIS-002)', () => {
       r.setSnapshot(await snapshotOf(scene));
       r.resize(720, 800);
       expect(r.cameraState().azimuthDeg).toBeCloseTo(authored.azimuthDeg, 6);
-      expect(r.cameraState().polarDeg).toBeCloseTo(authored.polarDeg, 6);
+      expect(r.cameraState().polarDeg).toBeCloseTo(Math.min(authored.polarDeg, FIRST_VIEW_POLAR_MAX_DEG), 6);
+      r.dispose();
+    }
+  });
+
+  it('VIS-002 S3-10 a first preset that looks lower than the horizon allows opens raised to it; a higher one is kept', async () => {
+    for (const id of ['stacker-crane-warehouse', 'three-level-lifts', 'belt-to-sensor']) {
+      const scene = loadScene(id);
+      const authored = cameraFromPreset(scene.cameras[0]!);
+      const { r } = build(scene);
+      r.setSnapshot(await snapshotOf(scene));
+      r.resize(1280, 720);
+      const opened = r.cameraState();
+      // The top edge of the picture stays at or below the horizon.
+      expect(opened.polarDeg + 45 / 2).toBeLessThanOrEqual(90 + 1e-9);
+      if (authored.polarDeg > FIRST_VIEW_POLAR_MAX_DEG) expect(opened.polarDeg).toBeCloseTo(FIRST_VIEW_POLAR_MAX_DEG, 9);
+      else expect(opened.polarDeg).toBeCloseTo(authored.polarDeg, 6);
+      // Choosing the first preset again opens the same raised view; another preset keeps its authored framing.
+      r.setCameraAnimation?.(false);
+      r.orbit(20, 0);
+      r.setCameraPreset(scene.cameras[0]!.name);
+      expect(r.cameraState().polarDeg).toBeCloseTo(opened.polarDeg, 6);
+      if (scene.cameras[1]) {
+        r.setCameraPreset(scene.cameras[1].name);
+        expect(r.cameraState().polarDeg).toBeCloseTo(cameraFromPreset(scene.cameras[1]).polarDeg, 6);
+      }
       r.dispose();
     }
   });

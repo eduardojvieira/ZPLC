@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test';
-import { lstat, mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
+import { lstat, mkdtemp, mkdir, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -7,7 +7,8 @@ import { createAiProvider } from './aiProvider';
 
 const directories: string[] = [];
 async function fixture() {
-  const directory = await mkdtemp(join(tmpdir(), 'zplc-ai-'));
+  // the gateway hands the provider the real path of a project; the temporary folder of macOS (/var) and Windows (8.3 names) is not one
+  const directory = await realpath(await mkdtemp(join(tmpdir(), 'zplc-ai-')));
   directories.push(directory);
   await mkdir(join(directory, 'workspace', 'src'), { recursive: true });
   await writeFile(join(directory, 'workspace', 'src', 'Main.st'), 'PROGRAM Main\nEND_PROGRAM\n');
@@ -30,20 +31,29 @@ const request = {
 };
 
 describe('optional AI provider (IDE-030)', () => {
-  it('is unconfigured by default and never uses a plaintext Linux fallback', async () => {
-    const directory = await fixture();
-    const provider = createAiProvider({ userDataPath: directory, vault: vault('basic_text') });
-    expect(await provider.getStatus()).toEqual({
-      configured: false,
-      enabled: false,
-      keyStored: false,
-      vaultAvailable: false,
-      vaultReason: 'insecure-backend',
-    });
-    expect(await provider.request(join(directory, 'workspace'), request, new AbortController().signal)).toEqual({
-      ok: false,
-      code: 'AI_VAULT_UNAVAILABLE',
-    });
+  // the plaintext backend exists only on Linux; macOS and Windows keep the key in the OS keychain through safeStorage
+  const unconfigured = 'is unconfigured by default and never uses a plaintext Linux fallback (%s)';
+  it.each(['linux', 'darwin', 'win32'] as const)(unconfigured, async (platform) => {
+    const original = Object.getOwnPropertyDescriptor(process, 'platform')!;
+    Object.defineProperty(process, 'platform', { ...original, value: platform });
+    try {
+      const directory = await fixture();
+      const provider = createAiProvider({ userDataPath: directory, vault: vault('basic_text') });
+      const linux = platform === 'linux';
+      expect(await provider.getStatus()).toEqual({
+        configured: false,
+        enabled: false,
+        keyStored: false,
+        vaultAvailable: !linux,
+        ...(linux ? { vaultReason: 'insecure-backend' } : {}),
+      });
+      expect(await provider.request(join(directory, 'workspace'), request, new AbortController().signal)).toEqual({
+        ok: false,
+        code: linux ? 'AI_VAULT_UNAVAILABLE' : 'AI_UNCONFIGURED',
+      });
+    } finally {
+      Object.defineProperty(process, 'platform', original);
+    }
   });
 
   it('normalizes only HTTPS or loopback endpoints, encrypts the key, and exposes neither', async () => {
@@ -298,10 +308,12 @@ describe('optional AI provider (IDE-030)', () => {
     });
     await provider.saveConfig({ enabled: true, endpoint: 'https://api.example.test', model: 'gpt-test' });
     await provider.storeKey('secret');
+    // every wait is bounded: a request that settles before the fetch, or a cancel that never lands, fails here instead of hanging the shard
+    const bound = (label: string) => Bun.sleep(2_000).then(() => ({ unsettled: label }));
     const pending = provider.request(join(directory, 'workspace'), request, new AbortController().signal);
-    await startedFetch;
+    expect(await Promise.race([startedFetch.then(() => 'fetch started'), pending, bound('fetch')])).toBe('fetch started');
     expect(provider.cancel()).toEqual({ requested: true });
-    expect(await pending).toEqual({ ok: false, code: 'AI_CANCELLED' });
+    expect(await Promise.race([pending, bound('cancel')])).toEqual({ ok: false, code: 'AI_CANCELLED' });
   });
 
   it('accepts a normal OpenAI envelope but rejects malformed JSON and malformed parsed edits', async () => {
@@ -994,5 +1006,57 @@ describe('assistant answer shapes (AI-14 / AIX-006)', () => {
       tool_calls: [{ name: 'deploy' }],
     })}`;
     expect(await replyWith(fencedWithTrailingToolCall)).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+  });
+
+  // R-07: an ```st fence is not a json fence; the object inside it is read by the bare-object scan and must stay as strict as the bare form
+  const stFence = (body: string) => `\`\`\`st\n${body}\n\`\`\``;
+
+  it('AI-14 reads a structured answer inside an st fence as the bare object', async () => {
+    const bare = await replyWith(JSON.stringify(VALID_EDIT));
+    expect(bare).toMatchObject({ ok: true, changes: [{ path: 'src/Main.st', kind: 'modify', content: UPDATED_ST }] });
+    expect(await replyWith(stFence(JSON.stringify(VALID_EDIT)))).toEqual(bare);
+  });
+
+  it('AI-14 lets an st fence bypass no refusal of the structured answer', async () => {
+    const withManifest = async (content: string) => {
+      const directory = await fixture();
+      await writeFile(join(directory, 'workspace', 'zplc.json'), JSON.stringify({ name: 'P' }));
+      const provider = createAiProvider({
+        userDataPath: directory,
+        vault: vault(),
+        fetch: async () => new Response(JSON.stringify({ choices: [{ message: { content } }] })),
+      });
+      await provider.saveConfig({ enabled: true, endpoint: 'https://api.example.test', model: 'gpt-test' });
+      await provider.storeKey('secret');
+      return provider.request(join(directory, 'workspace'), { ...request, mode: 'edit' }, new AbortController().signal);
+    };
+    const manifest = (value: unknown) => JSON.stringify({ answer: 'x', changes: [{ path: 'zplc.json', content: JSON.stringify(value) }] });
+    // the same manifest change without the credential is accepted, so the credential is what refuses it
+    expect(await withManifest(stFence(manifest({ name: 'P', version: '1.0.0' })))).toMatchObject({ ok: true });
+    const credential = manifest({ name: 'P', network: { wifi: { password: 'hunter2' } } });
+    expect(await withManifest(credential)).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+    expect(await withManifest(stFence(credential))).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+
+    const refused: Array<[string, string]> = [
+      ['a top-level replacement', JSON.stringify({ answer: 'x', replacement: { path: 'src/Main.st', content: UPDATED_ST } })],
+      ['tool_calls', JSON.stringify({ ...VALID_EDIT, tool_calls: [{ name: 'deploy' }] })],
+      ['an unknown change key', JSON.stringify({ answer: 'x', changes: [{ path: 'src/Main.st', content: UPDATED_ST, extra: true }] })],
+    ];
+    for (const [label, body] of refused) {
+      expect(await replyWith(body), label).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+      expect(await replyWith(stFence(body)), `st fence: ${label}`).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+    }
+
+    const huge = JSON.stringify({ answer: 'x'.repeat(256 * 1024), changes: VALID_EDIT.changes });
+    expect(await replyWith(huge)).toEqual({ ok: false, code: 'AI_RESPONSE_LIMIT' });
+    expect(await replyWith(stFence(huge))).toEqual({ ok: false, code: 'AI_RESPONSE_LIMIT' });
+  });
+
+  it('AI-14 reads an st fence of Structured Text without a JSON object as no structured answer', async () => {
+    const message = `Here is the program:\n${stFence('PROGRAM Main\nVAR x : INT; END_VAR\nx := x + 1;\nEND_PROGRAM')}`;
+    const result = await replyWith(message);
+    expect(result).toMatchObject({ ok: true, answer: message });
+    expect(result).not.toHaveProperty('changes');
+    expect(result).not.toHaveProperty('proposals');
   });
 });

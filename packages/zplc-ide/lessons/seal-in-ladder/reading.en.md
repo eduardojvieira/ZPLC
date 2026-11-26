@@ -15,9 +15,13 @@ The trick is to let the output **keep its own rung alive**. You add a second con
 
 The scan cycle you studied earlier is what makes this work. In one scan the output is calculated from the state that it had at the end of the previous scan.
 
-## How it looks in Ladder
+## Why the stop contacts go before the branch
 
-Here is a fan with two reasons to stop: an Off button and an overload relay that trips when the motor is too hot. The Off button and the overload are both read with normally closed contacts, in series before the branch.
+The stop contacts are in series with the **whole branch**. This is what gives the stop priority. If a stop contact were inside the held path, pressing Start together with Stop would turn the machine on, because the Start path would bypass the Stop contact. A stop that can be bypassed is not a stop. Put every condition that must always be able to stop the machine **in series, before the branch**.
+
+## Worked example
+
+Go back to the workshop fan, now with two reasons to stop: an Off button and an overload relay that trips when the motor is too hot. The Off button and the overload are both read with normally closed contacts, in series before the branch.
 
 ```ld-figure
 src: reading/fan-seal-in.ld.json
@@ -50,40 +54,35 @@ marks:
 caption: Fan starts with the press of OnButton, stays on after the release, and stops with OffButton
 ```
 
-## Why the stop contacts go before the branch
-
-The stop contacts are in series with the **whole branch**. This is what gives the stop priority. If a stop contact were inside the held path, pressing Start together with Stop would turn the machine on, because the Start path would bypass the Stop contact. A stop that can be bypassed is not a stop. Put every condition that must always be able to stop the machine **in series, before the branch**.
-
 ## Common mistakes
 
 - Putting the holding contact in parallel with the stop contact. The stop then cannot drop the output.
 - Using a normally closed contact for the holding contact. The output would turn itself off on the next scan.
-- Using a normally open contact for the stop button wired normally closed in the field. Remember how your program reads the field signal, as you will see in a later lesson.
+- Reading a stop button wired normally closed with the wrong contact. Choose the contact from the value the input has at rest, not from the name of the button.
 - Forgetting that the memory is the output: if the output is overwritten from another place, the seal-in breaks.
-
-> [!NOTE]
-> A seal-in forgets its state when the PLC loses power or is restarted, because variables start from their initial values. That is usually what you want, so that a machine does not start by itself after a power cut.
+- Expecting a seal-in to survive a restart. Variables start from their initial values when the PLC loses power or restarts, so the output is OFF again. That is usually what you want: a machine must not start by itself after a power cut.
 
 > [!WARNING]
-> Stopping with a program is not the same as stopping safely. An emergency stop is wired in hardware and cuts the power to the motor even when the PLC is stopped or has failed. It never depends on the seal-in or on any other part of the program. ZPLC makes no safety claim.
+> Stopping with a program is not the same as stopping safely. An emergency stop is wired in hardware and cuts the power to the motor even when the PLC is stopped or has failed. It never depends on the seal-in or on any other part of the program.
 
 ## Check yourself
 
 ```quiz
 question: The Start button is released. Why does a seal-in keep the output on?
 options:
-  - { text: 'A contact of the output itself is in parallel with Start and keeps power flowing', correct: true, feedback: Yes. The output holds its own rung alive. }
-  - { text: 'The PLC remembers that the button was pressed for the whole day', feedback: The PLC has no special memory for this. The program provides it with a contact of the output. }
-  - { text: 'The Stop contact is closed', feedback: The Stop contact must be closed for power to pass, but it is the holding contact that keeps the output on after Start is released. }
+  - { text: 'A contact of the output itself is in parallel with Start and keeps power flowing', correct: true, feedback: 'Yes. The output holds its own rung alive.' }
+  - { text: 'The PLC remembers that the button was pressed for the whole day', feedback: 'The PLC has no special memory for this. The program provides it with a contact of the output.' }
+  - { text: 'The Stop contact is closed', feedback: 'The Stop contact must be closed for power to pass, but it is the holding contact that keeps the output on after Start is released.' }
 ```
 
 ```quiz
 question: Where must the Stop contact go for Stop to win over Start?
 options:
-  - { text: 'In series, before the branch of Start and the holding contact', correct: true, feedback: Yes. Nothing can bypass it. }
-  - { text: 'In parallel with the holding contact', feedback: Then the Start button could still power the coil while Stop is pressed. }
+  - { text: 'In series, before the branch of Start and the holding contact', correct: true, feedback: 'Yes. Nothing can bypass it.' }
+  - { text: 'In parallel with the holding contact', feedback: 'Then the Start button could still power the coil while Stop is pressed.' }
+  - { text: 'After the coil, at the end of the rung', feedback: 'A rung ends in its coil. A condition must come before the coil to decide whether power reaches it.' }
 ```
 
 ## What you will do in the practice
 
-In the practice you get a motor rung with a Stop contact and a Start contact, but without the holding contact, so the motor stops as soon as you release Start. You will add the contact of the motor in parallel with Start, press Check, and see that the motor keeps running after Start is released and that Stop still wins.
+The starting program has a motor rung with a Stop contact and a Start contact but nothing that holds the motor on, so the motor stops as soon as Start is released. You will make the motor keep running after Start is released, stop when Stop is pressed, and stay stopped when Start and Stop are pressed together, then press {{ui:learn.check}}.

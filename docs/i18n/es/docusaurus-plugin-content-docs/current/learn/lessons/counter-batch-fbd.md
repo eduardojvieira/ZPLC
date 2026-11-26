@@ -19,14 +19,14 @@ Edite un diagrama de bloques de función para que un contador CTU cuente tres pi
 - Tiempo estimado: 20 minutos
 - Lenguajes: FBD
 - Rutas: Simulación, Hardware
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [edge-counter-pulses](./edge-counter-pulses.md)
 
 ## Objetivos
 
-- Lea un diagrama de bloques de función como bloques cuyos puertos de salida se conectan a los puertos de entrada de otros bloques.
-- Conecte un contador CTU: un flanco ascendente en CU cuenta, R lo borra y Q es TRUE cuando la cuenta llega al valor preestablecido PV.
+- Lea un contador en un diagrama de bloques de función como un bloque con memoria: una instancia cuyos puertos de entrada reciben conexiones y cuyas salidas Q y CV se pueden conectar a otros bloques.
+- Haga que un CTU cuente flancos ascendentes hasta su valor preestablecido, y póngalo a cero con una entrada de puesta a cero.
 
 ## Etapas
 
@@ -39,7 +39,7 @@ Edite un diagrama de bloques de función para que un contador CTU cuente tres pi
 
 ## Qué cubre la evidencia
 
-Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el cableado del sensor, el antirrebote ni la exactitud del conteo a la velocidad de la máquina.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota una fotocélula real ni a qué velocidad se puede contar una línea real.
 
 ## Cableado
 

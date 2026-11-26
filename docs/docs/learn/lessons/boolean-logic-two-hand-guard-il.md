@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/boolean-logic-two-hand-guard-il. Do not edit. >>> */}
 
-Read an Instruction List program as one current result that each line combines with an operand, and use it to enable a press only when both hands are on the buttons and the guard is closed.
+Read an Instruction List program as one current result that each line combines with an operand, and use it to enable a press only when both hands are on the push buttons and the guard is closed.
 
 ## Facts
 
@@ -19,7 +19,7 @@ Read an Instruction List program as one current result that each line combines w
 - Estimated time: 15 minutes
 - Languages: IL
 - Tracks: Simulation, Hardware
-- Reading page: no
+- Reading page: yes
 - Plant: none
 - Prerequisites: [boolean-logic-two-hand-guard](./boolean-logic-two-hand-guard.md)
 

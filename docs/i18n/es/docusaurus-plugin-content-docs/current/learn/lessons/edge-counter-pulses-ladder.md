@@ -39,7 +39,7 @@ Coloque un CTU en un peldaño para que CountReached se active en el tercer flanc
 
 ## Qué cubre la evidencia
 
-Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la exactitud de conteo de una entrada real ni el cableado.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un sensor real, cuántos pulsos pierde una entrada real ni cómo se cablea.
 
 ## Cableado
 

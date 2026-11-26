@@ -19,14 +19,14 @@ Llame a un contador CTU desde lista de instrucciones para contar tres pulsos dis
 - Tiempo estimado: 15 minutos
 - Lenguajes: IL
 - Rutas: Simulación, Hardware
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [edge-counter-pulses](./edge-counter-pulses.md), [boolean-logic-two-hand-guard-il](./boolean-logic-two-hand-guard-il.md)
 
 ## Objetivos
 
-- Llame a un contador CTU con CAL y lea su salida con LD Count.Q.
-- Cuente los flancos ascendentes de PulseInput hasta un valor preestablecido de 3, y borre la cuenta con Reset.
+- Llame a una instancia de CTU con CAL en cada ciclo, pasándole sus entradas, y lea su salida después de la llamada.
+- Cuente los flancos ascendentes de PulseInput hasta un valor preestablecido de 3, y ponga la cuenta a cero con Reset.
 
 ## Etapas
 
@@ -39,7 +39,7 @@ Llame a un contador CTU desde lista de instrucciones para contar tres pulsos dis
 
 ## Qué cubre la evidencia
 
-Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra sensores físicos ni rebote de contactos.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un sensor real ni qué hace una entrada real con un pulso más corto que un ciclo.
 
 ## Cableado
 

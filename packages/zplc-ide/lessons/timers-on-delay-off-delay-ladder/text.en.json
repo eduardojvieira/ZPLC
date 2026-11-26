@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "On-delay and off-delay in Ladder: timers as blocks in a rung",
   "summary": "Place a TOF and a TON between a contact and a coil, and see that an off-delay keeps a light on after the button and an on-delay ignores a sensor that does not stay on.",
-  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show real sensor filtering requirements or wiring.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real sensor flickers or how a real lamp is wired.",
   "objectives": [
     "Place a timer function block in a rung, with the contact feeding its IN and its output feeding the coil.",
     "Tell an off-delay (TOF) from an on-delay (TON) by what each does when the input rises and falls."
@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/DelaysLd.ld.json two rungs connect a contact straight to a coil. Insert a TOF of T#300ms in the first rung, so that Light stays on for T#300ms after Button is released, and a TON of T#200ms in the second, so that Confirmed turns on only after Sensor has been on for T#200ms.",
-      "checkpoint": "Each rung has contact, timer and coil in that order."
+      "body": "In src/DelaysLd.ld.json two rungs connect a contact straight to a coil, so Light follows Button and Confirmed follows Sensor. Make Light stay ON for T#300ms after Button is released, and make Confirmed turn ON only after Sensor has stayed ON for T#200ms.",
+      "checkpoint": "You can say which of the two timers keeps an output on after its input falls, and which one waits before it turns its output on."
     },
     {
       "key": "predict",
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter has no timers: Light drops the moment Button is released and Confirmed follows Sensor, so Light is OFF at {{t:450}} ms and Confirmed is ON at {{t:120}} ms; place a TOF of T#300ms between Button and Light, and a TON of T#200ms between Sensor and Confirmed. From the toolbox drag a TOF block into the first rung and a TON into the second, between the contact and the coil, and set PT on each.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program has no timers: Light drops the moment Button is released and Confirmed follows Sensor, so Light is OFF at {{t:450}} ms and Confirmed is ON at {{t:120}} ms. Change it so that Light stays ON until T#300ms after Button is released, and Confirmed turns ON only when Sensor has been ON for T#200ms without a break. Keep the contacts and the coils of both rungs.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The scenario is named DelaysLd and contains {{assertions}} assertions."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "Swap the two blocks, TON for the hold and TOF for the filter, and see which assertions fail. What does each block do to a short pulse?",
-      "checkpoint": "A TON ignores a pulse shorter than its preset and a TOF stretches a pulse by its preset. A real sensor filter also needs a preset chosen against the real signal, which this scenario does not measure."
+      "checkpoint": "A TON ignores a pulse shorter than its preset and a TOF stretches a pulse by its preset, so in the swapped program the short sensor pulse gets through and is stretched, and Light waits before it turns on, falls as soon as Button is released, and never turns on if the press is shorter than the preset."
     }
   ],
   "hints": [
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "The starter has no timers: Light drops the moment Button is released and Confirmed follows Sensor, so Light is OFF at {{t:450}} ms and Confirmed is ON at {{t:120}} ms; place a TOF of T#300ms between Button and Light, and a TON of T#200ms between Sensor and Confirmed."
+    "The starting program has no timers: Light drops the moment Button is released and Confirmed follows Sensor, so Light is OFF at {{t:450}} ms and Confirmed is ON at {{t:120}} ms."
   ]
 }

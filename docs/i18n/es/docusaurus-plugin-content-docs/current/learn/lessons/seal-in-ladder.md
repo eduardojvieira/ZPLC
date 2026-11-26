@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/seal-in-ladder. Do not edit. >>> */}
 
-Edite un peldaño en diagrama de escalera para que una pulsación de Start mantenga el motor encendido al soltar el botón, y una pulsación de Stop lo apague aunque Start siga pulsado.
+Edite un peldaño en diagrama de escalera para que una pulsación de Start mantenga el motor encendido al soltar el pulsador, y una pulsación de Stop lo apague aunque Start siga pulsado.
 
 ## Datos
 
@@ -39,7 +39,7 @@ Edite un peldaño en diagrama de escalera para que una pulsación de Start mante
 
 ## Qué cubre la evidencia
 
-Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra una función de parada segura ni el cableado.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo se cablea un pulsador de parada o un arrancador de motor reales.
 
 ## Cableado
 
