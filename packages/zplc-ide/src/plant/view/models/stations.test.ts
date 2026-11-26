@@ -148,6 +148,46 @@ describe('stacker crane models (VIS-014)', () => {
     expect(slot(at(0.5, 0).pieces, 'slide').visible).toBe(true);
   });
 
+  it('VIS-014 (S3-06) stacker rack has load beams, cell support crossbars, depth ties and diagonal bracing', async () => {
+    const { views } = await crane();
+    const pieces = partModel(views['stacker-rack']!)!;
+    expect(slotsOf(pieces, 'deck-').length).toBeGreaterThanOrEqual(config.columns * config.levels * 2);
+    expect(slotsOf(pieces, 'tie-').length).toBeGreaterThanOrEqual((config.columns + 1) * config.levels);
+    expect(slotsOf(pieces, 'brace-').length).toBeGreaterThan(0);
+  });
+
+  it('VIS-014 (S3-06) mast matches rack height, has twin braced columns, drive and top head, and no stray floor bar', async () => {
+    const { views } = await crane();
+    const rack = views['stacker-rack']!;
+    const mast = views['stacker-mast']!;
+    const rackTop = rack.pose.p[1] + rack.pose.size[1] / 2;
+    const rest = partModel(mast)!; // no scenePart, as renderer & catalogue call it
+    const mastCol = slot(rest, 'mast');
+    expect(mastCol.at[1] + pieceExtent(mastCol)[1] + mast.pose.p[1]).toBeLessThanOrEqual(rackTop + 0.12);
+    expect(slot(rest, 'mast-b').role).toBe('painted');
+    expect(slot(rest, 'mast-head').role).toBe('housing');
+    expect(slot(rest, 'drive-aisle').role).toBe('painted');
+    expect(slotsOf(rest, 'wheel-').length).toBeGreaterThanOrEqual(4);
+
+    // At bay 2 without scenePart (catalogue state "raised, bay 2, level 2"), rail-floor stays local under the truck.
+    const atBay2 = mastAt(mast, 2);
+    const bay2Pieces = partModel(atBay2)!;
+    const rail = slot(bay2Pieces, 'rail-floor');
+    expect(pieceExtent(rail)[0]).toBeLessThan(0.5);
+    expect(world(atBay2, rail)[0]).toBeCloseTo(atBay2.pose.p[0], 6);
+  });
+
+  it('VIS-014 (S3-06) carriage wraps mast above the floor with guide cheeks, rollers, and fork drive', async () => {
+    const { views } = await crane();
+    const view = views['stacker-crane']!;
+    const pieces = partModel(view)!;
+    expect(slot(pieces, 'carriage-side-a').role).toBe('housing');
+    expect(slot(pieces, 'carriage-side-b').role).toBe('housing');
+    expect(slot(pieces, 'drive-fork').role).toBe('painted');
+    expect(slotsOf(pieces, 'roller-').length).toBeGreaterThanOrEqual(4);
+    for (const p of pieces) expect(bottom(p) + view.pose.p[1]).toBeGreaterThanOrEqual(-1e-6);
+  });
+
   it('VIS-014 the rack is the same in every state the crane can be in, and Low quality and High contrast still draw it', async () => {
     const { views, part } = await crane();
     const rack = views['stacker-rack']!;
@@ -260,6 +300,21 @@ describe('layer palletizer models (VIS-014)', () => {
     expect(gap(1)).toBeLessThan(gap(0));
     expect(partModel(pad)!.length).toBeGreaterThan(0);
   });
+
+  it('VIS-014 (S3-07) manipulator-frame and manipulator-beam skip duplicate portals emitted by pick-place and gantry', async () => {
+    for (const part of ['pick-place', 'gantry'] as const) {
+      const core = await createPlantCore({
+        schemaVersion: 1,
+        name: 'dup',
+        parts: [{ id: 'm', part, name: 'M1', position: [0, 0, 0], rotationYDeg: 0, config: {} }],
+        cameras: [],
+      });
+      cores.push(core);
+      const snap = core.snapshot().parts;
+      expect(partModel(snap.find((v) => v.part === 'manipulator-frame')!)).toEqual([]);
+      expect(partModel(snap.find((v) => v.part === 'manipulator-beam')!)).toEqual([]);
+    }
+  });
 });
 
 const machiningPart: ScenePart = {
@@ -279,32 +334,48 @@ async function machining(): Promise<readonly PartView[]> {
 }
 
 describe('machining centre models (VIS-014)', () => {
-  it('VIS-014 the housing has its window, spindle, table, pendant and stack light, and leaves the door openings clear', async () => {
-    const views = await machining();
-    const centre = views.find((v) => v.part === 'machining-centre')!;
-    const doors = views.filter((v) => v.part === 'machining-door');
-    expect(doors.length).toBe(2);
-    const pieces = partModel(centre)!;
-    expect(slot(pieces, 'window').role).toBe('glass');
-    expect(slot(pieces, 'spindle').role).toBe('steel');
-    expect(slot(pieces, 'table').role).toBe('steel');
-    expect(slot(pieces, 'pendant').role).toBe('housing');
-    expect(slot(pieces, 'wall-back').role).toBe('housing');
-    // The body is inset so neighbouring machines stand apart, and its roof is a darker panel than the walls.
-    const body = pieces.filter((p) => !p.slot.startsWith('light-') && p.slot !== 'pendant');
-    for (const p of body) expect(Math.abs(p.at[2]) + pieceExtent(p)[2]).toBeLessThanOrEqual(0.85 * (centre.pose.size[2] / 2) + 1e-9);
-    expect(slot(pieces, 'roof').role).toBe('frame');
-    expect(slot(pieces, 'roof').role).not.toBe(slot(pieces, 'wall-back').role);
-    expect(slotsOf(pieces, 'plinth').length).toBeGreaterThan(0);
-    expect(new Set(slotsOf(pieces, 'plinth').map((p) => p.role))).toEqual(new Set(['frame']));
-    expect(slotsOf(pieces, 'light-').length).toBe(3);
-    // No piece reaches into the volume of a door at its closed pose.
-    for (const p of pieces)
-      for (const d of doors) {
-        const reach = Math.abs(p.at[0] + centre.pose.p[0] - d.pose.p[0]) - pieceExtent(p)[0] - d.pose.size[0] / 2;
-        expect(reach).toBeGreaterThanOrEqual(-1e-9);
-      }
-  });
+  it(
+    'VIS-014 (S3-05) housing has painted casing, housing crown & plinth, framed window, spindle/fixture, front console & ' + 'light',
+    async () => {
+      const views = await machining();
+      const centre = views.find((v) => v.part === 'machining-centre')!;
+      const doors = views.filter((v) => v.part === 'machining-door');
+      expect(doors.length).toBe(2);
+      const pieces = partModel(centre)!;
+      expect(slot(pieces, 'window').role).toBe('glass');
+      expect(slot(pieces, 'spindle').role).toBe('steel');
+      expect(slot(pieces, 'table').role).toBe('steel');
+      expect(slot(pieces, 'pendant').role).toBe('housing');
+      expect(slot(pieces, 'wall-back').role).toBe('housing');
+      // The body is inset so neighbouring machines stand apart, and its roof/plinth are housing (not a pale frame slab).
+      const body = pieces.filter((p) => !p.slot.startsWith('light-') && !p.slot.startsWith('beacon-') && !p.slot.startsWith('pendant'));
+      for (const p of body) expect(Math.abs(p.at[2]) + pieceExtent(p)[2]).toBeLessThanOrEqual(0.85 * (centre.pose.size[2] / 2) + 1e-9);
+      expect(slot(pieces, 'roof').role).toBe('housing');
+      expect(slot(pieces, 'crown').role).toBe('housing');
+      expect(pieces.some((p) => p.role === 'painted')).toBe(true);
+      expect(slotsOf(pieces, 'mullion-').length).toBeGreaterThanOrEqual(4);
+      expect(slotsOf(pieces, 'plinth').length).toBeGreaterThan(0);
+      expect(new Set(slotsOf(pieces, 'plinth').map((p) => p.role))).toEqual(new Set(['housing']));
+      // Interior machining detail: headstock column, chuck, tool, clamping vise, and machine base reaching floor.
+      expect(slot(pieces, 'column').role).toBe('housing');
+      expect(slot(pieces, 'chuck').role).toBe('collar');
+      expect(slot(pieces, 'tool').role).toBe('steel');
+      expect(slotsOf(pieces, 'vise-').length).toBeGreaterThanOrEqual(2);
+      expect(Math.min(...pieces.map((p) => bottom(p) + centre.pose.p[1]))).toBeCloseTo(0, 6);
+      // Front operator control console is on the +z front side, visible from the first view, with screen and buttons.
+      expect(slot(pieces, 'pendant').at[2]).toBeGreaterThan(0);
+      expect(slot(pieces, 'pendant-screen')).toBeDefined();
+      expect(slotsOf(pieces, 'pendant-btn-').length).toBeGreaterThanOrEqual(2);
+      expect(slotsOf(pieces, 'light-').length).toBe(3);
+      expect(slot(pieces, 'beacon-pole').role).toBe('steel');
+      // No piece reaches into the volume of a door at its closed pose.
+      for (const p of pieces)
+        for (const d of doors) {
+          const reach = Math.abs(p.at[0] + centre.pose.p[0] - d.pose.p[0]) - pieceExtent(p)[0] - d.pose.size[0] / 2;
+          expect(reach).toBeGreaterThanOrEqual(-1e-9);
+        }
+    },
+  );
 
   it('VIS-014 the stack light shows running (green) and done (amber); red stays off, as no fault state is published', async () => {
     const centre = (await machining()).find((v) => v.part === 'machining-centre')!;
