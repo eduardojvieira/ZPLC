@@ -94,21 +94,27 @@ export function ObjectNavigatorView({ groups, collapsed, onToggle, onOpen }: Obj
                 )
               ) : (
                 <ul>
-                  {group.items.map((item) => (
-                    <li key={item.key} className="flex items-center pr-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        data-navigator-item={item.key}
-                        onClick={() => onOpen(item.target)}
-                        className="h-auto min-w-0 flex-1 justify-start gap-2 py-1 pl-8 pr-2 text-left whitespace-normal"
-                      >
-                        <span className="truncate">{item.label}</span>
-                        {item.detail && <span className="ml-auto truncate text-[var(--color-surface-400)]">{item.detail}</span>}
-                      </Button>
-                      <ItemMenu item={item} />
-                    </li>
-                  ))}
+                  {group.items.map((item) => {
+                    // The label and detail are cut with an ellipsis in a narrow sidebar: the tooltip reads them whole (UXV-004).
+                    const full = item.detail ? `${item.label} — ${item.detail}` : item.label;
+                    return (
+                      <li key={item.key} className="flex items-center pr-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          tooltip={full}
+                          data-tooltip={full}
+                          data-navigator-item={item.key}
+                          onClick={() => onOpen(item.target)}
+                          className="h-auto min-w-0 flex-1 justify-start gap-2 py-1 pl-8 pr-2 text-left whitespace-normal"
+                        >
+                          <span className="truncate">{item.label}</span>
+                          {item.detail && <span className="ml-auto truncate text-[var(--color-surface-400)]">{item.detail}</span>}
+                        </Button>
+                        <ItemMenu item={item} />
+                      </li>
+                    );
+                  })}
                 </ul>
               ))}
           </section>
