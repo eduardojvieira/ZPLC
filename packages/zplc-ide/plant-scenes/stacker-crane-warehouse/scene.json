@@ -58,11 +58,11 @@
       "rotationYDeg": 180,
       "config": { "rangeM": 1 }
     },
-    { "id": "start", "part": "push-button", "name": "StartButton", "position": [-1.2, 0.5, -1.6], "rotationYDeg": 0, "config": {} },
-    { "id": "req1", "part": "push-button", "name": "Req1", "position": [-1.2, 0.5, -0.9], "rotationYDeg": 0, "config": {} },
-    { "id": "req2", "part": "push-button", "name": "Req2", "position": [-1.2, 0.5, -0.5], "rotationYDeg": 0, "config": {} },
-    { "id": "req3", "part": "push-button", "name": "Req3", "position": [-1.2, 0.5, -0.1], "rotationYDeg": 0, "config": {} },
-    { "id": "light", "part": "stack-light", "name": "StackLight1", "position": [-1.2, 0.35, 1.8], "rotationYDeg": 0, "config": {} }
+    { "id": "start", "part": "push-button", "name": "StartButton", "position": [-0.85, 0.5, 0.75], "rotationYDeg": 0, "config": {} },
+    { "id": "req1", "part": "push-button", "name": "Req1", "position": [-0.85, 0.5, -0.75], "rotationYDeg": 0, "config": {} },
+    { "id": "req2", "part": "push-button", "name": "Req2", "position": [-0.85, 0.5, -0.35], "rotationYDeg": 0, "config": {} },
+    { "id": "req3", "part": "push-button", "name": "Req3", "position": [-0.85, 0.5, 0.05], "rotationYDeg": 0, "config": {} },
+    { "id": "light", "part": "stack-light", "name": "StackLight1", "position": [0.6, 0.35, 1.9], "rotationYDeg": 0, "config": {} }
   ],
   "cameras": [
     { "name": "Aisle", "position": [-4, 2.2, 0], "target": [1.5, 0.8, 0.5] },

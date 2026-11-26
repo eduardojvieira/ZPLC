@@ -2,13 +2,14 @@
  * Page side of scripts/plant/capture.ts: draws one scene in one state, display mode, quality level and size and returns the frame as
  * a PNG data URL, composes labelled contact sheets, and measures the frame rate of a scene left running. See stage.ts for the method.
  */
-import type { CameraPreset } from '../../src/plant/contracts';
+import type { CameraPreset, PlantSceneFile } from '../../src/plant/contracts';
 import type { DisplayMode } from '../../src/plant/view/displayModes';
 import type { QualityLevel } from '../../src/plant/view/quality';
 import { draw, frames, openStage, partRect, pngOf, type Rect, type Stage } from './stage';
 
 export interface ShotSpec {
-  scene: string;
+  /** A shipped scene by id, or a scene file of the capture's own (a fixture such as sensorKinds.scene.json). */
+  scene: string | PlantSceneFile;
   quality: QualityLevel;
   mode: DisplayMode;
   width: number;

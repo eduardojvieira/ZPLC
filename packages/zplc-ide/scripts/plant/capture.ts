@@ -15,7 +15,9 @@
  *
  * `--catalogue` instead draws every part kind that has a model in each of its states, and each item look, one small frame each at a
  * camera that frames the part's bounds (scripts/plant/catalogueStates.ts), and sets them on one contact sheet per display mode and
- * quality level (`catalogue-<mode>-<level>.png`), each cell labelled with the kind and the state.
+ * quality level (`catalogue-<mode>-<level>.png`), each cell labelled with the kind and the state. Beside each sheet it draws the first
+ * view, at scene size (1280 x 720), of the capture fixture scripts/plant/sensorKinds.scene.json, a belt with a diffuse and a
+ * capacitive sensor side by side (`sensor-kinds-scene-<mode>-<level>.png`), so two sensor kinds can be judged where a scene shows them.
  *
  * `--fps` instead opens a real window with the GPU on (it needs a display and port 3000 free, which the application's development
  * window uses) and measures the frame rate of each scene per quality level on a 1920 x 1080 canvas, with the 1-minute load average
@@ -28,6 +30,7 @@ import { trustedDevelopmentRendererUrl } from '../../electron/security';
 import type { BodyPose, PlantSnapshot } from '../../src/plant/contracts';
 import { snapshotBounds } from '../../src/plant/view/geometry';
 import { CATALOGUE, catalogueCamera, catalogueKindCells, ITEMS } from './catalogueStates';
+import sensorKindsScene from './sensorKinds.scene.json';
 import { assert, Cdp, drain, freePort, HOST, packageRoot, stop, waitFor, type OwnedProcess } from '../run-desktop-smoke';
 
 const flag = (name: string): string | undefined => {
@@ -304,6 +307,9 @@ async function catalogue(page: Cdp): Promise<void> {
           `${JSON.stringify(frames)}, 8, { w: 300, h: 225 })`,
       )) as string;
       console.log(`  sheet ${save(`catalogue-${mode}-${quality}.png`, sheet)} (${frames.length} cells)`);
+      const spec = { scene: sensorKindsScene, quality, mode, width: 1280, height: 720, state: 'rest' };
+      const { png } = (await call(page, `m.shot(${JSON.stringify(spec)})`)) as { png: string };
+      console.log(`  ${save(`sensor-kinds-scene-${mode}-${quality}.png`, png)}`);
     }
   await page.evaluate(`(window.__cat?.stage.dispose(), true)`);
 }

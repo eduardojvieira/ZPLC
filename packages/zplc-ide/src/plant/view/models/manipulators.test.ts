@@ -4,10 +4,16 @@
  */
 import { afterEach, describe, expect, it } from 'bun:test';
 import type { PartView, PlantCore, PlantSceneFile, Vec3 } from '../../contracts';
+import scene3Axis from '../../../../plant-scenes/three-axis-palletizing/scene.json';
 import { createPlantCore } from '../../core/plantCore';
+import { cameraPosition, firstViewCamera, fitCamera } from '../camera';
+import { paletteFor } from '../displayModes';
+import { snapshotBounds } from '../geometry';
+import { roleLook } from '../look';
 import { partModel, pieceExtent } from './index';
 import { MANIPULATORS } from './manipulators';
 import { bottom, slot } from './models.fixtures';
+import { rasterize, worldBoxes } from './raster.fixtures';
 import type { Piece } from './shared';
 
 const cores: PlantCore[] = [];
@@ -131,7 +137,7 @@ describe('manipulator models (VIS-014)', () => {
     expect(['rail-a', 'rail-b', 'bridge', 'carriage', 'slide', 'head'].map((s) => slot(pieces, s).role)).toEqual([
       'frame',
       'frame',
-      'frame',
+      'painted',
       'housing',
       'frame',
       'steel',
@@ -231,5 +237,66 @@ describe('manipulator models (VIS-014)', () => {
     expect(slot(gan, 'truck-a').role).toBe('housing');
     expect(slot(gan, 'truck-b').role).toBe('housing');
     for (const s of ['gusset-a', 'gusset-b', 'gusset-c', 'gusset-d']) expect(slot(gan, s).role).toBe('steel');
+  });
+
+  it('VIS-016 (C10) a gantry that grips shows the striped mark across its head and up its slide; open, the mark is dark', async () => {
+    const base = moved(await rest('gantry'), [0.9, 0.6, 0.6]);
+    const at = (holding: boolean) => model({ ...base, state: { ...base.state, holding, closeFraction: holding ? 1 : 0 } });
+    const marks = (pieces: readonly Piece[]) => pieces.filter((p) => p.slot.startsWith('grip-'));
+    const open = marks(at(false));
+    const grip = marks(at(true));
+    expect(open.length).toBeGreaterThanOrEqual(5);
+    expect(new Set(open.map((p) => p.role))).toEqual(new Set(['lampOff']));
+    // Gripping: lit and rubber bands in turn, the pick-place's striped pad, as wide as the head.
+    const roles = grip.map((p) => p.role);
+    expect(new Set(roles)).toEqual(new Set(['lamp', 'rubber']));
+    const top = grip.filter((p) => p.slot.startsWith('grip-mark'));
+    const span = Math.max(...top.map((p) => p.at[0] + pieceExtent(p)[0])) - Math.min(...top.map((p) => p.at[0] - pieceExtent(p)[0]));
+    expect(span).toBeCloseTo(base.pose.size[0], 9);
+    expect(top.map((p) => p.role)).toEqual(top.map((_, i) => (i % 2 === 0 ? 'lamp' : 'rubber')));
+  });
+
+  it('VIS-014 (C10) the fixed rails and the moving bridge of a gantry are told apart by colour and by section', async () => {
+    const pieces = model(await rest('gantry'));
+    const palette = paletteFor({ mode: 'light', reducedMotion: false });
+    const colour = (s: string) => roleLook(slot(pieces, s).role, 'gantry', palette).colour;
+    expect(colour('bridge')).not.toBe(colour('rail-a'));
+    expect(slot(pieces, 'bridge').shape.kind).not.toBe(slot(pieces, 'rail-a').shape.kind);
+  });
+
+  it('VIS-014 (C10) the opening view of three-axis-palletizing does not lay the bridge over the rails', async () => {
+    // The renderer's opening view: the first preset raised as firstViewCamera does, fitted to the snapshot on a 16:9 panel.
+    const scene = scene3Axis as unknown as PlantSceneFile;
+    const core = await createPlantCore(scene);
+    cores.push(core);
+    const snapshot = core.snapshot();
+    const fit = fitCamera(firstViewCamera(scene.cameras[0]!), snapshotBounds(snapshot)!, 16 / 9);
+    const camera = { position: cameraPosition(fit), target: fit.target };
+    const gantry = snapshot.parts.find((p) => p.part === 'gantry')!;
+    const shown = model(gantry).filter((p) => p.visible);
+    const boxes = worldBoxes([gantry]);
+    const cell = { w: 640, h: 360 };
+    const frame = (prefixes: string[]) => {
+      const depth = new Float64Array(cell.w * cell.h);
+      const pixels = rasterize(
+        boxes.filter((_, i) => prefixes.some((s) => shown[i]!.slot.startsWith(s))),
+        camera,
+        depth,
+        cell,
+      );
+      return { pixels, depth };
+    };
+    const rails = frame(['rail-', 'guide-x']);
+    const bridge = frame(['bridge', 'guide-z']);
+    // A bridge pixel is laid over a rail where the rail is seen there too, more than 0.15 m nearer or farther: not where they meet.
+    let bridgePixels = 0;
+    let over = 0;
+    for (let i = 0; i < bridge.pixels.length; i++) {
+      if (bridge.pixels[i]! < 0) continue;
+      bridgePixels++;
+      if (rails.pixels[i]! >= 0 && Math.abs(rails.depth[i]! - bridge.depth[i]!) > 0.15) over++;
+    }
+    expect(bridgePixels).toBeGreaterThan(500);
+    expect(over / bridgePixels).toBeLessThanOrEqual(0.02);
   });
 });
