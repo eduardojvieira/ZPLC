@@ -114,12 +114,15 @@ describe('IDE-030: the tools an assistant can call are a closed list that names 
       'plant_inspect',
       'scenarios_list',
       'server_self_check',
+      'workspace_check_write',
+      'workspace_write',
     ]);
-    // plan-aix §2.4: `plant` alone is a read (plant_inspect); plant I/O mode is what stays forbidden
+    // plan-aix §2.4: `plant` alone is a read (plant_inspect); plant I/O mode is what stays forbidden. `write` alone is a write of
+    // a project file (workspace_write, AIX-011); writing course progress is what stays forbidden
     for (const name of MCP_TOOL_NAMES)
       expect(name, name).not.toMatch(
         new RegExp(
-          'flash|deploy|force|upload|connect|serial|shell|poke|write|stop|erase|provision|reset|debug|plant_io|feed|mirror|attach|' +
+          'flash|deploy|force|upload|connect|serial|shell|poke|stop|erase|provision|reset|debug|plant_io|feed|mirror|attach|' +
             'delete|remove|progress_write|unlock|solution',
         ),
       );
@@ -141,9 +144,11 @@ describe('COM-030: the MCP server cannot open the device link', () => {
     expect(resources.filter((resource) => typeof resource.uri !== 'string')).toHaveLength(4);
 
     // The only arguments any tool takes name a scenario, a position in a recorded trace, a board profile, or a scene file, or
-    // say how much of a recorded trace to read and which program variables to watch in the run (AIX-015, AI-08).
+    // say how much of a recorded trace to read and which program variables to watch in the run (AIX-015, AI-08), or are the
+    // project files to check or write with how to check them (AIX-011): a path and a text, never a device, port or session.
     const trace = ['mode', 'signals', 'includeInputs', 'watchSignals', 'fromMs', 'toMs', 'fromSample', 'limit'];
-    const allowed = new Set(['scenarioId', 'cursor', 'traceSha256', 'ideId', 'sceneFile', 'mapFile', ...trace]);
+    const write = ['files', 'compileCheck', 'requireCompile', 'expectedBaseSha256'];
+    const allowed = new Set(['scenarioId', 'cursor', 'traceSha256', 'ideId', 'sceneFile', 'mapFile', ...trace, ...write]);
     for (const tool of tools) {
       for (const key of Object.keys(tool.inputSchema.shape)) expect(allowed.has(key), `${tool.name} takes '${key}'`).toBe(true);
       // And an argument that names a port, a device or a session is refused, whatever else is supplied.
@@ -154,7 +159,10 @@ describe('COM-030: the MCP server cannot open the device link', () => {
             ? { ideId: 'posix' }
             : ['scenario_run', 'simulation_start', 'trace_get'].includes(tool.name)
               ? { scenarioId: 'smoke' }
-              : {};
+              : tool.name.startsWith('workspace_')
+                ? { files: [{ path: 'src/Main.st', content: 'PROGRAM Main\nEND_PROGRAM\n' }] }
+                : {};
+      expect(tool.inputSchema.safeParse(base).success, `${tool.name} refused its base arguments`).toBe(true);
       for (const extra of [
         'port',
         'serialPort',
@@ -177,11 +185,15 @@ describe('COM-030: the MCP server cannot open the device link', () => {
         expect(tool.inputSchema.safeParse({ ...base, [extra]: 'x' }).success, `${tool.name} accepted '${extra}'`).toBe(false);
       }
     }
-    // Nothing the server offers writes to a device: one tool is not read-only (a local cross-build) and none
-    // reaches outside the workspace and the repository.
-    expect(tools.filter((tool) => tool.annotations.readOnlyHint !== true).map((tool) => tool.name)).toEqual(['firmware_build']);
+    // Nothing the server offers writes to a device: two tools are not read-only (a local cross-build and a write of project
+    // files inside the workspace), only the write replaces files (plan-aix §2.4), and none reaches outside the workspace and
+    // the repository.
+    expect(tools.filter((tool) => tool.annotations.readOnlyHint !== true).map((tool) => tool.name)).toEqual([
+      'firmware_build',
+      'workspace_write',
+    ]);
     expect(tools.every((tool) => tool.annotations.openWorldHint === false)).toBe(true);
-    expect(tools.filter((tool) => tool.annotations.destructiveHint !== false).map((tool) => tool.name)).toEqual([]);
+    expect(tools.filter((tool) => tool.annotations.destructiveHint !== false).map((tool) => tool.name)).toEqual(['workspace_write']);
   });
 
   test('the module graph of the MCP entry point holds no serial, upload or socket module', async () => {
@@ -294,6 +306,12 @@ describe('COM-030: the MCP server cannot open the device link', () => {
         'server_self_check',
       ] as const) {
         const result = await dispatch(tool, {}, signal);
+        expect(result.isError ?? false, `${tool}: ${JSON.stringify(result.structuredContent)}`).toBe(false);
+      }
+      // the check and the write of a project file (AIX-011) open nothing either
+      const files = [{ path: 'src/Extra.st', content: 'PROGRAM Extra\nEND_PROGRAM\n' }];
+      for (const tool of ['workspace_check_write', 'workspace_write'] as const) {
+        const result = await dispatch(tool, { files }, signal);
         expect(result.isError ?? false, `${tool}: ${JSON.stringify(result.structuredContent)}`).toBe(false);
       }
       const { resources } = await registered();
