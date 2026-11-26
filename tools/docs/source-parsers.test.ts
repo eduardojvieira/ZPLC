@@ -160,7 +160,8 @@ describe('source readers: the command line, MCP and the protocol (DOC-008)', () 
       'const MAX_SIGNALS = 64;',
       'const MAX_SAMPLES = 10_000;',
       'const MAX_TRACE_VALUES = 1_000_000;',
-      "export type ScenarioKind = 'AT' | 'ALWAYS';",
+      "export const SCENARIO_KINDS = ['AT', 'ALWAYS'] as const;",
+      'export type ScenarioKind = (typeof SCENARIO_KINDS)[number];',
       "exact(source, hasPlant ? ['schemaVersion', 'id', 'plant', 'tickMs'] : ['schemaVersion', 'id', 'tickMs'], 'scenario');",
       'source.id.length > 128',
       "const tickMs = integer(source.tickMs, 'tickMs', 60_000);",
@@ -179,5 +180,37 @@ describe('source readers: the command line, MCP and the protocol (DOC-008)', () 
       { kind: 'ALWAYS', fields: ['kind', 'condition'] },
     ]);
     expect(format.limits.find((limit) => limit.name === 'SCENARIO_MAX_BYTES')?.value).toBe('131072');
+  });
+
+  it('reads the nine kinds of the test engine from SCENARIO_KINDS', () => {
+    // The shape of packages/zplc-ide/src/test-engine/index.ts since AIX-U2: the kinds are a const array, the type derives from it.
+    const engine = [
+      'const MAX_EVENTS = 256;',
+      'const MAX_EXPECTATIONS = 128;',
+      'const MAX_SIGNALS = 64;',
+      'const MAX_SAMPLES = 10_000;',
+      'const MAX_TRACE_VALUES = 1_000_000;',
+      "export const SCENARIO_KINDS = ['AT', 'WITHIN', 'FOR', 'EVENTUALLY', 'ALWAYS', 'NEVER', 'UNTIL', 'RISING', 'FALLING'] as const;",
+      'export type ScenarioKind = (typeof SCENARIO_KINDS)[number];',
+      "exact(source, hasPlant ? ['schemaVersion', 'id', 'plant', 'tickMs'] : ['schemaVersion', 'id', 'tickMs'], 'scenario');",
+      'source.id.length > 128',
+      "const tickMs = integer(source.tickMs, 'tickMs', 60_000);",
+      "const durationMs = integer(source.durationMs, 'durationMs', 3_600_000);",
+      "exact(event, ['atMs', 'set'], 'event');",
+      "const keys = kind === 'AT' ? ['kind', 'atMs', 'condition']",
+      "  : ['kind', 'condition'];",
+    ].join('\n');
+    const workspace = 'const SCENARIO_MAX_BYTES = 128 * 1024;\nconst SCENARIOS_MAX_COUNT = 64;\nconst SCENARIOS_MAX_BYTES = 512 * 1024;';
+    expect(parseScenarioFormat(engine, workspace).kinds.map((entry) => entry.kind)).toEqual([
+      'AT',
+      'WITHIN',
+      'FOR',
+      'EVENTUALLY',
+      'ALWAYS',
+      'NEVER',
+      'UNTIL',
+      'RISING',
+      'FALLING',
+    ]);
   });
 });
