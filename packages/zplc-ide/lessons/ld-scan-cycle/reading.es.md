@@ -66,7 +66,7 @@ Un ciclo es corto, y un retraso de un ciclo suele ser inofensivo. Se vuelve un p
 - Escribir la misma salida con una bobina simple en dos peldaños. ZPLC lo rechaza con un error, porque casi siempre es un error de programación. Use bobinas SET y RESET, o combine las condiciones en un solo peldaño.
 
 > [!WARNING]
-> El tiempo de ciclo de un PLC real depende del programa y del modelo, y una máquina que debe reaccionar dentro de un tiempo dado necesita que ese tiempo se mida en el controlador real. La simulación comprueba el orden de los peldaños, no la velocidad de ninguna placa. ZPLC no hace ninguna afirmación de seguridad, y una parada de emergencia se cablea en hardware y nunca depende del orden de los peldaños de un programa.
+> El tiempo de ciclo de un PLC real depende del programa y del modelo, y una máquina que debe reaccionar dentro de un tiempo dado necesita que ese tiempo se mida en el controlador real. La simulación comprueba el orden de los peldaños, no la velocidad de ninguna placa. Una parada de emergencia se cablea en hardware y nunca depende del orden de los peldaños de un programa.
 
 ## Compruébelo usted
 

@@ -6,7 +6,7 @@ Blinking is not only for decoration. A warning beacon on a crane, a pulsing pump
 
 ## The on-delay timer: TON
 
-A **TON** (on-delay timer) is a block with two main connections.
+A **TON** (on-delay timer) is a block with three main connections.
 
 - **IN** is the input. While IN is TRUE, the timer counts time. When IN becomes FALSE, the timer goes back to zero.
 - **PT** is the **preset time**, how long to wait. You write it as a duration such as `T#2s` (two seconds) or `T#500ms` (half a second).

@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program has the two timers but nothing that changes LED_Output, so the LED stays OFF for ever. Change it so that the LED turns ON when OffTimer is done, turns OFF when OnTimer is done, and keeps its state in between: OFF for about {{t:500}} ms, then ON for about {{t:500}} ms, and so on. Leave the two timer rungs as they are.",
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program has the two timers but nothing that changes LED_Output, so the LED stays OFF for ever. Change it so that LED_Output blinks on its own: OFF for about {{t:500}} ms, then ON for about {{t:500}} ms, again and again. Leave the two timer rungs as they are.",
       "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {

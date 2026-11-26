@@ -68,7 +68,7 @@ caption: The lamp is remembered from the call until the cancel
 - Believing that a SET coil is a pulse. It is the opposite: it holds.
 
 > [!WARNING]
-> A latched output survives a stop of the program only if the PLC retains it. In ZPLC, source `RETAIN` is not supported, so a latch starts from its initial value after a restart. Never rely on a latch to keep a dangerous machine in a safe state. An emergency stop is wired in hardware and never depends on the PLC program.
+> A latch starts from its initial value after a restart unless its variable is declared `RETAIN`, whose value ZPLC keeps across a restart. The variable table of a Ladder program has no RETAIN option, so a latch drawn in Ladder always starts from its initial value. Never rely on a latch to keep a dangerous machine in a safe state. An emergency stop is wired in hardware and never depends on the PLC program.
 
 ## Check yourself
 

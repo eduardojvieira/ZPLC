@@ -12,7 +12,7 @@ Un **TON** (temporizador con retardo a la conexión) es un bloque con tres conex
 - **PT** es el **valor preestablecido**, cuánto hay que esperar. Se escribe como una duración, como `T#2s` (dos segundos) o `T#500ms` (medio segundo).
 - **Q** es la salida. Permanece en FALSE hasta que IN ha sido TRUE durante todo el valor preestablecido, y entonces pasa a TRUE. Permanece en TRUE mientras IN siga en TRUE.
 
-Piense en un teléfono que se apaga solo si usted mantiene pulsado el botón de encendido durante dos segundos. Si suelta antes, la cuenta empieza de nuevo. Solo una pulsación completa e ininterrumpida da la respuesta.
+Piense en un teléfono que se apaga solo si usted mantiene pulsado el pulsador de encendido durante dos segundos. Si suelta antes, la cuenta empieza de nuevo. Solo una pulsación completa e ininterrumpida da la respuesta.
 
 ## Recordar un estado: SET y RESET
 
@@ -40,7 +40,7 @@ src: reading/hold-to-confirm.ld.json
 caption: El peldaño 1 alimenta el temporizador, el peldaño 2 enciende la lámpara con su salida Q
 ```
 
-En el diagrama de escalera, el temporizador es una caja a la derecha de su peldaño, donde iría una bobina. Su IN recibe la energía que llega al peldaño. El nombre `HoldTimer` es la **instancia**: su programa guarda una memoria para cada temporizador, y `HoldTimer.Q` lee la salida de ese temporizador en otro peldaño.
+En el diagrama de escalera, el temporizador es un bloque a la derecha de su peldaño, donde iría una bobina. Su IN recibe la energía que llega al peldaño. El nombre `HoldTimer` es la **instancia**: su programa guarda una memoria para cada temporizador, y `HoldTimer.Q` lee la salida de ese temporizador en otro peldaño.
 
 ```ld-try
 src: reading/hold-to-confirm.ld.json
@@ -69,7 +69,7 @@ caption: La lámpara se enciende cuando el pulsador lleva pulsado PT, y se apaga
 - Usar una bobina SET sin una bobina RESET. La salida se enciende y nada puede apagarla.
 - Confundir PT con la duración real. Agregue un pequeño margen por el ciclo: el tiempo real es el valor preestablecido más hasta un ciclo.
 - Escribir los tiempos en la unidad equivocada. `T#500ms` es medio segundo y `T#5s` son cinco segundos.
-- Buscar el TON entre las bobinas. Un TON es un bloque: en ZPLC aparece como una caja en el peldaño, con el nombre de su instancia encima.
+- Buscar el TON entre las bobinas. Un TON es un bloque: en ZPLC aparece como un bloque en el peldaño, con el nombre de su instancia encima.
 
 > [!WARNING]
 > Una lámpara que avisa de un peligro debe seguir avisando aunque el PLC se detenga, así que sale del propio cableado de la máquina. Un temporizador en un programa retrasa una señal; no hace segura una máquina.

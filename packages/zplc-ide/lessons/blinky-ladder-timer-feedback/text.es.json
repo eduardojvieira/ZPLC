@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial tiene los dos temporizadores pero nada que cambie LED_Output, así que el LED queda en OFF para siempre. Cámbielo para que el LED pase a ON cuando termina OffTimer, pase a OFF cuando termina OnTimer y conserve su estado entre medio: en OFF unos {{t:500}} ms, luego en ON unos {{t:500}} ms, y así sucesivamente. Deje como están los dos peldaños de los temporizadores.",
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial tiene los dos temporizadores pero nada que cambie LED_Output, así que el LED queda en OFF para siempre. Cámbielo para que LED_Output parpadee por sí solo: en OFF unos {{t:500}} ms, luego en ON unos {{t:500}} ms, una y otra vez. Deje como están los dos peldaños de los temporizadores.",
       "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {

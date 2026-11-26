@@ -68,7 +68,7 @@ caption: La lámpara queda recordada desde la llamada hasta la cancelación
 - Creer que una bobina SET es un pulso. Es lo contrario: retiene.
 
 > [!WARNING]
-> Una salida retenida sobrevive a una parada del programa solo si el PLC la conserva. En ZPLC la palabra clave `RETAIN` del código fuente no es compatible, así que un biestable arranca con su valor inicial tras un reinicio. Nunca confíe en un biestable para mantener una máquina peligrosa en estado seguro. Una parada de emergencia se cablea en hardware y nunca depende del programa del PLC.
+> Un biestable arranca con su valor inicial tras un reinicio, salvo que su variable esté declarada `RETAIN`, cuyo valor ZPLC conserva a través de un reinicio. La tabla de variables de un programa en diagrama de escalera no tiene la opción RETAIN, así que un biestable dibujado en escalera siempre arranca con su valor inicial. Nunca confíe en un biestable para mantener una máquina peligrosa en estado seguro. Una parada de emergencia se cablea en hardware y nunca depende del programa del PLC.
 
 ## Compruébelo usted
 

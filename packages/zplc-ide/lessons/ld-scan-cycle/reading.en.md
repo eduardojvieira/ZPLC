@@ -66,7 +66,7 @@ One scan is short, and a lag of one scan is often harmless. It becomes a real pr
 - Writing the same output with a plain coil in two rungs. ZPLC refuses this with an error, because it is almost always a mistake. Use SET and RESET coils, or combine the conditions in one rung.
 
 > [!WARNING]
-> The scan time of a real PLC depends on the program and the model, and a machine that must react within a given time needs that time measured on the real controller. The simulation proves the order of the rungs, not the speed of any board. ZPLC makes no safety claim, and an emergency stop is wired in hardware and never depends on the order of rungs in a program.
+> The scan time of a real PLC depends on the program and the model, and a machine that must react within a given time needs that time measured on the real controller. The simulation proves the order of the rungs, not the speed of any board. An emergency stop is wired in hardware and never depends on the order of rungs in a program.
 
 ## Check yourself
 
