@@ -103,4 +103,4 @@ options:
 
 ## Qué hará en la práctica
 
-En la práctica recibe un programa de un motor con un error realista: el botón de paro no detiene el motor. Aplicará el método: observar `Motor`, `StartPB` y `StopOK`, poner un punto de interrupción en el peldaño, forzar `StopOK` y ver que nada cambia, leer la traza y luego mover un contacto. Por último libera todos los forzados y pulsa Comprobar. El escenario califica solo el comportamiento corregido.
+En la práctica recibe un programa de un motor con un error realista: el botón de paro no detiene el motor. Aplicará el método: observar `Motor`, `StartPB` y `StopOK`, poner un punto de interrupción en el peldaño, forzar `StopOK` y ver que nada cambia, leer la traza y luego corregir el peldaño. Por último libera todos los forzados y pulsa Comprobar. El escenario califica solo el comportamiento corregido.

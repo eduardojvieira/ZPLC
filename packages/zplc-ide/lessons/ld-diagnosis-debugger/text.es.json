@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta falla del programa inicial, guárdelo y luego pulse Comprobar: StopOK está dibujado en serie con StartPB dentro de la rama, de modo que el contacto de autorretención de Motor lo rodea: pulsar el paro a los {{t:60}} ms deja Motor en ON a los {{t:80}} ms. Mueva StopOK a la parte en serie posterior a la rama. Antes de editar, diagnostique. Ejecute el programa inicial en Simulación y abra la tabla de observación. Agregue Motor, StartPB y StopOK. Pulse el botón de arranque y luego el de paro, y vea que Motor sigue en ON. Seleccione el peldaño 1 y pulse F9 para poner un punto de interrupción, ejecute de nuevo y lea los valores en la parada. Fuerce StopOK a FALSE desde la tabla de observación y vea que nada cambia. Abra la traza y busque dónde Motor debió caer. Después mueva StopOK fuera de la rama, a continuación de ella, en serie con toda la rama.",
+      "body": "Corrija esta falla del programa inicial, guárdelo y luego pulse Comprobar: Pulsar el paro a los {{t:60}} ms deja Motor en ON a los {{t:80}} ms: el motor no se detiene. Antes de editar, diagnostique. Ejecute el programa inicial en Simulación y abra la tabla de observación. Agregue Motor, StartPB y StopOK. Pulse el botón de arranque y luego el de paro, y vea que Motor sigue en ON. Seleccione el peldaño 1 y pulse F9 para poner un punto de interrupción, ejecute de nuevo y lea los valores en la parada. Fuerce StopOK a FALSE desde la tabla de observación y vea que nada cambia. Abra la traza y busque dónde Motor debió caer. Después corrija el peldaño para que el paro y la sobrecarga detengan el motor.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado, y la tabla de observación no muestra ningún forzado activo."
     },
     {
@@ -55,7 +55,5 @@
       "text": "El peldaño 1 debe leerse así: StartPB en paralelo con un contacto de Motor, luego StopOK, luego OverloadOK y luego la bobina Motor. Mueva StopOK a la derecha de la rama para que quede en serie con los dos caminos."
     }
   ],
-  "faultCases": [
-    "StopOK está dibujado en serie con StartPB dentro de la rama, de modo que el contacto de autorretención de Motor lo rodea: pulsar el paro a los {{t:60}} ms deja Motor en ON a los {{t:80}} ms. Mueva StopOK a la parte en serie posterior a la rama."
-  ]
+  "faultCases": ["Pulsar el paro a los {{t:60}} ms deja Motor en ON a los {{t:80}} ms: el motor no se detiene."]
 }

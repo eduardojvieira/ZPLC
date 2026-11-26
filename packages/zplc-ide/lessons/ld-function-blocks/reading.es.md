@@ -120,4 +120,4 @@ options:
 
 ## Lo que hará en la práctica
 
-En la práctica recibe una estación de bombas. El proyecto declara un bloque, `PumpCtl`, en texto estructurado. La bomba 1 ya es un peldaño que llama a su propia instancia. Usted agregará un segundo peldaño para la bomba 2, con el contacto y la segunda instancia, y conectará el mismo botón de paro y el mismo permisivo. Luego comprobará que las dos bombas conservan su propio estado.
+En la práctica recibe una estación de bombas. El proyecto declara un bloque, `PumpCtl`, en texto estructurado. La bomba 1 ya es un peldaño que llama a su propia instancia. Usted hará que la bomba 2 funcione como la bomba 1, con su propio pulsador de arranque, el mismo pulsador de paro y el mismo permisivo. Luego comprobará que las dos bombas conservan su propio estado.

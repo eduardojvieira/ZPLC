@@ -120,4 +120,4 @@ options:
 
 ## What you will do in the practice
 
-In the practice you get a pump station. The project declares a block, `PumpCtl`, in Structured Text. Pump 1 is already a rung that calls its own instance. You will add a second rung for pump 2, with the contact and the second instance, and wire the same stop button and permissive. Then you check that the two pumps keep their own state.
+In the practice you get a pump station. The project declares a block, `PumpCtl`, in Structured Text. Pump 1 is already a rung that calls its own instance. You will make pump 2 work like pump 1, from its own start button and with the same stop button and permissive. Then you check that the two pumps keep their own state.

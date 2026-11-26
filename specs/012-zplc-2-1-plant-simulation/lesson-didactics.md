@@ -10,7 +10,7 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 - `order`: 0 of 111 lessons break it
 - `glossary`: 25 of 111 lessons break it
 - `reading-parts`: 7 of 111 lessons break it
-- `answer`: 10 of 111 lessons break it
+- `answer`: 8 of 111 lessons break it
 - `grows`: 14 of 111 lessons break it
 - `scope`: 13 of 111 lessons break it
 - `machine`: 0 of 111 lessons break it
@@ -73,12 +73,12 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 | 53 | `function-block-pump-pair` | 7 | ST | 25 | no | 1 | 4 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
 | 54 | `structures-arrays-call-panel` | 7 | ST | 25 | no | 7 | 5 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador), botones (es, use pulsador) | ok | ok | ok | ok | ok |
 | 55 | `function-block-valves-fbd` | 7 | FBD | 20 | no |  | 4 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 56 | `function-block-call-il` | 7 | IL | 25 | no | 3 | 3 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | CAL PumpB(Set:=StartB,Reset:=StopB) (en), LD PumpB.Q (en), ST RunB (en), CAL PumpB(Set:=StartB,Reset:=StopB) (es), LD PumpB.Q (es), ST RunB (es) | ok | ok | ok |
+| 56 | `function-block-call-il` | 7 | IL | 25 | no | 3 | 3 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
 | 57 | `ld-diagnosis-debugger` | 8 | LD | 40 | yes |  | 2 | yes | yes | ok | ok | ok | ok | botón (es, use pulsador) | no "Worked example" (en), no "Common mistakes" (en), no "Ejemplo resuelto" (es), no "Errores comunes" (es) | ok | 2 starter statements, last of module 8 in ladder | real machine (en), safety (en), máquina real (es), seguridad (es) | ok |
 | 58 | `conveyor-classification-jam` | 8 | ST | 25 | no | 17 | 10 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 59 | `temporal-assertions-jam-fault` | 8 | ST | 25 | no | 17 | 10 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 60 | `conveyor-two-parts-diagnosis` | 8 | ST | 20 | no | 44 | 3 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 61 | `instruction-list-door-alarm` | 9 | IL | 20 | no | 2 | 3 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | OR Siren (en), ANDN Silence (en), OR Siren (es), ANDN Silence (es) | ok | ok | ok |
+| 61 | `instruction-list-door-alarm` | 9 | IL | 20 | no | 2 | 3 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
 | 62 | `one-logic-five-languages` | 9 | ST/LD/FBD/SFC/IL | 30 | yes |  | 1 | yes | yes | ok | ok | ok | ok | botón (es, use pulsador) | no "Worked example" (en), no "Common mistakes" (en), no "Ejemplo resuelto" (es), no "Errores comunes" (es) | ok | ok | ok | ok |
 | 63 | `modbus-register-round-trip` | 10 | ST | 25 | no | 3 | 2 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 64 | `mqtt-publish-subscribe` | 10 | ST | 25 | no | 4 | 4 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |

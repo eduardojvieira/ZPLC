@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/DoorAlarm.il cada línea es una instrucción: LD carga un operando en el resultado actual, AND lo combina y ST guarda el resultado en Siren. Agregue dos líneas antes de ST para que Siren se mantenga encendida y Silence la apague: OR Siren y luego ANDN Silence.",
+      "body": "En src/DoorAlarm.il cada línea es una instrucción: LD carga un operando en el resultado actual, AND lo combina y ST guarda el resultado en Siren. Siren debe mantenerse encendida una vez que empezó, y Silence debe apagarla.",
       "checkpoint": "La sirena suena cuando la alarma está armada y la puerta se abre, sigue sonando al cerrarse la puerta y se apaga al pulsar Silence."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial carga Armed, le aplica AND con DoorOpen y guarda el resultado, así que Siren sigue a la puerta y se apaga a los {{t:30}} ms cuando la puerta se cierra; agregue OR Siren para que la sirena se mantenga encendida y luego ANDN Silence para que Silence la apague, en ese orden.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial hace que Siren siga a la puerta, así que Siren se apaga a los {{t:30}} ms cuando la puerta se cierra. Siren debe seguir encendida después de que la puerta se cierra, hasta que se pulse Silence.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -41,14 +41,14 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "¿Qué pasa si ANDN Silence va antes de OR Siren? Intercambie las dos líneas y vea qué aserción falla.",
-      "checkpoint": "Cada instrucción trabaja sobre el resultado de las líneas anteriores, así que OR Siren después de ANDN Silence devuelve el valor retenido. El escenario muestra solo la lógica; no es un sistema de alarma."
+      "body": "¿Qué pasa si la línea de Silence va antes de la línea que mantiene Siren encendida? Intercambie las dos líneas y vea qué aserción falla.",
+      "checkpoint": "Cada instrucción trabaja sobre el resultado de las líneas anteriores, así que una retención aplicada después de Silence devuelve el valor retenido. El escenario muestra solo la lógica; no es un sistema de alarma."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Siren se mantiene encendida cuando su propio valor anterior forma parte de la condición. ¿Qué instrucción combina el resultado actual con otro operando mediante OR?"
+      "text": "Mire qué contiene el resultado actual justo antes de ST Siren: solo Armed y DoorOpen. Siren se mantiene encendida cuando su propio valor anterior forma parte de la condición."
     },
     {
       "level": 2,
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial carga Armed, le aplica AND con DoorOpen y guarda el resultado, así que Siren sigue a la puerta y se apaga a los {{t:30}} ms cuando la puerta se cierra; agregue OR Siren para que la sirena se mantenga encendida y luego ANDN Silence para que Silence la apague, en ese orden."
+    "El programa inicial hace que Siren siga a la puerta, así que Siren se apaga a los {{t:30}} ms cuando la puerta se cierra."
   ]
 }

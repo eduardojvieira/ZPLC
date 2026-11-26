@@ -103,4 +103,4 @@ options:
 
 ## What you will do in the practice
 
-In the practice you get a motor program with a realistic bug: the stop button does not stop the motor. You will apply the method: watch `Motor`, `StartPB` and `StopOK`, set a breakpoint on the rung, force `StopOK` and see that nothing changes, read the Trace, and then move one contact. Finally you release every force and press Check. The scenario grades the fixed behavior only.
+In the practice you get a motor program with a realistic bug: the stop button does not stop the motor. You will apply the method: watch `Motor`, `StartPB` and `StopOK`, set a breakpoint on the rung, force `StopOK` and see that nothing changes, read the Trace, and then correct the rung. Finally you release every force and press Check. The scenario grades the fixed behavior only.

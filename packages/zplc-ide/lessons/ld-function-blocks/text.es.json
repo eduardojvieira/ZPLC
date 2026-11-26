@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "src/PumpCtl.st declara el bloque de función PumpCtl: Start arranca la bomba y esta sigue funcionando al soltar Start, Stop la detiene, y Ready debe estar en TRUE para que la bomba funcione. En src/PumpStation.ld.json la bomba 1 es un peldaño con una instancia de PumpCtl llamada Pump1Ctl. La instancia Pump2Ctl está declarada pero no tiene peldaño. Agregue un peldaño con el contacto Start2 y un bloque PumpCtl para la instancia Pump2Ctl, con Stop en Stop, Ready en Ready y su salida Run escrita en Pump2.",
-      "checkpoint": "Un segundo peldaño contiene un bloque PumpCtl para la instancia Pump2Ctl, conectado como el primero y que escribe Pump2."
+      "body": "src/PumpCtl.st declara el bloque de función PumpCtl: Start arranca la bomba y esta sigue funcionando al soltar Start, Stop la detiene, y Ready debe estar en TRUE para que la bomba funcione. En src/PumpStation.ld.json la bomba 1 es un peldaño con una instancia de PumpCtl llamada Pump1Ctl. La instancia Pump2Ctl está declarada pero no tiene peldaño. La bomba 2 debe funcionar como la bomba 1: Start2 la arranca, Stop la detiene, Ready debe estar en TRUE para que funcione, y Pump2 muestra que funciona.",
+      "checkpoint": "Usted puede decir qué debe hacer la bomba 2 y qué instancia usa."
     },
     {
       "key": "predict",
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial llama solo a la instancia Pump1Ctl, así que Pump2 nunca pasa a ON y queda en OFF a los {{t:50}} ms; agregue un peldaño con Start2 y un bloque PumpCtl para Pump2Ctl, con Stop en Stop y Ready en Ready, y escriba su salida Run en Pump2. PumpCtl está en la categoría Proyecto de la caja de herramientas de escalera. La instancia Pump2Ctl ya está declarada, así que solo falta el peldaño.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial solo hace funcionar la bomba 1, así que Pump2 nunca pasa a ON y queda en OFF a los {{t:50}} ms. La bomba 2 debe arrancar con Start2, detenerse con Stop y funcionar solo mientras Ready esté en TRUE, con una memoria propia. PumpCtl está en la categoría Proyecto de la caja de herramientas de escalera. La instancia Pump2Ctl ya está declarada, así que solo falta el peldaño.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -55,7 +55,5 @@
       "text": "Copie el peldaño de la bomba 1. Cambie el contacto a Start2, la instancia a Pump2Ctl y la salida Run a Pump2. Mantenga Stop en Stop y Ready en Ready."
     }
   ],
-  "faultCases": [
-    "El programa inicial llama solo a la instancia Pump1Ctl, así que Pump2 nunca pasa a ON y queda en OFF a los {{t:50}} ms; agregue un peldaño con Start2 y un bloque PumpCtl para Pump2Ctl, con Stop en Stop y Ready en Ready, y escriba su salida Run en Pump2."
-  ]
+  "faultCases": ["El programa inicial solo hace funcionar la bomba 1, así que Pump2 nunca pasa a ON y queda en OFF a los {{t:50}} ms."]
 }

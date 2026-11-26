@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "src/Latch.st declares the function block Latch with the inputs Set and Reset and the output Q, and src/PumpPair.il declares two instances, PumpA and PumpB. PumpA is already called: CAL PumpA(Set := StartA, Reset := StopA) runs it, LD PumpA.Q loads its output and ST RunA stores it. Write the same three lines for PumpB with StartB and StopB.",
+      "body": "src/Latch.st declares the function block Latch with the inputs Set and Reset and the output Q, and src/PumpPair.il declares two instances, PumpA and PumpB. PumpA is already called: CAL PumpA(Set := StartA, Reset := StopA) runs it, LD PumpA.Q loads its output and ST RunA stores it. PumpB must do the same for pump B: StartB starts it, StopB stops it, and RunB shows it.",
       "checkpoint": "Each pump starts on its own Start, stops on its own Stop, and one pump never moves the other."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starting program calls PumpA but never calls PumpB, so RunB never rises and stays OFF at {{t:30}} ms; add CAL PumpB(Set := StartB, Reset := StopB), then LD PumpB.Q and ST RunB.",
+      "body": "Correct this starter omission, save it, then press Check: The starting program runs pump A only, so RunB never rises and stays OFF at {{t:30}} ms. RunB must follow StartB and StopB the way RunA follows StartA and StopA.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -42,20 +42,18 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "What would change if you gave PumpB the inputs of pump A? Try it and see which assertion fails.",
-      "checkpoint": "Each instance has its own copy of the variables of the block, so the same code serves any number of pumps; only the inputs you pass in CAL make them different. LD PumpB.Q before CAL PumpB would read the value of the previous scan. The scenario shows the logic only; it does not show start-up sequencing or a pump fault."
+      "checkpoint": "Each instance has its own copy of the variables of the block, so the same code serves any number of pumps; only the inputs you pass in CAL make them different. Reading the output of PumpB before its CAL would give the value of the previous scan. The scenario shows the logic only; it does not show start-up sequencing or a pump fault."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "CAL runs the instance with the inputs between brackets; the output is not returned by CAL, you read it afterwards with LD PumpB.Q."
+      "text": "Look at the three lines of PumpA: one runs the instance with its inputs between brackets, one loads its output and one stores it. CAL does not return the output; you read it after the call."
     },
     {
       "level": 2,
       "text": "CAL PumpB(Set := StartB, Reset := StopB), LD PumpB.Q, ST RunB, after the three lines of PumpA."
     }
   ],
-  "faultCases": [
-    "The starting program calls PumpA but never calls PumpB, so RunB never rises and stays OFF at {{t:30}} ms; add CAL PumpB(Set := StartB, Reset := StopB), then LD PumpB.Q and ST RunB."
-  ]
+  "faultCases": ["The starting program runs pump A only, so RunB never rises and stays OFF at {{t:30}} ms."]
 }

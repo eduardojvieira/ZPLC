@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "src/PumpCtl.st declares the function block PumpCtl: Start starts the pump and it keeps running after Start is released, Stop stops it, and Ready must be TRUE for the pump to run at all. In src/PumpStation.ld.json pump 1 is a rung with a PumpCtl instance named Pump1Ctl. The instance Pump2Ctl is declared but has no rung. Add a rung with the contact Start2 and a PumpCtl block for the instance Pump2Ctl, with Stop on Stop, Ready on Ready, and its Run output written to Pump2.",
-      "checkpoint": "A second rung holds a PumpCtl block for the instance Pump2Ctl, wired like the first and writing Pump2."
+      "body": "src/PumpCtl.st declares the function block PumpCtl: Start starts the pump and it keeps running after Start is released, Stop stops it, and Ready must be TRUE for the pump to run at all. In src/PumpStation.ld.json pump 1 is a rung with a PumpCtl instance named Pump1Ctl. The instance Pump2Ctl is declared but has no rung. Pump 2 must work like pump 1: Start2 starts it, Stop stops it, Ready must be TRUE for it to run, and Pump2 shows that it runs.",
+      "checkpoint": "You can say what pump 2 must do and which instance it uses."
     },
     {
       "key": "predict",
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter calls only the instance Pump1Ctl, so Pump2 never turns on and stays OFF at {{t:50}} ms; add a rung with Start2 and a PumpCtl block for Pump2Ctl, with Stop on Stop and Ready on Ready, and write its Run output to Pump2. PumpCtl is in the Project category of the Ladder toolbox. The instance Pump2Ctl is already declared, so only the rung is missing.",
+      "body": "Correct this starter omission, save it, then press Check: The starter runs only pump 1, so Pump2 never turns on and stays OFF at {{t:50}} ms. Pump 2 must start on Start2, stop on Stop and run only while Ready is TRUE, with a memory of its own. PumpCtl is in the Project category of the Ladder toolbox. The instance Pump2Ctl is already declared, so only the rung is missing.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -55,7 +55,5 @@
       "text": "Copy the rung of pump 1. Change the contact to Start2, the instance to Pump2Ctl, and the output Run to Pump2. Keep Stop on Stop and Ready on Ready."
     }
   ],
-  "faultCases": [
-    "The starter calls only the instance Pump1Ctl, so Pump2 never turns on and stays OFF at {{t:50}} ms; add a rung with Start2 and a PumpCtl block for Pump2Ctl, with Stop on Stop and Ready on Ready, and write its Run output to Pump2."
-  ]
+  "faultCases": ["The starter runs only pump 1, so Pump2 never turns on and stays OFF at {{t:50}} ms."]
 }
