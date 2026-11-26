@@ -170,6 +170,29 @@ export function collectMeasurement(options: CollectOptions): Omit<Measurement, '
     return label !== null && label.length >= ownText(element).length;
   };
 
+  /** Why a person cannot reach the element: inert, or covered at every sampled point of the part inside the window. */
+  const blocked = (element: Element, box: DOMRect): ElementMeasure['blocked'] => {
+    if (element.closest('[inert], [aria-hidden="true"]')) return 'inert';
+    const left = Math.max(box.left, 0);
+    const right = Math.min(box.right, innerWidth);
+    const top = Math.max(box.top, 0);
+    const bottom = Math.min(box.bottom, innerHeight);
+    if (right - left < 1 || bottom - top < 1) return null; // wholly outside the window: the offscreen detector judges it
+    // an element that lets the pointer through (pointer-events: none) is hit as the ancestor under it
+    const through = style(element).pointerEvents === 'none';
+    for (const [fx, fy] of [
+      [0.5, 0.5],
+      [0.2, 0.2],
+      [0.8, 0.2],
+      [0.2, 0.8],
+      [0.8, 0.8],
+    ] as const) {
+      const hit = document.elementFromPoint(left + (right - left) * fx, top + (bottom - top) * fy);
+      if (hit && (hit === element || element.contains(hit) || (through && hit.contains(element)))) return null;
+    }
+    return 'covered';
+  };
+
   const measured: Element[] = [];
   const index = new Map<Element, number>();
   const elements: ElementMeasure[] = [];
@@ -210,6 +233,7 @@ export function collectMeasurement(options: CollectOptions): Omit<Measurement, '
       disabled: element.closest('[disabled], [aria-disabled="true"], fieldset:disabled') !== null,
       focusRing: null,
       inScroller,
+      blocked: blocked(element, box),
     });
   }
 

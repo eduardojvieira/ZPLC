@@ -5,6 +5,9 @@
  *   clip ... scroll    every line of textFit.findTextOutOfBox, which follows each text to the ancestor that cuts it
  *   truncated          an ellipsis or a line clamp that hides text, with no title, aria-label, description or tooltip to read it
  *   overlap            two controls whose boxes cross by more than 1 px each way, unless one is inside the other
+ *
+ * overlap, offscreen, contrast and focus judge only what a person can reach: an element under a modal or another element, or
+ * in an inert subtree (`blocked`), is left out and listed under `unchecked` in the manifest instead.
  *   offscreen          a control not wholly inside the window (a control in a scrolling container is left to the container)
  *   message-key        a word on screen that is a key of the catalogue
  *   wrong-language     a text that is a string of the other language's catalogue and of no string of its own
@@ -55,7 +58,10 @@ const cutOrSpilling: Detector = ({ elements }) =>
     const wide = element.scroll.width > element.client.width + TOLERANCE;
     const size = `${element.scroll.width} by ${element.scroll.height} px`;
     const box = `${element.client.width} by ${element.client.height}`;
-    const tall = element.scroll.height > element.client.height + TOLERANCE;
+    const over = element.scroll.height - element.client.height;
+    const tall = over > TOLERANCE;
+    // glyphs of a display font reach a few pixels past a line box set tighter than the font: a spill is a quarter line or more
+    const tallSpill = over > Math.max(TOLERANCE, element.fontSize / 4);
     if ((wide && cuts(element.overflowX)) || (tall && cuts(element.overflowY)))
       return [
         {
@@ -64,7 +70,7 @@ const cutOrSpilling: Detector = ({ elements }) =>
           detail: `${quote(element.text)} needs ${size} in ${box}`,
         },
       ];
-    if ((wide && element.overflowX === 'visible') || (tall && element.overflowY === 'visible'))
+    if ((wide && element.overflowX === 'visible') || (tallSpill && element.overflowY === 'visible'))
       return [
         {
           kind: 'spill',
@@ -92,7 +98,7 @@ const insideOf = (elements: ElementMeasure[], child: number, ancestor: number): 
   return false;
 };
 const overlap: Detector = ({ elements }) => {
-  const controls = elements.map((element, index) => ({ element, index })).filter(({ element }) => element.control);
+  const controls = elements.map((element, index) => ({ element, index })).filter(({ element }) => element.control && !element.blocked);
   const found: Defect[] = [];
   // ponytail: every pair, O(n²); a page holds a few hundred controls, sort by x if one ever holds thousands
   for (let i = 0; i < controls.length; i++)
@@ -119,9 +125,10 @@ const overlap: Detector = ({ elements }) => {
 const offscreen: Detector = ({ elements, viewport }) =>
   elements
     .filter(
-      ({ control, inScroller, rect }) =>
+      ({ control, inScroller, blocked, rect }) =>
         control &&
         !inScroller &&
+        !blocked &&
         (rect.x < -TOLERANCE ||
           rect.y < -TOLERANCE ||
           rect.x + rect.width > viewport.width + TOLERANCE ||
@@ -204,7 +211,7 @@ export function contrastRatio(foreground: Rgba, background: Rgba): number {
 }
 const contrast: Detector = ({ elements }) =>
   elements.flatMap((element): Defect[] => {
-    if (!element.text || !element.color || !element.background || element.disabled) return [];
+    if (!element.text || !element.color || !element.background || element.disabled || element.blocked) return [];
     const large = element.fontSize >= 24 || (element.fontSize >= 18.66 && element.fontWeight >= 700);
     const needed = large ? 3 : 4.5;
     const got = contrastRatio(element.color, element.background);
@@ -215,7 +222,7 @@ const contrast: Detector = ({ elements }) =>
 
 const focus: Detector = ({ elements }) =>
   elements
-    .filter((element) => element.control && !element.disabled && element.focusRing === false)
+    .filter((element) => element.control && !element.disabled && !element.blocked && element.focusRing === false)
     .map((element) => ({ kind: 'focus', where: element.name, detail: 'looks the same with the keyboard focus' }));
 
 const holds = (outer: Rect, inner: Rect) =>

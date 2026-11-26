@@ -46,7 +46,7 @@ function fixture(): Measurement {
         overflowY: 'visible',
         textOverflow: 'clip',
         lineClamp: false,
-        text: 'Coil',
+        text: 'Hardware',
         readable: false,
         color: [0, 0, 0, 1],
         background: [255, 255, 255, 1],

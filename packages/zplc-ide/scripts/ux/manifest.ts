@@ -108,6 +108,8 @@ export interface CaptureRecord {
   file: string;
   measures: { elements: number; controls: number; texts: number; focusChecked: number; focusUnchecked: number; scene: string };
   defects: Defect[];
+  /** The texts and controls a person cannot reach on screen (under a modal, inert), which the detectors left out. */
+  unchecked: Array<{ where: string; reason: string }>;
 }
 
 export function captureRecord(name: string, surface: string, state: string, condition: Condition, measurement: Measurement): CaptureRecord {
@@ -127,6 +129,9 @@ export function captureRecord(name: string, surface: string, state: string, cond
       scene: measurement.scene === null ? 'none' : measurement.scene === 'unmeasured' ? 'unmeasured' : 'measured',
     },
     defects: detectDefects(measurement),
+    unchecked: measurement.elements
+      .filter((element) => element.blocked && (element.control || element.text))
+      .map((element) => ({ where: element.name, reason: element.blocked! })),
   };
 }
 
