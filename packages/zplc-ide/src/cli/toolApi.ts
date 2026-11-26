@@ -623,8 +623,25 @@ async function compile<Operation extends CompileOperation>(root: string, operati
     }
     return response as CompileResult<Operation>;
   } catch (error) {
-    return failed(operation, safeCompilerDiagnostics(error)) as CompileResult<Operation>;
+    return failed(operation, withAcceptedValues(safeCompilerDiagnostics(error), loaded.workspace)) as CompileResult<Operation>;
   }
+}
+
+/**
+ * A build that refused a visual file names what it found; the loader of project_validate knows the values it accepts there.
+ * Each refusal of the build gets the same `found` and `acceptedValues`, from that one source (AIX-013).
+ */
+function withAcceptedValues(diagnostics: ToolDiagnostic[], workspace: WorkspaceProject): ToolDiagnostic[] {
+  const visual = diagnostics.some((diagnostic) => diagnostic.code === 'TRANSLATION_FAILED') ? visualFileDiagnostics(workspace) : [];
+  return diagnostics.map((diagnostic) => {
+    const known = visual.find(
+      (item) =>
+        item.path === diagnostic.path && item.found !== undefined && item.acceptedValues && diagnostic.message.includes(`'${item.found}'`),
+    );
+    if (diagnostic.code !== 'TRANSLATION_FAILED' || !known) return diagnostic;
+    const message = `${diagnostic.message}; accepted values: ${known.acceptedValues!.join(', ')}`.slice(0, 512);
+    return { ...diagnostic, message, found: known.found, acceptedValues: known.acceptedValues } as ToolDiagnostic;
+  });
 }
 export async function compilerCheck(root: string): Promise<CompilerCheckResult> {
   return compile(root, 'check');

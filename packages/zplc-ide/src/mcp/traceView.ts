@@ -169,7 +169,8 @@ export function traceArgumentsError(args: Record<string, unknown>): McpToolResul
   );
 }
 
-function audit(execution: Record<string, unknown>): Record<string, unknown> {
+/** The compact `audit` of AI-12, beside a 2.0 `execution`: the job, its permission and how long it took. */
+export function audit(execution: Record<string, unknown>): Record<string, unknown> {
   return {
     jobId: execution.jobId,
     permission: execution.permission,
