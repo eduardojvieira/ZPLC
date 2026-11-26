@@ -169,7 +169,8 @@ function GroupSection({ group, open, onToggle, onInsert }: GroupSectionProps) {
         </span>
       </Button>
       {open ? (
-        <div className="mb-2 grid grid-cols-2 gap-1.5">
+        // one entry per row, as the wide sections: names such as SINT_TO_USINT cannot share a row without breaking
+        <div className="mb-2 grid grid-cols-1 gap-1.5">
           {group.items.map((item) => (
             <ToolboxItem key={item.functionName} item={item} onInsert={onInsert} />
           ))}

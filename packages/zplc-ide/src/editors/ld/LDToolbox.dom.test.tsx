@@ -21,6 +21,14 @@ describe('the Ladder palette of the compiler functions (LNG-030)', () => {
     expect(EXPECTED).toHaveLength(240);
   });
 
+  it('gives each entry of an open group its own row, so a long name such as SINT_TO_USINT does not break', async () => {
+    const { user } = dom.render(<LDToolbox onInsert={() => undefined} />);
+    await user.click(dom.screen.getByRole('button', { name: 'Conversions' }));
+    const grid = group('Conversions')!.querySelector('[data-ld-toolbox-item="function:SINT_TO_USINT"]')!.parentElement!;
+    expect(grid.classList.contains('grid-cols-1')).toBe(true);
+    expect(grid.classList.contains('grid-cols-2')).toBe(false);
+  });
+
   it('finds INT_TO_REAL by name', async () => {
     const { user } = dom.render(<LDToolbox onInsert={() => undefined} />);
     await user.type(dom.screen.getByRole('searchbox'), 'INT_TO_REAL');
