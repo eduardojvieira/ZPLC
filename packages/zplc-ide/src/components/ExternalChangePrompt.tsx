@@ -84,6 +84,11 @@ function Notices({ notices }: { notices: ExternalNotice[] }) {
               <div className="min-w-0 flex-1">
                 <p className="font-medium break-words">{t(NOTICE_TEXT[notice.kind], { name: notice.name })}</p>
                 {notice.name !== notice.path && <p className="mt-0.5 text-xs break-words text-[var(--color-surface-300)]">{notice.path}</p>}
+                {notice.error && (
+                  <p data-external-notice-error className="mt-1 text-xs break-words text-[var(--color-accent-red)]">
+                    {notice.error}
+                  </p>
+                )}
               </div>
               <IconButton
                 label={t('studio.notice.dismissLabel', { name: notice.name })}
@@ -172,7 +177,7 @@ export function ExternalChangePrompt() {
           <p className="mb-3 text-sm text-[var(--color-surface-200)]">{t('externalChange.intro')}</p>
           <ul className="space-y-2">
             {conflicts.map((conflict) => {
-              const buffer = conflict.settings?.mine ?? mine(conflict.path);
+              const buffer = conflict.settings?.mine ?? conflict.scene?.mine ?? mine(conflict.path);
               return (
                 <li
                   key={conflict.path}

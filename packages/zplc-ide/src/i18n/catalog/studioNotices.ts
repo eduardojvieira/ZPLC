@@ -21,6 +21,7 @@ export const studioNoticesEn = {
   'studio.notice.closeReview': 'Close',
   'studio.notice.restored': 'Restored {name}.',
   'studio.notice.restoreFailed': 'Could not restore {name}: {reason}',
+  'studio.notice.restoreStale': `Did not restore {name}: it changed again since this notice, and ${PRODUCT_NAME} writes nothing over it.`,
 } as const;
 
 export const studioNoticesEs: Record<keyof typeof studioNoticesEn, string> = {
@@ -42,4 +43,5 @@ export const studioNoticesEs: Record<keyof typeof studioNoticesEn, string> = {
   'studio.notice.closeReview': 'Cerrar',
   'studio.notice.restored': 'Se restauró {name}.',
   'studio.notice.restoreFailed': 'No se pudo restaurar {name}: {reason}',
+  'studio.notice.restoreStale': `No se restauró {name}: cambió de nuevo desde este aviso, y ${PRODUCT_NAME} no escribe nada encima.`,
 };
