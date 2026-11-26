@@ -1,7 +1,8 @@
 /**
  * A generated course for the scale tests of the outline (GDE-002): 111 lessons over the modules of the real course, each one a copy
- * of a real entry under a new id titled "Synthetic lesson N", and the paths of lessons/course.json with as many lessons each, taken in
- * order from the generated ones. Every title and id holds "s", so one typed letter opens every path and module.
+ * of a real entry under a new id titled "synthetic-lesson-N" (no words, so it is no text a person reads), and the paths of
+ * lessons/course.json with as many lessons each, taken in order from the generated ones. Every title and id holds "s", so one
+ * typed letter opens every path and module.
  */
 import { LESSON_INDEX } from '../../generated/lessonIndex';
 import type { LessonIndex } from '../../learn/lessonPackage';
@@ -25,7 +26,10 @@ export function syntheticCourse(): LessonIndex {
       module: modules[index % modules.length]!.id,
       order: index,
       prerequisites: [],
-      text: { en: { ...template.text.en, title: `Synthetic lesson ${index}` }, es: { ...template.text.es, title: `Synthetic ${index}` } },
+      text: {
+        en: { ...template.text.en, title: `synthetic-lesson-${index}` },
+        es: { ...template.text.es, title: `synthetic-lesson-${index}` },
+      },
     })),
   };
 }
