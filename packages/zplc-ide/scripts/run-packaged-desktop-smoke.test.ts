@@ -150,7 +150,7 @@ test('desktop smoke exercises real renderer accessibility and packaged isolation
   expect(developmentSmoke).toContain('prefers-reduced-motion');
   expect(developmentSmoke).toContain('forced-colors');
   expect(developmentSmoke).toContain('select[data-theme-control]');
-  expect(developmentSmoke).toContain('Learn keyboard selection');
+  expect(developmentSmoke).toContain('The language control in Preferences is not keyboard focusable.');
   expect(developmentSmoke).not.toContain('nativeVirtualKeyCode');
   expect(packagedSmoke).toContain('Node globals leaked into packaged renderer');
   expect(packagedSmoke).toContain('Unexpected packaged preload surface');
