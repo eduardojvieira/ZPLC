@@ -340,7 +340,7 @@ function validateModbusHelper(
  * read apart.
  */
 const OPERAND_LITERAL =
-  /^(?:-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|\d{1,2}#[0-9A-Fa-f_]+|[A-Za-z_]+#-?\d+(?:\.\d+)?|TRUE|FALSE|'(?:[^'\n\r]|'')*')$/;
+  /^(?:-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|\d{1,2}#[0-9A-Fa-f_]+|[A-Za-z_]+#\d{1,2}#[0-9A-Fa-f_]+|[A-Za-z_]+#-?\d+(?:\.\d+)?|TRUE|FALSE|'(?:[^'\n\r]|'')*')$/;
 const STRING_LITERAL = /^'(?:[^'\n\r]|'')*'$/;
 const REAL_LITERAL = /^-?\d+(?:\.\d+(?:[eE][+-]?\d+)?|[eE][+-]?\d+)$/;
 const TYPED_LITERAL = /^([A-Za-z_]+)#/;

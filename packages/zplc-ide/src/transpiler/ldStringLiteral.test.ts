@@ -76,3 +76,23 @@ describe('LNG-030 LNG-002 a STRING operand cannot close its literal', () => {
     expect(valid.source).toContain('D := T#1s;');
   });
 });
+
+describe('LNG-030 a typed literal in another base is an operand', () => {
+  const withByte = { local: [...declared.local, variable('B', 'BYTE')] };
+  it('BYTE#16#81 transpiles verbatim and builds', () => {
+    const content = ldFile(withByte, contact('c1', 'Start'), box('f1', 'SHL', ['BYTE#16#81', '1'], 'B'), coil('k1', 'Lamp'));
+    const result = transpileLDToST(content);
+    expect(result.errors).toEqual([]);
+    expect(result.source).toContain('B := SHL(BYTE#16#81, 1);');
+    expect(build(content)).toEqual([]);
+  });
+
+  it('a based typed literal followed by statements is still refused at the rung and cell', () => {
+    const result = transpileLDToST(
+      ldFile(withByte, contact('c1', 'Start'), box('f1', 'SHL', ['BYTE#16#81; X := 1', '1'], 'B'), coil('k1', 'Lamp')),
+    );
+    expect(result.success).toBe(false);
+    expect(result.source).toBe('');
+    expect(result.diagnostics![0]!.element).toBe('rung:r1/cell:0,1');
+  });
+});
