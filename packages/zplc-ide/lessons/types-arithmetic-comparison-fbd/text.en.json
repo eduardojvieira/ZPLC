@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter clears Total on Reset but never adds to it, so Low stays ON for ever; add 5 to Total on each rising edge of Step. Place an R_TRIG block named StepEdge with Step on CLK, an ADD block that adds Total and a constant 5 of type INT, and a SEL block with StepEdge.Q on G, Total on IN0 and ADD.OUT on IN1. Wire the SEL output to IN0 of the SEL block that handles Reset, in place of the wire from Total.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "body": "Correct the starting diagram, save it, then press {{ui:learn.check}}. The starting diagram clears Total on Reset but never adds to it, so Low stays ON for ever. Change it so that each press of Step adds 5 to Total once, however long the press lasts, while Reset still clears it. Place and wire the blocks yourself: the variables, the clearing SEL block and the three comparisons are already there.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The scenario is named TypedSteps and contains {{assertions}} assertions."
     },
     {
