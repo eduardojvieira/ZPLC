@@ -69,7 +69,7 @@ Ejecutar, pausar y avanzar un paso no se confirman, porque son una acción expl�
 
 El adaptador nativo POSIX es una simulación en el host. Una conexión serie y un perfil de placa de compilación cruzada no lo convierten en evidencia de hardware en el lazo. Hoy los perfiles catalogados tienen cero referencias de evidencia HIL. Use el procedimiento exacto de Zephyr de la placa y registre una ejecución HIL antes de afirmar un comportamiento en el destino. Vea [Compatibilidad de hardware](../reference/capabilities-evidence.md) y [Seguridad y limitaciones](../safety-and-limitations.md).
 
-Studio ofrece la compilación del firmware en Linux y macOS, y no en Windows. Aún no hay registro de una compilación del firmware de ZPLC en macOS.
+ZPLC ofrece la compilación del firmware en Linux y macOS, y no en Windows. Aún no hay registro de una compilación del firmware de ZPLC en macOS ni en Windows.
 
 ## Cuando falla una conexión o una carga
 

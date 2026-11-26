@@ -975,7 +975,8 @@ export function deviceProtocolBody(lang: Lang): string {
       `TypeScript de la aplicación ZPLC. El runtime nativo habla el mismo protocolo por la entrada y la salida estándar ` +
       `cuando se inicia con ${code('--device-link')}; ${code('--device-link-network')} le aplica las reglas de un enlace de red, para ` +
       `poder ejercitarlas sin un socket. El runtime nativo para Windows no tiene este modo: iniciado ` +
-      `con ${code('--device-link')}, dice que el enlace con el dispositivo no está disponible en esta plataforma y termina con el estado 1.`,
+      `con ${code('--device-link')}, dice que el enlace con el dispositivo no está disponible en esta plataforma y termina ` +
+      `con el estado 1.`,
   };
   const h = (en: string, es: string) => `## ${lang === 'en' ? en : es}`;
   const h3 = (text: string) => `### ${text}`;
