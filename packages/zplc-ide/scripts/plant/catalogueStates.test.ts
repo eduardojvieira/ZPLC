@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { gripperDecor, snapshotBounds } from '../../src/plant/view/geometry';
 import { MODELS, partModel } from '../../src/plant/view/models';
+import { silhouette, silhouetteXor } from './silhouette.fixtures';
 import { CATALOGUE, catalogueCamera, catalogueKindCells, catalogueView, catalogueViews, ITEMS, unionBounds } from './catalogueStates';
 
 const MACHINES = {
@@ -98,4 +99,37 @@ describe('the catalogue sheet', () => {
       }
     }
   }, 60000);
+
+  it('shows the five beam sensor kinds side by side, clear and detecting, each drawn its own way (owner decision 4)', () => {
+    const sensor = CATALOGUE.find((k) => k.id === 'sensor')!;
+    const kinds = ['diffuse', 'retro-reflective', 'inductive', 'capacitive', 'colour'];
+    expect(sensor.states.map((s) => s.label)).toEqual(kinds.flatMap((k) => [`${k}, clear`, `${k}, detecting`]));
+    const clear = sensor.states.filter((s) => s.label.endsWith('clear')).map((s) => catalogueView(sensor, s));
+    expect(clear.map((v) => v.state.kind)).toEqual(kinds);
+    const bodies = clear.map((v) =>
+      JSON.stringify(
+        partModel(v)!
+          .filter((p) => p.role !== 'beam')
+          .map((p) => [p.slot, p.shape, p.role]),
+      ),
+    );
+    expect(new Set(bodies).size).toBe(kinds.length);
+  });
+
+  it('frames the sensor bodies: every pair of the five kinds differs by at least 0.31 % of the cell (decision 4)', async () => {
+    const sensor = CATALOGUE.find((k) => k.id === 'sensor')!;
+    const cells = await catalogueKindCells(sensor, 400 / 300);
+    const kinds = ['diffuse', 'retro-reflective', 'inductive', 'capacitive', 'colour'];
+    for (const state of ['clear', 'detecting']) {
+      const masks = kinds.map((k) => {
+        const cell = cells.find((c) => c.label === `sensor: ${k}, ${state}`)!;
+        return silhouette(cell.snapshot.parts, cell.camera, 400, 300);
+      });
+      for (let i = 0; i < kinds.length; i++)
+        for (let j = i + 1; j < kinds.length; j++) {
+          const pair = `${kinds[i]} / ${kinds[j]}, ${state}`;
+          expect({ pair, enough: silhouetteXor(masks[i]!, masks[j]!) >= 0.0031 }).toEqual({ pair, enough: true });
+        }
+    }
+  });
 });

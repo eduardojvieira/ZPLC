@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'bun:test';
 import type { PlantCore, PlantSceneFile, ScenePart } from '../../contracts';
+import { catalogue } from '../catalogue';
 import { createPlantCore } from '../plantCore';
 
 const cores: PlantCore[] = [];
@@ -158,5 +159,28 @@ describe('panel parts', () => {
     expect(core.snapshot().parts.find((p) => p.name === 'lamp')!.state).toEqual({ lit: true });
     core.operate('start.pressed', false);
     expect(core.sense()['start.pressed']).toBe(false);
+  });
+});
+
+describe('sensor kinds (owner decision 4, 2026-11-25)', () => {
+  const KINDS = {
+    'sensor-diffuse': 'diffuse',
+    'sensor-retro': 'retro-reflective',
+    'sensor-inductive': 'inductive',
+    'sensor-capacitive': 'capacitive',
+    'sensor-colour': 'colour',
+  } as const;
+
+  it('the catalogue gives each beam sensor its kind, and the four that look like the diffuse one each have their own', () => {
+    for (const [id, kind] of Object.entries(KINDS)) expect({ id, kind: catalogue.get(id)?.kind }).toEqual({ id, kind });
+    expect(new Set(Object.values(KINDS)).size).toBe(5);
+  });
+
+  it('each sensor view carries the kind of its catalogue entry, so the view can draw it; the signals stay as they were', async () => {
+    const ids = Object.keys(KINDS);
+    const core = await make(ids.map((id, i) => part(`s${i}`, id, [0, TOP, i])));
+    const views = core.snapshot().parts;
+    expect(views.map((v) => [v.part, v.state.kind])).toEqual(ids.map((id) => ['sensor', KINDS[id as keyof typeof KINDS]]));
+    expect(Object.keys(core.sense()).sort()).toEqual(['s0.detect', 's1.detect', 's2.detect', 's3.detect', 's4.detect', 's4.match']);
   });
 });

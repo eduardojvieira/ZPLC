@@ -2,14 +2,26 @@
  * Sensors (plan-vis C3): the diffuse photoelectric sensor, the light array, the scale, the vision sensor and the limit switch. Each
  * shows its state with a shape, not only a colour (VIS-003): a beam dashed or solid, digits on a readout, a lever that swings.
  *
- * The retro-reflective, inductive, capacitive and colour sensors publish the same view as the diffuse one (`sensor`, with the same
- * state), so they are drawn as it is until the snapshot says which they are.
+ * The retro-reflective, inductive, capacitive and colour sensors publish the same view as the diffuse one (`sensor`); the kind their
+ * catalogue entry declares rides in the view's state, and each kind is drawn its own way (owner decision 4).
  */
 import type { PartView, Quat, Vec3 } from '../../contracts';
 import { cuesFor } from '../cues';
 import type { Role } from '../look';
 import { BELT } from './conveyors';
-import { box, MIN_STAND, piece, rod, rotate, slotted, type ModelContext, type ModelFamily, type Piece } from './shared';
+import {
+  box,
+  extrusion,
+  MIN_STAND,
+  piece,
+  rod,
+  rotate,
+  slotted,
+  type ModelContext,
+  type ModelFamily,
+  type Piece,
+  type Section,
+} from './shared';
 
 const conjugate = ([x, y, z, w]: Quat): Quat => [-x, -y, -z, w];
 const minus = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
@@ -211,19 +223,95 @@ function readout(prefix: string, text: string, cells: number, at: Vec3, h: numbe
 /** The beam: a 6 mm line, solid while the sensor detects; while it is clear, a dash every `dash` metres, a sixth of it long. */
 export const SENSOR = { dash: 0.06, beamRadius: 0.003, dashRadius: 0.0018 } as const;
 
+/**
+ * The body of each beam sensor kind, behind the beam's origin (the face of its lens), with its output lamp and the bezel that glows
+ * while it detects; `under` is the bottom of the body and `x` the middle the bracket holds.
+ */
+function sensorBody(kind: unknown, on: boolean, length: number, floor: number): { pieces: Piece[]; x: number; under: number } {
+  switch (kind) {
+    case 'inductive': {
+      // A threaded steel barrel with two lock nuts and a green sensing face; the lamp is a ring at its rear end.
+      const x = -0.03;
+      return {
+        x,
+        under: -0.012,
+        pieces: [
+          piece('barrel', rod(0.009, 0.06, 'x'), [x, 0, 0], 'steel'),
+          piece('face', rod(0.0085, 0.003, 'x'), [-0.0015, 0, 0], 'head'),
+          piece('nut-a', box([0.006, 0.024, 0.024], 0.001), [-0.048, 0, 0], 'collar'),
+          piece('nut-b', box([0.006, 0.024, 0.024], 0.001), [-0.012, 0, 0], 'collar'),
+          piece('bezel', rod(0.0095, 0.002, 'x'), [-0.004, 0, 0], lit(on)),
+          piece('lamp', rod(0.0095, 0.008, 'x'), [-0.064, 0, 0], lit(on)),
+        ],
+      };
+    }
+    case 'capacitive': {
+      // A thick plastic barrel closed by a wider flat face cap, with a tall sensitivity knob on top; the lamp is a ring at its rear.
+      const x = -0.04;
+      return {
+        x,
+        under: -0.024,
+        pieces: [
+          piece('barrel', rod(0.02, 0.07, 'x'), [x, 0, 0], 'housing'),
+          piece('face', rod(0.024, 0.006, 'x'), [-0.004, 0, 0], 'collar'),
+          piece('knob', rod(0.007, 0.024, 'y'), [-0.055, 0.032, 0], 'steel'),
+          piece('bezel', rod(0.021, 0.002, 'x'), [-0.008, 0, 0], lit(on)),
+          piece('lamp', rod(0.0205, 0.01, 'x'), [-0.08, 0, 0], lit(on)),
+        ],
+      };
+    }
+    case 'colour': {
+      // A wide head with a sloped top and two lenses, one over the other (the light it sends and the eye that reads the colour), on a
+      // slimmer housing behind it.
+      const back = -0.06;
+      const head: Section = [
+        [-0.015, -0.036],
+        [0.015, -0.036],
+        [0.015, 0.036],
+        [-0.015, 0.012],
+      ];
+      return {
+        x: back,
+        under: -0.036,
+        pieces: [
+          piece('head', extrusion(head, 0.07, 'z'), [-0.0165, 0, 0], 'housing'),
+          piece('housing', box([0.05, 0.04, 0.036], 0.004), [back, -0.012, 0], 'housing'),
+          piece('bezel', box([0.003, 0.068, 0.064], 0.0005), [-0.0015, 0, 0], lit(on)),
+          piece('lens-a', rod(0.011, 0.004, 'x'), [-0.0005, 0.017, 0], 'lens'),
+          piece('lens-b', rod(0.011, 0.004, 'x'), [-0.0005, -0.017, 0], 'lens'),
+          piece('lamp', box([0.04, 0.004, 0.03], 0.001), [back, 0.01, 0], lit(on)),
+        ],
+      };
+    }
+    default: {
+      // The diffuse housing; the retro-reflective one adds the reflector its beam is aimed at, on its own post.
+      const back = -0.036;
+      const pieces: Piece[] = [
+        piece('housing', box([0.07, 0.048, 0.04], 0.005), [back, 0, 0], 'housing'),
+        piece('lens', rod(0.013, 0.004, 'x'), [-0.0005, 0, 0], 'lens'),
+        piece('bezel', box([0.003, 0.044, 0.036], 0.0005), [-0.0015, 0, 0], lit(on)), // a face plate that glows while it detects
+        piece('lamp', box([0.05, 0.004, 0.032], 0.001), [back, 0.026, 0], lit(on)), // a lit window over the top of the housing
+      ];
+      if (kind === 'retro-reflective') {
+        pieces.push(
+          piece('reflector', box([0.006, 0.06, 0.06], 0.001), [length + 0.003, 0, 0], 'collar'),
+          piece('reflector-face', box([0.001, 0.05, 0.05], 0), [length - 0.0005, 0, 0], 'mark'),
+        );
+        const post = -0.03 - floor;
+        if (post > MIN_STAND) pieces.push(piece('reflector-post', rod(0.006, post, 'y'), [length + 0.003, floor + post / 2, 0], 'steel'));
+      }
+      return { x: back, under: -0.024, pieces };
+    }
+  }
+}
+
 function sensorModel(view: PartView, context: ModelContext): Piece[] {
   const cues = cuesFor(view);
   const detecting = cues.beam?.detecting === true;
   const length = typeof view.state.beamLength === 'number' && view.state.beamLength > 0 ? view.state.beamLength : 1;
-  const back = -0.036; // the housing sits behind the beam's origin, which is the face of the lens
-  const under = -0.024; // the bottom of the housing
-  const pieces: Piece[] = [
-    piece('housing', box([0.07, 0.048, 0.04], 0.005), [back, 0, 0], 'housing'),
-    piece('lens', rod(0.013, 0.004, 'x'), [-0.0005, 0, 0], 'lens'),
-    piece('bezel', box([0.003, 0.044, 0.036], 0.0005), [-0.0015, 0, 0], lit(detecting)), // a face plate that glows while it detects
-    piece('lamp', box([0.05, 0.004, 0.032], 0.001), [back, 0.026, 0], lit(detecting)), // a lit window over the top of the housing
-    ...stand(context.mount, back, back - 0.035, under, -view.pose.p[1]),
-  ];
+  const floor = -view.pose.p[1];
+  const body = sensorBody(view.state.kind, detecting, length, floor);
+  const pieces: Piece[] = [...body.pieces, ...stand(context.mount, body.x, body.x - 0.035, body.under, floor)];
   // The beam: a solid line while the sensor detects, a dashed one while it is clear (VIS-003, VIS-016); fine, like light.
   pieces.push(piece('beam', rod(SENSOR.beamRadius, length, 'x'), [length / 2, 0, 0], 'beam', detecting));
   const dashes = Math.max(1, Math.floor(length / SENSOR.dash));

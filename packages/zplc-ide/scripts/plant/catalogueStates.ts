@@ -146,10 +146,18 @@ export const CATALOGUE: readonly CatalogueKind[] = [
   kind('chute', [1, 0.03, 0.4], 0.5, {}, still()),
   kind('remover', [0.6, 0.6, 0.6], 0.3, { delivered: 0 }, still()),
   // sensors
-  kind('sensor', [0.05, 0.05, 0.05], 0.55, { detect: false, count: 0, beamLength: 0.8 }, [
-    { label: 'clear' },
-    { label: 'detecting', state: { detect: true }, signals: { detect: true } },
-  ]),
+  // The five beam sensor kinds side by side (owner decision 4): the kind their catalogue entry declares, which the core publishes. A
+  // short beam (rangeM 0.15) so that the bodies, not the beam, fill the cell.
+  kind(
+    'sensor',
+    [0.05, 0.05, 0.05],
+    0.55,
+    { detect: false, count: 0, beamLength: 0.15 },
+    (['diffuse', 'retro-reflective', 'inductive', 'capacitive', 'colour'] as const).flatMap((k): CatalogueState[] => [
+      { label: `${k}, clear`, state: { kind: k } },
+      { label: `${k}, detecting`, state: { kind: k, detect: true }, signals: { detect: true } },
+    ]),
+  ),
   kind(
     'light-array',
     [0.05, 0.05, 0.8],
