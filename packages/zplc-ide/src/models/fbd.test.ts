@@ -134,3 +134,11 @@ describe('FBD model validation', () => {
     ).toThrow('finite');
   });
 });
+
+describe('AIX-013 parseFBDModel checks the shape of a block, and leaves its type to the transpiler', () => {
+  it('accepts a block of any type, even with the project blocks: what a diagram can place is fbdPlacesBlock', () => {
+    const json = JSON.stringify({ ...model, blocks: [{ id: 'b1', type: 'SQRT', position: { x: 0, y: 0 } }], connections: [] });
+    expect(parseFBDModel(json, []).blocks[0]!.type).toBe('SQRT');
+    expect(transpileFBDToST(JSON.parse(json), [])).toMatchObject({ success: false, errors: [expect.stringContaining('SQRT')] });
+  });
+});

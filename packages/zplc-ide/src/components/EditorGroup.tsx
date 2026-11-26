@@ -10,6 +10,7 @@ import { serializeFBDModel, type FBDModel } from '../models/fbd';
 import { serializeLDModel, type LDModel } from '../models/ld';
 import { serializeSFCModel, type SFCModel } from '../models/sfc';
 import { loadFBDFile, loadLDFile, loadSFCFile, type VisualFileLoad } from '../models/visualFileLoad';
+import { visualViolationText } from '../models/visualFileText';
 import { displayEditorFileName } from './editorFilePresentation';
 import { ErrorBoundary } from './ErrorBoundary';
 import { DevFaultProbe } from './DevFaultProbe';
@@ -170,7 +171,7 @@ export function EditorGroup({
   // An invalid visual file names itself and its first violations; nothing else in the window is affected.
   const renderFileError = (lang: string, load: VisualFileLoad<unknown> | null) => {
     if (!load || load.ok) return null;
-    const { fileName, violations, more } = load.error;
+    const { fileName, details, more } = load.error;
     return (
       <div
         role="alert"
@@ -186,9 +187,9 @@ export function EditorGroup({
           </p>
           <p className="text-[var(--color-surface-200)] text-sm mt-1 text-center font-mono break-all">{fileName}</p>
           <ul className="mt-4 list-disc pl-5 text-sm text-[var(--color-surface-300)] space-y-1">
-            {violations.map((violation) => (
-              <li key={violation} className="break-words">
-                {violation}
+            {details.map((detail, index) => (
+              <li key={index} className="break-words">
+                {visualViolationText(detail)}
               </li>
             ))}
           </ul>

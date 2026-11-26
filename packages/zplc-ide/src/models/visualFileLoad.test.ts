@@ -2,10 +2,12 @@ import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createEmptyFileContent } from '../types';
+import { fbdPaletteBlocks } from '../editors/fbd/palette';
 import { parseFBDModel } from './fbd';
+import { collectProjectBlocks } from './projectBlocks';
 import { parseLDModel } from './ld';
-import { parseSFCModel } from './sfc';
-import { MAX_VIOLATIONS, loadFBDFile, loadLDFile, loadSFCFile } from './visualFileLoad';
+import { SFC_QUALIFIERS, parseSFCModel } from './sfc';
+import { LD_ELEMENT_TYPES, MAX_VIOLATIONS, loadFBDFile, loadLDFile, loadSFCFile } from './visualFileLoad';
 
 const packageRoot = join(import.meta.dir, '../..');
 const fixtures = (suffix: string): string[] => [...new Bun.Glob(`projects/**/*.${suffix}.json`).scanSync({ cwd: packageRoot })].sort();
@@ -140,5 +142,79 @@ describe('the editor opens visual files through the validating loaders', () => {
       expect(source).toContain(`${loader}(activeFile.path || activeFile.name, activeFile.content)`);
     for (const parser of ['parseLDModel(', 'parseFBDModel(', 'parseSFCModel(']) expect(source).not.toContain(parser);
     expect(source).toContain('data-file-error');
+  });
+});
+
+describe('AIX-013 a refused visual file names the place, what was found and the accepted values, as data', () => {
+  const variables = { local: [], outputs: [] };
+
+  it('LD: an unknown element type is an invalid value at its JSON path, with every accepted element type', () => {
+    const document = {
+      name: 'Main',
+      variables,
+      rungs: [{ id: 'rung_1', number: 1, elements: [{ id: 'e1', type: 'contact', variable: 'Start' }] }],
+    };
+    const error = failure(loadLDFile('Main.ld.json', JSON.stringify(document)));
+    expect(error.fileName).toBe('Main.ld.json');
+    expect(error.details).toEqual([
+      { code: 'invalid-value', path: 'rungs[0].elements[0].type', found: 'contact', acceptedValues: [...LD_ELEMENT_TYPES] },
+    ]);
+    // the strings of before stay as they were: zod's words at the place
+    expect(error.violations).toEqual([expect.stringMatching(/^rungs\[0\]\.elements\[0\]\.type: Invalid option/)]);
+  });
+
+  it('FBD: a block of a type no diagram can place is an unknown block, with the types the palette and the project offer', () => {
+    const document = { name: 'Main', variables, blocks: [{ id: 'b1', type: 'SQRT', position: { x: 0, y: 0 } }], connections: [] };
+    const error = failure(loadFBDFile('Main.fbd.json', JSON.stringify(document), []));
+    expect(error.details).toEqual([
+      { code: 'unknown-block', path: 'blocks[0].type', block: 'b1', found: 'SQRT', acceptedValues: fbdPaletteBlocks() },
+    ]);
+    expect(error.violations).toEqual(["blocks[0].type: 'SQRT'"]);
+  });
+
+  it('FBD: a block the project declares is placed, and is among the accepted types of a refused one', () => {
+    const blocks = collectProjectBlocks([
+      {
+        name: 'Lib.st',
+        language: 'ST',
+        content: 'FUNCTION_BLOCK MyFB\nVAR_INPUT IN : BOOL; END_VAR\nVAR_OUTPUT Q : BOOL; END_VAR\nEND_FUNCTION_BLOCK',
+      },
+    ]);
+    const withType = (type: string) =>
+      JSON.stringify({
+        name: 'Main',
+        variables,
+        blocks: [{ id: 'b1', type, instanceName: 'i1', position: { x: 0, y: 0 } }],
+        connections: [],
+      });
+    expect(loadFBDFile('Main.fbd.json', withType('MyFB'), blocks).ok).toBe(true);
+    expect(failure(loadFBDFile('Main.fbd.json', withType('FOO'), blocks)).details[0]!.acceptedValues).toContain('MyFB');
+  });
+
+  it('FBD: without the project blocks, as the editor opens a file, the block types are not checked, as before', () => {
+    const document = { name: 'Main', variables, blocks: [{ id: 'b1', type: 'FOO', position: { x: 0, y: 0 } }], connections: [] };
+    expect(loadFBDFile('Main.fbd.json', JSON.stringify(document)).ok).toBe(true);
+    expect(parseFBDModel(JSON.stringify(document), []).blocks[0]!.type).toBe('FOO');
+  });
+
+  it('SFC: an action qualifier outside the translated ones is an invalid value with N, S, R, L, D, P, P0, P1', () => {
+    const document = {
+      name: 'Main',
+      steps: [{ id: 's1', name: 'Idle', isInitial: true, position: { x: 0, y: 0 }, actions: [{ actionName: 'A', qualifier: 'X' }] }],
+      transitions: [],
+      actions: [{ id: 'A', name: 'A', body: '' }],
+    };
+    expect(failure(loadSFCFile('Main.sfc.json', JSON.stringify(document))).details).toEqual([
+      { code: 'invalid-value', path: 'steps[0].actions[0].qualifier', found: 'X', acceptedValues: [...SFC_QUALIFIERS] },
+    ]);
+  });
+
+  it('a missing field, a wrong shape and a file that is not JSON each have their code', () => {
+    const missing = failure(loadLDFile('Main.ld.json', JSON.stringify({ name: 'Main', variables })));
+    expect(missing.details).toEqual([{ code: 'missing-field', path: 'rungs', reason: expect.any(String) }]);
+    const shape = failure(loadLDFile('Main.ld.json', JSON.stringify({ name: 'Main', variables, rungs: {} })));
+    expect(shape.details).toEqual([{ code: 'invalid', path: 'rungs', reason: expect.any(String) }]);
+    expect(shape.violations[0]).toBe(`rungs: ${shape.details[0]!.reason}`);
+    expect(failure(loadLDFile('Main.ld.json', '{')).details).toEqual([{ code: 'not-json', path: '', reason: expect.any(String) }]);
   });
 });

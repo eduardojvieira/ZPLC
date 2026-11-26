@@ -240,6 +240,12 @@ describe('UX-029 i18n guard: a hard-coded message in a plain module', () => {
     }
   });
 
+  it('UX-029 the canonical format modules are a tool surface, not interface text', () => {
+    expect(isGuardedModule('packages/zplc-ide/src/formats/ld.ts')).toBe(false);
+    expect(isGuarded('packages/zplc-ide/src/components/LearnPanel.tsx')).toBe(true);
+    expect(isGuardedModule('packages/zplc-ide/src/components/deployFlow.ts')).toBe(true);
+  });
+
   it('UX-029 counts a message of a plain module against the list of offenders', () => {
     const file = { path: module('keyboard'), text: "const a = { say: 'Removed the wire.' };" };
     expect(checkSources([file], { offenders: [] })[0]).toContain('hard-coded-message');

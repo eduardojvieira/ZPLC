@@ -3,6 +3,7 @@ import { Button, Textarea } from '../../ui';
 import { useT } from '../../i18n';
 import { usePreferencesDocument } from '../../store/usePreferencesDocument';
 import { AgentProposals } from '../agent/AgentProposals';
+import { visualViolationText } from '../../models/visualFileText';
 import { AgentStatus, type AgentState } from '../ConsoleReviewPanels';
 import { providerErrorText, type AiProviderMode, type AiProviderStatusPresentation } from '../aiProviderPresentation';
 
@@ -204,9 +205,9 @@ export function AgentTab({
                 </p>
                 {agentState.presentation.violations.length > 0 && (
                   <ul className="list-disc pl-4">
-                    {agentState.presentation.violations.map((violation) => (
-                      <li key={violation}>{violation}</li>
-                    ))}
+                    {agentState.presentation.details
+                      ? agentState.presentation.details.map((detail, index) => <li key={index}>{visualViolationText(detail)}</li>)
+                      : agentState.presentation.violations.map((violation) => <li key={violation}>{violation}</li>)}
                   </ul>
                 )}
               </div>

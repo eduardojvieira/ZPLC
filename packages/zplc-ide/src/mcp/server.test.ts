@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { mkdtempSync } from 'node:fs';
 import { hardwareGradeRecordOf } from '../learn/hardwareCheck';
-import { mkdtemp, mkdir, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
+import { cp, mkdtemp, mkdir, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -1268,5 +1268,94 @@ describe('a failed start says why and what to do (AIX-007, AI-10)', () => {
     } finally {
       child.kill();
     }
+  });
+});
+
+describe('AIX-013 the MCP returns the located diagnostic of a refused file', () => {
+  /** A copy of a bundled project with one change in one of its files. */
+  async function changed(project: string, file: string, from: string, to: string): Promise<string> {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-mcp-located-'));
+    temporary.push(root);
+    await cp(fileURLToPath(new URL(`../../projects/${project}`, import.meta.url)), root, { recursive: true });
+    const text = await readFile(join(root, file), 'utf8');
+    expect(text).toContain(from);
+    await writeFile(join(root, file), text.replace(from, to));
+    return root;
+  }
+  async function call(root: string, tool: 'project_validate' | 'tests_run') {
+    const bound = await openMcpWorkspace(root);
+    expect(bound).toBeDefined();
+    return createMcpDispatcher(bound!)(tool, {}, new AbortController().signal);
+  }
+
+  test('project_validate answers a Ladder element type outside the accepted ones with its place and the accepted types', async () => {
+    const root = await changed('blinky', 'src/main.ld.json', '"type": "contact_no"', '"type": "contact"');
+    const result = await call(root, 'project_validate');
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent).toMatchObject({
+      ok: false,
+      evidence: {
+        diagnostics: [
+          {
+            code: 'VISUAL_FILE_INVALID',
+            path: 'src/main.ld.json',
+            jsonPath: expect.stringMatching(/^rungs\[\d+\]\.grid\[\d+\]\[\d+\]\.element\.type$/),
+            found: 'contact',
+            acceptedValues: expect.arrayContaining(['contact_no', 'coil']),
+            message: expect.stringContaining("invalid value 'contact'"),
+          },
+        ],
+      },
+    });
+  });
+
+  test('tests_run answers an expectation kind outside the accepted ones with its place and the accepted kinds', async () => {
+    const root = await changed('alarm_latch', 'tests/alarm-latch.scenario.json', '"kind": "AT"', '"kind": "ATT"');
+    const result = await call(root, 'tests_run');
+    expect(result.structuredContent).toMatchObject({
+      ok: false,
+      evidence: {
+        diagnostics: [
+          {
+            code: 'TEST_SCENARIO_INVALID',
+            jsonPath: expect.stringMatching(/^expectations\[\d+\]\.kind$/),
+            found: 'ATT',
+            acceptedValues: expect.arrayContaining(['AT', 'WITHIN']),
+            detail: expect.any(String),
+          },
+        ],
+      },
+    });
+  });
+
+  test('the located fields are bounded: within the bounds the result passes, beyond them it is refused whole', () => {
+    const answer = (diagnostic: Record<string, unknown>) =>
+      toMcpToolResult('project_validate', {
+        ok: false,
+        evidence: {
+          ...evidence('validate'),
+          outcome: 'failed',
+          artifacts: [],
+          diagnostics: [{ code: 'VISUAL_FILE_INVALID', message: 'Refused', path: 'src/main.ld.json', ...diagnostic }],
+        },
+      }).structuredContent;
+    const widest = {
+      jsonPath: 'p'.repeat(256),
+      found: 'f'.repeat(256),
+      file: 'scene.json',
+      detail: 'd'.repeat(512),
+      acceptedValues: Array.from({ length: 400 }, (_, index) => `${index}`.padEnd(64, 'v')),
+    };
+    expect(answer(widest)).toMatchObject({ ok: false, evidence: { diagnostics: [widest] } });
+    for (const over of [
+      { jsonPath: 'p'.repeat(257) },
+      { found: 'f'.repeat(257) },
+      { file: 'f'.repeat(257) },
+      { detail: 'd'.repeat(513) },
+      { acceptedValues: Array.from({ length: 401 }, () => 'v') },
+      { acceptedValues: ['v'.repeat(65)] },
+      { unknownField: 'x' },
+    ])
+      expect(answer(over)).toEqual({ ok: false, error: 'MCP_INTERNAL_ERROR' });
   });
 });

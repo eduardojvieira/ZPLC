@@ -3,7 +3,7 @@
  * load as the editors load it and is written in their byte-stable form; the manifest is written as Studio writes it and may not
  * hold a credential. One file that does not pass makes the whole set invalid, with the violations to show.
  */
-import { loadFBDFile, loadLDFile, loadSFCFile, type VisualFileLoad } from '../models/visualFileLoad';
+import { loadFBDFile, loadLDFile, loadSFCFile, type VisualFileLoad, type VisualFileViolation } from '../models/visualFileLoad';
 import { serializeVisualDocument } from '../models/visualFileFormat';
 import { parseAndMigrateProject } from '../project/projectModel';
 import { manifestSensitivePaths } from './manifestPrivacy';
@@ -16,22 +16,32 @@ export interface ProposedChange {
   baselineSha256?: string;
 }
 export type PrepareResult =
-  { ok: true; changes: ProposedChange[] } | { ok: false; reason: 'invalid-file' | 'sensitive-field'; path: string; violations: string[] };
+  | { ok: true; changes: ProposedChange[] }
+  | {
+      ok: false;
+      reason: 'invalid-file' | 'sensitive-field';
+      path: string;
+      violations: string[];
+      /** For a visual file: the same violations as data, which the Assistant says in the language of the interface (AIX-013). */
+      details?: VisualFileViolation[];
+    };
 
-const refusal = (reason: 'invalid-file' | 'sensitive-field', path: string, violations: string[] = []): PrepareResult => ({
-  ok: false,
-  reason,
-  path,
-  violations,
-});
+const refusal = (
+  reason: 'invalid-file' | 'sensitive-field',
+  path: string,
+  violations: string[] = [],
+  details?: VisualFileViolation[],
+): PrepareResult => ({ ok: false, reason, path, violations, ...(details ? { details } : {}) });
 
-function normalizeVisual(path: string, content: string): { content: string } | { violations: string[] } {
+function normalizeVisual(path: string, content: string): { content: string } | { violations: string[]; details: VisualFileViolation[] } {
   const loaded: VisualFileLoad<unknown> = path.endsWith('.ld.json')
     ? loadLDFile(path, content)
     : path.endsWith('.fbd.json')
       ? loadFBDFile(path, content)
       : loadSFCFile(path, content);
-  return loaded.ok ? { content: serializeVisualDocument(loaded.model) } : { violations: loaded.error.violations };
+  return loaded.ok
+    ? { content: serializeVisualDocument(loaded.model) }
+    : { violations: loaded.error.violations, details: loaded.error.details };
 }
 
 /** The manifest as `writeProjectConfig` writes it: migrated to the current schema, two-space JSON without a final newline. */
@@ -58,7 +68,7 @@ export function prepareChangeSet(changes: readonly ProposedChange[]): PrepareRes
       prepared.push({ ...change, content: manifest.content });
     } else if (/\.(ld|fbd|sfc)\.json$/.test(change.path)) {
       const visual = normalizeVisual(change.path, change.content);
-      if ('violations' in visual) return refusal('invalid-file', change.path, visual.violations);
+      if ('violations' in visual) return refusal('invalid-file', change.path, visual.violations, visual.details);
       prepared.push({ ...change, content: visual.content });
     } else prepared.push({ ...change });
   }

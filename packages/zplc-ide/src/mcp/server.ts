@@ -206,6 +206,12 @@ const diagnosticSchema = z
     endLine: z.number().int().optional(),
     endColumn: z.number().int().optional(),
     element: elementSchema.optional(),
+    /** AIX-013: the place in a JSON file, the file when `path` names another, what was found, the accepted values, the reason. */
+    jsonPath: z.string().max(256).optional(),
+    file: z.string().max(256).optional(),
+    found: z.string().max(256).optional(),
+    acceptedValues: z.array(z.string().max(64)).max(400).optional(),
+    detail: z.string().max(512).optional(),
   })
   .strict();
 const artifactSchema = z
