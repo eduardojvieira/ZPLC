@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { gripperDecor, snapshotBounds } from '../../src/plant/view/geometry';
 import { MODELS, partModel } from '../../src/plant/view/models';
+import { silhouette, silhouetteXor } from './silhouette.fixtures';
 import { CATALOGUE, catalogueCamera, catalogueKindCells, catalogueView, catalogueViews, ITEMS, unionBounds } from './catalogueStates';
 
 const MACHINES = {
@@ -113,5 +114,22 @@ describe('the catalogue sheet', () => {
       ),
     );
     expect(new Set(bodies).size).toBe(kinds.length);
+  });
+
+  it('frames the sensor bodies so that every pair of the five kinds differs by at least 0.31 % of the cell (owner decision 4)', async () => {
+    const sensor = CATALOGUE.find((k) => k.id === 'sensor')!;
+    const cells = await catalogueKindCells(sensor, 400 / 300);
+    const kinds = ['diffuse', 'retro-reflective', 'inductive', 'capacitive', 'colour'];
+    for (const state of ['clear', 'detecting']) {
+      const masks = kinds.map((k) => {
+        const cell = cells.find((c) => c.label === `sensor: ${k}, ${state}`)!;
+        return silhouette(cell.snapshot.parts, cell.camera, 400, 300);
+      });
+      for (let i = 0; i < kinds.length; i++)
+        for (let j = i + 1; j < kinds.length; j++) {
+          const pair = `${kinds[i]} / ${kinds[j]}, ${state}`;
+          expect({ pair, enough: silhouetteXor(masks[i]!, masks[j]!) >= 0.0031 }).toEqual({ pair, enough: true });
+        }
+    }
   });
 });
