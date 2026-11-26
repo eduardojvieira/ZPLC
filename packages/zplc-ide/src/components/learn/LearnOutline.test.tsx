@@ -56,7 +56,7 @@ async function clearFilter(user: ReturnType<typeof dom.render>['user']): Promise
   await user.keyboard('{Backspace}');
 }
 
-describe('The Learn activity course outline (GDE-002, UX-024, UX-026)', () => {
+describe('The Learn activity course outline (GDE-002)', () => {
   it('GDE-002 the outline lists paths and modules that open and close', async () => {
     const { user } = dom.render(<LearnOutline />);
     expect(tree()).toBeTruthy();

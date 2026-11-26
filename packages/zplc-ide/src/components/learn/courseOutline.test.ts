@@ -22,7 +22,8 @@ describe('The rows of the course outline (GDE-002)', () => {
     const rows = buildCourseOutlineRows(view, { expanded: new Set([moduleNodeId(1)]), filter: '', currentLessonId: 'ld-scan-cycle' });
     const lessons = rows.filter((row) => row.kind === 'lesson');
     expect(lessons.map((row) => row.lessonId)).toEqual(view.modules.find((mod) => mod.id === 1)!.lessons.map((lesson) => lesson.id));
-    expect(lessons.every((row) => row.level === 2 && row.parent === moduleNodeId(1) && row.moduleId === 1 && row.pathId === null)).toBe(true);
+    const inModule1 = (row: (typeof lessons)[number]) => row.level === 2 && row.parent === moduleNodeId(1) && row.moduleId === 1;
+    expect(lessons.every((row) => inModule1(row) && row.pathId === null)).toBe(true);
     const locked = rows.find((row) => row.id === lessonNodeId(moduleNodeId(1), 'scan-cycle-one-scan-memory'))!;
     expect(locked.state).toBe('locked');
     expect(locked.unlockedBy).toEqual([view.titles['first-blink-simulation']!]);

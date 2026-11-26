@@ -38,7 +38,13 @@ export function buildCourseOutlineRows(view: CourseView, { expanded, filter, cur
   const matches = (lesson: CourseLessonView) =>
     query === '' || lesson.title.toLowerCase().includes(query) || lesson.id.toLowerCase().includes(query);
   const meta = new Map<string, Meta>();
-  const container = (id: string, kind: 'path' | 'module', label: string, lessons: readonly CourseLessonView[], at: Pick<Meta, 'pathId' | 'moduleId'>) => {
+  const container = (
+    id: string,
+    kind: 'path' | 'module',
+    label: string,
+    lessons: readonly CourseLessonView[],
+    at: Pick<Meta, 'pathId' | 'moduleId'>,
+  ) => {
     meta.set(id, { kind, lessonId: null, ...at, state: null, unlockedBy: [], current: false });
     const children = lessons.filter(matches).map((lesson): TreeNodeSpec => {
       const child = lessonNodeId(id, lesson.id);
