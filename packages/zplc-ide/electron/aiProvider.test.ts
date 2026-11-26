@@ -989,5 +989,10 @@ describe('assistant answer shapes (AI-14 / AIX-006)', () => {
       replacement: { path: 'src/Main.st', content: UPDATED_ST },
     })}\n\`\`\``;
     expect(await replyWith(fencedLegacyReplacement)).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+
+    const fencedWithTrailingToolCall = `\`\`\`json\n${JSON.stringify(VALID_EDIT)}\n\`\`\`\n${JSON.stringify({
+      tool_calls: [{ name: 'deploy' }],
+    })}`;
+    expect(await replyWith(fencedWithTrailingToolCall)).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
   });
 });
