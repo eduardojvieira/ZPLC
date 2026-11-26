@@ -2,7 +2,6 @@
   "offences": [
     "and-or-xor-not-on-byte-word-dword:explainer",
     "array:explainer",
-    "blink-structured-text:reading",
     "blinky-ladder-timer-feedback:grows",
     "boolean-logic-two-hand-guard-il:answer",
     "boolean-logic-two-hand-guard:answer",
@@ -15,7 +14,6 @@
     "ctud:explainer",
     "edge-counter-pulses-ladder:grows",
     "fault-stop-reset-sfc:reading",
-    "first-blink-simulation:reading",
     "for:explainer",
     "function-block-call-il:answer",
     "function-block-call-il:glossary",
@@ -135,7 +133,6 @@
     "real:explainer",
     "repeat:explainer",
     "retain:explainer",
-    "scan-cycle-one-scan-memory:reading",
     "selection-branches-sfc:reading",
     "set-reset-alarm-latch-il:answer",
     "set-reset-alarm-latch-ladder:grows",
@@ -156,7 +153,6 @@
     "tp:explainer",
     "user-function:explainer",
     "var-global:explainer",
-    "verify-my-board:reading",
     "while:explainer"
   ]
 }
