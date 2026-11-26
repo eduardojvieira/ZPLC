@@ -78,16 +78,16 @@ Lo mismo vale para las salidas. Un peldaño que maneja una lámpara de alarma de
 ```quiz
 question: Overheat sigue en ON y el operador pulsa Reset. El peldaño de reset no comprueba Overheat. ¿Qué ocurre en el mismo ciclo?
 options:
-  - { text: 'El biestable se borra aunque la falla sigue ahí, así que la alarma oculta una falla real.', correct: true, feedback: Correcto. Un reset no debe actuar sobre una falla que sigue ocurriendo. }
-  - { text: 'Nada, porque una bobina set siempre gana a una bobina reset.', feedback: No en un PLC. Decide el peldaño que se resuelve último. }
+  - { text: 'El biestable se borra aunque la falla sigue ahí, así que la alarma oculta una falla real.', correct: true, feedback: 'Correcto. Un reset no debe actuar sobre una falla que sigue ocurriendo.' }
+  - { text: 'Nada, porque una bobina set siempre gana a una bobina reset.', feedback: 'No en un PLC. Decide el peldaño que se resuelve último.' }
 ```
 
 ```quiz
 question: Dos peldaños escriben el mismo bit en el mismo ciclo. ¿Qué valor tiene el bit al final?
 options:
-  - { text: 'El valor escrito por el peldaño más abajo en el programa.', correct: true, feedback: Correcto. Los peldaños se resuelven de arriba hacia abajo, así que gana el último. }
-  - { text: 'El valor escrito por el peldaño más arriba en el programa.', feedback: El peldaño de arriba se ejecuta primero y es sobrescrito. }
-  - { text: 'Uno al azar.', feedback: Un ciclo es determinista. Decide el orden de los peldaños. }
+  - { text: 'El valor escrito por el peldaño más abajo en el programa.', correct: true, feedback: 'Correcto. Los peldaños se resuelven de arriba hacia abajo, así que gana el último.' }
+  - { text: 'El valor escrito por el peldaño más arriba en el programa.', feedback: 'El peldaño de arriba se ejecuta primero y es sobrescrito.' }
+  - { text: 'Uno al azar.', feedback: 'Un ciclo es determinista. Decide el orden de los peldaños.' }
 ```
 
 ## Lo que hará en la práctica

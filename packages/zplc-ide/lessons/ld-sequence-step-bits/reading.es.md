@@ -98,16 +98,16 @@ Observe que `Go` se suelta mucho antes de que termine el paso de jabón. El bit 
 ```quiz
 question: El paso de jabón está activo y su temporizador acaba de terminar. Una transición tiene un peldaño set para el paso de enjuague pero ningún peldaño reset para el paso de jabón. ¿Qué ocurre?
 options:
-  - { text: 'Ambos pasos quedan en ON a la vez.', correct: true, feedback: Correcto. Nada pone en OFF el bit de jabón, así que la ficha está en dos casillas. }
-  - { text: 'El paso de enjuague nunca empieza.', feedback: Sí empieza, porque su peldaño set funciona. El problema es que el paso de jabón no termina. }
-  - { text: 'El programa se niega a ejecutarse.', feedback: El programa es válido. Es un error de lógica, así que se ejecuta y se comporta mal. }
+  - { text: 'Ambos pasos quedan en ON a la vez.', correct: true, feedback: 'Correcto. Nada pone en OFF el bit de jabón, así que la ficha está en dos casillas.' }
+  - { text: 'El paso de enjuague nunca empieza.', feedback: 'Sí empieza, porque su peldaño set funciona. El problema es que el paso de jabón no termina.' }
+  - { text: 'El programa se niega a ejecutarse.', feedback: 'El programa es válido. Es un error de lógica, así que se ejecuta y se comporta mal.' }
 ```
 
 ```quiz
 question: ¿Por qué se puede soltar Go pronto sin detener la secuencia?
 options:
-  - { text: 'El bit de paso recuerda que la secuencia está en marcha.', correct: true, feedback: Correcto. Una bobina set mantiene su bit en ON después de que desaparece la energía que lo activó. }
-  - { text: 'El temporizador mantiene pulsado el botón.', feedback: Un temporizador no actúa sobre las entradas. Solo mide el tiempo de su propia entrada. }
+  - { text: 'El bit de paso recuerda que la secuencia está en marcha.', correct: true, feedback: 'Correcto. Una bobina set mantiene su bit en ON después de que desaparece la energía que lo activó.' }
+  - { text: 'El temporizador mantiene pulsado el botón.', feedback: 'Un temporizador no actúa sobre las entradas. Solo mide el tiempo de su propia entrada.' }
 ```
 
 ## Lo que hará en la práctica

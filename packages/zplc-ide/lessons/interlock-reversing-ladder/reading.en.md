@@ -82,15 +82,15 @@ In a real panel the stop button is a switch that is closed at rest. Its PLC inpu
 ```quiz
 question: A permissive contact is placed in the seal-in branch only, not in series with the whole rung. The motor is running and the permissive is lost. What happens?
 options:
-  - { text: 'The motor keeps running.', correct: true, feedback: Right. The rest of the rung still conducts, so the lost permissive blocks nothing. }
-  - { text: 'The motor stops at once.', feedback: Only if the permissive is in series with the whole path to the coil. }
+  - { text: 'The motor keeps running.', correct: true, feedback: 'Right. The rest of the rung still conducts, so the lost permissive blocks nothing.' }
+  - { text: 'The motor stops at once.', feedback: 'Only if the permissive is in series with the whole path to the coil.' }
 ```
 
 ```quiz
 question: Why must the program stop both contactors from closing together?
 options:
-  - { text: 'Together they would short-circuit two phases of the motor supply.', correct: true, feedback: Right. Each contactor connects the wires in a different order. }
-  - { text: 'Together they would drain the PLC battery.', feedback: Contactors are driven by the outputs, not by a battery. }
+  - { text: 'Together they would short-circuit two phases of the motor supply.', correct: true, feedback: 'Right. Each contactor connects the wires in a different order.' }
+  - { text: 'Together they would drain the PLC battery.', feedback: 'Contactors are driven by the outputs, not by a battery.' }
 ```
 
 ## What you will do in the practice

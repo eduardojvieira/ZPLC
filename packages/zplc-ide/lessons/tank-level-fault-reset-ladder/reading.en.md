@@ -78,16 +78,16 @@ The same applies to outputs. A rung that drives an alarm lamp from the latch sho
 ```quiz
 question: Overheat is still on and the operator presses Reset. The reset rung does not check Overheat. What happens in the same scan?
 options:
-  - { text: 'The latch is cleared although the fault is still there, so the alarm hides a real fault.', correct: true, feedback: Right. A reset must not act on a fault that is still happening. }
-  - { text: 'Nothing, because a set coil always beats a reset coil.', feedback: Not in a PLC. The rung solved last decides. }
+  - { text: 'The latch is cleared although the fault is still there, so the alarm hides a real fault.', correct: true, feedback: 'Right. A reset must not act on a fault that is still happening.' }
+  - { text: 'Nothing, because a set coil always beats a reset coil.', feedback: 'Not in a PLC. The rung solved last decides.' }
 ```
 
 ```quiz
 question: Two rungs write the same bit in the same scan. Which value does the bit have at the end?
 options:
-  - { text: 'The value written by the rung lower in the program.', correct: true, feedback: Right. Rungs are solved from top to bottom, so the last one wins. }
-  - { text: 'The value written by the rung higher in the program.', feedback: The higher rung runs first and is overwritten. }
-  - { text: 'Random.', feedback: A scan is deterministic. The order of the rungs decides. }
+  - { text: 'The value written by the rung lower in the program.', correct: true, feedback: 'Right. Rungs are solved from top to bottom, so the last one wins.' }
+  - { text: 'The value written by the rung higher in the program.', feedback: 'The higher rung runs first and is overwritten.' }
+  - { text: 'Random.', feedback: 'A scan is deterministic. The order of the rungs decides.' }
 ```
 
 ## What you will do in the practice

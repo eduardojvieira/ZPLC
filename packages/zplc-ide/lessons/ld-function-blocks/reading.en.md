@@ -106,16 +106,16 @@ caption: DelayA and DelayB count at the same time, each from its own button.
 ```quiz
 question: A project declares the block `Hysteresis` and two instances, `Tank1Level` and `Tank2Level`. Tank 1 goes above its high limit. What happens to the output of the second instance?
 options:
-  - { text: 'Nothing. Each instance has its own memory.', correct: true, feedback: Right. An instance is separate from every other instance of the same block. }
-  - { text: 'It also turns on, because they share the declaration.', feedback: They share the plan, not the memory. The declaration is only a description. }
+  - { text: 'Nothing. Each instance has its own memory.', correct: true, feedback: 'Right. An instance is separate from every other instance of the same block.' }
+  - { text: 'It also turns on, because they share the declaration.', feedback: 'They share the plan, not the memory. The declaration is only a description.' }
 ```
 
 ```quiz
 question: Which one of these is the memory of a timer block?
 options:
-  - { text: 'The time that its input has been on.', correct: true, feedback: Right. It is stored inside the instance and survives from scan to scan. }
-  - { text: 'The name of the rung that calls it.', feedback: The timer does not know where it is called from. }
-  - { text: 'The value of the preset.', feedback: The preset is an input. You provide it each scan. }
+  - { text: 'The time that its input has been on.', correct: true, feedback: 'Right. It is stored inside the instance and survives from scan to scan.' }
+  - { text: 'The name of the rung that calls it.', feedback: 'The timer does not know where it is called from.' }
+  - { text: 'The value of the preset.', feedback: 'The preset is an input. You provide it each scan.' }
 ```
 
 ## What you will do in the practice
