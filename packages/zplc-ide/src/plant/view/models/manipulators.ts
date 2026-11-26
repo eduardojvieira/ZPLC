@@ -14,6 +14,8 @@ export const MANIPULATOR = {
   column: 0.08, // square profile of a column
   beam: 0.08, // the beam of a pick and place and the bridge of a gantry
   rail: 0.06, // a rail of a gantry
+  bridge: { height: 0.1 }, // the painted box girder of a gantry, as wide as `beam`
+  truck: { width: 0.16, height: 0.06, depth: 0.16 }, // a gantry truck rides on a rail and holds an end of the bridge
   carriage: 0.14,
   slide: 0.04,
   overhang: 0.2, // a column stands this far beyond the end of the stroke, so the head clears it
@@ -22,6 +24,8 @@ export const MANIPULATOR = {
   motor: { flange: 0.012, length: 0.08, size: 0.064, cap: 0.022 },
   clamp: { bodyH: 0.036, jawW: 0.026, jawH: 0.078, jawD: 0.14, padT: 0.01, openReach: 0.125, closedReach: 0.036 },
   vacuum: { bodyH: 0.034, cupR: 0.024, cupOpenH: 0.042, cupGripH: 0.02 },
+  // The gripping mark: bands on the wrist bezel (0.028 high) and a sleeve of bands `sleeveBand` long up the Y slide.
+  mark: { bands: 5, thickness: 0.008, above: 0.028, sleeve: 0.14, sleeveBand: 0.08 },
 } as const;
 
 const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
@@ -42,6 +46,35 @@ function axisDrive(id: string, x: number, y: number, z: number, axis: 'x' | 'z',
     piece(`motor-${id}`, box(motorSize, 0.006), at(m), 'painted'),
     piece(`motor-cap-${id}`, box(capSize, 0.004), at(c), 'housing'),
   ];
+}
+
+/** The role of band `i` of the gripping mark: lit and rubber in turn while the gripper holds, all dark while it is open. */
+const markRole = (i: number, gripping: boolean): Role => (!gripping ? 'lampOff' : i % 2 === 0 ? 'lamp' : 'rubber');
+
+/**
+ * The gripping mark (C10): the striped pad a pick and place shows between its closed jaws, lit and rubber bands in turn, drawn by a
+ * gantry where a scene sees it. A gantry stands tall and is seen from far away, so the bands lie across the top of its head and run
+ * up a sleeve on its Y slide; while the gripper is open they are all dark.
+ */
+function gripMark(view: PartView, gripping: boolean, slideBottom: number, slideTop: number): Piece[] {
+  const [w, h, d] = view.pose.size;
+  const { bands, thickness, above, sleeve, sleeveBand } = MANIPULATOR.mark;
+  const band = w / bands;
+  const out = Array.from({ length: bands }, (_, i) =>
+    piece(
+      `grip-mark-${i}`,
+      box([band, thickness, d], 0.001),
+      [-w / 2 + band * (i + 0.5), h / 2 + above + thickness / 2, 0],
+      markRole(i, gripping),
+    ),
+  );
+  // Bands of one size from the carriage down, as many as the slide's length holds, so their shape never changes as the head moves.
+  const n = Math.floor((slideTop - slideBottom - above - thickness) / sleeveBand);
+  for (let i = 0; i < n; i++)
+    out.push(
+      piece(`grip-sleeve-${i}`, box([sleeve, sleeveBand, sleeve], 0.001), [0, slideTop - sleeveBand * (i + 0.5), 0], markRole(i, gripping)),
+    );
+  return out;
 }
 
 /** The gripper and gripping status lamp/bezel mounted at the head. Never extends below `floor`. */
@@ -106,7 +139,7 @@ function gripperPieces(view: PartView, floor: number): Piece[] {
 
 /** The frame and the moving parts of a manipulator; `gantry` adds the Z axis, the second column pair and the rails. */
 function manipulator(view: PartView, gantry: boolean): Piece[] {
-  const { column, beam, rail, carriage: car, slide: sl, overhang, above, guideRail } = MANIPULATOR;
+  const { column, beam, rail, bridge, truck, carriage: car, slide: sl, overhang, above, guideRail } = MANIPULATOR;
   const [x, y, z] = [num(view.state.x), num(view.state.y), num(view.state.z)];
   const [sx, sy, sz] = [num(view.state.strokeX), num(view.state.strokeY), num(view.state.strokeZ)];
   const [, h] = view.pose.size;
@@ -137,7 +170,6 @@ function manipulator(view: PartView, gantry: boolean): Piece[] {
   let carriageY = track;
   if (gantry) {
     const midZ = (zs[0]! + zs[1]!) / 2;
-    const spanZ = zs[1]! - zs[0]! + column;
     zs.forEach((cz, i) => {
       const label = 'ab'[i]!;
       out.push(
@@ -145,20 +177,25 @@ function manipulator(view: PartView, gantry: boolean): Piece[] {
         piece(`guide-x${label}`, box([spanX, guideRail.height, guideRail.width], 0.002), [midX, track + guideRail.height / 2, cz], 'steel'),
       );
     });
-    carriageY = track + beam / 2;
+    // C10: the moving bridge is a painted box girder hung between the rails, its top flush with their guides, so from above it reads
+    // as the cross bar of an H in its own colour and section, never as a third silver profile laid over the two fixed ones.
+    const { height: bh } = bridge;
+    const bridgeTop = track + guideRail.height;
+    carriageY = bridgeTop - bh / 2;
+    const truckY = bridgeTop + truck.height / 2;
     out.push(
-      piece('bridge', slotted(beam, beam, spanZ, 'z'), [0, carriageY, midZ], 'frame'),
+      piece('bridge', box([beam, bh, zs[1]! - zs[0]! - rail], 0.004), [0, carriageY, midZ], 'painted'),
       piece(
         'guide-z',
-        box([guideRail.width, guideRail.height, spanZ], 0.002),
-        [0, carriageY + beam / 2 + guideRail.height / 2, midZ],
+        box([guideRail.width, guideRail.height, zs[1]! - zs[0]! - rail], 0.002),
+        [0, bridgeTop + guideRail.height / 2, midZ],
         'steel',
       ),
-      piece('truck-a', box([0.16, 0.09, 0.1], 0.004), [0, carriageY, zs[0]!], 'housing'),
-      piece('truck-b', box([0.16, 0.09, 0.1], 0.004), [0, carriageY, zs[1]!], 'housing'),
+      piece('truck-a', box([truck.width, truck.height, truck.depth], 0.004), [0, truckY, zs[0]!], 'housing'),
+      piece('truck-b', box([truck.width, truck.height, truck.depth], 0.004), [0, truckY, zs[1]!], 'housing'),
       piece('idler-x', box([0.018, 0.08, 0.08], 0.002), [xa - column / 2 - 0.009, track - rail / 2, zs[1]!], 'steel'),
       ...axisDrive('x', xb + column / 2, track - rail / 2, zs[1]!, 'x', 1),
-      ...axisDrive('z', 0, carriageY, zs[1]! + column / 2, 'z', 1),
+      ...axisDrive('z', 0, truckY, zs[1]! + truck.depth / 2, 'z', 1),
     );
   } else {
     out.push(
@@ -200,6 +237,10 @@ function manipulator(view: PartView, gantry: boolean): Piece[] {
     piece('head', box(view.pose.size), [0, 0, 0], 'steel'),
     ...gripperPieces(view, floor),
   );
+  if (gantry) {
+    const close = clamp01(num(view.state.closeFraction));
+    out.push(...gripMark(view, view.state.holding === true || close > 0.5, slideBottom, slideTop));
+  }
   return out;
 }
 
