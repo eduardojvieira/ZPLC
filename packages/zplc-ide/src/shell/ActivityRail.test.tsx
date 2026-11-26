@@ -48,11 +48,10 @@ describe('activity rail (UX-011)', () => {
     }
   });
 
-  it('UXV-004 draws the icon of the selected activity readable on its fill in the high-contrast theme', async () => {
-    const css = await Bun.file(new URL('../index.css', import.meta.url)).text();
-    const rule = /\.activity-rail-item\[data-active\] \.ui-icon-button \{([^}]*)\}/.exec(css)?.[1] ?? '';
-    const bg = /background-color:\s*var\((--[\w-]+)\)/.exec(rule)?.[1];
-    const fg = /(?:^|[\s;])color:\s*var\((--[\w-]+)\)/.exec(rule)?.[1];
+  it('UXV-004 draws the icon of the selected activity readable on its fill in the high-contrast theme', () => {
+    const button = /<button[^>]*aria-current="true"[^>]*>/.exec(render('project', 'regular'))?.[0] ?? '';
+    const bg = /class="[^"]*\bbg-\[var\((--[\w-]+)\)\]/.exec(button)?.[1];
+    const fg = /class="[^"]*\btext-\[var\((--[\w-]+)\)\]/.exec(button)?.[1];
     expect(bg).toBeDefined();
     expect(fg).toBeDefined();
     const hc = resolveTokens('high-contrast');

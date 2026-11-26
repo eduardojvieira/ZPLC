@@ -468,7 +468,7 @@ button,
    ============================================================================= */
 
 /* =============================================================================
-   Activity rail (UX-011). The selected activity is marked by a bar at the edge and a filled button, and
+   Activity rail (UX-011). The selected activity is marked by a bar at the edge and a filled button (ActivityRail.tsx), and
    `aria-current` says it to assistive technology: the colour is not the only sign.
    ============================================================================= */
 .activity-rail {
@@ -490,9 +490,4 @@ button,
   inset-inline-start: 0;
   width: 3px;
   background-color: var(--color-accent-blue);
-}
-
-.activity-rail-item[data-active] .ui-icon-button {
-  background-color: var(--color-surface-600);
-  color: var(--text-primary);
 }

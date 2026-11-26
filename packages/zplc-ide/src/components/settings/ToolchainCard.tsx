@@ -40,10 +40,10 @@ export function ToolchainCard({ ideId }: { ideId: string | undefined }) {
     localPlatform;
   const buildInFlight = buildState === 'building' || buildState === 'cancelling';
   const state = checking
-    ? { kind: 'checking' as const, message: 'Checking…' }
+    ? { kind: 'checking' as const, message: t('toolchain.status.checking') }
     : (presentation ??
       (bridgeAvailable
-        ? { kind: 'idle' as const, message: 'Not checked' }
+        ? { kind: 'idle' as const, message: t('toolchain.status.notChecked') }
         : { kind: 'unavailable' as const, message: t('toolchain.status.unavailable') }));
   const statusClass =
     state.kind === 'ready'
