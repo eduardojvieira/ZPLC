@@ -13,6 +13,7 @@ import {
   assertSmokePortAvailable,
   Cdp,
   drain,
+  electronExecutable,
   freePort,
   HOST,
   packageRoot,
@@ -320,7 +321,7 @@ export async function launchApp(
   const answerFile = join(root, 'folder-answer.txt');
   writeFileSync(answerFile, '');
   const cdpPort = await freePort();
-  const electronPath = join(packageRoot, 'node_modules', 'electron', 'dist', process.platform === 'win32' ? 'electron.exe' : 'electron');
+  const electronPath = electronExecutable();
   const output: string[] = [];
   const electron: OwnedProcess = Bun.spawn(
     [

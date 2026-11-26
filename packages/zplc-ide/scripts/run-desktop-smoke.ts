@@ -31,6 +31,17 @@ function executable(path: string | undefined): string | undefined {
   }
   return undefined;
 }
+/**
+ * The Electron executable the way the electron package names it (its index.js): dist/ plus the relative path in path.txt,
+ * which install.js writes for the platform (electron on Linux, electron.exe on Windows, Electron.app/Contents/MacOS/Electron
+ * on macOS). Read here, not through require('electron'), which downloads the binary when it is missing.
+ */
+function electronExecutable(root = packageRoot): string {
+  const electron = join(root, 'node_modules', 'electron');
+  const pathFile = join(electron, 'path.txt');
+  assert(existsSync(pathFile), 'Installed Electron executable is missing. Run bun install first.');
+  return join(electron, 'dist', readFileSync(pathFile, 'utf8').trim());
+}
 function required(path: string): void {
   assert(existsSync(path), `Required Electron artifact is missing: ${path}. Run bun run electron:compile first.`);
 }
@@ -40,10 +51,7 @@ function preflight(): string {
   required(join(packageRoot, 'electron-dist', 'electron', 'main.js'));
   required(join(packageRoot, 'electron-dist', 'preload.cjs'));
   required(join(packageRoot, 'electron-dist', 'toolApi.js'));
-  assert(
-    executable(join(packageRoot, 'node_modules', 'electron', 'dist', process.platform === 'win32' ? 'electron.exe' : 'electron')),
-    'Installed Electron executable is missing. Run bun install first.',
-  );
+  assert(executable(electronExecutable()), 'Installed Electron executable is missing. Run bun install first.');
   return runtime;
 }
 function smokeVitePort(): number {
@@ -350,7 +358,7 @@ async function main(): Promise<void> {
       (await fetch(`http://${HOST}:${vitePort}/`).catch(() => null))?.ok ? true : undefined,
     );
     assert(vite.exitCode === null, `Vite exited before Electron could use ${rendererUrl} (the port may be occupied).`);
-    const electronPath = join(packageRoot, 'node_modules', 'electron', 'dist', process.platform === 'win32' ? 'electron.exe' : 'electron');
+    const electronPath = electronExecutable();
     electron = Bun.spawn(
       [
         electronPath,
@@ -1253,6 +1261,19 @@ async function main(): Promise<void> {
   }
 }
 // The journey runner (run-journeys.ts) reuses these start-up and CDP helpers; importing this file starts nothing.
-export { assert, assertSmokePortAvailable, Cdp, drain, freePort, HOST, packageRoot, preflight, smokeVitePort, stop, waitFor };
+export {
+  assert,
+  assertSmokePortAvailable,
+  Cdp,
+  drain,
+  electronExecutable,
+  freePort,
+  HOST,
+  packageRoot,
+  preflight,
+  smokeVitePort,
+  stop,
+  waitFor,
+};
 export type { OwnedProcess };
 if (import.meta.main) await main();

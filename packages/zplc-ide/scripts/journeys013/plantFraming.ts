@@ -14,7 +14,19 @@
  */
 import { join } from 'node:path';
 import { trustedDevelopmentRendererUrl } from '../../electron/security';
-import { assert, Cdp, drain, freePort, HOST, packageRoot, smokeVitePort, stop, waitFor, type OwnedProcess } from '../run-desktop-smoke';
+import {
+  assert,
+  Cdp,
+  drain,
+  electronExecutable,
+  freePort,
+  HOST,
+  packageRoot,
+  smokeVitePort,
+  stop,
+  waitFor,
+  type OwnedProcess,
+} from '../run-desktop-smoke';
 import type { Journey } from '../journeys';
 
 export const FRAMING_SIZES: ReadonlyArray<readonly [number, number]> = [
@@ -126,7 +138,7 @@ const PAGE =
 export async function withGlWindow<T>(root: string, runtime: string, body: (page: Cdp) => Promise<T>): Promise<T> {
   const port = smokeVitePort();
   const cdpPort = await freePort();
-  const electronPath = join(packageRoot, 'node_modules', 'electron', 'dist', process.platform === 'win32' ? 'electron.exe' : 'electron');
+  const electronPath = electronExecutable();
   const output: string[] = [];
   const electron: OwnedProcess = Bun.spawn(
     [

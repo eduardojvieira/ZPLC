@@ -28,7 +28,18 @@ import { trustedDevelopmentRendererUrl } from '../../electron/security';
 import type { BodyPose, PlantSnapshot } from '../../src/plant/contracts';
 import { snapshotBounds } from '../../src/plant/view/geometry';
 import { CATALOGUE, catalogueCamera, catalogueKindCells, ITEMS } from './catalogueStates';
-import { assert, Cdp, drain, freePort, HOST, packageRoot, stop, waitFor, type OwnedProcess } from '../run-desktop-smoke';
+import {
+  assert,
+  Cdp,
+  drain,
+  electronExecutable,
+  freePort,
+  HOST,
+  packageRoot,
+  stop,
+  waitFor,
+  type OwnedProcess,
+} from '../run-desktop-smoke';
 
 const flag = (name: string): string | undefined => {
   const at = process.argv.indexOf(`--${name}`);
@@ -91,7 +102,7 @@ async function withWindow<T>(gpu: boolean, body: (page: Cdp) => Promise<T>): Pro
       : ['--headless', '--use-angle=swiftshader-webgl', '--use-gl=angle', '--enable-unsafe-swiftshader', `--zplc-smoke-port=${port}`];
     electron = Bun.spawn(
       [
-        join(packageRoot, 'node_modules', 'electron', 'dist', 'electron'),
+        electronExecutable(),
         ...flags,
         '--lang=en-US',
         `--remote-debugging-port=${cdpPort}`,
