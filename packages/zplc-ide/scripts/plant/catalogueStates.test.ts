@@ -116,7 +116,7 @@ describe('the catalogue sheet', () => {
     expect(new Set(bodies).size).toBe(kinds.length);
   });
 
-  it('frames the sensor bodies so that every pair of the five kinds differs by at least 0.31 % of the cell (owner decision 4)', async () => {
+  it('frames the sensor bodies: every pair of the five kinds differs by at least 0.31 % of the cell (decision 4)', async () => {
     const sensor = CATALOGUE.find((k) => k.id === 'sensor')!;
     const cells = await catalogueKindCells(sensor, 400 / 300);
     const kinds = ['diffuse', 'retro-reflective', 'inductive', 'capacitive', 'colour'];
