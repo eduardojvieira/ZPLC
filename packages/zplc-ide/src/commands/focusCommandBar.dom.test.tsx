@@ -52,6 +52,14 @@ const press = (target: Element, init: KeyboardEventInit) =>
     target.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...init }));
   });
 const chord = { key: 'c', code: 'KeyC', ctrlKey: true, altKey: true } as const;
+const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+/** The focus is on `target` after the frame a menu uses to move it, and it stays there. */
+const focusStaysOn = async (target: Element) => {
+  await pause(50);
+  expect(document.activeElement).toBe(target);
+  await pause(100);
+  expect(document.activeElement).toBe(target);
+};
 
 afterEach(() => resetCommandsForTest());
 
@@ -109,9 +117,22 @@ describe('view.focusCommandBar', () => {
       await dom.waitFor(() => expect(document.getElementById(controls)?.contains(document.activeElement)).toBe(true));
       press(document.activeElement!, { key: 'Escape', code: 'Escape' });
       await dom.waitFor(() => expect(document.getElementById(controls)).toBeNull());
-      await dom.waitFor(() => expect(document.activeElement).toBe(trigger));
+      await focusStaysOn(trigger);
       press(trigger, { key: 'Escape', code: 'Escape' });
-      await dom.waitFor(() => expect(document.activeElement).toBe(editor));
+      await focusStaysOn(editor);
+    });
+
+    it(`UX-025 Escape on the closed ${name} menu trigger after the jump returns to the editor and stays there`, async () => {
+      dom.render(<Harness />);
+      const editor = dom.screen.getByLabelText('Code editor');
+      const save = dom.screen.getByRole('button', { name: 'Save' });
+      const trigger = document.querySelector<HTMLElement>(`[aria-controls="${controls}"]`)!;
+      editor.focus();
+      press(editor, chord);
+      await dom.waitFor(() => expect(document.activeElement).toBe(save));
+      trigger.focus(); // Tab to the closed trigger
+      press(trigger, { key: 'Escape', code: 'Escape' });
+      await focusStaysOn(editor);
     });
   }
 });
