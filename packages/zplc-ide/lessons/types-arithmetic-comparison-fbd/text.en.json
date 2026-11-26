@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/TypedSteps.fbd.json a SEL block clears the INT variable Total while Reset is TRUE, and the comparisons Low (Total < 10), Exact (Total = 10) and High (Total > 10) are wired to their outputs. Build the arithmetic: on each rising edge of Step add 5 to Total.",
+      "body": "In src/TypedSteps.fbd.json a SEL block clears the INT variable Total while Reset is TRUE, and the comparisons Low (Total < 10), Exact (Total = 10) and High (Total > 10) are connected to their outputs. Build the arithmetic: on each rising edge of Step add 5 to Total.",
       "checkpoint": "Total goes 0, 5, 10, 15, and the three outputs show which band it is in."
     },
     {
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter clears Total on Reset but never adds to it, so Low stays ON for ever; add 5 to Total on each rising edge of Step. Place an R_TRIG block named StepEdge with Step on CLK, an ADD block that adds Total and a constant 5 of type INT, and a SEL block with StepEdge.Q on G, Total on IN0 and ADD.OUT on IN1. Wire the SEL output to IN0 of the SEL block that handles Reset, in place of the wire from Total.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "body": "Correct the starting diagram, save it, then press {{ui:learn.check}}. The starting diagram clears Total on Reset but never adds to it, so Low stays ON for ever. Change it so that each press of Step adds 5 to Total once, however long the press lasts, while Reset still clears it. Place and connect the blocks yourself: the variables, the clearing SEL block and the three comparisons are already there.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The scenario is named TypedSteps and contains {{assertions}} assertions."
     },
     {
@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "Wire Step to StepEdge.CLK, StepEdge.Q to the G of a new SEL block, Total to its IN0 and to an ADD block with the constant 5, ADD.OUT to its IN1, and the new SEL block to IN0 of the SEL block that clears Total."
+      "text": "Connect Step to StepEdge.CLK, StepEdge.Q to the G of a new SEL block, Total to its IN0 and to an ADD block with the constant 5, ADD.OUT to its IN1, and the new SEL block to IN0 of the SEL block that clears Total."
     }
   ],
   "faultCases": [
