@@ -12,12 +12,12 @@ Un programa nunca espera, así que no puede decir "espere medio segundo". En cam
 
 ## Un temporizador que cuenta mientras su entrada está en ON
 
-**TON** es un temporizador que trae el lenguaje. Usted declara una **instancia** de él en `VAR`, con un nombre propio como `Clock : TON;`, y **llama** a la instancia una vez en cada ciclo con dos entradas:
+**TON** es un temporizador que trae el lenguaje. Usted declara una **instancia** de él en `VAR`, con un nombre propio como `Delay : TON;`, y **llama** a la instancia una vez en cada ciclo con dos entradas:
 
 - **IN**, un BOOL: el temporizador cuenta mientras IN es TRUE y vuelve a cero en cuanto IN es FALSE.
-- **PT**, el valor preestablecido, un TIME como `T#300ms`.
+- **PT**, el valor preestablecido, un TIME como `T#2s`.
 
-Después de la llamada, `Clock.Q` es TRUE una vez que IN se mantuvo en TRUE durante todo el valor preestablecido. Luego sigue en TRUE mientras IN siga en TRUE, así que para contar el período siguiente el programa llama una vez al temporizador con IN en FALSE: el reloj vuelve a cero y Q cae.
+Después de la llamada, `Delay.Q` es TRUE una vez que IN se mantuvo en TRUE durante todo el valor preestablecido. Luego sigue en TRUE mientras IN siga en TRUE, así que para contar el período siguiente el programa llama una vez al temporizador con IN en FALSE: el reloj vuelve a cero y Q cae.
 
 ## Temporizador y memoria: el patrón del parpadeo
 
@@ -31,50 +31,50 @@ Para parpadear solo mientras una entrada está en ON, esa entrada cumple dos fun
 
 ## Ejemplo resuelto
 
-Un portón automático tiene una baliza de aviso que debe destellar mientras el portón se mueve, cambiando de estado cada `T#400ms`, y debe apagarse enseguida cuando el portón se detiene. La entrada es `Moving` y la salida es `Beacon`.
+Un portón automático tiene una baliza de aviso que debe dar un destello corto mientras el portón se mueve: apagada durante `T#800ms`, luego encendida durante `T#200ms`, una y otra vez, y apagada en cuanto el portón se detiene. El tiempo apagada y el tiempo encendida son distintos, así que esta baliza usa dos temporizadores en lugar de un temporizador y una memoria: un temporizador cuenta el tiempo apagada y el otro cuenta el tiempo encendida.
 
 ```st
 PROGRAM GateBeacon
 VAR_INPUT Moving : BOOL; END_VAR
 VAR_OUTPUT Beacon : BOOL; END_VAR
-VAR Flash : TON; BeaconOn : BOOL := FALSE; END_VAR
-Flash(IN := Moving, PT := T#400ms);
-IF Flash.Q THEN BeaconOn := NOT BeaconOn; Flash(IN := FALSE, PT := T#400ms); END_IF;
-Beacon := BeaconOn AND Moving;
+VAR OffTime : TON; OnTime : TON; END_VAR
+OffTime(IN := Moving AND NOT OnTime.Q, PT := T#800ms);
+OnTime(IN := OffTime.Q, PT := T#200ms);
+Beacon := OffTime.Q;
 END_PROGRAM
 ```
 
-La primera instrucción cuenta solo mientras el portón se mueve. Cada vez que termina el valor preestablecido, el `IF` invierte `BeaconOn` y llama una vez a `Flash` con IN en FALSE para empezar una cuenta nueva. La última instrucción muestra la memoria, pero solo mientras `Moving` es TRUE, así que la baliza se apaga en el mismo ciclo en que el portón se detiene, cualquiera sea el estado en que quedó `BeaconOn`.
+Léalo desde arriba. `OffTime` cuenta mientras el portón se mueve, y su Q enciende la baliza cuando termina el tiempo apagada. Mientras la baliza está encendida, `OnTime` cuenta el tiempo encendida. Cuando `OnTime.Q` pasa a TRUE, el ciclo siguiente llama a `OffTime` con IN en FALSE, lo que lo devuelve a cero: la baliza se apaga y el tiempo apagada empieza otra vez. `OnTime.Q` en la primera instrucción es el valor del ciclo anterior, porque `OnTime` se llama después.
 
 ```timing
-span: 2000
+span: 2800
 signals:
-  - { name: Moving, edges: [200, 1700] }
-  - { name: Beacon, edges: [600, 1000, 1400, 1700] }
+  - { name: Moving, edges: [200, 2600] }
+  - { name: Beacon, edges: [1000, 1200, 2000, 2200] }
 marks:
-  - { from: 200, to: 600, label: 'T#400ms' }
-  - { from: 600, to: 1000, label: 'T#400ms' }
-caption: La baliza cambia con cada valor preestablecido mientras el portón se mueve y se apaga cuando se detiene
+  - { from: 200, to: 1000, label: 'T#800ms' }
+  - { from: 1000, to: 1200, label: 'T#200ms' }
+caption: La baliza está apagada durante el primer valor preestablecido y encendida durante el segundo, mientras el portón se mueve
 ```
 
-El primer cambio llega un valor preestablecido después de que el portón arranca, no un valor preestablecido después de que arrancó el programa, porque el temporizador cuenta solo mientras `Moving` es TRUE. En un ciclo real el reinicio toma un ciclo, así que cada período dura un ciclo más que el valor preestablecido.
+Cuando el portón se detiene, la IN de `OffTime` pasa a FALSE, su Q cae en ese mismo ciclo y la baliza se apaga enseguida. Un parpadeador hecho con un temporizador y una memoria, como el de la práctica, no puede contar con eso: cuando su temporizador se detiene, la memoria conserva su último valor, así que la salida necesita un `AND` con la entrada.
 
 ## Errores comunes
 
-- Hacer contar el temporizador con IN := TRUE. La lámpara parpadea entonces desde que arranca el programa, diga lo que diga la entrada.
+- Hacer contar el temporizador con IN := TRUE. La memoria se invierte entonces desde que arranca el programa, aunque la entrada esté apagada, así que cuando la entrada se enciende la lámpara puede encenderse enseguida y el primer cambio no llega un valor preestablecido después.
 - Dejar la entrada fuera de la salida. El temporizador se detiene cuando la entrada cae, pero la memoria conserva su último valor, así que la lámpara puede quedar en ON.
 - Olvidar reiniciar el temporizador dentro del IF. Q sigue en TRUE, así que la memoria se invierte en cada ciclo y la lámpara parpadea muy rápido.
-- Escribir un valor preestablecido distinto del pedido: `T#250ms` cambia la lámpara demasiado seguido para un escenario que espera `T#300ms`.
+- Dar como valor preestablecido el tiempo de un parpadeo completo. El valor preestablecido es el tiempo de un estado, encendida o apagada; un parpadeo completo dura dos valores preestablecidos.
 - Llamar al temporizador solo dentro de un IF. Una instancia a la que no se llama no cuenta.
 
 ## Compruébelo usted
 
 ```quiz
-question: Un parpadeador termina con Lamp := LampOn; en lugar de Lamp := LampOn AND Enable;. Enable cae mientras LampOn es TRUE. ¿Qué hace Lamp?
+question: Un parpadeador hecho con un temporizador y una memoria termina con Out := Memory; y no tiene un AND con su entrada Run. Run cae mientras Memory es TRUE. ¿Qué hace Out?
 options:
-  - { text: 'Sigue en ON, porque ya nada cambia LampOn', correct: true, feedback: 'Sí. El temporizador deja de contar, LampOn conserva su último valor y Lamp lo copia.' }
-  - { text: 'Pasa a OFF enseguida', feedback: 'Nada en ese programa apaga Lamp cuando Enable cae. Esa es la tarea de AND Enable.' }
-  - { text: 'Sigue parpadeando', feedback: 'El temporizador cuenta solo mientras Enable es TRUE, así que LampOn ya no cambia.' }
+  - { text: 'Sigue en ON, porque ya nada cambia Memory', correct: true, feedback: 'Sí. El temporizador deja de contar, Memory conserva su último valor y Out lo copia.' }
+  - { text: 'Pasa a OFF enseguida', feedback: 'Nada en ese programa apaga Out cuando Run cae. Esa es la tarea de un AND con Run.' }
+  - { text: 'Sigue parpadeando', feedback: 'El temporizador cuenta solo mientras Run es TRUE, así que Memory ya no cambia.' }
 ```
 
 ```quiz

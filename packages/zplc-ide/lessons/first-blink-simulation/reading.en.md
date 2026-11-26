@@ -10,7 +10,7 @@ In this lesson there is no PLC on your desk. ZPLC runs the program in its **simu
 
 Many programs need time: a lamp that flashes, a pump that runs for a while. Structured Text, the language of this lesson, writes a length of time as a value of type `TIME`, which starts with `T#`:
 
-- `T#500ms` is half a second, five hundred milliseconds.
+- `T#750ms` is three quarters of a second, seven hundred and fifty milliseconds.
 - `T#2s` is two seconds, the same as `T#2000ms`.
 - `T#1m30s` is a minute and a half.
 
@@ -18,7 +18,7 @@ A variable of type `TIME` holds such a value, and its declaration can give it a 
 
 ## How a blinker works
 
-A lamp blinks when the program turns it on, waits, turns it off, waits, and so on. The program cannot pause, so it counts instead, with a **timer**: a part of the program that measures how long it has been running and says when a preset time is over. The program of this lesson uses one timer and one memory variable:
+A lamp blinks when the program turns it on, waits, turns it off, waits, and so on. The program cannot pause, so it counts instead, with a **timer**: a part of the program that measures how long its input, IN, has been TRUE and says when a preset time is over. The program of this lesson uses one timer and one memory variable:
 
 1. The timer counts up to the half period.
 2. When the half period is over, the program flips the memory: ON becomes OFF, OFF becomes ON.
@@ -55,10 +55,10 @@ Read it from the top. The first statement runs the timer `Clock` with `HalfPerio
 
 ## Common mistakes
 
-- Giving the time of a full blink instead of half of it. `HalfPeriod` is how long the lamp stays in one state, so a blink that lasts a second needs `T#500ms`.
-- Writing a number without its unit. `T#500` is not a time; write `T#500ms`.
-- Mixing up units: `T#500s` is more than eight minutes, not half a second.
-- Changing the value and pressing {{ui:learn.check}} before saving. Check runs the saved file, so it still sees the old value.
+- Giving the time of a full blink instead of half of it. `HalfPeriod` is how long the lamp stays in one state, so a blink that lasts two seconds needs `T#1s`.
+- Writing a number without its unit. `T#750` is not a time; write `T#750ms`.
+- Mixing up units: `T#750s` is twelve and a half minutes, not three quarters of a second.
+- Looking for {{ui:learn.check}} before saving. Check grades the saved file, so it is unavailable while the file has unsaved changes, and Learn asks you to save them first.
 
 > [!NOTE]
 > A blink at the wrong speed is still a blink. The scenario of the lesson looks at the lamp at given moments, so it can tell a lamp that blinks at the right speed from one that only blinks.
@@ -70,15 +70,15 @@ question: HalfPeriod is T#2s. How long does one full blink last, off and then on
 options:
   - { text: 'Four seconds', correct: true, feedback: 'Yes. The lamp stays off for one half period and on for the next one, so a blink lasts two half periods.' }
   - { text: 'Two seconds', feedback: 'Two seconds is how long the lamp stays in one state. A full blink has two of those.' }
-  - { text: 'One second', feedback: 'That would need a half period of T#500ms.' }
+  - { text: 'One second', feedback: 'A full blink is longer than one half period, never shorter.' }
 ```
 
 ```quiz
-question: You change the value of HalfPeriod, do not save the file, and press Check. Which program does Check run?
+question: You change the value of HalfPeriod and have not saved the file yet. What can you do with Check?
 options:
-  - { text: 'The saved program, with the old value', correct: true, feedback: 'Right. Check runs the file as it is saved, so save first and then press Check.' }
-  - { text: 'The program as you see it in the editor', feedback: 'The editor shows your change, but Check reads the saved file.' }
-  - { text: 'The solution of the lesson', feedback: 'Check grades your own program, never the solution.' }
+  - { text: 'Nothing yet: Check is unavailable until you save the file', correct: true, feedback: 'Right. Check grades the saved file, so Learn asks you to save your changes first.' }
+  - { text: 'Press it, and it grades the program as you see it in the editor', feedback: 'Check never grades unsaved text: it waits until the file is saved.' }
+  - { text: 'Press it, and it grades the last saved version', feedback: 'Check does not grade an old version behind your back: it stays unavailable until you save.' }
 ```
 
 ## What you will do in the practice

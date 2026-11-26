@@ -65,11 +65,11 @@ Si se intercambian las dos instrucciones, el programa deja de funcionar: EyeBefo
 ## Compruébelo usted
 
 ```quiz
-question: Un programa escribe Previous := Button; y después Delayed := Previous;. ¿Qué es Delayed?
+question: El contador de cajas se escribe en el otro orden, EyeBefore := Eye; y después Left := EyeBefore AND NOT Eye;. ¿Qué hace Left cuando una caja se va?
 options:
-  - { text: 'Lo mismo que Button en este ciclo, sin retardo', correct: true, feedback: 'Sí. Previous ya guarda el Button de este ciclo cuando Delayed lo lee.' }
-  - { text: 'Button un ciclo tarde', feedback: 'Para eso, Delayed debe leer Previous antes de que Previous se actualice.' }
-  - { text: 'Siempre FALSE', feedback: 'Delayed copia Previous, y Previous copia Button, así que sigue a Button.' }
+  - { text: 'Nada: sigue en FALSE', correct: true, feedback: 'Sí. EyeBefore ya guarda el Eye de este ciclo cuando Left lo lee, así que la prueba compara Eye consigo misma.' }
+  - { text: 'Es TRUE durante un ciclo', feedback: 'Para eso, Left debe leer EyeBefore antes de que EyeBefore se actualice.' }
+  - { text: 'Es TRUE mientras la caja está delante del sensor', feedback: 'Left necesita EyeBefore en TRUE y Eye en FALSE en el mismo ciclo, y este orden nunca lo da.' }
 ```
 
 ```quiz

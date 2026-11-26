@@ -10,7 +10,7 @@ En esta lección no hay ningún PLC sobre su mesa. ZPLC ejecuta el programa en s
 
 Muchos programas necesitan tiempo: una lámpara que destella, una bomba que funciona durante un rato. El texto estructurado, el lenguaje de esta lección, escribe una duración como un valor de tipo `TIME`, que empieza con `T#`:
 
-- `T#500ms` es medio segundo, quinientos milisegundos.
+- `T#750ms` son tres cuartos de segundo, setecientos cincuenta milisegundos.
 - `T#2s` son dos segundos, lo mismo que `T#2000ms`.
 - `T#1m30s` es un minuto y medio.
 
@@ -18,7 +18,7 @@ Una variable de tipo `TIME` guarda un valor así, y su declaración puede darle 
 
 ## Cómo funciona un parpadeador
 
-Una lámpara parpadea cuando el programa la enciende, espera, la apaga, espera, y así sucesivamente. El programa no puede hacer una pausa, así que cuenta, con un **temporizador**: una parte del programa que mide cuánto tiempo lleva contando y avisa cuando termina un tiempo preestablecido. El programa de esta lección usa un temporizador y una variable de memoria:
+Una lámpara parpadea cuando el programa la enciende, espera, la apaga, espera, y así sucesivamente. El programa no puede hacer una pausa, así que cuenta, con un **temporizador**: una parte del programa que mide cuánto tiempo lleva en TRUE su entrada, IN, y avisa cuando termina un tiempo preestablecido. El programa de esta lección usa un temporizador y una variable de memoria:
 
 1. El temporizador cuenta hasta el semiperíodo.
 2. Cuando termina el semiperíodo, el programa invierte la memoria: ON pasa a OFF y OFF pasa a ON.
@@ -55,10 +55,10 @@ Léalo desde arriba. La primera instrucción hace contar al temporizador `Clock`
 
 ## Errores comunes
 
-- Dar el tiempo de un parpadeo completo en lugar de la mitad. `HalfPeriod` es cuánto tiempo la lámpara se queda en un estado, así que un parpadeo que dura un segundo necesita `T#500ms`.
-- Escribir un número sin su unidad. `T#500` no es un tiempo; escriba `T#500ms`.
-- Confundir las unidades: `T#500s` son más de ocho minutos, no medio segundo.
-- Cambiar el valor y pulsar {{ui:learn.check}} antes de guardar. Comprobar ejecuta el archivo guardado, así que todavía ve el valor anterior.
+- Dar el tiempo de un parpadeo completo en lugar de la mitad. `HalfPeriod` es cuánto tiempo la lámpara se queda en un estado, así que un parpadeo que dura dos segundos necesita `T#1s`.
+- Escribir un número sin su unidad. `T#750` no es un tiempo; escriba `T#750ms`.
+- Confundir las unidades: `T#750s` son doce minutos y medio, no tres cuartos de segundo.
+- Buscar {{ui:learn.check}} antes de guardar. Comprobar califica el archivo guardado, así que no está disponible mientras el archivo tiene cambios sin guardar, y Learn le pide que los guarde primero.
 
 > [!NOTE]
 > Un parpadeo a la velocidad equivocada sigue siendo un parpadeo. El escenario de la lección mira la lámpara en momentos dados, así que distingue una lámpara que parpadea a la velocidad correcta de una que solo parpadea.
@@ -70,15 +70,15 @@ question: HalfPeriod vale T#2s. ¿Cuánto dura un parpadeo completo, apagada y l
 options:
   - { text: 'Cuatro segundos', correct: true, feedback: 'Sí. La lámpara queda apagada un semiperíodo y encendida el siguiente, así que un parpadeo dura dos semiperíodos.' }
   - { text: 'Dos segundos', feedback: 'Dos segundos es cuánto tiempo la lámpara se queda en un estado. Un parpadeo completo tiene dos de esos.' }
-  - { text: 'Un segundo', feedback: 'Para eso haría falta un semiperíodo de T#500ms.' }
+  - { text: 'Un segundo', feedback: 'Un parpadeo completo dura más que un semiperíodo, nunca menos.' }
 ```
 
 ```quiz
-question: Usted cambia el valor de HalfPeriod, no guarda el archivo y pulsa Comprobar. ¿Qué programa ejecuta Comprobar?
+question: Usted cambia el valor de HalfPeriod y todavía no guardó el archivo. ¿Qué puede hacer con Comprobar?
 options:
-  - { text: 'El programa guardado, con el valor anterior', correct: true, feedback: 'Correcto. Comprobar ejecuta el archivo tal como está guardado, así que guarde primero y después pulse Comprobar.' }
-  - { text: 'El programa tal como se ve en el editor', feedback: 'El editor muestra su cambio, pero Comprobar lee el archivo guardado.' }
-  - { text: 'La solución de la lección', feedback: 'Comprobar califica su propio programa, nunca la solución.' }
+  - { text: 'Nada todavía: Comprobar no está disponible hasta que guarde el archivo', correct: true, feedback: 'Correcto. Comprobar califica el archivo guardado, así que Learn le pide que guarde primero sus cambios.' }
+  - { text: 'Pulsarlo, y califica el programa tal como se ve en el editor', feedback: 'Comprobar nunca califica texto sin guardar: espera a que el archivo esté guardado.' }
+  - { text: 'Pulsarlo, y califica la última versión guardada', feedback: 'Comprobar no califica una versión anterior a escondidas: sigue sin estar disponible hasta que usted guarde.' }
 ```
 
 ## Qué hará en la práctica

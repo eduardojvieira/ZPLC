@@ -12,12 +12,12 @@ A program never waits, so it cannot say "wait half a second". It measures time w
 
 ## A timer that counts while its input is on
 
-**TON** is a timer that the language provides. You declare an **instance** of it in `VAR`, with a name of its own such as `Clock : TON;`, and you **call** the instance once on every scan with two inputs:
+**TON** is a timer that the language provides. You declare an **instance** of it in `VAR`, with a name of its own such as `Delay : TON;`, and you **call** the instance once on every scan with two inputs:
 
 - **IN**, a BOOL: the timer counts while IN is TRUE, and goes back to zero as soon as IN is FALSE.
-- **PT**, the preset, a TIME such as `T#300ms`.
+- **PT**, the preset, a TIME such as `T#2s`.
 
-After the call, `Clock.Q` is TRUE once IN has stayed TRUE for the whole preset. It then stays TRUE for as long as IN stays TRUE, so to count the next period the program calls the timer once with IN FALSE: the clock goes back to zero and Q falls.
+After the call, `Delay.Q` is TRUE once IN has stayed TRUE for the whole preset. It then stays TRUE for as long as IN stays TRUE, so to count the next period the program calls the timer once with IN FALSE: the clock goes back to zero and Q falls.
 
 ## Timer and memory: the blink pattern
 
@@ -31,50 +31,50 @@ To blink only while an input is on, that input does two jobs: it is the IN of th
 
 ## Worked example
 
-An automatic gate has a warning beacon that must flash while the gate is moving, changing state every `T#400ms`, and must be dark at once when the gate stops. The input is `Moving`, the output is `Beacon`.
+An automatic gate has a warning beacon that must give a short flash while the gate is moving: dark for `T#800ms`, then lit for `T#200ms`, again and again, and dark as soon as the gate stops. The dark time and the lit time differ, so this beacon uses two timers instead of one timer and a memory: one timer counts the dark time, the other counts the lit time.
 
 ```st
 PROGRAM GateBeacon
 VAR_INPUT Moving : BOOL; END_VAR
 VAR_OUTPUT Beacon : BOOL; END_VAR
-VAR Flash : TON; BeaconOn : BOOL := FALSE; END_VAR
-Flash(IN := Moving, PT := T#400ms);
-IF Flash.Q THEN BeaconOn := NOT BeaconOn; Flash(IN := FALSE, PT := T#400ms); END_IF;
-Beacon := BeaconOn AND Moving;
+VAR OffTime : TON; OnTime : TON; END_VAR
+OffTime(IN := Moving AND NOT OnTime.Q, PT := T#800ms);
+OnTime(IN := OffTime.Q, PT := T#200ms);
+Beacon := OffTime.Q;
 END_PROGRAM
 ```
 
-The first statement counts only while the gate moves. Each time the preset is over, the `IF` flips `BeaconOn` and calls `Flash` once with IN FALSE to start a new count. The last statement shows the memory, but only while `Moving` is TRUE, so the beacon is dark on the very scan the gate stops, whatever state `BeaconOn` was left in.
+Read it from the top. `OffTime` counts while the gate moves, and its Q lights the beacon once the dark time is over. While the beacon is lit, `OnTime` counts the lit time. When `OnTime.Q` turns TRUE, the next scan calls `OffTime` with IN FALSE, which brings it back to zero: the beacon goes dark and the dark time starts again. `OnTime.Q` in the first statement is the value of the previous scan, because `OnTime` is called after it.
 
 ```timing
-span: 2000
+span: 2800
 signals:
-  - { name: Moving, edges: [200, 1700] }
-  - { name: Beacon, edges: [600, 1000, 1400, 1700] }
+  - { name: Moving, edges: [200, 2600] }
+  - { name: Beacon, edges: [1000, 1200, 2000, 2200] }
 marks:
-  - { from: 200, to: 600, label: 'T#400ms' }
-  - { from: 600, to: 1000, label: 'T#400ms' }
-caption: The beacon changes every preset while the gate moves and goes dark when it stops
+  - { from: 200, to: 1000, label: 'T#800ms' }
+  - { from: 1000, to: 1200, label: 'T#200ms' }
+caption: The beacon is dark for the first preset and lit for the second, for as long as the gate moves
 ```
 
-The first change comes one preset after the gate starts, not one preset after the program started, because the timer counts only while `Moving` is TRUE. On a real scan the restart takes one scan, so each period is a scan longer than the preset.
+When the gate stops, the IN of `OffTime` turns FALSE, its Q falls on that same scan, and the beacon is dark at once. A blinker made of one timer and a memory, like the one of the practice, cannot rely on that: when its timer stops, the memory keeps its last value, so the output needs an `AND` with the input.
 
 ## Common mistakes
 
-- Running the timer with IN := TRUE. The lamp then blinks from the moment the program starts, whatever the input says.
+- Running the timer with IN := TRUE. The memory then flips from the moment the program starts, even while the input is off, so when the input turns on the lamp may light at once and the first change does not come one preset later.
 - Leaving the input out of the output. The timer stops when the input drops, but the memory keeps its last value, so the lamp can stay ON.
 - Forgetting to restart the timer inside the IF. Q stays TRUE, so the memory flips on every scan and the lamp blinks far too fast.
-- Writing a preset that is not the one asked: `T#250ms` changes the lamp too often for a scenario that expects `T#300ms`.
+- Giving the time of a full blink as the preset. The preset is the time of one state, on or off; a full blink lasts two presets.
 - Calling the timer only inside an IF. An instance that is not called does not count.
 
 ## Check yourself
 
 ```quiz
-question: A blinker ends with Lamp := LampOn; instead of Lamp := LampOn AND Enable;. Enable drops while LampOn is TRUE. What does Lamp do?
+question: A blinker made of a timer and a memory ends with Out := Memory; and has no AND with its input Run. Run drops while Memory is TRUE. What does Out do?
 options:
-  - { text: 'It stays ON, because nothing changes LampOn any more', correct: true, feedback: 'Yes. The timer stops counting, LampOn keeps its last value, and Lamp copies it.' }
-  - { text: 'It goes OFF at once', feedback: 'Nothing in that program turns Lamp off when Enable drops. That is the job of AND Enable.' }
-  - { text: 'It keeps blinking', feedback: 'The timer counts only while Enable is TRUE, so LampOn no longer changes.' }
+  - { text: 'It stays ON, because nothing changes Memory any more', correct: true, feedback: 'Yes. The timer stops counting, Memory keeps its last value, and Out copies it.' }
+  - { text: 'It goes OFF at once', feedback: 'Nothing in that program turns Out off when Run drops. That is the job of an AND with Run.' }
+  - { text: 'It keeps blinking', feedback: 'The timer counts only while Run is TRUE, so Memory no longer changes.' }
 ```
 
 ```quiz

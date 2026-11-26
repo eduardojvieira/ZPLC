@@ -65,11 +65,11 @@ Swap the two statements and the program breaks: EyeBefore would take the value o
 ## Check yourself
 
 ```quiz
-question: A program writes Previous := Button; and then Delayed := Previous;. What is Delayed?
+question: The box counter is written in the other order, EyeBefore := Eye; and then Left := EyeBefore AND NOT Eye;. What does Left do when a box leaves?
 options:
-  - { text: 'The same as Button in this scan, with no delay', correct: true, feedback: 'Yes. Previous already holds the Button of this scan when Delayed reads it.' }
-  - { text: 'Button one scan late', feedback: 'For that, Delayed must read Previous before Previous is updated.' }
-  - { text: 'Always FALSE', feedback: 'Delayed copies Previous, and Previous copies Button, so it follows Button.' }
+  - { text: 'Nothing: it stays FALSE', correct: true, feedback: 'Yes. EyeBefore already holds the Eye of this scan when Left reads it, so the test compares Eye with itself.' }
+  - { text: 'It is TRUE for one scan', feedback: 'For that, Left must read EyeBefore before EyeBefore is updated.' }
+  - { text: 'It is TRUE while the box is in front of the sensor', feedback: 'Left needs EyeBefore TRUE and Eye FALSE in the same scan, and this order never gives that.' }
 ```
 
 ```quiz
