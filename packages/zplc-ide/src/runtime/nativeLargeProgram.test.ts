@@ -272,3 +272,38 @@ describe('native simulation of a large program', () => {
     30_000,
   );
 });
+
+// On Windows the runtime reads stdin through the pipe handle (PeekNamedPipe, ReadFile) into its own line buffer
+// (firmware/apps/posix_host/src/host_stdio.c); ZPLC_STDIO_TRACE=1 makes it say so on stderr. A request that arrives
+// after the runtime has waited idle is the case the old FILE reader lost, so two requests are sent with a pause.
+describe('the native session on Windows reads stdin through the pipe handle', () => {
+  (process.platform === 'win32' ? itNative : it.skip)(
+    'answers a request sent after a pause, and says which read path it took',
+    async () => {
+      const persistRoot = await mkdtemp(join(tmpdir(), 'zplc-stdio-trace-'));
+      const supervisor = new NativeSimulationSupervisor({
+        clientName: 'zplc-stdio-trace-test',
+        clientVersion: '0',
+        requestTimeoutMs: 5_000,
+        lifecycleTimeoutMs: 5_000,
+        environment: { ...process.env, ZPLC_NATIVE_SIM_BIN: nativeRuntimeBinary, ZPLC_PERSIST_ROOT: persistRoot, ZPLC_STDIO_TRACE: '1' },
+      });
+      const stderr: string[] = [];
+      const unsubscribe = supervisor.onEvent((event) => {
+        if (event.method === 'runtime.output') stderr.push(String((event.params as { message?: unknown }).message));
+      });
+      try {
+        await supervisor.startSession();
+        expect(await supervisor.request({ id: 'before-pause', type: 'request', method: 'status.get', params: {} })).toBeDefined();
+        await new Promise((resolve) => setTimeout(resolve, 1_000));
+        expect(await supervisor.request({ id: 'after-pause', type: 'request', method: 'status.get', params: {} })).toBeDefined();
+        expect(stderr.join('\n')).toContain('stdin is read through the pipe handle (PeekNamedPipe, ReadFile)');
+      } finally {
+        unsubscribe();
+        await supervisor.stopSession().catch(() => undefined);
+        await rm(persistRoot, { recursive: true, force: true });
+      }
+    },
+    20_000,
+  );
+});

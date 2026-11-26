@@ -147,6 +147,7 @@ endif()
 add_executable(zplc_runtime
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/main.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/host_stdio.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/host_line_buffer.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/native_runtime_session.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/native_program_store.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/native_device_link.c
@@ -1060,6 +1061,7 @@ add_test(NAME test_sched_equivalence COMMAND test_sched_equivalence)
 add_executable(test_host_stdio
     tests/test_host_stdio.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/host_stdio.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/host_line_buffer.c
 )
 
 target_include_directories(test_host_stdio PRIVATE
@@ -1068,6 +1070,19 @@ target_include_directories(test_host_stdio PRIVATE
 )
 
 add_test(NAME test_host_stdio COMMAND test_host_stdio)
+
+# Test: the line splitting both stdin readers share (pure, so it runs on every host)
+add_executable(test_host_line_buffer
+    tests/test_host_line_buffer.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/host_line_buffer.c
+)
+
+target_include_directories(test_host_line_buffer PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src
+)
+
+add_test(NAME test_host_line_buffer COMMAND test_host_line_buffer)
 
 # Test: POSIX HAL persistence behavior
 add_executable(test_hal_posix_persist
@@ -1310,7 +1325,7 @@ add_test(NAME test_comm_handler_cloud COMMAND test_comm_handler_cloud)
 # Custom target to run all tests
 add_custom_target(check
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-    DEPENDS test_isa test_contract test_vm_core test_vm_arith_edges test_opcode_coverage test_comm_dispatch test_loader_verify test_native_runtime_session test_host_stdio test_hal_posix_persist test_hal_posix_mutex
+    DEPENDS test_isa test_contract test_vm_core test_vm_arith_edges test_opcode_coverage test_comm_dispatch test_loader_verify test_native_runtime_session test_host_stdio test_host_line_buffer test_hal_posix_persist test_hal_posix_mutex
     COMMENT "Running all tests..."
 )
 

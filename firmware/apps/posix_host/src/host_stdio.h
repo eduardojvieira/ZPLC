@@ -25,6 +25,13 @@ typedef enum {
 } zplc_host_stdio_result_t;
 
 /*
+ * On Windows, put stdin and stdout in binary mode (no CR/LF translation, no Ctrl-Z end of
+ * file). Call it at startup, before anything is written; later calls do nothing. On other
+ * hosts it does nothing.
+ */
+void zplc_host_stdio_set_binary(void);
+
+/*
  * Wait up to timeout_ms for one newline-terminated request line from input and
  * copy it, newline included, into buffer.
  *
