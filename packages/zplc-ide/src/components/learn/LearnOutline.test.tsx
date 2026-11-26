@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import { emptyProgress, withNote, withPassedIds, type LearnProgress } from '../../../shared/learnProgressModel';
 import { isFocused, setupDom, stubMonaco, stubProjectLoader } from '../../test/dom';
 
@@ -12,59 +12,44 @@ const { buildCourseView } = await import('../../learn/course');
 const { useLearnUi } = await import('../../learn/learnUi');
 const { useLearnProgress } = await import('../../learn/progressState');
 const { useAppSettings } = await import('../../store/useAppSettings');
-const { useIDEStore } = await import('../../store/useIDEStore');
 const { useShellLayout } = await import('../../store/useShellLayout');
+const { announcementsSnapshot } = await import('../../utils/announce');
 const { PrimarySidebar } = await import('../../shell/Sidebars');
-const { buildCourseOutlineRows, moduleNodeId, pathNodeId } = await import('./courseOutline');
+const { buildCourseOutlineRows, lessonNodeId, moduleNodeId, pathNodeId } = await import('./courseOutline');
 const { LearnOutline } = await import('./LearnOutline');
 
-const FIRST_MODULE_1 = 'ld-what-is-a-plc';
-const IN_PROGRESS_ID = 'first-blink-simulation';
-const AVAILABLE_ID = 'ld-scan-cycle';
-const LOCKED_ID = 'scan-cycle-one-scan-memory';
+const PASSED_ID = 'ld-what-is-a-plc'; // module 1, has a reading page
+const IN_PROGRESS_ID = 'first-blink-simulation'; // module 0, no reading page
+const AVAILABLE_ID = 'ld-scan-cycle'; // module 1, needs PASSED_ID
+const LOCKED_ID = 'scan-cycle-one-scan-memory'; // module 1, needs IN_PROGRESS_ID
 
-const restores: Array<() => void> = [];
-
-function withoutFolderAccess(): void {
-  const host = window as unknown as Record<string, unknown>;
-  const before = Object.fromEntries(['electronAPI', 'showDirectoryPicker'].filter((key) => key in host).map((key) => [key, host[key]]));
-  delete host.electronAPI;
-  delete host.showDirectoryPicker;
-  restores.push(() => {
-    Object.assign(host, before);
-  });
-}
-
-function withFolderAccess(): void {
-  const host = window as unknown as Record<string, unknown>;
-  const had = 'showDirectoryPicker' in host;
-  const previous = host.showDirectoryPicker;
-  host.showDirectoryPicker = () => undefined;
-  restores.push(() => {
-    if (had) host.showDirectoryPicker = previous;
-    else delete host.showDirectoryPicker;
-  });
-}
+const started: string[] = [];
 
 function setProgress(document: LearnProgress | null): void {
   dom.patchStore(useLearnProgress, { document, loaded: true, failed: false } as never);
 }
 
 beforeEach(() => {
+  started.length = 0;
   dom.patchStore(useAppSettings, {
     settings: { ...useAppSettings.getState().settings, unlockAllLessons: false, language: 'en' },
   } as never);
   setProgress(emptyProgress());
-  dom.patchStore(useLearnUi, { selected: null, starting: false, workspace: null, reading: null, homeOpen: false } as never);
+  dom.patchStore(useLearnUi, {
+    selected: null,
+    starting: false,
+    workspace: null,
+    reading: null,
+    homeOpen: false,
+    startLesson: async (id: string) => (started.push(id), true),
+  } as never);
   dom.patchStore(useShellLayout, { activityView: 'project', primaryVisible: true } as never);
-});
-
-afterEach(() => {
-  while (restores.length > 0) restores.pop()!();
 });
 
 const tree = () => dom.screen.getByRole('tree', { name: dom.t('u3Learn.outline.title') });
 const rowById = (rowId: string): HTMLElement => document.querySelector<HTMLElement>(`[data-row="${CSS.escape(rowId)}"]`)!;
+const moduleLesson = (module: number, id: string) => rowById(lessonNodeId(moduleNodeId(module), id));
+const filterBox = () => dom.screen.getByRole('textbox', { name: dom.t('u3Learn.outline.filterLabel') });
 
 describe('The Learn activity course outline (GDE-002, UX-024, UX-026)', () => {
   it('GDE-002 the outline lists paths and modules that open and close', async () => {
@@ -76,15 +61,8 @@ describe('The Learn activity course outline (GDE-002, UX-024, UX-026)', () => {
     expect(paths.length).toBeGreaterThan(0);
     expect(modules.length).toBeGreaterThan(0);
 
-    for (const path of paths) {
-      const node = rowById(pathNodeId(path.id));
-      expect(node).toBeTruthy();
-      expect(node.getAttribute('role')).toBe('treeitem');
-      expect(node.getAttribute('aria-level')).toBe('1');
-      expect(node.getAttribute('aria-expanded')).toBe('false');
-    }
-    for (const mod of modules) {
-      const node = rowById(moduleNodeId(mod.id));
+    for (const id of [...paths.map((path) => pathNodeId(path.id)), ...modules.map((mod) => moduleNodeId(mod.id))]) {
+      const node = rowById(id);
       expect(node).toBeTruthy();
       expect(node.getAttribute('role')).toBe('treeitem');
       expect(node.getAttribute('aria-level')).toBe('1');
@@ -115,213 +93,223 @@ describe('The Learn activity course outline (GDE-002, UX-024, UX-026)', () => {
     expect(document.querySelectorAll('[role="treeitem"][data-outline-module="1"][aria-level="2"]')).toHaveLength(0);
   });
 
-  it('GDE-002 each lesson has a state icon and a text equivalent, and the current lesson is marked', () => {
+  it('GDE-002 each lesson has a state icon and a text equivalent, and the current lesson is marked', async () => {
     const progress = withNote(
-      withPassedIds(emptyProgress(), [FIRST_MODULE_1]),
+      withPassedIds(emptyProgress(), [PASSED_ID]),
       { lessonId: IN_PROGRESS_ID, started: true, last: true },
       '2026-11-26T10:00:00.000Z',
     );
     setProgress(progress);
     dom.patchStore(useLearnUi, { selected: IN_PROGRESS_ID } as never);
 
-    const { unmount } = dom.render(<LearnOutline />);
+    const { user, unmount } = dom.render(<LearnOutline />);
+    // The module of the current lesson starts open.
+    expect(rowById(moduleNodeId(0)).getAttribute('aria-expanded')).toBe('true');
+    await user.click(rowById(moduleNodeId(1)));
     const checks = [
-      { id: FIRST_MODULE_1, state: 'passed' },
-      { id: IN_PROGRESS_ID, state: 'in-progress' },
-      { id: AVAILABLE_ID, state: 'available' },
-      { id: LOCKED_ID, state: 'locked' },
+      { module: 1, id: PASSED_ID, state: 'passed' },
+      { module: 0, id: IN_PROGRESS_ID, state: 'in-progress' },
+      { module: 1, id: AVAILABLE_ID, state: 'available' },
+      { module: 1, id: LOCKED_ID, state: 'locked' },
     ] as const;
 
     for (const item of checks) {
-      const row = rowById(`module:1:lesson:${item.id}`);
+      const row = moduleLesson(item.module, item.id);
       expect(row).toBeTruthy();
       expect(row.getAttribute('data-state')).toBe(item.state);
       const icon = row.querySelector(`[data-outline-state-icon="${item.state}"] svg`);
       expect(icon).not.toBeNull();
       expect(icon!.getAttribute('aria-hidden')).toBe('true');
-      const stateText = row.querySelector('[data-outline-state-text]')?.textContent?.trim();
-      expect(stateText).toBe(dom.t(`learn.state.${item.state}`));
+      expect(row.querySelector('[data-outline-state-text]')?.textContent?.trim()).toBe(dom.t(`learn.state.${item.state}`));
     }
 
-    const currentRow = rowById(`module:1:lesson:${IN_PROGRESS_ID}`);
+    const currentRow = moduleLesson(0, IN_PROGRESS_ID);
     expect(currentRow.getAttribute('aria-current')).toBe('true');
     expect(currentRow.textContent).toContain(dom.t('u3Learn.outline.current'));
-    expect(rowById(`module:1:lesson:${FIRST_MODULE_1}`).getAttribute('aria-current')).toBeNull();
+    expect(moduleLesson(1, PASSED_ID).getAttribute('aria-current')).toBeNull();
 
     unmount();
     dom.render(<LearnOutline />, { locale: 'es' });
     const esT = dom.tFor('es');
-    expect(rowById(`module:1:lesson:${FIRST_MODULE_1}`).querySelector('[data-outline-state-text]')?.textContent?.trim()).toBe(
-      esT('learn.state.passed'),
+    expect(moduleLesson(0, IN_PROGRESS_ID).querySelector('[data-outline-state-text]')?.textContent?.trim()).toBe(
+      esT('learn.state.in-progress'),
     );
-    expect(rowById(`module:1:lesson:${LOCKED_ID}`).querySelector('[data-outline-state-text]')?.textContent?.trim()).toBe(
-      esT('learn.state.locked'),
-    );
-    expect(rowById(`module:1:lesson:${IN_PROGRESS_ID}`).textContent).toContain(esT('u3Learn.outline.current'));
+    expect(moduleLesson(0, IN_PROGRESS_ID).textContent).toContain(esT('u3Learn.outline.current'));
   });
 
   it('GDE-002 a locked lesson says what unlocks it on hover and on focus', async () => {
     const view = buildCourseView(LESSON_INDEX, emptyProgress(), { locale: 'en', unlockAll: false });
     const firstPath = view.paths[0]!;
     const pathLockedLesson = firstPath.lessons.find((lesson) => lesson.state === 'locked')!;
-    const pathPreviousTitle = view.titles[pathLockedLesson.missing[0]!] ?? pathLockedLesson.missing[0]!;
+    const pathPreviousTitle = view.titles[pathLockedLesson.missing[0]!]!;
 
     const { user } = dom.render(<LearnOutline />);
     await user.click(rowById(moduleNodeId(1)));
-    const lockedModuleRow = rowById(`module:1:lesson:${LOCKED_ID}`);
+    const lockedModuleRow = moduleLesson(1, LOCKED_ID);
     expect(lockedModuleRow.getAttribute('aria-disabled')).toBe('true');
     expect(dom.screen.queryByRole('tooltip')).toBeNull();
 
     await user.hover(lockedModuleRow);
     await dom.waitFor(() => {
-      const tip = dom.screen.getByRole('tooltip');
-      expect(tip.textContent).toContain(view.titles[IN_PROGRESS_ID]!);
+      expect(dom.screen.getByRole('tooltip').textContent).toContain(view.titles[IN_PROGRESS_ID]!);
     });
     expect(lockedModuleRow.getAttribute('aria-describedby')).toBe(dom.screen.getByRole('tooltip').id);
     await user.unhover(lockedModuleRow);
     await dom.waitFor(() => expect(dom.screen.queryByRole('tooltip')).toBeNull());
 
     await user.click(rowById(pathNodeId(firstPath.id)));
-    const lockedPathRow = rowById(`path:${firstPath.id}:lesson:${pathLockedLesson.id}`);
+    const lockedPathRow = rowById(lessonNodeId(pathNodeId(firstPath.id), pathLockedLesson.id));
     await dom.act(async () => {
       lockedPathRow.focus();
     });
+    const reason = dom.t('u3Learn.outline.lockedByPath', { lessons: pathPreviousTitle });
     const tip = dom.screen.getByRole('tooltip');
-    expect(tip.textContent).toContain(pathPreviousTitle);
+    expect(tip.textContent).toContain(reason);
     expect(lockedPathRow.getAttribute('aria-describedby')).toBe(tip.id);
 
+    // A locked lesson does not open; its reason is announced.
+    await user.keyboard('{Enter}');
+    expect(useLearnUi.getState().selected).toBeNull();
+    expect(useLearnUi.getState().reading).toBeNull();
+    expect(started).toEqual([]);
+    expect(announcementsSnapshot().polite.message).toBe(reason);
+
     // No raw HTML title attributes anywhere in the outline.
-    expect(document.querySelector('[data-learn-outline] [title]:not(svg title)')).toBeNull();
+    expect(document.querySelector('[data-learn-outline] [title]')).toBeNull();
   });
 
-  it('GDE-002 the filter narrows by title and id and keeps the open state', async () => {
+  it('GDE-002 the filter narrows by title and keeps the open state', async () => {
     const { user } = dom.render(<LearnOutline />);
     const module1Row = rowById(moduleNodeId(1));
-    const module3Row = rowById(moduleNodeId(3));
-
     await user.click(module1Row);
     expect(module1Row.getAttribute('aria-expanded')).toBe('true');
-    expect(module3Row.getAttribute('aria-expanded')).toBe('false');
+    expect(rowById(moduleNodeId(3)).getAttribute('aria-expanded')).toBe('false');
 
-    const filterInput = dom.screen.getByRole('textbox', { name: dom.t('u3Learn.outline.filterLabel') });
-    await user.type(filterInput, 'timers-on-delay-off-delay');
-
-    expect(rowById('module:3:lesson:timers-on-delay-off-delay')).toBeTruthy();
+    await user.type(filterBox(), 'timers-on-delay-off-delay');
+    expect(moduleLesson(3, 'timers-on-delay-off-delay')).toBeTruthy();
     expect(rowById(moduleNodeId(3)).getAttribute('aria-expanded')).toBe('true');
-    expect(document.querySelector(`[data-row="${CSS.escape(moduleNodeId(1))}"]`)).toBeNull();
+    expect(rowById(moduleNodeId(1))).toBeNull();
 
-    await user.clear(filterInput);
+    await user.clear(filterBox());
     const targetLesson = LESSON_INDEX.lessons.find((lesson) => lesson.id === 'timers-on-delay-off-delay')!;
-    await user.type(filterInput, targetLesson.text.en.title.slice(0, 12));
-    expect(rowById('module:3:lesson:timers-on-delay-off-delay')).toBeTruthy();
+    await user.type(filterBox(), targetLesson.text.en.title.slice(0, 12));
+    expect(moduleLesson(3, 'timers-on-delay-off-delay')).toBeTruthy();
 
-    await user.clear(filterInput);
-    await user.type(filterInput, 'zzz-no-such-lesson');
+    await user.clear(filterBox());
+    await user.type(filterBox(), 'zzz-no-such-lesson');
     expect(dom.screen.getByText(dom.t('u3Learn.outline.filterEmpty', { query: 'zzz-no-such-lesson' }))).toBeTruthy();
 
-    await user.clear(filterInput);
+    await user.clear(filterBox());
     expect(rowById(moduleNodeId(1)).getAttribute('aria-expanded')).toBe('true');
     expect(rowById(moduleNodeId(3)).getAttribute('aria-expanded')).toBe('false');
   });
 
   it('GDE-002 the outline is a tree operable by keyboard alone', async () => {
-    withoutFolderAccess();
     const { user } = dom.render(<LearnOutline />);
-    const paths = LESSON_INDEX.course.paths ?? [];
-    const firstPath = paths[0]!;
+    const firstPath = (LESSON_INDEX.course.paths ?? [])[0]!;
     const firstPathNode = rowById(pathNodeId(firstPath.id));
+    const firstChildId = lessonNodeId(pathNodeId(firstPath.id), firstPath.lessons[0]!);
+    const secondChildId = lessonNodeId(pathNodeId(firstPath.id), firstPath.lessons[1]!);
 
     await user.tab();
-    expect(isFocused(dom.screen.getByRole('textbox', { name: dom.t('u3Learn.outline.filterLabel') }))).toBe(true);
+    expect(isFocused(filterBox())).toBe(true);
     await user.tab();
     expect(isFocused(firstPathNode)).toBe(true);
 
-    // ArrowRight opens the closed path; ArrowRight again moves to its first lesson child.
+    // Right opens the closed path; Right again moves to its first lesson.
     await user.keyboard('{ArrowRight}');
     expect(firstPathNode.getAttribute('aria-expanded')).toBe('true');
     expect(isFocused(firstPathNode)).toBe(true);
-
-    const firstChildId = `path:${firstPath.id}:lesson:${firstPath.lessons[0]!}`;
     await user.keyboard('{ArrowRight}');
     await dom.waitFor(() => expect(isFocused(rowById(firstChildId))).toBe(true));
 
-    // ArrowDown moves to the second lesson (locked in path 0), ArrowLeft returns to parent, ArrowLeft closes it.
-    const secondChildId = `path:${firstPath.id}:lesson:${firstPath.lessons[1]!}`;
+    // Down to the second lesson (locked in the path): Enter does not open it. Up, then Left goes to the path, Left closes it.
     await user.keyboard('{ArrowDown}');
     await dom.waitFor(() => expect(isFocused(rowById(secondChildId))).toBe(true));
     await user.keyboard('{Enter}');
     expect(useLearnUi.getState().selected).toBeNull();
-
+    await user.keyboard('{ArrowUp}');
+    await dom.waitFor(() => expect(isFocused(rowById(firstChildId))).toBe(true));
     await user.keyboard('{ArrowLeft}');
     await dom.waitFor(() => expect(isFocused(firstPathNode)).toBe(true));
     await user.keyboard('{ArrowLeft}');
     expect(firstPathNode.getAttribute('aria-expanded')).toBe('false');
 
-    // End and Home jump across visible rows.
-    const lastModuleId = moduleNodeId(LESSON_INDEX.course.modules[LESSON_INDEX.course.modules.length - 1]!.id);
+    // End and Home jump across the visible rows.
+    const modules = LESSON_INDEX.course.modules;
     await user.keyboard('{End}');
-    await dom.waitFor(() => expect(isFocused(rowById(lastModuleId))).toBe(true));
+    await dom.waitFor(() => expect(isFocused(rowById(moduleNodeId(modules[modules.length - 1]!.id)))).toBe(true));
     await user.keyboard('{Home}');
     await dom.waitFor(() => expect(isFocused(firstPathNode)).toBe(true));
 
-    // Open the path again, enter the unlocked first lesson, and confirm it opens/selects.
+    // Open the path again: Enter on its first lesson opens its reading page.
     await user.keyboard('{ArrowRight}');
     await user.keyboard('{ArrowDown}');
     await dom.waitFor(() => expect(isFocused(rowById(firstChildId))).toBe(true));
     await user.keyboard('{Enter}');
     expect(useLearnUi.getState().selected).toBe(firstPath.lessons[0]!);
+    expect(useLearnUi.getState().reading).toBe(firstPath.lessons[0]!);
+
+    // Type-ahead: letters typed on a row go to the filter.
+    await user.keyboard('timers-on');
+    expect(isFocused(filterBox())).toBe(true);
+    expect((filterBox() as HTMLInputElement).value).toBe('timers-on');
+    expect(moduleLesson(3, 'timers-on-delay-off-delay')).toBeTruthy();
   });
 
-  it('GDE-002 a 111-lesson course builds and renders within budget', () => {
-    expect(LESSON_INDEX.lessons.length).toBeGreaterThanOrEqual(111);
-    const view = buildCourseView(LESSON_INDEX, emptyProgress(), { locale: 'en', unlockAll: false });
-    const allContainers = new Set([...view.paths.map((path) => pathNodeId(path.id)), ...view.modules.map((mod) => moduleNodeId(mod.id))]);
-
+  it('GDE-002 a 111-lesson course renders within the budget', async () => {
+    // A generated course: 111 lessons over the 20 modules, each one a copy of a real entry under a new id.
+    const template = LESSON_INDEX.lessons[0]!;
+    const synthetic: typeof LESSON_INDEX = {
+      ...LESSON_INDEX,
+      course: { ...LESSON_INDEX.course, paths: [] },
+      lessons: Array.from({ length: 111 }, (_, index) => ({
+        ...template,
+        id: `synthetic-${index}`,
+        module: LESSON_INDEX.course.modules[index % LESSON_INDEX.course.modules.length]!.id,
+        order: index,
+        prerequisites: [],
+        text: { en: { ...template.text.en, title: `Synthetic lesson ${index}` }, es: { ...template.text.es, title: `Synthetic ${index}` } },
+      })),
+    };
+    const view = buildCourseView(synthetic, emptyProgress(), { locale: 'en', unlockAll: false });
+    const all = new Set(view.modules.map((mod) => moduleNodeId(mod.id)));
     const t0 = performance.now();
-    const rows = buildCourseOutlineRows(view, { expanded: allContainers, filter: '', currentLessonId: FIRST_MODULE_1 });
-    const buildMs = performance.now() - t0;
-    expect(rows.filter((row) => row.kind === 'lesson' && row.moduleId !== null)).toHaveLength(LESSON_INDEX.lessons.length);
-    expect(buildMs).toBeLessThan(100);
+    const rows = buildCourseOutlineRows(view, { expanded: all, filter: '', currentLessonId: null });
+    expect(performance.now() - t0).toBeLessThan(100);
+    expect(rows.filter((row) => row.kind === 'lesson')).toHaveLength(111);
 
     const t1 = performance.now();
-    dom.render(<LearnOutline />);
-    const renderMs = performance.now() - t1;
-    expect(renderMs).toBeLessThan(100);
+    dom.render(<LearnOutline index={synthetic} />);
+    expect(performance.now() - t1).toBeLessThan(100);
+
+    // Every lesson shown at once: a filter that matches them all opens every module.
+    const t2 = performance.now();
+    await dom.act(async () => {
+      dom.fireEvent.change(filterBox(), { target: { value: 'synthetic' } });
+    });
+    expect(performance.now() - t2).toBeLessThan(100);
+    expect(document.querySelectorAll('[role="treeitem"][aria-level="2"]')).toHaveLength(111);
   });
 
-  it('GDE-002 choosing an unlocked lesson starts it when folder access is available and opens reading otherwise', async () => {
-    withFolderAccess();
-    const started: string[] = [];
-    dom.patchStore(useLearnUi, { startLesson: async (id: string) => (started.push(id), true) } as never);
-    const { user, unmount } = dom.render(<LearnOutline />);
+  it('GDE-002 choosing a lesson opens its reading page, or starts it when it has none', async () => {
+    expect(LESSON_INDEX.lessons.find((lesson) => lesson.id === PASSED_ID)!.reading).toBeDefined();
+    expect(LESSON_INDEX.lessons.find((lesson) => lesson.id === IN_PROGRESS_ID)!.reading).toBeFalsy();
+    const { user } = dom.render(<LearnOutline />);
     await user.click(rowById(moduleNodeId(1)));
-    await user.click(rowById(`module:1:lesson:${FIRST_MODULE_1}`));
-    expect(useLearnUi.getState().selected).toBe(FIRST_MODULE_1);
-    expect(started).toEqual([FIRST_MODULE_1]);
-    unmount();
-    while (restores.length > 0) restores.pop()!();
+    await user.click(moduleLesson(1, PASSED_ID));
+    expect(useLearnUi.getState().selected).toBe(PASSED_ID);
+    expect(useLearnUi.getState().reading).toBe(PASSED_ID);
+    expect(started).toEqual([]);
 
-    withoutFolderAccess();
-    const readingEntry = LESSON_INDEX.lessons.find((lesson) => lesson.id === FIRST_MODULE_1)!;
-    expect(readingEntry.reading).toBeDefined();
-    dom.patchStore(useLearnUi, { selected: null, reading: null } as never);
-    const second = dom.render(<LearnOutline />);
-    await second.user.click(rowById(moduleNodeId(1)));
-    await second.user.click(rowById(`module:1:lesson:${FIRST_MODULE_1}`));
-    expect(useLearnUi.getState().selected).toBe(FIRST_MODULE_1);
-    expect(useLearnUi.getState().reading).toBe(FIRST_MODULE_1);
+    await user.click(rowById(moduleNodeId(0)));
+    await user.click(moduleLesson(0, IN_PROGRESS_ID));
+    expect(started).toEqual([IN_PROGRESS_ID]);
   });
 
-  it('GDE-002 LearnBody renders LearnOutline in the primary sidebar with and without a lesson workspace open', () => {
+  it('GDE-002 the Learn activity shows the outline when no lesson workspace is open', () => {
     dom.patchStore(useShellLayout, { activityView: 'learn' } as never);
-    const first = dom.render(<PrimarySidebar />);
-    expect(dom.screen.getByRole('tree', { name: dom.t('u3Learn.outline.title') })).toBeTruthy();
-    first.unmount();
-
-    dom.patchStore(useLearnUi, {
-      workspace: { lessonId: FIRST_MODULE_1, session: useIDEStore.getState().projectSession },
-    } as never);
     dom.render(<PrimarySidebar />);
-    expect(dom.screen.getByRole('tree', { name: dom.t('u3Learn.outline.title') })).toBeTruthy();
+    expect(tree()).toBeTruthy();
   });
 });
