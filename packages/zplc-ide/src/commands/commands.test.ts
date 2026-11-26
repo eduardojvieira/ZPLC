@@ -215,6 +215,39 @@ describe('shortcuts (UX-015)', () => {
     expect(parseChord('Enter').key).toBe('Enter');
   });
 
+  it('SHL-011 Mod+Comma opens Preferences from the renderer, as the key the browser reports', () => {
+    const matcher = createShortcutMatcher(
+      COMMAND_LIST.flatMap((command) => (command.shortcut ? [{ id: command.id, chords: parseShortcut(command.shortcut) }] : [])),
+    );
+    expect(matcher.handle(key(',', { ctrlKey: true })).id).toBe('file.preferences');
+    expect(matcher.handle(key(',', { metaKey: true })).id).toBe('file.preferences');
+    expect(matcher.handle(key('s', { ctrlKey: true })).id).toBe('file.save');
+    expect(formatShortcut('Mod+Comma', 'linux')).toBe('Ctrl+,');
+    expect(formatShortcut('Mod+Comma', 'darwin')).toBe('⌘,');
+    expect(toAccelerator('Mod+Comma')).toBe('CmdOrCtrl+,');
+  });
+
+  it('SHL-011 a key the registry names by word matches the character of the keydown', () => {
+    const words: Record<string, string> = {
+      Comma: ',',
+      Period: '.',
+      Slash: '/',
+      Backslash: '\\',
+      Semicolon: ';',
+      Quote: "'",
+      Backquote: '`',
+      Minus: '-',
+      Equal: '=',
+      Plus: '+',
+      BracketLeft: '[',
+      BracketRight: ']',
+    };
+    for (const [word, character] of Object.entries(words))
+      expect(chordMatches(parseChord(`Mod+${word}`), key(character, { ctrlKey: true }))).toBe(true);
+    // `+` separates the parts of an accelerator, so Electron names it by word.
+    expect(toAccelerator('Mod+Plus')).toBe('CmdOrCtrl+Plus');
+  });
+
   it('UX-015 matches Ctrl or Cmd as the command key and refuses a modifier that was not asked for', () => {
     const save = parseChord('Mod+S');
     expect(chordMatches(save, key('s', { ctrlKey: true }))).toBe(true);
