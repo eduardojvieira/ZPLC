@@ -200,35 +200,38 @@ describe('CLI JSON boundary', () => {
     }
   });
 
-  it.skipIf(process.platform === 'win32')('returns one successful JSON line for a coherent local toolchain', async () => {
-    const fixture = await readyToolchainRoot();
-    const oldPath = process.env.PATH;
-    const oldBase = process.env.ZEPHYR_BASE;
-    const oldSdk = process.env.ZEPHYR_SDK_INSTALL_DIR;
-    process.env.PATH = fixture.bin;
-    process.env.ZEPHYR_BASE = fixture.base;
-    process.env.ZEPHYR_SDK_INSTALL_DIR = fixture.sdk;
-    try {
-      const io = output();
-      expect(await main(['toolchain-inspect', fixture.root, '--json'], io)).toBe(0);
-      expect(io.errors).toEqual([]);
-      expect(io.lines).toHaveLength(1);
-      expect(JSON.parse(io.lines[0] ?? '{}')).toMatchObject({
-        ok: true,
-        summary: { ready: true },
-        evidence: { operation: 'toolchain-inspect', outcome: 'passed', artifacts: [] },
-      });
-    } finally {
-      if (oldPath === undefined) delete process.env.PATH;
-      else process.env.PATH = oldPath;
-      if (oldBase === undefined) delete process.env.ZEPHYR_BASE;
-      else process.env.ZEPHYR_BASE = oldBase;
-      if (oldSdk === undefined) delete process.env.ZEPHYR_SDK_INSTALL_DIR;
-      else process.env.ZEPHYR_SDK_INSTALL_DIR = oldSdk;
-      await rm(fixture.root, { recursive: true, force: true });
-      await rm(fixture.host, { recursive: true, force: true });
-    }
-  });
+  // Off Windows only (its toolchain fixture is /bin/sh scripts): a skip on Windows reads as a missing binary to VF-023.
+  if (process.platform !== 'win32') {
+    it('returns one successful JSON line for a coherent local toolchain', async () => {
+      const fixture = await readyToolchainRoot();
+      const oldPath = process.env.PATH;
+      const oldBase = process.env.ZEPHYR_BASE;
+      const oldSdk = process.env.ZEPHYR_SDK_INSTALL_DIR;
+      process.env.PATH = fixture.bin;
+      process.env.ZEPHYR_BASE = fixture.base;
+      process.env.ZEPHYR_SDK_INSTALL_DIR = fixture.sdk;
+      try {
+        const io = output();
+        expect(await main(['toolchain-inspect', fixture.root, '--json'], io)).toBe(0);
+        expect(io.errors).toEqual([]);
+        expect(io.lines).toHaveLength(1);
+        expect(JSON.parse(io.lines[0] ?? '{}')).toMatchObject({
+          ok: true,
+          summary: { ready: true },
+          evidence: { operation: 'toolchain-inspect', outcome: 'passed', artifacts: [] },
+        });
+      } finally {
+        if (oldPath === undefined) delete process.env.PATH;
+        else process.env.PATH = oldPath;
+        if (oldBase === undefined) delete process.env.ZEPHYR_BASE;
+        else process.env.ZEPHYR_BASE = oldBase;
+        if (oldSdk === undefined) delete process.env.ZEPHYR_SDK_INSTALL_DIR;
+        else process.env.ZEPHYR_SDK_INSTALL_DIR = oldSdk;
+        await rm(fixture.root, { recursive: true, force: true });
+        await rm(fixture.host, { recursive: true, force: true });
+      }
+    });
+  }
   it('exposes toolchain inspection as one read-only JSON result and rejects compile options', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-cli-toolchain-'));
     try {
@@ -896,60 +899,63 @@ describe('CLI firmware-build command', () => {
     expect(isInterruptibleInvocation(['--version', 'firmware-build', '/repo', 'alpha'])).toBe(false);
   });
 
-  it.skipIf(process.platform === 'win32')('runs the fixed local cross-build and emits only its evidence', async () => {
-    const fixture = await firmwareBuildRoot();
-    const manifest = await readFile(join(fixture.root, 'firmware', 'app', 'boards', 'boards.json'), 'utf8');
-    const cmake = await readFile(join(fixture.root, 'firmware', 'app', 'CMakeLists.txt'), 'utf8');
-    const oldPath = process.env.PATH;
-    const oldBase = process.env.ZEPHYR_BASE;
-    const oldSdk = process.env.ZEPHYR_SDK_INSTALL_DIR;
-    const oldMarker = process.env.ZPLC_FAKE_WEST_MARKER;
-    process.env.PATH = `${fixture.bin}:${oldPath ?? ''}`;
-    process.env.ZEPHYR_BASE = fixture.base;
-    process.env.ZEPHYR_SDK_INSTALL_DIR = fixture.sdk;
-    process.env.ZPLC_FAKE_WEST_MARKER = fixture.marker;
-    try {
-      const io = output();
-      expect(await main(['firmware-build', fixture.root, 'alpha', '--json'], io)).toBe(0);
-      expect(io.errors).toEqual([]);
-      expect(io.lines).toHaveLength(1);
-      const result = JSON.parse(io.lines[0] ?? '{}');
-      expect(result).toMatchObject({
-        ok: true,
-        summary: {
-          schemaVersion: 1,
-          scope: 'local-ephemeral-cross-build',
-          sourceIdentity: 'unverified',
-          board: { boardId: 'alpha-board', ideId: 'alpha', zephyrBoard: 'alpha/board' },
-          artifact: { kind: 'firmware-elf', byteLength: 52, sha256: expect.stringMatching(/^[a-f0-9]{64}$/) },
-        },
-        evidence: {
-          schemaVersion: 1,
-          operation: 'firmware-build',
-          outcome: 'passed',
-          diagnostics: [],
-          artifacts: [{ kind: 'firmware-elf' }],
-        },
-      });
-      expect(JSON.stringify(result)).not.toMatch(
-        new RegExp(`(?:${fixture.root.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}|PATH|argv|cwd|build_command|flash|deploy|HIL)`, 'i'),
-      );
-      expect(await readFile(join(fixture.root, 'firmware', 'app', 'boards', 'boards.json'), 'utf8')).toBe(manifest);
-      expect(await readFile(join(fixture.root, 'firmware', 'app', 'CMakeLists.txt'), 'utf8')).toBe(cmake);
-      expect((await lstat(fixture.marker)).isFile()).toBe(true);
-    } finally {
-      if (oldPath === undefined) delete process.env.PATH;
-      else process.env.PATH = oldPath;
-      if (oldBase === undefined) delete process.env.ZEPHYR_BASE;
-      else process.env.ZEPHYR_BASE = oldBase;
-      if (oldSdk === undefined) delete process.env.ZEPHYR_SDK_INSTALL_DIR;
-      else process.env.ZEPHYR_SDK_INSTALL_DIR = oldSdk;
-      if (oldMarker === undefined) delete process.env.ZPLC_FAKE_WEST_MARKER;
-      else process.env.ZPLC_FAKE_WEST_MARKER = oldMarker;
-      await rm(fixture.root, { recursive: true, force: true });
-      await rm(fixture.host, { recursive: true, force: true });
-    }
-  });
+  // Off Windows only (its west fixture is a /bin/sh script): a skip on Windows reads as a missing binary to VF-023.
+  if (process.platform !== 'win32') {
+    it('runs the fixed local cross-build and emits only its evidence', async () => {
+      const fixture = await firmwareBuildRoot();
+      const manifest = await readFile(join(fixture.root, 'firmware', 'app', 'boards', 'boards.json'), 'utf8');
+      const cmake = await readFile(join(fixture.root, 'firmware', 'app', 'CMakeLists.txt'), 'utf8');
+      const oldPath = process.env.PATH;
+      const oldBase = process.env.ZEPHYR_BASE;
+      const oldSdk = process.env.ZEPHYR_SDK_INSTALL_DIR;
+      const oldMarker = process.env.ZPLC_FAKE_WEST_MARKER;
+      process.env.PATH = `${fixture.bin}:${oldPath ?? ''}`;
+      process.env.ZEPHYR_BASE = fixture.base;
+      process.env.ZEPHYR_SDK_INSTALL_DIR = fixture.sdk;
+      process.env.ZPLC_FAKE_WEST_MARKER = fixture.marker;
+      try {
+        const io = output();
+        expect(await main(['firmware-build', fixture.root, 'alpha', '--json'], io)).toBe(0);
+        expect(io.errors).toEqual([]);
+        expect(io.lines).toHaveLength(1);
+        const result = JSON.parse(io.lines[0] ?? '{}');
+        expect(result).toMatchObject({
+          ok: true,
+          summary: {
+            schemaVersion: 1,
+            scope: 'local-ephemeral-cross-build',
+            sourceIdentity: 'unverified',
+            board: { boardId: 'alpha-board', ideId: 'alpha', zephyrBoard: 'alpha/board' },
+            artifact: { kind: 'firmware-elf', byteLength: 52, sha256: expect.stringMatching(/^[a-f0-9]{64}$/) },
+          },
+          evidence: {
+            schemaVersion: 1,
+            operation: 'firmware-build',
+            outcome: 'passed',
+            diagnostics: [],
+            artifacts: [{ kind: 'firmware-elf' }],
+          },
+        });
+        expect(JSON.stringify(result)).not.toMatch(
+          new RegExp(`(?:${fixture.root.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}|PATH|argv|cwd|build_command|flash|deploy|HIL)`, 'i'),
+        );
+        expect(await readFile(join(fixture.root, 'firmware', 'app', 'boards', 'boards.json'), 'utf8')).toBe(manifest);
+        expect(await readFile(join(fixture.root, 'firmware', 'app', 'CMakeLists.txt'), 'utf8')).toBe(cmake);
+        expect((await lstat(fixture.marker)).isFile()).toBe(true);
+      } finally {
+        if (oldPath === undefined) delete process.env.PATH;
+        else process.env.PATH = oldPath;
+        if (oldBase === undefined) delete process.env.ZEPHYR_BASE;
+        else process.env.ZEPHYR_BASE = oldBase;
+        if (oldSdk === undefined) delete process.env.ZEPHYR_SDK_INSTALL_DIR;
+        else process.env.ZEPHYR_SDK_INSTALL_DIR = oldSdk;
+        if (oldMarker === undefined) delete process.env.ZPLC_FAKE_WEST_MARKER;
+        else process.env.ZPLC_FAKE_WEST_MARKER = oldMarker;
+        await rm(fixture.root, { recursive: true, force: true });
+        await rm(fixture.host, { recursive: true, force: true });
+      }
+    });
+  }
 
   it('rejects invalid firmware-build arguments before west starts', async () => {
     const fixture = await firmwareBuildRoot();
@@ -1024,36 +1030,39 @@ describe('CLI firmware-build command', () => {
     expect(firmwareBuildExitCode(failed('FIRMWARE_BUILD_FAILED'))).toBe(1);
   });
 
-  it.skipIf(process.platform === 'win32')('keeps subprocess JSON and exit status honest', async () => {
-    const fixture = await firmwareBuildRoot();
-    try {
-      const success = await runWithEnv(['firmware-build', fixture.root, 'alpha', '--json'], {
-        PATH: `${fixture.bin}:${process.env.PATH ?? ''}`,
-        ZEPHYR_BASE: fixture.base,
-        ZEPHYR_SDK_INSTALL_DIR: fixture.sdk,
-        ZPLC_FAKE_WEST_MARKER: fixture.marker,
-      });
-      expect(success.code).toBe(0);
-      expect(success.stderr).toBe('');
-      expect(success.stdout.trim().split('\n')).toHaveLength(1);
-      expect(JSON.parse(success.stdout)).toMatchObject({ ok: true, evidence: { operation: 'firmware-build' } });
-      const failure = await runWithEnv(['firmware-build', fixture.root, 'unknown', '--json'], {
-        PATH: `${fixture.bin}:${process.env.PATH ?? ''}`,
-        ZPLC_FAKE_WEST_MARKER: fixture.marker,
-      });
-      expect(failure.code).toBe(1);
-      expect(failure.stderr).toBe('');
-      expect(failure.stdout.trim().split('\n')).toHaveLength(1);
-      expect(JSON.parse(failure.stdout)).toMatchObject({ ok: false, evidence: { operation: 'firmware-build' } });
-    } finally {
-      await rm(fixture.root, { recursive: true, force: true });
-      await rm(fixture.host, { recursive: true, force: true });
-    }
-  });
+  // Off Windows only (its west fixture is a /bin/sh script): a skip on Windows reads as a missing binary to VF-023.
+  if (process.platform !== 'win32') {
+    it('keeps subprocess JSON and exit status honest', async () => {
+      const fixture = await firmwareBuildRoot();
+      try {
+        const success = await runWithEnv(['firmware-build', fixture.root, 'alpha', '--json'], {
+          PATH: `${fixture.bin}:${process.env.PATH ?? ''}`,
+          ZEPHYR_BASE: fixture.base,
+          ZEPHYR_SDK_INSTALL_DIR: fixture.sdk,
+          ZPLC_FAKE_WEST_MARKER: fixture.marker,
+        });
+        expect(success.code).toBe(0);
+        expect(success.stderr).toBe('');
+        expect(success.stdout.trim().split('\n')).toHaveLength(1);
+        expect(JSON.parse(success.stdout)).toMatchObject({ ok: true, evidence: { operation: 'firmware-build' } });
+        const failure = await runWithEnv(['firmware-build', fixture.root, 'unknown', '--json'], {
+          PATH: `${fixture.bin}:${process.env.PATH ?? ''}`,
+          ZPLC_FAKE_WEST_MARKER: fixture.marker,
+        });
+        expect(failure.code).toBe(1);
+        expect(failure.stderr).toBe('');
+        expect(failure.stdout.trim().split('\n')).toHaveLength(1);
+        expect(JSON.parse(failure.stdout)).toMatchObject({ ok: false, evidence: { operation: 'firmware-build' } });
+      } finally {
+        await rm(fixture.root, { recursive: true, force: true });
+        await rm(fixture.host, { recursive: true, force: true });
+      }
+    });
+  }
 
-  it.skipIf(process.platform === 'win32')(
-    'cancels an owned local build on SIGINT before the CLI exits',
-    async () => {
+  // Off Windows only (it sends SIGINT to a /bin/sh west fixture): a skip on Windows reads as a missing binary to VF-023.
+  if (process.platform !== 'win32') {
+    it('cancels an owned local build on SIGINT before the CLI exits', async () => {
       const fixture = await firmwareBuildRoot(true);
       try {
         const proc = Bun.spawn([process.execPath, 'run', cli, 'firmware-build', fixture.root, 'alpha', '--json'], {
@@ -1087,9 +1096,8 @@ describe('CLI firmware-build command', () => {
         await rm(fixture.root, { recursive: true, force: true });
         await rm(fixture.host, { recursive: true, force: true });
       }
-    },
-    30_000,
-  );
+    }, 30_000);
+  }
 });
 
 describe('CLI test command', () => {
@@ -1322,66 +1330,72 @@ describe('CLI test command', () => {
     30_000,
   );
 
-  it.skipIf(process.platform === 'win32')('protects workspace inputs and their symlink aliases from trace output', async () => {
-    const root = await workspace();
-    const outside = await mkdtemp(join(tmpdir(), 'zplc-cli-trace-link-'));
-    try {
-      const sourceAlias = join(outside, 'source-alias');
-      const testsAlias = join(outside, 'tests-alias');
-      await symlink(join(root, 'src'), sourceAlias, 'dir');
-      await symlink(join(root, 'tests'), testsAlias, 'dir');
-      for (const path of [
-        join(root, 'zplc.json'),
-        join(root, 'src', 'trace.json'),
-        join(root, 'tests', 'trace.json'),
-        join(sourceAlias, 'trace.json'),
-        join(testsAlias, 'trace.json'),
-      ]) {
-        const io = output();
-        expect(await main(['test', root, '--output', path, '--json'], io)).toBe(1);
-        expect(JSON.parse(io.lines[0] ?? '{}')).toMatchObject({ ok: false, evidence: { diagnostics: [{ code: 'CLI_INVALID' }] } });
-      }
-    } finally {
-      await rm(root, { recursive: true, force: true });
-      await rm(outside, { recursive: true, force: true });
-    }
-  });
-
-  (process.platform === 'win32' ? it.skip : itNative)(
-    'cancels an owned native POSIX test session on SIGINT and publishes no partial evidence',
-    async () => {
-      const root = await workspace(true, 99_990);
-      const wrapper = join(root, 'native-runtime-wrapper');
-      const pidMarker = join(root, 'native-runtime.pid');
-      const trace = join(root, 'trace.json');
+  // Off Windows only (it needs POSIX symlinks outside the workspace): a skip on Windows reads as a missing binary to VF-023.
+  if (process.platform !== 'win32') {
+    it('protects workspace inputs and their symlink aliases from trace output', async () => {
+      const root = await workspace();
+      const outside = await mkdtemp(join(tmpdir(), 'zplc-cli-trace-link-'));
       try {
-        await writeFile(wrapper, '#!/bin/sh\nprintf \'%s\\n\' "$$" > "$ZPLC_FAKE_RUNTIME_PID"\nexec "$ZPLC_REAL_RUNTIME" "$@"\n');
-        await chmod(wrapper, 0o755);
-        await writeFile(trace, 'sentinel');
-        const proc = Bun.spawn([process.execPath, 'run', cli, 'test', root, '--output', trace, '--json'], {
-          stdout: 'pipe',
-          stderr: 'pipe',
-          env: { ...process.env, ZPLC_NATIVE_SIM_BIN: wrapper, ZPLC_REAL_RUNTIME: nativeRuntimeBinary, ZPLC_FAKE_RUNTIME_PID: pidMarker },
-        });
-        const stdout = new Response(proc.stdout).text();
-        const stderr = new Response(proc.stderr).text();
-        await waitForFile(pidMarker);
-        process.kill(proc.pid, 'SIGINT');
-        const [code, outputText, errorText] = await Promise.all([proc.exited, stdout, stderr]);
-        expect(code).toBe(130);
-        expect(errorText).toBe('');
-        expect(outputText.trim().split('\n')).toHaveLength(1);
-        expect(JSON.parse(outputText)).toMatchObject({
-          ok: false,
-          evidence: { operation: 'test', diagnostics: [{ code: 'TEST_CANCELLED' }], artifacts: [] },
-        });
-        expect(await readFile(trace, 'utf8')).toBe('sentinel');
-        const pid = Number((await readFile(pidMarker, 'utf8')).trim());
-        expect(() => process.kill(pid, 0)).toThrow();
+        const sourceAlias = join(outside, 'source-alias');
+        const testsAlias = join(outside, 'tests-alias');
+        await symlink(join(root, 'src'), sourceAlias, 'dir');
+        await symlink(join(root, 'tests'), testsAlias, 'dir');
+        for (const path of [
+          join(root, 'zplc.json'),
+          join(root, 'src', 'trace.json'),
+          join(root, 'tests', 'trace.json'),
+          join(sourceAlias, 'trace.json'),
+          join(testsAlias, 'trace.json'),
+        ]) {
+          const io = output();
+          expect(await main(['test', root, '--output', path, '--json'], io)).toBe(1);
+          expect(JSON.parse(io.lines[0] ?? '{}')).toMatchObject({ ok: false, evidence: { diagnostics: [{ code: 'CLI_INVALID' }] } });
+        }
       } finally {
         await rm(root, { recursive: true, force: true });
+        await rm(outside, { recursive: true, force: true });
       }
-    },
-    30_000,
-  );
+    });
+  }
+
+  // Off Windows only (it sends SIGINT through a /bin/sh runtime wrapper): a skip on Windows reads as a missing binary to VF-023.
+  if (process.platform !== 'win32') {
+    itNative(
+      'cancels an owned native POSIX test session on SIGINT and publishes no partial evidence',
+      async () => {
+        const root = await workspace(true, 99_990);
+        const wrapper = join(root, 'native-runtime-wrapper');
+        const pidMarker = join(root, 'native-runtime.pid');
+        const trace = join(root, 'trace.json');
+        try {
+          await writeFile(wrapper, '#!/bin/sh\nprintf \'%s\\n\' "$$" > "$ZPLC_FAKE_RUNTIME_PID"\nexec "$ZPLC_REAL_RUNTIME" "$@"\n');
+          await chmod(wrapper, 0o755);
+          await writeFile(trace, 'sentinel');
+          const proc = Bun.spawn([process.execPath, 'run', cli, 'test', root, '--output', trace, '--json'], {
+            stdout: 'pipe',
+            stderr: 'pipe',
+            env: { ...process.env, ZPLC_NATIVE_SIM_BIN: wrapper, ZPLC_REAL_RUNTIME: nativeRuntimeBinary, ZPLC_FAKE_RUNTIME_PID: pidMarker },
+          });
+          const stdout = new Response(proc.stdout).text();
+          const stderr = new Response(proc.stderr).text();
+          await waitForFile(pidMarker);
+          process.kill(proc.pid, 'SIGINT');
+          const [code, outputText, errorText] = await Promise.all([proc.exited, stdout, stderr]);
+          expect(code).toBe(130);
+          expect(errorText).toBe('');
+          expect(outputText.trim().split('\n')).toHaveLength(1);
+          expect(JSON.parse(outputText)).toMatchObject({
+            ok: false,
+            evidence: { operation: 'test', diagnostics: [{ code: 'TEST_CANCELLED' }], artifacts: [] },
+          });
+          expect(await readFile(trace, 'utf8')).toBe('sentinel');
+          const pid = Number((await readFile(pidMarker, 'utf8')).trim());
+          expect(() => process.kill(pid, 0)).toThrow();
+        } finally {
+          await rm(root, { recursive: true, force: true });
+        }
+      },
+      30_000,
+    );
+  }
 });
