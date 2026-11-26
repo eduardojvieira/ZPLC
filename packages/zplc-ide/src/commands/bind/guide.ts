@@ -34,6 +34,7 @@ export function useGuideCommands(): void {
         giveFocusBack();
       }
     };
+    // The capture phase: the bar's controls open a tooltip on focus, and the tooltip stops Escape from bubbling (Tooltip.tsx).
     window.addEventListener('keydown', onKeyDown, true);
     return () => {
       unbind();
