@@ -159,11 +159,23 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
 
   const stopped = state === 'stopped';
   const { setRunning } = session;
-  useEffect(() => setRunning(!stopped), [setRunning, stopped]);
-  // The session belongs to the document that opened it: it closes with the panel.
-  useEffect(() => () => void usePlantEdit.getState().end(), []);
+  useEffect(() => setRunning(!stopped, refKey), [setRunning, stopped, refKey]);
+  // The session belongs to the panel of its scene: it closes with that panel or its scene, never with another one.
+  const endOwn = () => {
+    const own = usePlantEdit.getState();
+    if (own.sceneRef === refKey) own.end();
+  };
+  useEffect(
+    () => () => {
+      const own = usePlantEdit.getState();
+      if (own.sceneRef === refKey) own.end();
+    },
+    [refKey],
+  );
   const startEditing = () => {
-    if (ready) session.begin({ scene: ready.scene, map: ready.map ?? null }, refKey);
+    if (!ready) return;
+    setRunning(!stopped, refKey);
+    session.begin({ scene: ready.scene, map: ready.map ?? null }, refKey);
   };
   const finishEditing = () => {
     const texts = session.end();
@@ -215,7 +227,7 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
         >
           {t('plant.panel.resetPlant')}
         </Button>
-        <Button data-plant-edit-scene aria-pressed={!!editing} disabled={!stopped || !ready || !!editing} onClick={startEditing}>
+        <Button data-plant-edit-scene aria-pressed={!!editing} disabled={!stopped || !ready || !!session.editor} onClick={startEditing}>
           {t('plant.panel.editScene')}
         </Button>
         {/* Controls that appear with the scene come last: appending never moves the ones already there. */}
@@ -245,7 +257,7 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
           rootScene={hasProjectScene}
           saved={saved.names}
           onChoose={(next) => {
-            session.end();
+            endOwn();
             setRef(next);
           }}
         />
@@ -305,14 +317,18 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
       {load.phase === 'loading' && <p className="p-2 text-sm">{t('plant.panel.loading')}</p>}
       {load.phase === 'failed' && (
         <div role="alert" data-plant-load-failed className="flex flex-wrap items-center gap-3 p-2 text-sm">
-          <span>{t('plant.panel.sceneFailed', { scene: refKey, detail: load.detail })}</span>
-          {view === '3d' && (
+          <span>
+            {t('plant.panel.sceneFailed', { scene: refKey, detail: load.detail })}
+            {load.at && ` (${t('plant.panel.breaksAt', load.at)})`}
+          </span>
+          {load.scene && view === '3d' && (
             <Button data-plant-show-schematic onClick={() => setView('schematic')}>
               {t('plant.panel.showSchematic')}
             </Button>
           )}
         </div>
       )}
+      {load.phase === 'failed' && load.scene && view === 'schematic' && <Schematic scene={load.scene} />}
       {ready && (
         <>
           {editing && view === '3d' && (

@@ -3,6 +3,9 @@
  * the scene being edited reads (the editor in the plant document today; the part list, the Inspector and the signal table later).
  * An edit through the session's editor bumps `version`, so each view that reads it re-renders. Rule R-P1: begin, undo and redo do
  * nothing while the plant runs (SCN-008); the views say why from the plant state.
+ *
+ * One session for the whole window: while one is open, only the plant of its scene reports `running` and ends it, and another
+ * begin is refused, so a second plant document never takes or discards its edits.
  */
 import { create } from 'zustand';
 import type { PlantMapV2 } from '../plants/plantMap';
@@ -19,7 +22,7 @@ export interface PlantEditSession {
   readonly version: number;
   /** The scene the session was opened on: the reference of the plant document that owns it. */
   readonly sceneRef: string | null;
-  /** The plant runs: nothing is edited (SCN-008). */
+  /** The plant of the open session runs, or, with none open, the plant that last said: nothing is edited (SCN-008). */
   readonly running: boolean;
   /** The scene opened with a plant map: ending keeps a map text although nothing is bound. */
   readonly hadMap: boolean;
@@ -32,7 +35,8 @@ export interface PlantEditActions {
   undo(): void;
   redo(): void;
   setMapEditor(mapEditor: MapEditor): void;
-  setRunning(running: boolean): void;
+  /** From the plant of scene `ref`; ignored while a session of another scene is open. */
+  setRunning(running: boolean, ref?: string): void;
   touch(): void;
 }
 
@@ -67,7 +71,7 @@ export const usePlantEdit = create<PlantEditSession & PlantEditActions>()((set, 
     version: 0,
     running: false,
     begin(ready, ref) {
-      if (get().running) return;
+      if (get().running || get().editor) return;
       const editor = createSceneEditor(catalogue, ready.scene);
       const mapEditor = createMapEditor(editor.signals(), ready.scene.name);
       if (ready.map) mapEditor.load(ready.map);
@@ -88,8 +92,10 @@ export const usePlantEdit = create<PlantEditSession & PlantEditActions>()((set, 
       if (!get().running) get().editor?.redo();
     },
     setMapEditor: (mapEditor) => set({ mapEditor }),
-    setRunning(running) {
-      get().editor?.setRunning(running);
+    setRunning(running, ref) {
+      const { editor, sceneRef } = get();
+      if (editor && ref !== undefined && ref !== sceneRef) return;
+      editor?.setRunning(running);
       set({ running });
     },
     touch,
