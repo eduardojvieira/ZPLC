@@ -45,7 +45,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Start is TRUE only while the button is held, so the belt needs a BOOL memory of its own, declared in VAR: set it when Start is TRUE, clear it when EyeFar is TRUE, and let Run follow it. A rising edge of Emit releases one box."
+      "text": "Start is TRUE only while the button is held, but the belt must keep running after it is released: what in your program can remember that the belt was started, and what makes it forget? A rising edge of Emit releases one box."
     },
     {
       "level": 2,

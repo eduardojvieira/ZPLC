@@ -97,4 +97,4 @@ options:
 
 ## What you will do in the practice
 
-You get a packing station with five inputs and three outputs, and a starter that only holds the belt in. Read the five requirements in the objective, list the inputs and outputs, then add a counter, a timer for a blocked sensor, a latched fault and the stop conditions. Press Check and use each failed assertion to find the requirement you missed. If you want to look inside, run the program in Simulation and use the Watch table as in the previous lesson.
+You get a packing station with five inputs and three outputs, and a starter that only holds the belt in. Read the five requirements in the objective, list the inputs and outputs, then meet them one at a time. Press Check and use each failed assertion to find the requirement you missed. If you want to look inside, run the program in Simulation and use the Watch table as in the previous lesson.

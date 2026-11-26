@@ -97,4 +97,4 @@ options:
 
 ## Qué hará en la práctica
 
-Recibe una estación de empaque con cinco entradas y tres salidas, y un programa inicial que solo mantiene la cinta con una autorretención. Lea los cinco requisitos del objetivo, haga la lista de entradas y salidas, y luego agregue un contador, un temporizador para un sensor bloqueado, una falla retenida y las condiciones de paro. Pulse Comprobar y use cada aserción fallida para encontrar el requisito que omitió. Si desea ver el interior, ejecute el programa en Simulación y use la tabla de observación como en la lección anterior.
+Recibe una estación de empaque con cinco entradas y tres salidas, y un programa inicial que solo mantiene la cinta con una autorretención. Lea los cinco requisitos del objetivo, haga la lista de entradas y salidas, y luego cúmplalos de uno en uno. Pulse Comprobar y use cada aserción fallida para encontrar el requisito que omitió. Si desea ver el interior, ejecute el programa en Simulación y use la tabla de observación como en la lección anterior.

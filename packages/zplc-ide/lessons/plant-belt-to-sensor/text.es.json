@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Start está en TRUE solo mientras se mantiene el pulsador, así que la cinta necesita una memoria BOOL propia, declarada en VAR: actívela cuando Start sea TRUE, bórrela cuando EyeFar sea TRUE y haga que Run la siga. Un flanco ascendente de Emit suelta una caja."
+      "text": "Start está en TRUE solo mientras se mantiene el pulsador, pero la cinta debe seguir en marcha después de soltarlo: ¿qué puede recordar en su programa que la cinta arrancó, y qué hace que lo olvide? Un flanco ascendente de Emit suelta una caja."
     },
     {
       "level": 2,
