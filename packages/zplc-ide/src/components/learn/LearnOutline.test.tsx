@@ -17,6 +17,7 @@ const { announcementsSnapshot } = await import('../../utils/announce');
 const { PrimarySidebar } = await import('../../shell/Sidebars');
 const { buildCourseOutlineRows, lessonNodeId, moduleNodeId, pathNodeId } = await import('./courseOutline');
 const { LearnOutline } = await import('./LearnOutline');
+const { allOpenLessonRows, syntheticCourse } = await import('./syntheticCourse');
 
 const PASSED_ID = 'ld-what-is-a-plc'; // module 1, has a reading page
 const IN_PROGRESS_ID = 'first-blink-simulation'; // module 0, no reading page
@@ -263,30 +264,12 @@ describe('The Learn activity course outline (GDE-002)', () => {
   });
 
   it('GDE-002 a 111-lesson course renders within the budget', async () => {
-    // A generated course: 111 lessons over the 20 modules, each one a copy of a real entry under a new id, and the paths of
-    // lessons/course.json with as many lessons each, taken in order from the generated ones. The budget is the plan's (Task G3: the
-    // tree is virtualised only if a render over a 111-lesson fixture takes over 100 ms).
-    const template = LESSON_INDEX.lessons[0]!;
-    const realPaths = LESSON_INDEX.course.paths ?? [];
-    const ids = Array.from({ length: 111 }, (_, index) => `synthetic-${index}`);
-    let next = 0;
-    const synthetic: typeof LESSON_INDEX = {
-      ...LESSON_INDEX,
-      course: {
-        ...LESSON_INDEX.course,
-        paths: realPaths.map((path) => ({ ...path, lessons: path.lessons.map(() => ids[next++ % ids.length]!) })),
-      },
-      lessons: ids.map((id, index) => ({
-        ...template,
-        id,
-        module: LESSON_INDEX.course.modules[index % LESSON_INDEX.course.modules.length]!.id,
-        order: index,
-        prerequisites: [],
-        text: { en: { ...template.text.en, title: `Synthetic lesson ${index}` }, es: { ...template.text.es, title: `Synthetic ${index}` } },
-      })),
-    };
-    const pathLessons = realPaths.reduce((sum, path) => sum + path.lessons.length, 0);
-    expect(realPaths.length).toBeGreaterThan(0);
+    // The generated course of syntheticCourse.ts: 111 lessons and the paths of lessons/course.json. The budget is the plan's (Task
+    // G3: the tree is virtualised only if a render over a 111-lesson fixture takes over 100 ms); its worst case, every row open, is
+    // timed with production React in LearnOutline.browser.test.ts.
+    const synthetic = syntheticCourse();
+    const pathLessons = allOpenLessonRows(synthetic) - synthetic.lessons.length;
+    expect(synthetic.course.paths?.length ?? 0).toBeGreaterThan(0);
     const view = buildCourseView(synthetic, emptyProgress(), { locale: 'en', unlockAll: false });
     const all = new Set([...view.paths.map((path) => pathNodeId(path.id)), ...view.modules.map((mod) => moduleNodeId(mod.id))]);
     const t0 = performance.now();
@@ -314,7 +297,7 @@ describe('The Learn activity course outline (GDE-002)', () => {
     expect(moduleLesson(currentModule, current).getAttribute('aria-current')).toBe('true');
 
     // Every lesson shown at once: a filter that matches them all opens every path and module. The plan's budget is the mount above;
-    // this render of every row is checked for its rows only (it is slower in happy-dom than in a browser).
+    // this render of every row is checked for its rows only here (happy-dom is not a browser).
     const { user } = mounted;
     await user.type(filterBox(), 'synthetic');
     expect(document.querySelectorAll('[role="treeitem"][aria-level="2"]')).toHaveLength(111 + pathLessons);
