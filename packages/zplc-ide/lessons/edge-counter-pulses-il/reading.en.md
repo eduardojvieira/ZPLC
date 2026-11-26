@@ -1,6 +1,6 @@
 ## Counting in Instruction List
 
-A counter adds one each time something arrives: a part at a sensor, a stroke of a pump, a press of a pulsador. An input that stays TRUE for many scans is still one arrival, so a counter does not count the scans in which its input is TRUE. It counts **rising edges**, the scans in which the input changes from FALSE to TRUE.
+A counter adds one each time something arrives: a part at a sensor, a stroke of a pump, a press of a push button. An input that stays TRUE for many scans is still one arrival, so a counter does not count the scans in which its input is TRUE. It counts **rising edges**, the scans in which the input changes from FALSE to TRUE.
 
 The **CTU**, the up counter, is a function block that does this for you. It keeps the value of its input from the scan before and adds one only on a rising edge. Its inputs and outputs are the same in every language:
 
@@ -24,7 +24,7 @@ The instance is declared in `VAR` like any other variable, as `Strokes : CTU;`. 
 
 ## Worked example
 
-A dosing pump gives one stroke each time a cam closes the switch `PumpStroke`; the switch stays closed for a part of each stroke. A dose is five strokes. After the fifth, the lamp `DoseDone` lights, and the operator starts the next dose with the pulsador `NextDose`, which clears the count.
+A dosing pump gives one stroke each time a cam closes the switch `PumpStroke`; the switch stays closed for a part of each stroke. A dose is five strokes. After the fifth, the lamp `DoseDone` lights, and the operator starts the next dose with the push button `NextDose`, which clears the count.
 
 ```il
 PROGRAM Dosing

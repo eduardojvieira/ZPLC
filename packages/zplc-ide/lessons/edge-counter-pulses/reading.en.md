@@ -45,9 +45,9 @@ A call looks like `Strokes(CU := PressDown, R := Oiled, PV := 500);`. The count 
 
 ## Worked example
 
-A tray stacker receives trays from a conveyor. Each tray stops under a sensor, `TrayHere`, until the stacker lifts it onto the stack, which takes several seconds. After four trays the stack is full: the lamp `StackFull` lights, an operator takes the stack away and presses the pulsador `StackTaken`. A display shows how many trays are on the stack now.
+A tray stacker receives trays from a conveyor. Each tray stops under a sensor, `TrayHere`, until the stacker lifts it onto the stack, which takes several seconds. After four trays the stack is full: the lamp `StackFull` lights, an operator takes the stack away and presses the push button `StackTaken`. A display shows how many trays are on the stack now.
 
-Each tray keeps `TrayHere` TRUE for a long time, so the program must count rising edges, which is what a CTU does. The pulsador clears the count, and the display reads CV.
+Each tray keeps `TrayHere` TRUE for a long time, so the program must count rising edges, which is what a CTU does. The push button clears the count, and the display reads CV.
 
 ```st
 PROGRAM Stacker
@@ -72,7 +72,7 @@ signals:
   - { name: StackTaken, edges: [8800, 9300] }
 marks:
   - { from: 6500, to: 8800, label: 'CV = 4' }
-caption: Four long arrivals count four; the pulsador clears the count and the lamp
+caption: Four long arrivals count four; the push button clears the count and the lamp
 ```
 
 ## Common mistakes
