@@ -61,7 +61,8 @@ function schemaProblems(schema: JsonSchema, value: unknown, path = '$'): string[
       const property = schema.properties?.[key];
       if (property) out.push(...schemaProblems(property, item, `${path}.${key}`));
       else if (schema.additionalProperties === false) out.push(`${path}: unknown key ${key}`);
-      else if (typeof schema.additionalProperties === 'object') out.push(...schemaProblems(schema.additionalProperties, item, `${path}.${key}`));
+      else if (typeof schema.additionalProperties === 'object')
+        out.push(...schemaProblems(schema.additionalProperties, item, `${path}.${key}`));
     }
   }
   return out;
