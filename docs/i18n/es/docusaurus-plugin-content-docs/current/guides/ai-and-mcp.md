@@ -41,6 +41,8 @@ El servidor sirve la única carpeta que usted nombra, y nada fuera de ella. La c
 
 `zplc-mcp --version` imprime la versión y termina con 0.
 
+`zplc-mcp --workspace <carpeta> --self-check` imprime un informe JSON: la carpeta, el nombre del proyecto, cuántas herramientas y recursos sirve, las revisiones del protocolo que atiende, si encuentra el simulador del host `zplc_runtime`, el límite de la regla 8 de AGENTS.md, y cada problema con su causa y el paso siguiente. Termina con 0 cuando el servidor está listo y con 1 cuando no. Solo mira archivos: no arranca el servidor, ningún proceso, ninguna placa ni ningún puerto. La herramienta `server_self_check` responde lo mismo, con el nombre del proyecto en lugar de la carpeta.
+
 Los mensajes de la consola de comandos están en inglés.
 
 ```bash
@@ -56,7 +58,7 @@ bun run --cwd=packages/zplc-ide mcp --workspace /home/me/plants/line-3
 Las versiones posteriores a 2.0.0-rc.3 incluyen `zplc-mcp-<versión>-<sistema>-<arquitectura>` como ejecutable independiente, sin firmar, que se verifica como dice la [página de instalación](../getting-started/install.md#verificar-la-descarga). Dos opciones agregan lo que una carpeta de proyecto no puede contener:
 
 - `--repository <directorio>` es una copia del repositorio de ZPLC. `boards_list`, `toolchain_inspect` y `firmware_build` la necesitan. Sin ella responden `MCP_CAPABILITY_UNAVAILABLE`.
-- `--user-data <directorio>` es la carpeta donde ZPLC guarda su progreso en las lecciones. El recurso `zplc://course/progress` la necesita.
+- `--user-data <directorio>` es la carpeta donde ZPLC guarda su progreso en las lecciones. El recurso `zplc://course/progress` la necesita, y `zplc://lesson/current` lee de ella si las soluciones están ocultas.
 
 ## 2. Conectar un asistente
 
@@ -97,20 +99,26 @@ Un cliente de la era 2025, como la 2025-11-25, abre con `initialize`, luego `not
 
 Pida lo que devuelve una herramienta, para que cada afirmación del asistente tenga un resultado detrás.
 
-| Pregunta                               | Herramienta o recurso                                     | Qué devuelve                                                                                 |
-| -------------------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| "¿Es válido este archivo de proyecto?" | `project_validate`                                        | `ok` y los diagnósticos                                                                      |
-| "¿Compila, y qué necesita?"            | `compiler_check`, `symbols_list`                          | El tamaño del programa, los diagnósticos, los símbolos públicos                              |
-| "¿Pasan sus escenarios?"               | `tests_run`, `scenario_run`                               | Un resultado por escenario, con el hash de su traza                                          |
-| "¿Qué pasó en el ciclo 40?"            | `trace_get`, `runtime_snapshot`                           | Una traza acotada y saneada de una ejecución registrada                                      |
-| "Muéstreme el programa"                | `zplc://project/programs`, `zplc://project/source/{name}` | La lista de los programas de `src` con su lenguaje, y el texto y el lenguaje de uno de ellos |
-| "¿Qué placas están descritas?"         | `boards_list`                                             | Las placas del manifiesto y su nivel, sin sondear hardware                                   |
-| "¿Qué lecciones están aprobadas?"      | `zplc://course/progress`                                  | Las lecciones aprobadas, cuántas están hechas y cuántas existen                              |
+| Pregunta                               | Herramienta o recurso                                               | Qué devuelve                                                                                                      |
+| -------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| "¿Es válido este archivo de proyecto?" | `project_validate`                                                  | `ok` y los diagnósticos                                                                                           |
+| "¿Compila, y qué necesita?"            | `compiler_check`, `symbols_list`                                    | El tamaño del programa, los diagnósticos, los símbolos públicos                                                   |
+| "¿Pasan sus escenarios?"               | `tests_run`, `scenario_run`                                         | Un resultado por escenario, con el hash de su traza                                                               |
+| "¿Qué pasó en el ciclo 40?"            | `trace_get`, `runtime_snapshot`                                     | Una traza acotada y saneada de una ejecución registrada                                                           |
+| "Muéstreme el programa"                | `zplc://project/programs`, `zplc://project/source/{name}`           | La lista de los programas de `src` con su lenguaje, y el texto y el lenguaje de uno de ellos                      |
+| "¿Qué placas están descritas?"         | `boards_list`                                                       | Las placas del manifiesto y su nivel, sin sondear hardware                                                        |
+| "¿Qué lecciones están aprobadas?"      | `zplc://course/progress`                                            | Las lecciones aprobadas, cuántas están hechas y cuántas existen                                                   |
+| "¿Qué ofrece la planta?"               | `plant_inspect`, `zplc://project/scene`, `zplc://project/plant-map` | Las piezas de la escena, las señales que ofrece, el mapa de planta y los puntos del mapa que el programa no tiene |
+| "¿Qué escenarios hay?"                 | `scenarios_list`, `zplc://project/scenario/{scenarioId}`            | Cada escenario con sus tiempos y expectativas, y el archivo completo de uno                                       |
+| "¿Qué pide esta lección?"              | `zplc://lesson/current`                                             | El objetivo, los objetivos parciales y las pistas de la lección, nunca su solución                                |
+| "¿Cómo se escribe un archivo Ladder?"  | `zplc://formats/{ld,fbd,sfc,scene,plant-map,scenario}`              | El JSON Schema, los valores aceptados y ejemplos resueltos del formato                                            |
 
-[La referencia de MCP](../reference/mcp.md) enumera las 15 herramientas y los 15 recursos.
+[La referencia de MCP](../reference/mcp.md) enumera las 18 herramientas y los 26 recursos. Cada resultado indica su `evidenceLevel` una sola vez, y el servidor da al cliente instrucciones sobre cómo trabajar.
 
 - **Recursos de programas.** Ambos son de solo lectura. Devuelven el código fuente guardado de un programa en cualquiera de los cinco lenguajes, dentro de los límites de tamaño del lector de proyectos. `zplc://project/source/{name}` recibe el nombre de archivo tal como se escribe en el URI (un espacio es `%20`). Un nombre que no está en `src` responde `MCP_NOT_FOUND`, un nombre con un separador responde `MCP_INVALID_ARGUMENTS`, y un proyecto que el lector rechaza responde `MCP_WORKSPACE_UNREADABLE`.
 - **Progreso del curso.** El recurso lee el archivo de progreso que guarda ZPLC y responde qué lecciones están aprobadas. No tiene ninguna operación que escriba el progreso, y un archivo de progreso de la primera versión se migra solo en memoria, sin escribirse de nuevo. Sin `--user-data` responde `MCP_CAPABILITY_UNAVAILABLE`.
+- **Lección.** `zplc://lesson/current` responde la lección de un espacio de trabajo que ZPLC guarda en `learn-workspaces`: su objetivo, sus objetivos parciales y sus pistas, nunca su solución. Si las soluciones están ocultas se lee del ajuste del aula en `--user-data`; un ajuste ausente o ilegible, o la falta de `--user-data`, significa ocultas, y ninguna herramienta ni argumento lo cambia.
+- **Respuestas acotadas.** La escena, el mapa, los escenarios y la lección se recortan a 64 elementos por lista, 256 caracteres por texto y 8 niveles de anidamiento como máximo, e indican `truncated: true` cuando se recortó algo.
 - **Escenarios.** Un escenario se ejecuta en el simulador de su computadora, así que su resultado es evidencia de una ejecución simulada, no de la planta.
 
 ## 4. Revisar lo que propone el asistente

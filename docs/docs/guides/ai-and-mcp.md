@@ -41,6 +41,8 @@ The server serves the one folder you name, and nothing outside it. The folder is
 
 `zplc-mcp --version` prints the version and exits with 0.
 
+`zplc-mcp --workspace <folder> --self-check` prints a JSON report: the folder, the project name, the tool and resource counts, the protocol revisions served, whether the host simulator `zplc_runtime` is found, the boundary of AGENTS.md rule 8, and each problem with its cause and next step. It exits with 0 when the server is ready and 1 when not. It only looks at files: it starts no server, process, board or port. The `server_self_check` tool answers the same, naming the project instead of the folder.
+
 ```bash
 zplc-mcp --workspace /home/me/plants/line-3
 ```
@@ -54,7 +56,7 @@ bun run --cwd=packages/zplc-ide mcp --workspace /home/me/plants/line-3
 The releases after 2.0.0-rc.3 carry `zplc-mcp-<version>-<system>-<architecture>` as a standalone executable, unsigned, to verify as the [install page](../getting-started/install.md#verify-the-download) says. Two options add what a project folder cannot hold:
 
 - `--repository <directory>` is a checkout of ZPLC. `boards_list`, `toolchain_inspect` and `firmware_build` need it. Without it they answer `MCP_CAPABILITY_UNAVAILABLE`.
-- `--user-data <directory>` is the folder where ZPLC keeps your lesson progress. The `zplc://course/progress` resource needs it.
+- `--user-data <directory>` is the folder where ZPLC keeps your lesson progress. The `zplc://course/progress` resource needs it, and `zplc://lesson/current` reads from it whether solutions are hidden.
 
 ## 2. Connect an assistant
 
@@ -95,20 +97,26 @@ A client of the 2025 era, such as 2025-11-25, opens with `initialize`, then `not
 
 Ask for what a tool returns, so every claim of the assistant has a result behind it.
 
-| Ask                                       | Tool or resource                                          | What comes back                                                                                 |
-| ----------------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| "Is this project file valid?"             | `project_validate`                                        | `ok` and the diagnostics                                                                        |
-| "Does it compile, and what does it need?" | `compiler_check`, `symbols_list`                          | The size of the program, the diagnostics, the public symbols                                    |
-| "Do its scenarios pass?"                  | `tests_run`, `scenario_run`                               | One result per scenario, with the digest of its trace                                           |
-| "What happened at cycle 40?"              | `trace_get`, `runtime_snapshot`                           | A bounded, sanitised trace of a recorded run                                                    |
-| "Show me the program"                     | `zplc://project/programs`, `zplc://project/source/{name}` | The list of the programs of `src` with their language, and the text and language of one of them |
-| "Which boards are described?"             | `boards_list`                                             | The boards of the manifest and their level, with no probe of hardware                           |
-| "Which lessons have I passed?"            | `zplc://course/progress`                                  | The lessons passed, how many are done and how many exist                                        |
+| Ask                                       | Tool or resource                                                    | What comes back                                                                                           |
+| ----------------------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| "Is this project file valid?"             | `project_validate`                                                  | `ok` and the diagnostics                                                                                  |
+| "Does it compile, and what does it need?" | `compiler_check`, `symbols_list`                                    | The size of the program, the diagnostics, the public symbols                                              |
+| "Do its scenarios pass?"                  | `tests_run`, `scenario_run`                                         | One result per scenario, with the digest of its trace                                                     |
+| "What happened at cycle 40?"              | `trace_get`, `runtime_snapshot`                                     | A bounded, sanitised trace of a recorded run                                                              |
+| "Show me the program"                     | `zplc://project/programs`, `zplc://project/source/{name}`           | The list of the programs of `src` with their language, and the text and language of one of them           |
+| "Which boards are described?"             | `boards_list`                                                       | The boards of the manifest and their level, with no probe of hardware                                     |
+| "Which lessons have I passed?"            | `zplc://course/progress`                                            | The lessons passed, how many are done and how many exist                                                  |
+| "What does the plant offer?"              | `plant_inspect`, `zplc://project/scene`, `zplc://project/plant-map` | The parts of the scene, the signals it offers, the plant map and the map points the program does not have |
+| "Which scenarios are there?"              | `scenarios_list`, `zplc://project/scenario/{scenarioId}`            | Each scenario with its timing and expectations, and the whole file of one                                 |
+| "What does this lesson ask?"              | `zplc://lesson/current`                                             | The goal, objectives and hints of the lesson, never its solution                                          |
+| "How is a Ladder file written?"           | `zplc://formats/{ld,fbd,sfc,scene,plant-map,scenario}`              | The JSON Schema, the accepted values and worked examples of the format                                    |
 
-[The MCP reference](../reference/mcp.md) lists all 15 tools and 15 resources.
+[The MCP reference](../reference/mcp.md) lists all 18 tools and 26 resources. Every result states its `evidenceLevel` once, and the server gives a client instructions on how to work.
 
 - **Program resources.** Both are read-only. They return the saved source of a program in any of the five languages, within the size limits of the project reader. `zplc://project/source/{name}` takes the file name as written in the URI (a space is `%20`). A name that is not in `src` answers `MCP_NOT_FOUND`, a name with a separator answers `MCP_INVALID_ARGUMENTS`, and a project the reader refuses answers `MCP_WORKSPACE_UNREADABLE`.
 - **Course progress.** The resource reads the progress file ZPLC keeps and answers which lessons are passed. It has no operation that writes progress, and a progress file of the first release is migrated in memory only, never written back. Without `--user-data` it answers `MCP_CAPABILITY_UNAVAILABLE`.
+- **Lesson.** `zplc://lesson/current` answers the lesson of a workspace that ZPLC keeps under `learn-workspaces`: its goal, objectives and hints, never its solution. Whether solutions are hidden is read from the classroom setting in `--user-data`; a missing or unreadable setting, or no `--user-data`, means hidden, and no tool or argument changes it.
+- **Bounded answers.** The scene, the map, the scenarios and the lesson are cut to at most 64 items per list, 256 characters per text and 8 levels of nesting, and say `truncated: true` when something was cut.
 - **Scenarios.** A scenario runs on the simulator of your computer, so its result is evidence of a simulated run, not of the plant.
 
 ## 4. Review what the assistant proposes

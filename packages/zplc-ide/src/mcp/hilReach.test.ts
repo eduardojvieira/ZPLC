@@ -48,11 +48,16 @@ describe('hardware runs are not reachable from MCP or AI tools (HIL-003, COM-030
       'boards_list',
       'toolchain_inspect',
       'firmware_build',
+      'plant_inspect',
+      'scenarios_list',
+      'server_self_check',
     ]);
     const physical = /hil|device|serial|(^|_)port|flash|deploy|force|stop|hardware|bench|(^|_)chain(_|$)|shell|write|record/i;
     expect(MCP_TOOL_NAMES.filter((name) => physical.test(name))).toEqual([]);
-    // LNK-009: plant I/O mode is started by a person in Studio; no tool feeds, mirrors or enters a plant.
-    expect(MCP_TOOL_NAMES.filter((name) => /plant|feed|mirror/i.test(name))).toEqual([]);
+    // LNK-009: plant I/O mode is started by a person in Studio; no tool feeds, mirrors or enters a plant. The one named
+    // exception is plant_inspect, which only reads the scene and map files (AIX-001).
+    const plantReads = new Set(['plant_inspect']);
+    expect(MCP_TOOL_NAMES.filter((name) => !plantReads.has(name) && /plant|feed|mirror/i.test(name))).toEqual([]);
   });
 
   test(
