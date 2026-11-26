@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "blinky-ladder-timer-feedback",
-  "version": 5,
+  "version": 6,
   "order": 77,
   "module": 1,
   "level": "foundation",

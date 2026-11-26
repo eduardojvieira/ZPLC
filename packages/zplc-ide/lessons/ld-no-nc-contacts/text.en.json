@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "NO and NC contacts: a stop button that fails safe",
   "summary": "Learn the normally open and normally closed contacts, why a stop button is wired normally closed, and read a field stop signal correctly in a program that also lights a lamp when the stop circuit is open.",
-  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a safe stop function or wiring. The scenario sets the stop signal for you.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real stop button is wired: the scenario sets the stop signal for you.",
   "objectives": [
     "Explain why a stop button is wired normally closed, and what a field NC button looks like to the program: TRUE at rest, FALSE when pressed or when the wire breaks.",
     "Choose the right kind of contact in a rung: a normally open contact passes power when its variable is TRUE, a normally closed contact when it is FALSE."
@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/NcStop.ld.json two rungs are drawn. The first drives Motor from StartButton and StopButton. The second lights StopLamp when the stop circuit is open. StopButton is a stop button wired normally closed: it is TRUE at rest. Both rungs read it with the wrong kind of contact. Replace each of them with the other kind.",
-      "checkpoint": "The motor rung reads StopButton with a normally open contact and the lamp rung with a normally closed contact."
+      "body": "In src/NcStop.ld.json two rungs are drawn. The first drives Motor from StartButton and StopButton. The second lights StopLamp when the stop circuit is open. StopButton is a stop button wired normally closed: it is TRUE at rest. Both rungs read it the wrong way. Make Motor run only while the stop circuit is closed, and StopLamp light only while it is open.",
+      "checkpoint": "You can say what value StopButton has at rest, when it is pressed and when its wire is cut."
     },
     {
       "key": "predict",
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Fix these starter omissions, save them, then press Check: The starter reads StopButton in the wrong way in both rungs, so Motor never runs and StopLamp is lit at {{t:0}} ms with the stop circuit intact; use a normally open contact in the motor rung and a normally closed contact in the lamp rung. In the Ladder editor, delete the contact and insert the other kind in the same cell: C inserts a normally open contact and N a normally closed contact.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program reads StopButton the wrong way in both rungs, so Motor never runs and StopLamp is lit at {{t:0}} ms with the stop circuit intact. Change it so that, with Start held, Motor runs while StopButton is TRUE and stops at {{t:50}} ms when it goes FALSE, and StopLamp is ON exactly while StopButton is FALSE. Leave StartButton, Motor and StopLamp as they are.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program and sets StartButton and StopButton the way the field devices would.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson, which sets StartButton and StopButton the way the field devices would, and lists every assertion that failed.",
       "checkpoint": "The scenario is named NcStop and contains {{assertions}} assertions."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "At {{t:70}} ms Start is released and StopButton is FALSE at the same time. Imagine that FALSE came from a cut wire instead of a button. What does the machine do, and why is that good?",
-      "checkpoint": "A cut wire reads like a press, so the motor stops. This scenario sets the stop signal and shows that the program reacts. It does not make the program a safety function."
+      "checkpoint": "A cut wire reads like a press, so the motor stops and the lamp lights: the most common failure gives the stop, which is why stop buttons are wired normally closed."
     }
   ],
   "hints": [
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "The starter reads StopButton in the wrong way in both rungs, so Motor never runs and StopLamp is lit at {{t:0}} ms with the stop circuit intact; use a normally open contact in the motor rung and a normally closed contact in the lamp rung."
+    "The starting program reads StopButton the wrong way in both rungs, so Motor never runs and StopLamp is lit at {{t:0}} ms with the stop circuit intact."
   ]
 }
