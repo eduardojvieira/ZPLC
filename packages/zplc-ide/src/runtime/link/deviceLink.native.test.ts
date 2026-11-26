@@ -9,22 +9,23 @@ import { join } from 'node:path';
 
 import { ZPLC_CONSTANTS, compileToBinary } from '@zplc/compiler';
 
-import { itNative, nativeRuntimeBinary } from '../../cli/nativeRuntimeGuard';
+import { itNative as itNativeRuntime, nativeRuntimeBinary } from '../../cli/nativeRuntimeGuard';
 import { DeviceLink, LinkError, type LinkEvent, type LinkTransport } from './deviceLink';
 import { beginFrame, crc32, encodeFrame, finishFrame } from './frame';
 import { programSignerOf, publicKeyOf, signProgram } from './signing';
 import { CAPABILITY, ENUMS, ERROR, EVENT_MASK, KIND, MESSAGES } from './protocol.generated';
 
 // The device link (--device-link) is served only on POSIX hosts (native_device_link.c, #ifndef _WIN32): on Windows the
-// runtime says so and exits 1. There this file asserts that rule and skips the link tests with the same reason.
+// runtime says so and exits 1. There this file asserts that rule and skips the link tests with the same reason; itNative
+// keeps its name so that tools/ci/requirement-coverage.ts still reads the titles.
 const LINK_UNAVAILABLE = 'the device link is not available on this platform';
-const itLink = (
+const itNative = (
   process.platform === 'win32'
     ? (name: string, ...rest: unknown[]) => (it.skip as (...args: unknown[]) => unknown)(`${name} (${LINK_UNAVAILABLE})`, ...rest)
-    : itNative
-) as typeof itNative;
+    : itNativeRuntime
+) as typeof itNativeRuntime;
 
-(process.platform === 'win32' ? itNative : it.skip)(`on Windows the runtime says "${LINK_UNAVAILABLE}" and exits 1`, () => {
+(process.platform === 'win32' ? itNativeRuntime : it.skip)(`on Windows the runtime says "${LINK_UNAVAILABLE}" and exits 1`, () => {
   const result = spawnSync(nativeRuntimeBinary, ['--device-link'], { encoding: 'utf8', input: '', timeout: 10_000 });
   expect(result.status).toBe(1);
   expect(result.stderr).toContain(LINK_UNAVAILABLE);
@@ -109,7 +110,7 @@ async function until<T>(read: () => Promise<T> | T, ok: (value: T) => boolean, w
 describe(
   'the device link over the serial rules, the native runtime on a pipe (COM-019, COM-020, COM-023, COM-024, COM-025, ' + 'COM-028)',
   () => {
-    itLink('a hello and an identity recognise the device (COM-019, COM-029)', async () => {
+    itNative('a hello and an identity recognise the device (COM-019, COM-029)', async () => {
       const { link } = await start(['--device-link']);
       const hello = await link.hello();
       expect(hello).toMatchObject({ version: 1, transport: 'SERIAL', sessionState: 'NONE', keyProvisioned: false, idleTimeoutS: 30 });
@@ -138,7 +139,7 @@ describe(
       expect(identity.code_size_max).toBeGreaterThan(0);
     });
 
-    itLink('nothing that changes the device works without a session, and nothing of it reaches the runtime (COM-020)', async () => {
+    itNative('nothing that changes the device works without a session, and nothing of it reaches the runtime (COM-020)', async () => {
       const { link } = await start(['--device-link']);
       await link.hello();
       const refused = async (run: () => Promise<unknown>) => {
@@ -164,7 +165,7 @@ describe(
       expect(link.snapshot().crcErrors).toBe(0);
     });
 
-    itLink(
+    itNative(
       'in a session: an atomic write, a refused range with its region, a force that ends with the session (COM-020, COM-023, COM-024)',
       async () => {
         const { link } = await start(['--device-link']);
@@ -220,7 +221,7 @@ describe(
       },
     );
 
-    itLink('one session at a time, replaced by its own link, and taken over from the serial link (COM-020)', async () => {
+    itNative('one session at a time, replaced by its own link, and taken over from the serial link (COM-020)', async () => {
       const { link } = await start(['--device-link']);
       await link.hello();
       await link.openSession({ name: 'first' });
@@ -231,7 +232,7 @@ describe(
       expect(await link.request('FORCE_LIST', {})).toMatchObject({ count: 0 });
     });
 
-    itLink(
+    itNative(
       'a download: chunks with progress, a read-back that is the announced CRC-32, STOP afterwards, RUN as its own request (COM-028, ' +
         'COM-025)',
       async () => {
@@ -303,7 +304,7 @@ describe(
       },
     );
 
-    itLink('breakpoints, and a watch batch with the values of one scan (COM-025)', async () => {
+    itNative('breakpoints, and a watch batch with the values of one scan (COM-025)', async () => {
       const { link } = await start(['--device-link']);
       await link.hello();
       await link.openSession({});
@@ -328,7 +329,7 @@ describe(
 );
 
 describe('the device link over the network rules, every session authenticated (COM-021)', () => {
-  itLink('a session needs the key, and a wrong key is not answered (COM-021)', async () => {
+  itNative('a session needs the key, and a wrong key is not answered (COM-021)', async () => {
     const { link, transport } = await start(['--device-link-network'], { ZPLC_NATIVE_LINK_KEY_HEX: KEY_HEX });
     const hello = await link.hello();
     expect(hello).toMatchObject({ transport: 'NETWORK', keyProvisioned: true });
@@ -357,7 +358,7 @@ describe('the device link over the network rules, every session authenticated (C
     await wrong.close();
   });
 
-  itLink('the right key opens a session; unsigned and wrongly signed frames are dropped, counted and not done (COM-021)', async () => {
+  itNative('the right key opens a session; unsigned and wrongly signed frames are dropped, counted and not done (COM-021)', async () => {
     const { link, transport } = await start(['--device-link-network'], { ZPLC_NATIVE_LINK_KEY_HEX: KEY_HEX });
     await link.hello();
     const session = await link.openSession({ key: KEY, name: 'network' });
@@ -400,7 +401,7 @@ describe('the device link over the network rules, every session authenticated (C
 describe('signed programs against the real native runtime (COM-026)', () => {
   const SEED = Uint8Array.from({ length: 32 }, (_, index) => 0x80 + index);
 
-  itLink('a device that holds a public key activates only a program signed with the matching private key', async () => {
+  itNative('a device that holds a public key activates only a program signed with the matching private key', async () => {
     const { link } = await start(['--device-link']);
     await link.hello();
     await link.openSession({ name: 'signing' });
