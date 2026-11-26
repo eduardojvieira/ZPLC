@@ -21,36 +21,44 @@ afterEach(() => {
 describe('the plant edit session (SCN-008, PLS-005)', () => {
   it('SCN-008 begin, undo and redo are refused while the plant runs and the trace hash is unchanged', async () => {
     const scene = sceneOf('belt-to-sensor');
-    const core = await createPlantCore(scene);
+    // the trace of a plant core built from a scene text and run for two seconds
+    const trace = async (text: string) => {
+      const core = await createPlantCore(JSON.parse(text) as PlantSceneFile);
+      for (let scan = 0; scan < 200; scan += 1) core.advance(10);
+      const hash = await core.traceHash();
+      core.dispose();
+      return hash;
+    };
+    const original = await trace(JSON.stringify(scene));
     const edit = usePlantEdit.getState;
     // begin refused while running: no editor, no scene reference
     edit().setRunning(true);
     edit().begin({ scene, map: null }, 'belt-to-sensor');
     expect(edit().editor).toBeNull();
     expect(edit().sceneRef).toBeNull();
-    // begun while stopped, one edit, then the plant runs
-    edit().setRunning(false);
-    edit().begin({ scene, map: null }, 'belt-to-sensor');
-    const editor = edit().editor!;
-    expect(editor).toBeTruthy();
-    expect(edit().sceneRef).toBe('belt-to-sensor');
-    editor.remove(scene.parts[0]!.id);
-    edit().undo();
-    edit().redo();
-    const edited = JSON.stringify(editor.toFile());
-    edit().setRunning(true);
-    for (let scan = 0; scan < 50; scan += 1) core.advance(10);
-    const hash = await core.traceHash();
-    const version = edit().version;
-    edit().undo();
-    edit().redo();
-    edit().begin({ scene: sceneOf('counted-queue'), map: null }, 'counted-queue');
-    expect(JSON.stringify(edit().editor!.toFile())).toBe(edited);
-    expect(edit().editor).toBe(editor);
-    expect(edit().sceneRef).toBe('belt-to-sensor');
-    expect(edit().version).toBe(version);
-    expect(await core.traceHash()).toBe(hash);
-    core.dispose();
+    // begun while stopped; a part removed and the removal undone, so a redo would remove it again; then the plant runs
+    const session = (running: boolean) => {
+      edit().setRunning(false);
+      edit().begin({ scene, map: null }, 'belt-to-sensor');
+      edit().editor!.remove(scene.parts[0]!.id);
+      edit().undo();
+      edit().setRunning(running);
+      const version = edit().version;
+      edit().redo();
+      edit().undo();
+      edit().redo();
+      if (running) {
+        edit().begin({ scene: sceneOf('counted-queue'), map: null }, 'counted-queue');
+        expect(edit().version).toBe(version);
+        expect(edit().sceneRef).toBe('belt-to-sensor');
+      }
+      edit().setRunning(false);
+      return edit().end()!.scene;
+    };
+    // refused while running: the plant rebuilt from the session is the original plant
+    expect(await trace(session(true))).toBe(original);
+    // the positive control: the same redo while stopped removes the part, and the trace differs
+    expect(await trace(session(false))).not.toBe(original);
   });
 
   it('SCN-008 end returns the texts the plant is rebuilt from and closes the session', () => {

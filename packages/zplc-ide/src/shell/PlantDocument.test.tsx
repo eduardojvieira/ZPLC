@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it } from 'bun:test';
+import { afterAll, afterEach, beforeAll, describe, expect, it, mock } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { setupDom, stubMonaco, stubProjectLoader } from '../test/dom';
@@ -9,6 +9,15 @@ import { getLanguageFromFilename } from '../types';
 const dom = await setupDom();
 await stubProjectLoader();
 await stubMonaco();
+// Monaco needs a browser engine; a text view is a plain element here. The real module comes back when this file is done.
+const realCodeEditor = { ...(await import('../components/CodeEditor')) };
+await mock.module('../components/CodeEditor', () => ({
+  ...realCodeEditor,
+  CodeEditor: ({ fileId }: { fileId: string }) => <div data-code-editor={fileId} />,
+}));
+afterAll(async () => {
+  await mock.module('../components/CodeEditor', () => realCodeEditor);
+});
 const { PlantDocument } = await import('./PlantDocument');
 const { TestResultsTab } = await import('../components/TestResultsTab');
 const { useIDEStore } = await import('../store/useIDEStore');
@@ -161,6 +170,51 @@ describe('the plant document (PLS-001, PLS-002)', () => {
   it('PLS-010 visible is false while another tab of the group is active', () => {
     const { container } = dom.render(<PlantDocument controller={undefined} visible={false} />);
     expect(container.querySelector('[data-plant-document]')?.getAttribute('data-visible')).toBe('false');
+  });
+
+  it('PLS-010 in a split, a plant document behind another view of its group is not visible, and beside a program it is', async () => {
+    const { EditorArea } = await import('../components/EditorArea');
+    const { useEditorGroups } = await import('../store/useEditorGroups');
+    const { useReviewDocument } = await import('../store/useReviewDocument');
+    const { useConfigEditors } = await import('../store/useConfigEditors');
+    const { PLANT_VIEW_ID } = await import('../layout/documentKinds');
+    window.innerWidth = 1400;
+    const file = (name: string) => ({
+      id: `file:src/${name}`,
+      name,
+      path: `src/${name}`,
+      parentPath: 'src',
+      language: 'ST' as const,
+      content: `// ${name}`,
+      isModified: false,
+    });
+    const files = [file('Motor.st'), file('Pump.st')];
+    dom.patchStore(useIDEStore, {
+      loadedFiles: new Map(files.map((f) => [f.id, f])),
+      openTabs: files.map((f) => f.id),
+      activeFileId: files[0]!.id,
+      showSettings: false,
+      projectSession: 1,
+    } as never);
+    dom.patchStore(useReviewDocument, { open: false, active: false } as never);
+    dom.patchStore(useConfigEditors, { open: [], active: null } as never);
+    usePlantDocument.setState({ open: true, active: false });
+    const split = (activeSecond: string) =>
+      dom.patchStore(useEditorGroups, {
+        groups: { second: [PLANT_VIEW_ID, files[1]!.id], activeSecond, focused: 'first', ratio: 0.5 },
+        activeFirst: files[0]!.id,
+        pendingFor: -1,
+      } as never);
+    const shown = () => document.querySelector('[data-plant-document]')?.getAttribute('data-visible');
+    dom.render(<EditorArea />);
+    await dom.settle();
+    await dom.act(async () => split(files[1]!.id));
+    await dom.settle();
+    expect(dom.screen.getByRole('group', { name: dom.t('studio.document.group.second') })).toBeTruthy();
+    expect(shown()).toBe('false'); // Pump.st is the view of the second group
+    await dom.act(async () => split(PLANT_VIEW_ID));
+    await dom.settle();
+    expect(shown()).toBe('true'); // the plant beside Motor.st
   });
 
   it('PLS-001 the document names itself for assistive technology as the plant', () => {

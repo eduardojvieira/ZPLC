@@ -824,22 +824,79 @@ describe('one plant edit session and the plant toolbar (PLS-004, PLS-005, PLS-00
     expect(pressed(first)).toBeNull();
   });
 
-  it('PLS-009 an invalid scene is a message in the plant document with the schematic offered', async () => {
-    const broken = '{ "schemaVersion": 1, "name": "Broken", "parts": [';
-    let detail = '';
-    try {
-      JSON.parse(broken);
-    } catch (error) {
-      detail = (error as Error).message;
-    }
-    projectScene(broken);
+  it('PLS-009 an unreadable scene is a message in the plant document that says where the text breaks, with no schematic', async () => {
+    projectScene('{\n  "schemaVersion": 1,\n  "parts": [');
     const r = rig();
     dom.render(<PlantDocument controller={r.controller} visible deps={r.deps} />);
     await dom.waitFor(() => expect(document.querySelector('[data-plant-document] [data-plant-load-failed]')).toBeTruthy());
     const message = document.querySelector<HTMLElement>('[data-plant-load-failed]')!;
     expect(message.getAttribute('role')).toBe('alert');
-    expect(message.textContent).toContain(detail); // located: the parser says where the text breaks
-    expect(message.querySelector('[data-plant-show-schematic]')?.textContent).toBe(dom.t('plant.panel.showSchematic'));
+    // the text ends inside the list of parts: line 3, column 13, just after "["
+    expect(message.textContent).toContain(dom.t('plant.panel.breaksAt', { line: 3, column: 13 }));
+    expect(message.textContent).not.toContain(': :');
+    expect(message.querySelector('[data-plant-show-schematic]')).toBeNull();
+  });
+
+  it('PLS-009 an invalid scene that can be read is a message in the plant document with the schematic offered and drawn', async () => {
+    projectScene(sceneFiles('belt-to-sensor').scene);
+    const r = rig();
+    const engine = await r.deps.loadEngine();
+    const refused = 'plant: invalid scene: parts[0].config.length: 99 is above the limit of 20 m';
+    const deps = {
+      ...r.deps,
+      loadEngine: async () => ({
+        ...engine,
+        createPlantCore: async () => {
+          throw new Error(refused);
+        },
+      }),
+    };
+    dom.render(<PlantDocument controller={r.controller} visible deps={deps} />);
+    await dom.waitFor(() => expect(document.querySelector('[data-plant-document] [data-plant-load-failed]')).toBeTruthy());
+    const message = document.querySelector<HTMLElement>('[data-plant-load-failed]')!;
+    expect(message.textContent).toContain(refused);
+    expect(message.textContent).not.toContain(': :');
+    const show = message.querySelector<HTMLButtonElement>('[data-plant-show-schematic]')!;
+    expect(show.textContent).toBe(dom.t('plant.panel.showSchematic'));
+    await dom.act(async () => show.click());
+    expect(document.querySelector('[data-plant-schematic]')?.getAttribute('aria-label')).toBe(
+      dom.t('plant.panel.schematic', { scene: 'Belt to sensor' }),
+    );
+    expect(document.querySelectorAll('[data-plant-schematic] rect').length).toBeGreaterThan(0);
+  });
+
+  it("A4 one panel's session is never ended or marked running by another panel on another scene", async () => {
+    const { usePlantEdit } = await import('../editSession');
+    dom.patchStore(useIDEStore, { loadedFiles: new Map() as never });
+    const a = rig();
+    const b = rig();
+    const viewA = dom.render(<PlantPanel controller={a.controller} visible deps={a.deps} />);
+    await dom.waitFor(() => expect(a.scenes.length).toBe(1));
+    const viewB = dom.render(<PlantPanel controller={b.controller} visible deps={b.deps} />);
+    await dom.waitFor(() => expect(b.scenes.length).toBe(1));
+    await dom.act(async () => {
+      dom.fireEvent.change(dom.within(viewB.container).getByLabelText(dom.t('plant.panel.scene')), {
+        target: { value: 'counted-queue' },
+      });
+    });
+    await dom.waitFor(() => expect(b.scenes.length).toBe(2));
+    const inA = (selector: string) => viewA.container.querySelector<HTMLElement>(selector);
+    await dom.act(async () => dom.fireEvent.click(inA('[data-plant-edit-scene]')!));
+    const before = a.scenes[0]!.parts.length;
+    await dom.act(async () => dom.fireEvent.click(dom.within(viewA.container).getByRole('button', { name: dom.t('plantEditor.add') })));
+    // B runs: A is still stopped, and its editor still edits
+    await dom.act(async () => b.sessions.at(-1)!.start());
+    await dom.settle();
+    expect(usePlantEdit.getState().running).toBe(false);
+    expect(usePlantEdit.getState().editor!.state().running).toBe(false);
+    expect((inA('[data-plant-undo]') as HTMLButtonElement).disabled).toBe(false);
+    // B closes: A's edits survive, and Done rebuilds A's plant with them
+    viewB.unmount();
+    expect(inA('[data-plant-editor]')).toBeTruthy();
+    expect(usePlantEdit.getState().sceneRef).not.toBeNull();
+    await dom.act(async () => dom.fireEvent.click(inA('[data-plant-edit-done]')!));
+    await dom.waitFor(() => expect(a.scenes.length).toBe(2));
+    expect(a.scenes[1]!.parts.length).toBe(before + 1);
   });
 
   it('PLS-010 a hidden plant document receives no snapshot and draws no frame', async () => {
