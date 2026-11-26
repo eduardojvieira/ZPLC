@@ -14,6 +14,7 @@ const { LESSON_INDEX } = await import('../generated/lessonIndex');
 const { LearnPanel } = await import('./LearnPanel');
 const { LearnHome } = await import('./LearnHome');
 const { LearnReadingView } = await import('./LearnReadingView');
+const { LearnOutline } = await import('./learn/LearnOutline');
 
 // WITHOUT is named by id, a lesson with no reading page: the second lesson of the course has one since the explaining lessons
 // come first, and deleting it here would strip the real page for every later test of the process.
@@ -133,6 +134,26 @@ describe('the reading view (LRN-039)', () => {
     const { user } = await open(WITH.id);
     expect(dom.within(dialog()!).getByRole('alert').textContent).toContain(dom.t('learnReading.view.error'));
     await user.click(dom.within(dialog()!).getByRole('button', { name: dom.t('learnReading.view.practice') }));
+    expect(dialog()).toBeNull();
+  });
+
+  it('GDE-002 Practice from a reading page opened in the course outline starts the lesson', async () => {
+    const started: string[] = [];
+    dom.patchStore(useLearnUi, { startLesson: async (id: string) => (started.push(id), true) } as never);
+    const { user } = dom.render(
+      <>
+        <LearnOutline />
+        <LearnReadingView />
+      </>,
+    );
+    await user.type(dom.screen.getByRole('textbox', { name: dom.t('u3Learn.outline.filterLabel') }), WITH.id);
+    await user.click(document.querySelector<HTMLElement>(`[data-learn-outline] [data-row$=${JSON.stringify(`:lesson:${WITH.id}`)}]`)!);
+    expect(useLearnUi.getState().reading).toBe(WITH.id);
+    expect(started).toEqual([]);
+
+    await user.click(dom.within(dialog()!).getByRole('button', { name: dom.t('learnReading.view.practice') }));
+    await dom.waitFor(() => expect(useLearnUi.getState().reading).toBeNull());
+    expect(started).toEqual([WITH.id]);
     expect(dialog()).toBeNull();
   });
 });
