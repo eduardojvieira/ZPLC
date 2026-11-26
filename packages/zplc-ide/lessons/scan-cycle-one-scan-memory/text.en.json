@@ -5,7 +5,7 @@
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how fast a real controller scans or how a real button bounces.",
   "objectives": [
     "See that a variable keeps its value from one scan to the next.",
-    "Build a one-scan delay and a one-scan pulse from a single memory."
+    "Make one output follow an input one scan late and another output pulse for one scan when the input turns on."
   ],
   "stages": [
     {
@@ -54,7 +54,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Delayed has to be the Button of the previous scan, so it needs a variable that still holds the old value when the scan starts: Previous."
+      "text": "Look at what Delayed and RisingPulse need that Button alone cannot tell them: the value Button had on the previous scan. Then look at where in the program that value is still the old one."
     },
     {
       "level": 2,

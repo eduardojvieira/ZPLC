@@ -5,7 +5,7 @@
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Write the timer-and-memory pattern that makes an output change state at a fixed interval.",
-    "Gate an output with an input so that it stops at once when the input drops."
+    "Make a blinking output go dark on the same scan its enable input drops."
   ],
   "stages": [
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "The timer must only run while Enable is ON, so Enable is the IN of Clock."
+      "text": "Look at two moments: what Clock does while Enable is OFF, and what Lamp shows on the scan Enable drops while LampOn is still TRUE."
     },
     {
       "level": 2,

@@ -1,0 +1,222 @@
+{
+  "name": "CapperChain",
+  "description": "A bottle sensor passes through two memory bits to a capping head, with every rung above the rung that writes what it reads.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "BottleHere",
+        "type": "BOOL",
+        "comment": "Bottle sensor: TRUE while a bottle is under the capping head"
+      },
+      {
+        "name": "BottleSeen",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "Memory bit that follows the bottle sensor"
+      },
+      {
+        "name": "CapReady",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "Memory bit that follows BottleSeen"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Capper",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Capping head"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "The capper rung reads CapReady, which rung 2 writes later in the scan.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "e0_0_1",
+              "type": "contact_no",
+              "variable": "CapReady",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e0_7_1",
+              "type": "coil",
+              "variable": "Capper",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "CapReady reads BottleSeen, which rung 3 writes later in the scan.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "e0_0_2",
+              "type": "contact_no",
+              "variable": "BottleSeen",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e0_7_2",
+              "type": "coil",
+              "variable": "CapReady",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "BottleSeen follows the bottle sensor.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "e0_0_3",
+              "type": "contact_no",
+              "variable": "BottleHere",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e0_7_3",
+              "type": "coil",
+              "variable": "BottleSeen",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-26",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

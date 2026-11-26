@@ -26,7 +26,7 @@ Siga cómo una entrada produce la salida actual y una copia demorada un ciclo.
 ## Objetivos
 
 - Compruebe que una variable conserva su valor de un ciclo al siguiente.
-- Construya un retardo de un ciclo y un pulso de un ciclo con una única memoria.
+- Haga que una salida siga a una entrada un ciclo tarde y que otra salida dé un pulso de un ciclo cuando la entrada se activa.
 
 ## Etapas
 

@@ -26,7 +26,7 @@ Learn that a PLC reads its inputs, solves the rungs from top to bottom and then 
 ## Objectives
 
 - Describe the scan cycle: read the inputs, solve the rungs from top to bottom, write the outputs, and repeat.
-- Reorder two rungs so that a value is calculated before the rung that uses it, and see the difference of one scan in the recorded trace.
+- Find why an output lags one scan behind its input, fix it without changing a contact or a coil, and see the difference of one scan in the recorded trace.
 
 ## Stages
 

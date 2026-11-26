@@ -5,7 +5,7 @@
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not measure how long a scan takes on a real controller.",
   "objectives": [
     "Describe the scan cycle: read the inputs, solve the rungs from top to bottom, write the outputs, and repeat.",
-    "Reorder two rungs so that a value is calculated before the rung that uses it, and see the difference of one scan in the recorded trace."
+    "Find why an output lags one scan behind its input, fix it without changing a contact or a coil, and see the difference of one scan in the recorded trace."
   ],
   "stages": [
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Inside a scan, a rung only sees what the rungs above it have already calculated. Which rung should calculate ButtonSeen first?"
+      "text": "Look at which rung writes ButtonSeen and which rung reads it, and at where each of them sits in the program."
     },
     {
       "level": 2,

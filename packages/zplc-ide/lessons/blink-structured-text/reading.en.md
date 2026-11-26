@@ -27,7 +27,7 @@ A blinker needs one more thing, a BOOL **memory** in `VAR` that holds the state 
 2. If its Q is TRUE, invert the memory with `NOT` and restart the timer.
 3. Set the output from the memory.
 
-To blink only while an input is on, that input does two jobs: it is the IN of the timer, so the timer counts only while the input is on, and it is part of the output with `AND`, so the output goes off on the scan in which the input drops.
+To blink only while an input is on, two things must hold: the timer must not count while the input is off, and the output must be dark on the very scan the input drops, although the memory still holds its last value. How the input gives both is the decision of the practice.
 
 ## Worked example
 
@@ -57,12 +57,12 @@ marks:
 caption: The beacon is dark for the first preset and lit for the second, for as long as the gate moves
 ```
 
-When the gate stops, the IN of `OffTime` turns FALSE, its Q falls on that same scan, and the beacon is dark at once. A blinker made of one timer and a memory, like the one of the practice, cannot rely on that: when its timer stops, the memory keeps its last value, so the output needs an `AND` with the input.
+When the gate stops, the IN of `OffTime` turns FALSE, its Q falls on that same scan, and the beacon is dark at once. A blinker made of one timer and a memory, like the one of the practice, cannot rely on that: when its timer stops, the memory keeps its last value, and a lamp written from the memory alone could stay lit.
 
 ## Common mistakes
 
-- Running the timer with IN := TRUE. The memory then flips from the moment the program starts, even while the input is off, so when the input turns on the lamp may light at once and the first change does not come one preset later.
-- Leaving the input out of the output. The timer stops when the input drops, but the memory keeps its last value, so the lamp can stay ON.
+- Letting the timer count while the input is off. The memory then flips from the moment the program starts, so when the input turns on the lamp may light at once and the first change does not come one preset later.
+- Expecting the stopped timer to darken the lamp. The timer stops when the input drops, but the memory keeps its last value, so the lamp can stay ON.
 - Forgetting to restart the timer inside the IF. Q stays TRUE, so the memory flips on every scan and the lamp blinks far too fast.
 - Giving the time of a full blink as the preset. The preset is the time of one state, on or off; a full blink lasts two presets.
 - Calling the timer only inside an IF. An instance that is not called does not count.
