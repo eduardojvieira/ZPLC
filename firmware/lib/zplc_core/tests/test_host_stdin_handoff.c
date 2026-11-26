@@ -158,7 +158,7 @@ static void *produce(void *arg) {
 
 static void test_bytes_in_order(void) {
   pthread_t producer;
-  char expected[LINE_BYTES + 1];
+  char expected[128]; /* room for any int index, so -Wformat-truncation holds in Release */
   int index = 0;
   int in_order = 1;
   int ended = 0;
