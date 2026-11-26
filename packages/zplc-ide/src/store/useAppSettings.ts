@@ -35,6 +35,19 @@ function browserStorage(): SettingsStorage | undefined {
 
 export const useAppSettings = createAppSettingsStore(browserStorage());
 
+type AppSettingsStore = ReturnType<typeof createAppSettingsStore>;
+
+/**
+ * Reports the classroom setting (AIX-002) now and on each change of it, for the main process to keep in `<userData>`
+ * (`electron/learnPolicy.ts`), where the assistant and MCP read it. Returns the function that stops the reports.
+ */
+export function mirrorLearnPolicy(store: AppSettingsStore, report: (policy: { hideSolutions: boolean }) => void): () => void {
+  report({ hideSolutions: store.getState().settings.hideSolutions });
+  return store.subscribe((state, previous) => {
+    if (state.settings.hideSolutions !== previous.settings.hideSolutions) report({ hideSolutions: state.settings.hideSolutions });
+  });
+}
+
 /** What the settings change outside React: the density (a CSS hook, UX-008) and the language of the document. */
 export function applyDisplaySettings(settings: AppSettings, root: { dataset: Record<string, string | undefined>; lang: string }): void {
   root.dataset.density = settings.density;
