@@ -167,7 +167,7 @@ function current(): Record<string, Entry> {
   return entries;
 }
 
-describe('LNG-029, LNG-030: the ST of every existing diagram and rung is identical byte for byte', () => {
+describe('LNG-029 the ST of every existing diagram, and of every rung for the Ladder half, is identical byte for byte', () => {
   const now = current();
   if (process.env.ZPLC_RECORD_ST_GOLDEN === '1') writeFileSync(GOLDEN, `${JSON.stringify(now, null, 2)}\n`);
   const golden = JSON.parse(readFileSync(GOLDEN, 'utf8')) as Record<string, Entry>;
