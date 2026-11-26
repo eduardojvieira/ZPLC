@@ -23,8 +23,8 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "El código inicial no tiene lógica: ninguna válvula se abre nunca, así que el ciclo no se ejecuta. Declara las entradas y las salidas. Mantenga un número de paso (0 reposo, 1 llenado, 2 espera, 3 vaciado), un TON para cada paso temporizado, y escriba las salidas a partir del paso al final del programa. El llenado dura 3,5 segundos.",
-      "checkpoint": "El programa tiene una variable de paso, tres temporizadores y una asignación para cada salida."
+      "body": "El código inicial no tiene lógica: ninguna válvula se abre nunca, así que el ciclo no se ejecuta. Declara las entradas y las salidas. Cada pulsación de Start, con la parada de emergencia liberada y el tanque en reposo, ejecuta un ciclo: Fill se abre durante 3,5 segundos, el tanque espera dos segundos, luego Drain se abre hasta LevelLow o durante veinte segundos como máximo; el ámbar está encendido mientras corre el ciclo y el verde cuando ha terminado.",
+      "checkpoint": "El ciclo recorre llenado, espera y vaciado en ese orden, cada uno con su propio tiempo, y la parada de emergencia lo termina en cualquier momento."
     },
     {
       "key": "run",

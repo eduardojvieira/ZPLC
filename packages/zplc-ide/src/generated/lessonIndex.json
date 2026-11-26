@@ -14227,7 +14227,7 @@
     },
     {
       "id": "plant-timed-tank",
-      "version": 4,
+      "version": 5,
       "order": 131,
       "module": 13,
       "level": "advanced",
@@ -14352,8 +14352,8 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "The starter has no logic: no valve ever opens, so the cycle never runs. It declares the inputs and outputs. Keep a step number (0 idle, 1 fill, 2 hold, 3 drain), one TON for each timed step, and write the outputs from the step at the end of the program. The fill lasts 3.5 seconds.",
-              "checkpoint": "The program has a step variable, three timers and one assignment for each output."
+              "body": "The starter has no logic: no valve ever opens, so the cycle never runs. It declares the inputs and outputs. Each press of Start, while the emergency stop is released and the tank is idle, runs one cycle: Fill opens for 3.5 seconds, the tank holds for two seconds, then Drain opens until LevelLow or for twenty seconds at most; amber is on while the cycle runs and green once it has ended.",
+              "checkpoint": "The cycle runs fill, hold and drain in that order, each for its own time, and the emergency stop ends it at any point."
             },
             {
               "key": "run",
@@ -14412,8 +14412,8 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "El código inicial no tiene lógica: ninguna válvula se abre nunca, así que el ciclo no se ejecuta. Declara las entradas y las salidas. Mantenga un número de paso (0 reposo, 1 llenado, 2 espera, 3 vaciado), un TON para cada paso temporizado, y escriba las salidas a partir del paso al final del programa. El llenado dura 3,5 segundos.",
-              "checkpoint": "El programa tiene una variable de paso, tres temporizadores y una asignación para cada salida."
+              "body": "El código inicial no tiene lógica: ninguna válvula se abre nunca, así que el ciclo no se ejecuta. Declara las entradas y las salidas. Cada pulsación de Start, con la parada de emergencia liberada y el tanque en reposo, ejecuta un ciclo: Fill se abre durante 3,5 segundos, el tanque espera dos segundos, luego Drain se abre hasta LevelLow o durante veinte segundos como máximo; el ámbar está encendido mientras corre el ciclo y el verde cuando ha terminado.",
+              "checkpoint": "El ciclo recorre llenado, espera y vaciado en ese orden, cada uno con su propio tiempo, y la parada de emergencia lo termina en cualquier momento."
             },
             {
               "key": "run",
@@ -14452,7 +14452,7 @@
     },
     {
       "id": "plant-tank-level-scaling",
-      "version": 3,
+      "version": 4,
       "order": 132,
       "module": 13,
       "level": "advanced",
@@ -14610,8 +14610,8 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "The starter has no logic: the inlet never opens, so the tank stays empty and never reaches its band. It declares the inputs and outputs. Scale the level and the set point to metres once, before any other line uses them, in a type that keeps the fraction: an integer division would give 0 for every level below 1 m. Then write FillCmd from the error, limited to 0 to 100 percent.",
-              "checkpoint": "The program has two REAL variables, the limited FillCmd and one assignment for each of the other three outputs."
+              "body": "The starter has no logic: the inlet never opens, so the tank stays empty and never reaches its band. It declares the inputs and outputs. Scale the level and the set point to metres once, before any other line uses them. Every comparison must hold for fractions of a metre: a raw level of 13824 is 0.5 m, not 0 m. Then write FillCmd from the error, limited to 0 to 100 percent.",
+              "checkpoint": "FillCmd stays within 0 to 100 percent, and the other three outputs follow the level and the drain potentiometer."
             },
             {
               "key": "run",
@@ -14670,8 +14670,8 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "El código inicial no tiene lógica: la entrada nunca se abre, así que el tanque permanece vacío y nunca llega a su banda. Declara las entradas y las salidas. Escale el nivel y la consigna a metros una sola vez, antes de que otra línea los use, en un tipo que conserve la fracción: una división entera daría 0 para cualquier nivel inferior a 1 m. Luego escriba FillCmd a partir del error, limitada de 0 a 100 por ciento.",
-              "checkpoint": "El programa tiene dos variables REAL, FillCmd limitada y una asignación para cada una de las otras tres salidas."
+              "body": "El código inicial no tiene lógica: la entrada nunca se abre, así que el tanque permanece vacío y nunca llega a su banda. Declara las entradas y las salidas. Escale el nivel y la consigna a metros una sola vez, antes de que otra línea los use. Cada comparación debe valer para fracciones de metro: un nivel bruto de 13824 es 0,5 m, no 0 m. Luego escriba FillCmd a partir del error, limitada de 0 a 100 por ciento.",
+              "checkpoint": "FillCmd se mantiene entre 0 y 100 por ciento, y las otras tres salidas siguen al nivel y al potenciómetro de vaciado."
             },
             {
               "key": "run",
@@ -14710,7 +14710,7 @@
     },
     {
       "id": "plant-tank-pid",
-      "version": 3,
+      "version": 4,
       "order": 133,
       "module": 13,
       "level": "advanced",
@@ -14856,7 +14856,7 @@
               "key": "objective",
               "title": "Objective",
               "body": "The tank has no passive outlet: its level only falls when the discharge valve opens. In src/TankLevel.st the level and the set point are already scaled to metres. Add the call to PID_Compact so that the inlet (FillCmd, 0 to 100 percent) keeps the level at the set point, pass the drain potentiometer to the discharge valve, show the level on the display, and light green while the level is within 5 percent of the set point. Choose KP, KI and KD yourself.",
-              "checkpoint": "Pid is called once per scan with SP, PV, the three gains, DT := 0.01, OUT_MIN := 0.0 and OUT_MAX := 100.0, and FillCmd is Pid.OUT."
+              "checkpoint": "FillCmd comes from a PID loop that holds the level inside the band around the set point, also after the drain opens."
             },
             {
               "key": "predict",
@@ -14892,11 +14892,11 @@
           "hints": [
             {
               "level": 1,
-              "text": "Look at what PID_Compact needs: the set point and the process value in the same unit, the three gains, the scan time DT and the output limits; its output OUT is the opening of the inlet. With KP at 100.0 the drain leaves the level under the band; 400.0 holds it."
+              "text": "Look at the gains you give PID_Compact, and at what the level does after the drain opens: does it settle inside the band, below it, or swing past the set point?"
             },
             {
               "level": 2,
-              "text": "Pid(SP := SetM, PV := LevelM, KP := 800.0, KI := 10.0, KD := 150.0, DT := 0.01, OUT_MIN := 0.0, OUT_MAX := 100.0); FillCmd := Pid.OUT; is the reference tuning: a large KP holds the level under the drain, KI slowly removes the offset and KD stops the integral term from making the level overshoot. Then DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
+              "text": "Pid(SP := SetM, PV := LevelM, KP := 800.0, KI := 10.0, KD := 150.0, DT := 0.01, OUT_MIN := 0.0, OUT_MAX := 100.0); FillCmd := Pid.OUT; is the reference tuning. With KP at 100.0 the drain leaves the level under the band, and 400.0 already holds it: a large KP holds the level under the drain, KI slowly removes the offset and KD stops the integral term from making the level overshoot. Then DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
             }
           ],
           "faultCases": [
@@ -14916,7 +14916,7 @@
               "key": "objective",
               "title": "Objetivo",
               "body": "El tanque no tiene una salida pasiva: su nivel solo baja cuando se abre la válvula de descarga. En src/TankLevel.st el nivel y la consigna ya están escalados a metros. Añada la llamada a PID_Compact para que la entrada (FillCmd, de 0 a 100 por ciento) mantenga el nivel en la consigna, pase el potenciómetro de vaciado a la válvula de descarga, muestre el nivel en el visualizador y encienda el verde mientras el nivel esté dentro del 5 por ciento de la consigna. Elija usted KP, KI y KD.",
-              "checkpoint": "Pid se llama una vez por ciclo con SP, PV, las tres ganancias, DT := 0.01, OUT_MIN := 0.0 y OUT_MAX := 100.0, y FillCmd es Pid.OUT."
+              "checkpoint": "FillCmd viene de un lazo PID que mantiene el nivel dentro de la banda alrededor de la consigna, también después de que se abra el vaciado."
             },
             {
               "key": "predict",
@@ -14952,11 +14952,11 @@
           "hints": [
             {
               "level": 1,
-              "text": "Mire qué necesita PID_Compact: la consigna y la variable de proceso en la misma unidad, las tres ganancias, el tiempo de ciclo DT y los límites de la salida; su salida OUT es la apertura de la entrada. Con KP en 100.0 el vaciado deja el nivel por debajo de la banda; con 400.0 se mantiene."
+              "text": "Mire las ganancias que le da a PID_Compact, y qué hace el nivel después de que se abre el vaciado: ¿se estabiliza dentro de la banda, por debajo, o se pasa de la consigna?"
             },
             {
               "level": 2,
-              "text": "Pid(SP := SetM, PV := LevelM, KP := 800.0, KI := 10.0, KD := 150.0, DT := 0.01, OUT_MIN := 0.0, OUT_MAX := 100.0); FillCmd := Pid.OUT; es el ajuste de referencia: un KP grande mantiene el nivel frente al vaciado, KI quita despacio el desvío y KD evita que el término integral haga que el nivel se pase. Luego DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
+              "text": "Pid(SP := SetM, PV := LevelM, KP := 800.0, KI := 10.0, KD := 150.0, DT := 0.01, OUT_MIN := 0.0, OUT_MAX := 100.0); FillCmd := Pid.OUT; es el ajuste de referencia. Con KP en 100.0 el vaciado deja el nivel por debajo de la banda, y con 400.0 ya se mantiene: un KP grande mantiene el nivel frente al vaciado, KI quita despacio el desvío y KD evita que el término integral haga que el nivel se pase. Luego DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
             }
           ],
           "faultCases": [

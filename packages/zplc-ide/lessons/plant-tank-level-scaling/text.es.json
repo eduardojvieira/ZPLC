@@ -23,8 +23,8 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "El código inicial no tiene lógica: la entrada nunca se abre, así que el tanque permanece vacío y nunca llega a su banda. Declara las entradas y las salidas. Escale el nivel y la consigna a metros una sola vez, antes de que otra línea los use, en un tipo que conserve la fracción: una división entera daría 0 para cualquier nivel inferior a 1 m. Luego escriba FillCmd a partir del error, limitada de 0 a 100 por ciento.",
-      "checkpoint": "El programa tiene dos variables REAL, FillCmd limitada y una asignación para cada una de las otras tres salidas."
+      "body": "El código inicial no tiene lógica: la entrada nunca se abre, así que el tanque permanece vacío y nunca llega a su banda. Declara las entradas y las salidas. Escale el nivel y la consigna a metros una sola vez, antes de que otra línea los use. Cada comparación debe valer para fracciones de metro: un nivel bruto de 13824 es 0,5 m, no 0 m. Luego escriba FillCmd a partir del error, limitada de 0 a 100 por ciento.",
+      "checkpoint": "FillCmd se mantiene entre 0 y 100 por ciento, y las otras tres salidas siguen al nivel y al potenciómetro de vaciado."
     },
     {
       "key": "run",

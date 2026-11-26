@@ -23,8 +23,8 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "The starter has no logic: no valve ever opens, so the cycle never runs. It declares the inputs and outputs. Keep a step number (0 idle, 1 fill, 2 hold, 3 drain), one TON for each timed step, and write the outputs from the step at the end of the program. The fill lasts 3.5 seconds.",
-      "checkpoint": "The program has a step variable, three timers and one assignment for each output."
+      "body": "The starter has no logic: no valve ever opens, so the cycle never runs. It declares the inputs and outputs. Each press of Start, while the emergency stop is released and the tank is idle, runs one cycle: Fill opens for 3.5 seconds, the tank holds for two seconds, then Drain opens until LevelLow or for twenty seconds at most; amber is on while the cycle runs and green once it has ended.",
+      "checkpoint": "The cycle runs fill, hold and drain in that order, each for its own time, and the emergency stop ends it at any point."
     },
     {
       "key": "run",

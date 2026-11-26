@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "plant-timed-tank",
-  "version": 4,
+  "version": 5,
   "order": 131,
   "module": 13,
   "level": "advanced",

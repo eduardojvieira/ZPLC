@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objetivo",
       "body": "El tanque no tiene una salida pasiva: su nivel solo baja cuando se abre la válvula de descarga. En src/TankLevel.st el nivel y la consigna ya están escalados a metros. Añada la llamada a PID_Compact para que la entrada (FillCmd, de 0 a 100 por ciento) mantenga el nivel en la consigna, pase el potenciómetro de vaciado a la válvula de descarga, muestre el nivel en el visualizador y encienda el verde mientras el nivel esté dentro del 5 por ciento de la consigna. Elija usted KP, KI y KD.",
-      "checkpoint": "Pid se llama una vez por ciclo con SP, PV, las tres ganancias, DT := 0.01, OUT_MIN := 0.0 y OUT_MAX := 100.0, y FillCmd es Pid.OUT."
+      "checkpoint": "FillCmd viene de un lazo PID que mantiene el nivel dentro de la banda alrededor de la consigna, también después de que se abra el vaciado."
     },
     {
       "key": "predict",
@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Mire qué necesita PID_Compact: la consigna y la variable de proceso en la misma unidad, las tres ganancias, el tiempo de ciclo DT y los límites de la salida; su salida OUT es la apertura de la entrada. Con KP en 100.0 el vaciado deja el nivel por debajo de la banda; con 400.0 se mantiene."
+      "text": "Mire las ganancias que le da a PID_Compact, y qué hace el nivel después de que se abre el vaciado: ¿se estabiliza dentro de la banda, por debajo, o se pasa de la consigna?"
     },
     {
       "level": 2,
-      "text": "Pid(SP := SetM, PV := LevelM, KP := 800.0, KI := 10.0, KD := 150.0, DT := 0.01, OUT_MIN := 0.0, OUT_MAX := 100.0); FillCmd := Pid.OUT; es el ajuste de referencia: un KP grande mantiene el nivel frente al vaciado, KI quita despacio el desvío y KD evita que el término integral haga que el nivel se pase. Luego DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
+      "text": "Pid(SP := SetM, PV := LevelM, KP := 800.0, KI := 10.0, KD := 150.0, DT := 0.01, OUT_MIN := 0.0, OUT_MAX := 100.0); FillCmd := Pid.OUT; es el ajuste de referencia. Con KP en 100.0 el vaciado deja el nivel por debajo de la banda, y con 400.0 ya se mantiene: un KP grande mantiene el nivel frente al vaciado, KI quita despacio el desvío y KD evita que el término integral haga que el nivel se pase. Luego DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
     }
   ],
   "faultCases": ["El código inicial nunca llama al lazo: FillCmd se queda en 0 por ciento y el tanque permanece vacío."]

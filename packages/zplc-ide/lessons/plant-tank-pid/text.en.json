@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objective",
       "body": "The tank has no passive outlet: its level only falls when the discharge valve opens. In src/TankLevel.st the level and the set point are already scaled to metres. Add the call to PID_Compact so that the inlet (FillCmd, 0 to 100 percent) keeps the level at the set point, pass the drain potentiometer to the discharge valve, show the level on the display, and light green while the level is within 5 percent of the set point. Choose KP, KI and KD yourself.",
-      "checkpoint": "Pid is called once per scan with SP, PV, the three gains, DT := 0.01, OUT_MIN := 0.0 and OUT_MAX := 100.0, and FillCmd is Pid.OUT."
+      "checkpoint": "FillCmd comes from a PID loop that holds the level inside the band around the set point, also after the drain opens."
     },
     {
       "key": "predict",
@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Look at what PID_Compact needs: the set point and the process value in the same unit, the three gains, the scan time DT and the output limits; its output OUT is the opening of the inlet. With KP at 100.0 the drain leaves the level under the band; 400.0 holds it."
+      "text": "Look at the gains you give PID_Compact, and at what the level does after the drain opens: does it settle inside the band, below it, or swing past the set point?"
     },
     {
       "level": 2,
-      "text": "Pid(SP := SetM, PV := LevelM, KP := 800.0, KI := 10.0, KD := 150.0, DT := 0.01, OUT_MIN := 0.0, OUT_MAX := 100.0); FillCmd := Pid.OUT; is the reference tuning: a large KP holds the level under the drain, KI slowly removes the offset and KD stops the integral term from making the level overshoot. Then DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
+      "text": "Pid(SP := SetM, PV := LevelM, KP := 800.0, KI := 10.0, KD := 150.0, DT := 0.01, OUT_MIN := 0.0, OUT_MAX := 100.0); FillCmd := Pid.OUT; is the reference tuning. With KP at 100.0 the drain leaves the level under the band, and 400.0 already holds it: a large KP holds the level under the drain, KI slowly removes the offset and KD stops the integral term from making the level overshoot. Then DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
     }
   ],
   "faultCases": ["The starter never calls the loop: FillCmd stays at 0 percent and the tank stays empty."]

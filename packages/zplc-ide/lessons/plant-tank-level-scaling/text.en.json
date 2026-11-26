@@ -23,8 +23,8 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "The starter has no logic: the inlet never opens, so the tank stays empty and never reaches its band. It declares the inputs and outputs. Scale the level and the set point to metres once, before any other line uses them, in a type that keeps the fraction: an integer division would give 0 for every level below 1 m. Then write FillCmd from the error, limited to 0 to 100 percent.",
-      "checkpoint": "The program has two REAL variables, the limited FillCmd and one assignment for each of the other three outputs."
+      "body": "The starter has no logic: the inlet never opens, so the tank stays empty and never reaches its band. It declares the inputs and outputs. Scale the level and the set point to metres once, before any other line uses them. Every comparison must hold for fractions of a metre: a raw level of 13824 is 0.5 m, not 0 m. Then write FillCmd from the error, limited to 0 to 100 percent.",
+      "checkpoint": "FillCmd stays within 0 to 100 percent, and the other three outputs follow the level and the drain potentiometer."
     },
     {
       "key": "run",
