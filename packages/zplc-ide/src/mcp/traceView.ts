@@ -12,8 +12,10 @@ export const TRACE_MODES = ['changes', 'summary', 'window'] as const;
 export type TraceMode = (typeof TRACE_MODES)[number];
 /** What each new trace_get parameter means, as the tool's input schema describes it. */
 export const TRACE_HELP = {
-  mode: 'changes: first sample, every change, failed expectations, last sample; window: every sample of a range; summary: per signal.',
-  signals: 'Only these signals, by name from availableSignals; all of them when omitted.',
+  mode:
+    'changes: first sample, every change of a program signal, failed expectations, last sample; a fact: that is not a whole ' +
+    'number counts only when signals names it. window: every sample of a range. summary: per signal.',
+  signals: 'Only these signals, by name from availableSignals; all of them when omitted. Name a fact: here to count its every change.',
   includeInputs: 'Include the inputs the run wrote (default true).',
   watchSignals: 'Program variables or block members (Program.T1.ET) to read after each step; the recorded trace is unchanged.',
   fromMs: 'Start of the range, in ms of plant time.',
@@ -84,10 +86,14 @@ export function traceError(error: string, message: string, nextStep: string, val
 }
 
 /** The answer, or the refusal that says how to ask for less when it is over the output limit. */
+// room for what the dispatcher adds to an answer (its evidence level), so a page that fits here fits there too
+const ENVELOPE_MARGIN = 256;
+const fits = (result: McpToolResult) => Buffer.byteLength(result.content[0]!.text, 'utf8') <= MAX_OUTPUT_BYTES - ENVELOPE_MARGIN;
+
 function sized(content: Record<string, unknown>, isError: boolean, nextStep: string, validValues?: readonly string[]): McpToolResult {
   const result = answer(content, isError);
   const bytes = Buffer.byteLength(result.content[0]!.text, 'utf8');
-  return bytes <= MAX_OUTPUT_BYTES
+  return fits(result)
     ? result
     : traceError(
         'MCP_OUTPUT_LIMIT',
@@ -112,12 +118,27 @@ const own = (record: object, key: string): unknown => {
   return descriptor && 'value' in descriptor ? descriptor.value : undefined;
 };
 
+/** A scenarioId the project has no scenario for (AIX-015): MCP_NOT_FOUND with the ids it has. Undefined otherwise. */
+export function scenarioNotFound(value: unknown, scenarioId: string): McpToolResult | undefined {
+  const ids = value && typeof value === 'object' ? own(value, 'scenarioIds') : undefined;
+  return Array.isArray(ids)
+    ? traceError(
+        'MCP_NOT_FOUND',
+        `The project has no scenario ${JSON.stringify(scenarioId)}.`,
+        'Call scenarios_list, or use one of validValues.',
+        ids as string[],
+      )
+    : undefined;
+}
+
 /**
  * The refusal of a scenario run before its trace is read: a recorded trace over the 16 MiB the server reads (AI-03), or a
  * watched name no variable has (AIX-015). Undefined when the run can be read.
  */
-export function traceRefusal(value: unknown): McpToolResult | undefined {
+export function traceRefusal(value: unknown, scenarioId: string): McpToolResult | undefined {
   if (!value || typeof value !== 'object') return undefined;
+  const missing = scenarioNotFound(value, scenarioId);
+  if (missing) return missing;
   const traceFile = own(value, 'traceFile');
   if (traceFile instanceof Uint8Array && traceFile.byteLength > MAX_INTERNAL_TRACE_BYTES)
     return traceError(
@@ -252,9 +273,10 @@ export function traceAnswer(replay: Replay, scenarioId: string, args: TraceArgs)
     );
   }
 
-  // ponytail: a continuous number (a box position) changes every step, so only a named one counts as a change by itself
-  const counts = (signal: string, before: Value | undefined, after: Value | undefined) =>
-    typeof after === 'boolean' || named.has(signal) || (Number.isInteger(before) && Number.isInteger(after));
+  // every change of a program signal counts; a plant fact that is not a whole number (a box position, which moves every
+  // step) counts only when `signals` names it
+  const counts = (group: Group, signal: string, before: Value | undefined, after: Value | undefined) =>
+    group !== 'facts' || typeof after === 'boolean' || named.has(signal) || (Number.isInteger(before) && Number.isInteger(after));
   const changedAt = (index: number) =>
     [
       ...new Set(
@@ -262,7 +284,7 @@ export function traceAnswer(replay: Replay, scenarioId: string, args: TraceArgs)
           selected[group].filter((signal) => {
             const before = value(group, index - 1, signal);
             const after = value(group, index, signal);
-            return before !== after && counts(signal, before, after);
+            return before !== after && counts(group, signal, before, after);
           }),
         ),
       ),
@@ -272,9 +294,7 @@ export function traceAnswer(replay: Replay, scenarioId: string, args: TraceArgs)
   for (let index = start; index <= end; index++)
     if (mode === 'window' || index === start || index === end || failedAt.has(replay.samples[index]!.atMs) || changedAt(index).length > 0)
       candidates.push(index);
-  const returned = candidates.slice(0, limit);
-  const next = candidates[limit];
-  const samples = returned.map((index, position) => {
+  const samples = candidates.slice(0, limit).map((index, position) => {
     const atMs = replay.samples[index]!.atMs;
     const sample: Record<string, unknown> = { index, atMs };
     const changed = mode === 'changes' && index > start ? changedAt(index) : [];
@@ -287,18 +307,30 @@ export function traceAnswer(replay: Replay, scenarioId: string, args: TraceArgs)
     if (changed.length > 0) sample.changed = changed;
     return sample;
   });
-  return sized(
-    {
-      ...head,
-      returnedSamples: samples.length,
-      truncated: next !== undefined,
-      ...(next === undefined ? {} : { nextCursor: { fromSample: next, fromMs: replay.samples[next]!.atMs } }),
-      availableSignals: available,
-      assertions: replay.assertions,
-      samples,
-      ...tail,
-    },
-    !replay.ok,
-    limitStep,
-  );
+  const page = (count: number) => {
+    const next = candidates[count];
+    return answer(
+      {
+        ...head,
+        returnedSamples: count,
+        truncated: next !== undefined,
+        ...(next === undefined ? {} : { nextCursor: { fromSample: next, fromMs: replay.samples[next]!.atMs } }),
+        availableSignals: available,
+        assertions: replay.assertions,
+        samples: samples.slice(0, count),
+        ...tail,
+      },
+      !replay.ok,
+    );
+  };
+  // a page over the output limit is cut to the most samples that fit; the cursor names where the next page starts
+  if (fits(page(samples.length))) return page(samples.length);
+  let low = 0;
+  let high = samples.length;
+  while (high - low > 1) {
+    const middle = Math.floor((low + high) / 2);
+    if (fits(page(middle))) low = middle;
+    else high = middle;
+  }
+  return low > 0 ? page(low) : sized(page(1).structuredContent, !replay.ok, limitStep);
 }

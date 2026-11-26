@@ -1034,7 +1034,7 @@ function dispatcher(
         const value = await callTool(tool, workspace.root, args, signal, operations);
         if (signal.aborted) return errorResult('MCP_CANCELLED');
         if (!sameIdentity(workspace.identity, await directoryIdentity(workspace.root))) return errorResult('MCP_WORKSPACE_CHANGED');
-        const refusal = trace.traceRefusal(value);
+        const refusal = trace.traceRefusal(value, ownValue(args, 'scenarioId') as string);
         if (refusal) return refusal;
         const replay = replayFromScenario(
           value,
@@ -1069,9 +1069,10 @@ function dispatcher(
       const executionStart = toolApi.startToolExecution('mcp', toolApi.executionPermission(operation), operation);
       const value = await callTool(tool, workspace.root, args, signal, operations);
       if (!sameIdentity(workspace.identity, await directoryIdentity(workspace.root))) return errorResult('MCP_WORKSPACE_CHANGED');
+      const missing = tool === 'scenario_run' ? trace.scenarioNotFound(value, ownValue(args, 'scenarioId') as string) : undefined;
       return signal.aborted
         ? errorResult('MCP_CANCELLED')
-        : toMcpToolResult(tool, value, toolApi.finishToolExecution(executionStart, value));
+        : (missing ?? toMcpToolResult(tool, value, toolApi.finishToolExecution(executionStart, value)));
     } catch {
       return errorResult('MCP_INTERNAL_ERROR');
     } finally {
@@ -1197,7 +1198,7 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
     'trace_get',
     {
       title: 'Get recorded trace',
-      description: 'Run one scenario on the host simulator and answer its trace: whole, or as changes, a window or a summary with inputs.',
+      description: 'Run one scenario and answer its trace: whole, changes, a window or a summary; a non-integer fact: counts if named.',
       inputSchema: TRACE_INPUT,
       annotations: READ_ONLY,
     },
