@@ -439,42 +439,50 @@ describe('the lock-step session on the real plant core', () => {
     return { core, rt, session };
   }
 
-  it('PLT-017 host pacing does not change the trace', async () => {
-    const plain = await live();
-    let seed = 7;
-    const jitter = async () => {
-      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-      await new Promise((resolve) => setTimeout(resolve, seed % 6));
-    };
-    const paced = await live(jitter);
-    expect(plain.session.scans).toBe(SCANS);
-    // both runs ended paused after every scan, so a hash mismatch below can only come from pacing
-    expect([paced.session.state, paced.session.scans]).toEqual(['paused', SCANS]);
-    expect(await paced.core.traceHash()).toBe(await plain.core.traceHash());
-    expect(plain.core.facts()['count:eye']).toBeGreaterThan(0); // the scene did something: the belt ran and the box reached the eye
-  }, REAL_CORE_TIMEOUT_MS);
+  it(
+    'PLT-017 host pacing does not change the trace',
+    async () => {
+      const plain = await live();
+      let seed = 7;
+      const jitter = async () => {
+        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+        await new Promise((resolve) => setTimeout(resolve, seed % 6));
+      };
+      const paced = await live(jitter);
+      expect(plain.session.scans).toBe(SCANS);
+      // both runs ended paused after every scan, so a hash mismatch below can only come from pacing
+      expect([paced.session.state, paced.session.scans]).toEqual(['paused', SCANS]);
+      expect(await paced.core.traceHash()).toBe(await plain.core.traceHash());
+      expect(plain.core.facts()['count:eye']).toBeGreaterThan(0); // the scene did something: the belt ran and the box reached the eye
+    },
+    REAL_CORE_TIMEOUT_MS,
+  );
 
-  it('PLT-017 live equals graded', async () => {
-    const liveRun = await live();
-    const gradedCore = await fresh();
-    const gradedRuntime = fakeRuntime();
-    const scenario = compileScenario(
-      {
-        schemaVersion: 1,
-        id: 'live-equals-graded',
-        tickMs: 10,
-        durationMs: 1000,
-        scene: { file: 'scene.json', map: 'plant-map.json', script: SCRIPT },
-        events: [],
-        expectations: [{ kind: 'ALWAYS', condition: { 'fact:itemsDropped': false } }],
-      },
-      debugMap,
-      { port: { core: gradedCore, map }, scene },
-    );
-    const result = await runScenario(scenario, new Uint8Array([1]), gradedRuntime.graded);
-    expect(result.assertions[0]?.passed).toBe(true);
-    expect(await gradedCore.traceHash()).toBe(await liveRun.core.traceHash());
-    expect(gradedCore.facts()).toEqual(liveRun.core.facts());
-    expect(gradedRuntime.cycles()).toBe(liveRun.rt.cycles());
-  }, REAL_CORE_TIMEOUT_MS);
+  it(
+    'PLT-017 live equals graded',
+    async () => {
+      const liveRun = await live();
+      const gradedCore = await fresh();
+      const gradedRuntime = fakeRuntime();
+      const scenario = compileScenario(
+        {
+          schemaVersion: 1,
+          id: 'live-equals-graded',
+          tickMs: 10,
+          durationMs: 1000,
+          scene: { file: 'scene.json', map: 'plant-map.json', script: SCRIPT },
+          events: [],
+          expectations: [{ kind: 'ALWAYS', condition: { 'fact:itemsDropped': false } }],
+        },
+        debugMap,
+        { port: { core: gradedCore, map }, scene },
+      );
+      const result = await runScenario(scenario, new Uint8Array([1]), gradedRuntime.graded);
+      expect(result.assertions[0]?.passed).toBe(true);
+      expect(await gradedCore.traceHash()).toBe(await liveRun.core.traceHash());
+      expect(gradedCore.facts()).toEqual(liveRun.core.facts());
+      expect(gradedRuntime.cycles()).toBe(liveRun.rt.cycles());
+    },
+    REAL_CORE_TIMEOUT_MS,
+  );
 });
