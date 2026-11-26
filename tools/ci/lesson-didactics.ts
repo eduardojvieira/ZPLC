@@ -1,4 +1,4 @@
-// The didactics check of the Learn course: one table per lesson and five rules the course owner asked to keep true.
+// The didactics check of the Learn course: one table per lesson and the rules the course owner asked to keep true (CRS-014 to CRS-023).
 //
 //   bun tools/ci/lesson-didactics.ts --check            fail on a rule broken by a lesson that is not in the baseline, on a baseline entry
 //                                                       that no longer occurs, and on a stale table (CI runs this through the test)
@@ -15,6 +15,21 @@
 //               whole words, any case, both languages
 //   order       in courseOrder no lesson comes before the lesson that explains an idea it practises (tools/ci/lesson-ideas.json)
 //   glossary    no learner text uses a synonym the glossary rules out (tools/ci/glossary-terms.json: one term per concept and language)
+//   reading-parts  each reading page that exists has an image or a timing, ld-figure or ld-try block, a quiz block and the level-2
+//               headings "Worked example" and "Common mistakes" ("Ejemplo resuelto", "Errores comunes") (CRS-014)
+//   answer      for ST and IL, no code line the solution adds to the starter (spaces normalised, any case; a line of one word such as
+//               VAR or END_IF; is a frame, not an answer) is in the objectives, the stages, the fault cases or a hint other than the
+//               last (CRS-017)
+//   grows       the starter of the last lesson of each module of a path (course.json) holds at most two statements beyond its
+//               declarations (ST, IL: `;` of a body, instruction lines) or no rung, connection, transition or step beyond the initial
+//               one (LD, FBD, SFC); the column "Starter statements" shows that count for every lesson (CRS-018)
+//   scope       no checkpoint holds SCOPE_WORDS below; the lesson's scope says what a pass proves (CRS-020)
+//   machine     each reading page of a lesson that names a scene embeds images/machine.<lang>.png and the signal tables that
+//               scripts/learn/signal-table.ts gives for that scene, row by row and cell by cell (CRS-016)
+// And per construct of the compiler support matrix (specs/012-zplc-2-1-plant-simulation/course-l7-support.md), baseline key
+// `<slug>:explainer`: a construct marked "Teach" in some language needs an idea of that slug in lesson-ideas.json, so that it has an
+// explainer and the rule `order` holds for it (CRS-023). The slug is the construct, lower case, each run of other characters a "-":
+// "User FUNCTION" is `user-function`, "AND, OR, XOR, NOT on BYTE, WORD, DWORD" is `and-or-xor-not-on-byte-word-dword`.
 // The baseline (tools/ci/lesson-didactics-baseline.json) is the ratchet: today's known offences. A fixed lesson must leave it.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -22,6 +37,7 @@ import { join, resolve } from 'node:path';
 import { learnEn, learnEs } from '../../packages/zplc-ide/src/i18n/catalog/learn';
 import { courseOrder } from '../../packages/zplc-ide/src/learn/course';
 import { uiLabel, type LessonText } from '../../packages/zplc-ide/src/learn/lessonPackage';
+import { tablesOf } from '../../packages/zplc-ide/scripts/learn/signal-table';
 import { buildIndex, loadCourse, loadLessonPackages } from '../../packages/zplc-ide/src/learn/lessonPackageFiles';
 
 const ROOT = resolve(import.meta.dir, '../..');
@@ -29,12 +45,24 @@ export const TABLE_FILE = join(ROOT, 'specs/012-zplc-2-1-plant-simulation/lesson
 export const BASELINE_FILE = join(import.meta.dir, 'lesson-didactics-baseline.json');
 const IDEAS_FILE = join(import.meta.dir, 'lesson-ideas.json');
 const TERMS_FILE = join(import.meta.dir, 'glossary-terms.json');
+const MATRIX_FILE = join(ROOT, 'specs/012-zplc-2-1-plant-simulation/course-l7-support.md');
 const GLOSSARY_PAGES = {
   en: join(ROOT, 'docs/docs/learn/glossary.md'),
   es: join(ROOT, 'docs/i18n/es/docusaurus-plugin-content-docs/current/learn/glossary.md'),
 };
 
-export const RULES = ['reading', 'check', 'vocabulary', 'order', 'glossary'] as const;
+export const RULES = [
+  'reading',
+  'check',
+  'vocabulary',
+  'order',
+  'glossary',
+  'reading-parts',
+  'answer',
+  'grows',
+  'scope',
+  'machine',
+] as const;
 export type Rule = (typeof RULES)[number];
 type Lang = 'en' | 'es';
 const LANGS: readonly Lang[] = ['en', 'es'];
@@ -43,6 +71,16 @@ const LANGS: readonly Lang[] = ['en', 'es'];
 export const VOCABULARY: Record<Lang, readonly string[]> = {
   en: ['POSIX', 'HIL', 'certification', 'host evidence'],
   es: ['POSIX', 'HIL', 'certificación', 'evidencia del host', 'evidencia guardada del host', 'equipo anfitrión'],
+};
+
+/** What a pass proves is said once, in the scope: a checkpoint never names these (CRS-020). Whole words, any case. */
+export const SCOPE_WORDS: Record<Lang, readonly string[]> = {
+  en: ['simulator', 'real machine', 'board', 'safety'],
+  es: ['simulador', 'máquina real', 'placa', 'seguridad'],
+};
+const HEADINGS: Record<Lang, readonly string[]> = {
+  en: ['Worked example', 'Common mistakes'],
+  es: ['Ejemplo resuelto', 'Errores comunes'],
 };
 
 export interface Term {
@@ -66,8 +104,14 @@ export interface LessonFacts {
   reading: Record<Lang, boolean>;
   /** The reading pages' text, for the vocabulary and glossary rules. */
   readingText: Record<Lang, string>;
-  /** Non-comment lines the solution adds to the starter, for ST and IL lessons only. */
-  codeLines: number | null;
+  /** The reading pages as written, for the rules reading-parts and machine. */
+  readingSource: Record<Lang, string>;
+  /** Non-comment lines the solution adds to the starter, trimmed, for ST and IL lessons only. */
+  addedLines: string[] | null;
+  /** Statements of the starter beyond its declarations; `graphic` for LD, FBD and SFC (rungs, connections, transitions, steps). */
+  starter: { statements: number; graphic: boolean };
+  /** For a lesson that names a scene: the image its page must show and the tables the scene gives, per language. */
+  machine: Record<Lang, { image: string; table: string }> | null;
   hasWrongSet: boolean;
   text: Record<Lang, LessonText>;
 }
@@ -77,6 +121,8 @@ export interface Input {
   checkLabel: Record<Lang, string>;
   ideas: Ideas;
   terms: Term[];
+  /** The paths of course.json, for the rule grows. */
+  paths: { id: string; lessons: string[] }[];
 }
 export interface Row {
   position: number;
@@ -116,8 +162,54 @@ const unplaced = (text: string, lang: Lang): string =>
   text.replace(/\{\{ui:([\w.]+)\}\}/g, (markup, key: string) => uiLabel(lang, key) ?? markup).replace(/\{\{[^}]*\}\}/g, '');
 
 const SEPARATOR = ', ';
+
+/** One code line or text, spaces normalised: runs of spaces are one, and none is kept beside punctuation. */
+const normalised = (code: string): string =>
+  code
+    .replace(/\s+/g, ' ')
+    .replace(/ ?([^\p{L}\p{N}_ ]) ?/gu, '$1')
+    .trim();
+
+/** A line of one word, such as `VAR`, `ELSE` or `END_IF;`: the frame of a statement, not its answer. */
+const KEYWORD_LINE = /^[\p{L}\p{N}_]+;?$/u;
+
+/** Whether `text` holds `code`, any case, not as part of a longer name: only an end that is a letter or digit needs a boundary. */
+const holdsCode = (text: string, code: string): boolean => {
+  const word = /[\p{L}\p{N}_]/u;
+  const before = word.test(code[0] ?? '') ? '(?<![\\p{L}\\p{N}_])' : '';
+  const after = word.test(code.at(-1) ?? '') ? '(?![\\p{L}\\p{N}_])' : '';
+  return new RegExp(`${before}${escape(code)}${after}`, 'iu').test(text);
+};
+
+/** The rows of the Markdown tables in `markdown`, each as its trimmed cells joined by `|`, without the alignment rows. */
+const tableRows = (markdown: string): string[] =>
+  markdown
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith('|') && !/^\|[\s:|-]+\|$/.test(line))
+    .map((line) =>
+      line
+        .slice(1, -1)
+        .split('|')
+        .map((cell) => cell.trim())
+        .join('|'),
+    );
+
+/** Per path, the lesson that ends each module in path order, and the path ids it ends a module of. */
+function moduleEnds(input: Input): Map<string, string[]> {
+  const moduleOf = new Map(input.lessons.map((lesson) => [lesson.id, lesson.module]));
+  const ends = new Map<string, string[]>();
+  for (const path of input.paths) {
+    const last = new Map<number, string>();
+    for (const id of path.lessons) if (moduleOf.has(id)) last.set(moduleOf.get(id)!, id);
+    for (const id of last.values()) ends.set(id, [...(ends.get(id) ?? []), path.id]);
+  }
+  return ends;
+}
+
 export function evaluate(input: Input): Row[] {
   const position = new Map(input.lessons.map((lesson, index) => [lesson.id, index]));
+  const ends = moduleEnds(input);
   return input.lessons.map((lesson, index) => {
     const offences: Partial<Record<Rule, string>> = {};
     const full = (lang: Lang) => unplaced(`${learnerText(lesson.text[lang])}\n${lesson.readingText[lang]}`, lang);
@@ -147,6 +239,69 @@ export function evaluate(input: Input): Row[] {
       ),
     );
     if (wrongTerms.length > 0) offences.glossary = wrongTerms.join(SEPARATOR);
+
+    const pages = LANGS.filter((lang) => lesson.reading[lang]);
+    const missingParts = pages.flatMap((lang) => {
+      const source = lesson.readingSource[lang];
+      const missing: string[] = [];
+      if (!/^!\[[^\]]*\]\(/m.test(source) && !/^```(?:timing|ld-figure|ld-try)\s*$/m.test(source)) missing.push('no figure');
+      if (!/^```quiz\s*$/m.test(source)) missing.push('no quiz');
+      for (const heading of HEADINGS[lang])
+        if (!new RegExp(`^## ${escape(heading)}\\s*$`, 'm').test(source)) missing.push(`no "${heading}"`);
+      return missing.map((what) => `${what} (${lang})`);
+    });
+    if (missingParts.length > 0) offences['reading-parts'] = missingParts.join(SEPARATOR);
+
+    if (lesson.addedLines) {
+      const told = (lang: Lang) => {
+        const t = lesson.text[lang];
+        return normalised(
+          unplaced(
+            [
+              ...t.objectives,
+              ...t.stages.flatMap((stage) => [stage.title, stage.body, stage.checkpoint]),
+              ...t.faultCases,
+              ...t.hints.slice(0, -1).map((hint) => hint.text),
+            ].join('\n'),
+            lang,
+          ),
+        );
+      };
+      const given = LANGS.flatMap((lang) =>
+        [...new Set(lesson.addedLines!.map(normalised))]
+          .filter((line) => !KEYWORD_LINE.test(line) && holdsCode(told(lang), line))
+          .map((line) => `${line} (${lang})`),
+      );
+      if (given.length > 0) offences.answer = given.join(SEPARATOR);
+    }
+
+    const endOf = ends.get(lesson.id);
+    if (endOf && lesson.starter.statements > (lesson.starter.graphic ? 0 : 2))
+      offences.grows = `${lesson.starter.statements} starter statements, last of module ${lesson.module} in ${endOf.join(SEPARATOR)}`;
+
+    const scopeWords = LANGS.flatMap((lang) =>
+      SCOPE_WORDS[lang]
+        .filter((word) => lesson.text[lang].stages.some((stage) => hasWord(unplaced(stage.checkpoint, lang), word)))
+        .map((word) => `${word} (${lang})`),
+    );
+    if (scopeWords.length > 0) offences.scope = scopeWords.join(SEPARATOR);
+
+    if (lesson.machine) {
+      const machine = lesson.machine;
+      const lacking = pages.flatMap((lang) => {
+        const source = lesson.readingSource[lang];
+        const rows = tableRows(source).join('\n');
+        const missing: string[] = [];
+        if (!source.includes(`](${machine[lang].image})`)) missing.push(`no image (${lang})`);
+        const tables = machine[lang].table
+          .split(/\n\s*\n/)
+          .map(tableRows)
+          .filter((table) => table.length > 0);
+        if (!tables.every((table) => `\n${rows}\n`.includes(`\n${table.join('\n')}\n`))) missing.push(`no table (${lang})`);
+        return missing;
+      });
+      if (lacking.length > 0) offences.machine = lacking.join(SEPARATOR);
+    }
     return { position: index + 1, lesson, namesCheck, offences };
   });
 }
@@ -176,19 +331,44 @@ export function mappingProblems(input: Input, glossary?: Record<Lang, string>): 
   return problems;
 }
 
-export const offenceKeys = (rows: readonly Row[]): string[] =>
-  rows.flatMap((row) => RULES.filter((rule) => row.offences[rule] !== undefined).map((rule) => `${row.lesson.id}:${rule}`)).sort();
+/** `<slug>:explainer` for each construct the matrix marks "Teach" in some language and lesson-ideas.json has no idea for (CRS-023). */
+export function unexplainedConstructs(matrix: string, ideas: Ideas): string[] {
+  return tableRows(matrix)
+    .slice(1)
+    .map((row) => row.split('|'))
+    .filter((cells) => cells.slice(1).some((cell) => cell.startsWith('Teach')))
+    .map((cells) =>
+      cells[0]!
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, ''),
+    )
+    .filter((slug) => !ideas.ideas[slug])
+    .map((slug) => `${slug}:explainer`)
+    .sort();
+}
+
+export const offenceKeys = (rows: readonly Row[], constructs: readonly string[] = []): string[] =>
+  [
+    ...rows.flatMap((row) => RULES.filter((rule) => row.offences[rule] !== undefined).map((rule) => `${row.lesson.id}:${rule}`)),
+    ...constructs,
+  ].sort();
 
 /** The ratchet: offences the baseline does not list, and baseline entries that no longer occur. */
-export function ratchet(rows: readonly Row[], baseline: readonly string[]): { added: string[]; stale: string[] } {
-  const now = new Set(offenceKeys(rows));
+export function ratchet(
+  rows: readonly Row[],
+  baseline: readonly string[],
+  constructs: readonly string[] = [],
+): { added: string[]; stale: string[] } {
+  const now = new Set(offenceKeys(rows, constructs));
   const known = new Set(baseline);
   return { added: [...now].filter((key) => !known.has(key)), stale: [...known].filter((key) => !now.has(key)) };
 }
 
 const yes = (value: boolean) => (value ? 'yes' : 'no');
-export function renderTable(rows: readonly Row[]): string {
+export function renderTable(rows: readonly Row[], constructs: readonly string[] = []): string {
   const cell = (row: Row, rule: Rule) => (row.offences[rule] ?? 'ok').replaceAll('|', '/');
+  const unexplained = constructs.length === 0 ? 'none' : constructs.map((key) => `\`${key.split(':')[0]}\``).join(', ');
   const counts = RULES.map(
     (rule) => `- \`${rule}\`: ${rows.filter((row) => row.offences[rule] !== undefined).length} of ${rows.length} lessons break it`,
   );
@@ -198,14 +378,16 @@ export function renderTable(rows: readonly Row[]): string {
     'GENERATED by `tools/ci/lesson-didactics.ts`; do not edit. ' +
       '`bun tools/ci/lesson-didactics.ts --write` regenerates it and `--check` fails when it is stale.',
     'Lessons are in full-course order (`courseOrder`). ' +
-      '"Code lines to add" counts the non-comment lines the solution adds to the starter, for ST and IL only.',
-    'The last five columns are the rules of the script header: `ok`, or what breaks it.',
+      '"Code lines to add" counts the non-comment lines the solution adds to the starter, for ST and IL only. ' +
+      '"Starter statements" counts what the starter holds beyond its declarations (rule `grows`).',
+    `The last ${RULES.length} columns are the rules of the script header: \`ok\`, or what breaks it.`,
     '',
     ...counts,
+    `- constructs of the compiler support matrix without an explainer: ${unexplained}`,
     '',
-    '| # | Lesson | Module | Language | Minutes | Reading | Code lines to add | Text names Check | Wrong-program set ' +
-      '| reading | check | vocabulary | order | glossary |',
-    '|---|---|---|---|---|---|---|---|---|---|---|---|---|---|',
+    '| # | Lesson | Module | Language | Minutes | Reading | Code lines to add | Starter statements | Text names Check ' +
+      `| Wrong-program set | ${RULES.join(' | ')} |`,
+    `|${'---|'.repeat(10 + RULES.length)}`,
     ...rows.map((row) =>
       [
         row.position,
@@ -214,7 +396,8 @@ export function renderTable(rows: readonly Row[]): string {
         row.lesson.languages.join('/'),
         row.lesson.minutes,
         yes(row.lesson.reading.en && row.lesson.reading.es),
-        row.lesson.codeLines ?? '',
+        row.lesson.addedLines?.length ?? '',
+        row.lesson.starter.statements,
         yes(row.namesCheck.en && row.namesCheck.es),
         yes(row.lesson.hasWrongSet),
         ...RULES.map((rule) => cell(row, rule)),
@@ -235,27 +418,49 @@ const glossaryCells = (markdown: string): string =>
     .map((line) => line.split('|').slice(1, 3).join(' | '))
     .join('\n');
 
+/** Statements of a starter beyond its declarations, by the kind of its program file. */
+export function starterStatements(file: string, source: string): { statements: number; graphic: boolean } {
+  if (file.endsWith('.json')) {
+    const model = JSON.parse(source) as {
+      rungs?: { grid?: { element?: unknown }[][] }[];
+      connections?: unknown[];
+      steps?: { isInitial?: boolean }[];
+      transitions?: unknown[];
+    };
+    const rungs = (model.rungs ?? []).filter((rung) => (rung.grid ?? []).some((row) => row.some((cell) => cell?.element))).length;
+    const steps = (model.steps ?? []).filter((step) => !step.isInitial).length;
+    return { statements: rungs + (model.connections?.length ?? 0) + steps + (model.transitions?.length ?? 0), graphic: true };
+  }
+  const body = codeLinesOf(source.replace(/\b(VAR\w*)\b[\s\S]*?\bEND_VAR\b/g, ''))
+    .filter((line) => !/^(?:END_)?(?:PROGRAM|FUNCTION_BLOCK|FUNCTION)\b/.test(line))
+    .join('\n');
+  const statements = file.endsWith('.il')
+    ? body.split('\n').filter((line) => line !== '' && !/^\w+:$/.test(line)).length
+    : (body.match(/;/g) ?? []).length;
+  return { statements, graphic: false };
+}
+
 const codeLinesOf = (source: string): string[] =>
   source
     .replace(/\(\*[\s\S]*?\*\)/g, '')
     .split('\n')
     .map((line) => line.trim())
     .filter((line) => line !== '' && !line.startsWith('//'));
-function linesAdded(starter: string, solution: string): number {
+function linesAdded(starter: string, solution: string): string[] {
   const left = new Map<string, number>();
   for (const line of codeLinesOf(starter)) left.set(line, (left.get(line) ?? 0) + 1);
   return codeLinesOf(solution).filter((line) => {
     const count = left.get(line) ?? 0;
     left.set(line, count - 1);
     return count <= 0;
-  }).length;
+  });
 }
 
 /** A reading page without the `src:` and `rung:` lines of its figure blocks, which name files and rungs, not words a learner reads. */
 const prose = (markdown = ''): string => markdown.replace(/^(src|rung):.*$/gm, '');
 
 /** The real tree, read: lesson packages, course.json, starters and solutions, the catalogue, the two mappings. */
-export function loadInput(): { input: Input; glossary: Record<Lang, string>; problems: string[] } {
+export function loadInput(): { input: Input; glossary: Record<Lang, string>; problems: string[]; matrix: string } {
   const { packages, problems } = loadLessonPackages();
   const { course, problems: courseProblems } = loadCourse();
   problems.push(...courseProblems);
@@ -265,9 +470,14 @@ export function loadInput(): { input: Input; glossary: Record<Lang, string>; pro
   const byId = new Map(packages.map((pkg) => [pkg.id, pkg]));
   const projects = join(ROOT, 'packages/zplc-ide/projects');
   const read = (project: { project: string; program: string }) => readFileSync(join(projects, project.project, project.program), 'utf8');
+  const scenes = [...new Set(packages.flatMap((pkg) => (pkg.manifest.scene ? [pkg.manifest.scene] : [])))];
+  const tables = tablesOf(scenes);
+  problems.push(...tables.problems);
+  const tableOf = new Map(tables.files.map((file) => [file.path, file.text]));
   const lessons = courseOrder(built.index).map((entry): LessonFacts => {
     const pkg = byId.get(entry.id)!;
     const textOnly = pkg.manifest.languages.every((language) => language === 'ST' || language === 'IL');
+    const scene = pkg.manifest.scene;
     return {
       id: pkg.id,
       module: pkg.manifest.module,
@@ -275,7 +485,17 @@ export function loadInput(): { input: Input; glossary: Record<Lang, string>; pro
       minutes: pkg.manifest.estimatedMinutes,
       reading: { en: existsSync(join(pkg.directory, 'reading.en.md')), es: existsSync(join(pkg.directory, 'reading.es.md')) },
       readingText: { en: prose(pkg.reading?.en), es: prose(pkg.reading?.es) },
-      codeLines: textOnly ? linesAdded(read(pkg.manifest.starter), read(pkg.manifest.solution)) : null,
+      readingSource: { en: pkg.reading?.en ?? '', es: pkg.reading?.es ?? '' },
+      addedLines: textOnly ? linesAdded(read(pkg.manifest.starter), read(pkg.manifest.solution)) : null,
+      starter: starterStatements(pkg.manifest.starter.program, read(pkg.manifest.starter)),
+      machine: scene
+        ? (Object.fromEntries(
+            LANGS.map((lang) => [
+              lang,
+              { image: `images/machine.${lang}.png`, table: tableOf.get(join(scene, `signals.${lang}.md`)) ?? '' },
+            ]),
+          ) as Record<Lang, { image: string; table: string }>)
+        : null,
       hasWrongSet: (pkg.checks?.wrong.length ?? 0) > 0,
       text: pkg.texts,
     };
@@ -285,12 +505,13 @@ export function loadInput(): { input: Input; glossary: Record<Lang, string>; pro
     checkLabel: { en: learnEn['learn.check'], es: learnEs['learn.check'] },
     ideas: JSON.parse(readFileSync(IDEAS_FILE, 'utf8')) as Ideas,
     terms: (JSON.parse(readFileSync(TERMS_FILE, 'utf8')) as { terms: Term[] }).terms,
+    paths: (course.paths ?? []).map((path) => ({ id: path.id, lessons: [...path.lessons] })),
   };
   const glossary = {
     en: glossaryCells(readFileSync(GLOSSARY_PAGES.en, 'utf8')),
     es: glossaryCells(readFileSync(GLOSSARY_PAGES.es, 'utf8')),
   };
-  return { input, glossary, problems };
+  return { input, glossary, problems, matrix: readFileSync(MATRIX_FILE, 'utf8') };
 }
 
 const readBaseline = (): string[] | undefined =>
@@ -298,39 +519,47 @@ const readBaseline = (): string[] | undefined =>
 const baselineText = (keys: readonly string[]): string => `${JSON.stringify({ offences: [...keys].sort() }, null, 2)}\n`;
 
 /** Every problem of the tree against the committed table and baseline; empty when it holds. */
-export function check(rows: readonly Row[], baseline: readonly string[], table: string | undefined, mapping: readonly string[]): string[] {
-  const { added, stale } = ratchet(rows, baseline);
+export function check(
+  rows: readonly Row[],
+  baseline: readonly string[],
+  table: string | undefined,
+  mapping: readonly string[],
+  constructs: readonly string[] = [],
+): string[] {
+  const { added, stale } = ratchet(rows, baseline, constructs);
   return [
     ...mapping,
     ...added.map((key) => `new offence ${key}: fix the lesson (the baseline only shrinks)`),
     ...stale.map((key) => `${key} no longer occurs: remove it from the baseline (--write-baseline)`),
-    ...(table === renderTable(rows) ? [] : ['specs/012-zplc-2-1-plant-simulation/lesson-didactics.md is stale: run --write']),
+    ...(table === renderTable(rows, constructs) ? [] : ['specs/012-zplc-2-1-plant-simulation/lesson-didactics.md is stale: run --write']),
   ];
 }
 
 if (import.meta.main) {
   const flag = process.argv[2];
-  const { input, glossary, problems: loading } = loadInput();
+  const { input, glossary, problems: loading, matrix } = loadInput();
   const rows = evaluate(input);
+  const constructs = unexplainedConstructs(matrix, input.ideas);
   const mapping = [...loading, ...mappingProblems(input, glossary)];
   if (flag === '--write') {
-    writeFileSync(TABLE_FILE, renderTable(rows));
+    writeFileSync(TABLE_FILE, renderTable(rows, constructs));
     console.log(`wrote ${TABLE_FILE}`);
   } else if (flag === '--write-baseline') {
     const previous = readBaseline();
-    const { added } = ratchet(rows, previous ?? offenceKeys(rows));
+    const now = offenceKeys(rows, constructs);
+    const { added } = ratchet(rows, previous ?? now, constructs);
     if (added.length > 0) {
       console.error(`refusing to grow the baseline: ${added.join(', ')}`);
       process.exit(1);
     }
-    writeFileSync(BASELINE_FILE, baselineText(offenceKeys(rows)));
-    console.log(`wrote ${BASELINE_FILE} (${offenceKeys(rows).length} offences)`);
+    writeFileSync(BASELINE_FILE, baselineText(now));
+    console.log(`wrote ${BASELINE_FILE} (${now.length} offences)`);
   } else if (flag === '--check') {
     const table = existsSync(TABLE_FILE) ? readFileSync(TABLE_FILE, 'utf8') : undefined;
-    const problems = check(rows, readBaseline() ?? [], table, mapping);
+    const problems = check(rows, readBaseline() ?? [], table, mapping, constructs);
     for (const problem of problems) console.error(problem);
     if (problems.length > 0) process.exit(1);
-    console.log(`lesson didactics: ${rows.length} lessons, ${offenceKeys(rows).length} known offences, none new`);
+    console.log(`lesson didactics: ${rows.length} lessons, ${offenceKeys(rows, constructs).length} known offences, none new`);
   } else {
     console.error('usage: lesson-didactics.ts --check | --write | --write-baseline');
     process.exit(2);

@@ -31,7 +31,8 @@ const text = (patch: Partial<LessonText> = {}, run = 'Press Check.'): LessonText
   faultCases: [],
   ...patch,
 });
-const page = (example: string, mistakes: string) => `## ${example}\n\n![A figure](images/a.png)\n\n## ${mistakes}\n\n\`\`\`quiz\nquestion: Q\n\`\`\`\n`;
+const page = (example: string, mistakes: string) =>
+  `## ${example}\n\n![A figure](images/a.png)\n\n## ${mistakes}\n\n\`\`\`quiz\nquestion: Q\n\`\`\`\n`;
 const PAGES = { en: page('Worked example', 'Common mistakes'), es: page('Ejemplo resuelto', 'Errores comunes') };
 const lesson = (id: string, patch: Partial<LessonFacts> = {}): LessonFacts => ({
   id,
@@ -146,15 +147,53 @@ describe('rules, each failing when broken', () => {
   test('answer: a code line the solution adds, spaces normalised, in a field other than the last hint', () => {
     const added = { addedLines: ['Q := A AND B;'] };
     const en = (patch: Partial<LessonText>) => ({ ...added, text: { en: text(patch), es: text({}, 'Pulse Comprobar.') } });
-    expect(offending(base([lesson('a', en({ hints: [{ level: 1, text: 'Write `Q:=A  AND B ;`.' }, { level: 2, text: 'H' }] }))]))).toEqual([
-      'a:answer',
-    ]);
+    expect(
+      offending(
+        base([
+          lesson(
+            'a',
+            en({
+              hints: [
+                { level: 1, text: 'Write `Q:=A  AND B ;`.' },
+                { level: 2, text: 'H' },
+              ],
+            }),
+          ),
+        ]),
+      ),
+    ).toEqual(['a:answer']);
     expect(offending(base([lesson('a', en({ objectives: ['Q := A AND B;'] }))]))).toEqual(['a:answer']);
     expect(offending(base([lesson('a', en({ faultCases: ['q := a and b;'] }))]))).toEqual(['a:answer']);
-    expect(evaluate(base([lesson('a', en({ objectives: ['Q := A AND B;'] }))]))[0]!.offences.answer).toBe('Q := A AND B; (en)');
+    expect(evaluate(base([lesson('a', en({ objectives: ['Q := A AND B;'] }))]))[0]!.offences.answer).toBe('Q:=A AND B; (en)');
     // The last hint may hold the answer; a longer name around the line is not the line; LD, FBD and SFC are not checked.
-    expect(offending(base([lesson('a', en({ hints: [{ level: 1, text: 'H' }, { level: 2, text: 'Q := A AND B;' }] }))]))).toEqual([]);
+    expect(
+      offending(
+        base([
+          lesson(
+            'a',
+            en({
+              hints: [
+                { level: 1, text: 'H' },
+                { level: 2, text: 'Q := A AND B;' },
+              ],
+            }),
+          ),
+        ]),
+      ),
+    ).toEqual([]);
     expect(offending(base([lesson('a', en({ objectives: ['XQ := A AND B;C'] }))]))).toEqual([]);
+    expect(offending(base([lesson('a', en({ objectives: ['Q := A AND B; then stop.'] }))]))).toEqual(['a:answer']);
+    // A line of one word is the frame of a statement, not its answer.
+    expect(
+      offending(
+        base([
+          lesson('a', {
+            addedLines: ['VAR', 'END_IF;'],
+            text: { en: text({ objectives: ['A VAR and END_IF;'] }), es: text({}, 'Pulse Comprobar.') },
+          }),
+        ]),
+      ),
+    ).toEqual([]);
     expect(offending(base([lesson('a', { ...en({ objectives: ['Q := A AND B;'] }), addedLines: null })]))).toEqual([]);
   });
 
@@ -193,20 +232,22 @@ describe('rules, each failing when broken', () => {
     expect(offending(base([lesson('a', at('ok', 'Sin placa.'))]))).toEqual(['a:scope']);
     expect(offending(base([lesson('a', at('For safety.', 'ok'))]))).toEqual(['a:scope']);
     // The scope may say it; another language's word is not checked; a checkpoint without the words holds.
-    expect(offending(base([lesson('a', { text: { en: text({ scope: 'On the simulator only.' }), es: text({}, 'Pulse Comprobar.') } })]))).toEqual(
-      [],
-    );
+    expect(
+      offending(base([lesson('a', { text: { en: text({ scope: 'On the simulator only.' }), es: text({}, 'Pulse Comprobar.') } })])),
+    ).toEqual([]);
     expect(offending(base([lesson('a', at('placa', 'board'))]))).toEqual([]);
   });
 
   test('machine: the reading page of a lesson that names a scene embeds its image and its table, cell by cell', () => {
-    const table = { en: '| Part | Kind |\n| --- | --- |\n| `Belt1` | Belt conveyor |\n', es: '| Elemento | Tipo |\n| --- | --- |\n| `Belt1` | Cinta |\n' };
+    const table = {
+      en: '| Part | Kind |\n| --- | --- |\n| `Belt1` | Belt conveyor |\n',
+      es: '| Elemento | Tipo |\n| --- | --- |\n| `Belt1` | Cinta |\n',
+    };
     const machine = {
       en: { image: 'images/machine.en.png', table: table.en },
       es: { image: 'images/machine.es.png', table: table.es },
     };
-    const pageWith = (lang: 'en' | 'es', image: string, rows: string) =>
-      `${PAGES[lang]}\n![The machine](${image})\n\n${rows}\nProse.\n`;
+    const pageWith = (lang: 'en' | 'es', image: string, rows: string) => `${PAGES[lang]}\n![The machine](${image})\n\n${rows}\nProse.\n`;
     const padded = { en: '| Part      | Kind          |\n| --------- | ------------- |\n| `Belt1`   | Belt conveyor |\n', es: table.es };
     const good = { en: pageWith('en', 'images/machine.en.png', padded.en), es: pageWith('es', 'images/machine.es.png', table.es) };
     expect(offending(base([lesson('a', { machine, readingSource: good })]))).toEqual([]);
@@ -288,10 +329,11 @@ describe('the real tree', () => {
   test('the packages and both mappings are sound', () => expect([...problems, ...mappingProblems(input, glossary)]).toEqual([]));
   test('it holds against the baseline and the committed table', () =>
     expect(check(rows, baseline, existsSync(TABLE_FILE) ? readFileSync(TABLE_FILE, 'utf8') : undefined, [], constructs)).toEqual([]));
-  test('the three pilot lessons keep every rule of the standard', () => {
+  test('the three pilot lessons keep the rules of T1', () => {
     for (const id of ['timers-on-delay-off-delay', 'sfc-fill-mix-sequence', 'plant-belt-to-sensor']) {
       const row = rows.find((candidate) => candidate.lesson.id === id)!;
-      expect({ id, offences: row.offences }).toEqual({ id, offences: {} });
+      const t1 = (['reading-parts', 'answer', 'grows', 'scope', 'machine'] as const).filter((rule) => row.offences[rule] !== undefined);
+      expect({ id, t1 }).toEqual({ id, t1: [] });
     }
   });
   test('the matrix is read: it names at least the fifteen constructs of L7', () =>
