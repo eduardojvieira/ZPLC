@@ -1,71 +1,45 @@
 {
-  "name": "Root",
+  "name": "Publish",
   "variables": {
     "local": [
       {
-        "name": "Level",
-        "type": "REAL",
-        "initialValue": 2.0
+        "name": "Go",
+        "type": "BOOL"
       }
     ],
     "inputs": [],
-    "outputs": [
-      {
-        "name": "Res",
-        "type": "REAL",
-        "address": "%QD0"
-      }
-    ]
+    "outputs": []
   },
   "blocks": [
     {
-      "id": "level",
+      "id": "go",
       "type": "input",
       "position": {
         "x": 0,
         "y": 0
       },
-      "variableName": "Level"
+      "variableName": "Go"
     },
     {
-      "id": "root",
-      "type": "SQRT",
+      "id": "pub",
+      "type": "COMM_PUBLISH",
+      "instanceName": "Pub",
       "position": {
-        "x": 0,
+        "x": 200,
         "y": 0
       }
-    },
-    {
-      "id": "out",
-      "type": "output",
-      "position": {
-        "x": 0,
-        "y": 0
-      },
-      "variableName": "Res"
     }
   ],
   "connections": [
     {
       "id": "w1",
       "from": {
-        "block": "level",
+        "block": "go",
         "port": "OUT"
       },
       "to": {
-        "block": "root",
-        "port": "IN"
-      }
-    },
-    {
-      "id": "w2",
-      "from": {
-        "block": "root",
-        "port": "OUT"
-      },
-      "to": {
-        "block": "out",
-        "port": "IN"
+        "block": "pub",
+        "port": "EN"
       }
     }
   ]
