@@ -92,10 +92,10 @@ options:
 ```
 
 ```quiz
-question: Capacity can be 0 before the setup. How do you protect DIV(Scaled, Capacity)?
+question: In the bottle case, Bottles is 0 while the case is empty. How do you protect DIV(Weight, Bottles)?
 options:
-  - { text: 'Put NE(Capacity, 0) in series, to the left of the DIV', correct: true, feedback: 'Right. The DIV gets power only when Capacity is not zero.' }
-  - { text: 'Put NE(Capacity, 0) after the DIV', feedback: 'By then the division has already happened and the program has faulted.' }
+  - { text: 'Put NE(Bottles, 0) in series, to the left of the DIV', correct: true, feedback: 'Right. The DIV gets power only when Bottles is not zero, so an empty case never divides.' }
+  - { text: 'Put NE(Bottles, 0) after the DIV', feedback: 'By then the division has already happened and the program has faulted.' }
   - { text: 'Do nothing: the DIV by zero gives 0', feedback: 'It does not. On the ZPLC runtime a division by zero faults the virtual machine.' }
 ```
 

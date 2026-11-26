@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program has no rung between Raw and Level, so Level stays 0 and Warn and HighLevel never turn ON at {{t:50}} ms and {{t:80}} ms. Add one rung that puts Raw in percent, Raw times 100 divided by 4095, into Quot, with the DINT Scaled for the intermediate product, and without losing the part of the value that the division drops. The rungs below it already read Quot.",
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program has no rung between Raw and Level, so Level stays 0 and Warn and HighLevel never turn ON at {{t:50}} ms and {{t:80}} ms. Add the rung that puts Raw as a percentage of full scale, from 0 to 100, into Quot, the variable the rungs below already read, so that Warn turns ON at 50 percent and HighLevel at 75 percent.",
       "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {

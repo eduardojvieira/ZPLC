@@ -92,10 +92,10 @@ options:
 ```
 
 ```quiz
-question: Capacity puede ser 0 antes de la configuración. ¿Cómo se protege DIV(Scaled, Capacity)?
+question: En la caja de botellas, Bottles vale 0 mientras la caja está vacía. ¿Cómo se protege DIV(Weight, Bottles)?
 options:
-  - { text: 'Poniendo NE(Capacity, 0) en serie, a la izquierda del DIV', correct: true, feedback: 'Correcto. El DIV recibe energía solo cuando Capacity no es cero.' }
-  - { text: 'Poniendo NE(Capacity, 0) después del DIV', feedback: 'Para entonces la división ya ocurrió y el programa ya falló.' }
+  - { text: 'Poniendo NE(Bottles, 0) en serie, a la izquierda del DIV', correct: true, feedback: 'Correcto. El DIV recibe energía solo cuando Bottles no es cero, así que una caja vacía nunca divide.' }
+  - { text: 'Poniendo NE(Bottles, 0) después del DIV', feedback: 'Para entonces la división ya ocurrió y el programa ya falló.' }
   - { text: 'No haciendo nada: el DIV entre cero da 0', feedback: 'No es así. En el runtime de ZPLC una división entre cero hace fallar la máquina virtual.' }
 ```
 

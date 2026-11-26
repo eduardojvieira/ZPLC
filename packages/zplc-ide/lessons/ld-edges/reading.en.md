@@ -101,4 +101,4 @@ options:
 
 ## What you will do in the practice
 
-In the practice you get the box sensor of the conveyor entry. Two rungs copy the sensor to two coils, so both outputs stay on while a box is there. You will make `BoxArrived` pulse for one scan when a box arrives and `BoxLeft` pulse for one scan when it leaves. The test blocks the sensor from {{t:10}} ms to {{t:70}} ms, so `BoxArrived` must be on only at {{t:10}} ms. Then press {{ui:learn.check}}.
+In the practice you get the box sensor of the conveyor entry. Two rungs copy the sensor to two coils, so both outputs stay on while a box is there. You will make `BoxArrived` pulse for one scan when a box arrives and `BoxLeft` pulse for one scan when it leaves. The test blocks the sensor from {{t:10}} ms to {{t:70}} ms, and again from {{t:100}} ms to {{t:110}} ms for a second box, so `BoxArrived` must be on only at {{t:10}} ms and at {{t:100}} ms, the scans in which a box arrives. Then press {{ui:learn.check}}.

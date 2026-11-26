@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial no tiene peldaño para Percent, así que Percent se queda en 0 y HighAlarm nunca pasa a ON a los {{t:80}} ms. Agregue un peldaño que haga de Percent el nivel en porcentaje de la capacidad, Level por 100 dividido entre Capacity, con Scaled para el producto, y que nunca divida mientras Capacity vale 0. Deje como están el peldaño de la alarma y los demás peldaños.",
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial no tiene peldaño para Percent, así que Percent se queda en 0 y HighAlarm nunca pasa a ON a los {{t:80}} ms. Agregue el peldaño que hace de Percent el nivel como porcentaje de Capacity, para que el peldaño de la alarma pase HighAlarm a ON cuando el tanque llegue al 75 por ciento, y asegúrese de que ninguna división se ejecute mientras Capacity todavía vale 0. Deje como están el peldaño de la alarma y los demás peldaños.",
       "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {

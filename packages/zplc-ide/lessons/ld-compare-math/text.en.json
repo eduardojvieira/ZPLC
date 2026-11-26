@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program has no rung for Percent, so Percent stays 0 and HighAlarm never turns ON at {{t:80}} ms. Add one rung that makes Percent the level in percent of the capacity, Level times 100 divided by Capacity, with Scaled for the product, and that never divides while Capacity is 0. Leave the alarm rung and the other rungs as they are.",
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program has no rung for Percent, so Percent stays 0 and HighAlarm never turns ON at {{t:80}} ms. Add the rung that makes Percent the level as a percentage of Capacity, so that the alarm rung turns HighAlarm ON when the tank reaches 75 percent, and make sure no division ever runs while Capacity is still 0. Leave the alarm rung and the other rungs as they are.",
       "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {

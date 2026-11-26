@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Retardo a la conexión y a la desconexión en escalera: temporizadores como bloques en un peldaño",
-  "summary": "Coloque un TOF y un TON entre un contacto y una bobina, y compruebe que un retardo a la desconexión mantiene una luz tras soltar el botón y que un retardo a la conexión ignora un sensor que no se mantiene.",
+  "summary": "Coloque un TOF y un TON entre un contacto y una bobina, y compruebe que un retardo a la desconexión mantiene una luz tras soltar el pulsador y que un retardo a la conexión ignora un sensor que no se mantiene.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo parpadea un sensor real ni cómo se cablea una lámpara real.",
   "objectives": [
     "Coloque un bloque temporizador en un peldaño, con el contacto en su entrada IN y su salida en la bobina.",

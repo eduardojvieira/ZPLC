@@ -13,8 +13,8 @@ Dos palabras lo aclaran.
 
 Recuerde el ciclo de escaneo: el PLC lee sus entradas, resuelve los peldaños de arriba abajo, escribe las salidas y vuelve a empezar. Un contacto de flanco trabaja dentro de ese ciclo. Recuerda el valor de su variable en el escaneo anterior y lo compara con el valor de este escaneo.
 
-- Un **contacto de transición positiva**, o contacto P, conduce durante exactamente un escaneo: el escaneo en que la variable está activa ahora y estaba inactiva en el escaneo anterior.
-- Un **contacto de transición negativa**, o contacto N, conduce durante exactamente un escaneo: el escaneo en que la variable está inactiva ahora y estaba activa en el escaneo anterior.
+- Un **contacto de flanco ascendente**, o contacto P, conduce durante exactamente un escaneo: el escaneo en que la variable está activa ahora y estaba inactiva en el escaneo anterior.
+- Un **contacto de flanco descendente**, o contacto N, conduce durante exactamente un escaneo: el escaneo en que la variable está inactiva ahora y estaba activa en el escaneo anterior.
 
 En cualquier otro escaneo, con el pulsador retenido o suelto, ambos contactos están abiertos. El resultado es un **pulso de un escaneo**: energía que circula por el peldaño durante una sola pasada del programa y luego se detiene.
 
@@ -101,4 +101,4 @@ options:
 
 ## Qué hará en la práctica
 
-En la práctica tendrá el sensor de cajas de la entrada del transportador. Dos peldaños copian el sensor a dos bobinas, así que ambas salidas permanecen en ON mientras hay una caja. Usted hará que `BoxArrived` pulse durante un escaneo cuando llega una caja y que `BoxLeft` pulse durante un escaneo cuando sale. La prueba bloquea el sensor desde los {{t:10}} ms hasta los {{t:70}} ms, así que `BoxArrived` debe estar en ON solo a los {{t:10}} ms. Después pulse {{ui:learn.check}}.
+En la práctica tendrá el sensor de cajas de la entrada del transportador. Dos peldaños copian el sensor a dos bobinas, así que ambas salidas permanecen en ON mientras hay una caja. Usted hará que `BoxArrived` pulse durante un escaneo cuando llega una caja y que `BoxLeft` pulse durante un escaneo cuando sale. La prueba bloquea el sensor desde los {{t:10}} ms hasta los {{t:70}} ms, y de nuevo desde los {{t:100}} ms hasta los {{t:110}} ms para una segunda caja, así que `BoxArrived` debe estar en ON solo a los {{t:10}} ms y a los {{t:100}} ms, los escaneos en que llega una caja. Después pulse {{ui:learn.check}}.

@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial no tiene peldaño entre Raw y Level, así que Level se queda en 0 y Warn y HighLevel nunca pasan a ON a los {{t:50}} ms y {{t:80}} ms. Agregue un peldaño que ponga Raw en porcentaje, Raw por 100 dividido entre 4095, en Quot, con el DINT Scaled para el producto intermedio, y sin perder la parte del valor que la división descarta. Los peldaños de abajo ya leen Quot.",
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial no tiene peldaño entre Raw y Level, así que Level se queda en 0 y Warn y HighLevel nunca pasan a ON a los {{t:50}} ms y {{t:80}} ms. Agregue el peldaño que pone Raw como porcentaje de la plena escala, de 0 a 100, en Quot, la variable que ya leen los peldaños de abajo, para que Warn pase a ON al 50 por ciento y HighLevel al 75 por ciento.",
       "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {

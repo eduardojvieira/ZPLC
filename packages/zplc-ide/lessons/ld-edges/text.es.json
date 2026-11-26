@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "title": "Flancos en escalera: contactos P y N y pulsos de un escaneo",
-  "summary": "Use un contacto de transición positiva y un contacto de transición negativa para que una caja en un transportador dé un pulso al llegar y otro al salir, sin importar cuánto tiempo siga activo el sensor.",
+  "summary": "Use un contacto de flanco ascendente y un contacto de flanco descendente para que una caja en un transportador dé un pulso al llegar y otro al salir, sin importar cuánto tiempo siga activo el sensor.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un sensor real, con qué rapidez responde ni cómo se cablea.",
   "objectives": [
-    "Use un contacto de transición positiva (P) y un contacto de transición negativa (N) para convertir un nivel en un pulso de un escaneo.",
+    "Use un contacto de flanco ascendente (P) y un contacto de flanco descendente (N) para convertir un nivel en un pulso de un escaneo.",
     "Explique por qué una entrada retenida debe contarse una sola vez y qué escaneo ve el pulso."
   ],
   "stages": [
@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "Intercambie los dos contactos, de modo que BoxArrived use la transición negativa, y ejecute de nuevo. ¿Qué aserciones fallan y qué contaría un contador colocado después de cada salida?",
+      "body": "Intercambie los dos contactos, de modo que BoxArrived use el flanco descendente, y ejecute de nuevo. ¿Qué aserciones fallan y qué contaría un contador colocado después de cada salida?",
       "checkpoint": "La llegada pulsa entonces cuando la caja sale, así que el pulso llega tarde por la longitud de la caja. Un contacto de flanco responde cuándo cambió, no si está activo ahora, y para contar se necesita lo primero."
     }
   ],
@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "Reemplace el contacto del primer peldaño por un contacto de transición positiva sobre BoxSensor, y el del segundo peldaño por un contacto de transición negativa sobre BoxSensor. Conserve las dos bobinas."
+      "text": "Reemplace el contacto del primer peldaño por un contacto de flanco ascendente sobre BoxSensor, y el del segundo peldaño por un contacto de flanco descendente sobre BoxSensor. Conserve las dos bobinas."
     }
   ],
   "faultCases": [

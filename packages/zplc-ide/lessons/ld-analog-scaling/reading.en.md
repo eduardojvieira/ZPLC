@@ -31,26 +31,26 @@ In Ladder these are two boxes in one rung: `MUL` and then `DIV`. A third box, `L
 
 ## Worked example
 
-A tank is 2000 mm deep. A lamp `Warn` must light at 1000 mm and a lamp `High` above 1500 mm. The figure scales the counts to millimeters: `MUL` first, into a DINT, then `DIV`.
+A conveyor belt runs at any speed from 0 to 1500 mm/s, and a speed sensor reports it in counts from 0 to 4095. A lamp `Moving` must light from 750 mm/s and a lamp `Overspeed` above 1200 mm/s. The figure scales the counts to millimeters per second, `Speed = Raw * 1500 / 4095`: `MUL` first, into a DINT, then `DIV`. At full scale the product is 6 142 500, far above what an INT holds.
 
 ```ld-figure
-src: reading/tank-gauge.ld.json
+src: reading/belt-speed.ld.json
 rung: 5
-caption: Counts to millimeters, in two boxes
+caption: Counts to millimeters per second, in two boxes
 ```
 
 This lab has no sensor, so a knob stands in for it: each press of TurnUp adds 512 counts and each press of TurnDown takes 512 away. Press TurnUp seven times, watching the two lamps, and then press TurnDown once.
 
 ```ld-try
-src: reading/tank-gauge.ld.json
+src: reading/belt-speed.ld.json
 inputs:
   - { name: TurnUp, kind: push }
   - { name: TurnDown, kind: push }
-outputs: [Warn, High]
-caption: Warn needs 1000 mm; High needs more than 1500 mm
+outputs: [Moving, Overspeed]
+caption: Moving needs 750 mm/s; Overspeed needs more than 1200 mm/s
 ```
 
-After four presses the level is 1000 mm and `Warn` turns on. After six presses it is exactly 1500 mm, and `High` stays off because its comparison is `GT`. The seventh press gives 1750 mm and `High` turns on. This is a level alarm driven by a comparison box, with the threshold written in engineering units and not in counts.
+After four presses the knob is at 2048 counts: 2048 times 1500 is 3 072 000, divided by 4095 it gives 750, and `Moving` turns on. After six presses the speed is 1125 mm/s and `Overspeed` stays off. The seventh press gives 1312 mm/s and `Overspeed` turns on; one press of TurnDown takes it back to 1125. Both thresholds are written in engineering units, not in counts.
 
 ## Common mistakes
 

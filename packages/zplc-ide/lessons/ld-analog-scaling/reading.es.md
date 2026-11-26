@@ -31,26 +31,26 @@ En escalera son dos bloques en un mismo peldaño: `MUL` y luego `DIV`. Un tercer
 
 ## Ejemplo resuelto
 
-Un tanque tiene 2000 mm de profundidad. Una lámpara `Warn` debe encenderse a los 1000 mm y una lámpara `High` por encima de 1500 mm. La figura escala las cuentas a milímetros: primero `MUL`, hacia un DINT, y luego `DIV`.
+Una cinta transportadora marcha a cualquier velocidad entre 0 y 1500 mm/s, y un sensor de velocidad la informa en cuentas de 0 a 4095. Una lámpara `Moving` debe encenderse desde 750 mm/s y una lámpara `Overspeed` por encima de 1200 mm/s. La figura escala las cuentas a milímetros por segundo, `Speed = Raw * 1500 / 4095`: primero `MUL`, hacia un DINT, y luego `DIV`. A plena escala el producto es 6 142 500, muy por encima de lo que guarda un INT.
 
 ```ld-figure
-src: reading/tank-gauge.ld.json
+src: reading/belt-speed.ld.json
 rung: 5
-caption: De cuentas a milímetros, en dos bloques
+caption: De cuentas a milímetros por segundo, en dos bloques
 ```
 
 Este laboratorio no tiene sensor, así que una perilla ocupa su lugar: cada pulsación de TurnUp suma 512 cuentas y cada pulsación de TurnDown quita 512. Pulse TurnUp siete veces, mirando las dos lámparas, y luego pulse TurnDown una vez.
 
 ```ld-try
-src: reading/tank-gauge.ld.json
+src: reading/belt-speed.ld.json
 inputs:
   - { name: TurnUp, kind: push }
   - { name: TurnDown, kind: push }
-outputs: [Warn, High]
-caption: Warn necesita 1000 mm; High necesita más de 1500 mm
+outputs: [Moving, Overspeed]
+caption: Moving necesita 750 mm/s; Overspeed necesita más de 1200 mm/s
 ```
 
-Tras cuatro pulsaciones el nivel es de 1000 mm y `Warn` se enciende. Tras seis es exactamente 1500 mm, y `High` sigue apagada porque su comparación es `GT`. La séptima pulsación da 1750 mm y `High` se enciende. Es una alarma de nivel gobernada por un bloque de comparación, con el umbral escrito en unidades de ingeniería y no en cuentas.
+Tras cuatro pulsaciones la perilla está en 2048 cuentas: 2048 por 1500 es 3 072 000, dividido entre 4095 da 750, y `Moving` se enciende. Tras seis pulsaciones la velocidad es de 1125 mm/s y `Overspeed` sigue apagada. La séptima pulsación da 1312 mm/s y `Overspeed` se enciende; una pulsación de TurnDown la devuelve a 1125. Los dos umbrales están escritos en unidades de ingeniería, no en cuentas.
 
 ## Errores comunes
 
