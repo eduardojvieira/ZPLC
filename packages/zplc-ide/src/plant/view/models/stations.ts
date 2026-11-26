@@ -29,7 +29,8 @@ export const STACKER = {
   aisleMargin: 0.3, // the aisle rails reach this far beyond the first and the last bay
   rail: { width: 0.08, height: 0.04 },
   truck: { width: 0.5, height: 0.055, depth: 0.24 },
-  headroom: 0.4, // C10: the rack's uprights rise this far over the top shelf (the mast's 0.4), so a load fits on it and the mast stands within the rack
+  // C10: the rack's uprights rise this far over the top shelf (the mast's 0.4), so a load fits on it and the mast stands within it.
+  headroom: 0.4,
   mastHead: 0.065,
   shelf: 0.02, // C10: the plate of a cell that carries a load, under the cell rails
   aisleBed: { width: 0.2, height: 0.012 }, // C10: the rack's floor bed under the crane's rail, tied to the rack's front uprights
