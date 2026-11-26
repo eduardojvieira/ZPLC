@@ -1,5 +1,5 @@
 {
-  "name": "TankGauge",
+  "name": "BeltSpeed",
   "description": "A level sensor in counts, scaled to millimetres, with a warning and a high lamp.",
   "version": "1.0.0",
   "variables": {
@@ -32,13 +32,13 @@
         "name": "Scaled",
         "type": "DINT",
         "initialValue": 0,
-        "comment": "Raw times 2000: 8 190 000 at full scale, far above what an INT holds"
+        "comment": "Raw times 1500: 6 142 500 at full scale, far above what an INT holds"
       },
       {
-        "name": "Mm",
+        "name": "Speed",
         "type": "DINT",
         "initialValue": 0,
-        "comment": "Level in millimetres, 0..2000"
+        "comment": "Belt speed in millimetres per second, 0..1500"
       }
     ],
     "inputs": [
@@ -55,14 +55,14 @@
     ],
     "outputs": [
       {
-        "name": "Warn",
+        "name": "Moving",
         "type": "BOOL",
-        "comment": "Lamp: 1000 mm or more"
+        "comment": "Lamp: 750 mm/s or more"
       },
       {
-        "name": "High",
+        "name": "Overspeed",
         "type": "BOOL",
-        "comment": "Lamp: more than 1500 mm"
+        "comment": "Lamp: more than 1200 mm/s"
       }
     ]
   },
@@ -274,7 +274,7 @@
     {
       "id": "rung_5",
       "number": 5,
-      "comment": "Counts to millimetres: multiply by the span of the tank, then divide by the span of the counts.",
+      "comment": "Counts to millimetres per second: multiply by the span of the speed, then divide by the span of the counts.",
       "branches": [],
       "gridConfig": {
         "cols": 6,
@@ -288,7 +288,7 @@
             "element": {
               "type": "function",
               "functionName": "MUL",
-              "operands": ["Raw", "2000"],
+              "operands": ["Raw", "1500"],
               "output": "Scaled",
               "id": "r5_0",
               "row": 0,
@@ -301,7 +301,7 @@
               "type": "function",
               "functionName": "DIV",
               "operands": ["Scaled", "4095"],
-              "output": "Mm",
+              "output": "Speed",
               "id": "r5_1",
               "row": 0,
               "col": 1
@@ -330,7 +330,7 @@
     {
       "id": "rung_6",
       "number": 6,
-      "comment": "Warning from 1000 mm.",
+      "comment": "Moving from 750 mm/s.",
       "branches": [],
       "gridConfig": {
         "cols": 6,
@@ -344,7 +344,7 @@
             "element": {
               "type": "function",
               "functionName": "GE",
-              "operands": ["Mm", "1000"],
+              "operands": ["Speed", "750"],
               "id": "r6_0",
               "row": 0,
               "col": 0
@@ -370,7 +370,7 @@
           {
             "element": {
               "type": "coil",
-              "variable": "Warn",
+              "variable": "Moving",
               "id": "r6_5",
               "row": 0,
               "col": 5
@@ -383,7 +383,7 @@
     {
       "id": "rung_7",
       "number": 7,
-      "comment": "High lamp above 1500 mm.",
+      "comment": "Overspeed lamp above 1200 mm/s.",
       "branches": [],
       "gridConfig": {
         "cols": 6,
@@ -397,7 +397,7 @@
             "element": {
               "type": "function",
               "functionName": "GT",
-              "operands": ["Mm", "1500"],
+              "operands": ["Speed", "1200"],
               "id": "r7_0",
               "row": 0,
               "col": 0
@@ -423,7 +423,7 @@
           {
             "element": {
               "type": "coil",
-              "variable": "High",
+              "variable": "Overspeed",
               "id": "r7_5",
               "row": 0,
               "col": 5

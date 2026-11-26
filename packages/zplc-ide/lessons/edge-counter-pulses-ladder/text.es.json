@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Contar pulsos en escalera: un CTU cuenta los flancos por sí mismo",
   "summary": "Coloque un CTU en un peldaño para que CountReached se active en el tercer flanco ascendente de una entrada de pulsos y Reset borre la cuenta.",
-  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la exactitud de conteo de una entrada real ni el cableado.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un sensor real, cuántos pulsos pierde una entrada real ni cómo se cablea.",
   "objectives": [
     "Coloque un bloque contador en un peldaño y fije su preset y su reset.",
     "Explique que un contador suma uno en el flanco ascendente de su entrada, no en cada escaneo en que la entrada está en alto."
@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/EdgeCounterLd.ld.json un peldaño copia PulseInput a CountReached. Reemplace la copia por un CTU de preset 3 entre el contacto y la bobina, y conecte Reset a su entrada R, para que CountReached se active con el tercer pulso y Reset la borre.",
-      "checkpoint": "El contador queda entre PulseInput y la bobina de CountReached."
+      "body": "En src/EdgeCounterLd.ld.json un peldaño copia PulseInput a CountReached, así que CountReached pasa a ON con cada pulso. Haga que CountReached pase a ON con el tercer pulso y siga en ON hasta que Reset borre la cuenta.",
+      "checkpoint": "Usted puede decir qué entrada de un contador suma uno, cuál borra la cuenta y cuándo se activa su Q."
     },
     {
       "key": "predict",
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia el pulso a la bobina: CountReached está en ON a los {{t:10}} ms, con el primer pulso, en lugar de después del tercero; coloque un CTU con PV 3 y Reset en su entrada R entre PulseInput y CountReached. En el editor de escalera arrastre un bloque CTU entre el contacto y la bobina, asigne a su instancia el nombre Count y fije PV en 3 y R en Reset.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial copia el pulso a la bobina, así que CountReached está en ON a los {{t:10}} ms, con el primer pulso, en lugar de después del tercero. Cámbielo para que CountReached pase a ON con el tercer pulso de PulseInput, siga en ON después y pase a OFF cuando se pulse Reset.",
+      "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta el programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario se llama EdgeCounterLd y contiene {{assertions}} aserciones."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial copia el pulso a la bobina: CountReached está en ON a los {{t:10}} ms, con el primer pulso, en lugar de después del tercero; coloque un CTU con PV 3 y Reset en su entrada R entre PulseInput y CountReached."
+    "El programa inicial copia el pulso a la bobina, así que CountReached está en ON a los {{t:10}} ms, con el primer pulso, en lugar de después del tercero."
   ]
 }
