@@ -14,19 +14,24 @@
 //   vocabulary  no learner-facing field (all that Learn shows, and the reading pages) uses the evidence vocabulary: VOCABULARY below,
 //               whole words, any case, both languages
 //   order       in courseOrder no lesson comes before the lesson that explains an idea it practises (tools/ci/lesson-ideas.json)
-//   glossary    no learner text uses a synonym the glossary rules out (tools/ci/glossary-terms.json: one term per concept and language)
+//   glossary    no learner text uses a synonym the glossary rules out (tools/ci/glossary-terms.json: one term per concept and language);
+//               a forbidden word right before a {{ui:<key>}} placeholder names a Studio control ("el botón {{ui:learn.check}}")
 //   reading-parts  each reading page that exists has an image or a timing, ld-figure or ld-try block, a quiz block and the level-2
 //               headings "Worked example" and "Common mistakes" ("Ejemplo resuelto", "Errores comunes") (CRS-014)
-//   answer      for ST and IL, no code line the solution adds to the starter (spaces normalised, any case; a line of one word such as
-//               VAR or END_IF; is a frame, not an answer) is in the objectives, the stages, the fault cases or a hint other than the
-//               last; nor is a statement the solution adds (ST, split at `;`) or the right-hand side of its `:=`, once
-//               normalised, when it is 6 characters or more (CRS-017). A worked example that becomes the solution once its
-//               variables are renamed is not detected: a person reads that at the owner's stops
+//   answer      for ST and IL, the candidates are each code line the solution adds to the starter (a line of one word such as VAR
+//               or END_IF; is a frame, not an answer) and, for ST, each statement it adds (split at `;`) and the right-hand side
+//               of each added assignment `name := …`, when that statement or side is more than ANSWER_PART_MIN characters once
+//               normalised. Spaces are normalised, a candidate the starter already holds is dropped, and the match is
+//               case-sensitive, so the operator words (AND, OR, ADD, MOD, LD, ST) count only in their code form. No candidate may
+//               be in the objectives, any stage (Reflect included), the fault cases or a hint other than the last, read with
+//               {{v:…|X}} as X and {{t:N}} as N (CRS-017). A worked example that becomes the solution once its variables are
+//               renamed is not detected: a person reads that at the owner's stops
 
 //   grows       the starter of the last lesson of each module of a path (course.json) holds at most two statements beyond its
 //               declarations (ST, IL: `;` of a body, instruction lines) or no rung, connection, transition or step beyond the initial
 //               one (LD, FBD, SFC); the column "Starter statements" shows that count for every lesson (CRS-018)
-//   scope       no checkpoint holds SCOPE_WORDS below; the lesson's scope says what a pass proves (CRS-020)
+//   scope       no checkpoint holds SCOPE_WORDS below, except the board term in SCOPE_EXEMPT's lessons; the lesson's scope says
+//               what a pass proves (CRS-020)
 //   machine     each reading page of a lesson that names a scene embeds images/machine.<lang>.png and the signal tables that
 //               scripts/learn/signal-table.ts gives for that scene, row by row and cell by cell (CRS-016)
 // And per construct of the compiler support matrix (specs/012-zplc-2-1-plant-simulation/course-l7-support.md), baseline key
@@ -79,7 +84,11 @@ export const VOCABULARY: Record<Lang, readonly string[]> = {
 /** What a pass proves is said once, in the scope: a checkpoint never names these (CRS-020). Whole words, any case. */
 export const SCOPE_WORDS: Record<Lang, readonly string[]> = {
   en: ['simulator', 'real machine', 'board', 'safety'],
-  es: ['simulador', 'máquina real', 'placa', 'seguridad'],
+  es: ['simulador', 'máquina real', 'placa de desarrollo', 'placas de desarrollo', 'seguridad'],
+};
+/** Lessons about the board itself: the board term may stand in their checkpoints, the other scope words may not. */
+export const SCOPE_EXEMPT: Record<string, readonly string[]> = {
+  'verify-my-board': ['board', 'placa de desarrollo', 'placas de desarrollo'],
 };
 const HEADINGS: Record<Lang, readonly string[]> = {
   en: ['Worked example', 'Common mistakes'],
@@ -113,6 +122,8 @@ export interface LessonFacts {
   addedLines: string[] | null;
   /** Structured Text statements (split at `;`) of the solution that the starter lacks, for the rule answer; empty for other languages. */
   addedStatements: string[];
+  /** The starter's program as written, for the rule answer: a candidate it already holds gives nothing away. */
+  starterSource: string;
   /** Statements of the starter beyond its declarations; `graphic` for LD, FBD and SFC (rungs, connections, transitions, steps). */
   starter: { statements: number; graphic: boolean };
   /** For a lesson that names a scene: the image its page must show and the tables the scene gives, per language. */
@@ -160,11 +171,15 @@ export function learnerText(text: LessonText): string {
 }
 
 /**
- * A `{{t:10}}` or `{{assertions}}` placeholder is filled in by Learn, so its name is not learner text; a `{{ui:key}}` control
- * name is, as the label of the catalogue the index expands it to (a key the catalogue lacks is the lesson validator's problem).
+ * The text as the index generator expands it (expandQuotes): `{{ui:key}}` is the label of the catalogue (a key the catalogue
+ * lacks is the lesson validator's problem), `{{t:N}}` is N, `{{v:…|X}}` is X; `{{assertions}}` and any other markup are left out.
  */
 const unplaced = (text: string, lang: Lang): string =>
-  text.replace(/\{\{ui:([\w.]+)\}\}/g, (markup, key: string) => uiLabel(lang, key) ?? markup).replace(/\{\{[^}]*\}\}/g, '');
+  text
+    .replace(/\{\{ui:([\w.]+)\}\}/g, (markup, key: string) => uiLabel(lang, key) ?? markup)
+    .replace(/\{\{t:(\d+)\}\}/g, '$1')
+    .replace(/\{\{v:[^|}]*\|([^}]*)\}\}/g, '$1')
+    .replace(/\{\{[^}]*\}\}/g, '');
 
 const SEPARATOR = ', ';
 
@@ -175,18 +190,21 @@ const normalised = (code: string): string =>
     .replace(/ ?([^\p{L}\p{N}_ ]) ?/gu, '$1')
     .trim();
 
-/** The shortest statement or right-hand side the rule answer looks for alone, normalised: `A OR B` is too common to be an answer. */
+/**
+ * A statement or right-hand side is a candidate of the rule answer only when it is longer than this, normalised: `A OR B`
+ * (6 characters) is too common to be an answer, `(Raw*100)/1000` is not.
+ */
 const ANSWER_PART_MIN = 6;
 
 /** A line of one word, such as `VAR`, `ELSE` or `END_IF;`: the frame of a statement, not its answer. */
 const KEYWORD_LINE = /^[\p{L}\p{N}_]+;?$/u;
 
-/** Whether `text` holds `code`, any case, not as part of a longer name: only an end that is a letter or digit needs a boundary. */
+/** Whether `text` holds `code`, case-sensitively, not as part of a longer name: only an end that is a letter or digit needs a boundary. */
 const holdsCode = (text: string, code: string): boolean => {
   const word = /[\p{L}\p{N}_]/u;
   const before = word.test(code[0] ?? '') ? '(?<![\\p{L}\\p{N}_])' : '';
   const after = word.test(code.at(-1) ?? '') ? '(?![\\p{L}\\p{N}_])' : '';
-  return new RegExp(`${before}${escape(code)}${after}`, 'iu').test(text);
+  return new RegExp(`${before}${escape(code)}${after}`, 'u').test(text);
 };
 
 /** The rows of the Markdown tables in `markdown`, each as its trimmed cells joined by `|`, without the alignment rows. */
@@ -243,7 +261,12 @@ export function evaluate(input: Input): Row[] {
     if (early.length > 0) offences.order = early.map((idea) => `${idea} < ${input.ideas.ideas[idea]!.explainedBy}`).join(SEPARATOR);
     const wrongTerms = input.terms.flatMap((term) =>
       LANGS.flatMap((lang) =>
-        term.forbidden[lang].filter((word) => hasWord(full(lang), word)).map((word) => `${word} (${lang}, use ${term[lang]})`),
+        term.forbidden[lang]
+          .filter((word) => {
+            const raw = `${learnerText(lesson.text[lang])}\n${lesson.readingText[lang]}`;
+            return hasWord(unplaced(raw.replace(new RegExp(`${escape(word)}(?=\\s+\\{\\{ui:)`, 'giu'), ''), lang), word);
+          })
+          .map((word) => `${word} (${lang}, use ${term[lang]})`),
       ),
     );
     if (wrongTerms.length > 0) offences.glossary = wrongTerms.join(SEPARATOR);
@@ -278,7 +301,10 @@ export function evaluate(input: Input): Row[] {
       const parts = lesson.addedStatements
         .flatMap((statement) => [statement, /^[\w.[\]]+\s*:=/.test(statement) ? statement.slice(statement.indexOf(':=') + 2) : ''])
         .map(normalised);
-      const candidates = [...new Set([...lesson.addedLines!.map(normalised), ...parts.filter((part) => part.length >= ANSWER_PART_MIN)])];
+      const starter = normalised(lesson.starterSource);
+      const candidates = [
+        ...new Set([...lesson.addedLines!.map(normalised), ...parts.filter((part) => part.length > ANSWER_PART_MIN)]),
+      ].filter((candidate) => !holdsCode(starter, candidate));
       const given = LANGS.flatMap((lang) =>
         candidates.filter((line) => !KEYWORD_LINE.test(line) && holdsCode(told(lang), line)).map((line) => `${line} (${lang})`),
       );
@@ -291,6 +317,7 @@ export function evaluate(input: Input): Row[] {
 
     const scopeWords = LANGS.flatMap((lang) =>
       SCOPE_WORDS[lang]
+        .filter((word) => !SCOPE_EXEMPT[lesson.id]?.includes(word))
         .filter((word) => lesson.text[lang].stages.some((stage) => hasWord(unplaced(stage.checkpoint, lang), word)))
         .map((word) => `${word} (${lang})`),
     );
@@ -515,6 +542,7 @@ export function loadInput(): { input: Input; glossary: Record<Lang, string>; pro
       readingText: { en: prose(pkg.reading?.en), es: prose(pkg.reading?.es) },
       readingSource: { en: pkg.reading?.en ?? '', es: pkg.reading?.es ?? '' },
       addedLines: textOnly ? linesAdded(read(pkg.manifest.starter), read(pkg.manifest.solution)) : null,
+      starterSource: read(pkg.manifest.starter),
       addedStatements: pkg.manifest.starter.program.endsWith('.st')
         ? statementsAdded(read(pkg.manifest.starter), read(pkg.manifest.solution))
         : [],

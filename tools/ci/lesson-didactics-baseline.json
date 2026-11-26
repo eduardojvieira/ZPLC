@@ -2,7 +2,6 @@
   "offences": [
     "and-or-xor-not-on-byte-word-dword:explainer",
     "array:explainer",
-    "blink-structured-text:answer",
     "blink-structured-text:reading",
     "blinky-ladder-timer-feedback:grows",
     "boolean-logic-two-hand-guard-il:answer",
@@ -53,7 +52,6 @@
     "ld-sequence-step-bits:grows",
     "ld-sequence-step-bits:reading-parts",
     "modbus-coil-fbd:reading",
-    "modbus-register-round-trip:answer",
     "modbus-register-round-trip:reading",
     "motor-plant-feedback:reading",
     "mqtt-publish-subscribe:reading",
@@ -85,9 +83,7 @@
     "plant-colour-separation-il:answer",
     "plant-colour-separation-il:reading",
     "plant-colour-separation-ladder:reading",
-    "plant-colour-separation-ladder:scope",
     "plant-colour-separation:reading",
-    "plant-colour-separation:scope",
     "plant-counted-queue-ladder:reading",
     "plant-counted-queue:reading",
     "plant-estop-interlocks-ladder:glossary",
@@ -158,11 +154,9 @@
     "temporal-assertions-jam-fault:reading",
     "timers-on-delay-off-delay:glossary",
     "tp:explainer",
-    "types-arithmetic-comparison-il:answer",
     "user-function:explainer",
     "var-global:explainer",
     "verify-my-board:reading",
-    "verify-my-board:scope",
     "while:explainer"
   ]
 }

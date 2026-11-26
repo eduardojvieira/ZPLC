@@ -360,8 +360,12 @@ function parseQuiz(body: Record<string, unknown>, problems: string[]): QuizData 
       const where = `option ${index + 1}`;
       if (!isObject(option) || !text(option.text)) return void problems.push(`${where} needs a text`);
       // In a flow mapping an unquoted comma ends a value, and the rest becomes a key of its own: the option is not what was written.
-      const cut = Object.keys(option).find((key) => !['text', 'correct', 'feedback'].includes(key));
-      if (cut !== undefined) problems.push(`${where} cannot be read whole ("${cut}" is not text, correct or feedback): quote its values`);
+      const keys = Object.keys(option);
+      const stray = keys.findIndex((key) => !['text', 'correct', 'feedback'].includes(key));
+      if (stray > 0)
+        problems.push(
+          `${where} cannot be read whole: its ${keys[stray - 1]} ends at a comma and "${keys[stray]}" is left over: quote its values`,
+        );
       if (option.correct !== undefined && typeof option.correct !== 'boolean') problems.push(`${where}: correct must be true or false`);
       if (!text(option.feedback)) problems.push(`${where} needs feedback`);
       options.push({
