@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter declares Total and the three comparisons but never changes Total, so Low stays ON for ever; add 5 to Total on each rising edge of Step and clear it while Reset is TRUE.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program declares Total and writes the three bands but never changes Total, so Low stays ON for ever. Change it so that each press of Step adds 5 to Total once, however long the press lasts, and Total goes back to 0 while Reset is TRUE. Write the statements yourself: the declarations and the three comparisons are already there.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The scenario is named TypedSteps and contains {{assertions}} assertions."
     },
     {
