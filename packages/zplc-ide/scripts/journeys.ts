@@ -8449,6 +8449,13 @@ export const JOURNEYS: Journey[] = [
           await check('the shell with the Files of the project');
           await openDiagram(app, 'extra/blink.ld.json', '[data-ld-rung-id]');
           await check('the Ladder editor');
+          // LNG-030: the function groups of the Ladder palette are closed at first; opened, their long names (SINT_TO_USINT) must fit too.
+          await app.eval(`document.querySelectorAll('[data-ld-group] > button[aria-expanded="false"]').forEach((group) => group.click())`);
+          await app.until(
+            'the Ladder function groups to open',
+            async () => (await app.eval<boolean>(`document.querySelector('[data-ld-group] [data-ld-toolbox-item]') !== null`)) || undefined,
+          );
+          await check('the Ladder editor with its function groups open');
           await openFile(app, 'src/main.st');
           await compile(app);
           await app.click(css('#console-tab-output'), 'the Output tab');
