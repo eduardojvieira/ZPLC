@@ -39,6 +39,11 @@ export interface PartDefinition {
   doc: { en: string; es: string };
   /** The equations of a process model, in prose and symbols, both languages (PLT-009). Required for family 'process'. */
   equations?: { en: string; es: string };
+  /**
+   * Which kind of a family's device this part is, for parts that publish one shared view (the beam sensors all publish `sensor`): the
+   * view draws each kind its own way. Catalogue metadata only: never in a scene file or in the trace.
+   */
+  kind?: string;
 }
 export interface ConfigField {
   kind: 'number' | 'enum' | 'boolean';
