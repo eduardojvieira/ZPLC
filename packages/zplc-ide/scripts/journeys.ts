@@ -124,10 +124,15 @@ async function unlockAllLessons(app: App): Promise<void> {
   await app.cdp.command('Page.bringToFront');
 }
 
-/** Chooses a lesson in the Learn view of the sidebar by the start of its title, as a learner clicks it. */
-const lessonButton = (title: string) =>
-  `[...document.querySelectorAll('[aria-label="Lesson"] button, [aria-label="Lección"] button')].find((item) => ` +
-  `item.textContent.trim().startsWith(${JSON.stringify(title)}))`;
+/**
+ * Chooses a lesson in the course outline of the Learn activity (GDE-002), as a learner does: types its title in the filter, then
+ * clicks its row. It opens the lesson's reading page, or starts its workspace when it has none.
+ */
+async function chooseOutlineLesson(app: App, id: string, title: string): Promise<void> {
+  await app.click(css('[data-learn-outline] input'), 'the filter of the course outline');
+  await app.type(title);
+  await app.click(css(`[data-learn-outline] [data-row$=${JSON.stringify(`:lesson:${id}`)}]`), `the ${title} lesson`);
+}
 
 /**
  * The page's own Monaco instance (the editor core Studio bundles, as the dev server pre-bundles it) and its active editor, for reading what
@@ -5404,7 +5409,7 @@ export const JOURNEYS: Journey[] = [
   },
   {
     // The starter of lesson 1 fails its scenario. Learn must say which assertion failed, when, what was expected against what
-    // was observed, and where in the trace (LRN-026), after the learner pressed Check: the program of the shown project is
+    // was observed, and where in the trace (LRN-026), after the learner pressed Check: the program of the lesson workspace is
     // graded against the scenario of the lesson package, in the tool worker (LRN-022).
     name: '39 Learn reports the failed assertion of a lesson',
     example: 'motor_start_stop_starter',
@@ -5414,7 +5419,7 @@ export const JOURNEYS: Journey[] = [
       await unlockAllLessons(app);
       await openFolder(app, project);
       await app.click(css('[data-activity="learn"]'), 'the Learn activity');
-      await app.click(lessonButton('Safe motor start-stop'), 'the Safe motor start-stop lesson');
+      await chooseOutlineLesson(app, 'motor-start-stop-safe', 'Safe motor start-stop');
       await app.until(
         'the Check button to be enabled',
         async () => (await app.eval<boolean>(`document.querySelector('[data-learn-check]')?.disabled === false`)) || undefined,
@@ -5460,7 +5465,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    // The reference solution is put in the starter folder before Studio opens it: the check passes, and the grade record says
+    // The reference solution is put in the lesson workspace before Studio opens it: the check passes, and the grade record says
     // which lesson version, scenario hash and program it was for (LRN-023, LRN-031).
     name: '39b Learn records the grade of a passed lesson',
     example: 'motor_start_stop_starter',
@@ -5472,10 +5477,13 @@ export const JOURNEYS: Journey[] = [
         join(project, 'src', 'Motor.st'),
         disk(join(packageRoot, 'projects', lesson.referenceExampleId, lesson.solutionProgram)),
       );
+      // GDE-001, GDE-002: the lesson is checked in its app-owned workspace (LRN-003), which a start reopens as it is when it holds a
+      // project; the starter with the solution is put there.
+      cpSync(project, join(root, 'profile', 'learn-workspaces', lesson.id), { recursive: true });
       await unlockAllLessons(app);
       await openFolder(app, project);
       await app.click(css('[data-activity="learn"]'), 'the Learn activity');
-      await app.click(lessonButton('Safe motor start-stop'), 'the Safe motor start-stop lesson');
+      await chooseOutlineLesson(app, 'motor-start-stop-safe', 'Safe motor start-stop');
       await app.until(
         'the Check button to be enabled',
         async () => (await app.eval<boolean>(`document.querySelector('[data-learn-check]')?.disabled === false`)) || undefined,
