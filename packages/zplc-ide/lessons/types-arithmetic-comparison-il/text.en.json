@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Look at the first lines: StepWas takes the value of Step before any condition could read the value of the previous scan, and no line loads Total or adds to it. ADD on an INT in the current result keeps it an INT, and JMPCN jumps over lines when the current result is FALSE."
+      "text": "Look at the first lines: StepWas takes the value of Step before any condition could read the value of the previous scan, and no line loads Total or adds to it."
     },
     {
       "level": 2,
-      "text": "LD Step, ANDN StepWas, JMPCN skip, LD Total, ADD 5, ST Total, skip:, then the lines that copy Step to StepWas, then LD Reset, JMPCN keep, LD 0, ST Total, keep:, before the three comparisons."
+      "text": "LD Step, ANDN StepWas, JMPCN skip, LD Total, ADD 5, ST Total, skip:, then the lines that copy Step to StepWas, then LD Reset, JMPCN keep, LD 0, ST Total, keep:, before the three comparisons. JMPCN jumps to its label when the current result is FALSE, so the lines between are skipped."
     }
   ],
   "faultCases": [

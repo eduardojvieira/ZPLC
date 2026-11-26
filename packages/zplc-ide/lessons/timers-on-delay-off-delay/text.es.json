@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "Intercambie los dos temporizadores mentalmente: ¿qué haría un TON sobre Button y un TOF sobre Sensor con este escenario? Después imagine las dos llamadas dentro de IF Button THEN ... END_IF: ¿qué haría Confirmed?",
+      "body": "Una vez que pase, intercambie mentalmente los papeles: ¿qué haría cada salida si su retardo estuviera en el otro extremo de su entrada? Después imagine que sus llamadas a los temporizadores solo se ejecutan mientras Button es TRUE: ¿qué haría Confirmed?",
       "checkpoint": "TON retrasa el inicio y TOF retrasa el final; cada uno responde una pregunta distinta sobre una señal. Un temporizador que no se llama conserva su reloj y su Q como estaban, así que Light nunca bajaría y Confirmed nunca subiría."
     }
   ],

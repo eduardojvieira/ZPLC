@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objetivo",
       "body": "En src/EdgeCounter.il el contador Count (CTU) está declarado pero nunca se llama, y el programa guarda FALSE en CountReached. Haga que CountReached pase a ON en el tercer flanco ascendente de PulseInput y siga en ON hasta que Reset ponga la cuenta a cero.",
-      "checkpoint": "Usted puede decir qué instrucción ejecuta un bloque de función en IL, y por qué la línea que lee su salida va después."
+      "checkpoint": "Usted puede decir qué instrucción ejecuta un bloque de función en IL, y qué debe hacer CountReached en cada pulso y con Reset."
     },
     {
       "key": "predict",

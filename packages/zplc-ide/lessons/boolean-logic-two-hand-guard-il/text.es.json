@@ -41,8 +41,8 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "Suponga que PressEnable combinara las dos manos con OR en lugar de AND: ¿qué combinación de entradas habilitaría la prensa por error?",
-      "checkpoint": "OR habilita la prensa con una sola mano, justo lo que un mando a dos manos existe para impedir. Cada línea trabaja sobre el resultado de las líneas anteriores, por eso el orden de las líneas importa en IL."
+      "body": "Una vez que pase, ¿qué combinaciones de entradas acepta su PressEnable, y cuál dejaría pasar un error que acepte una sola mano?",
+      "checkpoint": "Un mando a dos manos existe para mantener las dos manos lejos de la prensa, así que una condición que acepta una sola mano lo anula. Cada línea trabaja sobre el resultado de las líneas anteriores, por eso el orden de las líneas importa en IL."
     }
   ],
   "hints": [

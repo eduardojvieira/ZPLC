@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program never turns Motor ON, so Motor is OFF at {{t:100}} ms instead of ON. Change it so that the warning period lasts T#50ms, and Motor turns ON when the warning period is over and OFF with Stop. Keep Requested a memory bit, with no address.",
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program never turns Motor ON, so Motor is OFF at {{t:100}} ms instead of ON. Change it so that the warning period lasts 50 milliseconds, and Motor turns ON when the warning period is over and OFF with Stop. Keep Requested a memory bit, with no address.",
       "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {

@@ -41,8 +41,8 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Suppose PressEnable combined the two hands with OR instead of AND: which input combination would wrongly enable the press?",
-      "checkpoint": "OR enables the press with a single hand, which is exactly what a two-hand control exists to prevent. Each line works on the result of the lines above it, which is why the order of the lines matters in IL."
+      "body": "Once it passes, which input combinations does your PressEnable accept, and which one would a mistake that accepts a single hand let through?",
+      "checkpoint": "A two-hand control exists to keep both hands away from the press, so a condition that accepts one hand defeats it. Each line works on the result of the lines above it, which is why the order of the lines matters in IL."
     }
   ],
   "hints": [

@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Swap the two timers in your head: what would a TON on Button and a TOF on Sensor do with this scenario? Then imagine the two calls inside IF Button THEN ... END_IF: what would Confirmed do?",
+      "body": "Once it passes, swap the roles in your head: what would each output do if its delay sat at the other end of its input? Then imagine your timer calls running only while Button is TRUE: what would Confirmed do?",
       "checkpoint": "TON delays the start and TOF delays the end; each answers a different question about a signal. A timer that is not called keeps its clock and its Q as they were, so Light would never fall and Confirmed would never rise."
     }
   ],

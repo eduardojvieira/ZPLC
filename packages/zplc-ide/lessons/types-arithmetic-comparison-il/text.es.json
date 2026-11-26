@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Mire las primeras líneas: StepWas toma el valor de Step antes de que ninguna condición pueda leer el valor del ciclo anterior, y ninguna línea carga Total ni le suma. ADD sobre un INT en el resultado actual lo mantiene como INT, y JMPCN salta líneas cuando el resultado actual es FALSE."
+      "text": "Mire las primeras líneas: StepWas toma el valor de Step antes de que ninguna condición pueda leer el valor del ciclo anterior, y ninguna línea carga Total ni le suma."
     },
     {
       "level": 2,
-      "text": "LD Step, ANDN StepWas, JMPCN skip, LD Total, ADD 5, ST Total, skip:, luego las líneas que copian Step en StepWas, luego LD Reset, JMPCN keep, LD 0, ST Total, keep:, antes de las tres comparaciones."
+      "text": "LD Step, ANDN StepWas, JMPCN skip, LD Total, ADD 5, ST Total, skip:, luego las líneas que copian Step en StepWas, luego LD Reset, JMPCN keep, LD 0, ST Total, keep:, antes de las tres comparaciones. JMPCN salta a su etiqueta cuando el resultado actual es FALSE, así que las líneas intermedias no se ejecutan."
     }
   ],
   "faultCases": [

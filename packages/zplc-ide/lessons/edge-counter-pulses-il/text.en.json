@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objective",
       "body": "In src/EdgeCounter.il the counter Count (CTU) is declared but never called, and the program stores FALSE in CountReached. Make CountReached turn ON at the third rising edge of PulseInput and stay ON until Reset clears the count.",
-      "checkpoint": "You can say which instruction runs a function block in IL, and why the line that reads its output comes after it."
+      "checkpoint": "You can say which instruction runs a function block in IL, and what CountReached must do at each pulse and at Reset."
     },
     {
       "key": "predict",
