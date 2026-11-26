@@ -92,27 +92,34 @@ function live(runtime: NativeAdapter, core: PlantCore, scans: number, after?: (d
   return session;
 }
 
-describe('a numeric scene live and graded over the real native runtime', () => {
-  itNative('PLT-017 one numeric scene and script give the same trace live and graded', async () => {
-    const liveCore = await freshCore();
-    const session = live(await nativeAdapter(), liveCore, SCANS);
-    await session.start();
-    await session.settled();
-    expect(session.scans).toBe(SCANS);
+// The real-core runs take ~0.3 s idle and over 5 s on a loaded runner (macOS CI): bun's default 5 s timeout cut them short.
+const REAL_CORE_TIMEOUT_MS = 120_000;
 
-    const gradedCore = await freshCore();
-    const graded = await runScenario(
-      compileScenario(scenario, built.debugMap, { port: { core: gradedCore, map }, scene }),
-      built.zplcFile,
-      createNativeScenarioRuntime(await nativeAdapter(true)),
-    );
-    expect(graded.passed).toBe(true);
-    // the scene did something numeric: the potentiometer opened the valve and the tank filled
-    expect(Number(liveCore.facts()['level:Tank1'])).toBeGreaterThan(0);
-    expect(await gradedCore.traceHash()).toBe(await liveCore.traceHash());
-    expect(gradedCore.facts()).toEqual(liveCore.facts());
-    expect(gradedCore.snapshot().timeMs).toBe(liveCore.snapshot().timeMs);
-  });
+describe('a numeric scene live and graded over the real native runtime', () => {
+  itNative(
+    'PLT-017 one numeric scene and script give the same trace live and graded',
+    async () => {
+      const liveCore = await freshCore();
+      const session = live(await nativeAdapter(), liveCore, SCANS);
+      await session.start();
+      await session.settled();
+      expect(session.scans).toBe(SCANS);
+
+      const gradedCore = await freshCore();
+      const graded = await runScenario(
+        compileScenario(scenario, built.debugMap, { port: { core: gradedCore, map }, scene }),
+        built.zplcFile,
+        createNativeScenarioRuntime(await nativeAdapter(true)),
+      );
+      expect(graded.passed).toBe(true);
+      // the scene did something numeric: the potentiometer opened the valve and the tank filled
+      expect(Number(liveCore.facts()['level:Tank1'])).toBeGreaterThan(0);
+      expect(await gradedCore.traceHash()).toBe(await liveCore.traceHash());
+      expect(gradedCore.facts()).toEqual(liveCore.facts());
+      expect(gradedCore.snapshot().timeMs).toBe(liveCore.snapshot().timeMs);
+    },
+    REAL_CORE_TIMEOUT_MS,
+  );
 
   itNative("LNK-006 a forced numeric input keeps its forced value over the plant's write", async () => {
     const adapter = await nativeAdapter();
