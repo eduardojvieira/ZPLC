@@ -1759,20 +1759,38 @@ async function main(): Promise<void> {
       await page().evaluate('window.__zplcSmoke.changed = false');
     };
     // The new document starts in the system language (`auto`, UX-029); the first Learn check is in Spanish, so the run asks for it.
+    // The lesson text is the Guide of an open lesson workspace (GDE-001, GDE-002: the Learn activity shows the course outline). A page
+    // cannot open a lesson folder, so the run sets the state startLesson leaves once the workspace is open, over the seeded project.
     await page().evaluate(
       `import('/src/store/useAppSettings.ts').then(({ useAppSettings }) => useAppSettings.getState().update({ language: 'es', ` +
-        `unlockAllLessons: true })).then(() => import('/src/learn/learnUi.ts')).then(({ useLearnUi }) => { ` +
-        `useLearnUi.getState().select('motor-start-stop-safe'); return import('/src/store/useIDEStore.ts'); }).then(({ useIDEStore }) ` +
-        `=> useIDEStore.getState().setActiveConsoleTab('learn'))`,
+        `unlockAllLessons: true })).then(() => Promise.all([import('/src/learn/learnUi.ts'), import('/src/store/useIDEStore.ts'), ` +
+        `import('/src/store/useShellLayout.ts')])).then(([{ useLearnUi }, { useIDEStore }, { useShellLayout }]) => { ` +
+        `useLearnUi.setState({ selected: 'motor-start-stop-safe', workspace: { lessonId: 'motor-start-stop-safe', session: ` +
+        `useIDEStore.getState().projectSession } }); useShellLayout.getState().showActivity('learn'); })`,
     );
-    await waitFor('Spanish Learn lesson', async () => ((await text()).includes('Arranque y parada seguros') ? true : undefined));
+    await waitFor('Spanish Learn lesson', async () =>
+      (await page().evaluate(
+        `document.querySelector('[data-guide-stage]') && document.body.innerText.includes('Arranque y parada seguros') ? true : undefined`,
+      )) === true
+        ? true
+        : undefined,
+    );
+    // The Guide shows one stage at a time: the prediction is stage 2; the scenario name is in the lesson's files and record.
+    await page().evaluate(
+      `document.querySelector('button[aria-label="Ir a la etapa 2"]')?.click(); ` +
+        `document.querySelector('[data-guide-files]')?.setAttribute('open', '')`,
+    );
+    await waitFor('Spanish prediction stage', async () => ((await text()).includes('0, 20, 40, 50, 90 y 140 ms') ? true : undefined));
     assert(
       (await text()).includes('MotorStartStop') &&
         (await text()).includes('0, 20, 40, 50, 90 y 140 ms') &&
         !(await text()).includes('auto-graded'),
       'Learn must begin in Spanish with the exact host-only guided path',
     );
-    await click('English');
+    // The lesson follows the language of the app; the Guide has no language switch of its own.
+    await page().evaluate(
+      `import('/src/store/useAppSettings.ts').then(({ useAppSettings }) => useAppSettings.getState().update({ language: 'en' }))`,
+    );
     await waitFor('English Learn lesson', async () => ((await text()).includes('Safe motor start-stop') ? true : undefined));
     assert(
       (await text()).includes('The starter fails this test until the stated omission is corrected.') &&
