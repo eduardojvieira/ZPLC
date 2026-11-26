@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { COMMANDS } from '../commands/registry';
+import { contrastRatio } from '../theme/color';
+import { resolveTokens } from '../theme/tokens';
 import { auditMarkup } from '../ui/audit';
 import { ActivityRail } from './ActivityRail';
 
@@ -44,5 +46,15 @@ describe('activity rail (UX-011)', () => {
     for (const id of ['view.togglePrimarySidebar', 'view.toggleSecondarySidebar', 'view.toggleConsole']) {
       expect(COMMANDS.find((command) => command.id === id && 'shortcut' in command)).toBeDefined();
     }
+  });
+
+  it('UXV-004 draws the icon of the selected activity readable on its fill in the high-contrast theme', () => {
+    const button = /<button[^>]*aria-current="true"[^>]*>/.exec(render('project', 'regular'))?.[0] ?? '';
+    const bg = /class="[^"]*\bbg-\[var\((--[\w-]+)\)\]/.exec(button)?.[1];
+    const fg = /class="[^"]*\btext-\[var\((--[\w-]+)\)\]/.exec(button)?.[1];
+    expect(bg).toBeDefined();
+    expect(fg).toBeDefined();
+    const hc = resolveTokens('high-contrast');
+    expect(contrastRatio(hc[fg!]!, hc[bg!]!)).toBeGreaterThanOrEqual(4.5);
   });
 });
