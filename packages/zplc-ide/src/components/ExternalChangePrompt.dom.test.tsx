@@ -130,4 +130,15 @@ describe('the notice of a file replaced from outside (AIX-012, bar criterion AI-
     expect(store.getState().projectConfigDirty).toBe(false);
     store.setState({ projectConfig: null, projectName: '', projectConfigDirty: false });
   });
+
+  it('A1 a notice names the error of a Restore that failed', () => {
+    useExternalConflicts.setState({
+      notices: [
+        { path: 'src/Drive.st', name: 'Drive.st', kind: 'file', before: 'a', after: 'b', error: 'Could not restore Drive.st: disk full' },
+      ],
+    });
+    dom.render(<ExternalChangePrompt />);
+    const region = dom.screen.getByRole('region', { name: dom.t('studio.notice.externalRegion') });
+    expect(dom.within(region).getByText('Could not restore Drive.st: disk full')).toBeTruthy();
+  });
 });

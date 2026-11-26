@@ -5,6 +5,9 @@ await mock.module('../utils/projectLoader', () => projectLoaderStub());
 const { checkOpenFiles, followExternalChange, resolveConflict, restoreExternal, showChanges, useExternalConflicts } =
   await import('./externalChangeWatch');
 const { saveProjectScene } = await import('../plant/persistence/sceneFiles');
+const { saveChangeSet } = await import('../components/agent/changeSetReview');
+const { sha256Text } = await import('../components/candidateSources');
+const { usePlantEdit } = await import('../plant/editSession');
 const { useIDEStore } = await import('./useIDEStore');
 const { useProjectSources } = await import('./projectSources');
 const { useProjectTests } = await import('../projectTests/useProjectTests');
@@ -293,5 +296,149 @@ describe('what an outside change leaves behind (AIX-012)', () => {
     await followExternalChange({ paths: ['scene.json'], overflow: false });
     expect(usePlantDocument.getState().sceneRevision).toBe(before + 1);
     expect(useExternalConflicts.getState().notices).toEqual([{ path: 'scene.json', name: 'scene.json', kind: 'plant' }]);
+  });
+});
+
+describe('verifier recheck of AIX-U7 (AIX-012)', () => {
+  const realRefreshFileTree = useIDEStore.getState().refreshFileTree;
+  const project = (extra: Record<string, unknown> = {}) =>
+    useIDEStore.setState({ refreshFileTree: async () => undefined, isProjectOpen: true, ...extra } as never);
+  afterEach(() => {
+    useIDEStore.setState({ refreshFileTree: realRefreshFileTree, directoryHandle: null, isProjectOpen: false, fileTree: null });
+    useProjectSources.setState({ sources: [] });
+    usePlantEdit.setState({ editor: null, mapEditor: null, sceneRef: null });
+  });
+
+  it('B1 an edit or a save of the file dismisses its notice, and Restore never writes over text the person saved', async () => {
+    const { file, handle } = diskFile('a');
+    useIDEStore.setState({ loadedFiles: new Map([loaded(ID, 'src/Drive.st', 'a', handle)]) as never });
+    project();
+    file.text = 'b';
+    await followExternalChange({ paths: ['src/Drive.st'], overflow: false });
+    expect(useExternalConflicts.getState().notices.map((notice) => notice.path)).toEqual(['src/Drive.st']);
+
+    useIDEStore.getState().updateFileContent(ID, 'b typed');
+    expect(useExternalConflicts.getState().notices).toEqual([]);
+    expect(await useIDEStore.getState().saveFile(ID, { quiet: true })).toBe(true);
+    await followExternalChange({ paths: ['src/Drive.st'], overflow: false });
+    expect(useExternalConflicts.getState().notices).toEqual([]);
+    await restoreExternal('src/Drive.st');
+    expect(file.text).toBe('b typed');
+    expect(drive()?.content).toBe('b typed');
+  });
+
+  it('B1 Restore refuses a stale notice: the disk changed again since', async () => {
+    const { file, handle } = diskFile('a');
+    useIDEStore.setState({ loadedFiles: new Map([loaded(ID, 'src/Drive.st', 'a', handle)]) as never });
+    project();
+    file.text = 'b';
+    await followExternalChange({ paths: ['src/Drive.st'], overflow: false });
+    file.text = 'c';
+    await restoreExternal('src/Drive.st');
+    expect(file.writes).toEqual([]);
+    expect(file.text).toBe('c');
+    expect(drive()?.content).toBe('b');
+    const [notice] = useExternalConflicts.getState().notices;
+    expect(notice?.path).toBe('src/Drive.st');
+    expect(notice?.error).toBeTruthy();
+  });
+
+  it("B2 a saved AI change set of a closed source is Studio's own write: no notice", async () => {
+    const { file, handle } = diskFile('y := 1;');
+    const tree = {
+      id: 'root',
+      name: 'p',
+      path: '',
+      type: 'directory',
+      children: [{ id: 'file:src/Pump.st', name: 'Pump.st', path: 'src/Pump.st', type: 'file', handle }],
+    };
+    project({ fileTree: tree });
+    useProjectSources.setState({ sources: [{ path: 'src/Pump.st', name: 'Pump.st', content: 'y := 1;', language: 'ST' }] });
+    const store = {
+      projectSession: 1,
+      compilerRunId: 0,
+      isProjectOpen: true,
+      workspaceScenarioLink: { workspaceId: 'w', projectSession: 1 },
+      loadedFiles: new Map(),
+      fileTree: tree,
+      directoryHandle: null,
+      projectConfig: null,
+      projectConfigDirty: false,
+      addConsoleEntry: () => undefined,
+    } as never;
+    const snapshot = {
+      projectSession: 1,
+      compilerRunId: 0,
+      workspaceId: 'w',
+      files: [
+        {
+          path: 'src/Pump.st',
+          kind: 'modify' as const,
+          baseline: 'y := 1;',
+          candidate: 'y := 3;',
+          beforeSha256: await sha256Text('y := 1;'),
+          afterSha256: await sha256Text('y := 3;'),
+          handle,
+        },
+      ],
+    };
+    expect(await saveChangeSet(snapshot, () => store)).toBe('saved');
+    expect(file.text).toBe('y := 3;');
+    await followExternalChange({ paths: ['src/Pump.st'], overflow: false });
+    expect(useExternalConflicts.getState().notices).toEqual([]);
+  });
+
+  it('B3 a panel save of scene.json open in a text tab reloads the tab quietly: no notice, no remount', async () => {
+    const { file, handle } = diskFile('{"name":"old"}');
+    const root = { getFileHandle: async () => handle };
+    useIDEStore.setState({ loadedFiles: new Map([loaded('file:scene.json', 'scene.json', '{"name":"old"}', handle)]) as never });
+    project({ directoryHandle: root });
+    const before = usePlantDocument.getState().sceneRevision;
+    await saveProjectScene(root as never, { name: 'line' } as never);
+    await followExternalChange({ paths: ['scene.json'], overflow: false });
+    expect(useIDEStore.getState().loadedFiles.get('file:scene.json')?.content).toBe(file.text);
+    expect(useIDEStore.getState().loadedFiles.get('file:scene.json')?.isModified).toBe(false);
+    expect(useExternalConflicts.getState().notices).toEqual([]);
+    expect(usePlantDocument.getState().sceneRevision).toBe(before);
+  });
+
+  it('B4 an outside write of scene.json while the Scene Editor is open asks, with both versions, and never drops it', async () => {
+    const { file, handle } = diskFile('{"name":"outside"}');
+    project({ directoryHandle: { getFileHandle: async () => handle } });
+    usePlantEdit.setState({
+      editor: { toFile: () => ({ name: 'mine' }) } as never,
+      mapEditor: { map: () => ({ signals: {} }) } as never,
+      sceneRef: 'project',
+    });
+    const before = usePlantDocument.getState().sceneRevision;
+    await followExternalChange({ paths: ['scene.json'], overflow: false });
+    const [conflict] = useExternalConflicts.getState().conflicts;
+    expect(conflict?.path).toBe('scene.json');
+    expect(conflict?.disk).toBe(file.text);
+    expect(conflict?.scene?.mine).toBe(`${JSON.stringify({ name: 'mine' }, null, 2)}\n`);
+    expect(usePlantDocument.getState().sceneRevision).toBe(before);
+
+    resolveConflict('scene.json', 'disk');
+    expect(usePlantEdit.getState().editor).toBeNull();
+    expect(usePlantDocument.getState().sceneRevision).toBe(before + 1);
+    expect(useExternalConflicts.getState().conflicts).toEqual([]);
+  });
+
+  it('A1 a Restore whose write fails changes nothing, keeps the notice and names the error in it', async () => {
+    const { file, handle } = diskFile('a');
+    useIDEStore.setState({ loadedFiles: new Map([loaded(ID, 'src/Drive.st', 'a', handle)]) as never });
+    project();
+    file.text = 'b';
+    await followExternalChange({ paths: ['src/Drive.st'], overflow: false });
+    (handle as unknown as { createWritable: () => Promise<never> }).createWritable = async () => {
+      throw new Error('disk full');
+    };
+    await restoreExternal('src/Drive.st');
+    expect(file.text).toBe('b');
+    expect(drive()?.content).toBe('b');
+    expect(drive()?.diskContent).toBe('b');
+    const [notice] = useExternalConflicts.getState().notices;
+    expect(notice?.path).toBe('src/Drive.st');
+    expect(notice?.error).toContain('disk full');
   });
 });
