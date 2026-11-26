@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Escriba XAt := ABS(XPos - XSet) < Tol; y lo mismo para Y, y deje que cada estado cambie solo cuando su indicador At sea TRUE."
+      "text": "Mire cómo llega el brazo a una consigna: su posición es un REAL que se acerca a la consigna pero puede no igualarla nunca. Cada estado debe esperar un indicador que diga que el brazo está lo bastante cerca."
     },
     {
       "level": 2,
-      "text": "Suba primero a la altura segura, luego mueva en X, luego baje; fije la consigna al entrar en el estado, no en cada ciclo de un estado que espera."
+      "text": "Escriba XAt := ABS(XPos - XSet) < Tol; y lo mismo para Y, y deje que cada estado cambie solo cuando su indicador At sea TRUE. Suba primero a la altura segura, luego mueva en X, luego baje; fije la consigna al entrar en el estado, no en cada ciclo de un estado que espera."
     }
   ],
   "faultCases": [

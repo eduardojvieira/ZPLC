@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Write XAt := ABS(XPos - XSet) < Tol; and the same for Y, and let each state change only when its At flag is TRUE."
+      "text": "Look at how the pad reaches a setpoint: its position is a REAL that comes close to the setpoint but may never equal it. Each state must wait for a flag that says the pad is near enough."
     },
     {
       "level": 2,
-      "text": "Raise to the safe height first, then move in X, then lower; set the setpoint when you enter the state, not on every scan of a state that waits."
+      "text": "Write XAt := ABS(XPos - XSet) < Tol; and the same for Y, and let each state change only when its At flag is TRUE. Raise to the safe height first, then move in X, then lower; set the setpoint when you enter the state, not on every scan of a state that waits."
     }
   ],
   "faultCases": [

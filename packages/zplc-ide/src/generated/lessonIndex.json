@@ -16267,7 +16267,7 @@
     },
     {
       "id": "plant-assembler-numeric",
-      "version": 2,
+      "version": 3,
       "order": 153,
       "module": 15,
       "level": "advanced",
@@ -16490,11 +16490,11 @@
           "hints": [
             {
               "level": 1,
-              "text": "Write XAt := ABS(XPos - XSet) < Tol; and the same for Y, and let each state change only when its At flag is TRUE."
+              "text": "Look at how the pad reaches a setpoint: its position is a REAL that comes close to the setpoint but may never equal it. Each state must wait for a flag that says the pad is near enough."
             },
             {
               "level": 2,
-              "text": "Raise to the safe height first, then move in X, then lower; set the setpoint when you enter the state, not on every scan of a state that waits."
+              "text": "Write XAt := ABS(XPos - XSet) < Tol; and the same for Y, and let each state change only when its At flag is TRUE. Raise to the safe height first, then move in X, then lower; set the setpoint when you enter the state, not on every scan of a state that waits."
             }
           ],
           "faultCases": [
@@ -16550,11 +16550,11 @@
           "hints": [
             {
               "level": 1,
-              "text": "Escriba XAt := ABS(XPos - XSet) < Tol; y lo mismo para Y, y deje que cada estado cambie solo cuando su indicador At sea TRUE."
+              "text": "Mire cómo llega el brazo a una consigna: su posición es un REAL que se acerca a la consigna pero puede no igualarla nunca. Cada estado debe esperar un indicador que diga que el brazo está lo bastante cerca."
             },
             {
               "level": 2,
-              "text": "Suba primero a la altura segura, luego mueva en X, luego baje; fije la consigna al entrar en el estado, no en cada ciclo de un estado que espera."
+              "text": "Escriba XAt := ABS(XPos - XSet) < Tol; y lo mismo para Y, y deje que cada estado cambie solo cuando su indicador At sea TRUE. Suba primero a la altura segura, luego mueva en X, luego baje; fije la consigna al entrar en el estado, no en cada ciclo de un estado que espera."
             }
           ],
           "faultCases": [
@@ -17383,7 +17383,7 @@
     },
     {
       "id": "plant-colour-separation-il",
-      "version": 2,
+      "version": 3,
       "order": 162,
       "module": 16,
       "level": "advanced",
@@ -17524,7 +17524,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter only latches Start and runs the infeed belt, so no workpiece is read or sorted; add the four state blocks and drive the other outputs.",
+              "body": "Correct this starter omission, save it, then run: The starter only latches Start and runs the infeed belt, so no workpiece is read or sorted. The program must sort the eight workpieces, red ones into RedBin and blue ones into BlueBin, then light Done.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -17549,15 +17549,15 @@
           "hints": [
             {
               "level": 1,
-              "text": "A block looks like: LD State, EQ 1, AND Extended, JMPCN next, LD 2, ST State, then the label next:. Put the labels at the start of a line."
+              "text": "Take the states of the Structured Text sorter one at a time: each one becomes one block that ends at a label of its own. Put the labels at the start of a line."
             },
             {
               "level": 2,
-              "text": "Gate the timers: LD State, EQ 0, AND Waiting, ST Gate, CAL Settle(IN := Gate, PT := T#300ms). Read the result with AND Settle.Q."
+              "text": "A block looks like: LD State, EQ 1, AND Extended, JMPCN next, LD 2, ST State, then the label next:. Gate the timers: LD State, EQ 0, AND Waiting, ST Gate, CAL Settle(IN := Gate, PT := T#300ms). Read the result with AND Settle.Q."
             }
           ],
           "faultCases": [
-            "The starter only latches Start and runs the infeed belt, so no workpiece is read or sorted; add the four state blocks and drive the other outputs."
+            "The starter only latches Start and runs the infeed belt, so no workpiece is read or sorted."
           ]
         },
         "es": {
@@ -17584,7 +17584,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial solo memoriza Start y hace girar la cinta de entrada, así que no se lee ni se clasifica ninguna pieza; añada los cuatro bloques de estado y gobierne las demás salidas.",
+              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial solo memoriza Start y hace girar la cinta de entrada, así que no se lee ni se clasifica ninguna pieza. El programa debe clasificar las ocho piezas, las rojas a RedBin y las azules a BlueBin, y después encender Done.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -17609,15 +17609,15 @@
           "hints": [
             {
               "level": 1,
-              "text": "Un bloque tiene esta forma: LD State, EQ 1, AND Extended, JMPCN next, LD 2, ST State y la etiqueta next:. Ponga las etiquetas al inicio de la línea."
+              "text": "Tome los estados del clasificador en texto estructurado de uno en uno: cada uno se convierte en un bloque que termina en una etiqueta propia. Ponga las etiquetas al inicio de la línea."
             },
             {
               "level": 2,
-              "text": "Condicione los temporizadores: LD State, EQ 0, AND Waiting, ST Gate, CAL Settle(IN := Gate, PT := T#300ms). Lea el resultado con AND Settle.Q."
+              "text": "Un bloque tiene esta forma: LD State, EQ 1, AND Extended, JMPCN next, LD 2, ST State y la etiqueta next:. Condicione los temporizadores: LD State, EQ 0, AND Waiting, ST Gate, CAL Settle(IN := Gate, PT := T#300ms). Lea el resultado con AND Settle.Q."
             }
           ],
           "faultCases": [
-            "El inicial solo memoriza Start y hace girar la cinta de entrada, así que no se lee ni se clasifica ninguna pieza; añada los cuatro bloques de estado y gobierne las demás salidas."
+            "El inicial solo memoriza Start y hace girar la cinta de entrada, así que no se lee ni se clasifica ninguna pieza."
           ]
         }
       }
@@ -20333,7 +20333,7 @@
     },
     {
       "id": "plant-fault-actions",
-      "version": 2,
+      "version": 3,
       "order": 183,
       "module": 18,
       "level": "advanced",
@@ -20486,7 +20486,7 @@
             {
               "key": "objective",
               "title": "Objective",
-              "body": "In src/HeightSortChain.st the sorter of lesson 16.4 works while the sensors tell the truth. Add a diagnosis: a box breaks BeamHigh for about a second, so a TON of three seconds on High marks the beam as stuck. Latch a Fault, then stop the infeed and the chain module, keep the blade holding and put Busy out.",
+              "body": "In src/HeightSortChain.st the sorter of lesson 16.4 works while the sensors tell the truth. Add a diagnosis: a box breaks BeamHigh for about a second, so a beam that stays on for three seconds is stuck. From then on the program must remember the fault, stop the infeed and the chain module, keep the blade holding and put Busy out.",
               "checkpoint": "After the fault the infeed is off, Busy and Done are off, the blade still holds, and no box has gone to the wrong bin."
             },
             {
@@ -20498,7 +20498,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter sorts correctly but trusts BeamHigh for ever; when the beam sticks on, boxes that are not tall are sent to BinTall, so latch a fault when High stays on for three seconds and stop the line.",
+              "body": "Correct this starter omission, save it, then run: The starter sorts correctly but trusts BeamHigh for ever; when the beam sticks on, boxes that are not tall are sent to BinTall, so the line must stop, and stay stopped, once High has stayed on for three seconds.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -20523,15 +20523,15 @@
           "hints": [
             {
               "level": 1,
-              "text": "A normal box breaks BeamHigh for about a second. Use Stuck(IN := High, PT := T#3000ms), latch Fault := TRUE when Stuck.Q is TRUE and never clear it."
+              "text": "A normal box breaks BeamHigh for about a second, so a beam that stays on much longer is a fact the program can read. Once the fault is found, nothing in the program may clear it."
             },
             {
               "level": 2,
-              "text": "Stop what brings new boxes: RunIn and RunChain get AND NOT Fault, Stand gets AND NOT Fault so that no box is routed on a reading you do not trust, and Busy goes out. Leave the three outfeed belts running so that a box already on its way arrives."
+              "text": "Use Stuck(IN := High, PT := T#3000ms), latch Fault := TRUE when Stuck.Q is TRUE and never clear it. Stop what brings new boxes: RunIn and RunChain get AND NOT Fault, Stand gets AND NOT Fault so that no box is routed on a reading you do not trust, and Busy goes out. Leave the three outfeed belts running so that a box already on its way arrives."
             }
           ],
           "faultCases": [
-            "The starter sorts correctly but trusts BeamHigh for ever; when the beam sticks on, boxes that are not tall are sent to BinTall, so latch a fault when High stays on for three seconds and stop the line."
+            "The starter sorts correctly but trusts BeamHigh for ever; when the beam sticks on, boxes that are not tall are sent to BinTall, so the line must stop, and stay stopped, once High has stayed on for three seconds."
           ]
         },
         "es": {
@@ -20546,7 +20546,7 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/HeightSortChain.st el clasificador de la lección 16.4 funciona mientras los sensores dicen la verdad. Añada un diagnóstico: una caja rompe BeamHigh durante cerca de un segundo, así que un TON de tres segundos sobre High marca la barrera como atascada. Memorice un Fault, detenga la cinta de entrada y el módulo de cadenas, mantenga la cuchilla retenida y apague Busy.",
+              "body": "En src/HeightSortChain.st el clasificador de la lección 16.4 funciona mientras los sensores dicen la verdad. Añada un diagnóstico: una caja rompe BeamHigh durante cerca de un segundo, así que una barrera que sigue encendida tres segundos está atascada. Desde entonces el programa debe recordar la falla, detener la cinta de entrada y el módulo de cadenas, mantener la cuchilla retenida y apagar Busy.",
               "checkpoint": "Tras la falla la cinta de entrada está apagada, Busy y Done están apagados, la cuchilla sigue reteniendo y ninguna caja ha ido al contenedor equivocado."
             },
             {
@@ -20558,7 +20558,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial clasifica bien pero se fía de BeamHigh para siempre; cuando la barrera se atasca en encendido, las cajas que no son altas van a BinTall, así que memorice una falla cuando High permanezca en TRUE tres segundos y detenga la línea.",
+              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial clasifica bien pero se fía de BeamHigh para siempre; cuando la barrera se atasca en encendido, las cajas que no son altas van a BinTall, así que la línea debe detenerse, y seguir detenida, cuando High haya permanecido en TRUE tres segundos.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -20583,15 +20583,15 @@
           "hints": [
             {
               "level": 1,
-              "text": "Una caja normal rompe BeamHigh durante cerca de un segundo. Use Stuck(IN := High, PT := T#3000ms), memorice Fault := TRUE cuando Stuck.Q sea TRUE y no lo borre nunca."
+              "text": "Una caja normal rompe BeamHigh durante cerca de un segundo, así que una barrera que sigue encendida mucho más tiempo es un hecho que el programa puede leer. Una vez detectada la falla, nada en el programa debe borrarla."
             },
             {
               "level": 2,
-              "text": "Detenga lo que trae cajas nuevas: RunIn y RunChain llevan AND NOT Fault, Stand lleva AND NOT Fault para no encaminar ninguna caja con una lectura en la que no confía, y Busy se apaga. Deje en marcha las tres cintas de salida para que llegue una caja que ya va de camino."
+              "text": "Use Stuck(IN := High, PT := T#3000ms), memorice Fault := TRUE cuando Stuck.Q sea TRUE y no lo borre nunca. Detenga lo que trae cajas nuevas: RunIn y RunChain llevan AND NOT Fault, Stand lleva AND NOT Fault para no encaminar ninguna caja con una lectura en la que no confía, y Busy se apaga. Deje en marcha las tres cintas de salida para que llegue una caja que ya va de camino."
             }
           ],
           "faultCases": [
-            "El inicial clasifica bien pero se fía de BeamHigh para siempre; cuando la barrera se atasca en encendido, las cajas que no son altas van a BinTall, así que memorice una falla cuando High permanezca en TRUE tres segundos y detenga la línea."
+            "El inicial clasifica bien pero se fía de BeamHigh para siempre; cuando la barrera se atasca en encendido, las cajas que no son altas van a BinTall, así que la línea debe detenerse, y seguir detenida, cuando High haya permanecido en TRUE tres segundos."
           ]
         }
       }

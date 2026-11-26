@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter only latches Start and runs the infeed belt, so no workpiece is read or sorted; add the four state blocks and drive the other outputs.",
+      "body": "Correct this starter omission, save it, then run: The starter only latches Start and runs the infeed belt, so no workpiece is read or sorted. The program must sort the eight workpieces, red ones into RedBin and blue ones into BlueBin, then light Done.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -48,14 +48,12 @@
   "hints": [
     {
       "level": 1,
-      "text": "A block looks like: LD State, EQ 1, AND Extended, JMPCN next, LD 2, ST State, then the label next:. Put the labels at the start of a line."
+      "text": "Take the states of the Structured Text sorter one at a time: each one becomes one block that ends at a label of its own. Put the labels at the start of a line."
     },
     {
       "level": 2,
-      "text": "Gate the timers: LD State, EQ 0, AND Waiting, ST Gate, CAL Settle(IN := Gate, PT := T#300ms). Read the result with AND Settle.Q."
+      "text": "A block looks like: LD State, EQ 1, AND Extended, JMPCN next, LD 2, ST State, then the label next:. Gate the timers: LD State, EQ 0, AND Waiting, ST Gate, CAL Settle(IN := Gate, PT := T#300ms). Read the result with AND Settle.Q."
     }
   ],
-  "faultCases": [
-    "The starter only latches Start and runs the infeed belt, so no workpiece is read or sorted; add the four state blocks and drive the other outputs."
-  ]
+  "faultCases": ["The starter only latches Start and runs the infeed belt, so no workpiece is read or sorted."]
 }

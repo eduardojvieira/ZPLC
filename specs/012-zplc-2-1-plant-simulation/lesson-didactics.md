@@ -10,7 +10,7 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 - `order`: 0 of 111 lessons break it
 - `glossary`: 25 of 111 lessons break it
 - `reading-parts`: 7 of 111 lessons break it
-- `answer`: 5 of 111 lessons break it
+- `answer`: 2 of 111 lessons break it
 - `grows`: 14 of 111 lessons break it
 - `scope`: 13 of 111 lessons break it
 - `machine`: 0 of 111 lessons break it
@@ -104,12 +104,12 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 | 84 | `plant-belt-transfer` | 15 | ST | 40 | no | 83 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 85 | `plant-belt-transfer-ladder` | 15 | LD | 40 | no |  | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 86 | `plant-assembler` | 15 | SFC | 50 | no |  | 2 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 87 | `plant-assembler-numeric` | 15 | ST | 40 | no | 94 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | XAt:=ABS(XPos-XSet)<Tol; (en), XAt:=ABS(XPos-XSet)<Tol (en), ABS(XPos-XSet)<Tol (en), XAt:=ABS(XPos-XSet)<Tol; (es), XAt:=ABS(XPos-XSet)<Tol (es), ABS(XPos-XSet)<Tol (es) | ok | ok | ok |
+| 87 | `plant-assembler-numeric` | 15 | ST | 40 | no | 94 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 88 | `plant-layer-palletizer` | 15 | ST | 50 | no | 127 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 89 | `plant-xyz-palletizing` | 15 | ST | 50 | no | 92 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | Cycle MOD 4 (en), Cycle MOD 4 (es) | ok | ok | ok |
 | 90 | `plant-colour-separation` | 16 | ST | 45 | no | 45 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 91 | `plant-colour-separation-ladder` | 16 | LD | 45 | no |  | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 92 | `plant-colour-separation-il` | 16 | IL | 50 | no | 66 | 6 | yes | yes | no en, es | ok | ok | ok | ok | ok | ST State (en), EQ 1 (en), AND Extended (en), LD 2 (en), ST State (es), EQ 1 (es), AND Extended (es), LD 2 (es) | ok | ok | ok |
+| 92 | `plant-colour-separation-il` | 16 | IL | 50 | no | 66 | 6 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 93 | `plant-weight-sorting` | 16 | ST | 50 | no | 44 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 94 | `plant-weight-sorting-ladder` | 16 | LD | 50 | no |  | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 95 | `plant-height-chain` | 16 | ST | 60 | no | 77 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
@@ -124,7 +124,7 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 | 104 | `plant-estop-interlocks-ladder` | 18 | LD | 40 | no |  | 26 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | safety (en), seguridad (es) | ok |
 | 105 | `plant-manual-auto` | 18 | ST | 45 | no | 23 | 45 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador), botones (es, use pulsador) | ok | ok | ok | safety (en), seguridad (es) | ok |
 | 106 | `plant-manual-auto-ladder` | 18 | LD | 45 | no |  | 37 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador), botones (es, use pulsador) | ok | ok | 37 starter statements, last of module 18 in plant-ld | safety (en), seguridad (es) | ok |
-| 107 | `plant-fault-actions` | 18 | ST | 45 | no | 10 | 44 | yes | yes | no en, es | ok | ok | ok | ok | ok | Stuck(IN:=High,PT:=T#3000ms) (en), Stuck(IN:=High,PT:=T#3000ms) (es) | 44 starter statements, last of module 18 in plant-st | ok | ok |
+| 107 | `plant-fault-actions` | 18 | ST | 45 | no | 10 | 44 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | 44 starter statements, last of module 18 in plant-st | ok | ok |
 | 108 | `plant-build-belt-scene` | 19 | ST | 25 | no | 11 | 0 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
 | 109 | `plant-build-belt-scene-ladder` | 19 | LD | 25 | no |  | 1 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
 | 110 | `plant-change-scene` | 19 | ST | 20 | no | 0 | 26 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | 26 starter statements, last of module 19 in plant-st | ok | ok |
