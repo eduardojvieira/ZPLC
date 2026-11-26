@@ -1,0 +1,17 @@
+{
+  "note": "Written exceptions of the rule `answer` of lesson-didactics.ts: per lesson, a fragment of the solution that the lesson's text must name because it is the specification, not the fix. Only that fragment, and only in that lesson, leaves the rule.",
+  "exceptions": {
+    "boolean-logic-two-hand-guard": [
+      {
+        "fragment": "NOT GuardClosed",
+        "reason": "The Reflect stage asks, after the pass, what the different condition NOT GuardClosed AND LeftHand would do: the fragment is part of that specification, not the fix."
+      }
+    ],
+    "plant-xyz-palletizing": [
+      {
+        "fragment": "Cycle MOD 4",
+        "reason": "The objective says which slot each box goes to, the slot that Cycle MOD 4 gives: the fragment is the specification, not the fix."
+      }
+    ]
+  }
+}

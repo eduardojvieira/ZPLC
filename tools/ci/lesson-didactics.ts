@@ -25,8 +25,9 @@
 //               case-sensitive, so the operator words (AND, OR, ADD, MOD, LD, ST) count only in their code form. No candidate may
 //               be in the objectives, any stage (Reflect included), the fault cases or a hint other than the last, read with
 //               {{v:…|X}} as X and {{t:N}} as N (CRS-017). A worked example that becomes the solution once its variables are
-//               renamed is not detected: a person reads that at the owner's stops. ANSWER_EXCEPTIONS below names, per lesson,
-//               the fragments that are the specification, not the fix, each with its reason; only those leave the rule
+//               renamed is not detected: a person reads that at the owner's stops. tools/ci/lesson-answer-exceptions.json
+//               names, per lesson, the fragments that are the specification, not the fix, each with its reason; only those leave
+//               the rule
 
 //   grows       the starter of the last lesson of each module of a path (course.json) holds at most two statements beyond its
 //               declarations (ST, IL: `;` of a body, instruction lines) or no rung, connection, transition or step beyond the initial
@@ -54,6 +55,7 @@ export const TABLE_FILE = join(ROOT, 'specs/012-zplc-2-1-plant-simulation/lesson
 export const BASELINE_FILE = join(import.meta.dir, 'lesson-didactics-baseline.json');
 const IDEAS_FILE = join(import.meta.dir, 'lesson-ideas.json');
 const TERMS_FILE = join(import.meta.dir, 'glossary-terms.json');
+const EXCEPTIONS_FILE = join(import.meta.dir, 'lesson-answer-exceptions.json');
 const MATRIX_FILE = join(ROOT, 'specs/012-zplc-2-1-plant-simulation/course-l7-support.md');
 const GLOSSARY_PAGES = {
   en: join(ROOT, 'docs/docs/learn/glossary.md'),
@@ -198,25 +200,15 @@ const normalised = (code: string): string =>
 const ANSWER_PART_MIN = 6;
 
 /**
- * The written exceptions of the rule answer: a fragment of the solution that the lesson's text must name because it is the
- * specification, not the fix. Each one holds for its lesson only; any other candidate of that lesson still counts.
+ * The written exceptions of the rule answer (tools/ci/lesson-answer-exceptions.json, a data file so that no source file lists
+ * lesson ids, LRN-028): a fragment of the solution that the lesson's text must name because it is the specification, not the
+ * fix, with its reason. Each one holds for its lesson only; any other candidate of that lesson still counts.
  */
-export const ANSWER_EXCEPTIONS: Record<string, readonly { fragment: string; reason: string }[]> = {
-  'boolean-logic-two-hand-guard': [
-    {
-      fragment: 'NOT GuardClosed',
-      reason:
-        'The Reflect stage asks, after the pass, what the different condition NOT GuardClosed AND LeftHand would do: the fragment is part of that specification, not the fix.',
-    },
-  ],
-  'plant-xyz-palletizing': [
-    {
-      fragment: 'Cycle MOD 4',
-      reason:
-        'The objective says which slot each box goes to, the slot that Cycle MOD 4 gives: the fragment is the specification, not the fix.',
-    },
-  ],
-};
+export const ANSWER_EXCEPTIONS = (
+  JSON.parse(readFileSync(EXCEPTIONS_FILE, 'utf8')) as {
+    exceptions: Record<string, readonly { fragment: string; reason: string }[]>;
+  }
+).exceptions;
 
 /** A line of one word, such as `VAR`, `ELSE` or `END_IF;`: the frame of a statement, not its answer. */
 const KEYWORD_LINE = /^[\p{L}\p{N}_]+;?$/u;
