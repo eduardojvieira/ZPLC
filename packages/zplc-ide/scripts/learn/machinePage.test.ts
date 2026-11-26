@@ -271,19 +271,15 @@ describe('label layout', () => {
         const anchors = Object.fromEntries(
           labels.map((label, i) => [
             label.id,
-            [
-              Math.round(((i + 1) / (labels.length + 1)) * FRAME_WIDTH),
-              Math.round((i % 2 === 0 ? 0.3 : 0.7) * FRAME_HEIGHT),
-            ] as [number, number],
+            [Math.round(((i + 1) / (labels.length + 1)) * FRAME_WIDTH), Math.round((i % 2 === 0 ? 0.3 : 0.7) * FRAME_HEIGHT)] as [
+              number,
+              number,
+            ],
           ]),
         );
         const boxes = labelBoxesForParts(labels, anchors);
         const layout = (
-          layoutLabels as (
-            b: LabelBox[],
-            f: { w: number; h: number },
-            o?: { maxWidth?: number },
-          ) => ReturnType<typeof layoutLabels>
+          layoutLabels as (b: LabelBox[], f: { w: number; h: number }, o?: { maxWidth?: number }) => ReturnType<typeof layoutLabels>
         )(boxes, { w: FRAME_WIDTH, h: FRAME_HEIGHT }, { maxWidth: MAX_LAYOUT_WIDTH });
         expect({ id, locale, problems: layoutProblems(layout) }).toEqual({ id, locale, problems: [] });
         expect(layout.width).toBeLessThanOrEqual(MAX_LAYOUT_WIDTH);

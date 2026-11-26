@@ -2,7 +2,7 @@
 
 Many machines do one thing after another. A car wash soaps, then rinses, then waits for the next car. A mixing tank fills, then mixes, then waits. Each phase is a **step**, and the machine moves to the next step when something tells it to: a button, a sensor, or enough time spent in the step.
 
-You can write such a machine with IF statements and memory bits, as the Ladder lesson on step bits did. A **sequential function chart**, SFC for short, draws the steps instead, so the order of the machine is the picture you see.
+You can write such a machine with IF statements and memory bits. A **sequential function chart**, SFC for short, draws the steps instead, so the order of the machine is the picture you see.
 
 ## Steps, actions and transitions
 

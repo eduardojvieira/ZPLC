@@ -1,8 +1,8 @@
 ## Una máquina que trabaja por pasos
 
-Muchas máquinas hacen una cosa después de otra. Un lavadero de autos enjabona, después enjuaga y después espera el auto siguiente. Un tanque de mezcla se llena, después mezcla y después espera. Cada fase es un **paso**, y la máquina pasa al paso siguiente cuando algo se lo indica: un botón, un sensor o el tiempo suficiente dentro del paso.
+Muchas máquinas hacen una cosa después de otra. Un lavadero de autos enjabona, después enjuaga y después espera el auto siguiente. Un tanque de mezcla se llena, después mezcla y después espera. Cada fase es un **paso**, y la máquina pasa al paso siguiente cuando algo se lo indica: un pulsador, un sensor o el tiempo suficiente dentro del paso.
 
-Una máquina así se puede escribir con instrucciones IF y bits de memoria, como hizo la lección de bits de paso en diagrama de escalera. Un **diagrama funcional secuencial**, SFC por sus siglas, dibuja en cambio los pasos, de modo que el orden de la máquina es el dibujo que usted ve.
+Una máquina así se puede escribir con instrucciones IF y bits de memoria. Un **diagrama funcional secuencial**, SFC por sus siglas, dibuja en cambio los pasos, de modo que el orden de la máquina es el dibujo que usted ve.
 
 ## Pasos, acciones y transiciones
 

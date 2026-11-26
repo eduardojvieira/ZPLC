@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "plant-belt-to-sensor",
-  "version": 3,
+  "version": 4,
   "order": 121,
   "module": 12,
   "level": "advanced",

@@ -4,14 +4,21 @@ Esta es la primera máquina del curso y la estación más pequeña de una línea
 
 ![La escena de la cinta al sensor vista de frente. Una cinta transportadora sobre patas va de izquierda a derecha. A la izquierda, cuatro marcas cian en las esquinas muestran dónde el emisor pone una caja en la cinta, y detrás de la cinta está el pulsador de inicio sobre un pedestal. En el extremo derecho un sensor sobre un poste mira a través de la cinta. Cada elemento tiene una etiqueta con su nombre, su tipo y su señal conectada.](images/machine.es.png)
 
-La estación tiene cuatro elementos. La tabla dice qué es cada uno en una planta real y qué significa su señal para su programa. La variable del PLC es el nombre que usa el programa: el mapa de planta de la lección une cada señal de la escena con ella.
+La estación tiene cuatro elementos. Las tablas dicen qué es cada uno en una planta real y qué significa su señal para su programa. La variable del PLC es el nombre que usa el programa: el mapa de planta de la lección une cada señal de la escena con ella.
 
-| Pieza                           | Qué es en una planta real                                                                                                             | Señal                 | Variable del PLC | Dirección       | Tipo | Significado                                          |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | --------------------- | ---------------- | --------------- | ---- | ---------------------------------------------------- |
-| `Belt1` (Cinta transportadora)  | Una cinta movida por un motor que lleva la mercancía a lo largo de una línea, la base de casi toda línea de embalaje o clasificación. | `Belt1.run`           | `Run`            | Salida del PLC  | BOOL | TRUE hace avanzar la cinta.                          |
-| `Emitter1` (Emisor de piezas)   | Representa lo que alimenta la línea: la máquina anterior, un operario o un cargador que suelta una pieza.                             | `Emitter1.emit`       | `Emit`           | Salida del PLC  | BOOL | Cada flanco ascendente suelta una pieza en la línea. |
-| `EyeFar` (Sensor óptico difuso) | Un sensor fotoeléctrico que emite luz y la ve rebotar en un objeto que tiene delante.                                                 | `EyeFar.detect`       | `EyeFar`         | Entrada del PLC | BOOL | TRUE mientras hay un objeto en el haz.               |
-| `StartButton` (Pulsador)        | Un pulsador del panel del operador, presionado solo mientras un dedo lo mantiene.                                                     | `StartButton.pressed` | `Start`          | Entrada del PLC | BOOL | TRUE mientras el pulsador se mantiene presionado.    |
+| Elemento      | Tipo                 | Qué es en una planta real                                                                                                             |
+| ------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `Belt1`       | Cinta transportadora | Una cinta movida por un motor que lleva la mercancía a lo largo de una línea, la base de casi toda línea de embalaje o clasificación. |
+| `Emitter1`    | Emisor de piezas     | Representa lo que alimenta la línea: la máquina anterior, un operario o un cargador que suelta una pieza.                             |
+| `EyeFar`      | Sensor óptico difuso | Un sensor fotoeléctrico que emite luz y la ve rebotar en un objeto que tiene delante.                                                 |
+| `StartButton` | Pulsador             | Un pulsador del panel del operador, presionado solo mientras un dedo lo mantiene.                                                     |
+
+| Variable del PLC | Señal                 | Dirección y tipo       | Significado                                          |
+| ---------------- | --------------------- | ---------------------- | ---------------------------------------------------- |
+| `Run`            | `Belt1.run`           | Salida del PLC · BOOL  | TRUE hace avanzar la cinta.                          |
+| `Emit`           | `Emitter1.emit`       | Salida del PLC · BOOL  | Cada flanco ascendente suelta una pieza en la línea. |
+| `EyeFar`         | `EyeFar.detect`       | Entrada del PLC · BOOL | TRUE mientras hay un objeto en el haz.               |
+| `Start`          | `StartButton.pressed` | Entrada del PLC · BOOL | TRUE mientras el pulsador se mantiene presionado.    |
 
 Una salida del PLC acciona un elemento de la máquina; una entrada del PLC es lo que informa un elemento. Su programa solo ve las cuatro variables: nunca ve la caja misma, solo lo que el sensor dice de ella.
 
@@ -19,13 +26,13 @@ Una salida del PLC acciona un elemento de la máquina; una entrada del PLC es lo
 
 Un pulsador está en TRUE solo mientras un dedo lo mantiene, una fracción de segundo. La cinta, en cambio, debe seguir en marcha varios segundos, hasta que la caja llegue al sensor. Si Run simplemente copiara Start, la cinta se movería solo mientras se mantiene el pulsador y se detendría con la caja a mitad de camino.
 
-Por eso el programa necesita una **memoria**: una variable BOOL propia, no conectada a ningún elemento, que recuerda "la cinta debe estar en marcha". Una condición la activa, otra la borra, y la salida la sigue.
+Por eso el programa necesita una **memoria**: una variable BOOL propia — `Running` — no conectada a ningún elemento, que recuerda "la cinta debe estar en marcha". Una condición la activa, otra la borra, y la salida la sigue.
 
 ```timing
 span: 6000
 signals:
   - { name: Start, edges: [200, 400] }
-  - { name: Memory, edges: [200, 4800] }
+  - { name: Running, edges: [200, 4800] }
   - { name: EyeFar, edges: [4800, 6000] }
   - { name: Run, edges: [200, 4800] }
 caption: Una pulsación corta activa la memoria, el sensor la borra y la cinta sigue a la memoria
@@ -37,7 +44,7 @@ Cuando la activación y el borrado están los dos en TRUE en el mismo ciclo, gan
 
 ## Ejemplo resuelto
 
-Una cortina enrollable sobre una puerta de carga tiene un botón Open y un final de carrera superior. Una pulsación corta debe abrir la cortina del todo: el motor funciona hasta que el final de carrera indica que la cortina está arriba. Es el mismo problema que el de la cinta, resuelto aquí con una autorretención, la forma que vio en diagrama de escalera y en la lección del motor:
+Una cortina enrollable sobre una puerta de carga tiene un pulsador Open y un final de carrera superior. Una pulsación corta debe abrir la cortina del todo: el motor funciona hasta que el final de carrera indica que la cortina está arriba. Es el mismo problema que el de la cinta, resuelto aquí con una autorretención:
 
 ```st
 PROGRAM Shutter
@@ -49,7 +56,7 @@ Motor := Opening;
 END_PROGRAM
 ```
 
-Lea la asignación desde la derecha. `OpenButton OR Opening` sigue en TRUE después de soltar el botón, porque Opening se mantiene a sí misma. `AND NOT TopLimit` corta esa retención en cuanto el final de carrera se cierra, y también gana cuando los dos están en TRUE. Dos instrucciones IF, una que activa Opening y otra después que la borra, hacen lo mismo de una forma que a muchos programadores les resulta más fácil de leer.
+Lea la asignación desde la derecha. `OpenButton OR Opening` sigue en TRUE después de soltar el pulsador, porque Opening se mantiene a sí misma. `AND NOT TopLimit` corta esa retención en cuanto el final de carrera se cierra, y también gana cuando los dos están en TRUE. Dos instrucciones IF, una que activa Opening y otra después que la borra, hacen lo mismo de una forma que a muchos programadores les resulta más fácil de leer.
 
 ## Errores comunes
 
