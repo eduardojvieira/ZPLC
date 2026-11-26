@@ -20,44 +20,47 @@ In industry the same pair of coils holds a motor running state on a conveyor, re
 
 ## When both arrive together
 
-What if the call and the cancel are pressed in the same scan? Both rungs have power. The rungs run from top to bottom, so the SET coil writes `TRUE` first and the RESET coil writes `FALSE` afterwards. The rung that comes **last** decides. If you put the RESET rung first, the SET rung wins instead.
+What if the call and the cancel are pressed in the same scan? Both rungs have power. The rungs run from top to bottom, so the SET coil writes `TRUE` first and the RESET coil writes `FALSE` afterwards. The rung that comes **last** decides.
 
 This is the **priority** of the latch, and you choose it with the order of the rungs. An alarm that must not be lost usually gives priority to SET, so that a new fault is never cleared by an old acknowledge. A stop function usually gives priority to RESET. This is how the scan order of this runtime works. Other PLCs may order things differently, so check the manual of the PLC you use.
 
 ## Worked example
 
-Go back to the call light of the hospital bed. A short press of CallButton must turn CallLamp on, and only CancelButton may turn it off. One rung sets the lamp, another resets it. In ZPLC, a SET coil is drawn with an S inside the parentheses and a RESET coil with an R. The figure shows the call light: the first rung sets the lamp when the call button is pressed, and the second resets it when the cancel button is pressed.
+A tank is filled in cycles. A short press of FillButton starts a filling cycle, and the fill valve stays open after the button is released, until the float switch TankFull says the tank is full or somebody presses StopButton. A press of FillButton while the tank is already full must do nothing, and a stop must always end the cycle, even if somebody presses FillButton at the same moment. In ZPLC, a SET coil is drawn with an S inside the parentheses and a RESET coil with an R.
 
 ```ld-figure
-src: reading/call-light.ld.json
-caption: One rung sets CallLamp, another rung resets it
+src: reading/tank-filling.ld.json
+caption: One rung sets FillValve, a rung below it resets it
 ```
+
+The SET rung has two contacts in series: the button, and a normally closed contact on TankFull, so that a full tank cannot start a cycle. The RESET rung has two contacts in parallel, because either a full tank or the stop button ends the cycle. The RESET rung is written below the SET rung, so when both have power in the same scan, the reset has the last word.
 
 ZPLC accepts exactly one SET and one RESET for a variable, each in its own rung. Two rungs that both write the variable with coils in other ways are refused as multiple writers.
 
-Press Run, then press the call button and release it. The lamp stays on. Then press the cancel button.
+Press Run, then press FillButton and release it. The valve stays open. Switch TankFull on: the valve closes. Switch it off, start a cycle again, and this time hold StopButton and press FillButton together.
 
 ```ld-try
-src: reading/call-light.ld.json
+src: reading/tank-filling.ld.json
 inputs:
-  - { name: CallButton, kind: push }
-  - { name: CancelButton, kind: push }
-outputs: [CallLamp]
-timing: [CallButton, CancelButton, CallLamp]
-caption: A short press of CallButton is enough; only CancelButton clears the lamp
+  - { name: FillButton, kind: push }
+  - { name: StopButton, kind: push }
+  - { name: TankFull, kind: switch }
+outputs: [FillValve]
+timing: [FillButton, StopButton, FillValve]
+caption: A short press of FillButton opens the valve; a full tank or StopButton closes it
 ```
 
-The diagram shows the call light over a few seconds. The call button is pressed briefly, but the lamp rises with it and falls only when the cancel button is pressed.
+The diagram shows two cycles. The first is started by a short press and ended by StopButton. Then FillButton and StopButton are pressed in the same scan, and the valve stays closed: the RESET rung comes last and wins.
 
 ```timing
 span: 1500
 signals:
-  - { name: CallButton, edges: [100, 300] }
-  - { name: CancelButton, edges: [1000, 1200] }
-  - { name: CallLamp, edges: [100, 1000] }
+  - { name: FillButton, edges: [100, 300, 1100, 1300] }
+  - { name: StopButton, edges: [800, 1000, 1100, 1300] }
+  - { name: FillValve, edges: [100, 800] }
 marks:
-  - { from: 100, to: 1000, label: 'SET – RESET' }
-caption: The lamp is remembered from the call until the cancel
+  - { from: 100, to: 800, label: 'SET – RESET' }
+caption: The valve is remembered from the press until the stop; a press together with the stop does not open it
 ```
 
 ## Common mistakes

@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "The output has to remember that Start was pressed: keep a memory variable that Start sets and that holds itself until a stop condition clears it."
+      "text": "Look at two moments in the trace: the scan after Start is released, and the scan after a stop ends while Start is still held. In each, what must the program still know that the inputs alone cannot tell it?"
     },
     {
       "level": 2,

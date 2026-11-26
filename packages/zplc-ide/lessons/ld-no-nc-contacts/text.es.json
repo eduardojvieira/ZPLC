@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Un contacto normalmente abierto conduce cuando su variable es TRUE. StopButton es TRUE en reposo. ¿Qué tipo de contacto deja funcionar el motor cuando StopButton es TRUE, y cuál enciende la lámpara cuando es FALSE?"
+      "text": "Mire el valor que tiene StopButton en reposo y cuando se pulsa la parada, y qué debe hacer cada uno de los dos peldaños en cada caso."
     },
     {
       "level": 2,

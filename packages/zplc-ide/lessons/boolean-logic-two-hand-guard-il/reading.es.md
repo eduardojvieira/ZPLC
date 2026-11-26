@@ -22,51 +22,47 @@ En IL no hay un orden de los operadores: el orden de las líneas es el orden del
 
 ## Ejemplo resuelto
 
-Un horno de secado puede calentar solo mientras el selector del operador `HeatOn` está encendido, los dos interruptores de la puerta `DoorSwitchA` y `DoorSwitchB` dicen que la puerta está cerrada y el termostato `OverTemp` no se disparó. Una lámpara de puerta indica que los dos interruptores dicen abierta. Los dos interruptores siempre deberían coincidir, y una lámpara de falla se enciende cuando no coinciden.
+Una cinta clasificadora lleva cajas frente a una compuerta que empuja las cajas altas hacia un carril lateral. La compuerta se abre mientras la barrera de altura `TallBox` ve una caja alta y el interruptor del carril `LaneFull` indica que el carril no está lleno. El interruptor de posición de la compuerta, `FlapIsOut`, debería coincidir con la orden mientras la cinta funciona (`BeltRunning`), y una lámpara de falla se enciende cuando no coincide.
 
 ```il
-PROGRAM DryingOven
+PROGRAM Diverter
 VAR_INPUT
-    HeatOn : BOOL;
-    DoorSwitchA : BOOL;
-    DoorSwitchB : BOOL;
-    OverTemp : BOOL;
+    TallBox : BOOL;
+    LaneFull : BOOL;
+    FlapIsOut : BOOL;
+    BeltRunning : BOOL;
 END_VAR
 VAR_OUTPUT
-    Heater : BOOL;
-    DoorLamp : BOOL;
-    SwitchFault : BOOL;
+    Flap : BOOL;
+    FlapFault : BOOL;
 END_VAR
 
-        LD    HeatOn
-        AND   DoorSwitchA
-        AND   DoorSwitchB
-        ANDN  OverTemp
-        ST    Heater
-        LDN   DoorSwitchA
-        ANDN  DoorSwitchB
-        ST    DoorLamp
-        LD    DoorSwitchA
-        XOR   DoorSwitchB
-        ST    SwitchFault
+        LD    TallBox
+        ANDN  LaneFull
+        ST    Flap
+        LD    Flap
+        XOR   FlapIsOut
+        AND   BeltRunning
+        ST    FlapFault
 END_PROGRAM
 ```
 
-Léalo como tres grupos, uno para cada salida, cada uno abierto por una carga. El primer grupo necesita todas las condiciones, así que es una cadena de líneas AND, y ANDN agrega el termostato invertido. El segundo empieza con LDN, porque la lámpara quiere los dos interruptores abiertos. El tercero es un solo XOR.
+Léalo como dos grupos, uno por salida, cada uno abierto por una carga. El primer grupo necesita dos condiciones, y ANDN incorpora el interruptor del carril invertido. El segundo grupo carga la orden que acaba de guardar, la compara con el interruptor de posición mediante XOR, y recién entonces une la cinta con AND: el orden de las líneas es el orden del trabajo, así que el XOR se hace antes que el AND.
 
-Sígalo con el calor encendido y el horno frío. La puerta se cierra: el interruptor A se cierra un momento antes que el B, así que durante ese momento SwitchFault es TRUE y el calefactor espera. Cuando los dos están cerrados, el calefactor funciona. Más tarde el interruptor B se rompe y da FALSE aunque la puerta sigue cerrada: la cadena de AND pierde una de sus condiciones, así que el calefactor se detiene, y el XOR enciende la lámpara de falla.
+Sígalo con la cinta en marcha. Llega una caja alta y se ordena abrir la compuerta; el interruptor de posición lo confirma un momento después, así que durante ese momento FlapFault es TRUE. La caja pasa y la compuerta vuelve a entrar, con la misma falla breve. Más tarde el carril está lleno: pasa la siguiente caja alta y la compuerta no se abre.
 
 ```timing
 span: 5000
 signals:
-  - { name: DoorSwitchA, edges: [1000] }
-  - { name: DoorSwitchB, edges: [1300, 3000] }
-  - { name: Heater, edges: [1300, 3000] }
-  - { name: SwitchFault, edges: [1000, 1300, 3000] }
-caption: La puerta se cierra y después se rompe el interruptor B; HeatOn es TRUE y OverTemp FALSE todo el tiempo
+  - { name: TallBox, edges: [1000, 2000, 3500, 4500] }
+  - { name: LaneFull, edges: [3000] }
+  - { name: Flap, edges: [1000, 2000] }
+  - { name: FlapIsOut, edges: [1200, 2200] }
+  - { name: FlapFault, edges: [1000, 1200, 2000, 2200] }
+caption: Dos cajas altas, la segunda con el carril lateral lleno; BeltRunning es TRUE todo el tiempo
 ```
 
-Un horno real da a los dos interruptores un tiempo breve para coincidir antes de encender la lámpara de falla; eso necesita un temporizador, que esta página deja de lado.
+Un desviador real le da a la compuerta un tiempo breve para moverse antes de encender la lámpara de falla; eso necesita un temporizador, que esta página deja de lado.
 
 ## Errores comunes
 
@@ -90,9 +86,9 @@ options:
 ```
 
 ```quiz
-question: Un programa tiene ST Heater y, en la línea siguiente, AND DoorSwitchA sin una carga antes. ¿Con qué combina ese AND a DoorSwitchA?
+question: Un programa tiene ST Flap y, en la línea siguiente, AND BeltRunning sin una carga antes. ¿Con qué combina ese AND a BeltRunning?
 options:
-  - { text: 'Con el resultado actual que se acaba de guardar en Heater', correct: true, feedback: 'Correcto. ST deja el resultado actual como está, así que el AND continúa con él. Empiece cada condición nueva con LD o LDN.' }
+  - { text: 'Con el resultado actual que se acaba de guardar en Flap', correct: true, feedback: 'Correcto. ST deja el resultado actual como está, así que el AND continúa con él. Empiece cada condición nueva con LD o LDN.' }
   - { text: 'Con FALSE, porque ST borra el resultado actual', feedback: 'ST solo copia el resultado actual en la salida; no lo cambia.' }
   - { text: 'Con TRUE, porque después de ST empieza una condición nueva', feedback: 'Solo una carga empieza una condición nueva. Sin ella el AND trabaja sobre el resultado anterior.' }
 ```

@@ -5,7 +5,7 @@
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show alarm handling requirements of a real machine.",
   "objectives": [
     "Hold an alarm after the fault has gone, until it is acknowledged, with the IL instructions S and R.",
-    "Use the order of two lines to decide whether set or reset wins, and tell it from the SR and RS blocks."
+    "Give two outputs opposite priorities between set and reset with S and R, and tell it from the SR and RS blocks."
   ],
   "stages": [
     {

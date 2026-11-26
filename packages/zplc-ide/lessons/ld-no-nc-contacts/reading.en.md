@@ -34,30 +34,33 @@ This is the point that surprises beginners. The program does not read "pressed".
 | The stop button is pressed     | FALSE       |
 | The wire is broken             | FALSE       |
 
-So the program wants the motor to run when the stop input is TRUE. That means the motor rung needs a **normally open** contact on the stop input, which passes power when the input is TRUE. A beginner who thinks "stop, so I need a normally closed contact" gets the opposite of what they wanted: the motor would only run while the button is pressed or the wire is cut.
+So the name of the button does not choose the contact. A beginner who thinks "stop, so I need a normally closed contact" chooses from the word, not from the value. Before you choose a contact, look up in the table the value the input has in the situation where the rung must pass power, and take the contact that passes power for that value.
 
-To light a lamp when the stop circuit is open, you ask the opposite question, "is the stop input FALSE?", and use a normally closed contact.
+A rung that must react to the opposite situation asks the opposite question about the same input.
 
 ## Worked example
 
-A guard door on a machine carries a switch: the signal DoorClosed is TRUE when the door is closed. We want the machine ready only with the door closed, and a warning lamp when the door is open.
+A water tank is filled through a valve. The operator asks for water with a selector, FillRequest, and a float switch near the top, TankFull, is TRUE while the water reaches it. The float switch is an ordinary sensor: TRUE means "the tank is full". The valve must open while water is asked for and the tank is not full, and a lamp must show a full tank.
 
 ```ld-figure
-src: reading/door-ready.ld.json
-caption: One signal read with a normally open contact and with a normally closed contact
+src: reading/tank-fill.ld.json
+caption: One sensor read with a normally closed contact in one rung and a normally open contact in the other
 ```
 
-The first rung uses a normally open contact: with DoorClosed TRUE, power reaches MachineReady. The second rung uses a normally closed contact: with DoorClosed FALSE, power reaches DoorOpenLamp. One variable, two opposite questions.
+In the first rung, power needs FillRequest TRUE and TankFull FALSE, so FillRequest gets a normally open contact and TankFull a normally closed one, in series. In the second rung the lamp asks the opposite question about the same sensor, "is TankFull TRUE?", so it gets a normally open contact. Each contact was chosen from the value the input has when the rung must conduct.
 
 ```ld-try
-src: reading/door-ready.ld.json
+src: reading/tank-fill.ld.json
 inputs:
-  - { name: DoorClosed, kind: switch }
-outputs: [MachineReady, DoorOpenLamp]
-caption: Switch the door closed and open again
+  - { name: FillRequest, kind: switch }
+  - { name: TankFull, kind: switch }
+outputs: [FillValve, FullLamp]
+caption: Ask for water, then let the float switch report a full tank
 ```
 
-Press Run. At first DoorClosed is FALSE, so the warning lamp is on. Switch it on: the machine becomes ready and the lamp goes off. Exactly one of the two lamps is on at any moment.
+Press Run. Switch FillRequest on: the valve opens. Now switch TankFull on, as if the water had reached the float: the valve closes and the lamp lights, although FillRequest is still on. Switch TankFull off again and the valve opens once more.
+
+A stop button wired normally closed behaves differently from this float switch: its input is TRUE when nothing happens. The practice asks you to choose its contacts.
 
 ## Common mistakes
 
@@ -79,11 +82,11 @@ options:
 ```
 
 ```quiz
-question: The motor must run only while the stop input is TRUE. Which contact do you put on the stop input in the motor rung?
+question: A level switch LowLevel is TRUE while the water is below it. A pump must run only while LowLevel is FALSE. Which contact do you put on LowLevel in the pump rung?
 options:
-  - { text: 'A normally open contact', correct: true, feedback: 'Yes. It passes power when the input is TRUE.' }
-  - { text: 'A normally closed contact', feedback: 'That contact passes power when the input is FALSE, so the motor would run only while the stop circuit is open.' }
-  - { text: 'No contact is needed', feedback: 'Without the contact the program ignores the stop button entirely.' }
+  - { text: 'A normally closed contact', correct: true, feedback: 'Yes. It passes power when its variable is FALSE.' }
+  - { text: 'A normally open contact', feedback: 'That contact passes power when LowLevel is TRUE, so the pump would run only while the water is low.' }
+  - { text: 'No contact is needed', feedback: 'Without the contact the program ignores the level switch entirely.' }
 ```
 
 ## What you will do in the practice

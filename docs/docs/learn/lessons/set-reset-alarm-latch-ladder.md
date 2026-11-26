@@ -26,7 +26,7 @@ Hold a fault in memory with SET and RESET coils, and see that in Ladder the rung
 ## Objectives
 
 - Hold an alarm after the fault has gone with a SET coil, and clear it only with a RESET coil.
-- Decide the priority between set and reset by the order of the rungs: the last one scanned wins.
+- Give two outputs opposite priorities between set and reset, and check the scan in which both arrive together.
 
 ## Stages
 

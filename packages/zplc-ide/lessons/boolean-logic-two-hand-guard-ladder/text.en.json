@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Power reaches PressEnable only through contacts that are all closed. Which contact is missing from the rung?"
+      "text": "Look at the PressEnable rung: which of the three inputs the Edit stage names does it not read yet, and which value does that input have when the press may move?"
     },
     {
       "level": 2,

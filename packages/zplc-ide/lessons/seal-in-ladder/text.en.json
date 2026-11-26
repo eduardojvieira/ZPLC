@@ -5,7 +5,7 @@
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real stop button or motor starter is wired.",
   "objectives": [
     "Read a Ladder rung as a path of contacts that must all pass power to reach a coil.",
-    "Hold a coil on with a contact of its own output in parallel with Start, and keep Stop in series so that Stop wins."
+    "Make a coil hold itself on after Start is released, in a rung where Stop always wins over Start."
   ],
   "stages": [
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Power must reach the coil through StopPB and then through either StartPB or something that is true while the motor runs. What is true while the motor runs?"
+      "text": "Look at what is still TRUE in the scan after Start is released while the motor runs, and at which contact every path to the coil must pass."
     },
     {
       "level": 2,

@@ -26,7 +26,7 @@ Edite un peldaño en diagrama de escalera para que una pulsación de Start mante
 ## Objetivos
 
 - Lea un peldaño en diagrama de escalera como un camino de contactos por el que debe pasar la energía para llegar a la bobina.
-- Mantenga una bobina activada con un contacto de su propia salida en paralelo con Start, y deje Stop en serie para que Stop tenga prioridad.
+- Haga que una bobina se mantenga activada después de soltar Start, en un peldaño donde Stop siempre gane sobre Start.
 
 ## Etapas
 

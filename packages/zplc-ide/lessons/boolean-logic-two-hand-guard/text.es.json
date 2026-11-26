@@ -5,7 +5,7 @@
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Escriba una condición que sea verdadera solo cuando varias entradas sean verdaderas a la vez.",
-    "Use NOT para una lámpara de aviso y XOR para exactamente una de dos entradas."
+    "Convierta frases como \"mientras está abierta\" y \"solo una de las dos\" en condiciones booleanas."
   ],
   "stages": [
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "AND es verdadero solo cuando todas las partes lo son, así que PressEnable necesita las tres entradas unidas con AND."
+      "text": "Lea las tres frases de la etapa Edite de a una: cada una es la condición completa de una salida. Luego mire el operador que usa el programa inicial para PressEnable."
     },
     {
       "level": 2,

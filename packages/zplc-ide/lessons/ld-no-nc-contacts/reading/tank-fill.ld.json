@@ -1,0 +1,167 @@
+{
+  "name": "TankFill",
+  "description": "A fill valve that opens on request until a float switch says the tank is full, and a lamp that shows a full tank.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "FillRequest",
+        "type": "BOOL",
+        "comment": "Fill selector: TRUE while the operator asks for water"
+      },
+      {
+        "name": "TankFull",
+        "type": "BOOL",
+        "comment": "Float switch: TRUE while the water reaches it"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "FillValve",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Fill valve"
+      },
+      {
+        "name": "FullLamp",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Lamp that shows a full tank"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "The valve opens on request while the tank is not full: the normally closed contact conducts while TankFull is FALSE.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "e0_0_1",
+              "type": "contact_no",
+              "variable": "FillRequest",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e0_1_1",
+              "type": "contact_nc",
+              "variable": "TankFull",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e0_7_1",
+              "type": "coil",
+              "variable": "FillValve",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "The lamp is lit while the tank is full: the normally open contact conducts while TankFull is TRUE.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "e0_0_2",
+              "type": "contact_no",
+              "variable": "TankFull",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e0_7_2",
+              "type": "coil",
+              "variable": "FullLamp",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-26",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

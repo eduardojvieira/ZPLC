@@ -51,7 +51,7 @@ signals:
 caption: La autorretención simple vuelve a arrancar el extractor cuando termina la parada con FanStart todavía pulsado
 ```
 
-Eso es lo único que una autorretención sola no puede hacer: no sabe si el pulsador de arranque se soltó desde la última parada. Un programa que cumple la regla de la pulsación nueva necesita una segunda memoria BOOL que recuerde exactamente eso, borrada por cada parada y al empezar, para que una pulsación cuente solo cuando el pulsador ya se soltó, es decir, cuando el arranque está armado. La práctica pide esta regla.
+Eso es lo único que una autorretención sola no puede hacer: no sabe si el pulsador de arranque se soltó desde la última parada. La práctica pide la regla de la pulsación nueva, con tres paradas en lugar de dos; qué debe recordar su programa para esa regla, y cuándo lo olvida, queda para usted.
 
 ## Errores comunes
 

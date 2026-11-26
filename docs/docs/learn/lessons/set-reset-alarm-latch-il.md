@@ -26,7 +26,7 @@ Keep a fault in memory with the S and R instructions and see that, when the faul
 ## Objectives
 
 - Hold an alarm after the fault has gone, until it is acknowledged, with the IL instructions S and R.
-- Use the order of two lines to decide whether set or reset wins, and tell it from the SR and RS blocks.
+- Give two outputs opposite priorities between set and reset with S and R, and tell it from the SR and RS blocks.
 
 ## Stages
 

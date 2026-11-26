@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "SR tiene las entradas S1 y R y da prioridad al set; RS tiene las entradas S y R1 y da prioridad al reset."
+      "text": "Mire el momento de {{t:50}} ms, cuando Fault y Ack llegan juntos: ¿qué salida debe conservar su valor en ese momento, y cuál de los dos bloques declarados lo conserva?"
     },
     {
       "level": 2,

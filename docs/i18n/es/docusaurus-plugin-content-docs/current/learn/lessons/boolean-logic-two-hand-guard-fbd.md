@@ -26,7 +26,7 @@ Lea un diagrama de bloques de función (FBD) y conecte bloques AND, NOT y XOR pa
 ## Objetivos
 
 - Lea un diagrama de bloques de función (FBD): los bloques se unen con conexiones desde un puerto de salida hasta un puerto de entrada, y cada salida muestra el resultado de los bloques conectados a ella.
-- Conecte bloques AND, NOT y XOR para que una salida esté en ON solo cuando varias entradas estén en ON a la vez, cuando una entrada esté en OFF o cuando exactamente una de dos entradas esté en ON.
+- Elija y conecte bloques lógicos para que cada salida esté en ON exactamente en las situaciones que nombra su frase.
 
 ## Etapas
 

@@ -5,7 +5,7 @@
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el tiempo de respuesta, la redundancia ni el comportamiento ante fallas que necesita un dispositivo real de mando a dos manos.",
   "objectives": [
     "Lea un programa en lista de instrucciones (IL) como un resultado actual que cada instrucción combina con un operando, de arriba hacia abajo.",
-    "Use LD, LDN, AND, XOR y ST para convertir tres entradas en tres salidas."
+    "Convierta tres entradas en tres salidas con instrucciones de carga, combinación y almacenamiento."
   ],
   "stages": [
     {
