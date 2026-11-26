@@ -13,8 +13,10 @@ const reading: LessonReading = {
   files: { 'reading/fig.ld.json': '{}' },
   images: ['images/panel.svg'],
 };
-// A lesson without a reading page, named by id: the course now opens with an explaining lesson, which has one.
-const entry = LESSON_INDEX.lessons.find(({ id }) => id === 'motor-start-stop-safe')!;
+// A lesson without a reading page, built here from a shipped lesson whether or not that lesson has one, so the test does not
+// depend on which lessons the course has given a reading page yet.
+const entry: LessonIndexEntry = { ...LESSON_INDEX.lessons.find(({ id }) => id === 'motor-start-stop-safe')! };
+delete entry.reading;
 const withReading = (value: LessonReading): LessonIndexEntry => ({ ...entry, reading: value });
 const catalog = (value: LessonIndexEntry) => ({
   es: createLearnContentV1('es', [value]),
