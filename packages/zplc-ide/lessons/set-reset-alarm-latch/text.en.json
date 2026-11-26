@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this flaw of the starting program, save it, then press Check: The starting program copies Fault to both outputs, so they go OFF at {{t:20}} ms when the fault is gone. Call SetLatch with Fault as S1 and Ack as R, and ResetLatch with Fault as S and Ack as R1. Copy each Q1 to its output, and save the file.",
-      "checkpoint": "Each output is the Q1 of its own latch."
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program copies Fault to both outputs, so they go OFF at {{t:20}} ms when the fault is gone. Change it so that each output is held by its own latch: SetFirst by the block that lets Fault win when Fault and Ack arrive together, and ResetFirst by the block that lets Ack win. Write the calls yourself: the declarations are already there.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The scenario is named AlarmLatch and contains {{assertions}} assertions."
     },
     {
