@@ -16,7 +16,7 @@ import {
   ldFunctionPins,
   ldFunctionSpec,
 } from '../models/ldSupport';
-import { GENERIC_CLASSES, oneGenericType, outsideClass } from '../models/pinTypes';
+import { GENERIC_CLASSES, oneGenericType, outsideClass, selectsNoString } from '../models/pinTypes';
 import type { StdFunction } from '../catalog/stdFunctions';
 import { walkRung } from './ldPower';
 import { Problems, cellElement, rungElement, rungItemElement, type SourceElementId } from '../models/sourceElements';
@@ -415,7 +415,11 @@ function validateCall(
     const outside = outsideClass(pinType(pin), type);
     if (outside) {
       odd = true;
-      errors.push(`${named} operand ${pin} is ${outside}, and ${record.name} takes ${wanted.takes} there`);
+      errors.push(
+        wanted.types
+          ? `${named} operand ${pin} is ${outside}, and ${record.name} takes ${wanted.takes} there`
+          : `${named} operand ${pin} is STRING: ${selectsNoString(record.name)}`,
+      );
     }
   });
   if (!odd && !oneGenericType(generic))

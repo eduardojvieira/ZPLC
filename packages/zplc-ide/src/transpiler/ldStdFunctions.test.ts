@@ -42,6 +42,9 @@ function compileRung(file: Record<string, unknown>): unknown[] {
   }
 }
 
+/** What the owner's decision of 2026-11-26 has MUX and SEL say of a STRING. */
+const ADVICE = 'does not select STRING values; use an IF in Structured Text to choose between strings';
+
 describe('LNG-030 every registered function compiles from a Ladder rung', () => {
   const names = [...getAllFnNames()].sort();
 
@@ -201,8 +204,14 @@ describe('LNG-030 LNG-002 LNG-003 the box of a standard function: every fault na
     expect(faults(element)).toEqual([{ message: expect.stringContaining(message), element: 'rung:r1/cell:0,1' }]);
   });
 
-  it('MUX and SEL do not select a STRING', () => {
-    expect(faults(box('f1', 'MUX', ['K', 'Text', "'B'"], 'Text'))[0]!.message).toContain("Function 'f1' (MUX) operand IN0 is STRING");
-    expect(faults(box('f1', 'SEL', ['Start', 'Text', 'Text'], 'Text'))[0]!.message).toContain("Function 'f1' (SEL) operand IN0 is STRING");
+  it('MUX and SEL do not select a STRING: the message names the pin and says to use an IF in Structured Text', () => {
+    expect(faults(box('f1', 'MUX', ['K', 'Text', "'B'"], 'Text')).map((fault) => fault.message)).toEqual([
+      "Function 'f1' (MUX) operand IN0 is STRING: MUX " + ADVICE,
+      "Function 'f1' (MUX) operand IN1 is STRING: MUX " + ADVICE,
+    ]);
+    expect(faults(box('f1', 'SEL', ['Start', 'Text', 'Text'], 'Text')).map((fault) => fault.message)).toEqual([
+      "Function 'f1' (SEL) operand IN0 is STRING: SEL " + ADVICE,
+      "Function 'f1' (SEL) operand IN1 is STRING: SEL " + ADVICE,
+    ]);
   });
 });

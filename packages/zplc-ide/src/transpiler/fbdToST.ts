@@ -17,7 +17,7 @@ import { getFB, parseIOAddress } from '@zplc/compiler';
 import type { FBDModel, FBDBlock, FBDConnection } from '../models/fbd';
 import { isFunctionBlock, isLogicGate, isComparison, isMathOperator, validateFBDModel } from '../models/fbd';
 import { findProjectBlock, type ProjectBlock } from '../models/projectBlocks';
-import { FBD_FUNCTION_BLOCKS, GENERIC_CLASSES, INTEGER_LITERAL, outsideClass, pinTypeProblem } from '../models/pinTypes';
+import { FBD_FUNCTION_BLOCKS, GENERIC_CLASSES, INTEGER_LITERAL, outsideClass, pinTypeProblem, selectsNoString } from '../models/pinTypes';
 import { stdFunction } from '../catalog/stdFunctions';
 import {
   ElementError,
@@ -395,7 +395,9 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
           const data = block.type === 'SEL' ? operands.slice(1) : operands;
           const type = unify(block, data);
           if (block.type === 'SEL' && type === 'STRING') {
-            fail(block, 'SEL does not select STRING values: the code generator selects numbers, BOOL and TIME only');
+            data.forEach(
+              (source, index) => source.type === 'STRING' && fail(block, `input 'IN${index}' is STRING: ${selectsNoString('SEL')}`),
+            );
           }
           if (block.type === 'SEL' && operands[0].type && operands[0].type !== 'BOOL') {
             fail(block, `its selector 'G' is ${operands[0].type}, not BOOL`);
@@ -472,7 +474,9 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
           if (generic.length > 0 && genericType === undefined) return '';
           for (const pin of generic) {
             const odd = outsideClass(pinTypeOf(pin), operandOf(pin).type);
-            if (odd) fail(block, `input '${pin}' is ${odd}, and ${block.type} takes ${GENERIC_CLASSES[pinTypeOf(pin)]!.takes} there`);
+            const wanted = GENERIC_CLASSES[pinTypeOf(pin)]!;
+            if (odd && !wanted.types) fail(block, `input '${pin}' is STRING: ${selectsNoString(block.type)}`);
+            else if (odd) fail(block, `input '${pin}' is ${odd}, and ${block.type} takes ${wanted.takes} there`);
           }
           const typeOf = (pin: string): string => (pinTypeOf(pin) in GENERIC_CLASSES ? genericType! : pinTypeOf(pin).toUpperCase());
           pins.forEach((pin, index) => {

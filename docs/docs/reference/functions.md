@@ -73,7 +73,7 @@ Result after one scan: `Result` = `10`.
 
 `SEL(G : BOOL, IN0 : ANY, IN1 : ANY) : ANY`
 
-Returns IN0 when G is FALSE and IN1 when G is TRUE.
+Returns IN0 when G is FALSE and IN1 when G is TRUE. IN0 and IN1 take any elementary type but STRING: SEL does not select strings, in any language; to choose between strings, use an IF in Structured Text.
 
 ```pascal runnable expect="Result=20"
 PROGRAM Example
@@ -92,7 +92,7 @@ Result after one scan: `Result` = `20`.
 
 `MUX(K : INT, IN0 : ANY, IN1 : ANY, ...) : ANY`
 
-Returns the input that K selects: IN0 for 0, IN1 for 1, and so on, up to eight inputs.
+Returns the input that K selects: IN0 for 0, IN1 for 1, and so on, up to eight inputs. The inputs take any elementary type but STRING: MUX does not select strings, in any language; to choose between strings, use an IF in Structured Text.
 
 ```pascal runnable expect="Result=30"
 PROGRAM Example

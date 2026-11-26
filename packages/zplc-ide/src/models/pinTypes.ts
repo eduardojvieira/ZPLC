@@ -65,6 +65,13 @@ export const GENERIC_CLASSES: Readonly<Record<string, { types?: readonly string[
   ANY_BIT: { types: BIT_STRINGS, takes: 'a bit string (BYTE, WORD, DWORD or LWORD)' },
 };
 
+/**
+ * Why a STRING cannot go into a data pin of MUX or SEL: the compiler selects no string, in Structured Text either ("it is not a
+ * string"), so FBD and Ladder say what to do instead (owner, 2026-11-26).
+ */
+export const selectsNoString = (name: string): string =>
+  `${name} does not select STRING values; use an IF in Structured Text to choose between strings`;
+
 /** The elementary type that a generic pin of class `generic` does not take, or undefined when it takes `type` or `type` is not known. */
 export function outsideClass(generic: string, type: string | undefined): string | undefined {
   const wanted = GENERIC_CLASSES[generic];
@@ -245,9 +252,13 @@ export function judgeConnection(
     return { ...verdict, reason: `input ${label(sink.endpoint)} already has a wire: an input has one source` };
   }
   // a generic pin of a standard function takes the class the transpiler checks; an integer constant is an INT there, as it is built
-  if (callsStdFunction(sink.block.type, projectBlocks) && sink.port.type in GENERIC_CLASSES) {
+  // SEL keeps its own path in the build and refuses a STRING there too
+  const classed = callsStdFunction(sink.block.type, projectBlocks) || (sink.block.type === 'SEL' && sink.port.type === 'ANY');
+  if (classed && sink.port.type in GENERIC_CLASSES) {
     const from = normalize(valueType(model, source));
     const odd = outsideClass(sink.port.type, from === INTEGER_LITERAL ? 'INT' : from && ELEMENTARY.has(from) ? from : undefined);
+    if (odd && !GENERIC_CLASSES[sink.port.type]!.types)
+      return { ...verdict, reason: `${label(source.endpoint)} cannot feed ${label(sink.endpoint)}: ${selectsNoString(sink.block.type)}` };
     if (odd) {
       const takes = `${sink.block.type} takes ${GENERIC_CLASSES[sink.port.type]!.takes} there`;
       return {

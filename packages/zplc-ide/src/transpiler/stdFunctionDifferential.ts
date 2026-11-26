@@ -77,7 +77,10 @@ function callArguments(text: string, open: number): string[] {
   return args.length === 1 && args[0] === '' ? [] : args;
 }
 
-/** The operands of the first call of `name` in the statements of the example, and the variable it is stored in, if it is the whole statement. */
+/**
+ * The operands of the first call of `name` in the statements of the example, and the variable it is stored in when the call is the
+ * whole statement.
+ */
 function exampleCall(name: string, source: string): { operands: string[]; target?: string } {
   const body = source.slice(source.indexOf('END_VAR') + 'END_VAR'.length);
   if (name === 'MOD') {

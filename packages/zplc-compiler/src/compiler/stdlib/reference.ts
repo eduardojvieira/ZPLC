@@ -160,8 +160,10 @@ export const FUNCTION_DOCS: Record<string, FunctionDoc> = {
             ['IN1', 'ANY'],
         ],
         'ANY',
-        'Returns IN0 when G is FALSE and IN1 when G is TRUE.',
-        'Devuelve IN0 cuando G es FALSE e IN1 cuando G es TRUE.',
+        'Returns IN0 when G is FALSE and IN1 when G is TRUE. IN0 and IN1 take any elementary type but STRING: SEL does not select ' +
+            'strings, in any language; to choose between strings, use an IF in Structured Text.',
+        'Devuelve IN0 cuando G es FALSE e IN1 cuando G es TRUE. IN0 e IN1 admiten cualquier tipo elemental salvo STRING: SEL no ' +
+            'selecciona cadenas, en ningún lenguaje; para elegir entre cadenas, use un IF en texto estructurado.',
         'VAR\n    Choice : BOOL := TRUE;\n    Result : INT;\nEND_VAR\n\nResult := SEL(Choice, 10, 20);',
         'Result=20',
     ),
@@ -173,8 +175,11 @@ export const FUNCTION_DOCS: Record<string, FunctionDoc> = {
             ['IN1', 'ANY'],
         ],
         'ANY',
-        'Returns the input that K selects: IN0 for 0, IN1 for 1, and so on, up to eight inputs.',
-        'Devuelve la entrada que selecciona K: IN0 para 0, IN1 para 1, y así hasta ocho entradas.',
+        'Returns the input that K selects: IN0 for 0, IN1 for 1, and so on, up to eight inputs. The inputs take any elementary type ' +
+            'but STRING: MUX does not select strings, in any language; to choose between strings, use an IF in Structured Text.',
+        'Devuelve la entrada que selecciona K: IN0 para 0, IN1 para 1, y así hasta ocho entradas. Las entradas admiten cualquier tipo ' +
+            'elemental salvo STRING: MUX no selecciona cadenas, en ningún lenguaje; para elegir entre cadenas, use un IF en texto ' +
+            'estructurado.',
         'VAR\n    Result : INT;\nEND_VAR\n\nResult := MUX(2, 10, 20, 30);',
         'Result=30',
         { variadic: true },

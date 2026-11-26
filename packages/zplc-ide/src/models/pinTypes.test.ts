@@ -263,7 +263,14 @@ describe('LNG-013 judging a wire of the diagram', () => {
     );
     expect(judgeConnection(std, { block: 'count', port: 'OUT' }, { block: 'shl', port: 'IN' }).reason).toContain('INT is an integer');
     expect(judgeConnection(std, { block: 'tmr', port: 'ET' }, { block: 'neg', port: 'IN' }).reason).toContain('NEG takes a number');
-    expect(judgeConnection(std, { block: 'text', port: 'OUT' }, { block: 'mux', port: 'IN0' }).reason).toContain('STRING');
+    expect(judgeConnection(std, { block: 'text', port: 'OUT' }, { block: 'mux', port: 'IN0' }).reason).toBe(
+      "'text.OUT' cannot feed 'mux.IN0': MUX does not select STRING values; use an IF in Structured Text to choose between strings",
+    );
+    // SEL keeps its own path in the build, and refuses a STRING there as well
+    const sel = diagram([{ id: 'sel', type: 'SEL', position: { x: 0, y: 0 } }, block('text', 'constant', { value: 'abc' })]);
+    expect(judgeConnection(sel, { block: 'text', port: 'OUT' }, { block: 'sel', port: 'IN1' }).reason).toBe(
+      "'text.OUT' cannot feed 'sel.IN1': SEL does not select STRING values; use an IF in Structured Text to choose between strings",
+    );
     expect(judgeConnection(std, { block: 'count', port: 'OUT' }, { block: 'neg', port: 'IN' }).reason).toBeUndefined();
     expect(judgeConnection(std, { block: 'count', port: 'OUT' }, { block: 'mux', port: 'IN0' }).reason).toBeUndefined();
     // the blocks that keep their own path keep their rule: ADD takes a TIME
