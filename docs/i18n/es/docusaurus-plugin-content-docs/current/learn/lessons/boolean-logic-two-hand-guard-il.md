@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/boolean-logic-two-hand-guard-il. Do not edit. >>> */}
 
-Lea un programa en lista de instrucciones como un resultado actual que cada línea combina con un operando, y úselo para habilitar una prensa solo cuando las dos manos están en los botones y la protección está cerrada.
+Lea un programa en lista de instrucciones como un resultado actual que cada línea combina con un operando, y úselo para habilitar una prensa solo cuando las dos manos están en los pulsadores y la protección está cerrada.
 
 ## Datos
 
@@ -19,7 +19,7 @@ Lea un programa en lista de instrucciones como un resultado actual que cada lín
 - Tiempo estimado: 15 minutos
 - Lenguajes: IL
 - Rutas: Simulación, Hardware
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [boolean-logic-two-hand-guard](./boolean-logic-two-hand-guard.md)
 

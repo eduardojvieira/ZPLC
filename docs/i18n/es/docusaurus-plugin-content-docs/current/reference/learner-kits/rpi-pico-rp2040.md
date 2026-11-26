@@ -80,7 +80,7 @@ Cada versión publicada tiene una imagen precompilada para esta placa, `zplc-run
 | [Retardo a la conexión y a la desconexión en escalera: temporizadores como bloques en un peldaño](./rpi-pico-rp2040/timers-on-delay-off-delay-ladder.md) | `timers-on-delay-off-delay-ladder` |
 | [Lógica booleana en escalera: un mando a dos manos](./rpi-pico-rp2040/boolean-logic-two-hand-guard-ladder.md) | `boolean-logic-two-hand-guard-ladder` |
 | [Contar pulsos en escalera: un CTU cuenta los flancos por sí mismo](./rpi-pico-rp2040/edge-counter-pulses-ladder.md) | `edge-counter-pulses-ladder` |
-| [Tipos, aritmética y comparación: un total y tres cintas](./rpi-pico-rp2040/types-arithmetic-comparison.md) | `types-arithmetic-comparison` |
+| [Tipos, aritmética y comparación: un total y tres rangos](./rpi-pico-rp2040/types-arithmetic-comparison.md) | `types-arithmetic-comparison` |
 | [Una secuencia en diagrama funcional secuencial: llenar y luego mezclar](./rpi-pico-rp2040/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` |
 | [Enclavar una alarma en escalera: bobinas SET y RESET, y el orden de los peldaños](./rpi-pico-rp2040/set-reset-alarm-latch-ladder.md) | `set-reset-alarm-latch-ladder` |
 | [Diagrama de bloques de función: un mando a dos manos con protección](./rpi-pico-rp2040/boolean-logic-two-hand-guard-fbd.md) | `boolean-logic-two-hand-guard-fbd` |
@@ -95,7 +95,7 @@ Cada versión publicada tiene una imagen precompilada para esta placa, `zplc-run
 | [Lista de instrucciones: contar pulsos con un CTU](./rpi-pico-rp2040/edge-counter-pulses-il.md) | `edge-counter-pulses-il` |
 | [Escalado analógico en diagrama de bloques de función: una alarma de nivel alto](./rpi-pico-rp2040/analog-scaling-fbd.md) | `analog-scaling-fbd` |
 | [Lista de instrucciones: llamar a un bloque de función y leer sus salidas](./rpi-pico-rp2040/function-block-call-il.md) | `function-block-call-il` |
-| [Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres cintas](./rpi-pico-rp2040/types-arithmetic-comparison-fbd.md) | `types-arithmetic-comparison-fbd` |
+| [Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres rangos](./rpi-pico-rp2040/types-arithmetic-comparison-fbd.md) | `types-arithmetic-comparison-fbd` |
 | [Lista de instrucciones: aritmética, comparación y un salto en un flanco ascendente](./rpi-pico-rp2040/types-arithmetic-comparison-il.md) | `types-arithmetic-comparison-il` |
 
 {/* <<< END GENERATED: reference/learner-kits/rpi-pico-rp2040 <<< */}

@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/boolean-logic-two-hand-guard-fbd. Do not edit. >>> */}
 
-Read a Function Block Diagram and wire AND, NOT and XOR blocks so a press can only be enabled when both hands are on the buttons and the guard is closed.
+Read a Function Block Diagram and wire AND, NOT and XOR blocks so a press can only be enabled when both hands are on the push buttons and the guard is closed.
 
 ## Facts
 
@@ -19,7 +19,7 @@ Read a Function Block Diagram and wire AND, NOT and XOR blocks so a press can on
 - Estimated time: 20 minutes
 - Languages: FBD
 - Tracks: Simulation, Hardware
-- Reading page: no
+- Reading page: yes
 - Plant: none
 - Prerequisites: [boolean-logic-two-hand-guard](./boolean-logic-two-hand-guard.md)
 

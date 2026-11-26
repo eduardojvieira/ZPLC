@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/timers-on-delay-off-delay-fbd. Do not edit. >>> */}
 
-Conecte un bloque TOF para mantener una luz encendida después de soltar un botón, y un bloque TON para ignorar un pulso de sensor demasiado corto.
+Conecte un bloque TOF para mantener una luz encendida después de soltar un pulsador, y un bloque TON para ignorar un pulso de sensor demasiado corto.
 
 ## Datos
 
@@ -19,7 +19,7 @@ Conecte un bloque TOF para mantener una luz encendida después de soltar un bot�
 - Tiempo estimado: 20 minutos
 - Lenguajes: FBD
 - Rutas: Simulación, Hardware
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [timers-on-delay-off-delay](./timers-on-delay-off-delay.md), [boolean-logic-two-hand-guard-fbd](./boolean-logic-two-hand-guard-fbd.md)
 
@@ -39,7 +39,7 @@ Conecte un bloque TOF para mantener una luz encendida después de soltar un bot�
 
 ## Qué cubre la evidencia
 
-Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el antirrebote eléctrico, la respuesta del sensor ni el tiempo en el destino.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un pulsador real ni con qué rapidez responde un sensor real.
 
 ## Cableado
 
