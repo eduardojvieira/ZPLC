@@ -80,7 +80,8 @@ export const isGuarded = (path: string): boolean =>
 /**
  * A plain .ts module of the application that shows text to the person: a presentation, a keyboard or a flow module. Not a
  * test, the i18n module, the gallery, or a surface for tools and developers (the MCP server, the CLI, the compiler and the
- * language service speak to programs and keep the compiler's own English).
+ * language service speak to programs and keep the compiler's own English; the canonical format modules of src/formats are
+ * English on purpose, so the MCP resources and the docs generator never depend on the interface locale).
  */
 export const isGuardedModule = (path: string): boolean =>
   path.startsWith(`${IDE_SRC}/`) &&
@@ -89,7 +90,7 @@ export const isGuardedModule = (path: string): boolean =>
   !/\.(?:test|spec)\.ts$/.test(path) &&
   !path.startsWith(`${IDE_SRC}/i18n/`) &&
   !path.startsWith(`${IDE_SRC}/ui/gallery/`) &&
-  !/^packages\/zplc-ide\/src\/(?:mcp|cli|compiler|transpiler|langsvc|conformance)\//.test(path) &&
+  !/^packages\/zplc-ide\/src\/(?:mcp|cli|compiler|transpiler|langsvc|conformance|formats)\//.test(path) &&
   ![
     `${IDE_SRC}/ui/audit.ts`,
     `${IDE_SRC}/ui/registry.ts`,
