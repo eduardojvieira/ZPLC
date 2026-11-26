@@ -27,6 +27,9 @@ and version when the release is cut (see `RELEASING.md`).
 - A Function Block Diagram and a Ladder rung place every function of the compiler, the 240 type conversions included, so a
   `REAL` is converted with a block such as `REAL_TO_INT` and no second file in Structured Text is needed. `MUX` takes up
   to eight inputs.
+- An AI agent reads a long simulation trace in pieces: `trace_get` answers the changes, a window of samples or a
+  summary per signal, and a whole trace over 512 KiB is refused with the modes to use instead. A trace file over
+  16 MiB is refused before it is read. A plain `trace_get` call answers as in 2.0.
 
 ### Known limits
 
