@@ -39,8 +39,10 @@ const REPOSITORY = resolve(import.meta.dir, '..', '..', '..', '..');
 const SCREENS = join(REPOSITORY, 'specs', '014-zplc-2-1-release-quality', 'screens.md');
 
 /** Commands a capture must not run: they close the project, act on a board or a program, or start long work. */
-const NEVER =
-  /^(file\.(closeProject|open|export)|online\.|debug\.|build\.(runAllTests|runFailedTests|checkInterlocks)|learn\.|plant\.(createDeclarations|endEdit))/;
+const NEVER = new RegExp(
+  '^(file\\.(closeProject|open|export)|online\\.|debug\\.|learn\\.|' +
+    'build\\.(runAllTests|runFailedTests|checkInterlocks)|plant\\.(createDeclarations|endEdit))',
+);
 /** The surfaces the open workbench shows with no command, and the state they are in there. */
 const ON_OPEN: Array<[string, string]> = [
   ['shell.commandBar', 'idle'],
@@ -97,13 +99,17 @@ const slug = (text: string) =>
     .replace(/^-|-$/g, '');
 
 function sheet(area: string, captures: CaptureRecord[]): string {
-  const escape = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const entities: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
+  const escape = (text: string) => text.replace(/[&<>"]/g, (character) => entities[character]!);
+  const list = (capture: CaptureRecord) =>
+    capture.defects.length === 0
+      ? ''
+      : `<ul>${capture.defects.map((defect) => `<li>${escape(`${defect.kind}: ${defect.where}: ${defect.detail}`)}</li>`).join('')}</ul>`;
   const figures = captures
     .map(
       (capture) =>
-        `<figure><img src="${escape(capture.file)}" alt="${escape(capture.name)}" loading="lazy"><figcaption><b>${escape(capture.name)}</b>` +
-        `${capture.defects.length === 0 ? '' : `<ul>${capture.defects.map((defect) => `<li>${escape(`${defect.kind}: ${defect.where}: ${defect.detail}`)}</li>`).join('')}</ul>`}` +
-        `</figcaption></figure>`,
+        `<figure><img src="${escape(capture.file)}" alt="${escape(capture.name)}" loading="lazy">` +
+        `<figcaption><b>${escape(capture.name)}</b>${list(capture)}</figcaption></figure>`,
     )
     .join('\n');
   return (
@@ -182,7 +188,7 @@ async function captureCondition(
     await app.eval(
       `(async () => { const { useAppSettings } = await import('/src/store/useAppSettings.ts'); ` +
         `const { useIDEStore } = await import('/src/store/useIDEStore.ts'); ` +
-        `useAppSettings.getState().update({ language: ${JSON.stringify(condition.locale)}, density: ${JSON.stringify(condition.density)} }); ` +
+        `useAppSettings.getState().update(${JSON.stringify({ language: condition.locale, density: condition.density })}); ` +
         `useIDEStore.getState().setTheme(${JSON.stringify(condition.theme)}); return true; })()`,
     );
     await app.until(
