@@ -115,4 +115,4 @@ options:
 
 ## Qué hará en la práctica
 
-El programa inicial declara dos temporizadores, HoldTimer (TOF) y FilterTimer (TON), y copia el botón y el sensor directamente a sus salidas. Usted hará que Light siga encendida después de soltar Button, y que Confirmed ignore el pulso breve de Sensor que empieza a los {{t:100}} ms pero le crea a Sensor cuando se mantiene en ON desde los {{t:500}} ms. Después pulse {{ui:learn.check}}.
+El programa inicial declara dos temporizadores, HoldTimer (TOF) y FilterTimer (TON), y copia el pulsador y el sensor directamente a sus salidas. Usted hará que Light siga encendida después de soltar Button, y que Confirmed ignore el pulso breve de Sensor que empieza a los {{t:100}} ms pero le crea a Sensor cuando se mantiene en ON desde los {{t:500}} ms. Después pulse {{ui:learn.check}}.

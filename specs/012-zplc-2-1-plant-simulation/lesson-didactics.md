@@ -8,7 +8,7 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 - `check`: 0 of 111 lessons break it
 - `vocabulary`: 0 of 111 lessons break it
 - `order`: 0 of 111 lessons break it
-- `glossary`: 25 of 111 lessons break it
+- `glossary`: 0 of 111 lessons break it
 - `reading-parts`: 7 of 111 lessons break it
 - `answer`: 0 of 111 lessons break it
 - `grows`: 14 of 111 lessons break it
@@ -36,7 +36,7 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 | 16 | `boolean-logic-two-hand-guard-fbd` | 2 | FBD | 20 | yes |  | 5 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 17 | `boolean-logic-two-hand-guard-il` | 2 | IL | 15 | yes | 5 | 6 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 18 | `set-reset-alarm-latch-il` | 2 | IL | 15 | yes | 7 | 3 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 19 | `timers-on-delay-off-delay` | 3 | ST | 15 | yes | 2 | 2 | yes | yes | ok | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
+| 19 | `timers-on-delay-off-delay` | 3 | ST | 15 | yes | 2 | 2 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 20 | `ld-edges` | 3 | LD | 15 | yes |  | 2 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 21 | `edge-counter-pulses` | 3 | ST | 15 | yes | 12 | 1 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 22 | `counter-batch-fbd` | 3 | FBD | 20 | yes |  | 2 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
@@ -53,7 +53,7 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 | 33 | `analog-scaling-fbd` | 4 | FBD | 20 | yes |  | 17 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 34 | `types-arithmetic-comparison-fbd` | 4 | FBD | 25 | yes |  | 13 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 35 | `types-arithmetic-comparison-il` | 4 | IL | 20 | yes | 12 | 11 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 36 | `ld-sequence-step-bits` | 5 | LD | 25 | yes |  | 10 | yes | yes | ok | ok | ok | ok | botón (es, use pulsador) | no "Worked example" (en), no "Ejemplo resuelto" (es), no "Errores comunes" (es) | ok | 10 starter statements, last of module 5 in ladder | ok | ok |
+| 36 | `ld-sequence-step-bits` | 5 | LD | 25 | yes |  | 10 | yes | yes | ok | ok | ok | ok | ok | no "Worked example" (en), no "Ejemplo resuelto" (es), no "Errores comunes" (es) | ok | 10 starter statements, last of module 5 in ladder | ok | ok |
 | 37 | `pedestrian-crossing-states` | 5 | ST | 25 | no | 56 | 5 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 38 | `sfc-fill-mix-sequence` | 5 | SFC | 25 | yes |  | 4 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 39 | `pedestrian-crossing-sfc` | 5 | SFC | 25 | no |  | 8 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
@@ -64,41 +64,41 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 | 44 | `motor-plant-feedback` | 6 | ST | 20 | no | 28 | 2 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 45 | `tank-level-fault-reset` | 6 | ST | 25 | no | 36 | 2 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 46 | `interlock-guard-permissive` | 6 | ST | 20 | no | 1 | 2 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | safety (en), seguridad (es) | ok |
-| 47 | `interlock-reversing-ladder` | 6 | LD | 20 | yes |  | 2 | yes | yes | ok | ok | ok | ok | botón (es, use pulsador), botones (es, use pulsador) | no "Worked example" (en), no "Ejemplo resuelto" (es), no "Errores comunes" (es) | ok | ok | safety (en), seguridad (es) | ok |
-| 48 | `tank-level-fault-reset-ladder` | 6 | LD | 30 | yes |  | 2 | yes | yes | ok | ok | ok | ok | botón (es, use pulsador) | no "Worked example" (en), no "Ejemplo resuelto" (es), no "Errores comunes" (es) | ok | 2 starter statements, last of module 6 in ladder | ok | ok |
+| 47 | `interlock-reversing-ladder` | 6 | LD | 20 | yes |  | 2 | yes | yes | ok | ok | ok | ok | ok | no "Worked example" (en), no "Ejemplo resuelto" (es), no "Errores comunes" (es) | ok | ok | safety (en), seguridad (es) | ok |
+| 48 | `tank-level-fault-reset-ladder` | 6 | LD | 30 | yes |  | 2 | yes | yes | ok | ok | ok | ok | ok | no "Worked example" (en), no "Ejemplo resuelto" (es), no "Errores comunes" (es) | ok | 2 starter statements, last of module 6 in ladder | ok | ok |
 | 49 | `interlock-guard-permissive-fbd` | 6 | FBD | 25 | no |  | 6 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | safety (en), seguridad (es) | ok |
 | 50 | `fault-stop-reset-sfc` | 6 | SFC | 25 | no |  | 8 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 51 | `interlock-guard-permissive-il` | 6 | IL | 20 | no | 1 | 6 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | safety (en), seguridad (es) | ok |
-| 52 | `ld-function-blocks` | 7 | LD | 25 | yes |  | 1 | yes | yes | ok | ok | ok | ok | botón (es, use pulsador), botones (es, use pulsador) | no "Worked example" (en), no "Ejemplo resuelto" (es), no "Errores comunes" (es) | ok | 1 starter statements, last of module 7 in ladder | ok | ok |
-| 53 | `function-block-pump-pair` | 7 | ST | 25 | no | 1 | 4 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
-| 54 | `structures-arrays-call-panel` | 7 | ST | 25 | no | 7 | 5 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador), botones (es, use pulsador) | ok | ok | ok | ok | ok |
+| 52 | `ld-function-blocks` | 7 | LD | 25 | yes |  | 1 | yes | yes | ok | ok | ok | ok | ok | no "Worked example" (en), no "Ejemplo resuelto" (es), no "Errores comunes" (es) | ok | 1 starter statements, last of module 7 in ladder | ok | ok |
+| 53 | `function-block-pump-pair` | 7 | ST | 25 | no | 1 | 4 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
+| 54 | `structures-arrays-call-panel` | 7 | ST | 25 | no | 7 | 5 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 55 | `function-block-valves-fbd` | 7 | FBD | 20 | no |  | 4 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 56 | `function-block-call-il` | 7 | IL | 25 | no | 3 | 3 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
-| 57 | `ld-diagnosis-debugger` | 8 | LD | 40 | yes |  | 2 | yes | yes | ok | ok | ok | ok | botón (es, use pulsador) | no "Worked example" (en), no "Common mistakes" (en), no "Ejemplo resuelto" (es), no "Errores comunes" (es) | ok | 2 starter statements, last of module 8 in ladder | real machine (en), safety (en), máquina real (es), seguridad (es) | ok |
+| 56 | `function-block-call-il` | 7 | IL | 25 | no | 3 | 3 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
+| 57 | `ld-diagnosis-debugger` | 8 | LD | 40 | yes |  | 2 | yes | yes | ok | ok | ok | ok | ok | no "Worked example" (en), no "Common mistakes" (en), no "Ejemplo resuelto" (es), no "Errores comunes" (es) | ok | 2 starter statements, last of module 8 in ladder | real machine (en), safety (en), máquina real (es), seguridad (es) | ok |
 | 58 | `conveyor-classification-jam` | 8 | ST | 25 | no | 17 | 10 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 59 | `temporal-assertions-jam-fault` | 8 | ST | 25 | no | 17 | 10 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 60 | `conveyor-two-parts-diagnosis` | 8 | ST | 20 | no | 44 | 3 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 61 | `instruction-list-door-alarm` | 9 | IL | 20 | no | 2 | 3 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
-| 62 | `one-logic-five-languages` | 9 | ST/LD/FBD/SFC/IL | 30 | yes |  | 1 | yes | yes | ok | ok | ok | ok | botón (es, use pulsador) | no "Worked example" (en), no "Common mistakes" (en), no "Ejemplo resuelto" (es), no "Errores comunes" (es) | ok | ok | ok | ok |
+| 61 | `instruction-list-door-alarm` | 9 | IL | 20 | no | 2 | 3 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
+| 62 | `one-logic-five-languages` | 9 | ST/LD/FBD/SFC/IL | 30 | yes |  | 1 | yes | yes | ok | ok | ok | ok | ok | no "Worked example" (en), no "Common mistakes" (en), no "Ejemplo resuelto" (es), no "Errores comunes" (es) | ok | ok | ok | ok |
 | 63 | `modbus-register-round-trip` | 10 | ST | 25 | no | 3 | 2 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 64 | `mqtt-publish-subscribe` | 10 | ST | 25 | no | 4 | 4 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 65 | `modbus-coil-fbd` | 10 | FBD | 25 | no |  | 21 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 66 | `capstone-packing-station` | 11 | ST | 60 | no | 5 | 1 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | safety (en), seguridad (es) | ok |
-| 67 | `packing-station-sfc` | 11 | SFC | 60 | no |  | 3 | yes | yes | no en, es | ok | ok | ok | botones (es, use pulsador) | ok | ok | ok | safety (en), seguridad (es) | ok |
-| 68 | `ld-final-project` | 11 | LD | 60 | yes |  | 1 | yes | yes | ok | ok | ok | ok | botón (es, use pulsador), botones (es, use pulsador) | no "Worked example" (en), no "Ejemplo resuelto" (es) | ok | 1 starter statements, last of module 11 in ladder | safety (en), seguridad (es) | ok |
-| 69 | `plant-belt-to-sensor` | 12 | ST | 20 | yes | 11 | 0 | yes | yes | ok | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
-| 70 | `plant-belt-to-sensor-ladder` | 12 | LD | 20 | no |  | 0 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
+| 67 | `packing-station-sfc` | 11 | SFC | 60 | no |  | 3 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | safety (en), seguridad (es) | ok |
+| 68 | `ld-final-project` | 11 | LD | 60 | yes |  | 1 | yes | yes | ok | ok | ok | ok | ok | no "Worked example" (en), no "Ejemplo resuelto" (es) | ok | 1 starter statements, last of module 11 in ladder | safety (en), seguridad (es) | ok |
+| 69 | `plant-belt-to-sensor` | 12 | ST | 20 | yes | 11 | 0 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
+| 70 | `plant-belt-to-sensor-ladder` | 12 | LD | 20 | no |  | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 71 | `plant-latch-two-sensors` | 12 | ST | 20 | no | 6 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 72 | `plant-latch-two-sensors-ladder` | 12 | LD | 20 | no |  | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 73 | `plant-counted-queue` | 12 | ST | 30 | no | 15 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 74 | `plant-counted-queue-ladder` | 12 | LD | 30 | no |  | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 75 | `plant-timed-tank` | 13 | ST | 30 | no | 32 | 0 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
-| 76 | `plant-timed-tank-ladder` | 13 | LD | 30 | no |  | 0 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
+| 75 | `plant-timed-tank` | 13 | ST | 30 | no | 32 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
+| 76 | `plant-timed-tank-ladder` | 13 | LD | 30 | no |  | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 77 | `plant-tank-level-scaling` | 13 | ST | 30 | no | 16 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 78 | `plant-tank-level-scaling-ladder` | 13 | LD | 30 | no |  | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 79 | `plant-tank-pid` | 13 | ST | 40 | no | 8 | 2 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 80 | `plant-tank-pid-fbd` | 13 | FBD | 40 | no |  | 20 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 81 | `plant-buffer-release` | 14 | SFC | 45 | no |  | 2 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
+| 81 | `plant-buffer-release` | 14 | SFC | 45 | no |  | 2 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 82 | `plant-merge-lines` | 14 | ST | 45 | no | 55 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 83 | `plant-merge-lines-ladder` | 14 | LD | 45 | no |  | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 84 | `plant-belt-transfer` | 15 | ST | 40 | no | 83 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
@@ -118,14 +118,14 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 | 98 | `plant-vision-sorting` | 16 | ST | 50 | no | 37 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 99 | `plant-three-level-lifts` | 17 | SFC | 50 | no |  | 11 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 100 | `plant-lift-stacking` | 17 | ST | 45 | no | 70 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 101 | `plant-warehouse` | 17 | SFC | 60 | no |  | 23 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
+| 101 | `plant-warehouse` | 17 | SFC | 60 | no |  | 23 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 102 | `plant-production-line` | 17 | ST | 50 | no | 50 | 34 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | 34 starter statements, last of module 17 in plant-st | ok | ok |
-| 103 | `plant-estop-interlocks` | 18 | ST | 40 | no | 7 | 41 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | safety (en), seguridad (es) | ok |
-| 104 | `plant-estop-interlocks-ladder` | 18 | LD | 40 | no |  | 26 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | safety (en), seguridad (es) | ok |
-| 105 | `plant-manual-auto` | 18 | ST | 45 | no | 23 | 45 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador), botones (es, use pulsador) | ok | ok | ok | safety (en), seguridad (es) | ok |
-| 106 | `plant-manual-auto-ladder` | 18 | LD | 45 | no |  | 37 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador), botones (es, use pulsador) | ok | ok | 37 starter statements, last of module 18 in plant-ld | safety (en), seguridad (es) | ok |
+| 103 | `plant-estop-interlocks` | 18 | ST | 40 | no | 7 | 41 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | safety (en), seguridad (es) | ok |
+| 104 | `plant-estop-interlocks-ladder` | 18 | LD | 40 | no |  | 26 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | safety (en), seguridad (es) | ok |
+| 105 | `plant-manual-auto` | 18 | ST | 45 | no | 23 | 45 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | safety (en), seguridad (es) | ok |
+| 106 | `plant-manual-auto-ladder` | 18 | LD | 45 | no |  | 37 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | 37 starter statements, last of module 18 in plant-ld | safety (en), seguridad (es) | ok |
 | 107 | `plant-fault-actions` | 18 | ST | 45 | no | 10 | 44 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | 44 starter statements, last of module 18 in plant-st | ok | ok |
-| 108 | `plant-build-belt-scene` | 19 | ST | 25 | no | 11 | 0 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
-| 109 | `plant-build-belt-scene-ladder` | 19 | LD | 25 | no |  | 1 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
+| 108 | `plant-build-belt-scene` | 19 | ST | 25 | no | 11 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
+| 109 | `plant-build-belt-scene-ladder` | 19 | LD | 25 | no |  | 1 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 110 | `plant-change-scene` | 19 | ST | 20 | no | 0 | 26 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | 26 starter statements, last of module 19 in plant-st | ok | ok |
 | 111 | `plant-change-scene-ladder` | 19 | LD | 20 | no |  | 17 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | 17 starter statements, last of module 19 in plant-ld | ok | ok |

@@ -17,7 +17,7 @@
     {
       "key": "predict",
       "title": "Prediga",
-      "body": "Start1 se pulsa a los {{t:10}} ms y Start2 a los {{t:30}} ms; ambos botones se sueltan después. Stop se pulsa a los {{t:60}} ms y Start2 se vuelve a pulsar a los {{t:80}} ms. Prediga Pump1 y Pump2 a los {{t:50}}, {{t:60}} y {{t:90}} ms.",
+      "body": "Start1 se pulsa a los {{t:10}} ms y Start2 a los {{t:30}} ms; ambos pulsadores se sueltan después. Stop se pulsa a los {{t:60}} ms y Start2 se vuelve a pulsar a los {{t:80}} ms. Prediga Pump1 y Pump2 a los {{t:50}}, {{t:60}} y {{t:90}} ms.",
       "checkpoint": "{{v:PumpStation.Pump1=true,PumpStation.Pump2=true@50|Ambas en ON}} a los {{t:50}} ms, porque cada instancia sostiene su propia bomba; {{v:PumpStation.Pump1=false,PumpStation.Pump2=false@60|ambas en OFF}} a los {{t:60}} ms, tras Stop; {{v:PumpStation.Pump1=false,PumpStation.Pump2=true@90|solo Pump2 en ON}} a los {{t:90}} ms."
     },
     {
@@ -35,7 +35,7 @@
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Compare {{t:50}}, {{t:60}} y {{t:90}} ms. Pump1 y Pump2 siguen funcionando solas después de soltar sus botones, Stop termina ambas, y una nueva pulsación de Start2 arranca solo la bomba 2.",
+      "body": "Compare {{t:50}}, {{t:60}} y {{t:90}} ms. Pump1 y Pump2 siguen funcionando solas después de soltar sus pulsadores, Stop termina ambas, y una nueva pulsación de Start2 arranca solo la bomba 2.",
       "checkpoint": "Pump1 sube a los {{t:10}} ms y cae a los {{t:60}} ms. Pump2 sube a los {{t:30}} ms y está de nuevo en ON a los {{t:90}} ms mientras Pump1 sigue en OFF."
     },
     {

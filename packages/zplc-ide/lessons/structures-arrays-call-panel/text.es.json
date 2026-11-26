@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Estructuras y arreglos: un panel de tres llamadas",
-  "summary": "Guarde tres botones de llamada en un arreglo de estructuras y escriba un solo bucle FOR que retenga cada llamada hasta que se reconozca e informe si alguna llamada, o todas, están en espera.",
+  "summary": "Guarde tres pulsadores de llamada en un arreglo de estructuras y escriba un solo bucle FOR que retenga cada llamada hasta que se reconozca e informe si alguna llamada, o todas, están en espera.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el tiempo de respuesta de un panel de llamadas real ni tareas distintas de esa única tarea de 10 ms.",
   "objectives": [
     "Declare una estructura con miembros con nombre y un arreglo de esa estructura, y llegue a un elemento con un índice y un nombre de miembro.",
@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/CallPanel.st la estructura Call tiene los miembros Pressed y Held, y el arreglo Calls contiene tres de ellas. El programa copia los botones a Calls[1].Pressed hasta Calls[3].Pressed. Escriba un bucle FOR con i de 1 a 3 que ponga Held en TRUE cuando Pressed sea TRUE, lo borre cuando Ack sea TRUE, y active Pending si algún Held es TRUE y AllCalling si los tres lo son.",
-      "checkpoint": "Una llamada queda retenida al soltar su botón, Ack las borra, y el bucle trata las tres de la misma manera."
+      "body": "En src/CallPanel.st la estructura Call tiene los miembros Pressed y Held, y el arreglo Calls contiene tres de ellas. El programa copia los pulsadores a Calls[1].Pressed hasta Calls[3].Pressed. Escriba un bucle FOR con i de 1 a 3 que ponga Held en TRUE cuando Pressed sea TRUE, lo borre cuando Ack sea TRUE, y active Pending si algún Held es TRUE y AllCalling si los tres lo son.",
+      "checkpoint": "Una llamada queda retenida al soltar su pulsador, Ack las borra, y el bucle trata las tres de la misma manera."
     },
     {
       "key": "predict",
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia los tres botones al arreglo Calls pero no tiene bucle, así que Pending y AllCalling quedan en OFF; agregue un bucle FOR sobre los tres elementos que mantenga una llamada pulsada hasta Ack y active las dos salidas.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia los tres pulsadores al arreglo Calls pero no tiene bucle, así que Pending y AllCalling quedan en OFF; agregue un bucle FOR sobre los tres elementos que mantenga una llamada pulsada hasta Ack y active las dos salidas.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexione",
       "body": "¿Qué cambiaría si el bucle fuera de 1 a 2? Pruébelo y vea qué aserción falla; luego agregue una cuarta llamada y diga qué editaría.",
-      "checkpoint": "Con un arreglo y un bucle, agregar una llamada cambia los límites y una línea que copia el botón. El escenario muestra la lógica de una sola tarea; no muestra varias tareas ni sus prioridades."
+      "checkpoint": "Con un arreglo y un bucle, agregar una llamada cambia los límites y una línea que copia el pulsador. El escenario muestra la lógica de una sola tarea; no muestra varias tareas ni sus prioridades."
     }
   ],
   "hints": [
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial copia los tres botones al arreglo Calls pero no tiene bucle, así que Pending y AllCalling quedan en OFF; agregue un bucle FOR sobre los tres elementos que mantenga una llamada pulsada hasta Ack y active las dos salidas."
+    "El programa inicial copia los tres pulsadores al arreglo Calls pero no tiene bucle, así que Pending y AllCalling quedan en OFF; agregue un bucle FOR sobre los tres elementos que mantenga una llamada pulsada hasta Ack y active las dos salidas."
   ]
 }

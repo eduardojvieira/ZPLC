@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Lista de instrucciones: el resultado actual y el orden de las instrucciones",
-  "summary": "Complete un programa en lista de instrucciones para que una alarma de puerta se mantenga encendida al cerrar la puerta y se silencie con un botón, y vea que el orden de las instrucciones decide el resultado.",
+  "summary": "Complete un programa en lista de instrucciones para que una alarma de puerta se mantenga encendida al cerrar la puerta y se silencie con un pulsador, y vea que el orden de las instrucciones decide el resultado.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra requisitos de alarmas, tiempos de sirena ni el comportamiento de una máquina real.",
   "objectives": [
     "Lea un programa en lista de instrucciones como un resultado actual que cada instrucción combina con un operando, de arriba hacia abajo.",

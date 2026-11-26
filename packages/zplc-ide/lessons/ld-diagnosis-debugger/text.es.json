@@ -11,19 +11,19 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/MotorDiag.ld.json un motor arranca con StartPB, pero no se detiene cuando se pulsa el botón de paro. StartPB es un pulsador normalmente abierto. StopOK está cableado normalmente cerrado: es TRUE en reposo y FALSE mientras se pulsa el botón de paro. OverloadOK es TRUE mientras el motor está sano. Diagnostique el programa en simulación y luego corríjalo para que el paro y la sobrecarga detengan el motor y Alarm siga a la sobrecarga.",
+      "body": "En src/MotorDiag.ld.json un motor arranca con StartPB, pero no se detiene cuando se pulsa el pulsador de paro. StartPB es un pulsador normalmente abierto. StopOK está cableado normalmente cerrado: es TRUE en reposo y FALSE mientras se pulsa el pulsador de paro. OverloadOK es TRUE mientras el motor está sano. Diagnostique el programa en simulación y luego corríjalo para que el paro y la sobrecarga detengan el motor y Alarm siga a la sobrecarga.",
       "checkpoint": "Puede nombrar el contacto que está en el lugar equivocado antes de cambiar nada."
     },
     {
       "key": "predict",
       "title": "Prediga",
-      "body": "StartPB se pulsa a los {{t:20}} ms y se suelta a los {{t:30}} ms. El botón de paro se pulsa a los {{t:60}} ms y se suelta a los {{t:70}} ms. Prediga Motor a los {{t:40}}, {{t:50}} y {{t:80}} ms para un programa que funciona como se describe.",
-      "checkpoint": "{{v:MotorDiag.Motor=true@40|ON}} a los {{t:40}} ms; {{v:MotorDiag.Motor=true@50|ON}} a los {{t:50}} ms; y {{v:MotorDiag.Motor=false@80|OFF}} a los {{t:80}} ms, porque se pulsó el botón de paro. El programa inicial falla en el último."
+      "body": "StartPB se pulsa a los {{t:20}} ms y se suelta a los {{t:30}} ms. El pulsador de paro se pulsa a los {{t:60}} ms y se suelta a los {{t:70}} ms. Prediga Motor a los {{t:40}}, {{t:50}} y {{t:80}} ms para un programa que funciona como se describe.",
+      "checkpoint": "{{v:MotorDiag.Motor=true@40|ON}} a los {{t:40}} ms; {{v:MotorDiag.Motor=true@50|ON}} a los {{t:50}} ms; y {{v:MotorDiag.Motor=false@80|OFF}} a los {{t:80}} ms, porque se pulsó el pulsador de paro. El programa inicial falla en el último."
     },
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta falla del programa inicial, guárdelo y luego pulse Comprobar: Pulsar el paro a los {{t:60}} ms deja Motor en ON a los {{t:80}} ms: el motor no se detiene. Antes de editar, diagnostique. Ejecute el programa inicial en Simulación y abra la tabla de observación. Agregue Motor, StartPB y StopOK. Pulse el botón de arranque y luego el de paro, y vea que Motor sigue en ON. Seleccione el peldaño 1 y pulse F9 para poner un punto de interrupción, ejecute de nuevo y lea los valores en la parada. Fuerce StopOK a FALSE desde la tabla de observación y vea que nada cambia. Abra la traza y busque dónde Motor debió caer. Después corrija el peldaño para que el paro y la sobrecarga detengan el motor.",
+      "body": "Corrija esta falla del programa inicial, guárdelo y luego pulse Comprobar: Pulsar el paro a los {{t:60}} ms deja Motor en ON a los {{t:80}} ms: el motor no se detiene. Antes de editar, diagnostique. Ejecute el programa inicial en Simulación y abra la tabla de observación. Agregue Motor, StartPB y StopOK. Pulse el pulsador de arranque y luego el de paro, y vea que Motor sigue en ON. Seleccione el peldaño 1 y pulse F9 para poner un punto de interrupción, ejecute de nuevo y lea los valores en la parada. Fuerce StopOK a FALSE desde la tabla de observación y vea que nada cambia. Abra la traza y busque dónde Motor debió caer. Después corrija el peldaño para que el paro y la sobrecarga detengan el motor.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado, y la tabla de observación no muestra ningún forzado activo."
     },
     {

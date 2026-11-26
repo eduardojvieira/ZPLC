@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "function-block-pump-pair",
-  "version": 5,
+  "version": 6,
   "order": 22,
   "module": 7,
   "level": "intermediate",

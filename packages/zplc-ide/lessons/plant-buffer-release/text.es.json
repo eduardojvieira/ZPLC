@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Acumular y liberar",
-  "summary": "Modele una estación de búfer como una máquina de estados: cargue cinco cajas, retenga en una cuchilla y libere una por cada pulsación del botón.",
+  "summary": "Modele una estación de búfer como una máquina de estados: cargue cinco cajas, retenga en una cuchilla y libere una por cada pulsación del pulsador.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Modelar una estación con pasos y transiciones, un paso por cada cosa que hace la estación.",
@@ -18,7 +18,7 @@
       "key": "predict",
       "title": "Predecir",
       "body": "Antes de ejecutar, recorra el diagrama: la pulsación de inicio lo lleva de IDLE a los pasos de carga, que encienden el búfer y emiten una caja cada dos segundos.",
-      "checkpoint": "La cuchilla retiene la cola tras la quinta caja; cada pulsación del botón de liberación deja pasar exactamente una caja por EyeRelease; tras la quinta liberación Done se enciende y Fault sigue apagada."
+      "checkpoint": "La cuchilla retiene la cola tras la quinta caja; cada pulsación del pulsador de liberación deja pasar exactamente una caja por EyeRelease; tras la quinta liberación Done se enciende y Fault sigue apagada."
     },
     {
       "key": "edit",

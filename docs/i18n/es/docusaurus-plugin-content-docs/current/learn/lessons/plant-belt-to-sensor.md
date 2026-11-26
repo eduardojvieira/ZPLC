@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-belt-to-sensor. Do not edit. >>> */}
 
-Arranque una cinta con un botón y deténgala cuando una caja llegue al sensor del extremo.
+Arranque una cinta con un pulsador y deténgala cuando una caja llegue al sensor del extremo.
 
 ## Datos
 
@@ -25,7 +25,7 @@ Arranque una cinta con un botón y deténgala cuando una caja llegue al sensor d
 
 ## Objetivos
 
-- Arrancar un actuador con la pulsación de un botón y recordar que está en marcha.
+- Arrancar un actuador con la pulsación de un pulsador y recordar que está en marcha.
 - Detener el actuador cuando un sensor ve la caja.
 
 ## Etapas

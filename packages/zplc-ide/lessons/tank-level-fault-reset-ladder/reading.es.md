@@ -1,6 +1,6 @@
 ## Para qué sirve
 
-Una máquina que tiene una falla no debería olvidarla. Piense en un horno que se sobrecalienta y apaga su calefactor. Si el horno se enfría durante un minuto y el calefactor vuelve a encenderse solo, el operador nunca se entera de que algo salió mal, y la causa sigue ahí. Una máquina mejor recuerda la falla, muestra una alarma y espera a que una persona la revise y pulse un botón de **reset**.
+Una máquina que tiene una falla no debería olvidarla. Piense en un horno que se sobrecalienta y apaga su calefactor. Si el horno se enfría durante un minuto y el calefactor vuelve a encenderse solo, el operador nunca se entera de que algo salió mal, y la causa sigue ahí. Una máquina mejor recuerda la falla, muestra una alarma y espera a que una persona la revise y pulse un pulsador de **reset**.
 
 Esta página explica cómo hacer que un programa recuerde una falla, por qué el reset debe ser un acto deliberado y por qué importa el orden de los peldaños. La práctica lo aplica después a la bomba de un tanque.
 
@@ -22,7 +22,7 @@ caption: Un biestable de sobrecalentamiento. El peldaño 1 lo activa, el peldañ
 
 ## Reiniciar solo cuando es seguro
 
-Mire el peldaño 2. Desactiva `Locked` solo cuando se cumplen tres cosas: el biestable está en ON, el sobrecalentamiento terminó y el botón de reset está pulsado. La condición del medio es la importante. Sin ella, un reset pulsado mientras el sobrecalentamiento sigue presente borraría el biestable, y la alarma ocultaría una falla que todavía está ocurriendo.
+Mire el peldaño 2. Desactiva `Locked` solo cuando se cumplen tres cosas: el biestable está en ON, el sobrecalentamiento terminó y el pulsador de reset está pulsado. La condición del medio es la importante. Sin ella, un reset pulsado mientras el sobrecalentamiento sigue presente borraría el biestable, y la alarma ocultaría una falla que todavía está ocurriendo.
 
 Una buena regla: **un reset nunca debe borrar una falla que sigue ocurriendo**, y un reset debe ser una **acción** de una persona, no un estado. La práctica usa la misma idea para una bomba.
 
@@ -70,7 +70,7 @@ Lo mismo vale para las salidas. Un peldaño que maneja una lámpara de alarma de
 
 - Usar una bobina simple para una falla. La bobina sigue a la entrada, y la falla desaparece con ella.
 - Dejar que el reset borre la falla mientras la causa sigue presente.
-- Dejar que un botón de reset mantenido borre una falla nueva de inmediato. Un buen reset necesita una pulsación nueva después de que la falla terminó, es decir, el botón debe soltarse y volver a pulsarse.
+- Dejar que un pulsador de reset mantenido borre una falla nueva de inmediato. Un buen reset necesita una pulsación nueva después de que la falla terminó, es decir, el pulsador debe soltarse y volver a pulsarse.
 - Poner un peldaño de salida antes de los peldaños del biestable, de modo que muestre valores viejos.
 
 ## Compruebe lo aprendido

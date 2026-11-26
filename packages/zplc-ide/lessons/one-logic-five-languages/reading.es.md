@@ -6,7 +6,7 @@ Esta última lección es un epílogo. Muestra que la lógica que aprendió no de
 
 ## Una lógica, dibujada de dos maneras
 
-Esta es una baliza que sigue encendida tras una pulsación breve y se apaga cuando se pulsa un botón Off. En escalera es una autorretención: `TurnOn` en paralelo con el contacto de la propia baliza, y luego un contacto normalmente cerrado de `Off`.
+Esta es una baliza que sigue encendida tras una pulsación breve y se apaga cuando se pulsa un pulsador Off. En escalera es una autorretención: `TurnOn` en paralelo con el contacto de la propia baliza, y luego un contacto normalmente cerrado de `Off`.
 
 ```ld-figure
 src: reading/beacon.ld.json

@@ -35,7 +35,7 @@
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Compare {{t:10}}, {{t:30}} y {{t:50}} ms: RunA se mantiene al soltar su botón, RunB se une a los {{t:30}} ms, y detener A a los {{t:50}} ms deja B en ON.",
+      "body": "Compare {{t:10}}, {{t:30}} y {{t:50}} ms: RunA se mantiene al soltar su pulsador, RunB se une a los {{t:30}} ms, y detener A a los {{t:50}} ms deja B en ON.",
       "checkpoint": "RunA y RunB cambian en momentos distintos con el mismo bloque, lo que muestra dos memorias. A los {{t:90}} ms Start y Stop llegan juntos a la bomba A y esta sigue en OFF."
     },
     {

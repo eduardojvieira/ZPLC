@@ -17,24 +17,24 @@ Ambos se hacen en escalera con la misma herramienta: un contacto colocado **en s
 
 Un motor trifásico gira en sentido contrario cuando dos de sus tres cables intercambian lugar. Un **arrancador reversible** tiene dos **contactores**, que son relés grandes que conmutan la potencia del motor: el contactor de avance conecta los cables de una forma y el de retroceso los conecta de la otra.
 
-Si ambos contactores se cierran a la vez, las dos conexiones intercambiadas se encuentran y producen un cortocircuito entre fases. El resultado puede ser un fusible quemado, un contactor dañado o algo peor. Por eso el programa debe hacer imposible que ambas salidas estén en ON, incluso si el operador pulsa los dos botones juntos. Eso es un bloqueo mutuo.
+Si ambos contactores se cierran a la vez, las dos conexiones intercambiadas se encuentran y producen un cortocircuito entre fases. El resultado puede ser un fusible quemado, un contactor dañado o algo peor. Por eso el programa debe hacer imposible que ambas salidas estén en ON, incluso si el operador pulsa los dos pulsadores juntos. Eso es un bloqueo mutuo.
 
 ## Cómo se ve en escalera
 
-Aquí hay un mezclador con tapa. El motor se mantiene en ON una vez arrancado. Necesita dos cosas en serie para funcionar: la tapa cerrada y el botón de paro sin pulsar.
+Aquí hay un mezclador con tapa. El motor se mantiene en ON una vez arrancado. Necesita dos cosas en serie para funcionar: la tapa cerrada y el pulsador de paro sin pulsar.
 
 ```ld-figure
 src: reading/mixer-lid.ld.json
-caption: Un peldaño con autorretención y dos condiciones en serie. La tapa es un permisivo, y el botón de paro es un contacto normalmente cerrado en el peldaño.
+caption: Un peldaño con autorretención y dos condiciones en serie. La tapa es un permisivo, y el pulsador de paro es un contacto normalmente cerrado en el peldaño.
 ```
 
-Lea el peldaño de izquierda a derecha. La energía parte del riel izquierdo. Puede pasar por `StartButton`, o por el contacto del propio `Motor` en la rama inferior, que es la autorretención que mantiene el motor en ON. Después debe pasar por `LidClosed` y por el botón de paro antes de llegar a la bobina.
+Lea el peldaño de izquierda a derecha. La energía parte del riel izquierdo. Puede pasar por `StartButton`, o por el contacto del propio `Motor` en la rama inferior, que es la autorretención que mantiene el motor en ON. Después debe pasar por `LidClosed` y por el pulsador de paro antes de llegar a la bobina.
 
-En este laboratorio, `StopButton` está en `TRUE` mientras el botón se pulsa, así que el peldaño usa un contacto **normalmente cerrado** (NC) sobre él. Ese contacto conduce mientras su bit está en OFF, es decir, mientras nadie pulsa el botón. Al pulsar el botón, el contacto se abre y corta la energía.
+En este laboratorio, `StopButton` está en `TRUE` mientras el pulsador se pulsa, así que el peldaño usa un contacto **normalmente cerrado** (NC) sobre él. Ese contacto conduce mientras su bit está en OFF, es decir, mientras nadie pulsa el pulsador. Al pulsar el pulsador, el contacto se abre y corta la energía.
 
 ## Pruébelo
 
-Cierre la tapa con su interruptor y luego pulse y suelte el botón de arranque. El motor sigue funcionando. Ahora abra la tapa. El motor se detiene y sigue detenido aunque vuelva a cerrar la tapa, hasta que pulse arranque otra vez.
+Cierre la tapa con su interruptor y luego pulse y suelte el pulsador de arranque. El motor sigue funcionando. Ahora abra la tapa. El motor se detiene y sigue detenido aunque vuelva a cerrar la tapa, hasta que pulse arranque otra vez.
 
 ```ld-try
 src: reading/mixer-lid.ld.json
@@ -47,11 +47,11 @@ timing: [StartButton, LidClosed, Motor]
 caption: Pulse LidClosed para cerrar la tapa y luego pulse StartButton. Pulse LidClosed otra vez para abrirla.
 ```
 
-Pruebe también a pulsar el botón de arranque con la tapa abierta. No pasa nada, porque falta el permisivo.
+Pruebe también a pulsar el pulsador de arranque con la tapa abierta. No pasa nada, porque falta el permisivo.
 
 ## Qué pasa con el tiempo
 
-El diagrama siguiente muestra el motor manteniéndose en ON después de soltar el botón de arranque, y cayendo cuando se abre la tapa.
+El diagrama siguiente muestra el motor manteniéndose en ON después de soltar el pulsador de arranque, y cayendo cuando se abre la tapa.
 
 ```timing
 span: 6000
@@ -64,9 +64,9 @@ marks:
 caption: El motor arranca con StartButton, se mantiene en ON y cae cuando se abre la tapa.
 ```
 
-## Por qué un botón de paro real se cablea normalmente cerrado
+## Por qué un pulsador de paro real se cablea normalmente cerrado
 
-En un tablero real, el botón de paro es un interruptor cerrado en reposo. Su entrada del PLC lee `TRUE` mientras nadie lo pulsa, y un peldaño que se detiene con él usa un contacto normalmente abierto sobre esa entrada. La razón es lo que ocurre cuando se rompe un cable. Si se rompe un cable de un botón de paro normalmente abierto, el botón nunca puede leerse como pulsado, y nadie nota que el motor ya no se puede detener. Si se rompe un cable de un botón de paro normalmente cerrado, el programa lo lee como pulsado y el motor se detiene. La falla deja la máquina en estado seguro. Esto se llama cableado de **falla segura**.
+En un tablero real, el pulsador de paro es un interruptor cerrado en reposo. Su entrada del PLC lee `TRUE` mientras nadie lo pulsa, y un peldaño que se detiene con él usa un contacto normalmente abierto sobre esa entrada. La razón es lo que ocurre cuando se rompe un cable. Si se rompe un cable de un pulsador de paro normalmente abierto, el pulsador nunca puede leerse como pulsado, y nadie nota que el motor ya no se puede detener. Si se rompe un cable de un pulsador de paro normalmente cerrado, el programa lo lee como pulsado y el motor se detiene. La falla deja la máquina en estado seguro. Esto se llama cableado de **falla segura**.
 
 ## Errores frecuentes
 
@@ -95,4 +95,4 @@ options:
 
 ## Lo que hará en la práctica
 
-En la práctica recibe un motor reversible con un peldaño de avance y uno de retroceso, cada uno con autorretención, botón de paro y un permisivo de lubricación. Las dos direcciones todavía no se conocen entre sí. Usted hará que cada sentido siga apagado mientras el otro funciona, y comprobará que los dos contactores nunca están en ON a la vez, y que perder el permisivo de lubricación detiene cualquiera de las dos direcciones.
+En la práctica recibe un motor reversible con un peldaño de avance y uno de retroceso, cada uno con autorretención, pulsador de paro y un permisivo de lubricación. Las dos direcciones todavía no se conocen entre sí. Usted hará que cada sentido siga apagado mientras el otro funciona, y comprobará que los dos contactores nunca están en ON a la vez, y que perder el permisivo de lubricación detiene cualquiera de las dos direcciones.
