@@ -117,7 +117,7 @@ of this suite, by another executed test, or it is listed with the reason that no
 | LNG-D03d | Major | LNG-021 | `lng/lng-021-ld-parallel-coils`<br>`lng/lng-021-ld-nested-parallel-branches`<br>`lng/lng-021-ld-logic-after-a-block-uses-its-output` | A Ladder coil takes the AND of every contact in the rung regardless of position. |
 | LNG-D03e | Major | LNG-022, LNG-007 | `lng/lng-022-ld-rising-edge-contact`<br>`lng/lng-022-ld-falling-edge-contact`<br>`lng/lng-022-ld-edge-coils` | Edge contacts are offered in the palette and rejected by the transpiler. |
 | LNG-D03f | Major | LNG-023 | `lng/lng-023-fbd-unwired-input`<br>`lng/lng-023-fbd-unwired-output-block` | In FBD an unwired input becomes 0. |
-| LNG-D03g | Major | LNG-002 | `lng/lng-002-fbd-unknown-block`<br>`lng/lng-002-fbd-function-not-translated`<br>`lng/lng-002-ld-unknown-element` | In FBD an unknown block becomes a comment. |
+| LNG-D03g | Major | LNG-002 | `lng/lng-002-fbd-unknown-block`<br>`lng/lng-002-fbd-catalogue-type-not-buildable`<br>`lng/lng-002-ld-unknown-element` | In FBD an unknown block becomes a comment. |
 | LNG-D03h | Major | LNG-023 | `lng/lng-023-fbd-real-addition`<br>`lng/lng-023-fbd-real-chain-and-comparison` | In FBD REAL values pass through INT temporaries. |
 | LNG-D04a | Major | LNG-004 | debugElements.test.ts (LNG-004)<br>debugElementsRuntime.test.ts (LNG-004) | There is no map from generated text back to rungs, blocks or steps. |
 | LNG-D04b | Major | LNG-001 | - | The support table declares debug: true for all five languages. no program: The per-language capability table is a product statement; LNG-001 asks that it be produced from passing end-to-end tests, which the journeys of VF-008 are partly (requirement-evidence.json). |
@@ -218,7 +218,7 @@ The defects that each requirement fixes, and the cases filed under that requirem
 | CMP-059 | CMP-D18c | - |
 | CMP-060 | CMP-D18e | - |
 | LNG-001 | LNG-D04b | - |
-| LNG-002 | LNG-D03g | `lng/lng-002-fbd-function-not-translated`<br>`lng/lng-002-fbd-unknown-block`<br>`lng/lng-002-ld-unknown-element` |
+| LNG-002 | LNG-D03g | `lng/lng-002-fbd-catalogue-type-not-buildable`<br>`lng/lng-002-fbd-unknown-block`<br>`lng/lng-002-ld-unknown-element` |
 | LNG-003 | CMP-D08b, LNG-D02g | `lng/lng-003-fbd-compiler-error-names-the-block`<br>`lng/lng-003-il-compiler-error-names-the-il-line`<br>`lng/lng-003-ld-undeclared-variable-names-the-cell` |
 | LNG-004 | LNG-D04a | - |
 | LNG-005 | LNG-D04c | - |

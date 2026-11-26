@@ -17,7 +17,7 @@ import { getFB, parseIOAddress } from '@zplc/compiler';
 import type { FBDModel, FBDBlock, FBDConnection } from '../models/fbd';
 import { isFunctionBlock, isLogicGate, isComparison, isMathOperator, validateFBDModel } from '../models/fbd';
 import { findProjectBlock, type ProjectBlock } from '../models/projectBlocks';
-import { INTEGER_LITERAL, pinTypeProblem } from '../models/pinTypes';
+import { FBD_FUNCTION_BLOCKS, GENERIC_CLASSES, INTEGER_LITERAL, outsideClass, pinTypeProblem } from '../models/pinTypes';
 import { stdFunction } from '../catalog/stdFunctions';
 import {
   ElementError,
@@ -126,24 +126,12 @@ const FB_INPUT_ORDER: Record<string, string[]> = {
   CTUD: ['CU', 'CD', 'R', 'LD', 'PV'],
 };
 
-/** Functions of several inputs of one numeric type (ABS is a math operator of one input). */
-const FUNCTION_BLOCKS = new Set(['MAX', 'MIN', 'LIMIT', 'SEL']);
 const SIGNED = ['SINT', 'INT', 'DINT', 'LINT'];
 const UNSIGNED = ['USINT', 'UINT', 'UDINT', 'ULINT'];
 const BIT_STRING = ['BYTE', 'WORD', 'DWORD', 'LWORD'];
 const REALS = ['REAL', 'LREAL'];
 /** A logic gate does not take these. */
 const NOT_BOOLEAN = [...REALS, 'TIME', 'LTIME', 'STRING'];
-/**
- * The elementary types a generic pin of a standard function takes (LNG-029). The compiler accepts `SHL(REAL)` and a `MUX` of mixed
- * types, so the transpiler checks the class itself; `ANY` takes anything but a STRING, which the code generator does not select.
- */
-const GENERIC_CLASSES: Record<string, { types?: readonly string[]; takes: string }> = {
-  ANY: { takes: 'any elementary type but a STRING' },
-  ANY_NUM: { types: [...SIGNED, ...UNSIGNED, ...REALS], takes: 'a number (an integer or a real type)' },
-  ANY_INT: { types: [...SIGNED, ...UNSIGNED], takes: 'an integer' },
-  ANY_BIT: { types: BIT_STRING, takes: 'a bit string (BYTE, WORD, DWORD or LWORD)' },
-};
 
 // =============================================================================
 // Transpiler
@@ -483,10 +471,8 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
           const genericType = generic.length > 0 ? unify(block, generic.map(operandOf)) : undefined;
           if (generic.length > 0 && genericType === undefined) return '';
           for (const pin of generic) {
-            const wanted = GENERIC_CLASSES[pinTypeOf(pin)]!;
-            const type = operandOf(pin).type;
-            const odd = wanted.types ? (type && !wanted.types.includes(type) ? type : undefined) : type === 'STRING' ? type : undefined;
-            if (odd) fail(block, `input '${pin}' is ${odd}, and ${block.type} takes ${wanted.takes} there`);
+            const odd = outsideClass(pinTypeOf(pin), operandOf(pin).type);
+            if (odd) fail(block, `input '${pin}' is ${odd}, and ${block.type} takes ${GENERIC_CLASSES[pinTypeOf(pin)]!.takes} there`);
           }
           const typeOf = (pin: string): string => (pinTypeOf(pin) in GENERIC_CLASSES ? genericType! : pinTypeOf(pin).toUpperCase());
           pins.forEach((pin, index) => {
@@ -707,7 +693,7 @@ function classify(block: FBDBlock, blocks?: readonly ProjectBlock[]): Kind | und
   if (isLogicGate(type)) return 'gate';
   if (isComparison(type)) return 'compare';
   if (isMathOperator(type)) return 'math';
-  if (FUNCTION_BLOCKS.has(type)) return 'function';
+  if (FBD_FUNCTION_BLOCKS.has(type)) return 'function';
   if (type in MODBUS_HELPERS) return 'modbus';
   if (VM_COMM_BLOCKS.has(type)) return 'comm';
   if (isFunctionBlock(type)) return 'standard';

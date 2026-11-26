@@ -8,8 +8,18 @@
  * `pinTypes.test.ts` compiles an assignment for every pair of elementary types and fails when the two disagree.
  */
 
-import { getDefaultPorts, type FBDBlock, type FBDConnectionEndpoint, type FBDModel, type FBDPort } from './fbd';
-import type { ProjectBlock } from './projectBlocks';
+import { stdFunction } from '../catalog/stdFunctions';
+import {
+  getDefaultPorts,
+  isComparison,
+  isLogicGate,
+  isMathOperator,
+  type FBDBlock,
+  type FBDConnectionEndpoint,
+  type FBDModel,
+  type FBDPort,
+} from './fbd';
+import { findProjectBlock, type ProjectBlock } from './projectBlocks';
 
 const INTEGERS = ['SINT', 'INT', 'DINT', 'LINT', 'USINT', 'UINT', 'UDINT', 'ULINT', 'BYTE', 'WORD', 'DWORD', 'LWORD'];
 const REALS = ['REAL', 'LREAL'];
@@ -39,6 +49,37 @@ const TAKES: Record<string, string> = {
   ANY_STRING: 'strings',
   ANY_DATE: 'dates and times',
 };
+
+const SIGNED = ['SINT', 'INT', 'DINT', 'LINT'];
+const UNSIGNED = ['USINT', 'UINT', 'UDINT', 'ULINT'];
+
+/**
+ * The elementary types a generic pin of a standard function takes (LNG-029, LNG-030). The compiler accepts `SHL(REAL)` and a `MUX`
+ * of mixed types, so the transpilers check the class themselves, and the FBD editor judges a wire into such a pin by the same
+ * class; `ANY` takes anything but a STRING, which the code generator does not select.
+ */
+export const GENERIC_CLASSES: Readonly<Record<string, { types?: readonly string[]; takes: string }>> = {
+  ANY: { takes: 'any elementary type but a STRING' },
+  ANY_NUM: { types: [...SIGNED, ...UNSIGNED, ...REALS], takes: 'a number (an integer or a real type)' },
+  ANY_INT: { types: [...SIGNED, ...UNSIGNED], takes: 'an integer' },
+  ANY_BIT: { types: BIT_STRINGS, takes: 'a bit string (BYTE, WORD, DWORD or LWORD)' },
+};
+
+/** The elementary type that a generic pin of class `generic` does not take, or undefined when it takes `type` or `type` is not known. */
+export function outsideClass(generic: string, type: string | undefined): string | undefined {
+  const wanted = GENERIC_CLASSES[generic];
+  if (!wanted || !type) return undefined;
+  return wanted.types ? (wanted.types.includes(type) ? undefined : type) : type === 'STRING' ? type : undefined;
+}
+
+/** The standard functions FBD places as functions of their own, before LNG-029: they keep their path and their type rules. */
+export const FBD_FUNCTION_BLOCKS: ReadonlySet<string> = new Set(['MAX', 'MIN', 'LIMIT', 'SEL']);
+
+/** Whether FBD translates a block of this type as a call of a standard function of the table (LNG-029), the path of `GENERIC_CLASSES`. */
+function callsStdFunction(type: string, projectBlocks?: readonly ProjectBlock[]): boolean {
+  if (findProjectBlock(projectBlocks, type) || isLogicGate(type) || isComparison(type) || isMathOperator(type)) return false;
+  return !FBD_FUNCTION_BLOCKS.has(type) && stdFunction(type) !== undefined;
+}
 
 /** The type of an integer constant that names none: it goes where any number does, and nowhere else. */
 export const INTEGER_LITERAL = 'INTEGER_LITERAL';
@@ -191,6 +232,19 @@ export function judgeConnection(
   const verdict = { from: source.endpoint, to: sink.endpoint };
   if (model.connections.some((connection) => connection.to.block === sink.endpoint.block && connection.to.port === sink.endpoint.port)) {
     return { ...verdict, reason: `input ${label(sink.endpoint)} already has a wire: an input has one source` };
+  }
+  // a generic pin of a standard function takes the class the transpiler checks; an integer constant is an INT there, as it is built
+  if (callsStdFunction(sink.block.type, projectBlocks) && sink.port.type in GENERIC_CLASSES) {
+    const from = normalize(valueType(model, source));
+    const odd = outsideClass(sink.port.type, from === INTEGER_LITERAL ? 'INT' : from && ELEMENTARY.has(from) ? from : undefined);
+    if (odd) {
+      const takes = `${sink.block.type} takes ${GENERIC_CLASSES[sink.port.type]!.takes} there`;
+      return {
+        ...verdict,
+        reason: `${label(source.endpoint)} cannot feed ${label(sink.endpoint)}: ${odd} is ${describe(odd)}, and ${takes}`,
+      };
+    }
+    if (from && (from === INTEGER_LITERAL || ELEMENTARY.has(from))) return verdict;
   }
   const problem = pinTypeProblem(valueType(model, source), valueType(model, sink));
   return problem ? { ...verdict, reason: `${label(source.endpoint)} cannot feed ${label(sink.endpoint)}: ${problem}` } : verdict;
