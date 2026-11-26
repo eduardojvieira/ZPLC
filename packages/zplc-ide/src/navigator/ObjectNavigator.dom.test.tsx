@@ -244,7 +244,9 @@ function groupsDeclarations() {
 }
 
 describe('a shortened task row can be read whole (UXV-004)', () => {
-  const long = { tasks: [{ name: 'MainTaskWithAVeryLongName', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.st'] }] } as never;
+  const long = {
+    tasks: [{ name: 'MainTaskWithAVeryLongName', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.st'] }],
+  } as never;
   const longGroups = () => buildNavigatorGroups({ declarations: [], globals: [], fileTree: null, config: long }, words);
   const full = () => {
     const task = longGroups().find((g) => g.id === 'tasks')!.items[0]!;

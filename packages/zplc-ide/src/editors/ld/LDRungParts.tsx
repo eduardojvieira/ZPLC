@@ -358,9 +358,30 @@ export function RungHeader({ rung, cols, rows, readOnly, onChange, editRequest }
           placeholder={t('editors.ld.addRungComment')}
         />
       ) : (
-        <Tooltip content={readOnly ? rung.comment : t('editors.ld.editComment')}>
+        // The comment is cut with an ellipsis on a narrow rung: the tooltip reads it whole, on hover and on focus (UXV-004).
+        <Tooltip
+          content={
+            readOnly ? (
+              rung.comment
+            ) : (
+              <>
+                {rung.comment && <span className="block">{rung.comment}</span>}
+                {t('editors.ld.editComment')}
+              </>
+            )
+          }
+        >
           <span
             onClick={handleStartEdit}
+            onKeyDown={(e) => {
+              if (!readOnly && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault();
+                handleStartEdit();
+              }
+            }}
+            role={readOnly ? undefined : 'button'}
+            tabIndex={readOnly && !rung.comment ? undefined : 0}
+            data-tooltip={rung.comment || undefined}
             className={`flex-1 min-w-0 text-xs italic truncate ${
               readOnly ? '' : 'cursor-pointer hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] rounded px-1 -mx-1'
             } ${rung.comment ? 'text-[var(--color-surface-200)]' : 'text-[var(--color-surface-400)]'}`}
