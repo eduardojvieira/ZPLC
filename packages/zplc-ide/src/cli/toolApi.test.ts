@@ -765,7 +765,8 @@ END_PROGRAM`,
           undefined,
           undefined,
           `while [ "$#" -gt 0 ]; do [ "$1" = -d ] && { shift; out=$1; }; shift; done\n/bin/mkdir -p "$out/zephyr"\n/bin/dd if=/dev/zero ` +
-            `of="$out/zephyr/zephyr.elf" bs=52 count=1 2>/dev/null\nprintf '\\177ELF\\001\\001\\001' | /bin/dd of="$out/zephyr/zephyr.elf" ` +
+            `of="$out/zephyr/zephyr.elf" bs=52 count=1 2>/dev/null\nprintf '\\177ELF\\001\\001\\001' | ` +
+            `/bin/dd of="$out/zephyr/zephyr.elf" ` +
             `bs=1 seek=0 conv=notrunc 2>/dev/null\nprintf '\\002\\000\\003\\000\\001\\000\\000\\000' | /bin/dd ` +
             `of="$out/zephyr/zephyr.elf" bs=1 seek=16 conv=notrunc 2>/dev/null\nprintf '\\064\\000' | /bin/dd ` +
             `of="$out/zephyr/zephyr.elf" bs=1 seek=40 conv=notrunc 2>/dev/null\nprintf build > '${marker}'\nprintf built`,
@@ -811,7 +812,8 @@ END_PROGRAM`,
           undefined,
           undefined,
           `while [ "$#" -gt 0 ]; do [ "$1" = -d ] && { shift; out=$1; }; shift; done\n/bin/mkdir -p "$out/zephyr"\n/bin/dd if=/dev/zero ` +
-            `of="$out/zephyr/zephyr.elf" bs=52 count=1 2>/dev/null\nprintf '\\177ELF\\001\\001\\001' | /bin/dd of="$out/zephyr/zephyr.elf" ` +
+            `of="$out/zephyr/zephyr.elf" bs=52 count=1 2>/dev/null\nprintf '\\177ELF\\001\\001\\001' | ` +
+            `/bin/dd of="$out/zephyr/zephyr.elf" ` +
             `bs=1 seek=0 conv=notrunc 2>/dev/null\nprintf '\\002\\000\\003\\000\\001\\000\\000\\000' | /bin/dd ` +
             `of="$out/zephyr/zephyr.elf" bs=1 seek=16 conv=notrunc 2>/dev/null\nprintf '\\064\\000' | /bin/dd ` +
             `of="$out/zephyr/zephyr.elf" bs=1 seek=40 conv=notrunc 2>/dev/null\nprintf '%s' ` +
