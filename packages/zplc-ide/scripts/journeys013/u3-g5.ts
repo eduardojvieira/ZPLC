@@ -85,9 +85,8 @@ export const journeysU3G5: Journey[] = [
               `.find((el) => (el.textContent ?? '').includes('src/Motor.st')); if (!row) return false; row.click(); return true; })()`,
           )) || undefined,
       );
-      await app.until('the code editor', async () => (await app.visible(css('.monaco-editor textarea.inputarea'))) || undefined);
-      await app.eval(`document.querySelector('.monaco-editor textarea.inputarea').focus()`);
-      assert(await app.eval<boolean>(inEditor), 'The focus should be in the code editor before the shortcut');
+      // The editor takes the focus when the file opens: a person types there at once.
+      await app.until('the focus in the code editor', async () => (await app.eval<boolean>(inEditor)) || undefined);
       await app.press('Ctrl+Alt+C');
       await app.until(
         'the focus in the command bar',
