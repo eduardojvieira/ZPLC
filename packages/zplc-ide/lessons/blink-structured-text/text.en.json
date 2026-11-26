@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this flaw of the starting program, save it, then press Check: The starting program keeps Lamp OFF all the time, so it never turns ON at {{t:550}} ms. Run Clock with Enable and a preset of T#300ms. When Clock.Q is TRUE, invert LampOn and restart Clock. Set Lamp from LampOn and Enable, then save the file.",
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program keeps Lamp OFF all the time, so it never turns ON at {{t:550}} ms. Change it so that Lamp changes state every {{t:300}} ms while Enable is ON, with the first change {{t:300}} ms after Enable turns ON, and Lamp is OFF on the scan Enable drops. Write the statements yourself: the declarations are already there.",
       "checkpoint": "Lamp follows LampOn only while Enable is ON."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The scenario is named EnabledBlink and contains {{assertions}} assertions."
     },
     {

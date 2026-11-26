@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial mantiene Lamp en OFF todo el tiempo, así que nunca pasa a ON a los {{t:550}} ms. Llame a Clock con Enable como entrada y un valor preestablecido de T#300ms. Cuando Clock.Q sea TRUE, invierta LampOn y reinicie Clock. Calcule Lamp a partir de LampOn y Enable, y guarde el archivo.",
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial mantiene Lamp en OFF todo el tiempo, así que nunca pasa a ON a los {{t:550}} ms. Cámbielo para que Lamp cambie de estado cada {{t:300}} ms mientras Enable está en ON, con el primer cambio {{t:300}} ms después de que Enable pasa a ON, y para que Lamp esté en OFF en el ciclo en que Enable cae. Escriba usted mismo las instrucciones: las declaraciones ya están.",
       "checkpoint": "Lamp sigue a LampOn solo mientras Enable está en ON."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta el programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario se llama EnabledBlink y contiene {{assertions}} aserciones."
     },
     {
