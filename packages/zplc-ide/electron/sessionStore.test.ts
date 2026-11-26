@@ -1,12 +1,12 @@
-import { mkdir, mkdtemp, readFile, readdir, rm, stat, symlink, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { spawnSync } from 'node:child_process';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { afterEach, describe, expect, test } from 'bun:test';
 
 import { projectKey } from './recentProjects';
 import { SESSION_DIRECTORY, createSessionStore } from './sessionStore';
 import { SESSION_LIMITS, type SessionState } from './sessionStoreProtocol';
+import { expectOwnerOnly } from './test/ownerOnlyAccess';
 
 const directories: string[] = [];
 afterEach(async () => {
@@ -30,16 +30,6 @@ const state = (overrides: Partial<SessionState> = {}): SessionState => ({
   ...overrides,
 });
 const fileOf = (userData: string, realPath: string) => join(userData, SESSION_DIRECTORY, `${projectKey(realPath)}.json`);
-
-/** Owner decision 7, phase 1: reads (never changes) the ACL of a store file and its directory with icacls, for the CI log. */
-function measureAcl(store: string, file: string): void {
-  const icacls = (target: string) => spawnSync('icacls', [target], { encoding: 'utf8', shell: false });
-  const fileAcl = icacls(file);
-  const dirAcl = icacls(dirname(file));
-  const profile = process.env.USERPROFILE;
-  console.log('ZPLC-ACL', JSON.stringify({ store, path: file, profile, fileAcl: fileAcl.stdout, dirAcl: dirAcl.stdout }));
-  expect([fileAcl.status, dirAcl.status]).toEqual([0, 0]);
-}
 
 describe('session store (IDE-008)', () => {
   test('has no session for a project it never saw', async () => {
@@ -67,16 +57,8 @@ describe('session store (IDE-008)', () => {
     );
     expect((await store.load(PROJECT))!.tabs[0]!.line).toBe(6);
     expect(await readdir(join(userData, SESSION_DIRECTORY))).toEqual([`${projectKey(PROJECT)}.json`]);
-    expect((await stat(fileOf(userData, PROJECT))).mode & 0o777).toBe(0o600);
-    expect((await stat(join(userData, SESSION_DIRECTORY))).mode & 0o777).toBe(0o700);
-  });
-
-  // Studio writes this under app.getPath('userData')\sessions (%APPDATA%\ZPLC on Windows); the test uses os.tmpdir()
-  // (%TEMP%, under %LOCALAPPDATA%), also inside the user profile, so both inherit the profile's ACL; the logged path shows which.
-  test.skipIf(process.platform !== 'win32')('measures the Windows ACL of the session file (owner decision 7, phase 1)', async () => {
-    const userData = await fixture();
-    await createSessionStore(userData).save(PROJECT, state());
-    measureAcl('session', fileOf(userData, PROJECT));
+    expectOwnerOnly(fileOf(userData, PROJECT), 0o600);
+    expectOwnerOnly(join(userData, SESSION_DIRECTORY), 0o700);
   });
 
   test(
