@@ -10,7 +10,8 @@ const range: JsonSchema = {
   required: ['raw_min', 'raw_max', 'eng_min', 'eng_max', 'unit'],
   additionalProperties: false,
   description:
-    'Linear scaling: raw_min..raw_max of the program variable is eng_min..eng_max of the plant. raw_max > raw_min; INT raw fits -32768..32767.',
+    'Linear scaling: raw_min..raw_max of the program variable is eng_min..eng_max of the plant. ' +
+    'raw_max > raw_min; INT raw fits -32768..32767.',
   properties: {
     raw_min: { type: 'number' },
     raw_max: { type: 'number' },

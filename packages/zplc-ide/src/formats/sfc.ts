@@ -1,4 +1,7 @@
-/** Sequential Function Chart, `src/*.sfc.json`: the shape `loadSFCFile` checks and the rules `validateSFCModel` and the SFC transpiler hold. */
+/**
+ * Sequential Function Chart, `src/*.sfc.json`: the shape `loadSFCFile` checks and the rules `validateSFCModel` and the
+ * SFC transpiler hold.
+ */
 import type { FormatModule, JsonSchema } from './index';
 
 /** The qualifiers the SFC transpiler translates; SD, DS and SL are refused with an error. */
