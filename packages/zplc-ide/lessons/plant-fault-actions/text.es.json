@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial clasifica bien pero se fía de BeamHigh para siempre; cuando la barrera se atasca en encendido, las cajas que no son altas van a BinTall, así que la línea debe detenerse, y seguir detenida, cuando High haya permanecido en TRUE tres segundos.",
+      "body": "Corrija esta omisión del programa inicial, guarde y ejecute: El programa inicial clasifica bien pero se fía de BeamHigh para siempre; cuando la barrera se atasca en encendido, las cajas que no son altas van a BinTall, así que la línea debe detenerse, y seguir detenida, cuando High haya permanecido en TRUE tres segundos.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El inicial clasifica bien pero se fía de BeamHigh para siempre; cuando la barrera se atasca en encendido, las cajas que no son altas van a BinTall, así que la línea debe detenerse, y seguir detenida, cuando High haya permanecido en TRUE tres segundos."
+    "El programa inicial clasifica bien pero se fía de BeamHigh para siempre; cuando la barrera se atasca en encendido, las cajas que no son altas van a BinTall, así que la línea debe detenerse, y seguir detenida, cuando High haya permanecido en TRUE tres segundos."
   ]
 }

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "plant-fault-actions",
-  "version": 3,
+  "version": 4,
   "order": 183,
   "module": 18,
   "level": "advanced",

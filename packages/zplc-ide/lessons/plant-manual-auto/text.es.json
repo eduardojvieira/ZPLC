@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Cambie Auto con un flanco de ModeBtn, no con su nivel, para que mantener el pulsador pulsado cambie el modo una sola vez. Limpie el ciclo (Active, Step y los contadores) siempre que Auto sea FALSE."
+      "text": "Cambie Auto con un flanco de ModeBtn, no con su nivel, para que mantener presionado el pulsador cambie el modo una sola vez. Limpie el ciclo (Active, Step y los contadores) siempre que Auto sea FALSE."
     },
     {
       "level": 2,
