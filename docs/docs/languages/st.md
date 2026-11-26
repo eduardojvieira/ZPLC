@@ -256,3 +256,5 @@ No conformance case of this area is on the expected-failures list: no limit is r
 {/* <<< END GENERATED: known-limits-language <<< */}
 
 Not supported in this release and rejected with a message, by decision D-04: arrays of arrays, enumerations with a base type, subranges, `POINTER TO` and `ADR` (use `REF_TO` and `REF()`), `VAR_ACCESS`, a textual `CONFIGURATION`, `NAMESPACE`, `PROPERTY`, `ACTION` blocks in a program, positional function-block calls and the function forms of operators such as `ADD(a, b)`. The cases `cmp-006-*-is-rejected` pin the rejection, so a program that uses one fails to build.
+
+`SEL` and `MUX` do not select `STRING` values, in any language. The compiler refuses `Text := SEL(G, A, B);` with "it is not a string" when `A` and `B` are strings, and the FBD and Ladder editors refuse a string on those inputs with an error that names the block and the input. To choose between strings, write an `IF` in Structured Text: `IF G THEN Text := B; ELSE Text := A; END_IF;`. Checked on the host by the compiler and transpiler tests; the code generator of 2.1 is unchanged.

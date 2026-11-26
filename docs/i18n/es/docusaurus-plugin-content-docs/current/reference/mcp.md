@@ -38,7 +38,7 @@ El servidor atiende el apretón de manos de 2025 (`initialize`) además de la re
 | `simulation_start` | Start recorded simulation | `scenarioId` | sí | Run one scenario on the host simulator and answer its first recorded sample and trace digest; no session is kept. |
 | `simulation_step` | Step recorded simulation | `scenarioId`, `cursor`, `traceSha256` | sí | Answer the recorded sample after cursor of a scenario run, pinned by its trace digest, to walk a run step by step. |
 | `runtime_snapshot` | Read recorded snapshot | `scenarioId`, `cursor`, `traceSha256` | sí | Answer one recorded sample of a scenario run at cursor, pinned by its trace digest; a recording, not a live runtime. |
-| `trace_get` | Get recorded trace | `scenarioId` | sí | Run one scenario on the host simulator and answer its recorded outputs over time and its expectation results. |
+| `trace_get` | Get recorded trace | `scenarioId`, `mode`, `signals`, `includeInputs`, `watchSignals`, `fromMs`, `toMs`, `fromSample`, `limit` | sí | Run one scenario on the host simulator and answer its trace: whole, or as changes, a window or a summary with inputs. |
 | `boards_list` | List board profiles |   | sí | List the boards the repository declares and their validation level, without probing any hardware. Needs --repository. |
 | `toolchain_inspect` | Inspect toolchain |   | sí | Check the local tools a firmware build needs (west, CMake, Ninja, Zephyr SDK) and which are ready. Needs --repository. |
 | `firmware_build` | Build firmware | `ideId` | no | Run a local ephemeral cross-build of the runtime for one board, answer the image digest; it never flashes or deploys. |

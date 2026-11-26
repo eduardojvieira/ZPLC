@@ -27,6 +27,22 @@ const MODIFIER_KEYS: ReadonlySet<string> = new Set(['Control', 'Shift', 'Alt', '
 /** The registry writes an arrow as `Left`; the keyboard event names it `ArrowLeft`. */
 const ARROWS: Readonly<Record<string, string>> = { Left: 'ArrowLeft', Right: 'ArrowRight', Up: 'ArrowUp', Down: 'ArrowDown' };
 
+/** The registry names a punctuation key by word (`Mod+Comma`); the keyboard event reports the character (`,`). */
+const PUNCTUATION: Readonly<Record<string, string>> = {
+  Comma: ',',
+  Period: '.',
+  Slash: '/',
+  Backslash: '\\',
+  Semicolon: ';',
+  Quote: "'",
+  Backquote: '`',
+  Minus: '-',
+  Equal: '=',
+  Plus: '+',
+  BracketLeft: '[',
+  BracketRight: ']',
+};
+
 /** `Mod+Shift+P` as one chord; a letter is stored in lower case, a named key (`F5`, `Enter`) as it is. */
 export function parseChord(text: string): KeyChord {
   const chord: KeyChord = { mod: false, shift: false, alt: false, key: '' };
@@ -34,7 +50,7 @@ export function parseChord(text: string): KeyChord {
     if (part === 'Mod') chord.mod = true;
     else if (part === 'Shift') chord.shift = true;
     else if (part === 'Alt') chord.alt = true;
-    else chord.key = part.length === 1 ? part.toLowerCase() : (ARROWS[part] ?? part);
+    else chord.key = part.length === 1 ? part.toLowerCase() : (ARROWS[part] ?? PUNCTUATION[part] ?? part);
   }
   if (chord.key === '') throw new Error(`The shortcut "${text}" names no key`);
   return chord;
@@ -89,7 +105,8 @@ export function toAccelerator(shortcut: string): string | null {
   const chords = parseShortcut(shortcut);
   if (chords.length !== 1) return null;
   const chord = chords[0]!;
-  const key = chord.key.length === 1 ? chord.key.toUpperCase() : chord.key;
+  // `+` joins the parts of an accelerator, so Electron names that key `Plus`.
+  const key = chord.key === '+' ? 'Plus' : chord.key.length === 1 ? chord.key.toUpperCase() : chord.key;
   return [chord.mod ? 'CmdOrCtrl' : '', chord.shift ? 'Shift' : '', chord.alt ? 'Alt' : '', key].filter((part) => part !== '').join('+');
 }
 

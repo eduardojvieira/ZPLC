@@ -24,6 +24,8 @@ type NativeScenarioLifecycle = {
 const IPI_END = 0x1000;
 const OPI_START = 0x1000;
 const OPI_END = 0x2000;
+// the end of the retentive region: a watch reads any of the images, work or retentive memory (AI-08)
+const MEMORY_END = 0x5000;
 
 export interface NativeScenarioSession {
   runtime: ScenarioRuntimePort;
@@ -134,6 +136,12 @@ export function createNativeScenarioRuntime(adapter: NativeScenarioAdapter): Sce
     readOutput: async (address, bitOffset) => {
       validateBit(address, bitOffset, OPI_START, OPI_END, 'OPI');
       return ((await getOutput(address)) & (1 << bitOffset)) !== 0;
+    },
+    readMemory: async (address, size) => {
+      validateNumber(address, size, 0, MEMORY_END, 'memory');
+      const bytes = new Uint8Array(size);
+      for (let i = 0; i < size; i++) bytes[i] = await getOutput(address + i);
+      return bytes;
     },
   };
 }

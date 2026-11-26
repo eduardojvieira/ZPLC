@@ -39,6 +39,11 @@ describe('function reference: the pages list every name, in both languages (DOC-
     }
   });
 
+  it('says every function is callable from ST, FBD and Ladder (LNG-030)', () => {
+    expect(functionsBody('en')).toMatch(/callable from Structured Text, Function Block Diagram and Ladder/);
+    expect(functionsBody('es')).toMatch(/se llama(n)? desde Structured Text, Diagrama de Bloques de Función y Ladder/);
+  });
+
   it('lists every registered function block with a pin table', () => {
     for (const lang of ['en', 'es'] as const) {
       const text = blocksBody(lang);

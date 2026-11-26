@@ -22,7 +22,7 @@ const SCANNED = ['packages/zplc-ide/lessons', 'packages/zplc-ide/projects', 'con
  * Files that were refused only because FBD did not place a standard function (SQRT). D-37 removed that premise: the case now places a
  * COMM_PUBLISH, which the transpiler translates and the build refuses by name, so it is no longer the file the golden recorded.
  */
-const NOW_TRANSLATED = new Set(['conformance/lng/lng-002-fbd-function-not-translated.fbd.json']);
+const NOW_TRANSLATED = new Set(['conformance/lng/lng-002-fbd-catalogue-type-not-buildable.fbd.json']);
 
 interface Entry {
   sha256: string;

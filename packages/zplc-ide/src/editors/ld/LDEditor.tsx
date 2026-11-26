@@ -27,8 +27,16 @@ import LDPrompts, { type LDAsk } from './LDPrompts';
 import { insertRungAfter, runLDCommand, type LDCursor, type LDInsert, type LDOutcome } from './keyboard';
 import type { LDDropData } from './ldDragData';
 import { actionFor, keysBelongToControl } from '../keymap';
-import { functionItems, withFunction, withSlot } from './ldFunctions';
-import { ldFunctionSpec } from '../../models/ldSupport';
+import {
+  functionItems,
+  functionPins,
+  maxOperandInputs,
+  takesMoreOperands,
+  withFunction,
+  withOperandAdded,
+  withOperandRemoved,
+  withSlot,
+} from './ldFunctions';
 import { useProjectBlocks } from '../useProjectBlocks';
 import { declaredSymbols } from '../symbols';
 import {
@@ -77,7 +85,8 @@ interface ElementPropertiesProps {
   onClose: () => void;
 }
 
-function ElementProperties({ element, symbols = [], onChange, onClose }: ElementPropertiesProps) {
+/** The slot editor of an element: its variable, instance or comment, and for a function box its function, operands and output. */
+export function ElementProperties({ element, symbols = [], onChange, onClose }: ElementPropertiesProps) {
   const { t } = useT();
   const [variable, setVariable] = useState(element.variable || '');
   const [fbInstance, setFbInstance] = useState(element.instance || '');
@@ -86,7 +95,9 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
   // a function box is edited as a whole: its function, its operands in pin order and its output (LNG-028)
   const [fn, setFn] = useState(element);
   const isFunction = element.type === 'function';
-  const pins = ldFunctionSpec(fn.functionName)?.pins ?? [];
+  const pins = functionPins(fn);
+  const removable = withOperandRemoved(fn);
+  const addable = withOperandAdded(fn);
   const isFB = element.type === 'function_block';
   const isTimer = element.fbType === 'TON' || element.fbType === 'TOF' || element.fbType === 'TP';
 
@@ -147,6 +158,27 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
                 />
               </div>
             ))}
+            {takesMoreOperands(fn) && (
+              // a function that takes more inputs (MUX, LNG-030): one more after the last, or the last removed
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  disabled={!addable}
+                  tooltip={addable ? undefined : t('fbd.input.atMost', { name: fn.functionName ?? '', count: maxOperandInputs(fn) ?? 0 })}
+                  onClick={() => addable && setFn(addable)}
+                >
+                  {t('fbd.input.add')}
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={!removable}
+                  tooltip={removable ? undefined : t('fbd.input.atLeastTwo', { name: fn.functionName ?? '' })}
+                  onClick={() => removable && setFn(removable)}
+                >
+                  {t('fbd.input.remove')}
+                </Button>
+              </div>
+            )}
             <datalist id="ld-declared-symbols">
               {symbols.map((name) => (
                 <option key={name} value={name} />

@@ -133,6 +133,8 @@ export {
     findSourceLine,
     findPC,
     getBreakpointLocations,
+    elementPcMap,
+    resolveElementPc,
     buildDebugMap,
 } from './debug-map.ts';
 export { debugMapMatchesArtifact } from './build-id.ts';
@@ -150,6 +152,8 @@ export type {
     DebugMap,
     BuildDebugMapOptions,
     TypeResolver,
+    ElementPc,
+    ElementPcLookup,
 } from './debug-map.ts';
 
 // =============================================================================

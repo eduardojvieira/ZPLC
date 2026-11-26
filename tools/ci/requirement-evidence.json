@@ -995,8 +995,8 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"64e Sequential Function Chart from a new project to a deployed program that is watched"}
   ],
   "LNG-002": [
+    {"kind":"conformance","ref":"conformance/lng/lng-002-fbd-catalogue-type-not-buildable.expect.json","test":"LNG-002 an FBD block of a catalogue type that no diagram can build is rejected by name"},
     {"kind":"conformance","ref":"conformance/lng/lng-002-fbd-en-input-is-rejected.expect.json","test":"LNG-002 an FBD connection to an EN input is rejected naming the block"},
-    {"kind":"conformance","ref":"conformance/lng/lng-002-fbd-function-not-translated.expect.json","test":"LNG-002 an FBD block of a catalogue type that no diagram can build is rejected by name"},
     {"kind":"conformance","ref":"conformance/lng/lng-002-fbd-unknown-block.expect.json","test":"LNG-002 an FBD block the transpiler does not know is rejected"},
     {"kind":"conformance","ref":"conformance/lng/lng-002-ld-jump-is-rejected.expect.json","test":"LNG-002 an LD jump is rejected by name"},
     {"kind":"conformance","ref":"conformance/lng/lng-002-ld-unknown-element.expect.json","test":"LNG-002 an LD element the transpiler does not know is rejected by name"},
@@ -1004,6 +1004,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/compiler/il/il.test.ts","test":"IL transpiler errors (LNG-002, LNG-017, LNG-018)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/fbdStdFunctionErrors.test.ts","test":"LNG-002, LNG-003 the errors of a standard function name the block and the pin"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 LNG-002 LNG-003 the function box: every fault names its rung and cell"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldStdFunctions.test.ts","test":"LNG-030 LNG-002 LNG-003 the box of a standard function: every fault names its rung and cell"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldStringLiteral.test.ts","test":"LNG-030 LNG-002 a STRING operand cannot close its literal"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"FBD wiring and types (LNG-023, LNG-002)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"LD power flow (LNG-021, LNG-022, LNG-002)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"SFC scan semantics (LNG-024, LNG-025, LNG-002)"}
@@ -1027,6 +1029,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/fbdStdFunctionErrors.test.ts","test":"LNG-002, LNG-003 the errors of a standard function name the block and the pin"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 LNG-002 LNG-003 the function box: every fault names its rung and cell"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 a set/reset pair plus a box is refused at the box, which the message names (LNG-003)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldStdFunctions.test.ts","test":"LNG-030 LNG-002 LNG-003 the box of a standard function: every fault names its rung and cell"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"25 Problems select the block of a diagram","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"26 Problems select the cell of a rung","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"27 Problems select the step of an action","partial":true}
@@ -1085,6 +1088,7 @@
   ],
   "LNG-007": [
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-007 gives a Modbus, an MQTT or a library block an instance name as it gives a timer one, so a placed block builds"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 LNG-030 every function box of the Ladder palette is run, here or in the differential"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every block of the FBD palette is placed, built and run"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every coil of the Ladder palette is run"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every contact of the Ladder palette is run"},
@@ -1334,6 +1338,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 the function box: what stays as it was"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 the source map gives the statements of a box to its rung and cell"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 two plain coils on one variable stay refused"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldStdFunctions.test.ts","test":"stores the result of the call while the power reaches it, and passes that power on (ENO = EN, LNG-028)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"67 A Ladder function box in the editor, for the pictures of the site","partial":true}
   ],
   "RT-001": [

@@ -594,7 +594,7 @@
     "success": false,
     "text": "Invalid FBD connection 'w2': unknown destination input port 'gate.EN'"
   },
-  "conformance/lng/lng-002-fbd-function-not-translated.fbd.json": {
+  "conformance/lng/lng-002-fbd-catalogue-type-not-buildable.fbd.json": {
     "sha256": "6e3ca7e95351cbcc9d8e6c51453d250f340376eddd04687226cab7406bcdd7c5",
     "success": false,
     "text": "FBD block 'root' (SQRT): this block type is not supported by the FBD transpiler"

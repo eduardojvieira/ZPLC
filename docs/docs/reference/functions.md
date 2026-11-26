@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_function_reference.ts): reference/functions. Do not edit. >>> */}
 
-Every function of the compiler registry, with its signature, what it does and an example. The registry has 297 functions: the 57 named functions below and the 240 type conversions. `ANY`, `ANY_NUM`, `ANY_INT` and `ANY_BIT` stand for the family of types that the function accepts. The language elements that call them are in the [languages overview](../languages/index.md); the blocks with state are in the [function-block reference](./function-blocks.md).
+Every function of the compiler registry, with its signature, what it does and an example. The registry has 297 functions: the 57 named functions below and the 240 type conversions. `ANY`, `ANY_NUM`, `ANY_INT` and `ANY_BIT` stand for the family of types that the function accepts. The language elements that call them are in the [languages overview](../languages/index.md); the blocks with state are in the [function-block reference](./function-blocks.md). Every function is callable from Structured Text, Function Block Diagram and Ladder.
 
 Every example is a complete program. CI compiles it and runs it on the native POSIX runtime, and the result stated under it is the value that the run checks.
 
@@ -73,7 +73,7 @@ Result after one scan: `Result` = `10`.
 
 `SEL(G : BOOL, IN0 : ANY, IN1 : ANY) : ANY`
 
-Returns IN0 when G is FALSE and IN1 when G is TRUE.
+Returns IN0 when G is FALSE and IN1 when G is TRUE. IN0 and IN1 take any elementary type but STRING: SEL does not select strings, in any language; to choose between strings, use an IF in Structured Text.
 
 ```pascal runnable expect="Result=20"
 PROGRAM Example
@@ -92,7 +92,7 @@ Result after one scan: `Result` = `20`.
 
 `MUX(K : INT, IN0 : ANY, IN1 : ANY, ...) : ANY`
 
-Returns the input that K selects: IN0 for 0, IN1 for 1, and so on, up to eight inputs.
+Returns the input that K selects: IN0 for 0, IN1 for 1, and so on, up to eight inputs. The inputs take any elementary type but STRING: MUX does not select strings, in any language; to choose between strings, use an IF in Structured Text.
 
 ```pascal runnable expect="Result=30"
 PROGRAM Example
