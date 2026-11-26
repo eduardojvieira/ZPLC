@@ -83,4 +83,4 @@ options:
 
 ## Qué hará en la práctica
 
-El programa inicial ya hace parpadear Lamp, pero su semiperíodo es de dos segundos, así que la lámpara sigue en OFF cuando el escenario la mira a los {{t:750}} ms. Usted cambiará ese único valor para que Lamp esté apagada medio segundo y encendida medio segundo, guardará el archivo, pulsará {{ui:toolbar.run.label}} (F5) y observará Lamp en la pestaña {{ui:panel.watch}}, y después pulsará {{ui:learn.check}}.
+El programa inicial ya hace parpadear Lamp, pero su semiperíodo es de dos segundos, así que la lámpara sigue en OFF cuando el escenario la mira a los {{t:750}} ms. Usted hará que Lamp esté apagada medio segundo y encendida medio segundo, guardará el archivo, pulsará {{ui:toolbar.run.label}} (F5) y observará Lamp en la pestaña {{ui:panel.watch}}, y después pulsará {{ui:learn.check}}.

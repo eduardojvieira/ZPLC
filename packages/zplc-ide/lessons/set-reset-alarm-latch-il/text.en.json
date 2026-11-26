@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "LD Fault followed by S SetFirst sets the output when Fault is TRUE; LD Ack followed by R SetFirst clears it when Ack is TRUE. If both run in one scan, the last one runs last and wins."
+      "text": "Look at the two ST lines: ST writes its output on every scan, so it cannot keep a value after Fault drops. Then decide, for each output, which of its two conditions must win when both are TRUE in one scan."
     },
     {
       "level": 2,

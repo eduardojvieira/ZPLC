@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija el programa inicial, guárdelo y después pulse {{ui:learn.check}}. El programa inicial copia Fault a las dos salidas, así que pasan a OFF a los {{t:20}} ms cuando la falla ya desapareció. Cámbielo para que cada salida la mantenga su propio biestable: SetFirst, el bloque que hace ganar a Fault cuando Fault y Ack llegan juntos, y ResetFirst, el bloque que hace ganar a Ack. Escriba usted las llamadas: las declaraciones ya están.",
+      "body": "Corrija el programa inicial, guárdelo y después pulse {{ui:learn.check}}. El programa inicial copia Fault a las dos salidas, así que pasan a OFF a los {{t:20}} ms cuando la falla ya desapareció. Cámbielo para que cada salida conserve su valor después de que Fault baja hasta Ack, y para que gane Fault en SetFirst y gane Ack en ResetFirst cuando llegan juntos. Escriba usted las llamadas: las declaraciones ya están.",
       "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {

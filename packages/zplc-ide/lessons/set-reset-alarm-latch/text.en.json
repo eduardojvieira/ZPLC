@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program copies Fault to both outputs, so they go OFF at {{t:20}} ms when the fault is gone. Change it so that each output is held by its own latch: SetFirst by the block that lets Fault win when Fault and Ack arrive together, and ResetFirst by the block that lets Ack win. Write the calls yourself: the declarations are already there.",
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program copies Fault to both outputs, so they go OFF at {{t:20}} ms when the fault is gone. Change it so that each output keeps its value after Fault drops until Ack, and so that Fault wins for SetFirst and Ack wins for ResetFirst when both arrive together. Write the calls yourself: the declarations are already there.",
       "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {

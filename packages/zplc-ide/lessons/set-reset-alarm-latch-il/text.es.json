@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "LD Fault seguido de S SetFirst activa la salida cuando Fault es TRUE; LD Ack seguido de R SetFirst la desactiva cuando Ack es TRUE. Si ambas actúan en un ciclo, la que se ejecuta al final gana."
+      "text": "Mire las dos líneas ST: ST escribe su salida en cada ciclo, así que no puede conservar un valor después de que Fault baja. Después decida, para cada salida, cuál de sus dos condiciones debe ganar cuando ambas son TRUE en un mismo ciclo."
     },
     {
       "level": 2,

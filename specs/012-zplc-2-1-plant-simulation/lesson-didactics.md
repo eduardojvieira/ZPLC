@@ -10,7 +10,7 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 - `order`: 0 of 111 lessons break it
 - `glossary`: 25 of 111 lessons break it
 - `reading-parts`: 7 of 111 lessons break it
-- `answer`: 13 of 111 lessons break it
+- `answer`: 11 of 111 lessons break it
 - `grows`: 14 of 111 lessons break it
 - `scope`: 13 of 111 lessons break it
 - `machine`: 0 of 111 lessons break it
@@ -34,8 +34,8 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 | 14 | `boolean-logic-two-hand-guard-ladder` | 2 | LD | 20 | yes |  | 3 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 15 | `set-reset-alarm-latch-ladder` | 2 | LD | 20 | yes |  | 2 | yes | yes | ok | ok | ok | ok | ok | ok | ok | 2 starter statements, last of module 2 in ladder | ok | ok |
 | 16 | `boolean-logic-two-hand-guard-fbd` | 2 | FBD | 20 | yes |  | 5 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 17 | `boolean-logic-two-hand-guard-il` | 2 | IL | 15 | yes | 5 | 6 | yes | yes | ok | ok | ok | ok | ok | ok | AND RightHand (en), AND RightHand (es) | ok | ok | ok |
-| 18 | `set-reset-alarm-latch-il` | 2 | IL | 15 | yes | 7 | 3 | yes | yes | ok | ok | ok | ok | ok | ok | LD Ack (en), R SetFirst (en), S SetFirst (en), LD Ack (es), R SetFirst (es), S SetFirst (es) | ok | ok | ok |
+| 17 | `boolean-logic-two-hand-guard-il` | 2 | IL | 15 | yes | 5 | 6 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
+| 18 | `set-reset-alarm-latch-il` | 2 | IL | 15 | yes | 7 | 3 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 19 | `timers-on-delay-off-delay` | 3 | ST | 15 | yes | 2 | 2 | yes | yes | ok | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
 | 20 | `ld-edges` | 3 | LD | 15 | yes |  | 2 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 21 | `edge-counter-pulses` | 3 | ST | 15 | yes | 12 | 1 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |

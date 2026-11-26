@@ -83,4 +83,4 @@ options:
 
 ## What you will do in the practice
 
-The starting program already blinks Lamp, but its half period is two seconds, so the lamp is still OFF when the scenario looks at it at {{t:750}} ms. You will change that one value so that Lamp is off for half a second and on for half a second, save the file, press {{ui:toolbar.run.label}} (F5) and watch Lamp in the {{ui:panel.watch}} tab, then press {{ui:learn.check}}.
+The starting program already blinks Lamp, but its half period is two seconds, so the lamp is still OFF when the scenario looks at it at {{t:750}} ms. You will make Lamp stay off for half a second and on for half a second, save the file, press {{ui:toolbar.run.label}} (F5) and watch Lamp in the {{ui:panel.watch}} tab, then press {{ui:learn.check}}.

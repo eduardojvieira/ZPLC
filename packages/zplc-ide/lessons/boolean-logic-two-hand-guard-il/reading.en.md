@@ -99,4 +99,4 @@ options:
 
 ## What you will do in the practice
 
-The machine of the practice is a press with a two-hand control: it may close only while the operator holds two push buttons, one for each hand, and only while its guard is closed. The starting program combines the two hands with OR and stores FALSE in the two lamps. You will rewrite it as three groups of lines, one for each output: PressEnable only with both hands and the guard closed, GuardLamp while the guard is open, and OneHandWarning while exactly one hand is on its button. The scenario changes the inputs every {{t:10}} ms. Then press {{ui:learn.check}}.
+The machine of the practice is a press with a two-hand control: it may close only while the operator holds two push buttons, one for each hand, and only while its guard is closed. The starting program combines the two hands with OR and stores FALSE in the two lamps. You will make PressEnable ON only with both hands and the guard closed, GuardLamp while the guard is open, and OneHandWarning while exactly one hand is on its button. The scenario changes the inputs every {{t:10}} ms. Then press {{ui:learn.check}}.
