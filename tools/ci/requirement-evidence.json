@@ -2792,6 +2792,7 @@
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 stays quiet on a component that writes its text through t()"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 stays quiet on a correct pair of catalogs"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 stays quiet on text that goes through t(), identifiers, state words, upper-case tokens and other properties"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 the canonical format modules are a tool surface, not interface text"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"49 The migrated screens read in Spanish, with no raw catalog key, no English left over and no clipped control at 1366 by 768","partial":true}
   ],
   "UX-030": [
