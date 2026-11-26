@@ -30,7 +30,7 @@
     {
       "key": "run",
       "title": "Run",
-      "body": "Every physical step is yours; ZPLC starts none of them. Wire: with the USB cable unplugged, wire the parts of the wiring card of this lesson for your board (an LED with its 330 Ω resistor on DO0 and a push button on DI0), and check the wiring twice. Flash: write the prebuilt ZPLC firmware with the steps of the firmware card in the ZPLC application, after you check the SHA-256 of the file. Connect: connect the ZPLC application to the board over its serial port; the board reports which board its firmware was built for and the identity of its I/O description, and ZPLC refuses to deploy when they differ from the board you chose. That comparison is the identity check of this lesson. Deploy the program, then press RUN. Then press Check on board to grade the run on your board.",
+      "body": "Every physical step is yours; ZPLC starts none of them. Wire: with the USB cable unplugged, wire the parts of the wiring card of this lesson for your board (an LED with its 330 Ω resistor on DO0 and a push button on DI0), and check the wiring twice. Flash: write the prebuilt ZPLC firmware with the steps of the firmware card in the ZPLC application, after you check the SHA-256 of the file. Connect: connect the ZPLC application to the board over its serial port; the board reports which board its firmware was built for and the identity of its I/O description, and ZPLC refuses to deploy when they differ from the board you chose. That comparison is the identity check of this lesson. Deploy the program, then press RUN. Then press {{ui:learn.hardware.check.run}} to grade the run on your board.",
       "checkpoint": "The scenario is named VerifyBoard and contains {{assertions}} assertions."
     },
     {
