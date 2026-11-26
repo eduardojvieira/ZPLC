@@ -29,7 +29,10 @@ export const STACKER = {
   aisleMargin: 0.3, // the aisle rails reach this far beyond the first and the last bay
   rail: { width: 0.08, height: 0.04 },
   truck: { width: 0.5, height: 0.055, depth: 0.24 },
-  mastTopGap: 0.4, // matches rackH = mastH - 0.4 cleanly, leaving room for the top guide head
+  headroom: 0.4, // C10: the rack's uprights rise this far over the top shelf (the mast's 0.4), so a load fits on it and the mast stands within the rack
+  mastHead: 0.065,
+  shelf: 0.02, // C10: the plate of a cell that carries a load, under the cell rails
+  aisleBed: { width: 0.2, height: 0.012 }, // C10: the rack's floor bed under the crane's rail, tied to the rack's front uprights
   mastColumnX: 0.19,
   carriage: { width: 0.38, bedHeight: 0.026, sideWidth: 0.08, sideHeight: 0.28, depth: 0.22 },
   fork: { width: 0.05, thickness: 0.04, length: 0.6, offset: 0.055 }, // the fork plate of the core: 0.16 wide, 0.6 long, 0.04 thick
@@ -53,10 +56,12 @@ function diagBrace(slotName: string, p0: Vec3, p1: Vec3, thickness: number, role
   return { ...piece(slotName, box(size, 0.002), mid, role), q };
 }
 
-/** The rack: `columns` bays of `levels` levels, load beams, pallet crossbars, depth ties, and side/back bracing. */
-const rack: ModelBuilder = (view) => {
-  const { upright: u, beam, beamDepth, basePlate, basePlateHeight: bh, cellRail: rail } = STACKER;
-  const [w, h] = view.pose.size;
+/** The rack: `columns` bays of `levels` levels, load beams, a shelf per cell, depth ties, side/back bracing, and the aisle bed. */
+const rack: ModelBuilder = (view, context) => {
+  const { upright: u, beam, beamDepth, basePlate, basePlateHeight: bh, cellRail: rail, headroom, shelf, aisleBed, aisleMargin } = STACKER;
+  const [w] = view.pose.size;
+  // The drawn top: the core's box ends at the top shelf; the uprights rise `headroom` over it, as high as the mast.
+  const yTop = view.pose.size[1] / 2 + headroom;
   const cols = Math.max(1, Math.round(num(view.state.columns, 1)));
   const levels = Math.max(1, Math.round(num(view.state.levels, 1)));
   const [bay, level] = [num(view.state.bayPitchM), num(view.state.levelPitchM)];
@@ -72,9 +77,9 @@ const rack: ModelBuilder = (view) => {
   const out: Piece[] = [];
 
   for (const [face, z] of faces) {
-    out.push(piece(`header-${face}`, box([w, 0.05, 0.04], 0.002), [0, h / 2 - 0.025, z], 'painted'));
+    out.push(piece(`header-${face}`, box([w, 0.05, 0.04], 0.002), [0, yTop - 0.025, z], 'painted'));
     xs.forEach((x, i) => {
-      out.push(piece(`upright-${face}-${i}`, box([u, h / 2 - floor - bh, u]), [x, (h / 2 + floor + bh) / 2, z], 'painted'));
+      out.push(piece(`upright-${face}-${i}`, box([u, yTop - floor - bh, u]), [x, (yTop + floor + bh) / 2, z], 'painted'));
       out.push(piece(`base-${face}-${i}`, box([basePlate, bh, basePlate]), [x, floor + bh / 2, z], 'steel'));
     });
   }
@@ -96,18 +101,47 @@ const rack: ModelBuilder = (view) => {
             'steel',
           ),
         );
-      for (const [k, dz] of [-0.2, 0, 0.2].entries())
-        out.push(
-          piece(`deck-${c}-${l}-${k}`, box([2 * rail.offset + rail.width, 0.024, 0.04], 0.002), [cx, top + 0.012, cellMidZ + dz], 'steel'),
-        );
+      // The shelf that carries the load: a plate across both rails and the whole cell, under the fork's lowest pass.
+      out.push(
+        piece(
+          `shelf-${c}-${l}`,
+          box([2 * rail.offset + rail.width, shelf, rail.length - u], 0.002),
+          [cx, top + shelf / 2, cellMidZ],
+          'painted',
+        ),
+      );
     }
   }
+  xs.forEach((x, i) => out.push(piece(`tie-${i}-top`, box([0.04, 0.045, rail.length - u], 0.002), [x, yTop - 0.025, cellMidZ], 'painted')));
+
+  // The aisle is part of the store: a floor bed under the crane's rail from end to end, tied to every front upright, so the mast
+  // stands in the rack. Where the aisle lies comes from the core's layout: bay 0 at the foot of the mast, the rack's back face
+  // `forkStrokeM` + 0.325 m across from it, and the bays at `bayPitchM` from bay 0.
+  const aisleZ = -(setting(context, 'forkStrokeM') + rail.length / 2 + 0.025);
+  const centreX = (bay * (cols + 1)) / 2;
+  const [x0, x1] = [-aisleMargin - centreX, cols * bay + aisleMargin - centreX];
+  out.push(
+    piece(
+      'aisle-bed',
+      box([x1 - x0, aisleBed.height, aisleBed.width], 0.002),
+      [(x0 + x1) / 2, floor + aisleBed.height / 2, aisleZ],
+      'painted',
+    ),
+  );
+  const tieFrom = aisleZ + aisleBed.width / 2;
   xs.forEach((x, i) =>
-    out.push(piece(`tie-${i}-top`, box([0.04, 0.045, rail.length - u], 0.002), [x, h / 2 - 0.025, cellMidZ], 'painted')),
+    out.push(
+      piece(
+        `aisle-tie-${i}`,
+        box([0.04, aisleBed.height, frontZ - tieFrom], 0.002),
+        [x, floor + aisleBed.height / 2, (frontZ + tieFrom) / 2],
+        'painted',
+      ),
+    ),
   );
 
   // Side end-frame Warren-truss bracing and back-face truss bracing keep all cell fronts open for stored loads.
-  const yBounds = [floor + bh, ...Array.from({ length: levels }, (_, l) => floor + (l + 1) * level), h / 2 - 0.025];
+  const yBounds = [floor + bh, ...Array.from({ length: levels }, (_, l) => floor + (l + 1) * level), yTop - 0.025];
   for (let s = 0; s < yBounds.length - 1; s++) {
     const [y0, y1] = [yBounds[s]!, yBounds[s + 1]!];
     const [sy0, sy1] = s % 2 === 0 ? [y0, y1] : [y1, y0];
@@ -139,12 +173,13 @@ function aisleOrigin(view: PartView, part: ScenePart | null | undefined): Vec3 {
  * mast view id is `<id>-mast`, or catalogue renders), `rail-floor` stays compact under the truck instead of projecting into empty space.
  */
 const mast: ModelBuilder = (view, context) => {
-  const { rail, truck, mastTopGap, aisleMargin, mastColumnX } = STACKER;
+  const { rail, truck, mastHead, aisleMargin, mastColumnX } = STACKER;
   const [, h] = view.pose.size;
   const floor = -view.pose.p[1];
   const top = h / 2;
   const columnBottom = floor + rail.height + truck.height;
-  const columnTop = Math.max(columnBottom + 0.2, top - mastTopGap);
+  // C10: the whole mast, head and hoist drive included, stays within its view's box, which is as high as the rack's uprights.
+  const columnTop = Math.max(columnBottom + 0.2, top - mastHead);
   const colH = columnTop - columnBottom;
   const colMidY = (columnTop + columnBottom) / 2;
   const out: Piece[] = [];
@@ -181,9 +216,10 @@ const mast: ModelBuilder = (view, context) => {
     piece('mast-guide-b', box([0.016, colH, 0.04], 0.002), [mastColumnX - 0.038, colMidY, 0], 'steel'),
     piece('mast-foot-a', box([0.1, 0.02, 0.2], 0.002), [-mastColumnX, columnBottom + 0.01, 0], 'steel'),
     piece('mast-foot-b', box([0.1, 0.02, 0.2], 0.002), [mastColumnX, columnBottom + 0.01, 0], 'steel'),
-    piece('mast-head', box([0.48, 0.065, 0.2], 0.004), [0, columnTop + 0.0325, 0], 'housing'),
-    piece('drive-hoist', box([0.11, 0.08, 0.11], 0.005), [0.14, columnTop + 0.105, 0], 'painted'),
-    piece('drive-hoist-cap', box([0.085, 0.024, 0.085], 0.003), [0.14, columnTop + 0.157, 0], 'collar'),
+    piece('mast-head', box([0.48, mastHead, 0.2], 0.004), [0, columnTop + mastHead / 2, 0], 'housing'),
+    // The hoist drive hangs on the end of the head, not on top of it.
+    piece('drive-hoist', box([0.11, 0.08, 0.11], 0.005), [0.295, top - 0.04, 0], 'painted'),
+    piece('drive-hoist-cap', box([0.024, 0.068, 0.085], 0.003), [0.362, top - 0.04, 0], 'collar'),
   );
   const segs = Math.max(2, Math.round(colH / 0.45));
   for (let k = 0; k < segs; k++) {
@@ -218,7 +254,7 @@ const carriage: ModelBuilder = (view, context) => {
   for (const side of [-1, 1]) {
     const label = side < 0 ? 'a' : 'b';
     out.push(
-      piece(`fork-${label}`, box([fork.width, fork.thickness, fork.length]), [side * fork.offset, 0, 0], 'steel'),
+      piece(`fork-${label}`, box([fork.width, fork.thickness, fork.length]), [side * fork.offset, 0, 0], 'fork'),
       piece(
         `tine-rail-${label}`,
         box([fork.width * 0.72, 0.018, fork.length * 0.92], 0.002),
@@ -233,7 +269,7 @@ const carriage: ModelBuilder = (view, context) => {
       'slide',
       box([slide.width, slide.thickness, Math.max(Math.abs(reach), 0.02)]),
       [0, -fork.thickness / 2 - slide.thickness / 2, -reach / 2],
-      'steel',
+      'fork',
       shown,
     ),
   );

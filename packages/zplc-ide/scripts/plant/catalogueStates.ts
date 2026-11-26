@@ -234,7 +234,8 @@ export const CATALOGUE: readonly CatalogueKind[] = [
       { label: 'raised, bay 2, level 2', steps: [[{ raise: true, bay: 2, level: 2 }, 5000]] },
     ]),
     ['stacker-crane', 'stacker-mast', 'stacker-rack'],
-    [{ id: 'crane', part: 'stacker-crane', name: 'Crane1', position: [0, 0, 0], rotationYDeg: 0, config: {} }],
+    // Turned half round (C10): the sheet's camera looks from +x +z, and the rack on the crane's +z side hid the crane and its fork.
+    [{ id: 'crane', part: 'stacker-crane', name: 'Crane1', position: [0, 0, 0], rotationYDeg: 180, config: {} }],
     [stackerParts[0]!],
   ),
   machine(
