@@ -4,7 +4,7 @@ import type { PartView, ScenePart } from '../../contracts';
 import { LEVELLING_FOOT, rotate } from './shared';
 import { ALIGNER, ARM, BLADE, EMITTER, FLOW, PUSHER } from './flow';
 import { partModel, pieceExtent } from './index';
-import { beltToSensor, bottom, slot } from './models.fixtures';
+import { beltToSensor, bottom, slot, top } from './models.fixtures';
 
 const plant = beltToSensor();
 
@@ -77,6 +77,26 @@ describe('stop blade, pusher and diverter arm models (VIS-014)', () => {
     expect(pieceExtent(slot(up, 'rod'))[1] - pieceExtent(slot(down, 'rod'))[1]).toBeCloseTo((0.3 + BLADE.sink) / 2, 9);
     expect(world(blade(0), slot(down, 'cylinder'), 1)).toBeLessThan(SURFACE);
     expect(footprint(blade(1))).toEqual(footprint(blade(0)));
+  });
+
+  it('VIS-014 stop blade extended and retracted keep all pieces above floor and physically joined (S3-09)', () => {
+    const lowExtended = view('stop-blade', [0.05, 0.3, 0.6], [0, 0.33, 0], { travelMs: BLADE.travelMs, stuck: false });
+    for (const v of [blade(0), blade(1), lowExtended]) {
+      const pieces = partModel(v)!;
+      for (const p of pieces) expect(world(v, p, 1) - pieceExtent(p)[1]).toBeGreaterThanOrEqual(-1e-4);
+      const bl = slot(pieces, 'blade');
+      const rodPiece = slot(pieces, 'rod');
+      const cyl = slot(pieces, 'cylinder');
+      const brk = slot(pieces, 'bracket');
+      // Rod connects cylinder into blade with no floating gap.
+      expect(bottom(rodPiece)).toBeLessThanOrEqual(top(cyl) + 1e-6);
+      expect(top(rodPiece)).toBeGreaterThanOrEqual(bottom(bl) - 1e-6);
+      // Bracket connects directly to the cylinder, and any mounting posts start on the bracket.
+      expect(bottom(brk)).toBeLessThanOrEqual(top(cyl) + 1e-6);
+      expect(top(brk)).toBeGreaterThanOrEqual(bottom(cyl) - 1e-6);
+      for (const post of pieces.filter((p) => p.slot.startsWith('bracket-post-')))
+        expect(bottom(post)).toBeLessThanOrEqual(top(brk) + 1e-6);
+    }
   });
 
   it('VIS-014 a pusher is a cylinder on a slotted stand with a plate at the rod end that moves by the whole stroke', () => {
@@ -209,6 +229,34 @@ describe('aligner, chute and remover models (VIS-014)', () => {
     expect(ALIGNER.strip).toBeGreaterThan(0);
   });
 
+  it('VIS-014 aligner closed has steel guide rods physically bridging each fixed bracket into its moving rail (S3-09)', () => {
+    const closed = aligner(1, 0.6, 0.25, 1);
+    const pieces = partModel(closed)!;
+    expect(reach(pieces)).toEqual([0.5, 0.3 + GUIDE.thickness].map((x) => expect.closeTo(x, 9)));
+    for (const side of ['a', 'b'] as const) {
+      const rail = slot(pieces, `rail-${side}`);
+      const railInner = Math.abs(rail.at[2]) - pieceExtent(rail)[2];
+      const railOuter = Math.abs(rail.at[2]) + pieceExtent(rail)[2];
+      for (const end of ['0', '1'] as const) {
+        const brk = slot(pieces, `bracket-${side}-${end}`);
+        const rodPiece = slot(pieces, `rod-${side}-${end}`);
+        expect(rodPiece).toBeDefined();
+        expect(rodPiece.role).toBe('steel');
+        expect(rodPiece.shape.kind).toBe('cylinder');
+        expect(rodPiece.at[0]).toBeCloseTo(brk.at[0], 9);
+        const brkInner = Math.abs(brk.at[2]) - pieceExtent(brk)[2];
+        const rodInner = Math.abs(rodPiece.at[2]) - pieceExtent(rodPiece)[2];
+        const rodOuter = Math.abs(rodPiece.at[2]) + pieceExtent(rodPiece)[2];
+        // Rod physically bridges from inside the moving rail to the fixed bracket.
+        expect(rodInner).toBeGreaterThanOrEqual(railInner - 1e-6);
+        expect(rodInner).toBeLessThanOrEqual(railOuter + 1e-6);
+        expect(rodOuter).toBeGreaterThanOrEqual(brkInner - 1e-6);
+        expect(bottom(rodPiece)).toBeLessThan(top(brk));
+        expect(top(rodPiece)).toBeGreaterThan(bottom(rail));
+      }
+    }
+  });
+
   it('VIS-014 a chute is a steel slide with two low side walls on a slotted stand with levelling feet, falling the way items move', () => {
     const v = chute();
     const pieces = partModel(v)!;
@@ -259,6 +307,47 @@ describe('aligner, chute and remover models (VIS-014)', () => {
     expect(Math.max(...pieces.map((p) => p.at[1] + pieceExtent(p)[1]))).toBeCloseTo(0.25, 9);
     expect(Math.min(...pieces.map((p) => world(v, p, 1) - pieceExtent(p)[1]))).toBeCloseTo(0, 9);
   });
+
+  it(
+    'VIS-014 remover is an open framed collection hopper with slotted uprights, perimeter rails, steel collar/ribs and legs ' + '(S3-08)',
+    () => {
+      for (const v of [remover([0.8, 0.5, 0.6], 0.1), remover([0.6, 0.6, 0.6], 0), remover([0.4, 0.6, 0.6], 0.35)]) {
+        const pieces = partModel(v)!;
+        const [w, h, d] = v.pose.size;
+        const posts = pieces.filter((p) => p.slot.startsWith('post-'));
+        const rails = pieces.filter((p) => p.slot.startsWith('rail-'));
+        const rims = pieces.filter((p) => p.slot.startsWith('rim-'));
+        const collars = pieces.filter((p) => p.slot.startsWith('collar-'));
+        const ribs = pieces.filter((p) => p.slot.startsWith('rib-'));
+        const legs = pieces.filter((p) => p.slot.startsWith('leg-'));
+        expect(posts.length).toBe(4);
+        expect(posts.every((p) => p.role === 'frame' && p.shape.kind === 'extrusion')).toBe(true);
+        expect(rails.length).toBe(8);
+        expect(rails.every((p) => p.role === 'frame' && p.shape.kind === 'extrusion')).toBe(true);
+        expect(rims.length).toBe(4);
+        expect(rims.every((p) => p.role === 'steel')).toBe(true);
+        expect(collars.length).toBe(4);
+        expect(collars.every((p) => p.role === 'steel')).toBe(true);
+        expect(ribs.length).toBeGreaterThanOrEqual(4);
+        expect(ribs.every((p) => p.role === 'steel')).toBe(true);
+        expect(legs.length).toBe(4);
+        expect(pieces.filter((p) => p.slot.startsWith('stem-')).length).toBe(4);
+        expect(pieces.filter((p) => p.slot.startsWith('foot-')).length).toBe(4);
+        // Recessed painted walls sit inside the outer boundary of the slotted posts.
+        for (const wall of pieces.filter((p) => p.slot.startsWith('wall-'))) {
+          const horiz =
+            Math.abs(wall.at[0]) > 0 ? Math.abs(wall.at[0]) + pieceExtent(wall)[0] : Math.abs(wall.at[2]) + pieceExtent(wall)[2];
+          const limit = Math.abs(wall.at[0]) > 0 ? w / 2 : d / 2;
+          expect(horiz).toBeLessThan(limit - 1e-3);
+        }
+        // Strictly within declared [width, height, depth] footprint and above floor.
+        expect(reach(pieces)[0]).toBeLessThanOrEqual(w / 2 + 1e-6);
+        expect(reach(pieces)[1]).toBeLessThanOrEqual(d / 2 + 1e-6);
+        expect(Math.max(...pieces.map((p) => p.at[1] + pieceExtent(p)[1]))).toBeCloseTo(h / 2, 9);
+        expect(Math.min(...pieces.map((p) => world(v, p, 1) - pieceExtent(p)[1]))).toBeCloseTo(0, 9);
+      }
+    },
+  );
 
   it('VIS-014 the aligner, chute and remover draw in Low quality and High contrast: every piece visible and above the floor', () => {
     for (const v of [aligner(0), aligner(1), remover()])
