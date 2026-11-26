@@ -1,5 +1,8 @@
 #include "host_stdio.h"
 #include "host_line_buffer.h"
+#ifdef _WIN32
+#include "host_stdin_handoff.h"
+#endif
 
 #include <errno.h>
 #include <stdlib.h>
@@ -31,7 +34,7 @@ static struct {
 } pending = {-1, 0U, {0}};
 
 #ifdef _WIN32
-/* Whether the stream in `pending` is read through PeekNamedPipe() and ReadFile(). */
+/* Whether the stream in `pending` is a pipe, read by stdin_reader() through `stdin_handoff`. */
 static int pending_is_pipe = 0;
 #endif
 
@@ -99,60 +102,67 @@ static zplc_host_stdio_result_t wait_on_console(FILE *input, HANDLE input_handle
 }
 
 /*
- * A pipe: PeekNamedPipe() says how many bytes are waiting, ReadFile() takes them
- * into `pending` without blocking, and lines come only from `pending`.
- * ponytail: polls every millisecond; Sleep() rounds up to the system timer (about
- * 15 ms by default), which the 10 ms poll of the session tolerates. Use an
- * overlapped read with an event if a tighter wait is ever needed.
+ * A pipe: a thread blocks in ReadFile() and hands the bytes to the waiter through
+ * `stdin_handoff` (host_stdin_handoff.c), and the waiter sleeps on an event until they
+ * arrive. A poll would pay the system timer (Sleep(1) lasts about 15 ms) on every request.
+ * ponytail: one reader thread for the one stdin pipe, started once and never stopped (the
+ * process exit ends it). While it sits in a synchronous ReadFile(), any other call on the
+ * same handle (GetFileType(), another ReadFile()) waits for it, so nothing else touches stdin.
  */
-static zplc_host_stdio_result_t wait_on_pipe(HANDLE input_handle, char *buffer, size_t buffer_size, unsigned int timeout_ms) {
-  const ULONGLONG deadline = GetTickCount64() + (ULONGLONG)timeout_ms;
-  DWORD available = 0U;
-  DWORD got = 0U;
-  DWORD room;
-  zplc_host_stdio_result_t line_result;
+static zplc_host_handoff_t stdin_handoff;
+
+static DWORD WINAPI stdin_reader(LPVOID parameter) {
+  static char chunk[4096];
+  const HANDLE input_handle = (HANDLE)parameter;
+  DWORD got;
+  DWORD want;
+  size_t room;
 
   for (;;) {
-    if (PeekNamedPipe(input_handle, NULL, 0U, NULL, &available, NULL) == 0) {
-      if (GetLastError() == ERROR_BROKEN_PIPE) {
-        /* The writer closed its end: hand out what is left, then end of input. */
-        if (take_pending_line(buffer, buffer_size, 1, &line_result) != 0) {
-          return line_result;
-        }
-        return ZPLC_HOST_STDIO_EOF;
-      }
-      return ZPLC_HOST_STDIO_ERROR;
+    room = zplc_host_handoff_wait_room(&stdin_handoff);
+    if (room == 0U) {
+      return 0U;
     }
-    if (available > 0U) {
-      break;
+    want = (DWORD)((room < sizeof(chunk)) ? room : sizeof(chunk));
+    got = 0U;
+    if (ReadFile(input_handle, chunk, want, &got, NULL) == 0) {
+      /* The writer closed its end (end of input), or the read failed. */
+      zplc_host_handoff_close(&stdin_handoff, GetLastError() != ERROR_BROKEN_PIPE);
+      return 0U;
     }
-    if (GetTickCount64() >= deadline) {
-      return ZPLC_HOST_STDIO_TIMEOUT;
-    }
-    Sleep(1U);
+    /* Only this thread adds bytes, so the `room` it was given still fits them all. */
+    (void)zplc_host_handoff_put(&stdin_handoff, chunk, (size_t)got);
   }
+}
 
-  /* take_pending_line() empties a full buffer, so this cannot happen. */
-  if (pending.len >= sizeof(pending.data)) {
-    return ZPLC_HOST_STDIO_ERROR;
+/* Started on the first wait on the pipe; a failure to start is a read error, then end of input. */
+static void start_stdin_reader(HANDLE input_handle) {
+  HANDLE thread;
+
+  if (zplc_host_handoff_init(&stdin_handoff) != 0) {
+    (void)fprintf(stderr, "[native-sim] stdio: the stdin hand-off could not be created\n");
+    abort();
   }
-
-  room = (DWORD)(sizeof(pending.data) - pending.len);
-  if (available < room) {
-    room = available;
+  thread = CreateThread(NULL, 0U, stdin_reader, (LPVOID)input_handle, 0U, NULL);
+  if (thread == NULL) {
+    zplc_host_handoff_close(&stdin_handoff, 1);
+    return;
   }
+  (void)CloseHandle(thread);
+}
 
-  /* PeekNamedPipe() said `available` bytes wait, so this read does not block. */
-  if (ReadFile(input_handle, pending.data + pending.len, room, &got, NULL) == 0) {
-    return (GetLastError() == ERROR_BROKEN_PIPE) ? ZPLC_HOST_STDIO_EOF : ZPLC_HOST_STDIO_ERROR;
-  }
+static zplc_host_stdio_result_t wait_on_pipe(char *buffer, size_t buffer_size, unsigned int timeout_ms) {
+  zplc_host_stdio_result_t line_result;
 
-  pending.len += (size_t)got;
-  if (take_pending_line(buffer, buffer_size, 0, &line_result) != 0) {
+  if (zplc_host_handoff_take(&stdin_handoff, buffer, buffer_size, &line_result) != 0) {
     return line_result;
   }
-
-  /* Only a prefix of the next line has arrived: keep it and let the caller go on. */
+  /* take() reset the event under the lock, so bytes appended since then have set it again. */
+  if (zplc_host_handoff_wait(&stdin_handoff, timeout_ms) != 0 &&
+      zplc_host_handoff_take(&stdin_handoff, buffer, buffer_size, &line_result) != 0) {
+    return line_result;
+  }
+  /* No whole line yet (or only a prefix of one): let the caller go on. */
   return ZPLC_HOST_STDIO_TIMEOUT;
 }
 #endif
@@ -206,7 +216,15 @@ zplc_host_stdio_result_t zplc_host_wait_for_request_line(FILE *input, char *buff
     }
     /* main() sets this at startup; the guard makes this call a no-op then. */
     zplc_host_stdio_set_binary();
-    trace_read_path(pending_is_pipe ? "the pipe handle (PeekNamedPipe, ReadFile)" : "the FILE stream (WaitForSingleObject, fgets)");
+    if (pending_is_pipe) {
+      static int reader_started = 0;
+
+      if (reader_started == 0) {
+        reader_started = 1;
+        start_stdin_reader(input_handle);
+      }
+    }
+    trace_read_path(pending_is_pipe ? "the pipe handle (reader thread, ReadFile)" : "the FILE stream (WaitForSingleObject, fgets)");
 #else
     trace_read_path("the descriptor (select, read)");
 #endif
@@ -219,7 +237,7 @@ zplc_host_stdio_result_t zplc_host_wait_for_request_line(FILE *input, char *buff
 
 #ifdef _WIN32
   if (pending_is_pipe) {
-    return wait_on_pipe(input_handle, buffer, buffer_size, timeout_ms);
+    return wait_on_pipe(buffer, buffer_size, timeout_ms);
   }
   return wait_on_console(input, input_handle, buffer, buffer_size, timeout_ms);
 #else

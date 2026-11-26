@@ -273,8 +273,8 @@ describe('native simulation of a large program', () => {
   );
 });
 
-// On Windows the runtime reads stdin through the pipe handle (PeekNamedPipe, ReadFile) into its own line buffer
-// (firmware/apps/posix_host/src/host_stdio.c); ZPLC_STDIO_TRACE=1 makes it say so on stderr. A request that arrives
+// On Windows the runtime reads a stdin pipe on a reader thread (ReadFile) that hands the bytes to its line buffer
+// (firmware/apps/posix_host/src/host_stdio.c, host_stdin_handoff.c); ZPLC_STDIO_TRACE=1 makes it say so on stderr. A request that arrives
 // after the runtime has waited idle is the case the old FILE reader lost, so two requests are sent with a pause.
 // Registered only on Windows, not skipped elsewhere: a skip on Linux would read as a missing binary to the VF-023 guard.
 if (process.platform === 'win32') {
@@ -299,7 +299,7 @@ if (process.platform === 'win32') {
           expect(await supervisor.request({ id: 'before-pause', type: 'request', method: 'status.get', params: {} })).toBeDefined();
           await new Promise((resolve) => setTimeout(resolve, 1_000));
           expect(await supervisor.request({ id: 'after-pause', type: 'request', method: 'status.get', params: {} })).toBeDefined();
-          expect(stderr.join('\n')).toContain('stdin is read through the pipe handle (PeekNamedPipe, ReadFile)');
+          expect(stderr.join('\n')).toContain('stdin is read through the pipe handle (reader thread, ReadFile)');
         } finally {
           unsubscribe();
           await supervisor.stopSession().catch(() => undefined);
