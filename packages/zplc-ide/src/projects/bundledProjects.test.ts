@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
+import { itNative, itNativeLoopback, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
 import { compilerCompile, testsRun } from '../cli/toolApi';
 import { compileMultiTaskProject } from '../compiler';
 import { readWorkspace } from '../cli/workspace';
@@ -133,6 +133,11 @@ describe('the schema checker used by this file', () => {
 // The session Studio starts also gives a program a Modbus server and an MQTT broker of their own (COM-009); the
 // Communications examples are run against them, as the product runs them.
 const SESSION_ENVIRONMENT = { ZPLC_NATIVE_SIM_BIN: nativeRuntimeBinary, ZPLC_NATIVE_COMM: '1', ZPLC_NATIVE_LOOPBACK: '1' } as const;
+
+// A project whose sources call a Modbus or MQTT block needs those endpoints, which need zplc_loopback: where it is not
+// built (Windows, CMakeLists.txt if(NOT WIN32)) its scenarios are skipped and say why, as COM-009 is.
+const usesCommunicationBlocks = (root: string): boolean =>
+  readdirSync(join(root, 'src')).some((file) => /\b(MB|MQTT)_[A-Z_]+/.test(readFileSync(join(root, 'src', file), 'utf8')));
 const withNativeRuntime = async <T>(run: () => Promise<T>): Promise<T> => {
   const previous = Object.fromEntries(Object.keys(SESSION_ENVIRONMENT).map((name) => [name, process.env[name]]));
   Object.assign(process.env, SESSION_ENVIRONMENT);
@@ -243,7 +248,7 @@ describe('bundled example projects', () => {
       const hasScenarios =
         existsSync(join(rootOf(name), 'tests')) && readdirSync(join(rootOf(name), 'tests')).some((file) => file.endsWith('.scenario.json'));
       if (hasScenarios) {
-        itNative(
+        (usesCommunicationBlocks(rootOf(name)) ? itNativeLoopback : itNative)(
           'passes every scenario under tests/ on the native runtime',
           async () => {
             const result = await withNativeRuntime(() => testsRun(rootOf(name)));

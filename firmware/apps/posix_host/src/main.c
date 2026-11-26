@@ -89,6 +89,8 @@ int main(int argc, char **argv) {
   zplc_host_stdio_result_t io_result;
   int discarding_long_line = 0;
 
+  zplc_host_stdio_set_binary();
+
   for (arg = 1; arg < argc; arg++) {
     if (strcmp(argv[arg], "--device-link") == 0) {
       device_link = 1;
