@@ -26,11 +26,14 @@ const itNative = (
     : itNativeRuntime
 ) as typeof itNativeRuntime;
 
-(process.platform === 'win32' ? itNativeRuntime : it.skip)(`on Windows the runtime says "${LINK_UNAVAILABLE}" and exits 1`, () => {
-  const result = spawnSync(nativeRuntimeBinary, ['--device-link'], { encoding: 'utf8', input: '', timeout: 10_000 });
-  expect(result.status).toBe(1);
-  expect(result.stderr).toContain(LINK_UNAVAILABLE);
-});
+// Registered only on Windows, not skipped elsewhere: a skip on Linux would read as a missing binary to the VF-023 guard.
+if (process.platform === 'win32') {
+  itNativeRuntime(`on Windows the runtime says "${LINK_UNAVAILABLE}" and exits 1`, () => {
+    const result = spawnSync(nativeRuntimeBinary, ['--device-link'], { encoding: 'utf8', input: '', timeout: 10_000 });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(LINK_UNAVAILABLE);
+  });
+}
 
 const SYS_INFO = {
   board: 'native_sim',
