@@ -928,6 +928,8 @@ function validateText(model: FBDModel, problems: Problems): void {
 // Helpers
 // =============================================================================
 
+const UNSIGNED_OR_BITS = new Set([...UNSIGNED, ...BIT_STRING]);
+
 function formatValue(value: unknown, dataType: string): string {
   if (value === undefined || value === null) return '0';
 
@@ -946,6 +948,9 @@ function formatValue(value: unknown, dataType: string): string {
     if (dataType === 'REAL' || dataType === 'LREAL') {
       return value.toString().includes('.') ? value.toString() : `${value}.0`;
     }
+    // a plain integer literal is a DINT: an unsigned value above its range is written with its type, which the compiler reads as such
+    if (UNSIGNED_OR_BITS.has(dataType.toUpperCase()) && Number.isInteger(value) && value > 2147483647)
+      return `${dataType.toUpperCase()}#${value}`;
     return value.toString();
   }
 
