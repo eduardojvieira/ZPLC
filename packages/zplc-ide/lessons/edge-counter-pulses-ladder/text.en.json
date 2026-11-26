@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Counting pulses in Ladder: a CTU counts the edges itself",
   "summary": "Place a CTU in a rung so that CountReached turns on at the third rising edge of a pulse input and Reset clears the count.",
-  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the counting accuracy of a real input or wiring.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real sensor bounces, how many pulses a real input misses or how it is wired.",
   "objectives": [
     "Place a counter block in a rung and set its preset and its reset.",
     "Explain that a counter adds one on the rising edge of its input, not on every scan in which the input is high."
@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/EdgeCounterLd.ld.json one rung copies PulseInput to CountReached. Replace the copy with a CTU of preset 3 between the contact and the coil, and wire Reset to its R input, so that CountReached turns on at the third pulse and Reset clears it.",
-      "checkpoint": "The counter sits between PulseInput and the coil of CountReached."
+      "body": "In src/EdgeCounterLd.ld.json one rung copies PulseInput to CountReached, so CountReached turns ON with every pulse. Make CountReached turn ON at the third pulse and stay ON until Reset clears the count.",
+      "checkpoint": "You can say which input of a counter adds one, which one clears the count, and when its Q turns on."
     },
     {
       "key": "predict",
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter copies the pulse to the coil: CountReached is ON at {{t:10}} ms, on the first pulse, instead of after the third; place a CTU with PV 3, Reset on its R input, between PulseInput and CountReached. In the Ladder editor drag a CTU block between the contact and the coil, name its instance Count, and set PV to 3 and R to Reset.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program copies the pulse to the coil, so CountReached is ON at {{t:10}} ms, on the first pulse, instead of after the third. Change it so that CountReached turns ON at the third pulse of PulseInput, stays ON after it, and turns OFF when Reset is pressed.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The scenario is named EdgeCounterLd and contains {{assertions}} assertions."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "The starter copies the pulse to the coil: CountReached is ON at {{t:10}} ms, on the first pulse, instead of after the third; place a CTU with PV 3, Reset on its R input, between PulseInput and CountReached."
+    "The starting program copies the pulse to the coil, so CountReached is ON at {{t:10}} ms, on the first pulse, instead of after the third."
   ]
 }
