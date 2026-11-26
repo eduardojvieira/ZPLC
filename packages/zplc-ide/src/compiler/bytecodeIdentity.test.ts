@@ -33,7 +33,8 @@ async function current(): Promise<Record<string, string>> {
     const root = join(PROJECTS, name);
     if (!existsSync(join(root, 'zplc.json'))) continue;
     const result = await compilerCompile(root);
-    hashes[`projects/${name}`] = result.ok && result.zplcFile ? sha(result.zplcFile) : `error:${result.evidence.diagnostics[0]?.code ?? '?'}`;
+    const failure = `error:${result.evidence.diagnostics[0]?.code ?? '?'}`;
+    hashes[`projects/${name}`] = result.ok && result.zplcFile ? sha(result.zplcFile) : failure;
   }
   for (const name of readdirSync(CONFORMANCE).sort()) {
     const language = LANGUAGE_OF.find(([pattern]) => pattern.test(name))?.[1];

@@ -413,6 +413,71 @@ export function getBreakpointLocations(map: DebugMap, pouName: string): Breakpoi
 }
 
 // ============================================================================
+// Element to PC (AIX-014)
+// ============================================================================
+
+/**
+ * A place execution can stop at, named as the author names it: `line:14` of a Structured Text or IL source,
+ * `rung:r1/cell:0,2`, `block:and_1`, `step:s1/enter`, `transition:t1/fire`, `action:a1`.
+ */
+export interface ElementPc {
+    element: string;
+    /** The line the location is stored as: the source line for ST and IL, the generated line for a diagram. */
+    line: number;
+    /** The first instruction of the element. */
+    pc: number;
+}
+
+/** What `resolveElementPc` answers: the location, or why the element has none. */
+export type ElementPcLookup = ({ mapped: true } & ElementPc) | { mapped: false; element: string; message: string };
+
+/** The same file by any spelling the editor and the build use: `src/main.ld.json`, `./src/main.ld.json`, `src/main.ld`. */
+const fileKey = (value: string): string =>
+    value
+        .replace(/\\/g, '/')
+        .replace(/^(\.\/)+/, '')
+        .replace(/^file:/i, '')
+        .replace(/\.json$/i, '')
+        .toLowerCase();
+
+function pouOfSource(map: DebugMap, sourceRef: string): DebugPOUInfo | undefined {
+    const key = fileKey(sourceRef);
+    return Object.values(map.pou).find((pou) => pou.sourceRef !== undefined && fileKey(pou.sourceRef) === key);
+}
+
+/**
+ * Every place execution can stop at in the POU built from `sourceRef`, ordered by PC. A line of a plain Structured
+ * Text source is named `line:N`; a translated source names its elements (LNG-004). Empty when no POU was built from
+ * the file.
+ */
+export function elementPcMap(map: DebugMap, sourceRef: string): ElementPc[] {
+    return (pouOfSource(map, sourceRef)?.breakpoints ?? [])
+        .filter((location) => location.valid)
+        .map((location) => ({ element: location.element ?? `line:${location.line}`, line: location.line, pc: location.pc }))
+        .sort((a, b) => a.pc - b.pc);
+}
+
+/**
+ * The first instruction of `element` in the source `sourceRef`. A rung or a step holds its parts: the first of them
+ * stands for it, except that a step stops where a transition enters it and a transition where it fires.
+ */
+export function resolveElementPc(map: DebugMap, sourceRef: string, element: string): ElementPcLookup {
+    if (!pouOfSource(map, sourceRef)) {
+        const message = `element '${element}' is not mapped: no program of this build was compiled from ${sourceRef}`;
+        return { mapped: false, element, message };
+    }
+    let found = elementPcMap(map, sourceRef).filter((entry) => entry.element === element || entry.element.startsWith(`${element}/`));
+    const roles = found.filter((entry) => /\/(enter|fire)$/.test(entry.element));
+    if (roles.length > 0) found = roles;
+    const first = found[0];
+    if (!first) {
+        const message = `element '${element}' is not mapped in ${sourceRef}: no instruction was generated for it`;
+        return { mapped: false, element, message };
+    }
+    return { mapped: true, element, line: first.line, pc: first.pc };
+}
+
+// ============================================================================
 // Builder Functions (from SymbolTable + Assembly Result)
 // ============================================================================
 
