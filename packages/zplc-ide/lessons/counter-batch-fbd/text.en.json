@@ -2,17 +2,17 @@
   "schemaVersion": 1,
   "title": "Counters in Function Block Diagram: count parts to a batch",
   "summary": "Edit a Function Block Diagram so that a CTU counter counts three parts, lights BatchFull, and clears with Reset.",
-  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show sensor wiring, debounce or counting accuracy at machine speed.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real photocell bounces or how fast a real line can be counted.",
   "objectives": [
-    "Read a Function Block Diagram as blocks whose output ports are wired to the input ports of other blocks.",
-    "Wire a CTU counter: a rising edge on CU counts, R clears it, and Q is TRUE when the count reaches the preset PV."
+    "Read a counter in a Function Block Diagram as a block with a memory: an instance whose input ports receive connections and whose outputs Q and CV can be connected on.",
+    "Make a CTU count rising edges up to its preset, and clear it with a reset input."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/BatchCount.fbd.json the counter block Count (CTU), the preset 3 and the output BatchFull are placed, and Q is already wired to BatchFull. Wire the input PartSensor to CU and the input Reset to R.",
-      "checkpoint": "BatchFull lights when the third part is counted and goes out on Reset."
+      "body": "In src/BatchCount.fbd.json the counter block Count (CTU), the constant 3 on its PV and the output BatchFull are placed, and Q is already connected to BatchFull. Nothing reaches CU or R. Make BatchFull light when the third part has been counted and go out when Reset is pressed.",
+      "checkpoint": "You can say what each input port of a CTU does, and what an input port with no connection receives."
     },
     {
       "key": "predict",
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter has the counter and the preset, but PartSensor and Reset are not wired to it, so Count never counts and BatchFull stays OFF; wire PartSensor to the CU input and Reset to the R input.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "body": "Correct the starting diagram, save it, then press {{ui:learn.check}}. The starter has the counter and the preset, but PartSensor and Reset are not connected to it, so Count never counts and BatchFull stays OFF. Change the diagram so that each part in front of PartSensor counts once, BatchFull lights at the third, and Reset clears the count. Do not change the constant 3 or the connection to BatchFull.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The scenario is named BatchCount and contains {{assertions}} assertions."
     },
     {
@@ -41,21 +41,21 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "What does the counter count, the level of PartSensor or its rising edge? Swap the two inputs and see which assertion fails.",
-      "checkpoint": "CTU counts rising edges, so the {{t:20}} ms the first part stays in front of the sensor counts once. The scenario shows the logic only; it does not show how a real sensor bounces."
+      "body": "What does the counter count, the level of PartSensor or its rising edge? Then imagine PartSensor connected to R and Reset to CU: what would BatchFull do in this scenario?",
+      "checkpoint": "CTU counts rising edges, so the first part counts once although it stays in front of the sensor for {{t:20}} ms. With the two connections swapped, each part would clear the count and only Reset would count, so BatchFull would never light."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Each input variable block has one output port named OUT, and each input of Count has a name: CU counts, R clears."
+      "text": "Each input variable block has one output port named OUT, and each input port of Count has a name: CU counts, R clears."
     },
     {
       "level": 2,
-      "text": "Draw a wire from PartSensor.OUT to Count.CU, and another from Reset.OUT to Count.R. Do not change the constant 3 or the wire to BatchFull."
+      "text": "Draw a connection from PartSensor.OUT to Count.CU, and another from Reset.OUT to Count.R. Do not change the constant 3 or the connection to BatchFull."
     }
   ],
   "faultCases": [
-    "The starter has the counter and the preset, but PartSensor and Reset are not wired to it, so Count never counts and BatchFull stays OFF; wire PartSensor to the CU input and Reset to the R input."
+    "The starter has the counter and the preset, but PartSensor and Reset are not connected to it, so Count never counts and BatchFull stays OFF."
   ]
 }

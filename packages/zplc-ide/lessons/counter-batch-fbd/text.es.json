@@ -2,17 +2,17 @@
   "schemaVersion": 1,
   "title": "Contadores en diagrama de bloques de función: contar piezas hasta completar un lote",
   "summary": "Edite un diagrama de bloques de función para que un contador CTU cuente tres piezas, encienda BatchFull y se borre con Reset.",
-  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el cableado del sensor, el antirrebote ni la exactitud del conteo a la velocidad de la máquina.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota una fotocélula real ni a qué velocidad se puede contar una línea real.",
   "objectives": [
-    "Lea un diagrama de bloques de función como bloques cuyos puertos de salida se conectan a los puertos de entrada de otros bloques.",
-    "Conecte un contador CTU: un flanco ascendente en CU cuenta, R lo borra y Q es TRUE cuando la cuenta llega al valor preestablecido PV."
+    "Lea un contador en un diagrama de bloques de función como un bloque con memoria: una instancia cuyos puertos de entrada reciben conexiones y cuyas salidas Q y CV se pueden conectar a otros bloques.",
+    "Haga que un CTU cuente flancos ascendentes hasta su valor preestablecido, y póngalo a cero con una entrada de puesta a cero."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/BatchCount.fbd.json están colocados el bloque contador Count (CTU), el valor preestablecido 3 y la salida BatchFull, y Q ya está conectada a BatchFull. Conecte la entrada PartSensor a CU y la entrada Reset a R.",
-      "checkpoint": "BatchFull se enciende al contar la tercera pieza y se apaga con Reset."
+      "body": "En src/BatchCount.fbd.json están colocados el bloque contador Count (CTU), la constante 3 en su PV y la salida BatchFull, y Q ya está conectada a BatchFull. Nada llega a CU ni a R. Haga que BatchFull se encienda cuando se contó la tercera pieza y se apague cuando se pulsa Reset.",
+      "checkpoint": "Usted puede decir qué hace cada puerto de entrada de un CTU, y qué recibe un puerto de entrada sin conexión."
     },
     {
       "key": "predict",
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial tiene el contador y el valor preestablecido, pero PartSensor y Reset no están conectados a él, así que Count nunca cuenta y BatchFull queda en OFF; conecte PartSensor a la entrada CU y Reset a la entrada R.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "body": "Corrija el diagrama inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial tiene el contador y el valor preestablecido, pero PartSensor y Reset no están conectados a él, así que Count nunca cuenta y BatchFull queda en OFF. Cambie el diagrama para que cada pieza frente a PartSensor cuente una vez, BatchFull se encienda con la tercera y Reset ponga la cuenta a cero. No cambie la constante 3 ni la conexión hacia BatchFull.",
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario se llama BatchCount y contiene {{assertions}} aserciones."
     },
     {
@@ -41,21 +41,21 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "¿Qué cuenta el contador, el nivel de PartSensor o su flanco ascendente? Intercambie las dos entradas y vea qué aserción falla.",
-      "checkpoint": "CTU cuenta flancos ascendentes, así que los {{t:20}} ms que la primera pieza permanece frente al sensor cuentan una vez. El escenario muestra solo la lógica; no muestra cómo rebota un sensor real."
+      "body": "¿Qué cuenta el contador, el nivel de PartSensor o su flanco ascendente? Después imagine PartSensor conectado a R y Reset a CU: ¿qué haría BatchFull en este escenario?",
+      "checkpoint": "CTU cuenta flancos ascendentes, así que la primera pieza cuenta una vez aunque se quede {{t:20}} ms frente al sensor. Con las dos conexiones intercambiadas, cada pieza pondría la cuenta a cero y solo Reset contaría, así que BatchFull nunca se encendería."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Cada bloque de variable de entrada tiene un puerto de salida llamado OUT, y cada entrada de Count tiene un nombre: CU cuenta, R borra."
+      "text": "Cada bloque de variable de entrada tiene un puerto de salida llamado OUT, y cada puerto de entrada de Count tiene un nombre: CU cuenta, R pone a cero."
     },
     {
       "level": 2,
-      "text": "Trace un cable de PartSensor.OUT a Count.CU y otro de Reset.OUT a Count.R. No cambie la constante 3 ni el cable hacia BatchFull."
+      "text": "Trace una conexión de PartSensor.OUT a Count.CU y otra de Reset.OUT a Count.R. No cambie la constante 3 ni la conexión hacia BatchFull."
     }
   ],
   "faultCases": [
-    "El programa inicial tiene el contador y el valor preestablecido, pero PartSensor y Reset no están conectados a él, así que Count nunca cuenta y BatchFull queda en OFF; conecte PartSensor a la entrada CU y Reset a la entrada R."
+    "El programa inicial tiene el contador y el valor preestablecido, pero PartSensor y Reset no están conectados a él, así que Count nunca cuenta y BatchFull queda en OFF."
   ]
 }
