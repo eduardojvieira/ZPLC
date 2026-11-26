@@ -48,7 +48,7 @@ describe('the classroom setting the main process holds (AIX-002, D-32)', () => {
   it('writes the setting atomically into <userData>, private, and leaves no temporary file', async () => {
     const userData = await scratch();
     const store = createLearnPolicyStore(userData);
-    store.save({ hideSolutions: false });
+    await store.save({ hideSolutions: false });
     await store.settled();
     expect(JSON.parse(await readFile(path.join(userData, LEARN_POLICY_FILENAME), 'utf8'))).toEqual({ hideSolutions: false });
     expect(await readdir(userData)).toEqual([LEARN_POLICY_FILENAME]);
@@ -64,7 +64,7 @@ describe('the classroom setting the main process holds (AIX-002, D-32)', () => {
     const stop = mirrorLearnPolicy(settings, (next) => {
       reported.push(next);
       const parsed = parseLearnPolicy(next);
-      if (parsed) policy.save(parsed);
+      if (parsed) void policy.save(parsed).catch(() => undefined);
     });
     settings.getState().update({ hideSolutions: true });
     await policy.settled();
@@ -99,7 +99,7 @@ describe('the classroom setting the main process holds (AIX-002, D-32)', () => {
     expect(await store.solutionsHidden()).toBe(true);
   });
 
-  it('when the old policy cannot be removed either, this process keeps solutions hidden in memory and still reports the failure', async () => {
+  it('when the old policy cannot be removed either, the process holds solutions hidden in memory and reports it', async () => {
     const userData = await scratch();
     const store = createLearnPolicyStore(userData);
     await store.save({ hideSolutions: false });

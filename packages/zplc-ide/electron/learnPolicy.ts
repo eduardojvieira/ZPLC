@@ -46,28 +46,55 @@ export async function readSolutionsHidden(userDataPath: string | undefined): Pro
   }
 }
 
-export function createLearnPolicyStore(userDataPath: string) {
+/** The file operations of the store; a test replaces one to make a write fail. */
+export interface LearnPolicyIo {
+  mkdir: typeof mkdir;
+  writeFile: typeof writeFile;
+  rename: typeof rename;
+  unlink: typeof unlink;
+}
+
+const isMissing = (error: unknown): boolean => typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT';
+
+export function createLearnPolicyStore(userDataPath: string, override: Partial<LearnPolicyIo> = {}) {
+  const io: LearnPolicyIo = { mkdir, writeFile, rename, unlink, ...override };
   const file = path.join(userDataPath, LEARN_POLICY_FILENAME);
   let writing: Promise<void> = Promise.resolve();
+  // Set when a save that hides solutions failed and the old file could not be removed: no file on disk says hidden, so this
+  // process holds it until a later save succeeds.
+  let heldHidden = false;
   return {
-    /** Writes the mirrored setting; a write that fails leaves the old file in place. */
-    save(next: LearnPolicy): void {
+    /**
+     * Writes the mirrored setting and rejects with the error when the write fails. A failed save that hides solutions never
+     * leaves an older file that shows them: the old file is removed (a missing file reads as hidden), or, when even that
+     * fails, this store answers hidden for the rest of the process.
+     */
+    save(next: LearnPolicy): Promise<void> {
       const text = JSON.stringify({ hideSolutions: next.hideSolutions });
-      writing = writing.then(async () => {
+      const job = writing.then(async () => {
         const temporary = `${file}.${randomUUID()}.tmp`;
         try {
-          await mkdir(path.dirname(file), { recursive: true });
-          await writeFile(temporary, text, { mode: 0o600 });
-          await rename(temporary, file);
-        } catch {
-          await unlink(temporary).catch(() => undefined);
+          await io.mkdir(path.dirname(file), { recursive: true });
+          await io.writeFile(temporary, text, { mode: 0o600 });
+          await io.rename(temporary, file);
+          heldHidden = false;
+        } catch (error) {
+          await io.unlink(temporary).catch(() => undefined);
+          if (next.hideSolutions) {
+            await io.unlink(file).catch((removal: unknown) => {
+              if (!isMissing(removal)) heldHidden = true;
+            });
+          }
+          throw error;
         }
       });
+      writing = job.catch(() => undefined);
+      return job;
     },
     /** Read from the file each time, after any write in flight: no copy held here can be changed from outside. */
     async solutionsHidden(): Promise<boolean> {
       await writing;
-      return readSolutionsHidden(userDataPath);
+      return heldHidden || readSolutionsHidden(userDataPath);
     },
     settled(): Promise<void> {
       return writing;

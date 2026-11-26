@@ -87,10 +87,12 @@ const MAX_MESSAGE = 256;
 type Json = Record<string, unknown>;
 const isObject = (value: unknown): value is Json => typeof value === 'object' && value !== null && !Array.isArray(value);
 const text = (value: unknown): string => (typeof value === 'string' ? value : '');
-const strings = (value: unknown): string[] => (Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []);
+const strings = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
 const list = (value: unknown): Json[] => (Array.isArray(value) ? value.filter(isObject) : []);
 /** Only the listed keys that hold a value. */
-const pick = (value: Json, keys: readonly string[]): Json => Object.fromEntries(keys.filter((key) => value[key] !== undefined).map((key) => [key, value[key]]));
+const pick = (value: Json, keys: readonly string[]): Json =>
+  Object.fromEntries(keys.filter((key) => value[key] !== undefined).map((key) => [key, value[key]]));
 
 /** The lesson id of a workspace that is `<learnWorkspaceRoot>/<lessonId>` itself; undefined for any other folder. */
 export function lessonIdOfWorkspace(projectRoot: string, learnWorkspaceRoot: string): string | undefined {
@@ -101,7 +103,10 @@ export function lessonIdOfWorkspace(projectRoot: string, learnWorkspaceRoot: str
 function plantOf(input: ProjectContextInput): ProjectContext['plant'] {
   if (input.scene === undefined && input.plantMap === undefined) return undefined;
   const scene = isObject(input.scene)
-    ? { name: text(input.scene.name), parts: list(input.scene.parts).map((part) => ({ id: text(part.id), name: text(part.name), part: text(part.part) })) }
+    ? {
+        name: text(input.scene.name),
+        parts: list(input.scene.parts).map((part) => ({ id: text(part.id), name: text(part.name), part: text(part.part) })),
+      }
     : undefined;
   // A scene's map is schema 2 (`learn/sceneRun.ts`): its signals are keyed by name.
   const signals = isObject(input.plantMap) && isObject(input.plantMap.signals) ? input.plantMap.signals : {};
@@ -125,7 +130,12 @@ function scenarioOf({ path: file, input }: { path: string; input: unknown }): Js
     events: Array.isArray(scenario.events) ? scenario.events.length : 0,
     expectations: list(scenario.expectations).map((expectation) => ({
       ...pick(expectation, ['kind', 'atMs', 'fromMs', 'withinMs', 'forMs']),
-      signals: [...new Set([...Object.keys(isObject(expectation.condition) ? expectation.condition : {}), ...Object.keys(isObject(expectation.until) ? expectation.until : {})])],
+      signals: [
+        ...new Set([
+          ...Object.keys(isObject(expectation.condition) ? expectation.condition : {}),
+          ...Object.keys(isObject(expectation.until) ? expectation.until : {}),
+        ]),
+      ],
     })),
   };
 }
@@ -147,9 +157,9 @@ function lessonOf(lesson: ProjectContextInput['lesson'], solutionsHidden: boolea
   };
 }
 
-export function buildProjectContext(input: ProjectContextInput, policy: { solutionsHidden: boolean }): ProjectContext {
+export function buildProjectContext(input: ProjectContextInput, policy?: { solutionsHidden: boolean } | null): ProjectContext {
   const plant = plantOf(input);
-  const lesson = lessonOf(input.lesson, policy.solutionsHidden !== false);
+  const lesson = lessonOf(input.lesson, policy?.solutionsHidden !== false);
   return {
     ...(input.manifest !== undefined ? { manifest: manifestForAssistant(input.manifest) } : {}),
     ...(plant ? { plant } : {}),
