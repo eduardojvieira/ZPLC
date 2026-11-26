@@ -267,6 +267,26 @@ describe('firmware build gateway', () => {
     ).rejects.toThrow('Firmware build unavailable');
   });
 
+  it.skipIf(!buildOffered)('refuses start on Windows by its own platform check, even with a selection made', async () => {
+    const candidate = await root();
+    const host: { platform: NodeJS.Platform } = { platform: 'linux' };
+    const gateway = createFirmwareBuildGateway(host);
+    await gateway.inspect(7, candidate, async () => ready());
+    host.platform = 'win32';
+    let calls = 0;
+    const counted = async () => {
+      calls += 1;
+      return ready();
+    };
+    const approve = async () => (calls += 1) > 0;
+    await expect(gateway.start(7, { ideId: 'nucleo_h743zi' }, counted, approve, counted)).rejects.toThrow('Firmware build unavailable');
+    expect(calls).toBe(0);
+    // The selection survived the refusal, so it was the platform rule that refused, not a missing selection.
+    host.platform = 'linux';
+    const built = gateway.start(7, { ideId: 'nucleo_h743zi' }, async () => ready(), async () => true, async () => ({ ok: true }));
+    await expect(built).resolves.toEqual({ ok: true });
+  });
+
   it.skipIf(!buildOffered)('leases inspection exclusively and cannot revive a selection after its owner is revoked', async () => {
     const candidate = await root();
     const gateway = createFirmwareBuildGateway();

@@ -4,7 +4,7 @@ import { lstat, mkdir, mkdtemp, realpath, rename, rm, symlink, truncate, writeFi
 import { PassThrough } from 'node:stream';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { runFirmwareBuild, sameDirectoryIdentity } from './firmwareBuildRunner';
+import { readArtifact, runFirmwareBuild, sameDirectoryIdentity } from './firmwareBuildRunner';
 
 /** The firmware build is offered on Linux and macOS only; on Windows the runner answers unavailable before it does anything. */
 const buildOffered = process.platform !== 'win32';
@@ -108,6 +108,36 @@ describe('runFirmwareBuild', () => {
       expect(JSON.stringify(observed)).not.toContain('build_command');
     } finally {
       await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it.skipIf(!buildOffered)('refuses a build directory swapped for a link to an outside tree that holds a valid ELF', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-runner-root-'));
+    const outside = await mkdtemp(join(tmpdir(), 'zplc-runner-outside-'));
+    const owned = await mkdtemp(join(tmpdir(), 'zplc-runner-owned-'));
+    try {
+      await mkdir(join(outside, 'zephyr'));
+      await writeFile(join(outside, 'zephyr', 'zephyr.elf'), validElf32());
+      await symlink(outside, join(owned, 'build'), 'dir');
+      // The artifact check itself refuses it; the runner maps that refusal to artifact-invalid.
+      expect(await readArtifact(join(owned, 'build'))).toBeUndefined();
+      const result = await runFirmwareBuild(root, 'safe/board', {
+        spawnProcess: (_command, args) => {
+          const child = new FakeChild();
+          const out = args[args.indexOf('-d') + 1] as string;
+          void (async () => {
+            await rm(out, { recursive: true, force: true });
+            await symlink(outside, out, 'dir');
+            child.stdout.end();
+            child.stderr.end();
+            child.emit('close', 0);
+          })();
+          return child as never;
+        },
+      });
+      expect(result.ok).toBe(false);
+    } finally {
+      await Promise.all([root, outside, owned].map((path) => rm(path, { recursive: true, force: true })));
     }
   });
 

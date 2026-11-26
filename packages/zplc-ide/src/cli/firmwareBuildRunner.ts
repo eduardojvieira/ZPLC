@@ -92,7 +92,8 @@ function executableElfHeader(bytes: Buffer): boolean {
   const u32 = (offset: number) => (littleEndian ? bytes.readUInt32LE(offset) : bytes.readUInt32BE(offset));
   return [2, 3].includes(u16(16)) && u16(18) !== 0 && u32(20) === 1 && u16(headerSizeOffset) === headerSize && headerSize <= bytes.length;
 }
-async function readArtifact(root: string): Promise<FirmwareBuildArtifact | undefined> {
+/** Exported as a test seam only. */
+export async function readArtifact(root: string): Promise<FirmwareBuildArtifact | undefined> {
   const elf = resolve(root, 'zephyr/zephyr.elf');
   if (!inside(root, elf)) return undefined;
   try {

@@ -85,7 +85,8 @@ function readyBoards(result: unknown): Set<string> | undefined {
 
 /** Keeps the selected checkout private to Electron main while one local build is admitted at a time. */
 export function createFirmwareBuildGateway(options: { platform?: NodeJS.Platform } = {}) {
-  const platform = options.platform ?? process.platform;
+  // Read on every call, so a test can pin that each entry point checks the platform itself.
+  const offered = (): boolean => ['darwin', 'linux'].includes(options.platform ?? process.platform);
   let selection: Selection | undefined;
   let epoch = 0;
   let lease: Lease | undefined;
@@ -104,7 +105,7 @@ export function createFirmwareBuildGateway(options: { platform?: NodeJS.Platform
   const cancelled = (candidate: Lease, controller: AbortController): boolean => !current(candidate) || controller.signal.aborted;
 
   const inspect = async (owner: number, candidate: string, toolchainInspect: Inspect): Promise<unknown> => {
-    if ((platform !== 'darwin' && platform !== 'linux') || !validOwner(owner)) throw unavailable();
+    if (!offered() || !validOwner(owner)) throw unavailable();
     const pending = acquire(owner);
     selection = undefined;
     try {
@@ -135,7 +136,7 @@ export function createFirmwareBuildGateway(options: { platform?: NodeJS.Platform
     firmwareBuild: Build,
   ): Promise<unknown | null> => {
     if (
-      (platform !== 'darwin' && platform !== 'linux') ||
+      !offered() ||
       !validOwner(owner) ||
       !isAllowedFirmwareBuildRequest(request) ||
       !selection ||
