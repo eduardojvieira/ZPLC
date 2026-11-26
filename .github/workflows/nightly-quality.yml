@@ -233,10 +233,12 @@ jobs:
           restore-keys: |
             bun-${{ runner.os }}-${{ runner.arch }}-
 
+      # The root workspace (zplc) is in the filter for its devDependencies: tools/ci/i18n-guard.ts, which IDE tests import
+      # (lessonCi.test.ts), resolves `typescript` from the root node_modules, and the two packages alone do not link it there.
       - name: Install dependencies
         run: |
           test -f bun.lock
-          bun install --filter '@zplc/ide' --filter '@zplc/compiler' --frozen-lockfile
+          bun install --filter zplc --filter '@zplc/ide' --filter '@zplc/compiler' --frozen-lockfile
 
       # IDE-025: the IDE build embeds the WebAssembly runtime, and its tests run on it, with clang and wasm-ld. Apple's clang
       # has no WebAssembly target: Homebrew's LLVM goes first on macOS.
