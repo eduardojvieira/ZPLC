@@ -3,10 +3,12 @@
  * scenes (and a selector switch, which no scene uses yet) as the real plant core publishes them.
  */
 import { afterEach, describe, expect, it } from 'bun:test';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { PartView, PlantCore, PlantSceneFile } from '../../contracts';
 import { controlStation } from '../controlStations';
 import { createPlantCore } from '../../core/plantCore';
-import { modelBounds, partModel, pieceExtent } from './index';
+import { modelBounds, partModel, pieceExtent, rotate } from './index';
 import { beltToSensor, bottom, slot, top } from './models.fixtures';
 import { EMERGENCY_STOP, isStand, OPERATOR, POTENTIOMETER, PUSH_BUTTON } from './operator';
 
@@ -329,5 +331,32 @@ describe('numeric display model (VIS-014, F5)', () => {
     expect(body.at[0] + pieceExtent(body)[0]).toBeGreaterThan(0.4);
     expect(bottom(slot(a, 'station-plate'))).toBeCloseTo(-0.5, 9);
     expect(top(body)).toBeCloseTo(bottom(slot(a, 'enclosure')), 9);
+  });
+});
+
+describe('operator devices in their scenes (C10)', () => {
+  it('C10 in tank-level-control, timed-tank and stacker-crane-warehouse every operator device stands beside the plant', async () => {
+    // The planar box of a part in the world, from its model's bounds turned by its pose.
+    const planar = (v: PartView, parts: readonly PartView[]) => {
+      const b = modelBounds(v, parts)!;
+      const corners = [b.min, b.max].flatMap((x) => [b.min, b.max].map((z) => rotate(v.pose.q, [x[0], 0, z[2]])));
+      const xs = corners.map((c) => c[0] + v.pose.p[0]);
+      const zs = corners.map((c) => c[2] + v.pose.p[2]);
+      return { x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };
+    };
+    const gap = (a: ReturnType<typeof planar>, b: ReturnType<typeof planar>) =>
+      Math.hypot(Math.max(0, a.x0 - b.x1, b.x0 - a.x1), Math.max(0, a.z0 - b.z1, b.z0 - a.z1));
+    const far: string[] = [];
+    for (const id of ['tank-level-control', 'timed-tank', 'stacker-crane-warehouse']) {
+      const scene = JSON.parse(readFileSync(join(import.meta.dir, '../../../../plant-scenes', id, 'scene.json'), 'utf8')) as PlantSceneFile;
+      const parts = (await coreOf(scene)).snapshot().parts;
+      const plantParts = parts.filter((p) => !Object.hasOwn(OPERATOR, p.part)).map((p) => planar(p, parts));
+      for (const control of parts.filter((p) => Object.hasOwn(OPERATOR, p.part))) {
+        const nearest = Math.min(...plantParts.map((b) => gap(planar(control, parts), b)));
+        // Beside: within 0.4 m of the plant, and not on it.
+        if (!(nearest > 0 && nearest <= 0.4)) far.push(`${id} ${control.id} ${nearest.toFixed(2)} m`);
+      }
+    }
+    expect(far).toEqual([]);
   });
 });

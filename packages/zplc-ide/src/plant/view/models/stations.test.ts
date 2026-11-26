@@ -4,9 +4,13 @@
  */
 import { afterEach, describe, expect, it } from 'bun:test';
 import type { PartView, PlantCore, PlantSceneFile, ScenePart, Vec3 } from '../../contracts';
+import warehouse from '../../../../plant-scenes/stacker-crane-warehouse/scene.json';
+import { TOKENS } from '../../../theme/tokens';
 import { createPlantCore } from '../../core/plantCore';
+import { paletteFor } from '../displayModes';
+import { roleLook } from '../look';
 import { partModel, pieceExtent, rotate } from './index';
-import { bottom, slot } from './models.fixtures';
+import { bottom, slot, top } from './models.fixtures';
 import type { Piece } from './shared';
 import { STATIONS } from './stations';
 
@@ -133,7 +137,7 @@ describe('stacker crane models (VIS-014)', () => {
     };
     const rest = at(0, 0);
     expect(slot(rest.pieces, 'carriage').role).toBe('housing');
-    expect(slotsOf(rest.pieces, 'fork').every((p) => p.role === 'steel')).toBe(true);
+    expect(slotsOf(rest.pieces, 'fork').every((p) => p.role === 'fork')).toBe(true);
     expect(slotsOf(rest.pieces, 'fork').length).toBeGreaterThanOrEqual(2);
     const high = at(0, 1.2);
     close(world(high.v, slot(high.pieces, 'carriage'))[1] - world(rest.v, slot(rest.pieces, 'carriage'))[1], 1.2);
@@ -148,10 +152,10 @@ describe('stacker crane models (VIS-014)', () => {
     expect(slot(at(0.5, 0).pieces, 'slide').visible).toBe(true);
   });
 
-  it('VIS-014 (S3-06) stacker rack has load beams, cell support crossbars, depth ties and diagonal bracing', async () => {
+  it('VIS-014 (S3-06) stacker rack has load beams, cell shelves, depth ties and diagonal bracing', async () => {
     const { views } = await crane();
     const pieces = partModel(views['stacker-rack']!)!;
-    expect(slotsOf(pieces, 'deck-').length).toBeGreaterThanOrEqual(config.columns * config.levels * 2);
+    expect(slotsOf(pieces, 'shelf-').length).toBe(config.columns * config.levels);
     expect(slotsOf(pieces, 'tie-').length).toBeGreaterThanOrEqual((config.columns + 1) * config.levels);
     expect(slotsOf(pieces, 'brace-').length).toBeGreaterThan(0);
   });
@@ -160,10 +164,10 @@ describe('stacker crane models (VIS-014)', () => {
     const { views } = await crane();
     const rack = views['stacker-rack']!;
     const mast = views['stacker-mast']!;
-    const rackTop = rack.pose.p[1] + rack.pose.size[1] / 2;
+    const rackTop = rack.pose.p[1] + Math.max(...partModel(rack)!.map(top));
     const rest = partModel(mast)!; // no scenePart, as renderer & catalogue call it
     const mastCol = slot(rest, 'mast');
-    expect(mastCol.at[1] + pieceExtent(mastCol)[1] + mast.pose.p[1]).toBeLessThanOrEqual(rackTop + 0.12);
+    expect(mastCol.at[1] + pieceExtent(mastCol)[1] + mast.pose.p[1]).toBeLessThanOrEqual(rackTop);
     expect(slot(rest, 'mast-b').role).toBe('painted');
     expect(slot(rest, 'mast-head').role).toBe('housing');
     expect(slot(rest, 'drive-aisle').role).toBe('painted');
@@ -404,5 +408,50 @@ describe('machining centre models (VIS-014)', () => {
       expect(pieces.every((p) => p.visible)).toBe(true);
     }
     expect(doors.length).toBe(2);
+  });
+});
+
+describe('stacker crane, rack and fork (C10)', () => {
+  it('C10 in stacker-crane-warehouse the mast stands within the rack and is no taller than it', async () => {
+    const core = await createPlantCore(warehouse as unknown as PlantSceneFile);
+    cores.push(core);
+    const parts = core.snapshot().parts;
+    const rack = parts.find((p) => p.part === 'stacker-rack')!;
+    const mast = parts.find((p) => p.part === 'stacker-mast')!;
+    const rackPieces = partModel(rack)!; // the renderer finds no scene part for the mast and rack views
+    const mastPieces = partModel(mast)!;
+    const highest = (v: PartView, pieces: readonly Piece[]) => Math.max(...pieces.map((p) => world(v, p)[1] + pieceExtent(p)[1]));
+    expect(highest(mast, mastPieces)).toBeLessThanOrEqual(highest(rack, rackPieces) + 1e-9);
+    const [rx0, rz0, rx1, rz1] = footprint(rack, rackPieces, ['']);
+    const [mx0, mz0, mx1, mz1] = footprint(mast, mastPieces, ['mast']);
+    expect({ x: mx0! >= rx0! && mx1! <= rx1!, z: mz0! >= rz0! && mz1! <= rz1! }).toEqual({ x: true, z: true });
+  });
+
+  it('C10 every cell of the rack has a shelf that carries a box under it, below the lowest pass of the fork', async () => {
+    const { views } = await crane();
+    const pieces = partModel(views['stacker-rack']!)!;
+    for (let c = 1; c <= config.columns; c++)
+      for (let l = 1; l <= config.levels; l++) {
+        const shelf = slot(pieces, `shelf-${c}-${l}`);
+        const [a, b] = [slot(pieces, `cell-${c}-${l}-a`), slot(pieces, `cell-${c}-${l}-b`)];
+        const e = pieceExtent(shelf);
+        // Across both rails, and deep enough for the 0.4 m box.
+        expect(shelf.at[0] - e[0]).toBeLessThanOrEqual(a.at[0] - pieceExtent(a)[0] + 1e-9);
+        expect(shelf.at[0] + e[0]).toBeGreaterThanOrEqual(b.at[0] + pieceExtent(b)[0] - 1e-9);
+        expect(2 * e[2]).toBeGreaterThanOrEqual(0.4);
+        // The fork passes 0.03 m under the rail tops and is 0.04 m thick: the shelf stays under it.
+        expect(top(shelf)).toBeLessThanOrEqual(top(a) - 0.07 + 1e-9);
+      }
+  });
+
+  it('C10 the fork has its own colour, the teal of the design tokens, apart from the carriage and the steel', async () => {
+    const { views } = await crane();
+    const pieces = partModel(views['stacker-crane']!)!;
+    const palette = paletteFor({ mode: 'light', reducedMotion: false });
+    const colour = (s: string) => roleLook(slot(pieces, s).role, 'stacker-crane', palette).colour;
+    const teal = parseInt(TOKENS.find((t) => t.name === '--ramp-teal-300')!.light.slice(1), 16);
+    expect(colour('fork-a')).toBe(teal);
+    expect(colour('fork-b')).toBe(teal);
+    for (const other of ['carriage', 'roller-0-0-0', 'tine-rail-a']) expect(colour(other)).not.toBe(teal);
   });
 });

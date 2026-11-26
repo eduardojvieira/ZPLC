@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { gripperDecor, snapshotBounds } from '../../src/plant/view/geometry';
 import { MODELS, partModel } from '../../src/plant/view/models';
+import { pairPercent, rasterize, worldBoxes } from '../../src/plant/view/models/raster.fixtures';
 import { CATALOGUE, catalogueCamera, catalogueKindCells, catalogueView, catalogueViews, ITEMS, unionBounds } from './catalogueStates';
 
 const MACHINES = {
@@ -114,4 +115,30 @@ describe('the catalogue sheet', () => {
     );
     expect(new Set(bodies).size).toBe(kinds.length);
   });
+
+  // C10 (D-33): the reviewer's pair measure, the share of a 300 by 225 cell that changes between two states of one part, here on a flat
+  // ray cast of the pieces by role (raster.fixtures.ts). It reads a little under the reviewer's frames (pick-place 0.22 % for their
+  // 0.31 %), so holding a pair to 0.31 % here holds it to at least the pick-place pair there.
+  const PICK_PLACE_BAR = 0.31;
+  const pair = async (id: string, a: string, b: string): Promise<number> => {
+    const cells = await catalogueKindCells(
+      CATALOGUE.find((k) => k.id === id)!,
+      4 / 3,
+    );
+    const frame = (label: string) => {
+      const cell = cells.find((c) => c.label === `${id}: ${label}`)!;
+      return rasterize(worldBoxes(cell.snapshot.parts), cell.camera);
+    };
+    return pairPercent(frame(a), frame(b));
+  };
+
+  it('C10 a gantry that grips differs from one that is open at least as much as the pick-place pair does', async () => {
+    const pickPlace = await pair('pick-place', 'moved, open', 'moved, gripping');
+    const gantry = await pair('gantry', 'moved on X, Y, Z', 'moved, gripping');
+    expect({ gantry: gantry >= PICK_PLACE_BAR, pickPlace: gantry >= pickPlace }).toEqual({ gantry: true, pickPlace: true });
+  }, 60000);
+
+  it('C10 the stacker crane fork at the centre and out to the left differ by more than the pick-place bar', async () => {
+    expect(await pair('stacker-crane', 'fork centre', 'fork left')).toBeGreaterThan(PICK_PLACE_BAR);
+  }, 60000);
 });
