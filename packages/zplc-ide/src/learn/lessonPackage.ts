@@ -671,8 +671,10 @@ export function walkReading(blocks: readonly ReadingBlock[]): ReadingWalk {
   const found: ReadingWalk = { directives: [], images: [], alts: {} };
   const visit = (block: ReadingBlock): void => {
     if (block.type === 'directive') found.directives.push(block.directive);
-    else if (block.type === 'image') (found.images.push(block.src), (found.alts[block.src] = block.alt));
-    else if (block.type === 'callout') block.children.forEach(visit);
+    else if (block.type === 'image') {
+      found.images.push(block.src);
+      found.alts[block.src] = block.alt;
+    } else if (block.type === 'callout') block.children.forEach(visit);
     else if (block.type === 'list') block.items.forEach((item) => item.forEach(visit));
   };
   blocks.forEach(visit);

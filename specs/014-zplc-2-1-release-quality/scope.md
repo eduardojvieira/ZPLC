@@ -29,7 +29,7 @@ Each change that closes or adds an item updates this list in the same change (FR
 | Spec 012 coverage, CRS-009, LNK-016, LNK-017 | 012 CRS-009, LNK-016, LNK-017 | waiting | HIL bench |
 | M6-V7 evidence run, local seam | 012 LNK-014, LNK-015; plan-m6 V7 | waiting | owner: announces the quiet window |
 | HIL BENCH-2.1 on ESP32-S3 and Pico; gate 6 records before publishing (bench sheet and tmux session script ready) | 012 LNK-007, LNK-016, LNK-017; plan-m6 E1 | waiting | owner: at the bench, types the commands |
-| Hosted CI ci.yml: green on f0bccfdc; fb73c77f red (shard 3 store leak, journey 47 save race), both fixed (27f00284, 2b1c6dfd); 45674898020 on 2b1c6dfd failed on journeys 47 and 63; head 9bc3b14a (27 commits ahead) not yet run | none | in progress | fix journeys 47 and 63, then run ci.yml on head |
+| Hosted CI ci.yml: green on f0bccfdc; fb73c77f red (shard 3 store leak, journey 47 save race), both fixed (27f00284, 2b1c6dfd); 45674898020 on 2b1c6dfd failed on journeys 47 and 63, both fixed (projectSources immediate structural indexing + journey 63 board section); rerun dispatched on head | none | in progress | the rerun on head |
 | Nightly on hosted runners (answer 10): 21 scene hashes equal to Linux on win32 and darwin (45636849073) | 012 SCN-004 | done (49e94ade) | none |
 | Windows: native simulator saves a program twice; fix proven on Windows runner (nightly 45664343548, 0 occurrences of commit failed); no 2.0.2, ships in 2.1.0 only (L433) | none | done (b13cf917) | none |
 | Windows and macOS test portability: groups B, C, D, E, G, H, I, J and the macOS FBD selection merged; F (file modes) by an icacls ACL assertion measured on the Windows runner first | none | in progress | nightly rerun; the F measurement |
