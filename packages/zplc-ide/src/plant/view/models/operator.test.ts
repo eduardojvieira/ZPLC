@@ -8,7 +8,10 @@ import { join } from 'node:path';
 import type { PartView, PlantCore, PlantSceneFile } from '../../contracts';
 import { controlStation } from '../controlStations';
 import { createPlantCore } from '../../core/plantCore';
+import { cameraPosition, firstViewCamera, fitCamera } from '../camera';
+import { snapshotBounds } from '../geometry';
 import { modelBounds, partModel, pieceExtent, rotate } from './index';
+import { rasterize, worldBoxes } from './raster.fixtures';
 import { beltToSensor, bottom, slot, top } from './models.fixtures';
 import { EMERGENCY_STOP, isStand, OPERATOR, POTENTIOMETER, PUSH_BUTTON } from './operator';
 
@@ -358,5 +361,27 @@ describe('operator devices in their scenes (C10)', () => {
       }
     }
     expect(far).toEqual([]);
+  });
+
+  it('C10 in the opening view of stacker-crane-warehouse no operator device stands in front of the infeed or the outfeed belt', async () => {
+    const scene = JSON.parse(
+      readFileSync(join(import.meta.dir, '../../../../plant-scenes/stacker-crane-warehouse/scene.json'), 'utf8'),
+    ) as PlantSceneFile;
+    const snapshot = (await coreOf(scene)).snapshot();
+    const fit = fitCamera(firstViewCamera(scene.cameras[0]!), snapshotBounds(snapshot)!, 16 / 9);
+    const camera = { position: cameraPosition(fit), target: fit.target };
+    const parts = snapshot.parts;
+    const context = (v: PartView) => ({ travel: 0, station: controlStation(v, parts) });
+    const cell = { w: 640, h: 360 };
+    const frame = (views: PartView[]) => {
+      const depth = new Float64Array(cell.w * cell.h);
+      return { pixels: rasterize(worldBoxes(views, context), camera, depth, cell), depth };
+    };
+    const belts = frame(parts.filter((p) => p.part === 'belt'));
+    const devices = frame(parts.filter((p) => Object.hasOwn(OPERATOR, p.part)));
+    let inFront = 0;
+    for (let i = 0; i < belts.pixels.length; i++)
+      if (belts.pixels[i]! >= 0 && devices.pixels[i]! >= 0 && devices.depth[i]! < belts.depth[i]!) inFront++;
+    expect(inFront).toBe(0);
   });
 });

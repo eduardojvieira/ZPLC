@@ -8,6 +8,7 @@ import warehouse from '../../../../plant-scenes/stacker-crane-warehouse/scene.js
 import { TOKENS } from '../../../theme/tokens';
 import { createPlantCore } from '../../core/plantCore';
 import { paletteFor } from '../displayModes';
+import { controlStation } from '../controlStations';
 import { roleLook } from '../look';
 import { partModel, pieceExtent, rotate } from './index';
 import { bottom, slot, top } from './models.fixtures';
@@ -412,19 +413,69 @@ describe('machining centre models (VIS-014)', () => {
 });
 
 describe('stacker crane, rack and fork (C10)', () => {
-  it('C10 in stacker-crane-warehouse the mast stands within the rack and is no taller than it', async () => {
+  it('C10 in stacker-crane-warehouse the mast stands between two upright frames of the rack all along the aisle, no taller than it', async () => {
     const core = await createPlantCore(warehouse as unknown as PlantSceneFile);
     cores.push(core);
     const parts = core.snapshot().parts;
     const rack = parts.find((p) => p.part === 'stacker-rack')!;
     const mast = parts.find((p) => p.part === 'stacker-mast')!;
     const rackPieces = partModel(rack)!; // the renderer finds no scene part for the mast and rack views
-    const mastPieces = partModel(mast)!;
     const highest = (v: PartView, pieces: readonly Piece[]) => Math.max(...pieces.map((p) => world(v, p)[1] + pieceExtent(p)[1]));
-    expect(highest(mast, mastPieces)).toBeLessThanOrEqual(highest(rack, rackPieces) + 1e-9);
-    const [rx0, rz0, rx1, rz1] = footprint(rack, rackPieces, ['']);
-    const [mx0, mz0, mx1, mz1] = footprint(mast, mastPieces, ['mast']);
-    expect({ x: mx0! >= rx0! && mx1! <= rx1!, z: mz0! >= rz0! && mz1! <= rz1! }).toEqual({ x: true, z: true });
+    expect(highest(mast, partModel(mast)!)).toBeCloseTo(highest(rack, rackPieces), 9);
+    // The upright posts of the rack in the world, as x and z extents (not the floor bed or ties).
+    const posts = rackPieces
+      .filter((p) => p.slot.startsWith('upright-'))
+      .map((p) => footprint(rack, [p], [p.slot]))
+      .map(([x0, z0, x1, z1]) => ({ x0: x0!, z0: z0!, x1: x1!, z1: z1! }));
+    // A frame: posts at one place along the aisle on both sides of the mast's line.
+    const frameXs = [...new Set(posts.map((p) => Math.round(((p.x0 + p.x1) / 2) * 1e4) / 1e4))];
+    const [, mz0, , mz1] = footprint(mast, partModel(mast)!, ['mast']);
+    const frames = frameXs.filter((x) => {
+      const at = posts.filter((p) => Math.abs((p.x0 + p.x1) / 2 - x) < 1e-3);
+      return at.some((p) => p.z1 <= mz0!) && at.some((p) => p.z0 >= mz1!);
+    });
+    const columns = warehouse.parts[0]!.config.columns as number;
+    const where: string[] = [];
+    for (let bay = 0; bay <= columns; bay++) {
+      const v = mastAt(mast, bay);
+      const [x0, z0, x1, z1] = footprint(v, partModel(v)!, ['mast']);
+      const before = frames.some((x) => x < x0!);
+      const after = frames.some((x) => x > x1!);
+      // Within the rack's depth: the posts reach past the mast's columns on both sides across the aisle.
+      const deep = Math.min(...posts.map((p) => p.z0)) <= z0! && Math.max(...posts.map((p) => p.z1)) >= z1!;
+      if (!(before && after && deep)) where.push(`bay ${bay}: frame before ${before}, after ${after}, within depth ${deep}`);
+    }
+    expect(where).toEqual([]);
+  });
+
+  it('C10 no operator device of stacker-crane-warehouse meets the crane, its mast, carriage or fork anywhere along their travel', async () => {
+    const core = await createPlantCore(warehouse as unknown as PlantSceneFile);
+    cores.push(core);
+    const parts = core.snapshot().parts;
+    const box3 = (v: PartView, p: Piece) => {
+      const c = world(v, p);
+      const e = pieceExtent(p);
+      return { min: [c[0] - e[0], c[1] - e[1], c[2] - e[2]], max: [c[0] + e[0], c[1] + e[1], c[2] + e[2]] };
+    };
+    const devices = parts
+      .filter((p) => ['push-button', 'stack-light', 'emergency-stop', 'selector-switch', 'indicator-light'].includes(p.part))
+      .flatMap((v) => partModel(v, { travel: 0, station: controlStation(v, parts) })!.map((p) => ({ id: v.id, ...box3(v, p) })));
+    expect(devices.length).toBeGreaterThan(0);
+    const mast = parts.find((p) => p.part === 'stacker-mast')!;
+    const crane = parts.find((p) => p.part === 'stacker-crane')!;
+    const { columns, levels } = warehouse.parts[0]!.config as { columns: number; levels: number };
+    const hits = new Set<string>();
+    for (let dx = 0; dx <= columns + 1e-9; dx += 0.25)
+      for (let l = 0; l <= levels; l++)
+        for (const raise of [0, 0.06])
+          for (const f of [-1, -0.5, 0, 0.5, 1]) {
+            const m = mastAt(mast, dx);
+            const c = craneAt(mastAt(crane, dx), f, l * config.levelPitchM + raise);
+            const moving = [...partModel(m)!.map((p) => box3(m, p)), ...partModel(c)!.map((p) => box3(c, p))];
+            for (const d of devices)
+              for (const b of moving) if ([0, 1, 2].every((i) => d.min[i]! < b.max[i]! && d.max[i]! > b.min[i]!)) hits.add(d.id);
+          }
+    expect([...hits]).toEqual([]);
   });
 
   it('C10 every cell of the rack has a shelf that carries a box under it, below the lowest pass of the fork', async () => {
