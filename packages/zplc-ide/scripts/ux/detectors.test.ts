@@ -28,8 +28,10 @@ function element(overrides: Partial<ElementMeasure> = {}): ElementMeasure {
     control: false,
     disabled: false,
     focusRing: null,
-    inScroller: false,
     blocked: null,
+    clip: { x: 0, y: 0, width: 1440, height: 900 },
+    modal: false,
+    field: null,
     ...overrides,
   };
 }
@@ -52,7 +54,17 @@ const clean = page(
     button(10, 100),
     button(100, 100),
     button(1350, 860),
-    button(-500, 100, { inScroller: true }),
+    // scrolled out of its list: the list's padding box is all that shows of it
+    button(-500, 100, { clip: { x: 0, y: 0, width: 300, height: 900 } }),
+    element({
+      name: 'select',
+      text: '',
+      control: true,
+      focusRing: true,
+      rect: { x: 400, y: 100, width: 120, height: 24 },
+      client: { width: 120, height: 24 },
+      field: { textWidth: 82, paddingLeft: 8, paddingRight: 28, arrow: 20 },
+    }),
     button(200, 100, { text: 'Run', focusRing: null }),
     element({ name: 'button.disabled', text: 'Deploy', control: true, disabled: true, color: [180, 180, 180, 1], focusRing: false }),
   ],
@@ -89,7 +101,8 @@ describe('the measured defects of a capture (UXV-004)', () => {
         'scroll: div',
       ],
     });
-    expect(detectors.textOutOfBox!(found, catalogs).map((d) => d.kind)).toEqual(['clip', 'spill', 'word', 'control', 'scroll']);
+    // a field's text is judged by the field detector, from the measures of the field
+    expect(detectors.textOutOfBox!(found, catalogs).map((d) => d.kind)).toEqual(['clip', 'spill', 'word', 'scroll']);
     expect(detectors.textOutOfBox!(clean, catalogs)).toEqual([]);
   });
 
@@ -174,5 +187,61 @@ describe('the measured defects of a capture (UXV-004)', () => {
     expect(detectors.sceneFraming!(cut, catalogs).map((d) => d.kind)).toEqual(['scene-framing']);
     expect(detectors.sceneFraming!(page([], { scene: 'unmeasured' }), catalogs)).toEqual([]);
     expect(detectors.sceneFraming!(clean, catalogs)).toEqual([]);
+  });
+
+  test('UXV-004 overlap compares only what shows: the part a scroller, the window or a modal leaves visible', () => {
+    // a toolbox button scrolled under the tab strip: its scroller shows nothing of it where it crosses the strip
+    const scrolled = page([button(10, 100), button(20, 110, { clip: { x: 0, y: 130, width: 300, height: 500 } })]);
+    expect(detectors.overlap!(scrolled, catalogs)).toEqual([]);
+    // two controls below the fold
+    expect(detectors.overlap!(page([button(10, 950), button(20, 960)]), catalogs)).toEqual([]);
+    // a row of an open modal and a control outside it
+    const modal = page([button(10, 100, { modal: true }), button(20, 110)]);
+    expect(detectors.overlap!(modal, catalogs)).toEqual([]);
+    // two visible controls of the same modal still overlap
+    const both = page([button(10, 100, { modal: true }), button(20, 110, { modal: true })]);
+    expect(detectors.overlap!(both, catalogs).map((d) => d.where)).toEqual(['button@10,100 / button@20,110']);
+  });
+
+  test('UXV-004 a control that its scroller hides is not outside the window', () => {
+    const hidden = page([button(1400, 100, { clip: { x: 1000, y: 0, width: 300, height: 900 } })]);
+    expect(detectors.offscreen!(hidden, catalogs)).toEqual([]);
+  });
+
+  test("UXV-004 a field's text wider than the room its padding and arrow leave is a defect", () => {
+    const field = (textWidth: number, overrides: Partial<ElementMeasure> = {}) =>
+      element({
+        name: 'select',
+        text: '',
+        control: true,
+        rect: { x: 400, y: 100, width: 120, height: 24 },
+        client: { width: 120, height: 24 },
+        field: { textWidth, paddingLeft: 8, paddingRight: 28, arrow: 20 },
+        ...overrides,
+      });
+    // the right padding holds the arrow: 120 - 8 - max(28, 20) = 84 px of room, 4 px of tolerance
+    expect(detectors.fieldText!(page([field(88)]), catalogs)).toEqual([]);
+    expect(detectors.fieldText!(page([field(89)]), catalogs).map((d) => [d.kind, d.where])).toEqual([['control', 'select']]);
+    // a field its scroller hides is not seen
+    expect(detectors.fieldText!(page([field(120, { clip: { x: 0, y: 0, width: 300, height: 900 } })]), catalogs)).toEqual([]);
+  });
+
+  test('UXV-004 a spill counts only the part that shows inside the nearest clipper and the window', () => {
+    const wide = (x: number, overrides: Partial<ElementMeasure> = {}) =>
+      element({
+        name: `span@${x}`,
+        rect: { x, y: 10, width: 100, height: 20 },
+        client: { width: 100, height: 20 },
+        scroll: { width: 300, height: 20 },
+        ...overrides,
+      });
+    expect(
+      detectors.cutOrSpilling!(page([wide(10, { clip: { x: 0, y: 0, width: 150, height: 900 } })]), catalogs).map((d) => d.kind),
+    ).toEqual(['spill']);
+    expect(detectors.cutOrSpilling!(page([wide(10, { clip: { x: 0, y: 0, width: 105, height: 900 } })]), catalogs)).toEqual([]);
+    expect(detectors.cutOrSpilling!(page([wide(1340)]), catalogs).map((d) => d.kind)).toEqual([]);
+    expect(detectors.cutOrSpilling!(page([wide(1300)]), catalogs).map((d) => d.detail)).toEqual([
+      '"Open project" spills 40 px past its box',
+    ]);
   });
 });

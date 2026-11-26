@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 
-import { plan } from './capture';
+import { markerOf, plan } from './capture';
 import { captureName, captureRecord, conditionName, conditionsFor, manifestText, parseScreens, type Condition } from './manifest';
 import type { Measurement } from './measurement';
 
@@ -33,8 +33,10 @@ function fixture(): Measurement {
         control: false,
         disabled: false,
         focusRing: null,
-        inScroller: false,
         blocked: null,
+        clip: { x: 0, y: 0, width: 1440, height: 900 },
+        modal: false,
+        field: null,
       },
       {
         name: 'button[data-ld-toolbox-item]',
@@ -55,8 +57,10 @@ function fixture(): Measurement {
         control: true,
         disabled: false,
         focusRing: false,
-        inScroller: false,
         blocked: 'covered',
+        clip: { x: 0, y: 0, width: 1440, height: 900 },
+        modal: false,
+        field: null,
       },
     ],
     textOutOfBox: ['spill: "Run" runs 12 px out of div'],
@@ -126,5 +130,32 @@ describe('the names and the manifest of a capture run (UXV-003)', () => {
     expect(unreached.find((entry) => entry.surface === 'installer.nsis')?.reason).toContain('outside Studio');
     expect(unreached.find((entry) => entry.surface === 'dialog.deploy')?.reason).toContain('online.deploy');
     expect(reached.length + unreached.length).toBe(surfaces.length);
+  });
+
+  test('UXV-003 the summary counts one defect per condition, selector and kind', () => {
+    const at = (name: string, condition: Condition) => captureRecord(name, 'shell.welcome', 'normal', condition, fixture());
+    const text = manifestText(
+      [
+        at('shell.welcome--normal--1440x900-light-en', base),
+        at('shell.commandBar--idle--1440x900-light-en', base),
+        at('shell.welcome--normal--1440x900-dark-en', { ...base, theme: 'dark' }),
+      ],
+      [],
+    );
+    const manifest = JSON.parse(text) as { defects: number; summary: { defects: number; byKind: Record<string, number> } };
+    expect(manifest.defects).toBe(9);
+    expect(manifest.summary).toEqual({ defects: 6, byKind: { contrast: 2, spill: 2, 'wrong-language': 2 } });
+  });
+
+  test('UXV-003 every surface the tool reaches has a marker that shows it is on screen, and the editors are reached', () => {
+    const { reached, unreached } = plan(surfaces);
+    for (const entry of reached)
+      expect({ surface: entry.surface.id, marker: typeof markerOf(entry.surface.id, 'en') }).toEqual({
+        surface: entry.surface.id,
+        marker: 'string',
+      });
+    for (const id of ['editor.ld', 'editor.st', 'editor.il', 'editor.fbd', 'editor.sfc'])
+      expect(reached.find((entry) => entry.surface.id === id)?.open).toBeTruthy();
+    expect(unreached.find((entry) => entry.surface === 'dialog.importArchive')?.reason).toContain('Welcome');
   });
 });

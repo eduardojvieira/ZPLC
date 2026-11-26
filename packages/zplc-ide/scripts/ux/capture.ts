@@ -57,6 +57,13 @@ interface Plan {
   surface: Surface;
   state: string;
   command: string | null;
+  /** A file of the fixture project to open instead of a command. */
+  open?: string;
+}
+
+/** The page expression that is true when the surface shows. */
+export function markerOf(_surface: string, _locale: 'en' | 'es'): string | null {
+  return null;
 }
 
 /** Which surfaces this tool reaches, how, and in which state; the others with the reason. */
