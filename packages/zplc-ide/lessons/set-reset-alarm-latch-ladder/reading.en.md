@@ -18,9 +18,15 @@ Recall that the program runs in scans: read inputs, solve the rungs from top to 
 
 In industry the same pair of coils holds a motor running state on a conveyor, remembers that a bottle jam happened, or keeps a tank-filling cycle in progress. The pattern is always the same: one event starts the memory, and a different event ends it. Because the memory is a plain variable, other rungs can read it with an ordinary contact, as they would read a button.
 
-## How it looks in Ladder
+## When both arrive together
 
-In ZPLC, a SET coil is drawn with an S inside the parentheses and a RESET coil with an R. The figure shows the call light: the first rung sets the lamp when the call button is pressed, and the second resets it when the cancel button is pressed.
+What if the call and the cancel are pressed in the same scan? Both rungs have power. The rungs run from top to bottom, so the SET coil writes `TRUE` first and the RESET coil writes `FALSE` afterwards. The rung that comes **last** decides. If you put the RESET rung first, the SET rung wins instead.
+
+This is the **priority** of the latch, and you choose it with the order of the rungs. An alarm that must not be lost usually gives priority to SET, so that a new fault is never cleared by an old acknowledge. A stop function usually gives priority to RESET. This is how the scan order of this runtime works. Other PLCs may order things differently, so check the manual of the PLC you use.
+
+## Worked example
+
+Go back to the call light of the hospital bed. A short press of CallButton must turn CallLamp on, and only CancelButton may turn it off. One rung sets the lamp, another resets it. In ZPLC, a SET coil is drawn with an S inside the parentheses and a RESET coil with an R. The figure shows the call light: the first rung sets the lamp when the call button is pressed, and the second resets it when the cancel button is pressed.
 
 ```ld-figure
 src: reading/call-light.ld.json
@@ -29,9 +35,7 @@ caption: One rung sets CallLamp, another rung resets it
 
 ZPLC accepts exactly one SET and one RESET for a variable, each in its own rung. Two rungs that both write the variable with coils in other ways are refused as multiple writers.
 
-## Try it
-
-Press the call button and release it. The lamp stays on. Then press the cancel button.
+Press Run, then press the call button and release it. The lamp stays on. Then press the cancel button.
 
 ```ld-try
 src: reading/call-light.ld.json
@@ -43,8 +47,6 @@ timing: [CallButton, CancelButton, CallLamp]
 caption: A short press of CallButton is enough; only CancelButton clears the lamp
 ```
 
-## What happens over time
-
 The diagram shows the call light over a few seconds. The call button is pressed briefly, but the lamp rises with it and falls only when the cancel button is pressed.
 
 ```timing
@@ -54,36 +56,38 @@ signals:
   - { name: CancelButton, edges: [1000, 1200] }
   - { name: CallLamp, edges: [100, 1000] }
 marks:
-  - { from: 100, to: 1000, label: remembered }
+  - { from: 100, to: 1000, label: 'SET – RESET' }
 caption: The lamp is remembered from the call until the cancel
 ```
 
-## When both arrive together
-
-What if the call and the cancel are pressed in the same scan? Both rungs have power. The rungs run from top to bottom, so the SET coil writes `TRUE` first and the RESET coil writes `FALSE` afterwards. The rung that comes **last** decides. If you put the RESET rung first, the SET rung wins instead.
-
-This is the **priority** of the latch, and you choose it with the order of the rungs. An alarm that must not be lost usually gives priority to SET, so that a new fault is never cleared by an old acknowledge. A stop function usually gives priority to RESET. This is how the scan order of this runtime works. Other PLCs may order things differently, so check the manual of the PLC you use.
-
 ## Common mistakes
-
-> [!WARNING]
-> A latched output survives a stop of the program only if the PLC retains it. In ZPLC, source `RETAIN` is not supported, so a latch starts from its initial value after a restart. Never rely on a latch to keep a dangerous machine in a safe state. An emergency stop is wired in hardware and never depends on the PLC program, and ZPLC makes no safety claim about any lesson.
 
 - Using a SET coil and forgetting the RESET. The variable then stays on forever.
 - Putting the SET and the RESET for the same variable in the wrong order and getting the opposite priority from the one you wanted.
 - Using a plain coil and a SET coil on the same variable. Choose one way of writing it.
 - Believing that a SET coil is a pulse. It is the opposite: it holds.
 
+> [!WARNING]
+> A latched output survives a stop of the program only if the PLC retains it. In ZPLC, source `RETAIN` is not supported, so a latch starts from its initial value after a restart. Never rely on a latch to keep a dangerous machine in a safe state. An emergency stop is wired in hardware and never depends on the PLC program.
+
 ## Check yourself
 
 ```quiz
 question: Rung 1 has a SET coil on Alarm driven by Fault. Rung 2 has a RESET coil on Alarm driven by Ack. Fault and Ack are both true in the same scan. What is Alarm after the scan?
 options:
-  - { text: 'FALSE, because the RESET rung comes last', correct: true, feedback: Right. Both coils act, and the one scanned last leaves its value. }
-  - { text: 'TRUE, because a fault is more important', feedback: Importance does not decide it. The order of the rungs does. }
-  - { text: 'It keeps its old value', feedback: Both coils have power, so the variable is written twice, and the last write remains. }
+  - { text: 'FALSE, because the RESET rung comes last', correct: true, feedback: 'Right. Both coils act, and the one scanned last leaves its value.' }
+  - { text: 'TRUE, because a fault is more important', feedback: 'Importance does not decide it. The order of the rungs does.' }
+  - { text: 'It keeps its old value', feedback: 'Both coils have power, so the variable is written twice, and the last write remains.' }
+```
+
+```quiz
+question: The call button is pressed for half a second and released. Nobody presses cancel. What is CallLamp ten minutes later?
+options:
+  - { text: 'TRUE, because the SET coil turned it on and nothing reset it', correct: true, feedback: 'Yes. Without power on either coil, the variable keeps the last value written.' }
+  - { text: 'FALSE, because the button was released', feedback: 'That is how a plain coil behaves. A SET coil leaves the variable on after its power is gone.' }
+  - { text: 'FALSE, after one scan', feedback: 'No rung writes FALSE until the cancel button is pressed, so the lamp stays on.' }
 ```
 
 ## What you will do in the practice
 
-In the practice the alarm outputs are plain coils driven by `Fault`, so they go off as soon as the fault is gone, which is the wrong behavior. You will replace them with SET and RESET coils and place the rungs so that, when `Fault` and `Ack` arrive together at {{t:50}} ms, `SetFirst` stays on and `ResetFirst` goes off.
+In the starting program the alarm outputs are plain coils driven by `Fault`, so they go off as soon as the fault is gone, which is the wrong behavior. You will make both alarms stay on after the fault is gone and go off only with `Ack`, and, when `Fault` and `Ack` arrive together at {{t:50}} ms, make `SetFirst` stay on and `ResetFirst` go off. Then press {{ui:learn.check}}.
