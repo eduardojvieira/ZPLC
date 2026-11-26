@@ -337,7 +337,8 @@ describe('aligner, chute and remover models (VIS-014)', () => {
         const marks = pieces.filter((p) => p.slot.startsWith('mark-'));
         expect(marks.length).toBe(8);
         expect(marks.every((p) => p.role === 'zone')).toBe(true);
-        expect(new Set(marks.map((p) => p.role))).toEqual(new Set(partModel(view('emitter', [0.1, 0.1, 0.1], [0, 0.5, 0], {}))!.map((p) => p.role)));
+        const emitter = partModel(view('emitter', [0.1, 0.1, 0.1], [0, 0.5, 0], {}))!;
+        expect(new Set(marks.map((p) => p.role))).toEqual(new Set(emitter.map((p) => p.role)));
         // Recessed painted walls sit inside the outer boundary of the slotted posts.
         for (const wall of pieces.filter((p) => p.slot.startsWith('wall-'))) {
           const horiz =
