@@ -403,6 +403,9 @@ const SCRIPT = [
   { atMs: 100, operate: { signal: 'start.pressed', value: true } },
   { atMs: 200, operate: { signal: 'start.pressed', value: false } },
 ];
+// The real-core runs take ~0.3 s idle and over 5 s on a loaded runner. On bun's default 5 s timeout, afterEach disposed
+// the cores while the paced session still ran, cutting its trace short: a hash mismatch that pacing did not cause.
+const REAL_CORE_TIMEOUT_MS = 120_000;
 
 describe('the lock-step session on the real plant core', () => {
   const cores: PlantCore[] = [];
@@ -445,9 +448,11 @@ describe('the lock-step session on the real plant core', () => {
     };
     const paced = await live(jitter);
     expect(plain.session.scans).toBe(SCANS);
+    // both runs ended paused after every scan, so a hash mismatch below can only come from pacing
+    expect([paced.session.state, paced.session.scans]).toEqual(['paused', SCANS]);
     expect(await paced.core.traceHash()).toBe(await plain.core.traceHash());
     expect(plain.core.facts()['count:eye']).toBeGreaterThan(0); // the scene did something: the belt ran and the box reached the eye
-  });
+  }, REAL_CORE_TIMEOUT_MS);
 
   it('PLT-017 live equals graded', async () => {
     const liveRun = await live();
@@ -471,5 +476,5 @@ describe('the lock-step session on the real plant core', () => {
     expect(await gradedCore.traceHash()).toBe(await liveRun.core.traceHash());
     expect(gradedCore.facts()).toEqual(liveRun.core.facts());
     expect(gradedRuntime.cycles()).toBe(liveRun.rt.cycles());
-  });
+  }, REAL_CORE_TIMEOUT_MS);
 });
