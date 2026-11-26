@@ -1185,6 +1185,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     <>
       <div
         role="toolbar"
+        data-command-bar
         aria-label={t('toolbar.label')}
         className={
           `h-12 bg-[var(--color-surface-800)] border-b border-[var(--color-surface-600)] flex items-center px-3 ` +

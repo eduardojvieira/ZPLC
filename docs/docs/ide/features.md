@@ -171,22 +171,23 @@ ZPLC keeps one list of commands, and every way to start a command reads it: the 
 - **Command palette.** Press `Ctrl+Shift+P` (`Cmd+Shift+P` on macOS), type a few letters, choose with the arrow keys and press Enter. With no letters it lists the commands. With letters it finds eight kinds of thing, in groups in this order: **Commands**, **Files**, **PLC objects**, **I/O points**, **Configuration editors**, **Lessons**, **Preferences** and **Scenes** (the `scene.json` and the `scenes/*.scene.json` of the open project folder). A group shows its best eight matches and a row such as **Show all 12 in Files** for the rest. Every command is in the palette, so each one is reachable from the keyboard even when it has no shortcut. A command that does not apply now, such as Deploy without a connection, is listed as not available and does not run.
 - **Shortcut reference.** Open **Help** > **Keyboard shortcuts**, or press `Ctrl+K` and then `Ctrl+S`, to see every command with its shortcut.
 
-| Shortcut                | Command                    |
-| ----------------------- | -------------------------- |
-| `Ctrl+S`                | Save                       |
-| `Ctrl+B`                | Compile the project        |
-| `F5`                    | Run, or resume when paused |
-| `Shift+F5`              | Stop                       |
-| `F6`                    | Pause                      |
-| `F10`                   | Step one cycle             |
-| `F8`                    | Reset the runtime          |
-| `Ctrl+Shift+P`          | Command palette            |
-| `Ctrl+,`                | Open preferences           |
-| `Ctrl+Alt+T`            | Run all tests              |
-| `F12`                   | Go to definition           |
-| `Shift+F12`             | Find all references        |
-| `Alt+Left`, `Alt+Right` | Go back, Go forward        |
-| `Ctrl+K`, then `Ctrl+S` | Keyboard shortcuts         |
+| Shortcut                | Command                         |
+| ----------------------- | ------------------------------- |
+| `Ctrl+S`                | Save                            |
+| `Ctrl+B`                | Compile the project             |
+| `F5`                    | Run, or resume when paused      |
+| `Shift+F5`              | Stop                            |
+| `F6`                    | Pause                           |
+| `F10`                   | Step one cycle                  |
+| `F8`                    | Reset the runtime               |
+| `Ctrl+Shift+P`          | Command palette                 |
+| `Ctrl+,`                | Open preferences                |
+| `Ctrl+Shift+T`          | Run all tests                   |
+| `Ctrl+Alt+C`            | Go to the command bar, and back |
+| `F12`                   | Go to definition                |
+| `Shift+F12`             | Find all references             |
+| `Alt+Left`, `Alt+Right` | Go back, Go forward             |
+| `Ctrl+K`, then `Ctrl+S` | Keyboard shortcuts              |
 
 `Cmd` replaces `Ctrl` on macOS. The shortcuts that act on a program (`F5`, `F6`, `F10`, `F8`, `Shift+F5`) leave a text field its own keys.
 

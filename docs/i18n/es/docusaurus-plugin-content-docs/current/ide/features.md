@@ -182,7 +182,8 @@ ZPLC mantiene una sola lista de comandos, y cada forma de iniciar un comando la 
 | `F8`                           | Reiniciar el runtime                  |
 | `Ctrl+Mayús+P`                 | Paleta de comandos                    |
 | `Ctrl+,`                       | Abrir las preferencias                |
-| `Ctrl+Alt+T`                   | Ejecutar todas las pruebas            |
+| `Ctrl+Mayús+T`                 | Ejecutar todas las pruebas            |
+| `Ctrl+Alt+C`                   | Ir a la barra de comandos y volver    |
 | `F12`                          | Ir a la definición                    |
 | `Mayús+F12`                    | Buscar todas las referencias          |
 | `Alt+Izquierda`, `Alt+Derecha` | Ir atrás, Ir adelante                 |

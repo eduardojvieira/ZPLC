@@ -59,7 +59,7 @@ export const journeysU2T4: Journey[] = [
       await openTests(app, project);
       await app.until('the tests in the list', async () => (await app.visible(css('[data-test-row]'))) || undefined);
       // the focus is on the rail, not in an editor: the shortcut is the registry's
-      await app.press('Ctrl+Alt+T');
+      await app.press('Ctrl+Shift+T');
       await app.until(
         'a test to have a result after the shortcut',
         async () => {
