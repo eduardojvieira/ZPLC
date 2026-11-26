@@ -4,7 +4,20 @@
  */
 import type { PartView } from '../../contracts';
 import { catalogue } from '../../core/catalogue';
-import { box, levellingLeg, MIN_STAND, piece, rod, rotate, slotted, type ModelContext, type ModelFamily, type Piece } from './shared';
+import type { Role } from '../look';
+import {
+  box,
+  LEVELLING_FOOT,
+  levellingLeg,
+  MIN_STAND,
+  piece,
+  rod,
+  rotate,
+  slotted,
+  type ModelContext,
+  type ModelFamily,
+  type Piece,
+} from './shared';
 
 const num = (v: unknown, fallback: number): number => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
 const clamp01 = (x: number): number => Math.min(1, Math.max(0, x));
@@ -55,14 +68,15 @@ function stopBladeModel(view: PartView): Piece[] {
   const surface = (1 - f) * (height + sink) - height / 2; // the belt surface in the blade's frame
   const floor = -view.pose.p[1];
   const bodyTop = surface - height - sink; // where the blade's bottom is when retracted: the cylinder stands still there
-  const length = Math.min(cylinder.length, Math.max(0.05, bodyTop - floor - 0.01));
-  const rodBottom = bodyTop - 0.05; // the rod runs up into the cylinder
+  const cylTop = Math.max(floor + 0.02, Math.min(-height / 2, Math.max(bodyTop, floor + 0.06)));
+  const length = Math.min(cylinder.length, Math.max(0.015, cylTop - floor - 0.005));
+  const rodBottom = Math.max(floor + 0.005, Math.min(cylTop - 0.01, bodyTop - 0.05)); // the rod runs up into the cylinder
   const rodTop = -height / 2;
-  const bracketY = bodyTop - 0.04;
+  const bracketY = Math.max(floor + section / 2, cylTop - Math.min(0.04, length * 0.7));
   const pieces: Piece[] = [
     piece('blade', box([thickness, height, width], 0.004), [0, 0, 0], 'steel'),
-    piece('rod', rod(rodRadius, rodTop - rodBottom, 'y'), [0, (rodTop + rodBottom) / 2, 0], 'steel'),
-    piece('cylinder', rod(cylinder.radius, length, 'y'), [0, bodyTop - length / 2, 0], 'housing'),
+    piece('rod', rod(rodRadius, Math.max(0.01, rodTop - rodBottom), 'y'), [0, (rodTop + rodBottom) / 2, 0], 'steel'),
+    piece('cylinder', rod(cylinder.radius, length, 'y'), [0, cylTop - length / 2, 0], 'housing'),
     piece('bracket', slotted(section, section, width + 2 * section, 'z'), [0, bracketY, 0], 'frame'),
   ];
   // Two posts hold the bracket up to the underside of the belt frame (the foot of a rail is about 0.12 under the surface).
@@ -154,28 +168,31 @@ function diverterArmModel(view: PartView): Piece[] {
 // sides. The core publishes the gap between the guides, and the rails follow it; the brackets stand still
 // ---------------------------------------------------------------------------------------------------------------------
 
-/** The plant core's guide is 0.05 thick and 0.15 high: a `strip` of rubber on the inner face, a rail of the rest, brackets under it. */
-export const ALIGNER = { thickness: 0.05, strip: 0.012, bracket: 0.03, bracketLength: 0.1 } as const;
+/**
+ * The plant core's guide is 0.05 thick and 0.15 high: a `strip` of rubber on the inner face, a rail of the rest, brackets and guide rods.
+ */
+export const ALIGNER = { thickness: 0.05, strip: 0.012, bracket: 0.03, bracketLength: 0.1, rodRadius: 0.01 } as const;
 
 function alignerModel(view: PartView): Piece[] {
-  const { thickness, strip, bracket, bracketLength } = ALIGNER;
+  const { thickness, strip, bracket, bracketLength, rodRadius } = ALIGNER;
   const [length, height, span] = view.pose.size;
   const width = span - 2 * thickness; // the belt width the guides sit on: open, their inner faces are this far apart
   const gap = Math.min(width, Math.max(0, num(view.state.gapM, width)));
   const railHeight = height - bracket; // the brackets take the lowest part of the guide's height
   const railY = bracket / 2;
+  const railZ = gap / 2 + strip + (thickness - strip) / 2;
+  const rodOut = width / 2 + bracketLength / 2 - 0.005;
+  const rodIn = Math.min(rodOut - 0.01, railZ);
+  const rodLength = rodOut - rodIn;
+  const rodZ = (rodIn + rodOut) / 2;
+  const rodY = -height / 2 + bracket; // straddles the fixed bracket top and the moving rail underside
   const pieces: Piece[] = [];
   for (const [side, sign] of [
     ['a', 1],
     ['b', -1],
   ] as const) {
     pieces.push(
-      piece(
-        `rail-${side}`,
-        slotted(thickness - strip, railHeight, length, 'x'),
-        [0, railY, sign * (gap / 2 + strip + (thickness - strip) / 2)],
-        'frame',
-      ),
+      piece(`rail-${side}`, slotted(thickness - strip, railHeight, length, 'x'), [0, railY, sign * railZ], 'frame'),
       piece(`strip-${side}`, box([length - 0.02, railHeight * 0.7, strip], 0.002), [0, railY, sign * (gap / 2 + strip / 2)], 'rubber'),
     );
     for (const [end, x] of [
@@ -189,6 +206,7 @@ function alignerModel(view: PartView): Piece[] {
           [x, -height / 2 + bracket / 2, sign * (width / 2)],
           'frame',
         ),
+        piece(`rod-${side}-${end}`, rod(rodRadius, rodLength, 'z'), [x, rodY, sign * rodZ], 'steel'),
       );
   }
   return pieces;
@@ -240,41 +258,154 @@ function chuteModel(view: PartView): Piece[] {
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Remover: an open-top collection bin of the part's declared size, painted walls and a housing floor, on four short feet that reach the
-// floor of the world
+// Remover: an open-top framed collection hopper of the part's declared size, slotted uprights & perimeter rails,
+// recessed ribbed painted walls, upper & lower steel hopper collar rims, housing floor, and levelling legs to the floor
 // ---------------------------------------------------------------------------------------------------------------------
 
-export const REMOVER = { wall: 0.02, foot: 0.05 } as const;
+export const REMOVER = {
+  post: 0.04,
+  rail: 0.03,
+  wall: 0.016,
+  rimHeight: 0.026,
+  rimWidth: 0.045,
+  collarHeight: 0.04,
+  footRise: 0.05,
+} as const;
+
+function perimeter(
+  prefix: string,
+  y: number,
+  h: number,
+  thickness: number,
+  xSpan: number,
+  zSpan: number,
+  xDist: number,
+  zDist: number,
+  role: Role,
+): Piece[] {
+  return [
+    piece(`${prefix}-n`, box([xSpan, h, thickness], 0.002), [0, y, -zDist], role),
+    piece(`${prefix}-s`, box([xSpan, h, thickness], 0.002), [0, y, zDist], role),
+    piece(`${prefix}-w`, box([thickness, h, zSpan], 0.002), [-xDist, y, 0], role),
+    piece(`${prefix}-e`, box([thickness, h, zSpan], 0.002), [xDist, y, 0], role),
+  ];
+}
 
 function removerModel(view: PartView): Piece[] {
-  const { wall, foot } = REMOVER;
   const [width, height, depth] = view.pose.size;
-  const base = -height / 2;
-  const wallHeight = height - wall;
-  const wallY = base + wall + wallHeight / 2;
+  const floor = -view.pose.p[1];
+  const top = height / 2;
+  const binBottom = Math.max(floor, -height / 2);
+  const reachDown = binBottom - floor;
+  const pad = Math.min(LEVELLING_FOOT.pad, width * 0.2, depth * 0.2);
+  const cx = Math.max(0, width / 2 - pad);
+  const cz = Math.max(0, depth / 2 - pad);
+  const footGap = reachDown > MIN_STAND ? 0 : Math.min(REMOVER.footRise, Math.max(0.03, (top - binBottom) * 0.15));
+  const frameBottom = binBottom + footGap;
+  const availH = Math.max(0.08, top - frameBottom);
+  const post = Math.min(REMOVER.post, cx > 0 ? cx : width * 0.2, cz > 0 ? cz : depth * 0.2);
+  const rail = Math.min(REMOVER.rail, availH * 0.15, post);
+  const rimH = Math.min(REMOVER.rimHeight, availH * 0.14);
+  const rimT = Math.min(REMOVER.rimWidth, width * 0.22, depth * 0.22);
+  const collarH = Math.min(REMOVER.collarHeight, availH * 0.2);
+  const cageTop = top - rimH;
+  const panelBottom = frameBottom + rail + collarH;
+  const panelTop = cageTop - rail;
+  const panelH = Math.max(0.01, panelTop - panelBottom);
+  const wallT = Math.min(REMOVER.wall, post * 0.5);
+  const recess = 0.006; // recessed inward from the slotted upright faces so the frame stands proud
+  const wallX = Math.max(0, 2 * cx - post);
+  const wallZ = Math.max(0, 2 * cz - post);
+  const panelY = (panelBottom + panelTop) / 2;
+  const collarY = frameBottom + rail + collarH / 2;
+  const rimY = top - rimH / 2;
+  const wallXPos = cx + post / 2 - recess - wallT / 2;
+  const wallZPos = cz + post / 2 - recess - wallT / 2;
+  const floorT = Math.min(0.02, rail);
   const pieces: Piece[] = [
-    piece('floor', box([width, wall, depth], 0.002), [0, base + wall / 2, 0], 'housing'),
-    piece('wall-n', box([width, wallHeight, wall], 0.002), [0, wallY, -(depth / 2 - wall / 2)], 'painted'),
-    piece('wall-s', box([width, wallHeight, wall], 0.002), [0, wallY, depth / 2 - wall / 2], 'painted'),
-    piece('wall-w', box([wall, wallHeight, depth - 2 * wall], 0.002), [-(width / 2 - wall / 2), wallY, 0], 'painted'),
-    piece('wall-e', box([wall, wallHeight, depth - 2 * wall], 0.002), [width / 2 - wall / 2, wallY, 0], 'painted'),
+    piece(
+      'floor',
+      box([Math.max(0.02, 2 * cx - rail), floorT, Math.max(0.02, 2 * cz - rail)], 0.002),
+      [0, frameBottom + floorT / 2, 0],
+      'housing',
+    ),
+    ...perimeter('rim', rimY, rimH, rimT, width, Math.max(0.01, depth - 2 * rimT), width / 2 - rimT / 2, depth / 2 - rimT / 2, 'steel'),
+    ...perimeter('wall', panelY, panelH, wallT, wallX, wallZ, wallXPos, wallZPos, 'painted'),
+    ...perimeter('collar', collarY, collarH, wallT + 0.006, wallX, wallZ, wallXPos, wallZPos, 'steel'),
   ];
-  const reachDown = base - -view.pose.p[1]; // from the bottom of the bin to the floor of the world
-  if (reachDown > 0.005)
-    for (const [i, sx, sz] of [
-      [0, -1, -1],
-      [1, 1, -1],
-      [2, -1, 1],
-      [3, 1, 1],
-    ] as const)
+  const ribT = 0.012;
+  const ribOut = 0.004;
+  for (const [side, sz] of [
+    ['n', -1],
+    ['s', 1],
+  ] as const)
+    for (const [k, rx] of (wallX >= 0.3 ? [-wallX * 0.25, wallX * 0.25] : [0]).entries())
       pieces.push(
-        piece(
-          `foot-${i}`,
-          box([foot, reachDown, foot], 0.002),
-          [sx * (width / 2 - foot), base - reachDown / 2, sz * (depth / 2 - foot)],
-          'rubber',
-        ),
+        piece(`rib-${side}-${k}`, box([ribT, panelH, wallT + ribOut], 0.001), [rx, panelY, sz * (wallZPos + ribOut / 2)], 'steel'),
       );
+  for (const [side, sx] of [
+    ['w', -1],
+    ['e', 1],
+  ] as const)
+    for (const [k, rz] of (wallZ >= 0.3 ? [-wallZ * 0.25, wallZ * 0.25] : [0]).entries())
+      pieces.push(
+        piece(`rib-${side}-${k}`, box([wallT + ribOut, panelH, ribT], 0.001), [sx * (wallXPos + ribOut / 2), panelY, rz], 'steel'),
+      );
+  if (wallX > 0.005)
+    for (const [tier, y] of [
+      ['top', cageTop - rail / 2],
+      ['bot', frameBottom + rail / 2],
+    ] as const)
+      for (const [side, z] of [
+        ['n', -cz],
+        ['s', cz],
+      ] as const)
+        pieces.push(piece(`rail-${tier}-${side}`, slotted(rail, rail, wallX, 'x'), [0, y, z], 'frame'));
+  if (wallZ > 0.005)
+    for (const [tier, y] of [
+      ['top', cageTop - rail / 2],
+      ['bot', frameBottom + rail / 2],
+    ] as const)
+      for (const [side, x] of [
+        ['w', -cx],
+        ['e', cx],
+      ] as const)
+        pieces.push(piece(`rail-${tier}-${side}`, slotted(rail, rail, wallZ, 'z'), [x, y, 0], 'frame'));
+  const legLen = frameBottom - floor;
+  for (const [i, sx, sz] of [
+    [0, -1, -1],
+    [1, 1, -1],
+    [2, -1, 1],
+    [3, 1, 1],
+  ] as const) {
+    pieces.push(
+      piece(`post-${i}`, slotted(post, post, cageTop - frameBottom, 'y'), [sx * cx, (cageTop + frameBottom) / 2, sz * cz], 'frame'),
+    );
+    if (legLen > 0.02) pieces.push(...levellingLeg(String(i), sx * cx, sz * cz, frameBottom, floor, post));
+    // The emitter's convention (S3-08): the same zone-coloured corner marks on the floor, so the two ends of a line read alike.
+    const { mark, bar, thickness } = EMITTER;
+    const [hx, hz] = [width / 2, depth / 2];
+    const markY = floor + 0.001 + thickness / 2;
+    pieces.push(
+      piece(`mark-${i}-x`, box([mark, thickness, bar], 0), [sx * (hx - mark / 2), markY, sz * (hz - bar / 2)], 'zone'),
+      piece(`mark-${i}-z`, box([bar, thickness, mark - bar], 0), [sx * (hx - bar / 2), markY, sz * (hz - bar - (mark - bar) / 2)], 'zone'),
+    );
+  }
+  if (legLen > 0.25) {
+    const braceY = floor + legLen * 0.35;
+    if (wallX > 0.005)
+      for (const [side, z] of [
+        ['n', -cz],
+        ['s', cz],
+      ] as const)
+        pieces.push(piece(`brace-${side}`, slotted(rail, rail, wallX, 'x'), [0, braceY, z], 'frame'));
+    if (wallZ > 0.005)
+      for (const [side, x] of [
+        ['w', -cx],
+        ['e', cx],
+      ] as const)
+        pieces.push(piece(`brace-${side}`, slotted(rail, rail, wallZ, 'z'), [x, braceY, 0], 'frame'));
+  }
   return pieces;
 }
 

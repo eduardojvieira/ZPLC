@@ -3,6 +3,7 @@ import type { BodyPose, PartView, PlantSceneFile, PlantSnapshot } from '../contr
 import {
   cameraFromPreset,
   cameraPosition,
+  firstViewCamera,
   fitCamera,
   FOV_DEG,
   orbitCamera,
@@ -576,7 +577,7 @@ export function createRenderer(
     return entry.material;
   };
 
-  let camState: CameraState = cameraFromPreset(scene.cameras[0] ?? { name: 'default', position: [6, 6, 8], target: [0, 0, 0] });
+  let camState: CameraState = firstViewCamera(scene.cameras[0] ?? { name: 'default', position: [6, 6, 8], target: [0, 0, 0] });
   let goal: CameraState | null = null; // a preset the camera is still easing toward
   // The first view and a resize show the whole scene (VIS-002) until a person moves the camera or chooses another named preset.
   let sceneBounds: Bounds | null = null;
@@ -1042,7 +1043,7 @@ export function createRenderer(
       if (preset) {
         // The first preset is the one the scene opens with, so it is fitted like the first view; the others keep their authored framing.
         autoFit = preset === scene.cameras[0];
-        goal = autoFit ? fitted(cameraFromPreset(preset)) : cameraFromPreset(preset);
+        goal = autoFit ? fitted(firstViewCamera(preset)) : cameraFromPreset(preset);
         if (!animate) camState = goal;
         dirty = true;
       }

@@ -25,10 +25,9 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { loadavg } from 'node:os';
 import { join, resolve } from 'node:path';
 import { trustedDevelopmentRendererUrl } from '../../electron/security';
-import type { BodyPose, PlantSnapshot, Vec3 } from '../../src/plant/contracts';
-import { fitCamera } from '../../src/plant/view/camera';
+import type { BodyPose, PlantSnapshot } from '../../src/plant/contracts';
 import { snapshotBounds } from '../../src/plant/view/geometry';
-import { CATALOGUE, catalogueViews, ITEMS } from './catalogueStates';
+import { CATALOGUE, catalogueCamera, catalogueKindCells, ITEMS } from './catalogueStates';
 import { assert, Cdp, drain, freePort, HOST, packageRoot, stop, waitFor, type OwnedProcess } from '../run-desktop-smoke';
 
 const flag = (name: string): string | undefined => {
@@ -248,15 +247,7 @@ async function conceptSheet(page: Cdp, dir: string): Promise<void> {
 
 /** One small frame of the catalogue: its camera frames the bounds of what is drawn, from the same direction for every cell. */
 const CELL = { width: 400, height: 300 } as const;
-function catalogueCell(snapshot: PlantSnapshot) {
-  const bounds = snapshotBounds(snapshot)!;
-  const fit = fitCamera({ target: [0, 0, 0], azimuthDeg: 35, polarDeg: 62, distance: 1 }, bounds, CELL.width / CELL.height);
-  const [az, po] = [(fit.azimuthDeg * Math.PI) / 180, (fit.polarDeg * Math.PI) / 180];
-  const position = [0, 1, 2].map(
-    (i) => fit.target[i]! + fit.distance * [Math.sin(po) * Math.sin(az), Math.cos(po), Math.sin(po) * Math.cos(az)][i]!,
-  ) as unknown as Vec3;
-  return { snapshot, camera: { position, target: fit.target } };
-}
+const CELL_ASPECT = CELL.width / CELL.height;
 const emptySnapshot = (parts: PlantSnapshot['parts'], items: PlantSnapshot['items']): PlantSnapshot => ({
   timeMs: 0,
   scans: 0,
@@ -267,23 +258,17 @@ const emptySnapshot = (parts: PlantSnapshot['parts'], items: PlantSnapshot['item
 
 /**
  * The catalogue (plan-vis C8). A stage of belt-to-sensor stays open per display mode and quality level and is handed one snapshot per
- * cell: the part views of a kind in a state, alone on the floor (a machine whole), or one item. The frame is what the
- * product's renderer draws from it.
+ * cell: the part views of a kind in a state, alone on the floor (a machine whole), or one item. Every state cell of one kind uses
+ * the same camera fitted to the union of all its states (S3-11).
  */
 async function catalogue(page: Cdp): Promise<void> {
   const cells = [
-    ...(await Promise.all(
-      CATALOGUE.flatMap((kind) =>
-        kind.states.map(async (state) => ({
-          label: `${kind.id}: ${state.label}`,
-          ...catalogueCell(emptySnapshot(await catalogueViews(kind, state), [])),
-        })),
-      ),
-    )),
+    ...(await Promise.all(CATALOGUE.map((kind) => catalogueKindCells(kind, CELL_ASPECT)))).flat(),
     ...ITEMS.map((item) => {
       const [, h] = item.pose.size;
       const pose: BodyPose = { id: item.id, part: 'box', q: [0, 0, 0, 1], p: [0, h / 2, 0], ...item.pose };
-      return { label: `item: ${item.label}`, ...catalogueCell(emptySnapshot([], [pose])) };
+      const snapshot = emptySnapshot([], [pose]);
+      return { label: `item: ${item.label}`, snapshot, camera: catalogueCamera(snapshotBounds(snapshot)!, CELL_ASPECT) };
     }),
   ];
   for (const mode of MODES)
