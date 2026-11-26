@@ -4,7 +4,15 @@
  */
 import { describe, expect, it } from 'bun:test';
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { compileMultiTaskProject, type DebugMap } from '../compiler';
+import { FBD_VALUE_BLOCKS, fbdPaletteBlocks } from '../editors/fbd/palette';
+import { getDefaultPorts } from '../models/fbd';
+import { LD_FUNCTIONS, ldPaletteFunctionBlocks } from '../models/ldSupport';
+import { DIRECTIONS, TYPES } from '../plants/plantMap';
+import { SFC_ACTION_TYPES } from '../transpiler/sfcToST';
+import { fbdNeedsInstance } from '../transpiler/fbdToST';
 import { LD_COIL_TYPES, LD_CONTACT_TYPES } from '../models/ldSupport';
 import { FBD_SPECIAL_BLOCKS } from '../models/fbd';
 import { SFC_QUALIFIERS } from '../models/sfc';
@@ -53,8 +61,17 @@ function schemaProblems(schema: JsonSchema, value: unknown, path = '$'): string[
   }
   if ('const' in schema && value !== schema.const) out.push(`${path}: expected ${JSON.stringify(schema.const)}`);
   if (schema.enum && !schema.enum.includes(value as never)) out.push(`${path}: ${JSON.stringify(value)} is not in enum`);
+  if (typeof value === 'number') {
+    if (schema.minimum !== undefined && value < schema.minimum) out.push(`${path}: below ${schema.minimum}`);
+    if (schema.maximum !== undefined && value > schema.maximum) out.push(`${path}: above ${schema.maximum}`);
+  }
+  if (typeof value === 'string') {
+    if (schema.minLength !== undefined && value.length < schema.minLength) out.push(`${path}: shorter than ${schema.minLength}`);
+    if (schema.pattern !== undefined && !new RegExp(schema.pattern, 'u').test(value)) out.push(`${path}: does not match ${schema.pattern}`);
+  }
   if (Array.isArray(value)) {
     if (schema.minItems !== undefined && value.length < schema.minItems) out.push(`${path}: fewer than ${schema.minItems} items`);
+    if (schema.maxItems !== undefined && value.length > schema.maxItems) out.push(`${path}: more than ${schema.maxItems} items`);
     if (schema.items) value.forEach((item, index) => out.push(...schemaProblems(schema.items!, item, `${path}[${index}]`)));
   } else if (value !== null && typeof value === 'object') {
     const record = value as Record<string, unknown>;
@@ -213,5 +230,97 @@ describe('AIX-013 the formats read their closed sets from the code that owns the
     expect(heads(integerFacts!)).toEqual([...INTEGER_FACTS].sort());
     expect(heads(realFacts!)).toEqual([...REAL_FACTS].sort());
     expect(heads(booleanFacts!)).toEqual([...BOOLEAN_FACTS].sort());
+  });
+});
+
+describe('AIX-013 the format schemas accept every shipped file and list only what compiles', () => {
+  const packageRoot = join(import.meta.dir, '../..');
+  const shipped = (pattern: string) => [...new Bun.Glob(pattern).scanSync({ cwd: packageRoot })].sort();
+
+  it('every shipped plant map, of schema 1 or 2, passes the plant-map schema (B1)', () => {
+    const files = ['lessons/*/plant-map.json', 'projects/**/plant-map.json', 'plant-scenes/**/plant-map.json'].flatMap(shipped);
+    expect(files.length).toBeGreaterThan(10);
+    expect(files.some((file) => JSON.parse(readFileSync(join(packageRoot, file), 'utf8')).schemaVersion === 1)).toBe(true);
+    const refused = files.flatMap((file) => {
+      const problems = schemaProblems(formatById('plant-map').schema, JSON.parse(readFileSync(join(packageRoot, file), 'utf8')));
+      return problems.length > 0 ? [`${file}: ${problems.join('; ')}`] : [];
+    });
+    expect(refused).toEqual([]);
+  });
+
+  it('the schema 1 branch of the plant map is marked as read only', () => {
+    const branches = formatById('plant-map').schema.anyOf ?? [];
+    expect(branches.map((branch) => branch.properties?.schemaVersion?.const)).toEqual([2, 1]);
+    expect(branches[1]!.description).toContain('still read; write schema 2');
+  });
+
+  it('the FBD standard blocks are the palette blocks, and SQRT, which the palette does not offer, is not one (B2)', () => {
+    const { standardBlocks, specialBlocks } = formatById('fbd').acceptedValues;
+    expect(standardBlocks).toEqual(fbdPaletteBlocks().filter((block) => !(FBD_VALUE_BLOCKS as readonly string[]).includes(block)));
+    expect(new Set([...specialBlocks!, ...standardBlocks!])).toEqual(new Set(fbdPaletteBlocks()));
+    expect(standardBlocks).not.toContain('SQRT');
+  });
+
+  it('every FBD standard block compiles in a one-block file, its inputs wired to constants (B2)', () => {
+    const literal: Record<string, [string, unknown]> = { BOOL: ['BOOL', true], TIME: ['TIME', 'T#1s'], REAL: ['REAL', 1.5] };
+    const failed: string[] = [];
+    for (const type of formatById('fbd').acceptedValues.standardBlocks!) {
+      const instance = fbdNeedsInstance(type);
+      const helper = type.startsWith('MB_') && !instance; // a Modbus tag helper binds a variable
+      const boolHelper = helper && !type.includes('REGISTER');
+      const blocks: Array<Record<string, unknown>> = [
+        { id: 'b1', type, position: { x: 0, y: 0 }, ...(instance ? { instanceName: 'I1' } : {}), ...(helper ? { variableName: 'X' } : {}) },
+      ];
+      const connections = getDefaultPorts(type).inputs.map((port, index) => {
+        const [dataType, value] = literal[boolHelper && port.name === 'IN' ? 'BOOL' : port.type] ?? ['INT', 1];
+        blocks.push({ id: `c${index}`, type: 'constant', dataType, value, position: { x: 0, y: 0 } });
+        return { id: `w${index}`, from: { block: `c${index}`, port: 'OUT' }, to: { block: 'b1', port: port.name } };
+      });
+      const local = helper ? [{ name: 'X', type: boolHelper ? 'BOOL' : 'INT' }] : [];
+      try {
+        build('FBD', 'One', '.fbd.json', { name: 'One', variables: { local, outputs: [] }, blocks, connections });
+      } catch (error) {
+        failed.push(`${type}: ${error instanceof Error ? error.message.split('\n', 1)[0] : String(error)}`);
+      }
+    }
+    expect(failed).toEqual([]);
+  });
+
+  it('the Ladder function blocks and functions are the ones the Ladder palette offers', () => {
+    expect(formatById('ld').acceptedValues.functionBlocks).toEqual(ldPaletteFunctionBlocks());
+    expect(formatById('ld').acceptedValues.functions).toEqual(Object.keys(LD_FUNCTIONS));
+  });
+
+  it('SFC actions are ST only, as the SFC transpiler compiles them, and an IL action is refused at compile (B3)', () => {
+    expect(formatById('sfc').acceptedValues.actionTypes).toBe(SFC_ACTION_TYPES);
+    expect(SFC_ACTION_TYPES).toEqual(['ST']);
+    const il = exampleOf('sfc') as { actions: Array<{ type: string; body: string }> };
+    il.actions[0]!.type = 'IL';
+    il.actions[0]!.body = 'LD FALSE\nST Pump';
+    expect(() => build('SFC', 'Cycle', '.sfc.json', il)).toThrow(/only ST actions are supported/);
+  });
+
+  it('the FBD ports of each block are listed: the AND, TON and output blocks of the example use them (B4)', () => {
+    const { acceptedValues } = formatById('fbd');
+    const example = exampleOf('fbd') as {
+      blocks: Array<{ id: string; type: string }>;
+      connections: Array<{ from: { block: string; port: string }; to: { block: string; port: string } }>;
+    };
+    for (const type of ['AND', 'TON', 'output']) {
+      const ids = example.blocks.filter((block) => block.type === type).map((block) => block.id);
+      const used = (side: 'from' | 'to') =>
+        example.connections.filter((connection) => ids.includes(connection[side].block)).map((connection) => connection[side].port);
+      const names = (key: string) => (acceptedValues[key] ?? []).map((port) => port.split(':')[0]);
+      expect(names(`inputs.${type}`)).toEqual(expect.arrayContaining(used('to')));
+      expect(names(`outputs.${type}`)).toEqual(expect.arrayContaining(used('from')));
+      expect(used('to').length + used('from').length).toBeGreaterThan(0);
+    }
+    expect(acceptedValues['inputs.TON']).toEqual(['IN:BOOL', 'PT:TIME']);
+    expect(acceptedValues['outputs.TON']).toEqual(['Q:BOOL', 'ET:TIME']);
+  });
+
+  it('plant-map directions and types are the ones validatePlantMap checks (A2)', () => {
+    expect(formatById('plant-map').acceptedValues.directions).toBe(DIRECTIONS);
+    expect(formatById('plant-map').acceptedValues.types).toBe(TYPES);
   });
 });
