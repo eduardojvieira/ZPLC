@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'bun:test';
 import { setupDom, stubProjectLoader } from '../test/dom';
-import type { LDElement, LDModel } from '../models/ld';
+import type { LDElement, LDModel, LDRung } from '../models/ld';
 
 const dom = await setupDom();
 await stubProjectLoader();
@@ -12,7 +12,8 @@ const { ElementProperties } = await import('../editors/ld/LDEditor');
 const { LD_OPERAND_COMMANDS, runLDCommand } = await import('../editors/ld/keyboard');
 const { functionSlots, withOperandAdded, withOperandRemoved } = await import('../editors/ld/ldFunctions');
 const { transpileLDToST } = await import('./ldToST');
-const { box, contact, ldFile, variable } = await import('./ldFunctionFixture');
+const { box, contact, ldFile, rungsFile, variable } = await import('./ldFunctionFixture');
+const { default: LDRungGrid } = await import('../editors/ld/LDRungGrid');
 
 const mux = (operands: string[]): LDElement => ({
   id: 'f1',
@@ -81,5 +82,34 @@ describe('LNG-030 the operands of a MUX box', () => {
       <ElementProperties element={{ ...mux(['A']), functionName: 'SQRT' }} onChange={() => undefined} onClose={() => undefined} />,
     );
     expect(dom.screen.queryByRole('button', { name: 'Add input' })).toBeNull();
+  });
+
+  it('stops at the eight inputs of MUX: Add input is disabled there with its reason, and validation refuses a ninth at the cell', () => {
+    const full = mux(['K', 'A', 'B', 'C', 'A', 'B', 'C', 'A', 'B']);
+    expect(withOperandAdded(full)).toBeUndefined();
+    const model = ldFile({}, contact('c1', 'Start'), box('f1', 'MUX', full.operands!, 'Out')) as unknown as LDModel;
+    const refused = runLDCommand(model, { rungId: 'r1', row: 0, col: 1 }, 'addOperand');
+    expect([refused.refused, refused.say]).toEqual([true, 'MUX takes at most 8 inputs.']);
+    dom.render(<ElementProperties element={full} onChange={() => undefined} onClose={() => undefined} />);
+    expect((dom.screen.getByRole('button', { name: 'Add input' }) as HTMLButtonElement).disabled).toBe(true);
+    const declared = {
+      local: ['Start'].map((name) => variable(name, 'BOOL')).concat(['K', 'A', 'B', 'C', 'Out'].map((name) => variable(name, 'INT'))),
+    };
+    expect(transpileLDToST(ldFile(declared, contact('c1', 'Start'), box('f1', 'MUX', full.operands!, 'Out'))).errors).toEqual([]);
+    const ten = transpileLDToST(ldFile(declared, contact('c1', 'Start'), box('f1', 'MUX', [...full.operands!, 'C'], 'Out')));
+    expect(ten.diagnostics).toEqual([
+      { message: "Function 'f1' (MUX) takes at most 9 operands (K and 8 inputs), found 10", element: 'rung:r1/cell:0,1' },
+    ]);
+  });
+
+  it('a MUX box draws one row per operand, labelled K, IN0, IN1, IN2', () => {
+    const rung = (rungsFile({}, [{ cols: 1, grid: [[box('f1', 'MUX', ['K', 'A', 'B', 'C'], 'Out')]] }]).rungs as LDRung[])[0]!;
+    const { container } = dom.render(
+      <svg>
+        <LDRungGrid rung={rung} readOnly />
+      </svg>,
+    );
+    const rows = [...container.querySelectorAll('[data-ld-operand]')].map((row) => row.getAttribute('data-ld-operand'));
+    expect(rows).toEqual(['K', 'IN0', 'IN1', 'IN2']);
   });
 });

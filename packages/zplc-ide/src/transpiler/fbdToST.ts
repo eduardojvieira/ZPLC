@@ -13,7 +13,7 @@
  *    nothing is replaced by a comment or by a constant
  */
 
-import { getFB, parseIOAddress } from '@zplc/compiler';
+import { getFB, parseIOAddress, parseTimeLiteral } from '@zplc/compiler';
 import type { FBDModel, FBDBlock, FBDConnection } from '../models/fbd';
 import { isFunctionBlock, isLogicGate, isComparison, isMathOperator, validateFBDModel } from '../models/fbd';
 import { findProjectBlock, type ProjectBlock } from '../models/projectBlocks';
@@ -455,6 +455,10 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
             fail(block, `its inputs are ${pins.join(', ')}; ${block.type} takes ${first![0]}, then IN0, IN1 and more inputs in order`);
             return '';
           }
+          if (record.maxInputs !== undefined && pins.length - 1 > record.maxInputs) {
+            fail(block, `it has ${pins.length - 1} inputs after ${first![0]}; ${block.type} takes at most ${record.maxInputs}`);
+            return '';
+          }
           const sources = pins.map((pin) => required(block, pin));
           if (sources.some((s) => !s)) return '';
           const operands = sources as Source[];
@@ -891,6 +895,8 @@ function validateText(model: FBDModel, problems: Problems): void {
         problems.push(`${label}: the type '${String(v.type)}' is not a type name`);
       if (v.comment !== undefined && (typeof v.comment !== 'string' || COMMENT_DELIMITER.test(v.comment)))
         problems.push(`${label}: the comment must not contain ST comment delimiters`);
+      if (!passedAsTime(v.initialValue))
+        problems.push(`${label}: its initial value '${String(v.initialValue)}' starts as a TIME literal and is not one`);
       if (v.address !== undefined) {
         try {
           parseIOAddress(String(v.address));
@@ -911,6 +917,19 @@ function validateText(model: FBDModel, problems: Problems): void {
       problems.push(`${label}: the variable name '${String(block.variableName)}' is not a variable`, at);
     if (block.type === 'constant' && (block.value === undefined || block.value === null || typeof block.value === 'object'))
       problems.push(`${label}: it has no value`, at);
+    if (block.type === 'constant' && !passedAsTime(block.value))
+      problems.push(`${label}: its value '${String(block.value)}' starts as a TIME literal and is not one`, at);
+  }
+}
+
+/** Whether a value that `formatValue` writes as it is (a text that starts with T#) is a TIME literal: anything else would be ST text. */
+function passedAsTime(value: unknown): boolean {
+  if (typeof value !== 'string' || !value.startsWith('T#')) return true;
+  try {
+    parseTimeLiteral(value);
+    return /^T#-?[0-9A-Za-z_.]+$/.test(value);
+  } catch {
+    return false;
   }
 }
 

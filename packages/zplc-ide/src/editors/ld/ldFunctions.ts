@@ -80,10 +80,17 @@ export const slotValue = (element: LDElement, slot: number): string => {
 export const takesMoreOperands = (element: Pick<LDElement, 'functionName'>): boolean =>
   ldFunctionSpec(element.functionName)?.record?.variadic === true;
 
-/** The box with one more input `IN<n>`, empty; undefined for a box whose function has a fixed set of operands. */
+/** The box with one more input `IN<n>`, empty; undefined for a box whose function has a fixed set of operands, or at its most. */
 export function withOperandAdded(element: LDElement): LDElement | undefined {
-  return takesMoreOperands(element) ? { ...element, operands: [...(element.operands ?? []), ''] } : undefined;
+  const max = ldFunctionSpec(element.functionName)?.record?.maxInputs;
+  const operands = element.operands ?? [];
+  if (!takesMoreOperands(element) || (max !== undefined && operands.length - 1 >= max)) return undefined;
+  return { ...element, operands: [...operands, ''] };
 }
+
+/** The most inputs after the selector of a box that takes more, or undefined. */
+export const maxOperandInputs = (element: Pick<LDElement, 'functionName'>): number | undefined =>
+  ldFunctionSpec(element.functionName)?.record?.maxInputs;
 
 /** The box without its last input; undefined when it has a fixed set of operands, or only the inputs the table requires. */
 export function withOperandRemoved(element: LDElement): LDElement | undefined {

@@ -260,10 +260,10 @@ export function judgeConnection(
     if (odd && !GENERIC_CLASSES[sink.port.type]!.types)
       return { ...verdict, reason: `${label(source.endpoint)} cannot feed ${label(sink.endpoint)}: ${selectsNoString(sink.block.type)}` };
     if (odd) {
-      const takes = `${sink.block.type} takes ${GENERIC_CLASSES[sink.port.type]!.takes} there`;
+      const takes = `${sink.block.type} takes ${GENERIC_CLASSES[sink.port.type]!.takes}`;
       return {
         ...verdict,
-        reason: `${label(source.endpoint)} cannot feed ${label(sink.endpoint)}: ${odd} is ${describe(odd)}, and ${takes}`,
+        reason: `${label(source.endpoint)} cannot feed ${label(sink.endpoint)}: input '${sink.port.name}' is ${odd}; ${takes}`,
       };
     }
     if (from && (from === INTEGER_LITERAL || ELEMENTARY.has(from))) return verdict;

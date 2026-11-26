@@ -335,11 +335,13 @@ function validateModbusHelper(
 
 /**
  * A literal an operand of a function box may be (LNG-028, LNG-030): a number, a based or typed number, TRUE or FALSE, or a STRING
- * in the strict IEC form, whose quote and dollar are escaped with `$`. TIME is read apart.
+ * exactly as the compiler's lexer reads one (`readStringLiteral`): it ends at a quote, a quote inside it is written `''`, and it holds
+ * no line break. The operand is passed to the ST as it is, so anything wider could close the literal and add statements. TIME is
+ * read apart.
  */
 const OPERAND_LITERAL =
-  /^(?:-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|\d{1,2}#[0-9A-Fa-f_]+|[A-Za-z_]+#-?\d+(?:\.\d+)?|TRUE|FALSE|'(?:[^'$]|\$.)*')$/;
-const STRING_LITERAL = /^'(?:[^'$]|\$.)*'$/;
+  /^(?:-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|\d{1,2}#[0-9A-Fa-f_]+|[A-Za-z_]+#-?\d+(?:\.\d+)?|TRUE|FALSE|'(?:[^'\n\r]|'')*')$/;
+const STRING_LITERAL = /^'(?:[^'\n\r]|'')*'$/;
 const REAL_LITERAL = /^-?\d+(?:\.\d+(?:[eE][+-]?\d+)?|[eE][+-]?\d+)$/;
 const TYPED_LITERAL = /^([A-Za-z_]+)#/;
 
@@ -369,7 +371,11 @@ function validateOperand(operand: unknown, pin: string, subject: string, symbols
   const member = operand.match(MEMBER_REFERENCE);
   if (member && symbols.has(key(member[1]))) return;
   if (OPERAND_LITERAL.test(operand) || isTimeLiteral(operand)) return;
-  errors.push(`${subject} operand ${pin} '${operand}' is neither a declared variable nor a literal`);
+  // an operand that starts as a string and is not one says how a string is written
+  const hint = operand.startsWith("'")
+    ? ": a STRING literal ends at its quote and holds no line break; write a quote inside a string as ''"
+    : '';
+  errors.push(`${subject} operand ${pin} '${operand}' is neither a declared variable nor a literal${hint}`);
 }
 
 /** The elementary type of an operand when the transpiler can know it: a declared variable, or a literal that says its type. */
@@ -450,8 +456,12 @@ function validateFunction(
   }
   // a function that takes more inputs (MUX) has its fixed pins and at least the extra inputs of the table; any other, its pins
   const variadic = spec.record?.variadic === true;
+  // the most operands: the selector and the most inputs the table gives (MUX: K and eight inputs)
+  const most = variadic && spec.record?.maxInputs !== undefined ? spec.record.maxInputs + 1 : Infinity;
   if (variadic ? value.operands.length < spec.pins.length : value.operands.length !== spec.pins.length) {
     errors.push(`${named} takes ${variadic ? 'at least ' : ''}${spec.pins.length} operands, found ${value.operands.length}`);
+  } else if (value.operands.length > most) {
+    errors.push(`${named} takes at most ${most} operands (${spec.pins[0]} and ${most - 1} inputs), found ${value.operands.length}`);
   } else {
     const pins = ldFunctionPins(spec, value.operands.length);
     value.operands.forEach((operand, index) => validateOperand(operand, pins[index]!, named, symbols, errors));

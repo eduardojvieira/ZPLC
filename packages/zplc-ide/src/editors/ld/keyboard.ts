@@ -37,6 +37,7 @@ import {
   emptyFunction,
   functionPins,
   functionSlots,
+  maxOperandInputs,
   slotValue,
   takesMoreOperands,
   withOperandAdded,
@@ -527,7 +528,12 @@ function changeOperands(model: LDModel, cursor: LDCursor | null, add: boolean): 
   if (!element || element.type !== 'function' || !takesMoreOperands(element))
     return refuse(model, cursor, t('fbd.input.notVariadic', { name: name || t('ld.kind.function') }));
   const changed = add ? withOperandAdded(element) : withOperandRemoved(element);
-  if (!changed) return refuse(model, cursor, t('fbd.input.atLeastTwo', { name }));
+  if (!changed)
+    return refuse(
+      model,
+      cursor,
+      add ? t('fbd.input.atMost', { name, count: maxOperandInputs(element) ?? 0 }) : t('fbd.input.atLeastTwo', { name }),
+    );
   const pin = functionPins(add ? changed : element).at(-1)!;
   const rung = placeElement(place.rung, changed, place.row, place.col);
   return {

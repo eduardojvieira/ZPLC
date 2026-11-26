@@ -259,9 +259,11 @@ describe('LNG-013 judging a wire of the diagram', () => {
       block('sum', 'ADD'),
     ]);
     expect(judgeConnection(std, { block: 'start', port: 'OUT' }, { block: 'shl', port: 'IN' }).reason).toBe(
-      "'start.OUT' cannot feed 'shl.IN': BOOL is a BOOL, and SHL takes a bit string (BYTE, WORD, DWORD or LWORD) there",
+      "'start.OUT' cannot feed 'shl.IN': input 'IN' is BOOL; SHL takes a bit string (BYTE, WORD, DWORD or LWORD)",
     );
-    expect(judgeConnection(std, { block: 'count', port: 'OUT' }, { block: 'shl', port: 'IN' }).reason).toContain('INT is an integer');
+    expect(judgeConnection(std, { block: 'count', port: 'OUT' }, { block: 'shl', port: 'IN' }).reason).toContain(
+      "input 'IN' is INT; SHL takes a bit string",
+    );
     expect(judgeConnection(std, { block: 'tmr', port: 'ET' }, { block: 'neg', port: 'IN' }).reason).toContain('NEG takes a number');
     expect(judgeConnection(std, { block: 'text', port: 'OUT' }, { block: 'mux', port: 'IN0' }).reason).toBe(
       "'text.OUT' cannot feed 'mux.IN0': MUX does not select STRING values; use an IF in Structured Text to choose between strings",

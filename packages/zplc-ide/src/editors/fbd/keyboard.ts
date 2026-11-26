@@ -548,13 +548,16 @@ export function fbdInputMenuItems(nodes: readonly Node[], readOnly: boolean, run
   const extra = ((data(here).inputs as FBDPort[] | undefined) ?? []).filter((port) => /^IN\d+$/.test(port.name));
   const editing = readOnly ? t('editor.menu.readOnly') : undefined;
   const keep = editing ?? (extra.length <= 2 ? t('fbd.input.atLeastTwo', { name: blockTitle(here) }) : undefined);
+  const max = stdFunction(blockType(here))?.maxInputs;
+  const full =
+    editing ?? (max !== undefined && extra.length >= max ? t('fbd.input.atMost', { name: blockTitle(here), count: max }) : undefined);
   return [
     {
       id: 'addInput',
       label: t('fbd.input.add'),
       separatorBefore: true,
       onSelect: () => run('addInput'),
-      ...(editing ? { disabled: true, disabledReason: editing } : {}),
+      ...(full ? { disabled: true, disabledReason: full } : {}),
     },
     {
       id: 'removeInput',
@@ -573,6 +576,8 @@ function changeInputs(state: FBDState, here: Node | undefined, add: boolean, pro
   const inputs = (data(here).inputs as FBDPort[] | undefined) ?? getDefaultPorts(blockType(here), projectBlocks).inputs;
   const extra = inputs.filter((port) => /^IN\d+$/.test(port.name));
   if (!add && extra.length <= 2) return refuse(state, t('fbd.input.atLeastTwo', { name }));
+  const max = stdFunction(blockType(here))?.maxInputs;
+  if (add && max !== undefined && extra.length >= max) return refuse(state, t('fbd.input.atMost', { name, count: max }));
   const pin = add ? `IN${extra.length}` : extra[extra.length - 1]!.name;
   const next = add ? [...inputs, { name: pin, type: extra[0]?.type ?? 'ANY' }] : inputs.filter((port) => port.name !== pin);
   return {

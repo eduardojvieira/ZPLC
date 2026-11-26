@@ -6,7 +6,9 @@
  * A task holds one PROGRAM (`assertTaskProgramCardinality`), so the three programs run in three tasks; they share their results
  * through located memory (`%M`) that two programs declare at the same address: the FBD result `LngFbd` (`%M7200`) and the Ladder
  * result `LngLd` (`%M7600`), high in the work memory so that no automatic variable meets them. The ST program sets the flags
- * `LngSameF` (`%QX0.0`) and `LngSameL` (`%QX0.1`). The diagram and the rung also set
+ * `LngSameF` (`%QX0.0`) and `LngSameL` (`%QX0.1`), then writes into `LngFbd` and `LngLd` a value that differs from its own result, so
+ * that a diagram or a rung that does not compute in the next scan is caught even when the right result is the default value of its
+ * type (NAND, TAN, CYCLE_TIME, CLEAR). The diagram and the rung also set
  * `FbdRan` (`%QX0.2`) and `LdRan` (`%QX0.3`), which is all a function that returns nothing can show.
  */
 import { getAllFnNames } from '@zplc/compiler';
@@ -61,8 +63,8 @@ function callArguments(text: string, open: number): string[] {
   for (let index = open; index < text.length; index += 1) {
     const char = text[index];
     if (char === "'") {
-      // a STRING literal: its parentheses and commas are text; `$` escapes the next character
-      for (index += 1; index < text.length && text[index] !== "'"; index += text[index] === '$' ? 2 : 1);
+      // a STRING literal: its parentheses and commas are text (a quoted quote '' ends it and starts it again)
+      for (index += 1; index < text.length && text[index] !== "'"; index += 1);
       continue;
     }
     if (char === '(') depth += 1;
@@ -109,7 +111,14 @@ function literalValue(text: string): unknown {
 
 const GENERIC = new Set(['ANY', 'ANY_NUM', 'ANY_INT', 'ANY_BIT']);
 
-function fbdDiagram(record: StdFunction, operands: string[], variables: Declared[], result: string | undefined, pins: string[]): string {
+function fbdDiagram(
+  record: StdFunction,
+  operands: string[],
+  variables: Declared[],
+  result: string | undefined,
+  pins: string[],
+  sink: string,
+): string {
   const known = new Map(variables.map((variable) => [variable.name.toUpperCase(), variable]));
   const pinType = (pin: string) => record.inputs.find(([name]) => name === pin)?.[1] ?? record.inputs[record.inputs.length - 1]![1];
   const blocks: unknown[] = [];
@@ -133,7 +142,7 @@ function fbdDiagram(record: StdFunction, operands: string[], variables: Declared
     connections.push({ id: `w${index}`, from: { block: id, port: 'OUT' }, to: { block: 'fn', port: pins[index] } });
   });
   if (result) {
-    blocks.push({ id: 'out', type: 'output', variableName: 'LngFbd', position: { x: 600, y: 0 } });
+    blocks.push({ id: 'out', type: 'output', variableName: sink, position: { x: 600, y: 0 } });
     connections.push({ id: 'wout', from: { block: 'fn', port: 'OUT' }, to: { block: 'out', port: 'IN' } });
   }
   blocks.push({ id: 'one', type: 'constant', value: true, position: { x: 300, y: 300 } });
@@ -142,7 +151,7 @@ function fbdDiagram(record: StdFunction, operands: string[], variables: Declared
   return JSON.stringify({
     name: 'FbdCall',
     variables: {
-      local: variables.map((variable) => local(variable)),
+      local: [...variables.map((variable) => local(variable)), ...(result && sink !== 'LngFbd' ? [{ name: sink, type: result }] : [])],
       inputs: [],
       outputs: [
         ...(result ? [{ name: 'LngFbd', type: result, address: '%M7200' }] : []),
@@ -163,7 +172,7 @@ const local = (variable: Declared) => ({
 /** The bit strings, whose variables a Ladder file declares without an initial value. */
 const BIT_STRINGS = new Set(['BYTE', 'WORD', 'DWORD', 'LWORD']);
 
-function ldRung(record: StdFunction, given: string[], variables: Declared[], result: string | undefined): string {
+function ldRung(record: StdFunction, given: string[], variables: Declared[], result: string | undefined, sink: string): string {
   const cell = (element: Record<string, unknown>, col: number) => ({ element: { ...element, row: 0, col }, hasWire: true });
   // an initialised bit-string variable of the example is its value written as a typed literal: Ladder initialises no bit string
   const initialised = new Map(
@@ -184,6 +193,7 @@ function ldRung(record: StdFunction, given: string[], variables: Declared[], res
       local: [
         ...variables.filter((variable) => !initialised.has(variable.name.toUpperCase())).map((variable) => local(variable)),
         ...(result ? [{ name: 'LngLd', type: result, address: '%M7600' }] : []),
+        ...(result && sink !== 'LngLd' ? [{ name: sink, type: result }] : []),
       ],
       inputs: [],
       outputs: [{ name: 'LdRan', type: 'BOOL', address: '%QX0.3' }],
@@ -195,7 +205,7 @@ function ldRung(record: StdFunction, given: string[], variables: Declared[], res
         gridConfig: { cols: 2, rows: 1, cellWidth: 80, cellHeight: 60 },
         grid: [
           [
-            cell({ id: 'f1', type: 'function', functionName: record.name, operands, ...(result ? { output: 'LngLd' } : {}) }, 0),
+            cell({ id: 'f1', type: 'function', functionName: record.name, operands, ...(result ? { output: sink } : {}) }, 0),
             cell({ id: 'k1', type: 'coil', variable: 'LdRan' }, 1),
           ],
         ],
@@ -207,7 +217,21 @@ function ldRung(record: StdFunction, given: string[], variables: Declared[], res
 }
 
 /** The project of one function: its call in ST, FBD and Ladder, and the comparison in the ST program. */
-export function differentialCase(name: string, example: Example): DifferentialCase {
+/**
+ * A value of the type of the result that is never the result itself: what the ST program leaves in `LngFbd` and `LngLd` after it
+ * compares them, so that the next scan has to compute them again.
+ */
+function otherThan(type: string): string {
+  if (type === 'STRING') return "CONCAT(LngSt, 'x')";
+  return type === 'REAL' || type === 'LREAL' ? 'LngSt + 1.0' : 'NOT LngSt';
+}
+
+/**
+ * The project of one function: its call in ST, FBD and Ladder, and the comparison in the ST program. `discardResults` is the fault
+ * probe of the differential: the diagram and the rung store their results elsewhere, as boxes that compute nothing would, and every
+ * function with a result must then differ.
+ */
+export function differentialCase(name: string, example: Example, { discardResults = false } = {}): DifferentialCase {
   const record = stdFunction(name);
   if (!record) throw new Error(`${name} is not a registered function`);
   const variables = exampleVariables(example.source);
@@ -230,7 +254,13 @@ export function differentialCase(name: string, example: Example): DifferentialCa
     '    LngSameL AT %QX0.1 : BOOL;',
     'END_VAR',
     ...(result
-      ? [`LngSt := ${call};`, `LngSameF := ${same('LngFbd')};`, `LngSameL := ${same('LngLd')};`]
+      ? [
+          `LngSt := ${call};`,
+          `LngSameF := ${same('LngFbd')};`,
+          `LngSameL := ${same('LngLd')};`,
+          `LngFbd := ${otherThan(result)};`,
+          `LngLd := ${otherThan(result)};`,
+        ]
       : [`${call};`, 'LngSameF := TRUE;', 'LngSameL := TRUE;']),
     'END_PROGRAM',
     '',
@@ -247,8 +277,18 @@ export function differentialCase(name: string, example: Example): DifferentialCa
     name,
     config: { name: 'Lng', version: '1.0.0', tasks: [task('TFbd', 'fbd', 1), task('TLd', 'ld', 2), task('TSt', 'st', 3)] },
     sources: [
-      { name: 'fbd', content: fbdDiagram(record, operands, variables, result, pins), language: 'FBD', sourceRef: 'src/fbd.fbd.json' },
-      { name: 'ld', content: ldRung(record, operands, variables, result), language: 'LD', sourceRef: 'src/ld.ld.json' },
+      {
+        name: 'fbd',
+        content: fbdDiagram(record, operands, variables, result, pins, discardResults ? 'LngSink' : 'LngFbd'),
+        language: 'FBD',
+        sourceRef: 'src/fbd.fbd.json',
+      },
+      {
+        name: 'ld',
+        content: ldRung(record, operands, variables, result, discardResults ? 'LngSink' : 'LngLd'),
+        language: 'LD',
+        sourceRef: 'src/ld.ld.json',
+      },
       { name: 'st', content: st, language: 'ST', sourceRef: 'src/st.st' },
     ],
     scans: Math.max(1, example.scans ?? 1) + 2,

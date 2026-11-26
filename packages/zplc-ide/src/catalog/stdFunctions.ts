@@ -22,10 +22,14 @@ export interface StdFunction {
   es: string;
   /** The inputs the call writes: what is wired there has to be a variable. */
   written: readonly string[];
+  /** For a function that takes more inputs, the most inputs after its first pin (the selector K of MUX). */
+  maxInputs?: number;
 }
 
 /** The pins a call writes, which `FUNCTION_DOCS` says only in its text (`stdFunctions.test.ts` pins it to that text). */
 const WRITTEN: Readonly<Record<string, readonly string[]>> = { COPY: ['DST'], CLEAR: ['S'] };
+/** The most inputs of a function that takes more, which `FUNCTION_DOCS` says only in its text ("up to eight inputs"). */
+const MAX_INPUTS: Readonly<Record<string, number>> = { MUX: 8 };
 
 function build(): Map<string, StdFunction> {
   const records = new Map<string, StdFunction>();
@@ -39,6 +43,7 @@ function build(): Map<string, StdFunction> {
       en: doc.en,
       es: doc.es,
       written: WRITTEN[name] ?? [],
+      ...(MAX_INPUTS[name] === undefined ? {} : { maxInputs: MAX_INPUTS[name] }),
     });
   }
   for (const from of CONVERSION_TYPES) {

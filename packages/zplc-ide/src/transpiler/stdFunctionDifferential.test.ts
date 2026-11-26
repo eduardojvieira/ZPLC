@@ -14,7 +14,7 @@ import { CONVERSION_TYPES, FUNCTION_DOCS } from '@zplc/compiler';
 import productManifest from '../../../../package.json';
 import { NativeSimulationSupervisor } from '../../shared/nativeSimulationSupervisor';
 import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
-import { compileMultiTaskProject } from '../compiler';
+import { compileMultiTaskProject, transpileToST } from '../compiler';
 import { NativeAdapter } from '../runtime/nativeAdapter';
 import { stdFunction } from '../catalog/stdFunctions';
 import { DIFFERENTIAL_FUNCTIONS, differentialCase, type Example } from './stdFunctionDifferential';
@@ -38,8 +38,15 @@ function exampleOf(name: string): Example {
 }
 
 /** Builds the project of one function, runs it for its scans on the virtual clock, and returns what differs, or nothing. */
-async function differential(name: string): Promise<string[]> {
-  const project = differentialCase(name, exampleOf(name));
+async function differential(name: string, discardResults = false): Promise<string[]> {
+  const project = differentialCase(name, exampleOf(name), { discardResults });
+  // a function that returns nothing shows only that it ran: its call is in the ST of the diagram and of the rung
+  if (stdFunction(name)!.returns === 'VOID') {
+    for (const source of project.sources.filter((candidate) => candidate.language !== 'ST')) {
+      const translated = transpileToST(source.content, source.language).source;
+      if (!translated.includes(`${name}();`)) return [`${name}: the ${source.language} source does not call it`];
+    }
+  }
   let zplcFile: Uint8Array;
   try {
     zplcFile = compileMultiTaskProject(project.config, project.sources).zplcFile;
@@ -102,4 +109,19 @@ describe('LNG-029 LNG-030 every registered function gives in FBD and in Ladder t
       5_000 + names.length * 1_000,
     );
   }
+
+  // the fault probe: the diagram and the rung store their results elsewhere, as boxes that compute nothing would
+  itNative(
+    'catches a box that computes nothing: every function with a result differs, WATCHDOG_RESET still runs',
+    async () => {
+      const caught = new Set<string>();
+      for (const name of DIFFERENTIAL_FUNCTIONS) {
+        const failures = await differential(name, true);
+        const both = failures.some((f) => f.includes('FBD and ST differ')) && failures.some((f) => f.includes('Ladder and ST differ'));
+        if (both) caught.add(name);
+      }
+      expect(DIFFERENTIAL_FUNCTIONS.filter((name) => !caught.has(name))).toEqual(['WATCHDOG_RESET']);
+    },
+    60_000,
+  );
 });

@@ -1005,6 +1005,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/fbdStdFunctionErrors.test.ts","test":"LNG-002, LNG-003 the errors of a standard function name the block and the pin"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 LNG-002 LNG-003 the function box: every fault names its rung and cell"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldStdFunctions.test.ts","test":"LNG-030 LNG-002 LNG-003 the box of a standard function: every fault names its rung and cell"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldStringLiteral.test.ts","test":"LNG-030 LNG-002 a STRING operand cannot close its literal"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"FBD wiring and types (LNG-023, LNG-002)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"LD power flow (LNG-021, LNG-022, LNG-002)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"SFC scan semantics (LNG-024, LNG-025, LNG-002)"}

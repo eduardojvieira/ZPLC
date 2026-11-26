@@ -127,10 +127,10 @@ describe('LNG-030 the box of a standard function: the statements', () => {
     expect(lines(result.source)).toContain('IF _rung1_result THEN Count := A MOD B; END_IF;');
   });
 
-  it('a STRING literal operand is passed verbatim, with its $ escapes', () => {
-    const result = rung(box('f1', 'CONCAT', ["'AB'", "'it$'s $$5'"], 'Text'));
+  it("a STRING literal operand is passed verbatim, with its quoted quote ''", () => {
+    const result = rung(box('f1', 'CONCAT', ["'AB'", "'it''s $5'"], 'Text'));
     expect(result.errors).toEqual([]);
-    expect(lines(result.source)).toContain("IF _rung1_result THEN Text := CONCAT('AB', 'it$'s $$5'); END_IF;");
+    expect(lines(result.source)).toContain("IF _rung1_result THEN Text := CONCAT('AB', 'it''s $5'); END_IF;");
   });
 
   it('a written operand that is a declared variable is passed: COPY(SRC, DST)', () => {

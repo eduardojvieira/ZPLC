@@ -30,6 +30,7 @@ import { actionFor, keysBelongToControl } from '../keymap';
 import {
   functionItems,
   functionPins,
+  maxOperandInputs,
   takesMoreOperands,
   withFunction,
   withOperandAdded,
@@ -96,6 +97,7 @@ export function ElementProperties({ element, symbols = [], onChange, onClose }: 
   const isFunction = element.type === 'function';
   const pins = functionPins(fn);
   const removable = withOperandRemoved(fn);
+  const addable = withOperandAdded(fn);
   const isFB = element.type === 'function_block';
   const isTimer = element.fbType === 'TON' || element.fbType === 'TOF' || element.fbType === 'TP';
 
@@ -159,7 +161,12 @@ export function ElementProperties({ element, symbols = [], onChange, onClose }: 
             {takesMoreOperands(fn) && (
               // a function that takes more inputs (MUX, LNG-030): one more after the last, or the last removed
               <div className="flex gap-2">
-                <Button size="sm" onClick={() => setFn(withOperandAdded(fn) ?? fn)}>
+                <Button
+                  size="sm"
+                  disabled={!addable}
+                  tooltip={addable ? undefined : t('fbd.input.atMost', { name: fn.functionName ?? '', count: maxOperandInputs(fn) ?? 0 })}
+                  onClick={() => addable && setFn(addable)}
+                >
                   {t('fbd.input.add')}
                 </Button>
                 <Button
@@ -196,22 +203,6 @@ export function ElementProperties({ element, symbols = [], onChange, onClose }: 
               placeholder={t('ld.variableName')}
               list="ld-declared-symbols"
             />
-            {takesMoreOperands(fn) && (
-              // a function that takes more inputs (MUX, LNG-030): one more after the last, or the last removed
-              <div className="flex gap-2">
-                <Button size="sm" onClick={() => setFn(withOperandAdded(fn) ?? fn)}>
-                  {t('fbd.input.add')}
-                </Button>
-                <Button
-                  size="sm"
-                  disabled={!removable}
-                  tooltip={removable ? undefined : t('fbd.input.atLeastTwo', { name: fn.functionName ?? '' })}
-                  onClick={() => removable && setFn(removable)}
-                >
-                  {t('fbd.input.remove')}
-                </Button>
-              </div>
-            )}
             <datalist id="ld-declared-symbols">
               {symbols.map((name) => (
                 <option key={name} value={name} />

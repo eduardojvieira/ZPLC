@@ -38,4 +38,11 @@ describe('LNG-029 the record of the standard functions', () => {
     const writers = [...stdFunctions().values()].filter((record) => record.written.length > 0).map((record) => record.name);
     expect(writers.sort()).toEqual(['CLEAR', 'COPY']);
   });
+
+  it('knows the most inputs of MUX, as its reference text says, and of no other function', () => {
+    expect(FUNCTION_DOCS.MUX!.en).toContain('up to eight inputs');
+    expect(stdFunction('MUX')!.maxInputs).toBe(8);
+    const bounded = [...stdFunctions().values()].filter((record) => record.maxInputs !== undefined).map((record) => record.name);
+    expect(bounded).toEqual([...stdFunctions().values()].filter((record) => record.variadic).map((record) => record.name));
+  });
 });
