@@ -2,17 +2,17 @@
   "schemaVersion": 1,
   "title": "Timers: an off-delay light and an on-delay filter",
   "summary": "Use a TOF timer to keep a light on after a button is released, and a TON timer to ignore a sensor blip that is too short.",
-  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show electrical debounce, sensor response or target timing.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real button bounces or how fast a real sensor answers.",
   "objectives": [
-    "Keep an output on for a fixed time after its input drops, using TOF.",
-    "Ignore an input that is on for less than a fixed time, using TON."
+    "Keep an output on for a fixed time after its input drops, with a TOF instance called on every scan.",
+    "Ignore an input that is on for less than a fixed time, with a TON instance."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/Delays.st the timers HoldTimer (TOF) and FilterTimer (TON) are declared but not used. Light must stay ON for {{t:300}} ms after Button is released. Confirmed must turn ON only after Sensor has stayed ON for {{t:200}} ms.",
-      "checkpoint": "You can say which timer keeps an output on and which one waits before turning it on."
+      "body": "In src/Delays.st two timers are declared, HoldTimer (TOF) and FilterTimer (TON), and the program copies Button to Light and Sensor to Confirmed. Make Light stay ON for {{t:300}} ms after Button is released, and make Confirmed turn ON only after Sensor has stayed ON for {{t:200}} ms.",
+      "checkpoint": "You can say which of the two timers keeps an output on after its input falls, and which one waits before it turns its output on."
     },
     {
       "key": "predict",
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this flaw of the starting program, save it, then press Check: The starting program copies the inputs to the outputs, so Light is already OFF at {{t:450}} ms and Confirmed turns ON for the {{t:100}} ms blip. Call HoldTimer with Button as IN and a preset of T#300ms, and set Light from its Q output. Do the same with FilterTimer, Sensor and T#200ms for Confirmed. Save the file.",
-      "checkpoint": "Both timers are called every scan and each output comes from its timer's Q."
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program copies the inputs to the outputs, so Light is already OFF at {{t:450}} ms and Confirmed turns ON with the short blip at {{t:100}} ms. Change it so that Light stays ON until {{t:300}} ms after Button is released, and Confirmed turns ON only when Sensor has been ON for {{t:200}} ms without a break. Write the statements yourself: the declarations are already there.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The scenario is named Delays and contains {{assertions}} assertions."
     },
     {
@@ -41,14 +41,14 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Swap the two timers in your head: what would a TON on Button and a TOF on Sensor do with this scenario?",
-      "checkpoint": "TON delays the start and TOF delays the end; each answers a different question about a signal."
+      "body": "Swap the two timers in your head: what would a TON on Button and a TOF on Sensor do with this scenario? Then imagine the two calls inside IF Button THEN ... END_IF: what would Confirmed do?",
+      "checkpoint": "TON delays the start and TOF delays the end; each answers a different question about a signal. A timer that is not called keeps its clock and its Q as they were, so Light would never fall and Confirmed would never rise."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "TOF keeps its Q on for the preset time after IN falls, and TON raises Q only after IN has been on for the preset time."
+      "text": "Light must stay on after its input falls, so it needs the TOF; Confirmed must wait before it turns on, so it needs the TON. Call each instance on every scan with its input and its preset, then read its Q."
     },
     {
       "level": 2,
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "The starting program copies the inputs to the outputs, so Light is already OFF at {{t:450}} ms and Confirmed turns ON for the {{t:100}} ms blip."
+    "The starting program copies the inputs to the outputs, so Light is already OFF at {{t:450}} ms and Confirmed turns ON with the short blip at {{t:100}} ms."
   ]
 }

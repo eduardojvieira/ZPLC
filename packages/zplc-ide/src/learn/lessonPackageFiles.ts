@@ -411,7 +411,7 @@ export function buildIndex(packages: readonly LessonPackage[], course: CourseDef
     .map(({ id, manifest, scenario, scenarioBytes, texts, plantMap, wiring, reading }) => {
       const expanded = Object.fromEntries(
         LOCALES.map((locale) => {
-          const result = expandText(texts[locale], scenario);
+          const result = expandText(texts[locale], scenario, locale);
           problems.push(...result.problems.map((problem) => `${id}/text.${locale}.json: ${problem}`));
           return [locale, result.text];
         }),

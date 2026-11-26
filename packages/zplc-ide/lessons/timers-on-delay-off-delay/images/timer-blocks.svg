@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 220" role="img">
+  <title>Two timer blocks, TON and TOF, each with the inputs IN and PT and the outputs Q and ET</title>
+  <rect width="100%" height="100%" rx="8" fill="#ffffff"/>
+  <g font-family="sans-serif" fill="#123">
+    <rect x="110" y="40" width="140" height="130" rx="6" fill="#e8f0fe" stroke="#335" stroke-width="2"/>
+    <text x="180" y="30" text-anchor="middle" font-size="14" font-weight="bold">TON</text>
+    <line x1="40" y1="80" x2="110" y2="80" stroke="#335" stroke-width="2"/>
+    <line x1="40" y1="130" x2="110" y2="130" stroke="#335" stroke-width="2"/>
+    <line x1="250" y1="80" x2="310" y2="80" stroke="#335" stroke-width="2"/>
+    <line x1="250" y1="130" x2="310" y2="130" stroke="#335" stroke-width="2"/>
+    <text x="120" y="85" font-size="14">IN</text>
+    <text x="120" y="135" font-size="14">PT</text>
+    <text x="240" y="85" font-size="14" text-anchor="end">Q</text>
+    <text x="240" y="135" font-size="14" text-anchor="end">ET</text>
+    <text x="40" y="72" font-size="12" fill="#555">BOOL</text>
+    <text x="40" y="122" font-size="12" fill="#555">TIME</text>
+    <text x="310" y="72" font-size="12" fill="#555" text-anchor="end">BOOL</text>
+    <text x="310" y="122" font-size="12" fill="#555" text-anchor="end">TIME</text>
+    <rect x="430" y="40" width="140" height="130" rx="6" fill="#fff4d6" stroke="#533" stroke-width="2"/>
+    <text x="500" y="30" text-anchor="middle" font-size="14" font-weight="bold">TOF</text>
+    <line x1="360" y1="80" x2="430" y2="80" stroke="#533" stroke-width="2"/>
+    <line x1="360" y1="130" x2="430" y2="130" stroke="#533" stroke-width="2"/>
+    <line x1="570" y1="80" x2="630" y2="80" stroke="#533" stroke-width="2"/>
+    <line x1="570" y1="130" x2="630" y2="130" stroke="#533" stroke-width="2"/>
+    <text x="440" y="85" font-size="14">IN</text>
+    <text x="440" y="135" font-size="14">PT</text>
+    <text x="560" y="85" font-size="14" text-anchor="end">Q</text>
+    <text x="560" y="135" font-size="14" text-anchor="end">ET</text>
+    <text x="360" y="72" font-size="12" fill="#555">BOOL</text>
+    <text x="360" y="122" font-size="12" fill="#555">TIME</text>
+    <text x="630" y="72" font-size="12" fill="#555" text-anchor="end">BOOL</text>
+    <text x="630" y="122" font-size="12" fill="#555" text-anchor="end">TIME</text>
+    <text x="320" y="205" font-size="13" text-anchor="middle" fill="#333">IN, PT → Q, ET</text>
+  </g>
+</svg>

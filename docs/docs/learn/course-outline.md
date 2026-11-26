@@ -132,7 +132,7 @@ Time and events come after logic: timers delay or hold a signal, edges turn a le
 
 Objectives of the available lessons:
 
-- **Timers: an off-delay light and an on-delay filter**: Keep an output on for a fixed time after its input drops, using TOF. Ignore an input that is on for less than a fixed time, using TON.
+- **Timers: an off-delay light and an on-delay filter**: Keep an output on for a fixed time after its input drops, with a TOF instance called on every scan. Ignore an input that is on for less than a fixed time, with a TON instance.
 - **Edges and pulse counter**: Count three rising edges of PulseInput with a CTU counter. Reset the count and CountReached with Reset.
 - **Counters in Function Block Diagram: count parts to a batch**: Read a Function Block Diagram as blocks whose output ports are wired to the input ports of other blocks. Wire a CTU counter: a rising edge on CU counts, R clears it, and Q is TRUE when the count reaches the preset PV.
 - **On-delay and off-delay in Ladder: timers as blocks in a rung**: Place a timer function block in a rung, with the contact feeding its IN and its output feeding the coil. Tell an off-delay (TOF) from an on-delay (TON) by what each does when the input rises and falls.

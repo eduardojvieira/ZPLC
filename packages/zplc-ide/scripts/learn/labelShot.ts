@@ -1,10 +1,53 @@
 /**
  * Page side of scripts/learn/machine-images.ts: draws a scene's first view with the plant renderer (scripts/plant/stage.ts) and sets a
- * label beside the frame for each part, joined to the part by a leader line (labelLayout.ts), once per language.
+ * label around the frame for each part, joined to the part by a leader line (labelLayout.ts), once per language.
  */
 import * as THREE from 'three';
 import { draw, openStage, partRect, project, type Stage } from '../plant/stage';
-import { layoutLabels, type LabelLayout } from './labelLayout';
+import {
+  COMPACT_COLUMN_WIDTH_PX,
+  FOOTER,
+  FRAME_HEIGHT,
+  FRAME_WIDTH,
+  HEADER,
+  HEADER_FONT,
+  HEADER_FONT_PX,
+  LEGEND_FONT,
+  LEGEND_FONT_PX,
+  LEGEND_LINE,
+  LINE,
+  LINE_FONT,
+  LINE_FONT_PX,
+  MARGIN,
+  MAX_LAYOUT_WIDTH,
+  MIN_DISPLAY_TEXT_PX,
+  PAD,
+  READING_COLUMN_WIDTH_PX,
+  TITLE_FONT,
+  TITLE_FONT_PX,
+  effectiveLabelTextPx,
+  labelBoxesForParts,
+  layoutLabels,
+  type LabelLayout,
+} from './labelLayout';
+
+export {
+  COMPACT_COLUMN_WIDTH_PX,
+  FRAME_HEIGHT,
+  FRAME_WIDTH,
+  HEADER_FONT,
+  HEADER_FONT_PX,
+  LEGEND_FONT,
+  LEGEND_FONT_PX,
+  LINE_FONT,
+  LINE_FONT_PX,
+  MAX_LAYOUT_WIDTH,
+  MIN_DISPLAY_TEXT_PX,
+  READING_COLUMN_WIDTH_PX,
+  TITLE_FONT,
+  TITLE_FONT_PX,
+  effectiveLabelTextPx,
+};
 
 export interface LabelText {
   id: string;
@@ -19,13 +62,28 @@ export interface MachineShotSpec {
   pages: Record<string, { title: string; legend: string; labels: LabelText[] }>;
 }
 
-const TITLE_FONT = 'bold 15px sans-serif';
-const LINE_FONT = '13px ui-monospace, Menlo, Consolas, monospace';
-const LINE = 18;
-const PAD = 8;
-const HEADER = 40;
-const FOOTER = 30;
 const MARGIN_TEXT = 4;
+
+/** Splits `text` on sentence gaps (`   `) or spaces so each line fits within `maxWidth`. */
+function wrapLegend(text: string, maxWidth: number, measure: CanvasRenderingContext2D): string[] {
+  if (measure.measureText(text).width <= maxWidth) return [text];
+  const clauses = text
+    .split('   ')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (clauses.length > 1 && clauses.every((part) => measure.measureText(part).width <= maxWidth)) return clauses;
+  const lines: string[] = [];
+  let current = '';
+  for (const word of text.split(/\s+/)) {
+    const next = current ? `${current} ${word}` : word;
+    if (current && measure.measureText(next).width > maxWidth) {
+      lines.push(current);
+      current = word;
+    } else current = next;
+  }
+  if (current) lines.push(current);
+  return lines;
+}
 
 /**
  * Where a part is on the frame: its position projected (a sensor's head, a belt's middle; the centre of a drawn box would land in
@@ -53,32 +111,27 @@ export async function machineShot(
     const result: Awaited<ReturnType<typeof machineShot>> = {};
     for (const [locale, page] of Object.entries(spec.pages)) {
       const measure = document.createElement('canvas').getContext('2d')!;
-      const boxes = page.labels.map((label) => {
-        measure.font = TITLE_FONT;
-        let w = measure.measureText(label.title).width;
-        measure.font = LINE_FONT;
-        for (const line of label.lines) w = Math.max(w, measure.measureText(line).width);
-        return {
-          id: label.id,
-          anchor: anchors[label.id] ?? null,
-          w: Math.ceil(w) + 2 * PAD,
-          h: (1 + label.lines.length) * LINE + 2 * PAD - 4,
-        };
+      const boxes = labelBoxesForParts(page.labels, anchors, (text, font) => {
+        measure.font = font;
+        return measure.measureText(text).width;
       });
-      const layout = layoutLabels(boxes, { w: frame.width, h: frame.height });
+      const layout = layoutLabels(boxes, { w: frame.width, h: frame.height }, { maxWidth: MAX_LAYOUT_WIDTH });
+      measure.font = LEGEND_FONT;
+      const legendLines = wrapLegend(page.legend, layout.width - 2 * MARGIN, measure);
+      const footerHeight = FOOTER + Math.max(0, legendLines.length - 1) * LEGEND_LINE;
       const canvas = document.createElement('canvas');
       canvas.width = layout.width;
-      canvas.height = HEADER + layout.height + FOOTER;
+      canvas.height = HEADER + layout.height + footerHeight;
       const g = canvas.getContext('2d')!;
       g.fillStyle = '#f3f4f6';
       g.fillRect(0, 0, canvas.width, canvas.height);
       g.fillStyle = '#111827';
-      g.font = 'bold 20px sans-serif';
+      g.font = HEADER_FONT;
       g.textBaseline = 'middle';
-      g.fillText(page.title, layout.frame.x + MARGIN_TEXT, HEADER / 2);
-      g.font = '14px sans-serif';
-      g.fillText(page.legend, layout.frame.x + MARGIN_TEXT, HEADER + layout.height + FOOTER / 2);
-      g.drawImage(frameCanvas, layout.frame.x, HEADER);
+      g.fillText(page.title, MARGIN + MARGIN_TEXT, HEADER / 2);
+      g.font = LEGEND_FONT;
+      legendLines.forEach((line, i) => g.fillText(line, MARGIN + MARGIN_TEXT, HEADER + layout.height + FOOTER / 2 + i * LEGEND_LINE));
+      g.drawImage(frameCanvas, layout.frame.x, HEADER + layout.frame.y);
       g.translate(0, HEADER);
       // Leaders first, labels over them: a white casing keeps a dark line visible on a dark part.
       for (const label of layout.labels) {

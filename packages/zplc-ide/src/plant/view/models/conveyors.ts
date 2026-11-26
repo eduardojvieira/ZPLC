@@ -346,8 +346,11 @@ function turntableModel(view: PartView, context: ModelContext): Piece[] {
     piece('rail-b', slotted(rail.width, rail.height, size, 'x'), [0, railTop - rail.height / 2, railZ], 'frame'),
     piece('deck', box([size, deck, size], 0.003), [0, deckTop - deck / 2, 0], 'painted'),
     piece('ring', rod(0.3 * size, ring, 'y'), [0, ringTop - ring / 2, 0], 'steel'),
+    // Asymmetric deck marks: an entry bar across -x and a side index on the +z rail only (offset toward exit).
+    piece('entry-bar', box([0.024, 0.02, size - 2 * rail.width], 0.002), [-size / 2 + 0.012, railTop - 0.01, 0], 'safety'),
+    piece('side-index', box([0.38 * size, 0.01, rail.width], 0.002), [0.12 * size, railTop + 0.005, railZ], 'safety'),
   ];
-  // The base, in its own frame: a square of profile under the ring and a leg on a levelling foot at each corner.
+  // The base, in its own frame: a square of profile under the ring, a fixed +x index, and a corner leg on a levelling foot.
   const b = size / 2 - 0.07;
   const frameY = ringTop - ring - base / 2;
   const fixed: Piece[] = [
@@ -355,6 +358,7 @@ function turntableModel(view: PartView, context: ModelContext): Piece[] {
     piece('frame-b', slotted(base, base, 2 * b + base, 'x'), [0, frameY, b], 'frame'),
     piece('frame-c', slotted(base, base, 2 * b - base, 'z'), [-b, frameY, 0], 'frame'),
     piece('frame-d', slotted(base, base, 2 * b - base, 'z'), [b, frameY, 0], 'frame'),
+    piece('base-index', box([0.024, base, 0.14], 0.002), [b + base / 2 + 0.012, frameY, 0], 'safety'),
   ];
   const corners = [
     [-b, -b],
@@ -368,8 +372,11 @@ function turntableModel(view: PartView, context: ModelContext): Piece[] {
   const a = (num(view.state.angleDeg, 0) * Math.PI) / 180;
   const [c, s] = [Math.cos(a), Math.sin(a)];
   for (const p of fixed) pieces.push({ ...p, at: [p.at[0] * c + p.at[2] * s, p.at[1], -p.at[0] * s + p.at[2] * c], yaw: p.yaw + a });
-  // One arrow along the rollers, on the deck's frame: it turns with the table, so left and right differ at a glance.
-  pieces.push(piece('arrow', arrow(0.2), [0, top + 0.002, 0], 'mark', true, Math.PI / 2));
+  // A large directional arrow spanning most of the deck along +x (tail on -x, arrowhead toward +x).
+  pieces.push(
+    piece('arrow-shaft', box([0.44 * size, 0.004, 0.09 * size], 0.001), [-0.12 * size, top + 0.002, 0], 'mark'),
+    piece('arrow', arrow(0.21 * size), [0.16 * size, top + 0.003, 0], 'mark', true, Math.PI / 2),
+  );
   return [...pieces, ...directionMarks(size, top + 0.002, speedOf(view), context.travel)];
 }
 

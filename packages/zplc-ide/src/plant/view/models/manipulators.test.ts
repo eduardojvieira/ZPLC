@@ -176,4 +176,60 @@ describe('manipulator models (VIS-014)', () => {
     expect(first.max[2]).toBeGreaterThan(sz!);
     for (const foot of model(view).filter((p) => p.slot.startsWith('foot-'))) expect(bottom(foot) + view.pose.p[1]).toBeCloseTo(0, 9);
   });
+
+  it('VIS-016 (S3-02) clamp gripper draws actuator housing, closing jaws with rubber pads, and gripping status lamp', async () => {
+    const base = moved(await rest('pick-place'), [0.4, 0.5, 0]);
+    const openView: PartView = { ...base, state: { ...base.state, gripper: 'clamp', closeFraction: 0, holding: false } };
+    const gripView: PartView = { ...base, state: { ...base.state, gripper: 'clamp', closeFraction: 1, holding: true } };
+    const open = model(openView);
+    const grip = model(gripView);
+
+    expect(slot(open, 'gripper-body').role).toBe('housing');
+    expect(slot(open, 'gripper-bezel').role).toBe('collar');
+    expect(slot(open, 'gripper-lamp').role).toBe('lampOff');
+    expect(slot(grip, 'gripper-lamp').role).toBe('lamp');
+    expect(slot(open, 'jaw-pad-a').role).toBe('rubber');
+    expect(slot(open, 'jaw-pad-b').role).toBe('rubber');
+
+    const gap = (pieces: readonly Piece[]) => Math.abs(slot(pieces, 'jaw-b').at[0] - slot(pieces, 'jaw-a').at[0]);
+    expect(gap(open) - gap(grip)).toBeGreaterThanOrEqual(0.12);
+    expect(slot(open, 'jaw-a').at[1]).toBeLessThan(slot(open, 'head').at[1]);
+  });
+
+  it('VIS-016 (S3-02) vacuum gripper draws manifold, 4 rubber suction cups that engage when gripping, and status lamp', async () => {
+    const base = moved(await rest('gantry'), [0.5, 0.4, 0.3]);
+    const openView: PartView = { ...base, state: { ...base.state, gripper: 'vacuum', closeFraction: 0, holding: false } };
+    const gripView: PartView = { ...base, state: { ...base.state, gripper: 'vacuum', closeFraction: 1, holding: true } };
+    const open = model(openView);
+    const grip = model(gripView);
+
+    expect(slot(open, 'gripper-manifold').role).toBe('housing');
+    expect(slot(open, 'gripper-bezel').role).toBe('collar');
+    expect(slot(open, 'gripper-lamp').role).toBe('lampOff');
+    expect(slot(grip, 'gripper-lamp').role).toBe('lamp');
+    for (let i = 0; i < 4; i++) expect(slot(open, `cup-${i}`).role).toBe('rubber');
+    // When gripping, suction bellows compress upward toward the manifold.
+    expect(slot(grip, 'cup-0').at[1]).toBeGreaterThan(slot(open, 'cup-0').at[1]);
+  });
+
+  it('VIS-014 (S3-07) pick-place and gantry have steel linear rails, drive motor housings, gussets, and Y guide hardware', async () => {
+    const pick = model(await rest('pick-place'));
+    expect(slot(pick, 'guide-x').role).toBe('steel');
+    expect(slot(pick, 'motor-x').role).toBe('painted');
+    expect(slot(pick, 'gusset-a').role).toBe('steel');
+    expect(slot(pick, 'gusset-b').role).toBe('steel');
+    expect(slot(pick, 'motor-y').role).toBe('painted');
+    expect(slot(pick, 'guide-y').role).toBe('steel');
+
+    const gan = model(await rest('gantry'));
+    expect(slot(gan, 'guide-xa').role).toBe('steel');
+    expect(slot(gan, 'guide-xb').role).toBe('steel');
+    expect(slot(gan, 'guide-z').role).toBe('steel');
+    expect(slot(gan, 'motor-x').role).toBe('painted');
+    expect(slot(gan, 'motor-z').role).toBe('painted');
+    expect(slot(gan, 'motor-y').role).toBe('painted');
+    expect(slot(gan, 'truck-a').role).toBe('housing');
+    expect(slot(gan, 'truck-b').role).toBe('housing');
+    for (const s of ['gusset-a', 'gusset-b', 'gusset-c', 'gusset-d']) expect(slot(gan, s).role).toBe('steel');
+  });
 });

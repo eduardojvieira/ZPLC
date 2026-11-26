@@ -67,6 +67,14 @@ describe('rules, each failing when broken', () => {
     expect(offending(base([lesson('a')], { checkLabel: { en: 'Grade', es: 'Calificar' } }))).toEqual(['a:check']);
   });
 
+  test('check: CRS-019 a Run stage that names Check through the catalogue placeholder names it', () => {
+    const named = (run: string) => ({ text: { en: text({}, run), es: text({}, run) } });
+    expect(offending(base([lesson('a', named('Press {{ui:learn.check}}.'))]))).toEqual([]);
+    // Another control, or a key the catalogue lacks, is not the Check control.
+    expect(offending(base([lesson('a', named('Press {{ui:toolbar.run.label}}.'))]))).toEqual(['a:check']);
+    expect(offending(base([lesson('a', named('Press {{ui:learn.nothing}}.'))]))).toEqual(['a:check']);
+  });
+
   test('vocabulary: a word of the evidence list in any learner field or reading page, as a word, in either language', () => {
     expect(
       offending(base([lesson('a', { text: { en: text({ scope: 'Native POSIX host.' }), es: text({}, 'Pulse Comprobar.') } })])),

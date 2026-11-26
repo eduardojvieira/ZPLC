@@ -182,3 +182,60 @@ describe('the Learn home', () => {
     expect(auditMarkup(render(withPassedIds(emptyProgress(), [FIRST])))).toEqual([]);
   });
 });
+
+// The Tab order of the home (GDE-011): the tab stops of the markup in order, leaving out whatever sits in a closed <details>.
+function tabStops(out: string): string[] {
+  const visible = out.replace(/<details(?![^>]*\sopen)[^>]*>[\s\S]*?<\/details>/g, '');
+  return [...visible.matchAll(/<(?:button|a|summary|input)\b[^>]*>/g)]
+    .map((match) => match[0])
+    .filter((tag) => !/\sdisabled=""/.test(tag))
+    .map((tag) => /data-learn-[a-z-]+/.exec(tag)?.[0] ?? tag.slice(0, 12));
+}
+const LADDER_FIRST = LESSON_INDEX.course.paths![0]!.lessons[0]!;
+const PLANT_FIRST = LESSON_INDEX.course.paths![1]!.lessons[0]!;
+const inLadder = withNote(emptyProgress(), { lessonId: LADDER_FIRST, started: true, last: true }, AT);
+
+describe('the Tab order of the Learn home (GDE-011)', () => {
+  it('GDE-011 Continue is the first control and the skip link the second', () => {
+    for (const progress of [emptyProgress(), inLadder]) {
+      const stops = tabStops(render(progress));
+      expect(stops.slice(0, 2)).toEqual(['data-learn-continue', 'data-learn-skip']);
+    }
+  });
+
+  it('GDE-011 a path that holds no lesson to continue is closed and its Start buttons are not in the tab order', () => {
+    const out = render(inLadder);
+    expect(out).toMatch(/<details[^>]*data-learn-path="ladder"[^>]*\sopen|<details[^>]*\sopen[^>]*data-learn-path="ladder"/);
+    expect(out).not.toMatch(/<details[^>]*data-learn-path="plant-st"[^>]*\sopen/);
+    const stops = tabStops(out);
+    const ladderStarts = LESSON_INDEX.course.paths![0]!.lessons.length;
+    expect(stops.filter((stop) => stop === 'data-learn-path-start').length).toBeGreaterThan(0);
+    expect(stops.filter((stop) => stop === 'data-learn-path-start').length).toBeLessThanOrEqual(ladderStarts);
+    // the plant path is closed: none of its first lesson's controls is a tab stop
+    expect(render(inLadder)).toContain(`data-learn-path-start="${PLANT_FIRST}"`);
+    expect(tabStops(render(emptyProgress())).filter((stop) => stop === 'data-learn-path-start')).toEqual([]);
+  });
+
+  it('GDE-011 a learner reaches the switches within 4 Tab presses', () => {
+    for (const progress of [emptyProgress(), inLadder]) {
+      const out = render(progress);
+      const stops = tabStops(out);
+      // Tab to the skip link, Enter on it: the focus is on the switch. That is the presses a learner makes.
+      const presses = stops.indexOf('data-learn-skip') + 1 + 1;
+      expect(presses).toBeLessThanOrEqual(4);
+      const href = /<a\b[^>]*data-learn-skip[^>]*>/.exec(out)?.[0] ?? '';
+      expect(href).toContain('href="#learn-switches"');
+      expect(out).toContain('id="learn-switches"');
+      expect(out.indexOf('id="learn-switches"')).toBeLessThan(out.indexOf('data-learn-unlock-all'));
+      expect(stops).toContain('data-learn-unlock-all');
+    }
+  });
+
+  it('GDE-011 the hardware track is not pinned over the lessons', () => {
+    const out = render(emptyProgress());
+    const hardware = out.indexOf('data-learn-track="hardware"');
+    expect(hardware).toBeGreaterThan(-1);
+    expect(hardware).toBeGreaterThan(out.lastIndexOf('data-learn-path-lesson='));
+    expect(hardware).toBeGreaterThan(out.lastIndexOf('data-learn-lesson='));
+  });
+});

@@ -64,6 +64,20 @@ describe('lesson text markup (LRN-025)', () => {
   it('flags markup it does not know', () => {
     expect(expandQuotes('{{x:1}}', scenario).problems).toHaveLength(1);
   });
+
+  // The label comes from the i18n catalogue when the index is built, so a renamed control renames the lesson text with it.
+  it('CRS-019 names a Studio control by its label in the i18n catalogue of the language of the text', () => {
+    expect(expandQuotes('Press {{ui:learn.check}}.', scenario, 'en')).toEqual({ text: 'Press Check.', problems: [] });
+    expect(expandQuotes('Pulse {{ui:learn.check}}.', scenario, 'es')).toEqual({ text: 'Pulse Comprobar.', problems: [] });
+  });
+
+  it('CRS-019 refuses a control the catalogue does not have, a catalogue text with markers and a text of no language', () => {
+    expect(expandQuotes('{{ui:learn.noSuchControl}}', scenario, 'en').problems).toEqual([
+      'control "learn.noSuchControl" is not a label of the en catalogue',
+    ]);
+    expect(expandQuotes('{{ui:learn.hint}}', scenario, 'es').problems).toEqual(['control "learn.hint" is not a label of the es catalogue']);
+    expect(expandQuotes('{{ui:learn.check}}', scenario).problems).toEqual(['control "learn.check" needs the language of the text']);
+  });
 });
 
 describe('lesson package validators (LRN-009, LRN-010, LRN-027)', () => {

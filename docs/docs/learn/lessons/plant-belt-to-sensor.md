@@ -19,7 +19,7 @@ Start a belt from a button and stop it when a box reaches the sensor at the far 
 - Estimated time: 20 minutes
 - Languages: ST
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Belt to sensor](../../plant/scenes/belt-to-sensor.md)
 - Prerequisites: [motor-start-stop-safe](./motor-start-stop-safe.md)
 

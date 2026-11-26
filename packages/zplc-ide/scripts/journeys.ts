@@ -4919,9 +4919,9 @@ export const JOURNEYS: Journey[] = [
       await showExplorer(app);
       await app.click(button('Remove library lib'), 'Remove library lib');
       await app.until('the block gone from the tree', async () => !(await app.visible(declaration('Debounce'))) || undefined);
-      assert(
-        (JSON.parse(disk(join(project, 'zplc.json'))) as { libraries?: string[] }).libraries?.length === 0,
-        'zplc.json still names the library.',
+      await app.until(
+        'zplc.json to name no library',
+        () => (JSON.parse(disk(join(project, 'zplc.json'))) as { libraries?: string[] }).libraries?.length === 0 || undefined,
       );
       await app.until(
         'the folder reported as not compiled again',
@@ -5971,6 +5971,14 @@ export const JOURNEYS: Journey[] = [
       );
       await focus('[data-learn-continue]');
       await app.press('Enter');
+      // GDE-009: the Guide keeps the board section closed until the learner opens it; open it by keyboard before reading or switching.
+      await app.until('the Guide board section summary', async () => (await app.visible(css('[data-guide-board] > summary'))) || undefined);
+      await focus('[data-guide-board] > summary');
+      await app.press('Enter');
+      await app.until(
+        'the Guide board section to open',
+        async () => (await app.eval<boolean>(`Boolean(document.querySelector('[data-guide-board]')?.open)`)) || undefined,
+      );
       await app.until('the lesson on the board', async () => (await app.visible(css('[data-learn-board-lesson]'))) || undefined);
 
       // 2. LRN-014: the Pico's wiring is drawn and written, and the pin map names its parts.
@@ -8148,6 +8156,7 @@ export const JOURNEYS: Journey[] = [
       await app.until('the Learn home', async () => (await app.visible(css('[data-learn-home]'))) || undefined);
       // the Ladder path of the home, then its first lesson, which opens on its reading page
       await app.eval(`document.querySelector('[data-learn-paths]')?.scrollIntoView({ block: 'start' })`);
+      await app.click(css('[data-learn-path] summary'), 'the Ladder path');
       await app.until('the Ladder path', async () => (await app.visible(css('[data-learn-path-start]'))) || undefined);
       await docShot(app, `learn-path-${locale}`);
       await app.click(css('[data-learn-path-start]'), 'the first lesson of the Ladder path');

@@ -175,4 +175,54 @@ describe('trackProjectSources (IDE-023)', () => {
     await settle();
     expect(getProjectDeclarations()).toEqual([]);
   });
+
+  it('publishes immediately on project open and structural changes, and debounces open-file edits', async () => {
+    const store = fakeStore({
+      isProjectOpen: false,
+      fileTree: null,
+      projectConfig: null,
+      projectSession: 0,
+    });
+    const stop = trackProjectSources(store, { read: reader(), delayMs: 250 });
+    try {
+      // Opening a project must populate ST declarations immediately rather than waiting for the 250ms typing debounce.
+      store.set({
+        isProjectOpen: true,
+        fileTree: tree,
+        loadedFiles: new Map([['file:src/Main.st', loaded('src/Main.st', DISK['src/Main.st']!)]]),
+        projectConfig: { name: 'P', version: '1.0.0' },
+        projectSession: 1,
+      });
+      await new Promise((resolve) => setTimeout(resolve, 25));
+      expect(
+        getProjectDeclarations()
+          .map((entry) => entry.name)
+          .sort(),
+      ).toEqual(['Main', 'Other']);
+
+      // Adding a library in projectConfig is structural and also publishes without waiting for the typing debounce.
+      store.set({ projectConfig: { name: 'P', version: '1.0.0', libraries: ['lib'] } });
+      await new Promise((resolve) => setTimeout(resolve, 25));
+      expect(getProjectDeclarations().map((entry) => entry.name)).toContain('Debounce');
+
+      // Editing an open file (loadedFiles only) waits for the typing debounce, then publishes once settled.
+      const edited = 'PROGRAM MainRenamed\nEND_PROGRAM\n';
+      store.set({ loadedFiles: new Map([['file:src/Main.st', loaded('src/Main.st', edited)]]) });
+      await new Promise((resolve) => setTimeout(resolve, 25));
+      expect(getProjectDeclarations().map((entry) => entry.name)).toContain('Main');
+      expect(getProjectDeclarations().map((entry) => entry.name)).not.toContain('MainRenamed');
+      await new Promise((resolve) => setTimeout(resolve, 260));
+      expect(getProjectDeclarations().map((entry) => entry.name)).toContain('MainRenamed');
+
+      // Closing the project clears declarations immediately and cancels any pending typing debounce.
+      const editedAgain = 'PROGRAM MainAgain\nEND_PROGRAM\n';
+      store.set({ loadedFiles: new Map([['file:src/Main.st', loaded('src/Main.st', editedAgain)]]) });
+      store.set({ isProjectOpen: false, fileTree: null, projectConfig: null, projectSession: 2 });
+      expect(getProjectDeclarations()).toEqual([]);
+      await new Promise((resolve) => setTimeout(resolve, 280));
+      expect(getProjectDeclarations()).toEqual([]);
+    } finally {
+      stop();
+    }
+  });
 });

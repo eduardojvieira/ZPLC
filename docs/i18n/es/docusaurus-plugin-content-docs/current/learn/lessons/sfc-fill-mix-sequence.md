@@ -19,7 +19,7 @@ Complete un diagrama funcional secuencial de tres pasos agregando la transición
 - Tiempo estimado: 25 minutos
 - Lenguajes: SFC
 - Rutas: Simulación, Hardware
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [edge-counter-pulses](./edge-counter-pulses.md)
 
@@ -39,7 +39,7 @@ Complete un diagrama funcional secuencial de tres pasos agregando la transición
 
 ## Qué cubre la evidencia
 
-Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra volúmenes de proceso, calidad de mezcla ni tiempos de válvulas en equipos reales.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cuánto contiene un tanque real, qué tan bien mezcla ni con qué rapidez se mueve una válvula real.
 
 ## Cableado
 

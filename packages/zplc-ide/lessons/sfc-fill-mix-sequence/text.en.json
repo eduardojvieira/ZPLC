@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "A sequence in Sequential Function Chart: fill, then mix",
   "summary": "Complete a Sequential Function Chart with three steps by adding the missing timed transition, and check that the valve and the mixer never run together.",
-  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show process volumes, mixing quality or valve timing on real equipment.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how much a real tank holds, how well it mixes or how fast a real valve moves.",
   "objectives": [
     "Read a Sequential Function Chart as steps that are active one at a time, actions that run while their step is active, and transitions that move the activity.",
     "Add a timed transition that uses the elapsed time of a step."
@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/FillMix.sfc.json the steps IDLE, FILL and MIX, their actions and the transitions IDLE to FILL (Start) and MIX to IDLE (after a delay) are drawn. Add the missing transition from FILL to MIX with the condition step_fill.T >= T#50ms, where T is how long the step has been active.",
+      "body": "In src/FillMix.sfc.json the steps IDLE, FILL and MIX are drawn with their actions, and so are the transitions from IDLE to FILL (Start) and from MIX back to IDLE (after a time). The transition out of FILL is missing. Make the sequence leave FILL for MIX once FILL has been active for {{t:50}} ms.",
       "checkpoint": "The sequence runs IDLE, FILL, MIX and back to IDLE on each Start, with one step active at a time."
     },
     {
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter has the three steps and two of the three transitions: FILL never leaves, so the valve stays open and MIX never runs; add a transition from FILL to MIX whose condition is step_fill.T >= T#50ms.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "body": "Complete the chart, save it, then press {{ui:learn.check}}. The starting chart has the three steps and two of the three transitions, so FILL never ends: the valve stays open and MIX never runs. The valve must close and the mixer must start once FILL has been active for {{t:50}} ms, and the rest of the sequence must stay as it is: MIX still returns to IDLE, which waits for the next Start.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The scenario is named FillMix and contains {{assertions}} assertions."
     },
     {
@@ -41,14 +41,14 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Which step is active while the valve is open, and why can only one be active at a time? Change the MIX action to open the valve too and see which assertion fails.",
-      "checkpoint": "Each action sets both outputs, so a step defines the whole output state and the sequence cannot leave an output on by accident. The scenario shows the sequence logic only; it does not show process feedback such as a level switch."
+      "body": "Which step is active while the valve is open, and why can only one be active at a time? A real tank leaves FILL when a level switch says it is full, not after a time: what would change in the chart?",
+      "checkpoint": "Each action writes both outputs, so a step defines the whole output state and the sequence cannot leave an output on by accident. With a level switch only the condition of the transition out of FILL changes: it reads the switch instead of the clock of the step."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "A transition has a source step, a target step and a condition. The transition from IDLE to FILL is already there; copy its shape for FILL to MIX."
+      "text": "A transition has a source step, a target step and a condition. The transition out of MIX already leaves after a time, because its condition reads the clock of its own step, step_mix.T. FILL needs the same kind of transition, to MIX."
     },
     {
       "level": 2,
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "The starter has the three steps and two of the three transitions: FILL never leaves, so the valve stays open and MIX never runs; add a transition from FILL to MIX whose condition is step_fill.T >= T#50ms."
+    "The starting chart has the three steps and two of the three transitions, so FILL never ends: the valve stays open and MIX never runs."
   ]
 }

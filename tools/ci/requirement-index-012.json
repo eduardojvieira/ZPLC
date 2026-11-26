@@ -91,5 +91,17 @@
   {"id":"CRS-010","workstream":"CRS","title":"The 68 lessons of 2.0 MUST keep their starter, solution, scenario, scenario hash and simulation grade."},
   {"id":"CRS-011","workstream":"CRS","title":"Every lesson, hint, part name and scene text MUST exist in English and Spanish with the same structure (LRN-029)."},
   {"id":"CRS-012","workstream":"CRS","title":"The course MUST include lessons in which the learner builds or changes a scene."},
-  {"id":"CRS-013","workstream":"CRS","title":"Public text about the plant MUST state only what recorded evidence supports, including the frame rates, the supported boards and the link…"}
+  {"id":"CRS-013","workstream":"CRS","title":"Public text about the plant MUST state only what recorded evidence supports, including the frame rates, the supported boards and the link…"},
+  {"id":"CRS-014","workstream":"CRS","title":"Every lesson that introduces an idea MUST open with a reading page in English and Spanish that explains the idea in plain words and holds at…"},
+  {"id":"CRS-015","workstream":"CRS","title":"In the full course an explanation MUST come before the practice that uses it: in courseOrder no lesson comes before the lesson that explains…"},
+  {"id":"CRS-016","workstream":"CRS","title":"The reading page of a plant lesson MUST present the machine before the task: what each part of the scene is in a real plant, a labelled…"},
+  {"id":"CRS-017","workstream":"CRS","title":"The Edit stage MUST say what the program must do, never how, and the complete answer MUST appear only in the last hint."},
+  {"id":"CRS-018","workstream":"CRS","title":"The exercises MUST grow: a one-line fix MAY open a module as a warm-up, the last practice of each module of a path MUST be a program the…"},
+  {"id":"CRS-019","workstream":"CRS","title":"The Run stage of every lesson MUST lead to Check, and a lesson MUST name each Studio control it mentions through the placeholder…"},
+  {"id":"CRS-020","workstream":"CRS","title":"What a pass proves MUST stay true but be said once per lesson, in plain words, in the lesson's scope and never in a checkpoint, and no…"},
+  {"id":"CRS-021","workstream":"CRS","title":"The Spanish of every lesson, hint and reading page MUST address the learner as \"usted\" and MUST use one term per concept, the term of the…"},
+  {"id":"CRS-022","workstream":"CRS","title":"The course MUST have a path \"Structured Text from zero\", with Structured Text as its focus language (LRN-043), that takes a learner who…"},
+  {"id":"CRS-023","workstream":"CRS","title":"A construct of a language MUST be taught before a lesson uses it, each construct that the compiler and the runtime support for the course…"},
+  {"id":"CRS-024","workstream":"CRS","title":"Every lesson MUST carry at least two wrong programs, each a mistake a learner makes, that stay RED against its scenario."},
+  {"id":"CRS-025","workstream":"CRS","title":"A journey MUST follow, word for word, the text of the first lesson of the course and the text of the first plant lesson in a real Studio…"}
 ]

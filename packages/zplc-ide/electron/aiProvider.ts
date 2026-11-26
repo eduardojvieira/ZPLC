@@ -108,7 +108,166 @@ function manifestIsAllowed(text: string): boolean {
     return false;
   }
 }
-const ANSWER_SHAPES = [['answer'], ['answer', 'changes'], ['answer', 'proposals'], ['answer', 'changes', 'proposals']] as const;
+const FORBIDDEN_TOOL_KEYS = new Set(['tool_calls', 'function_call', 'tool_call']);
+const MAX_INSPECT_DEPTH = 32;
+const MAX_JSON_SCAN_STEPS = MAX_RESPONSE * 4;
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value) && Object.getPrototypeOf(value) === Object.prototype;
+}
+function hasForbiddenToolKey(value: unknown, depth = 0): boolean {
+  if (depth > MAX_INSPECT_DEPTH) return true;
+  if (Array.isArray(value)) return value.some((item) => hasForbiddenToolKey(item, depth + 1));
+  if (typeof value !== 'object' || value === null) return false;
+  for (const key of Object.keys(value)) {
+    const field = (value as Record<string, unknown>)[key];
+    if (FORBIDDEN_TOOL_KEYS.has(key) && field !== undefined) return true;
+    if (hasForbiddenToolKey(field, depth + 1)) return true;
+  }
+  return false;
+}
+function hasForbiddenPayloadKey(value: Record<string, unknown>): boolean {
+  return Object.hasOwn(value, 'replacement') || hasForbiddenToolKey(value);
+}
+function isStructuredCandidate(value: Record<string, unknown>): boolean {
+  return Object.hasOwn(value, 'answer') || Object.hasOwn(value, 'changes') || Object.hasOwn(value, 'proposals');
+}
+function extractMessageText(content: unknown): string | null {
+  if (typeof content === 'string') return content;
+  if (!Array.isArray(content) || content.length === 0) return null;
+  const parts: string[] = [];
+  for (const part of content) {
+    if (!isPlainObject(part) || hasForbiddenToolKey(part)) return null;
+    if (part.type !== 'text' || typeof part.text !== 'string') return null;
+    parts.push(part.text);
+  }
+  return parts.join('\n');
+}
+function scanJsonObjectEnd(text: string, openIndex: number, budget: number): { end: number; steps: number } {
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  let steps = 0;
+  for (let i = openIndex; i < text.length; i += 1) {
+    steps += 1;
+    if (steps > budget) return { end: -1, steps };
+    const ch = text[i]!;
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === '\\') escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') inString = true;
+    else if (ch === '{') depth += 1;
+    else if (ch === '}') {
+      depth -= 1;
+      if (depth === 0) return { end: i + 1, steps };
+    }
+  }
+  return { end: -1, steps };
+}
+type ExtractedAnswer = { kind: 'none' } | { kind: 'invalid' } | { kind: 'structured'; value: Record<string, unknown>; prose: string };
+function remainingProse(text: string, start: number, end: number): string {
+  return [text.slice(0, start).trim(), text.slice(end).trim()].filter(Boolean).join('\n').trim();
+}
+function scanBareJsonObjects(
+  text: string,
+): { invalid: true } | { invalid: false; candidates: Array<{ value: Record<string, unknown>; start: number; end: number }> } {
+  const lastClose = text.lastIndexOf('}');
+  if (lastClose === -1) return { invalid: false, candidates: [] };
+  const candidates: Array<{ value: Record<string, unknown>; start: number; end: number }> = [];
+  let pos = 0;
+  let budget = MAX_JSON_SCAN_STEPS;
+  while (pos < lastClose && budget > 0) {
+    const open = text.indexOf('{', pos);
+    if (open === -1 || open >= lastClose) break;
+    const scanned = scanJsonObjectEnd(text, open, budget);
+    budget -= scanned.steps;
+    if (scanned.end === -1) {
+      pos = open + 1;
+      continue;
+    }
+    try {
+      const parsed = JSON.parse(text.slice(open, scanned.end)) as unknown;
+      if (isPlainObject(parsed)) {
+        if (hasForbiddenPayloadKey(parsed)) return { invalid: true };
+        if (isStructuredCandidate(parsed)) candidates.push({ value: parsed, start: open, end: scanned.end });
+        pos = scanned.end;
+        continue;
+      }
+    } catch {
+      /* not valid JSON; continue scanning after this brace */
+    }
+    pos = open + 1;
+  }
+  return { invalid: false, candidates };
+}
+function extractStructuredAnswer(message: string): ExtractedAnswer {
+  const trimmed = message.trim();
+  if (trimmed.length === 0) return { kind: 'invalid' };
+  if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+    try {
+      const parsed = JSON.parse(trimmed) as unknown;
+      if (isPlainObject(parsed)) {
+        if (hasForbiddenPayloadKey(parsed) || !isStructuredCandidate(parsed)) return { kind: 'invalid' };
+        return { kind: 'structured', value: parsed, prose: '' };
+      }
+    } catch {
+      /* not a single raw JSON object; continue to fenced and prose+JSON extraction */
+    }
+  }
+  const fenceOpen = /^([ \t]*)(`{3,})([a-zA-Z0-9_-]*)[ \t]*\r?\n/gm;
+  const fencedCandidates: Array<{ value: Record<string, unknown>; start: number; end: number }> = [];
+  let fenceMatch: RegExpExecArray | null;
+  let budget = MAX_JSON_SCAN_STEPS;
+  while ((fenceMatch = fenceOpen.exec(message)) !== null && budget > 0) {
+    const lang = fenceMatch[3]!.toLowerCase();
+    if (lang !== '' && lang !== 'json') continue;
+    const ticks = fenceMatch[2]!;
+    let objStart = fenceMatch.index + fenceMatch[0].length;
+    while (objStart < message.length && /\s/.test(message[objStart]!)) objStart += 1;
+    if (message[objStart] !== '{') continue;
+    const scanned = scanJsonObjectEnd(message, objStart, budget);
+    budget -= scanned.steps;
+    if (scanned.end === -1) continue;
+    let closeStart = scanned.end;
+    while (closeStart < message.length && /\s/.test(message[closeStart]!)) closeStart += 1;
+    if (!message.startsWith(ticks, closeStart)) continue;
+    let closeEnd = closeStart + ticks.length;
+    while (closeEnd < message.length && message[closeEnd] === '`') closeEnd += 1;
+    while (closeEnd < message.length && (message[closeEnd] === ' ' || message[closeEnd] === '\t')) closeEnd += 1;
+    if (closeEnd < message.length) {
+      if (message[closeEnd] === '\r' && message[closeEnd + 1] === '\n') closeEnd += 2;
+      else if (message[closeEnd] === '\n') closeEnd += 1;
+      else continue;
+    }
+    try {
+      const parsed = JSON.parse(message.slice(objStart, scanned.end)) as unknown;
+      if (isPlainObject(parsed)) {
+        if (hasForbiddenPayloadKey(parsed)) return { kind: 'invalid' };
+        if (isStructuredCandidate(parsed)) fencedCandidates.push({ value: parsed, start: fenceMatch.index, end: closeEnd });
+        fenceOpen.lastIndex = closeEnd;
+      }
+    } catch {
+      /* non-JSON fenced block */
+    }
+  }
+  if (fencedCandidates.length > 1) return { kind: 'invalid' };
+  if (fencedCandidates.length === 1) {
+    const [found] = fencedCandidates;
+    const prose = remainingProse(message, found!.start, found!.end);
+    const trailing = scanBareJsonObjects(prose);
+    if (trailing.invalid || trailing.candidates.length > 0) return { kind: 'invalid' };
+    return { kind: 'structured', value: found!.value, prose };
+  }
+  const bare = scanBareJsonObjects(message);
+  if (bare.invalid || bare.candidates.length > 1) return { kind: 'invalid' };
+  if (bare.candidates.length === 1) {
+    const [found] = bare.candidates;
+    return { kind: 'structured', value: found!.value, prose: remainingProse(message, found!.start, found!.end) };
+  }
+  return { kind: 'none' };
+}
 function code(code: AiErrorCode, retryAfter?: number): { ok: false; code: AiErrorCode; retryAfter?: number } {
   return { ok: false, code, ...(retryAfter ? { retryAfter } : {}) };
 }
@@ -202,7 +361,8 @@ function parseStored(value: unknown): Stored | null {
     : { schemaVersion: 1, enabled: value.enabled, endpoint, model: value.model };
 }
 function compact(value: unknown): string | null {
-  return typeof value === 'string' && Buffer.byteLength(value) <= MAX_ANSWER ? value : null;
+  if (typeof value !== 'string') return null;
+  return value.trim().length > 0 && Buffer.byteLength(value) <= MAX_ANSWER ? value : null;
 }
 async function boundedBody(response: Response, signal: AbortSignal): Promise<string | null> {
   if (!response.body) return null;
@@ -543,11 +703,13 @@ export function createAiProvider(options: { userDataPath: string; vault: SafeSto
         if (
           (payload as Record<string, unknown>).tool_calls !== undefined ||
           (payload as Record<string, unknown>).function_call !== undefined ||
+          (payload as Record<string, unknown>).tool_call !== undefined ||
           typeof choice !== 'object' ||
           choice === null ||
           Array.isArray(choice) ||
           (choice as Record<string, unknown>).tool_calls !== undefined ||
-          (choice as Record<string, unknown>).function_call !== undefined
+          (choice as Record<string, unknown>).function_call !== undefined ||
+          (choice as Record<string, unknown>).tool_call !== undefined
         )
           return code('AI_RESPONSE_INVALID');
         const messageObject = (choice as Record<string, unknown>).message;
@@ -557,34 +719,39 @@ export function createAiProvider(options: { userDataPath: string; vault: SafeSto
           Array.isArray(messageObject) ||
           (messageObject as Record<string, unknown>).tool_calls !== undefined ||
           (messageObject as Record<string, unknown>).function_call !== undefined ||
-          typeof (messageObject as Record<string, unknown>).content !== 'string'
+          (messageObject as Record<string, unknown>).tool_call !== undefined
         )
           return code('AI_RESPONSE_INVALID');
-        const message = (messageObject as Record<string, unknown>).content as string;
-        let answer = compact(message);
+        const message = extractMessageText((messageObject as Record<string, unknown>).content);
+        if (message === null) return code('AI_RESPONSE_INVALID');
+        const extracted = extractStructuredAnswer(message);
+        if (extracted.kind === 'invalid') return code('AI_RESPONSE_INVALID');
+        let answer: string | null = null;
         let changes: Awaited<ReturnType<typeof resolveChanges>> | undefined;
         let proposals: AiProposal[] | undefined;
-        try {
-          const parsed = JSON.parse(message) as unknown;
-          const shaped = ANSWER_SHAPES.some((keys) => exact(parsed, keys));
-          if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed) && !shaped) return code('AI_RESPONSE_INVALID');
-          if (shaped && exact(parsed, Object.keys(parsed as object))) {
+        if (extracted.kind === 'structured') {
+          const parsed = extracted.value;
+          if (Object.hasOwn(parsed, 'answer')) {
+            if (typeof parsed.answer !== 'string') return code('AI_RESPONSE_INVALID');
             answer = compact(parsed.answer);
-            if (Object.hasOwn(parsed, 'proposals')) {
-              // editor actions and display settings from a closed list; a person clicks each one, nothing here runs it
-              proposals = parseProposals(parsed.proposals) ?? undefined;
-              if (!proposals) return code('AI_RESPONSE_INVALID');
-            }
-            if (Object.hasOwn(parsed, 'changes')) {
-              // a change set is a proposal for the person to review, and only an edit request asks for one
-              if (request.mode !== 'edit' || !source) return code('AI_RESPONSE_INVALID');
-              changes = await resolveChanges(root, parsed.changes);
-              if (gatewaySignal.aborted) return code('AI_CANCELLED');
-              if (!changes) return code('AI_RESPONSE_INVALID');
-            }
+            if (answer === null && parsed.answer.trim().length === 0 && extracted.prose.length > 0) answer = compact(extracted.prose);
+          } else if (extracted.prose.length > 0) {
+            answer = compact(extracted.prose);
           }
-        } catch {
-          /* plain text is an allowed inert answer */
+          if (Object.hasOwn(parsed, 'proposals')) {
+            // editor actions and display settings from a closed list; a person clicks each one, nothing here runs it
+            proposals = parseProposals(parsed.proposals) ?? undefined;
+            if (!proposals) return code('AI_RESPONSE_INVALID');
+          }
+          if (Object.hasOwn(parsed, 'changes')) {
+            // a change set is a proposal for the person to review, and only an edit request asks for one
+            if (request.mode !== 'edit' || !source) return code('AI_RESPONSE_INVALID');
+            changes = await resolveChanges(root, parsed.changes);
+            if (gatewaySignal.aborted) return code('AI_CANCELLED');
+            if (!changes) return code('AI_RESPONSE_INVALID');
+          }
+        } else {
+          answer = compact(message);
         }
         if (answer === null) return code('AI_RESPONSE_INVALID');
         return {

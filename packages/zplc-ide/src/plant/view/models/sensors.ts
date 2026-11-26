@@ -312,9 +312,12 @@ function scaleModel(view: PartView, context: ModelContext): Piece[] {
   pieces.push(
     ...post.pieces,
     piece('indicator', box([iw, ih, id], 0.006), [x, above, post.z], 'housing'),
-    piece('display', box([iw - 0.03, 0.06, 0.002], 0), [x, above + 0.015, face + 0.001], 'lens'),
-    ...readout('digit-', text, 5, [x - 0.005, above + 0.015, face + 0.003], digit, 'lamp'),
-    piece('stable', rod(0.009, 0.004, 'z'), [x + iw / 2 - 0.03, above - 0.035, face + 0.002], lit(stable)),
+    piece('display', box([iw - 0.03, 0.06, 0.002], 0), [x, above + 0.018, face + 0.001], 'lens'),
+    ...readout('digit-', text, 5, [x - 0.005, above + 0.018, face + 0.003], digit, 'lamp'),
+    // Prominent front status band + top beacon so stable vs unsettled weight reads unmistakably at scene and sheet scale.
+    piece('stable', box([iw - 0.03, 0.026, 0.006], 0.001), [x, above - 0.035, face + 0.003], lit(stable)),
+    piece('stable-collar', box([0.132, 0.006, id - 0.004], 0.002), [x, above + ih / 2 + 0.003, post.z], 'collar'),
+    piece('stable-beacon', box([0.12, 0.028, id - 0.01], 0.004), [x, above + ih / 2 + 0.02, post.z], lit(stable)),
   );
   return pieces;
 }
@@ -373,7 +376,7 @@ function visionModel(view: PartView, context: ModelContext): Piece[] {
 // ---------------------------------------------------------------------------------------------------------------------
 
 /** The lever's swing while the switch makes contact, in radians, and the radius of its roller. */
-export const LIMIT_SWITCH = { swing: (25 * Math.PI) / 180, roller: 0.012 } as const;
+export const LIMIT_SWITCH = { swing: (50 * Math.PI) / 180, roller: 0.015 } as const;
 
 function limitSwitchModel(view: PartView, context: ModelContext): Piece[] {
   const reach = view.pose.size[0]; // the contact zone runs reach metres along +x from the switch's face; the origin is its middle
@@ -383,14 +386,18 @@ function limitSwitchModel(view: PartView, context: ModelContext): Piece[] {
   const arm = reach + 0.02 - roller; // from the head's axis to the roller's: the roller ends at the far end of the zone
   const yaw = contact ? swing : 0;
   const [c, s] = [Math.cos(yaw), Math.sin(yaw)];
-  const lever: Piece = piece('arm', box([arm, 0.006, 0.01], 0.001), [x + (arm / 2) * c, 0.004, (-arm / 2) * s], 'steel', true, yaw);
+  const lever: Piece = piece('arm', box([arm, 0.012, 0.016], 0.002), [x + (arm / 2) * c, 0.005, (-arm / 2) * s], 'steel', true, yaw);
   lever.q = [0, Math.sin(yaw / 2), 0, Math.cos(yaw / 2)]; // the lever turns about its pivot at the head
+  const flag: Piece = piece('flag', box([0.026, 0.01, 0.026], 0.002), [x + arm * c, 0.016, -arm * s], 'mark', true, yaw);
+  flag.q = lever.q;
   return [
-    piece('body', box([0.04, 0.06, 0.035], 0.003), [x, -0.04, 0], 'housing'),
-    piece('head', rod(0.014, 0.02, 'y'), [x, 0, 0], 'collar'),
+    piece('body', box([0.04, 0.06, 0.052], 0.003), [x, -0.04, 0], 'housing'),
+    piece('bezel', box([0.038, 0.032, 0.056], 0.002), [x, -0.036, 0], lit(contact)),
+    piece('head', rod(0.015, 0.028, 'y'), [x, 0, 0], 'collar'),
+    piece('lamp', box([0.038, 0.02, 0.048], 0.003), [x, 0.023, 0], lit(contact)),
     lever,
-    piece('roller', rod(roller, 0.012, 'y'), [x + arm * c, 0, -arm * s], 'rubber'),
-    piece('lamp', rod(0.006, 0.004, 'y'), [x - 0.012, -0.008, 0.011], lit(contact)),
+    piece('roller', rod(roller, 0.022, 'y'), [x + arm * c, 0, -arm * s], 'rubber'),
+    flag,
     ...stand(context.mount, x, x - 0.02, -0.07, -view.pose.p[1]),
   ];
 }
