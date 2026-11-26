@@ -8,7 +8,7 @@ import { controlStation } from '../controlStations';
 import { createPlantCore } from '../../core/plantCore';
 import { modelBounds, partModel, pieceExtent } from './index';
 import { beltToSensor, bottom, slot, top } from './models.fixtures';
-import { EMERGENCY_STOP, isStand, OPERATOR, PUSH_BUTTON } from './operator';
+import { EMERGENCY_STOP, isStand, OPERATOR, POTENTIOMETER, PUSH_BUTTON } from './operator';
 
 const plant = beltToSensor();
 
@@ -197,6 +197,75 @@ describe('operator panel models (VIS-014)', () => {
     const ticks = low.filter((p) => p.slot.startsWith('tick-'));
     expect(ticks.map((p) => Math.round(deg(p.yaw))).sort((a, b) => a - b)).toEqual([-135, 0, 135]);
     expect(ticks.every((p) => p.role === 'mark')).toBe(true);
+  });
+
+  it(
+    'VIS-014 a potentiometer has a dark dial plate, asymmetric 270-degree scale, tall overhanging pointer wing, and front meter ' +
+      'window',
+    async () => {
+      const core = await coreOf(lone('potentiometer', { min: 0, max: 100 }));
+      const pieces = partModel(viewOf(core, 'it'))!;
+      const dial = slot(pieces, 'dial-plate');
+      expect(dial).toBeDefined();
+      expect(dial.role).toBe('lens');
+      expect(pieceExtent(dial)[0]).toBeGreaterThanOrEqual(0.05);
+
+      // Asymmetric 270-degree scale: intermediate radial marks plus a distinct max-end accent.
+      const scaleMarks = pieces.filter((p) => p.slot.startsWith('scale-'));
+      expect(scaleMarks.length).toBeGreaterThanOrEqual(7);
+      const scaleMax = slot(pieces, 'scale-max');
+      expect(scaleMax).toBeDefined();
+      expect(scaleMax.role).toBe('safety');
+      expect(Math.round(deg(scaleMax.yaw))).toBe(135);
+
+      // Tall pointer wing extending past the knob radius with an overhanging pointer tip.
+      const pointer = slot(pieces, 'pointer');
+      expect(2 * pieceExtent(pointer)[1]).toBeGreaterThanOrEqual(0.012);
+      const pointerTip = slot(pieces, 'pointer-tip');
+      expect(pointerTip).toBeDefined();
+      expect(pointerTip.role).toBe('mark');
+      expect(Math.hypot(pointerTip.at[0], pointerTip.at[2])).toBeGreaterThan(POTENTIOMETER.radius);
+
+      // Prominent front meter window with 6 bargraph segments on the +z face.
+      const win = slot(pieces, 'meter-window');
+      expect(win).toBeDefined();
+      expect(win.role).toBe('lens');
+      expect(2 * pieceExtent(win)[0]).toBeGreaterThanOrEqual(0.1);
+      expect(2 * pieceExtent(win)[1]).toBeGreaterThanOrEqual(0.05);
+      expect(win.at[2]).toBeGreaterThan(0.05);
+      const bars = pieces.filter((p) => p.slot.startsWith('bar-'));
+      expect(bars.length).toBe(6);
+    },
+  );
+
+  it('VIS-016 the potentiometer front bargraph and overhanging pointer unmistakably distinguish min, half and max', async () => {
+    const core = await coreOf(lone('potentiometer', { min: 0, max: 100 }));
+    const at = (value: number) => {
+      core.operate('It.value', value);
+      core.advance(5);
+      return partModel(viewOf(core, 'it'))!;
+    };
+    const [min, half, max] = [at(0), at(50), at(100)];
+    const litBars = (pieces: ReturnType<typeof at>) => pieces.filter((p) => p.slot.startsWith('bar-') && p.role === 'lamp');
+    const offBars = (pieces: ReturnType<typeof at>) => pieces.filter((p) => p.slot.startsWith('bar-') && p.role === 'lampOff');
+    expect(litBars(min).length).toBe(0);
+    expect(offBars(min).length).toBe(6);
+    expect(litBars(half).length).toBe(3);
+    expect(offBars(half).length).toBe(3);
+    expect(litBars(max).length).toBe(6);
+    expect(offBars(max).length).toBe(0);
+
+    // At max, the glowing bargraph face area meets the diffuse sensor scene-visibility benchmark (>= 0.0015 m2).
+    const glowingArea = litBars(max).reduce((sum, p) => {
+      const [hx, hy] = pieceExtent(p);
+      return sum + 4 * hx * hy;
+    }, 0);
+    expect(glowingArea).toBeGreaterThanOrEqual(0.0015);
+
+    // Pointer tip turns cleanly across -135, 0, +135 degrees.
+    expect(deg(slot(min, 'pointer-tip').yaw)).toBeCloseTo(-135, 9);
+    expect(deg(slot(half, 'pointer-tip').yaw)).toBeCloseTo(0, 9);
+    expect(deg(slot(max, 'pointer-tip').yaw)).toBeCloseTo(135, 9);
   });
 });
 

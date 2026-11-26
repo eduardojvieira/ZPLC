@@ -366,6 +366,94 @@ describe('turntable model (VIS-014, VIS-016)', () => {
     expect(marks.length).toBeGreaterThanOrEqual(2);
     expect(marks.every((m) => m.yaw === Math.PI / 2 && m.at[2] === 0)).toBe(true);
   });
+
+  it(
+    'VIS-014 a turntable carries asymmetric orientation marks (arrow shaft + head, entry bar, one-sided side index) and a fixed ' +
+      'base index inside its square',
+    async () => {
+      const view = await viewOf(tableScene, 'table');
+      const pieces = partModel(view)!;
+      const size = view.pose.size[0];
+      const shaft = slot(pieces, 'arrow-shaft');
+      const head = slot(pieces, 'arrow');
+      expect(shaft).toBeDefined();
+      expect(shaft.role).toBe('mark');
+      expect(head.role).toBe('mark');
+      // Together, shaft and arrowhead span most of the deck along +x.
+      const minX = shaft.at[0] - pieceExtent(shaft)[0];
+      const maxX = head.at[0] + pieceExtent(head)[0];
+      expect(maxX - minX).toBeGreaterThanOrEqual(0.65 * size);
+      expect(head.at[0]).toBeGreaterThan(shaft.at[0]);
+
+      const entryBar = slot(pieces, 'entry-bar');
+      expect(entryBar).toBeDefined();
+      expect(entryBar.role).toBe('safety');
+      expect(entryBar.at[0]).toBeLessThan(-size / 4);
+      expect(pieceExtent(entryBar)[2]).toBeGreaterThan(size / 3);
+      // No mirror bar on the exit (+x) end.
+      expect(pieces.some((p) => p.slot !== 'entry-bar' && p.role === 'safety' && p.at[0] > size / 4 && pieceExtent(p)[2] > size / 3)).toBe(
+        false,
+      );
+
+      const sideIndex = slot(pieces, 'side-index');
+      expect(sideIndex).toBeDefined();
+      expect(sideIndex.role).toBe('safety');
+      expect(sideIndex.at[2]).toBeGreaterThan(size / 3);
+      expect(sideIndex.at[0]).toBeGreaterThan(0);
+      // Asymmetric: no matching side index on the -z rail.
+      expect(pieces.some((p) => p.role === 'safety' && p.at[2] < -size / 3)).toBe(false);
+
+      const baseIndex = slot(pieces, 'base-index');
+      expect(baseIndex).toBeDefined();
+      expect(baseIndex.role).toBe('safety');
+      expect(baseIndex.at[0]).toBeGreaterThan(size / 4);
+      expect(baseIndex.at[1]).toBeLessThan(0);
+
+      const bounds = modelBounds(view)!;
+      [bounds.min[0], bounds.max[0], bounds.min[2], bounds.max[2]].forEach((v, i) =>
+        expect(v).toBeCloseTo([-1, 1, -1, 1][i]! * (size / 2), 9),
+      );
+    },
+  );
+
+  it(
+    'VIS-016 turntable centre, left (-90 deg) and right (+90 deg) place asymmetric deck marks at distinct world positions while ' +
+      'base-index stays fixed',
+    async () => {
+      const centre = await viewOf(tableScene, 'table');
+      const left = await viewOf(tableScene, 'table', { 'Table1.toLeft': true }, 2000);
+      const right = await viewOf(tableScene, 'table', { 'Table1.toRight': true }, 2000);
+      expect(left.state.text).toBe('left');
+      expect(right.state.text).toBe('right');
+      const world = (view: PartView, p: Piece): [number, number, number] => {
+        const yaw = 2 * Math.atan2(view.pose.q[1], view.pose.q[3]);
+        const [x, z] = [p.at[0], p.at[2]];
+        return [x * Math.cos(yaw) + z * Math.sin(yaw), -x * Math.sin(yaw) + z * Math.cos(yaw), yaw + p.yaw];
+      };
+      const [mc, ml, mr] = [partModel(centre)!, partModel(left)!, partModel(right)!];
+      const baseC = world(centre, slot(mc, 'base-index'));
+      for (const [view, pieces] of [
+        [left, ml],
+        [right, mr],
+      ] as const) {
+        world(view, slot(pieces, 'base-index')).forEach((v, i) => expect(v).toBeCloseTo(baseC[i]!, 6));
+      }
+      const size = centre.pose.size[0];
+      // Entry bar moves to +z at left (-90 deg) and -z at right (+90 deg), while arrow points -z at left and +z at right.
+      expect(world(centre, slot(mc, 'entry-bar'))[0]).toBeLessThan(-size / 4);
+      expect(world(left, slot(ml, 'entry-bar'))[1]).toBeGreaterThan(size / 4);
+      expect(world(right, slot(mr, 'entry-bar'))[1]).toBeLessThan(-size / 4);
+      expect(world(left, slot(ml, 'arrow'))[1]).toBeLessThan(-0.1 * size);
+      expect(world(right, slot(mr, 'arrow'))[1]).toBeGreaterThan(0.1 * size);
+      // Side index lies at distinct world quadrants across all three positions.
+      const sides = [world(centre, slot(mc, 'side-index')), world(left, slot(ml, 'side-index')), world(right, slot(mr, 'side-index'))];
+      for (let i = 0; i < sides.length; i++)
+        for (let j = i + 1; j < sides.length; j++) {
+          const d = Math.hypot(sides[i]![0] - sides[j]![0], sides[i]![1] - sides[j]![1]);
+          expect(d).toBeGreaterThan(0.25 * size);
+        }
+    },
+  );
 });
 
 describe('lift model (VIS-014, VIS-016)', () => {
