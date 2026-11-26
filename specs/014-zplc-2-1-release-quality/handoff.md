@@ -131,7 +131,7 @@ Given by the reviewer under S-19, for the most complete release. The owner overt
 | 9 | HIL-009 for the release | No exception for 2.1.0. Two things are due: the bench of `tools/hil/BENCH-2.1.md` on both boards before the first candidate (RCN-003), and the records of gate 6 on the images of the draft before publishing (REL-016) |
 | 10 | Scene hashes and frame rates on macOS and Windows | Run the nightly on the hosted runners now, for the scene hashes. A frame rate from a hosted runner is recorded as such and claims nothing about a real GPU. The real machines are a step of the owner |
 
-Writers and verifiers run on Sonnet 5.5 at medium effort, as the owner asked on 2026-11-25. The brief of each is closed: the branch, the files, the red test, the commands and the end condition; and each commits and pushes after the red test and after each green one, so a cut loses nothing.
+Writers with closed briefs run on `pro`; independent verifiers and high-risk units (C core and HAL, journey races, MCP design and security) run on `inherit` (Gemini 4 Neon High); `flash` is limited to read-only exploration and log classification, with findings confirmed by the orchestrator before acting (`flash_lite` is not used); a `pro` writer that fails the same unit twice escalates to `inherit`, as the owner approved on 2026-11-26 (L436). The brief of each is closed: the branch, the files, the red test, the commands and the end condition; and each commits and pushes after the red test and after each green one, so a cut loses nothing.
 
 ## 8. What is not known
 
