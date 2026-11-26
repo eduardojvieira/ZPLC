@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_function_reference.ts): reference/functions. Do not edit. >>> */}
 
-Todas las funciones del registro del compilador, con su firma, lo que hacen y un ejemplo. El registro tiene 297 funciones: las 57 funciones con nombre de abajo y las 240 conversiones de tipo. `ANY`, `ANY_NUM`, `ANY_INT` y `ANY_BIT` representan la familia de tipos que la función acepta. Los elementos del lenguaje que las llaman están en la [vista general de lenguajes](../languages/index.md); los bloques con estado están en la [referencia de bloques de función](./function-blocks.md).
+Todas las funciones del registro del compilador, con su firma, lo que hacen y un ejemplo. El registro tiene 297 funciones: las 57 funciones con nombre de abajo y las 240 conversiones de tipo. `ANY`, `ANY_NUM`, `ANY_INT` y `ANY_BIT` representan la familia de tipos que la función acepta. Los elementos del lenguaje que las llaman están en la [vista general de lenguajes](../languages/index.md); los bloques con estado están en la [referencia de bloques de función](./function-blocks.md). Toda función se llama desde Structured Text, Diagrama de Bloques de Función y Ladder.
 
 Cada ejemplo es un programa completo. CI lo compila y lo ejecuta en el runtime POSIX nativo, y el resultado indicado debajo es el valor que la ejecución comprueba.
 

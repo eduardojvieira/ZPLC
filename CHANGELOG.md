@@ -22,6 +22,19 @@ and version when the release is cut (see `RELEASING.md`).
 
 ## Unreleased
 
+### What changed for you
+
+- A Function Block Diagram and a Ladder rung place every function of the compiler, the 240 type conversions included, so a
+  `REAL` is converted with a block such as `REAL_TO_INT` and no second file in Structured Text is needed. `MUX` takes up
+  to eight inputs.
+
+### Known limits
+
+- `SEL` and `MUX` do not select strings in any language. In FBD and Ladder the build refuses them with `STRING` and says
+  to use an `IF` in Structured Text.
+- A 64-bit literal (`LWORD#`, `ULINT#`, `LINT#`) as the input of `SHL`, `SHR`, `ROL` or `ROR` is refused at build time.
+  Assign the literal to a variable first. Assignment and arithmetic with those literals work.
+
 ## 2.0.1 - 2026-11-12
 
 ZPLC 2.0.1 fixes the simulation for anyone who used an earlier ZPLC on the same computer.
