@@ -118,12 +118,16 @@ describe('IDE-030: the tools an assistant can call are a closed list that names 
     // plan-aix §2.4: `plant` alone is a read (plant_inspect); plant I/O mode is what stays forbidden
     for (const name of MCP_TOOL_NAMES)
       expect(name, name).not.toMatch(
-        /flash|deploy|force|upload|connect|serial|shell|poke|write|stop|erase|provision|reset|debug|plant_io|feed|mirror|attach|delete|remove|progress_write|unlock|solution/,
+        new RegExp(
+          'flash|deploy|force|upload|connect|serial|shell|poke|write|stop|erase|provision|reset|debug|plant_io|feed|mirror|attach|' +
+            'delete|remove|progress_write|unlock|solution',
+        ),
       );
   });
 
   test('the resources are read-only documents and snapshots: none of them is a command', () => {
-    for (const uri of MCP_RESOURCE_URIS) expect(uri, uri).toMatch(/^zplc:\/\/(project|target|runtime|course|docs|lesson|formats)\/[a-z-]+$/);
+    for (const uri of MCP_RESOURCE_URIS)
+      expect(uri, uri).toMatch(/^zplc:\/\/(project|target|runtime|course|docs|lesson|formats)\/[a-z-]+$/);
   });
 });
 

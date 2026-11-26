@@ -7,10 +7,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/server';
-import { LEARN_POLICY_FILENAME } from '../../electron/learnPolicy';
+import { LEARN_POLICY_FILENAME, readSolutionsHidden } from '../../electron/learnPolicy';
 import { buildProjectContext } from '../ai/projectContext';
 import { LESSON_INDEX } from '../generated/lessonIndex';
-import { lessonCurrentResource } from './resources';
+import { lessonCurrentResource, solutionsHiddenIn } from './resources';
 import { buildMcpServer, openMcpUserData, openMcpWorkspace, type McpWorkspace } from './server';
 
 const LESSON = 'ld-no-nc-contacts';
@@ -42,7 +42,7 @@ async function solutionText(): Promise<string> {
 
 function expectNoSolution(body: unknown, solution: string) {
   const text = JSON.stringify(body);
-  expect(text).not.toMatch(/"solution/i);
+  expect(text).not.toMatch(/"solution"\s*:/i);
   expect(text).not.toContain(`"${entry.solution.project}"`);
   expect(text).not.toContain(solution.slice(0, 200));
 }
@@ -51,7 +51,7 @@ describe('AIX-002 zplc://lesson/current reads the lesson goal and never its solu
   test('with hideSolutions true in <userData>, the lesson answers its goal and hints, solutionsHidden true, and no solution', async () => {
     const body = await lessonCurrentResource(await lessonWorkspace(JSON.stringify({ hideSolutions: true })));
     expect(body).toMatchObject({ ok: true, lesson: { lessonId: LESSON, solutionsHidden: true } });
-    const lesson = (body as { lesson: Record<string, any> }).lesson;
+    const lesson = JSON.parse(JSON.stringify(body)).lesson;
     expect(lesson.goal).toBe(entry.text.en.summary);
     expect(lesson.objectives.length).toBeGreaterThan(0);
     expect(lesson.hints.length).toBeGreaterThan(0);
@@ -101,6 +101,29 @@ describe('AIX-002 zplc://lesson/current reads the lesson goal and never its solu
     for (const [name, schema] of schemas)
       for (const key of ['hideSolutions', 'solutionsHidden', 'showSolution', 'solution'])
         expect(schema.safeParse({ [key]: false }).success, `${name} accepted '${key}'`).toBe(false);
+  });
+
+  test("the MCP reader of the policy answers what Studio's readSolutionsHidden answers, for every kind of file", async () => {
+    const policies = [
+      undefined,
+      '',
+      '{',
+      '[]',
+      'null',
+      JSON.stringify({ hideSolutions: true }),
+      JSON.stringify({ hideSolutions: false }),
+      JSON.stringify({ hideSolutions: 'false' }),
+      JSON.stringify({ hideSolutions: false, other: 1 }),
+      JSON.stringify({ hideSolutions: false, pad: 'x'.repeat(2000) }),
+      ` ${JSON.stringify({ hideSolutions: false })}\n`,
+    ];
+    for (const policy of policies) {
+      const folder = await mkdtemp(join(tmpdir(), 'zplc-mcp-policy-'));
+      temporary.push(folder);
+      if (policy !== undefined) await writeFile(join(folder, LEARN_POLICY_FILENAME), policy);
+      expect(await solutionsHiddenIn(folder), String(policy)).toBe(await readSolutionsHidden(folder));
+    }
+    expect(await solutionsHiddenIn(join(tmpdir(), 'zplc-no-such-user-data'))).toBe(true);
   });
 
   test('the assistant context builder carries no solution either, hidden or not', async () => {

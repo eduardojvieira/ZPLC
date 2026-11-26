@@ -62,12 +62,17 @@ async function bind(root: string): Promise<McpWorkspace> {
 }
 
 const signal = () => new AbortController().signal;
+/** The JSON answer of a tool, read by path: each test asserts the fields it reads. */
+const answer = (result: { content: Array<{ text: string }> }) => JSON.parse(result.content[0]!.text);
 
 /** Builds the real server and returns its registered resources and the options it was built with. */
 function captured(workspace: McpWorkspace) {
   const proto = McpServer.prototype as unknown as Record<string, (...args: unknown[]) => unknown>;
   const original = { registerResource: proto.registerResource, registerTool: proto.registerTool, registerPrompt: proto.registerPrompt };
-  const resources = new Map<string, { config: Record<string, unknown>; read: (...args: unknown[]) => Promise<{ contents: Array<{ text: string }> }> }>();
+  const resources = new Map<
+    string,
+    { config: Record<string, unknown>; read: (...args: unknown[]) => Promise<{ contents: Array<{ text: string }> }> }
+  >();
   const tools = new Map<string, Record<string, unknown>>();
   const prompts: string[] = [];
   proto.registerResource = function (this: unknown, name: string, uri: unknown, config: Record<string, unknown>, read: never) {
@@ -107,7 +112,7 @@ describe('AIX-001 plant_inspect reads the scene, its signals and the plant map w
   test('a scene project answers its parts, the signals the scene offers, the map and no binding problem', async () => {
     const result = await createMcpDispatcher(await bind(await copyProject('plant_belt_to_sensor')))('plant_inspect', {}, signal());
     expect(result.isError ?? false).toBe(false);
-    const body = result.structuredContent as Record<string, any>;
+    const body = answer(result);
     expect(body.evidenceLevel).toBe('host-static');
     expect(body.summary.hasScene).toBe(true);
     expect(body.summary.hasPlantMap).toBe(true);
@@ -117,7 +122,12 @@ describe('AIX-001 plant_inspect reads the scene, its signals and the plant map w
     expect(JSON.stringify(body.summary.scene.parts)).not.toContain('speedMps');
     expect(body.summary.offeredSignals).toContainEqual({ name: 'Belt1.run', direction: 'command', type: 'BOOL' });
     expect(body.summary.offeredSignals).toContainEqual({ name: 'EyeFar.detect', direction: 'sensor', type: 'BOOL' });
-    expect(body.summary.plantMap.signals).toContainEqual({ name: 'Belt1.run', direction: 'command', type: 'BOOL', point: 'BeltToSensor.Run' });
+    expect(body.summary.plantMap.signals).toContainEqual({
+      name: 'Belt1.run',
+      direction: 'command',
+      type: 'BOOL',
+      point: 'BeltToSensor.Run',
+    });
     expect(body.summary.plantMap.bindingProblems).toEqual([]);
     expect(body.summary.factNames).toContain('itemsDropped');
   });
@@ -128,7 +138,7 @@ describe('AIX-001 plant_inspect reads the scene, its signals and the plant map w
     map.signals['Belt1.run'].point = 'BeltToSensor.Missing';
     await writeFile(join(root, 'plant-map.json'), JSON.stringify(map));
     const result = await createMcpDispatcher(await bind(root))('plant_inspect', {}, signal());
-    const problems = (result.structuredContent as Record<string, any>).summary.plantMap.bindingProblems as string[];
+    const problems = answer(result).summary.plantMap.bindingProblems as string[];
     expect(problems).toHaveLength(1);
     expect(problems[0]).toContain('Belt1.run');
     expect(problems[0]).toContain('BeltToSensor.Missing');
@@ -137,28 +147,34 @@ describe('AIX-001 plant_inspect reads the scene, its signals and the plant map w
   test('a project without a scene answers ok with hasScene and hasPlantMap false', async () => {
     const result = await createMcpDispatcher(await bind(await plain()))('plant_inspect', {}, signal());
     expect(result.isError ?? false).toBe(false);
-    expect((result.structuredContent as Record<string, any>).summary).toMatchObject({ hasScene: false, hasPlantMap: false });
+    expect(answer(result).summary).toMatchObject({ hasScene: false, hasPlantMap: false });
   });
 
-  test('a scene file named explicitly that does not exist is MCP_NOT_FOUND; a broken scene is MCP_VALIDATION_FAILED with its place', async () => {
-    const root = await copyProject('plant_belt_to_sensor');
-    const dispatch = createMcpDispatcher(await bind(root));
-    const missing = await dispatch('plant_inspect', { sceneFile: 'plant-scenes/other/scene.json' }, signal());
-    expect(missing.isError).toBe(true);
-    expect(missing.structuredContent).toMatchObject({ ok: false, error: 'MCP_NOT_FOUND' });
-    await writeFile(join(root, 'scene.json'), JSON.stringify({ schemaVersion: 1, name: 'x', parts: [{ id: 'a', part: 'nope' }], cameras: [] }));
-    const broken = await dispatch('plant_inspect', {}, signal());
-    expect(broken.isError).toBe(true);
-    expect(broken.structuredContent).toMatchObject({ ok: false, error: 'MCP_VALIDATION_FAILED' });
-    expect(((broken.structuredContent as Record<string, any>).diagnostics as Array<{ code: string }>)[0]!.code).toBe('SCENE_INVALID');
-  });
+  test(
+    'a scene file named explicitly that does not exist is MCP_NOT_FOUND; a broken scene is MCP_VALIDATION_FAILED with its ' + 'place',
+    async () => {
+      const root = await copyProject('plant_belt_to_sensor');
+      const dispatch = createMcpDispatcher(await bind(root));
+      const missing = await dispatch('plant_inspect', { sceneFile: 'plant-scenes/other/scene.json' }, signal());
+      expect(missing.isError).toBe(true);
+      expect(missing.structuredContent).toMatchObject({ ok: false, error: 'MCP_NOT_FOUND' });
+      await writeFile(
+        join(root, 'scene.json'),
+        JSON.stringify({ schemaVersion: 1, name: 'x', parts: [{ id: 'a', part: 'nope' }], cameras: [] }),
+      );
+      const broken = await dispatch('plant_inspect', {}, signal());
+      expect(broken.isError).toBe(true);
+      expect(broken.structuredContent).toMatchObject({ ok: false, error: 'MCP_VALIDATION_FAILED' });
+      expect((answer(broken).diagnostics as Array<{ code: string }>)[0]!.code).toBe('SCENE_INVALID');
+    },
+  );
 });
 
 describe('AIX-001 scenarios_list and the scenario resources list each scenario and its expectations', () => {
   test('scenarios_list answers id, path, timing, scene and a summary of each expectation', async () => {
     const result = await createMcpDispatcher(await bind(await copyProject('plant_belt_to_sensor')))('scenarios_list', {}, signal());
     expect(result.isError ?? false).toBe(false);
-    const body = result.structuredContent as Record<string, any>;
+    const body = answer(result);
     expect(body.evidenceLevel).toBe('host-static');
     expect(body.summary.count).toBe(1);
     expect(body.summary.scenarios[0]).toMatchObject({
@@ -169,7 +185,12 @@ describe('AIX-001 scenarios_list and the scenario resources list each scenario a
       scene: 'scene.json',
       events: 0,
     });
-    expect(body.summary.scenarios[0].expectations[1]).toEqual({ kind: 'EVENTUALLY', fromMs: 0, withinMs: 8000, signals: ['fact:count:EyeFar'] });
+    expect(body.summary.scenarios[0].expectations[1]).toEqual({
+      kind: 'EVENTUALLY',
+      fromMs: 0,
+      withinMs: 8000,
+      signals: ['fact:count:EyeFar'],
+    });
   });
 
   test('zplc://project/scenario/{scenarioId} reads one scenario; an unknown id is MCP_NOT_FOUND with the valid ids', async () => {
@@ -201,7 +222,7 @@ describe('AIX-001 the context an agent reads is bounded by MCP_CONTEXT_CAPS', ()
   test('a scenario with more expectations, longer texts and more signals than the caps is cut and says truncated', async () => {
     const root = await plain();
     const long = 'L'.repeat(1000);
-    const condition = Object.fromEntries(Array.from({ length: 100 }, (_, index) => [`Main.S${index}`, true]));
+    const condition = Object.fromEntries(Array.from({ length: 70 }, (_, index) => [`Main.S${index}`, true]));
     await writeFile(
       join(root, 'tests', 'big.scenario.json'),
       JSON.stringify({
@@ -210,17 +231,22 @@ describe('AIX-001 the context an agent reads is bounded by MCP_CONTEXT_CAPS', ()
         tickMs: 10,
         durationMs: 100,
         events: [],
-        expectations: Array.from({ length: 300 }, () => ({ kind: 'AT', atMs: 0, condition })),
+        expectations: Array.from({ length: 80 }, () => ({ kind: 'AT', atMs: 0, condition })),
       }),
     );
-    for (let index = 0; index < 70; index += 1)
-      await writeFile(join(root, 'tests', `s${index}.scenario.json`), JSON.stringify({ schemaVersion: 1, id: `s${index}`, tickMs: 10, durationMs: 10, events: [], expectations: [] }));
+    // the workspace reader takes at most 64 scenario files, as many as listItems
+    for (let index = 0; index < 63; index += 1)
+      await writeFile(
+        join(root, 'tests', `s${index}.scenario.json`),
+        JSON.stringify({ schemaVersion: 1, id: `s${index}`, tickMs: 10, durationMs: 10, events: [], expectations: [] }),
+      );
     const result = await createMcpDispatcher(await bind(root))('scenarios_list', {}, signal());
-    const body = result.structuredContent as Record<string, any>;
+    const body = answer(result);
     expect(body.truncated).toBe(true);
     expect(body.summary.count).toBe(64);
     expect(body.summary.scenarios.length).toBeLessThanOrEqual(MCP_CONTEXT_CAPS.listItems);
     const big = body.summary.scenarios.find((scenario: { path: string }) => scenario.path === 'tests/big.scenario.json');
+    expect(big.id).toHaveLength(120);
     expect(big.expectations).toHaveLength(MCP_CONTEXT_CAPS.listItems);
     expect(big.expectations[0].signals).toHaveLength(MCP_CONTEXT_CAPS.listItems);
     expect(Buffer.byteLength(result.content[0]!.text, 'utf8')).toBeLessThanOrEqual(MAX_OUTPUT_BYTES);
@@ -230,10 +256,17 @@ describe('AIX-001 the context an agent reads is bounded by MCP_CONTEXT_CAPS', ()
     const root = await plain();
     await writeFile(
       join(root, 'tests', 'x.scenario.json'),
-      JSON.stringify({ schemaVersion: 1, id: 'x', tickMs: 10, durationMs: 10, events: [], expectations: [{ kind: 'AT', atMs: 0, condition: { ['M'.repeat(900)]: true } }] }),
+      JSON.stringify({
+        schemaVersion: 1,
+        id: 'x',
+        tickMs: 10,
+        durationMs: 10,
+        events: [],
+        expectations: [{ kind: 'AT', atMs: 0, condition: { ['M'.repeat(900)]: true } }],
+      }),
     );
     const result = await createMcpDispatcher(await bind(root))('scenarios_list', {}, signal());
-    const body = result.structuredContent as Record<string, any>;
+    const body = answer(result);
     expect(body.summary.scenarios[0].expectations[0].signals[0]).toHaveLength(MCP_CONTEXT_CAPS.textChars);
     expect(body.truncated).toBe(true);
   });
@@ -265,7 +298,7 @@ describe('AIX-007 server_self_check and zplc-mcp --self-check report the folder,
     const root = await plain();
     const result = await createMcpDispatcher(await bind(root), refuse)('server_self_check', {}, signal());
     expect(result.isError ?? false).toBe(false);
-    const body = result.structuredContent as Record<string, any>;
+    const body = answer(result);
     expect(body.evidenceLevel).toBe('repository-metadata');
     expect(body.summary).toMatchObject({
       workspaceName: 'Plain',
@@ -314,7 +347,14 @@ describe('AIX-007 server_self_check and zplc-mcp --self-check report the folder,
       const done = await selfCheck(['--workspace', root, '--self-check']);
       expect(done.code).toBe(0);
       const report = JSON.parse(done.out);
-      expect(report).toMatchObject({ ready: true, folder: root, workspaceName: 'Plain', toolCount: 18, boundary: MCP_BOUNDARY, problems: [] });
+      expect(report).toMatchObject({
+        ready: true,
+        folder: root,
+        workspaceName: 'Plain',
+        toolCount: 18,
+        boundary: MCP_BOUNDARY,
+        problems: [],
+      });
       expect(report.protocolsServed).toEqual(expect.arrayContaining(['2026-07-28', '2025-11-25']));
       expect(report.nativeSimulatorReady).toBe(true);
     } finally {
@@ -366,7 +406,16 @@ describe('AIX-008 every tool and resource says in plain words what it returns, a
   test('the instructions name the order of work, the formats, the evidence level and the 2.0 boundary of AGENTS.md rule 8', async () => {
     const { server } = captured(await bind(await plain()));
     const instructions = String((server.server as unknown as { _instructions?: string })._instructions ?? '');
-    for (const part of ['project_inspect', 'plant_inspect', 'scenarios_list', 'zplc://formats/', 'compiler_check', 'scenario_run', 'evidenceLevel', MCP_BOUNDARY])
+    for (const part of [
+      'project_inspect',
+      'plant_inspect',
+      'scenarios_list',
+      'zplc://formats/',
+      'compiler_check',
+      'scenario_run',
+      'evidenceLevel',
+      MCP_BOUNDARY,
+    ])
       expect(instructions, part).toContain(part);
     // the proposed rule 8 sentence for private simulators waits for the owner (plan-aix §2.1a)
     expect(instructions).not.toMatch(/private (host )?simulat|set inputs and step/i);
