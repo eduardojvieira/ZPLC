@@ -3,48 +3,22 @@
  * lesson's reference solution. Studio mirrors its `hideSolutions` setting here, into one small private file under the user-data
  * directory, and the assistant (`aiProvider.ts`) and `zplc-mcp --user-data` read it from that file, never from a value a page or
  * an agent sends. Writing is atomic (temporary file, then rename), as in `shellPreferences.ts`. Reading fails closed: a missing,
- * corrupt, oversized or foreign file, or no user-data folder at all, means the solutions are hidden.
+ * linked, corrupt, oversized or foreign file, or no user-data folder at all, means the solutions are hidden.
  */
-import { mkdir, readFile, rename, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, rename, unlink, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 
-export interface LearnPolicy {
-  hideSolutions: boolean;
-}
+import { LEARN_POLICY_FILENAME, readSolutionsHidden, type LearnPolicy } from '../shared/learnPolicyModel.js';
 
-export const LEARN_POLICY_FILENAME = 'zplc-learn-policy.v1.json';
-const MAX_BYTES = 1024;
-const HIDDEN: LearnPolicy = { hideSolutions: true };
-
-/** The policy of a value, or null for anything that is not exactly `{ hideSolutions: boolean }`. */
-export function parseLearnPolicy(value: unknown): LearnPolicy | null {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
-  const record = value as Record<string, unknown>;
-  const keys = Object.keys(record);
-  if (keys.length !== 1 || typeof record.hideSolutions !== 'boolean') return null;
-  return { hideSolutions: record.hideSolutions };
-}
-
-/** The policy in a file's text; solutions hidden for anything else. */
-export function readLearnPolicy(raw: string): LearnPolicy {
-  if (raw.length > MAX_BYTES) return HIDDEN;
-  try {
-    return parseLearnPolicy(JSON.parse(raw)) ?? HIDDEN;
-  } catch {
-    return HIDDEN;
-  }
-}
-
-/** True unless `<userData>` holds a valid policy that shows the solutions. */
-export async function readSolutionsHidden(userDataPath: string | undefined): Promise<boolean> {
-  if (!userDataPath) return true;
-  try {
-    return readLearnPolicy(await readFile(path.join(userDataPath, LEARN_POLICY_FILENAME), 'utf8')).hideSolutions;
-  } catch {
-    return true;
-  }
-}
+// The reader is shared with zplc-mcp (shared/learnPolicyModel.ts); this module keeps the store that writes the file.
+export {
+  LEARN_POLICY_FILENAME,
+  parseLearnPolicy,
+  readLearnPolicy,
+  readSolutionsHidden,
+  type LearnPolicy,
+} from '../shared/learnPolicyModel.js';
 
 /** The file operations of the store; a test replaces one to make a write fail. */
 export interface LearnPolicyIo {

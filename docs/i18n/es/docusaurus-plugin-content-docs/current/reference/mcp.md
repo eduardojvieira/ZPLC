@@ -9,14 +9,14 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/mcp. Do not edit. >>> */}
 
-`zplc-mcp` es un servidor local del Model Context Protocol sobre entrada y salida estándar. Expone 15 herramientas y 15 recursos para un espacio de trabajo. Todas las herramientas son de solo lectura salvo `firmware_build`, que ejecuta una compilación cruzada local y efímera: ninguna herramienta graba, despliega, fuerza, arranca, detiene ni abre un puerto serie o una consola. Los resultados son evidencia de una ejecución registrada en el host, no del hardware.
+`zplc-mcp` es un servidor local del Model Context Protocol sobre entrada y salida estándar. Expone 18 herramientas y 26 recursos para un espacio de trabajo. Todas las herramientas son de solo lectura salvo `firmware_build`, que ejecuta una compilación cruzada local y efímera: ninguna herramienta graba, despliega, fuerza, arranca, detiene ni abre un puerto serie o una consola. Los resultados son evidencia de una ejecución registrada en el host, no del hardware.
 
 Esta tabla se lee del archivo fuente `packages/zplc-ide/src/mcp/server.ts`; su texto es el de la propia fuente, por eso es igual en inglés y en español.
 
 ## Arranque del servidor
 
 ```text
-zplc-mcp --workspace <absolute-path-of-a-project> [--repository <absolute-path-of-a-checkout>] [--user-data <absolute-path-of-a-folder>]
+zplc-mcp --workspace <absolute-path-of-a-project> [--repository <absolute-path-of-a-checkout>] [--user-data <absolute-path-of-a-folder>] [--self-check]
 ```
 
 ## Revisión del protocolo
@@ -27,21 +27,24 @@ El servidor atiende el apretón de manos de 2025 (`initialize`) además de la re
 
 | Herramienta | Título | Entrada | Solo lectura | Descripción |
 | --- | --- | --- | --- | --- |
-| `project_inspect` | Inspect project |   | sí | Inspect the fixed ZPLC workspace. |
-| `project_validate` | Validate project |   | sí | Validate the fixed ZPLC workspace. |
-| `compiler_check` | Check compiler |   | sí | Check the fixed workspace without producing a program payload. |
-| `compiler_compile` | Compile workspace |   | sí | Compile the fixed workspace and return evidence only. |
-| `symbols_list` | List symbols |   | sí | List public compiler symbols for the fixed workspace. |
-| `safety_check` | Check declared interlocks |   | sí | Check declared incompatible-output coverage. |
-| `tests_run` | Run workspace tests |   | sí | Run deterministic native POSIX workspace tests. |
-| `scenario_run` | Run one scenario | `scenarioId` | sí | Run one named deterministic workspace scenario. |
-| `simulation_start` | Start recorded simulation | `scenarioId` | sí | Re-run a deterministic native POSIX scenario without retaining a session. |
-| `simulation_step` | Step recorded simulation | `scenarioId`, `cursor`, `traceSha256` | sí | Return one deterministic recorded host sample with an explicit trace identity. |
-| `runtime_snapshot` | Read recorded snapshot | `scenarioId`, `cursor`, `traceSha256` | sí | Read one explicit recorded host snapshot; no implicit runtime session exists. |
-| `trace_get` | Get recorded trace | `scenarioId` | sí | Return a bounded, sanitized deterministic native POSIX trace. |
-| `boards_list` | List board profiles |   | sí | List declared repository board profiles without probing hardware. |
-| `toolchain_inspect` | Inspect toolchain |   | sí | Inspect local firmware-build prerequisites only. |
-| `firmware_build` | Build firmware | `ideId` | no | Run a local ephemeral cross-build only; never flash or deploy. |
+| `project_inspect` | Inspect project |   | sí | Read the manifest summary: name, version, tasks, target and the programs of src with their language. Call it first. |
+| `project_validate` | Validate project |   | sí | Check that zplc.json, the tasks and each LD, FBD and SFC file load; a failure names the place and the accepted values. |
+| `compiler_check` | Check compiler |   | sí | Compile every program in memory: pass or fail, the code size and the located diagnostics. Use it after each edit. |
+| `compiler_compile` | Compile workspace |   | sí | Compile the project to .zplc bytecode and answer its digest, size and diagnostics; the bytes stay on the server. |
+| `symbols_list` | List symbols |   | sí | List the compiled variables with type, region and address; use the exact names in scenarios and plant maps. |
+| `safety_check` | Check declared interlocks |   | sí | Check that each incompatible output pair of zplc.json is covered by a NEVER expectation of a scenario in tests. |
+| `tests_run` | Run workspace tests |   | sí | Run every scenario of tests on the host simulator: pass or fail per scenario, the failed checks, a trace digest. |
+| `scenario_run` | Run one scenario | `scenarioId` | sí | Run one scenario, named by its id from scenarios_list, on the host simulator and answer its result and failed checks. |
+| `simulation_start` | Start recorded simulation | `scenarioId` | sí | Run one scenario on the host simulator and answer its first recorded sample and trace digest; no session is kept. |
+| `simulation_step` | Step recorded simulation | `scenarioId`, `cursor`, `traceSha256` | sí | Answer the recorded sample after cursor of a scenario run, pinned by its trace digest, to walk a run step by step. |
+| `runtime_snapshot` | Read recorded snapshot | `scenarioId`, `cursor`, `traceSha256` | sí | Answer one recorded sample of a scenario run at cursor, pinned by its trace digest; a recording, not a live runtime. |
+| `trace_get` | Get recorded trace | `scenarioId` | sí | Run one scenario on the host simulator and answer its recorded outputs over time and its expectation results. |
+| `boards_list` | List board profiles |   | sí | List the boards the repository declares and their validation level, without probing any hardware. Needs --repository. |
+| `toolchain_inspect` | Inspect toolchain |   | sí | Check the local tools a firmware build needs (west, CMake, Ninja, Zephyr SDK) and which are ready. Needs --repository. |
+| `firmware_build` | Build firmware | `ideId` | no | Run a local ephemeral cross-build of the runtime for one board, answer the image digest; it never flashes or deploys. |
+| `plant_inspect` | Inspect plant scene and map | `sceneFile`, `mapFile` | sí | Read the plant scene, the signals it offers, the plant map and the map points the compiled program does not have. |
+| `scenarios_list` | List scenarios |   | sí | List every scenario of tests with its id, timing, scene and a summary of each expectation; use the ids to run them. |
+| `server_self_check` | Check this server |   | sí | Answer what this server serves: project name, optional folders, simulator, protocols, counts and the boundary. |
 
 ## Recursos
 
@@ -59,7 +62,18 @@ El servidor atiende el apretón de manos de 2025 (`initialize`) además de la re
 | `zplc://docs/evidence` | fijo |
 | `zplc://docs/safety` | fijo |
 | `zplc://docs/testing` | fijo |
+| `zplc://project/scene` | fijo |
+| `zplc://project/plant-map` | fijo |
+| `zplc://project/scenarios` | fijo |
+| `zplc://lesson/current` | fijo |
+| `zplc://formats/ld` | fijo |
+| `zplc://formats/fbd` | fijo |
+| `zplc://formats/sfc` | fijo |
+| `zplc://formats/scene` | fijo |
+| `zplc://formats/plant-map` | fijo |
+| `zplc://formats/scenario` | fijo |
 | `zplc://project/source/{name}` | plantilla |
+| `zplc://project/scenario/{scenarioId}` | plantilla |
 | `zplc://runtime/trace/{scenarioId}` | plantilla |
 | `zplc://runtime/snapshot/{scenarioId}/{cursor}/{traceSha256}` | plantilla |
 

@@ -2,6 +2,10 @@ import { describe, expect, it } from 'bun:test';
 import { gripperDecor, snapshotBounds } from '../../src/plant/view/geometry';
 import { MODELS, partModel } from '../../src/plant/view/models';
 import { pairPercent, rasterize, worldBoxes } from '../../src/plant/view/models/raster.fixtures';
+import { silhouette, silhouetteXor } from './silhouette.fixtures';
+import sensorKindsScene from './sensorKinds.scene.json';
+import type { PlantSceneFile } from '../../src/plant/contracts';
+import { createPlantCore } from '../../src/plant/core/plantCore';
 import { CATALOGUE, catalogueCamera, catalogueKindCells, catalogueView, catalogueViews, ITEMS, unionBounds } from './catalogueStates';
 
 const MACHINES = {
@@ -141,4 +145,36 @@ describe('the catalogue sheet', () => {
   it('C10 the stacker crane fork at the centre and out to the left differ by more than the pick-place bar', async () => {
     expect(await pair('stacker-crane', 'fork centre', 'fork left')).toBeGreaterThan(PICK_PLACE_BAR);
   }, 60000);
+  // 0.31 % is the floor taken from the pick-place pair of the C9 sheet (moved, open / moved, gripping): it guards the sensor kinds
+  // against regressions and is not their approval, which is the sheet a person looks at (VIS-014). The guard compares silhouettes
+  // (silhouette.fixtures.ts) and so measures shape and outline only, never colour: each pair of kinds passes on its form alone.
+  it('frames the sensor bodies: every pair of the five kinds differs by at least 0.31 % of the cell (decision 4)', async () => {
+    const sensor = CATALOGUE.find((k) => k.id === 'sensor')!;
+    const cells = await catalogueKindCells(sensor, 400 / 300);
+    const kinds = ['diffuse', 'retro-reflective', 'inductive', 'capacitive', 'colour'];
+    for (const state of ['clear', 'detecting']) {
+      const masks = kinds.map((k) => {
+        const cell = cells.find((c) => c.label === `sensor: ${k}, ${state}`)!;
+        return silhouette(cell.snapshot.parts, cell.camera, 400, 300);
+      });
+      for (let i = 0; i < kinds.length; i++)
+        for (let j = i + 1; j < kinds.length; j++) {
+          const pair = `${kinds[i]} / ${kinds[j]}, ${state}`;
+          expect({ pair, enough: silhouetteXor(masks[i]!, masks[j]!) >= 0.0031 }).toEqual({ pair, enough: true });
+        }
+    }
+  });
+
+  it('C10 the capture fixture of two sensor kinds loads in the core and stands a diffuse and a capacitive sensor on one belt', async () => {
+    const core = await createPlantCore(sensorKindsScene as unknown as PlantSceneFile);
+    try {
+      const kinds = core
+        .snapshot()
+        .parts.filter((p) => p.part === 'sensor')
+        .map((p) => p.state.kind);
+      expect(kinds.sort()).toEqual(['capacitive', 'diffuse']);
+    } finally {
+      core.dispose();
+    }
+  });
 });

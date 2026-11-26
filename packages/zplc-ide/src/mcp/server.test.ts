@@ -121,6 +121,9 @@ describe('local MCP adapter', () => {
       'boards_list',
       'toolchain_inspect',
       'firmware_build',
+      'plant_inspect',
+      'scenarios_list',
+      'server_self_check',
     ]);
     expect(MCP_RESOURCE_URIS).toEqual([
       'zplc://project/manifest',
@@ -135,6 +138,16 @@ describe('local MCP adapter', () => {
       'zplc://docs/evidence',
       'zplc://docs/safety',
       'zplc://docs/testing',
+      'zplc://project/scene',
+      'zplc://project/plant-map',
+      'zplc://project/scenarios',
+      'zplc://lesson/current',
+      'zplc://formats/ld',
+      'zplc://formats/fbd',
+      'zplc://formats/sfc',
+      'zplc://formats/scene',
+      'zplc://formats/plant-map',
+      'zplc://formats/scenario',
     ]);
     expect(
       MCP_TOOL_NAMES.filter((name) =>

@@ -1,27 +1,49 @@
 import { createHash } from 'node:crypto';
-import { lstat, readFile } from 'node:fs/promises';
-import { isAbsolute, join } from 'node:path';
-import { McpServer, ResourceTemplate } from '@modelcontextprotocol/server';
+import { isAbsolute } from 'node:path';
+import { McpServer, ResourceTemplate, SUPPORTED_PROTOCOL_VERSIONS } from '@modelcontextprotocol/server';
 import { getBoardEvidenceSummary, getBoardNetworkType, getCompilerMemoryProfile } from '../config/boardProfiles';
 import * as z from 'zod/v4';
 import idePackage from '../../package.json';
 import { directoryIdentity, sameDirectoryIdentity, type DirectoryIdentity } from '../cli/firmwareBuildRunner';
 import * as toolApi from '../cli/toolApi';
-import { readWorkspace } from '../cli/workspace';
-import { LESSON_INDEX } from '../generated/lessonIndex';
-import { courseCounts, passedIn } from '../learn/course';
-import type { LessonIndex } from '../learn/lessonPackage';
 import {
-  LEARN_PROGRESS_FILENAME,
-  LEARN_PROGRESS_LEGACY_FILENAME,
-  LEARN_PROGRESS_MAX_BYTES,
-  emptyProgress,
-  migrateLegacyMastery,
-  parseProgress,
-  type LearnProgress,
-} from '../../shared/learnProgressModel';
+  EVIDENCE_LEVEL,
+  MCP_BOUNDARY,
+  MCP_INSTRUCTIONS,
+  MCP_PROMPT_NAMES,
+  MODERN_PROTOCOL_REVISION,
+  courseProgressResource,
+  type McpSelfCheck,
+  formatResource,
+  lessonCurrentResource,
+  nativeSimulatorReady,
+  plantInspect,
+  plantMapResource,
+  programsResource,
+  registerPrompts,
+  sceneResource,
+  scenarioResource,
+  scenariosList,
+  scenariosResource,
+  sourceResource,
+} from './resources';
 
-const MAX_OUTPUT_BYTES = 512 * 1024;
+export { MCP_BOUNDARY, MCP_PROMPT_NAMES, courseProgressResource, programsResource, sourceResource } from './resources';
+
+/** The largest answer of a tool or a resource, in bytes of its JSON text. */
+export const MAX_OUTPUT_BYTES = 512 * 1024;
+function logicalPath(value: string): boolean {
+  if (
+    value.length === 0 ||
+    value.length > 512 ||
+    value.includes('\0') ||
+    value.includes('\\') ||
+    value.startsWith('/') ||
+    /^[A-Za-z]:/.test(value)
+  )
+    return false;
+  return value.split('/').every((part) => part.length > 0 && part !== '.' && part !== '..');
+}
 const shortText = z.string().min(1).max(256);
 const identifier = z
   .string()
@@ -45,6 +67,12 @@ const REPLAY_INPUT = z
       .regex(/^[A-Za-z0-9][A-Za-z0-9._:-]*$/),
     cursor: z.number().int().min(0).max(100_000),
     traceSha256: z.string().regex(/^[0-9a-f]{64}$/),
+  })
+  .strict();
+const PLANT_INSPECT_INPUT = z
+  .object({
+    sceneFile: z.string().max(256).refine(logicalPath).optional().describe('Scene path in the project; scene.json when omitted.'),
+    mapFile: z.string().max(256).refine(logicalPath).optional().describe('Plant map path in the project; plant-map.json when omitted.'),
   })
   .strict();
 const FIRMWARE_BUILD_INPUT = z
@@ -74,6 +102,9 @@ export const MCP_TOOL_NAMES = [
   'boards_list',
   'toolchain_inspect',
   'firmware_build',
+  'plant_inspect',
+  'scenarios_list',
+  'server_self_check',
 ] as const;
 export const MCP_RESOURCE_URIS = [
   'zplc://project/manifest',
@@ -88,9 +119,25 @@ export const MCP_RESOURCE_URIS = [
   'zplc://docs/evidence',
   'zplc://docs/safety',
   'zplc://docs/testing',
+  'zplc://project/scene',
+  'zplc://project/plant-map',
+  'zplc://project/scenarios',
+  'zplc://lesson/current',
+  'zplc://formats/ld',
+  'zplc://formats/fbd',
+  'zplc://formats/sfc',
+  'zplc://formats/scene',
+  'zplc://formats/plant-map',
+  'zplc://formats/scenario',
+] as const;
+export const MCP_RESOURCE_TEMPLATES = [
+  'zplc://project/source/{name}',
+  'zplc://project/scenario/{scenarioId}',
+  'zplc://runtime/trace/{scenarioId}',
+  'zplc://runtime/snapshot/{scenarioId}/{cursor}/{traceSha256}',
 ] as const;
 export const MCP_SERVER_VERSION = idePackage.version;
-type McpToolName = (typeof MCP_TOOL_NAMES)[number];
+export type McpToolName = (typeof MCP_TOOL_NAMES)[number];
 type ToolArguments = Record<string, unknown>;
 export interface McpOperations {
   projectInspect(root: string): Promise<unknown>;
@@ -170,18 +217,6 @@ function safeJson(value: unknown, depth = 0): unknown | undefined {
   }
 }
 
-function logicalPath(value: string): boolean {
-  if (
-    value.length === 0 ||
-    value.length > 512 ||
-    value.includes('\0') ||
-    value.includes('\\') ||
-    value.startsWith('/') ||
-    /^[A-Za-z]:/.test(value)
-  )
-    return false;
-  return value.split('/').every((part) => part.length > 0 && part !== '.' && part !== '..');
-}
 const logicalPathSchema = z.string().max(512).refine(logicalPath);
 /**
  * The element of a visual or IL source a diagnostic is about (LNG-003): `rung:r1/cell:0,2`, `block:and_1`, `line:12`; ids are
@@ -861,6 +896,7 @@ function validArguments(tool: McpToolName, args: ToolArguments): boolean {
   if (tool === 'simulation_start' || tool === 'trace_get' || tool === 'scenario_run') return SCENARIO_INPUT.safeParse(args).success;
   if (tool === 'simulation_step' || tool === 'runtime_snapshot') return REPLAY_INPUT.safeParse(args).success;
   if (tool === 'firmware_build') return FIRMWARE_BUILD_INPUT.safeParse(args).success;
+  if (tool === 'plant_inspect') return PLANT_INSPECT_INPUT.safeParse(args).success;
   return Object.keys(args).length === 0;
 }
 
@@ -898,10 +934,71 @@ async function callTool(
   }
 }
 
+/** Compiles the program and answers its public variables, or undefined when it does not compile. */
+function compiledSymbols(root: string, operations: Pick<McpOperations, 'symbolsList'>) {
+  return async (): Promise<Array<{ pou: string; name: string }> | undefined> => {
+    const read = projectResource('symbols_list', await operations.symbolsList(root), 'symbols');
+    return read.ok === true ? (read.symbols as Array<{ pou: string; name: string }>) : undefined;
+  };
+}
+
+/** A result as text and structured content; an answer over the output limit is MCP_OUTPUT_LIMIT. */
+function asResult(structuredContent: Record<string, unknown>, isError: boolean): McpToolResult {
+  const text = JSON.stringify(structuredContent);
+  if (Buffer.byteLength(text, 'utf8') > MAX_OUTPUT_BYTES) return errorResult('MCP_OUTPUT_LIMIT');
+  return { content: [{ type: 'text', text }], structuredContent, ...(isError ? { isError: true } : {}) };
+}
+
+/** The answer of a read tool of `resources.ts`: its body as it is, an error when `ok` is false. */
+const readResult = (body: Record<string, unknown>) => asResult(body, body.ok !== true);
+
+/** Adds the evidence level after `ok` to every result that is not an error envelope. */
+function withEvidenceLevel(tool: McpToolName, result: McpToolResult): McpToolResult {
+  if ('error' in result.structuredContent) return result;
+  const { ok, ...rest } = result.structuredContent;
+  return asResult({ ok, evidenceLevel: EVIDENCE_LEVEL[tool], ...rest }, result.isError === true);
+}
+
+/**
+ * What the server would serve (AIX-007): the project by its name, the optional folders, the simulator binary, the protocol
+ * revisions, the counts and the boundary. It reads the project with the Tool API's inspection and looks at files; it starts no
+ * process and opens no board, port or socket (AGENTS.md rule 8).
+ */
+export async function mcpSelfCheck(workspace: McpWorkspace | undefined): Promise<McpSelfCheck> {
+  let workspaceName: string | undefined;
+  let workspaceValid = false;
+  if (workspace && sameIdentity(workspace.identity, await directoryIdentity(workspace.root))) {
+    const inspected = await toolApi.projectInspect(workspace.root);
+    workspaceValid = inspected.ok && sameIdentity(workspace.identity, await directoryIdentity(workspace.root));
+    if (inspected.ok) workspaceName = inspected.summary.name;
+  }
+  return {
+    serverVersion: MCP_SERVER_VERSION,
+    ...(workspaceName === undefined ? {} : { workspaceName }),
+    workspaceValid,
+    hasRepository: workspace?.repository !== undefined,
+    hasUserData: workspace?.userData !== undefined,
+    nativeSimulatorReady: nativeSimulatorReady(),
+    protocolsServed: [MODERN_PROTOCOL_REVISION, ...SUPPORTED_PROTOCOL_VERSIONS],
+    toolCount: MCP_TOOL_NAMES.length,
+    resourceCount: MCP_RESOURCE_URIS.length + MCP_RESOURCE_TEMPLATES.length,
+    promptCount: MCP_PROMPT_NAMES.length,
+    boundary: MCP_BOUNDARY,
+  };
+}
+
 /** @internal Small test seam; production uses the canonical Tool API functions. */
 export function createMcpDispatcher(
   workspace: McpWorkspace,
   operations: McpOperations = toolApi,
+): (tool: McpToolName, args: ToolArguments, signal: AbortSignal) => Promise<McpToolResult> {
+  const dispatch = dispatcher(workspace, operations);
+  return async (tool, args, signal) => withEvidenceLevel(tool, await dispatch(tool, args, signal));
+}
+
+function dispatcher(
+  workspace: McpWorkspace,
+  operations: McpOperations,
 ): (tool: McpToolName, args: ToolArguments, signal: AbortSignal) => Promise<McpToolResult> {
   let busy = false;
   return async (tool, args, signal) => {
@@ -912,6 +1009,12 @@ export function createMcpDispatcher(
     try {
       if (!sameIdentity(workspace.identity, await directoryIdentity(workspace.root))) return errorResult('MCP_WORKSPACE_CHANGED');
       if (signal.aborted) return errorResult('MCP_CANCELLED');
+      if (tool === 'server_self_check') return readResult({ ok: true, summary: await mcpSelfCheck(workspace) });
+      if (tool === 'scenarios_list') return readResult(await scenariosList(workspace));
+      if (tool === 'plant_inspect')
+        return readResult(
+          await plantInspect(workspace, args as { sceneFile?: string; mapFile?: string }, compiledSymbols(workspace.root, operations)),
+        );
       if (['simulation_start', 'simulation_step', 'runtime_snapshot', 'trace_get'].includes(tool)) {
         const executionStart = toolApi.startToolExecution('mcp', 'tests:run', 'scenario-run');
         const value = await callTool(tool, workspace.root, args, signal, operations);
@@ -979,23 +1082,33 @@ export function createMcpDispatcher(
 }
 
 export function buildMcpServer(workspace: McpWorkspace): McpServer {
-  const server = new McpServer({ name: 'zplc-local', version: MCP_SERVER_VERSION });
+  const server = new McpServer({ name: 'zplc-local', version: MCP_SERVER_VERSION }, { instructions: MCP_INSTRUCTIONS });
   const dispatch = createMcpDispatcher(workspace);
   server.registerTool(
     'project_inspect',
-    { title: 'Inspect project', description: 'Inspect the fixed ZPLC workspace.', inputSchema: EMPTY_INPUT, annotations: READ_ONLY },
+    {
+      title: 'Inspect project',
+      description: 'Read the manifest summary: name, version, tasks, target and the programs of src with their language. Call it first.',
+      inputSchema: EMPTY_INPUT,
+      annotations: READ_ONLY,
+    },
     (args, ctx) => dispatch('project_inspect', args, ctx.mcpReq.signal),
   );
   server.registerTool(
     'project_validate',
-    { title: 'Validate project', description: 'Validate the fixed ZPLC workspace.', inputSchema: EMPTY_INPUT, annotations: READ_ONLY },
+    {
+      title: 'Validate project',
+      description: 'Check that zplc.json, the tasks and each LD, FBD and SFC file load; a failure names the place and the accepted values.',
+      inputSchema: EMPTY_INPUT,
+      annotations: READ_ONLY,
+    },
     (args, ctx) => dispatch('project_validate', args, ctx.mcpReq.signal),
   );
   server.registerTool(
     'compiler_check',
     {
       title: 'Check compiler',
-      description: 'Check the fixed workspace without producing a program payload.',
+      description: 'Compile every program in memory: pass or fail, the code size and the located diagnostics. Use it after each edit.',
       inputSchema: EMPTY_INPUT,
       annotations: READ_ONLY,
     },
@@ -1005,7 +1118,7 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
     'compiler_compile',
     {
       title: 'Compile workspace',
-      description: 'Compile the fixed workspace and return evidence only.',
+      description: 'Compile the project to .zplc bytecode and answer its digest, size and diagnostics; the bytes stay on the server.',
       inputSchema: EMPTY_INPUT,
       annotations: READ_ONLY,
     },
@@ -1015,7 +1128,7 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
     'symbols_list',
     {
       title: 'List symbols',
-      description: 'List public compiler symbols for the fixed workspace.',
+      description: 'List the compiled variables with type, region and address; use the exact names in scenarios and plant maps.',
       inputSchema: EMPTY_INPUT,
       annotations: READ_ONLY,
     },
@@ -1025,7 +1138,7 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
     'safety_check',
     {
       title: 'Check declared interlocks',
-      description: 'Check declared incompatible-output coverage.',
+      description: 'Check that each incompatible output pair of zplc.json is covered by a NEVER expectation of a scenario in tests.',
       inputSchema: EMPTY_INPUT,
       annotations: READ_ONLY,
     },
@@ -1035,7 +1148,7 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
     'tests_run',
     {
       title: 'Run workspace tests',
-      description: 'Run deterministic native POSIX workspace tests.',
+      description: 'Run every scenario of tests on the host simulator: pass or fail per scenario, the failed checks, a trace digest.',
       inputSchema: EMPTY_INPUT,
       annotations: READ_ONLY,
     },
@@ -1045,7 +1158,7 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
     'scenario_run',
     {
       title: 'Run one scenario',
-      description: 'Run one named deterministic workspace scenario.',
+      description: 'Run one scenario, named by its id from scenarios_list, on the host simulator and answer its result and failed checks.',
       inputSchema: SCENARIO_INPUT,
       annotations: READ_ONLY,
     },
@@ -1055,7 +1168,7 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
     'simulation_start',
     {
       title: 'Start recorded simulation',
-      description: 'Re-run a deterministic native POSIX scenario without retaining a session.',
+      description: 'Run one scenario on the host simulator and answer its first recorded sample and trace digest; no session is kept.',
       inputSchema: SCENARIO_INPUT,
       annotations: READ_ONLY,
     },
@@ -1065,7 +1178,7 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
     'simulation_step',
     {
       title: 'Step recorded simulation',
-      description: 'Return one deterministic recorded host sample with an explicit trace identity.',
+      description: 'Answer the recorded sample after cursor of a scenario run, pinned by its trace digest, to walk a run step by step.',
       inputSchema: REPLAY_INPUT,
       annotations: READ_ONLY,
     },
@@ -1075,7 +1188,7 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
     'runtime_snapshot',
     {
       title: 'Read recorded snapshot',
-      description: 'Read one explicit recorded host snapshot; no implicit runtime session exists.',
+      description: 'Answer one recorded sample of a scenario run at cursor, pinned by its trace digest; a recording, not a live runtime.',
       inputSchema: REPLAY_INPUT,
       annotations: READ_ONLY,
     },
@@ -1085,7 +1198,7 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
     'trace_get',
     {
       title: 'Get recorded trace',
-      description: 'Return a bounded, sanitized deterministic native POSIX trace.',
+      description: 'Run one scenario on the host simulator and answer its recorded outputs over time and its expectation results.',
       inputSchema: SCENARIO_INPUT,
       annotations: READ_ONLY,
     },
@@ -1095,7 +1208,7 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
     'boards_list',
     {
       title: 'List board profiles',
-      description: 'List declared repository board profiles without probing hardware.',
+      description: 'List the boards the repository declares and their validation level, without probing any hardware. Needs --repository.',
       inputSchema: EMPTY_INPUT,
       annotations: READ_ONLY,
     },
@@ -1105,7 +1218,7 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
     'toolchain_inspect',
     {
       title: 'Inspect toolchain',
-      description: 'Inspect local firmware-build prerequisites only.',
+      description: 'Check the local tools a firmware build needs (west, CMake, Ninja, Zephyr SDK) and which are ready. Needs --repository.',
       inputSchema: EMPTY_INPUT,
       annotations: READ_ONLY,
     },
@@ -1115,81 +1228,220 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
     'firmware_build',
     {
       title: 'Build firmware',
-      description: 'Run a local ephemeral cross-build only; never flash or deploy.',
+      description: 'Run a local ephemeral cross-build of the runtime for one board, answer the image digest; it never flashes or deploys.',
       inputSchema: FIRMWARE_BUILD_INPUT,
       annotations: FIRMWARE_BUILD_ONLY,
     },
     (args, ctx) => dispatch('firmware_build', args, ctx.mcpReq.signal),
   );
-  const resource = (uri: string, read: () => Promise<Record<string, unknown>>) =>
-    server.registerResource(uri, uri, { title: uri, mimeType: 'application/json' }, async () => {
+  server.registerTool(
+    'plant_inspect',
+    {
+      title: 'Inspect plant scene and map',
+      description: 'Read the plant scene, the signals it offers, the plant map and the map points the compiled program does not have.',
+      inputSchema: PLANT_INSPECT_INPUT,
+      annotations: READ_ONLY,
+    },
+    (args, ctx) => dispatch('plant_inspect', args, ctx.mcpReq.signal),
+  );
+  server.registerTool(
+    'scenarios_list',
+    {
+      title: 'List scenarios',
+      description: 'List every scenario of tests with its id, timing, scene and a summary of each expectation; use the ids to run them.',
+      inputSchema: EMPTY_INPUT,
+      annotations: READ_ONLY,
+    },
+    (args, ctx) => dispatch('scenarios_list', args, ctx.mcpReq.signal),
+  );
+  server.registerTool(
+    'server_self_check',
+    {
+      title: 'Check this server',
+      description: 'Answer what this server serves: project name, optional folders, simulator, protocols, counts and the boundary.',
+      inputSchema: EMPTY_INPUT,
+      annotations: READ_ONLY,
+    },
+    (args, ctx) => dispatch('server_self_check', args, ctx.mcpReq.signal),
+  );
+  const serve = (uri: string, body: Record<string, unknown>) => {
+    const text = JSON.stringify(body);
+    return {
+      contents: [
+        {
+          uri,
+          text: Buffer.byteLength(text, 'utf8') <= MAX_OUTPUT_BYTES ? text : JSON.stringify({ ok: false, error: 'MCP_OUTPUT_LIMIT' }),
+        },
+      ],
+    };
+  };
+  const resource = (uri: string, title: string, description: string, read: () => Promise<Record<string, unknown>>) =>
+    server.registerResource(uri, uri, { title, description, mimeType: 'application/json' }, async () => {
       try {
-        const body = await read();
-        const text = JSON.stringify(body);
-        return {
-          contents: [
-            {
-              uri,
-              text: Buffer.byteLength(text, 'utf8') <= MAX_OUTPUT_BYTES ? text : JSON.stringify({ ok: false, error: 'MCP_OUTPUT_LIMIT' }),
-            },
-          ],
-        };
+        return serve(uri, await read());
       } catch {
         return { contents: [{ uri, text: JSON.stringify({ ok: false, error: 'MCP_INTERNAL_ERROR' }) }] };
       }
     });
-  resource('zplc://project/manifest', async () => resourceProject(workspace, 'manifest'));
-  resource('zplc://project/programs', async () => programsResource(workspace));
-  resource('zplc://project/symbols', async () => resourceProject(workspace, 'symbols'));
-  resource('zplc://project/io-map', async () => resourceProject(workspace, 'io-map'));
-  resource('zplc://project/diagnostics', async () => resourceProject(workspace, 'diagnostics'));
-  resource('zplc://target/capabilities', async () => resourceProject(workspace, 'capabilities'));
-  resource('zplc://runtime/trace', async () => ({
-    ok: true,
-    stateless: true,
-    template: 'zplc://runtime/trace/{scenarioId}',
-    scope: 'recorded-native-posix-host',
-    note: 'Read a deterministic recorded host trace by scenario ID; not a live runtime, hardware, or HIL.',
-  }));
-  resource('zplc://runtime/snapshot', async () => ({
-    ok: true,
-    stateless: true,
-    template: 'zplc://runtime/snapshot/{scenarioId}/{cursor}/{traceSha256}',
-    scope: 'recorded-native-posix-host',
-    note: 'Read one fenced deterministic recorded host snapshot; not a live runtime, hardware, or HIL.',
-  }));
-  resource('zplc://course/progress', async () => courseProgressResource(workspace));
+  resource(
+    'zplc://project/manifest',
+    'Project manifest',
+    'The zplc.json summary: name, version, tasks and target, credentials left out.',
+    async () => resourceProject(workspace, 'manifest'),
+  );
+  resource(
+    'zplc://project/programs',
+    'Programs',
+    'The programs of src with their file name, path and language (ST, IL, LD, FBD, SFC).',
+    async () => programsResource(workspace),
+  );
+  resource(
+    'zplc://project/symbols',
+    'Compiled symbols',
+    'The compiled variables with their type, region (IPI, OPI, WORK, RETAIN, CODE) and address.',
+    async () => resourceProject(workspace, 'symbols'),
+  );
+  resource(
+    'zplc://project/io-map',
+    'I/O map',
+    'The compiled inputs (IPI) and outputs (OPI) with their addresses and bit offsets.',
+    async () => resourceProject(workspace, 'io-map'),
+  );
+  resource(
+    'zplc://project/diagnostics',
+    'Compiler diagnostics',
+    'The diagnostics of compiling the saved project now, each with its place.',
+    async () => resourceProject(workspace, 'diagnostics'),
+  );
+  resource(
+    'zplc://target/capabilities',
+    'Target capabilities',
+    'The declared target and its memory profile from the board catalogue; never the state of a connected device.',
+    async () => resourceProject(workspace, 'capabilities'),
+  );
+  resource(
+    'zplc://runtime/trace',
+    'How to read a trace',
+    'How to read a recorded host trace with zplc://runtime/trace/{scenarioId} or trace_get.',
+    async () => ({
+      ok: true,
+      stateless: true,
+      template: 'zplc://runtime/trace/{scenarioId}',
+      scope: 'recorded-native-posix-host',
+      note: 'Read a deterministic recorded host trace by scenario ID; not a live runtime, hardware, or HIL.',
+    }),
+  );
+  resource(
+    'zplc://runtime/snapshot',
+    'How to read a snapshot',
+    'How to read one recorded sample with zplc://runtime/snapshot/{scenarioId}/{cursor}/{traceSha256}.',
+    async () => ({
+      ok: true,
+      stateless: true,
+      template: 'zplc://runtime/snapshot/{scenarioId}/{cursor}/{traceSha256}',
+      scope: 'recorded-native-posix-host',
+      note: 'Read one fenced deterministic recorded host snapshot; not a live runtime, hardware, or HIL.',
+    }),
+  );
+  resource(
+    'zplc://course/progress',
+    'Course progress',
+    'The lessons passed and how many are done, read from --user-data; it never writes progress.',
+    async () => courseProgressResource(workspace),
+  );
   for (const topic of ['evidence', 'safety', 'testing'] as const)
-    resource(`zplc://docs/${topic}`, async () => ({
-      topic,
-      text:
-        topic === 'evidence'
-          ? 'Tool results are evidence; recorded host results are not HIL.'
-          : topic === 'safety'
-            ? 'MCP cannot flash, deploy, force, run, stop, recover, access serial, or run a shell.'
-            : 'Use scenario_run or stateless simulation tools for deterministic native POSIX tests.',
-    }));
+    resource(
+      `zplc://docs/${topic}`,
+      topic === 'evidence' ? 'Evidence levels' : topic === 'safety' ? 'Physical boundary' : 'Testing',
+      topic === 'evidence'
+        ? 'What the evidence level of a result means, and why a host result is not hardware or HIL evidence.'
+        : topic === 'safety'
+          ? 'What this server never does on a device (AGENTS.md rule 8), and what safety_check checks.'
+          : 'How to test a program with deterministic scenarios on the host simulator.',
+      async () => ({
+        topic,
+        text:
+          topic === 'evidence'
+            ? 'Tool results are evidence; recorded host results are not HIL.'
+            : topic === 'safety'
+              ? 'MCP cannot flash, deploy, force, run, stop, recover, access serial, or run a shell.'
+              : 'Use scenario_run or stateless simulation tools for deterministic native POSIX tests.',
+      }),
+    );
+  resource(
+    'zplc://project/scene',
+    'Plant scene',
+    'The plant scene of scene.json: its parts, the signals it offers and the fact names.',
+    () => sceneResource(workspace),
+  );
+  resource(
+    'zplc://project/plant-map',
+    'Plant map',
+    'The bindings of plant-map.json and the points the compiled program does not have.',
+    () => plantMapResource(workspace, compiledSymbols(workspace.root, toolApi)),
+  );
+  resource(
+    'zplc://project/scenarios',
+    'Scenarios',
+    'The scenarios of tests with their ids, timing and a summary of each expectation.',
+    () => scenariosResource(workspace),
+  );
+  resource(
+    'zplc://lesson/current',
+    'Current lesson',
+    'The goal, objectives and hints of the lesson this workspace belongs to. It never holds the solution.',
+    async () => lessonCurrentResource(workspace),
+  );
+  resource(
+    'zplc://formats/ld',
+    'Ladder file format',
+    'The JSON Schema of a .ld.json file, its accepted element values and worked examples.',
+    async () => formatResource('ld'),
+  );
+  resource(
+    'zplc://formats/fbd',
+    'FBD file format',
+    'The JSON Schema of a .fbd.json file, its accepted block and port values and worked examples.',
+    async () => formatResource('fbd'),
+  );
+  resource(
+    'zplc://formats/sfc',
+    'SFC file format',
+    'The JSON Schema of a .sfc.json file, its accepted step, transition and action values and examples.',
+    async () => formatResource('sfc'),
+  );
+  resource(
+    'zplc://formats/scene',
+    'Scene file format',
+    'The JSON Schema of scene.json, the catalogue part ids and their configs, and worked examples.',
+    async () => formatResource('scene'),
+  );
+  resource(
+    'zplc://formats/plant-map',
+    'Plant map file format',
+    'The JSON Schema of plant-map.json, the direction, type and range rules, and worked examples.',
+    async () => formatResource('plant-map'),
+  );
+  resource(
+    'zplc://formats/scenario',
+    'Scenario file format',
+    'The JSON Schema of a tests/*.scenario.json file, the expectation kinds, the plant fact names and worked examples.',
+    async () => formatResource('scenario'),
+  );
   const template = (
     name: string,
     pattern: string,
+    title: string,
+    description: string,
     read: (variables: Record<string, string | string[]>, signal: AbortSignal) => Promise<Record<string, unknown>>,
   ) =>
     server.registerResource(
       name,
       new ResourceTemplate(pattern, { list: undefined }),
-      { title: name, mimeType: 'application/json' },
+      { title, description, mimeType: 'application/json' },
       async (uri, variables, ctx) => {
         try {
-          const body = await read(variables, ctx.mcpReq.signal);
-          const text = JSON.stringify(body);
-          return {
-            contents: [
-              {
-                uri: uri.href,
-                text: Buffer.byteLength(text, 'utf8') <= MAX_OUTPUT_BYTES ? text : JSON.stringify({ ok: false, error: 'MCP_OUTPUT_LIMIT' }),
-              },
-            ],
-          };
+          return serve(uri.href, await read(variables, ctx.mcpReq.signal));
         } catch {
           return { contents: [{ uri: uri.href, text: JSON.stringify({ ok: false, error: 'MCP_INTERNAL_ERROR' }) }] };
         }
@@ -1208,104 +1460,50 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
     const result = await dispatch(tool, args, signal);
     return result.structuredContent;
   };
-  template('project-source', 'zplc://project/source/{name}', async (variables) => {
-    // the template hands over the name as the URI wrote it, so a name with a space arrives as %20
-    let name: string | undefined;
-    try {
-      name = typeof variables.name === 'string' ? decodeURIComponent(variables.name) : undefined;
-    } catch {
-      name = undefined;
-    }
-    return name === undefined ? { ok: false, error: 'MCP_INVALID_ARGUMENTS' } : sourceResource(workspace, name);
-  });
-  template('runtime-trace', 'zplc://runtime/trace/{scenarioId}', (variables, signal) => replayResource('trace_get', variables, signal));
-  template('runtime-snapshot', 'zplc://runtime/snapshot/{scenarioId}/{cursor}/{traceSha256}', (variables, signal) =>
-    replayResource('runtime_snapshot', variables, signal),
+  template(
+    'project-source',
+    'zplc://project/source/{name}',
+    'Program source',
+    'The saved text and language of one program of src, named by its URL-encoded file name.',
+    async (variables) => {
+      // the template hands over the name as the URI wrote it, so a name with a space arrives as %20
+      let name: string | undefined;
+      try {
+        name = typeof variables.name === 'string' ? decodeURIComponent(variables.name) : undefined;
+      } catch {
+        name = undefined;
+      }
+      return name === undefined ? { ok: false, error: 'MCP_INVALID_ARGUMENTS' } : sourceResource(workspace, name);
+    },
   );
+  template(
+    'project-scenario',
+    'zplc://project/scenario/{scenarioId}',
+    'Scenario definition',
+    'The whole saved JSON of one scenario of tests, named by its id; an unknown id answers the valid ids.',
+    async (variables) => {
+      const scenarioId = variables.scenarioId;
+      return SCENARIO_INPUT.safeParse({ scenarioId }).success
+        ? scenarioResource(workspace, scenarioId as string)
+        : { ok: false, error: 'MCP_INVALID_ARGUMENTS' };
+    },
+  );
+  template(
+    'runtime-trace',
+    'zplc://runtime/trace/{scenarioId}',
+    'Recorded trace',
+    'The recorded host trace of one scenario run, as trace_get answers it.',
+    (variables, signal) => replayResource('trace_get', variables, signal),
+  );
+  template(
+    'runtime-snapshot',
+    'zplc://runtime/snapshot/{scenarioId}/{cursor}/{traceSha256}',
+    'Recorded snapshot',
+    'One recorded sample of a scenario run at cursor, pinned by its trace digest, as runtime_snapshot answers it.',
+    (variables, signal) => replayResource('runtime_snapshot', variables, signal),
+  );
+  registerPrompts(server);
   return server;
-}
-
-/**
- * @internal Small test seam; never returns paths or raw user-data.
- *
- * Read-only (LRN-034): this reads the progress file the Studio keeps and answers which lessons are passed. It has no
- * operation that writes progress, and a file of the first release is migrated in memory only, never written back.
- */
-export async function courseProgressResource(workspace: McpWorkspace, index: LessonIndex = LESSON_INDEX): Promise<Record<string, unknown>> {
-  if (!workspace.userData) return { ok: false, error: 'MCP_CAPABILITY_UNAVAILABLE', reason: 'requires-explicit-user-data' };
-  // This directory is user-managed progress storage, so its entry generation changes when the progress file is created.
-  const sameUserData = async (): Promise<boolean> => {
-    const current = await directoryIdentity(workspace.userData!.root);
-    return (
-      !!current &&
-      workspace.userData!.identity.path === current.path &&
-      workspace.userData!.identity.dev === current.dev &&
-      workspace.userData!.identity.ino === current.ino
-    );
-  };
-  if (!(await sameUserData())) return { ok: false, error: 'MCP_WORKSPACE_CHANGED' };
-  /** The text of a regular, bounded, unlinked file; undefined when absent; null when it cannot be trusted. */
-  const readBounded = async (name: string, limit: number): Promise<string | undefined | null> => {
-    const file = join(workspace.userData!.root, name);
-    try {
-      const status = await lstat(file);
-      if (status.isSymbolicLink() || !status.isFile() || status.size > limit) return null;
-      const text = await readFile(file, 'utf8');
-      return Buffer.byteLength(text, 'utf8') > limit ? null : text;
-    } catch (error) {
-      if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT') return undefined;
-      return null;
-    }
-  };
-  let progress: LearnProgress | undefined;
-  const current = await readBounded(LEARN_PROGRESS_FILENAME, LEARN_PROGRESS_MAX_BYTES);
-  if (current === null) return { ok: false, error: 'MCP_INTERNAL_ERROR' };
-  if (current !== undefined) progress = parseProgress(current);
-  else {
-    const legacy = await readBounded(LEARN_PROGRESS_LEGACY_FILENAME, 4096);
-    if (legacy === null) return { ok: false, error: 'MCP_INTERNAL_ERROR' };
-    progress = legacy === undefined ? emptyProgress() : migrateLegacyMastery(legacy);
-  }
-  if (!(await sameUserData())) return { ok: false, error: 'MCP_WORKSPACE_CHANGED' };
-  if (!progress) return { ok: false, error: 'MCP_INTERNAL_ERROR' };
-  // Only lessons this build knows are reported; progress for any other lesson is kept inert in the file. A lesson is passed
-  // as the course counts it: a hardware-only lesson by its passing hardware check (LRN-024).
-  const mastered = index.lessons.map((lesson) => lesson.id).filter((id) => passedIn(index, id, progress!));
-  // The count is the course's: an alternative pair counts once, and the sibling not taken is never listed as passed (M7-K5).
-  const { passed, total } = courseCounts(index, progress);
-  return { ok: true, schemaVersion: 1, mastered, completed: passed, total };
-}
-
-/**
- * The programs of `src`, read by the workspace reader with its limits and its refusal of links; false when the root changed or is
- * unreadable.
- */
-async function readPrograms(workspace: McpWorkspace) {
-  if (!sameIdentity(workspace.identity, await directoryIdentity(workspace.root))) return { error: 'MCP_WORKSPACE_CHANGED' } as const;
-  const loaded = await readWorkspace(workspace.root);
-  if (!sameIdentity(workspace.identity, await directoryIdentity(workspace.root))) return { error: 'MCP_WORKSPACE_CHANGED' } as const;
-  return loaded.ok
-    ? ({ sources: loaded.workspace.sources.filter((source) => source.library === undefined) } as const)
-    : ({ error: 'MCP_WORKSPACE_UNREADABLE' } as const);
-}
-
-/** @internal The list of the programs of the project: name, path and language. Read-only (IDE-030). */
-export async function programsResource(workspace: McpWorkspace): Promise<Record<string, unknown>> {
-  const read = await readPrograms(workspace);
-  if ('error' in read) return { ok: false, error: read.error };
-  return { ok: true, programs: read.sources.map(({ name, path, language }) => ({ name, path, language })) };
-}
-
-/** @internal The text and the language of one program of `src`. There is no resource, tool or argument that writes it. */
-export async function sourceResource(workspace: McpWorkspace, name: string): Promise<Record<string, unknown>> {
-  if (name.length === 0 || name.length > 128 || name === '.' || name === '..' || /[/\\\0\r\n]/.test(name))
-    return { ok: false, error: 'MCP_INVALID_ARGUMENTS' };
-  const read = await readPrograms(workspace);
-  if ('error' in read) return { ok: false, error: read.error };
-  const source = read.sources.find((candidate) => candidate.name === name);
-  return source
-    ? { ok: true, name: source.name, path: source.path, language: source.language, source: source.content }
-    : { ok: false, error: 'MCP_NOT_FOUND' };
 }
 
 async function resourceProject(
