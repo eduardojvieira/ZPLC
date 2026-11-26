@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { compileMultiTaskProject, type DebugMap } from '../compiler';
 import { FBD_VALUE_BLOCKS, fbdPaletteBlocks } from '../editors/fbd/palette';
+import { stdFunction } from '../catalog/stdFunctions';
 import { getDefaultPorts } from '../models/fbd';
 import { LD_FUNCTIONS, ldPaletteFunctionBlocks } from '../models/ldSupport';
 import { DIRECTIONS, TYPES } from '../plants/plantMap';
@@ -253,16 +254,18 @@ describe('AIX-013 the format schemas accept every shipped file and list only wha
     expect(branches[1]!.description).toContain('still read; write schema 2');
   });
 
-  it('the FBD standard blocks are the palette blocks, and SQRT, which the palette does not offer, is not one (B2)', () => {
+  it('the FBD standard blocks are the palette blocks: SQRT is one (D-37), COMM_PUBLISH, which the palette refuses, is not (B2)', () => {
     const { standardBlocks, specialBlocks } = formatById('fbd').acceptedValues;
     expect(standardBlocks).toEqual(fbdPaletteBlocks().filter((block) => !(FBD_VALUE_BLOCKS as readonly string[]).includes(block)));
     expect(new Set([...specialBlocks!, ...standardBlocks!])).toEqual(new Set(fbdPaletteBlocks()));
-    expect(standardBlocks).not.toContain('SQRT');
+    expect(standardBlocks).toContain('SQRT');
+    expect(standardBlocks).not.toContain('COMM_PUBLISH');
   });
 
-  it('every FBD standard block compiles in a one-block file, its inputs wired to constants (B2)', () => {
+  it('every FBD standard block compiles in a one-block file, its inputs wired to constants of their own types (B2)', () => {
     const literal: Record<string, [string, unknown]> = {
       BOOL: ['BOOL', true],
+      ANY_BIT: ['WORD', 1],
       TIME: ['TIME', 'T#1s'],
       REAL: ['REAL', 1.5],
       STRING: ['STRING', "'a'"],
@@ -275,12 +278,19 @@ describe('AIX-013 the format schemas accept every shipped file and list only wha
       const blocks: Array<Record<string, unknown>> = [
         { id: 'b1', type, position: { x: 0, y: 0 }, ...(instance ? { instanceName: 'I1' } : {}), ...(helper ? { variableName: 'X' } : {}) },
       ];
+      const written = stdFunction(type)?.written ?? [];
+      const local: Array<{ name: string; type: string }> = helper ? [{ name: 'X', type: boolHelper ? 'BOOL' : 'INT' }] : [];
       const connections = getDefaultPorts(type).inputs.map((port, index) => {
-        const [dataType, value] = literal[boolHelper && port.name === 'IN' ? 'BOOL' : port.type] ?? ['INT', 1];
-        blocks.push({ id: `c${index}`, type: 'constant', dataType, value, position: { x: 0, y: 0 } });
+        if (written.includes(port.name)) {
+          // a pin the function writes is wired from a variable block (U-LNG-1)
+          local.push({ name: `V${index}`, type: port.type });
+          blocks.push({ id: `c${index}`, type: 'variable', variableName: `V${index}`, position: { x: 0, y: 0 } });
+        } else {
+          const [dataType, value] = literal[boolHelper && port.name === 'IN' ? 'BOOL' : port.type] ?? ['INT', 1];
+          blocks.push({ id: `c${index}`, type: 'constant', dataType, value, position: { x: 0, y: 0 } });
+        }
         return { id: `w${index}`, from: { block: `c${index}`, port: 'OUT' }, to: { block: 'b1', port: port.name } };
       });
-      const local = helper ? [{ name: 'X', type: boolHelper ? 'BOOL' : 'INT' }] : [];
       try {
         build('FBD', 'One', '.fbd.json', { name: 'One', variables: { local, outputs: [] }, blocks, connections });
       } catch (error) {
