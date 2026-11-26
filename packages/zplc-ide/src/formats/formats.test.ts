@@ -300,6 +300,12 @@ describe('AIX-013 the format schemas accept every shipped file and list only wha
     expect(failed).toEqual([]);
   });
 
+  it('the FBD blocks and the Ladder functions listed are exactly the ones the editors place (LNG-030)', () => {
+    const fbd = formatById('fbd').acceptedValues;
+    expect([...fbd.specialBlocks!, ...fbd.standardBlocks!].sort()).toEqual([...fbdPaletteBlocks()].sort());
+    expect(formatById('ld').acceptedValues.functions).toEqual(Object.keys(LD_FUNCTIONS));
+  });
+
   it('the Ladder function blocks and functions are the ones the Ladder palette offers', () => {
     expect(formatById('ld').acceptedValues.functionBlocks).toEqual(ldPaletteFunctionBlocks());
     expect(formatById('ld').acceptedValues.functions).toEqual(Object.keys(LD_FUNCTIONS));
