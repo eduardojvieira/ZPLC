@@ -4,14 +4,21 @@ This is the first machine of the course, and the smallest station of a packing l
 
 ![The belt-to-sensor scene seen from the front. A belt conveyor on legs runs from left to right. On the left, four cyan corner marks show where the emitter puts a box on the belt, and behind the belt stands the start button on a pedestal. At the far right end a sensor on a post looks across the belt. Each part has a label with its name, its kind and its wired signal.](images/machine.en.png)
 
-The station has four parts. The table says what each one is in a real plant and what its signal means to your program. The PLC variable is the name the program uses: the plant map of the lesson binds each signal of the scene to it.
+The station has four parts. The tables say what each one is in a real plant and what its signal means to your program. The PLC variable is the name the program uses: the plant map of the lesson binds each signal of the scene to it.
 
-| Part                              | What it is in a real plant                                                                                    | Signal                | PLC variable | Direction  | Type | Meaning                                           |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------- | ------------ | ---------- | ---- | ------------------------------------------------- |
-| `Belt1` (Belt conveyor)           | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines.              | `Belt1.run`           | `Run`        | PLC output | BOOL | TRUE runs the belt forward.                       |
-| `Emitter1` (Item emitter)         | Stands for whatever feeds the line: the machine before it, an operator, or a magazine that releases one item. | `Emitter1.emit`       | `Emit`       | PLC output | BOOL | Each rising edge releases one item onto the line. |
-| `EyeFar` (Diffuse optical sensor) | A photoelectric sensor that sends out light and sees it bounce back off an object in front of it.             | `EyeFar.detect`       | `EyeFar`     | PLC input  | BOOL | TRUE while an object is in the beam.              |
-| `StartButton` (Push button)       | A button on the operator panel that is pressed only while a finger holds it.                                  | `StartButton.pressed` | `Start`      | PLC input  | BOOL | TRUE while the button is held down.               |
+| Part          | Kind                   | What it is in a real plant                                                                                    |
+| ------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `Belt1`       | Belt conveyor          | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines.              |
+| `Emitter1`    | Item emitter           | Stands for whatever feeds the line: the machine before it, an operator, or a magazine that releases one item. |
+| `EyeFar`      | Diffuse optical sensor | A photoelectric sensor that sends out light and sees it bounce back off an object in front of it.             |
+| `StartButton` | Push button            | A button on the operator panel that is pressed only while a finger holds it.                                  |
+
+| Variable | Signal                | Direction & type  | Meaning                                           |
+| -------- | --------------------- | ----------------- | ------------------------------------------------- |
+| `Run`    | `Belt1.run`           | PLC output · BOOL | TRUE runs the belt forward.                       |
+| `Emit`   | `Emitter1.emit`       | PLC output · BOOL | Each rising edge releases one item onto the line. |
+| `EyeFar` | `EyeFar.detect`       | PLC input · BOOL  | TRUE while an object is in the beam.              |
+| `Start`  | `StartButton.pressed` | PLC input · BOOL  | TRUE while the button is held down.               |
 
 A PLC output drives a part of the machine; a PLC input is what a part reports. Your program sees only the four variables: it never sees the box itself, only what the sensor says about it.
 
@@ -19,13 +26,13 @@ A PLC output drives a part of the machine; a PLC input is what a part reports. Y
 
 A push button is TRUE only while a finger holds it, for a fraction of a second. The belt, though, must keep running for several seconds, until the box reaches the sensor. If Run simply copied Start, the belt would move only while the button is held and stop with the box in the middle.
 
-So the program needs a **memory**: a BOOL variable of its own, not wired to any part, that remembers "the belt should be running". One condition sets it, another clears it, and the output follows it.
+So the program needs a **memory**: a BOOL variable of its own — `Running` — not wired to any part, that remembers "the belt should be running". One condition sets it, another clears it, and the output follows it.
 
 ```timing
 span: 6000
 signals:
   - { name: Start, edges: [200, 400] }
-  - { name: Memory, edges: [200, 4800] }
+  - { name: Running, edges: [200, 4800] }
   - { name: EyeFar, edges: [4800, 6000] }
   - { name: Run, edges: [200, 4800] }
 caption: A short press sets the memory, the sensor clears it, and the belt follows the memory
@@ -37,7 +44,7 @@ When the set and the clear are both TRUE in the same scan, the statement written
 
 ## Worked example
 
-A roller shutter over a loading door has an Open button and a top limit switch. A short press must open the shutter all the way: the motor runs until the limit switch says the shutter is up. This is the same problem as the belt, solved here with a seal-in, the form you met in Ladder diagram and in the motor lesson:
+A roller shutter over a loading door has an Open button and a top limit switch. A short press must open the shutter all the way: the motor runs until the limit switch says the shutter is up. This is the same problem as the belt, solved here with a seal-in:
 
 ```st
 PROGRAM Shutter

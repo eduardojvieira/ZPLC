@@ -1,6 +1,6 @@
 /**
- * The machine page of a plant lesson, from the scene and its plant map (course review L8): one row per part signal for the signal
- * table, and one label per part for the labelled image. signal-table.ts writes the tables, machine-images.ts draws the images; both
+ * The machine page of a plant lesson, from the scene and its plant map (course review L8): a 3-column parts table and a 4-column signal
+ * table, plus one label per part for the labelled image. signal-table.ts writes the tables, machine-images.ts draws the images; both
  * read the scene files as they are, so neither can drift from them.
  */
 import { readFileSync } from 'node:fs';
@@ -83,17 +83,19 @@ export function machineRows(machine: Machine): { rows: MachineRow[]; problems: s
 
 const WORDS = {
   en: {
-    head: ['Part', 'What it is in a real plant', 'Signal', 'PLC variable', 'Direction', 'Type', 'Meaning'],
+    partsHead: ['Part', 'Kind', 'What it is in a real plant'],
+    signalsHead: ['Variable', 'Signal', 'Direction & type', 'Meaning'],
     sensor: 'PLC input',
     command: 'PLC output',
     unwired: 'Not wired to the PLC.',
     to: 'to',
   },
   es: {
-    head: ['Pieza', 'Qué es en una planta real', 'Señal', 'Variable del PLC', 'Dirección', 'Tipo', 'Significado'],
+    partsHead: ['Elemento', 'Tipo', 'Qué es en una planta real'],
+    signalsHead: ['Variable del PLC', 'Señal', 'Dirección y tipo', 'Significado'],
     sensor: 'Entrada del PLC',
     command: 'Salida del PLC',
-    unwired: 'No está cableada al PLC.',
+    unwired: 'No está cableado al PLC.',
     to: 'a',
   },
 } as const;
@@ -112,34 +114,37 @@ function typeText(binding: Binding, locale: Locale): string {
 }
 
 const cell = (text: string): string => text.replace(/\|/g, '\\|');
+const markdownTable = (head: readonly string[], body: readonly string[][]): string =>
+  [`| ${head.join(' | ')} |`, `| ${head.map(() => '---').join(' | ')} |`, ...body.map((row) => `| ${row.map(cell).join(' | ')} |`)].join(
+    '\n',
+  );
 
 /**
- * The signal table in Markdown, in the subset a lesson reading page accepts (src/learn/readingMarkdown.ts). A part's "what it is" is
- * written on its first row only, so the column reads once per part.
+ * The machine tables in Markdown, in the subset a lesson reading page accepts (src/learn/readingMarkdown.ts): a 3-column parts table
+ * followed by a 4-column signals table, so every table fits a compact reading column without clipping.
  */
 export function signalTable(rows: readonly MachineRow[], locale: Locale): string {
   const words = WORDS[locale];
-  const lines = [`| ${words.head.join(' | ')} |`, `| ${words.head.map(() => '---').join(' | ')} |`];
-  let previous: string | undefined;
+  const seen = new Set<string>();
+  const parts: string[][] = [];
+  const signals: string[][] = [];
   for (const { part, signal } of rows) {
-    const first = part.id !== previous;
-    previous = part.id;
-    const cells = [
-      `\`${part.name}\` (${part.kindName[locale]})`,
-      first ? part.plant[locale] : '',
-      ...(signal
+    if (!seen.has(part.id)) {
+      seen.add(part.id);
+      parts.push([`\`${part.name}\``, part.kindName[locale], part.plant[locale]]);
+    }
+    signals.push(
+      signal
         ? [
-            `\`${signal.name}\``,
             `\`${variableOf(signal.point)}\``,
-            words[signal.direction],
-            typeText(signal, locale),
+            `\`${signal.name}\``,
+            `${words[signal.direction]} · ${typeText(signal, locale)}`,
             signal.meaning[locale],
           ]
-        : ['—', '—', '—', '—', words.unwired]),
-    ];
-    lines.push(`| ${cells.map(cell).join(' | ')} |`);
+        : ['—', `\`${part.name}\``, '—', words.unwired],
+    );
   }
-  return `${lines.join('\n')}\n`;
+  return `${markdownTable(words.partsHead, parts)}\n\n${markdownTable(words.signalsHead, signals)}\n`;
 }
 
 export interface PartLabel {

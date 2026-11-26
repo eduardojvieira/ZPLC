@@ -187,12 +187,12 @@ export const PART_TEXT: Readonly<Record<string, PartText>> = {
   'emergency-stop': {
     plant: t(
       'The red mushroom button that stops the machine; it stays in until someone twists it to release it.',
-      'El botón rojo tipo hongo que detiene la máquina; queda hundido hasta que alguien lo gira para liberarlo.',
+      'El pulsador rojo tipo hongo que detiene la máquina; queda hundido hasta que alguien lo gira para liberarlo.',
     ),
     signals: {
       ok: t(
         'TRUE while the button is released (its normally closed contact); FALSE when it is pushed or its wire is cut.',
-        'TRUE mientras el botón está liberado (su contacto normalmente cerrado); FALSE si está presionado o su cable está cortado.',
+        'TRUE mientras el pulsador está liberado (su contacto normalmente cerrado); FALSE si está presionado o su cable está cortado.',
       ),
     },
   },
