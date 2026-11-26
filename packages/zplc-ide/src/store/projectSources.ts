@@ -101,19 +101,48 @@ export function trackProjectSources(
     );
   };
 
-  const run = async () => {
-    const mine = ++generation;
+  // One reading of the project at a time (R-04): the changes that arrive during it are joined into one more reading
+  // after it, so a burst of writes reads the project twice, not once per write.
+  let reading = false;
+  let again = false;
+
+  /** A close or a project switch abandons the reading in flight: it is not published, and the next one starts at once. */
+  const abandon = () => {
+    ++generation;
+    reading = false;
+    again = false;
+  };
+
+  const run = async (): Promise<void> => {
     const { isProjectOpen, fileTree, loadedFiles, projectConfig, projectSession } = store.getState();
     if (!isProjectOpen || !fileTree) {
+      abandon();
       publish([]);
       return;
     }
+    if (reading) {
+      again = true;
+      return;
+    }
+    reading = true;
+    const mine = ++generation;
     const libraries = configuredLibraries(projectConfig);
-    const [sources, unlisted] = await Promise.all([
-      readProjectSources({ tree: fileTree, libraries, loaded: loadedFiles, read }),
-      unlistedSourceFiles(fileTree, libraries),
-    ]);
-    if (!stopped && mine === generation) publish(sources, unlisted, projectSession ?? 0);
+    let found: [ProjectSource[], string[]];
+    try {
+      found = await Promise.all([
+        readProjectSources({ tree: fileTree, libraries, loaded: loadedFiles, read }),
+        unlistedSourceFiles(fileTree, libraries),
+      ]);
+    } finally {
+      // an abandoned reading leaves the flags to the reading that replaced it
+      if (mine === generation) reading = false;
+    }
+    if (stopped || mine !== generation) return;
+    if (again) {
+      again = false;
+      return run();
+    }
+    publish(found[0], found[1], projectSession ?? 0);
   };
 
   const runNow = () => {
@@ -131,6 +160,7 @@ export function trackProjectSources(
   };
 
   const unsubscribe = store.subscribe((state, previous) => {
+    if (state.projectSession !== previous.projectSession) abandon();
     if (
       state.isProjectOpen !== previous.isProjectOpen ||
       state.fileTree !== previous.fileTree ||

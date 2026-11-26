@@ -225,4 +225,110 @@ describe('trackProjectSources (IDE-023)', () => {
       stop();
     }
   });
+
+  /** The tree after the n-th of a burst of file writes (AIX-012): `src/Main.st` and one new program, `src/W<n>.st`. */
+  const written = (n: number): FileTreeNode => folder('', [folder('src', [file('src/Main.st'), file(`src/W${n}.st`)])]);
+  const burstReader = (reads: string[], delayOf: (reading: number) => number) => async (node: FileTreeNode) => {
+    reads.push(node.path);
+    const reading = reads.filter((path) => path === 'src/Main.st').length;
+    await new Promise((resolve) => setTimeout(resolve, delayOf(reading)));
+    return node.path === 'src/Main.st' ? DISK['src/Main.st']! : `PROGRAM ${node.name.replace('.st', '')}\nEND_PROGRAM\n`;
+  };
+
+  it('a burst of eight structural changes starts at most two readings of the project, and publishes the last (R-04)', async () => {
+    const reads: string[] = [];
+    const store = fakeStore({});
+    const stop = trackProjectSources(store, { read: burstReader(reads, () => 5), delayMs: 250 });
+    try {
+      await settle();
+      reads.length = 0;
+      for (let n = 1; n <= 8; n++) store.set({ fileTree: written(n) });
+      await settle();
+      expect(reads.filter((path) => path === 'src/Main.st').length).toBeLessThanOrEqual(2);
+      expect(getProjectDeclarations().map((entry) => entry.name)).toEqual(['Main', 'W8']);
+    } finally {
+      stop();
+    }
+  });
+
+  /** A reader whose reads stay pending until the test lets them go. */
+  const heldReader = () => {
+    const reads: string[] = [];
+    const pending: Array<() => void> = [];
+    const read = (node: FileTreeNode) => {
+      reads.push(node.path);
+      return new Promise<string>((resolve) => pending.push(() => resolve(`PROGRAM ${node.name.replace('.st', '')}\nEND_PROGRAM\n`)));
+    };
+    const release = async () => {
+      while (pending.length) {
+        pending.splice(0).forEach((go) => go());
+        await settle();
+      }
+    };
+    return { reads, read, release };
+  };
+  const projectB: FileTreeNode = folder('', [folder('src', [file('src/B.st')])]);
+
+  it('opening a project does not wait for the reading of the one just closed (R-04)', async () => {
+    const held = heldReader();
+    const store = fakeStore({ projectSession: 1 });
+    const stop = trackProjectSources(store, { read: held.read, delayMs: 250 });
+    try {
+      await held.release();
+      store.set({ fileTree: written(1) }); // a reading of A is in flight, and stays so
+      store.set({ isProjectOpen: false, fileTree: null, projectConfig: null });
+      store.set({ isProjectOpen: true, fileTree: projectB, projectConfig: { name: 'B', version: '1.0.0' }, projectSession: 2 });
+      await Promise.resolve();
+      expect(held.reads.filter((path) => path === 'src/B.st').length).toBe(1);
+      await held.release();
+      expect(getProjectDeclarations().map((entry) => entry.name)).toEqual(['B']);
+    } finally {
+      stop();
+    }
+  });
+
+  it('a switch to another project in the middle of a burst reads the new project at once, and the old one no more (R-04)', async () => {
+    const held = heldReader();
+    const published: string[][] = [];
+    const store = fakeStore({ projectSession: 1 });
+    const stop = trackProjectSources(store, { read: held.read, delayMs: 250 });
+    const unsubscribe = useProjectSources.subscribe((state) => published.push(state.sources.map((source) => source.path)));
+    try {
+      await held.release();
+      published.length = 0;
+      for (let n = 1; n <= 4; n++) store.set({ fileTree: written(n) }); // one reading of A in flight, one more asked for
+      store.set({ fileTree: projectB, projectConfig: { name: 'B', version: '1.0.0' }, projectSession: 2 });
+      await Promise.resolve();
+      expect(held.reads.filter((path) => path === 'src/B.st').length).toBe(1);
+      const readsOfA = held.reads.filter((path) => path === 'src/Main.st').length;
+      await held.release();
+      expect(held.reads.filter((path) => path === 'src/Main.st').length).toBe(readsOfA);
+      expect(published).toEqual([['src/B.st']]);
+    } finally {
+      unsubscribe();
+      stop();
+    }
+  });
+
+  it('never publishes an older state of the project after a newer one, whatever reading ends first (R-04)', async () => {
+    const reads: string[] = [];
+    const published: string[][] = [];
+    const store = fakeStore({});
+    // the first readings take the longest, so an earlier reading ends after a later one
+    const stop = trackProjectSources(store, { read: burstReader(reads, (reading) => Math.max(1, 20 - 2 * reading)), delayMs: 250 });
+    const unsubscribe = useProjectSources.subscribe((state) => published.push(state.sources.map((source) => source.path)));
+    try {
+      for (let n = 1; n <= 8; n++) {
+        store.set({ fileTree: written(n) });
+        await new Promise((resolve) => setTimeout(resolve, 2));
+      }
+      await new Promise((resolve) => setTimeout(resolve, 120));
+      const order = published.map((paths) => Number(paths.find((path) => path.startsWith('src/W'))?.slice(5, -3) ?? 0));
+      expect(order.at(-1)).toBe(8);
+      expect(order).toEqual([...order].sort((a, b) => a - b));
+    } finally {
+      unsubscribe();
+      stop();
+    }
+  });
 });

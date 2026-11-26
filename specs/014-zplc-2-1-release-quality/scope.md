@@ -8,7 +8,7 @@ Each change that closes or adds an item updates this list in the same change (FR
 | Catalogue C0-C7: frame, conveyors, flow, sensors, operator and stations, manipulators, stations, tank, items; fixes after the first look (machining centre inset, crane rail, tank glass, state cues) | 012 VIS-014, VIS-016; plan-vis C0, C1, C2, C3, C4, C5, C6, C7 | done (02387d03, 903cb4a5, d76326df) | none |
 | C8 catalogue sheet and the 21 scenes in their initial view | 012 VIS-014, VIS-017; plan-vis C8 | done (f52e73fa, c94cef7a) | none |
 | C8 owner's look at the catalogue sheet (STOP 3): approved in part on 2026-11-25 (belts, sensors, controls, tank, items) | 012 VIS-014; plan-vis C8 | done (f619a1c1) | none |
-| C9 closed wave S3-01 to S3-11: asymmetric position marks and input lamps (turntable, grippers, potentiometer, scale, limit switch); machining centre, stacker crane, pick-place, gantry and remover to the conveyors' level; loose blocks of the stop blade and aligner; first views of the warehouse and three-level-lifts; one camera per part on the sheet | 012 VIS-014, VIS-016; plan-vis C8 | not started | none; a new sheet is looked at again, limited to the list |
+| C9 closed wave S3-01 to S3-11: asymmetric position marks and input lamps (turntable, grippers, potentiometer, scale, limit switch); machining centre, stacker crane, pick-place, gantry and remover to the conveyors' level; loose blocks of the stop blade and aligner; first views of the warehouse and three-level-lifts; one camera per part on the sheet | 012 VIS-014, VIS-016; plan-vis C8 | in progress | C9-1 merged (09cac70f), C9-2 merged (0adb1e58); C9-3 in progress (feat/plant-c9-flow-views); owner: look at the new sheet in .cache/claude-ux-review/plant/c9/ |
 | Sensor kinds drawn differently: a kind field in the core catalogue, outside the trace (owner decision 4a) | 012 VIS-014, PRT-006 | not started | after C9 (shares the sensor models); scene and trace hashes must stay identical |
 | E1, E2, E3 and the thread A verifier (STOP 4) | 012 VIS-012, VIS-016, VIS-018; plan-vis E1, E2, E3 | not started | E2: none (may run beside C9); E1 and E3: C9 |
 | U2 complete | 013 FND-001..007 | done (59f645de, bfb01f36) | none |
@@ -37,7 +37,7 @@ Each change that closes or adds an item updates this list in the same change (FR
 | Spec 014 AI-22: cite AGENTS.md rule 8 for physical operations | 014 OSS-005 | done (14dbc5fb) | none |
 | Spec 014 FRZ-001 scope list and its check | 014 FRZ-001 | done (80624007) | none |
 | Spec 014 JRN-001 journeys.md | 014 JRN-001 | done (07968804) | none |
-| Spec 014 AIX, UXV and PUB threads: AIX defects AI-10, AI-16, D-35 (07647370, 1842e22f, verified) and AI-14 (efcf9502, pending verifier) done; the AIX plan, UXV and PUB not started | 014 AIX-001..015, UXV-001..009, PUB-001..005 | in progress | the AIX plan is an owner stop |
+| Spec 014 AIX, UXV and PUB threads: AIX defects AI-10, AI-16, D-35 (07647370, 1842e22f, verified) and AI-14 (efcf9502, verified 2026-11-26) done; the AIX plan corrected and merged (plan-aix.md, owner stop; W1-W2 approved, W3-W6 wait for the owner), UXV and PUB not started | 014 AIX-001..015, UXV-001..009, PUB-001..005 | in progress | the AIX plan is an owner stop |
 | Version 2.1.0, T20-K5 compiler known issues | none | not started | the cut |
 | CHANGELOG Unreleased, screenshots, rehearsal | none | not started | the cut |
 | PR, tag, publication | none | not started | owner: PR, tag and publication; green seam |

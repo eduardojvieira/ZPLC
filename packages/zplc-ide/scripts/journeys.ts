@@ -4919,9 +4919,9 @@ export const JOURNEYS: Journey[] = [
       await showExplorer(app);
       await app.click(button('Remove library lib'), 'Remove library lib');
       await app.until('the block gone from the tree', async () => !(await app.visible(declaration('Debounce'))) || undefined);
-      assert(
-        (JSON.parse(disk(join(project, 'zplc.json'))) as { libraries?: string[] }).libraries?.length === 0,
-        'zplc.json still names the library.',
+      await app.until(
+        'zplc.json to name no library',
+        () => (JSON.parse(disk(join(project, 'zplc.json'))) as { libraries?: string[] }).libraries?.length === 0 || undefined,
       );
       await app.until(
         'the folder reported as not compiled again',
