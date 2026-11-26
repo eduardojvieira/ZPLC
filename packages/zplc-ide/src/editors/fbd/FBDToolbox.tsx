@@ -6,8 +6,8 @@
  * filters the blocks of every category by name.
  */
 
-import { t } from '../../i18n';
-import { useState, type ReactElement } from 'react';
+import { currentLocale, t } from '../../i18n';
+import { useMemo, useState, type ReactElement } from 'react';
 import {
   ChevronDown,
   ChevronRight,
@@ -26,7 +26,7 @@ import {
   Radio,
 } from 'lucide-react';
 import { Button, TextField } from '../../ui';
-import { FBD_VALUE_BLOCKS, blockGroupLabel, fbdPaletteCategories } from './palette';
+import { FBD_VALUE_BLOCKS, blockGroupLabel, fbdPaletteCategories, functionDescription } from './palette';
 import { describeProjectBlock, projectPalette } from '../../models/projectBlocks';
 import { filterItems } from '../picker';
 import { useProjectBlocks } from '../useProjectBlocks';
@@ -57,7 +57,7 @@ const CATEGORY_ICONS: Record<string, ReactElement> = {
   Trigonometry: <Calculator size={14} />,
   Selection: <GitBranch size={14} />,
   Bitwise: <Zap size={14} />,
-  'Type Conversion': <ArrowRightLeft size={14} />,
+  Conversions: <ArrowRightLeft size={14} />,
   Strings: <Type size={14} />,
   Other: <Database size={14} />,
 };
@@ -98,7 +98,11 @@ export default function FBDToolbox({ onInsert }: FBDToolboxProps) {
   const descriptions = new Map(projectBlocks.map((block) => [block.name, describeProjectBlock(block)] as const));
   // a search shows the blocks that match in every category, whether it is expanded or not
   const searching = query.trim() !== '';
-  const found = searching ? new Set(filterItems(paletteChoices(projectBlocks), query).map((item) => item.id)) : null;
+  // the list of 297 functions is built once per language and project, not on every key typed
+  const locale = currentLocale();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the labels follow the language, which only `locale` stands for
+  const choices = useMemo(() => paletteChoices(projectBlocks), [projectBlocks, locale]);
+  const found = searching ? new Set(filterItems(choices, query).map((item) => item.id)) : null;
   const shown = found
     ? categories
         .map((category) => ({ ...category, blocks: category.blocks.filter((block) => found.has(block)) }))
@@ -147,7 +151,7 @@ export default function FBDToolbox({ onInsert }: FBDToolboxProps) {
           const isExpanded = searching || expandedCategories.has(category.name);
 
           return (
-            <div key={category.name} className="select-none">
+            <div key={category.name} className="select-none" data-fbd-group={category.name}>
               {/* Category header */}
               <Button
                 variant="ghost"
@@ -172,7 +176,11 @@ export default function FBDToolbox({ onInsert }: FBDToolboxProps) {
                       onClick={() => onInsert?.(block)}
                       data-fbd-toolbox-item={block}
                       aria-label={t('editors.insert', { name: block })}
-                      tooltip={category.name === 'Project' ? descriptions.get(block) : t('editors.fbd.insertTooltip', { name: block })}
+                      tooltip={
+                        category.name === 'Project'
+                          ? descriptions.get(block)
+                          : (functionDescription(block) ?? t('editors.fbd.insertTooltip', { name: block }))
+                      }
                       className={ITEM_CLASS}
                     >
                       {block}

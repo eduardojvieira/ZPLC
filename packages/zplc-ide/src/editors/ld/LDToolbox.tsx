@@ -13,7 +13,10 @@
  */
 
 import { t } from '../../i18n';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { getBlockCategories } from '../../catalog/blockCatalog';
+import { blockGroupLabel, functionDescription } from '../fbd/palette';
 import { getToolboxItems } from '../../models/ld';
 import { Button, TextField } from '../../ui';
 import { filterItems } from '../picker';
@@ -74,7 +77,7 @@ function ToolboxItem({ item, onInsert }: ToolboxItemProps) {
       onClick={() => onInsert?.(item)}
       data-ld-toolbox-item={`${item.type}${(item.functionName ?? item.fbType) ? `:${item.functionName ?? item.fbType}` : ''}`}
       aria-label={t('editors.insert', { name: item.label })}
-      tooltip={t('editors.ld.insertTooltip', { name: item.label })}
+      tooltip={(item.functionName && functionDescription(item.functionName)) || t('editors.ld.insertTooltip', { name: item.label })}
       className={
         `flex-col whitespace-normal border-2 bg-transparent p-2 cursor-grab active:cursor-grabbing ` + `select-none ${getCategoryStyles()}`
       }
@@ -115,6 +118,68 @@ function ToolboxSection({ title, items, onInsert, wide = false }: ToolboxSection
 }
 
 // =============================================================================
+// Groups of the compiler's functions (LNG-030)
+// =============================================================================
+
+interface FunctionGroup {
+  name: string;
+  items: LDPaletteEntry[];
+}
+
+/** The standard functions beyond the 15 boxes, by the groups of the block catalogue; the conversions are one group, by source type. */
+const functionGroups = (() => {
+  let built: FunctionGroup[] | undefined;
+  return (): FunctionGroup[] => {
+    if (built) return built;
+    const byName = new Map(functionItems().map((item) => [item.functionName!, item] as const));
+    built = getBlockCategories()
+      .map((category) => ({
+        name: category.name,
+        items: category.blocks.flatMap((name) => {
+          const item = byName.get(name);
+          return item?.kind === 'function' ? [item] : [];
+        }),
+      }))
+      .filter((group) => group.items.length > 0);
+    return built;
+  };
+})();
+
+interface GroupSectionProps {
+  group: FunctionGroup;
+  /** Searching opens every group that has a match. */
+  open: boolean;
+  onToggle: (name: string) => void;
+  onInsert?: (item: LDPaletteEntry) => void;
+}
+
+function GroupSection({ group, open, onToggle, onInsert }: GroupSectionProps) {
+  return (
+    <div className="mb-1" data-ld-group={group.name}>
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-expanded={open}
+        onClick={() => onToggle(group.name)}
+        className="w-full justify-start gap-1 px-1 py-1 text-left"
+      >
+        {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+        <span className={`${CAPTION} font-semibold text-[var(--color-surface-300)] uppercase tracking-wider`}>
+          {blockGroupLabel(group.name)}
+        </span>
+      </Button>
+      {open ? (
+        <div className="mb-2 grid grid-cols-2 gap-1.5">
+          {group.items.map((item) => (
+            <ToolboxItem key={item.functionName} item={item} onInsert={onInsert} />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+// =============================================================================
 // Main Toolbox Component
 // =============================================================================
 
@@ -140,12 +205,29 @@ export default function LDToolbox({ onInsert }: LDToolboxProps) {
     ).map((item) => item.id),
   );
   const allItems = projectItems.filter((item) => found.has(idOf(item)));
+  // the groups of the other functions are shown closed and render no entry until opened; a search opens those that match
+  const [openGroups, setOpenGroups] = useState<ReadonlySet<string>>(new Set());
+  const toggleGroup = (name: string) =>
+    setOpenGroups((previous) => {
+      const next = new Set(previous);
+      if (!next.delete(name)) next.add(name);
+      return next;
+    });
+  const searching = query.trim() !== '';
+  const groups = useMemo(
+    () =>
+      functionGroups()
+        .map((group) => ({ ...group, items: group.items.filter((item) => found.has(idOf(item))) }))
+        .filter((group) => group.items.length > 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `found` follows the query
+    [query],
+  );
 
   const contacts = allItems.filter((i) => i.category === 'contact');
   const coils = allItems.filter((i) => i.category === 'coil');
   const structure = allItems.filter((i) => i.category === 'structure');
   const functionBlocks = allItems.filter((i) => i.category === 'function_block');
-  const functions = allItems.filter((i) => i.category === 'function');
+  const functions = allItems.filter((i) => i.category === 'function' && i.kind !== 'function');
 
   return (
     <div
@@ -167,6 +249,15 @@ export default function LDToolbox({ onInsert }: LDToolboxProps) {
       <ToolboxSection title={t('editors.ld.structure')} items={structure} onInsert={onInsert} />
       <ToolboxSection title={t('editors.ld.functionBlocks')} items={functionBlocks} onInsert={onInsert} wide />
       <ToolboxSection title={t('editors.ld.functions')} items={functions} onInsert={onInsert} />
+      {groups.map((group) => (
+        <GroupSection
+          key={group.name}
+          group={group}
+          open={searching || openGroups.has(group.name)}
+          onToggle={toggleGroup}
+          onInsert={onInsert}
+        />
+      ))}
       {allItems.length === 0 ? <p className={`px-1 ${CAPTION} text-[var(--color-surface-300)]`}>{t('editors.nothingMatches')}</p> : null}
 
       {/* Instructions */}

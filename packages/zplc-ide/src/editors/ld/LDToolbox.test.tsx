@@ -13,7 +13,8 @@ describe('the Ladder toolbox (LNG-012) on the component kit', () => {
   const html = renderToStaticMarkup(<LDToolbox onInsert={() => undefined} />);
 
   it('keeps one draggable, named button per item, with the attribute the editor and the journeys select on', () => {
-    const items = [...getToolboxItems(), ...Object.keys(LD_FUNCTIONS)];
+    // the 282 other functions sit in closed groups and render no entry until opened (LNG-030)
+    const items = [...getToolboxItems(), ...Object.keys(LD_FUNCTIONS).filter((name) => LD_FUNCTIONS[name]!.kind !== 'function')];
     expect(html).toContain('data-ld-toolbox');
     expect(html.match(/data-ld-toolbox-item=/g)).toHaveLength(items.length);
     for (const item of items) expect(html).toContain(`aria-label="Insert ${typeof item === 'string' ? item : item.label}"`);
@@ -24,7 +25,8 @@ describe('the Ladder toolbox (LNG-012) on the component kit', () => {
 
   it('LNG-028 LNG-012 has a Functions group with one draggable button for each function, with its name to drag', () => {
     expect(html).toContain('>Functions<');
-    for (const name of Object.keys(LD_FUNCTIONS)) expect(html).toContain(`data-ld-toolbox-item="function:${name}"`);
+    for (const name of Object.keys(LD_FUNCTIONS).filter((name) => LD_FUNCTIONS[name]!.kind !== 'function'))
+      expect(html).toContain(`data-ld-toolbox-item="function:${name}"`);
   });
 
   it('has a named search box of the kit, and uses no title tooltip, focus override or text under 11px', () => {
