@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/instruction-list-door-alarm. Do not edit. >>> */}
 
-Complete un programa en lista de instrucciones para que una alarma de puerta se mantenga encendida al cerrar la puerta y se silencie con un botón, y vea que el orden de las instrucciones decide el resultado.
+Complete un programa en lista de instrucciones para que una alarma de puerta se mantenga encendida al cerrar la puerta y se silencie con un pulsador, y vea que el orden de las instrucciones decide el resultado.
 
 ## Datos
 

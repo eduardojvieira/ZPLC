@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import type { LessonText } from '../../packages/zplc-ide/src/learn/lessonPackage';
 import {
+  ANSWER_EXCEPTIONS,
   BASELINE_FILE,
   TABLE_FILE,
   check,
@@ -255,6 +256,32 @@ describe('rules, each failing when broken', () => {
     expect(offending(base([lesson('a', facts('Write Level:=(Raw*100)/1000 here.'))]))).toEqual(['a:answer']);
     // A right-hand side shorter than 6 characters once normalised (A+B) is not the answer alone.
     expect(offending(base([lesson('a', facts('Use A + B.'))]))).toEqual([]);
+  });
+
+  test('answer: the two written exceptions drop only their fragment, in their lesson, and give a reason', () => {
+    const facts = (objective: string, addedStatements: string[]) => ({
+      addedLines: [],
+      addedStatements,
+      text: { en: text({ objectives: [objective] }), es: text({}, 'Pulse Comprobar.') },
+    });
+    const guard = ['GuardLamp := NOT GuardClosed', 'PressEnable := LeftHand AND RightHand AND GuardClosed'];
+    const pallet = ['Slot := Cycle MOD 4', 'Layer := Cycle < 4 AND Ready'];
+    // The fragment is the specification of the lesson, not its fix.
+    expect(offending(base([lesson('boolean-logic-two-hand-guard', facts('Try NOT GuardClosed AND LeftHand.', guard))]))).toEqual([]);
+    expect(offending(base([lesson('plant-xyz-palletizing', facts('The slot that Cycle MOD 4 gives.', pallet))]))).toEqual([]);
+    // A real leak in the same lesson still fires, and only that leak is reported.
+    const leak = evaluate(
+      base([lesson('boolean-logic-two-hand-guard', facts('Write NOT GuardClosed, then LeftHand AND RightHand AND GuardClosed.', guard))]),
+    )[0]!.offences.answer;
+    expect(leak).toBe('LeftHand AND RightHand AND GuardClosed (en)');
+    expect(
+      evaluate(base([lesson('plant-xyz-palletizing', facts('Use Cycle MOD 4 and Cycle<4 AND Ready.', pallet))]))[0]!.offences.answer,
+    ).toBe('Cycle<4 AND Ready (en)');
+    // The exception belongs to its lesson: the same fragment in another lesson is a leak.
+    expect(offending(base([lesson('a', facts('Try NOT GuardClosed AND LeftHand.', guard))]))).toEqual(['a:answer']);
+    expect(Object.keys(ANSWER_EXCEPTIONS).sort()).toEqual(['boolean-logic-two-hand-guard', 'plant-xyz-palletizing']);
+    for (const exceptions of Object.values(ANSWER_EXCEPTIONS))
+      for (const { reason } of exceptions) expect(reason).toContain('specification, not the fix');
   });
 
   test('statementsAdded: the ST statements of the solution that the starter lacks, declarations left out', () => {

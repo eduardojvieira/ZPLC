@@ -17,7 +17,7 @@ Cada paso hace su trabajo manejando salidas. En un autolavado, el paso de jabón
 
 ## Cómo termina un paso: la transición
 
-El cambio de un paso al siguiente se llama **transición**. Una transición tiene una **condición**: algo que debe cumplirse para que el cambio ocurra. La condición suele ser que termine un temporizador (el jabón corrió el tiempo suficiente), un sensor (el tanque está lleno) o un botón.
+El cambio de un paso al siguiente se llama **transición**. Una transición tiene una **condición**: algo que debe cumplirse para que el cambio ocurra. La condición suele ser que termine un temporizador (el jabón corrió el tiempo suficiente), un sensor (el tanque está lleno) o un pulsador.
 
 En escalera, una transición se escribe como dos peldaños pequeños con la misma condición:
 
@@ -79,7 +79,7 @@ marks:
 caption: El jabón y el enjuague se suceden. Go se puede soltar enseguida, porque el bit de paso sostiene la secuencia.
 ```
 
-Observe que `Go` se suelta mucho antes de que termine el paso de jabón. El bit de paso recuerda que la secuencia está en marcha, así que no hace falta mantener el botón pulsado.
+Observe que `Go` se suelta mucho antes de que termine el paso de jabón. El bit de paso recuerda que la secuencia está en marcha, así que no hace falta mantener presionado el pulsador.
 
 ## Errores frecuentes
 
@@ -107,9 +107,9 @@ options:
 question: ¿Por qué se puede soltar Go pronto sin detener la secuencia?
 options:
   - { text: 'El bit de paso recuerda que la secuencia está en marcha.', correct: true, feedback: 'Correcto. Una bobina set mantiene su bit en ON después de que desaparece la energía que lo activó.' }
-  - { text: 'El temporizador mantiene pulsado el botón.', feedback: 'Un temporizador no actúa sobre las entradas. Solo mide el tiempo de su propia entrada.' }
+  - { text: 'El temporizador mantiene presionado el pulsador.', feedback: 'Un temporizador no actúa sobre las entradas. Solo mide el tiempo de su propia entrada.' }
 ```
 
 ## Lo que hará en la práctica
 
-En la práctica recibe un tanque con tres pasos: llenado, mezcla y vaciado, cada uno con su bit de paso y su temporizador. La transición de llenado a mezcla está escrita y falta la de mezcla a vaciado. Usted agregará los dos peldaños de esa transición, uno que active `StepDrain` y otro que desactive `StepMix`, y luego comprobará que las tres salidas nunca se solapan.
+En la práctica recibe un tanque con tres pasos: llenado, mezcla y vaciado, cada uno con su bit de paso y su temporizador. La transición de llenado a mezcla está escrita y falta la de mezcla a vaciado. Usted hará que la secuencia pase de la mezcla al vaciado, y luego comprobará que las tres salidas nunca se solapan.

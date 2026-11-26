@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/ColourSeparation.il, write each state as a block: LD State, EQ n, AND the condition that leaves it, JMPCN to the next block, then the instructions that change State. Store a condition in Gate before CAL, because CAL takes variables.",
+      "body": "In src/ColourSeparation.il, each workpiece waits at the blade until it has lain still, then a red one is pushed onto the side belt and the plate pulled back, while a blue one is released and must have left the blade before the blade holds again.",
       "checkpoint": "The program sorts the same eight workpieces as in Structured Text: red ones into RedBin, blue ones into BlueBin, then Done."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter only latches Start and runs the infeed belt, so no workpiece is read or sorted; add the four state blocks and drive the other outputs.",
+      "body": "Correct this starter omission, save it, then run: The starter only latches Start and runs the infeed belt, so no workpiece is read or sorted. The program must sort the eight workpieces, red ones into RedBin and blue ones into BlueBin, then light Done.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -48,14 +48,12 @@
   "hints": [
     {
       "level": 1,
-      "text": "A block looks like: LD State, EQ 1, AND Extended, JMPCN next, LD 2, ST State, then the label next:. Put the labels at the start of a line."
+      "text": "Take the states of the Structured Text sorter one at a time: each one becomes one block that ends at a label of its own. Put the labels at the start of a line."
     },
     {
       "level": 2,
-      "text": "Gate the timers: LD State, EQ 0, AND Waiting, ST Gate, CAL Settle(IN := Gate, PT := T#300ms). Read the result with AND Settle.Q."
+      "text": "A block looks like: LD State, EQ 1, AND Extended, JMPCN next, LD 2, ST State, then the label next:. Gate the timers: LD State, EQ 0, AND Waiting, ST Gate, CAL Settle(IN := Gate, PT := T#300ms). Read the result with AND Settle.Q. Write each state as a block: LD State, EQ n, AND the condition that leaves it, JMPCN to the next block, then the instructions that change State; CAL takes variables, so store a condition in Gate before it. The states, each with its exit condition and next state: 0 wait, while Active and after Settle.Q (Settle runs while State is 0 and Waiting, PT := T#300ms), to 1 when IsRed, otherwise to 3; 1 push, to 2 when Extended; 2 retract, when Retracted add 1 to Handled and go to 0; 3 release, after Clear.Q (Clear runs while State is 3 and NOT Waiting, PT := T#1500ms), add 1 to Handled and go to 0. Outputs: RunIn, RunOut and RunSide follow Active; Hold is State NE 3 AND Active; Push is State EQ 1; Done is Handled GE 8; Busy is Active ANDN Done."
     }
   ],
-  "faultCases": [
-    "The starter only latches Start and runs the infeed belt, so no workpiece is read or sorted; add the four state blocks and drive the other outputs."
-  ]
+  "faultCases": ["The starter only latches Start and runs the infeed belt, so no workpiece is read or sorted."]
 }

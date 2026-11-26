@@ -101,4 +101,4 @@ options:
 
 ## Qué hará en la práctica
 
-En la práctica tendrá una máquina que avisa antes de arrancar. El bit de memoria `Requested` ya está allí, junto con la autorretención y el temporizador. Usted hará que el período de aviso dure `T#50ms` y que `Motor` se encienda cuando termine, de modo que la lámpara se encienda a los {{t:10}} ms y el motor más tarde, y mirará el mapa de E/S para ver qué tiene dirección y qué no. Después pulse {{ui:learn.check}}.
+En la práctica tendrá una máquina que avisa antes de arrancar. El bit de memoria `Requested` ya está allí, junto con la autorretención y el temporizador. Usted hará que el período de aviso dure 50 milisegundos y que `Motor` se encienda cuando termine, de modo que la lámpara se encienda a los {{t:10}} ms y el motor más tarde, y mirará el mapa de E/S para ver qué tiene dirección y qué no. Después pulse {{ui:learn.check}}.

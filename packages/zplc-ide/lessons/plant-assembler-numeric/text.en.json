@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/Assembler.st, name the positions as constants (lid belt x 0, base belt x 100, down y 0, safe height y 30, tolerance 0.2 cm), write XSet and YSet in one state per move, and move on when XAt or YAt says the pad is within the tolerance.",
-      "checkpoint": "Each move is one setpoint and one comparison; the pad never crosses the belts below the safe height."
+      "body": "In src/Assembler.st, the pad works at four positions (lid belt x 0, base belt x 100, down y 0, safe height y 30), and a move is done when the pad is within 0.2 cm of its target.",
+      "checkpoint": "Each move ends only when the pad is close enough to its target; the pad never crosses the belts below the safe height."
     },
     {
       "key": "predict",
@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Write XAt := ABS(XPos - XSet) < Tol; and the same for Y, and let each state change only when its At flag is TRUE."
+      "text": "Look at how the pad reaches a setpoint: its position is a REAL that comes close to the setpoint but may never equal it. Each state must wait for a flag that says the pad is near enough."
     },
     {
       "level": 2,
-      "text": "Raise to the safe height first, then move in X, then lower; set the setpoint when you enter the state, not on every scan of a state that waits."
+      "text": "Write XAt := ABS(XPos - XSet) < Tol; and the same for Y, and let each state change only when its At flag is TRUE. Raise to the safe height first, then move in X, then lower; set the setpoint when you enter the state, not on every scan of a state that waits. Constants: LidX 0.0, BaseX 100.0, Down 0.0, Safe 30.0, Tol 0.2. The steps, each with its exit condition and what it sets: 0 idle, on Start YSet := Safe, to 1; 1 when YAt, XSet := LidX, to 2; 2 when XAt, to 3; 3 when LidReady and BaseReady and the last base has left, to 4; 4 after a TON SettleT of T#800ms, YSet := Down, to 5; 5 when YAt, to 6; 6 after a TON GripT of T#400ms and Gripped, YSet := Safe, to 7; 7 when YAt, XSet := BaseX, to 8; 8 when XAt, YSet := Down, to 9; 9 when YAt, to 10; 10 after a TON LetGoT of T#400ms, YSet := Safe, Cycles := Cycles + 1 and FreeBase := TRUE, to 11; 11 when YAt, XSet := LidX, to 12; 12 when XAt, to 13 once Cycles >= 3, otherwise back to 3. Outputs: Grip while the step is 6 to 9; Start latches Active, and RunLid, RunBase, RunExit and HoldLid follow Active; HoldBase is Active AND NOT FreeBase; Green is step 13; Amber is Active and not step 13. Feeding: a R_TRIG Go on Start, an F_TRIG LidGone on LidReady and a TON BaseLeft of T#600ms on FreeBase AND NOT BaseReady; EmitLid := (Go.Q OR LidGone.Q) AND Active AND LidsFed < 3; EmitBase := (Go.Q OR BaseLeft.Q) AND Active AND BasesFed < 3; count each emit, and clear FreeBase when BaseLeft.Q is TRUE. The code of one step: ELSIF Step = 1 AND YAt THEN XSet := LidX; Step := 2;"
     }
   ],
   "faultCases": [

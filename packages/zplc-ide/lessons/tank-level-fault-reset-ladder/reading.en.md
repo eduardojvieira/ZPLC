@@ -92,4 +92,4 @@ options:
 
 ## What you will do in the practice
 
-In the practice you get a tank pump that follows a level plant. The pump rung and the alarm rung are written. You will add the rungs that set a fault latch from the emergency input or the pump fault, arm the reset only after the button has been released, and clear the latch with a fresh press, so that the alarm stays on after the fault input goes away. Pay attention to the order of the rungs.
+In the practice you get a tank pump that follows a level plant. The pump rung and the alarm rung are written. You will make the alarm stay on after the fault input goes away, until a fresh press of Reset after the fault has gone. Pay attention to the order of the rungs.

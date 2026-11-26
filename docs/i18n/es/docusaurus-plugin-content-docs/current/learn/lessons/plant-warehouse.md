@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-warehouse. Do not edit. >>> */}
 
-Maneje un transelevador desde un diagrama: almacene cada caja en la primera celda libre y traiga una caja de vuelta cuando se pulse su botón de petición.
+Maneje un transelevador desde un diagrama: almacene cada caja en la primera celda libre y traiga una caja de vuelta cuando se pulse su pulsador de petición.
 
 ## Datos
 

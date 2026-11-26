@@ -95,4 +95,4 @@ options:
 
 ## What you will do in the practice
 
-In the practice you get a reversing motor with a forward rung and a reverse rung, each with a seal-in, a stop button and a lubrication permissive. The two directions do not yet know about each other. You will add the mutual lock to each rung and check that the two contactors are never on together, and that losing the lubrication permissive drops either direction.
+In the practice you get a reversing motor with a forward rung and a reverse rung, each with a seal-in, a stop button and a lubrication permissive. The two directions do not yet know about each other. You will make each direction stay off while the other one runs, and check that the two contactors are never on together, and that losing the lubrication permissive drops either direction.

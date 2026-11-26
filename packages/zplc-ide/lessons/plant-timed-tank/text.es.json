@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "La escena es un tanque con una válvula de llenado, una válvula de vaciado y un interruptor de nivel bajo, un botón de arranque, una parada de emergencia y una luz de columna. En src/TimedTank.st, ejecute un ciclo por cada pulsación de Start mientras la parada de emergencia esté liberada y el tanque esté en reposo: ámbar encendido, Fill abierta durante un tiempo fijado por un temporizador (el tanque no tiene un sensor para este nivel, así que el temporizador es la medida), una espera de dos segundos, luego Drain abierta hasta LevelLow o veinte segundos, y después verde encendido. La parada de emergencia cierra ambas válvulas y enciende el rojo.",
+      "body": "La escena es un tanque con una válvula de llenado, una válvula de vaciado y un interruptor de nivel bajo, un pulsador de arranque, una parada de emergencia y una luz de columna. En src/TimedTank.st, ejecute un ciclo por cada pulsación de Start mientras la parada de emergencia esté liberada y el tanque esté en reposo: ámbar encendido, Fill abierta durante un tiempo fijado por un temporizador (el tanque no tiene un sensor para este nivel, así que el temporizador es la medida), una espera de dos segundos, luego Drain abierta hasta LevelLow o veinte segundos, y después verde encendido. La parada de emergencia cierra ambas válvulas y enciende el rojo.",
       "checkpoint": "El ciclo es una cadena de pasos y cada paso temporizado tiene su propio temporizador."
     },
     {
@@ -23,8 +23,8 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "El código inicial no tiene lógica: ninguna válvula se abre nunca, así que el ciclo no se ejecuta. Declara las entradas y las salidas. Mantenga un número de paso (0 reposo, 1 llenado, 2 espera, 3 vaciado), un TON para cada paso temporizado, y escriba las salidas a partir del paso al final del programa. El llenado dura 3,5 segundos: un TON con PT := T#3500ms.",
-      "checkpoint": "El programa tiene una variable de paso, tres temporizadores y una asignación para cada salida."
+      "body": "El código inicial no tiene lógica: ninguna válvula se abre nunca, así que el ciclo no se ejecuta. Declara las entradas y las salidas. Cada pulsación de Start, con la parada de emergencia liberada y el tanque en reposo, ejecuta un ciclo: Fill se abre durante 3,5 segundos, el tanque espera dos segundos, luego Drain se abre hasta LevelLow o durante veinte segundos como máximo; el ámbar está encendido mientras corre el ciclo y el verde cuando ha terminado.",
+      "checkpoint": "El ciclo recorre llenado, espera y vaciado en ese orden, cada uno con su propio tiempo, y la parada de emergencia lo termina en cualquier momento."
     },
     {
       "key": "run",
@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Cada temporizador lo arranca su paso: FillT(IN := Step = 1, PT := T#3500ms). Cuando su Q es TRUE, pase al paso siguiente."
+      "text": "Mire los pasos del objetivo de uno en uno: cada paso temporizado hace correr su propio temporizador solo mientras es el paso activo, y el paso termina cuando ese temporizador acaba."
     },
     {
       "level": 2,
-      "text": "Empiece con IF NOT EStopOk THEN Step := 0; ELSIF Step = 0 AND Start THEN Step := 1; END_IF; y luego un bloque para cada paso: HoldT para dos segundos, DrainT para veinte segundos con la condición de salida LevelLow OR DrainT.Q. Por último Fill := Step = 1; Drain := Step = 3; Amber := Step <> 0; Red := NOT EStopOk, y Green es TRUE tras un ciclo terminado."
+      "text": "Empiece con IF NOT EStopOk THEN Step := 0; ELSIF Step = 0 AND Start THEN Step := 1; END_IF; y luego un bloque para cada paso: FillT(IN := Step = 1, PT := T#3500ms) y el paso a 2 cuando FillT.Q es TRUE, HoldT para dos segundos, DrainT para veinte segundos con la condición de salida LevelLow OR DrainT.Q. Por último Fill := Step = 1; Drain := Step = 3; Amber := Step <> 0; Red := NOT EStopOk, y Green es TRUE tras un ciclo terminado."
     }
   ],
   "faultCases": ["El código inicial no tiene lógica: ninguna válvula se abre nunca, así que el ciclo no se ejecuta."]

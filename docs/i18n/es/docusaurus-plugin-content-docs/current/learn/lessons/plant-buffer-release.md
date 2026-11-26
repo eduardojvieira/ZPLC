@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-buffer-release. Do not edit. >>> */}
 
-Modele una estación de búfer como una máquina de estados: cargue cinco cajas, retenga en una cuchilla y libere una por cada pulsación del botón.
+Modele una estación de búfer como una máquina de estados: cargue cinco cajas, retenga en una cuchilla y libere una por cada pulsación del pulsador.
 
 ## Datos
 

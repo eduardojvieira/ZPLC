@@ -7,7 +7,7 @@
       "channel": "DI0",
       "label": {
         "en": "Fill button",
-        "es": "Botón de llenado"
+        "es": "Pulsador de llenado"
       }
     },
     {
@@ -16,7 +16,7 @@
       "channel": "DI1",
       "label": {
         "en": "Drain button",
-        "es": "Botón de vaciado"
+        "es": "Pulsador de vaciado"
       }
     },
     {
@@ -25,7 +25,7 @@
       "channel": "DI2",
       "label": {
         "en": "Stop button",
-        "es": "Botón de parada"
+        "es": "Pulsador de parada"
       }
     },
     {

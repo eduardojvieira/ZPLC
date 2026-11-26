@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "A transition has a source step, a target step and a condition. The transition out of MIX already leaves after a time, because its condition reads the clock of its own step, step_mix.T. FILL needs the same kind of transition, to MIX."
+      "text": "Look for the step that never ends, and at what every transition of the chart has: a source step, a target step and a condition."
     },
     {
       "level": 2,
-      "text": "Add a transition with fromStep step_fill, toStep step_mix and the condition step_fill.T >= T#50ms."
+      "text": "Like the transition out of MIX, the new one reads the clock of its own step. Add a transition with fromStep step_fill, toStep step_mix and the condition step_fill.T >= T#50ms."
     }
   ],
   "faultCases": [

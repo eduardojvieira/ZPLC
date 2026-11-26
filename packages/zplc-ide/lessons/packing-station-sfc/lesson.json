@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "packing-station-sfc",
-  "version": 2,
+  "version": 3,
   "order": 66,
   "module": 11,
   "level": "advanced",

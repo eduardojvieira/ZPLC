@@ -5,13 +5,13 @@
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show gate requirements, actuator timing or any real machine behaviour.",
   "objectives": [
     "Hold an output on after its request is released, and let a close command win, in Structured Text.",
-    "Recognise the same condition, (Request OR Open) AND NOT Close, in Instruction List, Ladder, Function Block Diagram and Sequential Function Chart."
+    "Recognise the same hold-and-close condition in Instruction List, Ladder, Function Block Diagram and Sequential Function Chart."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/Gate.st the output Open follows Request only while the button is pressed. Make it hold: Open is on when Request is pressed or Open is already on, and never while Close is pressed. The same condition is written in the other four languages as: Instruction List LD Request, OR Open, ANDN Close, ST Open; Ladder, Request in parallel with a contact of Open, then a normally closed contact of Close, then the coil Open; Function Block Diagram, an OR block feeding an AND block whose second input comes from a NOT block of Close; Sequential Function Chart, a step IS_CLOSED and a step IS_OPEN with a transition to IS_OPEN on Request AND NOT Close and a transition back on Close.",
+      "body": "In src/Gate.st the output Open follows Request only while the button is pressed. Make it hold: Request opens it, it stays open after Request is released, and Close always wins. Once it passes, the same condition can be written in each of the other four languages; the last hint shows all four.",
       "checkpoint": "The gate opens when Request is pressed, stays open after Request is released, and closes when Close is pressed."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter sets Open to Request AND NOT Close, so Open drops the moment Request is released at {{t:40}} ms; add the hold by writing (Request OR Open) AND NOT Close, so that the output keeps itself on and Close still wins.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter makes Open follow Request, so Open drops the moment Request is released at {{t:40}} ms. Open must stay on after Request is released, and Close must still switch it off.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -52,10 +52,8 @@
     },
     {
       "level": 2,
-      "text": "Open := (Request OR Open) AND NOT Close; the OR keeps the output on, and the AND NOT Close comes last so that Close wins."
+      "text": "Open := (Request OR Open) AND NOT Close; the OR keeps the output on, and the AND NOT Close comes last so that Close wins. In the other four languages: Instruction List LD Request, OR Open, ANDN Close, ST Open; Ladder, Request in parallel with a contact of Open, then a normally closed contact of Close, then the coil Open; Function Block Diagram, an OR block feeding an AND block whose second input comes from a NOT block of Close; Sequential Function Chart, a step IS_CLOSED and a step IS_OPEN with a transition to IS_OPEN on Request AND NOT Close and a transition back on Close."
     }
   ],
-  "faultCases": [
-    "The starter sets Open to Request AND NOT Close, so Open drops the moment Request is released at {{t:40}} ms; add the hold by writing (Request OR Open) AND NOT Close, so that the output keeps itself on and Close still wins."
-  ]
+  "faultCases": ["The starter makes Open follow Request, so Open drops the moment Request is released at {{t:40}} ms."]
 }

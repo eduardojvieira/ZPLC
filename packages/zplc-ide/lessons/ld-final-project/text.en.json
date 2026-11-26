@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter has only the belt rung, so a full batch never stops the belt and a blocked sensor never raises Fault. Add the counter with Reset on its R input, the timer on Part that sets Fault, the RESET coil that Reset reaches only when Part is clear, and a normally closed contact of Fault and of BatchFull in the belt rung. Plan first: write the inputs and outputs in a table, then the steps, then the tests. The rungs are: rung 1, the counter (CU from Part, R from Reset, preset 3) driving BatchFull; rung 2, the timer on Part that sets Fault; rung 3, the RESET coil on Fault under Reset with a normally closed contact of Part.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter has only the belt rung, so a full batch never stops the belt and a blocked sensor never raises Fault. The program must meet the five requirements of the objective. Plan first: write the inputs and outputs in a table, then the steps, then the tests.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -48,14 +48,12 @@
   "hints": [
     {
       "level": 1,
-      "text": "Write one requirement at a time: the counter and BatchFull first, then the timer and the fault, then put every reason to stop in series in the belt rung. Which reasons are there, and which contacts read them?"
+      "text": "Take the requirements one at a time, starting with the full batch and then the blocked sensor. For each one, ask what the program must remember and what the belt rung must read to stop."
     },
     {
       "level": 2,
       "text": "Rung 1: Part, then a CTU block Count with CU connected, R set to Reset and PV set to 3, then the coil BatchFull. Rung 2: Part, then a TON block Stuck with PT set to T#80ms, then a SET coil on Fault. Rung 3: Reset in series with a normally closed contact of Part, then a RESET coil on Fault. Belt rung: Start in parallel with Belt, then StopOK, EStopOK, a normally closed Fault and a normally closed BatchFull, then the coil Belt."
     }
   ],
-  "faultCases": [
-    "The starter has only the belt rung, so a full batch never stops the belt and a blocked sensor never raises Fault. Add the counter with Reset on its R input, the timer on Part that sets Fault, the RESET coil that Reset reaches only when Part is clear, and a normally closed contact of Fault and of BatchFull in the belt rung."
-  ]
+  "faultCases": ["The starter has only the belt rung, so a full batch never stops the belt and a blocked sensor never raises Fault."]
 }

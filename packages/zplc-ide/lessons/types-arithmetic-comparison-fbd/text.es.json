@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Total es un INT, así que Total + 5 es un INT. SEL da IN0 mientras G es FALSE e IN1 mientras G es TRUE, y R_TRIG.Q es TRUE durante un ciclo en cada flanco ascendente."
+      "text": "Mire qué llega a IN0 del bloque SEL que borra Total: el propio Total, así que nada le suma nunca. Después pregúntese cuántas veces debe contar una pulsación mantenida durante varios ciclos."
     },
     {
       "level": 2,
-      "text": "Conecte Step a StepEdge.CLK, StepEdge.Q a G de un SEL nuevo, Total a su IN0 y a un bloque ADD con la constante 5, ADD.OUT a su IN1, y el SEL nuevo a IN0 del SEL que borra Total."
+      "text": "Coloque un bloque R_TRIG llamado StepEdge, cuya Q es TRUE durante un ciclo en cada flanco ascendente. Conecte Step a StepEdge.CLK, StepEdge.Q a G de un SEL nuevo, Total a su IN0 y a un bloque ADD con la constante 5, ADD.OUT a su IN1, y el SEL nuevo a IN0 del SEL que borra Total."
     }
   ],
   "faultCases": ["El diagrama inicial borra Total con Reset pero nunca le suma, así que Low se queda en ON para siempre."]

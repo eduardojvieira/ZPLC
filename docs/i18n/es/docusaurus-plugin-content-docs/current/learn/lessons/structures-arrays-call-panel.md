@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/structures-arrays-call-panel. Do not edit. >>> */}
 
-Guarde tres botones de llamada en un arreglo de estructuras y escriba un solo bucle FOR que retenga cada llamada hasta que se reconozca e informe si alguna llamada, o todas, están en espera.
+Guarde tres pulsadores de llamada en un arreglo de estructuras y escriba un solo bucle FOR que retenga cada llamada hasta que se reconozca e informe si alguna llamada, o todas, están en espera.
 
 ## Datos
 

@@ -26,7 +26,7 @@ Añada un modo al ensamblaje de dos ejes: avance el brazo a mano en manual, ejec
 ## Objetivos
 
 - Guardar el modo en una memoria que cambie con una pulsación de ModeBtn, y dejar que la máquina arranque en manual.
-- Mover el brazo con los botones de avance solo en manual, sin pasar de un final de carrera, y arrancar el ciclo con Start solo en automático.
+- Mover el brazo con los pulsadores de avance solo en manual, sin pasar de un final de carrera, y arrancar el ciclo con Start solo en automático.
 
 ## Etapas
 

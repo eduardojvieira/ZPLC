@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "La escena es un tanque con una válvula de llenado, una válvula de vaciado y un interruptor de nivel bajo, un botón Start, una parada de emergencia y una torre de luces. En src/TimedTank.ld.json, ejecute un ciclo por cada pulsación de Start mientras la parada de emergencia está liberada y el tanque está en reposo: ámbar encendido, Fill abierta durante un tiempo fijado por un temporizador (el tanque no tiene sensor a este nivel, así que el temporizador es la medición), una retención de dos segundos, luego Drain abierta hasta LevelLow o veinte segundos, y después verde encendido. La parada de emergencia cierra ambas válvulas y enciende el rojo.",
+      "body": "La escena es un tanque con una válvula de llenado, una válvula de vaciado y un interruptor de nivel bajo, un pulsador Start, una parada de emergencia y una torre de luces. En src/TimedTank.ld.json, ejecute un ciclo por cada pulsación de Start mientras la parada de emergencia está liberada y el tanque está en reposo: ámbar encendido, Fill abierta durante un tiempo fijado por un temporizador (el tanque no tiene sensor a este nivel, así que el temporizador es la medición), una retención de dos segundos, luego Drain abierta hasta LevelLow o veinte segundos, y después verde encendido. La parada de emergencia cierra ambas válvulas y enciende el rojo.",
       "checkpoint": "El ciclo es una cadena de pasos y cada paso temporizado tiene su propio temporizador."
     },
     {

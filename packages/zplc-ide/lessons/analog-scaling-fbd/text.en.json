@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "The scenario sets only BOOL inputs, so this lesson does not read a real analog input: in src/LevelScale.fbd.json the blocks at the top stand in for a potentiometer on AI0, raising Raw by 410 counts on each scan while Enable is TRUE, up to 4095, and turning it back to 0 when Enable is FALSE. The blocks below multiply Raw by 100 and limit the result to 0..100 before they compare it with 75. Add the division by 4095, so that Level is the level in percent.",
+      "body": "The scenario sets only BOOL inputs, so this lesson does not read a real analog input: in src/LevelScale.fbd.json the blocks at the top stand in for a potentiometer on AI0, raising Raw by 410 counts on each scan while Enable is TRUE, up to 4095, and turning it back to 0 when Enable is FALSE. The blocks below multiply Raw by 100 and limit the result to 0..100 before they compare it with 75. Level must be the level in percent: 0 when Raw is 0 and 100 when Raw is 4095.",
       "checkpoint": "Level follows Raw in percent, and HighLevel turns ON once Level reaches 75 percent."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct the starting diagram, save it, then press {{ui:learn.check}}. The starter multiplies Raw by 100 but never divides by 4095, so LIMIT clamps the product to 100 from the first scan and HighLevel lights at {{t:10}} ms. Change it so that Level is the level in percent, from 0 to 100, before the LIMIT and the comparison with 75. Place and connect the missing block yourself: the stand-in for Raw, the MUL, the LIMIT and the comparison are already there.",
+      "body": "Correct the starting diagram, save it, then press {{ui:learn.check}}. The starter shows the level at 100 percent from the first scan, while Raw is still low, so HighLevel lights at {{t:10}} ms. Change it so that Level is the level in percent, from 0 to 100, before the LIMIT and the comparison with 75. Place and connect the missing block yourself: the stand-in for Raw, the MUL, the LIMIT and the comparison are already there.",
       "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "The level in percent is Raw times 100 divided by 4095. Which block is missing from the starter, and between which two blocks does it go?"
+      "text": "Look at the value that leaves the MUL block on the first scans and compare it with the range that LIMIT lets through. What must happen to it before the LIMIT?"
     },
     {
       "level": 2,
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "The starter multiplies Raw by 100 but never divides by 4095, so LIMIT clamps the product to 100 from the first scan and HighLevel lights at {{t:10}} ms."
+    "The starter shows the level at 100 percent from the first scan, while Raw is still low, so HighLevel lights at {{t:10}} ms."
   ]
 }

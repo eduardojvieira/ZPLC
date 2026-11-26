@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "Open src/FirstBlink.st. The program already blinks Lamp, but too slowly: it changes the lamp each time HalfPeriod passes, and HalfPeriod is set to two seconds. Your job is to change that one value.",
-      "checkpoint": "You know which line sets the half period and what it is now."
+      "body": "Open src/FirstBlink.st. The program already blinks Lamp, but too slowly: Lamp must stay off for half a second, then on for half a second. Your job is to find what sets that speed and correct it.",
+      "checkpoint": "You can say how long Lamp must stay in each state."
     },
     {
       "key": "predict",
@@ -23,8 +23,8 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program uses a half period of two seconds, so Lamp is still OFF when the scenario looks at {{t:750}} ms. Change the value of HalfPeriod so that Lamp is off for half a second and then on for half a second, and save the file.",
-      "checkpoint": "HalfPeriod holds half a second and the file is saved."
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program uses a half period of two seconds, so Lamp is still OFF when the scenario looks at {{t:750}} ms. Lamp must be off for half a second and then on for half a second; save the file once it is.",
+      "checkpoint": "Lamp stays half a second in each state and the file is saved."
     },
     {
       "key": "run",

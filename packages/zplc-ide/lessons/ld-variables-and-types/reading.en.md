@@ -101,4 +101,4 @@ options:
 
 ## What you will do in the practice
 
-In the practice you get a machine that warns before it starts. The memory bit `Requested` is already there, together with the seal-in and the timer. You will make the warning period last `T#50ms` and make `Motor` turn on when it is over, so that the lamp turns on at {{t:10}} ms and the motor at a later time, and you will look at the I/O map to see what has an address and what does not. Then press {{ui:learn.check}}.
+In the practice you get a machine that warns before it starts. The memory bit `Requested` is already there, together with the seal-in and the timer. You will make the warning period last 50 milliseconds and make `Motor` turn on when it is over, so that the lamp turns on at {{t:10}} ms and the motor at a later time, and you will look at the I/O map to see what has an address and what does not. Then press {{ui:learn.check}}.

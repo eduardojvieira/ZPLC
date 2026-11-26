@@ -5,7 +5,7 @@
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Guardar el modo en una memoria que cambie con una pulsación de ModeBtn, y dejar que la máquina arranque en manual.",
-    "Mover el brazo con los botones de avance solo en manual, sin pasar de un final de carrera, y arrancar el ciclo con Start solo en automático."
+    "Mover el brazo con los pulsadores de avance solo en manual, sin pasar de un final de carrera, y arrancar el ciclo con Start solo en automático."
   ],
   "stages": [
     {
@@ -17,13 +17,13 @@
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, siga el panel: el escenario lleva el brazo a la cinta de las bases y lo devuelve, pulsa Start en manual, pasa a automático, arranca el ciclo y mantiene un botón de avance pulsado en mitad del ciclo.",
-      "checkpoint": "En manual el brazo se mueve solo mientras se mantiene un botón y se detiene en su final de carrera; Start no hace nada; en automático el ciclo corre y el botón mantenido no cambia nada."
+      "body": "Antes de ejecutar, siga el panel: el escenario lleva el brazo a la cinta de las bases y lo devuelve, pulsa Start en manual, pasa a automático, arranca el ciclo y mantiene un pulsador de avance pulsado en mitad del ciclo.",
+      "checkpoint": "En manual el brazo se mueve solo mientras se mantiene un pulsador y se detiene en su final de carrera; Start no hace nada; en automático el ciclo corre y el pulsador mantenido no cambia nada."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guarde y ejecute: El programa inicial no tiene modo: una pulsación de Start en manual arranca el ciclo y los botones de avance no hacen nada; cambie con ModeBtn, admita Start solo en automático y mueva el brazo con los botones de avance solo en manual.",
+      "body": "Corrija esta omisión del programa inicial, guarde y ejecute: El programa inicial no tiene modo: una pulsación de Start en manual arranca el ciclo y los pulsadores de avance no hacen nada; cambie con ModeBtn, admita Start solo en automático y mueva el brazo con los pulsadores de avance solo en manual.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -35,7 +35,7 @@
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe cómo el brazo sigue los botones de avance en los primeros segundos, ignora Start, y luego ensambla tres tapas sobre tres bases en automático mientras se mantiene un botón de avance.",
+      "body": "Observe cómo el brazo sigue los pulsadores de avance en los primeros segundos, ignora Start, y luego ensambla tres tapas sobre tres bases en automático mientras se mantiene un pulsador de avance.",
       "checkpoint": "La luz ámbar está apagada en manual y encendida en automático; la luz verde aparece al terminar los tres ensamblajes, y la vuelta a manual deja todas las salidas apagadas."
     },
     {
@@ -48,14 +48,14 @@
   "hints": [
     {
       "level": 1,
-      "text": "Cambie Auto con un flanco de ModeBtn, no con su nivel, para que mantener el botón pulsado cambie el modo una sola vez. Limpie el ciclo (Active, Step y los contadores) siempre que Auto sea FALSE."
+      "text": "Cambie Auto con un flanco de ModeBtn, no con su nivel, para que mantener presionado el pulsador cambie el modo una sola vez. Limpie el ciclo (Active, Step y los contadores) siempre que Auto sea FALSE."
     },
     {
       "level": 2,
-      "text": "Haga una salida de avance TRUE solo cuando Auto sea FALSE, su botón esté pulsado, el botón opuesto no lo esté y su final de carrera no se haya alcanzado; haga que Begin sea la pulsación de Start Y Auto, y use Begin donde el ciclo usaba Start."
+      "text": "Haga una salida de avance TRUE solo cuando Auto sea FALSE, su pulsador esté pulsado, el pulsador opuesto no lo esté y su final de carrera no se haya alcanzado; haga que Begin sea la pulsación de Start Y Auto, y use Begin donde el ciclo usaba Start."
     }
   ],
   "faultCases": [
-    "El programa inicial no tiene modo: una pulsación de Start en manual arranca el ciclo y los botones de avance no hacen nada; cambie con ModeBtn, admita Start solo en automático y mueva el brazo con los botones de avance solo en manual."
+    "El programa inicial no tiene modo: una pulsación de Start en manual arranca el ciclo y los pulsadores de avance no hacen nada; cambie con ModeBtn, admita Start solo en automático y mueva el brazo con los pulsadores de avance solo en manual."
   ]
 }

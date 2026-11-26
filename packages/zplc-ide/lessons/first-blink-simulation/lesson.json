@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "first-blink-simulation",
-  "version": 5,
+  "version": 6,
   "order": 11,
   "module": 0,
   "level": "foundation",

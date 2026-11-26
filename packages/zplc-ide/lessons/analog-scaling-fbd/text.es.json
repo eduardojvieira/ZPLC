@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "Las entradas del escenario son BOOL, así que esta lección no lee una entrada analógica real: en src/LevelScale.fbd.json los bloques de arriba sustituyen a un potenciómetro en AI0, suman 410 cuentas a Raw en cada ciclo mientras Enable es TRUE, hasta 4095, y lo devuelven a 0 cuando Enable es FALSE. Los bloques de abajo multiplican Raw por 100 y limitan el resultado a 0..100 antes de compararlo con 75. Agregue la división por 4095 para que Level sea el nivel en porcentaje.",
+      "body": "Las entradas del escenario son BOOL, así que esta lección no lee una entrada analógica real: en src/LevelScale.fbd.json los bloques de arriba sustituyen a un potenciómetro en AI0, suman 410 cuentas a Raw en cada ciclo mientras Enable es TRUE, hasta 4095, y lo devuelven a 0 cuando Enable es FALSE. Los bloques de abajo multiplican Raw por 100 y limitan el resultado a 0..100 antes de compararlo con 75. Level debe ser el nivel en porcentaje: 0 cuando Raw es 0 y 100 cuando Raw es 4095.",
       "checkpoint": "Level sigue a Raw en porcentaje, y HighLevel pasa a ON cuando Level llega al 75 por ciento."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija el diagrama inicial, guárdelo y pulse {{ui:learn.check}}. El diagrama inicial multiplica Raw por 100 pero nunca divide por 4095, así que LIMIT recorta el producto a 100 desde el primer ciclo y HighLevel se enciende a los {{t:10}} ms. Cámbielo para que Level sea el nivel en porcentaje, de 0 a 100, antes del LIMIT y de la comparación con 75. Coloque y conecte usted el bloque que falta: el sustituto de Raw, el MUL, el LIMIT y la comparación ya están.",
+      "body": "Corrija el diagrama inicial, guárdelo y pulse {{ui:learn.check}}. El diagrama inicial muestra el nivel al 100 por ciento desde el primer ciclo, cuando Raw todavía es bajo, así que HighLevel se enciende a los {{t:10}} ms. Cámbielo para que Level sea el nivel en porcentaje, de 0 a 100, antes del LIMIT y de la comparación con 75. Coloque y conecte usted el bloque que falta: el sustituto de Raw, el MUL, el LIMIT y la comparación ya están.",
       "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "El nivel en porcentaje es Raw por 100 dividido por 4095. ¿Qué bloque falta en el programa inicial, y entre qué dos bloques va?"
+      "text": "Mire el valor que sale del bloque MUL en los primeros ciclos y compárelo con el rango que deja pasar LIMIT. ¿Qué le tiene que pasar antes del LIMIT?"
     },
     {
       "level": 2,
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El diagrama inicial multiplica Raw por 100 pero nunca divide por 4095, así que LIMIT recorta el producto a 100 desde el primer ciclo y HighLevel se enciende a los {{t:10}} ms."
+    "El diagrama inicial muestra el nivel al 100 por ciento desde el primer ciclo, cuando Raw todavía es bajo, así que HighLevel se enciende a los {{t:10}} ms."
   ]
 }

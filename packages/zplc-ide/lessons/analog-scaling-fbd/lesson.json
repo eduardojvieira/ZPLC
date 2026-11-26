@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "analog-scaling-fbd",
-  "version": 5,
+  "version": 6,
   "order": 82,
   "module": 4,
   "level": "intermediate",

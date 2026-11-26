@@ -1,6 +1,6 @@
 ## Para qué sirve
 
-Imagine una estación de agua con diez bombas idénticas. Cada bomba necesita la misma lógica: arrancar con un botón, seguir funcionando al soltarlo, detenerse con un botón de paro y negarse a funcionar cuando la línea de succión está seca. Se podría copiar esa lógica diez veces y cambiar el nombre de las variables. Pero entonces un error encontrado en una copia hay que corregirlo en diez lugares, y alguien olvidará uno.
+Imagine una estación de agua con diez bombas idénticas. Cada bomba necesita la misma lógica: arrancar con un pulsador, seguir funcionando al soltarlo, detenerse con un pulsador de paro y negarse a funcionar cuando la línea de succión está seca. Se podría copiar esa lógica diez veces y cambiar el nombre de las variables. Pero entonces un error encontrado en una copia hay que corregirlo en diez lugares, y alguien olvidará uno.
 
 Los programas reales evitan esto con un **bloque de función**: lógica escrita una sola vez, con un nombre, que se puede usar tantas veces como haga falta. Esta página explica qué es un bloque de función, por qué necesita memoria y cómo llamar a uno propio desde un peldaño de escalera.
 
@@ -34,7 +34,7 @@ caption: Dos instancias del mismo bloque. Cada peldaño llama a su propia instan
 
 ## Pruébelo
 
-Mantenga pulsado `ButtonA`. A los dos segundos `LampA` pasa a ON. Ahora mantenga pulsado `ButtonB` un poco después. `LampB` tiene su propio reloj, así que pasa a ON dos segundos después de su propio botón, no después del primero.
+Mantenga pulsado `ButtonA`. A los dos segundos `LampA` pasa a ON. Ahora mantenga pulsado `ButtonB` un poco después. `LampB` tiene su propio reloj, así que pasa a ON dos segundos después de su propio pulsador, no después del primero.
 
 ```ld-try
 src: reading/two-delays.ld.json
@@ -86,7 +86,7 @@ signals:
 marks:
   - { from: 500, to: 2500, label: DelayA }
   - { from: 1500, to: 3500, label: DelayB }
-caption: DelayA y DelayB cuentan al mismo tiempo, cada una desde su propio botón.
+caption: DelayA y DelayB cuentan al mismo tiempo, cada una desde su propio pulsador.
 ```
 
 ## Errores frecuentes
@@ -120,4 +120,4 @@ options:
 
 ## Lo que hará en la práctica
 
-En la práctica recibe una estación de bombas. El proyecto declara un bloque, `PumpCtl`, en texto estructurado. La bomba 1 ya es un peldaño que llama a su propia instancia. Usted agregará un segundo peldaño para la bomba 2, con el contacto y la segunda instancia, y conectará el mismo botón de paro y el mismo permisivo. Luego comprobará que las dos bombas conservan su propio estado.
+En la práctica recibe una estación de bombas. El proyecto declara un bloque, `PumpCtl`, en texto estructurado. La bomba 1 ya es un peldaño que llama a su propia instancia. Usted hará que la bomba 2 funcione como la bomba 1, con su propio pulsador de arranque, el mismo pulsador de paro y el mismo permisivo. Luego comprobará que las dos bombas conservan su propio estado.

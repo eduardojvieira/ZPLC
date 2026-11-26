@@ -26,7 +26,7 @@ Edit two Ladder rungs so that a reversing motor never closes its Forward and Rev
 ## Objectives
 
 - Tell an interlock, a contact that keeps one output off while another is on, from a permissive, a contact that must be closed for an output to run at all.
-- Lock two coils out of each other with a normally closed contact of each one in the rung of the other, in series with Stop and the permissive.
+- Lock two coils out of each other, so that one can never run while the other is on, together with Stop and the permissive.
 
 ## Stages
 

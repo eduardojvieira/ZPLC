@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Total is an INT, so Total + 5 is an INT. SEL gives IN0 while G is FALSE and IN1 while G is TRUE, and R_TRIG.Q is TRUE for one scan on each rising edge."
+      "text": "Look at what reaches IN0 of the SEL block that clears Total: Total itself, so nothing ever adds to it. Then ask how many times a press held for several scans must count."
     },
     {
       "level": 2,
-      "text": "Connect Step to StepEdge.CLK, StepEdge.Q to the G of a new SEL block, Total to its IN0 and to an ADD block with the constant 5, ADD.OUT to its IN1, and the new SEL block to IN0 of the SEL block that clears Total."
+      "text": "Place an R_TRIG block named StepEdge, whose Q is TRUE for one scan on each rising edge. Connect Step to StepEdge.CLK, StepEdge.Q to the G of a new SEL block, Total to its IN0 and to an ADD block with the constant 5, ADD.OUT to its IN1, and the new SEL block to IN0 of the SEL block that clears Total."
     }
   ],
   "faultCases": ["The starter clears Total on Reset but never adds to it, so Low stays ON for ever."]

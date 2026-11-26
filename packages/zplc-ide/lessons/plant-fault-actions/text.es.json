@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/HeightSortChain.st el clasificador de la lección 16.4 funciona mientras los sensores dicen la verdad. Añada un diagnóstico: una caja rompe BeamHigh durante cerca de un segundo, así que un TON de tres segundos sobre High marca la barrera como atascada. Memorice un Fault, detenga la cinta de entrada y el módulo de cadenas, mantenga la cuchilla retenida y apague Busy.",
+      "body": "En src/HeightSortChain.st el clasificador de la lección 16.4 funciona mientras los sensores dicen la verdad. Añada un diagnóstico: una caja rompe BeamHigh durante cerca de un segundo, así que una barrera que sigue encendida tres segundos está atascada. Desde entonces el programa debe recordar la falla, detener la cinta de entrada y el módulo de cadenas, mantener la cuchilla retenida y apagar Busy.",
       "checkpoint": "Tras la falla la cinta de entrada está apagada, Busy y Done están apagados, la cuchilla sigue reteniendo y ninguna caja ha ido al contenedor equivocado."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial clasifica bien pero se fía de BeamHigh para siempre; cuando la barrera se atasca en encendido, las cajas que no son altas van a BinTall, así que memorice una falla cuando High permanezca en TRUE tres segundos y detenga la línea.",
+      "body": "Corrija esta omisión del programa inicial, guarde y ejecute: El programa inicial clasifica bien pero se fía de BeamHigh para siempre; cuando la barrera se atasca en encendido, las cajas que no son altas van a BinTall, así que la línea debe detenerse, y seguir detenida, cuando High haya permanecido en TRUE tres segundos.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -48,14 +48,14 @@
   "hints": [
     {
       "level": 1,
-      "text": "Una caja normal rompe BeamHigh durante cerca de un segundo. Use Stuck(IN := High, PT := T#3000ms), memorice Fault := TRUE cuando Stuck.Q sea TRUE y no lo borre nunca."
+      "text": "Una caja normal rompe BeamHigh durante cerca de un segundo, así que una barrera que sigue encendida mucho más tiempo es un hecho que el programa puede leer. Una vez detectada la falla, nada en el programa debe borrarla."
     },
     {
       "level": 2,
-      "text": "Detenga lo que trae cajas nuevas: RunIn y RunChain llevan AND NOT Fault, Stand lleva AND NOT Fault para no encaminar ninguna caja con una lectura en la que no confía, y Busy se apaga. Deje en marcha las tres cintas de salida para que llegue una caja que ya va de camino."
+      "text": "Use Stuck(IN := High, PT := T#3000ms), memorice Fault := TRUE cuando Stuck.Q sea TRUE y no lo borre nunca. Detenga lo que trae cajas nuevas: RunIn y RunChain llevan AND NOT Fault, Stand lleva AND NOT Fault para no encaminar ninguna caja con una lectura en la que no confía, y Busy se apaga. Deje en marcha las tres cintas de salida para que llegue una caja que ya va de camino."
     }
   ],
   "faultCases": [
-    "El inicial clasifica bien pero se fía de BeamHigh para siempre; cuando la barrera se atasca en encendido, las cajas que no son altas van a BinTall, así que memorice una falla cuando High permanezca en TRUE tres segundos y detenga la línea."
+    "El programa inicial clasifica bien pero se fía de BeamHigh para siempre; cuando la barrera se atasca en encendido, las cajas que no son altas van a BinTall, así que la línea debe detenerse, y seguir detenida, cuando High haya permanecido en TRUE tres segundos."
   ]
 }
