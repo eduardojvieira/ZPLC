@@ -75,3 +75,19 @@ export const slotValue = (element: LDElement, slot: number): string => {
   const pins = functionPins(element).length;
   return (slot >= pins ? element.output : element.operands?.[slot]) ?? '';
 };
+
+/** Whether a box takes more inputs (MUX), so that an input can be added and removed. */
+export const takesMoreOperands = (element: Pick<LDElement, 'functionName'>): boolean =>
+  ldFunctionSpec(element.functionName)?.record?.variadic === true;
+
+/** The box with one more input `IN<n>`, empty; undefined for a box whose function has a fixed set of operands. */
+export function withOperandAdded(element: LDElement): LDElement | undefined {
+  return takesMoreOperands(element) ? { ...element, operands: [...(element.operands ?? []), ''] } : undefined;
+}
+
+/** The box without its last input; undefined when it has a fixed set of operands, or only the inputs the table requires. */
+export function withOperandRemoved(element: LDElement): LDElement | undefined {
+  const required = ldFunctionSpec(element.functionName)?.pins.length ?? 0;
+  const operands = element.operands ?? [];
+  return takesMoreOperands(element) && operands.length > required ? { ...element, operands: operands.slice(0, -1) } : undefined;
+}

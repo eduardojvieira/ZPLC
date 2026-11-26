@@ -28,12 +28,21 @@ import {
   type LDModel,
   type LDRung,
 } from '../../models/ld';
-import { ldElementKind, ldFunctionLabel, ldFunctionSpec, LD_MODBUS_HELPERS } from '../../models/ldSupport';
+import { ldElementKind, ldFunctionLabel, LD_MODBUS_HELPERS } from '../../models/ldSupport';
 import type { ProjectBlock } from '../../models/projectBlocks';
 import type { PickerItem } from '../picker';
 import { boolOutputsOf, declaredSymbols, sameType, symbolItems } from '../symbols';
 import { NO_LD_SELECTION, type LDSelection } from './graphModel';
-import { emptyFunction, functionSlots, slotValue, withSlot } from './ldFunctions';
+import {
+  emptyFunction,
+  functionPins,
+  functionSlots,
+  slotValue,
+  takesMoreOperands,
+  withOperandAdded,
+  withOperandRemoved,
+  withSlot,
+} from './ldFunctions';
 import { t } from '../../i18n';
 
 /** A cell of a rung: the place the keys act on. */
@@ -117,6 +126,12 @@ export const LD_MODEL_COMMANDS: readonly string[] = [
   'deleteElement',
   'deleteRung',
 ];
+
+/**
+ * The commands of a box that takes more inputs (MUX, LNG-030): they add an input after the last or remove the last, never below the
+ * inputs the function requires. The slot editor of the box runs them too; they are not keys of the table.
+ */
+export const LD_OPERAND_COMMANDS: readonly string[] = ['addOperand', 'removeOperand'];
 
 /** The commands of the table that the editor runs because they need the screen: the clipboard, the breakpoint, the list. */
 export const LD_EDITOR_COMMANDS: readonly string[] = [
@@ -346,7 +361,7 @@ export function bindingChoices(
   const symbols = declaredSymbols(model.variables);
   if (element.type === 'function') {
     // an operand is a declared symbol or a typed literal; the result goes to a variable that is not an input
-    const pins = ldFunctionSpec(element.functionName)?.pins ?? [];
+    const pins = functionPins(element);
     const output = slot >= pins.length;
     return {
       items: symbolItems(output ? symbols.filter((symbol) => symbol.section !== 'input') : symbols),
@@ -397,6 +412,8 @@ const NEEDS_CURSOR: ReadonlySet<string> = new Set([
   'narrowBranch',
   'removeBranch',
   'addRow',
+  'addOperand',
+  'removeOperand',
 ]);
 
 /** Runs one command of the table. Unknown ids and refusals leave the document and the cursor as they were. */
@@ -493,9 +510,33 @@ export function runLDCommand(model: LDModel, given: LDCursor | null, command: st
       return deleteElement(model, cursor);
     case 'deleteRung':
       return deleteRung(model, cursor);
+    case 'addOperand':
+    case 'removeOperand':
+      return changeOperands(model, cursor, command === 'addOperand');
     default:
       return refuse(model, cursor, `${command} is not a command of the ladder editor.`);
   }
+}
+
+/** One more input on the box under the cursor, or one less, for a function that takes more (MUX). */
+function changeOperands(model: LDModel, cursor: LDCursor | null, add: boolean): LDOutcome {
+  const place = placeOf(model, cursor);
+  if (!place) return refuse(model, cursor, describeCursor(model, cursor));
+  const element = elementAt(place);
+  const name = element?.functionName ?? '';
+  if (!element || element.type !== 'function' || !takesMoreOperands(element))
+    return refuse(model, cursor, t('fbd.input.notVariadic', { name: name || t('ld.kind.function') }));
+  const changed = add ? withOperandAdded(element) : withOperandRemoved(element);
+  if (!changed) return refuse(model, cursor, t('fbd.input.atLeastTwo', { name }));
+  const pin = functionPins(add ? changed : element).at(-1)!;
+  const rung = placeElement(place.rung, changed, place.row, place.col);
+  return {
+    model: withRung(model, rung),
+    cursor: cursorAt(place),
+    changed: true,
+    selection: { rungId: rung.id, elementId: changed.id },
+    say: t(add ? 'fbd.input.added' : 'fbd.input.removed', { name, pin }),
+  };
 }
 
 function insertAt(model: LDModel, cursor: LDCursor | null, item: LDInsert): LDOutcome {

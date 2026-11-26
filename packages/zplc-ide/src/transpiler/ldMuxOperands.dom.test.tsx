@@ -3,10 +3,11 @@
  * commands `addOperand` and `removeOperand` of the keyboard; the transpiler reads the operands of the document.
  */
 import { describe, expect, it } from 'bun:test';
-import { setupDom } from '../test/dom';
+import { setupDom, stubProjectLoader } from '../test/dom';
 import type { LDElement, LDModel } from '../models/ld';
 
 const dom = await setupDom();
+await stubProjectLoader();
 const { ElementProperties } = await import('../editors/ld/LDEditor');
 const { LD_OPERAND_COMMANDS, runLDCommand } = await import('../editors/ld/keyboard');
 const { functionSlots, withOperandAdded, withOperandRemoved } = await import('../editors/ld/ldFunctions');
