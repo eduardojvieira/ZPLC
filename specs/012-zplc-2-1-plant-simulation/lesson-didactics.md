@@ -10,7 +10,7 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 - `order`: 0 of 111 lessons break it
 - `glossary`: 25 of 111 lessons break it
 - `reading-parts`: 7 of 111 lessons break it
-- `answer`: 2 of 111 lessons break it
+- `answer`: 0 of 111 lessons break it
 - `grows`: 14 of 111 lessons break it
 - `scope`: 13 of 111 lessons break it
 - `machine`: 0 of 111 lessons break it
@@ -27,7 +27,7 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 | 7 | `blink-structured-text` | 1 | ST | 15 | yes | 3 | 1 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 8 | `ld-no-nc-contacts` | 2 | LD | 20 | yes |  | 2 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 9 | `ld-series-parallel` | 2 | LD | 20 | yes |  | 2 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 10 | `boolean-logic-two-hand-guard` | 2 | ST | 15 | yes | 1 | 3 | yes | yes | ok | ok | ok | ok | ok | ok | NOT GuardClosed (en), NOT GuardClosed (es) | ok | ok | ok |
+| 10 | `boolean-logic-two-hand-guard` | 2 | ST | 15 | yes | 1 | 3 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 11 | `seal-in-ladder` | 2 | LD | 20 | yes |  | 1 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 12 | `set-reset-alarm-latch` | 2 | ST | 15 | yes | 2 | 2 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 13 | `motor-start-stop-safe` | 2 | ST | 20 | yes | 23 | 2 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
@@ -106,7 +106,7 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 | 86 | `plant-assembler` | 15 | SFC | 50 | no |  | 2 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 87 | `plant-assembler-numeric` | 15 | ST | 40 | no | 94 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 88 | `plant-layer-palletizer` | 15 | ST | 50 | no | 127 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 89 | `plant-xyz-palletizing` | 15 | ST | 50 | no | 92 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | Cycle MOD 4 (en), Cycle MOD 4 (es) | ok | ok | ok |
+| 89 | `plant-xyz-palletizing` | 15 | ST | 50 | no | 92 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 90 | `plant-colour-separation` | 16 | ST | 45 | no | 45 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 91 | `plant-colour-separation-ladder` | 16 | LD | 45 | no |  | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 92 | `plant-colour-separation-il` | 16 | IL | 50 | no | 66 | 6 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
