@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
   "title": "Diagrama de bloques de función: un mando a dos manos con protección",
-  "summary": "Lea un diagrama de bloques de función (FBD) y conecte bloques AND, NOT y XOR para que una prensa solo se habilite con las dos manos en los botones y la protección cerrada.",
+  "summary": "Lea un diagrama de bloques de función (FBD) y conecte bloques AND, NOT y XOR para que una prensa solo se habilite con las dos manos en los pulsadores y la protección cerrada.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
-    "Lea un diagrama de bloques de función (FBD): los bloques se unen con cables desde un puerto de salida hasta un puerto de entrada, y cada salida muestra el resultado de los bloques conectados a ella.",
+    "Lea un diagrama de bloques de función (FBD): los bloques se unen con conexiones desde un puerto de salida hasta un puerto de entrada, y cada salida muestra el resultado de los bloques conectados a ella.",
     "Conecte bloques AND, NOT y XOR para que una salida esté en ON solo cuando varias entradas estén en ON a la vez, cuando una entrada esté en OFF o cuando exactamente una de dos entradas esté en ON."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/TwoHand.fbd.json las tres salidas todavía no son correctas. PressEnable debe estar en ON solo con LeftHand, RightHand y GuardClosed en ON. GuardLamp debe estar en ON cuando la protección está abierta. OneHandWarning debe estar en ON cuando exactamente una mano está en su botón. Lea el diagrama de izquierda a derecha: cada cable lleva el valor de un puerto de salida a un puerto de entrada.",
+      "body": "En src/TwoHand.fbd.json las tres salidas todavía no son correctas. PressEnable debe estar en ON solo con LeftHand, RightHand y GuardClosed en ON. GuardLamp debe estar en ON cuando la protección está abierta. OneHandWarning debe estar en ON cuando exactamente una mano está en su pulsador. Lea el diagrama de izquierda a derecha: cada conexión lleva el valor de un puerto de salida a un puerto de entrada.",
       "checkpoint": "Usted puede decir, para cada salida, qué bloques forman su condición."
     },
     {
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta falla del diagrama inicial, guárdelo y pulse Comprobar: El diagrama inicial habilita la prensa con un bloque OR, así que PressEnable ya está en ON a los {{t:10}} ms con una sola mano, y GuardLamp y OneHandWarning se quedan en OFF. Elimine el bloque OR y las dos constantes FALSE. Coloque un bloque AND con LeftHand y RightHand, un segundo bloque AND con el primero y GuardClosed, y conecte el segundo AND a PressEnable. Coloque un bloque NOT desde GuardClosed hasta GuardLamp, y un bloque XOR desde LeftHand y RightHand hasta OneHandWarning. Guarde el archivo.",
-      "checkpoint": "Cada salida está conectada a sus propios bloques y el archivo está guardado."
+      "body": "Corrija el diagrama inicial, guárdelo y pulse {{ui:learn.check}}. El diagrama inicial habilita la prensa con un bloque OR, así que PressEnable ya está en ON a los {{t:10}} ms con una sola mano, y GuardLamp y OneHandWarning se quedan en OFF. Cambie el diagrama para que PressEnable esté en ON solo con las dos manos en sus pulsadores y la protección cerrada, GuardLamp esté en ON mientras la protección está abierta y OneHandWarning esté en ON mientras exactamente una mano está en su pulsador. Elija y conecte usted los bloques.",
+      "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta el programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario se llama TwoHand y contiene {{assertions}} aserciones."
     },
     {
