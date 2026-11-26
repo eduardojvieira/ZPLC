@@ -3505,23 +3505,23 @@ describe('AIX-013 diagnostics name the place and the accepted values, and projec
     }
   });
 
-  it('projectValidate refuses an FBD block no diagram can place, such as SQRT in blinky_fbd, naming the block (K2)', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'zplc-aix013-sqrt-'));
+  it('projectValidate refuses an FBD block no diagram can place, such as COMM_PUBLISH in blinky_fbd, naming the block (K2)', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-aix013-comm-publish-'));
     try {
       await cp(blinkyFbd, root, { recursive: true });
       const text = await readFile(join(root, 'src/main.fbd.json'), 'utf8');
-      await writeFile(join(root, 'src/main.fbd.json'), text.replace('"type": "NOT"', '"type": "SQRT"'));
+      await writeFile(join(root, 'src/main.fbd.json'), text.replace('"type": "NOT"', '"type": "COMM_PUBLISH"'));
       const result = await projectValidate(root);
       expect(result.ok).toBe(false);
       expect(result.evidence.diagnostics as unknown[]).toEqual([
         {
           code: 'VISUAL_FILE_INVALID',
           message: expect.stringMatching(
-            /^blocks\[\d+\]\.type: block '[^']+' has the type 'SQRT', which an FBD diagram cannot place; accepted values: /,
+            /^blocks\[\d+\]\.type: block '[^']+' has the type 'COMM_PUBLISH', which an FBD diagram cannot place; accepted values: /,
           ),
           path: 'src/main.fbd.json',
           jsonPath: expect.stringMatching(/^blocks\[\d+\]\.type$/),
-          found: 'SQRT',
+          found: 'COMM_PUBLISH',
           acceptedValues: fbdPaletteBlocks(),
         },
       ]);
