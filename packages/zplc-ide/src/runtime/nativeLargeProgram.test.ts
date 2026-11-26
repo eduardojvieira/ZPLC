@@ -308,5 +308,37 @@ if (process.platform === 'win32') {
       },
       20_000,
     );
+
+    // The waiter sleeps on an event that the reader thread sets, so a request is served as soon as it arrives. The
+    // previous reader polled with Sleep(1), which lasts one system timer tick (about 15.6 ms) on Windows: 200 strict
+    // request/response round trips paid at least 200 x 15.6 ms = 3.1 s. Through this supervisor the same 200 take
+    // about 11 ms on Linux (measured on the change, also under Wine through an anonymous pipe: 29 ms with the reader
+    // thread, 244 ms with the old poll there, where a tick is about 1 ms). The bound, 1.5 s, leaves a slow Windows runner
+    // more than 100 times the Linux figure and still fails a reader that waits for a timer tick per request.
+    itNative(
+      'answers 200 sequential requests without waiting a timer tick for each',
+      async () => {
+        const persistRoot = await mkdtemp(join(tmpdir(), 'zplc-stdio-latency-'));
+        const supervisor = new NativeSimulationSupervisor({
+          clientName: 'zplc-stdio-latency-test',
+          clientVersion: '0',
+          requestTimeoutMs: 5_000,
+          lifecycleTimeoutMs: 5_000,
+          environment: { ...process.env, ZPLC_NATIVE_SIM_BIN: nativeRuntimeBinary, ZPLC_PERSIST_ROOT: persistRoot },
+        });
+        try {
+          await supervisor.startSession();
+          const started = performance.now();
+          for (let index = 0; index < 200; index++) {
+            await supervisor.request({ id: `latency-${index}`, type: 'request', method: 'status.get', params: {} });
+          }
+          expect(performance.now() - started).toBeLessThan(1_500);
+        } finally {
+          await supervisor.stopSession().catch(() => undefined);
+          await rm(persistRoot, { recursive: true, force: true });
+        }
+      },
+      20_000,
+    );
   });
 }
