@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "TOF mantiene su Q en ON durante el tiempo preestablecido después de que IN cae, y TON pone Q en ON solo después de que IN estuvo en ON ese tiempo. CAL ejecuta un temporizador con sus entradas; después, cargue la Q del temporizador y guárdela."
+      "text": "Mire los dos pares LD y ST: pasan cada entrada directamente a su salida, y ningún temporizador llega a ejecutarse. TOF mantiene su Q en ON durante el tiempo preestablecido después de que IN cae, y TON pone Q en ON solo después de que IN estuvo en ON ese tiempo."
     },
     {
       "level": 2,

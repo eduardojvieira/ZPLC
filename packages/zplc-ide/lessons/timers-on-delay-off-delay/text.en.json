@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Light must stay on after its input falls, so it needs the TOF; Confirmed must wait before it turns on, so it needs the TON. Call each instance on every scan with its input and its preset, then read its Q."
+      "text": "Look at the two copy statements: nothing stands between each input and its output. For each output, ask whether its delay belongs to the start of its input or to the end of it."
     },
     {
       "level": 2,

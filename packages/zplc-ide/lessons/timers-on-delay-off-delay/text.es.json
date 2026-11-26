@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Light debe seguir encendida después de que su entrada cae, así que necesita el TOF; Confirmed debe esperar antes de encenderse, así que necesita el TON. Llame a cada instancia en cada ciclo con su entrada y su valor preestablecido, y después lea su Q."
+      "text": "Mire las dos instrucciones que copian: nada se interpone entre cada entrada y su salida. Para cada salida, pregúntese si su retardo corresponde al inicio de su entrada o al final."
     },
     {
       "level": 2,

@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "TOF keeps its Q on for the preset time after IN falls, and TON raises Q only after IN has been on for the preset time. CAL runs a timer with its inputs; after it, load the timer's Q and store it."
+      "text": "Look at the two LD and ST pairs: they pass each input straight to its output, and neither timer ever runs. TOF keeps its Q on for the preset time after IN falls, and TON raises Q only after IN has been on for the preset time."
     },
     {
       "level": 2,

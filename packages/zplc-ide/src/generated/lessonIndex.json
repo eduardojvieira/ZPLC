@@ -1090,7 +1090,7 @@
     },
     {
       "id": "timers-on-delay-off-delay",
-      "version": 5,
+      "version": 6,
       "order": 7,
       "module": 3,
       "level": "foundation",
@@ -1227,7 +1227,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "Light must stay on after its input falls, so it needs the TOF; Confirmed must wait before it turns on, so it needs the TON. Call each instance on every scan with its input and its preset, then read its Q."
+              "text": "Look at the two copy statements: nothing stands between each input and its output. For each output, ask whether its delay belongs to the start of its input or to the end of it."
             },
             {
               "level": 2,
@@ -1287,7 +1287,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "Light debe seguir encendida después de que su entrada cae, así que necesita el TOF; Confirmed debe esperar antes de encenderse, así que necesita el TON. Llame a cada instancia en cada ciclo con su entrada y su valor preestablecido, y después lea su Q."
+              "text": "Mire las dos instrucciones que copian: nada se interpone entre cada entrada y su salida. Para cada salida, pregúntese si su retardo corresponde al inicio de su entrada o al final."
             },
             {
               "level": 2,
@@ -10277,7 +10277,7 @@
     },
     {
       "id": "timers-on-delay-off-delay-il",
-      "version": 4,
+      "version": 5,
       "order": 73,
       "module": 3,
       "level": "foundation",
@@ -10415,7 +10415,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "TOF keeps its Q on for the preset time after IN falls, and TON raises Q only after IN has been on for the preset time. CAL runs a timer with its inputs; after it, load the timer's Q and store it."
+              "text": "Look at the two LD and ST pairs: they pass each input straight to its output, and neither timer ever runs. TOF keeps its Q on for the preset time after IN falls, and TON raises Q only after IN has been on for the preset time."
             },
             {
               "level": 2,
@@ -10475,7 +10475,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "TOF mantiene su Q en ON durante el tiempo preestablecido después de que IN cae, y TON pone Q en ON solo después de que IN estuvo en ON ese tiempo. CAL ejecuta un temporizador con sus entradas; después, cargue la Q del temporizador y guárdela."
+              "text": "Mire los dos pares LD y ST: pasan cada entrada directamente a su salida, y ningún temporizador llega a ejecutarse. TOF mantiene su Q en ON durante el tiempo preestablecido después de que IN cae, y TON pone Q en ON solo después de que IN estuvo en ON ese tiempo."
             },
             {
               "level": 2,
@@ -11965,7 +11965,7 @@
     },
     {
       "id": "edge-counter-pulses-il",
-      "version": 4,
+      "version": 5,
       "order": 81,
       "module": 3,
       "level": "foundation",
@@ -12092,7 +12092,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "A CTU already counts only the rising edges of CU, so a long pulse counts once. CAL runs the counter with its inputs; after it, load the output Q of Count and store it."
+              "text": "Look at the line that stores FALSE in CountReached: nothing in it comes from Count, which never runs. A CTU already counts only the rising edges of CU, so a long pulse counts once."
             },
             {
               "level": 2,
@@ -12152,7 +12152,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "Un CTU ya cuenta solo los flancos ascendentes de CU, así que un pulso largo cuenta una sola vez. CAL ejecuta el contador con sus entradas; después, cargue la salida Q de Count y guárdela."
+              "text": "Mire la línea que guarda FALSE en CountReached: nada en ella viene de Count, que nunca se ejecuta. Un CTU ya cuenta solo los flancos ascendentes de CU, así que un pulso largo cuenta una sola vez."
             },
             {
               "level": 2,
