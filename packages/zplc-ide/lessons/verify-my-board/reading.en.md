@@ -31,28 +31,28 @@ The program blinks the LED by itself, half a second on and half a second off, so
 
 ## Worked example
 
-A technician commissions a new pump panel. Its Ready lamp must light while the local selector is ON or while the control room asks for the pump. Before writing the full program, the technician tests both inputs and the lamp with a program of one line:
+A technician commissions a new pump panel. Its Ready lamp must light while the local selector is ON, but never while the pump reports a fault. Before writing the full program, the technician tests both inputs and the lamp with a program of one line:
 
 ```st
 PROGRAM PanelTest
-VAR_INPUT Local : BOOL; Remote : BOOL; END_VAR
+VAR_INPUT Local : BOOL; Fault : BOOL; END_VAR
 VAR_OUTPUT ReadyLamp : BOOL; END_VAR
-ReadyLamp := Local OR Remote;
+ReadyLamp := Local AND NOT Fault;
 END_PROGRAM
 ```
 
-`OR` is TRUE when at least one side is TRUE, so the lamp lights for either input and stays lit while both are ON. Turning each input on and off, one at a time, proves each wire on its own:
+`NOT Fault` is TRUE while there is no fault, and `AND` is TRUE only when both sides are TRUE, so the lamp lights with the selector and goes dark while a fault is reported. Turning each input on and off, one at a time, proves each wire on its own:
 
 ```timing
 span: 3000
 signals:
-  - { name: Local, edges: [500, 1500] }
-  - { name: Remote, edges: [1000, 2500] }
-  - { name: ReadyLamp, edges: [500, 2500] }
-caption: ReadyLamp is ON while Local or Remote is ON
+  - { name: Local, edges: [500, 2500] }
+  - { name: Fault, edges: [1200, 1800] }
+  - { name: ReadyLamp, edges: [500, 1200, 1800, 2500] }
+caption: ReadyLamp is ON while Local is ON and Fault is OFF
 ```
 
-If the lamp never lights, the technician looks at the output and its wiring first. If the lamp lights for Local but not for Remote, the lamp is fine and the wire of Remote is the suspect. One small program, one signal at a time: that is how the check of your board works too.
+If the lamp never lights, the technician looks at the output and its wiring first. If the lamp lights with Local but a fault does not turn it off, the lamp is fine and the wire of Fault is the suspect. One small program, one signal at a time: that is how the check of your board works too.
 
 ## Common mistakes
 

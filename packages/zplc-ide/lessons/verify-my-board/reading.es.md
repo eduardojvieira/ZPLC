@@ -31,28 +31,28 @@ El programa hace parpadear el LED por sí solo, medio segundo encendido y medio 
 
 ## Ejemplo resuelto
 
-Un técnico pone en servicio un tablero nuevo de una bomba. Su lámpara Ready debe encenderse mientras el selector local está en ON o mientras la sala de control pide la bomba. Antes de escribir el programa completo, el técnico prueba las dos entradas y la lámpara con un programa de una sola línea:
+Un técnico pone en servicio un tablero nuevo de una bomba. Su lámpara Ready debe encenderse mientras el selector local está en ON, pero nunca mientras la bomba informa una falla. Antes de escribir el programa completo, el técnico prueba las dos entradas y la lámpara con un programa de una sola línea:
 
 ```st
 PROGRAM PanelTest
-VAR_INPUT Local : BOOL; Remote : BOOL; END_VAR
+VAR_INPUT Local : BOOL; Fault : BOOL; END_VAR
 VAR_OUTPUT ReadyLamp : BOOL; END_VAR
-ReadyLamp := Local OR Remote;
+ReadyLamp := Local AND NOT Fault;
 END_PROGRAM
 ```
 
-`OR` es TRUE cuando al menos uno de sus lados es TRUE, así que la lámpara se enciende con cualquiera de las dos entradas y sigue encendida mientras las dos están en ON. Poner cada entrada en ON y en OFF, una por una, prueba cada cable por separado:
+`NOT Fault` es TRUE mientras no hay falla, y `AND` es TRUE solo cuando sus dos lados son TRUE, así que la lámpara se enciende con el selector y se apaga mientras se informa una falla. Poner cada entrada en ON y en OFF, una por una, prueba cada cable por separado:
 
 ```timing
 span: 3000
 signals:
-  - { name: Local, edges: [500, 1500] }
-  - { name: Remote, edges: [1000, 2500] }
-  - { name: ReadyLamp, edges: [500, 2500] }
-caption: ReadyLamp está en ON mientras Local o Remote está en ON
+  - { name: Local, edges: [500, 2500] }
+  - { name: Fault, edges: [1200, 1800] }
+  - { name: ReadyLamp, edges: [500, 1200, 1800, 2500] }
+caption: ReadyLamp está en ON mientras Local está en ON y Fault está en OFF
 ```
 
-Si la lámpara nunca se enciende, el técnico revisa primero la salida y su cableado. Si la lámpara se enciende con Local pero no con Remote, la lámpara está bien y el sospechoso es el cable de Remote. Un programa pequeño, una señal por vez: así funciona también la verificación de su placa.
+Si la lámpara nunca se enciende, el técnico revisa primero la salida y su cableado. Si la lámpara se enciende con Local pero una falla no la apaga, la lámpara está bien y el sospechoso es el cable de Fault. Un programa pequeño, una señal por vez: así funciona también la verificación de su placa.
 
 ## Errores comunes
 
