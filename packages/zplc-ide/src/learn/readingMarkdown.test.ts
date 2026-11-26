@@ -272,6 +272,15 @@ describe('the live-block limits (LRN-040)', () => {
     ]);
   });
 
+  it('quiz: an option it cannot read whole is refused, as an unquoted comma that cuts the feedback', () => {
+    expect(
+      problem(quiz('  - { text: A, correct: true, feedback: Yes. It was solved, so it waits }\n  - { text: B, feedback: no }')),
+    ).toEqual(['quiz: option 1 cannot be read whole ("so it waits" is not text, correct or feedback): quote its values']);
+    expect(
+      problem(quiz("  - { text: A, correct: true, feedback: 'Yes. It was solved, so it waits' }\n  - { text: B, feedback: no }")),
+    ).toEqual([]);
+  });
+
   const timing = (body: string): string => fence('timing', body);
   it('timing: span above 0, 1 to 8 signals, edges ascending and within the span, marks inside the span with a label', () => {
     const base = 'span: 1000\nsignals:\n  - { name: A, edges: [100, 200] }';
