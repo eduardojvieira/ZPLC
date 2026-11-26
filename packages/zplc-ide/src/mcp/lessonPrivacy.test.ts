@@ -1,5 +1,5 @@
 // AIX-002, D-32: in a lesson an agent reads the goal, the objectives and the hints, never the reference solution. Whether
-// solutions are hidden is read from `<userData>/zplc-learn-policy.v1.json` (electron/learnPolicy.ts) and fails closed: no
+// solutions are hidden is read from `<userData>/zplc-learn-policy.v1.json` (shared/learnPolicyModel.ts) and fails closed: no
 // file, a broken file, or no --user-data at all means hidden. No tool, argument or resource can turn it off.
 import { afterEach, describe, expect, test } from 'bun:test';
 import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
@@ -7,10 +7,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/server';
-import { LEARN_POLICY_FILENAME, readSolutionsHidden } from '../../electron/learnPolicy';
+import { LEARN_POLICY_FILENAME } from '../../shared/learnPolicyModel';
 import { buildProjectContext } from '../ai/projectContext';
 import { LESSON_INDEX } from '../generated/lessonIndex';
-import { lessonCurrentResource, solutionsHiddenIn } from './resources';
+import { lessonCurrentResource } from './resources';
 import { buildMcpServer, openMcpUserData, openMcpWorkspace, type McpWorkspace } from './server';
 
 const LESSON = 'ld-no-nc-contacts';
@@ -101,29 +101,6 @@ describe('AIX-002 zplc://lesson/current reads the lesson goal and never its solu
     for (const [name, schema] of schemas)
       for (const key of ['hideSolutions', 'solutionsHidden', 'showSolution', 'solution'])
         expect(schema.safeParse({ [key]: false }).success, `${name} accepted '${key}'`).toBe(false);
-  });
-
-  test("the MCP reader of the policy answers what Studio's readSolutionsHidden answers, for every kind of file", async () => {
-    const policies = [
-      undefined,
-      '',
-      '{',
-      '[]',
-      'null',
-      JSON.stringify({ hideSolutions: true }),
-      JSON.stringify({ hideSolutions: false }),
-      JSON.stringify({ hideSolutions: 'false' }),
-      JSON.stringify({ hideSolutions: false, other: 1 }),
-      JSON.stringify({ hideSolutions: false, pad: 'x'.repeat(2000) }),
-      ` ${JSON.stringify({ hideSolutions: false })}\n`,
-    ];
-    for (const policy of policies) {
-      const folder = await mkdtemp(join(tmpdir(), 'zplc-mcp-policy-'));
-      temporary.push(folder);
-      if (policy !== undefined) await writeFile(join(folder, LEARN_POLICY_FILENAME), policy);
-      expect(await solutionsHiddenIn(folder), String(policy)).toBe(await readSolutionsHidden(folder));
-    }
-    expect(await solutionsHiddenIn(join(tmpdir(), 'zplc-no-such-user-data'))).toBe(true);
   });
 
   test('the assistant context builder carries no solution either, hidden or not', async () => {

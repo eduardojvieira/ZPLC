@@ -12,6 +12,7 @@ import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
+import { readSolutionsHidden } from '../../shared/learnPolicyModel';
 import { buildProjectContext, lessonIdOfWorkspace } from '../ai/projectContext';
 import { directoryIdentity, sameDirectoryIdentity } from '../cli/firmwareBuildRunner';
 import { readWorkspace, readWorkspaceProjectFile, readWorkspaceScenarios } from '../cli/workspace';
@@ -185,31 +186,6 @@ export interface McpSelfCheck {
   resourceCount: number;
   promptCount: number;
   boundary: string;
-}
-
-/** The classroom setting Studio mirrors into `<userData>` (electron/learnPolicy.ts, LEARN_POLICY_FILENAME). */
-const LEARN_POLICY_FILE = 'zplc-learn-policy.v1.json';
-
-/**
- * True unless `<userData>` holds exactly `{ "hideSolutions": false }`: the rules of `readSolutionsHidden` in
- * electron/learnPolicy.ts, read here because src/mcp must not import electron/ (IDE-033). It also refuses a linked file.
- * `lessonPrivacy.test.ts` runs both readers over the same files so the two stay the same.
- * ponytail: a copy of a 1 KiB fail-closed parser; move the reader to shared/ and import it from both when that unit is open.
- */
-export async function solutionsHiddenIn(userDataRoot: string): Promise<boolean> {
-  const file = join(userDataRoot, LEARN_POLICY_FILE);
-  try {
-    const status = await lstat(file);
-    if (!status.isFile() || status.size > 1024) return true;
-    const raw = await readFile(file, 'utf8');
-    if (raw.length > 1024) return true;
-    const value: unknown = JSON.parse(raw);
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) return true;
-    const keys = Object.keys(value);
-    return !(keys.length === 1 && (value as { hideSolutions?: unknown }).hideSolutions === false);
-  } catch {
-    return true;
-  }
 }
 
 /** The value cut to MCP_CONTEXT_CAPS, and whether anything was cut. */
@@ -421,7 +397,8 @@ export async function scenarioResource(workspace: McpWorkspace, scenarioId: stri
 
 /**
  * The lesson of a lesson workspace (`<userData>/learn-workspaces/<lessonId>`): its title, goal, objectives and hints, never
- * its solution, and whether solutions are hidden. That is read from `<userData>` with `solutionsHiddenIn`, which fails
+ * its solution, and whether solutions are hidden. That is read from `<userData>` with `readSolutionsHidden` (shared/learnPolicyModel.ts),
+ * which fails
  * closed; no argument, tool or resource changes it. A lesson found by its folder name without `--user-data`, or under a
  * user-data folder that is not the one given, is always hidden.
  *
@@ -439,7 +416,7 @@ export async function lessonCurrentResource(workspace: McpWorkspace): Promise<Bo
   const lessonId = underUserData ?? byFolder;
   const entry = lessonId ? LESSON_INDEX.lessons.find((lesson) => lesson.id === lessonId) : undefined;
   if (!entry) return { ok: false, error: 'MCP_NOT_FOUND', cause: 'The project is not a lesson workspace of this ZPLC.' };
-  const solutionsHidden = underUserData ? await solutionsHiddenIn(userData!.root) : true;
+  const solutionsHidden = underUserData ? await readSolutionsHidden(userData!.root) : true;
   const { lesson } = buildProjectContext({ lesson: { manifest: entry, text: entry.text.en } }, { solutionsHidden });
   return lesson ? okBody({ lesson }) : { ok: false, error: 'MCP_NOT_FOUND', cause: 'The lesson has no text in this ZPLC.' };
 }
