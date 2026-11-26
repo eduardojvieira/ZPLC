@@ -19,7 +19,10 @@
 //               headings "Worked example" and "Common mistakes" ("Ejemplo resuelto", "Errores comunes") (CRS-014)
 //   answer      for ST and IL, no code line the solution adds to the starter (spaces normalised, any case; a line of one word such as
 //               VAR or END_IF; is a frame, not an answer) is in the objectives, the stages, the fault cases or a hint other than the
-//               last (CRS-017)
+//               last; nor is a statement the solution adds (ST, split at `;`) or the right-hand side of its `:=`, once
+//               normalised, when it is 6 characters or more (CRS-017). A worked example that becomes the solution once its
+//               variables are renamed is not detected: a person reads that at the owner's stops
+
 //   grows       the starter of the last lesson of each module of a path (course.json) holds at most two statements beyond its
 //               declarations (ST, IL: `;` of a body, instruction lines) or no rung, connection, transition or step beyond the initial
 //               one (LD, FBD, SFC); the column "Starter statements" shows that count for every lesson (CRS-018)
@@ -108,6 +111,8 @@ export interface LessonFacts {
   readingSource: Record<Lang, string>;
   /** Non-comment lines the solution adds to the starter, trimmed, for ST and IL lessons only. */
   addedLines: string[] | null;
+  /** Structured Text statements (split at `;`) of the solution that the starter lacks, for the rule answer; empty for other languages. */
+  addedStatements: string[];
   /** Statements of the starter beyond its declarations; `graphic` for LD, FBD and SFC (rungs, connections, transitions, steps). */
   starter: { statements: number; graphic: boolean };
   /** For a lesson that names a scene: the image its page must show and the tables the scene gives, per language. */
@@ -169,6 +174,9 @@ const normalised = (code: string): string =>
     .replace(/\s+/g, ' ')
     .replace(/ ?([^\p{L}\p{N}_ ]) ?/gu, '$1')
     .trim();
+
+/** The shortest statement or right-hand side the rule answer looks for alone, normalised: `A OR B` is too common to be an answer. */
+const ANSWER_PART_MIN = 6;
 
 /** A line of one word, such as `VAR`, `ELSE` or `END_IF;`: the frame of a statement, not its answer. */
 const KEYWORD_LINE = /^[\p{L}\p{N}_]+;?$/u;
@@ -267,10 +275,12 @@ export function evaluate(input: Input): Row[] {
           ),
         );
       };
+      const parts = lesson.addedStatements
+        .flatMap((statement) => [statement, /^[\w.[\]]+\s*:=/.test(statement) ? statement.slice(statement.indexOf(':=') + 2) : ''])
+        .map(normalised);
+      const candidates = [...new Set([...lesson.addedLines!.map(normalised), ...parts.filter((part) => part.length >= ANSWER_PART_MIN)])];
       const given = LANGS.flatMap((lang) =>
-        [...new Set(lesson.addedLines!.map(normalised))]
-          .filter((line) => !KEYWORD_LINE.test(line) && holdsCode(told(lang), line))
-          .map((line) => `${line} (${lang})`),
+        candidates.filter((line) => !KEYWORD_LINE.test(line) && holdsCode(told(lang), line)).map((line) => `${line} (${lang})`),
       );
       if (given.length > 0) offences.answer = given.join(SEPARATOR);
     }
@@ -440,6 +450,24 @@ export function starterStatements(file: string, source: string): { statements: n
   return { statements, graphic: false };
 }
 
+/** The ST statements (split at `;`, spaces normalised to one) of a solution's bodies that its starter's bodies lack. */
+export function statementsAdded(starter: string, solution: string): string[] {
+  const statements = (source: string) =>
+    codeLinesOf(source.replace(/\b(VAR\w*)\b[\s\S]*?\bEND_VAR\b/g, ''))
+      .filter((line) => !/^(?:END_)?(?:PROGRAM|FUNCTION_BLOCK|FUNCTION)\b/.test(line))
+      .join(' ')
+      .split(';')
+      .map((statement) => statement.replace(/\s+/g, ' ').trim())
+      .filter((statement) => statement !== '');
+  const left = new Map<string, number>();
+  for (const statement of statements(starter)) left.set(statement, (left.get(statement) ?? 0) + 1);
+  return statements(solution).filter((statement) => {
+    const count = left.get(statement) ?? 0;
+    left.set(statement, count - 1);
+    return count <= 0;
+  });
+}
+
 const codeLinesOf = (source: string): string[] =>
   source
     .replace(/\(\*[\s\S]*?\*\)/g, '')
@@ -487,6 +515,9 @@ export function loadInput(): { input: Input; glossary: Record<Lang, string>; pro
       readingText: { en: prose(pkg.reading?.en), es: prose(pkg.reading?.es) },
       readingSource: { en: pkg.reading?.en ?? '', es: pkg.reading?.es ?? '' },
       addedLines: textOnly ? linesAdded(read(pkg.manifest.starter), read(pkg.manifest.solution)) : null,
+      addedStatements: pkg.manifest.starter.program.endsWith('.st')
+        ? statementsAdded(read(pkg.manifest.starter), read(pkg.manifest.solution))
+        : [],
       starter: starterStatements(pkg.manifest.starter.program, read(pkg.manifest.starter)),
       machine: scene
         ? (Object.fromEntries(

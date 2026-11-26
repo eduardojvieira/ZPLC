@@ -12,6 +12,7 @@ import {
   mappingProblems,
   offenceKeys,
   RULES,
+  statementsAdded,
   unexplainedConstructs,
   ratchet,
   renderTable,
@@ -201,21 +202,21 @@ describe('rules, each failing when broken', () => {
   test('answer: a solution statement or a right-hand side of 6 or more characters, printed alone, is a leak too', () => {
     const facts = (objective: string) => ({
       addedLines: [],
-      addedStatements: ['Level := (Raw * 100) / 1000', 'Ok := A OR B'],
+      addedStatements: ['Level := (Raw * 100) / 1000', 'Ok := A + B'],
       text: { en: text({ objectives: [objective] }), es: text({}, 'Pulse Comprobar.') },
     });
     expect(offending(base([lesson('a', facts('Compute (Raw*100) / 1000 and store it.'))]))).toEqual(['a:answer']);
     expect(evaluate(base([lesson('a', facts('Compute (Raw*100) / 1000.'))]))[0]!.offences.answer).toBe('(Raw*100)/1000 (en)');
     expect(offending(base([lesson('a', facts('Write Level:=(Raw*100)/1000 here.'))]))).toEqual(['a:answer']);
-    // A right-hand side shorter than 6 characters (A OR B) is not the answer alone.
-    expect(offending(base([lesson('a', facts('Use A OR B.'))]))).toEqual([]);
+    // A right-hand side shorter than 6 characters once normalised (A+B) is not the answer alone.
+    expect(offending(base([lesson('a', facts('Use A + B.'))]))).toEqual([]);
   });
 
   test('statementsAdded: the ST statements of the solution that the starter lacks, declarations left out', () => {
     const starter = 'PROGRAM P\nVAR X : INT; END_VAR\nX := 1;\nEND_PROGRAM\n';
     const solution =
       'PROGRAM P\nVAR X : INT; Y : INT; END_VAR\nX := 1;\n(* scale *)\nY := (X * 100) / 1000;\nIF X > 0 THEN Y := 0; END_IF;\nEND_PROGRAM\n';
-    expect(statementsAdded(starter, solution)).toEqual(['Y := (X * 100) / 1000', 'IF X > 0 THEN Y := 0']);
+    expect(statementsAdded(starter, solution)).toEqual(['Y := (X * 100) / 1000', 'IF X > 0 THEN Y := 0', 'END_IF']);
   });
 
   test('grows: the last lesson of each module of a path starts from its declarations', () => {

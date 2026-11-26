@@ -10,7 +10,7 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 - `order`: 0 of 111 lessons break it
 - `glossary`: 25 of 111 lessons break it
 - `reading-parts`: 7 of 111 lessons break it
-- `answer`: 10 of 111 lessons break it
+- `answer`: 16 of 111 lessons break it
 - `grows`: 14 of 111 lessons break it
 - `scope`: 16 of 111 lessons break it
 - `machine`: 0 of 111 lessons break it
@@ -24,10 +24,10 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 | 4 | `ld-scan-cycle` | 1 | LD | 15 | yes |  | 2 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 5 | `scan-cycle-one-scan-memory` | 1 | ST | 10 | no | 15 | 3 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 6 | `blinky-ladder-timer-feedback` | 1 | LD | 20 | yes |  | 2 | yes | yes | ok | ok | ok | ok | ok | ok | ok | 2 starter statements, last of module 1 in ladder | ok | ok |
-| 7 | `blink-structured-text` | 1 | ST | 15 | no | 3 | 1 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
+| 7 | `blink-structured-text` | 1 | ST | 15 | no | 3 | 1 | yes | yes | no en, es | ok | ok | ok | ok | ok | LampOn AND Enable (en) | ok | ok | ok |
 | 8 | `ld-no-nc-contacts` | 2 | LD | 20 | yes |  | 2 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 9 | `ld-series-parallel` | 2 | LD | 20 | yes |  | 2 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 10 | `boolean-logic-two-hand-guard` | 2 | ST | 15 | yes | 1 | 3 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
+| 10 | `boolean-logic-two-hand-guard` | 2 | ST | 15 | yes | 1 | 3 | yes | yes | ok | ok | ok | ok | ok | ok | NOT GuardClosed (en), NOT GuardClosed (es) | ok | ok | ok |
 | 11 | `seal-in-ladder` | 2 | LD | 20 | yes |  | 1 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 12 | `set-reset-alarm-latch` | 2 | ST | 15 | yes | 2 | 2 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 13 | `motor-start-stop-safe` | 2 | ST | 20 | yes | 23 | 2 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
@@ -80,7 +80,7 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 | 60 | `conveyor-two-parts-diagnosis` | 8 | ST | 20 | no | 44 | 3 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 61 | `instruction-list-door-alarm` | 9 | IL | 20 | no | 2 | 3 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | OR Siren (en), ANDN Silence (en), OR Siren (es), ANDN Silence (es) | ok | ok | ok |
 | 62 | `one-logic-five-languages` | 9 | ST/LD/FBD/SFC/IL | 30 | yes |  | 1 | yes | yes | ok | ok | ok | ok | botón (es, use pulsador) | no "Worked example" (en), no "Common mistakes" (en), no "Ejemplo resuelto" (es), no "Errores comunes" (es) | ok | ok | ok | ok |
-| 63 | `modbus-register-round-trip` | 10 | ST | 25 | no | 3 | 2 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
+| 63 | `modbus-register-round-trip` | 10 | ST | 25 | no | 3 | 2 | yes | yes | no en, es | ok | ok | ok | ok | ok | Wr.ERROR OR Rd.ERROR (en) | ok | ok | ok |
 | 64 | `mqtt-publish-subscribe` | 10 | ST | 25 | no | 4 | 4 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 65 | `modbus-coil-fbd` | 10 | FBD | 25 | no |  | 21 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 66 | `capstone-packing-station` | 11 | ST | 60 | no | 5 | 1 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | safety (en), seguridad (es) | ok |
@@ -92,11 +92,11 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 | 72 | `plant-latch-two-sensors-ladder` | 12 | LD | 20 | no |  | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 73 | `plant-counted-queue` | 12 | ST | 30 | no | 15 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 74 | `plant-counted-queue-ladder` | 12 | LD | 30 | no |  | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 75 | `plant-timed-tank` | 13 | ST | 30 | no | 32 | 0 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
+| 75 | `plant-timed-tank` | 13 | ST | 30 | no | 32 | 0 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | FillT(IN:=Step=1,PT:=T#3500ms) (en), Step=1 (en), FillT(IN:=Step=1,PT:=T#3500ms) (es), Step=1 (es) | ok | ok | ok |
 | 76 | `plant-timed-tank-ladder` | 13 | LD | 30 | no |  | 0 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
-| 77 | `plant-tank-level-scaling` | 13 | ST | 30 | no | 16 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | LevelM:=INT_TO_REAL(LevelRaw)/27648.0; (en), SetM:=INT_TO_REAL(SetPointRaw)/1000.0; (en), LevelM:=INT_TO_REAL(LevelRaw)/27648.0; (es), SetM:=INT_TO_REAL(SetPointRaw)/1000.0; (es) | ok | ok | ok |
+| 77 | `plant-tank-level-scaling` | 13 | ST | 30 | no | 16 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | LevelM:=INT_TO_REAL(LevelRaw)/27648.0; (en), SetM:=INT_TO_REAL(SetPointRaw)/1000.0; (en), LevelM:=INT_TO_REAL(LevelRaw)/27648.0 (en), INT_TO_REAL(LevelRaw)/27648.0 (en), SetM:=INT_TO_REAL(SetPointRaw)/1000.0 (en), INT_TO_REAL(SetPointRaw)/1000.0 (en), LevelM:=INT_TO_REAL(LevelRaw)/27648.0; (es), SetM:=INT_TO_REAL(SetPointRaw)/1000.0; (es), LevelM:=INT_TO_REAL(LevelRaw)/27648.0 (es), INT_TO_REAL(LevelRaw)/27648.0 (es), SetM:=INT_TO_REAL(SetPointRaw)/1000.0 (es), INT_TO_REAL(SetPointRaw)/1000.0 (es) | ok | ok | ok |
 | 78 | `plant-tank-level-scaling-ladder` | 13 | LD | 30 | no |  | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 79 | `plant-tank-pid` | 13 | ST | 40 | no | 8 | 2 | yes | yes | no en, es | ok | ok | ok | ok | ok | FillCmd:=Pid.OUT; (en), FillCmd:=Pid.OUT; (es) | ok | ok | ok |
+| 79 | `plant-tank-pid` | 13 | ST | 40 | no | 8 | 2 | yes | yes | no en, es | ok | ok | ok | ok | ok | FillCmd:=Pid.OUT; (en), FillCmd:=Pid.OUT (en), Pid.OUT (en), FillCmd:=Pid.OUT; (es), FillCmd:=Pid.OUT (es), Pid.OUT (es) | ok | ok | ok |
 | 80 | `plant-tank-pid-fbd` | 13 | FBD | 40 | no |  | 20 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 81 | `plant-buffer-release` | 14 | SFC | 45 | no |  | 2 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
 | 82 | `plant-merge-lines` | 14 | ST | 45 | no | 55 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
@@ -104,9 +104,9 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 | 84 | `plant-belt-transfer` | 15 | ST | 40 | no | 83 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 85 | `plant-belt-transfer-ladder` | 15 | LD | 40 | no |  | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 86 | `plant-assembler` | 15 | SFC | 50 | no |  | 2 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 87 | `plant-assembler-numeric` | 15 | ST | 40 | no | 94 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | XAt:=ABS(XPos-XSet)<Tol; (en), XAt:=ABS(XPos-XSet)<Tol; (es) | ok | ok | ok |
+| 87 | `plant-assembler-numeric` | 15 | ST | 40 | no | 94 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | XAt:=ABS(XPos-XSet)<Tol; (en), XAt:=ABS(XPos-XSet)<Tol (en), ABS(XPos-XSet)<Tol (en), XAt:=ABS(XPos-XSet)<Tol; (es), XAt:=ABS(XPos-XSet)<Tol (es), ABS(XPos-XSet)<Tol (es) | ok | ok | ok |
 | 88 | `plant-layer-palletizer` | 15 | ST | 50 | no | 127 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 89 | `plant-xyz-palletizing` | 15 | ST | 50 | no | 92 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
+| 89 | `plant-xyz-palletizing` | 15 | ST | 50 | no | 92 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | Cycle MOD 4 (en), Cycle MOD 4 (es) | ok | ok | ok |
 | 90 | `plant-colour-separation` | 16 | ST | 45 | no | 45 | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | placa (es) | ok |
 | 91 | `plant-colour-separation-ladder` | 16 | LD | 45 | no |  | 0 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | placa (es) | ok |
 | 92 | `plant-colour-separation-il` | 16 | IL | 50 | no | 66 | 6 | yes | yes | no en, es | ok | ok | ok | ok | ok | LD State (en), ST State (en), EQ 1 (en), AND Extended (en), LD 2 (en), LD State (es), ST State (es), EQ 1 (es), AND Extended (es), LD 2 (es) | ok | ok | ok |
@@ -124,7 +124,7 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 | 104 | `plant-estop-interlocks-ladder` | 18 | LD | 40 | no |  | 26 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | safety (en), seguridad (es) | ok |
 | 105 | `plant-manual-auto` | 18 | ST | 45 | no | 23 | 45 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador), botones (es, use pulsador) | ok | ok | ok | safety (en), seguridad (es) | ok |
 | 106 | `plant-manual-auto-ladder` | 18 | LD | 45 | no |  | 37 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador), botones (es, use pulsador) | ok | ok | 37 starter statements, last of module 18 in plant-ld | safety (en), seguridad (es) | ok |
-| 107 | `plant-fault-actions` | 18 | ST | 45 | no | 10 | 44 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | 44 starter statements, last of module 18 in plant-st | ok | ok |
+| 107 | `plant-fault-actions` | 18 | ST | 45 | no | 10 | 44 | yes | yes | no en, es | ok | ok | ok | ok | ok | Stuck(IN:=High,PT:=T#3000ms) (en), Stuck(IN:=High,PT:=T#3000ms) (es) | 44 starter statements, last of module 18 in plant-st | ok | ok |
 | 108 | `plant-build-belt-scene` | 19 | ST | 25 | no | 11 | 0 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
 | 109 | `plant-build-belt-scene-ladder` | 19 | LD | 25 | no |  | 1 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
 | 110 | `plant-change-scene` | 19 | ST | 20 | no | 0 | 26 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | 26 starter statements, last of module 19 in plant-st | ok | ok |
