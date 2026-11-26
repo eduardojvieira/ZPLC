@@ -242,3 +242,30 @@ describe('the place bar shows the navigator (FND-007)', () => {
 function groupsDeclarations() {
   return [{ file: 'src/Main.st', declarations: [{ name: 'Main', kind: 'PROGRAM', file: 'src/Main.st', line: 3, column: 9 }] }];
 }
+
+describe('a shortened task row can be read whole (UXV-004)', () => {
+  const long = { tasks: [{ name: 'MainTaskWithAVeryLongName', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.st'] }] } as never;
+  const longGroups = () => buildNavigatorGroups({ declarations: [], globals: [], fileTree: null, config: long }, words);
+  const full = () => {
+    const task = longGroups().find((g) => g.id === 'tasks')!.items[0]!;
+    return `${task.label} — ${task.detail}`;
+  };
+  const row = () => group('tasks').querySelector('[data-navigator-item]') as HTMLElement;
+
+  it('UXV-004 the task row carries its full name and schedule, and shows them on hover', async () => {
+    reset();
+    const { user } = dom.render(<div style={{ width: '120px' }}>{view(longGroups())}</div>);
+    expect(row().getAttribute('data-tooltip')).toBe(full());
+    await user.hover(row());
+    await dom.waitFor(() => expect(dom.screen.getByRole('tooltip').textContent).toBe(full()));
+    expect(row().getAttribute('aria-describedby')).toBe(dom.screen.getByRole('tooltip').id);
+  });
+
+  it('UXV-004 the task row shows its full text on keyboard focus', async () => {
+    reset();
+    dom.render(<div style={{ width: '120px' }}>{view(longGroups())}</div>);
+    row().focus();
+    await dom.waitFor(() => expect(dom.screen.getByRole('tooltip').textContent).toBe(full()));
+    expect(row().getAttribute('aria-describedby')).toBe(dom.screen.getByRole('tooltip').id);
+  });
+});
