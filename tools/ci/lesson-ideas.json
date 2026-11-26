@@ -1,11 +1,11 @@
 {
   "note": "Rule `order` of lesson-didactics.ts, kept outside the lesson packages. `ideas`: the lesson that explains each idea (its reading page). `practises`: per lesson, the ideas it needs to have been explained already. Plain judgement from the objectives; a lesson that practises nothing listed is simply absent.",
   "ideas": {
-    "plc-basics": { "explainedBy": "ld-what-is-a-plc" },
-    "scan-cycle": { "explainedBy": "ld-scan-cycle" },
+    "plc-basics": { "explainedBy": "first-blink-simulation" },
+    "scan-cycle": { "explainedBy": "first-blink-simulation" },
     "no-nc-contacts": { "explainedBy": "ld-no-nc-contacts" },
     "series-parallel": { "explainedBy": "ld-series-parallel" },
-    "edges": { "explainedBy": "ld-edges" },
+    "edges": { "explainedBy": "scan-cycle-one-scan-memory" },
     "variables-types": { "explainedBy": "ld-variables-and-types" },
     "comparison": { "explainedBy": "ld-compare-math" },
     "scaling": { "explainedBy": "ld-analog-scaling" },
