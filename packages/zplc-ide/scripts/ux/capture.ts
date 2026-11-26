@@ -237,6 +237,36 @@ async function captureCondition(
   return { captures, failed };
 }
 
+export interface ConditionRun {
+  captures: CaptureRecord[];
+  failed: Array<{ surface: string; reason: string }>;
+}
+
+export interface RunResult {
+  captures: CaptureRecord[];
+  /** Surfaces a command did not open, each with the condition it failed in. */
+  failed: Array<{ surface: string; reason: string }>;
+  /** Conditions that stopped before their last capture, with the error. */
+  failedConditions: Array<{ condition: string; error: string }>;
+}
+
+/** Every condition in turn. */
+export async function runConditions(
+  conditions: Condition[],
+  captureOne: (condition: Condition) => Promise<ConditionRun>,
+  log: (line: string) => void = console.log,
+): Promise<RunResult> {
+  const result: RunResult = { captures: [], failed: [], failedConditions: [] };
+  for (const condition of conditions) {
+    const started = Date.now();
+    const run = await captureOne(condition);
+    result.captures.push(...run.captures);
+    for (const { surface, reason } of run.failed) result.failed.push({ surface, reason: `${conditionName(condition)}: ${reason}` });
+    log(`${conditionName(condition)}: ${run.captures.length} captures in ${Math.round((Date.now() - started) / 1000)} s`);
+  }
+  return result;
+}
+
 async function main(): Promise<void> {
   const { values } = parseArgs({
     args: Bun.argv.slice(2),
@@ -265,16 +295,8 @@ async function main(): Promise<void> {
   // every Studio surface has the same covering set; one launch per condition holds every surface in it
   let conditions = conditionsFor({ id: '', area: '', states: [], reachedBy: [] });
   if (values.condition) conditions = conditions.filter((condition) => values.condition!.includes(conditionName(condition)));
-  const captures: CaptureRecord[] = [];
-  const failed = new Map<string, string>();
-  for (const condition of conditions) {
-    const started = Date.now();
-    const run = await captureCondition(condition, reached, surfaces, project, out);
-    captures.push(...run.captures);
-    for (const { surface, reason } of run.failed) failed.set(surface, `${conditionName(condition)}: ${reason}`);
-    console.log(`${conditionName(condition)}: ${run.captures.length} captures in ${Math.round((Date.now() - started) / 1000)} s`);
-  }
-  const notReached = [...unreached, ...[...failed].map(([surface, reason]) => ({ surface, reason }))];
+  const { captures, failed } = await runConditions(conditions, (condition) => captureCondition(condition, reached, surfaces, project, out));
+  const notReached = [...unreached, ...failed];
   writeFileSync(join(out, 'manifest.json'), manifestText(captures, notReached));
   const areas = [...new Set(reached.map((entry) => entry.surface.area))];
   for (const area of areas) {
