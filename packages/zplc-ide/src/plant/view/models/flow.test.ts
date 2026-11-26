@@ -333,6 +333,11 @@ describe('aligner, chute and remover models (VIS-014)', () => {
         expect(legs.length).toBe(4);
         expect(pieces.filter((p) => p.slot.startsWith('stem-')).length).toBe(4);
         expect(pieces.filter((p) => p.slot.startsWith('foot-')).length).toBe(4);
+        // The emitter's floor marks, in the same zone role, at the four corners of the footprint.
+        const marks = pieces.filter((p) => p.slot.startsWith('mark-'));
+        expect(marks.length).toBe(8);
+        expect(marks.every((p) => p.role === 'zone')).toBe(true);
+        expect(new Set(marks.map((p) => p.role))).toEqual(new Set(partModel(view('emitter', [0.1, 0.1, 0.1], [0, 0.5, 0], {}))!.map((p) => p.role)));
         // Recessed painted walls sit inside the outer boundary of the slotted posts.
         for (const wall of pieces.filter((p) => p.slot.startsWith('wall-'))) {
           const horiz =

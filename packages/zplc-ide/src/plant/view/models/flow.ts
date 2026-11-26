@@ -382,6 +382,14 @@ function removerModel(view: PartView): Piece[] {
       piece(`post-${i}`, slotted(post, post, cageTop - frameBottom, 'y'), [sx * cx, (cageTop + frameBottom) / 2, sz * cz], 'frame'),
     );
     if (legLen > 0.02) pieces.push(...levellingLeg(String(i), sx * cx, sz * cz, frameBottom, floor, post));
+    // The emitter's convention (S3-08): the same zone-coloured corner marks on the floor, so the two ends of a line read alike.
+    const { mark, bar, thickness } = EMITTER;
+    const [hx, hz] = [width / 2, depth / 2];
+    const markY = floor + 0.001 + thickness / 2;
+    pieces.push(
+      piece(`mark-${i}-x`, box([mark, thickness, bar], 0), [sx * (hx - mark / 2), markY, sz * (hz - bar / 2)], 'zone'),
+      piece(`mark-${i}-z`, box([bar, thickness, mark - bar], 0), [sx * (hx - bar / 2), markY, sz * (hz - bar - (mark - bar) / 2)], 'zone'),
+    );
   }
   if (legLen > 0.25) {
     const braceY = floor + legLen * 0.35;

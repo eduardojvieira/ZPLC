@@ -216,6 +216,7 @@ export const CATALOGUE: readonly CatalogueKind[] = [
   kind('gantry', [0.3, 0.03, 0.2], 0.2, GANTRY_AXES, [
     { label: 'home, open' },
     { label: 'moved on X, Y, Z', state: { x: 0.9, y: 0.6, z: 0.6 } },
+    { label: 'moved, gripping', state: { x: 0.9, y: 0.6, z: 0.6, holding: true, closeFraction: 1 } },
   ]),
   // stations
   machine(

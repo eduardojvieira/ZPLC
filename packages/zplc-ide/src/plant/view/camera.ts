@@ -45,6 +45,19 @@ export function cameraFromPreset(preset: CameraPreset): CameraState {
   });
 }
 
+/**
+ * The lowest a first view may look from (S3-10): polar at most 62°, the catalogue's angle. At 90° less half the field of view
+ * (67.5°) the fitted picture still showed a band of sky, so the cap keeps the horizon out with room to spare. A scene whose first
+ * preset looks lower opens raised to it, keeping the preset's azimuth; the scene file is not changed.
+ */
+export const FIRST_VIEW_POLAR_MAX_DEG = 62;
+
+/** The state a scene opens with: its first preset, raised so the picture shows the plant and not the horizon. */
+export function firstViewCamera(preset: CameraPreset): CameraState {
+  const s = cameraFromPreset(preset);
+  return { ...s, polarDeg: Math.min(s.polarDeg, FIRST_VIEW_POLAR_MAX_DEG) };
+}
+
 export function cameraPosition(s: CameraState): Vec3 {
   const az = s.azimuthDeg * RAD;
   const po = s.polarDeg * RAD;

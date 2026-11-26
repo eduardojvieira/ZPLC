@@ -1,8 +1,4 @@
 import { describe, expect, it } from 'bun:test';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import type { PlantSceneFile } from '../../src/plant/contracts';
-import { cameraFromPreset } from '../../src/plant/view/camera';
 import { gripperDecor, snapshotBounds } from '../../src/plant/view/geometry';
 import { MODELS, partModel } from '../../src/plant/view/models';
 import { CATALOGUE, catalogueCamera, catalogueKindCells, catalogueView, catalogueViews, ITEMS, unionBounds } from './catalogueStates';
@@ -67,24 +63,15 @@ describe('the catalogue sheet', () => {
     expect(ITEMS.map((i) => i.id)).toEqual(['box', 'part', 'metal', 'lid', 'base', 'crate', 'pallet']);
   });
 
-  it('S3-10 sets elevated 3/4 opening cameras (polar 40-62 deg) for stacker-crane-warehouse and three-level-lifts', () => {
-    for (const id of ['stacker-crane-warehouse', 'three-level-lifts'] as const) {
-      const path = resolve(import.meta.dir, `../../plant-scenes/${id}/scene.json`);
-      const scene = JSON.parse(readFileSync(path, 'utf8')) as PlantSceneFile;
-      const first = scene.cameras[0];
-      expect(first).toBeDefined();
-      const cam = cameraFromPreset(first!);
-      expect(cam.polarDeg).toBeGreaterThanOrEqual(40);
-      expect(cam.polarDeg).toBeLessThanOrEqual(62);
-    }
-  });
-
   it('aligns turntable left/right yawDeg with the core pose and raises extended stop-blade above the floor', () => {
     const turntable = CATALOGUE.find((k) => k.id === 'turntable')!;
     const left = turntable.states.find((s) => s.label === 'left')!;
     const right = turntable.states.find((s) => s.label === 'right')!;
     expect(left.yawDeg).toBe(90);
     expect(right.yawDeg).toBe(-90);
+
+    const gantry = CATALOGUE.find((k) => k.id === 'gantry')!;
+    expect(gantry.states.find((s) => s.label === 'moved, gripping')?.state).toMatchObject({ holding: true });
 
     const blade = CATALOGUE.find((k) => k.id === 'stop-blade')!;
     const extended = blade.states.find((s) => s.label === 'extended (up)')!;
@@ -98,7 +85,7 @@ describe('the catalogue sheet', () => {
       { min: [-1, 0, -0.5], max: [1, 1, 0.5] },
       { min: [-0.2, 0.2, -2], max: [3, 1.5, 1] },
     ]);
-    expect(merged).toEqual({ min: [-1, 0, -2], max: [3, 1.5, 0.5] });
+    expect(merged).toEqual({ min: [-1, 0, -2], max: [3, 1.5, 1] });
 
     for (const id of ['turntable', 'pusher', 'diverter-arm', 'stop-blade', 'stacker-crane'] as const) {
       const k = CATALOGUE.find((c) => c.id === id)!;
