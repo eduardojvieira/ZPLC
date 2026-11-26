@@ -112,4 +112,4 @@ options:
 
 ## What you will do in the practice
 
-In the practice you get a tank with three steps: fill, mix and drain, each with its own step bit and timer. The transition from fill to mix is written, and the transition from mix to drain is missing. You will add the two rungs of that transition, one that sets `StepDrain` and one that resets `StepMix`, and then check that the three outputs never overlap.
+In the practice you get a tank with three steps: fill, mix and drain, each with its own step bit and timer. The transition from fill to mix is written, and the transition from mix to drain is missing. You will make the sequence move from mix to drain, and then check that the three outputs never overlap.

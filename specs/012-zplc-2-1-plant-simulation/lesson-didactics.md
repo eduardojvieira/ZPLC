@@ -10,7 +10,7 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 - `order`: 0 of 111 lessons break it
 - `glossary`: 25 of 111 lessons break it
 - `reading-parts`: 7 of 111 lessons break it
-- `answer`: 11 of 111 lessons break it
+- `answer`: 10 of 111 lessons break it
 - `grows`: 14 of 111 lessons break it
 - `scope`: 13 of 111 lessons break it
 - `machine`: 0 of 111 lessons break it
@@ -68,7 +68,7 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 | 48 | `tank-level-fault-reset-ladder` | 6 | LD | 30 | yes |  | 2 | yes | yes | ok | ok | ok | ok | botón (es, use pulsador) | no "Worked example" (en), no "Ejemplo resuelto" (es), no "Errores comunes" (es) | ok | 2 starter statements, last of module 6 in ladder | ok | ok |
 | 49 | `interlock-guard-permissive-fbd` | 6 | FBD | 25 | no |  | 6 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | safety (en), seguridad (es) | ok |
 | 50 | `fault-stop-reset-sfc` | 6 | SFC | 25 | no |  | 8 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 51 | `interlock-guard-permissive-il` | 6 | IL | 20 | no | 1 | 6 | yes | yes | no en, es | ok | ok | ok | ok | ok | AND GuardClosed (en), AND GuardClosed (es) | ok | safety (en), seguridad (es) | ok |
+| 51 | `interlock-guard-permissive-il` | 6 | IL | 20 | no | 1 | 6 | yes | yes | no en, es | ok | ok | ok | ok | ok | ok | ok | safety (en), seguridad (es) | ok |
 | 52 | `ld-function-blocks` | 7 | LD | 25 | yes |  | 1 | yes | yes | ok | ok | ok | ok | botón (es, use pulsador), botones (es, use pulsador) | no "Worked example" (en), no "Ejemplo resuelto" (es), no "Errores comunes" (es) | ok | 1 starter statements, last of module 7 in ladder | ok | ok |
 | 53 | `function-block-pump-pair` | 7 | ST | 25 | no | 1 | 4 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador) | ok | ok | ok | ok | ok |
 | 54 | `structures-arrays-call-panel` | 7 | ST | 25 | no | 7 | 5 | yes | yes | no en, es | ok | ok | ok | botón (es, use pulsador), botones (es, use pulsador) | ok | ok | ok | ok | ok |

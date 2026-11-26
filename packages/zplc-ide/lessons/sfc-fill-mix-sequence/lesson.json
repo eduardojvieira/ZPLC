@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "sfc-fill-mix-sequence",
-  "version": 6,
+  "version": 7,
   "order": 60,
   "module": 5,
   "level": "intermediate",

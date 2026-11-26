@@ -92,4 +92,4 @@ options:
 
 ## Lo que hará en la práctica
 
-En la práctica recibe la bomba de un tanque que sigue una planta de nivel. El peldaño de la bomba y el de la alarma están escritos. Usted agregará los peldaños que activan un biestable de falla desde la entrada de emergencia o la falla de la bomba, que arman el reset solo después de soltar el botón y que borran el biestable con una pulsación nueva, de modo que la alarma siga en ON después de que la entrada de falla desaparezca. Preste atención al orden de los peldaños.
+En la práctica recibe la bomba de un tanque que sigue una planta de nivel. El peldaño de la bomba y el de la alarma están escritos. Usted hará que la alarma siga en ON después de que la entrada de falla desaparezca, hasta una pulsación nueva de Reset una vez desaparecida la falla. Preste atención al orden de los peldaños.

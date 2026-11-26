@@ -95,4 +95,4 @@ options:
 
 ## Lo que hará en la práctica
 
-En la práctica recibe un motor reversible con un peldaño de avance y uno de retroceso, cada uno con autorretención, botón de paro y un permisivo de lubricación. Las dos direcciones todavía no se conocen entre sí. Usted agregará el bloqueo mutuo a cada peldaño y comprobará que los dos contactores nunca están en ON a la vez, y que perder el permisivo de lubricación detiene cualquiera de las dos direcciones.
+En la práctica recibe un motor reversible con un peldaño de avance y uno de retroceso, cada uno con autorretención, botón de paro y un permisivo de lubricación. Las dos direcciones todavía no se conocen entre sí. Usted hará que cada sentido siga apagado mientras el otro funciona, y comprobará que los dos contactores nunca están en ON a la vez, y que perder el permisivo de lubricación detiene cualquiera de las dos direcciones.

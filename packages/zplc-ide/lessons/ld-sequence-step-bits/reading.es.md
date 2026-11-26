@@ -112,4 +112,4 @@ options:
 
 ## Lo que hará en la práctica
 
-En la práctica recibe un tanque con tres pasos: llenado, mezcla y vaciado, cada uno con su bit de paso y su temporizador. La transición de llenado a mezcla está escrita y falta la de mezcla a vaciado. Usted agregará los dos peldaños de esa transición, uno que active `StepDrain` y otro que desactive `StepMix`, y luego comprobará que las tres salidas nunca se solapan.
+En la práctica recibe un tanque con tres pasos: llenado, mezcla y vaciado, cada uno con su bit de paso y su temporizador. La transición de llenado a mezcla está escrita y falta la de mezcla a vaciado. Usted hará que la secuencia pase de la mezcla al vaciado, y luego comprobará que las tres salidas nunca se solapan.

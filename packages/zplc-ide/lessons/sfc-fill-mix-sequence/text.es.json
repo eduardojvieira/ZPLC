@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Una transición tiene un paso de origen, un paso de destino y una condición. La transición que sale de MIX ya sale tras un tiempo, porque su condición lee el reloj de su propio paso, step_mix.T. FILL necesita la misma clase de transición, hacia MIX."
+      "text": "Mire la transición que sale de MIX: sale tras un tiempo, y su condición lee el reloj de su propio paso. Una transición tiene un paso de origen, un paso de destino y una condición."
     },
     {
       "level": 2,

@@ -25,7 +25,6 @@
     "instruction-list-door-alarm:reading",
     "interlock-guard-permissive-fbd:reading",
     "interlock-guard-permissive-fbd:scope",
-    "interlock-guard-permissive-il:answer",
     "interlock-guard-permissive-il:reading",
     "interlock-guard-permissive-il:scope",
     "interlock-guard-permissive:reading",

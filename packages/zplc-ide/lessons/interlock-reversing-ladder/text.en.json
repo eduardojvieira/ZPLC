@@ -5,13 +5,13 @@
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a safety function, mechanically interlocked contactors or wiring.",
   "objectives": [
     "Tell an interlock, a contact that keeps one output off while another is on, from a permissive, a contact that must be closed for an output to run at all.",
-    "Lock two coils out of each other with a normally closed contact of each one in the rung of the other, in series with Stop and the permissive."
+    "Lock two coils out of each other, so that one can never run while the other is on, together with Stop and the permissive."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/Reversing.ld.json two rungs are drawn, one per direction. Each holds its coil on with a seal-in under its pushbutton, and has StopPB and the permissive LubeOk in series. Add the interlock: a normally closed contact on Reverse in the Forward rung, and a normally closed contact on Forward in the Reverse rung.",
+      "body": "In src/Reversing.ld.json two rungs are drawn, one per direction. Each holds its coil on with a seal-in under its pushbutton, and has StopPB and the permissive LubeOk in series. Add the interlock: Forward must never turn ON while Reverse is ON, and Reverse never while Forward is ON.",
       "checkpoint": "Forward and Reverse are never ON together, a running direction ignores the other pushbutton, and losing LubeOk drops either one."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter has no interlock, so pressing RevPB at {{t:30}} ms while Forward runs closes Reverse as well and both contactors are ON; add a normally closed contact on Reverse in the Forward rung and a normally closed contact on Forward in the Reverse rung. In the Ladder editor add a normally closed contact to each rung, between the LubeOk contact and the coil, and give it the coil of the other rung.",
+      "body": "Correct this starter omission, save it, then press Check: The starter has no interlock, so pressing RevPB at {{t:30}} ms while Forward runs closes Reverse as well and both contactors are ON. Each direction must stay OFF while the other one runs, and the stop, the permissive and the seal-in of each rung must keep working as they do. Make the change in the Ladder editor.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "An interlock keeps a coil OFF while the other coil is ON. Which kind of contact passes power only while its variable is FALSE?"
+      "text": "Look at what each rung knows about the other direction: nothing. An interlock keeps a coil OFF while the other coil is ON; which kind of contact passes power only while its variable is FALSE?"
     },
     {
       "level": 2,
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "The starter has no interlock, so pressing RevPB at {{t:30}} ms while Forward runs closes Reverse as well and both contactors are ON; add a normally closed contact on Reverse in the Forward rung and a normally closed contact on Forward in the Reverse rung."
+    "The starter has no interlock, so pressing RevPB at {{t:30}} ms while Forward runs closes Reverse as well and both contactors are ON."
   ]
 }

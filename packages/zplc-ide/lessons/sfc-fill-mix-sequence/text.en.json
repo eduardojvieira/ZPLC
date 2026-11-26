@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "A transition has a source step, a target step and a condition. The transition out of MIX already leaves after a time, because its condition reads the clock of its own step, step_mix.T. FILL needs the same kind of transition, to MIX."
+      "text": "Look at the transition out of MIX: it leaves after a time, and its condition reads the clock of its own step. A transition has a source step, a target step and a condition."
     },
     {
       "level": 2,

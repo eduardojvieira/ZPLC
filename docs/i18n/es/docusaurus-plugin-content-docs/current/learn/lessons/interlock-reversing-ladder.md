@@ -26,7 +26,7 @@ Edite dos peldaños en diagrama de escalera para que un motor con inversión de 
 ## Objetivos
 
 - Distinga un enclavamiento, un contacto que mantiene una salida apagada mientras otra está encendida, de un permisivo, un contacto que debe estar cerrado para que una salida funcione.
-- Haga que dos bobinas se excluyan mutuamente con un contacto normalmente cerrado de cada una en el peldaño de la otra, en serie con Stop y el permisivo.
+- Haga que dos bobinas se excluyan mutuamente, de modo que una nunca funcione mientras la otra está en ON, junto con Stop y el permisivo.
 
 ## Etapas
 
