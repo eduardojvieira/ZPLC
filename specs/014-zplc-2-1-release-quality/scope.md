@@ -37,7 +37,7 @@ Each change that closes or adds an item updates this list in the same change (FR
 | Spec 014 AI-22: cite AGENTS.md rule 8 for physical operations | 014 OSS-005 | done (14dbc5fb) | none |
 | Spec 014 FRZ-001 scope list and its check | 014 FRZ-001 | done (80624007) | none |
 | Spec 014 JRN-001 journeys.md | 014 JRN-001 | done (07968804) | none |
-| Spec 014 AIX, UXV and PUB threads: AIX defects AI-10, AI-16, D-35 (07647370, 1842e22f, verified) and AI-14 (efcf9502, pending verifier) done; the AIX plan, UXV and PUB not started | 014 AIX-001..015, UXV-001..009, PUB-001..005 | in progress | the AIX plan is an owner stop |
+| Spec 014 AIX, UXV and PUB threads: AIX defects AI-10, AI-16, D-35 (07647370, 1842e22f, verified) and AI-14 (efcf9502, verified 2026-11-26) done; the AIX plan, UXV and PUB not started | 014 AIX-001..015, UXV-001..009, PUB-001..005 | in progress | the AIX plan is an owner stop |
 | Version 2.1.0, T20-K5 compiler known issues | none | not started | the cut |
 | CHANGELOG Unreleased, screenshots, rehearsal | none | not started | the cut |
 | PR, tag, publication | none | not started | owner: PR, tag and publication; green seam |
