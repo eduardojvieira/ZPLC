@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 
+import { plan } from './capture';
 import { captureName, captureRecord, conditionName, conditionsFor, manifestText, parseScreens, type Condition } from './manifest';
 import type { Measurement } from './measurement';
 
@@ -43,7 +44,10 @@ function fixture(): Measurement {
 describe('the names and the manifest of a capture run (UXV-003)', () => {
   test('UXV-003 the surfaces, their areas and states are read from screens.md', () => {
     const welcome = surfaces.find((surface) => surface.id === 'shell.welcome');
-    expect(welcome).toMatchObject({ area: 'The shell', states: ['normal', 'with recent projects', 'a recent project that is gone', 'preferences shown'] });
+    expect(welcome).toMatchObject({
+      area: 'The shell',
+      states: ['normal', 'with recent projects', 'a recent project that is gone', 'preferences shown'],
+    });
     expect(surfaces.find((surface) => surface.id === 'dialog.palette')?.reachedBy).toEqual(['view.commandPalette']);
     expect(new Set(surfaces.map((surface) => surface.id)).size).toBe(surfaces.length);
     expect(surfaces.length).toBeGreaterThan(60);
@@ -52,7 +56,9 @@ describe('the names and the manifest of a capture run (UXV-003)', () => {
   test('UXV-003 a capture is named by surface, state and condition', () => {
     expect(conditionName(base)).toBe('1440x900-light-en');
     expect(conditionName({ ...base, width: 1024, height: 768, locale: 'es', density: 'compact' })).toBe('1024x768-light-es-compact');
-    expect(captureName(surfaces, 'shell.welcome', 'with recent projects', base)).toBe('shell.welcome--with-recent-projects--1440x900-light-en');
+    expect(captureName(surfaces, 'shell.welcome', 'with recent projects', base)).toBe(
+      'shell.welcome--with-recent-projects--1440x900-light-en',
+    );
     expect(() => captureName(surfaces, 'shell.nothing', 'normal', base)).toThrow('shell.nothing');
     expect(() => captureName(surfaces, 'shell.welcome', 'exploded', base)).toThrow('exploded');
   });
@@ -82,5 +88,17 @@ describe('the names and the manifest of a capture run (UXV-003)', () => {
     expect(manifest.captures[0]!.file).toBe('shell.welcome--normal--1440x900-light-es.png');
     expect(manifest.captures[0]!.defects.map((defect) => defect.kind).sort()).toEqual(['contrast', 'spill', 'wrong-language']);
     expect(manifest.unreached).toEqual([{ surface: 'installer.nsis', reason: 'outside Studio' }]);
+  });
+
+  test('UXV-003 the tool reaches every surface a safe command opens, and says why it cannot reach the others', () => {
+    const { reached, unreached } = plan(surfaces);
+    const by = new Map(reached.map((entry) => [entry.surface.id, entry]));
+    expect(by.get('shell.welcome')).toMatchObject({ state: 'normal', command: null });
+    expect(by.get('dialog.palette')).toMatchObject({ state: 'empty query', command: 'view.commandPalette' });
+    expect(by.get('secondary.inspector')?.command).toBe('view.showInspector');
+    for (const entry of reached) expect(entry.command ?? '').not.toMatch(/^(online|debug|learn)\.|^file\.closeProject$/);
+    expect(unreached.find((entry) => entry.surface === 'installer.nsis')?.reason).toContain('outside Studio');
+    expect(unreached.find((entry) => entry.surface === 'dialog.deploy')?.reason).toContain('online.deploy');
+    expect(reached.length + unreached.length).toBe(surfaces.length);
   });
 });

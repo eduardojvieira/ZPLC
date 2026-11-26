@@ -211,7 +211,9 @@ export function collectMeasurement(options: CollectOptions): Omit<Measurement, '
     const before = document.activeElement as HTMLElement | null;
     const look = (element: Element) => {
       const s = getComputedStyle(element);
-      return [s.outlineStyle, s.outlineWidth, s.outlineColor, s.boxShadow, s.borderColor, s.backgroundColor, s.textDecorationLine].join('|');
+      return [s.outlineStyle, s.outlineWidth, s.outlineColor, s.boxShadow, s.borderColor, s.backgroundColor, s.textDecorationLine].join(
+        '|',
+      );
     };
     measured.forEach((element, at) => {
       const entry = elements[at]!;

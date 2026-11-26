@@ -61,7 +61,8 @@ const clean = page(
 describe('the measured defects of a capture (UXV-004)', () => {
   test('UXV-004 a page with nothing wrong has no defect', () => {
     expect(detectDefects(clean, catalogs)).toEqual([]);
-    for (const [name, detect] of Object.entries(detectors)) expect({ name, defects: detect(clean, catalogs) }).toEqual({ name, defects: [] });
+    for (const [name, detect] of Object.entries(detectors))
+      expect({ name, defects: detect(clean, catalogs) }).toEqual({ name, defects: [] });
   });
 
   test('UXV-004 content cut by its container, or spilling out of it, is a defect', () => {
@@ -74,7 +75,13 @@ describe('the measured defects of a capture (UXV-004)', () => {
 
   test('UXV-004 every line textFit finds is a defect of its own kind', () => {
     const found = page([], {
-      textOutOfBox: ['clip: "Build" in button, cut by div', 'spill: "Run" runs 12 px out of div', 'word: "x" breaks', 'control: "a"', 'scroll: div'],
+      textOutOfBox: [
+        'clip: "Build" in button, cut by div',
+        'spill: "Run" runs 12 px out of div',
+        'word: "x" breaks',
+        'control: "a"',
+        'scroll: div',
+      ],
     });
     expect(detectors.textOutOfBox!(found, catalogs).map((d) => d.kind)).toEqual(['clip', 'spill', 'word', 'control', 'scroll']);
     expect(detectors.textOutOfBox!(clean, catalogs)).toEqual([]);
@@ -135,7 +142,9 @@ describe('the measured defects of a capture (UXV-004)', () => {
   });
 
   test('UXV-004 a scene that its opening camera does not hold whole is a defect', () => {
-    const cut = page([], { scene: { canvas: { x: 0, y: 0, width: 800, height: 600 }, bounds: { x: -20, y: 30, width: 700, height: 500 } } });
+    const cut = page([], {
+      scene: { canvas: { x: 0, y: 0, width: 800, height: 600 }, bounds: { x: -20, y: 30, width: 700, height: 500 } },
+    });
     expect(detectors.sceneFraming!(cut, catalogs).map((d) => d.kind)).toEqual(['scene-framing']);
     expect(detectors.sceneFraming!(page([], { scene: 'unmeasured' }), catalogs)).toEqual([]);
     expect(detectors.sceneFraming!(clean, catalogs)).toEqual([]);
