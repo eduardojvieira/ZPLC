@@ -263,37 +263,53 @@ describe('The Learn activity course outline (GDE-002)', () => {
   });
 
   it('GDE-002 a 111-lesson course renders within the budget', async () => {
-    // A generated course: 111 lessons over the 20 modules, each one a copy of a real entry under a new id.
+    // A generated course: 111 lessons over the 20 modules, each one a copy of a real entry under a new id, and the paths of
+    // lessons/course.json with as many lessons each, taken in order from the generated ones. The budget is the plan's (Task G3: the
+    // tree is virtualised only if a render over a 111-lesson fixture takes over 100 ms).
     const template = LESSON_INDEX.lessons[0]!;
+    const realPaths = LESSON_INDEX.course.paths ?? [];
+    const ids = Array.from({ length: 111 }, (_, index) => `synthetic-${index}`);
+    let next = 0;
     const synthetic: typeof LESSON_INDEX = {
       ...LESSON_INDEX,
-      course: { ...LESSON_INDEX.course, paths: [] },
-      lessons: Array.from({ length: 111 }, (_, index) => ({
+      course: {
+        ...LESSON_INDEX.course,
+        paths: realPaths.map((path) => ({ ...path, lessons: path.lessons.map(() => ids[next++ % ids.length]!) })),
+      },
+      lessons: ids.map((id, index) => ({
         ...template,
-        id: `synthetic-${index}`,
+        id,
         module: LESSON_INDEX.course.modules[index % LESSON_INDEX.course.modules.length]!.id,
         order: index,
         prerequisites: [],
         text: { en: { ...template.text.en, title: `Synthetic lesson ${index}` }, es: { ...template.text.es, title: `Synthetic ${index}` } },
       })),
     };
+    const pathLessons = realPaths.reduce((sum, path) => sum + path.lessons.length, 0);
+    expect(realPaths.length).toBeGreaterThan(0);
     const view = buildCourseView(synthetic, emptyProgress(), { locale: 'en', unlockAll: false });
-    const all = new Set(view.modules.map((mod) => moduleNodeId(mod.id)));
+    const all = new Set([...view.paths.map((path) => pathNodeId(path.id)), ...view.modules.map((mod) => moduleNodeId(mod.id))]);
     const t0 = performance.now();
     const rows = buildCourseOutlineRows(view, { expanded: all, filter: '', currentLessonId: null });
     expect(performance.now() - t0).toBeLessThan(100);
-    expect(rows.filter((row) => row.kind === 'lesson')).toHaveLength(111);
+    expect(rows.filter((row) => row.kind === 'lesson')).toHaveLength(111 + pathLessons);
 
+    // The first mount the learner sees: a current lesson, so its module is open.
+    const current = 'synthetic-45';
+    dom.patchStore(useLearnUi, { selected: current } as never);
     const t1 = performance.now();
     const { user } = dom.render(<LearnOutline index={synthetic} />);
     expect(performance.now() - t1).toBeLessThan(100);
+    const currentModule = synthetic.lessons.find((lesson) => lesson.id === current)!.module;
+    expect(rowById(moduleNodeId(currentModule)).getAttribute('aria-expanded')).toBe('true');
+    expect(moduleLesson(currentModule, current).getAttribute('aria-current')).toBe('true');
 
-    // Every lesson shown at once: a filter that matches them all opens every module; the last key renders all 131 rows.
+    // Every lesson shown at once: a filter that matches them all opens every path and module; the last key renders every row.
     await user.type(filterBox(), 'syntheti');
     const t2 = performance.now();
     await user.keyboard('c');
     expect(performance.now() - t2).toBeLessThan(100);
-    expect(document.querySelectorAll('[role="treeitem"][aria-level="2"]')).toHaveLength(111);
+    expect(document.querySelectorAll('[role="treeitem"][aria-level="2"]')).toHaveLength(111 + pathLessons);
   });
 
   it('GDE-002 choosing a lesson opens its reading page, or starts it when it has none', async () => {
