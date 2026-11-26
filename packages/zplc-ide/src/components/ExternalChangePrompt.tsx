@@ -172,7 +172,7 @@ export function ExternalChangePrompt() {
           <p className="mb-3 text-sm text-[var(--color-surface-200)]">{t('externalChange.intro')}</p>
           <ul className="space-y-2">
             {conflicts.map((conflict) => {
-              const buffer = mine(conflict.path);
+              const buffer = conflict.settings?.mine ?? mine(conflict.path);
               return (
                 <li
                   key={conflict.path}

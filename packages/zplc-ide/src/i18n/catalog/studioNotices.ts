@@ -21,7 +21,6 @@ export const studioNoticesEn = {
   'studio.notice.closeReview': 'Close',
   'studio.notice.restored': 'Restored {name}.',
   'studio.notice.restoreFailed': 'Could not restore {name}: {reason}',
-  'studio.notice.settingsKept': 'zplc.json changed on disk; your unsaved project settings were kept.',
 } as const;
 
 export const studioNoticesEs: Record<keyof typeof studioNoticesEn, string> = {
@@ -43,5 +42,4 @@ export const studioNoticesEs: Record<keyof typeof studioNoticesEn, string> = {
   'studio.notice.closeReview': 'Cerrar',
   'studio.notice.restored': 'Se restauró {name}.',
   'studio.notice.restoreFailed': 'No se pudo restaurar {name}: {reason}',
-  'studio.notice.settingsKept': 'zplc.json cambió en el disco; se conservó la configuración del proyecto sin guardar.',
 };
