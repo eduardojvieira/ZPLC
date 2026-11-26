@@ -2,8 +2,8 @@
 // COM-029): the text shell of a device is a bridge in this test (`zplc link <hex>` becomes the raw frames the
 // runtime reads, and what it writes comes back as `ZF:<hex>` lines), so the engine and the program store are the
 // real ones and the adapter, the transport and the router are Studio's.
-import { afterEach, describe, expect } from 'bun:test';
-import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import { afterEach, describe, expect, it } from 'bun:test';
+import { spawn, spawnSync, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -15,6 +15,21 @@ import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
 import { FramedSerialAdapter } from './framedSerialAdapter';
 import { MemoryAccessError } from './memoryAccess';
 import { bytesToLowerHex, hexToBytes } from './link/shellTransport';
+
+// The device link (--device-link) is served only on POSIX hosts (native_device_link.c, #ifndef _WIN32): on Windows the
+// runtime says so and exits 1. There this file asserts that rule and skips the link tests with the same reason.
+const LINK_UNAVAILABLE = 'the device link is not available on this platform';
+const itLink = (
+  process.platform === 'win32'
+    ? (name: string, ...rest: unknown[]) => (it.skip as (...args: unknown[]) => unknown)(`${name} (${LINK_UNAVAILABLE})`, ...rest)
+    : itNative
+) as typeof itNative;
+
+(process.platform === 'win32' ? itNative : it.skip)(`on Windows the runtime says "${LINK_UNAVAILABLE}" and exits 1`, () => {
+  const result = spawnSync(nativeRuntimeBinary, ['--device-link'], { encoding: 'utf8', input: '', timeout: 10_000 });
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain(LINK_UNAVAILABLE);
+});
 
 const SYS_INFO = {
   board: 'native_sim',
@@ -131,7 +146,7 @@ const program = (): Uint8Array =>
   new Uint8Array(compileToBinary('PROGRAM Adapter\nVAR counter : DINT; END_VAR\n counter := counter + 1;\nEND_PROGRAM\n').zplcFile);
 
 describe('the serial adapter on firmware that speaks the link (COM-019, COM-023, COM-025, COM-028)', () => {
-  itNative('recognises it, writes whole values, forces and releases them, and reports a refused range before any frame', async () => {
+  itLink('recognises it, writes whole values, forces and releases them, and reports a refused range before any frame', async () => {
     const made = await bridge(true);
     const adapter = await connected(made, 15_000);
     expect(adapter.framed).toBe(true);
@@ -161,7 +176,7 @@ describe('the serial adapter on firmware that speaks the link (COM-019, COM-023,
     await adapter.disconnect().catch(() => undefined);
   });
 
-  itNative('downloads a program with progress and a read-back, runs and stops it, and is told the state', async () => {
+  itLink('downloads a program with progress and a read-back, runs and stops it, and is told the state', async () => {
     const made = await bridge(true);
     const adapter = await connected(made, 15_000);
     const states: string[] = [];
@@ -179,7 +194,7 @@ describe('the serial adapter on firmware that speaks the link (COM-019, COM-023,
     await adapter.disconnect().catch(() => undefined);
   });
 
-  itNative('breakpoints go through the link and come back from the device', async () => {
+  itLink('breakpoints go through the link and come back from the device', async () => {
     const made = await bridge(true);
     const adapter = await connected(made, 15_000);
     await adapter.loadProgram(program());
