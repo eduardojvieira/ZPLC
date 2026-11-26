@@ -339,8 +339,17 @@ function validateModbusHelper(
  * no line break. The operand is passed to the ST as it is, so anything wider could close the literal and add statements. TIME is
  * read apart.
  */
-const OPERAND_LITERAL =
-  /^(?:-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|\d{1,2}#[0-9A-Fa-f_]+|[A-Za-z_]+#\d{1,2}#[0-9A-Fa-f_]+|[A-Za-z_]+#-?\d+(?:\.\d+)?|TRUE|FALSE|'(?:[^'\n\r]|'')*')$/;
+const OPERAND_LITERAL = new RegExp(
+  `^(?:${[
+    String.raw`-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?`,
+    String.raw`\d{1,2}#[0-9A-Fa-f_]+`,
+    String.raw`[A-Za-z_]+#\d{1,2}#[0-9A-Fa-f_]+`,
+    String.raw`[A-Za-z_]+#-?\d+(?:\.\d+)?`,
+    'TRUE',
+    'FALSE',
+    String.raw`'(?:[^'\n\r]|'')*'`,
+  ].join('|')})$`,
+);
 const STRING_LITERAL = /^'(?:[^'\n\r]|'')*'$/;
 const REAL_LITERAL = /^-?\d+(?:\.\d+(?:[eE][+-]?\d+)?|[eE][+-]?\d+)$/;
 const TYPED_LITERAL = /^([A-Za-z_]+)#/;
