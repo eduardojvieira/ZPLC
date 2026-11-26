@@ -13,7 +13,7 @@ import { afterAll, afterEach, describe, expect, test } from 'bun:test';
 
 import { itNative } from '../cli/nativeRuntimeGuard';
 import { scenarioRun } from '../cli/toolApi';
-import { createMcpDispatcher, openMcpWorkspace, type McpOperations } from './server';
+import { createMcpDispatcher, executionSchema, openMcpWorkspace, type McpOperations } from './server';
 import { MAX_INTERNAL_TRACE_BYTES } from './traceView';
 
 const temporary: string[] = [];
@@ -114,6 +114,14 @@ interface TraceBody {
 }
 const content = (result: { structuredContent: Record<string, unknown> }) => result.structuredContent as TraceBody;
 const signal = new AbortController().signal;
+/** The 2.0 envelope fields of a reply the audit and not-found tests read. */
+interface Reply {
+  [key: string]: unknown;
+  evidence: { diagnostics: Array<{ code: string }> };
+  execution: { jobId: string; permission: string; startedAt: string; finishedAt: string };
+  message: string;
+  nextStep: string;
+}
 
 describe('trace_get reads a trace over 512 KiB (AI-03)', () => {
   test('AI-03 a 1 MiB trace replays, its whole form says how to ask for less, and its summary is small', async () => {
@@ -316,6 +324,48 @@ describe('trace_get on a shipped plant lesson (AI-03, AI-08)', () => {
       expect(at?.watched?.['TankLevel.FillCmd']).toBeLessThan(100);
     },
     120_000,
+  );
+
+  itNative(
+    'AIX-015 scenario_run with a wrong id keeps its 2.0 evidence and execution, and adds the valid ids beside them',
+    async () => {
+      const dispatch = createMcpDispatcher((await openMcpWorkspace(belt()))!);
+      const body = content(await dispatch('scenario_run', { scenarioId: 'nope' }, signal)) as unknown as Reply;
+      expect(body).toMatchObject({ ok: false, error: 'MCP_NOT_FOUND', validValues: ['belt-to-sensor'] });
+      expect(body.message).toContain('nope');
+      expect(body.nextStep).toContain('scenarios_list');
+      // the 2.0 answer, field for field: evidence with TEST_SCENARIO_NOT_FOUND, and execution of the 2.0 schema
+      expect(body.evidence).toMatchObject({ operation: 'scenario-run', outcome: 'failed', artifacts: [] });
+      expect(body.evidence.diagnostics[0].code).toBe('TEST_SCENARIO_NOT_FOUND');
+      expect(executionSchema.safeParse(body.execution).success).toBe(true);
+      expect(body.execution).toMatchObject({ actor: 'mcp', permission: 'tests:run', operation: 'scenario-run', outcome: 'failed' });
+    },
+    120_000,
+  );
+
+  itNative(
+    'AI-12 every reply that carries execution adds audit beside it, and execution keeps its 2.0 schema',
+    async () => {
+      const dispatch = createMcpDispatcher((await openMcpWorkspace(belt()))!);
+      for (const [tool, args] of [
+        ['project_inspect', {}],
+        ['compiler_check', {}],
+        ['tests_run', {}],
+        ['scenario_run', { scenarioId: 'belt-to-sensor' }],
+        ['scenario_run', { scenarioId: 'nope' }],
+        ['trace_get', { scenarioId: 'belt-to-sensor' }],
+        ['simulation_start', { scenarioId: 'belt-to-sensor' }],
+      ] as const) {
+        const body = content(await dispatch(tool, args, signal)) as unknown as Reply;
+        expect(executionSchema.safeParse(body.execution).success, tool).toBe(true);
+        expect(body.audit, tool).toEqual({
+          jobId: body.execution.jobId,
+          permission: body.execution.permission,
+          durationMs: Date.parse(body.execution.finishedAt) - Date.parse(body.execution.startedAt),
+        });
+      }
+    },
+    240_000,
   );
 
   itNative(

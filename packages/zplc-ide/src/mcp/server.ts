@@ -287,7 +287,7 @@ const evidenceSchema = z
     artifacts: z.array(artifactSchema).max(8),
   })
   .strict();
-const executionSchema = z
+export const executionSchema = z
   .object({
     schemaVersion: z.literal(1),
     jobId: z.string().uuid(),
