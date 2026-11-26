@@ -435,3 +435,61 @@ describe('AIX-008 every tool and resource says in plain words what it returns, a
     }
   });
 });
+
+describe('AIX-007 AIX-008 review advisories: cut errors say so, the catalogue is checked, arguments are described', () => {
+  test('a plant map with 300 bad signals answers 64 diagnostics and truncated: true, from the tool and the resource', async () => {
+    const root = await copyProject('plant_belt_to_sensor');
+    const signals = Object.fromEntries(
+      Array.from({ length: 300 }, (_, index) => [`Bad${index}.x`, { direction: 'up', type: 'BOOL', point: 'A.B' }]),
+    );
+    await writeFile(join(root, 'plant-map.json'), JSON.stringify({ schemaVersion: 2, target: { scene: 'belt-to-sensor' }, signals }));
+    const workspace = await bind(root);
+    const result = await createMcpDispatcher(workspace)('plant_inspect', {}, signal());
+    const body = answer(result);
+    expect(body.error).toBe('MCP_VALIDATION_FAILED');
+    expect(body.diagnostics).toHaveLength(MCP_CONTEXT_CAPS.listItems);
+    expect(body.truncated).toBe(true);
+    const resource = await captured(workspace).read('zplc://project/plant-map');
+    expect(resource).toMatchObject({ ok: false, error: 'MCP_VALIDATION_FAILED', truncated: true });
+  });
+
+  test('a scene part the catalogue does not have is a located SCENE_INVALID diagnostic', async () => {
+    const root = await copyProject('plant_belt_to_sensor');
+    const scene = JSON.parse(await readFile(join(root, 'scene.json'), 'utf8'));
+    scene.parts[0].part = 'nope';
+    await writeFile(join(root, 'scene.json'), JSON.stringify(scene));
+    const body = answer(await createMcpDispatcher(await bind(root))('plant_inspect', {}, signal()));
+    expect(body.error).toBe('MCP_VALIDATION_FAILED');
+    expect(body.diagnostics[0]).toMatchObject({ code: 'SCENE_INVALID', path: 'scene.json' });
+    expect(body.diagnostics[0].message).toContain('parts[0].part');
+  });
+
+  test('every argument of plant_inspect says what it is', async () => {
+    const { tools } = captured(await bind(await plain()));
+    const shape = (tools.get('plant_inspect')!.inputSchema as { shape: Record<string, { description?: string }> }).shape;
+    for (const key of ['sceneFile', 'mapFile']) expect(String(shape[key]!.description ?? '').length, key).toBeGreaterThanOrEqual(30);
+  });
+
+  test(
+    '--self-check with a relative workspace path answers the JSON report with the cause and the next step, and exits with ' + '1',
+    async () => {
+      const out: string[] = [];
+      const stdout = process.stdout.write;
+      const stderr = process.stderr.write;
+      process.stdout.write = ((chunk: string) => out.push(String(chunk)) > 0) as never;
+      process.stderr.write = (() => true) as never;
+      let code: number;
+      try {
+        code = await runMcpEntrypoint(['--workspace', 'projects/blinky', '--self-check']);
+      } finally {
+        process.stdout.write = stdout;
+        process.stderr.write = stderr;
+      }
+      expect(code).toBe(1);
+      const report = JSON.parse(out.join(''));
+      expect(report.ready).toBe(false);
+      expect(report.problems[0].cause).toContain('absolute path');
+      expect(report.problems[0].nextStep).toContain('--workspace');
+    },
+  );
+});
