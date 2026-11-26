@@ -106,16 +106,16 @@ caption: DelayA y DelayB cuentan al mismo tiempo, cada una desde su propio botó
 ```quiz
 question: Un proyecto declara el bloque `Hysteresis` y dos instancias, `Tank1Level` y `Tank2Level`. El tanque 1 supera su límite alto. ¿Qué pasa con la salida de la segunda instancia?
 options:
-  - { text: 'Nada. Cada instancia tiene su propia memoria.', correct: true, feedback: Correcto. Una instancia es independiente de cualquier otra instancia del mismo bloque. }
-  - { text: 'También pasa a ON, porque comparten la declaración.', feedback: Comparten el plano, no la memoria. La declaración es solo una descripción. }
+  - { text: 'Nada. Cada instancia tiene su propia memoria.', correct: true, feedback: 'Correcto. Una instancia es independiente de cualquier otra instancia del mismo bloque.' }
+  - { text: 'También pasa a ON, porque comparten la declaración.', feedback: 'Comparten el plano, no la memoria. La declaración es solo una descripción.' }
 ```
 
 ```quiz
 question: ¿Cuál de estas es la memoria de un bloque temporizador?
 options:
-  - { text: 'El tiempo que lleva su entrada en ON.', correct: true, feedback: Correcto. Se guarda dentro de la instancia y se conserva de un ciclo al siguiente. }
-  - { text: 'El nombre del peldaño que lo llama.', feedback: El temporizador no sabe desde dónde se lo llama. }
-  - { text: 'El valor preestablecido.', feedback: El valor preestablecido es una entrada. Usted lo entrega en cada ciclo. }
+  - { text: 'El tiempo que lleva su entrada en ON.', correct: true, feedback: 'Correcto. Se guarda dentro de la instancia y se conserva de un ciclo al siguiente.' }
+  - { text: 'El nombre del peldaño que lo llama.', feedback: 'El temporizador no sabe desde dónde se lo llama.' }
+  - { text: 'El valor preestablecido.', feedback: 'El valor preestablecido es una entrada. Usted lo entrega en cada ciclo.' }
 ```
 
 ## Lo que hará en la práctica

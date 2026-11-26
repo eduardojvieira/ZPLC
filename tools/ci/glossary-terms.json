@@ -5,32 +5,186 @@
       "concept": "scan cycle",
       "en": "scan cycle",
       "es": "ciclo de escaneo",
-      "forbidden": { "en": ["scan loop"], "es": ["ciclo de scan", "scan", "scans"] }
+      "forbidden": {
+        "en": ["scan loop"],
+        "es": ["ciclo de scan", "scan", "scans"]
+      }
     },
-    { "concept": "rung", "en": "rung", "es": "peldaño", "forbidden": { "en": [], "es": ["rung", "rungs", "escalón", "escalones"] } },
-    { "concept": "seal-in", "en": "seal-in", "es": "autorretención", "forbidden": { "en": [], "es": ["seal-in"] } },
+    {
+      "concept": "rung",
+      "en": "rung",
+      "es": "peldaño",
+      "forbidden": {
+        "en": [],
+        "es": ["rung", "rungs", "escalón", "escalones"]
+      }
+    },
+    {
+      "concept": "seal-in",
+      "en": "seal-in",
+      "es": "autorretención",
+      "forbidden": {
+        "en": [],
+        "es": ["seal-in"]
+      }
+    },
     {
       "concept": "interlock",
       "en": "interlock",
       "es": "enclavamiento",
-      "forbidden": { "en": [], "es": ["interbloqueo", "interbloqueos", "interlock", "interlocks"] }
+      "forbidden": {
+        "en": [],
+        "es": ["interbloqueo", "interbloqueos", "interlock", "interlocks"]
+      }
     },
-    { "concept": "fault", "en": "fault", "es": "falla", "forbidden": { "en": [], "es": ["fallo", "fallos"] } },
+    {
+      "concept": "fault",
+      "en": "fault",
+      "es": "falla",
+      "forbidden": {
+        "en": [],
+        "es": ["fallo", "fallos"]
+      }
+    },
     {
       "concept": "rising edge",
       "en": "rising edge",
       "es": "flanco ascendente",
-      "forbidden": { "en": ["leading edge"], "es": ["flanco de subida", "flancos de subida"] }
+      "forbidden": {
+        "en": ["leading edge"],
+        "es": ["flanco de subida", "flancos de subida"]
+      }
     },
     {
       "concept": "function block",
       "en": "function block",
       "es": "bloque de función",
-      "forbidden": { "en": [], "es": ["bloque funcional", "bloques funcionales"] }
+      "forbidden": {
+        "en": [],
+        "es": ["bloque funcional", "bloques funcionales"]
+      }
     },
-    { "concept": "starter", "en": "starter", "es": "proyecto inicial", "forbidden": { "en": [], "es": ["starter"] } },
-    { "concept": "sample", "en": "sample", "es": "muestra", "forbidden": { "en": [], "es": ["sample", "samples"] } },
-    { "concept": "assertion", "en": "assertion", "es": "aserción", "forbidden": { "en": [], "es": ["assertion", "assertions"] } },
-    { "concept": "belt", "en": "belt", "es": "cinta", "forbidden": { "en": [], "es": ["banda transportadora", "bandas transportadoras"] } }
+    {
+      "concept": "starter",
+      "en": "starter",
+      "es": "proyecto inicial",
+      "forbidden": {
+        "en": [],
+        "es": ["starter"]
+      }
+    },
+    {
+      "concept": "sample",
+      "en": "sample",
+      "es": "muestra",
+      "forbidden": {
+        "en": [],
+        "es": ["sample", "samples"]
+      }
+    },
+    {
+      "concept": "assertion",
+      "en": "assertion",
+      "es": "aserción",
+      "forbidden": {
+        "en": [],
+        "es": ["assertion", "assertions"]
+      }
+    },
+    {
+      "concept": "belt",
+      "en": "belt",
+      "es": "cinta",
+      "forbidden": {
+        "en": [],
+        "es": ["banda transportadora", "bandas transportadoras"]
+      }
+    },
+    {
+      "concept": "block (of a function block diagram)",
+      "en": "block",
+      "es": "bloque",
+      "forbidden": {
+        "en": [],
+        "es": []
+      }
+    },
+    {
+      "concept": "connection (between two blocks)",
+      "en": "connection",
+      "es": "conexión",
+      "forbidden": {
+        "en": [],
+        "es": []
+      },
+      "glossary": false
+    },
+    {
+      "concept": "transition",
+      "en": "transition",
+      "es": "transición",
+      "forbidden": {
+        "en": [],
+        "es": []
+      }
+    },
+    {
+      "concept": "action (of a step)",
+      "en": "action",
+      "es": "acción",
+      "forbidden": {
+        "en": [],
+        "es": []
+      }
+    },
+    {
+      "concept": "step",
+      "en": "step",
+      "es": "paso",
+      "forbidden": {
+        "en": [],
+        "es": []
+      }
+    },
+    {
+      "concept": "part (of the machine)",
+      "en": "part",
+      "es": "elemento",
+      "forbidden": {
+        "en": [],
+        "es": []
+      },
+      "glossary": false
+    },
+    {
+      "concept": "item (what travels along the line)",
+      "en": "item",
+      "es": "pieza",
+      "forbidden": {
+        "en": [],
+        "es": []
+      },
+      "glossary": false
+    },
+    {
+      "concept": "push button",
+      "en": "push button",
+      "es": "pulsador",
+      "forbidden": {
+        "en": [],
+        "es": ["botón", "botones"]
+      },
+      "glossary": false
+    },
+    {
+      "concept": "limit switch",
+      "en": "limit switch",
+      "es": "final de carrera",
+      "forbidden": {
+        "en": [],
+        "es": ["fin de carrera", "fines de carrera"]
+      },
+      "glossary": false
+    }
   ]
 }

@@ -82,15 +82,15 @@ En un tablero real, el botón de paro es un interruptor cerrado en reposo. Su en
 ```quiz
 question: Un contacto permisivo se coloca solo en la rama de autorretención, no en serie con todo el peldaño. El motor está funcionando y se pierde el permisivo. ¿Qué ocurre?
 options:
-  - { text: 'El motor sigue funcionando.', correct: true, feedback: Correcto. El resto del peldaño sigue conduciendo, así que el permisivo perdido no bloquea nada. }
-  - { text: 'El motor se detiene de inmediato.', feedback: Solo si el permisivo está en serie con todo el camino hasta la bobina. }
+  - { text: 'El motor sigue funcionando.', correct: true, feedback: 'Correcto. El resto del peldaño sigue conduciendo, así que el permisivo perdido no bloquea nada.' }
+  - { text: 'El motor se detiene de inmediato.', feedback: 'Solo si el permisivo está en serie con todo el camino hasta la bobina.' }
 ```
 
 ```quiz
 question: ¿Por qué el programa debe impedir que ambos contactores se cierren juntos?
 options:
-  - { text: 'Juntos pondrían en cortocircuito dos fases de la alimentación del motor.', correct: true, feedback: Correcto. Cada contactor conecta los cables en un orden distinto. }
-  - { text: 'Juntos descargarían la batería del PLC.', feedback: Los contactores los manejan las salidas, no una batería. }
+  - { text: 'Juntos pondrían en cortocircuito dos fases de la alimentación del motor.', correct: true, feedback: 'Correcto. Cada contactor conecta los cables en un orden distinto.' }
+  - { text: 'Juntos descargarían la batería del PLC.', feedback: 'Los contactores los manejan las salidas, no una batería.' }
 ```
 
 ## Lo que hará en la práctica

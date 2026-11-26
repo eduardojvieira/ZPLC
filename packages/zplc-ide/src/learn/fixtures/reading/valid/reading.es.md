@@ -44,6 +44,6 @@ caption: Un diagrama de tiempos
 ```quiz
 question: ¿Qué se lee en reposo?
 options:
-  - { text: 'TRUE', correct: true, feedback: Sí, conduce. }
-  - { text: 'FALSE', feedback: No, no conduce. }
+  - { text: 'TRUE', correct: true, feedback: 'Sí, conduce.' }
+  - { text: 'FALSE', feedback: 'No, no conduce.' }
 ```
