@@ -1,8 +1,8 @@
 {
   "requirement": "LNG-002",
-  "title": "an FBD block of a type the transpiler does not translate is rejected by name",
+  "title": "an FBD block of a catalogue type that no diagram can build is rejected by name",
   "matrix": ["ld-fbd.fbd-blocks"],
   "build": "fails",
-  "codes": ["TRANSLATION_FAILED"],
-  "messageIncludes": ["'root'", "SQRT"]
+  "codes": ["UNKNOWN_TYPE"],
+  "messageIncludes": ["'pub'", "COMM_PUBLISH"]
 }

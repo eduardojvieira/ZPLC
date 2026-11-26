@@ -494,17 +494,8 @@ function fbdWord(checks: WordCheck[]): string {
       [`zero${i}`]: constant(check.type, 0),
       [`value${i}`]: constant(check.type, check.value),
       [`pick${i}`]: { type: 'SEL' },
-      // The editor gives a shift block one input port (IN) only; the probe declares IN and N, so that the transpiler is what answers
-      [`op${i}`]: ['SHL', 'SHR', 'ROL', 'ROR'].includes(check.op)
-        ? {
-            type: check.op,
-            inputs: [
-              { name: 'IN', type: 'ANY' },
-              { name: 'N', type: 'INT' },
-            ],
-            outputs: [{ name: 'OUT', type: 'ANY' }],
-          }
-        : { type: check.op },
+      // a shift block has the pins of the compiler's table, IN and N, since D-37 (LNG-029)
+      [`op${i}`]: { type: check.op },
       [`result${i}`]: constant(check.type, check.result),
       [`same${i}`]: { type: 'EQ' },
       [`out${i}`]: output(check.out),
@@ -575,7 +566,6 @@ const WORD_PROBES: Probe[] = [
   ...wordProbes('AND, OR, XOR, NOT on BYTE, WORD, DWORD', LOGIC, { LD: { build: "names the unknown function 'AND'" } }),
   ...wordProbes('SHL, SHR, ROL, ROR', SHIFTS, {
     LD: { build: "names the unknown function 'SHL'" },
-    FBD: { build: '(SHL): this block type is not supported by the FBD transpiler' },
     IL: { build: "Unknown mnemonic 'SHL'" },
   }),
 ];
