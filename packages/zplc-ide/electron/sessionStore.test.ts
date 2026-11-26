@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, readdir, rm, stat, symlink, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, test } from 'bun:test';
@@ -6,6 +6,7 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import { projectKey } from './recentProjects';
 import { SESSION_DIRECTORY, createSessionStore } from './sessionStore';
 import { SESSION_LIMITS, type SessionState } from './sessionStoreProtocol';
+import { expectOwnerOnly } from './test/ownerOnlyAccess';
 
 const directories: string[] = [];
 afterEach(async () => {
@@ -56,8 +57,8 @@ describe('session store (IDE-008)', () => {
     );
     expect((await store.load(PROJECT))!.tabs[0]!.line).toBe(6);
     expect(await readdir(join(userData, SESSION_DIRECTORY))).toEqual([`${projectKey(PROJECT)}.json`]);
-    expect((await stat(fileOf(userData, PROJECT))).mode & 0o777).toBe(0o600);
-    expect((await stat(join(userData, SESSION_DIRECTORY))).mode & 0o777).toBe(0o700);
+    expectOwnerOnly(fileOf(userData, PROJECT), 0o600);
+    expectOwnerOnly(join(userData, SESSION_DIRECTORY), 0o700);
   });
 
   test(

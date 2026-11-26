@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, test } from 'bun:test';
 
 import { RECENT_PROJECTS_FILENAME, RECENT_PROJECTS_LIMITS, createRecentProjects, parseRecentProjects, projectKey } from './recentProjects';
+import { expectOwnerOnly } from './test/ownerOnlyAccess';
 
 const directories: string[] = [];
 afterEach(async () => {
@@ -84,8 +85,7 @@ describe('recent projects store', () => {
     const raw = await readFile(join(directory, RECENT_PROJECTS_FILENAME), 'utf8');
     expect(JSON.parse(raw)).toMatchObject({ schemaVersion: 1 });
     expect(JSON.parse(raw).projects).toHaveLength(3);
-    const { statSync } = await import('node:fs');
-    expect(statSync(join(directory, RECENT_PROJECTS_FILENAME)).mode & 0o777).toBe(0o600);
+    expectOwnerOnly(join(directory, RECENT_PROJECTS_FILENAME), 0o600);
   });
 
   test('serialises concurrent records so none is lost', async () => {

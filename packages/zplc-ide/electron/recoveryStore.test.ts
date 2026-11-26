@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, readdir, rm, stat, symlink, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, test } from 'bun:test';
@@ -6,6 +6,7 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import { RECOVERY_DIRECTORY, createRecoveryStore } from './recoveryStore';
 import { RECOVERY_LIMITS, parseRecoveryDiscard, parseRecoveryEntry, parseRecoveryList, parseRecoveryWrite } from './recoveryStoreProtocol';
 import { projectKey } from './recentProjects';
+import { expectOwnerOnly } from './test/ownerOnlyAccess';
 
 const directories: string[] = [];
 afterEach(async () => {
@@ -61,7 +62,16 @@ describe('recovery store (IDE-006)', () => {
     await Promise.all(Array.from({ length: 8 }, (_, index) => store.write(PROJECT, 'src/A.st', `v${index}`)));
     expect((await store.list(PROJECT)).map((entry) => entry.content)).toEqual(['v7']);
     expect(await readdir(projectDirectory(userData))).toHaveLength(1);
-    expect((await stat(projectDirectory(userData))).mode & 0o777).toBe(0o700);
+    expectOwnerOnly(projectDirectory(userData), 0o700);
+  });
+
+  // A copy can hold a zplc.json with passwords. Studio writes it under app.getPath('userData')\recovery\<project>
+  // (%APPDATA%\ZPLC on Windows); the test uses os.tmpdir() (%TEMP%), also inside the user profile (owner decision 7).
+  test('keeps each copy readable by its owner only: mode 0600, or on Windows inside the profile with no read for others', async () => {
+    const userData = await fixture();
+    await createRecoveryStore(userData).write(PROJECT, 'src/Motor.st', 'a');
+    const [entry] = await readdir(projectDirectory(userData));
+    expectOwnerOnly(join(projectDirectory(userData), entry!), 0o600);
   });
 
   test('discards one entry or all of them, and discarding what is not there is not an error', async () => {

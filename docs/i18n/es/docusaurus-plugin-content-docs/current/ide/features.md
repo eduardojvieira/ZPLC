@@ -135,6 +135,19 @@ Límites: un proyecto conserva copias de 64 archivos como máximo y de unos 64 M
 
 Nivel de evidencia: host. `packages/zplc-ide/electron/recoveryStore.test.ts` cubre el almacén, los mensajes y los tiempos, y el recorrido 19 de `bun run test:journeys` mata la aplicación real con SIGKILL, la inicia de nuevo y restaura el archivo.
 
+## Dónde guarda ZPLC las sesiones y las copias de recuperación
+
+La lista de proyectos recientes, la sesión de cada proyecto y las copias de recuperación viven en la carpeta de datos de usuario de ZPLC para su cuenta (`%APPDATA%\ZPLC` en Windows), nunca en la carpeta del proyecto. Importan porque una copia de recuperación guarda el texto de un archivo modificado tal como usted lo escribió, y un archivo del proyecto como `zplc.json` puede contener contraseñas. Cada sistema los protege de los demás usuarios de la computadora a su manera:
+
+| Sistema       | Cómo se protegen los archivos                                                                                                                                                                                     |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Linux y macOS | ZPLC escribe los archivos con modo `0600` y sus carpetas con modo `0700`: solo su cuenta puede leerlos.                                                                                                           |
+| Windows       | Windows no tiene esos modos. Los archivos viven dentro de su perfil de usuario y heredan su lista de acceso, que no da acceso a los demás usuarios que no son administradores. ZPLC no cambia la lista de acceso. |
+
+En ambos, un administrador de la computadora todavía puede leerlos.
+
+Nivel de evidencia: host en Linux; en Windows, el runner de Windows de CI, donde una medición listó solo `SYSTEM`, `Administrators` y la propia cuenta. `packages/zplc-ide/electron/sessionStore.test.ts`, `recentProjects.test.ts` y `recoveryStore.test.ts` comprueban los modos en Linux y macOS; en Windows comprueban que cada archivo está dentro de `USERPROFILE` y que la lista que imprime `icacls` no da derecho de lectura a `Users`, `Everyone` ni `Authenticated Users`. Solo leen la lista.
+
 ## Preferencias
 
 Las preferencias son suyas, no de un proyecto: se aplican a todos los proyectos y se guardan para su cuenta de usuario. **Preferencias** es un documento propio, que se abre con o sin un proyecto: **Preferencias** en la pantalla de bienvenida, **Abrir las preferencias** en el menú Archivo (`Ctrl+,`, `Cmd+,` en macOS), o el nombre de una preferencia en la paleta de comandos, que abre el documento en ese ajuste. Contiene el único control del tema de ZPLC, el interruptor **Salida detallada** de la pestaña Salida, la preferencia **Antes de ejecutar y compilar** (**Guardar el proyecto primero** o **Preguntar antes de guardar**) y, bajo **Asistente**, el proveedor del asistente de IA opcional. Los campos del proyecto están en **Configuración del proyecto**.
