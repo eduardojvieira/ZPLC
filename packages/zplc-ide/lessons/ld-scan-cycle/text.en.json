@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "The scan cycle: why the order of the rungs matters",
   "summary": "Learn that a PLC reads its inputs, solves the rungs from top to bottom and then writes its outputs, and fix a program whose lamp follows the button one scan too late.",
-  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not measure how long a scan takes on a real controller.",
   "objectives": [
     "Describe the scan cycle: read the inputs, solve the rungs from top to bottom, write the outputs, and repeat.",
     "Reorder two rungs so that a value is calculated before the rung that uses it, and see the difference of one scan in the recorded trace."
@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/ScanOrder.ld.json two rungs are drawn. One copies the button StartButton into a memory bit ButtonSeen, and the other shows ButtonSeen on the Lamp. They are in the wrong order. Move the rungs so that the one that sets ButtonSeen is first, and the lamp follows the button in the same scan.",
-      "checkpoint": "The rung that sets ButtonSeen is rung 1 and the rung that drives Lamp is rung 2."
+      "body": "In src/ScanOrder.ld.json two rungs are drawn. One copies the button StartButton into a memory bit ButtonSeen, and the other shows ButtonSeen on the Lamp. They are in the wrong order, so the lamp follows the button one scan late. Make the lamp follow the button in the same scan.",
+      "checkpoint": "You can say which of the two rungs calculates a value and which one uses it."
     },
     {
       "key": "predict",
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Fix this starter order, save it, then press Check: The starter solves the lamp rung before it updates ButtonSeen, so the lamp lights one scan late, at {{t:20}} ms instead of {{t:10}} ms; move the ButtonSeen rung above the lamp rung. In the Ladder editor, use the Move rung up button.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program solves the lamp rung before it updates ButtonSeen, so the lamp lights one scan late, at {{t:20}} ms instead of {{t:10}} ms. Change it so that Lamp turns ON at {{t:10}} ms and OFF at {{t:30}} ms, in the same scans as StartButton. Keep every contact and coil as it is.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program and compares the lamp, scan by scan, with the scenario of this lesson.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The scenario is named ScanOrder and contains {{assertions}} assertions."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "A scan takes the same few milliseconds every time. Why can a one-scan delay be harmless in one machine and a problem in another? What would happen if the lamp were a fast counter input?",
-      "checkpoint": "The scenario proves the order of two rungs in simulation. It does not measure the scan time of any board."
+      "checkpoint": "A delay of one scan only matters when something needs the value sooner: a chain of rungs adds a scan per link, and a pulse shorter than a scan can come and go unseen. Calculating first and using later removes the delay."
     }
   ],
   "hints": [
@@ -52,10 +52,10 @@
     },
     {
       "level": 2,
-      "text": "Select the rung that copies StartButton into ButtonSeen and press Move rung up once, so that it becomes rung 1. Do not change any contact or coil."
+      "text": "Select the rung that copies StartButton into ButtonSeen and press {{ui:ld.moveRungUp}} once, so that it becomes rung 1. Do not change any contact or coil."
     }
   ],
   "faultCases": [
-    "The starter solves the lamp rung before it updates ButtonSeen, so the lamp lights one scan late, at {{t:20}} ms instead of {{t:10}} ms; move the ButtonSeen rung above the lamp rung."
+    "The starting program solves the lamp rung before it updates ButtonSeen, so the lamp lights one scan late, at {{t:20}} ms instead of {{t:10}} ms."
   ]
 }

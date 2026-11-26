@@ -13,27 +13,6 @@ Ladder borrows the two words for the two contacts of a rung.
 
 The word "closed" here describes the contact on the screen, not the button in the field. The contact is a question about a variable. The variable gets its value from the input, and the input comes from the world.
 
-## A door switch, read both ways
-
-A guard door on a machine carries a switch: the signal DoorClosed is TRUE when the door is closed. We want the machine ready only with the door closed, and a warning lamp when the door is open.
-
-```ld-figure
-src: reading/door-ready.ld.json
-caption: One signal read with a normally open contact and with a normally closed contact
-```
-
-The first rung uses a normally open contact: with DoorClosed TRUE, power reaches MachineReady. The second rung uses a normally closed contact: with DoorClosed FALSE, power reaches DoorOpenLamp. One variable, two opposite questions.
-
-```ld-try
-src: reading/door-ready.ld.json
-inputs:
-  - { name: DoorClosed, kind: switch }
-outputs: [MachineReady, DoorOpenLamp]
-caption: Switch the door closed and open again
-```
-
-Press Run. At first DoorClosed is FALSE, so the warning lamp is on. Switch it on: the machine becomes ready and the lamp goes off. Exactly one of the two lamps is on at any moment.
-
 ## Why a stop button is wired normally closed
 
 Imagine two ways to build a stop button for a motor.
@@ -59,6 +38,27 @@ So the program wants the motor to run when the stop input is TRUE. That means th
 
 To light a lamp when the stop circuit is open, you ask the opposite question, "is the stop input FALSE?", and use a normally closed contact.
 
+## Worked example
+
+A guard door on a machine carries a switch: the signal DoorClosed is TRUE when the door is closed. We want the machine ready only with the door closed, and a warning lamp when the door is open.
+
+```ld-figure
+src: reading/door-ready.ld.json
+caption: One signal read with a normally open contact and with a normally closed contact
+```
+
+The first rung uses a normally open contact: with DoorClosed TRUE, power reaches MachineReady. The second rung uses a normally closed contact: with DoorClosed FALSE, power reaches DoorOpenLamp. One variable, two opposite questions.
+
+```ld-try
+src: reading/door-ready.ld.json
+inputs:
+  - { name: DoorClosed, kind: switch }
+outputs: [MachineReady, DoorOpenLamp]
+caption: Switch the door closed and open again
+```
+
+Press Run. At first DoorClosed is FALSE, so the warning lamp is on. Switch it on: the machine becomes ready and the lamp goes off. Exactly one of the two lamps is on at any moment.
+
 ## Common mistakes
 
 - Choosing the contact from the name of the button, not from the value of the input. Always ask: what value does the input have at rest?
@@ -66,25 +66,26 @@ To light a lamp when the stop circuit is open, you ask the opposite question, "i
 - Forgetting that a push button for starting is the opposite: a start button is normally open, so it reads FALSE at rest and TRUE when pressed.
 
 > [!WARNING]
-> Wiring a stop button normally closed is a good habit, but it does not make a program a safety function. An emergency stop is wired in hardware, so that it cuts the power to the machine even if the PLC fails, and it never depends on the PLC program. ZPLC makes no safety claim, and the lessons only show you how signals are read.
+> Wiring a stop button normally closed is a good habit, but it does not make a program safe. An emergency stop is wired in hardware, so that it cuts the power to the machine even if the PLC fails, and it never waits for a PLC program.
 
 ## Check yourself
 
 ```quiz
 question: A stop button is wired normally closed. What does the program read while nobody presses it?
 options:
-  - { text: 'TRUE', correct: true, feedback: The circuit is closed at rest, so the input is on. }
-  - { text: 'FALSE', feedback: FALSE is what the program reads when the button is pressed or the wire is broken. }
+  - { text: 'TRUE', correct: true, feedback: 'Yes. The circuit is closed at rest, so the input is on.' }
+  - { text: 'FALSE', feedback: 'FALSE is what the program reads when the button is pressed or the wire is broken.' }
+  - { text: 'It changes on every scan', feedback: 'Nothing moves at rest: the closed circuit keeps the input TRUE scan after scan.' }
 ```
 
 ```quiz
 question: The motor must run only while the stop input is TRUE. Which contact do you put on the stop input in the motor rung?
 options:
-  - { text: 'A normally open contact', correct: true, feedback: Yes. It passes power when the input is TRUE. }
-  - { text: 'A normally closed contact', feedback: That contact passes power when the input is FALSE, so the motor would run only while the stop circuit is open. }
-  - { text: 'No contact is needed', feedback: Without the contact the program ignores the stop button entirely. }
+  - { text: 'A normally open contact', correct: true, feedback: 'Yes. It passes power when the input is TRUE.' }
+  - { text: 'A normally closed contact', feedback: 'That contact passes power when the input is FALSE, so the motor would run only while the stop circuit is open.' }
+  - { text: 'No contact is needed', feedback: 'Without the contact the program ignores the stop button entirely.' }
 ```
 
 ## What you will do in the practice
 
-In the practice a small program drives a motor and a lamp from a start button and a stop button wired normally closed. Both rungs read the stop input with the wrong kind of contact. You will fix both, press Check, and see that the motor stops when the stop circuit opens and that the lamp lights at the same time.
+The starting program drives a motor and a lamp from a start button and a stop button wired normally closed, but both rungs read the stop input the wrong way, so the motor never runs and the lamp is lit with the stop circuit intact. You will make the motor run only while the stop circuit is closed and the lamp light only while it is open, then press {{ui:learn.check}}.
