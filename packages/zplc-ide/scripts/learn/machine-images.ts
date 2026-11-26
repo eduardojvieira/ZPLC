@@ -18,7 +18,18 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { trustedDevelopmentRendererUrl } from '../../electron/security';
-import { assert, Cdp, drain, freePort, HOST, packageRoot, stop, waitFor, type OwnedProcess } from '../run-desktop-smoke';
+import {
+  assert,
+  Cdp,
+  drain,
+  electronExecutable,
+  freePort,
+  HOST,
+  packageRoot,
+  stop,
+  waitFor,
+  type OwnedProcess,
+} from '../run-desktop-smoke';
 import {
   COMPACT_COLUMN_WIDTH_PX,
   FRAME_HEIGHT,
@@ -62,7 +73,7 @@ async function withWindow<T>(body: (page: Cdp) => Promise<T>): Promise<T> {
     const cdpPort = await freePort();
     electron = Bun.spawn(
       [
-        join(packageRoot, 'node_modules', 'electron', 'dist', 'electron'),
+        electronExecutable(),
         '--headless',
         '--use-angle=swiftshader-webgl',
         '--use-gl=angle',

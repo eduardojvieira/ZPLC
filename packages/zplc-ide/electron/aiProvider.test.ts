@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it } from 'bun:test';
-import { lstat, mkdtemp, mkdir, realpath, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { createAiProvider } from './aiProvider';
+import { expectOwnerOnly } from './test/ownerOnlyAccess';
 
 const directories: string[] = [];
 async function fixture() {
@@ -392,7 +393,7 @@ describe('optional AI provider (IDE-030)', () => {
     const directory = await fixture();
     const provider = createAiProvider({ userDataPath: directory, vault: vault() });
     expect(await provider.saveConfig({ enabled: true, endpoint: 'https://api.example.test', model: 'gpt-test' })).toEqual({ ok: true });
-    expect((await lstat(join(directory, 'ai-provider.json'))).mode & 0o077).toBe(0);
+    expectOwnerOnly(join(directory, 'ai-provider.json'), 0o600);
     expect(await provider.storeKey('bad key')).toEqual({ ok: false, code: 'AI_CONTEXT_REJECTED' });
     expect(await provider.storeKey('bad\nkey')).toEqual({ ok: false, code: 'AI_CONTEXT_REJECTED' });
   });

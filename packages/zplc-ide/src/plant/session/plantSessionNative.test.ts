@@ -147,6 +147,9 @@ async function live(adapter: NativeAdapter | WASMAdapter, core: PlantCore, optio
   return { session, outputs };
 }
 
+// The real-core runs take ~0.3 s idle and over 5 s on a loaded runner (macOS CI): bun's default 5 s timeout cut them short.
+const REAL_CORE_TIMEOUT_MS = 120_000;
+
 describe('the lock-step session over the real native runtime', () => {
   itNative('PLT-005 the plant follows the completed scans of the runtime: belt, eye and the 500 ms timer', async () => {
     const adapter = await nativeAdapter();
@@ -167,48 +170,52 @@ describe('the lock-step session over the real native runtime', () => {
     expect(session.state).toBe('stopped');
   });
 
-  itNative('PLT-005 a breakpoint holds the plant and a held scan costs no clock', async () => {
-    const baseline = await (async () => {
+  itNative(
+    'PLT-005 a breakpoint holds the plant and a held scan costs no clock',
+    async () => {
+      const baseline = await (async () => {
+        const adapter = await nativeAdapter();
+        const { session, outputs } = await live(adapter, await freshCore(), { scans: 90 });
+        await session.start();
+        await session.settled();
+        return outputs;
+      })();
+      const interval = (rows: typeof baseline) => rows.findIndex((o) => o.done) - rows.findIndex((o) => o.belt);
+
       const adapter = await nativeAdapter();
-      const { session, outputs } = await live(adapter, await freshCore(), { scans: 90 });
+      const core = await freshCore();
+      const pc = built.debugMap.pou.Cell!.breakpoints.find((location) => location.valid)!.pc;
+      let armed = false;
+      const { session, outputs } = await live(adapter, core, {
+        scans: 90,
+        after: async (scans) => {
+          if (scans === 30 && !armed) {
+            armed = true;
+            await adapter.setBreakpoint(pc); // while the timer runs: the next scan is held
+          }
+        },
+      });
       await session.start();
       await session.settled();
-      return outputs;
-    })();
-    const interval = (rows: typeof baseline) => rows.findIndex((o) => o.done) - rows.findIndex((o) => o.belt);
-
-    const adapter = await nativeAdapter();
-    const core = await freshCore();
-    const pc = built.debugMap.pou.Cell!.breakpoints.find((location) => location.valid)!.pc;
-    let armed = false;
-    const { session, outputs } = await live(adapter, core, {
-      scans: 90,
-      after: async (scans) => {
-        if (scans === 30 && !armed) {
-          armed = true;
-          await adapter.setBreakpoint(pc); // while the timer runs: the next scan is held
-        }
-      },
-    });
-    await session.start();
-    await session.settled();
-    expect(session.state).toBe('held');
-    expect(session.heldSteps).toBeGreaterThanOrEqual(1);
-    expect(session.scans).toBe(30);
-    // the plant stepped for the held scan once and never again: it is one scan interval ahead of the completed scans
-    expect(core.snapshot().timeMs).toBe(31 * session.scanMs);
-    expect((await adapter.getInfo()).cycles).toBe(30);
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    expect(core.snapshot().timeMs).toBe(31 * session.scanMs);
-    await adapter.removeBreakpoint(pc);
-    session.resume();
-    await session.settled();
-    expect(session.scans).toBe(90);
-    expect(session.state).toBe('paused');
-    expect(interval(outputs)).toBe(50); // the timer interval in completed scans: not 49, not 51
-    expect(interval(outputs)).toBe(interval(baseline));
-    expect(await core.traceHash()).toBeTypeOf('string');
-  });
+      expect(session.state).toBe('held');
+      expect(session.heldSteps).toBeGreaterThanOrEqual(1);
+      expect(session.scans).toBe(30);
+      // the plant stepped for the held scan once and never again: it is one scan interval ahead of the completed scans
+      expect(core.snapshot().timeMs).toBe(31 * session.scanMs);
+      expect((await adapter.getInfo()).cycles).toBe(30);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(core.snapshot().timeMs).toBe(31 * session.scanMs);
+      await adapter.removeBreakpoint(pc);
+      session.resume();
+      await session.settled();
+      expect(session.scans).toBe(90);
+      expect(session.state).toBe('paused');
+      expect(interval(outputs)).toBe(50); // the timer interval in completed scans: not 49, not 51
+      expect(interval(outputs)).toBe(interval(baseline));
+      expect(await core.traceHash()).toBeTypeOf('string');
+    },
+    REAL_CORE_TIMEOUT_MS,
+  );
 
   itNative('LNK-006 a forced input keeps its forced value over the plant', async () => {
     const adapter = await nativeAdapter();
@@ -248,32 +255,36 @@ describe('the lock-step session over the real native runtime', () => {
     expect(bit((await adapter.peek(DONE, 1))[0], 2)).toBe(true);
   });
 
-  itNative('PLT-017 live equals graded on the real runtime', async () => {
-    const liveCore = await freshCore();
-    const { session } = await live(await nativeAdapter(), liveCore, { scans: 101 });
-    await session.start();
-    await session.settled();
+  itNative(
+    'PLT-017 live equals graded on the real runtime',
+    async () => {
+      const liveCore = await freshCore();
+      const { session } = await live(await nativeAdapter(), liveCore, { scans: 101 });
+      await session.start();
+      await session.settled();
 
-    const gradedCore = await freshCore();
-    const gradedAdapter = await nativeAdapter(true);
-    const scenario = compileScenario(
-      {
-        schemaVersion: 1,
-        id: 'live-equals-graded',
-        tickMs: 10,
-        durationMs: 1000,
-        scene: { file: 'scene.json', map: 'plant-map.json', script: SCRIPT },
-        events: [],
-        expectations: [{ kind: 'EVENTUALLY', fromMs: 0, withinMs: 1000, condition: { 'Cell.Done': true } }],
-      },
-      built.debugMap,
-      { port: { core: gradedCore, map }, scene },
-    );
-    const result = await runScenario(scenario, built.zplcFile, createNativeScenarioRuntime(gradedAdapter));
-    expect(result.assertions[0]?.passed).toBe(true);
-    expect(await gradedCore.traceHash()).toBe(await liveCore.traceHash());
-    expect(gradedCore.facts()).toEqual(liveCore.facts());
-  });
+      const gradedCore = await freshCore();
+      const gradedAdapter = await nativeAdapter(true);
+      const scenario = compileScenario(
+        {
+          schemaVersion: 1,
+          id: 'live-equals-graded',
+          tickMs: 10,
+          durationMs: 1000,
+          scene: { file: 'scene.json', map: 'plant-map.json', script: SCRIPT },
+          events: [],
+          expectations: [{ kind: 'EVENTUALLY', fromMs: 0, withinMs: 1000, condition: { 'Cell.Done': true } }],
+        },
+        built.debugMap,
+        { port: { core: gradedCore, map }, scene },
+      );
+      const result = await runScenario(scenario, built.zplcFile, createNativeScenarioRuntime(gradedAdapter));
+      expect(result.assertions[0]?.passed).toBe(true);
+      expect(await gradedCore.traceHash()).toBe(await liveCore.traceHash());
+      expect(gradedCore.facts()).toEqual(liveCore.facts());
+    },
+    REAL_CORE_TIMEOUT_MS,
+  );
 
   itWasm('LNK-005 the same session runs over the WASM adapter and gives the same trace', async () => {
     const nativeCore = await freshCore();
