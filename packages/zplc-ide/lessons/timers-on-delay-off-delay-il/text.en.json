@@ -41,8 +41,8 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Swap the two timers in your head: what would a TON on Button and a TOF on Sensor do with this scenario? Then imagine the line that loads the Q of HoldTimer moved above its CAL: when would Light fall?",
-      "checkpoint": "TON delays the start and TOF delays the end; each answers a different question about a signal. In IL both are called the same way, so the declaration decides which one you get. Read above its CAL, Light would show the Q of the previous scan and fall one scan late."
+      "body": "Think about what each timer answers: which one tells you how long a signal has been on, and which one tells you how long ago it went off? Then look at where the line that reads a timer's Q sits relative to its CAL, and ask what that order changes.",
+      "checkpoint": "One timer delays the start of a signal and the other delays its end; each answers a different question. In IL both are called the same way, so the declaration decides which one you get. Where the line that reads Q sits decides whether Light shows the result of this scan or of the previous one."
     }
   ],
   "hints": [

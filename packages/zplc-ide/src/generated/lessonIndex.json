@@ -10277,7 +10277,7 @@
     },
     {
       "id": "timers-on-delay-off-delay-il",
-      "version": 5,
+      "version": 6,
       "order": 73,
       "module": 3,
       "level": "foundation",
@@ -10408,8 +10408,8 @@
             {
               "key": "reflect",
               "title": "Reflect",
-              "body": "Swap the two timers in your head: what would a TON on Button and a TOF on Sensor do with this scenario? Then imagine the line that loads the Q of HoldTimer moved above its CAL: when would Light fall?",
-              "checkpoint": "TON delays the start and TOF delays the end; each answers a different question about a signal. In IL both are called the same way, so the declaration decides which one you get. Read above its CAL, Light would show the Q of the previous scan and fall one scan late."
+              "body": "Think about what each timer answers: which one tells you how long a signal has been on, and which one tells you how long ago it went off? Then look at where the line that reads a timer's Q sits relative to its CAL, and ask what that order changes.",
+              "checkpoint": "One timer delays the start of a signal and the other delays its end; each answers a different question. In IL both are called the same way, so the declaration decides which one you get. Where the line that reads Q sits decides whether Light shows the result of this scan or of the previous one."
             }
           ],
           "hints": [
@@ -10468,8 +10468,8 @@
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "Intercambie mentalmente los dos temporizadores: ¿qué haría un TON sobre Button y un TOF sobre Sensor con este escenario? Después imagine la línea que carga la Q de HoldTimer movida arriba de su CAL: ¿cuándo caería Light?",
-              "checkpoint": "TON retrasa el inicio y TOF retrasa el final; cada uno responde una pregunta distinta sobre una señal. En IL los dos se llaman de la misma manera, así que la declaración decide cuál se obtiene. Leída arriba de su CAL, Light mostraría la Q del ciclo anterior y caería un ciclo tarde."
+              "body": "Piense qué responde cada temporizador: ¿cuál le dice cuánto tiempo lleva activa una señal y cuál cuánto hace que se desactivó? Después mire dónde está, respecto de su CAL, la línea que lee la Q de un temporizador, y pregúntese qué cambia ese orden.",
+              "checkpoint": "Un temporizador retrasa el inicio de una señal y el otro retrasa su final; cada uno responde una pregunta distinta. En IL los dos se llaman de la misma manera, así que la declaración decide cuál se obtiene. La posición de la línea que lee la Q decide si Light muestra el resultado de este ciclo o el del anterior."
             }
           ],
           "hints": [

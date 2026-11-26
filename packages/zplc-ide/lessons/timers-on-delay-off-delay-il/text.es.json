@@ -41,8 +41,8 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "Intercambie mentalmente los dos temporizadores: ¿qué haría un TON sobre Button y un TOF sobre Sensor con este escenario? Después imagine la línea que carga la Q de HoldTimer movida arriba de su CAL: ¿cuándo caería Light?",
-      "checkpoint": "TON retrasa el inicio y TOF retrasa el final; cada uno responde una pregunta distinta sobre una señal. En IL los dos se llaman de la misma manera, así que la declaración decide cuál se obtiene. Leída arriba de su CAL, Light mostraría la Q del ciclo anterior y caería un ciclo tarde."
+      "body": "Piense qué responde cada temporizador: ¿cuál le dice cuánto tiempo lleva activa una señal y cuál cuánto hace que se desactivó? Después mire dónde está, respecto de su CAL, la línea que lee la Q de un temporizador, y pregúntese qué cambia ese orden.",
+      "checkpoint": "Un temporizador retrasa el inicio de una señal y el otro retrasa su final; cada uno responde una pregunta distinta. En IL los dos se llaman de la misma manera, así que la declaración decide cuál se obtiene. La posición de la línea que lee la Q decide si Light muestra el resultado de este ciclo o el del anterior."
     }
   ],
   "hints": [
