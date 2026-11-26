@@ -41,8 +41,7 @@ export function LearnOutline({ index = LESSON_INDEX }: { index?: LessonIndex }) 
   const root = useRef<HTMLUListElement>(null);
   const filterInput = useRef<HTMLInputElement>(null);
   const rows = buildCourseOutlineRows(view, { expanded, filter, currentLessonId });
-  const active =
-    rows.find((row) => row.id === focusId)?.id ?? rows.find((row) => row.current)?.id ?? rows[0]?.id ?? null;
+  const active = rows.find((row) => row.id === focusId)?.id ?? rows.find((row) => row.current)?.id ?? rows[0]?.id ?? null;
 
   // ponytail: while a filter is typed every match is shown open; closing a container then changes only the state the filter restores.
   const toggle = (id: string, open: boolean): void =>
