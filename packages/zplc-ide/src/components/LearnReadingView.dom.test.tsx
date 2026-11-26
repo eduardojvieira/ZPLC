@@ -156,4 +156,24 @@ describe('the reading view (LRN-039)', () => {
     expect(started).toEqual([WITH.id]);
     expect(dialog()).toBeNull();
   });
+
+  it('GDE-002 after Practice the workspace is open with the exercise in front, and the page can be read again', async () => {
+    const { user } = dom.render(
+      <>
+        <LearnOutline />
+        <LearnReadingView />
+      </>,
+    );
+    await user.type(dom.screen.getByRole('textbox', { name: dom.t('u3Learn.outline.filterLabel') }), WITH.id);
+    await user.click(document.querySelector<HTMLElement>(`[data-learn-outline] [data-row$=${JSON.stringify(`:lesson:${WITH.id}`)}]`)!);
+    await user.click(dom.within(dialog()!).getByRole('button', { name: dom.t('learnReading.view.practice') }));
+    await dom.waitFor(() => expect(useLearnUi.getState().workspace?.lessonId).toBe(WITH.id));
+    await dom.waitFor(() => expect(dialog()).toBeNull());
+    expect(useLearnUi.getState().reading).toBeNull();
+    // With the workspace open, Practice from the page read again only closes it.
+    await dom.act(async () => useLearnUi.getState().openReading(WITH.id));
+    await user.click(dom.within(dialog()!).getByRole('button', { name: dom.t('learnReading.view.practice') }));
+    expect(dialog()).toBeNull();
+    expect(useLearnUi.getState().workspace?.lessonId).toBe(WITH.id);
+  });
 });

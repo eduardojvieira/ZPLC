@@ -1,13 +1,15 @@
 /**
  * The full-screen reading page of a lesson (LRN-039): opened by starting a lesson that has one, over the workbench where the Learn
- * home is mounted. It only renders; the try-it labs inside the page reach the simulator through their own seam. Practice (and Escape)
- * closes it and hands the focus to the lesson panel; Back to course opens the Learn home.
+ * home is mounted. It only renders; the try-it labs inside the page reach the simulator through their own seam. Practice shows the
+ * exercise (it starts the lesson when its workspace is not open yet), Escape closes the page, and both hand the focus to the lesson
+ * panel; Back to course opens the Learn home.
  */
 import { BookOpen } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { LESSON_INDEX } from '../generated/lessonIndex';
 import { useT } from '../i18n';
 import { useLearnUi } from '../learn/learnUi';
+import { useIDEStore } from '../store/useIDEStore';
 import { ReadingPage } from '../learn/reading/ReadingPage';
 import { lessonImageUrl } from '../learn/reading/lessonImages';
 import { parseReading } from '../learn/readingMarkdown';
@@ -31,9 +33,20 @@ function ReadingSurface({ lessonId }: { lessonId: string }) {
   const parsed = page === undefined ? null : parseReading(page);
   const moduleTitle = LESSON_INDEX.course.modules.find((module) => module.id === entry?.module)?.title[locale] ?? '';
 
+  // Practice shows the exercise: with the lesson's workspace open it only closes the page; otherwise (a page opened from the course
+  // outline) it starts the lesson, and closes the page once the workspace is open (`startLesson` reopens it for a lesson that has one;
+  // Read again in the Guide brings it back). A start that does not open leaves the page where it was.
   const practice = (): void => {
     leaving.current = 'panel';
-    useLearnUi.getState().closeReading();
+    const ui = useLearnUi.getState();
+    if (ui.workspace?.lessonId === lessonId && ui.workspace.session === useIDEStore.getState().projectSession) {
+      ui.closeReading();
+      return;
+    }
+    if (ui.starting) return;
+    void ui.startLesson(lessonId).then((opened) => {
+      if (opened) useLearnUi.getState().closeReading();
+    });
   };
   const back = (): void => {
     leaving.current = 'home';
