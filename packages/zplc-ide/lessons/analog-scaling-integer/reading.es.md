@@ -5,10 +5,10 @@ Un sensor de nivel, un termómetro o un transmisor de presión no le dan al prog
 El **escalado** convierte las cuentas en bruto en **unidades de ingeniería**, las unidades que lee una persona y en las que se escribe un límite. Cuando los dos rangos empiezan en cero, la regla es una línea: el valor es la cuenta en bruto por el tope de las unidades, dividido por el tope de las cuentas.
 
 | Cuentas en bruto | Fracción del rango | Porcentaje |
-|---|---|---|
-| 0 | nada | 0 |
-| 250 | un cuarto | 25 |
-| 1000 | todo | 100 |
+| ---------------- | ------------------ | ---------- |
+| 0                | nada               | 0          |
+| 250              | un cuarto          | 25         |
+| 1000             | todo               | 100        |
 
 Cuando las unidades empiezan en otro valor, por ejemplo un termómetro de −50 a 250 °C, reste primero el extremo bajo de las cuentas, escale por el ancho de cada rango y sume al final el extremo bajo de las unidades.
 
@@ -18,11 +18,11 @@ El escalado de esta lección usa solo números enteros, INT o DINT. Los números
 
 **El orden.** La división de números enteros descarta el resto, así que divida al final. Dividir primero tira la información antes de que la multiplicación pueda usarla.
 
-| Raw | `(Raw / 1000) * 100` | `(Raw * 100) / 1000` |
-|---|---|---|
-| 450 | 0 | 45 |
-| 999 | 0 | 99 |
-| 1000 | 100 | 100 |
+| Raw  | `(Raw / 1000) * 100` | `(Raw * 100) / 1000` |
+| ---- | -------------------- | -------------------- |
+| 450  | 0                    | 45                   |
+| 999  | 0                    | 99                   |
+| 1000 | 100                  | 100                  |
 
 **El redondeo.** Aun en el orden correcto la división corta, no redondea: 999 cuentas dan 99, no 99,9. Para valores que nunca son negativos, sume la mitad del divisor antes de dividir para redondear al más cercano: `(Raw * 100 + 500) / 1000` da 100 para 999 cuentas.
 
@@ -45,12 +45,12 @@ OverTemp := Temp >= 240;
 END_PROGRAM
 ```
 
-| Raw | Valor exacto | Temp |
-|---|---|---|
-| 0 | −50 °C | −50 |
-| 1013 | 25,975 °C | 26 |
-| 2000 | 100 °C | 100 |
-| 4000 | 250 °C | 250 |
+| Raw  | Valor exacto | Temp |
+| ---- | ------------ | ---- |
+| 0    | −50 °C       | −50  |
+| 1013 | 25,975 °C    | 26   |
+| 2000 | 100 °C       | 100  |
+| 4000 | 250 °C       | 250  |
 
 Sin el 2000, 1013 cuentas darían 25 °C. Las dos lámparas comparan el valor escalado, en grados, con límites escritos en grados, así que una persona puede verificarlos con el indicador del horno.
 

@@ -2,14 +2,14 @@
 
 Una entrada analógica le da al programa **cuentas en bruto**, un número entero como 0 a 4095, y un límite se escribe en **unidades de ingeniería**, como porcentaje o bar. El escalado convierte unas en otras: multiplique las cuentas por el tope de las unidades y después divida por el tope de las cuentas. En un diagrama de bloques de función cada paso de esa regla es un bloque, y la conexión de un bloque al siguiente lleva el número.
 
-| Bloque | Entradas | Salida |
-|---|---|---|
-| MUL | IN1, IN2 | el producto IN1 × IN2 |
-| DIV | IN1, IN2 | IN1 ÷ IN2, sin el resto |
-| LIMIT | MN, IN, MX | IN, mantenido entre MN y MX |
-| GE, LT | IN1, IN2 | un BOOL: ¿IN1 es mayor o igual, o menor, que IN2? |
+| Bloque | Entradas   | Salida                                            |
+| ------ | ---------- | ------------------------------------------------- |
+| MUL    | IN1, IN2   | el producto IN1 × IN2                             |
+| DIV    | IN1, IN2   | IN1 ÷ IN2, sin el resto                           |
+| LIMIT  | MN, IN, MX | IN, mantenido entre MN y MX                       |
+| GE, LT | IN1, IN2   | un BOOL: ¿IN1 es mayor o igual, o menor, que IN2? |
 
-Valen las mismas tres reglas que en texto estructurado. Ponga el DIV después del MUL, porque una división de números enteros descarta el resto. Elija conexiones y constantes DINT, porque el producto, aquí 4095 × 100, está muy por encima de 32767, el mayor INT. Y compare con el límite el valor escalado, nunca las cuentas en bruto.
+Tres reglas deciden si el resultado es correcto. Ponga el DIV después del MUL, porque una división de números enteros descarta el resto. Elija conexiones y constantes DINT, porque el producto, aquí 4095 × 100, está muy por encima de 32767, el mayor INT. Y compare con el límite el valor escalado, nunca las cuentas en bruto.
 
 ## Ejemplo resuelto
 

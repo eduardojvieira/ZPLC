@@ -5,10 +5,10 @@ A level sensor, a thermometer or a pressure transmitter does not give the progra
 **Scaling** turns raw counts into **engineering units**, the units a person reads and a limit is written in. When both ranges start at zero, the rule is one line: the value is the raw count times the top of the units, divided by the top of the counts.
 
 | Raw counts | Fraction of the range | Percent |
-|---|---|---|
-| 0 | none | 0 |
-| 250 | a quarter | 25 |
-| 1000 | all | 100 |
+| ---------- | --------------------- | ------- |
+| 0          | none                  | 0       |
+| 250        | a quarter             | 25      |
+| 1000       | all                   | 100     |
 
 When the units start elsewhere, for example a thermometer from −50 to 250 °C, subtract the low end of the counts first, scale by the width of each range and add the low end of the units at the end.
 
@@ -18,11 +18,11 @@ The scaling of this lesson uses only whole numbers, INT or DINT. Whole numbers a
 
 **The order.** Division of whole numbers drops the remainder, so divide last. Dividing first throws the information away before the multiplication can use it.
 
-| Raw | `(Raw / 1000) * 100` | `(Raw * 100) / 1000` |
-|---|---|---|
-| 450 | 0 | 45 |
-| 999 | 0 | 99 |
-| 1000 | 100 | 100 |
+| Raw  | `(Raw / 1000) * 100` | `(Raw * 100) / 1000` |
+| ---- | -------------------- | -------------------- |
+| 450  | 0                    | 45                   |
+| 999  | 0                    | 99                   |
+| 1000 | 100                  | 100                  |
 
 **The rounding.** Even in the right order the division cuts, it does not round: 999 counts give 99, not 99.9. For values that are never negative, add half the divisor before you divide to round to the nearest: `(Raw * 100 + 500) / 1000` gives 100 for 999 counts.
 
@@ -45,12 +45,12 @@ OverTemp := Temp >= 240;
 END_PROGRAM
 ```
 
-| Raw | Exact value | Temp |
-|---|---|---|
-| 0 | −50 °C | −50 |
-| 1013 | 25.975 °C | 26 |
-| 2000 | 100 °C | 100 |
-| 4000 | 250 °C | 250 |
+| Raw  | Exact value | Temp |
+| ---- | ----------- | ---- |
+| 0    | −50 °C      | −50  |
+| 1013 | 25.975 °C   | 26   |
+| 2000 | 100 °C      | 100  |
+| 4000 | 250 °C      | 250  |
 
 Without the 2000, 1013 counts would give 25 °C. The two lamps compare the scaled value, in degrees, with limits written in degrees, so a person can check them against the oven's dial.
 

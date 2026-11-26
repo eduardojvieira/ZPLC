@@ -2,14 +2,14 @@
 
 An analog input gives the program **raw counts**, a whole number such as 0 to 4095, and a limit is written in **engineering units**, such as percent or bar. Scaling turns one into the other: multiply the counts by the top of the units, then divide by the top of the counts. In a Function Block Diagram each step of that rule is a block, and the wire from one block to the next carries the number.
 
-| Block | Inputs | Output |
-|---|---|---|
-| MUL | IN1, IN2 | the product IN1 × IN2 |
-| DIV | IN1, IN2 | IN1 ÷ IN2, the remainder dropped |
-| LIMIT | MN, IN, MX | IN, kept between MN and MX |
-| GE, LT | IN1, IN2 | a BOOL: is IN1 more or equal, or less, than IN2? |
+| Block  | Inputs     | Output                                           |
+| ------ | ---------- | ------------------------------------------------ |
+| MUL    | IN1, IN2   | the product IN1 × IN2                            |
+| DIV    | IN1, IN2   | IN1 ÷ IN2, the remainder dropped                 |
+| LIMIT  | MN, IN, MX | IN, kept between MN and MX                       |
+| GE, LT | IN1, IN2   | a BOOL: is IN1 more or equal, or less, than IN2? |
 
-The same three rules hold as in Structured Text. Put the DIV after the MUL, because a whole-number division drops the remainder. Choose DINT wires and constants, because the product, 4095 × 100 here, is far above 32767, the largest INT. And compare the scaled value with the limit, never the raw counts.
+Three rules decide whether the result is right. Put the DIV after the MUL, because a whole-number division drops the remainder. Choose DINT wires and constants, because the product, 4095 × 100 here, is far above 32767, the largest INT. And compare the scaled value with the limit, never the raw counts.
 
 ## Worked example
 

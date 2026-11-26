@@ -2,12 +2,12 @@
 
 En un diagrama de bloques de función un número viaja por una conexión igual que un ON o un OFF. La conexión toma el tipo del valor que lleva: un BOOL es un sí o un no, un INT es un número entero de −32768 a 32767. Cuatro clases de bloque hacen el trabajo de esta lección.
 
-| Bloque | Entradas | Salida | Qué da |
-|---|---|---|---|
-| ADD | IN1, IN2 | OUT | la suma IN1 + IN2 |
-| SEL | G, IN0, IN1 | OUT | IN0 mientras G es FALSE, IN1 mientras G es TRUE |
-| R_TRIG | CLK | Q | TRUE durante un ciclo cuando CLK sube |
-| LT, EQ, GT, GE | IN1, IN2 | OUT | un BOOL: ¿IN1 es menor, igual, mayor, mayor o igual que IN2? |
+| Bloque         | Entradas    | Salida | Qué da                                                       |
+| -------------- | ----------- | ------ | ------------------------------------------------------------ |
+| ADD            | IN1, IN2    | OUT    | la suma IN1 + IN2                                            |
+| SEL            | G, IN0, IN1 | OUT    | IN0 mientras G es FALSE, IN1 mientras G es TRUE              |
+| R_TRIG         | CLK         | Q      | TRUE durante un ciclo cuando CLK sube                        |
+| LT, EQ, GT, GE | IN1, IN2    | OUT    | un BOOL: ¿IN1 es menor, igual, mayor, mayor o igual que IN2? |
 
 Una variable se puede leer a la izquierda del diagrama y escribir a la derecha. El diagrama se ejecuta una vez por ciclo, así que el valor escrito en el borde derecho es el que lee el borde izquierdo en el ciclo siguiente. Así crece un total: se lee, se le suma y se vuelve a escribir. Un bloque ADD solo suma en cada ciclo; un bloque SEL decide, en cada ciclo, si vuelve a la variable el valor nuevo o el anterior.
 

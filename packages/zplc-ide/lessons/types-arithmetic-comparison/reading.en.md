@@ -2,11 +2,11 @@
 
 So far most signals in your programs were ON or OFF. A machine also counts and measures: how many boxes went into a crate, how full a tank is, how many places are left in a car park. A program keeps such a number in a variable, and every variable has a **type** that says what it may hold.
 
-| Type | What it holds | Range | Example |
-|---|---|---|---|
-| BOOL | a yes or a no | FALSE or TRUE | `Full : BOOL;` |
-| INT | a whole number, 16 bits | −32768 to 32767 | `Cars : INT := 0;` |
-| DINT | a whole number, 32 bits | about −2.1 to 2.1 billion | `Pieces : DINT;` |
+| Type | What it holds           | Range                     | Example            |
+| ---- | ----------------------- | ------------------------- | ------------------ |
+| BOOL | a yes or a no           | FALSE or TRUE             | `Full : BOOL;`     |
+| INT  | a whole number, 16 bits | −32768 to 32767           | `Cars : INT := 0;` |
+| DINT | a whole number, 32 bits | about −2.1 to 2.1 billion | `Pieces : DINT;`   |
 
 The type is written after the name when you declare the variable, and the value after `:=` is the value it starts with. A BOOL cannot hold 5, and an INT cannot hold a number above 32767.
 
@@ -26,12 +26,12 @@ Division of whole numbers gives a whole number and drops the remainder: `17 / 5`
 
 A **comparison** asks a question about numbers and answers TRUE or FALSE. Its result is a BOOL, so you can store it straight in a BOOL output.
 
-| Operator | Question | 7 compared with 10 |
-|---|---|---|
-| `=` | equal? | FALSE |
-| `<>` | different? | TRUE |
-| `<` and `>` | less, more? | TRUE, FALSE |
-| `<=` and `>=` | less or equal, more or equal? | TRUE, FALSE |
+| Operator      | Question                      | 7 compared with 10 |
+| ------------- | ----------------------------- | ------------------ |
+| `=`           | equal?                        | FALSE              |
+| `<>`          | different?                    | TRUE               |
+| `<` and `>`   | less, more?                   | TRUE, FALSE        |
+| `<=` and `>=` | less or equal, more or equal? | TRUE, FALSE        |
 
 `=` compares and `:=` stores; they are not the same sign. Three comparisons can split the number line into bands, so that exactly one of them is TRUE for every value: `Cars < 3`, `Cars = 3` and `Cars > 3` cover every number once.
 

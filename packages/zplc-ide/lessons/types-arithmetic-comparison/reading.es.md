@@ -2,11 +2,11 @@
 
 Hasta ahora casi todas las señales de sus programas estaban en ON o en OFF. Una máquina también cuenta y mide: cuántas cajas entraron en un cajón, qué tan lleno está un tanque, cuántos lugares quedan en un estacionamiento. Un programa guarda ese número en una variable, y cada variable tiene un **tipo** que dice qué puede guardar.
 
-| Tipo | Qué guarda | Rango | Ejemplo |
-|---|---|---|---|
-| BOOL | un sí o un no | FALSE o TRUE | `Full : BOOL;` |
-| INT | un número entero, 16 bits | −32768 a 32767 | `Cars : INT := 0;` |
-| DINT | un número entero, 32 bits | unos −2100 a 2100 millones | `Pieces : DINT;` |
+| Tipo | Qué guarda                | Rango                      | Ejemplo            |
+| ---- | ------------------------- | -------------------------- | ------------------ |
+| BOOL | un sí o un no             | FALSE o TRUE               | `Full : BOOL;`     |
+| INT  | un número entero, 16 bits | −32768 a 32767             | `Cars : INT := 0;` |
+| DINT | un número entero, 32 bits | unos −2100 a 2100 millones | `Pieces : DINT;`   |
 
 El tipo se escribe después del nombre cuando se declara la variable, y el valor que sigue a `:=` es el valor con el que empieza. Un BOOL no puede guardar 5, y un INT no puede guardar un número mayor que 32767.
 
@@ -26,12 +26,12 @@ La división de números enteros da un número entero y descarta el resto: `17 /
 
 Una **comparación** hace una pregunta sobre números y responde TRUE o FALSE. Su resultado es un BOOL, así que se puede guardar directamente en una salida BOOL.
 
-| Operador | Pregunta | 7 comparado con 10 |
-|---|---|---|
-| `=` | ¿igual? | FALSE |
-| `<>` | ¿distinto? | TRUE |
-| `<` y `>` | ¿menor, mayor? | TRUE, FALSE |
-| `<=` y `>=` | ¿menor o igual, mayor o igual? | TRUE, FALSE |
+| Operador    | Pregunta                       | 7 comparado con 10 |
+| ----------- | ------------------------------ | ------------------ |
+| `=`         | ¿igual?                        | FALSE              |
+| `<>`        | ¿distinto?                     | TRUE               |
+| `<` y `>`   | ¿menor, mayor?                 | TRUE, FALSE        |
+| `<=` y `>=` | ¿menor o igual, mayor o igual? | TRUE, FALSE        |
 
 `=` compara y `:=` guarda; no son el mismo signo. Tres comparaciones pueden dividir la recta de los números en rangos, de modo que exactamente una esté en TRUE para cada valor: `Cars < 3`, `Cars = 3` y `Cars > 3` cubren cada número una sola vez.
 

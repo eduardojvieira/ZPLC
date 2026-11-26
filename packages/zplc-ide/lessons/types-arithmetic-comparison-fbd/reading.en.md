@@ -2,12 +2,12 @@
 
 In a Function Block Diagram a number travels on a wire just as an ON or OFF does. The wire takes the type of the value it carries: a BOOL is a yes or a no, an INT is a whole number from −32768 to 32767. Four kinds of block do the work of this lesson.
 
-| Block | Inputs | Output | What it gives |
-|---|---|---|---|
-| ADD | IN1, IN2 | OUT | the sum IN1 + IN2 |
-| SEL | G, IN0, IN1 | OUT | IN0 while G is FALSE, IN1 while G is TRUE |
-| R_TRIG | CLK | Q | TRUE for one scan when CLK rises |
-| LT, EQ, GT, GE | IN1, IN2 | OUT | a BOOL: is IN1 less, equal, more, more or equal than IN2? |
+| Block          | Inputs      | Output | What it gives                                             |
+| -------------- | ----------- | ------ | --------------------------------------------------------- |
+| ADD            | IN1, IN2    | OUT    | the sum IN1 + IN2                                         |
+| SEL            | G, IN0, IN1 | OUT    | IN0 while G is FALSE, IN1 while G is TRUE                 |
+| R_TRIG         | CLK         | Q      | TRUE for one scan when CLK rises                          |
+| LT, EQ, GT, GE | IN1, IN2    | OUT    | a BOOL: is IN1 less, equal, more, more or equal than IN2? |
 
 A variable can be read on the left of the diagram and written on the right. The diagram runs once per scan, so a value written at the right edge is what the left edge reads on the next scan. That is how a total grows: read it, add to it, write it back. An ADD block alone adds on every scan; a SEL block decides, on each scan, whether the new value or the old one goes back into the variable.
 

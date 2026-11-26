@@ -1,12 +1,12 @@
 ## Numbers in the current result
 
-Instruction List works one line at a time on a single value, the **current result**. `LD` loads a value into it and `ST` stores it in a variable. Until now the current result was a BOOL; it can just as well hold a number, such as an INT from −32768 to 32767, and the instructions of this lesson work on that number.
+Instruction List works one line at a time on a single value, the **current result**. `LD` loads a value into it and `ST` stores it in a variable. The current result can hold a BOOL, as in a line of logic, or a number, such as an INT from −32768 to 32767, and the instructions of this lesson work on that number.
 
-| Instruction | What it does to the current result | Leaves |
-|---|---|---|
-| `ADD n`, `SUB n`, `MUL n`, `DIV n` | adds, subtracts, multiplies or divides by n | a number of the same type |
-| `LT n`, `EQ n`, `GT n`, `GE n` | asks: less, equal, more, more or equal than n? | a BOOL |
-| `JMPC label`, `JMPCN label` | jumps to `label:` when it is TRUE, or when it is FALSE | the program goes on at the label |
+| Instruction                        | What it does to the current result                     | Leaves                           |
+| ---------------------------------- | ------------------------------------------------------ | -------------------------------- |
+| `ADD n`, `SUB n`, `MUL n`, `DIV n` | adds, subtracts, multiplies or divides by n            | a number of the same type        |
+| `LT n`, `EQ n`, `GT n`, `GE n`     | asks: less, equal, more, more or equal than n?         | a BOOL                           |
+| `JMPC label`, `JMPCN label`        | jumps to `label:` when it is TRUE, or when it is FALSE | the program goes on at the label |
 
 So `LD Count`, `ADD 3`, `ST Count` read a number, add to it and store it back, and `LD Count`, `LT 10`, `ST Few` turn the number into a yes or a no. Every line runs on every scan, from top to bottom. To change a number only on some scans, compute the condition first and jump over the arithmetic when the condition is FALSE: the jump skips those lines on that scan only.
 

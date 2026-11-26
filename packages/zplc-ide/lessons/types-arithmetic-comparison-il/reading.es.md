@@ -1,12 +1,12 @@
 ## Números en el resultado actual
 
-La lista de instrucciones trabaja una línea a la vez sobre un único valor, el **resultado actual**. `LD` carga un valor en él y `ST` lo guarda en una variable. Hasta ahora el resultado actual era un BOOL; también puede guardar un número, como un INT de −32768 a 32767, y las instrucciones de esta lección trabajan sobre ese número.
+La lista de instrucciones trabaja una línea a la vez sobre un único valor, el **resultado actual**. `LD` carga un valor en él y `ST` lo guarda en una variable. El resultado actual puede guardar un BOOL, como en una línea de lógica, o un número, como un INT de −32768 a 32767, y las instrucciones de esta lección trabajan sobre ese número.
 
-| Instrucción | Qué le hace al resultado actual | Deja |
-|---|---|---|
-| `ADD n`, `SUB n`, `MUL n`, `DIV n` | suma, resta, multiplica o divide por n | un número del mismo tipo |
-| `LT n`, `EQ n`, `GT n`, `GE n` | pregunta: ¿menor, igual, mayor, mayor o igual que n? | un BOOL |
-| `JMPC label`, `JMPCN label` | salta a `label:` cuando es TRUE, o cuando es FALSE | el programa sigue en la etiqueta |
+| Instrucción                        | Qué le hace al resultado actual                      | Deja                             |
+| ---------------------------------- | ---------------------------------------------------- | -------------------------------- |
+| `ADD n`, `SUB n`, `MUL n`, `DIV n` | suma, resta, multiplica o divide por n               | un número del mismo tipo         |
+| `LT n`, `EQ n`, `GT n`, `GE n`     | pregunta: ¿menor, igual, mayor, mayor o igual que n? | un BOOL                          |
+| `JMPC label`, `JMPCN label`        | salta a `label:` cuando es TRUE, o cuando es FALSE   | el programa sigue en la etiqueta |
 
 Así, `LD Count`, `ADD 3`, `ST Count` leen un número, le suman y lo vuelven a guardar, y `LD Count`, `LT 10`, `ST Few` convierten el número en un sí o un no. Cada línea se ejecuta en cada ciclo, de arriba abajo. Para cambiar un número solo en algunos ciclos, calcule primero la condición y salte por encima de la aritmética cuando la condición es FALSE: el salto omite esas líneas solo en ese ciclo.
 
