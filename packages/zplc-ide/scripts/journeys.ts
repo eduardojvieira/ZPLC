@@ -6797,16 +6797,11 @@ export const JOURNEYS: Journey[] = [
       await watch(app, 'LED_Output');
       await assertFits('1366 by 768 while the simulation runs and the Watch table shows');
 
-      // one lesson of Learn opens from the rail (UX-011)
+      // the lessons of Learn open from the rail (UX-011), as the course outline (GDE-002)
       await app.click(css('[data-activity="learn"]'), 'the Learn activity');
       await app.until(
         'the lessons in the primary sidebar',
-        async () =>
-          (await app.visible(
-            css(
-              '[aria-label="Primary sidebar"] [aria-label="Lesson"] button, [aria-label="Primary sidebar"] [aria-label="Lección"] button',
-            ),
-          )) || undefined,
+        async () => (await app.visible(css('[aria-label="Primary sidebar"] [data-learn-outline] [role="treeitem"]'))) || undefined,
       );
       await assertFits('1366 by 768 with the lessons shown');
 
