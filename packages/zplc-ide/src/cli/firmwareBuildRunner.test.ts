@@ -111,7 +111,7 @@ describe('runFirmwareBuild', () => {
     }
   });
 
-  it.skipIf(!buildOffered)('reads the ELF when the temporary directory is reached through a symbolic link, as /var is on macOS', async () => {
+  it.skipIf(!buildOffered)('reads the ELF when the temporary root is reached through a link, as /var is on macOS', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-runner-root-'));
     const real = await mkdtemp(join(tmpdir(), 'zplc-runner-real-temp-'));
     const linked = `${real}-link`;

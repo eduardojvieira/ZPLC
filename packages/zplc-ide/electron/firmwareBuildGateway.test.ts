@@ -302,7 +302,8 @@ describe('firmware build gateway', () => {
     ).resolves.toEqual({ ok: true });
   });
 
-  it.skipIf(!buildOffered)('cancels before build during preflight or approval and releases only after the owned operation settles', async () => {
+  const cancelsBefore = 'cancels before build during preflight or approval and releases only after the owned operation settles';
+  it.skipIf(!buildOffered)(cancelsBefore, async () => {
     const candidate = await root();
     const gateway = createFirmwareBuildGateway();
     await gateway.inspect(7, candidate, async () => ready());
