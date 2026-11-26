@@ -1,12 +1,10 @@
 {
   "offences": [
-    "blink-structured-text:reading",
     "capstone-packing-station:reading",
     "conveyor-classification-jam:reading",
     "conveyor-sorting-sfc:reading",
     "conveyor-two-parts-diagnosis:reading",
     "fault-stop-reset-sfc:reading",
-    "first-blink-simulation:reading",
     "function-block-call-il:reading",
     "function-block-pump-pair:reading",
     "function-block-valves-fbd:reading",
@@ -63,13 +61,11 @@
     "plant-weight-sorting-ladder:reading",
     "plant-weight-sorting:reading",
     "plant-xyz-palletizing:reading",
-    "scan-cycle-one-scan-memory:reading",
     "selection-branches-sfc:reading",
     "simultaneous-branches-sfc:reading",
     "step-times-sfc:reading",
     "structures-arrays-call-panel:reading",
     "tank-level-fault-reset:reading",
-    "temporal-assertions-jam-fault:reading",
-    "verify-my-board:reading"
+    "temporal-assertions-jam-fault:reading"
   ]
 }
