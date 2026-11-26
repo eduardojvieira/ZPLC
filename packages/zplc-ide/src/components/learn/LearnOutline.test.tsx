@@ -275,10 +275,7 @@ describe('The Learn activity course outline (GDE-002, UX-024, UX-026)', () => {
   it('GDE-002 a 111-lesson course builds and renders within budget', () => {
     expect(LESSON_INDEX.lessons.length).toBeGreaterThanOrEqual(111);
     const view = buildCourseView(LESSON_INDEX, emptyProgress(), { locale: 'en', unlockAll: false });
-    const allContainers = new Set([
-      ...view.paths.map((path) => pathNodeId(path.id)),
-      ...view.modules.map((mod) => moduleNodeId(mod.id)),
-    ]);
+    const allContainers = new Set([...view.paths.map((path) => pathNodeId(path.id)), ...view.modules.map((mod) => moduleNodeId(mod.id))]);
 
     const t0 = performance.now();
     const rows = buildCourseOutlineRows(view, { expanded: allContainers, filter: '', currentLessonId: FIRST_MODULE_1 });
