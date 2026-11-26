@@ -81,15 +81,23 @@ function diskFile(initial: string) {
   return { file, handle };
 }
 
-const loaded = (id: string, path: string, content: string, handle: FileSystemFileHandle, extra: Record<string, unknown> = {}) => [
-  id,
-  { id, name: path.split('/').at(-1)!, language: 'ST', path, content, isModified: false, diskContent: content, handle, ...extra },
-];
+const loaded = (id: string, path: string, content: string, handle: FileSystemFileHandle, extra: Record<string, unknown> = {}) =>
+  [
+    id,
+    { id, name: path.split('/').at(-1)!, language: 'ST', path, content, isModified: false, diskContent: content, handle, ...extra },
+  ] as const;
 
 describe('Studio follows external edits (AIX-012)', () => {
   const refreshFileTree = async () => undefined;
+  const realRefreshFileTree = useIDEStore.getState().refreshFileTree;
+  afterEach(() => useIDEStore.setState({ refreshFileTree: realRefreshFileTree, directoryHandle: null, isProjectOpen: false }));
   const project = (directoryHandle: unknown, extra: Record<string, unknown> = {}) =>
-    useIDEStore.setState({ refreshFileTree, directoryHandle: directoryHandle as FileSystemDirectoryHandle, isProjectOpen: true, ...extra } as never);
+    useIDEStore.setState({
+      refreshFileTree,
+      directoryHandle: directoryHandle as FileSystemDirectoryHandle,
+      isProjectOpen: true,
+      ...extra,
+    } as never);
 
   it('reloads an open file without unsaved changes, and the notice names it with what changed and restore', async () => {
     const { file, handle } = diskFile('x := 1;');
@@ -121,7 +129,9 @@ describe('Studio follows external edits (AIX-012)', () => {
 
   it('asks about an open file with unsaved changes, and does not reload it', async () => {
     const { file, handle } = diskFile('x := 1;');
-    useIDEStore.setState({ loadedFiles: new Map([loaded(ID, 'src/Drive.st', 'x := 9;', handle, { isModified: true, diskContent: 'x := 1;' })]) as never });
+    useIDEStore.setState({
+      loadedFiles: new Map([loaded(ID, 'src/Drive.st', 'x := 9;', handle, { isModified: true, diskContent: 'x := 1;' })]) as never,
+    });
     project(null);
     file.text = 'x := 2;';
     await followExternalChange({ paths: ['src/Drive.st'], overflow: false });
@@ -134,7 +144,13 @@ describe('Studio follows external edits (AIX-012)', () => {
 
   it('gives a notice with what changed for a file that was not open, when Studio knew its text', async () => {
     const { file, handle } = diskFile('y := 1;');
-    const tree = { id: 'root', name: 'p', path: '', type: 'directory', children: [{ id: 'file:src/Pump.st', name: 'Pump.st', path: 'src/Pump.st', type: 'file', handle }] };
+    const tree = {
+      id: 'root',
+      name: 'p',
+      path: '',
+      type: 'directory',
+      children: [{ id: 'file:src/Pump.st', name: 'Pump.st', path: 'src/Pump.st', type: 'file', handle }],
+    };
     project(null, { fileTree: tree });
     useProjectSources.setState({ sources: [{ path: 'src/Pump.st', name: 'Pump.st', content: 'y := 1;', language: 'ST' }] });
     try {
@@ -161,7 +177,10 @@ describe('Studio follows external edits (AIX-012)', () => {
     const config = JSON.parse(text);
     const renamed = JSON.stringify({ ...config, name: 'Renamed outside' });
     const { handle } = diskFile(renamed);
-    const directory = { getFileHandle: async (name: string) => (name === 'zplc.json' ? handle : Promise.reject(Object.assign(new Error('x'), { name: 'NotFoundError' }))) };
+    const directory = {
+      getFileHandle: async (name: string) =>
+        name === 'zplc.json' ? handle : Promise.reject(Object.assign(new Error('x'), { name: 'NotFoundError' })),
+    };
     const refresh = mock(async () => undefined);
     const realRefresh = useProjectTests.getState().refresh;
     useProjectTests.setState({ refresh });

@@ -3,15 +3,25 @@
  * its folder and sends batches of changed paths; each batch reads the tree again and checks every open file against the
  * disk. An unmodified file is reloaded silently, a deleted one is closed, and a modified one that changed on disk is
  * asked about: keep the user's version, or load the one on disk. The decision itself is `planExternalChanges`.
+ *
+ * Studio follows (AIX-012): each file replaced from outside gets a notice that names it; when Studio knows what the file
+ * held (an open file, or a source the editors indexed), the notice shows what changed and restores what Studio had. A
+ * change to `zplc.json` reloads the project settings (never over unsaved ones), one under `tests/` lists the tests again,
+ * and one to `scene.json` or `plant-map.json` reloads the plant document.
  */
 import { create } from 'zustand';
 import { t } from '../i18n';
 import { parseProjectChange } from '../../electron/projectFilesProtocol';
 import { projectRootId } from '../ipc/projectFilesHandles';
-import { readFileContent } from '../utils/fileSystem';
+import { findFileInTree, readFileContent, readProjectConfig, writeFileContent } from '../utils/fileSystem';
+import { announce } from '../utils/announce';
 import { debugLog } from '../utils/debugLog';
+import { useProjectTests } from '../projectTests/useProjectTests';
 import { planExternalChanges } from './externalChanges';
+import { useProjectSources } from './projectSources';
 import { useIDEStore } from './useIDEStore';
+import { usePlantDocument } from './usePlantDocument';
+import { usePlantEdit } from '../plant/editSession';
 
 export interface ExternalConflict {
   path: string;
@@ -19,7 +29,30 @@ export interface ExternalConflict {
   /** The text on disk, or null when the file was deleted. */ disk: string | null;
 }
 
-export const useExternalConflicts = create<{ conflicts: ExternalConflict[] }>(() => ({ conflicts: [] }));
+/**
+ * A file replaced from outside. `before` is what Studio had, when it knew (`kind: 'file'` only): with it the notice shows
+ * what changed and can restore it. A `plant` or `project` notice only names the file.
+ */
+export interface ExternalNotice {
+  path: string;
+  name: string;
+  kind: 'file' | 'plant' | 'project';
+  before?: string;
+  after?: string;
+}
+
+/** What "What changed" shows: the text Studio had against the text on disk. */
+export interface ExternalReview {
+  path: string;
+  name: string;
+  before: string;
+  after: string;
+}
+
+export const useExternalConflicts = create<{ conflicts: ExternalConflict[]; notices: ExternalNotice[]; review: ExternalReview | null }>(
+  () => ({ conflicts: [], notices: [], review: null }),
+);
+const NOTICE_LIMIT = 8;
 
 const setConflicts = (update: (previous: ExternalConflict[]) => ExternalConflict[]) =>
   useExternalConflicts.setState((state) => ({ conflicts: update(state.conflicts) }));
@@ -34,8 +67,76 @@ async function readDisk(handle: FileSystemFileHandle): Promise<string | null | u
 
 const note = (message: string) => useIDEStore.getState().addConsoleEntry({ type: 'info', message, source: 'system' });
 
-/** Reads every open file from the disk and applies what `planExternalChanges` decides. */
-export async function checkOpenFiles(): Promise<void> {
+const NOTICE_TEXT = {
+  file: 'studio.notice.externalUpdated',
+  plant: 'studio.notice.externalPlant',
+  project: 'studio.notice.externalProject',
+} as const;
+
+/** Adds the notice of a file, in place of an earlier one of the same file (whose `before` it keeps), and says it. */
+function addNotice(notice: ExternalNotice): void {
+  useExternalConflicts.setState((state) => {
+    const earlier = state.notices.find((item) => item.path === notice.path);
+    const next = earlier?.before !== undefined && notice.before !== undefined ? { ...notice, before: earlier.before } : notice;
+    return { notices: [...state.notices.filter((item) => item.path !== notice.path), next].slice(-NOTICE_LIMIT) };
+  });
+  announce(t(NOTICE_TEXT[notice.kind], { name: notice.name }));
+}
+
+export function dismissNotice(path: string): void {
+  useExternalConflicts.setState((state) => ({ notices: state.notices.filter((item) => item.path !== path) }));
+}
+
+/** Opens what changed in the file of a notice, in the conflict prompt. */
+export function showChanges(path: string): void {
+  const notice = useExternalConflicts.getState().notices.find((item) => item.path === path);
+  if (notice?.before === undefined || notice.after === undefined) return;
+  useExternalConflicts.setState({ review: { path, name: notice.name, before: notice.before, after: notice.after } });
+}
+
+export function closeReview(): void {
+  useExternalConflicts.setState({ review: null });
+}
+
+/** The text Studio writes itself to a file that is not open (a restore): the change the watcher then reports is not news. */
+const ownWrites = new Map<string, string>();
+
+/**
+ * Writes back what Studio had before the file was replaced from outside. An open file shows it again, as saved; one with
+ * unsaved changes made since is left alone, so that nothing the person typed is lost.
+ */
+export async function restoreExternal(path: string): Promise<void> {
+  const notice = useExternalConflicts.getState().notices.find((item) => item.path === path);
+  if (notice?.before === undefined) return;
+  const before = notice.before;
+  const state = useIDEStore.getState();
+  const file = [...state.loadedFiles.values()].find((candidate) => candidate.path === path);
+  const handle = file?.handle ?? (state.fileTree ? findFileInTree(state.fileTree, path)?.handle : undefined);
+  if (!handle || file?.isModified) return;
+  dismissNotice(path);
+  closeReview();
+  if (file) {
+    useIDEStore.setState({
+      loadedFiles: new Map(state.loadedFiles).set(file.id, { ...file, content: before, isModified: false, diskContent: before }),
+    });
+  } else {
+    ownWrites.set(path, before);
+  }
+  try {
+    await writeFileContent(handle, before);
+    announce(t('studio.notice.restored', { name: notice.name }));
+  } catch (error) {
+    ownWrites.delete(path);
+    useIDEStore.getState().addConsoleEntry({
+      type: 'error',
+      message: t('studio.notice.restoreFailed', { name: notice.name, reason: error instanceof Error ? error.message : String(error) }),
+      source: 'system',
+    });
+  }
+}
+
+/** Reads every open file from the disk and applies what `planExternalChanges` decides; returns the paths it reloaded. */
+export async function checkOpenFiles(): Promise<string[]> {
   const before = useIDEStore.getState();
   const session = before.projectSession;
   const checked = [...before.loadedFiles.values()].filter((file) => file.handle);
@@ -47,7 +148,7 @@ export async function checkOpenFiles(): Promise<void> {
     }),
   );
   const state = useIDEStore.getState();
-  if (state.projectSession !== session) return;
+  if (state.projectSession !== session) return [];
   // A reading taken before Studio wrote the file (a save while it was read: the save's own write is a change the watcher
   // reports) is older than what Studio now knows of the disk. It is dropped; the write brings a check of its own.
   for (const file of state.loadedFiles.values())
@@ -74,6 +175,10 @@ export async function checkOpenFiles(): Promise<void> {
     note(t('statusText.reloadedFromDisk', { name: file.name }));
   }
   if (changed) useIDEStore.setState({ loadedFiles });
+  for (const reload of plan.reload) {
+    const file = byPath.get(reload.path)!;
+    addNotice({ path: file.path, name: file.name, kind: 'file', before: file.content, after: reload.content });
+  }
   for (const path of plan.close) {
     const file = byPath.get(path)!;
     useIDEStore.getState().discardFile(file.id);
@@ -84,6 +189,7 @@ export async function checkOpenFiles(): Promise<void> {
     ...previous.filter((conflict) => open.has(conflict.path) && !plan.conflicts.some((next) => next.path === conflict.path)),
     ...plan.conflicts.map((conflict) => ({ ...conflict, name: byPath.get(conflict.path)!.name })),
   ]);
+  return plan.reload.map((reload) => reload.path);
 }
 
 /** The user's answer for one file: keep their version (the disk is then the known base) or take the disk's. */
@@ -110,6 +216,66 @@ export function resolveConflict(path: string, choice: 'mine' | 'disk'): void {
   }
 }
 
+const SCENE_FILES = new Set(['scene.json', 'plant-map.json']);
+
+/** Reads the project settings again after `zplc.json` changed on disk; unsaved Project Settings are kept. */
+async function reloadProjectConfig(): Promise<void> {
+  const before = useIDEStore.getState();
+  if (!before.directoryHandle || !before.projectConfig) return;
+  const read = await readProjectConfig(before.directoryHandle);
+  const state = useIDEStore.getState();
+  if (read.kind !== 'valid' || state.projectSession !== before.projectSession || state.directoryHandle !== before.directoryHandle) return;
+  if (state.projectConfigDirty) {
+    note(t('studio.notice.settingsKept'));
+    return;
+  }
+  if (JSON.stringify(read.config) === JSON.stringify(state.projectConfig)) return;
+  useIDEStore.setState({ projectConfig: read.config, projectName: read.config.name });
+  addNotice({ path: 'zplc.json', name: 'zplc.json', kind: 'project' });
+}
+
+/** Tells the files that are not open and that Studio knew (the sources it indexed) whose text changed on disk. */
+async function noticeClosedFiles(paths: readonly string[], known: ReadonlyMap<string, string>): Promise<void> {
+  const state = useIDEStore.getState();
+  const open = new Set([...state.loadedFiles.values()].map((file) => file.path));
+  await Promise.all(
+    paths.map(async (path) => {
+      if (open.has(path)) return;
+      const before = known.get(path);
+      const node = state.fileTree ? findFileInTree(state.fileTree, path) : null;
+      if (before === undefined || !node?.handle) return;
+      const after = await readDisk(node.handle);
+      if (typeof after !== 'string') return;
+      const own = ownWrites.get(path);
+      ownWrites.delete(path);
+      if (after === before || after === own) return;
+      addNotice({ path, name: node.name, kind: 'file', before, after });
+    }),
+  );
+}
+
+/** What one batch of changes made outside Studio does to the open project. */
+export async function followExternalChange(change: { paths: readonly string[]; overflow: boolean }): Promise<void> {
+  const { paths, overflow } = change;
+  const touched = (test: (path: string) => boolean) => overflow || paths.some(test);
+  // What the editors indexed is read before the tree, whose refresh has the indexed sources read again.
+  const known = new Map(useProjectSources.getState().sources.map((source) => [source.path, source.content]));
+  await useIDEStore.getState().refreshFileTree();
+  const reloaded = await checkOpenFiles();
+  await noticeClosedFiles(paths, known);
+  if (touched((path) => path === 'zplc.json')) await reloadProjectConfig();
+  if (touched((path) => path.startsWith('tests/'))) await useProjectTests.getState().refresh();
+  const scenes = overflow ? [...SCENE_FILES] : paths.filter((path) => SCENE_FILES.has(path));
+  const conflicted = new Set(useExternalConflicts.getState().conflicts.map((conflict) => conflict.path));
+  // An open scene file with unsaved changes is asked about instead; a scene being edited keeps its edits.
+  const followed = scenes.filter((path) => !conflicted.has(path));
+  if (followed.length > 0 && !usePlantEdit.getState().editor) {
+    usePlantDocument.getState().notifyExternalPlantChange();
+    // An open scene file that was reloaded already has its notice, with what changed.
+    for (const path of followed) if (!reloaded.includes(path)) addNotice({ path, name: path, kind: 'plant' });
+  }
+}
+
 /**
  * Watches the folder of whatever project the store has open. Returns the function that stops it. Only the desktop app
  * has a watch; elsewhere nothing happens.
@@ -123,7 +289,11 @@ export function startExternalChangeWatch(): () => void {
   let running = false;
   let again = false;
 
-  const run = async () => {
+  // The batches that arrive while one is followed are followed together after it.
+  let queued = { paths: new Set<string>(), overflow: false };
+  const run = async (change: { paths: readonly string[]; overflow: boolean }) => {
+    for (const path of change.paths) queued.paths.add(path);
+    queued.overflow ||= change.overflow;
     if (running) {
       again = true;
       return;
@@ -132,8 +302,9 @@ export function startExternalChangeWatch(): () => void {
     try {
       do {
         again = false;
-        await useIDEStore.getState().refreshFileTree();
-        await checkOpenFiles();
+        const next = queued;
+        queued = { paths: new Set(), overflow: false };
+        await followExternalChange({ paths: [...next.paths], overflow: next.overflow });
       } while (again);
     } catch (error) {
       debugLog('[ExternalChanges] check failed', error);
@@ -147,7 +318,8 @@ export function startExternalChangeWatch(): () => void {
     const rootId = state.isProjectOpen ? projectRootId(state.directoryHandle) : null;
     if (rootId === watched) return;
     watched = rootId;
-    useExternalConflicts.setState({ conflicts: [] });
+    useExternalConflicts.setState({ conflicts: [], notices: [], review: null });
+    ownWrites.clear();
     if (rootId !== null)
       void Promise.resolve(watch({ rootId })).catch((error: unknown) => debugLog('[ExternalChanges] watch failed', error));
   };
@@ -158,7 +330,7 @@ export function startExternalChangeWatch(): () => void {
   });
   const stopListening = onChanged((raw) => {
     const change = parseProjectChange(raw);
-    if (change && change.rootId === watched) void run();
+    if (change && change.rootId === watched) void run(change);
   });
   return () => {
     unsubscribe();

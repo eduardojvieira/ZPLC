@@ -173,7 +173,9 @@ describe('the plant document (PLS-001, PLS-002)', () => {
     const root = {
       getDirectoryHandle: notFound,
       getFileHandle: async (name: string) =>
-        name === 'scene.json' && scene !== undefined ? { getFile: async () => ({ size: scene!.length, text: async () => scene! }) } : notFound(),
+        name === 'scene.json' && scene !== undefined
+          ? { getFile: async () => ({ size: scene!.length, text: async () => scene! }) }
+          : notFound(),
     };
     useIDEStore.setState({ directoryHandle: root as unknown as FileSystemDirectoryHandle });
     try {

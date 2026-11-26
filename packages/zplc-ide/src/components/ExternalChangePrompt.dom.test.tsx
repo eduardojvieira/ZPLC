@@ -22,7 +22,20 @@ function openDrive(content: string, extra: Record<string, unknown> = {}) {
   } as unknown as FileSystemFileHandle;
   useIDEStore.setState({
     loadedFiles: new Map([
-      [ID, { id: ID, name: 'Drive.st', language: 'ST', path: 'src/Drive.st', content, isModified: false, diskContent: content, handle, ...extra }],
+      [
+        ID,
+        {
+          id: ID,
+          name: 'Drive.st',
+          language: 'ST',
+          path: 'src/Drive.st',
+          content,
+          isModified: false,
+          diskContent: content,
+          handle,
+          ...extra,
+        },
+      ],
     ]) as never,
   });
   return disk;
