@@ -35,6 +35,8 @@ export interface ScenarioRuntimePort {
   setInputNumber?(address: number, type: NumericType, raw: number): Promise<void>;
   /** Reads a raw INT or REAL from the output image. */
   readOutputNumber?(address: number, type: NumericType): Promise<number>;
+  /** Reads `size` bytes of program memory after a step; a runtime without it cannot watch variables (AI-08). */
+  readMemory?(address: number, size: number): Promise<Uint8Array>;
 }
 
 export type NumericType = 'INT' | 'REAL';
@@ -153,6 +155,27 @@ export interface ScenarioRunResult {
   passed: boolean;
   trace: ScenarioTraceSample[];
   assertions: ScenarioAssertionResult[];
+  /** Only when `runScenario` was asked to observe: a sidecar, one record per trace sample, that is never part of the trace. */
+  observed?: ScenarioObservedTrace;
+}
+
+/** A variable or a function block member to read after each step (AI-08): its canonical name, address and type. */
+export interface ResolvedWatch {
+  readonly signal: string;
+  readonly address: number;
+  readonly type: string;
+  readonly size: number;
+  readonly bitOffset?: number;
+}
+/** What a run records beside its trace (AI-08): the inputs it wrote, the watched variables and the raw plant facts. */
+export interface ScenarioObserveOptions {
+  readonly inputs?: boolean;
+  readonly watch?: ReadonlyArray<ResolvedWatch>;
+}
+export interface ScenarioObservedTrace {
+  inputs: Array<Record<string, boolean | number>>;
+  watched: Array<Record<string, boolean | number>>;
+  facts: Array<Record<string, boolean | number>>;
 }
 
 type UnknownRecord = Record<string, unknown>;
@@ -310,6 +333,92 @@ export function findSignalVariable(debugMap: DebugMap, signal: string): { signal
   if (own) return { signal, variable: own };
   const global = pou?.type === 'PROGRAM' ? declared(second) : undefined;
   return global ? { signal, variable: global } : undefined;
+}
+
+// the byte width of each type a watch can read
+const WATCH_SIZES = new Map<string, number>([
+  ['BOOL', 1],
+  ['SINT', 1],
+  ['USINT', 1],
+  ['BYTE', 1],
+  ['INT', 2],
+  ['UINT', 2],
+  ['WORD', 2],
+  ['DINT', 4],
+  ['UDINT', 4],
+  ['DWORD', 4],
+  ['TIME', 4],
+  ['REAL', 4],
+  ['LINT', 8],
+  ['ULINT', 8],
+  ['LWORD', 8],
+  ['LREAL', 8],
+]);
+
+/** `Program.variable`, a global, or `Program.instance.member` of a block, when its type is one a watch reads (AI-08). */
+export function resolveWatch(debugMap: DebugMap, signal: string): ResolvedWatch | undefined {
+  const parts = signal.split('.');
+  const member = parts.length === 3 ? parts.pop()! : undefined;
+  const found = findSignalVariable(debugMap, parts.join('.'));
+  if (!found) return undefined;
+  const { variable } = found;
+  const child =
+    member !== undefined && variable.children && Object.hasOwn(variable.children, member) ? variable.children[member] : undefined;
+  if (member !== undefined && !child) return undefined;
+  const type = child?.type ?? variable.type;
+  const size = child?.size ?? variable.size;
+  if (WATCH_SIZES.get(type) !== size || !Number.isInteger(variable.addr)) return undefined;
+  return {
+    signal: child ? `${found.signal}.${member}` : found.signal,
+    address: variable.addr + (child?.offset ?? 0),
+    type,
+    size,
+    ...(child === undefined && variable.bitOffset !== undefined ? { bitOffset: variable.bitOffset } : {}),
+  };
+}
+
+/** Every name of the programs that `resolveWatch` accepts, sorted: the valid values of a wrong watched name. */
+export function watchableSignals(debugMap: DebugMap): string[] {
+  const names = new Set<string>();
+  for (const [pou, info] of Object.entries(debugMap.pou)) {
+    if (info.type !== 'PROGRAM') continue;
+    for (const [name, variable] of Object.entries(info.vars))
+      for (const candidate of [`${pou}.${name}`, ...Object.keys(variable.children ?? {}).map((child) => `${pou}.${name}.${child}`)])
+        if (resolveWatch(debugMap, candidate)) names.add(candidate);
+  }
+  return [...names].sort();
+}
+
+function readWatch(watch: ResolvedWatch, bytes: Uint8Array): boolean | number {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  switch (watch.type) {
+    case 'BOOL':
+      return watch.bitOffset === undefined ? bytes[0] !== 0 : (bytes[0]! & (1 << watch.bitOffset)) !== 0;
+    case 'SINT':
+      return view.getInt8(0);
+    case 'USINT':
+    case 'BYTE':
+      return view.getUint8(0);
+    case 'INT':
+      return view.getInt16(0, true);
+    case 'UINT':
+    case 'WORD':
+      return view.getUint16(0, true);
+    case 'DINT':
+    case 'TIME':
+      return view.getInt32(0, true);
+    case 'UDINT':
+    case 'DWORD':
+      return view.getUint32(0, true);
+    case 'REAL':
+      return view.getFloat32(0, true);
+    case 'LREAL':
+      return view.getFloat64(0, true);
+    case 'LINT':
+      return Number(view.getBigInt64(0, true));
+    default:
+      return Number(view.getBigUint64(0, true));
+  }
 }
 
 function resolve(debugMap: DebugMap, signal: string, expectedRegion: 'IPI' | 'OPI', value: boolean): ResolvedSignal {
@@ -637,8 +746,15 @@ function matches(reads: ReadonlyArray<ResolvedSignal>, outputs: Record<string, b
   return reads.every(({ signal, value }) => outputs[signal] === value);
 }
 
-export async function runScenario(scenario: CompiledScenario, zplc: Uint8Array, runtime: ScenarioRuntimePort): Promise<ScenarioRunResult> {
+export async function runScenario(
+  scenario: CompiledScenario,
+  zplc: Uint8Array,
+  runtime: ScenarioRuntimePort,
+  observe?: ScenarioObserveOptions,
+): Promise<ScenarioRunResult> {
   if (!compiledScenarios.has(scenario)) throw new Error('Scenario must be produced by compileScenario');
+  const watch = observe?.watch ?? [];
+  if (watch.length > 0 && !runtime.readMemory) throw new Error('the runtime has no readMemory; it cannot watch variables');
   if (await runtime.hasForces()) throw new Error('Cannot run scenario with active forces');
   for (const bound of [...(scenario.scene?.commands ?? []), ...(scenario.scene?.sensors ?? [])])
     if (bound.numeric && (!runtime.setInputNumber || !runtime.readOutputNumber))
@@ -674,6 +790,18 @@ export async function runScenario(scenario: CompiledScenario, zplc: Uint8Array, 
   const rawFacts = new Map<number, Record<string, number>>();
   const inputs = new Map<string, boolean>([...terminalReads.values()].map((read) => [location(read), false]));
   const inputSnapshots: Record<string, boolean>[] = [];
+  // the sidecar (AI-08): the inputs by name, every one known from the start, and what each step watched and the plant knew
+  const observed: ScenarioObservedTrace | undefined = observe ? { inputs: [], watched: [], facts: [] } : undefined;
+  const named: Record<string, boolean | number> | undefined = observe?.inputs ? {} : undefined;
+  if (named) {
+    for (const read of terminalReads.values()) named[read.signal] = false;
+    for (const event of scenario.events) for (const write of event.writes) named[write.signal] = false;
+    for (const sensor of scene?.sensors ?? []) named[sensor.signal.signal] = sensor.numeric ? 0 : false;
+  }
+  const setInput = (signal: ResolvedSignal, value: boolean) => {
+    inputs.set(location(signal), value);
+    if (named) named[signal.signal] = value;
+  };
   let speedPermille = 0;
   let conveyorState: 'idle' | 'classifier' | 'diverter' | 'transfer' | 'jammed' = 'idle';
   let classifiedCount = 0;
@@ -683,7 +811,7 @@ export async function runScenario(scenario: CompiledScenario, zplc: Uint8Array, 
   for (let atMs = 0; atMs <= scenario.durationMs; atMs += scenario.tickMs) {
     const atSpeedInput = scenario.plant?.kind === 'motor-v1' ? speedPermille >= 1000 : undefined;
     if (scenario.plant?.kind === 'motor-v1') {
-      inputs.set(location(scenario.plant.atSpeed), atSpeedInput!);
+      setInput(scenario.plant.atSpeed, atSpeedInput!);
       await runtime.setInput(scenario.plant.atSpeed.address, scenario.plant.atSpeed.bitOffset, atSpeedInput!);
     }
     const conveyorInputs =
@@ -702,7 +830,7 @@ export async function runScenario(scenario: CompiledScenario, zplc: Uint8Array, 
         [scenario.plant.partAtDiverter, conveyorInputs!.partAtDiverter],
         [scenario.plant.jamDetected, conveyorInputs!.jamDetected],
       ] as const) {
-        inputs.set(location(signal), value);
+        setInput(signal, value);
         await runtime.setInput(signal.address, signal.bitOffset, value);
       }
     const tankInputs = scenario.plant?.kind === 'tank-v1' ? { levelLow: levelPermille <= 250, levelHigh: levelPermille >= 750 } : undefined;
@@ -711,7 +839,7 @@ export async function runScenario(scenario: CompiledScenario, zplc: Uint8Array, 
         [scenario.plant.levelLow, tankInputs!.levelLow],
         [scenario.plant.levelHigh, tankInputs!.levelHigh],
       ] as const) {
-        inputs.set(location(signal), value);
+        setInput(signal, value);
         await runtime.setInput(signal.address, signal.bitOffset, value);
       }
     const pedestrianRequest =
@@ -719,7 +847,7 @@ export async function runScenario(scenario: CompiledScenario, zplc: Uint8Array, 
         ? atMs >= 10 && (pedestrianPhase === 'approaching' || pedestrianPhase === 'waiting')
         : undefined;
     if (scenario.plant?.kind === 'pedestrian-v1') {
-      inputs.set(location(scenario.plant.pedRequest), pedestrianRequest!);
+      setInput(scenario.plant.pedRequest, pedestrianRequest!);
       await runtime.setInput(scenario.plant.pedRequest.address, scenario.plant.pedRequest.bitOffset, pedestrianRequest!);
     }
     const writes = scenario.events
@@ -727,7 +855,7 @@ export async function runScenario(scenario: CompiledScenario, zplc: Uint8Array, 
       .flatMap((event) => event.writes)
       .sort((left, right) => (left.signal < right.signal ? -1 : left.signal > right.signal ? 1 : 0));
     for (const write of writes) {
-      inputs.set(location(write), write.value);
+      setInput(write, write.value);
       await runtime.setInput(write.address, write.bitOffset, write.value);
     }
     if (scene)
@@ -742,10 +870,11 @@ export async function runScenario(scenario: CompiledScenario, zplc: Uint8Array, 
             if (!(sensor.name in sensed)) continue;
             if (sensor.numeric) {
               await runtime.setInputNumber!(sensor.signal.address, sensor.numeric.type, Number(sensed[sensor.name]));
+              if (named) named[sensor.signal.signal] = Number(sensed[sensor.name]);
               continue;
             }
             const value = Boolean(sensed[sensor.name]);
-            inputs.set(location(sensor.signal), value);
+            setInput(sensor.signal, value);
             await runtime.setInput(sensor.signal.address, sensor.signal.bitOffset, value);
           }
         },
@@ -760,6 +889,12 @@ export async function runScenario(scenario: CompiledScenario, zplc: Uint8Array, 
       for (const command of scene.commands)
         if (command.numeric) commandValues[command.name] = await runtime.readOutputNumber!(command.signal.address, command.numeric.type);
       const facts = scene.port.core.facts();
+      if (observed)
+        observed.facts.push(
+          Object.fromEntries(
+            Object.entries(facts).flatMap(([name, fact]) => (typeof fact === 'string' ? [] : [[`fact:${name}`, fact] as const])),
+          ),
+        );
       const raw: Record<string, number> = {};
       for (const read of factReads) {
         const fact = facts[read.fact ?? read.signal.slice('fact:'.length)];
@@ -828,6 +963,12 @@ export async function runScenario(scenario: CompiledScenario, zplc: Uint8Array, 
         : {}),
     });
     inputSnapshots.push(Object.fromEntries([...terminalReads.values()].map((read) => [read.signal, inputs.get(location(read)) ?? false])));
+    if (named) observed!.inputs.push({ ...named });
+    if (watch.length > 0) {
+      const values: Record<string, boolean | number> = {};
+      for (const item of watch) values[item.signal] = readWatch(item, await runtime.readMemory!(item.address, item.size));
+      observed!.watched.push(values);
+    }
   }
   const outcomes = scenario.expectations.map((expectation): ScenarioAssertionResult => {
     const samples =
@@ -888,5 +1029,5 @@ export async function runScenario(scenario: CompiledScenario, zplc: Uint8Array, 
     });
     return { ...outcome, index, checks };
   });
-  return { passed: assertions.every((assertion) => assertion.passed), trace, assertions };
+  return { passed: assertions.every((assertion) => assertion.passed), trace, assertions, ...(observed ? { observed } : {}) };
 }

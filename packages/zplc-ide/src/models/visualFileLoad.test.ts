@@ -164,12 +164,12 @@ describe('AIX-013 a refused visual file names the place, what was found and the 
   });
 
   it('FBD: a block of a type no diagram can place is an unknown block, with the types the palette and the project offer', () => {
-    const document = { name: 'Main', variables, blocks: [{ id: 'b1', type: 'SQRT', position: { x: 0, y: 0 } }], connections: [] };
+    const document = { name: 'Main', variables, blocks: [{ id: 'b1', type: 'COMM_PUBLISH', position: { x: 0, y: 0 } }], connections: [] };
     const error = failure(loadFBDFile('Main.fbd.json', JSON.stringify(document), []));
     expect(error.details).toEqual([
-      { code: 'unknown-block', path: 'blocks[0].type', block: 'b1', found: 'SQRT', acceptedValues: fbdPaletteBlocks() },
+      { code: 'unknown-block', path: 'blocks[0].type', block: 'b1', found: 'COMM_PUBLISH', acceptedValues: fbdPaletteBlocks() },
     ]);
-    expect(error.violations).toEqual(["blocks[0].type: 'SQRT'"]);
+    expect(error.violations).toEqual(["blocks[0].type: 'COMM_PUBLISH'"]);
   });
 
   it('FBD: a block the project declares is placed, and is among the accepted types of a refused one', () => {
