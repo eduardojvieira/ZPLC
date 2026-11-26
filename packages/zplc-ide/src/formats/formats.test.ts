@@ -14,7 +14,6 @@ import { DIRECTIONS, TYPES } from '../plants/plantMap';
 import { SFC_ACTION_TYPES } from '../transpiler/sfcToST';
 import { fbdNeedsInstance } from '../transpiler/fbdToST';
 import { LD_COIL_TYPES, LD_CONTACT_TYPES } from '../models/ldSupport';
-import { FBD_SPECIAL_BLOCKS } from '../models/fbd';
 import { SFC_QUALIFIERS } from '../models/sfc';
 import { LD_ELEMENT_TYPES, loadFBDFile, loadLDFile, loadSFCFile } from '../models/visualFileLoad';
 import { catalogue } from '../plant/core/catalogue';
@@ -211,8 +210,8 @@ describe('AIX-013 the formats read their closed sets from the code that owns the
     expect(formatById('ld').acceptedValues.elementTypes).toBe(LD_ELEMENT_TYPES);
   });
 
-  it('FBD special blocks are the ones the FBD model exports', () => {
-    expect(formatById('fbd').acceptedValues.specialBlocks).toBe(FBD_SPECIAL_BLOCKS);
+  it('FBD special blocks are the value blocks of the FBD palette', () => {
+    expect(formatById('fbd').acceptedValues.specialBlocks).toBe(FBD_VALUE_BLOCKS);
   });
 
   it('SFC qualifiers are the ones the SFC model exports', () => {

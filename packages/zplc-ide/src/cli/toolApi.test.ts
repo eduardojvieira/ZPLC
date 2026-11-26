@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { chmod, mkdir, mkdtemp, readFile, readdir, rename, rm, symlink, writeFile } from 'node:fs/promises';
+import { chmod, cp, mkdir, mkdtemp, readFile, readdir, rename, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -31,12 +31,14 @@ import {
   withToolExecution,
 } from './toolApi';
 import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';
+import { fbdPaletteBlocks } from '../editors/fbd/palette';
 import { formatById, type FormatId } from '../formats';
 import { LD_ELEMENT_TYPES } from '../models/visualFileLoad';
 import { SCENARIO_KINDS } from '../test-engine';
 
 const demo = fileURLToPath(new URL('../../projects/multitask_demo', import.meta.url));
 const blinky = fileURLToPath(new URL('../../projects/blinky', import.meta.url));
+const blinkyFbd = fileURLToPath(new URL('../../projects/blinky_fbd', import.meta.url));
 const blinkySfc = fileURLToPath(new URL('../../projects/blinky_sfc', import.meta.url));
 const motorStartStop = fileURLToPath(new URL('../../projects/motor_start_stop', import.meta.url));
 const pedestrianCrossing = fileURLToPath(new URL('../../projects/pedestrian_crossing', import.meta.url));
@@ -3498,6 +3500,44 @@ describe('AIX-013 diagnostics name the place and the accepted values, and projec
       expect(result.evidence.diagnostics as unknown[]).toEqual([
         expect.objectContaining({ code: 'VISUAL_FILE_INVALID', path: 'src/Guard.fbd.json', jsonPath: 'blocks[2].type', found: 'ANDD' }),
       ]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('projectValidate refuses an FBD block no diagram can place, such as SQRT in blinky_fbd, naming the block (K2)', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-aix013-sqrt-'));
+    try {
+      await cp(blinkyFbd, root, { recursive: true });
+      const text = await readFile(join(root, 'src/main.fbd.json'), 'utf8');
+      await writeFile(join(root, 'src/main.fbd.json'), text.replace('"type": "NOT"', '"type": "SQRT"'));
+      const result = await projectValidate(root);
+      expect(result.ok).toBe(false);
+      expect(result.evidence.diagnostics as unknown[]).toEqual([
+        {
+          code: 'VISUAL_FILE_INVALID',
+          message: expect.stringMatching(
+            /^blocks\[\d+\]\.type: block '[^']+' has the type 'SQRT', which an FBD diagram cannot place; accepted values: /,
+          ),
+          path: 'src/main.fbd.json',
+          jsonPath: expect.stringMatching(/^blocks\[\d+\]\.type$/),
+          found: 'SQRT',
+          acceptedValues: fbdPaletteBlocks(),
+        },
+      ]);
+      expect(result.evidence.diagnostics[0]!.message.length).toBeLessThanOrEqual(512);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('a found value longer than the bound is cut to 256 characters', async () => {
+    const scenario = example('scenario');
+    set(scenario, 'expectations.0.kind', 'K'.repeat(300));
+    const root = await beltWorkspace({ 'tests/belt.scenario.json': scenario });
+    try {
+      const [diagnostic] = (await testsRun(root)).evidence.diagnostics as Array<{ found?: string }>;
+      expect(diagnostic!.found).toBe('K'.repeat(256));
     } finally {
       await rm(root, { recursive: true, force: true });
     }
