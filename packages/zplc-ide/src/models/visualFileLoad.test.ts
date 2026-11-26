@@ -2,10 +2,10 @@ import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createEmptyFileContent } from '../types';
-import { parseFBDModel } from './fbd';
+import { FBD_SPECIAL_BLOCKS, parseFBDModel } from './fbd';
 import { parseLDModel } from './ld';
-import { parseSFCModel } from './sfc';
-import { MAX_VIOLATIONS, loadFBDFile, loadLDFile, loadSFCFile } from './visualFileLoad';
+import { SFC_QUALIFIERS, parseSFCModel } from './sfc';
+import { LD_ELEMENT_TYPES, MAX_VIOLATIONS, loadFBDFile, loadLDFile, loadSFCFile } from './visualFileLoad';
 
 const packageRoot = join(import.meta.dir, '../..');
 const fixtures = (suffix: string): string[] => [...new Bun.Glob(`projects/**/*.${suffix}.json`).scanSync({ cwd: packageRoot })].sort();
@@ -140,5 +140,61 @@ describe('the editor opens visual files through the validating loaders', () => {
       expect(source).toContain(`${loader}(activeFile.path || activeFile.name, activeFile.content)`);
     for (const parser of ['parseLDModel(', 'parseFBDModel(', 'parseSFCModel(']) expect(source).not.toContain(parser);
     expect(source).toContain('data-file-error');
+  });
+});
+
+describe('AIX-013 a refused visual file names the place, what was found and the accepted values', () => {
+  const variables = { local: [], outputs: [] };
+
+  it('LD: an unknown element type names its JSON path, the type found and every accepted element type', () => {
+    const document = {
+      name: 'Main',
+      variables,
+      rungs: [{ id: 'rung_1', number: 1, elements: [{ id: 'e1', type: 'contact', variable: 'Start' }] }],
+    };
+    const error = failure(loadLDFile('Main.ld.json', JSON.stringify(document)));
+    expect(error.fileName).toBe('Main.ld.json');
+    expect(error.details).toEqual([
+      {
+        path: 'rungs[0].elements[0].type',
+        message: `invalid value 'contact'; accepted values: ${LD_ELEMENT_TYPES.join(', ')}`,
+        found: 'contact',
+        acceptedValues: [...LD_ELEMENT_TYPES],
+      },
+    ]);
+    expect(error.violations).toEqual([`rungs[0].elements[0].type: invalid value 'contact'; accepted values: ${LD_ELEMENT_TYPES.join(', ')}`]);
+  });
+
+  it('FBD: an unknown block type is refused at parse time, naming the block and the accepted types', () => {
+    const document = { name: 'Main', variables, blocks: [{ id: 'b1', type: 'FOO', position: { x: 0, y: 0 } }], connections: [] };
+    const error = failure(loadFBDFile('Main.fbd.json', JSON.stringify(document), []));
+    expect(error.details).toEqual([
+      expect.objectContaining({ path: 'blocks[0].type', found: 'FOO', acceptedValues: expect.arrayContaining([...FBD_SPECIAL_BLOCKS, 'TON', 'AND']) }),
+    ]);
+    expect(error.violations[0]).toMatch(/^blocks\[0\]\.type: unknown block type 'FOO' of block 'b1'; accepted values: constant, variable, input, output, /);
+  });
+
+  it('SFC: an action qualifier outside the translated ones names the step action and N, S, R, L, D, P, P0, P1', () => {
+    const document = {
+      name: 'Main',
+      steps: [{ id: 's1', name: 'Idle', isInitial: true, position: { x: 0, y: 0 }, actions: [{ actionName: 'A', qualifier: 'X' }] }],
+      transitions: [],
+      actions: [{ id: 'A', name: 'A', body: '' }],
+    };
+    const error = failure(loadSFCFile('Main.sfc.json', JSON.stringify(document)));
+    expect(error.details).toEqual([
+      {
+        path: 'steps[0].actions[0].qualifier',
+        message: "invalid value 'X'; accepted values: N, S, R, L, D, P, P0, P1",
+        found: 'X',
+        acceptedValues: [...SFC_QUALIFIERS],
+      },
+    ]);
+  });
+
+  it('a violation without a closed set of values keeps its place and message, and no accepted values', () => {
+    const error = failure(loadLDFile('Main.ld.json', JSON.stringify({ name: 'Main', variables, rungs: {} })));
+    expect(error.details[0]).toEqual({ path: 'rungs', message: expect.any(String) });
+    expect(error.violations[0]).toBe(`rungs: ${error.details[0]!.message}`);
   });
 });

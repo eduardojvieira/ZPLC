@@ -31,6 +31,9 @@ import {
   withToolExecution,
 } from './toolApi';
 import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';
+import { formatById, type FormatId } from '../formats';
+import { LD_ELEMENT_TYPES } from '../models/visualFileLoad';
+import { SCENARIO_KINDS } from '../test-engine';
 
 const demo = fileURLToPath(new URL('../../projects/multitask_demo', import.meta.url));
 const blinky = fileURLToPath(new URL('../../projects/blinky', import.meta.url));
@@ -3429,6 +3432,133 @@ describe('program inputs in the debug map (IDE-024)', () => {
       expect(marked).toEqual(['Enable', 'Gain']);
       expect(vars.SensorWest!.region).toBe('IPI');
       expect(vars.SensorWest!.tags?.['zplc:input']).toBeUndefined();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('AIX-013 diagnostics name the place and the accepted values, and project validation reads visual files', () => {
+  const example = (id: FormatId, index = 0) => structuredClone(formatById(id).examples[index]!.content) as Record<string, any>;
+  async function beltWorkspace(files: Record<string, unknown>): Promise<string> {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-aix013-'));
+    const all: Record<string, unknown> = {
+      'zplc.json': {
+        schemaVersion: 2,
+        name: 'Belt',
+        version: '1.0.0',
+        tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Belt.ld'] }],
+      },
+      'src/Belt.ld.json': example('ld'),
+      ...files,
+    };
+    for (const [path, content] of Object.entries(all)) {
+      await mkdir(join(root, path, '..'), { recursive: true });
+      await writeFile(join(root, path), JSON.stringify(content, null, 2));
+    }
+    return root;
+  }
+
+  it('projectValidate refuses a Ladder file that does not load, naming the file, the place and the accepted values', async () => {
+    const broken = example('ld');
+    broken.rungs[0].grid[0][0].element.type = 'contact';
+    const root = await beltWorkspace({ 'src/Belt.ld.json': broken });
+    try {
+      const result = await projectValidate(root);
+      expect(result.ok).toBe(false);
+      expect(result.evidence.diagnostics).toEqual([
+        {
+          code: 'VISUAL_FILE_INVALID',
+          message: expect.stringMatching(/^rungs\[0\]\.grid\[0\]\[0\]\.element\.type: invalid value 'contact'; accepted values: left_rail, /),
+          path: 'src/Belt.ld.json',
+          jsonPath: 'rungs[0].grid[0][0].element.type',
+          found: 'contact',
+          acceptedValues: [...LD_ELEMENT_TYPES],
+        },
+      ]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('projectValidate refuses an FBD block of a type nobody declares, at validation and not only at the build', async () => {
+    const fbd = example('fbd');
+    fbd.blocks[2].type = 'ANDD';
+    const root = await beltWorkspace({ 'src/Guard.fbd.json': fbd });
+    try {
+      const result = await projectValidate(root);
+      expect(result.evidence.diagnostics).toEqual([
+        expect.objectContaining({ code: 'VISUAL_FILE_INVALID', path: 'src/Guard.fbd.json', jsonPath: 'blocks[2].type', found: 'ANDD' }),
+      ]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('projectValidate still accepts the worked example and every bundled project', async () => {
+    const root = await beltWorkspace({});
+    try {
+      await expect(projectValidate(root)).resolves.toMatchObject({ ok: true });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+    const projects = fileURLToPath(new URL('../../projects', import.meta.url));
+    const refused: string[] = [];
+    for (const name of (await readdir(projects)).sort()) {
+      if (!existsSync(join(projects, name, 'zplc.json'))) continue;
+      const result = await projectValidate(join(projects, name));
+      const visual = result.ok ? [] : result.evidence.diagnostics.filter((diagnostic) => diagnostic.code === 'VISUAL_FILE_INVALID');
+      if (visual.length > 0) refused.push(`${name}: ${JSON.stringify(visual)}`);
+    }
+    expect(refused).toEqual([]);
+  });
+
+  it('a scenario of an unknown expectation kind names the scenario, the place and the accepted kinds', async () => {
+    const scenario = example('scenario');
+    scenario.expectations[0].kind = 'SOMETIMES';
+    const root = await beltWorkspace({ 'tests/belt.scenario.json': scenario });
+    try {
+      const result = await testsRun(root);
+      expect(result.ok).toBe(false);
+      expect(result.evidence.diagnostics).toEqual([
+        {
+          code: 'TEST_SCENARIO_INVALID',
+          message: 'Test execution failed',
+          path: 'tests/belt.scenario.json',
+          jsonPath: 'expectations[0].kind',
+          found: 'SOMETIMES',
+          acceptedValues: [...SCENARIO_KINDS],
+          detail: expect.stringContaining('expectations[0].kind'),
+        },
+      ]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('a scene part outside the catalogue names the scene file, the place and the accepted parts', async () => {
+    const scene = example('scene');
+    scene.parts[0].part = 'conveyor';
+    const root = await beltWorkspace({
+      'scene.json': scene,
+      'plant-map.json': example('plant-map'),
+      'tests/belt.scenario.json': example('scenario', 1),
+    });
+    try {
+      const result = await testsRun(root);
+      expect(result.ok).toBe(false);
+      expect(result.evidence.diagnostics).toEqual([
+        {
+          code: 'TEST_SCENARIO_INVALID',
+          message: 'Test execution failed',
+          path: 'tests/belt.scenario.json',
+          file: 'scene.json',
+          jsonPath: 'parts[0].part',
+          found: 'conveyor',
+          acceptedValues: formatById('scene').acceptedValues.parts,
+          detail: expect.stringContaining('conveyor'),
+        },
+      ]);
     } finally {
       await rm(root, { recursive: true, force: true });
     }

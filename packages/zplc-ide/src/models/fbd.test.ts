@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 
-import { parseFBDModel, validateFBDModel } from './fbd';
+import { FBD_SPECIAL_BLOCKS, UnknownBlockTypeError, parseFBDModel, validateFBDModel } from './fbd';
+import { collectProjectBlocks } from './projectBlocks';
+import { blockElement } from './sourceElements';
 import { transpileFBDToST } from '../transpiler/fbdToST';
 
 const model = {
@@ -132,5 +134,38 @@ describe('FBD model validation', () => {
         blocks: [{ ...model.blocks[0], position: { x: Number.NaN, y: Number.POSITIVE_INFINITY } }, model.blocks[1]],
       }),
     ).toThrow('finite');
+  });
+});
+
+describe('AIX-013 parseFBDModel checks the type of each block', () => {
+  const withType = (type: string) => JSON.stringify({ ...model, blocks: [{ id: 'b1', type, position: { x: 0, y: 0 } }], connections: [] });
+
+  it('refuses an unknown type with its place, the type found and the accepted types, when the project blocks are known', () => {
+    let thrown: unknown;
+    try {
+      parseFBDModel(withType('FOO'), []);
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(UnknownBlockTypeError);
+    const error = thrown as UnknownBlockTypeError;
+    expect(error.path).toBe('blocks[0].type');
+    expect(error.found).toBe('FOO');
+    expect(error.acceptedValues.slice(0, 4)).toEqual([...FBD_SPECIAL_BLOCKS]);
+    expect(error.acceptedValues).toEqual(expect.arrayContaining(['TON', 'AND', 'MB_COIL', 'MQTT_PUBLISH']));
+    expect(error.element).toBe(blockElement('b1'));
+    expect(error.message).toMatch(/^Invalid FBD blocks\[0\]\.type: unknown block type 'FOO' of block 'b1'; accepted values: constant, variable, input, output, /);
+  });
+
+  it('accepts a block the project declares, and lists it among the accepted types', () => {
+    const blocks = collectProjectBlocks([
+      { name: 'Lib.st', language: 'ST', content: 'FUNCTION_BLOCK MyFB\nVAR_INPUT IN : BOOL; END_VAR\nVAR_OUTPUT Q : BOOL; END_VAR\nEND_FUNCTION_BLOCK' },
+    ]);
+    expect(parseFBDModel(withType('MyFB'), blocks).blocks[0]!.type).toBe('MyFB');
+    expect(() => parseFBDModel(withType('FOO'), blocks)).toThrow(/accepted values: .*MyFB/);
+  });
+
+  it('keeps accepting any type when the caller does not know the project blocks, as before', () => {
+    expect(parseFBDModel(withType('FOO')).blocks[0]!.type).toBe('FOO');
   });
 });
