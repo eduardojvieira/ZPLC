@@ -98,4 +98,20 @@ describe('the catalogue sheet', () => {
       }
     }
   }, 60000);
+
+  it('shows the five beam sensor kinds side by side, clear and detecting, each drawn its own way (owner decision 4)', () => {
+    const sensor = CATALOGUE.find((k) => k.id === 'sensor')!;
+    const kinds = ['diffuse', 'retro-reflective', 'inductive', 'capacitive', 'colour'];
+    expect(sensor.states.map((s) => s.label)).toEqual(kinds.flatMap((k) => [`${k}, clear`, `${k}, detecting`]));
+    const clear = sensor.states.filter((s) => s.label.endsWith('clear')).map((s) => catalogueView(sensor, s));
+    expect(clear.map((v) => v.state.kind)).toEqual(kinds);
+    const bodies = clear.map((v) =>
+      JSON.stringify(
+        partModel(v)!
+          .filter((p) => p.role !== 'beam')
+          .map((p) => [p.slot, p.shape, p.role]),
+      ),
+    );
+    expect(new Set(bodies).size).toBe(kinds.length);
+  });
 });

@@ -142,6 +142,52 @@ describe('sensor models (VIS-014)', () => {
   });
 });
 
+describe('sensor kinds (owner decision 4; VIS-014)', () => {
+  const KINDS = ['diffuse', 'retro-reflective', 'inductive', 'capacitive', 'colour'] as const;
+  /** The pieces of a beam sensor of each kind, as the core publishes it: the kind comes from its catalogue entry. */
+  async function kinds() {
+    const ids = ['sensor-diffuse', 'sensor-retro', 'sensor-inductive', 'sensor-capacitive', 'sensor-colour'];
+    const parts = ids.map((id, i) => ({
+      id: `s${i}`,
+      part: id,
+      name: `S${i}`,
+      position: [0, 0.5, i] as [number, number, number],
+      rotationYDeg: 0,
+      config: {},
+    }));
+    const { core, view } = await open({ schemaVersion: 1, name: 'kinds', parts, cameras: [] });
+    expect(core.snapshot().parts.map((v) => v.state.kind)).toEqual([...KINDS]);
+    return ids.map((_, i) => partModel(view(`s${i}`))!);
+  }
+  const signature = (pieces: readonly Piece[]) =>
+    JSON.stringify(pieces.filter((p) => !p.slot.startsWith('dash-')).map((p) => [p.slot, p.shape, p.role]));
+
+  it('each kind is built from a different set of pieces, at scene size', async () => {
+    const models = await kinds();
+    expect(new Set(models.map(signature)).size).toBe(KINDS.length);
+    const slots = models.map((m) => new Set(m.map((p) => p.slot)));
+    expect(slots[0]!.has('housing') && slots[0]!.has('lens')).toBe(true); // the diffuse sensor as it was
+    expect(slots[1]!.has('reflector')).toBe(true); // a reflector at the far end of the beam
+    expect(slots[2]!.has('barrel') && slots[2]!.has('nut-a') && slots[2]!.has('nut-b')).toBe(true); // a threaded metal barrel
+    expect(slots[3]!.has('barrel') && slots[3]!.has('knob')).toBe(true); // a plastic barrel with its sensitivity knob
+    expect(slots[4]!.has('lens-a') && slots[4]!.has('lens-b')).toBe(true); // a twin lens: emitter and receiver
+  });
+
+  it('the reflector stands where the beam ends, and the two barrels differ in material', async () => {
+    const [, retro, inductive, capacitive] = await kinds();
+    const beam = slot(retro!, 'dash-0');
+    expect(beam).toBeDefined();
+    const reflector = slot(retro!, 'reflector');
+    expect(reflector.at[0]).toBeCloseTo(1.5, 2); // the retro-reflective sensor's default range
+    expect(slot(inductive!, 'barrel').role).toBe('steel');
+    expect(slot(capacitive!, 'barrel').role).toBe('housing');
+  });
+
+  it('every kind keeps the cues of VIS-016: the output lamp, the bezel and the beam, solid or dashed', async () => {
+    for (const m of await kinds()) for (const s of ['lamp', 'bezel', 'beam', 'dash-0']) expect(slot(m, s)).toBeDefined();
+  });
+});
+
 describe('light array (VIS-014, VIS-016)', () => {
   it('VIS-014 a column at each end of the beams, at the heights the core casts them, each on a stand to the floor', async () => {
     const { view, model } = await open('height-sorting-turntable');
