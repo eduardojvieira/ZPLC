@@ -19,8 +19,8 @@ const { buildCourseOutlineRows, lessonNodeId, moduleNodeId, pathNodeId } = await
 const { LearnOutline } = await import('./LearnOutline');
 const { allOpenLessonRows, syntheticCourse } = await import('./syntheticCourse');
 
-const PASSED_ID = 'ld-what-is-a-plc'; // module 1, has a reading page
-const IN_PROGRESS_ID = 'first-blink-simulation'; // module 0, no reading page
+const PASSED_ID = 'ld-what-is-a-plc'; // module 1
+const IN_PROGRESS_ID = 'first-blink-simulation'; // module 0
 const AVAILABLE_ID = 'ld-scan-cycle'; // module 1, needs PASSED_ID
 const LOCKED_ID = 'scan-cycle-one-scan-memory'; // module 1, needs IN_PROGRESS_ID
 
@@ -304,18 +304,23 @@ describe('The Learn activity course outline (GDE-002)', () => {
   });
 
   it('GDE-002 choosing a lesson opens its reading page, or starts it when it has none', async () => {
-    expect(LESSON_INDEX.lessons.find((lesson) => lesson.id === PASSED_ID)!.reading).toBeDefined();
-    expect(LESSON_INDEX.lessons.find((lesson) => lesson.id === IN_PROGRESS_ID)!.reading).toBeFalsy();
+    // Which shipped lessons have a reading page changes as pages land, so both lessons are picked from the index when the test runs;
+    // every lesson is unlocked so that neither is held back by its prerequisites.
+    const withReading = LESSON_INDEX.lessons.find((lesson) => lesson.reading);
+    const withoutReading = LESSON_INDEX.lessons.find((lesson) => !lesson.reading);
+    expect(withReading).toBeDefined();
+    expect(withoutReading).toBeDefined();
+    dom.patchStore(useAppSettings, { settings: { ...useAppSettings.getState().settings, unlockAllLessons: true } } as never);
     const { user } = dom.render(<LearnOutline />);
-    await user.click(rowById(moduleNodeId(1)));
-    await user.click(moduleLesson(1, PASSED_ID));
-    expect(useLearnUi.getState().selected).toBe(PASSED_ID);
-    expect(useLearnUi.getState().reading).toBe(PASSED_ID);
+    await user.click(rowById(moduleNodeId(withReading!.module)));
+    await user.click(moduleLesson(withReading!.module, withReading!.id));
+    expect(useLearnUi.getState().selected).toBe(withReading!.id);
+    expect(useLearnUi.getState().reading).toBe(withReading!.id);
     expect(started).toEqual([]);
 
-    await user.click(rowById(moduleNodeId(0)));
-    await user.click(moduleLesson(0, IN_PROGRESS_ID));
-    expect(started).toEqual([IN_PROGRESS_ID]);
+    if (withoutReading!.module !== withReading!.module) await user.click(rowById(moduleNodeId(withoutReading!.module)));
+    await user.click(moduleLesson(withoutReading!.module, withoutReading!.id));
+    expect(started).toEqual([withoutReading!.id]);
   });
 
   it('GDE-002 the Learn activity shows the outline when no lesson workspace is open', () => {
