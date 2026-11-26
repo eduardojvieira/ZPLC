@@ -4,17 +4,17 @@ import { describe, expect, it } from 'bun:test';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { COMMAND_LIST } from '../../packages/zplc-ide/src/commands/registry';
-import { SURFACES } from '../../packages/zplc-ide/src/shell/surfaces';
+import { COMMAND_LIST } from '../commands/registry';
+import { SURFACES } from './surfaces';
 
-const ROOT = resolve(import.meta.dir, '../..');
+const ROOT = resolve(import.meta.dir, '../../../..');
 const INVENTORY = 'specs/014-zplc-2-1-release-quality/screens.md';
 // views.ts imports the React views; they load in a DOM with the project loader and Monaco stubbed, as surfaces.test.ts does.
-const { setupDom, stubMonaco, stubProjectLoader } = await import('../../packages/zplc-ide/src/test/dom');
+const { setupDom, stubMonaco, stubProjectLoader } = await import('../test/dom');
 await setupDom();
 await stubProjectLoader();
 await stubMonaco();
-const { PRIMARY_VIEWS, SECONDARY_VIEWS } = await import('../../packages/zplc-ide/src/shell/views');
+const { PRIMARY_VIEWS, SECONDARY_VIEWS } = await import('./views');
 const VIEW_SURFACES = [...Object.values(PRIMARY_VIEWS), ...Object.values(SECONDARY_VIEWS)].map((view) => view.surface);
 
 interface Row {
