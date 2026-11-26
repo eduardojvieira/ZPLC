@@ -35,7 +35,8 @@ export function BuildMenu({
       className="relative"
       ref={menuRef}
       onKeyDown={(event) => {
-        if (event.key === 'Escape') {
+        // Only an open menu owns Escape; on the closed trigger it belongs to the jump back from the command bar.
+        if (event.key === 'Escape' && open) {
           event.preventDefault();
           onClose(true);
         }

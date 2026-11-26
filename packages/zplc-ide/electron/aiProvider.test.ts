@@ -995,4 +995,56 @@ describe('assistant answer shapes (AI-14 / AIX-006)', () => {
     })}`;
     expect(await replyWith(fencedWithTrailingToolCall)).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
   });
+
+  // R-07: an ```st fence is not a json fence; the object inside it is read by the bare-object scan and must stay as strict as the bare form
+  const stFence = (body: string) => `\`\`\`st\n${body}\n\`\`\``;
+
+  it('AI-14 reads a structured answer inside an st fence as the bare object', async () => {
+    const bare = await replyWith(JSON.stringify(VALID_EDIT));
+    expect(bare).toMatchObject({ ok: true, changes: [{ path: 'src/Main.st', kind: 'modify', content: UPDATED_ST }] });
+    expect(await replyWith(stFence(JSON.stringify(VALID_EDIT)))).toEqual(bare);
+  });
+
+  it('AI-14 lets an st fence bypass no refusal of the structured answer', async () => {
+    const withManifest = async (content: string) => {
+      const directory = await fixture();
+      await writeFile(join(directory, 'workspace', 'zplc.json'), JSON.stringify({ name: 'P' }));
+      const provider = createAiProvider({
+        userDataPath: directory,
+        vault: vault(),
+        fetch: async () => new Response(JSON.stringify({ choices: [{ message: { content } }] })),
+      });
+      await provider.saveConfig({ enabled: true, endpoint: 'https://api.example.test', model: 'gpt-test' });
+      await provider.storeKey('secret');
+      return provider.request(join(directory, 'workspace'), { ...request, mode: 'edit' }, new AbortController().signal);
+    };
+    const manifest = (value: unknown) => JSON.stringify({ answer: 'x', changes: [{ path: 'zplc.json', content: JSON.stringify(value) }] });
+    // the same manifest change without the credential is accepted, so the credential is what refuses it
+    expect(await withManifest(stFence(manifest({ name: 'P', version: '1.0.0' })))).toMatchObject({ ok: true });
+    const credential = manifest({ name: 'P', network: { wifi: { password: 'hunter2' } } });
+    expect(await withManifest(credential)).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+    expect(await withManifest(stFence(credential))).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+
+    const refused: Array<[string, string]> = [
+      ['a top-level replacement', JSON.stringify({ answer: 'x', replacement: { path: 'src/Main.st', content: UPDATED_ST } })],
+      ['tool_calls', JSON.stringify({ ...VALID_EDIT, tool_calls: [{ name: 'deploy' }] })],
+      ['an unknown change key', JSON.stringify({ answer: 'x', changes: [{ path: 'src/Main.st', content: UPDATED_ST, extra: true }] })],
+    ];
+    for (const [label, body] of refused) {
+      expect(await replyWith(body), label).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+      expect(await replyWith(stFence(body)), `st fence: ${label}`).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+    }
+
+    const huge = JSON.stringify({ answer: 'x'.repeat(256 * 1024), changes: VALID_EDIT.changes });
+    expect(await replyWith(huge)).toEqual({ ok: false, code: 'AI_RESPONSE_LIMIT' });
+    expect(await replyWith(stFence(huge))).toEqual({ ok: false, code: 'AI_RESPONSE_LIMIT' });
+  });
+
+  it('AI-14 reads an st fence of Structured Text without a JSON object as no structured answer', async () => {
+    const message = `Here is the program:\n${stFence('PROGRAM Main\nVAR x : INT; END_VAR\nx := x + 1;\nEND_PROGRAM')}`;
+    const result = await replyWith(message);
+    expect(result).toMatchObject({ ok: true, answer: message });
+    expect(result).not.toHaveProperty('changes');
+    expect(result).not.toHaveProperty('proposals');
+  });
 });

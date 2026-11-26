@@ -19,7 +19,7 @@ Walk through a motor with seal-in, stop, and overload handling using the Motor S
 - Estimated time: 20 minutes
 - Languages: ST
 - Tracks: Simulation, Hardware
-- Reading page: no
+- Reading page: yes
 - Plant: none
 - Prerequisites: [set-reset-alarm-latch](./set-reset-alarm-latch.md)
 

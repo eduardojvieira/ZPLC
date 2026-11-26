@@ -2,19 +2,19 @@
 
 No necesita saber nada de PLC para empezar. Solo necesita esta computadora. Todo este curso se ejecuta en un laboratorio simulado dentro de ZPLC, así que no hacen falta placas, cables ni herramientas.
 
-Un **PLC** (controlador lógico programable) es una computadora pequeña y resistente fabricado para manejar máquinas: una cinta transportadora, una estación de empaque, una bomba, un portón. Vive en un gabinete de una fábrica y hace un solo trabajo durante años, sin pantalla, sin teclado y sin reiniciarse. Lo que lo hace especial es que está conectado directamente a la máquina, de modo que lo que decide el programa realmente mueve cosas.
+Un **PLC** (controlador lógico programable) es una computadora pequeña y resistente fabricada para manejar máquinas: una cinta transportadora, una estación de empaque, una bomba, un portón. Vive en un gabinete de una fábrica y hace un solo trabajo durante años, sin pantalla, sin teclado y sin reiniciarse. Lo que lo hace especial es que está conectado directamente a la máquina, de modo que lo que decide el programa realmente mueve cosas.
 
 ## Qué es un programa
 
-Un **programa** es una lista de instrucciones que una computadora sigue al pie de la letra. Una receta de cocina es una buena imagen: "si el agua hierve, agregue la pasta". Un programa de PLC se compone de muchas reglas pequeñas como esa, por ejemplo "si el botón de inicio está pulsado, encienda la lámpara". El PLC nunca se cansa, nunca olvida una regla y revisa todas las reglas una y otra vez, muchas veces por segundo.
+Un **programa** es una lista de instrucciones que una computadora sigue al pie de la letra. Una receta de cocina es una buena imagen: "si el agua hierve, agregue la pasta". Un programa de PLC se compone de muchas reglas pequeñas como esa, por ejemplo "si el pulsador de inicio está pulsado, encienda la lámpara". El PLC nunca se cansa, nunca olvida una regla y revisa todas las reglas una y otra vez, muchas veces por segundo.
 
 ## Entradas, un programa y salidas
 
 Todo sistema con PLC tiene las mismas tres partes.
 
-![Tres cajas en fila: una entrada, como un botón o un sensor, el programa que decide y una salida, como una lámpara o un motor. Las flechas muestran que el programa lee la entrada y escribe la salida.](images/plc-overview.svg)
+![Tres cajas en fila: una entrada, como un pulsador o un sensor, el programa que decide y una salida, como una lámpara o un motor. Las flechas muestran que el programa lee la entrada y escribe la salida.](images/plc-overview.svg)
 
-- Una **entrada** es una señal que llega al PLC desde el mundo: se pulsó un botón, una puerta está cerrada, llegó una caja.
+- Una **entrada** es una señal que llega al PLC desde el mundo: se accionó un pulsador, una puerta está cerrada, llegó una caja.
 - El **programa** lee las entradas y decide qué debe pasar.
 - Una **salida** es una señal que sale del PLC hacia el mundo: se enciende una lámpara, arranca un motor, se abre una válvula.
 
@@ -39,29 +39,7 @@ Un PLC reemplaza ese cableado por un programa. Para cambiar una regla, se cambia
 
 Un programa en diagrama de escalera se dibuja como una escalera acostada. Dos rieles verticales corren por los lados. Entre ellos van líneas horizontales llamadas **peldaños**. Cada peldaño es una regla. Se imagina que la energía fluye desde el riel izquierdo a lo largo del peldaño hasta el derecho. En el camino pasa por **contactos**, que leen una entrada o un valor guardado, y termina en una **bobina**, que escribe una salida.
 
-Aquí hay dos peldaños de un programa pequeño.
-
-```ld-figure
-src: reading/doorbell-and-porch.ld.json
-caption: Dos reglas independientes, un timbre y una luz de entrada
-```
-
-El primer peldaño dice: si DoorbellButton está pulsado, la energía llega a la bobina Chime y suena el timbre. El segundo peldaño dice: si NightSwitch está activado, la bobina PorchLight se enciende. Un contacto dibujado con dos barras verticales es un contacto **normalmente abierto**: deja pasar la energía solo cuando su variable es TRUE.
-
-## Pruébelo aquí mismo
-
-Esta es una simulación pequeña dentro de la página. Ejecuta el mismo programa que acaba de ver. Pulse Ejecutar, luego pulse y suelte el botón del timbre, y active y desactive el interruptor de noche. Observe cómo fluye la energía por los peldaños y cómo cambian las lámparas.
-
-```ld-try
-src: reading/doorbell-and-porch.ld.json
-inputs:
-  - { name: DoorbellButton, kind: push }
-  - { name: NightSwitch, kind: switch }
-outputs: [Chime, PorchLight]
-caption: Pulse y suelte el botón, luego mueva el interruptor de noche
-```
-
-Notará dos cosas. El timbre sigue al botón: suena solo mientras usted lo mantiene pulsado. La luz de entrada sigue al interruptor: queda encendida hasta que usted lo apaga, porque un interruptor se queda donde usted lo deja, y un pulsador no.
+Un contacto y una bobina llevan cada uno el nombre de una **variable**: un lugar con nombre donde el programa guarda un valor, como StartButton o Lamp. Un valor que solo puede ser TRUE o FALSE se llama **BOOL**. Un contacto dibujado con dos barras verticales es un contacto **normalmente abierto**: deja pasar la energía solo cuando su variable es TRUE.
 
 ## Qué significan el verde, el gris y el rojo
 
@@ -74,36 +52,57 @@ ZPLC usa los mismos colores en todas partes para que usted pueda leer una pantal
 
 El color nunca actúa solo. Cada estado tiene también una palabra, como TRUE o FALSE, y una forma, para que se pueda leer aunque no se distingan bien los colores.
 
-## Errores frecuentes
+## Ejemplo resuelto
 
-> [!NOTE]
-> Una **variable** es un lugar con nombre donde el programa guarda un valor, como StartButton o Lamp. Un valor que solo puede ser TRUE o FALSE se llama **BOOL**.
+La entrada de una casa tiene un pulsador de timbre y un interruptor de noche. El timbre debe sonar mientras el pulsador está pulsado, y la luz de entrada debe estar encendida mientras el interruptor de noche está activado. Dos reglas dan dos peldaños, uno por cada salida.
 
-- Pensar que el contacto es un botón. El contacto es el dibujo de una pregunta: "¿esta variable es TRUE?". El botón está afuera, en el mundo.
+```ld-figure
+src: reading/doorbell-and-porch.ld.json
+caption: Dos reglas independientes, un timbre y una luz de entrada
+```
+
+El primer peldaño dice: si DoorbellButton está pulsado, la energía llega a la bobina Chime y suena el timbre. El segundo peldaño dice: si NightSwitch está activado, la bobina PorchLight se enciende. Cada peldaño lee una entrada con un contacto normalmente abierto y acciona una salida con su bobina.
+
+La pequeña simulación de abajo ejecuta el mismo programa. Pulse Ejecutar, luego pulse y suelte el pulsador del timbre, y active y desactive el interruptor de noche. Observe cómo fluye la energía por los peldaños y cómo cambian las lámparas.
+
+```ld-try
+src: reading/doorbell-and-porch.ld.json
+inputs:
+  - { name: DoorbellButton, kind: push }
+  - { name: NightSwitch, kind: switch }
+outputs: [Chime, PorchLight]
+caption: Pulse y suelte el pulsador, luego mueva el interruptor de noche
+```
+
+Notará dos cosas. El timbre sigue al pulsador: suena solo mientras usted lo mantiene pulsado. La luz de entrada sigue al interruptor: queda encendida hasta que usted lo apaga, porque un interruptor se queda donde usted lo deja, y un pulsador no.
+
+## Errores comunes
+
+- Pensar que el contacto es un pulsador. El contacto es el dibujo de una pregunta: "¿esta variable es TRUE?". El pulsador está afuera, en el mundo.
 - Pensar que el programa se ejecuta una sola vez. Un PLC ejecuta su programa una y otra vez. La lección siguiente muestra cómo.
 - Olvidar la bobina. Un peldaño sin bobina no acciona nada.
 
 > [!WARNING]
-> En este curso el laboratorio simulado se puede romper sin riesgo. Una máquina real no. Un botón de parada de emergencia se cablea en el propio circuito de la máquina y nunca depende del programa del PLC. ZPLC no hace ninguna afirmación de seguridad, y nada de estas lecciones reemplaza un diseño de seguridad certificado.
+> El laboratorio simulado se puede romper sin riesgo; una máquina real no. Una parada de emergencia se cablea en el propio circuito de la máquina y nunca espera a un programa de PLC.
 
 ## Compruébelo usted
 
 ```quiz
 question: Una fotocélula ve una caja en una cinta y se lo avisa al PLC. En palabras de PLC, ¿qué es la fotocélula?
 options:
-  - { text: 'Una entrada, porque envía una señal al PLC', correct: true, feedback: Correcto. Un sensor le da una entrada al PLC. }
-  - { text: 'Una salida, porque está al final de la cinta', feedback: Una salida sale del PLC. La fotocélula envía información hacia adentro. }
-  - { text: 'El programa, porque decide qué hacer con la caja', feedback: El programa es la lista de reglas dentro del PLC. La fotocélula solo informa lo que ve. }
+  - { text: 'Una entrada, porque envía una señal al PLC', correct: true, feedback: 'Correcto. Un sensor le da una entrada al PLC.' }
+  - { text: 'Una salida, porque está al final de la cinta', feedback: 'Una salida sale del PLC. La fotocélula envía información hacia adentro.' }
+  - { text: 'El programa, porque decide qué hacer con la caja', feedback: 'El programa es la lista de reglas dentro del PLC. La fotocélula solo informa lo que ve.' }
 ```
 
 ```quiz
 question: En un peldaño de diagrama de escalera, ¿qué representa la bobina de la derecha?
 options:
-  - { text: 'Una salida que el peldaño enciende o apaga', correct: true, feedback: Correcto. Cuando la energía llega a la bobina, su salida se activa. }
-  - { text: 'Un botón que alguien pulsa', feedback: Los botones los leen los contactos de la izquierda. }
-  - { text: 'El tiempo que lleva ejecutándose el programa', feedback: El tiempo lo manejan los temporizadores, que vienen más adelante en el curso. }
+  - { text: 'Una salida que el peldaño enciende o apaga', correct: true, feedback: 'Correcto. Cuando la energía llega a la bobina, su salida se activa.' }
+  - { text: 'Un pulsador que alguien pulsa', feedback: 'Los pulsadores los leen los contactos de la izquierda.' }
+  - { text: 'El tiempo que lleva ejecutándose el programa', feedback: 'El tiempo lo manejan los temporizadores, que vienen más adelante en el curso.' }
 ```
 
 ## Qué hará en la práctica
 
-En la práctica abrirá un programa que tiene la bobina Lamp y una pieza que falta. Agregará un contacto normalmente abierto llamado StartButton, de modo que pulsar el botón encienda la lámpara. Luego pulsará Comprobar y verá cómo el laboratorio ejecuta su programa y compara el resultado con el plan de la lección. Su primer peldaño le tomará solo unos minutos.
+El programa inicial tiene un peldaño con la bobina Lamp y nada que lea el pulsador, así que la lámpara está encendida antes de que alguien pulse algo. Usted hará que la lámpara se encienda solo mientras StartButton está pulsado, y después pulsará {{ui:learn.check}} para ejecutar su programa con el plan de la lección. Su primer peldaño le tomará solo unos minutos.

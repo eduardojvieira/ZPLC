@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Lista de instrucciones: el resultado actual en un mando a dos manos",
-  "summary": "Lea un programa en lista de instrucciones como un resultado actual que cada línea combina con un operando, y úselo para habilitar una prensa solo cuando las dos manos están en los botones y la protección está cerrada.",
+  "summary": "Lea un programa en lista de instrucciones como un resultado actual que cada línea combina con un operando, y úselo para habilitar una prensa solo cuando las dos manos están en los pulsadores y la protección está cerrada.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el tiempo de respuesta, la redundancia ni el comportamiento ante fallas que necesita un dispositivo real de mando a dos manos.",
   "objectives": [
     "Lea un programa en lista de instrucciones (IL) como un resultado actual que cada instrucción combina con un operando, de arriba hacia abajo.",
@@ -11,25 +11,25 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/TwoHand.il cada línea es una instrucción. LD carga un operando en el resultado actual, AND le combina el operando siguiente y ST guarda el resultado en una salida; el resultado se conserva después de ST, así que el siguiente LD inicia una nueva línea de lógica. PressEnable debe estar en ON solo con LeftHand, RightHand y GuardClosed en ON. GuardLamp debe estar en ON cuando la protección está abierta (LDN carga lo contrario de un operando). OneHandWarning debe estar en ON cuando exactamente una mano está en su botón (XOR).",
-      "checkpoint": "Puede decir, para cada salida, las instrucciones que construyen su condición."
+      "body": "En src/TwoHand.il cada línea es una instrucción. LD carga un operando en el resultado actual, AND le combina el operando siguiente y ST guarda el resultado en una salida; el resultado se conserva después de ST, así que el siguiente LD inicia una nueva línea de lógica. PressEnable debe estar en ON solo con LeftHand, RightHand y GuardClosed en ON. GuardLamp debe estar en ON cuando la protección está abierta (LDN carga lo contrario de un operando). OneHandWarning debe estar en ON cuando exactamente una mano está en su pulsador (XOR).",
+      "checkpoint": "Usted puede decir, para cada salida, las instrucciones que construyen su condición."
     },
     {
       "key": "predict",
       "title": "Prediga",
       "body": "Antes de ejecutar, prediga las tres salidas a los {{t:20}}, {{t:30}} y {{t:40}} ms. Las entradas cambian cada {{t:10}} ms, así que avance un paso a la vez.",
-      "checkpoint": "{{v:TwoHand.PressEnable=true,TwoHand.GuardLamp=false,TwoHand.OneHandWarning=false@20|Solo PressEnable en ON}} a los {{t:20}} ms; {{v:TwoHand.PressEnable=false,TwoHand.GuardLamp=true,TwoHand.OneHandWarning=false@30|solo GuardLamp en ON}} a los {{t:30}} ms; {{v:TwoHand.PressEnable=false,TwoHand.GuardLamp=false,TwoHand.OneHandWarning=true@40|solo OneHandWarning en ON}} a los {{t:40}} ms."
+      "checkpoint": "{{v:TwoHand.PressEnable=true,TwoHand.GuardLamp=false,TwoHand.OneHandWarning=false@20|solo PressEnable en ON}} a los {{t:20}} ms; {{v:TwoHand.PressEnable=false,TwoHand.GuardLamp=true,TwoHand.OneHandWarning=false@30|solo GuardLamp en ON}} a los {{t:30}} ms; {{v:TwoHand.PressEnable=false,TwoHand.GuardLamp=false,TwoHand.OneHandWarning=true@40|solo OneHandWarning en ON}} a los {{t:40}} ms."
     },
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija este defecto del programa inicial, guárdelo y pulse Comprobar: El programa inicial carga LeftHand, le combina OR RightHand y lo guarda en PressEnable, así que PressEnable ya está en ON a los {{t:10}} ms con una sola mano, y las dos lámparas quedan fijas en OFF; reescriba los tres grupos de líneas, uno para cada salida, y guarde el archivo.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial carga LeftHand, le combina OR RightHand y lo guarda en PressEnable, así que PressEnable ya está en ON a los {{t:10}} ms con una sola mano, y las dos lámparas quedan fijas en OFF; reescriba los tres grupos de líneas, uno para cada salida, y guarde el archivo. PressEnable debe estar en ON solo con las dos manos en sus pulsadores y la protección cerrada, GuardLamp en ON mientras la protección está abierta y OneHandWarning en ON mientras exactamente una mano está en su pulsador. Escriba usted las instrucciones: las declaraciones ya están.",
+      "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta el programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario se llama TwoHand y contiene {{assertions}} aserciones."
     },
     {

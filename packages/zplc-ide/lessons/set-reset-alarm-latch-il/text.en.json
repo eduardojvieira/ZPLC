@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/AlarmLatch.il, S sets its operand to TRUE when the current result is TRUE and does nothing otherwise; R sets it to FALSE in the same way. Both outputs must stay ON after Fault drops and go OFF only when Ack is pressed. When Fault and Ack arrive together, SetFirst must stay ON and ResetFirst must go OFF, so SetFirst needs its R line before its S line, and ResetFirst the other way round.",
+      "body": "In src/AlarmLatch.il, S sets its operand to TRUE when the current result is TRUE and does nothing otherwise; R sets it to FALSE in the same way. Both outputs must stay ON after Fault drops and go OFF only when Ack is pressed. When Fault and Ack arrive together, SetFirst must stay ON and ResetFirst must go OFF.",
       "checkpoint": "You can say which of the two lines runs last, and so wins, for each output."
     },
     {
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter flaw, save it, then press Check: The starting program copies Fault to both outputs with ST, so they go OFF at {{t:20}} ms when the fault is gone; replace it with S and R lines, loading Ack and then Fault for SetFirst, and Fault and then Ack for ResetFirst, and save the file.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program copies Fault to both outputs with ST, so they go OFF at {{t:20}} ms when the fault is gone. Change it so that each output keeps its value after Fault drops until Ack, and so that Fault wins for SetFirst and Ack wins for ResetFirst when both arrive together. Write the lines yourself: the declarations are already there.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The scenario is named AlarmLatch and contains {{assertions}} assertions."
     },
     {
@@ -55,7 +55,5 @@
       "text": "SetFirst: LD Ack, R SetFirst, LD Fault, S SetFirst. ResetFirst: LD Fault, S ResetFirst, LD Ack, R ResetFirst."
     }
   ],
-  "faultCases": [
-    "The starting program copies Fault to both outputs with ST, so they go OFF at {{t:20}} ms when the fault is gone; replace it with S and R lines, loading Ack and then Fault for SetFirst, and Fault and then Ack for ResetFirst, and save the file."
-  ]
+  "faultCases": ["The starting program copies Fault to both outputs with ST, so they go OFF at {{t:20}} ms when the fault is gone."]
 }

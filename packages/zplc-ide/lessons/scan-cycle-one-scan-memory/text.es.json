@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Ciclo de escaneo y memoria de un ciclo",
   "summary": "Siga cómo una entrada produce la salida actual y una copia demorada un ciclo.",
-  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra los tiempos en el dispositivo de destino, las instantáneas bajo interrupciones físicas ni el rebote eléctrico.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra a qué velocidad hace sus ciclos un controlador real ni cómo rebota un pulsador real.",
   "objectives": [
     "Compruebe que una variable conserva su valor de un ciclo al siguiente.",
     "Construya un retardo de un ciclo y un pulso de un ciclo con una única memoria."
@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/ScanSnapshot.st, use Button, Current, Delayed y RisingPulse y agregue la memoria Previous.",
-      "checkpoint": "Previous se actualiza al final del ciclo."
+      "body": "En src/ScanSnapshot.st, Button es la entrada y Current, Delayed y RisingPulse son las salidas. Current ya copia Button; Delayed y RisingPulse necesitan saber cómo estaba Button en el ciclo anterior.",
+      "checkpoint": "Usted puede decir qué valor guarda una variable de memoria cuando empieza un ciclo."
     },
     {
       "key": "predict",
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial no tiene memoria de un ciclo; conserve Previous, calcule Delayed a partir de Previous, derive RisingPulse de Current y Delayed y actualice Previous al final.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial no tiene memoria de un ciclo, así que RisingPulse sigue en FALSE a los {{t:10}} ms y Delayed sigue en FALSE a los {{t:20}} ms. Haga que Delayed muestre Button un ciclo tarde y que RisingPulse sea TRUE solo en el ciclo en que Button se enciende. Declare usted mismo la memoria que necesita.",
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario requerido se llama ScanSnapshot y contiene {{assertions}} aserciones."
     },
     {
@@ -40,15 +40,15 @@
     },
     {
       "key": "evidence",
-      "title": "Evidencia",
-      "body": "AT/RISING/FALLING/NEVER cubren el escenario; los hashes y la traza corresponden al escenario que se ejecutó.",
-      "checkpoint": "La evidencia registrada corresponde al escenario ejecutado."
+      "title": "Qué mira Comprobar",
+      "body": "El escenario mira las tres salidas a los {{t:0}}, {{t:10}}, {{t:20}} y {{t:30}} ms, el ciclo en que RisingPulse y Delayed se encienden y se apagan, y una combinación que nunca debe ocurrir: Delayed y RisingPulse en TRUE en el mismo ciclo.",
+      "checkpoint": "Usted puede decir por qué Delayed y RisingPulse nunca están en TRUE en el mismo ciclo."
     },
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "Actualizar Previous al principio rompería el detector de flancos.",
-      "checkpoint": "La memoria debe conservar el valor anterior hasta el final del ciclo."
+      "body": "¿Qué haría RisingPulse si la memoria se actualizara primero, al comienzo del programa?",
+      "checkpoint": "La memoria ya guardaría el Button de este ciclo, así que RisingPulse nunca se encendería: una memoria conserva el valor anterior solo hasta la línea que la actualiza."
     }
   ],
   "hints": [
@@ -62,6 +62,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial no tiene memoria de un ciclo; conserve Previous, calcule Delayed a partir de Previous, derive RisingPulse de Current y Delayed y actualice Previous al final."
+    "El programa inicial no tiene memoria de un ciclo, así que RisingPulse sigue en FALSE a los {{t:10}} ms y Delayed sigue en FALSE a los {{t:20}} ms."
   ]
 }

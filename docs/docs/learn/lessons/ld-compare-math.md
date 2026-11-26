@@ -39,7 +39,7 @@ Use comparison boxes as conditions and math boxes as calculations in Ladder, and
 
 ## What the evidence covers
 
-Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the behavior of a real level sensor, its wiring or the timing of a real tank.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real level sensor reads, how it is wired or how fast a real tank fills.
 
 ## On a board
 

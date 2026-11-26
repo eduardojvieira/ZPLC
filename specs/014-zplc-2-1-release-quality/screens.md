@@ -2,7 +2,7 @@
 
 Every surface a person sees, with an id, where it lives, its states, how a person reaches it, and the journey or capture that already shows it. Built at `b3cde14d` from the command registry (`packages/zplc-ide/src/commands/registry.ts`), the surface table (`packages/zplc-ide/src/shell/surfaces.ts`) and the view table (`packages/zplc-ide/src/shell/views.ts`), then from the dialogs, notices, Learn, the 3D view and the assistant found in the code.
 
-How the check reads this page (`tools/ci/screens-inventory.test.ts`):
+How the check reads this page (`packages/zplc-ide/src/shell/screensInventory.test.ts`):
 
 - A row is a table line whose first cell is a backticked id. Ids are unique.
 - **Registry** says which table holds the id. A row marked `surfaces.ts` or `views.ts` must name an id that table has, and every id of those tables must have a row marked so. `none` means the surface is not in a registry yet; it is listed here so that a capture can name it.

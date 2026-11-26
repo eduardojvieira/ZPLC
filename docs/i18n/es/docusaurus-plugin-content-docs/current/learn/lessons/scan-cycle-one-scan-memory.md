@@ -19,7 +19,7 @@ Siga cómo una entrada produce la salida actual y una copia demorada un ciclo.
 - Tiempo estimado: 10 minutos
 - Lenguajes: ST
 - Rutas: Simulación, Hardware
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [first-blink-simulation](./first-blink-simulation.md)
 
@@ -35,12 +35,12 @@ Siga cómo una entrada produce la salida actual y una copia demorada un ciclo.
 3. **Edite**
 4. **Ejecute**
 5. **Observe**
-6. **Evidencia**
+6. **Qué mira Comprobar**
 7. **Reflexione**
 
 ## Qué cubre la evidencia
 
-Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra los tiempos en el dispositivo de destino, las instantáneas bajo interrupciones físicas ni el rebote eléctrico.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra a qué velocidad hace sus ciclos un controlador real ni cómo rebota un pulsador real.
 
 ## Cableado
 

@@ -39,7 +39,7 @@ Complete un parpadeador de 500 ms en diagrama de escalera, hecho con dos tempori
 
 ## Qué cubre la evidencia
 
-Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el período eléctrico ni el brillo.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cuánto brilla una lámpara real ni con qué exactitud un controlador real mantiene el período.
 
 ## Cableado
 

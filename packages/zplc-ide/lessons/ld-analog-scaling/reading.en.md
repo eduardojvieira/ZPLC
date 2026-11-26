@@ -18,28 +18,7 @@ For a straight line from zero, the formula is the raw value times the span of th
 
 `Level = Raw * 2000 / 4095`
 
-In Ladder these are two boxes in one rung: `MUL` and then `DIV`. The next figure scales a tank of 2000 mm. A third box, `LIMIT`, keeps a value between a minimum and a maximum, so a sensor that reports something strange never pushes the program out of range.
-
-```ld-figure
-src: reading/tank-gauge.ld.json
-rung: 5
-caption: Counts to millimeters, in two boxes
-```
-
-## Try it
-
-This lab has no sensor, so a knob stands in for it: each press of TurnUp adds 512 counts and each press of TurnDown takes 512 away. Press TurnUp seven times, watching the two lamps, and then press TurnDown once.
-
-```ld-try
-src: reading/tank-gauge.ld.json
-inputs:
-  - { name: TurnUp, kind: push }
-  - { name: TurnDown, kind: push }
-outputs: [Warn, High]
-caption: Warn needs 1000 mm; High needs more than 1500 mm
-```
-
-After four presses the level is 1000 mm and `Warn` turns on. After six presses it is exactly 1500 mm, and `High` stays off because its comparison is `GT`. The seventh press gives 1750 mm and `High` turns on. This is a level alarm driven by a comparison box, with the threshold written in engineering units and not in counts.
+In Ladder these are two boxes in one rung: `MUL` and then `DIV`. A third box, `LIMIT`, keeps a value between a minimum and a maximum, so a sensor that reports something strange never pushes the program out of range.
 
 ## Two traps of integer arithmetic
 
@@ -50,6 +29,29 @@ After four presses the level is 1000 mm and `Warn` turns on. After six presses i
 > [!WARNING]
 > Overflow gives no error. Before you pick a type, work out the biggest value that the intermediate product can take, with the sensor at full scale. If it does not fit, the type is wrong.
 
+## Worked example
+
+A conveyor belt runs at any speed from 0 to 1500 mm/s, and a speed sensor reports it in counts from 0 to 4095. A lamp `Moving` must light from 750 mm/s and a lamp `Overspeed` above 1200 mm/s. The figure scales the counts to millimeters per second, `Speed = Raw * 1500 / 4095`: `MUL` first, into a DINT, then `DIV`. At full scale the product is 6 142 500, far above what an INT holds.
+
+```ld-figure
+src: reading/belt-speed.ld.json
+rung: 5
+caption: Counts to millimeters per second, in two boxes
+```
+
+This lab has no sensor, so a knob stands in for it: each press of TurnUp adds 512 counts and each press of TurnDown takes 512 away. Press TurnUp seven times, watching the two lamps, and then press TurnDown once.
+
+```ld-try
+src: reading/belt-speed.ld.json
+inputs:
+  - { name: TurnUp, kind: push }
+  - { name: TurnDown, kind: push }
+outputs: [Moving, Overspeed]
+caption: Moving needs 750 mm/s; Overspeed needs more than 1200 mm/s
+```
+
+After four presses the knob is at 2048 counts: 2048 times 1500 is 3 072 000, divided by 4095 it gives 750, and `Moving` turns on. After six presses the speed is 1125 mm/s and `Overspeed` stays off. The seventh press gives 1312 mm/s and `Overspeed` turns on; one press of TurnDown takes it back to 1125. Both thresholds are written in engineering units, not in counts.
+
 ## Common mistakes
 
 - Comparing counts with a limit written in percent. Scale first, then compare.
@@ -58,26 +60,26 @@ After four presses the level is 1000 mm and `Warn` turns on. After six presses i
 - Forgetting that the division is by the span of the counts, 4095, and not by 4096.
 
 > [!WARNING]
-> A level alarm in the program is information. A high level cut-off that protects people or equipment is wired in hardware, and an emergency stop never depends on the PLC program. ZPLC makes no safety claim about any lesson.
+> A level alarm in the program is information. A high level cut-off that protects people or equipment is wired in hardware, and an emergency stop never depends on the PLC program.
 
 ## Check yourself
 
 ```quiz
-question: Raw is 3000 counts. Which order gives the percentage 73 for a 0..100 range, using whole numbers and a DINT?
+question: On the belt of the worked example, Raw is 3000 counts. Which order gives the speed 1098 mm/s for the 0..1500 range, using whole numbers and a DINT?
 options:
-  - { text: 'Raw * 100 / 4095', correct: true, feedback: Right. 300000 divided by 4095 is 73 with the decimals dropped. }
-  - { text: 'Raw / 4095 * 100', feedback: Raw divided by 4095 is 0 as a whole number, and 0 times 100 is still 0. }
-  - { text: 'Raw / 100 * 4095', feedback: This has the span the wrong way around and does not give a percentage. }
+  - { text: 'Raw * 1500 / 4095', correct: true, feedback: 'Right. 3000 times 1500 is 4 500 000, and divided by 4095 it is 1098 with the decimals dropped.' }
+  - { text: 'Raw / 4095 * 1500', feedback: 'Raw divided by 4095 is 0 as a whole number, and 0 times 1500 is still 0.' }
+  - { text: 'Raw / 1500 * 4095', feedback: 'This has the spans the wrong way around: it gives 8190, which is not a speed on a 0..1500 belt.' }
 ```
 
 ```quiz
 question: Why is the intermediate variable a DINT and not an INT?
 options:
-  - { text: 'The product of the counts and the span does not fit in 16 bits', correct: true, feedback: Right. An INT would wrap around with no error and the level would be wrong. }
-  - { text: 'A DINT is faster', feedback: Speed is not the reason. The product has to fit in the variable. }
-  - { text: 'An INT cannot hold negative numbers', feedback: An INT holds negative numbers. The problem is its size. }
+  - { text: 'The product of the counts and the span does not fit in 16 bits', correct: true, feedback: 'Right. An INT would wrap around with no error and the level would be wrong.' }
+  - { text: 'A DINT is faster', feedback: 'Speed is not the reason. The product has to fit in the variable.' }
+  - { text: 'An INT cannot hold negative numbers', feedback: 'An INT holds negative numbers. The problem is its size.' }
 ```
 
 ## What you will do in the practice
 
-In the practice, the program has no sensor either: some blocks at the top stand in for a potentiometer, adding 410 counts on each scan while `Enable` is on, and a `LIMIT` box keeps the count at 4095. The rung that turns counts into percent is missing. You will add `MUL` and `DIV` in the right order, so that `Warn` turns on at {{t:50}} ms and `HighLevel` at {{t:80}} ms.
+In the practice, the program has no sensor either: some blocks at the top stand in for a potentiometer, adding 410 counts on each scan while `Enable` is on, and a `LIMIT` box keeps the count at 4095. The rung that turns counts into percent is missing. You will add it, so that the level reads in percent and `Warn` turns on at {{t:50}} ms and `HighLevel` at {{t:80}} ms. Then press {{ui:learn.check}}.

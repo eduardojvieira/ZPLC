@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial usa un semiperíodo de dos segundos, así que Lamp sigue en OFF cuando el escenario la comprueba a los {{t:750}} ms. Cambie HalfPeriod de T#2000ms a {{t:500}} ms, escrito como T#500ms, y guarde el archivo.",
-      "checkpoint": "HalfPeriod vale T#500ms y el archivo está guardado."
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial usa un semiperíodo de dos segundos, así que Lamp sigue en OFF cuando el escenario la comprueba a los {{t:750}} ms. Cambie el valor de HalfPeriod para que Lamp esté apagada medio segundo y luego encendida medio segundo, y guarde el archivo.",
+      "checkpoint": "HalfPeriod vale medio segundo y el archivo está guardado."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Ejecutar (F5) en la barra de herramientas. Una sola pulsación guarda el proyecto, lo compila si la compilación es antigua, inicia el simulador, carga el programa y lo ejecuta, y un aviso nombra el paso en curso; si la compilación falla, los problemas aparecen en la lista y no se ejecuta nada. Abra la pestaña Observación y vea cómo Lamp se enciende y se apaga. Después pulse Comprobar: ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "body": "Pulse {{ui:toolbar.run.label}} (F5) en la barra de herramientas. Una sola pulsación guarda el proyecto, lo compila si la compilación es antigua, inicia el simulador, carga el programa y lo ejecuta, y un aviso nombra el paso en curso; si la compilación falla, los problemas aparecen en la lista y no se ejecuta nada. Abra la pestaña {{ui:panel.watch}} y vea cómo Lamp se enciende y se apaga. Después pulse {{ui:learn.check}}: ZPLC ejecuta el programa guardado con el escenario de esta lección.",
       "checkpoint": "El escenario se llama FirstBlink y contiene {{assertions}} aserciones; ZPLC enumera cada una de las que fallaron."
     },
     {

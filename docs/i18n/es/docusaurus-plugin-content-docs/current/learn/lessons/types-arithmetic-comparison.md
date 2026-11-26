@@ -1,12 +1,12 @@
 ---
-title: "Tipos, aritmética y comparación: un total y tres cintas"
+title: "Tipos, aritmética y comparación: un total y tres rangos"
 sidebar_label: "types-arithmetic-comparison"
 description: "La lección types-arithmetic-comparison: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Tipos, aritmética y comparación: un total y tres cintas
+# Tipos, aritmética y comparación: un total y tres rangos
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/types-arithmetic-comparison. Do not edit. >>> */}
 
@@ -19,14 +19,14 @@ Mantenga un total acumulado en una variable INT, súmele un valor en cada pulsac
 - Tiempo estimado: 20 minutos
 - Lenguajes: ST
 - Rutas: Simulación, Hardware
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [edge-counter-pulses](./edge-counter-pulses.md)
 
 ## Objetivos
 
 - Use una variable INT para un número y una variable BOOL para un sí o un no, y vea que una comparación convierte un número en un BOOL.
-- Sume a un número solo en el flanco ascendente de una entrada, para que un botón mantenido varios ciclos cuente una vez.
+- Sume a un número solo en el flanco ascendente de una entrada, para que un pulsador mantenido varios ciclos cuente una vez.
 
 ## Etapas
 

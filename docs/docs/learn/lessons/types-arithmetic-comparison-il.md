@@ -19,7 +19,7 @@ Keep a running total in an INT variable, add to it on each press with ADD and a 
 - Estimated time: 20 minutes
 - Languages: IL
 - Tracks: Simulation, Hardware
-- Reading page: no
+- Reading page: yes
 - Plant: none
 - Prerequisites: [types-arithmetic-comparison](./types-arithmetic-comparison.md), [edge-counter-pulses-il](./edge-counter-pulses-il.md)
 

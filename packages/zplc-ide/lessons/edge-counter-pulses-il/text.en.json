@@ -2,53 +2,53 @@
   "schemaVersion": 1,
   "title": "Instruction List: counting pulses with a CTU",
   "summary": "Call a CTU counter from Instruction List to count three discrete pulses, read its output with LD and reset the count.",
-  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show physical sensors or contact bounce.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real sensor bounces or what a real input does with a pulse shorter than a scan.",
   "objectives": [
-    "Call a CTU counter with CAL and read its output with LD Count.Q.",
+    "Call a CTU instance with CAL on every scan, passing its inputs, and read its output after the call.",
     "Count the rising edges of PulseInput up to a preset of 3, and clear the count with Reset."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/EdgeCounter.il the counter Count (CTU) is declared but not called. Call it every scan with CAL Count(CU := PulseInput, R := Reset, PV := 3), then load Count.Q and store it in CountReached. CTU counts each rising edge of CU once, however long the pulse stays high, so you do not detect the edge yourself.",
-      "checkpoint": "CountReached is ON from the third pulse until Reset clears the count."
+      "body": "In src/EdgeCounter.il the counter Count (CTU) is declared but never called, and the program stores FALSE in CountReached. Make CountReached turn ON at the third rising edge of PulseInput and stay ON until Reset clears the count.",
+      "checkpoint": "You can say which instruction runs a function block in IL, and why the line that reads its output comes after it."
     },
     {
       "key": "predict",
       "title": "Predict",
-      "body": "Before running, predict when the counter reaches PV=3.",
+      "body": "The scenario gives PulseInput three pulses, rising at {{t:10}}, {{t:30}} and {{t:50}} ms, and presses Reset at {{t:70}} ms. Predict CountReached at {{t:0}}, {{t:10}}, {{t:30}}, {{t:50}} and {{t:70}} ms.",
       "checkpoint": "CountReached stays OFF at {{v:EdgeCounter.CountReached=false@0|0}}, {{v:EdgeCounter.CountReached=false@10|10}} and {{v:EdgeCounter.CountReached=false@30|30}} ms; turns ON at {{v:EdgeCounter.CountReached=true@50|50}} after the third edge; returns OFF at {{v:EdgeCounter.CountReached=false@70|70}} with Reset."
     },
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starting program stores FALSE in CountReached and never calls the counter; call Count with PV := 3 so that CountReached turns ON on the third rising edge and Reset turns it OFF.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program stores FALSE in CountReached and never calls the counter, so CountReached stays OFF after the third pulse. Change it so that CountReached turns ON at the third rising edge of PulseInput and Reset turns it OFF again. Write the instructions yourself: the declaration is already there.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The scenario is named EdgeCounter and contains {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Compare {{t:10}}, {{t:30}}, {{t:50}} and {{t:70}} ms with CountReached.",
-      "checkpoint": "The third pulse reaches PV=3; Reset dominates and returns CountReached to OFF."
+      "body": "Follow PulseInput and CountReached in the trace: nothing changes on the first two pulses, CountReached rises with the third at {{t:50}} ms, and it falls when Reset rises at {{t:70}} ms.",
+      "checkpoint": "CountReached rises once, at the third rising edge, and falls once, with Reset."
     },
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Move the CAL after the LD Count.Q line, so that the output is read before the counter runs. What changes, and in which scan?",
-      "checkpoint": "The output would show the count of the previous scan, one scan late. In IL the order of the lines is the order of execution. The AT, RISING and FALLING assertions cover this logical sequence only."
+      "body": "Move the line that reads the output of Count above the CAL, so that the output is read before the counter runs. What changes, and in which scan?",
+      "checkpoint": "The output would show the count of the previous scan, one scan late. In IL the order of the lines is the order in which they run."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "A CTU already counts only rising edges of CU, so a long pulse still counts once. CAL runs the counter with its inputs; LD Count.Q reads its output."
+      "text": "A CTU already counts only the rising edges of CU, so a long pulse counts once. CAL runs the counter with its inputs; after it, load the output Q of Count and store it."
     },
     {
       "level": 2,
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "The starting program stores FALSE in CountReached and never calls the counter; call Count with PV := 3 so that CountReached turns ON on the third rising edge and Reset turns it OFF."
+    "The starting program stores FALSE in CountReached and never calls the counter, so CountReached stays OFF after the third pulse."
   ]
 }
