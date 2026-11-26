@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial multiplica Raw por 100 pero nunca divide por 4095, así que LIMIT recorta el producto a 100 desde el primer ciclo y HighLevel se enciende a los {{t:10}} ms; inserte entre MUL y LIMIT un bloque DIV que divida el producto por 4095. Coloque un bloque DIV y una constante 4095 de tipo DINT, conecte MUL.OUT a DIV.IN1 y la constante a DIV.IN2, y luego conecte DIV.OUT a LIMIT.IN en lugar del cable que viene de MUL.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "body": "Corrija el diagrama inicial, guárdelo y pulse {{ui:learn.check}}. El diagrama inicial multiplica Raw por 100 pero nunca divide por 4095, así que LIMIT recorta el producto a 100 desde el primer ciclo y HighLevel se enciende a los {{t:10}} ms. Cámbielo para que Level sea el nivel en porcentaje, de 0 a 100, antes del LIMIT y de la comparación con 75. Coloque y conecte usted el bloque que falta: el sustituto de Raw, el MUL, el LIMIT y la comparación ya están.",
+      "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta el programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario se llama LevelScale y contiene {{assertions}} aserciones."
     },
     {
