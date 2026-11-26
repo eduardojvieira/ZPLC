@@ -47,6 +47,25 @@ static void trace_read_path(const char *path) {
   }
 }
 
+void zplc_host_stdio_set_binary(void) {
+#ifdef _WIN32
+  static int done = 0;
+
+  if (done != 0) {
+    return;
+  }
+  done = 1;
+  /*
+   * The messages are bytes: no CR/LF translation and no Ctrl-Z end of file, on the input
+   * and on the responses. stdout is flushed first so nothing already written changes mode
+   * halfway.
+   */
+  (void)fflush(stdout);
+  (void)_setmode(_fileno(stdin), _O_BINARY);
+  (void)_setmode(_fileno(stdout), _O_BINARY);
+#endif
+}
+
 static int take_pending_line(char *buffer, size_t buffer_size, int at_eof, zplc_host_stdio_result_t *result) {
   return zplc_host_take_line(pending.data, &pending.len, sizeof(pending.data), buffer, buffer_size, at_eof, result);
 }
@@ -185,14 +204,8 @@ zplc_host_stdio_result_t zplc_host_wait_for_request_line(FILE *input, char *buff
        */
       pending_is_pipe = (PeekNamedPipe(input_handle, NULL, 0U, NULL, &available, NULL) != 0 || GetLastError() == ERROR_BROKEN_PIPE);
     }
-    /*
-     * The messages are bytes: no CR/LF translation and no Ctrl-Z end of file, on the
-     * input and on the responses. stdout is flushed first so nothing already written
-     * changes mode halfway.
-     */
-    (void)fflush(stdout);
-    (void)_setmode(fd, _O_BINARY);
-    (void)_setmode(_fileno(stdout), _O_BINARY);
+    /* main() sets this at startup; the guard makes this call a no-op then. */
+    zplc_host_stdio_set_binary();
     trace_read_path(pending_is_pipe ? "the pipe handle (PeekNamedPipe, ReadFile)" : "the FILE stream (WaitForSingleObject, fgets)");
 #else
     trace_read_path("the descriptor (select, read)");
