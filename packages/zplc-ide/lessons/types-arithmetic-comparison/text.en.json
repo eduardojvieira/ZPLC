@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program declares Total and writes the three bands but never changes Total, so Low stays ON for ever. Change it so that each press of Step adds 5 to Total once, however long the press lasts, and Total goes back to 0 while Reset is TRUE. Write the statements yourself: the declarations and the three comparisons are already there.",
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starter declares Total and writes the three bands but never changes Total, so Low stays ON for ever. Change it so that each press of Step adds 5 to Total once, however long the press lasts, and Total goes back to 0 while Reset is TRUE. Write the statements yourself: the declarations and the three comparisons are already there.",
       "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "The starter declares Total and the three comparisons but never changes Total, so Low stays ON for ever; add 5 to Total on each rising edge of Step and clear it while Reset is TRUE."
+    "The starter declares Total and writes the three bands but never changes Total, so Low stays ON for ever."
   ]
 }

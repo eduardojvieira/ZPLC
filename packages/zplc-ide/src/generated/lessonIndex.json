@@ -7929,7 +7929,7 @@
     },
     {
       "id": "types-arithmetic-comparison",
-      "version": 5,
+      "version": 6,
       "order": 52,
       "module": 4,
       "level": "intermediate",
@@ -8052,7 +8052,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct the starting program, save it, then press Check. The starting program declares Total and writes the three bands but never changes Total, so Low stays ON for ever. Change it so that each press of Step adds 5 to Total once, however long the press lasts, and Total goes back to 0 while Reset is TRUE. Write the statements yourself: the declarations and the three comparisons are already there.",
+              "body": "Correct the starting program, save it, then press Check. The starter declares Total and writes the three bands but never changes Total, so Low stays ON for ever. Change it so that each press of Step adds 5 to Total once, however long the press lasts, and Total goes back to 0 while Reset is TRUE. Write the statements yourself: the declarations and the three comparisons are already there.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -8085,7 +8085,7 @@
             }
           ],
           "faultCases": [
-            "The starter declares Total and the three comparisons but never changes Total, so Low stays ON for ever; add 5 to Total on each rising edge of Step and clear it while Reset is TRUE."
+            "The starter declares Total and writes the three bands but never changes Total, so Low stays ON for ever."
           ]
         },
         "es": {
@@ -8145,7 +8145,7 @@
             }
           ],
           "faultCases": [
-            "El programa inicial declara Total y las tres comparaciones pero nunca cambia Total, así que Low queda en ON para siempre; sume 5 a Total en cada flanco ascendente de Step y bórrelo mientras Reset sea TRUE."
+            "El programa inicial declara Total y escribe los tres rangos pero nunca cambia Total, así que Low queda en ON para siempre."
           ]
         }
       },
@@ -10496,7 +10496,7 @@
     },
     {
       "id": "analog-scaling-integer",
-      "version": 5,
+      "version": 6,
       "order": 74,
       "module": 4,
       "level": "intermediate",
@@ -10599,7 +10599,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct the starting program, save it, then press Check. The starting program divides before it multiplies, so the integer division Raw / 1000 gives 0 until Raw reaches 1000 and the percentage stays at 0. Change the scaling so that Percent is the right percentage of Raw at every step, not only at full scale. Leave the stand-in for Raw and the two comparisons as they are.",
+              "body": "Correct the starting program, save it, then press Check. The starter divides before it multiplies, so the integer division Raw / 1000 gives 0 until Raw reaches 1000 and the percentage stays at 0. Change the scaling so that Percent is the right percentage of Raw at every step, not only at full scale. Leave the stand-in for Raw and the two comparisons as they are.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -10632,7 +10632,7 @@
             }
           ],
           "faultCases": [
-            "The starter divides before it multiplies, so the integer division Raw / 1000 gives 0 until Raw reaches 1000 and the percentage stays at 0; multiply by 100 first, then divide by 1000."
+            "The starter divides before it multiplies, so the integer division Raw / 1000 gives 0 until Raw reaches 1000 and the percentage stays at 0."
           ]
         },
         "es": {
@@ -10692,7 +10692,7 @@
             }
           ],
           "faultCases": [
-            "El programa inicial divide antes de multiplicar, así que la división entera Raw / 1000 da 0 hasta que Raw llega a 1000 y el porcentaje queda en 0; multiplique primero por 100 y luego divida por 1000."
+            "El programa inicial divide antes de multiplicar, así que la división entera Raw / 1000 da 0 hasta que Raw llega a 1000 y el porcentaje queda en 0."
           ]
         }
       },
@@ -12173,7 +12173,7 @@
     },
     {
       "id": "analog-scaling-fbd",
-      "version": 4,
+      "version": 5,
       "order": 82,
       "module": 4,
       "level": "intermediate",
@@ -12266,7 +12266,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct the starting diagram, save it, then press Check. The starting diagram multiplies Raw by 100 but never divides by 4095, so LIMIT clamps the product to 100 from the first scan and HighLevel lights at 10 ms. Change it so that Level is the level in percent, from 0 to 100, before the LIMIT and the comparison with 75. Place and connect the missing block yourself: the stand-in for Raw, the MUL, the LIMIT and the comparison are already there.",
+              "body": "Correct the starting diagram, save it, then press Check. The starter multiplies Raw by 100 but never divides by 4095, so LIMIT clamps the product to 100 from the first scan and HighLevel lights at 10 ms. Change it so that Level is the level in percent, from 0 to 100, before the LIMIT and the comparison with 75. Place and connect the missing block yourself: the stand-in for Raw, the MUL, the LIMIT and the comparison are already there.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -12299,7 +12299,7 @@
             }
           ],
           "faultCases": [
-            "The starter multiplies Raw by 100 but never divides by 4095, so LIMIT clamps the product to 100 from the first scan and HighLevel lights at 10 ms; insert a DIV block that divides the product by 4095 between MUL and LIMIT."
+            "The starter multiplies Raw by 100 but never divides by 4095, so LIMIT clamps the product to 100 from the first scan and HighLevel lights at 10 ms."
           ]
         },
         "es": {
@@ -12359,7 +12359,7 @@
             }
           ],
           "faultCases": [
-            "El programa inicial multiplica Raw por 100 pero nunca divide por 4095, así que LIMIT recorta el producto a 100 desde el primer ciclo y HighLevel se enciende a los 10 ms; inserte entre MUL y LIMIT un bloque DIV que divida el producto por 4095."
+            "El diagrama inicial multiplica Raw por 100 pero nunca divide por 4095, así que LIMIT recorta el producto a 100 desde el primer ciclo y HighLevel se enciende a los 10 ms."
           ]
         }
       },
@@ -13152,7 +13152,7 @@
     },
     {
       "id": "types-arithmetic-comparison-fbd",
-      "version": 4,
+      "version": 5,
       "order": 89,
       "module": 4,
       "level": "intermediate",
@@ -13276,7 +13276,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct the starting diagram, save it, then press Check. The starting diagram clears Total on Reset but never adds to it, so Low stays ON for ever. Change it so that each press of Step adds 5 to Total once, however long the press lasts, while Reset still clears it. Place and connect the blocks yourself: the variables, the clearing SEL block and the three comparisons are already there.",
+              "body": "Correct the starting diagram, save it, then press Check. The starter clears Total on Reset but never adds to it, so Low stays ON for ever. Change it so that each press of Step adds 5 to Total once, however long the press lasts, while Reset still clears it. Place and connect the blocks yourself: the variables, the clearing SEL block and the three comparisons are already there.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -13309,7 +13309,7 @@
             }
           ],
           "faultCases": [
-            "The starter clears Total on Reset but never adds to it, so Low stays ON for ever; add 5 to Total on each rising edge of Step."
+            "The starter clears Total on Reset but never adds to it, so Low stays ON for ever."
           ]
         },
         "es": {
@@ -13369,7 +13369,7 @@
             }
           ],
           "faultCases": [
-            "El diagrama inicial borra Total con Reset pero nunca le suma, así que Low se queda en ON para siempre; sume 5 a Total en cada flanco ascendente de Step."
+            "El diagrama inicial borra Total con Reset pero nunca le suma, así que Low se queda en ON para siempre."
           ]
         }
       },
@@ -13382,7 +13382,7 @@
     },
     {
       "id": "types-arithmetic-comparison-il",
-      "version": 4,
+      "version": 5,
       "order": 90,
       "module": 4,
       "level": "intermediate",
@@ -13506,7 +13506,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct the starting program, save it, then press Check. The starting program remembers Step in StepWas and writes the three comparisons, but never changes Total, so Low stays ON for ever. Change it so that each press of Step adds 5 to Total once, however long the press lasts, and Total goes back to 0 while Reset is TRUE. Write the instructions yourself: the declarations and the three comparisons are already there.",
+              "body": "Correct the starting program, save it, then press Check. The starter remembers Step in StepWas and writes the three comparisons, but never changes Total, so Low stays ON for ever. Change it so that each press of Step adds 5 to Total once, however long the press lasts, and Total goes back to 0 while Reset is TRUE. Write the instructions yourself: the declarations and the three comparisons are already there.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -13539,7 +13539,7 @@
             }
           ],
           "faultCases": [
-            "The starting program remembers Step in StepWas and writes the three comparisons, but never changes Total, so Low stays ON for ever; add 5 to Total on each rising edge of Step and clear it while Reset is TRUE."
+            "The starter remembers Step in StepWas and writes the three comparisons, but never changes Total, so Low stays ON for ever."
           ]
         },
         "es": {
@@ -13599,7 +13599,7 @@
             }
           ],
           "faultCases": [
-            "El programa inicial recuerda Step en StepWas y escribe las tres comparaciones, pero nunca cambia Total, así que Low queda en ON para siempre; sume 5 a Total en cada flanco ascendente de Step y bórrelo mientras Reset sea TRUE."
+            "El programa inicial recuerda Step en StepWas y escribe las tres comparaciones, pero nunca cambia Total, así que Low queda en ON para siempre."
           ]
         }
       },

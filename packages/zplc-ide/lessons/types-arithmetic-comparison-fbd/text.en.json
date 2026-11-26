@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct the starting diagram, save it, then press {{ui:learn.check}}. The starting diagram clears Total on Reset but never adds to it, so Low stays ON for ever. Change it so that each press of Step adds 5 to Total once, however long the press lasts, while Reset still clears it. Place and connect the blocks yourself: the variables, the clearing SEL block and the three comparisons are already there.",
+      "body": "Correct the starting diagram, save it, then press {{ui:learn.check}}. The starter clears Total on Reset but never adds to it, so Low stays ON for ever. Change it so that each press of Step adds 5 to Total once, however long the press lasts, while Reset still clears it. Place and connect the blocks yourself: the variables, the clearing SEL block and the three comparisons are already there.",
       "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "The starter clears Total on Reset but never adds to it, so Low stays ON for ever; add 5 to Total on each rising edge of Step."
+    "The starter clears Total on Reset but never adds to it, so Low stays ON for ever."
   ]
 }

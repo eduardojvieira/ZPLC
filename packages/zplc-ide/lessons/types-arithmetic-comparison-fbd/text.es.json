@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El diagrama inicial borra Total con Reset pero nunca le suma, así que Low se queda en ON para siempre; sume 5 a Total en cada flanco ascendente de Step."
+    "El diagrama inicial borra Total con Reset pero nunca le suma, así que Low se queda en ON para siempre."
   ]
 }

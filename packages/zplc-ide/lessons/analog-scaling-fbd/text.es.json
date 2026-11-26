@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial multiplica Raw por 100 pero nunca divide por 4095, así que LIMIT recorta el producto a 100 desde el primer ciclo y HighLevel se enciende a los {{t:10}} ms; inserte entre MUL y LIMIT un bloque DIV que divida el producto por 4095."
+    "El diagrama inicial multiplica Raw por 100 pero nunca divide por 4095, así que LIMIT recorta el producto a 100 desde el primer ciclo y HighLevel se enciende a los {{t:10}} ms."
   ]
 }

@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial recuerda Step en StepWas y escribe las tres comparaciones, pero nunca cambia Total, así que Low queda en ON para siempre; sume 5 a Total en cada flanco ascendente de Step y bórrelo mientras Reset sea TRUE."
+    "El programa inicial recuerda Step en StepWas y escribe las tres comparaciones, pero nunca cambia Total, así que Low queda en ON para siempre."
   ]
 }
