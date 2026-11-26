@@ -111,15 +111,19 @@ describe('IDE-030: the tools an assistant can call are a closed list that names 
       'boards_list',
       'toolchain_inspect',
       'firmware_build',
+      'plant_inspect',
+      'scenarios_list',
+      'server_self_check',
     ]);
+    // plan-aix §2.4: `plant` alone is a read (plant_inspect); plant I/O mode is what stays forbidden
     for (const name of MCP_TOOL_NAMES)
       expect(name, name).not.toMatch(
-        /flash|deploy|force|upload|connect|serial|shell|poke|write|stop|erase|provision|reset|debug|plant|feed|mirror/,
+        /flash|deploy|force|upload|connect|serial|shell|poke|write|stop|erase|provision|reset|debug|plant_io|feed|mirror|attach|delete|remove|progress_write|unlock|solution/,
       );
   });
 
   test('the resources are read-only documents and snapshots: none of them is a command', () => {
-    for (const uri of MCP_RESOURCE_URIS) expect(uri, uri).toMatch(/^zplc:\/\/(project|target|runtime|course|docs)\/[a-z-]+$/);
+    for (const uri of MCP_RESOURCE_URIS) expect(uri, uri).toMatch(/^zplc:\/\/(project|target|runtime|course|docs|lesson|formats)\/[a-z-]+$/);
   });
 });
 
@@ -129,11 +133,11 @@ describe('COM-030: the MCP server cannot open the device link', () => {
     expect(tools.map((tool) => tool.name).sort()).toEqual([...MCP_TOOL_NAMES].sort());
     const staticUris = resources.filter((resource) => typeof resource.uri === 'string').map((resource) => resource.uri as string);
     expect(staticUris.sort()).toEqual([...MCP_RESOURCE_URIS].sort());
-    // the replay of a trace, the replay of a snapshot, and the text of one program (IDE-030): templates, all of them reads
-    expect(resources.filter((resource) => typeof resource.uri !== 'string')).toHaveLength(3);
+    // the replay of a trace, the replay of a snapshot, the text of one program (IDE-030) and one scenario: templates, all reads
+    expect(resources.filter((resource) => typeof resource.uri !== 'string')).toHaveLength(4);
 
-    // The only arguments any tool takes name a scenario, a position in a recorded trace, or a board profile.
-    const allowed = new Set(['scenarioId', 'cursor', 'traceSha256', 'ideId']);
+    // The only arguments any tool takes name a scenario, a position in a recorded trace, a board profile, or a scene file.
+    const allowed = new Set(['scenarioId', 'cursor', 'traceSha256', 'ideId', 'sceneFile', 'mapFile']);
     for (const tool of tools) {
       for (const key of Object.keys(tool.inputSchema.shape)) expect(allowed.has(key), `${tool.name} takes '${key}'`).toBe(true);
       // And an argument that names a port, a device or a session is refused, whatever else is supplied.
@@ -145,7 +149,25 @@ describe('COM-030: the MCP server cannot open the device link', () => {
             : ['scenario_run', 'simulation_start', 'trace_get'].includes(tool.name)
               ? { scenarioId: 'smoke' }
               : {};
-      for (const extra of ['port', 'serialPort', 'device', 'baud', 'host', 'address', 'session', 'deploy', 'command']) {
+      for (const extra of [
+        'port',
+        'serialPort',
+        'device',
+        'baud',
+        'host',
+        'address',
+        'session',
+        'studioSession',
+        'deploy',
+        'flash',
+        'force',
+        'command',
+        'shell',
+        'boardRun',
+        'boardStop',
+        'plantIo',
+        'mirror',
+      ]) {
         expect(tool.inputSchema.safeParse({ ...base, [extra]: 'x' }).success, `${tool.name} accepted '${extra}'`).toBe(false);
       }
     }
@@ -153,6 +175,7 @@ describe('COM-030: the MCP server cannot open the device link', () => {
     // reaches outside the workspace and the repository.
     expect(tools.filter((tool) => tool.annotations.readOnlyHint !== true).map((tool) => tool.name)).toEqual(['firmware_build']);
     expect(tools.every((tool) => tool.annotations.openWorldHint === false)).toBe(true);
+    expect(tools.filter((tool) => tool.annotations.destructiveHint !== false).map((tool) => tool.name)).toEqual([]);
   });
 
   test('the module graph of the MCP entry point holds no serial, upload or socket module', async () => {
@@ -260,6 +283,9 @@ describe('COM-030: the MCP server cannot open the device link', () => {
         'compiler_compile',
         'symbols_list',
         'safety_check',
+        'plant_inspect',
+        'scenarios_list',
+        'server_self_check',
       ] as const) {
         const result = await dispatch(tool, {}, signal);
         expect(result.isError ?? false, `${tool}: ${JSON.stringify(result.structuredContent)}`).toBe(false);
@@ -279,6 +305,42 @@ describe('COM-030: the MCP server cannot open the device link', () => {
       else delete (globalThis as Record<string, unknown>).navigator;
     }
     expect(touched).toEqual([]);
+  });
+
+  // AIX-007 and AGENTS.md rule 8: the self-check only looks at files; it starts no process, so no board, flash, deploy or port.
+  test('server_self_check and zplc-mcp --self-check start no process and open no socket', async () => {
+    const root = await workspace();
+    const bound = await openMcpWorkspace(root);
+    const started: string[] = [];
+    const childProcess = (await import('node:child_process')).default as unknown as Record<string, unknown>;
+    const bunRecord = Bun as unknown as Record<string, unknown>;
+    const names = ['spawn', 'spawnSync', 'exec', 'execFile', 'execSync', 'execFileSync', 'fork'] as const;
+    const saved = Object.fromEntries(names.map((name) => [name, childProcess[name]]));
+    const savedBun = { spawn: bunRecord.spawn, spawnSync: bunRecord.spawnSync, connect: bunRecord.connect };
+    const savedNet = net.connect;
+    const trap = (what: string) => () => {
+      started.push(what);
+      throw new Error(`self-check started ${what}`);
+    };
+    for (const name of names) childProcess[name] = trap(`child_process.${name}`);
+    bunRecord.spawn = trap('Bun.spawn');
+    bunRecord.spawnSync = trap('Bun.spawnSync');
+    bunRecord.connect = trap('Bun.connect');
+    net.connect = trap('net.connect') as never;
+    const stdout = process.stdout.write;
+    try {
+      const result = await createMcpDispatcher(bound!)('server_self_check', {}, new AbortController().signal);
+      expect(result.isError ?? false).toBe(false);
+      process.stdout.write = (() => true) as never;
+      const { runMcpEntrypoint } = await import('./index');
+      await runMcpEntrypoint(['--workspace', root, '--self-check']);
+    } finally {
+      process.stdout.write = stdout;
+      Object.assign(childProcess, saved);
+      Object.assign(bunRecord, savedBun);
+      net.connect = savedNet;
+    }
+    expect(started).toEqual([]);
   });
 
   // HIL-003 and HIL-012: the hardware scenario run and the bench commands are started by a person, through a
