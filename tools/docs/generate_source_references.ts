@@ -962,7 +962,8 @@ export function deviceProtocolBody(lang: Lang): string {
       `definition the C codec of the firmware and the TypeScript codec of the ZPLC application are generated from. The native ` +
       `runtime speaks the same protocol on standard input and output when it is started ` +
       `with ${code('--device-link')}; ${code('--device-link-network')} applies the rules of a network link to it, so that ` +
-      `they can be exercised without a socket.`,
+      `they can be exercised without a socket. The native runtime for Windows does not have this mode: started ` +
+      `with ${code('--device-link')}, it says the device link is not available on this platform and exits with status 1.`,
     es:
       `El protocolo de enlace con el dispositivo es como hablan la aplicación ZPLC y un dispositivo: un protocolo binario con tramas y ` +
       `versión, con longitud, número de secuencia y suma de verificación en cada trama, negociación de capacidades y códigos de error ` +
@@ -973,7 +974,9 @@ export function deviceProtocolBody(lang: Lang): string {
       `de ${code(SOURCES.deviceProtocol)}, la definición única de la que se generan el códec C del firmware y el códec ` +
       `TypeScript de la aplicación ZPLC. El runtime nativo habla el mismo protocolo por la entrada y la salida estándar ` +
       `cuando se inicia con ${code('--device-link')}; ${code('--device-link-network')} le aplica las reglas de un enlace de red, para ` +
-      `poder ejercitarlas sin un socket.`,
+      `poder ejercitarlas sin un socket. El runtime nativo para Windows no tiene este modo: iniciado ` +
+      `con ${code('--device-link')}, dice que el enlace con el dispositivo no está disponible en esta plataforma y termina ` +
+      `con el estado 1.`,
   };
   const h = (en: string, es: string) => `## ${lang === 'en' ? en : es}`;
   const h3 = (text: string) => `### ${text}`;
