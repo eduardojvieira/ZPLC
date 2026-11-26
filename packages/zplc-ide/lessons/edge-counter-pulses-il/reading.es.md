@@ -14,7 +14,7 @@ La cuenta no se detiene en PV, y Q sigue en TRUE hasta que R pone la cuenta a ce
 
 ## CAL ejecuta un bloque, LD lo lee
 
-En lista de instrucciones cada línea es una instrucción que trabaja sobre el resultado actual: LD carga un valor en él, ST lo guarda en una variable. Un bloque de función no cabe en una de esas líneas, así que IL tiene una instrucción propia para él. **CAL** llama a una instancia con sus entradas, nombradas con `:=` como en texto estructurado:
+En lista de instrucciones cada línea es una instrucción que trabaja sobre el resultado actual: LD carga un valor en él, ST lo guarda en una variable. Un bloque de función no cabe en una de esas líneas, así que IL tiene una instrucción propia para él. **CAL** llama a una instancia y le da sus entradas entre paréntesis: cada una es el nombre de una entrada del bloque, después `:=` y después el valor que recibe, separadas por comas:
 
 ```il
         CAL   Strokes(CU := PumpStroke, R := NextDose, PV := 5)

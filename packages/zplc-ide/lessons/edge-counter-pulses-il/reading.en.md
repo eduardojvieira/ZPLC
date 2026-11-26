@@ -14,7 +14,7 @@ The count does not stop at PV, and Q stays TRUE until R clears the count.
 
 ## CAL runs a block, LD reads it
 
-In Instruction List each line is one instruction that works on the current result: LD loads a value into it, ST stores it in a variable. A function block does not fit on one such line, so IL has an instruction of its own for it. **CAL** calls an instance with its inputs, named with `:=` as in Structured Text:
+In Instruction List each line is one instruction that works on the current result: LD loads a value into it, ST stores it in a variable. A function block does not fit on one such line, so IL has an instruction of its own for it. **CAL** calls an instance and gives it its inputs between parentheses: each one is the name of an input of the block, then `:=`, then the value it receives, separated by commas:
 
 ```il
         CAL   Strokes(CU := PumpStroke, R := NextDose, PV := 5)
