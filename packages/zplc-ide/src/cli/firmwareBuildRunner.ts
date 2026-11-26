@@ -107,8 +107,9 @@ async function readArtifact(root: string): Promise<FirmwareBuildArtifact | undef
       initial.size > ELF_MAX_BYTES
     )
       return undefined;
+    // Compare canonical with canonical: the temporary root itself may sit behind a link (/var -> /private/var on macOS).
     const canonical = await realpath(elf);
-    if (!inside(root, canonical)) return undefined;
+    if (!inside(await realpath(root), canonical)) return undefined;
     const handle = await open(elf, constants.O_RDONLY | (process.platform === 'win32' ? 0 : constants.O_NOFOLLOW));
     try {
       const before = await handle.stat();

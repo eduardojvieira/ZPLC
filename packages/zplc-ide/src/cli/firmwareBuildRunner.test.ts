@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'bun:test';
 import { EventEmitter } from 'node:events';
-import { lstat, mkdir, mkdtemp, rename, rm, symlink, truncate, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, mkdtemp, realpath, rename, rm, symlink, truncate, writeFile } from 'node:fs/promises';
 import { PassThrough } from 'node:stream';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { runFirmwareBuild, sameDirectoryIdentity } from './firmwareBuildRunner';
+
+/** The firmware build is offered on Linux and macOS only; on Windows the runner answers unavailable before it does anything. */
+const buildOffered = process.platform !== 'win32';
 
 class FakeChild extends EventEmitter {
   stdout = new PassThrough();
@@ -100,10 +103,39 @@ describe('runFirmwareBuild', () => {
       });
       expect(observed).toMatchObject({
         args: ['build', '-b', 'safe/board', 'firmware/app', '-d', expect.any(String), '--pristine'],
-        options: { cwd: root, shell: false, detached: true, windowsHide: true },
+        options: { cwd: await realpath(root), shell: false, detached: true, windowsHide: true },
       });
       expect(JSON.stringify(observed)).not.toContain('build_command');
     } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it.skipIf(!buildOffered)('reads the ELF when the temporary directory is reached through a symbolic link, as /var is on macOS', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-runner-root-'));
+    const real = await mkdtemp(join(tmpdir(), 'zplc-runner-real-temp-'));
+    const linked = `${real}-link`;
+    await symlink(real, linked, 'dir');
+    try {
+      const result = await runFirmwareBuild(root, 'safe/board', {
+        tempRoot: linked,
+        spawnProcess: (_command, args) => {
+          const child = new FakeChild();
+          const out = args[args.indexOf('-d') + 1] as string;
+          void (async () => {
+            await mkdir(join(out, 'zephyr'), { recursive: true });
+            await writeFile(join(out, 'zephyr', 'zephyr.elf'), validElf32());
+            child.stdout.end();
+            child.stderr.end();
+            child.emit('close', 0);
+          })();
+          return child as never;
+        },
+      });
+      expect(result).toMatchObject({ ok: true, artifact: { byteLength: 52 } });
+    } finally {
+      await rm(linked, { force: true });
+      await rm(real, { recursive: true, force: true });
       await rm(root, { recursive: true, force: true });
     }
   });
