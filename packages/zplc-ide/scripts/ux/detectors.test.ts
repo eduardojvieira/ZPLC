@@ -29,6 +29,7 @@ function element(overrides: Partial<ElementMeasure> = {}): ElementMeasure {
     disabled: false,
     focusRing: null,
     inScroller: false,
+    blocked: null,
     ...overrides,
   };
 }
@@ -70,6 +71,11 @@ describe('the measured defects of a capture (UXV-004)', () => {
     const spill = page([element({ name: 'span.spill', scroll: { width: 100, height: 46 } })]);
     expect(detectors.cutOrSpilling!(cut, catalogs).map((d) => [d.kind, d.where])).toEqual([['clip', 'span.cut']]);
     expect(detectors.cutOrSpilling!(spill, catalogs).map((d) => [d.kind, d.where])).toEqual([['spill', 'span.spill']]);
+    // the Welcome heading: a display font whose glyphs reach 2 px past a line box set tighter than the font; nothing shows
+    const ink = page([
+      element({ name: 'h1', text: 'ZPLC', fontSize: 36, scroll: { width: 639, height: 42 }, client: { width: 639, height: 40 } }),
+    ]);
+    expect(detectors.cutOrSpilling!(ink, catalogs)).toEqual([]);
     expect(detectors.cutOrSpilling!(clean, catalogs)).toEqual([]);
   });
 
@@ -101,6 +107,26 @@ describe('the measured defects of a capture (UXV-004)', () => {
     const nested = page([button(10, 100), { ...button(20, 102), parent: 0 }]);
     expect(detectors.overlap!(nested, catalogs)).toEqual([]);
     expect(detectors.overlap!(clean, catalogs)).toEqual([]);
+  });
+
+  test('UXV-004 controls hidden under a modal are not measured as overlapping, faint, offscreen or without focus', () => {
+    // the command palette over the Ladder toolbox: its rows cross the toolbox buttons, which sit behind it
+    const row = (y: number) =>
+      element({ name: `div[data-command]@${y}`, rect: { x: 450, y, width: 540, height: 36 }, control: true, focusRing: true });
+    const hidden = (y: number) =>
+      button(350, y, {
+        name: `button[data-ld-toolbox-item]@${y}`,
+        rect: { x: 350, y, width: 140, height: 60 },
+        blocked: 'covered',
+        focusRing: false,
+        color: [200, 200, 200, 1],
+      });
+    const modal = page([row(380), row(416), hidden(380), hidden(416), button(1430, 10, { blocked: 'inert' })]);
+    for (const name of ['overlap', 'offscreen', 'contrast', 'focus'])
+      expect({ name, defects: detectors[name]!(modal, catalogs) }).toEqual({ name, defects: [] });
+    // two controls a person sees still overlap
+    const seen = page([row(380), { ...button(400, 390), name: 'button.visible' }]);
+    expect(detectors.overlap!(seen, catalogs).map((d) => d.where)).toEqual(['div[data-command]@380 / button.visible']);
   });
 
   test('UXV-004 a control partly or wholly outside the window is a defect', () => {

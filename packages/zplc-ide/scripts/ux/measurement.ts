@@ -43,6 +43,12 @@ export interface ElementMeasure {
   focusRing: boolean | null;
   /** Inside an ancestor that scrolls: being partly out of view there is by design. */
   inScroller: boolean;
+  /**
+   * Why a person cannot reach the element on screen, or null when they can: `covered` when another element (a modal, an
+   * overlay, a scroller's edge) is on top at every point sampled in its visible part, `inert` when it is inside an `inert` or
+   * `aria-hidden="true"` subtree. An element wholly outside the window is not covered: it is offscreen.
+   */
+  blocked: 'covered' | 'inert' | null;
 }
 
 export interface Measurement {

@@ -34,6 +34,29 @@ function fixture(): Measurement {
         disabled: false,
         focusRing: null,
         inScroller: false,
+        blocked: null,
+      },
+      {
+        name: 'button[data-ld-toolbox-item]',
+        parent: null,
+        rect: { x: 350, y: 380, width: 80, height: 60 },
+        scroll: { width: 80, height: 60 },
+        client: { width: 80, height: 60 },
+        overflowX: 'visible',
+        overflowY: 'visible',
+        textOverflow: 'clip',
+        lineClamp: false,
+        text: 'Coil',
+        readable: false,
+        color: [0, 0, 0, 1],
+        background: [255, 255, 255, 1],
+        fontSize: 13,
+        fontWeight: 400,
+        control: true,
+        disabled: false,
+        focusRing: false,
+        inScroller: false,
+        blocked: 'covered',
       },
     ],
     textOutOfBox: ['spill: "Run" runs 12 px out of div'],
@@ -87,6 +110,9 @@ describe('the names and the manifest of a capture run (UXV-003)', () => {
     const manifest = JSON.parse(first) as { captures: Array<{ file: string; defects: Array<{ kind: string }> }>; unreached: unknown[] };
     expect(manifest.captures[0]!.file).toBe('shell.welcome--normal--1440x900-light-es.png');
     expect(manifest.captures[0]!.defects.map((defect) => defect.kind).sort()).toEqual(['contrast', 'spill', 'wrong-language']);
+    expect((manifest.captures[0] as unknown as { unchecked: unknown }).unchecked).toEqual([
+      { where: 'button[data-ld-toolbox-item]', reason: 'covered' },
+    ]);
     expect(manifest.unreached).toEqual([{ surface: 'installer.nsis', reason: 'outside Studio' }]);
   });
 
