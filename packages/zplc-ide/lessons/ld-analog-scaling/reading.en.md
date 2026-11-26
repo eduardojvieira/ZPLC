@@ -65,11 +65,11 @@ After four presses the knob is at 2048 counts: 2048 times 1500 is 3 072 000, div
 ## Check yourself
 
 ```quiz
-question: Raw is 3000 counts. Which order gives the percentage 73 for a 0..100 range, using whole numbers and a DINT?
+question: On the belt of the worked example, Raw is 3000 counts. Which order gives the speed 1098 mm/s for the 0..1500 range, using whole numbers and a DINT?
 options:
-  - { text: 'Raw * 100 / 4095', correct: true, feedback: 'Right. 300000 divided by 4095 is 73 with the decimals dropped.' }
-  - { text: 'Raw / 4095 * 100', feedback: 'Raw divided by 4095 is 0 as a whole number, and 0 times 100 is still 0.' }
-  - { text: 'Raw / 100 * 4095', feedback: 'This has the span the wrong way around and does not give a percentage.' }
+  - { text: 'Raw * 1500 / 4095', correct: true, feedback: 'Right. 3000 times 1500 is 4 500 000, and divided by 4095 it is 1098 with the decimals dropped.' }
+  - { text: 'Raw / 4095 * 1500', feedback: 'Raw divided by 4095 is 0 as a whole number, and 0 times 1500 is still 0.' }
+  - { text: 'Raw / 1500 * 4095', feedback: 'This has the spans the wrong way around: it gives 8190, which is not a speed on a 0..1500 belt.' }
 ```
 
 ```quiz

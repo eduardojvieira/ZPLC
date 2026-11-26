@@ -41,14 +41,14 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "¿Por qué multiplicar por 100 antes de dividir entre 4095, y por qué Scaled es un DINT? Calcule Raw / 4095 * 100 para Raw = 3280, con números enteros, y compárelo con Raw * 100 / 4095. ¿De qué protegería el bloque LIMIT si el sensor informara un valor fuera de 0..4095?",
-      "checkpoint": "Raw / 4095 vale 0 para todo Raw menor que 4095, así que el nivel se quedaría en 0 hasta la plena escala. El producto 4095 por 100 es 409500, más de los 32767 que guarda un INT, y un INT daría la vuelta sin ningún error. LIMIT mantiene Raw dentro de 0..4095 haga lo que haga la entrada, así que Level queda dentro de 0..100."
+      "body": "¿Por qué el peldaño debe multiplicar antes de dividir, y por qué Scaled es un DINT? Calcule, con números enteros, qué daría dividir primero para Raw = 3280. ¿De qué protegería el bloque LIMIT si el sensor informara un valor fuera de 0..4095?",
+      "checkpoint": "Dividir Raw entre 4095 primero da 0 para todo Raw menor que 4095, así que el nivel se quedaría en 0 hasta la plena escala. A plena escala el producto supera con mucho los 32767 que guarda un INT, y un INT daría la vuelta sin ningún error. LIMIT mantiene Raw dentro de 0..4095 haga lo que haga la entrada, así que Level queda dentro de 0..100."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "El nivel en porcentaje es Raw por 100 dividido entre 4095. ¿Qué dos cajas faltan en el programa y en qué orden van?"
+      "text": "Multiplique antes de dividir, para que la división descarte lo menos posible, y guarde el producto en un DINT, donde cabe a plena escala. ¿Cuál es el rango de las cuentas y cuál el rango del resultado?"
     },
     {
       "level": 2,

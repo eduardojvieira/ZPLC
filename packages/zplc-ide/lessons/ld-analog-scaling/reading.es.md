@@ -65,11 +65,11 @@ Tras cuatro pulsaciones la perilla está en 2048 cuentas: 2048 por 1500 es 3 072
 ## Compruébelo usted
 
 ```quiz
-question: Raw vale 3000 cuentas. ¿Qué orden da el porcentaje 73 para un rango de 0 a 100, con números enteros y un DINT?
+question: En la cinta del ejemplo resuelto, Raw vale 3000 cuentas. ¿Qué orden da la velocidad de 1098 mm/s para el rango de 0 a 1500, con números enteros y un DINT?
 options:
-  - { text: 'Raw * 100 / 4095', correct: true, feedback: 'Correcto. 300000 dividido entre 4095 es 73 al descartar los decimales.' }
-  - { text: 'Raw / 4095 * 100', feedback: 'Raw dividido entre 4095 es 0 como número entero, y 0 por 100 sigue siendo 0.' }
-  - { text: 'Raw / 100 * 4095', feedback: 'Aquí los rangos están al revés y no se obtiene un porcentaje.' }
+  - { text: 'Raw * 1500 / 4095', correct: true, feedback: 'Correcto. 3000 por 1500 es 4 500 000, y dividido entre 4095 es 1098 al descartar los decimales.' }
+  - { text: 'Raw / 4095 * 1500', feedback: 'Raw dividido entre 4095 es 0 como número entero, y 0 por 1500 sigue siendo 0.' }
+  - { text: 'Raw / 1500 * 4095', feedback: 'Aquí los rangos están al revés: da 8190, que no es una velocidad de una cinta de 0 a 1500.' }
 ```
 
 ```quiz
