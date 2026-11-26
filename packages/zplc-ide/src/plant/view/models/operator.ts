@@ -211,15 +211,43 @@ function potentiometerModel(view: PartView, context: ModelContext): Piece[] {
   const yaw = (f - 0.5) * POTENTIOMETER.sweep;
   const collarTop = ENCLOSURE.top + 0.012;
   const knobTop = collarTop + POTENTIOMETER.knob;
+  const face = ENCLOSURE.size[2] / 2;
+  const boxY = ENCLOSURE.top - ENCLOSURE.size[1] / 2;
+  const barCount = 6;
+  const litBars = f > 0 ? Math.min(barCount, Math.max(1, Math.round(f * barCount))) : 0;
   return [
     ...controlBox(view, 'housing', context.station),
-    piece('collar', rod(0.04, 0.012, 'y'), [0, ENCLOSURE.top + 0.006, 0], 'collar'),
+    piece('dial-plate', rod(0.053, 0.003, 'y'), [0, ENCLOSURE.top + 0.0015, 0], 'lens'),
+    piece('collar', rod(0.034, 0.012, 'y'), [0, ENCLOSURE.top + 0.006, 0], 'collar'),
     piece('knob', rod(POTENTIOMETER.radius, POTENTIOMETER.knob, 'y'), [0, collarTop + POTENTIOMETER.knob / 2, 0], 'rubber'),
-    piece('pointer', box([0.008, 0.002, 0.03], 0), toward(yaw, 0.015, knobTop + 0.001), 'mark', true, yaw),
-    // The printed scale on the box around the collar: a tick at the minimum, the middle and the maximum.
+    // A tall asymmetric pointer wing and overhanging tip so the dial setting reads from low scene and sheet views.
+    piece('pointer', box([0.014, 0.016, 0.048], 0.002), toward(yaw, 0.022, knobTop + 0.008), 'mark', true, yaw),
+    piece('pointer-tip', box([0.012, 0.024, 0.016], 0.002), toward(yaw, 0.036, knobTop - 0.002), 'mark', true, yaw),
+    // Bold major ticks at min (-135 deg), mid (0 deg) and max (+135 deg), plus graduated radial scale marks and max accent.
     ...[-1, 0, 1].map((k) => {
       const a = (k * 3 * Math.PI) / 4;
-      return piece(`tick-${k + 1}`, box([0.004, 0.002, 0.014], 0), toward(a, 0.058, ENCLOSURE.top + 0.001), 'mark', true, a);
+      return piece(`tick-${k + 1}`, box([0.008, 0.004, 0.018], 0), toward(a, 0.044, ENCLOSURE.top + 0.005), 'mark', true, a);
+    }),
+    ...[1, 2, 3, 5, 6, 7].map((i) => {
+      const a = ((i / 8 - 0.5) * 3 * Math.PI) / 2;
+      const weight = 0.004 + (i / 8) * 0.004;
+      return piece(
+        `scale-${i}`,
+        box([weight, 0.003, 0.011 + (i / 8) * 0.005], 0),
+        toward(a, 0.044, ENCLOSURE.top + 0.0045),
+        'mark',
+        true,
+        a,
+      );
+    }),
+    piece('scale-max', rod(0.005, 0.005, 'y'), toward((3 * Math.PI) / 4, 0.052, ENCLOSURE.top + 0.0055), 'safety', true, (3 * Math.PI) / 4),
+    // Front analog bargraph meter on the +z face so min, half and max read unmistakably at scene scale.
+    piece('meter-window', box([0.12, 0.066, 0.003], 0.001), [0, boxY, face + 0.0015], 'lens'),
+    ...Array.from({ length: barCount }, (_, i) => {
+      const h = 0.018 + i * 0.005;
+      const x = (i - (barCount - 1) / 2) * 0.018;
+      const bottomY = boxY - 0.022;
+      return piece(`bar-${i}`, box([0.014, h, 0.004], 0.001), [x, bottomY + h / 2, face + 0.004], i < litBars ? 'lamp' : 'lampOff');
     }),
   ];
 }
