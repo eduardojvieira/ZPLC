@@ -4,7 +4,7 @@
  */
 import { describe, expect, test } from 'bun:test';
 
-import { MAX_OUTPUT_BYTES, traceAnswer, type Replay } from './traceView';
+import { MAX_OUTPUT_BYTES, TRACE_HELP, traceAnswer, type Replay } from './traceView';
 
 const execution = {
   schemaVersion: 1,
@@ -174,7 +174,7 @@ describe('trace_get window (AIX-015)', () => {
     expect(body(result)).toMatchObject({ truncated: true, nextCursor: { fromSample: 5, fromMs: 50 } });
   });
 
-  test('AIX-015 a window still over 512 KiB is refused with how to ask for less', () => {
+  test('AIX-015 a window over 512 KiB is cut to the samples that fit, with the cursor of the next page', () => {
     const big = replay();
     big.samples = Array.from({ length: 1000 }, (_, index) => ({
       atMs: index * 10,
@@ -183,9 +183,50 @@ describe('trace_get window (AIX-015)', () => {
     big.totalSamples = 1000;
     delete big.observed;
     const result = traceAnswer(big, 'belt', { mode: 'window', limit: 1000 });
+    const content = body(result);
+    expect(content).toMatchObject({ mode: 'window', truncated: true });
+    const returned = content.returnedSamples as number;
+    expect(returned).toBeGreaterThan(10);
+    expect(returned).toBeLessThan(1000);
+    expect(content.nextCursor).toEqual({ fromSample: returned, fromMs: returned * 10 });
+    // room is left for the evidence level the dispatcher adds
+    expect(Buffer.byteLength(result.content[0]!.text)).toBeLessThanOrEqual(MAX_OUTPUT_BYTES - 256);
+    expect(Buffer.byteLength(result.content[0]!.text)).toBeGreaterThan(MAX_OUTPUT_BYTES / 2);
+  });
+
+  test('AIX-015 a single sample over 512 KiB is refused with how to ask for less', () => {
+    const big = replay();
+    big.samples = [
+      { atMs: 0, outputs: Object.fromEntries(Array.from({ length: 4000 }, (_, n) => [`Program.${'L'.repeat(200)}${n}`, true])) },
+    ];
+    big.totalSamples = 1;
+    delete big.observed;
+    const result = traceAnswer(big, 'belt', { mode: 'window' });
     expect(body(result)).toMatchObject({ ok: false, error: 'MCP_OUTPUT_LIMIT' });
-    expect(body(result).nextStep).toContain('limit');
-    expect(Buffer.byteLength(result.content[0]!.text)).toBeLessThan(MAX_OUTPUT_BYTES);
+    expect(body(result).nextStep).toContain('signals');
+  });
+});
+
+describe('trace_get counts every change of a program signal (AIX-015 follow-up)', () => {
+  test('AIX-015 a REAL watched variable or output that changes is a change, unnamed', () => {
+    const levels = [100, 100, 99.59, 98.58, 98.58, 98.58];
+    const real: Replay = {
+      ...replay(),
+      assertions: [],
+      samples: levels.map((_, index) => ({ atMs: index * 10, outputs: { 'P.Run': true } })),
+      observed: { inputs: [], watched: levels.map((level) => ({ 'P.Level': level })), facts: [] },
+    };
+    const result = traceAnswer(real, 'belt', { mode: 'changes' });
+    expect(indices(result)).toEqual([0, 2, 3, 5]);
+    expect(body(result).samples[1]).toEqual({ index: 2, atMs: 20, watched: { 'P.Level': 99.59 }, changed: ['P.Level'] });
+    // a plant fact that is not a whole number still counts only when named
+    const facts = traceAnswer(replay(), 'belt', { mode: 'changes', signals: ['P.Run', 'fact:count:Eye'] });
+    expect(indices(facts)).toEqual([0, 2, 3, 4, 5]);
+  });
+
+  test('AIX-015 the help of mode and signals says which changes count', () => {
+    expect(TRACE_HELP.mode).toContain('fact:');
+    expect(TRACE_HELP.signals).toContain('fact:');
   });
 });
 

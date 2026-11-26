@@ -3491,6 +3491,22 @@ describe('AIX-013 diagnostics name the place and the accepted values, and projec
     }
   });
 
+  it('AIX-013 compilerCheck names the accepted LD element types, as projectValidate does, from the same list', async () => {
+    const broken = example('ld');
+    set(broken, 'rungs.0.grid.0.0.element.type', 'contact');
+    const root = await beltWorkspace({ 'src/Belt.ld.json': broken });
+    try {
+      const result = await compilerCheck(root);
+      expect(result.ok).toBe(false);
+      const messages = result.evidence.diagnostics.map((diagnostic) => diagnostic.message);
+      expect(
+        messages.some((message) => message.includes("'contact'") && message.includes(`accepted values: ${LD_ELEMENT_TYPES.join(', ')}`)),
+      ).toBe(true);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it('projectValidate refuses an FBD block of a type nobody declares, at validation and not only at the build', async () => {
     const fbd = example('fbd');
     set(fbd, 'blocks.2.type', 'ANDD');

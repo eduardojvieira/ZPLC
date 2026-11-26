@@ -287,7 +287,7 @@ const evidenceSchema = z
     artifacts: z.array(artifactSchema).max(8),
   })
   .strict();
-const executionSchema = z
+export const executionSchema = z
   .object({
     schemaVersion: z.literal(1),
     jobId: z.string().uuid(),
@@ -968,9 +968,11 @@ const readResult = (body: Record<string, unknown>) => asResult(body, body.ok !==
 
 /** Adds the evidence level after `ok` to every result that is not an error envelope. */
 function withEvidenceLevel(tool: McpToolName, result: McpToolResult): McpToolResult {
-  if ('error' in result.structuredContent) return result;
   const { ok, ...rest } = result.structuredContent;
-  return asResult({ ok, evidenceLevel: EVIDENCE_LEVEL[tool], ...rest }, result.isError === true);
+  // AI-12: every reply that carries the 2.0 execution adds its compact audit beside it; execution is unchanged
+  const audit = rest.execution && !('audit' in rest) ? { audit: trace.audit(rest.execution as Record<string, unknown>) } : {};
+  if ('error' in rest) return 'audit' in audit ? asResult({ ok, ...rest, ...audit }, true) : result;
+  return asResult({ ok, evidenceLevel: EVIDENCE_LEVEL[tool], ...rest, ...audit }, result.isError === true);
 }
 
 /**
@@ -1034,7 +1036,7 @@ function dispatcher(
         const value = await callTool(tool, workspace.root, args, signal, operations);
         if (signal.aborted) return errorResult('MCP_CANCELLED');
         if (!sameIdentity(workspace.identity, await directoryIdentity(workspace.root))) return errorResult('MCP_WORKSPACE_CHANGED');
-        const refusal = trace.traceRefusal(value);
+        const refusal = trace.traceRefusal(value, ownValue(args, 'scenarioId') as string);
         if (refusal) return refusal;
         const replay = replayFromScenario(
           value,
@@ -1069,9 +1071,11 @@ function dispatcher(
       const executionStart = toolApi.startToolExecution('mcp', toolApi.executionPermission(operation), operation);
       const value = await callTool(tool, workspace.root, args, signal, operations);
       if (!sameIdentity(workspace.identity, await directoryIdentity(workspace.root))) return errorResult('MCP_WORKSPACE_CHANGED');
-      return signal.aborted
-        ? errorResult('MCP_CANCELLED')
-        : toMcpToolResult(tool, value, toolApi.finishToolExecution(executionStart, value));
+      if (signal.aborted) return errorResult('MCP_CANCELLED');
+      const result = toMcpToolResult(tool, value, toolApi.finishToolExecution(executionStart, value));
+      // a wrong scenarioId keeps the 2.0 evidence and execution and adds the valid ids beside them (AIX-015)
+      const missing = tool === 'scenario_run' ? trace.scenarioNotFound(value, ownValue(args, 'scenarioId') as string) : undefined;
+      return missing ? asResult({ ...result.structuredContent, ...missing.structuredContent }, true) : result;
     } catch {
       return errorResult('MCP_INTERNAL_ERROR');
     } finally {
@@ -1197,7 +1201,7 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
     'trace_get',
     {
       title: 'Get recorded trace',
-      description: 'Run one scenario on the host simulator and answer its trace: whole, or as changes, a window or a summary with inputs.',
+      description: 'Run one scenario and answer its trace: whole, changes, a window or a summary; a non-integer fact: counts if named.',
       inputSchema: TRACE_INPUT,
       annotations: READ_ONLY,
     },

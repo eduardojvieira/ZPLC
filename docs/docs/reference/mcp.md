@@ -38,7 +38,7 @@ The server serves the 2025 handshake (`initialize`) as well as revision 2026-07-
 | `simulation_start` | Start recorded simulation | `scenarioId` | yes | Run one scenario on the host simulator and answer its first recorded sample and trace digest; no session is kept. |
 | `simulation_step` | Step recorded simulation | `scenarioId`, `cursor`, `traceSha256` | yes | Answer the recorded sample after cursor of a scenario run, pinned by its trace digest, to walk a run step by step. |
 | `runtime_snapshot` | Read recorded snapshot | `scenarioId`, `cursor`, `traceSha256` | yes | Answer one recorded sample of a scenario run at cursor, pinned by its trace digest; a recording, not a live runtime. |
-| `trace_get` | Get recorded trace | `scenarioId`, `mode`, `signals`, `includeInputs`, `watchSignals`, `fromMs`, `toMs`, `fromSample`, `limit` | yes | Run one scenario on the host simulator and answer its trace: whole, or as changes, a window or a summary with inputs. |
+| `trace_get` | Get recorded trace | `scenarioId`, `mode`, `signals`, `includeInputs`, `watchSignals`, `fromMs`, `toMs`, `fromSample`, `limit` | yes | Run one scenario and answer its trace: whole, changes, a window or a summary; a non-integer fact: counts if named. |
 | `boards_list` | List board profiles |   | yes | List the boards the repository declares and their validation level, without probing any hardware. Needs --repository. |
 | `toolchain_inspect` | Inspect toolchain |   | yes | Check the local tools a firmware build needs (west, CMake, Ninja, Zephyr SDK) and which are ready. Needs --repository. |
 | `firmware_build` | Build firmware | `ideId` | no | Run a local ephemeral cross-build of the runtime for one board, answer the image digest; it never flashes or deploys. |

@@ -104,6 +104,13 @@ describe('createNativeScenarioRuntime', () => {
     expect(adapter.calls).toEqual(['peek:4096:64']); // both reads come from one chunk read
   });
 
+  it('AI-08 readMemory refuses a size that is not a positive integer, before any adapter call', async () => {
+    const adapter = new FakeNativeAdapter();
+    const runtime = createNativeScenarioRuntime(adapter);
+    for (const size of [Number.NaN, 0, 0.5, 1.5, -1]) await expect(runtime.readMemory!(0x2000, size)).rejects.toThrow('size');
+    expect(adapter.calls).toEqual([]);
+  });
+
   it('fails closed before adapter calls for invalid addresses, bits, and reads', async () => {
     const adapter = new FakeNativeAdapter();
     const runtime = createNativeScenarioRuntime(adapter);

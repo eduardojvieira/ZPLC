@@ -138,6 +138,7 @@ export function createNativeScenarioRuntime(adapter: NativeScenarioAdapter): Sce
       return ((await getOutput(address)) & (1 << bitOffset)) !== 0;
     },
     readMemory: async (address, size) => {
+      if (!Number.isInteger(size) || size < 1) throw new Error('Scenario memory read size must be a positive integer');
       validateNumber(address, size, 0, MEMORY_END, 'memory');
       const bytes = new Uint8Array(size);
       for (let i = 0; i < size; i++) bytes[i] = await getOutput(address + i);
