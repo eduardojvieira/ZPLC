@@ -1,7 +1,7 @@
 # Spec 014: scope of 2.1.0
 
 This is the one list of what 2.1.0 holds and what is left (FRZ-001). It replaces every other ledger as the answer to "what is left".
-Each change that closes or adds an item updates this list in the same change (FRZ-004); nothing new enters the scope after 2026-11-25 (S-21).
+Each change that closes or adds an item updates this list in the same change (FRZ-004); nothing new enters the scope after 2026-11-25 (S-21), except what the owner adds by statement (S-23, D-37).
 
 | Item | Spec | State | Blocked by |
 |---|---|---|---|
@@ -41,3 +41,4 @@ Each change that closes or adds an item updates this list in the same change (FR
 | Version 2.1.0, T20-K5 compiler known issues | none | not started | the cut |
 | CHANGELOG Unreleased, screenshots, rehearsal | none | not started | the cut |
 | PR, tag, publication | none | not started | owner: PR, tag and publication; green seam |
+| Every compiler function placed in FBD and Ladder (S-23, D-37): one mechanism from the compiler's table, the conversions group, the generated tests, the docs; plan-lng.md, units U-LNG-1 to U-LNG-4 | 014 LNG-029, LNG-030 | not started | the independent verifier reads plan-lng.md before any unit starts |
