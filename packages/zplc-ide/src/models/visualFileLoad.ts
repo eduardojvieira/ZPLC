@@ -7,7 +7,9 @@
  */
 
 import * as z from 'zod/v4';
-import { UnknownBlockTypeError, parseFBDModel, serializeFBDModel, type FBDModel } from './fbd';
+import { FBD_VALUE_BLOCKS, fbdPaletteBlocks } from '../editors/fbd/palette';
+import { fbdPlacesBlock } from '../transpiler/fbdToST';
+import { parseFBDModel, serializeFBDModel, type FBDModel } from './fbd';
 import { LD_COIL_TYPES, LD_CONTACT_TYPES } from './ldSupport';
 import { parseLDModel, serializeLDModel, type LDModel } from './ld';
 import type { ProjectBlock } from './projectBlocks';
@@ -15,19 +17,26 @@ import { SFC_QUALIFIERS, parseSFCModel, serializeSFCModel, type SFCModel } from 
 
 export const MAX_VIOLATIONS = 5;
 
-/** One violation and its place in the file: `path` is the JSON path, `found` and `acceptedValues` are set for a closed set of values. */
+/**
+ * One violation as data (AIX-013): what kind it is, its JSON path, and for a closed set the value found and the accepted
+ * values. No words: the editor and the Assistant say it through the catalogue, the CLI and the MCP compose their own.
+ * `reason` is the words of zod or of the model parser, for the kinds that have no more structure.
+ */
 export interface VisualFileViolation {
+  code: 'not-json' | 'invalid-value' | 'missing-field' | 'unknown-block' | 'invalid';
   path: string;
-  message: string;
   found?: string;
   acceptedValues?: readonly string[];
+  /** For unknown-block: the id of the block. */
+  block?: string;
+  reason?: string;
 }
 
 export interface VisualFileError {
   fileName: string;
-  /** At most MAX_VIOLATIONS, in document order: `<path>: <message>` of each of `details`. */
+  /** At most MAX_VIOLATIONS, in document order, as they were before `details`: kept for the consumers that read them. */
   violations: string[];
-  /** The same violations, located (AIX-013). */
+  /** The same violations, as data. */
   details: VisualFileViolation[];
   /** Violations found beyond the ones listed. */
   more: number;
@@ -116,58 +125,60 @@ const sfcFile = z.looseObject({
   actions: z.array(z.looseObject({ id, name: id, body: z.string() })).optional(),
 });
 
-/** A violation at `path`; its words are the zod ones or the parser ones, in English like the rest of the file format. */
-const violation = (path: string, text: string, closed?: { found: string; acceptedValues: readonly string[] }): VisualFileViolation => ({
-  path,
-  message: text,
-  ...closed,
-});
-const shown = (value: unknown): string => (typeof value === 'string' ? value : (JSON.stringify(value) ?? String(value)));
+/** A violation and the string `violations` has always held for it. */
+type Found = { detail: VisualFileViolation; legacy: string };
 
-/** A zod issue at its `rungs[0].grid[1]`-style place; a value outside a closed set names what was found and the accepted values. */
-function describeIssue(issue: z.core.$ZodIssue, document: unknown): VisualFileViolation {
+const shown = (value: unknown): string => (typeof value === 'string' ? value : (JSON.stringify(value) ?? String(value)));
+const valueAt = (document: unknown, path: readonly PropertyKey[]): unknown =>
+  path.reduce<unknown>((value, part) => (value as Record<PropertyKey, unknown> | undefined)?.[part], document);
+
+/** A zod issue at its `rungs[0].grid[1]`-style place. */
+function describeIssue(issue: z.core.$ZodIssue, document: unknown): Found {
   const path = issue.path.reduce<string>(
     (text, part) => (typeof part === 'number' ? `${text}[${part}]` : text ? `${text}.${String(part)}` : String(part)),
     '',
   );
+  const reason = issue.message.split('\n', 1)[0]!;
+  const legacy = path ? `${path}: ${reason}` : reason;
   if (issue.code === 'invalid_value' && issue.values.every((value) => typeof value === 'string')) {
-    const found = shown(issue.path.reduce<unknown>((value, part) => (value as Record<PropertyKey, unknown> | undefined)?.[part], document));
-    const acceptedValues = issue.values as string[];
-    return violation(path, `invalid value '${found}'; accepted values: ${acceptedValues.join(', ')}`, { found, acceptedValues });
+    const detail = {
+      code: 'invalid-value' as const,
+      path,
+      found: shown(valueAt(document, issue.path)),
+      acceptedValues: issue.values as string[],
+    };
+    return { detail, legacy };
   }
-  return violation(path, issue.message.split('\n', 1)[0]!);
+  const missing = issue.code === 'invalid_type' && valueAt(document, issue.path) === undefined;
+  return { detail: { code: missing ? 'missing-field' : 'invalid', path, reason }, legacy };
 }
 
-function rejected(fileName: string, all: VisualFileViolation[]): { ok: false; error: VisualFileError } {
-  const details = all.slice(0, MAX_VIOLATIONS);
+function rejected(fileName: string, all: Found[]): { ok: false; error: VisualFileError } {
+  const listed = all.slice(0, MAX_VIOLATIONS);
   return {
     ok: false,
     error: {
       fileName,
-      violations: details.map(({ path, message }) => (path ? `${path}: ${message}` : message)),
-      details,
+      violations: listed.map(({ legacy }) => legacy),
+      details: listed.map(({ detail }) => detail),
       more: Math.max(0, all.length - MAX_VIOLATIONS),
     },
   };
 }
 
-/** What a model parser threw, located when it says where. */
-function parseViolation(error: unknown): VisualFileViolation {
-  if (error instanceof UnknownBlockTypeError)
-    return violation(error.path, error.message.replace(`Invalid FBD ${error.path}: `, ''), {
-      found: error.found,
-      acceptedValues: error.acceptedValues,
-    });
-  return violation('', error instanceof Error ? error.message.split('\n', 1)[0]! : 'the model could not be read');
-}
-
-function load<T>(fileName: string, content: string, shape: z.ZodType, parse: (text: string) => T): VisualFileLoad<T> {
+function load<T>(
+  fileName: string,
+  content: string,
+  shape: z.ZodType,
+  parse: (text: string) => T,
+  check: (document: unknown) => Found[] = () => [],
+): VisualFileLoad<T> {
   let document: unknown;
   try {
     document = JSON.parse(content);
   } catch (error) {
-    const detail = error instanceof Error ? error.message.split('\n', 1)[0] : 'unreadable';
-    return rejected(fileName, [violation('', `not valid JSON: ${detail}`)]);
+    const reason = error instanceof Error ? error.message.split('\n', 1)[0] : 'unreadable';
+    return rejected(fileName, [{ detail: { code: 'not-json', path: '', reason }, legacy: `not valid JSON: ${reason}` }]);
   }
   const checked = shape.safeParse(document);
   if (!checked.success)
@@ -175,17 +186,55 @@ function load<T>(fileName: string, content: string, shape: z.ZodType, parse: (te
       fileName,
       checked.error.issues.map((issue) => describeIssue(issue, document)),
     );
+  const unchecked = check(document);
+  if (unchecked.length > 0) return rejected(fileName, unchecked);
   try {
     return { ok: true, model: parse(content) };
   } catch (error) {
-    return rejected(fileName, [parseViolation(error)]);
+    const reason = error instanceof Error ? error.message.split('\n', 1)[0]! : 'the model could not be read';
+    return rejected(fileName, [{ detail: { code: 'invalid', path: '', reason }, legacy: reason }]);
   }
 }
 
+/**
+ * The blocks no diagram can place, by the rule of the FBD transpiler and the palette (`fbdPlacesBlock`); the accepted
+ * values are the palette's blocks and the ones the project declares that a diagram can place.
+ */
+function unplacedBlocks(document: unknown, projectBlocks: readonly ProjectBlock[]): Found[] {
+  const blocks = (document as { blocks: Array<{ id: string; type: string }> }).blocks;
+  const placeable = (type: string) => (FBD_VALUE_BLOCKS as readonly string[]).includes(type) || fbdPlacesBlock(type, projectBlocks);
+  let accepted: string[] | undefined;
+  return blocks.flatMap((block, index) => {
+    if (placeable(block.type)) return [];
+    accepted ??= [
+      ...new Set([
+        ...fbdPaletteBlocks(),
+        ...projectBlocks.map((declared) => declared.name).filter((name) => fbdPlacesBlock(name, projectBlocks)),
+      ]),
+    ];
+    const path = `blocks[${index}].type`;
+    return [
+      {
+        detail: { code: 'unknown-block' as const, path, block: block.id, found: block.type, acceptedValues: accepted },
+        legacy: `${path}: '${block.type}'`,
+      },
+    ];
+  });
+}
+
 export const loadLDFile = (fileName: string, content: string): VisualFileLoad<LDModel> => load(fileName, content, ldFile, parseLDModel);
-/** `projectBlocks`, when the caller knows them, has the type of every block checked (AIX-013). */
+/**
+ * `projectBlocks`, when the caller knows them, has every block checked against what a diagram can place (AIX-013); the editor
+ * opens a file without them, and a block of the project would otherwise be refused.
+ */
 export const loadFBDFile = (fileName: string, content: string, projectBlocks?: readonly ProjectBlock[]): VisualFileLoad<FBDModel> =>
-  load(fileName, content, fbdFile, (text) => parseFBDModel(text, projectBlocks));
+  load(
+    fileName,
+    content,
+    fbdFile,
+    (text) => parseFBDModel(text, projectBlocks),
+    projectBlocks ? (document) => unplacedBlocks(document, projectBlocks) : undefined,
+  );
 export const loadSFCFile = (fileName: string, content: string): VisualFileLoad<SFCModel> => load(fileName, content, sfcFile, parseSFCModel);
 
 /**

@@ -6,7 +6,6 @@
  */
 
 import { getFB } from '@zplc/compiler';
-import { getBlockCategories } from '../catalog/blockCatalog';
 import { ElementError, blockElement, connectionElement } from './sourceElements';
 import { serializeVisualDocument } from './visualFileFormat';
 import { findProjectBlock, type ProjectBlock } from './projectBlocks';
@@ -41,39 +40,6 @@ export interface FBDPort {
 // =============================================================================
 // Block Types
 // =============================================================================
-
-/** The blocks that are not calls: a literal, a variable read, a program input and a variable write. */
-export const FBD_SPECIAL_BLOCKS = ['constant', 'variable', 'input', 'output'] as const;
-
-/** A block whose type is neither special, nor a standard block, nor one the project declares (AIX-013). */
-export class UnknownBlockTypeError extends ElementError {
-  readonly path: string;
-  readonly found: string;
-  readonly acceptedValues: readonly string[];
-
-  constructor(path: string, found: string, acceptedValues: readonly string[], blockId: string) {
-    // ponytail: the message names the first 40 types; acceptedValues holds them all
-    const shown = acceptedValues.slice(0, 40).join(', ');
-    const rest = acceptedValues.length > 40 ? `, ... (${acceptedValues.length} in all)` : '';
-    super(
-      `Invalid FBD ${path}: block '${blockId}' has the unknown type '${found}'; accepted values: ${shown}${rest}`,
-      blockElement(blockId),
-    );
-    this.name = 'UnknownBlockTypeError';
-    this.path = path;
-    this.found = found;
-    this.acceptedValues = acceptedValues;
-  }
-}
-
-let standardBlocks: Set<string> | undefined;
-const standard = (): Set<string> => (standardBlocks ??= new Set(getBlockCategories().flatMap((category) => category.blocks)));
-const isKnownBlockType = (type: string, projectBlocks: readonly ProjectBlock[]): boolean =>
-  (FBD_SPECIAL_BLOCKS as readonly string[]).includes(type) || standard().has(type) || findProjectBlock(projectBlocks, type) !== undefined;
-/** Every type a block can have: the special ones, the project's own, then the standard blocks. */
-const acceptedBlockTypes = (projectBlocks: readonly ProjectBlock[]): string[] => [
-  ...new Set([...FBD_SPECIAL_BLOCKS, ...projectBlocks.map((block) => block.name), ...standard()]),
-];
 
 export type FBDBlockType =
   // Special blocks
@@ -270,9 +236,6 @@ export function validateFBDModel(value: unknown, projectBlocks?: readonly Projec
     const block = record(value, `blocks[${index}]`);
     const id = nonEmptyString(block.id, `blocks[${index}].id`);
     const type = nonEmptyString(block.type, `blocks[${index}].type`);
-    // a caller that knows the project's blocks gets the type checked here; the editor and the clipboard do not know them
-    if (projectBlocks && !isKnownBlockType(type, projectBlocks))
-      throw new UnknownBlockTypeError(`blocks[${index}].type`, type, acceptedBlockTypes(projectBlocks), id);
     if (blockIds.has(id)) throw new ElementError(`Invalid FBD: duplicate block id '${id}'`, blockElement(id));
     blockIds.add(id);
     const position = record(block.position, `blocks[${index}].position`);

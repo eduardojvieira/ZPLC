@@ -1,6 +1,6 @@
 /** Function Block Diagram, `src/*.fbd.json`: the shape `loadFBDFile` checks and the port rules `validateFBDModel` holds. */
-import { fbdPaletteBlocks } from '../editors/fbd/palette';
-import { FBD_SPECIAL_BLOCKS as SPECIAL_BLOCKS, getDefaultPorts } from '../models/fbd';
+import { FBD_VALUE_BLOCKS as SPECIAL_BLOCKS, fbdPaletteBlocks } from '../editors/fbd/palette';
+import { getDefaultPorts } from '../models/fbd';
 import type { FormatModule, JsonSchema } from './index';
 
 /** The blocks the FBD palette offers, which are the ones the transpiler translates; the value blocks are SPECIAL_BLOCKS. */

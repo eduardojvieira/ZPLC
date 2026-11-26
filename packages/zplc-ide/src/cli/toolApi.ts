@@ -27,7 +27,7 @@ import type { ProjectMigrationChange } from '../project/projectModel';
 import { resolveProgramSource } from '../utils/programSourceResolution';
 import { elementAtLine } from '../models/sourceElements';
 import { collectProjectBlocks } from '../models/projectBlocks';
-import { loadFBDFile, loadLDFile, loadSFCFile } from '../models/visualFileLoad';
+import { loadFBDFile, loadLDFile, loadSFCFile, type VisualFileViolation } from '../models/visualFileLoad';
 import { catalogue } from '../plant/core/catalogue';
 import { validateScene, type SceneProblem } from '../plant/core/scene';
 import type { PlantSceneFile } from '../plant/contracts';
@@ -174,8 +174,49 @@ function valueAt(document: unknown, path: string): string | undefined {
   );
   return value === undefined ? undefined : typeof value === 'string' ? value : JSON.stringify(value);
 }
-const located = (diagnostic: LocatedDiagnostic): LocatedDiagnostic =>
-  Object.fromEntries(Object.entries(diagnostic).filter(([, value]) => value !== undefined)) as LocatedDiagnostic;
+/** The bounds of the located fields, the ones the MCP result schema holds them to. */
+const LOCATED_BOUNDS = { jsonPath: 256, found: 256, file: 256, detail: 512, values: 400, value: 64, message: 512 } as const;
+/** Without the fields that are not set, and each one cut to its bound. */
+function located(diagnostic: LocatedDiagnostic): LocatedDiagnostic {
+  const { jsonPath, found, file, detail, acceptedValues } = diagnostic;
+  const cut = (text: string | undefined, max: number) => text?.slice(0, max);
+  const bounded: LocatedDiagnostic = {
+    ...diagnostic,
+    message: diagnostic.message.slice(0, LOCATED_BOUNDS.message),
+    jsonPath: cut(jsonPath, LOCATED_BOUNDS.jsonPath),
+    found: cut(found, LOCATED_BOUNDS.found),
+    file: cut(file, LOCATED_BOUNDS.file),
+    detail: cut(detail, LOCATED_BOUNDS.detail),
+    acceptedValues: acceptedValues?.slice(0, LOCATED_BOUNDS.values).map((value) => value.slice(0, LOCATED_BOUNDS.value)),
+  };
+  return Object.fromEntries(Object.entries(bounded).filter(([, value]) => value !== undefined)) as LocatedDiagnostic;
+}
+
+/** `head` followed by as many accepted values as fit in one message, and how many there are when not all fit. */
+function withAccepted(head: string, values: readonly string[]): string {
+  const all = `${head}; accepted values: ${values.join(', ')}`;
+  if (all.length <= LOCATED_BOUNDS.message) return all;
+  const tail = `, ... (${values.length} in all)`;
+  let text = `${head}; accepted values: `;
+  for (const [index, value] of values.entries()) {
+    const next = `${index === 0 ? '' : ', '}${value}`;
+    if (text.length + next.length + tail.length > LOCATED_BOUNDS.message) break;
+    text += next;
+  }
+  return `${text}${tail}`;
+}
+
+/** The English sentence of a violation of a visual file, for the CLI and the MCP; the editor says it through the catalogue. */
+function visualViolationSentence(detail: VisualFileViolation, legacy: string): string {
+  const at = detail.path || 'the file';
+  if (detail.code === 'invalid-value') return withAccepted(`${at}: invalid value '${detail.found}'`, detail.acceptedValues ?? []);
+  if (detail.code === 'unknown-block')
+    return withAccepted(
+      `${at}: block '${detail.block}' has the type '${detail.found}', which an FBD diagram cannot place`,
+      detail.acceptedValues ?? [],
+    );
+  return legacy;
+}
 
 /** Every Ladder, FBD and SFC file of the project, loaded as Studio opens it, the FBD types checked against the project's blocks. */
 function visualFileDiagnostics(workspace: WorkspaceProject): LocatedDiagnostic[] {
@@ -193,7 +234,7 @@ function visualFileDiagnostics(workspace: WorkspaceProject): LocatedDiagnostic[]
     return loaded.error.details.map((detail, index) =>
       located({
         code: 'VISUAL_FILE_INVALID',
-        message: loaded.error.violations[index]!,
+        message: visualViolationSentence(detail, loaded.error.violations[index]!),
         path: source.path,
         jsonPath: detail.path || undefined,
         found: detail.found,

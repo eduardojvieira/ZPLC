@@ -7,11 +7,19 @@
 import { CANDIDATE_CHANGE_CAP, isCandidateChangePath } from '../../ai/candidatePaths';
 import { parseProposals, type AiProposal } from '../../ai/proposals';
 import { prepareChangeSet, type ProposedChange } from '../../ai/changeSetPrepare';
+import type { VisualFileViolation } from '../../models/visualFileLoad';
 import { ERROR_CODES, record, text } from '../aiProviderPresentation';
 
 export type AgentResponsePresentation =
   | { kind: 'answer'; answer: string; changes?: ProposedChange[]; proposals?: AiProposal[] }
-  | { kind: 'refused'; answer: string; reason: 'invalid-file' | 'sensitive-field'; path: string; violations: string[] }
+  | {
+      kind: 'refused';
+      answer: string;
+      reason: 'invalid-file' | 'sensitive-field';
+      path: string;
+      violations: string[];
+      details?: VisualFileViolation[];
+    }
   | { kind: 'error'; code: string; retryAfter?: number }
   | { kind: 'invalid' };
 
@@ -94,5 +102,12 @@ export function presentAgentResponse(value: unknown, expected?: AgentSentProgram
   const prepared = prepareChangeSet(changes);
   return prepared.ok
     ? { kind: 'answer', answer: item.answer, changes: prepared.changes, ...withProposals }
-    : { kind: 'refused', answer: item.answer, reason: prepared.reason, path: prepared.path, violations: prepared.violations };
+    : {
+        kind: 'refused',
+        answer: item.answer,
+        reason: prepared.reason,
+        path: prepared.path,
+        violations: prepared.violations,
+        ...(prepared.details ? { details: prepared.details } : {}),
+      };
 }
