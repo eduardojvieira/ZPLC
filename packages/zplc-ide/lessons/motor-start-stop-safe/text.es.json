@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial pierde la autorretención al soltar Start; haga que Stop, EStop y Overload detengan el motor, y que nunca arranque ni vuelva a arrancar mientras Start siga pulsado tras el encendido o una parada.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "body": "Corrija el programa inicial, guárdelo y después pulse {{ui:learn.check}}. El programa inicial copia Start a Forward, así que el motor funciona solo mientras se mantiene Start. Cámbielo para que Forward siga en ON después de una pulsación de Start, pase a OFF con Stop, EStop y Overload, y vuelva a ON solo después de que Start se soltó y se pulsó otra vez, también cuando el programa empieza con Start pulsado. Reverse sigue en FALSE. Escriba usted las instrucciones y declare las memorias que necesite.",
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario requerido se llama MotorStartStop y contiene {{assertions}} aserciones."
     },
     {
@@ -41,8 +41,8 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "La aserción NEVER exacta comprueba la cobertura lógica de este escenario.",
-      "checkpoint": "Este escenario prueba la lógica del programa; no es una función de seguridad y no dice nada sobre la seguridad física."
+      "body": "A los {{t:50}} ms se libera EStop mientras Start sigue pulsado. ¿Por qué el motor debe seguir en OFF en ese momento, y qué esperaría un operador que está delante de la máquina?",
+      "checkpoint": "Un motor que arranca solo cuando termina una parada sorprende a las personas que están cerca. Después de cualquier parada, un arranque necesita una pulsación nueva de Start."
     }
   ],
   "hints": [
@@ -55,7 +55,5 @@
       "text": "Borre primero la memoria cuando Stop, EStop u Overload sea TRUE; solo después deje que Start la active, y solo si Start se vio suelto desde la última parada, para que un Start mantenido no vuelva a arrancar el motor."
     }
   ],
-  "faultCases": [
-    "El programa inicial pierde la autorretención al soltar Start; haga que Stop, EStop y Overload detengan el motor, y que nunca arranque ni vuelva a arrancar mientras Start siga pulsado tras el encendido o una parada."
-  ]
+  "faultCases": ["El programa inicial copia Start a Forward, así que el motor funciona solo mientras se mantiene Start."]
 }

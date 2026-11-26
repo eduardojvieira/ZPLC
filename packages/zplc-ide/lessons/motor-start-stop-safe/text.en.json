@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter loses seal-in when Start is released; implement Stop, EStop, and Overload dropout, and never start or restart while Start is still held after power-up or a stop.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program copies Start to Forward, so the motor runs only while Start is held. Change it so that Forward stays ON after a press of Start, goes OFF on Stop, EStop and Overload, and turns ON again only after Start has been released and pressed again, also when the program starts with Start held. Reverse stays FALSE. Write the statements yourself, and declare the memories you need.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The required scenario is named MotorStartStop and contains {{assertions}} assertions."
     },
     {
@@ -41,8 +41,8 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "The exact NEVER assertion checks logical coverage for this scenario.",
-      "checkpoint": "This scenario tests the logic of the program; it is not a safety function and says nothing about physical safety."
+      "body": "At {{t:50}} ms EStop is released while Start is still held. Why must the motor stay OFF there, and what would an operator in front of the machine expect?",
+      "checkpoint": "A motor that starts by itself when a stop ends surprises the people near it. After any stop, a start needs a new press of Start."
     }
   ],
   "hints": [
@@ -55,7 +55,5 @@
       "text": "Clear the memory first when Stop, EStop or Overload is TRUE; only then let Start set it, and only if Start was seen released since the last stop, so a held Start cannot restart the motor."
     }
   ],
-  "faultCases": [
-    "The starter loses seal-in when Start is released; implement Stop, EStop, and Overload dropout, and never start or restart while Start is still held after power-up or a stop."
-  ]
+  "faultCases": ["The starting program copies Start to Forward, so the motor runs only while Start is held."]
 }
