@@ -135,13 +135,19 @@ export function captureRecord(name: string, surface: string, state: string, cond
   };
 }
 
-export function manifestText(captures: CaptureRecord[], unreached: Array<{ surface: string; reason: string }>): string {
+export function manifestText(
+  captures: CaptureRecord[],
+  unreached: Array<{ surface: string; reason: string }>,
+  failedConditions: Array<{ condition: string; error: string }> = [],
+): string {
   const sorted = [...captures].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   const manifest = {
     what: 'The captures of a UXV run (spec 014 UXV-003) with the defects a machine measured on each (UXV-004)',
     captures: sorted,
     defects: sorted.reduce((total, capture) => total + capture.defects.length, 0),
     unreached: [...unreached].sort((a, b) => (a.surface < b.surface ? -1 : a.surface > b.surface ? 1 : 0)),
+    /** Conditions that stopped before their last capture: what they captured is above, the error is here. */
+    failedConditions: [...failedConditions].sort((a, b) => (a.condition < b.condition ? -1 : a.condition > b.condition ? 1 : 0)),
   };
   return `${JSON.stringify(manifest, null, 2)}\n`;
 }

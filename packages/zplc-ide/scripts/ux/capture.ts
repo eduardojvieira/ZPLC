@@ -34,6 +34,7 @@ import {
   type Surface,
 } from './manifest';
 import { collectMeasurement, type Measurement } from './measurement';
+import type { Harness } from '../journeyApp';
 
 const REPOSITORY = resolve(import.meta.dir, '..', '..', '..', '..');
 const SCREENS = join(REPOSITORY, 'specs', '014-zplc-2-1-release-quality', 'screens.md');
@@ -126,10 +127,11 @@ async function captureCondition(
   surfaces: Surface[],
   project: string,
   out: string,
-): Promise<{ captures: CaptureRecord[]; failed: Array<{ surface: string; reason: string }> }> {
-  const { launchApp, startHarness, button, css } = await import('../journeyApp');
+  shared: { harness: Harness; scratch: string },
+): Promise<ConditionRun> {
+  const { launchApp, button, css } = await import('../journeyApp');
   const ui = (key: Parameters<typeof translate>[1]) => translate(condition.locale, key);
-  const { harness, scratch, stop } = await startHarness();
+  const { harness, scratch } = shared;
   const launched = await launchApp(harness, mkdtempSync(join(scratch, 'uxv-')));
   const app = launched.app;
   const captures: CaptureRecord[] = [];
@@ -230,9 +232,24 @@ async function captureCondition(
         await reset();
       }
     }
+  } catch (error) {
+    // what the window showed and what the app logged when the condition stopped, so the failure can be read afterwards
+    const shot = `${conditionName(condition)}--failure.png`;
+    try {
+      // a hung renderer never answers: five seconds, then the log alone
+      const picture = (await Promise.race([
+        app.cdp.command('Page.captureScreenshot', { format: 'png' }),
+        Bun.sleep(5_000).then(() => null),
+      ])) as { data: string } | null;
+      if (picture) writeFileSync(join(out, shot), Buffer.from(picture.data, 'base64'));
+    } catch {
+      /* the window is gone: the log has to say it */
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    const errors = app.errors.length > 0 ? `\nrenderer errors:\n${app.errors.slice(-10).join('\n')}` : '';
+    throw new Error(`${message}\npicture: ${shot}${errors}\napplication log (last 4000 characters):\n${app.log().slice(-4_000)}`);
   } finally {
     await launched.stop();
-    await stop();
   }
   return { captures, failed };
 }
@@ -250,7 +267,7 @@ export interface RunResult {
   failedConditions: Array<{ condition: string; error: string }>;
 }
 
-/** Every condition in turn. */
+/** Every condition in turn; one that throws is recorded with its error and the run goes on to the next. */
 export async function runConditions(
   conditions: Condition[],
   captureOne: (condition: Condition) => Promise<ConditionRun>,
@@ -259,7 +276,15 @@ export async function runConditions(
   const result: RunResult = { captures: [], failed: [], failedConditions: [] };
   for (const condition of conditions) {
     const started = Date.now();
-    const run = await captureOne(condition);
+    let run: ConditionRun;
+    try {
+      run = await captureOne(condition);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      result.failedConditions.push({ condition: conditionName(condition), error: message });
+      log(`${conditionName(condition)}: failed: ${message.split('\n')[0]}`);
+      continue;
+    }
     result.captures.push(...run.captures);
     for (const { surface, reason } of run.failed) result.failed.push({ surface, reason: `${conditionName(condition)}: ${reason}` });
     log(`${conditionName(condition)}: ${run.captures.length} captures in ${Math.round((Date.now() - started) / 1000)} s`);
@@ -295,9 +320,20 @@ async function main(): Promise<void> {
   // every Studio surface has the same covering set; one launch per condition holds every surface in it
   let conditions = conditionsFor({ id: '', area: '', states: [], reachedBy: [] });
   if (values.condition) conditions = conditions.filter((condition) => values.condition!.includes(conditionName(condition)));
-  const { captures, failed } = await runConditions(conditions, (condition) => captureCondition(condition, reached, surfaces, project, out));
+  // one Vite server for the whole run, as run-journeys.ts has; every condition launches its own Electron against it
+  const { startHarness } = await import('../journeyApp');
+  const { harness, scratch, stop } = await startHarness();
+  let run: RunResult;
+  try {
+    run = await runConditions(conditions, (condition) =>
+      captureCondition(condition, reached, surfaces, project, out, { harness, scratch }),
+    );
+  } finally {
+    await stop();
+  }
+  const { captures, failed, failedConditions } = run;
   const notReached = [...unreached, ...failed];
-  writeFileSync(join(out, 'manifest.json'), manifestText(captures, notReached));
+  writeFileSync(join(out, 'manifest.json'), manifestText(captures, notReached, failedConditions));
   const areas = [...new Set(reached.map((entry) => entry.surface.area))];
   for (const area of areas) {
     const ids = new Set(reached.filter((entry) => entry.surface.area === area).map((entry) => entry.surface.id));
@@ -314,7 +350,8 @@ async function main(): Promise<void> {
   for (const capture of captures) for (const defect of capture.defects) byKind.set(defect.kind, (byKind.get(defect.kind) ?? 0) + 1);
   console.log(`uxv: ${captures.length} captures, ${defects} measured defects, ${notReached.length} surfaces not reached; ${out}`);
   for (const [kind, count] of [...byKind].sort()) console.log(`  ${kind}: ${count}`);
-  process.exit(defects === 0 ? 0 : 1);
+  for (const { condition, error } of failedConditions) console.log(`  condition ${condition} failed: ${error.split('\n')[0]}`);
+  process.exit(defects === 0 && failedConditions.length === 0 ? 0 : 1);
 }
 
 if (import.meta.main) await main();
