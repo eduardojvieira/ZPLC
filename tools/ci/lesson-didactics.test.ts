@@ -214,8 +214,15 @@ describe('rules, each failing when broken', () => {
 
   test('statementsAdded: the ST statements of the solution that the starter lacks, declarations left out', () => {
     const starter = 'PROGRAM P\nVAR X : INT; END_VAR\nX := 1;\nEND_PROGRAM\n';
-    const solution =
-      'PROGRAM P\nVAR X : INT; Y : INT; END_VAR\nX := 1;\n(* scale *)\nY := (X * 100) / 1000;\nIF X > 0 THEN Y := 0; END_IF;\nEND_PROGRAM\n';
+    const solution = [
+      'PROGRAM P',
+      'VAR X : INT; Y : INT; END_VAR',
+      'X := 1;',
+      '(* scale *)',
+      'Y := (X * 100) / 1000;',
+      'IF X > 0 THEN Y := 0; END_IF;',
+      'END_PROGRAM',
+    ].join('\n');
     expect(statementsAdded(starter, solution)).toEqual(['Y := (X * 100) / 1000', 'IF X > 0 THEN Y := 0', 'END_IF']);
   });
 

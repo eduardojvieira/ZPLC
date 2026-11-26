@@ -44,6 +44,6 @@ caption: A timing diagram
 ```quiz
 question: What is read at rest?
 options:
-  - { text: 'TRUE', correct: true, feedback: Yes, it conducts. }
-  - { text: 'FALSE', feedback: No, it does not. }
+  - { text: 'TRUE', correct: true, feedback: 'Yes, it conducts.' }
+  - { text: 'FALSE', feedback: 'No, it does not.' }
 ```
