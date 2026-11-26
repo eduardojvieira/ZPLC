@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Latching an alarm in Ladder: SET and RESET coils, and the order of the rungs",
   "summary": "Hold a fault in memory with SET and RESET coils, and see that in Ladder the rung that comes last decides which one wins.",
-  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the alarm handling requirements of a real machine or wiring.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real plant must handle and acknowledge its alarms.",
   "objectives": [
     "Hold an alarm after the fault has gone with a SET coil, and clear it only with a RESET coil.",
     "Decide the priority between set and reset by the order of the rungs: the last one scanned wins."
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter drives both outputs with plain coils from Fault, so they go OFF at {{t:20}} ms when the fault is gone; use a SET coil for Fault and a RESET coil for Ack on each output. Put the RESET rung of SetFirst before its SET rung, and the SET rung of ResetFirst before its RESET rung.",
-      "checkpoint": "Each output has one SET rung and one RESET rung, in the order that gives the priority asked for."
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program drives both outputs with plain coils from Fault, so they go OFF at {{t:20}} ms when the fault is gone. Change it so that each output turns ON with Fault, stays ON after Fault drops, and turns OFF only with Ack; and when Fault and Ack arrive together at {{t:50}} ms, SetFirst ends ON and ResetFirst ends OFF.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The scenario is named AlarmLatchLd and contains {{assertions}} assertions."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "The starter drives both outputs with plain coils from Fault, so they go OFF at {{t:20}} ms when the fault is gone; use a SET coil for Fault and a RESET coil for Ack on each output."
+    "The starting program drives both outputs with plain coils from Fault, so they go OFF at {{t:20}} ms when the fault is gone."
   ]
 }

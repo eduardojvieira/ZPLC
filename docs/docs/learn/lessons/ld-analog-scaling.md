@@ -39,7 +39,7 @@ Scale the raw counts of an analog input to a level in percent with a MUL box and
 
 ## What the evidence covers
 
-Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the accuracy, noise, calibration of a real analog input or wiring.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety. The scenario sets only BOOL inputs, so the lesson does not read a real analog input, and it does not show how accurate, noisy or well calibrated a real sensor is, or how it is wired.
 
 ## On a board
 

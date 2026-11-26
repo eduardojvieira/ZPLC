@@ -1,12 +1,12 @@
 ---
-title: "Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres cintas"
+title: "Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres rangos"
 sidebar_label: "types-arithmetic-comparison-fbd"
 description: "La lección types-arithmetic-comparison-fbd: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres cintas
+# Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres rangos
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/types-arithmetic-comparison-fbd. Do not edit. >>> */}
 
@@ -19,14 +19,14 @@ Mantenga un total acumulado en una variable INT con bloques ADD, SEL y R_TRIG, y
 - Tiempo estimado: 25 minutos
 - Lenguajes: FBD
 - Rutas: Simulación, Hardware
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [types-arithmetic-comparison](./types-arithmetic-comparison.md), [boolean-logic-two-hand-guard-fbd](./boolean-logic-two-hand-guard-fbd.md)
 
 ## Objetivos
 
 - Use una variable INT para un número: un bloque ADD calcula el valor siguiente, los bloques SEL eligen entre el total anterior, el nuevo y cero, y los bloques LT, EQ y GT convierten el número en resultados BOOL.
-- Sume a un número solo en el flanco ascendente de una entrada, con un bloque R_TRIG, de modo que un botón mantenido durante varios ciclos cuente una sola vez.
+- Sume a un número solo en el flanco ascendente de una entrada, con un bloque R_TRIG, de modo que un pulsador mantenido durante varios ciclos cuente una sola vez.
 
 ## Etapas
 

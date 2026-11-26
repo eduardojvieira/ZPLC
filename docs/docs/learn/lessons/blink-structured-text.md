@@ -19,7 +19,7 @@ Build a blinker from a TON timer and a memory variable, and make it run only whi
 - Estimated time: 15 minutes
 - Languages: ST
 - Tracks: Simulation, Hardware
-- Reading page: no
+- Reading page: yes
 - Plant: none
 - Prerequisites: [scan-cycle-one-scan-memory](./scan-cycle-one-scan-memory.md)
 

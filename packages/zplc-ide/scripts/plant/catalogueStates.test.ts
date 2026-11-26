@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
-import { gripperDecor } from '../../src/plant/view/geometry';
+import { gripperDecor, snapshotBounds } from '../../src/plant/view/geometry';
 import { MODELS, partModel } from '../../src/plant/view/models';
-import { CATALOGUE, catalogueView, catalogueViews, ITEMS } from './catalogueStates';
+import { CATALOGUE, catalogueCamera, catalogueKindCells, catalogueView, catalogueViews, ITEMS, unionBounds } from './catalogueStates';
 
 const MACHINES = {
   'stacker-crane': ['stacker-crane', 'stacker-mast', 'stacker-rack'],
@@ -62,4 +62,40 @@ describe('the catalogue sheet', () => {
   it('draws every item kind: a plain box, a coloured part, a metal item, a lid, a base, a crate and a pallet', () => {
     expect(ITEMS.map((i) => i.id)).toEqual(['box', 'part', 'metal', 'lid', 'base', 'crate', 'pallet']);
   });
+
+  it('aligns turntable left/right yawDeg with the core pose and raises extended stop-blade above the floor', () => {
+    const turntable = CATALOGUE.find((k) => k.id === 'turntable')!;
+    const left = turntable.states.find((s) => s.label === 'left')!;
+    const right = turntable.states.find((s) => s.label === 'right')!;
+    expect(left.yawDeg).toBe(90);
+    expect(right.yawDeg).toBe(-90);
+
+    const gantry = CATALOGUE.find((k) => k.id === 'gantry')!;
+    expect(gantry.states.find((s) => s.label === 'moved, gripping')?.state).toMatchObject({ holding: true });
+
+    const blade = CATALOGUE.find((k) => k.id === 'stop-blade')!;
+    const extended = blade.states.find((s) => s.label === 'extended (up)')!;
+    expect(extended.rise).toBeCloseTo(0.32, 9);
+    const v = catalogueView(blade, extended);
+    expect(v.pose.p[1]).toBeCloseTo(0.65, 9);
+  });
+
+  it('S3-11 fits one shared camera on the union bounds across all states of each CatalogueKind', async () => {
+    const merged = unionBounds([
+      { min: [-1, 0, -0.5], max: [1, 1, 0.5] },
+      { min: [-0.2, 0.2, -2], max: [3, 1.5, 1] },
+    ]);
+    expect(merged).toEqual({ min: [-1, 0, -2], max: [3, 1.5, 1] });
+
+    for (const id of ['turntable', 'pusher', 'diverter-arm', 'stop-blade', 'stacker-crane'] as const) {
+      const k = CATALOGUE.find((c) => c.id === id)!;
+      const cells = await catalogueKindCells(k, 400 / 300);
+      expect(cells.length).toBe(k.states.length);
+      const expectedBounds = unionBounds(cells.map((c) => snapshotBounds(c.snapshot)!));
+      const expectedCam = catalogueCamera(expectedBounds, 400 / 300);
+      for (const cell of cells) {
+        expect(cell.camera).toEqual(expectedCam);
+      }
+    }
+  }, 60000);
 });

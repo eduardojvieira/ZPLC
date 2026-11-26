@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "title": "Flancos en escalera: contactos P y N y pulsos de un escaneo",
-  "summary": "Use un contacto de transición positiva y un contacto de transición negativa para que una caja en un transportador dé un pulso al llegar y otro al salir, sin importar cuánto tiempo siga activo el sensor.",
-  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el antirrebote, el tiempo de respuesta ni el cableado de un sensor real.",
+  "summary": "Use un contacto de flanco ascendente y un contacto de flanco descendente para que una caja en un transportador dé un pulso al llegar y otro al salir, sin importar cuánto tiempo siga activo el sensor.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un sensor real, con qué rapidez responde ni cómo se cablea.",
   "objectives": [
-    "Use un contacto de transición positiva (P) y un contacto de transición negativa (N) para convertir un nivel en un pulso de un escaneo.",
+    "Use un contacto de flanco ascendente (P) y un contacto de flanco descendente (N) para convertir un nivel en un pulso de un escaneo.",
     "Explique por qué una entrada retenida debe contarse una sola vez y qué escaneo ve el pulso."
   ],
   "stages": [
@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objetivo",
       "body": "En src/BoxEdges.ld.json dos peldaños copian BoxSensor a BoxArrived y a BoxLeft. Haga que BoxArrived pulse durante un escaneo cuando llega una caja, y que BoxLeft pulse durante un escaneo cuando sale, sin importar cuánto tiempo siga activo el sensor.",
-      "checkpoint": "BoxArrived usa un contacto de transición positiva y BoxLeft usa un contacto de transición negativa."
+      "checkpoint": "Usted puede decir qué contacto conduce solo en el escaneo en que su variable se activa, y cuál solo en el escaneo en que se desactiva."
     },
     {
       "key": "predict",
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia el sensor a las dos bobinas: BoxArrived sigue en ON a los {{t:20}} ms, con la caja retenida, en lugar de bajar tras un escaneo, y BoxLeft nunca pulsa; use un contacto de transición positiva para BoxArrived y un contacto de transición negativa para BoxLeft. En el editor de escalera, seleccione cada contacto y reemplácelo por el contacto de transición de la caja de herramientas.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial copia el sensor a las dos bobinas, así que BoxArrived sigue en ON a los {{t:20}} ms, mientras la caja está ahí, y BoxLeft nunca pasa a ON. Cámbielo para que BoxArrived esté en ON solo en el escaneo en que llega una caja, y BoxLeft solo en el escaneo en que sale. Conserve los dos peldaños y las dos bobinas.",
+      "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta el programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario se llama BoxEdges y contiene {{assertions}} aserciones."
     },
     {
@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "Intercambie los dos contactos, de modo que BoxArrived use la transición negativa, y ejecute de nuevo. ¿Qué aserciones fallan y qué contaría un contador colocado después de cada salida?",
+      "body": "Intercambie los dos contactos, de modo que BoxArrived use el flanco descendente, y ejecute de nuevo. ¿Qué aserciones fallan y qué contaría un contador colocado después de cada salida?",
       "checkpoint": "La llegada pulsa entonces cuando la caja sale, así que el pulso llega tarde por la longitud de la caja. Un contacto de flanco responde cuándo cambió, no si está activo ahora, y para contar se necesita lo primero."
     }
   ],
@@ -52,10 +52,10 @@
     },
     {
       "level": 2,
-      "text": "Reemplace el contacto del primer peldaño por un contacto de transición positiva sobre BoxSensor, y el del segundo peldaño por un contacto de transición negativa sobre BoxSensor. Conserve las dos bobinas."
+      "text": "Reemplace el contacto del primer peldaño por un contacto de flanco ascendente sobre BoxSensor, y el del segundo peldaño por un contacto de flanco descendente sobre BoxSensor. Conserve las dos bobinas."
     }
   ],
   "faultCases": [
-    "El programa inicial copia el sensor a las dos bobinas: BoxArrived sigue en ON a los {{t:20}} ms, con la caja retenida, en lugar de bajar tras un escaneo, y BoxLeft nunca pulsa; use un contacto de transición positiva para BoxArrived y un contacto de transición negativa para BoxLeft."
+    "El programa inicial copia el sensor a las dos bobinas, así que BoxArrived sigue en ON a los {{t:20}} ms, mientras la caja está ahí, y BoxLeft nunca pasa a ON."
   ]
 }

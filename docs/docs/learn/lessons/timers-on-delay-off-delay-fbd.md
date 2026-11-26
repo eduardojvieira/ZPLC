@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/timers-on-delay-off-delay-fbd. Do not edit. >>> */}
 
-Wire a TOF block to keep a light on after a button is released, and a TON block to ignore a sensor blip that is too short.
+Connect a TOF block to keep a light on after a push button is released, and a TON block to ignore a sensor blip that is too short.
 
 ## Facts
 
@@ -19,7 +19,7 @@ Wire a TOF block to keep a light on after a button is released, and a TON block 
 - Estimated time: 20 minutes
 - Languages: FBD
 - Tracks: Simulation, Hardware
-- Reading page: no
+- Reading page: yes
 - Plant: none
 - Prerequisites: [timers-on-delay-off-delay](./timers-on-delay-off-delay.md), [boolean-logic-two-hand-guard-fbd](./boolean-logic-two-hand-guard-fbd.md)
 
@@ -39,7 +39,7 @@ Wire a TOF block to keep a light on after a button is released, and a TON block 
 
 ## What the evidence covers
 
-Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show electrical debounce, sensor response or target timing.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real push button bounces or how fast a real sensor answers.
 
 ## Wiring
 

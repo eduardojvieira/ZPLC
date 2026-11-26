@@ -19,7 +19,7 @@ Construya un parpadeador con un temporizador TON y una variable de memoria, y ha
 - Tiempo estimado: 15 minutos
 - Lenguajes: ST
 - Rutas: Simulación, Hardware
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [scan-cycle-one-scan-memory](./scan-cycle-one-scan-memory.md)
 

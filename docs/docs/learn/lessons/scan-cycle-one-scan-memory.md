@@ -19,7 +19,7 @@ Follow how one input produces the current output and a copy delayed by one scan.
 - Estimated time: 10 minutes
 - Languages: ST
 - Tracks: Simulation, Hardware
-- Reading page: no
+- Reading page: yes
 - Plant: none
 - Prerequisites: [first-blink-simulation](./first-blink-simulation.md)
 
@@ -35,12 +35,12 @@ Follow how one input produces the current output and a copy delayed by one scan.
 3. **Edit**
 4. **Run**
 5. **Observe**
-6. **Evidence**
+6. **What Check looks at**
 7. **Reflect**
 
 ## What the evidence covers
 
-Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show target timing, snapshots under physical interrupts or electrical bounce.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how fast a real controller scans or how a real button bounces.
 
 ## Wiring
 

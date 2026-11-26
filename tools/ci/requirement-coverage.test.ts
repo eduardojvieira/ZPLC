@@ -708,11 +708,11 @@ describe('requirement coverage of spec 014', () => {
       mapped?: boolean;
     }>;
 
-  it('the index has 69 requirements in ten workstreams, each with a level', () => {
+  it('the index has 71 requirements in eleven workstreams, each with a level', () => {
     const counts: Record<string, number> = {};
     for (const { workstream } of index014()) counts[workstream] = (counts[workstream] ?? 0) + 1;
-    expect(index014().length).toBe(69);
-    expect(counts).toEqual({ FRZ: 4, BAR: 7, JRN: 8, REV: 6, AIX: 15, UXV: 9, FIX: 4, OSS: 5, PUB: 5, RCN: 6 });
+    expect(index014().length).toBe(71);
+    expect(counts).toEqual({ FRZ: 4, BAR: 7, JRN: 8, REV: 6, AIX: 15, UXV: 9, FIX: 4, OSS: 5, PUB: 5, RCN: 6, LNG: 2 });
     for (const { id, level } of index014()) expect({ id, level: ['MUST', 'SHOULD'].includes(level ?? '') }).toEqual({ id, level: true });
   });
 
@@ -720,8 +720,9 @@ describe('requirement coverage of spec 014', () => {
     const result = run('--spec', '014');
     expect(result.exitCode).toBe(0);
     expect(text(result)).toContain('spec 014');
-    for (const prefix of ['FRZ', 'BAR', 'JRN', 'REV', 'AIX', 'UXV', 'FIX', 'OSS', 'PUB', 'RCN']) expect(text(result)).toContain(prefix);
-    expect(text(result)).toMatch(/overall\s+\d+ \/\s+69/);
+    const prefixes = ['FRZ', 'BAR', 'JRN', 'REV', 'AIX', 'UXV', 'FIX', 'OSS', 'PUB', 'RCN', 'LNG'];
+    for (const prefix of prefixes) expect(text(result)).toContain(prefix);
+    expect(text(result)).toMatch(/overall\s+\d+ \/\s+71/);
     expect(text(result)).toContain('pending');
   });
 

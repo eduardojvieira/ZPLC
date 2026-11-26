@@ -39,29 +39,7 @@ A PLC replaces that wiring with a program. To change a rule, you change the prog
 
 A Ladder program is drawn like a ladder lying on its side. Two vertical rails run down the sides. Between them go horizontal lines called **rungs**. Each rung is one rule. Power is imagined to flow from the left rail along the rung to the right. On the way it passes **contacts**, which read an input or a stored value, and it ends in a **coil**, which writes an output.
 
-Here are two rungs of a small program.
-
-```ld-figure
-src: reading/doorbell-and-porch.ld.json
-caption: Two independent rules, a doorbell and a porch light
-```
-
-The first rung says: if DoorbellButton is pressed, power reaches the coil Chime, and the chime sounds. The second rung says: if NightSwitch is on, the coil PorchLight turns on. A contact that is drawn as two vertical bars is a **normally open** contact: it lets power through only when its variable is TRUE.
-
-## Try it right here
-
-This is a small simulation inside the page. It runs the same program that you just saw. Press Run, then press and release the doorbell button, and switch the night switch on and off. Watch the power flow along the rungs and the lamps change.
-
-```ld-try
-src: reading/doorbell-and-porch.ld.json
-inputs:
-  - { name: DoorbellButton, kind: push }
-  - { name: NightSwitch, kind: switch }
-outputs: [Chime, PorchLight]
-caption: Press and release the button, then switch the night switch
-```
-
-You will notice two things. The chime follows the button: it sounds only while you hold it. The porch light follows the switch: it stays on until you switch it off, because a switch stays where you put it, and a push button does not.
+A contact and a coil each carry the name of a **variable**: a named place where the program stores a value, such as StartButton or Lamp. A value that is only TRUE or FALSE is called a **BOOL**. A contact drawn as two vertical bars is a **normally open** contact: it lets power through only when its variable is TRUE.
 
 ## What green, grey and red mean
 
@@ -74,36 +52,57 @@ ZPLC uses the same colors everywhere so that you can read a screen at a glance.
 
 Color never works alone. Every state also has a word, such as TRUE or FALSE, and a shape, so you can read it even if you do not see colors well.
 
-## Common mistakes
+## Worked example
 
-> [!NOTE]
-> A **variable** is a named place where the program stores a value, such as StartButton or Lamp. A value that is only TRUE or FALSE is called a **BOOL**.
+A house entrance has a doorbell button and a night switch. The chime must sound while the button is pressed, and the porch light must be on while the night switch is on. Two rules give two rungs, one for each output.
+
+```ld-figure
+src: reading/doorbell-and-porch.ld.json
+caption: Two independent rules, a doorbell and a porch light
+```
+
+The first rung says: if DoorbellButton is pressed, power reaches the coil Chime, and the chime sounds. The second rung says: if NightSwitch is on, the coil PorchLight turns on. Each rung reads one input with a normally open contact and drives one output with its coil.
+
+The small simulation below runs the same program. Press Run, then press and release the doorbell button, and switch the night switch on and off. Watch the power flow along the rungs and the lamps change.
+
+```ld-try
+src: reading/doorbell-and-porch.ld.json
+inputs:
+  - { name: DoorbellButton, kind: push }
+  - { name: NightSwitch, kind: switch }
+outputs: [Chime, PorchLight]
+caption: Press and release the button, then switch the night switch
+```
+
+You will notice two things. The chime follows the button: it sounds only while you hold it. The porch light follows the switch: it stays on until you switch it off, because a switch stays where you put it, and a push button does not.
+
+## Common mistakes
 
 - Thinking that the contact is a button. The contact is a drawing of a question: "is this variable TRUE?" The button is outside, in the world.
 - Thinking that the program is run once. A PLC runs its program again and again. The next lesson shows how.
 - Forgetting the coil. A rung without a coil does not drive anything.
 
 > [!WARNING]
-> In this course the simulated lab is safe to break. A real machine is not. An emergency stop button is wired into the machine's own circuit and never depends on the PLC program. ZPLC makes no safety claim, and nothing in these lessons replaces a certified safety design.
+> The simulated lab is safe to break; a real machine is not. An emergency stop is wired into the machine's own circuit and never waits for a PLC program.
 
 ## Check yourself
 
 ```quiz
 question: A photocell sees a box on a conveyor and tells the PLC. In PLC words, what is the photocell?
 options:
-  - { text: 'An input, because it sends a signal into the PLC', correct: true, feedback: Yes. A sensor gives the PLC an input. }
-  - { text: 'An output, because it is at the end of the conveyor', feedback: An output goes out of the PLC. The photocell sends information in. }
-  - { text: 'The program, because it decides about the box', feedback: The program is the list of rules inside the PLC. The photocell only reports what it sees. }
+  - { text: 'An input, because it sends a signal into the PLC', correct: true, feedback: 'Yes. A sensor gives the PLC an input.' }
+  - { text: 'An output, because it is at the end of the conveyor', feedback: 'An output goes out of the PLC. The photocell sends information in.' }
+  - { text: 'The program, because it decides about the box', feedback: 'The program is the list of rules inside the PLC. The photocell only reports what it sees.' }
 ```
 
 ```quiz
 question: In a Ladder rung, what does the coil on the right represent?
 options:
-  - { text: 'An output that the rung switches on or off', correct: true, feedback: Yes. When power reaches the coil, its output turns on. }
-  - { text: 'A button that somebody presses', feedback: Buttons are read by contacts on the left. }
-  - { text: 'The amount of time the program has been running', feedback: Time is handled by timers, which come later in the course. }
+  - { text: 'An output that the rung switches on or off', correct: true, feedback: 'Yes. When power reaches the coil, its output turns on.' }
+  - { text: 'A button that somebody presses', feedback: 'Buttons are read by contacts on the left.' }
+  - { text: 'The amount of time the program has been running', feedback: 'Time is handled by timers, which come later in the course.' }
 ```
 
 ## What you will do in the practice
 
-In the practice you will open a program that has the Lamp coil and a missing piece. You will add a normally open contact named StartButton, so that a button press lights the lamp. Then you will press Check and see the lab run your program and compare the result with the plan of the lesson. Your first rung will take only a few minutes.
+The starting program has one rung with the Lamp coil and nothing that reads the button, so the lamp is lit before anyone presses anything. You will make the lamp light only while StartButton is pressed, then press {{ui:learn.check}} to run your program against the plan of the lesson. Your first rung will take only a few minutes.

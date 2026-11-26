@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this flaw of the starting program, save it, then press Check: The starting program uses a half period of two seconds, so Lamp is still OFF when the scenario looks at {{t:750}} ms. Change HalfPeriod from T#2000ms to {{t:500}} ms written as T#500ms, and save the file.",
-      "checkpoint": "HalfPeriod reads T#500ms and the file is saved."
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program uses a half period of two seconds, so Lamp is still OFF when the scenario looks at {{t:750}} ms. Change the value of HalfPeriod so that Lamp is off for half a second and then on for half a second, and save the file.",
+      "checkpoint": "HalfPeriod holds half a second and the file is saved."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Run (F5) on the toolbar. One press saves the project, builds it if the build is old, starts the simulator, loads the program and runs it, and one notice names the step in progress; if the build fails, the problems are listed and nothing runs. Open the Watch tab and see Lamp turn on and off. Then press Check: ZPLC runs your saved program against the scenario of this lesson.",
+      "body": "Press {{ui:toolbar.run.label}} (F5) on the toolbar. One press saves the project, builds it if the build is old, starts the simulator, loads the program and runs it, and one notice names the step in progress; if the build fails, the problems are listed and nothing runs. Open the {{ui:panel.watch}} tab and see Lamp turn on and off. Then press {{ui:learn.check}}: ZPLC runs your saved program against the scenario of this lesson.",
       "checkpoint": "The scenario is named FirstBlink and contains {{assertions}} assertions; ZPLC lists every one that failed."
     },
     {

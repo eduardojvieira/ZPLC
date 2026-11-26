@@ -4,13 +4,15 @@
  * way the model tests build views): the size and state of the part as the plant core publishes it in the reference scenes, with
  * the keys a state changes. A kind that never changes its look has one state.
  */
-import type { BodyPose, FactValue, PartView, ScenePart, Vec3 } from '../../src/plant/contracts';
+import type { BodyPose, FactValue, PartView, PlantSnapshot, ScenePart, Vec3 } from '../../src/plant/contracts';
 import { loadJolt } from '../../src/plant/core/jolt';
 import { itemParts, type PartRuntime, type RuntimePartDefinition } from '../../src/plant/core/parts/items';
 import { stationParts } from '../../src/plant/core/parts/layerPalletizer';
 import { machiningParts } from '../../src/plant/core/parts/machining';
 import { stackerParts } from '../../src/plant/core/parts/stackerCrane';
 import { createWorld } from '../../src/plant/core/world';
+import { cameraPosition, fitCamera, type Bounds } from '../../src/plant/view/camera';
+import { snapshotBounds } from '../../src/plant/view/geometry';
 
 type Facts = Readonly<Record<string, FactValue>>;
 type Signals = Readonly<Record<string, boolean | number>>;
@@ -110,8 +112,8 @@ export const CATALOGUE: readonly CatalogueKind[] = [
   ]),
   kind('turntable', [0.6, 0.1, 0.6], 0.45, { ...BELT_STATE, angleDeg: 0, fraction: 0, turnStuck: false }, [
     { label: 'centre' },
-    { label: 'left', state: { angleDeg: -90 } },
-    { label: 'right', state: { angleDeg: 90 } },
+    { label: 'left', state: { angleDeg: -90 }, yawDeg: 90 },
+    { label: 'right', state: { angleDeg: 90 }, yawDeg: -90 },
   ]),
   kind('lift', [1.4, 0.1, 0.7], 0.45, { ...BELT_STATE, fraction: 0, level: 1, strokeM: 0.6, levelPitchM: 0.6 }, [
     { label: 'level 1' },
@@ -121,7 +123,7 @@ export const CATALOGUE: readonly CatalogueKind[] = [
   kind('emitter', [0.1, 0.1, 0.1], 0.5, { emitted: 0 }, still()),
   kind('stop-blade', [0.05, 0.3, 0.6], 0.33, { travelMs: 0, stuck: false }, [
     { label: 'retracted (down)' },
-    { label: 'extended (up)', state: { travelMs: 400 } },
+    { label: 'extended (up)', state: { travelMs: 400 }, rise: 0.32 },
   ]),
   kind('pusher', [0.2, 0.25, 0.05], 0.63, { fraction: 0, stuck: false }, [
     { label: 'retracted' },
@@ -214,6 +216,7 @@ export const CATALOGUE: readonly CatalogueKind[] = [
   kind('gantry', [0.3, 0.03, 0.2], 0.2, GANTRY_AXES, [
     { label: 'home, open' },
     { label: 'moved on X, Y, Z', state: { x: 0.9, y: 0.6, z: 0.6 } },
+    { label: 'moved, gripping', state: { x: 0.9, y: 0.6, z: 0.6, holding: true, closeFraction: 1 } },
   ]),
   // stations
   machine(
@@ -329,6 +332,44 @@ export async function catalogueViews(k: CatalogueKind, state: CatalogueState): P
   } finally {
     world.dispose();
   }
+}
+
+/** The axis-aligned box enclosing every box in `boundsList`. */
+export function unionBounds(boundsList: readonly Bounds[]): Bounds {
+  if (boundsList.length === 0) throw new Error('unionBounds requires at least one bounds');
+  const min: [number, number, number] = [Infinity, Infinity, Infinity];
+  const max: [number, number, number] = [-Infinity, -Infinity, -Infinity];
+  for (const b of boundsList) {
+    for (let i = 0; i < 3; i += 1) {
+      min[i] = Math.min(min[i]!, b.min[i]!);
+      max[i] = Math.max(max[i]!, b.max[i]!);
+    }
+  }
+  return { min: min as Vec3, max: max as Vec3 };
+}
+
+/** One camera framing `bounds` at `aspect` from the shared catalogue viewing angle. */
+export function catalogueCamera(bounds: Bounds, aspect: number): { position: Vec3; target: Vec3 } {
+  const fit = fitCamera({ target: [0, 0, 0], azimuthDeg: 35, polarDeg: 62, distance: 1 }, bounds, aspect);
+  return { position: cameraPosition(fit), target: fit.target };
+}
+
+/**
+ * Every state cell of a `CatalogueKind`, all sharing one camera fitted to the union of all its state bounds so states stay at
+ * the same scale across the sheet (S3-11).
+ */
+export async function catalogueKindCells(
+  k: CatalogueKind,
+  aspect: number,
+): Promise<Array<{ label: string; snapshot: PlantSnapshot; camera: { position: Vec3; target: Vec3 } }>> {
+  const snapshots = await Promise.all(
+    k.states.map(async (state) => ({
+      label: `${k.id}: ${state.label}`,
+      snapshot: { timeMs: 0, scans: 0, parts: await catalogueViews(k, state), items: [], facts: {} } satisfies PlantSnapshot,
+    })),
+  );
+  const camera = catalogueCamera(unionBounds(snapshots.map((s) => snapshotBounds(s.snapshot)!)), aspect);
+  return snapshots.map((s) => ({ ...s, camera }));
 }
 
 export interface CatalogueItem {

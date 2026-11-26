@@ -39,7 +39,7 @@ Combine contacts in series for AND and in parallel for OR, read a truth table, a
 
 ## What the evidence covers
 
-Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real alarm horn or overheat sensor behaves.
 
 ## On a board
 

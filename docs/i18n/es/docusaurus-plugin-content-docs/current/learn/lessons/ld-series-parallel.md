@@ -39,7 +39,7 @@ Combine contactos en serie para AND y en paralelo para OR, lea una tabla de verd
 
 ## Qué cubre la evidencia
 
-Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo se comporta una bocina de alarma o un sensor de sobrecalentamiento reales.
 
 ## En una placa
 
