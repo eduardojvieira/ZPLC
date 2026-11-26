@@ -140,8 +140,10 @@ describe('COM-030: the MCP server cannot open the device link', () => {
     // the replay of a trace, the replay of a snapshot, the text of one program (IDE-030) and one scenario: templates, all reads
     expect(resources.filter((resource) => typeof resource.uri !== 'string')).toHaveLength(4);
 
-    // The only arguments any tool takes name a scenario, a position in a recorded trace, a board profile, or a scene file.
-    const allowed = new Set(['scenarioId', 'cursor', 'traceSha256', 'ideId', 'sceneFile', 'mapFile']);
+    // The only arguments any tool takes name a scenario, a position in a recorded trace, a board profile, or a scene file, or
+    // say how much of a recorded trace to read and which program variables to watch in the run (AIX-015, AI-08).
+    const trace = ['mode', 'signals', 'includeInputs', 'watchSignals', 'fromMs', 'toMs', 'fromSample', 'limit'];
+    const allowed = new Set(['scenarioId', 'cursor', 'traceSha256', 'ideId', 'sceneFile', 'mapFile', ...trace]);
     for (const tool of tools) {
       for (const key of Object.keys(tool.inputSchema.shape)) expect(allowed.has(key), `${tool.name} takes '${key}'`).toBe(true);
       // And an argument that names a port, a device or a session is refused, whatever else is supplied.

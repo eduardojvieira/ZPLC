@@ -100,7 +100,19 @@ function operations(scenarioRun: McpOperations['scenarioRun']): McpOperations {
     firmwareBuild: unused,
   };
 }
-const content = (result: { structuredContent: Record<string, unknown> }) => result.structuredContent as Record<string, any>;
+type Group = 'outputs' | 'inputs' | 'watched' | 'facts';
+/** The fields of a trace_get answer or refusal the tests read. */
+interface TraceBody {
+  [key: string]: unknown;
+  samples: Array<{ index: number; atMs: number; changed?: string[] } & Partial<Record<Group, Record<string, boolean | number>>>>;
+  signalSummary: Record<string, Record<string, boolean | number>>;
+  availableSignals: Record<string, string[]>;
+  evidence: { artifacts: Array<{ kind: string; sha256: string }> };
+  validValues: string[];
+  message: string;
+  nextStep: string;
+}
+const content = (result: { structuredContent: Record<string, unknown> }) => result.structuredContent as TraceBody;
 const signal = new AbortController().signal;
 
 describe('trace_get reads a trace over 512 KiB (AI-03)', () => {
@@ -214,7 +226,7 @@ describe('trace_get on a shipped plant lesson (AI-03, AI-08)', () => {
     async () => {
       const dispatch = createMcpDispatcher((await openMcpWorkspace(belt()))!);
       const run = content(await dispatch('scenario_run', { scenarioId: 'belt-to-sensor' }, signal));
-      const traceSha256 = run.evidence.artifacts.find((artifact: { kind: string }) => artifact.kind === 'trace').sha256;
+      const traceSha256 = run.evidence.artifacts.find((artifact: { kind: string }) => artifact.kind === 'trace')!.sha256;
       const result = await dispatch(
         'trace_get',
         { scenarioId: 'belt-to-sensor', mode: 'changes', watchSignals: ['BeltToSensor.Running'] },
@@ -224,12 +236,8 @@ describe('trace_get on a shipped plant lesson (AI-03, AI-08)', () => {
       expect(body).toMatchObject({ ok: true, mode: 'changes', traceSha256 });
       expect(body.availableSignals.inputs).toEqual(['BeltToSensor.EyeFar', 'BeltToSensor.Start']);
       expect(body.availableSignals.watched).toEqual(['BeltToSensor.Running']);
-      expect(body.samples.some((sample: { inputs?: Record<string, boolean> }) => sample.inputs?.['BeltToSensor.Start'] === true)).toBe(
-        true,
-      );
-      expect(body.samples.some((sample: { watched?: Record<string, boolean> }) => sample.watched?.['BeltToSensor.Running'] === true)).toBe(
-        true,
-      );
+      expect(body.samples.some((sample) => sample.inputs?.['BeltToSensor.Start'] === true)).toBe(true);
+      expect(body.samples.some((sample) => sample.watched?.['BeltToSensor.Running'] === true)).toBe(true);
       expect(result.content[0]!.text.length).toBeLessThan(64 * 1024);
       const summary = await dispatch('trace_get', { scenarioId: 'belt-to-sensor', mode: 'summary' }, signal);
       expect(content(summary)).toMatchObject({ ok: true, traceSha256 });

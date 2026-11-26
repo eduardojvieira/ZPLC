@@ -28,10 +28,13 @@ import {
   sourceResource,
 } from './resources';
 
-export { MCP_BOUNDARY, MCP_PROMPT_NAMES, courseProgressResource, programsResource, sourceResource } from './resources';
+import * as trace from './traceView';
 
+type McpToolResult = trace.McpToolResult;
+
+export { MCP_BOUNDARY, MCP_PROMPT_NAMES, courseProgressResource, programsResource, sourceResource } from './resources';
 /** The largest answer of a tool or a resource, in bytes of its JSON text. */
-export const MAX_OUTPUT_BYTES = 512 * 1024;
+export const MAX_OUTPUT_BYTES = trace.MAX_OUTPUT_BYTES;
 function logicalPath(value: string): boolean {
   if (
     value.length === 0 ||
@@ -67,6 +70,22 @@ const REPLAY_INPUT = z
       .regex(/^[A-Za-z0-9][A-Za-z0-9._:-]*$/),
     cursor: z.number().int().min(0).max(100_000),
     traceSha256: z.string().regex(/^[0-9a-f]{64}$/),
+  })
+  .strict();
+const TRACE_INPUT = z
+  .object({
+    scenarioId: z
+      .string()
+      .max(128)
+      .regex(/^[A-Za-z0-9][A-Za-z0-9._:-]*$/),
+    mode: z.enum(trace.TRACE_MODES).optional().describe(trace.TRACE_HELP.mode),
+    signals: z.array(z.string().min(1).max(256)).max(64).optional().describe(trace.TRACE_HELP.signals),
+    includeInputs: z.boolean().optional().describe(trace.TRACE_HELP.includeInputs),
+    watchSignals: z.array(z.string().min(1).max(256)).max(32).optional().describe(trace.TRACE_HELP.watchSignals),
+    fromMs: z.number().int().min(0).max(3_600_000).optional().describe(trace.TRACE_HELP.fromMs),
+    toMs: z.number().int().min(0).max(3_600_000).optional().describe(trace.TRACE_HELP.toMs),
+    fromSample: z.number().int().min(0).max(100_000).optional().describe(trace.TRACE_HELP.fromSample),
+    limit: z.number().int().min(1).max(1000).optional().describe(trace.TRACE_HELP.limit),
   })
   .strict();
 const PLANT_INSPECT_INPUT = z
@@ -147,7 +166,7 @@ export interface McpOperations {
   symbolsList(root: string): Promise<unknown>;
   safetyCheck(root: string): Promise<unknown>;
   testsRun(root: string, options?: toolApi.TestsRunOptions): Promise<unknown>;
-  scenarioRun(root: string, scenarioId: string, options?: toolApi.TestsRunOptions): Promise<unknown>;
+  scenarioRun(root: string, scenarioId: string, options?: toolApi.ScenarioRunOptions): Promise<unknown>;
   boardsList(repository: string): Promise<unknown>;
   toolchainInspect(repository: string): Promise<unknown>;
   firmwareBuild(repository: string, ideId: string, options?: { signal?: AbortSignal }): Promise<unknown>;
@@ -158,7 +177,6 @@ export interface McpWorkspace {
   readonly repository?: { readonly root: string; readonly identity: DirectoryIdentity };
   readonly userData?: { readonly root: string; readonly identity: DirectoryIdentity };
 }
-type McpToolResult = { content: Array<{ type: 'text'; text: string }>; structuredContent: Record<string, unknown>; isError?: boolean };
 
 function errorResult(
   error:
@@ -821,22 +839,13 @@ function sameRepository(repository: McpWorkspace['repository']): Promise<boolean
     : Promise.resolve(false);
 }
 
-type Replay = {
-  traceSha256: string;
-  samples: Array<Record<string, unknown>>;
-  assertions: Array<Record<string, unknown>>;
-  totalSamples: number;
-  evidence: Record<string, unknown>;
-  execution: Record<string, unknown>;
-  ok: boolean;
-};
-function replayFromScenario(value: unknown, scenarioId: string, execution: unknown): Replay | undefined {
+function replayFromScenario(value: unknown, scenarioId: string, execution: unknown): trace.Replay | undefined {
   try {
     const publicValue = publicResult('scenario_run', value, execution);
     if (!publicValue) return undefined;
     if (!value || typeof value !== 'object') return undefined;
     const traceFile = Object.getOwnPropertyDescriptor(value, 'traceFile')?.value;
-    if (!(traceFile instanceof Uint8Array) || traceFile.byteLength > MAX_OUTPUT_BYTES) return undefined;
+    if (!(traceFile instanceof Uint8Array) || traceFile.byteLength > trace.MAX_INTERNAL_TRACE_BYTES) return undefined;
     const aggregate = aggregateTraceSchema.safeParse(JSON.parse(new TextDecoder().decode(traceFile)) as unknown);
     if (!aggregate.success) return undefined;
     const selected = aggregate.data.scenarios.filter((scenario) => scenario.id === scenarioId);
@@ -859,13 +868,14 @@ function replayFromScenario(value: unknown, scenarioId: string, execution: unkno
       evidence: publicValue.evidence as Record<string, unknown>,
       execution: publicValue.execution as Record<string, unknown>,
       ok: publicValue.ok as boolean,
+      observed: ownValue(value, 'observed') as trace.ObservedTrace | undefined,
     };
   } catch {
     return undefined;
   }
 }
 
-function replayResult(replay: Replay, cursor: number): McpToolResult {
+function replayResult(replay: trace.Replay, cursor: number): McpToolResult {
   if (cursor < 0 || cursor >= replay.totalSamples) return errorResult('MCP_INVALID_ARGUMENTS');
   const structuredContent = {
     ok: replay.ok,
@@ -893,7 +903,8 @@ function validArguments(tool: McpToolName, args: ToolArguments): boolean {
     Object.keys(args).some((key) => !('value' in (Object.getOwnPropertyDescriptor(args, key) ?? {})))
   )
     return false;
-  if (tool === 'simulation_start' || tool === 'trace_get' || tool === 'scenario_run') return SCENARIO_INPUT.safeParse(args).success;
+  if (tool === 'trace_get') return TRACE_INPUT.safeParse(args).success;
+  if (tool === 'simulation_start' || tool === 'scenario_run') return SCENARIO_INPUT.safeParse(args).success;
   if (tool === 'simulation_step' || tool === 'runtime_snapshot') return REPLAY_INPUT.safeParse(args).success;
   if (tool === 'firmware_build') return FIRMWARE_BUILD_INPUT.safeParse(args).success;
   if (tool === 'plant_inspect') return PLANT_INSPECT_INPUT.safeParse(args).success;
@@ -924,10 +935,13 @@ async function callTool(
       return operations.testsRun(root, { signal });
     case 'scenario_run':
       return operations.scenarioRun(root, ownValue(args, 'scenarioId') as string, { signal });
+    case 'trace_get': {
+      const observe = trace.traceObserve(args as trace.TraceArgs);
+      return operations.scenarioRun(root, ownValue(args, 'scenarioId') as string, { signal, ...(observe ? { observe } : {}) });
+    }
     case 'simulation_start':
     case 'simulation_step':
     case 'runtime_snapshot':
-    case 'trace_get':
       return operations.scenarioRun(root, ownValue(args, 'scenarioId') as string, { signal });
     default:
       throw new Error('unsupported dispatch');
@@ -1004,7 +1018,7 @@ function dispatcher(
   return async (tool, args, signal) => {
     if (busy) return errorResult('MCP_BUSY');
     if (signal.aborted) return errorResult('MCP_CANCELLED');
-    if (!validArguments(tool, args)) return errorResult('MCP_INVALID_ARGUMENTS');
+    if (!validArguments(tool, args)) return tool === 'trace_get' ? trace.traceArgumentsError(args) : errorResult('MCP_INVALID_ARGUMENTS');
     busy = true;
     try {
       if (!sameIdentity(workspace.identity, await directoryIdentity(workspace.root))) return errorResult('MCP_WORKSPACE_CHANGED');
@@ -1020,6 +1034,8 @@ function dispatcher(
         const value = await callTool(tool, workspace.root, args, signal, operations);
         if (signal.aborted) return errorResult('MCP_CANCELLED');
         if (!sameIdentity(workspace.identity, await directoryIdentity(workspace.root))) return errorResult('MCP_WORKSPACE_CHANGED');
+        const refusal = trace.traceRefusal(value);
+        if (refusal) return refusal;
         const replay = replayFromScenario(
           value,
           ownValue(args, 'scenarioId') as string,
@@ -1030,24 +1046,7 @@ function dispatcher(
         if (requestedHash !== undefined && requestedHash !== replay.traceSha256) return errorResult('MCP_WORKSPACE_CHANGED');
         if (signal.aborted || !sameIdentity(workspace.identity, await directoryIdentity(workspace.root)))
           return signal.aborted ? errorResult('MCP_CANCELLED') : errorResult('MCP_WORKSPACE_CHANGED');
-        if (tool === 'trace_get') {
-          const structuredContent = {
-            ok: replay.ok,
-            scope: 'recorded-native-posix-host',
-            scenarioId: ownValue(args, 'scenarioId'),
-            traceSha256: replay.traceSha256,
-            totalSamples: replay.totalSamples,
-            assertions: replay.assertions,
-            trace: replay.samples,
-            evidence: replay.evidence,
-            execution: replay.execution,
-            note: 'Recorded native POSIX host result; not live runtime, hardware, or HIL.',
-          };
-          const text = JSON.stringify(structuredContent);
-          return Buffer.byteLength(text, 'utf8') <= MAX_OUTPUT_BYTES
-            ? { content: [{ type: 'text', text }], structuredContent, ...(replay.ok ? {} : { isError: true }) }
-            : errorResult('MCP_OUTPUT_LIMIT');
-        }
+        if (tool === 'trace_get') return trace.traceAnswer(replay, ownValue(args, 'scenarioId') as string, args as trace.TraceArgs);
         const cursor = tool === 'simulation_start' ? 0 : (ownValue(args, 'cursor') as number);
         return replayResult(replay, tool === 'simulation_step' ? cursor + 1 : cursor);
       }
@@ -1198,8 +1197,8 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
     'trace_get',
     {
       title: 'Get recorded trace',
-      description: 'Run one scenario on the host simulator and answer its recorded outputs over time and its expectation results.',
-      inputSchema: SCENARIO_INPUT,
+      description: 'Run one scenario on the host simulator and answer its trace: whole, or as changes, a window or a summary with inputs.',
+      inputSchema: TRACE_INPUT,
       annotations: READ_ONLY,
     },
     (args, ctx) => dispatch('trace_get', args, ctx.mcpReq.signal),

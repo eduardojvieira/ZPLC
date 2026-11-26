@@ -36,8 +36,11 @@ import {
   SCENARIO_KINDS,
   compileScenario,
   findSignalVariable,
+  resolveWatch,
   runScenario,
+  watchableSignals,
   type CompiledScenario,
+  type ResolvedWatch,
   type ScenarioKind,
   type ScenarioAssertionResult,
   type ScenarioRunResult,
@@ -798,6 +801,14 @@ export interface TestsRunOptions {
   /** Test seam for a monotonic host clock; Electron never supplies it. */
   now?: () => number;
 }
+/**
+ * `observe` asks a scenario run for its sidecar (AI-08): the inputs by name and the variables `watch` names, read after each
+ * step. It lands on the result as a non-enumerable `observed`, so the result, the trace and `traceSha256` stay the 2.0 ones; a
+ * name no variable has fails the run with a non-enumerable `watchUnknown` that lists the names a watch accepts.
+ */
+export interface ScenarioRunOptions extends TestsRunOptions {
+  observe?: { inputs?: boolean; watch?: readonly string[] };
+}
 
 export interface CandidateChangeSetEdit {
   path: string;
@@ -949,7 +960,7 @@ async function runWorkspaceScenarios(
   root: string,
   operation: TestOperation,
   scenarioId: string | undefined,
-  options: TestsRunOptions,
+  options: ScenarioRunOptions,
 ): Promise<TestRunResult> {
   const deadline = createTestDeadline(options);
   const sceneCores: Array<Awaited<ReturnType<typeof createPlantCore>>> = [];
@@ -1045,12 +1056,21 @@ async function runWorkspaceScenarios(
       return testFailed(operation, [testDiagnostic('TEST_BUDGET_EXCEEDED', 'tests')]);
     }
 
+    const watchNames = [...new Set(options.observe?.watch ?? [])];
+    const watch = watchNames.map((name) => resolveWatch(compiled.debugMap, name));
+    if (watch.some((item) => item === undefined)) {
+      const refused = testFailed(operation, [testDiagnostic('TRACE_WATCH_UNKNOWN', 'tests')], [zplcArtifact]);
+      const unknown = watchNames.filter((_, index) => watch[index] === undefined);
+      return Object.defineProperty(refused, 'watchUnknown', { value: { unknown, validValues: watchableSignals(compiled.debugMap) } });
+    }
+    const observe = options.observe && { inputs: options.observe.inputs === true, watch: watch as ResolvedWatch[] };
     const completed: Array<{
       id: string;
       path: string;
       passed: boolean;
       trace: ScenarioRunResult['trace'];
       assertions: ScenarioRunResult['assertions'];
+      observed?: ScenarioRunResult['observed'];
       traceArtifact: ToolArtifact;
     }> = [];
     const assertionFailures: ToolDiagnostic[] = [];
@@ -1070,7 +1090,7 @@ async function runWorkspaceScenarios(
       };
       deadline.signal.addEventListener('abort', closeOnAbort, { once: true });
       try {
-        result = await runScenario(scenario.compiled, compiled.zplcFile, session.runtime);
+        result = await runScenario(scenario.compiled, compiled.zplcFile, session.runtime, observe);
       } catch {
         runtimeFailed = true;
       } finally {
@@ -1090,6 +1110,7 @@ async function runWorkspaceScenarios(
         passed: result.passed,
         trace: result.trace,
         assertions: result.assertions,
+        observed: result.observed,
         traceArtifact: artifactEvidence('trace', bytes),
       });
       if (!result.passed) assertionFailures.push(testDiagnostic('SCENARIO_ASSERTION_FAILED', scenario.path));
@@ -1144,6 +1165,7 @@ async function runWorkspaceScenarios(
           savedTestInputIdentity,
         };
     Object.defineProperty(response, 'traceFile', { value: aggregateTrace });
+    if (observe && completed.length === 1) Object.defineProperty(response, 'observed', { value: completed[0]!.observed });
     return response;
   } finally {
     for (const core of sceneCores) core.dispose();
@@ -1386,7 +1408,7 @@ export async function createCandidateChangeSet(
   return response!;
 }
 
-export function scenarioRun(root: string, scenarioId: string, options: TestsRunOptions = {}): Promise<TestRunResult> {
+export function scenarioRun(root: string, scenarioId: string, options: ScenarioRunOptions = {}): Promise<TestRunResult> {
   if (typeof scenarioId !== 'string' || scenarioId.length === 0 || scenarioId.length > 128 || scenarioId.includes('\0'))
     return Promise.resolve(testFailed('scenario-run', [testDiagnostic('TEST_SCENARIO_INVALID', 'tests')]));
   return runWorkspaceScenarios(root, 'scenario-run', scenarioId, options);

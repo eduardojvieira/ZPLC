@@ -37,7 +37,19 @@ function replay(): Replay {
     },
   };
 }
-const body = (result: { structuredContent: Record<string, unknown> }) => result.structuredContent as Record<string, any>;
+type Group = 'outputs' | 'inputs' | 'watched' | 'facts';
+/** The fields of a trace_get answer or refusal the tests read. */
+interface TraceBody {
+  [key: string]: unknown;
+  samples: Array<{ index: number; atMs: number; changed?: string[] } & Partial<Record<Group, Record<string, boolean | number>>>>;
+  signalSummary: Record<string, Record<string, boolean | number>>;
+  availableSignals: Record<string, string[]>;
+  evidence: { artifacts: Array<{ kind: string; sha256: string }> };
+  validValues: string[];
+  message: string;
+  nextStep: string;
+}
+const body = (result: { structuredContent: Record<string, unknown> }) => result.structuredContent as TraceBody;
 const indices = (result: { structuredContent: Record<string, unknown> }) =>
   (body(result).samples as Array<{ index: number }>).map((sample) => sample.index);
 
@@ -82,15 +94,18 @@ describe('trace_get changes (AIX-015, AI-03)', () => {
     expect(result.isError).toBe(true);
     // 1: Start rises; 2: Run and Running rise; 3: Start falls and the AT failed; 4: the count rises; 5: last
     expect(indices(result)).toEqual([0, 1, 2, 3, 4, 5]);
-    const samples = body(result).samples as Array<Record<string, any>>;
+    const samples = body(result).samples;
     expect(samples[2]).toMatchObject({
       index: 2,
       atMs: 20,
       outputs: { 'P.Run': true },
-      inputs: { 'P.Start': true },
       watched: { 'P.Running': true },
       changed: ['P.Run', 'P.Running'],
     });
+    // a change sample carries only what changed; the failure at 30 ms and the last sample carry every signal
+    expect(samples[2]!.inputs).toBeUndefined();
+    expect(Object.keys(samples[3]!.outputs!)).toEqual(['P.Run', 'fact:count:Eye']);
+    expect(Object.keys(samples[5]!.facts!)).toEqual(['fact:count:Eye', 'fact:position:box:0']);
     expect(body(result)).toMatchObject({
       ok: false,
       scenarioId: 'belt',
@@ -115,7 +130,7 @@ describe('trace_get changes (AIX-015, AI-03)', () => {
     expect(indices(only)).toEqual([0, 1, 2, 3, 4, 5]);
     const run = traceAnswer(replay(), 'belt', { mode: 'changes', signals: ['P.Run'] });
     expect(indices(run)).toEqual([0, 2, 3, 5]);
-    expect((body(run).samples as Array<Record<string, any>>)[1]).toEqual({
+    expect(body(run).samples[1]).toEqual({
       index: 2,
       atMs: 20,
       outputs: { 'P.Run': true },
@@ -182,7 +197,7 @@ describe('trace_get summary (AIX-015)', () => {
     expect(content.signalSummary['P.Run']).toEqual({ first: false, last: true, transitions: 1, firstTrueMs: 20, lastTrueMs: 50 });
     expect(content.signalSummary['P.Start']).toEqual({ first: false, last: false, transitions: 2, firstTrueMs: 10, lastTrueMs: 20 });
     expect(content.signalSummary['fact:position:box:0']).toMatchObject({ first: 0.105, transitions: 5, min: 0.105 });
-    expect(content.signalSummary['fact:position:box:0'].max).toBeCloseTo(0.17);
+    expect(content.signalSummary['fact:position:box:0']!.max as number).toBeCloseTo(0.17);
     expect(content).toMatchObject({ returnedSamples: 0, truncated: false });
   });
 });
