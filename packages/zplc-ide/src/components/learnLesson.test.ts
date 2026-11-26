@@ -200,11 +200,11 @@ describe('Learn lesson catalog', () => {
       sourcePath: 'src/Blinky.ld.json',
       scenarioPath: 'tests/blinky-visual.scenario.json',
       title: 'Oscilador TON y realimentación de salida',
-      scope: `${passingEs}, y no demuestra el período eléctrico ni el brillo.`,
+      scope: `${passingEs}, y no muestra cuánto brilla una lámpara real ni con qué exactitud un controlador real mantiene el período.`,
     });
     expect(en[4]).toMatchObject({
       title: 'TON oscillator and output feedback',
-      scope: `${passingEn}, and it does not show electrical period or brightness.`,
+      scope: `${passingEn}, and it does not show how bright a real lamp is or how exactly a real controller keeps the period.`,
     });
     expect(es[4]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Prediga', 'Edite', 'Ejecute', 'Observe', 'Reflexione']);
     expect(en[4]?.stages.map(({ title }) => title)).toEqual(['Objective', 'Predict', 'Edit', 'Run', 'Observe', 'Reflect']);
@@ -216,11 +216,13 @@ describe('Learn lesson catalog', () => {
       'OFF at 250 ms, ON at 750, OFF at 1250, ON at 1750; the first rising edge lands between 400 and 600 ms.',
     );
     // LRN-038: lesson 5 has the learner edit a Ladder program. The starter is a Ladder file with the two timer rungs drawn and
-    // the lesson names the rungs and the file the learner really gets.
+    // the lesson names the rungs and the file the learner really gets. Under the course pilot standard the stages say what to
+    // do and the last hint keeps how, so the stages name the file, the output and the two timers, and the hints name the coils.
     for (const lesson of [es[4]!, en[4]!]) {
       const text = lesson.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ');
-      for (const value of ['src/Blinky.ld.json', 'LED_Output', 'OffTimer.Q', 'OnTimer.Q', 'SET', 'RESET'])
+      for (const value of ['src/Blinky.ld.json', 'LED_Output', 'OffTimer', 'OnTimer'])
         expect(`${lesson.sourcePath} ${text}`).toContain(value);
+      for (const value of ['OffTimer.Q', 'OnTimer.Q', 'SET', 'RESET']) expect(lesson.hints.join(' ')).toContain(value);
       expect(lesson.sourcePath).toBe('src/Blinky.ld.json');
       expect(lesson.languages).toEqual(['LD']);
       // The Structured Text names of the old lesson are gone.
@@ -279,56 +281,84 @@ describe('Learn lesson catalog', () => {
       scenarioPath: 'tests/edge-counter.scenario.json',
       title: 'Flancos y contador de pulsos',
       summary: 'Use un contador CTU para contar tres pulsos discretos y poner la cuenta a cero.',
-      scope: `${passingEs}.`,
+      scope: `${passingEs}, y no muestra cómo rebota un sensor real ni qué hace una entrada real con un pulso más corto que un ciclo.`,
     });
     expect(en[6]).toMatchObject({
       title: 'Edges and pulse counter',
       summary: 'Use a CTU counter to count three discrete pulses and reset the count.',
-      scope: `${passingEn}.`,
+      scope: `${passingEn}, and it does not show how a real sensor bounces or what a real input does with a pulse shorter than a scan.`,
     });
     expect(es[6]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Prediga', 'Edite', 'Ejecute', 'Observe', 'Reflexione']);
     expect(en[6]?.stages.map(({ title }) => title)).toEqual(['Objective', 'Predict', 'Edit', 'Run', 'Observe', 'Reflect']);
+    // Since its reading page (4a917d61) the lesson says what CountReached must do and leaves the counter to the learner; the
+    // predicted times still come from the scenario.
     expect(es[6]?.stages[0]).toEqual({
       title: 'Objetivo',
-      body: 'En src/EdgeCounter.st, use PulseInput, Reset y CountReached y agregue una instancia Count (CTU) con PV=3.',
+      body:
+        'En src/EdgeCounter.st están declaradas las entradas PulseInput y Reset y la salida CountReached, y el programa escribe FALSE ' +
+        'en CountReached. Haga que CountReached pase a ON en el tercer flanco ascendente de PulseInput y siga en ON hasta que Reset ' +
+        'ponga la cuenta a cero. El contador lo declara usted.',
       checkpoint:
-        'CTU cuenta una vez cada flanco ascendente de PulseInput, sin importar cuánto tiempo siga en alto el pulso; Reset borra la cuenta.',
+        'Usted puede decir por qué un contador cuenta flancos ascendentes y no los ciclos en que su entrada está en TRUE, y qué hacen ' +
+        'su valor preestablecido PV y su puesta a cero R.',
     });
     expect(en[6]?.stages[0]).toEqual({
       title: 'Objective',
-      body: 'In src/EdgeCounter.st, use PulseInput, Reset, and CountReached and add a Count (CTU) instance with PV=3.',
-      checkpoint: 'CTU counts each rising edge of PulseInput once, however long the pulse stays high; Reset clears the count.',
+      body:
+        'In src/EdgeCounter.st the inputs PulseInput and Reset and the output CountReached are declared, and the program writes FALSE ' +
+        'to CountReached. Make CountReached turn ON at the third rising edge of PulseInput and stay ON until Reset clears the count. ' +
+        'You declare the counter yourself.',
+      checkpoint:
+        'You can say why a counter counts rising edges and not the scans in which its input is TRUE, and what its preset PV and its ' +
+        'reset R do.',
     });
     expect(es[6]?.stages[1]).toEqual({
       title: 'Prediga',
-      body: 'Antes de ejecutar, prediga cuándo el contador alcanza PV=3.',
+      body:
+        'El escenario da a PulseInput tres pulsos, que suben a los 10, 30 y 50 ms, y pulsa Reset a los 70 ms. Prediga CountReached a ' +
+        'los 0, 10, 30, 50 y 70 ms.',
       checkpoint:
         'CountReached permanece en OFF a los 0, 10 y 30 ms; pasa a ON a los 50, tras el tercer flanco, y vuelve a OFF a los 70 con Reset.',
     });
     expect(en[6]?.stages[1]).toEqual({
       title: 'Predict',
-      body: 'Before running, predict when the counter reaches PV=3.',
+      body:
+        'The scenario gives PulseInput three pulses, rising at 10, 30 and 50 ms, and presses Reset at 70 ms. Predict CountReached at ' +
+        '0, 10, 30, 50 and 70 ms.',
       checkpoint: 'CountReached stays OFF at 0, 10, and 30 ms; turns ON at 50 after the third edge; returns OFF at 70 with Reset.',
     });
     expect(es[6]?.stages[4]).toEqual({
       title: 'Observe',
-      body: 'Compare los eventos de 10, 30, 50 y 70 ms con la salida CountReached.',
-      checkpoint: 'El tercer pulso alcanza PV=3; Reset domina y devuelve CountReached a OFF.',
+      body:
+        'Siga PulseInput y CountReached en la traza: nada cambia con los dos primeros pulsos, CountReached sube con el tercero a los ' +
+        '50 ms y cae cuando Reset sube a los 70 ms.',
+      checkpoint: 'CountReached sube una vez, en el tercer flanco ascendente, y cae una vez, con Reset.',
     });
     expect(en[6]?.stages[4]).toEqual({
       title: 'Observe',
-      body: 'Compare 10, 30, 50, and 70 ms with CountReached.',
-      checkpoint: 'The third pulse reaches PV=3; Reset dominates and returns CountReached to OFF.',
+      body:
+        'Follow PulseInput and CountReached in the trace: nothing changes on the first two pulses, CountReached rises with the third ' +
+        'at 50 ms, and it falls when Reset rises at 70 ms.',
+      checkpoint: 'CountReached rises once, at the third rising edge, and falls once, with Reset.',
     });
     expect(es[6]?.stages[5]).toEqual({
       title: 'Reflexione',
-      body: 'Las aserciones AT/RISING/FALLING cubren esta secuencia lógica discreta.',
-      checkpoint: 'Solo se prueba lo que comprueban las aserciones; nada más.',
+      body:
+        'Imagine que el tercer pulso sigue en TRUE hasta el final del escenario. ¿Cambia CountReached? Después imagine el contador ' +
+        'llamado solo dentro de IF PulseInput THEN ... END_IF: ¿qué cuenta?',
+      checkpoint:
+        'Un pulso largo tiene un solo flanco ascendente, así que cuenta una vez y CountReached es la misma. Dentro del IF el contador ' +
+        'se llama solo mientras PulseInput está en TRUE, así que nunca ve PulseInput en FALSE, nunca ve un flanco ascendente después ' +
+        'del primero y deja de contar.',
     });
     expect(en[6]?.stages[5]).toEqual({
       title: 'Reflect',
-      body: 'The AT/RISING/FALLING assertions cover this discrete logical sequence.',
-      checkpoint: 'What the assertions check is tested; nothing else is.',
+      body:
+        'Imagine that the third pulse stays TRUE until the end of the scenario. Does CountReached change? Then imagine the counter ' +
+        'called only inside IF PulseInput THEN ... END_IF: what does it count?',
+      checkpoint:
+        'A long pulse has one rising edge, so it counts once and CountReached is the same. Inside the IF the counter is called only ' +
+        'while PulseInput is TRUE, so it never sees PulseInput FALSE, never sees a rising edge after the first one and stops counting.',
     });
     expect(es[7]).toMatchObject({
       exampleId: 'scan_snapshot',
@@ -337,14 +367,12 @@ describe('Learn lesson catalog', () => {
       scenarioPath: 'tests/scan-snapshot.scenario.json',
       title: 'Ciclo de escaneo y memoria de un ciclo',
       summary: 'Siga cómo una entrada produce la salida actual y una copia demorada un ciclo.',
-      scope:
-        `${passingEs}, y no demuestra los tiempos en el dispositivo de destino, las instantáneas bajo interrupciones físicas ni el ` +
-        'rebote eléctrico.',
+      scope: `${passingEs}, y no muestra a qué velocidad hace sus ciclos un controlador real ni cómo rebota un pulsador real.`,
     });
     expect(en[7]).toMatchObject({
       title: 'Scan cycle and one-scan memory',
       summary: 'Follow how one input produces the current output and a copy delayed by one scan.',
-      scope: `${passingEn}, and it does not show target timing, snapshots under physical interrupts or electrical bounce.`,
+      scope: `${passingEn}, and it does not show how fast a real controller scans or how a real button bounces.`,
     });
     expect(es[7]?.stages[2]).toMatchObject({ title: 'Edite', checkpoint: 'Comprobar da el escenario de esta lección como aprobado.' });
     expect(en[7]?.stages[2]).toMatchObject({ title: 'Edit', checkpoint: 'Check reports the scenario of this lesson as passed.' });
