@@ -44,13 +44,13 @@ Beacon := OffTime.Q;
 END_PROGRAM
 ```
 
-Read it from the top. `OffTime` counts while the gate moves, and its Q lights the beacon once the dark time is over. While the beacon is lit, `OnTime` counts the lit time. When `OnTime.Q` turns TRUE, the next scan calls `OffTime` with IN FALSE, which brings it back to zero: the beacon goes dark and the dark time starts again. `OnTime.Q` in the first statement is the value of the previous scan, because `OnTime` is called after it.
+Read it from the top. `OffTime` counts while the gate moves, and its Q lights the beacon once the dark time is over. While the beacon is lit, `OnTime` counts the lit time. When `OnTime.Q` turns TRUE, the next scan calls `OffTime` with IN FALSE, which brings it back to zero: the beacon goes dark and the dark time starts again. `OnTime.Q` in the first statement is the value of the previous scan, because `OnTime` is called after it. Each restart takes one scan, so with a scan of {{t:10}} ms the beacon is lit for {{t:210}} ms and dark for {{t:810}} ms, as the diagram shows.
 
 ```timing
 span: 2800
 signals:
   - { name: Moving, edges: [200, 2600] }
-  - { name: Beacon, edges: [1000, 1200, 2000, 2200] }
+  - { name: Beacon, edges: [1000, 1210, 2020, 2230] }
 marks:
   - { from: 200, to: 1000, label: 'T#800ms' }
   - { from: 1000, to: 1200, label: 'T#200ms' }

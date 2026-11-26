@@ -44,13 +44,13 @@ Beacon := OffTime.Q;
 END_PROGRAM
 ```
 
-Léalo desde arriba. `OffTime` cuenta mientras el portón se mueve, y su Q enciende la baliza cuando termina el tiempo apagada. Mientras la baliza está encendida, `OnTime` cuenta el tiempo encendida. Cuando `OnTime.Q` pasa a TRUE, el ciclo siguiente llama a `OffTime` con IN en FALSE, lo que lo devuelve a cero: la baliza se apaga y el tiempo apagada empieza otra vez. `OnTime.Q` en la primera instrucción es el valor del ciclo anterior, porque `OnTime` se llama después.
+Léalo desde arriba. `OffTime` cuenta mientras el portón se mueve, y su Q enciende la baliza cuando termina el tiempo apagada. Mientras la baliza está encendida, `OnTime` cuenta el tiempo encendida. Cuando `OnTime.Q` pasa a TRUE, el ciclo siguiente llama a `OffTime` con IN en FALSE, lo que lo devuelve a cero: la baliza se apaga y el tiempo apagada empieza otra vez. `OnTime.Q` en la primera instrucción es el valor del ciclo anterior, porque `OnTime` se llama después. Cada reinicio toma un ciclo, así que con un ciclo de {{t:10}} ms la baliza está encendida {{t:210}} ms y apagada {{t:810}} ms, como muestra el diagrama.
 
 ```timing
 span: 2800
 signals:
   - { name: Moving, edges: [200, 2600] }
-  - { name: Beacon, edges: [1000, 1200, 2000, 2200] }
+  - { name: Beacon, edges: [1000, 1210, 2020, 2230] }
 marks:
   - { from: 200, to: 1000, label: 'T#800ms' }
   - { from: 1000, to: 1200, label: 'T#200ms' }
