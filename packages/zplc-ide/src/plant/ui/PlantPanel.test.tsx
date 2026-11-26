@@ -727,9 +727,12 @@ describe('the scene of the project itself (CRS-012)', () => {
 
 describe('one plant edit session and the plant toolbar (PLS-004, PLS-005, PLS-009, PLS-010, PLT-013)', () => {
   const toolbar = () => document.querySelector<HTMLElement>('[role="toolbar"]')!;
-  const projectScene = (content: string) =>
+  const projectScene = (content: string, map?: string) =>
     dom.patchStore(useIDEStore, {
-      loadedFiles: new Map([['scene', { id: 'scene', name: 'scene.json', path: 'scene.json', content }]]) as never,
+      loadedFiles: new Map([
+        ['scene', { id: 'scene', name: 'scene.json', path: 'scene.json', content }],
+        ...(map ? [['map', { id: 'map', name: 'plant-map.json', path: 'plant-map.json', content: map }] as const] : []),
+      ]) as never,
     });
 
   it('PLS-004 the toolbar holds only the view switch, cameras, Reset plant, faults, items and Edit scene', async () => {
@@ -840,7 +843,7 @@ describe('one plant edit session and the plant toolbar (PLS-004, PLS-005, PLS-00
   });
 
   it('PLS-010 a hidden plant document receives no snapshot and draws no frame', async () => {
-    projectScene(sceneFiles('belt-to-sensor').scene);
+    projectScene(sceneFiles('belt-to-sensor').scene, sceneFiles('belt-to-sensor').map); // with its map, so a session binds
     const r = rig('ok', 'running');
     const view = dom.render(<PlantDocument controller={r.controller} visible={false} deps={r.deps} />);
     await dom.waitFor(() => expect(r.renderer.options.length).toBe(1));

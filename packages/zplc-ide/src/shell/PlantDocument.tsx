@@ -9,7 +9,7 @@ import { recordedLabScenes } from '../components/labPlayback';
 import { LESSON_INDEX } from '../generated/lessonIndex';
 import type { DebugController } from '../hooks/useDebugController';
 import { useT } from '../i18n';
-import { PlantPanel } from '../plant/ui/PlantPanel';
+import { PlantPanel, type PlantPanelProps } from '../plant/ui/PlantPanel';
 import { useProjectSceneTexts, useProjectScenes } from '../plant/ui/usePlantSession';
 import { PlantLivePanel } from '../plants/PlantLivePanel';
 import { resolvePlantMap } from '../plants/plantMap';
@@ -20,7 +20,16 @@ import { useIDEStore } from '../store/useIDEStore';
 import { Button, ToggleGroup } from '../ui';
 import { useWorkspaceTestResult } from './workspaceTestResult';
 
-export function PlantDocument({ controller, visible }: { controller: DebugController | undefined; visible: boolean }) {
+export function PlantDocument({
+  controller,
+  visible,
+  deps,
+}: {
+  controller: DebugController | undefined;
+  visible: boolean;
+  /** What a test replaces in the scene panel (`PlantPanelProps.deps`). */
+  deps?: PlantPanelProps['deps'];
+}) {
   const { t } = useT();
   const debugMap = useIDEStore((state) => state.debug.debugMap);
   const rootScene = useProjectSceneTexts().scene !== undefined;
@@ -73,7 +82,11 @@ export function PlantDocument({ controller, visible }: { controller: DebugContro
         </Button>
       )}
       {showing === 'live' &&
-        (sceneOpen ? <PlantPanel controller={controller} visible={visible} /> : <PlantLivePanel controller={controller} />)}
+        (sceneOpen ? (
+          <PlantPanel controller={controller} visible={visible} {...(deps ? { deps } : {})} />
+        ) : (
+          <PlantLivePanel controller={controller} />
+        ))}
       {showing === 'replay' && (
         <>
           <h2 data-plant-replay className="px-3 pt-2 text-sm font-semibold text-[var(--text-primary)]">

@@ -1,8 +1,13 @@
 /**
  * The 3D plant as the content of the plant document (spec 013 PLS-001, Task V4). It has no run controls: while a session is bound
  * it is the command bar's transport (PLS-003, `usePlantSession`). The toolbar holds only what belongs to a plant: the view switch,
- * the camera presets, "Reset plant" and "Edit scene" (PLS-004). A failure of the view is said here, with the schematic offered,
- * while the program, the plant core and grading keep running (VIS-006, PLS-009); the facts are always there as text (VIS-008).
+ * the camera presets, "Reset plant" and "Edit scene" (PLS-004); the faults and the items are the operate panel's. A failure of the
+ * view or of the scene is said here, with the schematic offered, while the program, the plant core and grading keep running
+ * (VIS-006, PLS-009); the facts are always there as text (VIS-008).
+ *
+ * Interim (plan-u3 P1, removed by P4): the scene being edited is the one edit session (`usePlantEdit`), and its editor still renders
+ * here, with Undo, Redo and Done; the scene chooser and the save sit beside it, off the toolbar, until the Plant activity, the
+ * navigator and Save all hold them (P2, P5, P6).
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DebugController } from '../../hooks/debugControllerTypes';
@@ -17,8 +22,7 @@ import { Button, Select, ToggleGroup } from '../../ui';
 import { SaveSceneButton, SceneChooser } from './SceneChooser';
 import { catalogue } from '../core/catalogue';
 import { EditorPanel } from '../editor/EditorPanel';
-import { createMapEditor, type MapEditor } from '../editor/mapEditor';
-import { createSceneEditor, type SceneEditor } from '../editor/model';
+import { usePlantEdit } from '../editSession';
 import { schematicFor } from '../schematic/schematic';
 import { describePlant } from '../text/describe';
 import type { DisplayPrefs } from '../view/displayModes';
@@ -111,11 +115,15 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
   const [renderer, setRenderer] = useState<PlantRenderer | undefined>();
   // The part whose control in the operate panel has the keyboard focus: the 3D view marks it and names its signals (VIS-003).
   const [focusedPart, setFocusedPart] = useState<string | undefined>();
-  // The scene being edited (SCN-008) and, once editing ends, the edited scene the plant core is rebuilt from.
-  const [editing, setEditing] = useState<{ editor: SceneEditor; mapEditor: MapEditor } | undefined>();
+  // Once editing ends, the edited scene the plant core is rebuilt from.
   const [edited, setEdited] = useState<{ key: string; texts: SceneOverride } | undefined>();
-  const [version, setVersion] = useState(0);
   const refKey = refValue(ref);
+  // The scene being edited (SCN-008) is the session's, when it was opened on this scene; `version` re-renders its views.
+  const session = usePlantEdit();
+  const editing =
+    session.editor && session.mapEditor && session.sceneRef === refKey
+      ? { editor: session.editor, mapEditor: session.mapEditor }
+      : undefined;
   const binding = usePlantSession(controller, ref, deps, edited?.key === refKey ? edited.texts : undefined);
   const { load, snapshot, state } = binding;
   const ready = load.phase === 'ready' ? load : undefined;
@@ -150,25 +158,16 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
   );
 
   const stopped = state === 'stopped';
+  const { setRunning } = session;
+  useEffect(() => setRunning(!stopped), [setRunning, stopped]);
+  // The session belongs to the document that opened it: it closes with the panel.
+  useEffect(() => () => void usePlantEdit.getState().end(), []);
   const startEditing = () => {
-    if (!ready) return;
-    const editor = createSceneEditor(catalogue, ready.scene);
-    const mapEditor = createMapEditor(editor.signals(), ready.scene.name);
-    if (ready.map) mapEditor.load(ready.map);
-    setEditing({ editor, mapEditor });
+    if (ready) session.begin({ scene: ready.scene, map: ready.map ?? null }, refKey);
   };
   const finishEditing = () => {
-    if (!editing) return;
-    const map = editing.mapEditor.map();
-    const bound = Object.keys(map.signals).length > 0 || ready?.map;
-    setEdited({ key: refKey, texts: { scene: JSON.stringify(editing.editor.toFile()), map: bound ? JSON.stringify(map) : '' } });
-    setEditing(undefined);
-  };
-  const history = (undo: boolean) => {
-    if (!editing || !stopped) return;
-    if (undo) editing.editor.undo();
-    else editing.editor.redo();
-    setVersion((n) => n + 1);
+    const texts = session.end();
+    if (texts) setEdited({ key: refKey, texts });
   };
   const message =
     failure?.kind === 'unavailable'
@@ -187,7 +186,6 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
     if (!handle || !ready) return;
     await saveScene(handle, name, ready.scene, ready.map ? JSON.stringify(ready.map) : undefined);
     saved.refresh();
-    setEditing(undefined);
     setRef({ kind: 'file', name });
     announce(t('plant.panel.saved', { name }));
   };
@@ -195,15 +193,6 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
   return (
     <div data-plant-panel data-visible={visible} className="flex min-h-0 flex-1 flex-col">
       <div role="toolbar" aria-label={t('plant.panel.toolbar')} className="flex flex-wrap items-end gap-3 p-2">
-        <SceneChooser
-          value={refKey}
-          rootScene={hasProjectScene}
-          saved={saved.names}
-          onChoose={(next) => {
-            setEditing(undefined);
-            setRef(next);
-          }}
-        />
         <ToggleGroup
           label={t('plant.panel.view')}
           options={[
@@ -226,23 +215,9 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
         >
           {t('plant.panel.resetPlant')}
         </Button>
-        {editing ? (
-          <>
-            <Button data-plant-undo disabled={!stopped} onClick={() => history(true)}>
-              {t('plantEditor.undo')}
-            </Button>
-            <Button data-plant-redo disabled={!stopped} onClick={() => history(false)}>
-              {t('plantEditor.redo')}
-            </Button>
-            <Button data-plant-edit-done disabled={!stopped} onClick={finishEditing}>
-              {t('plantEditor.done')}
-            </Button>
-          </>
-        ) : (
-          <Button data-plant-edit-scene disabled={!stopped || !ready} onClick={startEditing}>
-            {t('plant.panel.editScene')}
-          </Button>
-        )}
+        <Button data-plant-edit-scene aria-pressed={!!editing} disabled={!stopped || !ready || !!editing} onClick={startEditing}>
+          {t('plant.panel.editScene')}
+        </Button>
         {/* Controls that appear with the scene come last: appending never moves the ones already there. */}
         {ready && view === '3d' && ready.scene.cameras.length > 0 && (
           <Select
@@ -263,6 +238,17 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
             {t('command.view.fitPlantScene')}
           </Button>
         )}
+      </div>
+      <div role="group" aria-label={t('plant.panel.sceneFile')} data-plant-scene-file className="flex flex-wrap items-end gap-3 px-2">
+        <SceneChooser
+          value={refKey}
+          rootScene={hasProjectScene}
+          saved={saved.names}
+          onChoose={(next) => {
+            session.end();
+            setRef(next);
+          }}
+        />
         {handle && ready && ref.kind === 'project' && !editing && (
           <Button data-plant-save-scene onClick={() => void saveProject()}>
             {t('plant.panel.saveToProject')}
@@ -273,15 +259,25 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
         )}
       </div>
       {editing && (
-        <div data-plant-editor className="p-2">
+        <div data-plant-editor className="flex flex-col gap-3 p-2">
+          <div className="flex flex-wrap gap-3">
+            <Button data-plant-undo disabled={!stopped} onClick={session.undo}>
+              {t('plantEditor.undo')}
+            </Button>
+            <Button data-plant-redo disabled={!stopped} onClick={session.redo}>
+              {t('plantEditor.redo')}
+            </Button>
+            <Button data-plant-edit-done disabled={!stopped} onClick={finishEditing}>
+              {t('plantEditor.done')}
+            </Button>
+          </div>
           <EditorPanel
-            key={version}
             editor={editing.editor}
             mapEditor={editing.mapEditor}
             stopped={stopped}
             catalogue={catalogue}
             projectScene={ref.kind === 'project'}
-            onMapEditor={(mapEditor) => setEditing((current) => current && { ...current, mapEditor })}
+            onMapEditor={session.setMapEditor}
           />
         </div>
       )}
@@ -308,9 +304,14 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
       )}
       {load.phase === 'loading' && <p className="p-2 text-sm">{t('plant.panel.loading')}</p>}
       {load.phase === 'failed' && (
-        <p role="alert" data-plant-load-failed className="p-2 text-sm">
-          {t('plant.panel.sceneFailed', { scene: refKey, detail: load.detail })}
-        </p>
+        <div role="alert" data-plant-load-failed className="flex flex-wrap items-center gap-3 p-2 text-sm">
+          <span>{t('plant.panel.sceneFailed', { scene: refKey, detail: load.detail })}</span>
+          {view === '3d' && (
+            <Button data-plant-show-schematic onClick={() => setView('schematic')}>
+              {t('plant.panel.showSchematic')}
+            </Button>
+          )}
+        </div>
       )}
       {ready && (
         <>
@@ -331,7 +332,7 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
                 {...(focusedPart ? { focusedPart } : {})}
                 label={t('plant.panel.canvas', { scene: ready.scene.name })}
                 {...(deps.timing ? { timing: deps.timing } : {})}
-                {...(editing ? { edit: { editor: editing.editor, catalogue, onEdited: () => setVersion((n) => n + 1) } } : {})}
+                {...(editing ? { edit: { editor: editing.editor, catalogue, onEdited: session.touch } } : {})}
                 onRenderer={setRenderer}
                 onFailure={setFailure}
               />
