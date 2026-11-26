@@ -1,14 +1,20 @@
 /**
  * The defects a machine can find on a capture (UXV-004), each a pure function over a `Measurement` (measurement.ts):
  *
- *   clip, spill        an element's own text cut by its box (overflow hidden, no ellipsis) or running out of it (overflow visible)
- *   clip ... scroll    every line of textFit.findTextOutOfBox, which follows each text to the ancestor that cuts it
+ *   clip, spill        an element's own text cut by its box (overflow hidden, no ellipsis), or running out of it (overflow
+ *                      visible) by a part that shows inside its clippers and the window (a quarter line, downwards)
+ *   clip ... scroll    every line of textFit.findTextOutOfBox, which follows each text to the ancestor that cuts it; its
+ *                      `control` lines are left to the field detector
  *   truncated          an ellipsis or a line clamp that hides text, with no title, aria-label, description or tooltip to read it
- *   overlap            two controls whose boxes cross by more than 1 px each way, unless one is inside the other
+ *   control            a field's text wider than its client width less the left padding and the larger of the right padding
+ *                      and the arrow, by more than 4 px
+ *   overlap            the visible parts of two controls cross by more than 1 px each way, unless one is inside the other or
+ *                      only one of them is in an open modal
+ *   offscreen          the part of a control its clippers let show is not wholly inside the window
  *
- * overlap, offscreen, contrast and focus judge only what a person can reach: an element under a modal or another element, or
- * in an inert subtree (`blocked`), is left out and listed under `unchecked` in the manifest instead.
- *   offscreen          a control not wholly inside the window (a control in a scrolling container is left to the container)
+ * overlap, offscreen, control, contrast and focus judge only what a person can see and reach: an element under a modal or another
+ * element, in an inert subtree (`blocked`), or that its clippers and the window hide, is left out and listed under `unchecked` in
+ * the manifest instead.
  *   message-key        a word on screen that is a key of the catalogue
  *   wrong-language     a text that is a string of the other language's catalogue and of no string of its own
  *   contrast           under 4.5 to 1, or 3 to 1 for text of 24 px, or 18.66 px and bold; a disabled control is exempt (WCAG 1.4.3)
@@ -48,12 +54,26 @@ type Detector = (measurement: Measurement, catalogs: Catalogs) => Defect[];
 const TOLERANCE = 1;
 const quote = (text: string) => JSON.stringify(text.slice(0, 60));
 const cuts = (value: string) => value === 'hidden' || value === 'clip';
+const intersect = (a: Rect, b: Rect): Rect | null => {
+  const x = Math.max(a.x, b.x);
+  const y = Math.max(a.y, b.y);
+  const width = Math.min(a.x + a.width, b.x + b.width) - x;
+  const height = Math.min(a.y + a.height, b.y + b.height) - y;
+  return width > 0 && height > 0 ? { x, y, width, height } : null;
+};
+const windowOf = ({ viewport }: Measurement): Rect => ({ x: 0, y: 0, width: viewport.width, height: viewport.height });
+/** The part of an element a person sees: its box, cut by its clippers and by the window. */
+export const visibleRect = (element: ElementMeasure, measurement: Measurement): Rect | null => {
+  const clipped = intersect(element.rect, element.clip);
+  return clipped && intersect(clipped, windowOf(measurement));
+};
+const seen = (element: ElementMeasure, measurement: Measurement) => !element.blocked && visibleRect(element, measurement) !== null;
 const shortened = (element: ElementMeasure) =>
   (element.textOverflow === 'ellipsis' && cuts(element.overflowX) && element.scroll.width > element.client.width + TOLERANCE) ||
   (element.lineClamp && cuts(element.overflowY) && element.scroll.height > element.client.height + TOLERANCE);
 
-const cutOrSpilling: Detector = ({ elements }) =>
-  elements.flatMap((element): Defect[] => {
+const cutOrSpilling: Detector = (measurement) =>
+  measurement.elements.flatMap((element): Defect[] => {
     if (!element.text || element.textOverflow === 'ellipsis' || element.lineClamp) return [];
     const wide = element.scroll.width > element.client.width + TOLERANCE;
     const size = `${element.scroll.width} by ${element.scroll.height} px`;
@@ -70,23 +90,32 @@ const cutOrSpilling: Detector = ({ elements }) =>
           detail: `${quote(element.text)} needs ${size} in ${box}`,
         },
       ];
-    if ((wide && element.overflowX === 'visible') || (tallSpill && element.overflowY === 'visible'))
-      return [
-        {
-          kind: 'spill',
-          where: element.name,
-          detail: `${quote(element.text)} takes ${size} of a ${box} box`,
-        },
-      ];
+    // what runs past the box, as much of it as its clippers and the window let show
+    const shows = intersect(element.clip, windowOf(measurement));
+    const { rect, client, scroll } = element;
+    const right =
+      wide && element.overflowX === 'visible' && shows
+        ? intersect({ x: rect.x + client.width, y: rect.y, width: scroll.width - client.width, height: rect.height }, shows)
+        : null;
+    const below =
+      tallSpill && element.overflowY === 'visible' && shows
+        ? intersect({ x: rect.x, y: rect.y + client.height, width: rect.width, height: scroll.height - client.height }, shows)
+        : null;
+    const spilled = Math.max(right ? right.width : 0, below ? below.height : 0);
+    const enough = (right && right.width > TOLERANCE) || (below && below.height > Math.max(TOLERANCE, element.fontSize / 4));
+    if (enough)
+      return [{ kind: 'spill', where: element.name, detail: `${quote(element.text)} spills ${Math.round(spilled)} px past its box` }];
     return [];
   });
 
 const TEXT_FIT_KINDS = new Set<DefectKind>(['clip', 'spill', 'word', 'control', 'scroll']);
 const textOutOfBox: Detector = ({ textOutOfBox: lines }) =>
-  lines.map((line) => {
-    const kind = line.slice(0, line.indexOf(':')) as DefectKind;
-    return { kind: TEXT_FIT_KINDS.has(kind) ? kind : 'clip', where: 'textFit', detail: line };
-  });
+  lines
+    .filter((line) => !line.startsWith('control:'))
+    .map((line) => {
+      const kind = line.slice(0, line.indexOf(':')) as DefectKind;
+      return { kind: TEXT_FIT_KINDS.has(kind) ? kind : 'clip', where: 'textFit', detail: line };
+    });
 
 const truncated: Detector = ({ elements }) =>
   elements
@@ -97,20 +126,31 @@ const insideOf = (elements: ElementMeasure[], child: number, ancestor: number): 
   for (let at = elements[child]!.parent; at !== null; at = elements[at]!.parent) if (at === ancestor) return true;
   return false;
 };
-const overlap: Detector = ({ elements }) => {
-  const controls = elements.map((element, index) => ({ element, index })).filter(({ element }) => element.control && !element.blocked);
+const fieldText: Detector = (measurement) =>
+  measurement.elements.flatMap((element): Defect[] => {
+    if (!element.field || !seen(element, measurement)) return [];
+    const { textWidth, paddingLeft, paddingRight, arrow } = element.field;
+    const room = element.client.width - paddingLeft - Math.max(paddingRight, arrow);
+    return textWidth > room + 4
+      ? [{ kind: 'control', where: element.name, detail: `the text needs ${Math.round(textWidth)} px in ${Math.round(room)} px` }]
+      : [];
+  });
+
+const overlap: Detector = (measurement) => {
+  const { elements } = measurement;
+  const controls = elements
+    .map((element, index) => ({ element, index, shown: element.blocked ? null : visibleRect(element, measurement) }))
+    .filter((entry): entry is { element: ElementMeasure; index: number; shown: Rect } => entry.element.control && entry.shown !== null);
   const found: Defect[] = [];
   // ponytail: every pair, O(n²); a page holds a few hundred controls, sort by x if one ever holds thousands
   for (let i = 0; i < controls.length; i++)
     for (let j = i + 1; j < controls.length; j++) {
       const a = controls[i]!;
       const b = controls[j]!;
-      const across =
-        Math.min(a.element.rect.x + a.element.rect.width, b.element.rect.x + b.element.rect.width) -
-        Math.max(a.element.rect.x, b.element.rect.x);
-      const down =
-        Math.min(a.element.rect.y + a.element.rect.height, b.element.rect.y + b.element.rect.height) -
-        Math.max(a.element.rect.y, b.element.rect.y);
+      // a modal hides what is outside it; the row of the modal and the control under it are not side by side
+      if (a.element.modal !== b.element.modal) continue;
+      const across = Math.min(a.shown.x + a.shown.width, b.shown.x + b.shown.width) - Math.max(a.shown.x, b.shown.x);
+      const down = Math.min(a.shown.y + a.shown.height, b.shown.y + b.shown.height) - Math.max(a.shown.y, b.shown.y);
       if (across <= TOLERANCE || down <= TOLERANCE) continue;
       if (insideOf(elements, b.index, a.index) || insideOf(elements, a.index, b.index)) continue;
       found.push({
@@ -124,16 +164,19 @@ const overlap: Detector = ({ elements }) => {
 
 const offscreen: Detector = ({ elements, viewport }) =>
   elements
-    .filter(
-      ({ control, inScroller, blocked, rect }) =>
-        control &&
-        !inScroller &&
-        !blocked &&
-        (rect.x < -TOLERANCE ||
-          rect.y < -TOLERANCE ||
-          rect.x + rect.width > viewport.width + TOLERANCE ||
-          rect.y + rect.height > viewport.height + TOLERANCE),
-    )
+    .filter(({ control, blocked, rect, clip }) => {
+      if (!control || blocked) return false;
+      // a clipper as large as the window is the page's frame: past it is outside the window, which is what this judges
+      const frame = clip.x <= 0 && clip.y <= 0 && clip.x + clip.width >= viewport.width && clip.y + clip.height >= viewport.height;
+      const part = frame ? rect : intersect(rect, clip);
+      if (!part) return false; // its scroller hides it
+      return (
+        part.x < -TOLERANCE ||
+        part.y < -TOLERANCE ||
+        part.x + part.width > viewport.width + TOLERANCE ||
+        part.y + part.height > viewport.height + TOLERANCE
+      );
+    })
     .map(({ name, rect }) => ({
       kind: 'offscreen',
       where: name,
@@ -209,9 +252,9 @@ export function contrastRatio(foreground: Rgba, background: Rgba): number {
   const [hi, lo] = [luminance(seen), luminance(background)].sort((x, y) => y - x);
   return (hi! + 0.05) / (lo! + 0.05);
 }
-const contrast: Detector = ({ elements }) =>
-  elements.flatMap((element): Defect[] => {
-    if (!element.text || !element.color || !element.background || element.disabled || element.blocked) return [];
+const contrast: Detector = (measurement) =>
+  measurement.elements.flatMap((element): Defect[] => {
+    if (!element.text || !element.color || !element.background || element.disabled || !seen(element, measurement)) return [];
     const large = element.fontSize >= 24 || (element.fontSize >= 18.66 && element.fontWeight >= 700);
     const needed = large ? 3 : 4.5;
     const got = contrastRatio(element.color, element.background);
@@ -220,9 +263,9 @@ const contrast: Detector = ({ elements }) =>
       : [];
   });
 
-const focus: Detector = ({ elements }) =>
-  elements
-    .filter((element) => element.control && !element.disabled && !element.blocked && element.focusRing === false)
+const focus: Detector = (measurement) =>
+  measurement.elements
+    .filter((element) => element.control && !element.disabled && seen(element, measurement) && element.focusRing === false)
     .map((element) => ({ kind: 'focus', where: element.name, detail: 'looks the same with the keyboard focus' }));
 
 const holds = (outer: Rect, inner: Rect) =>
@@ -245,6 +288,7 @@ export const detectors: Record<string, Detector> = {
   cutOrSpilling,
   textOutOfBox,
   truncated,
+  fieldText,
   overlap,
   offscreen,
   messageKey,

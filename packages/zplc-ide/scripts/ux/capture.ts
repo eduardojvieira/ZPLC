@@ -21,10 +21,11 @@ import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 
 import { translate } from '../../src/i18n/translate';
-import { findTextOutOfBox } from '../textFit';
+import { clippersOf, findTextOutOfBox } from '../textFit';
 import {
   captureName,
   captureRecord,
+  defectSummary,
   conditionName,
   conditionsFor,
   manifestText,
@@ -51,6 +52,29 @@ const ON_OPEN: Array<[string, string]> = [
   ['shell.status', 'idle'],
   ['activity.project', 'normal'],
 ];
+/** The language editors, each opened on its file of the fixture project, and the name its tab shows. */
+const EDITORS: Record<string, { file: string; tab: string; body: string }> = {
+  'editor.ld': { file: 'src/main.ld.json', tab: 'main.ld', body: '[data-ld-rung-id]' },
+  'editor.st': { file: 'src/main.st', tab: 'main.st', body: '.monaco-editor .view-lines' },
+  'editor.il': { file: 'src/main.il', tab: 'main.il', body: '.monaco-editor .view-lines' },
+  'editor.fbd': { file: 'src/main.fbd.json', tab: 'main.fbd', body: '.react-flow__node' },
+  'editor.sfc': { file: 'src/main.sfc.json', tab: 'main.sfc', body: '.react-flow__node' },
+};
+/** Surfaces reached another way than their command of screens.md, or that cannot be reached yet, and why. */
+const SPECIAL: Record<string, { command: string; click: string; state: string } | { unreached: string }> = {
+  // plant.edit is pending in the command registry: the Edit scene button of the 3D view is the way in
+  'plant.editor': { command: 'view.plant', click: '[data-plant-edit-scene]', state: 'parts' },
+  'dialog.importArchive': {
+    unreached:
+      'opened by the Import a project archive button of the Welcome screen, which asks for an archive file through a native ' +
+      'dialog the capture cannot answer yet; screens.md maps it to file.export and file.exportProjectJson, which export instead',
+  },
+  'secondary.guide': {
+    unreached:
+      'view.guide is pending in the command registry (no handler yet), and the Guide shows only while a lesson workspace is ' +
+      'open, which only a learn command starts',
+  },
+};
 const STILL = '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }';
 
 interface Plan {
@@ -59,11 +83,57 @@ interface Plan {
   command: string | null;
   /** A file of the fixture project to open instead of a command. */
   open?: string;
+  /** A control to click once the command ran. */
+  click?: string;
 }
 
-/** The page expression that is true when the surface shows. */
-export function markerOf(_surface: string, _locale: 'en' | 'es'): string | null {
-  return null;
+/** The page expression that is true when the surface shows; null for a surface the tool has no marker for. */
+export function markerOf(surface: string, locale: 'en' | 'es'): string | null {
+  const sel = (selector: string) => `Boolean(document.querySelector(${JSON.stringify(selector)}))`;
+  const tab = (view: string) => sel(`[id="editor-tab-${view}"][aria-selected="true"]`);
+  const activity = (view: string) => sel(`[data-activity="${view}"][aria-current="true"]`);
+  const secondary = (key: 'shell.secondary.inspector' | 'shell.secondary.assistant' | 'shell.secondary.lesson') =>
+    `[...document.querySelectorAll('[data-sidebar-kind="secondary"] h2')]` +
+    `.some((heading) => heading.textContent.trim() === ${JSON.stringify(translate(locale, key))})`;
+  const editor = EDITORS[surface];
+  if (editor)
+    return (
+      `[...document.querySelectorAll('[id^="editor-tab-"][aria-selected="true"]')]` +
+      `.some((tab) => tab.textContent.includes(${JSON.stringify(editor.tab)})) && ${sel(editor.body)}`
+    );
+  const [area, rest] = [surface.slice(0, surface.indexOf('.')), surface.slice(surface.indexOf('.') + 1)];
+  if (area === 'results') return sel(`[role="tabpanel"][aria-labelledby="console-tab-${rest}"]`);
+  if (surface.startsWith('editor.config.')) return tab(`config:${surface.slice('editor.config.'.length)}`);
+  const markers: Record<string, string> = {
+    'shell.welcome': sel('[data-welcome-preferences]'),
+    'shell.commandBar': sel('[data-command-bar]'),
+    'shell.activityRail': sel('[data-activity-rail]'),
+    'shell.status': sel('[data-status-line]'),
+    'shell.statusDetails': sel(
+      '[data-command="view.statusDetails"][aria-expanded="true"], [data-command="view.statusDetails"][data-state="open"]',
+    ),
+    'activity.project': activity('project'),
+    'activity.search': activity('search'),
+    'activity.tests': activity('tests'),
+    'activity.tests.interlocks': sel('[data-interlocks-view]'),
+    'activity.plant': activity('plant'),
+    'activity.learn': activity('learn'),
+    'secondary.inspector': secondary('shell.secondary.inspector'),
+    'secondary.assistant': secondary('shell.secondary.assistant'),
+    'secondary.guide': secondary('shell.secondary.lesson'),
+    'editor.settings': tab('settings'),
+    'editor.preferences': `${tab('preferences')} && ${sel('[data-preferences-document]')}`,
+    'editor.learn': sel('[data-learn-home]'),
+    'editor.changes': tab('review:changes'),
+    'editor.plant': `${tab('plant')} && ${sel('[data-plant-document]')}`,
+    'plant.editor': sel('[data-plant-editor]'),
+    'dialog.palette': sel('[role="dialog"] [role="combobox"]'),
+    'dialog.shortcuts': sel('[data-shortcut-group]'),
+    'dialog.newProject': sel('[data-new-project]'),
+    'dialog.explorer': sel('[data-entry-dialog]'),
+    'dialog.generatedCode': sel('[role="dialog"]'),
+  };
+  return markers[surface] ?? null;
 }
 
 /** Which surfaces this tool reaches, how, and in which state; the others with the reason. */
@@ -71,6 +141,15 @@ export function plan(surfaces: Surface[]): { reached: Plan[]; unreached: Array<{
   const reached: Plan[] = [];
   const unreached: Array<{ surface: string; reason: string }> = [];
   for (const surface of surfaces) {
+    const special = SPECIAL[surface.id];
+    if (special && 'unreached' in special) {
+      unreached.push({ surface: surface.id, reason: special.unreached });
+      continue;
+    }
+    if (special) {
+      reached.push({ surface, state: special.state, command: special.command, click: special.click });
+      continue;
+    }
     if (surface.id === 'shell.welcome') {
       reached.push({ surface, state: 'normal', command: null });
       continue;
@@ -78,6 +157,11 @@ export function plan(surfaces: Surface[]): { reached: Plan[]; unreached: Array<{
     const open = ON_OPEN.find(([id]) => id === surface.id);
     if (open) {
       reached.push({ surface, state: open[1], command: null });
+      continue;
+    }
+    const editor = EDITORS[surface.id];
+    if (editor) {
+      reached.push({ surface, state: 'normal', command: null, open: editor.file });
       continue;
     }
     if (surface.area === 'Outside Studio') {
@@ -93,6 +177,10 @@ export function plan(surfaces: Surface[]): { reached: Plan[]; unreached: Array<{
         reason:
           surface.reachedBy.length > 0 ? `only by commands a capture must not run: ${surface.reachedBy.join(', ')}` : 'no command opens it',
       });
+      continue;
+    }
+    if (markerOf(surface.id, 'en') === null) {
+      unreached.push({ surface: surface.id, reason: `${command} opens it, but the tool has no marker to tell that it shows` });
       continue;
     }
     reached.push({ surface, state: surface.states[0]!, command });
@@ -128,6 +216,37 @@ function sheet(area: string, captures: CaptureRecord[]): string {
   );
 }
 
+/** The editor tabs, the layout and the results panel of the open workbench, to go back to before each surface. */
+const BASELINE = `(async () => {
+  const { useShellLayout } = await import('/src/store/useShellLayout.ts');
+  const { useIDEStore } = await import('/src/store/useIDEStore.ts');
+  const plain = (state) => Object.fromEntries(Object.entries(state).filter(([, value]) => typeof value !== 'function'));
+  const ide = useIDEStore.getState();
+  return {
+    tabs: [...document.querySelectorAll('[id^="editor-tab-"]')].map((tab) => tab.id),
+    layout: JSON.parse(JSON.stringify(plain(useShellLayout.getState()))),
+    console: { activeConsoleTab: ide.activeConsoleTab, isConsoleCollapsed: ide.isConsoleCollapsed },
+  };
+})()`;
+const RESET = (baseline: unknown) => `(async (baseline) => {
+  const { useShellLayout } = await import('/src/store/useShellLayout.ts');
+  const { useIDEStore } = await import('/src/store/useIDEStore.ts');
+  // close every editor tab the open workbench did not have, with the close button beside it
+  for (let round = 0; round < 10; round++) {
+    const extra = [...document.querySelectorAll('[id^="editor-tab-"]')].filter((tab) => !baseline.tabs.includes(tab.id));
+    if (extra.length === 0) break;
+    for (const tab of extra) tab.parentElement?.querySelector('button:not([role="tab"])')?.click();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  document.getElementById(baseline.tabs[0] ?? '')?.click();
+  useShellLayout.setState(baseline.layout);
+  useIDEStore.setState(baseline.console);
+  await new Promise((resolve) => requestAnimationFrame(() => resolve(true)));
+  for (const element of document.querySelectorAll('*'))
+    if (element.scrollTop !== 0 || element.scrollLeft !== 0) element.scrollTo(0, 0);
+  return true;
+})(${JSON.stringify(baseline)})`;
+
 async function captureCondition(
   condition: Condition,
   plans: Plan[],
@@ -143,13 +262,50 @@ async function captureCondition(
   const app = launched.app;
   const captures: CaptureRecord[] = [];
   const failed: Array<{ surface: string; reason: string }> = [];
+  const notes: string[] = [];
   const strips = [`[role="tablist"][aria-label=${JSON.stringify(ui('workbench.editor.views'))}]`, '[data-ld-rung-id] .overflow-x-auto'];
+  const collect = (focus: boolean) =>
+    app.eval<Omit<Measurement, 'textOutOfBox'>>(
+      `(${collectMeasurement.toString()})(${JSON.stringify({ locale: condition.locale, focus })}, ${clippersOf.toString()})`,
+    );
 
   const still = async () => {
     await app.eval(
       `(() => { let s = document.getElementById('uxv-still'); if (!s) { s = document.createElement('style'); s.id = 'uxv-still'; ` +
         `document.head.append(s); } s.textContent = ${JSON.stringify(STILL)}; })()`,
     );
+  };
+  /**
+   * The region-error screen, or the workbench's own failure screen, shown when a module request was dropped (Chromium's
+   * net::ERR_NETWORK_CHANGED reaches localhost too): its Retry is clicked once. True when it clicked.
+   */
+  let retried = false;
+  const recoverOnce = async (where: string): Promise<boolean> => {
+    if (retried) return false;
+    const clicked = await app.eval<boolean>(
+      `(() => { const failure = document.querySelector('[data-region-error]') ?? ` +
+        `(document.body.innerText.includes(${JSON.stringify(ui('app.workbenchFailedTitle'))}) ? document.body : null); ` +
+        `if (!failure) return false; const retry = [...failure.querySelectorAll('button')]` +
+        `.find((button) => button.textContent.trim() === ${JSON.stringify(ui('common.retry'))}); ` +
+        `if (!retry) return false; retry.click(); return true; })()`,
+    );
+    if (clicked) {
+      retried = true;
+      const note = `${conditionName(condition)}: a failure screen showed at ${where}; Retry was clicked once`;
+      notes.push(note);
+      console.log(note);
+    }
+    return clicked;
+  };
+  /** Polls a page expression until it is true, clicking a failure screen's Retry once on the way; false when time runs out. */
+  const showing = async (expression: string, where: string, timeoutMs = 30_000): Promise<boolean> => {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      if (await app.eval<boolean>(`(() => { try { return Boolean(${expression}); } catch { return false; } })()`)) return true;
+      await recoverOnce(where);
+      await Bun.sleep(200);
+    }
+    return false;
   };
   const take = async (plan: Plan) => {
     const name = captureName(surfaces, plan.surface.id, plan.state, condition);
@@ -166,25 +322,33 @@ async function captureCondition(
       await Bun.sleep(250);
     }
     writeFileSync(join(out, `${name}.png`), Buffer.from(data, 'base64'));
-    const page = await app.eval<Omit<Measurement, 'textOutOfBox'>>(
-      `(${collectMeasurement.toString()})(${JSON.stringify({ locale: condition.locale, focus: false })})`,
-    );
+    const page = await collect(false);
     const textOutOfBox = await app.eval<string[]>(`(${findTextOutOfBox.toString()})(${JSON.stringify(strips)})`);
     // the focus pass last, after the picture: focusing can open a tooltip. A key first (Shift, which closes nothing), so that
     // programmatic focus counts as keyboard focus for :focus-visible.
     for (const type of ['keyDown', 'keyUp'])
       await app.cdp.command('Input.dispatchKeyEvent', { type, key: 'Shift', code: 'ShiftLeft', windowsVirtualKeyCode: 16 });
-    const focused = await app.eval<Omit<Measurement, 'textOutOfBox'>>(
-      `(${collectMeasurement.toString()})(${JSON.stringify({ locale: condition.locale, focus: true })})`,
-    );
+    const focused = await collect(true);
     const rings = new Map(focused.elements.map((element) => [`${element.name}@${element.rect.x},${element.rect.y}`, element.focusRing]));
     for (const element of page.elements) element.focusRing = rings.get(`${element.name}@${element.rect.x},${element.rect.y}`) ?? null;
     captures.push(captureRecord(name, plan.surface.id, plan.state, condition, { ...page, textOutOfBox }));
   };
-  const reset = async () => {
-    for (let i = 0; i < 2; i++) await app.press('Escape');
-    await app.eval(`import('/src/commands/bus.ts').then(({ runCommand }) => { runCommand('view.showProject'); return true; })`);
+  /** Measures the surface only once its marker shows; otherwise records that the wrong surface was on screen. */
+  const takeIfShowing = async (plan: Plan) => {
+    if (await showing(markerOf(plan.surface.id, condition.locale)!, plan.surface.id)) await take(plan);
+    else failed.push({ surface: plan.surface.id, reason: 'not reached: wrong surface (its marker never showed)' });
   };
+  const run = async (command: string): Promise<string> =>
+    app.eval<string>(
+      `import('/src/commands/bus.ts').then(({ runCommand }) => runCommand(${JSON.stringify(command)}, { respectEnabled: true }))`,
+    );
+  const openFile = async (path: string): Promise<string> =>
+    app.eval<string>(
+      `(async () => { const { useIDEStore } = await import('/src/store/useIDEStore.ts'); const state = useIDEStore.getState(); ` +
+        `const find = (node) => node.path === ${JSON.stringify(path)} ? node : (node.children ?? []).map(find).find(Boolean); ` +
+        `const node = state.fileTree && find(state.fileTree); if (!node) return 'missing'; ` +
+        `await state.openFile(node.id); return 'ran'; })()`,
+    );
 
   try {
     await app.cdp.command('Emulation.setDeviceMetricsOverride', {
@@ -210,33 +374,44 @@ async function captureCondition(
     await still();
     await app.until('the Welcome screen', async () => (await app.visible(button(ui('welcome.open.title'), 'contains'))) || undefined);
     const welcome = plans.find((plan) => plan.surface.id === 'shell.welcome');
-    if (welcome) await take(welcome);
+    if (welcome) await takeIfShowing(welcome);
 
     app.answer(project);
     await app.click(button(ui('welcome.open.title'), 'contains'), 'the Open project button');
-    await app.until('the project workbench', async () => (await app.visible(css('[role="toolbar"]'))) || undefined);
+    if (!(await showing(`document.querySelector('[role="toolbar"]')`, 'the opening of the project', 60_000)))
+      throw new Error('Timed out waiting for the project workbench');
     await still();
-    for (const plan of plans.filter((candidate) => candidate.command === null && candidate.surface.id !== 'shell.welcome'))
-      await take(plan);
+    const baseline = await app.eval<unknown>(BASELINE);
+    const reset = async () => {
+      for (let i = 0; i < 2; i++) await app.press('Escape');
+      await app.eval(RESET(baseline));
+    };
 
-    for (const plan of plans.filter((candidate) => candidate.command !== null)) {
+    for (const plan of plans.filter((candidate) => candidate.surface.id !== 'shell.welcome')) {
       try {
-        const outcome = await app.eval<string>(
-          `import('/src/commands/bus.ts').then(({ runCommand }) => runCommand(${JSON.stringify(plan.command)}, { respectEnabled: true }))`,
-        );
+        await reset();
+        const how = plan.command ?? (plan.open ? `open ${plan.open}` : null);
+        const outcome = plan.command ? await run(plan.command) : plan.open ? await openFile(plan.open) : 'ran';
         if (outcome !== 'ran') {
-          failed.push({ surface: plan.surface.id, reason: `${plan.command} is ${outcome} with the fixture project open` });
+          failed.push({ surface: plan.surface.id, reason: `${how} is ${outcome} with the fixture project open` });
           continue;
         }
+        if (plan.click) {
+          const ready = await showing(
+            `(() => { const b = document.querySelector(${JSON.stringify(plan.click)}); return b && !b.disabled; })()`,
+            plan.click,
+          );
+          if (!ready) {
+            failed.push({ surface: plan.surface.id, reason: `${plan.click} is not there or not enabled after ${how}` });
+            continue;
+          }
+          await app.click(css(plan.click), plan.click);
+        }
         await still();
-        await take(plan);
+        await takeIfShowing(plan);
       } catch (error) {
-        failed.push({
-          surface: plan.surface.id,
-          reason: `${plan.command}: ${error instanceof Error ? error.message.split('\n')[0] : String(error)}`,
-        });
-      } finally {
-        await reset();
+        const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
+        failed.push({ surface: plan.surface.id, reason: `${plan.command ?? plan.open ?? 'the open workbench'}: ${message}` });
       }
     }
   } catch (error) {
@@ -258,12 +433,14 @@ async function captureCondition(
   } finally {
     await launched.stop();
   }
-  return { captures, failed };
+  return { captures, failed, notes };
 }
 
 export interface ConditionRun {
   captures: CaptureRecord[];
   failed: Array<{ surface: string; reason: string }>;
+  /** What the run had to do that a person would not, such as clicking Retry on a failure screen. */
+  notes?: string[];
 }
 
 export interface RunResult {
@@ -272,6 +449,7 @@ export interface RunResult {
   failed: Array<{ surface: string; reason: string }>;
   /** Conditions that stopped before their last capture, with the error. */
   failedConditions: Array<{ condition: string; error: string }>;
+  notes: string[];
 }
 
 /** Every condition in turn; one that throws is recorded with its error and the run goes on to the next. */
@@ -280,7 +458,7 @@ export async function runConditions(
   captureOne: (condition: Condition) => Promise<ConditionRun>,
   log: (line: string) => void = console.log,
 ): Promise<RunResult> {
-  const result: RunResult = { captures: [], failed: [], failedConditions: [] };
+  const result: RunResult = { captures: [], failed: [], failedConditions: [], notes: [] };
   for (const condition of conditions) {
     const started = Date.now();
     let run: ConditionRun;
@@ -293,6 +471,7 @@ export async function runConditions(
       continue;
     }
     result.captures.push(...run.captures);
+    result.notes.push(...(run.notes ?? []));
     for (const { surface, reason } of run.failed) result.failed.push({ surface, reason: `${conditionName(condition)}: ${reason}` });
     log(`${conditionName(condition)}: ${run.captures.length} captures in ${Math.round((Date.now() - started) / 1000)} s`);
   }
@@ -321,6 +500,14 @@ async function main(): Promise<void> {
   writeFileSync(join(project, 'zplc.json'), `${JSON.stringify(config, null, 2)}\n`);
   mkdirSync(join(project, 'scenes'));
   cpSync(join(packageRoot, 'projects', 'plant_assembler', 'scene.json'), join(project, 'scenes', 'station.scene.json'));
+  // a file of each other language, so that every language editor opens on the same program Blinky shows in Ladder
+  for (const [example, file] of [
+    ['blinky_st', 'main.st'],
+    ['blinky_il', 'main.il'],
+    ['blinky_fbd', 'main.fbd.json'],
+    ['blinky_sfc', 'main.sfc.json'],
+  ])
+    cpSync(join(packageRoot, 'projects', example, 'src', file), join(project, 'src', file));
 
   rmSync(out, { recursive: true, force: true });
   mkdirSync(out, { recursive: true });
@@ -338,9 +525,9 @@ async function main(): Promise<void> {
   } finally {
     await stop();
   }
-  const { captures, failed, failedConditions } = run;
+  const { captures, failed, failedConditions, notes } = run;
   const notReached = [...unreached, ...failed];
-  writeFileSync(join(out, 'manifest.json'), manifestText(captures, notReached, failedConditions));
+  writeFileSync(join(out, 'manifest.json'), manifestText(captures, notReached, failedConditions, notes));
   const areas = [...new Set(reached.map((entry) => entry.surface.area))];
   for (const area of areas) {
     const ids = new Set(reached.filter((entry) => entry.surface.area === area).map((entry) => entry.surface.id));
@@ -353,10 +540,11 @@ async function main(): Promise<void> {
     );
   }
   const defects = captures.reduce((total, capture) => total + capture.defects.length, 0);
-  const byKind = new Map<string, number>();
-  for (const capture of captures) for (const defect of capture.defects) byKind.set(defect.kind, (byKind.get(defect.kind) ?? 0) + 1);
+  const summary = defectSummary(captures);
   console.log(`uxv: ${captures.length} captures, ${defects} measured defects, ${notReached.length} surfaces not reached; ${out}`);
-  for (const [kind, count] of [...byKind].sort()) console.log(`  ${kind}: ${count}`);
+  console.log(`  one per condition, selector and kind: ${summary.defects}`);
+  for (const [kind, count] of Object.entries(summary.byKind)) console.log(`    ${kind}: ${count}`);
+  for (const note of notes) console.log(`  note: ${note}`);
   for (const { condition, error } of failedConditions) console.log(`  condition ${condition} failed: ${error.split('\n')[0]}`);
   process.exit(defects === 0 && failedConditions.length === 0 ? 0 : 1);
 }

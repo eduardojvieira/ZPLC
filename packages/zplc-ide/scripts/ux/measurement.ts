@@ -41,14 +41,21 @@ export interface ElementMeasure {
   disabled: boolean;
   /** For a control that Tab reaches: true when focusing it changes how it looks, false when not, null when not checked. */
   focusRing: boolean | null;
-  /** Inside an ancestor that scrolls: being partly out of view there is by design. */
-  inScroller: boolean;
   /**
    * Why a person cannot reach the element on screen, or null when they can: `covered` when another element (a modal, an
    * overlay, a scroller's edge) is on top at every point sampled in its visible part, `inert` when it is inside an `inert` or
    * `aria-hidden="true"` subtree. An element wholly outside the window is not covered: it is offscreen.
    */
   blocked: 'covered' | 'inert' | null;
+  /**
+   * The region its clippers let show: the padding boxes of the ancestors that cut it (textFit.clippersOf), intersected. The
+   * window is not in it: the detectors add it. Unbounded (±1e6) when nothing cuts the element.
+   */
+  clip: Rect;
+  /** Inside an open `aria-modal="true"` dialog. */
+  modal: boolean;
+  /** For a select or a text field: the width of the text it shows and what its box keeps for padding and arrow. */
+  field: { textWidth: number; paddingLeft: number; paddingRight: number; arrow: number } | null;
 }
 
 export interface Measurement {
@@ -70,8 +77,11 @@ export interface CollectOptions {
   focus: boolean;
 }
 
-/** Runs in the page. Returns everything of `Measurement` except `textOutOfBox`, which the runner adds from `textFit`. */
-export function collectMeasurement(options: CollectOptions): Omit<Measurement, 'textOutOfBox'> {
+/**
+ * Runs in the page. Returns everything of `Measurement` except `textOutOfBox`, which the runner adds from `textFit`.
+ * `clippersOf` is `textFit.clippersOf`, injected with it: `(${collectMeasurement})(options, ${clippersOf})`.
+ */
+export function collectMeasurement(options: CollectOptions, clippersOf: (box: Element) => Element[]): Omit<Measurement, 'textOutOfBox'> {
   const SKIP = '.monaco-editor, .react-flow, svg, canvas, script, style, noscript, template, option, optgroup';
   const CONTROL =
     'button, a[href], input, select, textarea, summary, [role="button"], [role="tab"], [role="menuitem"], [role="menuitemcheckbox"], ' +
@@ -152,7 +162,41 @@ export function collectMeasurement(options: CollectOptions): Omit<Measurement, '
     if (box.width <= 1 || box.height <= 1) return false;
     const s = style(element);
     if (s.visibility !== 'visible' || s.display === 'none') return false;
+    // a closed <details>, content-visibility and the like
+    if (typeof element.checkVisibility === 'function' && !element.checkVisibility()) return false;
     return opacityOf(element) > 0;
+  };
+  const UNBOUNDED: Rect = { x: -1e6, y: -1e6, width: 2e6, height: 2e6 };
+  const clipOf = (element: Element): Rect => {
+    let left = UNBOUNDED.x;
+    let top = UNBOUNDED.y;
+    let right = UNBOUNDED.x + UNBOUNDED.width;
+    let bottom = UNBOUNDED.y + UNBOUNDED.height;
+    for (const clipper of clippersOf(element)) {
+      if (clipper === element) continue; // its own overflow cuts its content, not itself
+      const edge = clipper.getBoundingClientRect();
+      left = Math.max(left, edge.left + clipper.clientLeft);
+      top = Math.max(top, edge.top + clipper.clientTop);
+      right = Math.min(right, edge.left + clipper.clientLeft + clipper.clientWidth);
+      bottom = Math.min(bottom, edge.top + clipper.clientTop + clipper.clientHeight);
+    }
+    return { x: round(left), y: round(top), width: round(Math.max(0, right - left)), height: round(Math.max(0, bottom - top)) };
+  };
+  const measure = document.createElement('canvas').getContext('2d');
+  const fieldOf = (element: Element, s: CSSStyleDeclaration): ElementMeasure['field'] => {
+    const select = element instanceof HTMLSelectElement;
+    const input = element instanceof HTMLInputElement && ['text', 'search', 'number', 'email', 'url', 'tel', ''].includes(element.type);
+    if (!measure || (!select && !input)) return null;
+    const shownText = select
+      ? (element.selectedOptions[0]?.text ?? '')
+      : (element as HTMLInputElement).value || (element as HTMLInputElement).placeholder;
+    measure.font = `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+    return {
+      textWidth: round(measure.measureText(shownText).width),
+      paddingLeft: Number.parseFloat(s.paddingLeft),
+      paddingRight: Number.parseFloat(s.paddingRight),
+      arrow: select && s.appearance !== 'none' ? 20 : 0,
+    };
   };
   const ownText = (element: Element): string =>
     [...element.childNodes]
@@ -162,7 +206,6 @@ export function collectMeasurement(options: CollectOptions): Omit<Measurement, '
       .replace(/\s+/g, ' ')
       .trim()
       .slice(0, 200);
-  const scrolls = (value: string) => value === 'auto' || value === 'scroll';
   const readable = (element: Element): boolean => {
     for (let at: Element | null = element; at && at !== document.body; at = at.parentElement)
       if (at.hasAttribute('title') || at.hasAttribute('aria-describedby') || at.hasAttribute('data-tooltip')) return true;
@@ -171,13 +214,14 @@ export function collectMeasurement(options: CollectOptions): Omit<Measurement, '
   };
 
   /** Why a person cannot reach the element: inert, or covered at every sampled point of the part inside the window. */
-  const blocked = (element: Element, box: DOMRect): ElementMeasure['blocked'] => {
+  const blocked = (element: Element, box: DOMRect, clip: Rect): ElementMeasure['blocked'] => {
     if (element.closest('[inert], [aria-hidden="true"]')) return 'inert';
-    const left = Math.max(box.left, 0);
-    const right = Math.min(box.right, innerWidth);
-    const top = Math.max(box.top, 0);
-    const bottom = Math.min(box.bottom, innerHeight);
-    if (right - left < 1 || bottom - top < 1) return null; // wholly outside the window: the offscreen detector judges it
+    const left = Math.max(box.left, clip.x, 0);
+    const right = Math.min(box.right, clip.x + clip.width, innerWidth);
+    const top = Math.max(box.top, clip.y, 0);
+    const bottom = Math.min(box.bottom, clip.y + clip.height, innerHeight);
+    // nothing of it shows: the clip and the window say so, the detectors read them
+    if (right - left < 1 || bottom - top < 1) return null;
     // an element that lets the pointer through (pointer-events: none) is hit as the ancestor under it
     const through = style(element).pointerEvents === 'none';
     for (const [fx, fy] of [
@@ -203,13 +247,9 @@ export function collectMeasurement(options: CollectOptions): Omit<Measurement, '
     const control = element.matches(CONTROL);
     if (!text && !control && s.overflowX === 'visible' && s.overflowY === 'visible') continue;
     let parent: number | null = null;
-    let inScroller = false;
-    for (let at = element.parentElement; at && at !== document.documentElement; at = at.parentElement) {
-      if (parent === null && index.has(at)) parent = index.get(at)!;
-      const its = style(at);
-      if (scrolls(its.overflowX) || scrolls(its.overflowY)) inScroller = true;
-    }
+    for (let at = element.parentElement; at && parent === null; at = at.parentElement) if (index.has(at)) parent = index.get(at)!;
     const box = element.getBoundingClientRect();
+    const clip = clipOf(element);
     const colour = text ? parse(s.color) : null;
     index.set(element, elements.length);
     measured.push(element);
@@ -232,8 +272,10 @@ export function collectMeasurement(options: CollectOptions): Omit<Measurement, '
       control,
       disabled: element.closest('[disabled], [aria-disabled="true"], fieldset:disabled') !== null,
       focusRing: null,
-      inScroller,
-      blocked: blocked(element, box),
+      blocked: blocked(element, box, clip),
+      clip,
+      modal: element.closest('[aria-modal="true"]') !== null,
+      field: control ? fieldOf(element, s) : null,
     });
   }
 

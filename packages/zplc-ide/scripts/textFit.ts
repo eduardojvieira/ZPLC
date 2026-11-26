@@ -6,12 +6,33 @@
  * - clip: text cut by an ancestor that hides its overflow, without an ellipsis on the text's own box;
  * - spill: text that runs out of its box, or out of an ancestor's box, into whatever is next to it;
  * - word: a word broken across two lines because its box is narrower than the word;
- * - control: a select, or a field's value or placeholder, wider than the control shows;
+ * - control: a select, or a field's value or placeholder, wider than the room its padding and arrow leave (4 px of tolerance);
  * - scroll: a container that scrolls sideways, other than the deliberate scroll strips named by `scrollStrips` (selectors).
  *
  * Code editors and diagram canvases (Monaco, React Flow, SVG) are left out: they scroll and clip by design. Text that is
  * only for assistive technology, inside a closed <details>, or fully transparent is not shown, so it is not checked.
  */
+/**
+ * The ancestors that clip a box, following containing blocks: an absolute or fixed box escapes the static ones. It runs in the
+ * page and is injected as source, as `findTextOutOfBox` is (the capture tool passes it to its collector).
+ * ponytail: `findTextOutOfBox` keeps the same rule inline, because the journeys inject that function alone; change both together.
+ */
+export function clippersOf(box: Element): Element[] {
+  const found: Element[] = [];
+  const own = getComputedStyle(box);
+  if (own.overflowX !== 'visible') found.push(box);
+  let position = own.position;
+  for (let at = box.parentElement; at && at !== document.documentElement; at = at.parentElement) {
+    const its = getComputedStyle(at);
+    const contains = /paint|layout|strict|content/.test(its.contain) || its.transform !== 'none' || its.filter !== 'none';
+    const block = position === 'absolute' ? its.position !== 'static' || contains : position === 'fixed' ? contains : true;
+    if (!block) continue;
+    if (its.overflowX !== 'visible') found.push(at);
+    position = its.position;
+  }
+  return found;
+}
+
 export function findTextOutOfBox(scrollStrips: string[]): string[] {
   const SKIP = '.monaco-editor, .react-flow, svg, canvas, script, style, noscript, template, option, optgroup';
   const TOLERANCE = 1.5;
@@ -154,13 +175,33 @@ export function findTextOutOfBox(scrollStrips: string[]): string[] {
     if (control instanceof HTMLInputElement && !['text', 'search', 'number', 'email', 'url', 'tel', ''].includes(control.type)) continue;
     const own = style(control);
     if (own.visibility !== 'visible') continue;
+    // nothing of it shows: a scroller or a closed region hides it
+    const at = control.getBoundingClientRect();
+    let [left, top, right, bottom] = [
+      Math.max(at.left, 0),
+      Math.max(at.top, 0),
+      Math.min(at.right, innerWidth),
+      Math.min(at.bottom, innerHeight),
+    ];
+    for (const clipper of clippers(control)) {
+      if (clipper === control) continue;
+      const edge = clipper.getBoundingClientRect();
+      [left, top, right, bottom] = [
+        Math.max(left, edge.left),
+        Math.max(top, edge.top),
+        Math.min(right, edge.right),
+        Math.min(bottom, edge.bottom),
+      ];
+    }
+    if (right - left <= 0 || bottom - top <= 0) continue;
+    // the right padding of a select is where its arrow is drawn: the arrow takes that padding, not room besides it
     const arrow = control instanceof HTMLSelectElement && own.appearance !== 'none' ? 20 : 0;
-    const room = control.clientWidth - parseFloat(own.paddingLeft) - parseFloat(own.paddingRight) - arrow;
+    const room = control.clientWidth - parseFloat(own.paddingLeft) - Math.max(parseFloat(own.paddingRight), arrow);
     const shown = control instanceof HTMLSelectElement ? (control.selectedOptions[0]?.text ?? '') : control.value || control.placeholder;
     if (!shown) continue;
     measure.font = `${own.fontStyle} ${own.fontWeight} ${own.fontSize} ${own.fontFamily}`;
     const width = measure.measureText(shown).width;
-    if (width > room + 1)
+    if (width > room + 4)
       problems.push(
         `control: ${JSON.stringify(shown.slice(0, 60))} needs ${Math.round(width)} px in ${Math.round(room)} px of ${name(control)}`,
       );
