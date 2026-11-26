@@ -10,13 +10,12 @@ import type { CommandId } from '../commands/registry';
 import type { ActivityView } from '../store/useShellLayout';
 import { useLearnUi } from '../learn/learnUi';
 import { useIDEStore } from '../store/useIDEStore';
-import { LearnPanel } from '../components/LearnPanel';
+import { LearnOutline } from '../components/learn/LearnOutline';
 import { ProjectExplorer } from '../components/ProjectExplorer';
 import { WorkbenchInspector } from '../components/WorkbenchInspector';
 import { PlantActivityView } from '../plant/ui/PlantActivityView';
 import { GuideView } from '../components/guide/GuideView';
 import { lessonSurface } from './shellRouting';
-import { useWorkspaceTestResult } from './workspaceTestResult';
 import { SearchView } from './SearchView';
 import { TestsView } from './TestsView';
 import type { SecondaryView } from './useSelection';
@@ -29,16 +28,18 @@ export interface SidebarView {
   Body: ComponentType;
 }
 
-/** On the Learn rail the lesson is the Guide of the secondary sidebar (GDE-001); the primary view is then an empty labelled region. */
+/**
+ * On the Learn rail the lesson is the Guide of the secondary sidebar (GDE-001); the primary view is then an empty labelled region.
+ * With no lesson open it is the course outline (GDE-002).
+ */
 function LearnBody() {
   const { t } = useT();
-  const presentation = useWorkspaceTestResult((state) => state.presentation);
   const workspace = useLearnUi((state) => state.workspace);
   const session = useIDEStore((state) => state.projectSession);
   if (lessonSurface('learn', workspace !== null && workspace.session === session) === 'secondary') {
     return createElement('div', { role: 'region', 'aria-label': t('shell.activity.learn') });
   }
-  return createElement(LearnPanel, { workspaceTestPresentation: presentation });
+  return createElement(LearnOutline);
 }
 
 export const PRIMARY_VIEWS: Record<ActivityView, SidebarView> = {

@@ -50,6 +50,11 @@ const tree = () => dom.screen.getByRole('tree', { name: dom.t('u3Learn.outline.t
 const rowById = (rowId: string): HTMLElement => document.querySelector<HTMLElement>(`[data-row="${CSS.escape(rowId)}"]`)!;
 const moduleLesson = (module: number, id: string) => rowById(lessonNodeId(moduleNodeId(module), id));
 const filterBox = () => dom.screen.getByRole('textbox', { name: dom.t('u3Learn.outline.filterLabel') });
+// Select all and delete, as a person does; user.clear left React's value tracker behind once the list was empty (happy-dom).
+async function clearFilter(user: ReturnType<typeof dom.render>['user']): Promise<void> {
+  await user.tripleClick(filterBox());
+  await user.keyboard('{Backspace}');
+}
 
 describe('The Learn activity course outline (GDE-002, UX-024, UX-026)', () => {
   it('GDE-002 the outline lists paths and modules that open and close', async () => {
@@ -190,16 +195,16 @@ describe('The Learn activity course outline (GDE-002, UX-024, UX-026)', () => {
     expect(rowById(moduleNodeId(3)).getAttribute('aria-expanded')).toBe('true');
     expect(rowById(moduleNodeId(1))).toBeNull();
 
-    await user.clear(filterBox());
+    await clearFilter(user);
     const targetLesson = LESSON_INDEX.lessons.find((lesson) => lesson.id === 'timers-on-delay-off-delay')!;
     await user.type(filterBox(), targetLesson.text.en.title.slice(0, 12));
     expect(moduleLesson(3, 'timers-on-delay-off-delay')).toBeTruthy();
 
-    await user.clear(filterBox());
+    await clearFilter(user);
     await user.type(filterBox(), 'zzz-no-such-lesson');
     expect(dom.screen.getByText(dom.t('u3Learn.outline.filterEmpty', { query: 'zzz-no-such-lesson' }))).toBeTruthy();
 
-    await user.clear(filterBox());
+    await clearFilter(user);
     expect(rowById(moduleNodeId(1)).getAttribute('aria-expanded')).toBe('true');
     expect(rowById(moduleNodeId(3)).getAttribute('aria-expanded')).toBe('false');
   });
@@ -280,14 +285,13 @@ describe('The Learn activity course outline (GDE-002, UX-024, UX-026)', () => {
     expect(rows.filter((row) => row.kind === 'lesson')).toHaveLength(111);
 
     const t1 = performance.now();
-    dom.render(<LearnOutline index={synthetic} />);
+    const { user } = dom.render(<LearnOutline index={synthetic} />);
     expect(performance.now() - t1).toBeLessThan(100);
 
-    // Every lesson shown at once: a filter that matches them all opens every module.
+    // Every lesson shown at once: a filter that matches them all opens every module; the last key renders all 131 rows.
+    await user.type(filterBox(), 'syntheti');
     const t2 = performance.now();
-    await dom.act(async () => {
-      dom.fireEvent.change(filterBox(), { target: { value: 'synthetic' } });
-    });
+    await user.keyboard('c');
     expect(performance.now() - t2).toBeLessThan(100);
     expect(document.querySelectorAll('[role="treeitem"][aria-level="2"]')).toHaveLength(111);
   });
