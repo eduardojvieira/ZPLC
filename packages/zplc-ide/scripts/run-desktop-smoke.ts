@@ -831,31 +831,97 @@ async function main(): Promise<void> {
         ? true
         : undefined,
     );
+    // GDE-002: the Learn activity shows the course outline, and the lesson follows the app language (LRN-029, GDE-005); the per-lesson
+    // language toggle is gone. The language a person learns in is still changed with the keyboard alone: Mod+Comma opens Preferences,
+    // and its language control is focusable and changes the outline text.
+    const outline = async (): Promise<{ label: string | null; text: string } | undefined> =>
+      (await cdp!.evaluate(
+        `(() => { const tree = document.querySelector('[role="tree"]'); return tree ? { label: tree.getAttribute('aria-label'), ` +
+          `text: tree.innerText } : undefined; })()`,
+      )) as { label: string | null; text: string } | undefined;
+    const englishOutline = await waitFor('English course outline', async () => {
+      const shown = await outline();
+      return shown?.label === 'Course outline' ? shown : undefined;
+    });
+    // Mod+Comma is a native menu accelerator, which a CDP key event does not reach; the palette (Mod+Shift+P) is the renderer's keyboard
+    // route to the same command.
+    const modifiers = (process.platform === 'darwin' ? 4 : 2) | 8;
+    await cdp.command('Input.dispatchKeyEvent', { type: 'keyDown', key: 'P', code: 'KeyP', modifiers, windowsVirtualKeyCode: 80 });
+    await cdp.command('Input.dispatchKeyEvent', { type: 'keyUp', key: 'P', code: 'KeyP', modifiers, windowsVirtualKeyCode: 80 });
+    await waitFor('command palette from the keyboard', async () =>
+      (await cdp!.evaluate(`document.activeElement?.getAttribute('aria-controls') !== null && document.activeElement?.tagName === 'INPUT'`))
+        ? true
+        : undefined,
+    );
+    await cdp.command('Input.insertText', { text: 'Open preferences' });
+    await press(cdp, 'Enter');
+    await waitFor('Preferences from the keyboard', async () =>
+      (await cdp!.evaluate(`document.querySelector('select[data-setting="language"]') !== null`)) ? true : undefined,
+    );
     assert(
       await cdp.evaluate(
-        `(() => { const english = [...document.querySelectorAll('button')].find((item) => item.textContent === 'English'); ` +
-          `english?.focus(); return document.activeElement === english && english.matches(':focus-visible'); })()`,
+        `(() => { const control = document.querySelector('select[data-setting="language"]'); control?.focus(); return ` +
+          `document.activeElement === control && control.matches(':focus-visible'); })()`,
       ),
-      'Learn language selection is not keyboard focusable.',
+      'The language control in Preferences is not keyboard focusable.',
     );
-    await press(cdp, 'Enter');
-    const learnSelection = await waitFor(
-      'Learn keyboard selection',
-      async () =>
-        (await cdp!.evaluate(
-          `(() => { const status = document.querySelector('[data-learn-grade]'); const text = ` +
-            `document.querySelector('[aria-label="Primary sidebar"]')?.innerText ?? document.body.innerText; const selected = ` +
-            `[...document.querySelectorAll('button[aria-pressed="true"]')].map((item) => item.textContent); return status ? { grade: ` +
-            `status.getAttribute('data-learn-grade'), text: text.slice(-1_000), selected } : undefined; })()`,
-        )) as { grade: string | null; text: string; selected: string[] },
-    );
+    const languageValue = async () => String(await cdp!.evaluate(`document.querySelector('select[data-setting="language"]')?.value`));
+    // The choices are auto, en, es: the arrow keys walk them, so the run presses until the control holds the language it wants.
+    for (let step = 0; step < 2 && (await languageValue()) !== 'es'; step += 1) await press(cdp, 'ArrowDown');
+    const spanishOutline = await waitFor('Spanish course outline', async () => {
+      const shown = await outline();
+      return shown?.label === 'Índice del curso' ? shown : undefined;
+    });
     assert(
-      learnSelection.grade === 'not-run' &&
-        learnSelection.text.includes('Open the workspace of this lesson.') &&
-        !/\b(\d+) of \1 tests passed/.test(learnSelection.text) &&
-        learnSelection.selected.includes('English'),
-      `Learn keyboard selection did not remain read-only: ${JSON.stringify(learnSelection)}`,
+      // The outline opens with its paths collapsed, so the lesson text it shows is the path titles.
+      englishOutline.text.includes('Ladder diagram from zero') &&
+        spanishOutline.text.includes('Diagrama de escalera desde cero') &&
+        !spanishOutline.text.includes('Ladder diagram from zero'),
+      `The language control did not change the lesson text: ${JSON.stringify({ englishOutline, spanishOutline })}`,
     );
+    for (let step = 0; step < 2 && (await languageValue()) !== 'en'; step += 1) await press(cdp, 'ArrowUp');
+    const restoredOutline = await waitFor('English course outline again', async () => {
+      const shown = await outline();
+      return shown?.label === 'Course outline' ? shown : undefined;
+    });
+    // The language change is read-only for the project: no test ran from it.
+    assert(
+      restoredOutline.text.includes('Ladder diagram from zero') && !/\b(\d+) of \1 tests passed/.test(restoredOutline.text),
+      `The language change must not run the tests: ${JSON.stringify(restoredOutline)}`,
+    );
+    await cdp.evaluate(
+      `import('/src/store/usePreferencesDocument.ts').then(({ usePreferencesDocument }) => usePreferencesDocument.getState().close())`,
+    );
+    // The lesson text itself follows the app language too: a reading page, opened as the outline opens it, is read in English, then in
+    // Spanish, then in English again. The reading page is modal, so the language changes through the settings store, as the Preferences
+    // control does (the Studio vertical smoke does the same for the Guide).
+    const reading = (await cdp.evaluate(
+      `import('/src/generated/lessonIndex.ts').then(({ LESSON_INDEX }) => import('/src/learn/learnUi.ts').then(({ useLearnUi }) => { ` +
+        `const entry = LESSON_INDEX.lessons.find((lesson) => { const module = LESSON_INDEX.course.modules.find((item) => item.id === ` +
+        `lesson.module); return lesson.reading && module && module.title.en !== module.title.es; }); if (!entry) return null; const ` +
+        `module = LESSON_INDEX.course.modules.find((item) => item.id === entry.module); useLearnUi.getState().openReading(entry.id); ` +
+        `return { id: entry.id, en: module.title.en, es: module.title.es }; }))`,
+    )) as { id: string; en: string; es: string } | null;
+    assert(reading !== null, 'No lesson has a reading page whose module title differs between English and Spanish.');
+    const readingText = async (): Promise<string> =>
+      String(await cdp!.evaluate(`document.querySelector('[data-learn-reading]')?.innerText ?? ''`));
+    const setLanguage = (language: 'en' | 'es') =>
+      cdp!.evaluate(
+        `import('/src/store/useAppSettings.ts').then(({ useAppSettings }) => ` +
+          `useAppSettings.getState().update({ language: '${language}' }))`,
+      );
+    await waitFor('English reading page', async () => ((await readingText()).includes(reading.en) ? true : undefined));
+    await setLanguage('es');
+    await waitFor('Spanish reading page', async () => {
+      const shown = await readingText();
+      return shown.includes(reading.es) && !shown.includes(reading.en) ? true : undefined;
+    });
+    await setLanguage('en');
+    await waitFor('English reading page again', async () => {
+      const shown = await readingText();
+      return shown.includes(reading.en) && !shown.includes(reading.es) ? true : undefined;
+    });
+    await cdp.evaluate(`import('/src/learn/learnUi.ts').then(({ useLearnUi }) => useLearnUi.getState().closeReading())`);
     await waitFor('Test results tab after Learn', async () =>
       (await cdp!.evaluate(
         `(() => { const tab = [...document.querySelectorAll('button')].find((item) => ` +
