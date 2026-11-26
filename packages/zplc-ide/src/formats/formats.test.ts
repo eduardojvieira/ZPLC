@@ -262,7 +262,12 @@ describe('AIX-013 the format schemas accept every shipped file and list only wha
   });
 
   it('every FBD standard block compiles in a one-block file, its inputs wired to constants (B2)', () => {
-    const literal: Record<string, [string, unknown]> = { BOOL: ['BOOL', true], TIME: ['TIME', 'T#1s'], REAL: ['REAL', 1.5] };
+    const literal: Record<string, [string, unknown]> = {
+      BOOL: ['BOOL', true],
+      TIME: ['TIME', 'T#1s'],
+      REAL: ['REAL', 1.5],
+      STRING: ['STRING', "'a'"],
+    };
     const failed: string[] = [];
     for (const type of formatById('fbd').acceptedValues.standardBlocks!) {
       const instance = fbdNeedsInstance(type);

@@ -451,7 +451,7 @@ function validateSFCForTranspilation(model: SFCModel): Problems {
     }
     validateIdentifier(action.name, 'Action name', errors);
     validateComment(action.comment, `Action ${describeId(action.id)} comment`, errors);
-    if (action.type !== 'ST') {
+    if (!(SFC_ACTION_TYPES as readonly unknown[]).includes(action.type)) {
       errors.push(`Action ${describeId(action.id)} only ST actions are supported`);
     }
     if (typeof action.body !== 'string' || action.body.trim().length === 0) {
@@ -511,6 +511,8 @@ function validateUniqueIds(items: unknown[], label: string, elementOf: (id: stri
 }
 
 /** Action qualifiers the transpiler translates; L and D take a time. */
+/** The action languages the SFC transpiler compiles (AIX-013). */
+export const SFC_ACTION_TYPES = ['ST'] as const;
 const SUPPORTED_QUALIFIERS = new Set(['N', 'S', 'R', 'L', 'D', 'P', 'P0', 'P1']);
 const TIMED_QUALIFIERS = new Set(['L', 'D']);
 

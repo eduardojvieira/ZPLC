@@ -94,8 +94,8 @@ function checkSide(side: unknown, name: 'reads' | 'drives', expected: readonly s
   }
 }
 
-const DIRECTIONS: readonly string[] = ['command', 'sensor'];
-const TYPES: readonly string[] = ['BOOL', 'INT', 'REAL'];
+export const DIRECTIONS: readonly string[] = ['command', 'sensor'];
+export const TYPES: readonly string[] = ['BOOL', 'INT', 'REAL'];
 const isNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
 
 function checkRange(range: unknown, type: unknown, at: string, problems: string[]): void {

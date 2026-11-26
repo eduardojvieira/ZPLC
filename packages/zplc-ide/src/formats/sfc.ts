@@ -3,10 +3,10 @@
  * SFC transpiler hold.
  */
 import { SFC_QUALIFIERS as QUALIFIERS } from '../models/sfc';
+import { SFC_ACTION_TYPES as ACTION_TYPES } from '../transpiler/sfcToST';
 import type { FormatModule, JsonSchema } from './index';
 
 // QUALIFIERS: the ones the SFC transpiler translates; SD, DS and SL are refused with an error.
-const ACTION_TYPES = ['ST', 'IL', 'FBD', 'LD'];
 
 const position: JsonSchema = { type: 'object', required: ['x', 'y'], properties: { x: { type: 'number' }, y: { type: 'number' } } };
 const variable: JsonSchema = {

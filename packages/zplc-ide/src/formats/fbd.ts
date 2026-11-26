@@ -1,9 +1,20 @@
 /** Function Block Diagram, `src/*.fbd.json`: the shape `loadFBDFile` checks and the port rules `validateFBDModel` holds. */
-import { getBlockCategories } from '../catalog/blockCatalog';
-import { FBD_SPECIAL_BLOCKS as SPECIAL_BLOCKS } from '../models/fbd';
+import { fbdPaletteBlocks } from '../editors/fbd/palette';
+import { FBD_SPECIAL_BLOCKS as SPECIAL_BLOCKS, getDefaultPorts } from '../models/fbd';
 import type { FormatModule, JsonSchema } from './index';
 
-const STANDARD_BLOCKS = getBlockCategories().flatMap((category) => category.blocks);
+/** The blocks the FBD palette offers, which are the ones the transpiler translates; the value blocks are SPECIAL_BLOCKS. */
+const STANDARD_BLOCKS = fbdPaletteBlocks().filter((block) => !(SPECIAL_BLOCKS as readonly string[]).includes(block));
+/**
+ * `inputs.<type>` and `outputs.<type>`: the ports of each block, `NAME:TYPE`, as validateFBDModel gives a block that omits
+ * them; a block with no port on a side (a constant has no input) has no entry for it.
+ */
+const PORTS = [...SPECIAL_BLOCKS, ...STANDARD_BLOCKS].flatMap((type) => {
+  const ports = getDefaultPorts(type);
+  return (['inputs', 'outputs'] as const)
+    .filter((side) => ports[side].length > 0)
+    .map((side) => [`${side}.${type}`, ports[side].map((port) => `${port.name}:${port.type}`)] as const);
+});
 
 const variable: JsonSchema = {
   type: 'object',
@@ -133,6 +144,6 @@ export const fbdFormat: FormatModule = {
     'port to an input port; variable blocks read a variable, output blocks write one, constant blocks hold a literal.',
   filePattern: 'src/*.fbd.json',
   schema,
-  acceptedValues: { specialBlocks: SPECIAL_BLOCKS, standardBlocks: STANDARD_BLOCKS },
+  acceptedValues: { specialBlocks: SPECIAL_BLOCKS, standardBlocks: STANDARD_BLOCKS, ...Object.fromEntries(PORTS) },
   examples: [{ title: 'AND of two inputs into a TON, written to an output', content: guard }],
 };
