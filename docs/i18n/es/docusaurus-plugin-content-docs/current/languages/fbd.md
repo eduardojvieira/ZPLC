@@ -28,7 +28,7 @@ Cada acción también se puede hacer con el teclado; la [referencia de teclado](
 | Proyecto                                                                                                                                             | Los bloques de función y las funciones que declaran los archivos de texto estructurado del proyecto, con los pines de su declaración.                                                                                               |
 | E/S                                                                                                                                                  | Los bloques que transportan un valor: `constant`, `variable`, `input`, `output`.                                                                                                                                                    |
 
-Las funciones de la biblioteca, como `SQRT`, `SIN`, `LEN`, `CONCAT` y las conversiones, no se ofrecen, y la compilación las rechaza por su nombre; llámelas desde texto estructurado. Una función del proyecto sí se ofrece, y se llama aunque nadie use su resultado. Una declaración del proyecto prevalece sobre un bloque estándar del mismo nombre.
+Toda función del compilador es un bloque: `SQRT`, `SIN`, `LEN`, `CONCAT` y las 240 conversiones de tipo, como `REAL_TO_INT`, están en la paleta, y la búsqueda las encuentra por su nombre. Una función no tiene estado y se emite como `OUT := NAME(args)`; una función sin resultado es una sentencia. `MUX` admite como máximo ocho entradas, y **Agregar entrada** se desactiva en el límite. `SEL` y `MUX` no seleccionan cadenas: con `STRING` la compilación las rechaza e indica usar un `IF` en texto estructurado. Un literal de 64 bits (`LWORD#`, `ULINT#`, `LINT#`) conectado como `IN` de `SHL`, `SHR`, `ROL` o `ROR` se rechaza al compilar; asigne primero el literal a una variable y conecte la variable. Una función del proyecto sí se ofrece, y se llama aunque nadie use su resultado. Una declaración del proyecto prevalece sobre un bloque estándar del mismo nombre.
 
 ## Cómo se ejecuta el diagrama
 
@@ -46,7 +46,7 @@ El lienzo rechaza un cable entre pines cuyos tipos no coinciden, y explica el mo
 | `BOOL`, `TIME`, `DATE`, `TOD`, `DT`, cadenas | Cada uno acepta solo su propio tipo.                                                                                                                                                                             |
 | Un pin declarado `ANY`                       | No se juzga.                                                                                                                                                                                                     |
 
-Para llevar un `REAL` a una entrada entera, conviértalo antes con una función de conversión como `REAL_TO_INT` en un programa de texto estructurado. Una entrada tiene un solo origen: un segundo cable hacia la misma entrada se rechaza.
+Para llevar un `REAL` a una entrada entera, conviértalo antes con una función de conversión como `REAL_TO_INT`. Una entrada tiene un solo origen: un segundo cable hacia la misma entrada se rechaza.
 
 ## Errores comunes
 

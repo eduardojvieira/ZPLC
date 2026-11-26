@@ -220,12 +220,14 @@ const FUNCTIONS_INTRO: L10n = {
     'Every function of the compiler registry, with its signature, what it does and an example. The registry has {total} functions: the ' +
     '{named} named functions below and the {conversions} type conversions. `ANY`, `ANY_NUM`, `ANY_INT` and `ANY_BIT` stand for the ' +
     'family of types that the function accepts. The language elements that call them are in the [languages ' +
-    'overview](../languages/index.md); the blocks with state are in the [function-block reference](./function-blocks.md).',
+    'overview](../languages/index.md); the blocks with state are in the [function-block reference](./function-blocks.md). ' +
+    'Every function is callable from Structured Text, Function Block Diagram and Ladder.',
   es:
     'Todas las funciones del registro del compilador, con su firma, lo que hacen y un ejemplo. El registro tiene {total} funciones: ' +
     'las {named} funciones con nombre de abajo y las {conversions} conversiones de tipo. `ANY`, `ANY_NUM`, `ANY_INT` y `ANY_BIT` ' +
     'representan la familia de tipos que la función acepta. Los elementos del lenguaje que las llaman están en la [vista general de ' +
-    'lenguajes](../languages/index.md); los bloques con estado están en la [referencia de bloques de función](./function-blocks.md).',
+    'lenguajes](../languages/index.md); los bloques con estado están en la [referencia de bloques de función](./function-blocks.md). ' +
+    'Toda función se llama desde Structured Text, Diagrama de Bloques de Función y Ladder.',
 };
 
 const EXECUTED: L10n = {

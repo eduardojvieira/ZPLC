@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_function_reference.ts): reference/functions. Do not edit. >>> */}
 
-Every function of the compiler registry, with its signature, what it does and an example. The registry has 297 functions: the 57 named functions below and the 240 type conversions. `ANY`, `ANY_NUM`, `ANY_INT` and `ANY_BIT` stand for the family of types that the function accepts. The language elements that call them are in the [languages overview](../languages/index.md); the blocks with state are in the [function-block reference](./function-blocks.md).
+Every function of the compiler registry, with its signature, what it does and an example. The registry has 297 functions: the 57 named functions below and the 240 type conversions. `ANY`, `ANY_NUM`, `ANY_INT` and `ANY_BIT` stand for the family of types that the function accepts. The language elements that call them are in the [languages overview](../languages/index.md); the blocks with state are in the [function-block reference](./function-blocks.md). Every function is callable from Structured Text, Function Block Diagram and Ladder.
 
 Every example is a complete program. CI compiles it and runs it on the native POSIX runtime, and the result stated under it is the value that the run checks.
 

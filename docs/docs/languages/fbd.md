@@ -28,7 +28,7 @@ Every action also works from the keyboard; the [keyboard reference](../reference
 | Project                                                                                                         | The function blocks and the functions that the Structured Text files of the project declare, with the ports of their declaration.                                                                                |
 | I/O                                                                                                             | The blocks that carry a value: `constant`, `variable`, `input`, `output`.                                                                                                                                        |
 
-The functions of the library such as `SQRT`, `SIN`, `LEN`, `CONCAT` and the conversions are not offered, and the build refuses them by name; call them from Structured Text. A function of the project is offered, and it is called even when nothing uses its result. A declaration in the project wins over a standard block of the same name.
+Every function of the compiler is a block: `SQRT`, `SIN`, `LEN`, `CONCAT` and the 240 type conversions such as `REAL_TO_INT` are in the palette, and the search finds them by name. A function has no state and is emitted as `OUT := NAME(args)`; a function with no result is a statement. `MUX` takes at most eight inputs, and **Add input** is disabled at the limit. `SEL` and `MUX` do not select strings: with `STRING` the build refuses them and says to use an `IF` in Structured Text. A 64-bit literal (`LWORD#`, `ULINT#`, `LINT#`) wired as the `IN` of `SHL`, `SHR`, `ROL` or `ROR` is refused at build time; assign the literal to a variable first and wire the variable. A function of the project is offered, and it is called even when nothing uses its result. A declaration in the project wins over a standard block of the same name.
 
 ## How the diagram runs
 
@@ -46,7 +46,7 @@ The canvas refuses a wire between pins whose types do not match, and says why in
 | `BOOL`, `TIME`, `DATE`, `TOD`, `DT`, strings | Each takes only its own type.                                                                                                                                                                          |
 | A pin declared `ANY`                         | Not judged.                                                                                                                                                                                            |
 
-To feed a `REAL` to an integer input, convert it first with a conversion function such as `REAL_TO_INT` in a Structured Text program. An input has one source: a second wire into the same input is refused.
+To feed a `REAL` to an integer input, convert it first with a conversion function such as `REAL_TO_INT`. An input has one source: a second wire into the same input is refused.
 
 ## Common mistakes
 

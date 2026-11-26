@@ -29,7 +29,7 @@ Every action also works from the keyboard; the [keyboard reference](../reference
 | Coils           | normal, negated, set, reset, rising edge, falling edge                                                                                     |
 | Structure       | the parallel branch                                                                                                                        |
 | Function blocks | the timers, counters, triggers and bistables of the library, and the function blocks that the Structured Text files of the project declare |
-| Functions       | the fifteen IEC functions that run as boxes with EN and ENO, described below                                                               |
+| Functions       | every function of the compiler (297, the type conversions included) as a box with EN and ENO, described below                              |
 
 The communication blocks `COMM_CONNECT`, `COMM_PUBLISH`, `COMM_SUBSCRIBE` and `COMM_MODBUS` are not offered: a Ladder file cannot declare an instance of them. A function of the project is not placed in a rung; call it from a Function Block Diagram or from Structured Text. Jumps and labels are not supported, and the build refuses them with a message.
 
@@ -66,7 +66,12 @@ A function box sits in the rung like a contact. Its left wire is EN, the power t
 - The box detects no error, so ENO never reports one. An integer result that does not fit its type wraps around.
 - `DIV` and `MOD` by zero fault the VM: the scan ends in a fault, the output is not written and the `%Q` output image is cleared, so a mapped output reads 0. The same holds for `REAL` with `0.0` or `-0.0`. Guard the divisor with a comparison box in series.
 
-The operand pins are `IN1` and `IN2` for the comparisons, math, `MIN` and `MAX`, `IN` for `MOVE`, and `MN`, `IN` and `MX` for `LIMIT`.
+- To convert a `REAL`, place a conversion box such as `REAL_TO_INT`; the conversions are boxes like any other function.
+- `MUX` takes at most eight inputs, and **Add input** is disabled at the limit. `SEL` and `MUX` do not select strings: with `STRING` the build refuses them and says to use an `IF` in Structured Text.
+- A `STRING` literal operand writes a quote inside the string as `''`, and it cannot hold a line break.
+- A 64-bit literal (`LWORD#`, `ULINT#`, `LINT#`) as the `IN` of `SHL`, `SHR`, `ROL` or `ROR` is refused at build time; assign the literal to a variable first.
+
+The operand pins of the first fifteen boxes are `IN1` and `IN2` for the comparisons, math, `MIN` and `MAX`, `IN` for `MOVE`, and `MN`, `IN` and `MX` for `LIMIT`.
 
 ## Who may write a variable
 
