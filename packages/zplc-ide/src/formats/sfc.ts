@@ -2,10 +2,10 @@
  * Sequential Function Chart, `src/*.sfc.json`: the shape `loadSFCFile` checks and the rules `validateSFCModel` and the
  * SFC transpiler hold.
  */
+import { SFC_QUALIFIERS as QUALIFIERS } from '../models/sfc';
 import type { FormatModule, JsonSchema } from './index';
 
-/** The qualifiers the SFC transpiler translates; SD, DS and SL are refused with an error. */
-const QUALIFIERS = ['N', 'S', 'R', 'L', 'D', 'P', 'P0', 'P1'];
+// QUALIFIERS: the ones the SFC transpiler translates; SD, DS and SL are refused with an error.
 const ACTION_TYPES = ['ST', 'IL', 'FBD', 'LD'];
 
 const position: JsonSchema = { type: 'object', required: ['x', 'y'], properties: { x: { type: 'number' }, y: { type: 'number' } } };

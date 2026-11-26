@@ -26,7 +26,14 @@ import { buildOptionsOf } from '../project/buildOptions';
 import type { ProjectMigrationChange } from '../project/projectModel';
 import { resolveProgramSource } from '../utils/programSourceResolution';
 import { elementAtLine } from '../models/sourceElements';
+import { collectProjectBlocks } from '../models/projectBlocks';
+import { loadFBDFile, loadLDFile, loadSFCFile } from '../models/visualFileLoad';
+import { catalogue } from '../plant/core/catalogue';
+import { validateScene, type SceneProblem } from '../plant/core/scene';
+import type { PlantSceneFile } from '../plant/contracts';
+import { PLANT_KINDS } from '../plants/plantEngine';
 import {
+  SCENARIO_KINDS,
   compileScenario,
   findSignalVariable,
   runScenario,
@@ -151,6 +158,89 @@ function unresolvedPrograms(workspace: WorkspaceProject): ToolDiagnostic[] {
     }),
   );
   return diagnostics;
+}
+
+/**
+ * A diagnostic about a JSON file names its place in it, `jsonPath`, and, for a value outside a closed set, what was found and
+ * the accepted values (AIX-013). `file` is the file it is about when `path` names another one; `detail` is the located reason.
+ */
+type LocatedDiagnostic = ToolDiagnostic & { file?: string; jsonPath?: string; found?: string; acceptedValues?: string[]; detail?: string };
+
+/** The value at a `parts[0].config.length`-style path of a document, as text. */
+function valueAt(document: unknown, path: string): string | undefined {
+  const value = (path.match(/[^.[\]]+/g) ?? []).reduce<unknown>(
+    (inner, key) => (inner as Record<string, unknown> | undefined)?.[key],
+    document,
+  );
+  return value === undefined ? undefined : typeof value === 'string' ? value : JSON.stringify(value);
+}
+const located = (diagnostic: LocatedDiagnostic): LocatedDiagnostic =>
+  Object.fromEntries(Object.entries(diagnostic).filter(([, value]) => value !== undefined)) as LocatedDiagnostic;
+
+/** Every Ladder, FBD and SFC file of the project, loaded as Studio opens it, the FBD types checked against the project's blocks. */
+function visualFileDiagnostics(workspace: WorkspaceProject): LocatedDiagnostic[] {
+  let blocks: ReturnType<typeof collectProjectBlocks> | undefined;
+  return workspace.sources.flatMap((source) => {
+    const loaded =
+      source.language === 'LD'
+        ? loadLDFile(source.path, source.content)
+        : source.language === 'FBD'
+          ? loadFBDFile(source.path, source.content, (blocks ??= collectProjectBlocks(workspace.sources)))
+          : source.language === 'SFC'
+            ? loadSFCFile(source.path, source.content)
+            : undefined;
+    if (!loaded || loaded.ok) return [];
+    return loaded.error.details.map((detail, index) =>
+      located({
+        code: 'VISUAL_FILE_INVALID',
+        message: loaded.error.violations[index]!,
+        path: source.path,
+        jsonPath: detail.path || undefined,
+        found: detail.found,
+        acceptedValues: detail.acceptedValues && [...detail.acceptedValues],
+      }),
+    );
+  });
+}
+
+/** The closed sets of a scenario, by the place `compileScenario` names. */
+const SCENARIO_CLOSED_SETS: Array<[RegExp, readonly string[]]> = [
+  [/^expectations\[\d+\]\.kind$/, SCENARIO_KINDS],
+  [/^plant$/, PLANT_KINDS],
+];
+const SCENARIO_KEYS = /^(?:schemaVersion|id|tickMs|durationMs|plant|scene|events|expectations)(?:\[\d+\]|\.[A-Za-z_][\w]*)*(?=\s|$)/;
+
+/** A scenario `compileScenario` refused: the code and message as before, with the place and the accepted values it names. */
+function scenarioDiagnostic(source: WorkspaceScenario, error: unknown): LocatedDiagnostic {
+  const detail = error instanceof Error ? error.message.replace(/^Invalid test scenario: /, '') : undefined;
+  const jsonPath = detail === undefined ? undefined : SCENARIO_KEYS.exec(detail)?.[0];
+  const accepted = jsonPath === undefined ? undefined : SCENARIO_CLOSED_SETS.find(([pattern]) => pattern.test(jsonPath))?.[1];
+  return located({
+    ...testDiagnostic('TEST_SCENARIO_INVALID', source.path),
+    jsonPath,
+    found: accepted && valueAt(source.input, jsonPath!),
+    acceptedValues: accepted && [...accepted],
+    detail,
+  });
+}
+
+/** A scene part the catalogue does not have, or a setting the part does not have, with what it has. */
+function sceneDiagnostic(scenarioPath: string, file: string, scene: PlantSceneFile, problem: SceneProblem): LocatedDiagnostic {
+  const place = /^parts\[(\d+)\]\.(?:(part)|config\.(.+))$/.exec(problem.path);
+  const definition = place?.[3] === undefined ? undefined : catalogue.get(scene.parts[Number(place[1])]!.part);
+  const unknownSetting = definition && !(place![3]! in definition.config) ? place![3] : undefined;
+  return located({
+    ...testDiagnostic('TEST_SCENARIO_INVALID', scenarioPath),
+    file,
+    jsonPath: problem.path,
+    found: place?.[2] ? valueAt(scene, problem.path) : unknownSetting,
+    acceptedValues: place?.[2]
+      ? catalogue.list().map((part) => part.id)
+      : unknownSetting !== undefined
+        ? Object.keys(definition!.config)
+        : undefined,
+    detail: `${problem.path}: ${problem.message}`,
+  });
 }
 function compilationSources(workspace: WorkspaceProject) {
   const sourceByProgram = new Map<string, ReturnType<typeof resolveProgramSource>>();
@@ -394,6 +484,8 @@ export async function projectValidate(root: string): Promise<ToolResult<{ name: 
   }
   const diagnostics = unresolvedPrograms(loaded.workspace);
   if (diagnostics.length) return failed('validate', diagnostics);
+  const visual = visualFileDiagnostics(loaded.workspace);
+  if (visual.length) return failed('validate', visual);
   return {
     ok: true,
     summary: { name: loaded.workspace.project.name, taskCount: loaded.workspace.project.tasks.length },
@@ -870,6 +962,12 @@ async function runWorkspaceScenarios(
           // A scene scenario runs headless on the project's scene and map, the same loader the Learn Check uses (LNK-009).
           const context = await loadSceneContext(workspace.root, { scene: sceneBlock });
           if (!context.ok) return testFailed(operation, context.diagnostics);
+          const sceneProblems = validateScene(context.scene, catalogue);
+          if (sceneProblems.length > 0)
+            return testFailed(
+              operation,
+              sceneProblems.map((problem) => sceneDiagnostic(source.path, sceneBlock.file, context.scene, problem)),
+            );
           const core = await createPlantCore(context.scene);
           sceneCores.push(core);
           const sceneContext: SceneScenarioContext = { port: { core, map: context.map }, scene: context.scene };
@@ -883,8 +981,8 @@ async function runWorkspaceScenarios(
         }
         const scenario = compileScenario(source.input, compiled.debugMap);
         scenarios.push({ id: scenario.id, path: source.path, compiled: scenario, source });
-      } catch {
-        return testFailed(operation, [testDiagnostic('TEST_SCENARIO_INVALID', source.path)]);
+      } catch (error) {
+        return testFailed(operation, [scenarioDiagnostic(source, error)]);
       }
     }
     const ids = new Set<string>();

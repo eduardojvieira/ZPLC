@@ -1,9 +1,8 @@
 /** Function Block Diagram, `src/*.fbd.json`: the shape `loadFBDFile` checks and the port rules `validateFBDModel` holds. */
 import { getBlockCategories } from '../catalog/blockCatalog';
+import { FBD_SPECIAL_BLOCKS as SPECIAL_BLOCKS } from '../models/fbd';
 import type { FormatModule, JsonSchema } from './index';
 
-/** The blocks that are not calls: a literal, a variable read, a program input and a variable write. */
-const SPECIAL_BLOCKS = ['constant', 'variable', 'input', 'output'];
 const STANDARD_BLOCKS = getBlockCategories().flatMap((category) => category.blocks);
 
 const variable: JsonSchema = {

@@ -154,12 +154,18 @@ describe('AIX-013 parseFBDModel checks the type of each block', () => {
     expect(error.acceptedValues.slice(0, 4)).toEqual([...FBD_SPECIAL_BLOCKS]);
     expect(error.acceptedValues).toEqual(expect.arrayContaining(['TON', 'AND', 'MB_COIL', 'MQTT_PUBLISH']));
     expect(error.element).toBe(blockElement('b1'));
-    expect(error.message).toMatch(/^Invalid FBD blocks\[0\]\.type: unknown block type 'FOO' of block 'b1'; accepted values: constant, variable, input, output, /);
+    expect(error.message).toMatch(
+      /^Invalid FBD blocks\[0\]\.type: block 'b1' has the unknown type 'FOO'; accepted values: constant, variable, input, output, /,
+    );
   });
 
   it('accepts a block the project declares, and lists it among the accepted types', () => {
     const blocks = collectProjectBlocks([
-      { name: 'Lib.st', language: 'ST', content: 'FUNCTION_BLOCK MyFB\nVAR_INPUT IN : BOOL; END_VAR\nVAR_OUTPUT Q : BOOL; END_VAR\nEND_FUNCTION_BLOCK' },
+      {
+        name: 'Lib.st',
+        language: 'ST',
+        content: 'FUNCTION_BLOCK MyFB\nVAR_INPUT IN : BOOL; END_VAR\nVAR_OUTPUT Q : BOOL; END_VAR\nEND_FUNCTION_BLOCK',
+      },
     ]);
     expect(parseFBDModel(withType('MyFB'), blocks).blocks[0]!.type).toBe('MyFB');
     expect(() => parseFBDModel(withType('FOO'), blocks)).toThrow(/accepted values: .*MyFB/);

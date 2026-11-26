@@ -19,7 +19,9 @@ const MAX_SAMPLES = 10_000;
 const MAX_TRACE_VALUES = 1_000_000;
 // `Program.variable`, or the name of a VAR_GLOBAL alone: a global is seen by every program, whichever file declares it
 const SIGNAL = /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)?$/;
-export type ScenarioKind = 'AT' | 'WITHIN' | 'FOR' | 'EVENTUALLY' | 'ALWAYS' | 'NEVER' | 'UNTIL' | 'RISING' | 'FALLING';
+/** The expectation kinds compileScenario accepts, in its order. */
+export const SCENARIO_KINDS = ['AT', 'WITHIN', 'FOR', 'EVENTUALLY', 'ALWAYS', 'NEVER', 'UNTIL', 'RISING', 'FALLING'] as const;
+export type ScenarioKind = (typeof SCENARIO_KINDS)[number];
 const compiledScenarios = new WeakSet<CompiledScenario>();
 
 export interface ScenarioRuntimePort {
@@ -217,9 +219,9 @@ function namedSignal(signal: unknown, path: string): string {
 }
 // The type of a plant fact by the head of its name (the fact grammar of plant/ci/sceneCheck.ts): counts are integers, positions and
 // quantities are reals, and inBand and cell are booleans.
-const REAL_FACTS = new Set(['position', 'level', 'volume', 'spilledL', 'axis']);
-const BOOLEAN_FACTS = new Set(['inBand', 'cell']);
-const INTEGER_FACTS = new Set([
+export const REAL_FACTS = new Set(['position', 'level', 'volume', 'spilledL', 'axis']);
+export const BOOLEAN_FACTS = new Set(['inBand', 'cell']);
+export const INTEGER_FACTS = new Set([
   ...['itemsEmitted', 'itemsRemoved', 'itemsDropped', 'itemsCollided', 'itemsAssembled', 'emitted', 'delivered', 'count', 'highs'],
   ...['picked', 'placed', 'drops', 'sorted', 'misrouted', 'stored', 'produced', 'misfires', 'blocked', 'stacked', 'layers', 'loaded'],
 ]);

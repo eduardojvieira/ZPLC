@@ -43,6 +43,9 @@ export interface Position {
 // Step Definition
 // =============================================================================
 
+/** The qualifiers the SFC transpiler translates: the values a file may hold (AIX-013). */
+export const SFC_QUALIFIERS = ['N', 'S', 'R', 'L', 'D', 'P', 'P0', 'P1'] as const;
+
 /**
  * Action qualifier codes per IEC 61131-3.
  *

@@ -162,16 +162,24 @@ describe('AIX-013 a refused visual file names the place, what was found and the 
         acceptedValues: [...LD_ELEMENT_TYPES],
       },
     ]);
-    expect(error.violations).toEqual([`rungs[0].elements[0].type: invalid value 'contact'; accepted values: ${LD_ELEMENT_TYPES.join(', ')}`]);
+    expect(error.violations).toEqual([
+      `rungs[0].elements[0].type: invalid value 'contact'; accepted values: ${LD_ELEMENT_TYPES.join(', ')}`,
+    ]);
   });
 
   it('FBD: an unknown block type is refused at parse time, naming the block and the accepted types', () => {
     const document = { name: 'Main', variables, blocks: [{ id: 'b1', type: 'FOO', position: { x: 0, y: 0 } }], connections: [] };
     const error = failure(loadFBDFile('Main.fbd.json', JSON.stringify(document), []));
     expect(error.details).toEqual([
-      expect.objectContaining({ path: 'blocks[0].type', found: 'FOO', acceptedValues: expect.arrayContaining([...FBD_SPECIAL_BLOCKS, 'TON', 'AND']) }),
+      expect.objectContaining({
+        path: 'blocks[0].type',
+        found: 'FOO',
+        acceptedValues: expect.arrayContaining([...FBD_SPECIAL_BLOCKS, 'TON', 'AND']),
+      }),
     ]);
-    expect(error.violations[0]).toMatch(/^blocks\[0\]\.type: unknown block type 'FOO' of block 'b1'; accepted values: constant, variable, input, output, /);
+    expect(error.violations[0]).toMatch(
+      /^blocks\[0\]\.type: block 'b1' has the unknown type 'FOO'; accepted values: constant, variable, input, output, /,
+    );
   });
 
   it('SFC: an action qualifier outside the translated ones names the step action and N, S, R, L, D, P, P0, P1', () => {

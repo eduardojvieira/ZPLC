@@ -1,18 +1,19 @@
 /** Test scenario, `tests/*.scenario.json`: the rules `compileScenario` holds, with the `plant` and `scene` blocks and the `fact:` reads. */
 import { PLANT_KINDS } from '../plants/plantEngine';
+import { BOOLEAN_FACTS, INTEGER_FACTS, REAL_FACTS, SCENARIO_KINDS as KINDS } from '../test-engine';
 import type { FormatModule, JsonSchema } from './index';
 
-/** The kinds `compileScenario` accepts, in its order. */
-const KINDS = ['AT', 'WITHIN', 'FOR', 'EVENTUALLY', 'ALWAYS', 'NEVER', 'UNTIL', 'RISING', 'FALLING'];
-// The heads of the `fact:` names and their types, as `test-engine/index.ts` reads them and `plant/ci/sceneCheck.ts` names them.
-const INTEGER_FACTS = [
-  ...['itemsEmitted', 'itemsRemoved', 'itemsDropped', 'itemsCollided', 'itemsAssembled', 'emitted:<Name>', 'delivered:<Name>'],
-  ...['count:<Name>', 'highs:<Name>', 'picked:<Name>', 'placed:<Name>', 'drops:<Name>', 'sorted:<Name>', 'misrouted:<Name>'],
-  ...['stored:<Name>', 'produced:<Name>', 'misfires:<Name>', 'blocked:<Name>', 'stacked:pallet:<index>', 'layers:pallet:<index>'],
-  'loaded:crate:<index>',
-];
-const REAL_FACTS = ['position:<box|pallet>:<index>', 'level:<Name>', 'volume:<Name>', 'spilledL:<Name>', 'axis:<Name>:<x|y|z>'];
-const BOOLEAN_FACTS = ['inBand:<Name>', 'cell:<Name>:<column>:<level>'];
+// The heads of the `fact:` names come typed from the test engine; what follows a head is the grammar of `plant/ci/sceneCheck.ts`.
+const ARGUMENTS: Record<string, string> = {
+  position: ':<box|pallet>:<index>',
+  axis: ':<Name>:<x|y|z>',
+  cell: ':<Name>:<column>:<level>',
+  stacked: ':pallet:<index>',
+  layers: ':pallet:<index>',
+  loaded: ':crate:<index>',
+};
+const facts = (heads: ReadonlySet<string>): string[] =>
+  [...heads].map((head) => (head.startsWith('items') ? head : `${head}${ARGUMENTS[head] ?? ':<Name>'}`));
 
 const ms: JsonSchema = { type: 'integer', minimum: 0, description: 'Milliseconds, a multiple of tickMs, at most durationMs.' };
 const condition: JsonSchema = {
@@ -158,9 +159,9 @@ export const scenarioFormat: FormatModule = {
     kinds: KINDS,
     plants: PLANT_KINDS,
     scriptEvents: ['operate', 'emit', 'fault'],
-    integerFacts: INTEGER_FACTS,
-    realFacts: REAL_FACTS,
-    booleanFacts: BOOLEAN_FACTS,
+    integerFacts: facts(INTEGER_FACTS),
+    realFacts: facts(REAL_FACTS),
+    booleanFacts: facts(BOOLEAN_FACTS),
   },
   examples: [
     { title: 'Plain I/O: events drive the inputs, five kinds of expectation', content: plain },

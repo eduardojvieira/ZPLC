@@ -3439,7 +3439,13 @@ describe('program inputs in the debug map (IDE-024)', () => {
 });
 
 describe('AIX-013 diagnostics name the place and the accepted values, and project validation reads visual files', () => {
-  const example = (id: FormatId, index = 0) => structuredClone(formatById(id).examples[index]!.content) as Record<string, any>;
+  const example = (id: FormatId, index = 0) => structuredClone(formatById(id).examples[index]!.content);
+  /** Writes `value` at a `rungs.0.grid.0.0.element.type`-style path of a document. */
+  function set(document: Record<string, unknown>, path: string, value: unknown) {
+    const keys = path.split('.');
+    const parent = keys.slice(0, -1).reduce<Record<string, unknown>>((inner, key) => inner[key] as Record<string, unknown>, document);
+    parent[keys.at(-1)!] = value;
+  }
   async function beltWorkspace(files: Record<string, unknown>): Promise<string> {
     const root = await mkdtemp(join(tmpdir(), 'zplc-aix013-'));
     const all: Record<string, unknown> = {
@@ -3461,15 +3467,17 @@ describe('AIX-013 diagnostics name the place and the accepted values, and projec
 
   it('projectValidate refuses a Ladder file that does not load, naming the file, the place and the accepted values', async () => {
     const broken = example('ld');
-    broken.rungs[0].grid[0][0].element.type = 'contact';
+    set(broken, 'rungs.0.grid.0.0.element.type', 'contact');
     const root = await beltWorkspace({ 'src/Belt.ld.json': broken });
     try {
       const result = await projectValidate(root);
       expect(result.ok).toBe(false);
-      expect(result.evidence.diagnostics).toEqual([
+      expect(result.evidence.diagnostics as unknown[]).toEqual([
         {
           code: 'VISUAL_FILE_INVALID',
-          message: expect.stringMatching(/^rungs\[0\]\.grid\[0\]\[0\]\.element\.type: invalid value 'contact'; accepted values: left_rail, /),
+          message: expect.stringMatching(
+            /^rungs\[0\]\.grid\[0\]\[0\]\.element\.type: invalid value 'contact'; accepted values: left_rail, /,
+          ),
           path: 'src/Belt.ld.json',
           jsonPath: 'rungs[0].grid[0][0].element.type',
           found: 'contact',
@@ -3483,11 +3491,11 @@ describe('AIX-013 diagnostics name the place and the accepted values, and projec
 
   it('projectValidate refuses an FBD block of a type nobody declares, at validation and not only at the build', async () => {
     const fbd = example('fbd');
-    fbd.blocks[2].type = 'ANDD';
+    set(fbd, 'blocks.2.type', 'ANDD');
     const root = await beltWorkspace({ 'src/Guard.fbd.json': fbd });
     try {
       const result = await projectValidate(root);
-      expect(result.evidence.diagnostics).toEqual([
+      expect(result.evidence.diagnostics as unknown[]).toEqual([
         expect.objectContaining({ code: 'VISUAL_FILE_INVALID', path: 'src/Guard.fbd.json', jsonPath: 'blocks[2].type', found: 'ANDD' }),
       ]);
     } finally {
@@ -3515,12 +3523,12 @@ describe('AIX-013 diagnostics name the place and the accepted values, and projec
 
   it('a scenario of an unknown expectation kind names the scenario, the place and the accepted kinds', async () => {
     const scenario = example('scenario');
-    scenario.expectations[0].kind = 'SOMETIMES';
+    set(scenario, 'expectations.0.kind', 'SOMETIMES');
     const root = await beltWorkspace({ 'tests/belt.scenario.json': scenario });
     try {
       const result = await testsRun(root);
       expect(result.ok).toBe(false);
-      expect(result.evidence.diagnostics).toEqual([
+      expect(result.evidence.diagnostics as unknown[]).toEqual([
         {
           code: 'TEST_SCENARIO_INVALID',
           message: 'Test execution failed',
@@ -3538,7 +3546,7 @@ describe('AIX-013 diagnostics name the place and the accepted values, and projec
 
   it('a scene part outside the catalogue names the scene file, the place and the accepted parts', async () => {
     const scene = example('scene');
-    scene.parts[0].part = 'conveyor';
+    set(scene, 'parts.0.part', 'conveyor');
     const root = await beltWorkspace({
       'scene.json': scene,
       'plant-map.json': example('plant-map'),
@@ -3547,7 +3555,7 @@ describe('AIX-013 diagnostics name the place and the accepted values, and projec
     try {
       const result = await testsRun(root);
       expect(result.ok).toBe(false);
-      expect(result.evidence.diagnostics).toEqual([
+      expect(result.evidence.diagnostics as unknown[]).toEqual([
         {
           code: 'TEST_SCENARIO_INVALID',
           message: 'Test execution failed',

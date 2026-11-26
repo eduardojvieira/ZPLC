@@ -1,8 +1,7 @@
 /** Ladder Diagram, `src/*.ld.json`: the shape `loadLDFile` checks and the rules `parseLDModel` and the LD transpiler hold. */
 import { LD_COIL_TYPES, LD_CONTACT_TYPES, LD_FUNCTIONS, ldPaletteFunctionBlocks } from '../models/ldSupport';
+import { LD_ELEMENT_TYPES as ELEMENT_TYPES } from '../models/visualFileLoad';
 import type { FormatModule, JsonSchema } from './index';
-
-const ELEMENT_TYPES = ['left_rail', 'right_rail', ...LD_CONTACT_TYPES, ...LD_COIL_TYPES, 'function_block', 'function'];
 
 const variable: JsonSchema = {
   type: 'object',

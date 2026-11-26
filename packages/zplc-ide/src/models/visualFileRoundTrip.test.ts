@@ -61,7 +61,8 @@ describe('LNG-014 the committed visual files', () => {
       }
     }
     // Each of these cases is about the compiler refusing a model the editors cannot hold either (an element of a type the Ladder
-    // editor does not draw, a wire to a port the block does not have: LNG-002, LNG-008): the file is refused when it is opened
+    // editor does not draw, a wire to a port the block does not have, an action qualifier the SFC transpiler does not translate:
+    // LNG-002, LNG-008, AIX-013): the file is refused when it is opened
     // and again when it is built.
     expect(refused).toEqual([
       'conformance/lng/lng-002-ld-jump-is-rejected.ld.json',
@@ -69,6 +70,7 @@ describe('LNG-014 the committed visual files', () => {
       'conformance/lng/lng-002-fbd-en-input-is-rejected.fbd.json',
       'conformance/lng/lng-008-fbd-calls-a-user-function-block.fbd.json',
       'conformance/lng/lng-008-fbd-calls-a-user-function.fbd.json',
+      'conformance/lng/lng-002-sfc-unsupported-qualifier.sfc.json',
     ]);
   });
 });
