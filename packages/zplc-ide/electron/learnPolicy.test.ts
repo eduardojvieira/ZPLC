@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test';
-import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -13,6 +13,7 @@ const scratch = async (): Promise<string> => {
   return directory;
 };
 afterEach(async () => {
+  await Promise.all(directories.map((directory) => chmod(directory, 0o700).catch(() => undefined)));
   await Promise.all(directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
 });
 
@@ -82,5 +83,34 @@ describe('the classroom setting the main process holds (AIX-002, D-32)', () => {
     await writeFile(path.join(userData, LEARN_POLICY_FILENAME), '{"hideSolutions":0}');
     expect(await policy.solutionsHidden()).toBe(true);
     expect(reported).toEqual([{ hideSolutions: false }, { hideSolutions: true }]);
+  });
+
+  it('a failed save that hides solutions removes the old policy, so the file reads as hidden, and reports the failure', async () => {
+    const userData = await scratch();
+    const failingWrite = (async () => {
+      throw new Error('ENOSPC: no space left on device');
+    }) as unknown as typeof writeFile;
+    const store = createLearnPolicyStore(userData, { writeFile: failingWrite });
+    await writeFile(path.join(userData, LEARN_POLICY_FILENAME), '{"hideSolutions":false}');
+    expect(await store.solutionsHidden()).toBe(false);
+    await expect(store.save({ hideSolutions: true })).rejects.toThrow('ENOSPC');
+    expect(await readdir(userData)).toEqual([]);
+    expect(await readSolutionsHidden(userData)).toBe(true);
+    expect(await store.solutionsHidden()).toBe(true);
+  });
+
+  it('when the old policy cannot be removed either, this process keeps solutions hidden in memory and still reports the failure', async () => {
+    const userData = await scratch();
+    const store = createLearnPolicyStore(userData);
+    await store.save({ hideSolutions: false });
+    // A read-only folder: neither the new file nor the removal of the old one can be written.
+    await chmod(userData, 0o500);
+    await expect(store.save({ hideSolutions: true })).rejects.toThrow();
+    expect(await readSolutionsHidden(userData)).toBe(false);
+    expect(await store.solutionsHidden()).toBe(true);
+    // The hold in memory ends only when a later save succeeds.
+    await chmod(userData, 0o700);
+    await store.save({ hideSolutions: false });
+    expect(await store.solutionsHidden()).toBe(false);
   });
 });

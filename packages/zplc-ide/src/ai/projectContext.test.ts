@@ -157,4 +157,10 @@ describe('the lesson in the context (AIX-002, D-32)', () => {
     expect(lessonIdOfWorkspace(path.join(root, '..', 'project'), root)).toBeUndefined();
     expect(lessonIdOfWorkspace('/home/me/project', root)).toBeUndefined();
   });
+
+  test('without a policy, or with a null one, solutions are hidden', () => {
+    for (const policy of [undefined, null]) {
+      expect(buildProjectContext(input(), policy as never).lesson?.solutionsHidden).toBe(true);
+    }
+  });
 });
