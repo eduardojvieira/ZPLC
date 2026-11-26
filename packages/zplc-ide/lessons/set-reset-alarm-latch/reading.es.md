@@ -90,7 +90,7 @@ Si quien diseña hubiera decidido que la palabra del conductor es la última, el
 ## Compruébelo usted
 
 ```quiz
-question: Un biestable SR tiene S1 := Fault y R := Ack. En un ciclo Fault y Ack están los dos en TRUE. ¿Cuánto vale Q1 al terminar la llamada?
+question: En el programa de la mesa de embalaje, CallLatch es un SR con S1 := Call y R := Served. En un ciclo Call y Served están los dos en TRUE. ¿Cuánto vale CallLatch.Q1 al terminar la llamada?
 options:
   - { text: 'TRUE', correct: true, feedback: 'Sí. Un SR es dominante en set, así que gana el set cuando las dos entradas están en TRUE.' }
   - { text: 'FALSE', feedback: 'Eso es lo que hace un RS. En un SR la cifra 1 está en S1, el set, y gana el set.' }
@@ -98,11 +98,11 @@ options:
 ```
 
 ```quiz
-question: Un programa llama a su biestable de alarma solo dentro de IF Fault THEN ... END_IF. La falla aparece y desaparece, y más tarde el operador pulsa Ack. ¿Qué hace la alarma?
+question: El programa de la mesa de embalaje llama a CallLatch solo dentro de IF Call THEN ... END_IF. El operador pulsa Call y lo suelta, y más tarde el conductor pulsa Served. ¿Qué hace CallLamp?
 options:
-  - { text: 'Sigue en ON, porque el biestable no se llama mientras Fault está en FALSE', correct: true, feedback: 'Correcto. Una instancia cambia solo cuando se la llama, así que Ack nunca se ve. Llame al biestable en cada ciclo.' }
-  - { text: 'Pasa a OFF, porque Ack hace reset del biestable', feedback: 'Ack hace reset solo durante una llamada, y la llamada se ejecuta solo mientras Fault está en TRUE.' }
-  - { text: 'Pasa a OFF cuando la falla desaparece', feedback: 'Entonces el biestable no recordaría nada. Su Q1 conserva el último valor que recibió.' }
+  - { text: 'Sigue en ON, porque el biestable no se llama mientras Call está en FALSE', correct: true, feedback: 'Correcto. Una instancia cambia solo cuando se la llama, así que Served nunca se ve. Llame al biestable en cada ciclo.' }
+  - { text: 'Pasa a OFF, porque Served hace reset del biestable', feedback: 'Served hace reset solo durante una llamada, y la llamada se ejecuta solo mientras Call está en TRUE.' }
+  - { text: 'Pasa a OFF cuando se suelta Call', feedback: 'Entonces el biestable no recordaría nada. Su Q1 conserva el último valor que recibió.' }
 ```
 
 ## Qué hará en la práctica

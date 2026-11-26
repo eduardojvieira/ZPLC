@@ -20,7 +20,7 @@ Las líneas de un programa se ejecutan de arriba abajo en cada ciclo. Si el set 
 - Escriba `R` al final, y gana el reset.
 - Escriba `S` al final, y gana el set.
 
-Los bloques SR y RS fijan esa elección dentro del bloque; con `S` y `R` la fija el orden de sus líneas.
+Con `S` y `R`, el orden de sus líneas es toda la decisión: nada más en el programa dice cuál gana.
 
 ## Ejemplo resuelto
 
@@ -71,19 +71,19 @@ Si se intercambian los dos pares de líneas, `LD Checked` y `R` primero, `LD Doo
 ## Compruébelo usted
 
 ```quiz
-question: Un programa tiene LD Fault, S Alarm, LD Ack, R Alarm en ese orden. En un ciclo Fault y Ack están los dos en TRUE. ¿Cuánto vale Alarm al terminar el ciclo?
+question: El programa de la cámara frigorífica tiene LD DoorOpen, S DoorWasOpen, LD Checked, R DoorWasOpen en ese orden. En un ciclo DoorOpen y Checked están los dos en TRUE. ¿Cuánto vale DoorWasOpen al terminar el ciclo?
 options:
-  - { text: 'FALSE', correct: true, feedback: 'Sí. Las dos líneas escriben Alarm, y R Alarm se ejecuta al final, así que gana el reset.' }
-  - { text: 'TRUE', feedback: 'S Alarm se ejecuta primero y la pone en TRUE, pero R Alarm se ejecuta después en el mismo ciclo.' }
-  - { text: 'Conserva el valor del ciclo anterior', feedback: 'Eso pasa solo cuando las dos condiciones están en FALSE. Aquí las dos instrucciones escriben Alarm.' }
+  - { text: 'FALSE', correct: true, feedback: 'Sí. Las dos líneas escriben DoorWasOpen, y R DoorWasOpen se ejecuta al final, así que gana el reset.' }
+  - { text: 'TRUE', feedback: 'S DoorWasOpen se ejecuta primero y la pone en TRUE, pero R DoorWasOpen se ejecuta después en el mismo ciclo.' }
+  - { text: 'Conserva el valor del ciclo anterior', feedback: 'Eso pasa solo cuando las dos condiciones están en FALSE. Aquí las dos instrucciones escriben DoorWasOpen.' }
 ```
 
 ```quiz
-question: Un programa tiene LD Fault seguido de ST Alarm. La falla dura un ciclo. ¿Qué hace Alarm después de ese ciclo?
+question: Una versión del programa de la cámara frigorífica tiene LD DoorOpen seguido de ST DoorWasOpen. La puerta está abierta durante un ciclo. ¿Qué hace DoorWasOpen después de ese ciclo?
 options:
-  - { text: 'Pasa a FALSE en el ciclo siguiente', correct: true, feedback: 'Correcto. ST escribe el resultado actual en cada ciclo, así que Alarm sigue a Fault. Use S para conservarla.' }
-  - { text: 'Sigue en TRUE hasta Ack', feedback: 'Eso es lo que hacen S y R. ST no tiene memoria propia.' }
-  - { text: 'Sigue en TRUE para siempre', feedback: 'ST escribe FALSE en cuanto Fault está en FALSE.' }
+  - { text: 'Pasa a FALSE en el ciclo siguiente', correct: true, feedback: 'Correcto. ST escribe el resultado actual en cada ciclo, así que DoorWasOpen sigue a DoorOpen. Use S para conservarla.' }
+  - { text: 'Sigue en TRUE hasta Checked', feedback: 'Eso es lo que hacen S y R. ST no tiene memoria propia.' }
+  - { text: 'Sigue en TRUE para siempre', feedback: 'ST escribe FALSE en cuanto DoorOpen está en FALSE.' }
 ```
 
 ## Qué hará en la práctica

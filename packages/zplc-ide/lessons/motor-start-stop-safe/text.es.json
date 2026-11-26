@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija el programa inicial, guárdelo y después pulse {{ui:learn.check}}. El programa inicial copia Start a Forward, así que el motor funciona solo mientras se mantiene Start. Cámbielo para que Forward siga en ON después de una pulsación de Start, pase a OFF con Stop, EStop y Overload, y vuelva a ON solo después de que Start se soltó y se pulsó otra vez, también cuando el programa empieza con Start pulsado. Reverse sigue en FALSE. Escriba usted las instrucciones y declare las memorias que necesite.",
+      "body": "Corrija el programa inicial, guárdelo y después pulse {{ui:learn.check}}. El programa inicial copia Start a Forward, así que el motor funciona solo mientras se mantiene Start. Cámbielo para que Forward siga en ON después de una pulsación de Start, pase a OFF con Stop, EStop y Overload, y vuelva a ON solo después de que Start se soltó y se pulsó otra vez, también cuando el programa empieza con Start pulsado. Reverse sigue en FALSE. Escriba usted las sentencias y declare las memorias que necesite.",
       "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {

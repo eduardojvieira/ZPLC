@@ -10,66 +10,48 @@ A start-stop program answers three questions, and this page takes them one at a 
 
 ## The seal-in holds the motor on
 
-A push button is TRUE only while a finger holds it. If the output copied Start, the motor would stop as soon as the operator lets go. So the program keeps a BOOL memory of its own, `Running`, that Start sets and every stop clears, and the output follows the memory. A memory that keeps itself on in this way is a **seal-in**.
-
-```st
-IF Stop OR EStop OR Overload THEN
-  Running := FALSE;
-ELSIF Start THEN
-  Running := TRUE;
-END_IF;
-```
-
-When none of the conditions is TRUE, neither assignment runs, and `Running` keeps the value it had: that is the memory.
+A push button is TRUE only while a finger holds it. If the output copied the start push button, the motor would stop as soon as the operator lets go. So the output must hold itself on: it is ON when the start push button is pressed, or when it was already ON, and as long as no stop is TRUE. An output written this way appears in its own condition, and that is what keeps it on after the finger is gone. This form is a **seal-in**.
 
 ## The stop always wins
 
-The order of the IF decides which signal wins when two are TRUE in the same scan. The first condition that is TRUE runs its branch, and the others are not even looked at. Testing the stops first means that a pressed Stop, an emergency stop or a tripped overload turns the motor off whatever Start is doing.
+When a start and a stop are TRUE in the same scan, the stop must win. In a seal-in every stop is joined with AND NOT, so a pressed stop push button, an emergency stop or a tripped overload makes the whole condition FALSE, whatever the start push button is doing. Written with IF statements, the same rule means testing the stops first: the first condition that is TRUE runs its branch, and the others are not even looked at.
 
-Put Start first and the program would keep a jammed motor running as long as someone holds Start. A stop must never lose to a start.
+A program in which the start wins would keep a jammed motor running as long as someone holds the start push button. A stop must never lose to a start.
 
 ## A machine must not start by itself
 
-The seal-in above still has a fault. Suppose the operator holds Start, or a Start push button sticks, while the emergency stop is pressed. When the emergency stop is released, Start is still TRUE, so on the next scan the motor starts again, with nobody asking for it. The same happens when the program starts with Start already held.
+Suppose the operator holds the start push button, or the push button sticks, while the emergency stop is pressed. When the emergency stop is released, the start push button is still TRUE, and a plain seal-in turns the motor on again on the next scan, with nobody asking for it. The same happens when the program starts with the start push button already held.
 
-A machine that starts by itself surprises the person in front of it. The rule is: **after any stop, and when the program starts, a start needs a new press.** Start must be seen released before a press counts.
-
-The program needs a second memory for that, `Armed`, which says "Start was released since the last stop". A stop clears it, a released Start sets it, and only an armed Start may set `Running`. `Armed` starts FALSE, so a Start held when the program starts is not a new press.
+A machine that starts by itself surprises the person in front of it. The rule is: **after any stop, and when the program starts, a start needs a new press.** The start push button must be seen released before a press counts.
 
 ## Worked example
 
-A workshop has a dust extraction fan with two push buttons, `FanStart` and `FanStop`, and a switch on its filter door, `FilterDoorOpen`, that is TRUE while the door is open. Opening the door must stop the fan, and closing it again must not restart the fan until someone presses `FanStart` again.
+A workshop has a dust extraction fan with two push buttons, `FanStart` and `FanStop`, and a switch on its filter door, `FilterDoorOpen`, that is TRUE while the door is open. Opening the door must stop the fan. The classic seal-in does the first two jobs of this page in one line:
 
 ```st
 PROGRAM Extractor
 VAR_INPUT FanStart : BOOL; FanStop : BOOL; FilterDoorOpen : BOOL; END_VAR
 VAR_OUTPUT Fan : BOOL; END_VAR
-VAR
-  Running : BOOL;
-  Armed : BOOL;
-END_VAR
-IF FanStop OR FilterDoorOpen THEN
-  Running := FALSE;
-  Armed := FALSE;
-ELSIF NOT FanStart THEN
-  Armed := TRUE;
-ELSIF Armed THEN
-  Running := TRUE;
-END_IF;
-Fan := Running;
+VAR FanOn : BOOL; END_VAR
+FanOn := (FanStart OR FanOn) AND NOT FanStop AND NOT FilterDoorOpen;
+Fan := FanOn;
 END_PROGRAM
 ```
 
-Read the three branches in order. A stop clears both memories. With no stop, a released `FanStart` arms the next press. With no stop and `FanStart` pressed, the press counts only if it is armed. Follow it on the diagram: the first press starts the fan. The operator then holds `FanStart` while someone presses `FanStop`; the fan stops and stays stopped after `FanStop` is released, because `FanStart` was never let go. Only after `FanStart` is released and pressed again does the fan run.
+Read the assignment from the left. `FanStart OR FanOn` stays TRUE after the push button is released, because FanOn holds itself. Each `AND NOT` breaks the hold as soon as its stop is TRUE, and it wins when a start arrives in the same scan.
+
+Now follow the diagram, where the operator holds `FanStart` while someone presses `FanStop`. The fan stops, but as soon as `FanStop` is released, `FanStart` is still TRUE and the seal-in turns the fan on again by itself.
 
 ```timing
 span: 5000
 signals:
   - { name: FanStart, edges: [500, 800, 2000, 3200, 3800, 4100] }
   - { name: FanStop, edges: [2400, 2700] }
-  - { name: Fan, edges: [500, 2400, 3800] }
-caption: A FanStart held through a stop does not restart the fan; a new press does
+  - { name: Fan, edges: [500, 2400, 2700] }
+caption: The plain seal-in restarts the fan when the stop ends while FanStart is still held
 ```
+
+That is the one thing a seal-in alone cannot do: it does not know whether the start push button was released since the last stop. A program that follows the rule of a new press needs a second BOOL memory that remembers exactly that, cleared by every stop and at start-up, so that a press counts only once the push button has been let go. The practice asks for this rule.
 
 ## Common mistakes
 
@@ -93,11 +75,11 @@ options:
 ```
 
 ```quiz
-question: A program writes IF Start THEN Running := TRUE; ELSIF Stop THEN Running := FALSE; END_IF; and in one scan Start and Stop are both TRUE. What is Running at the end of the scan?
+question: A program writes IF FanStart THEN FanOn := TRUE; ELSIF FanStop THEN FanOn := FALSE; END_IF; and in one scan FanStart and FanStop are both TRUE. What is FanOn at the end of the scan?
 options:
-  - { text: 'TRUE, because the first branch that is TRUE runs and the other is not looked at', correct: true, feedback: 'Right. Here Start wins, which is the wrong way round: test the stops first.' }
-  - { text: 'FALSE, because Stop is written last', feedback: 'In an IF ... ELSIF only the first TRUE branch runs. Stop is never looked at in this scan.' }
-  - { text: 'It keeps the value of the previous scan', feedback: 'Start is TRUE, so the first branch runs and writes Running.' }
+  - { text: 'TRUE, because the first branch that is TRUE runs and the other is not looked at', correct: true, feedback: 'Right. Here FanStart wins, which is the wrong way round: test the stops first.' }
+  - { text: 'FALSE, because FanStop is written last', feedback: 'In an IF ... ELSIF only the first TRUE branch runs. FanStop is never looked at in this scan.' }
+  - { text: 'It keeps the value of the previous scan', feedback: 'FanStart is TRUE, so the first branch runs and writes FanOn.' }
 ```
 
 ## What you will do in the practice

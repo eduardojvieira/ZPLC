@@ -10,66 +10,48 @@ Un programa de arranque y parada responde tres preguntas, y esta página las tom
 
 ## La autorretención mantiene el motor encendido
 
-Un pulsador está en TRUE solo mientras un dedo lo mantiene. Si la salida copiara Start, el motor se detendría en cuanto el operador suelta. Por eso el programa guarda una memoria BOOL propia, `Running`, que Start activa y que cualquier parada borra, y la salida sigue a la memoria. Una memoria que se mantiene encendida a sí misma de esta forma es una **autorretención**.
-
-```st
-IF Stop OR EStop OR Overload THEN
-  Running := FALSE;
-ELSIF Start THEN
-  Running := TRUE;
-END_IF;
-```
-
-Cuando ninguna de las condiciones es TRUE, no se ejecuta ninguna asignación, y `Running` conserva el valor que tenía: esa es la memoria.
+Un pulsador está en TRUE solo mientras un dedo lo mantiene. Si la salida copiara el pulsador de arranque, el motor se detendría en cuanto el operador suelta. Por eso la salida debe mantenerse encendida a sí misma: está en ON cuando se pulsa el pulsador de arranque, o cuando ya estaba en ON, y mientras ninguna parada esté en TRUE. Una salida escrita así aparece en su propia condición, y eso es lo que la mantiene encendida cuando el dedo ya se fue. Esta forma es una **autorretención**.
 
 ## La parada siempre gana
 
-El orden del IF decide qué señal gana cuando dos están en TRUE en el mismo ciclo. La primera condición que es TRUE ejecuta su rama, y las demás ni siquiera se miran. Comprobar primero las paradas significa que un Stop pulsado, una parada de emergencia o una sobrecarga disparada apagan el motor haga lo que haga Start.
+Cuando un arranque y una parada están en TRUE en el mismo ciclo, debe ganar la parada. En una autorretención cada parada se une con AND NOT, así que un pulsador de parada pulsado, una parada de emergencia o una sobrecarga disparada ponen toda la condición en FALSE, haga lo que haga el pulsador de arranque. Escrita con sentencias IF, la misma regla significa comprobar primero las paradas: la primera condición que es TRUE ejecuta su rama, y las demás ni siquiera se miran.
 
-Si Start fuera primero, el programa mantendría en marcha un motor atascado mientras alguien mantenga Start. Una parada nunca debe perder frente a un arranque.
+Un programa en el que gana el arranque mantendría en marcha un motor atascado mientras alguien mantenga el pulsador de arranque. Una parada nunca debe perder frente a un arranque.
 
 ## Una máquina no debe arrancar sola
 
-La autorretención de arriba todavía tiene una falla. Suponga que el operador mantiene Start, o que un pulsador Start se atasca, mientras se pulsa la parada de emergencia. Cuando se libera la parada de emergencia, Start sigue en TRUE, así que en el ciclo siguiente el motor vuelve a arrancar sin que nadie lo pida. Lo mismo pasa cuando el programa empieza con Start ya pulsado.
+Suponga que el operador mantiene el pulsador de arranque, o que el pulsador se atasca, mientras se pulsa la parada de emergencia. Cuando se libera la parada de emergencia, el pulsador de arranque sigue en TRUE, y una autorretención simple vuelve a encender el motor en el ciclo siguiente, sin que nadie lo pida. Lo mismo pasa cuando el programa empieza con el pulsador de arranque ya pulsado.
 
-Una máquina que arranca sola sorprende a la persona que está delante. La regla es: **después de cualquier parada, y cuando el programa empieza, un arranque necesita una pulsación nueva.** Start debe verse suelto antes de que una pulsación cuente.
-
-El programa necesita una segunda memoria para eso, `Armed`, que dice "Start se soltó desde la última parada". Una parada la borra, un Start suelto la activa, y solo un Start habilitado puede activar `Running`. `Armed` empieza en FALSE, así que un Start que ya está pulsado cuando el programa empieza no es una pulsación nueva.
+Una máquina que arranca sola sorprende a la persona que está delante. La regla es: **después de cualquier parada, y cuando el programa empieza, un arranque necesita una pulsación nueva.** El pulsador de arranque debe verse suelto antes de que una pulsación cuente.
 
 ## Ejemplo resuelto
 
-Un taller tiene un extractor de polvo con dos pulsadores, `FanStart` y `FanStop`, y un interruptor en la puerta de su filtro, `FilterDoorOpen`, que está en TRUE mientras la puerta está abierta. Abrir la puerta debe detener el extractor, y cerrarla otra vez no debe volver a arrancarlo hasta que alguien pulse `FanStart` de nuevo.
+Un taller tiene un extractor de polvo con dos pulsadores, `FanStart` y `FanStop`, y un interruptor en la puerta de su filtro, `FilterDoorOpen`, que está en TRUE mientras la puerta está abierta. Abrir la puerta debe detener el extractor. La autorretención clásica hace en una línea los dos primeros trabajos de esta página:
 
 ```st
 PROGRAM Extractor
 VAR_INPUT FanStart : BOOL; FanStop : BOOL; FilterDoorOpen : BOOL; END_VAR
 VAR_OUTPUT Fan : BOOL; END_VAR
-VAR
-  Running : BOOL;
-  Armed : BOOL;
-END_VAR
-IF FanStop OR FilterDoorOpen THEN
-  Running := FALSE;
-  Armed := FALSE;
-ELSIF NOT FanStart THEN
-  Armed := TRUE;
-ELSIF Armed THEN
-  Running := TRUE;
-END_IF;
-Fan := Running;
+VAR FanOn : BOOL; END_VAR
+FanOn := (FanStart OR FanOn) AND NOT FanStop AND NOT FilterDoorOpen;
+Fan := FanOn;
 END_PROGRAM
 ```
 
-Lea las tres ramas en orden. Una parada borra las dos memorias. Sin parada, un `FanStart` suelto habilita la pulsación siguiente. Sin parada y con `FanStart` pulsado, la pulsación cuenta solo si está habilitada. Sígalo en el diagrama: la primera pulsación arranca el extractor. Después el operador mantiene `FanStart` mientras alguien pulsa `FanStop`; el extractor se detiene y sigue detenido después de soltar `FanStop`, porque `FanStart` nunca se soltó. Solo después de soltar `FanStart` y pulsarlo otra vez el extractor funciona.
+Lea la asignación desde la izquierda. `FanStart OR FanOn` sigue en TRUE después de soltar el pulsador, porque FanOn se mantiene a sí misma. Cada `AND NOT` corta esa retención en cuanto su parada está en TRUE, y gana cuando un arranque llega en el mismo ciclo.
+
+Ahora siga el diagrama, en el que el operador mantiene `FanStart` mientras alguien pulsa `FanStop`. El extractor se detiene, pero en cuanto se suelta `FanStop`, `FanStart` sigue en TRUE y la autorretención vuelve a encender el extractor sola.
 
 ```timing
 span: 5000
 signals:
   - { name: FanStart, edges: [500, 800, 2000, 3200, 3800, 4100] }
   - { name: FanStop, edges: [2400, 2700] }
-  - { name: Fan, edges: [500, 2400, 3800] }
-caption: Un FanStart mantenido durante una parada no vuelve a arrancar el extractor; una pulsación nueva sí
+  - { name: Fan, edges: [500, 2400, 2700] }
+caption: La autorretención simple vuelve a arrancar el extractor cuando termina la parada con FanStart todavía pulsado
 ```
+
+Eso es lo único que una autorretención sola no puede hacer: no sabe si el pulsador de arranque se soltó desde la última parada. Un programa que cumple la regla de la pulsación nueva necesita una segunda memoria BOOL que recuerde exactamente eso, borrada por cada parada y al empezar, para que una pulsación cuente solo cuando el pulsador ya se soltó, es decir, cuando el arranque está armado. La práctica pide esta regla.
 
 ## Errores comunes
 
@@ -93,11 +75,11 @@ options:
 ```
 
 ```quiz
-question: Un programa escribe IF Start THEN Running := TRUE; ELSIF Stop THEN Running := FALSE; END_IF; y en un ciclo Start y Stop están los dos en TRUE. ¿Cuánto vale Running al terminar el ciclo?
+question: Un programa escribe IF FanStart THEN FanOn := TRUE; ELSIF FanStop THEN FanOn := FALSE; END_IF; y en un ciclo FanStart y FanStop están los dos en TRUE. ¿Cuánto vale FanOn al terminar el ciclo?
 options:
-  - { text: 'TRUE, porque se ejecuta la primera rama que es TRUE y la otra no se mira', correct: true, feedback: 'Correcto. Aquí gana Start, que es al revés de lo que se busca: compruebe primero las paradas.' }
-  - { text: 'FALSE, porque Stop está escrito al final', feedback: 'En un IF ... ELSIF solo se ejecuta la primera rama que es TRUE. En este ciclo Stop nunca se mira.' }
-  - { text: 'Conserva el valor del ciclo anterior', feedback: 'Start está en TRUE, así que se ejecuta la primera rama y escribe Running.' }
+  - { text: 'TRUE, porque se ejecuta la primera rama que es TRUE y la otra no se mira', correct: true, feedback: 'Correcto. Aquí gana FanStart, que es al revés de lo que se busca: compruebe primero las paradas.' }
+  - { text: 'FALSE, porque FanStop está escrito al final', feedback: 'En un IF ... ELSIF solo se ejecuta la primera rama que es TRUE. En este ciclo FanStop nunca se mira.' }
+  - { text: 'Conserva el valor del ciclo anterior', feedback: 'FanStart está en TRUE, así que se ejecuta la primera rama y escribe FanOn.' }
 ```
 
 ## Qué hará en la práctica

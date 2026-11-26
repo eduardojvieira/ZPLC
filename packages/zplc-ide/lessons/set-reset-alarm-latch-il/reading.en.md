@@ -20,7 +20,7 @@ The lines of a program run from top to bottom on every scan. If the set and the 
 - Write `R` last, and the reset wins.
 - Write `S` last, and the set wins.
 
-The SR and RS blocks fix that choice inside the block; with `S` and `R` it is the order of your lines.
+With `S` and `R`, the order of your lines is the whole decision: nothing else in the program says which one wins.
 
 ## Worked example
 
@@ -71,19 +71,19 @@ Swap the two pairs of lines, `LD Checked` and `R` first, `LD DoorOpen` and `S` l
 ## Check yourself
 
 ```quiz
-question: A program has LD Fault, S Alarm, LD Ack, R Alarm in that order. In one scan Fault and Ack are both TRUE. What is Alarm at the end of the scan?
+question: The cold-room program has LD DoorOpen, S DoorWasOpen, LD Checked, R DoorWasOpen in that order. In one scan DoorOpen and Checked are both TRUE. What is DoorWasOpen at the end of the scan?
 options:
-  - { text: 'FALSE', correct: true, feedback: 'Yes. Both lines write Alarm, and R Alarm runs last, so the reset wins.' }
-  - { text: 'TRUE', feedback: 'S Alarm runs first and makes it TRUE, but R Alarm runs after it in the same scan.' }
-  - { text: 'It keeps the value of the previous scan', feedback: 'That happens only when both conditions are FALSE. Here both instructions write Alarm.' }
+  - { text: 'FALSE', correct: true, feedback: 'Yes. Both lines write DoorWasOpen, and R DoorWasOpen runs last, so the reset wins.' }
+  - { text: 'TRUE', feedback: 'S DoorWasOpen runs first and makes it TRUE, but R DoorWasOpen runs after it in the same scan.' }
+  - { text: 'It keeps the value of the previous scan', feedback: 'That happens only when both conditions are FALSE. Here both instructions write DoorWasOpen.' }
 ```
 
 ```quiz
-question: A program has LD Fault followed by ST Alarm. The fault lasts one scan. What does Alarm do after that scan?
+question: A version of the cold-room program has LD DoorOpen followed by ST DoorWasOpen. The door is open for one scan. What does DoorWasOpen do after that scan?
 options:
-  - { text: 'It turns FALSE on the next scan', correct: true, feedback: 'Right. ST writes the current result on every scan, so Alarm follows Fault. Use S to keep it.' }
-  - { text: 'It stays TRUE until Ack', feedback: 'That is what S and R do. ST has no memory of its own.' }
-  - { text: 'It stays TRUE for ever', feedback: 'ST writes FALSE as soon as Fault is FALSE.' }
+  - { text: 'It turns FALSE on the next scan', correct: true, feedback: 'Right. ST writes the current result on every scan, so DoorWasOpen follows DoorOpen. Use S to keep it.' }
+  - { text: 'It stays TRUE until Checked', feedback: 'That is what S and R do. ST has no memory of its own.' }
+  - { text: 'It stays TRUE for ever', feedback: 'ST writes FALSE as soon as DoorOpen is FALSE.' }
 ```
 
 ## What you will do in the practice

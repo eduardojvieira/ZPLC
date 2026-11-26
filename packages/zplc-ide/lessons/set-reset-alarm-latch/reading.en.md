@@ -90,7 +90,7 @@ Had the designer decided that the driver's word is final, the same program with 
 ## Check yourself
 
 ```quiz
-question: An SR latch has S1 := Fault and R := Ack. In one scan Fault and Ack are both TRUE. What is Q1 at the end of the call?
+question: In the packing-table program, CallLatch is an SR with S1 := Call and R := Served. In one scan Call and Served are both TRUE. What is CallLatch.Q1 at the end of the call?
 options:
   - { text: 'TRUE', correct: true, feedback: 'Yes. An SR is set-dominant, so the set wins when both inputs are TRUE.' }
   - { text: 'FALSE', feedback: 'That is what an RS does. In an SR the figure 1 is on S1, the set, and the set wins.' }
@@ -98,11 +98,11 @@ options:
 ```
 
 ```quiz
-question: A program calls its alarm latch only inside IF Fault THEN ... END_IF. The fault comes and goes, and later the operator presses Ack. What does the alarm do?
+question: The packing-table program calls CallLatch only inside IF Call THEN ... END_IF. The operator presses Call and lets go, and later the driver presses Served. What does CallLamp do?
 options:
-  - { text: 'It stays ON, because the latch is not called while Fault is FALSE', correct: true, feedback: 'Right. An instance changes only when it is called, so the Ack is never seen. Call the latch on every scan.' }
-  - { text: 'It turns OFF, because Ack resets the latch', feedback: 'Ack resets the latch only during a call, and the call runs only while Fault is TRUE.' }
-  - { text: 'It turns OFF when the fault goes away', feedback: 'Then the latch would not remember anything. Its Q1 keeps the last value it was given.' }
+  - { text: 'It stays ON, because the latch is not called while Call is FALSE', correct: true, feedback: 'Right. An instance changes only when it is called, so Served is never seen. Call the latch on every scan.' }
+  - { text: 'It turns OFF, because Served resets the latch', feedback: 'Served resets the latch only during a call, and the call runs only while Call is TRUE.' }
+  - { text: 'It turns OFF when Call is released', feedback: 'Then the latch would not remember anything. Its Q1 keeps the last value it was given.' }
 ```
 
 ## What you will do in the practice
