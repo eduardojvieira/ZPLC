@@ -5,16 +5,9 @@
   "order": 44,
   "module": 6,
   "level": "intermediate",
-  "prerequisites": [
-    "tank-level-fault-reset",
-    "blinky-ladder-timer-feedback"
-  ],
-  "languages": [
-    "LD"
-  ],
-  "tracks": [
-    "simulation"
-  ],
+  "prerequisites": ["tank-level-fault-reset", "blinky-ladder-timer-feedback"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
   "unsupported": {
     "hardware": {
       "reason": {
