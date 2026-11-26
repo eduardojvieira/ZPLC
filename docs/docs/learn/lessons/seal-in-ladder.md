@@ -39,7 +39,7 @@ Edit a Ladder rung so that a Start press keeps the motor on after the button is 
 
 ## What the evidence covers
 
-Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a safe stop function or wiring.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real stop button or motor starter is wired.
 
 ## Wiring
 

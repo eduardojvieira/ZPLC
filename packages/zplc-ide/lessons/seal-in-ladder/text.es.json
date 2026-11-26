@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "title": "Autorretención en diagrama de escalera: un motor que se mantiene encendido",
-  "summary": "Edite un peldaño en diagrama de escalera para que una pulsación de Start mantenga el motor encendido al soltar el botón, y una pulsación de Stop lo apague aunque Start siga pulsado.",
-  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra una función de parada segura ni el cableado.",
+  "summary": "Edite un peldaño en diagrama de escalera para que una pulsación de Start mantenga el motor encendido al soltar el pulsador, y una pulsación de Stop lo apague aunque Start siga pulsado.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo se cablea un pulsador de parada o un arrancador de motor reales.",
   "objectives": [
     "Lea un peldaño en diagrama de escalera como un camino de contactos por el que debe pasar la energía para llegar a la bobina.",
     "Mantenga una bobina activada con un contacto de su propia salida en paralelo con Start, y deje Stop en serie para que Stop tenga prioridad."
@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/SealIn.ld.json hay un peldaño dibujado: un contacto normalmente cerrado de StopPB, un contacto normalmente abierto de StartPB y la bobina Motor. Agregue un contacto normalmente abierto de Motor en paralelo con el contacto de StartPB para que el motor se mantenga encendido una vez arrancado.",
-      "checkpoint": "El motor sigue encendido al soltar Start y se apaga al pulsar Stop."
+      "body": "En src/SealIn.ld.json hay un peldaño dibujado: un contacto normalmente cerrado de StopPB, un contacto normalmente abierto de StartPB y la bobina Motor. El motor funciona solo mientras se mantiene pulsado Start. Haga que el motor siga funcionando una vez arrancado, hasta que se pulse Stop, y que Stop gane cuando se pulsan los dos pulsadores a la vez.",
+      "checkpoint": "Puede decir qué debe seguir en TRUE para que el motor siga funcionando al soltar Start, y qué debe poder detenerlo siempre."
     },
     {
       "key": "predict",
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial acciona Motor solo mientras StartPB está pulsado, así que se apaga en cuanto se suelta Start a los {{t:20}} ms; agregue un contacto normalmente abierto de Motor en paralelo con el contacto de StartPB para que la bobina se mantenga activada por sí misma. En el editor de escalera, agregue un contacto en la segunda fila, debajo de StartPB, y asígnele la variable Motor.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial acciona Motor solo mientras StartPB está pulsado, así que se apaga en cuanto se suelta Start a los {{t:20}} ms. Cámbielo para que Motor siga en ON al soltar Start, pase a OFF al pulsar Stop a los {{t:40}} ms, siga en OFF al soltar Stop y quede en OFF a los {{t:70}} ms cuando se pulsan Start y Stop a la vez. Deje el contacto de StopPB donde está.",
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta el programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario se llama SealIn y contiene {{assertions}} aserciones."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexione",
       "body": "¿Por qué el contacto de Stop debe estar en serie antes de la rama? Muévalo a la rama de autorretención y vea qué aserción falla.",
-      "checkpoint": "Con Stop fuera del camino en serie, un motor que se mantiene solo no se puede detener. El escenario pulsa Start y Stop a la vez a los {{t:70}} ms para comprobar que Stop tiene prioridad; no demuestra una función de parada segura."
+      "checkpoint": "Con Stop dentro del camino de retención, Start lo salta: a los {{t:70}} ms el motor funciona aunque Stop está pulsado, y esa aserción falla. En serie antes de la rama, nada puede saltar a Stop."
     }
   ],
   "hints": [
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial acciona Motor solo mientras StartPB está pulsado, así que se apaga en cuanto se suelta Start a los {{t:20}} ms; agregue un contacto normalmente abierto de Motor en paralelo con el contacto de StartPB para que la bobina se mantenga activada por sí misma."
+    "El programa inicial acciona Motor solo mientras StartPB está pulsado, así que se apaga en cuanto se suelta Start a los {{t:20}} ms."
   ]
 }

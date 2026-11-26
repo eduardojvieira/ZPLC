@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Lógica booleana: un mando a dos manos con protección",
-  "summary": "Combine AND, NOT y XOR para que una prensa solo se habilite con las dos manos en los botones y la protección cerrada.",
+  "summary": "Combine AND, NOT y XOR para que una prensa solo se habilite con las dos manos en los pulsadores y la protección cerrada.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Escriba una condición que sea verdadera solo cuando varias entradas sean verdaderas a la vez.",
@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/TwoHand.st las tres salidas todavía no son correctas. PressEnable debe estar en ON solo con LeftHand, RightHand y GuardClosed en ON. GuardLamp debe estar en ON cuando la protección está abierta. OneHandWarning debe estar en ON cuando exactamente una mano está en su botón.",
+      "body": "En src/TwoHand.st las tres salidas todavía no son correctas. PressEnable debe estar en ON solo con LeftHand, RightHand y GuardClosed en ON. GuardLamp debe estar en ON cuando la protección está abierta. OneHandWarning debe estar en ON cuando exactamente una mano está en su pulsador.",
       "checkpoint": "Usted puede decir, para cada salida, la condición que la pone en ON."
     },
     {
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial habilita la prensa con cualquiera de las dos manos, así que PressEnable ya está en ON a los {{t:10}} ms con una sola mano. Reemplace la sentencia inicial por una condición para cada salida, guarde el archivo y observe el resultado.",
-      "checkpoint": "Cada salida sigue su propia condición y el archivo está guardado."
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial habilita la prensa con cualquiera de las dos manos, así que PressEnable ya está en ON a los {{t:10}} ms con una sola mano. Dé a cada salida su propia condición: PressEnable en ON solo con las dos manos en sus pulsadores y la protección cerrada, GuardLamp en ON mientras la protección está abierta y OneHandWarning en ON mientras exactamente una mano está en su pulsador. Escriba usted las instrucciones: las declaraciones ya están.",
+      "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta el programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario se llama TwoHand y contiene {{assertions}} aserciones."
     },
     {
@@ -41,8 +41,8 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "Pruebe la misma condición con OR en lugar de AND y diga qué combinación de entradas habilita la prensa por error.",
-      "checkpoint": "OR habilita la prensa con una sola mano, que es justo lo que un mando a dos manos existe para impedir."
+      "body": "Pruebe la misma condición con OR en lugar de AND y diga qué combinación de entradas habilita la prensa por error. Después escriba GuardLamp como NOT GuardClosed AND LeftHand: ¿cuándo queda apagada la lámpara aunque la protección esté abierta?",
+      "checkpoint": "OR habilita la prensa con una sola mano, que es justo lo que un mando a dos manos existe para impedir. NOT se aplica solo a GuardClosed, así que esa lámpara se enciende solo mientras la protección está abierta y la mano izquierda está en su pulsador."
     }
   ],
   "hints": [

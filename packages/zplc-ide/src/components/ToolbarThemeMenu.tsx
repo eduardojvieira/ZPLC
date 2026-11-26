@@ -23,7 +23,8 @@ export function ThemeMenu() {
       className="relative max-[1100px]:hidden"
       ref={menuRef}
       onKeyDown={(event) => {
-        if (event.key === 'Escape') {
+        // Only an open menu owns Escape; on the closed trigger it belongs to the jump back from the command bar.
+        if (event.key === 'Escape' && open) {
           event.preventDefault();
           closeMenu(true);
         }

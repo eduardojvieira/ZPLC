@@ -76,7 +76,7 @@ Cada versión publicada tiene una imagen precompilada para esta placa, `zplc-run
 | [Retardo a la conexión y a la desconexión en escalera: temporizadores como bloques en un peldaño](./esp32-s3-devkitc/timers-on-delay-off-delay-ladder.md) | `timers-on-delay-off-delay-ladder` |
 | [Lógica booleana en escalera: un mando a dos manos](./esp32-s3-devkitc/boolean-logic-two-hand-guard-ladder.md) | `boolean-logic-two-hand-guard-ladder` |
 | [Contar pulsos en escalera: un CTU cuenta los flancos por sí mismo](./esp32-s3-devkitc/edge-counter-pulses-ladder.md) | `edge-counter-pulses-ladder` |
-| [Tipos, aritmética y comparación: un total y tres cintas](./esp32-s3-devkitc/types-arithmetic-comparison.md) | `types-arithmetic-comparison` |
+| [Tipos, aritmética y comparación: un total y tres rangos](./esp32-s3-devkitc/types-arithmetic-comparison.md) | `types-arithmetic-comparison` |
 | [Una secuencia en diagrama funcional secuencial: llenar y luego mezclar](./esp32-s3-devkitc/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` |
 | [Enclavar una alarma en escalera: bobinas SET y RESET, y el orden de los peldaños](./esp32-s3-devkitc/set-reset-alarm-latch-ladder.md) | `set-reset-alarm-latch-ladder` |
 | [Diagrama de bloques de función: un mando a dos manos con protección](./esp32-s3-devkitc/boolean-logic-two-hand-guard-fbd.md) | `boolean-logic-two-hand-guard-fbd` |
@@ -91,7 +91,7 @@ Cada versión publicada tiene una imagen precompilada para esta placa, `zplc-run
 | [Lista de instrucciones: contar pulsos con un CTU](./esp32-s3-devkitc/edge-counter-pulses-il.md) | `edge-counter-pulses-il` |
 | [Escalado analógico en diagrama de bloques de función: una alarma de nivel alto](./esp32-s3-devkitc/analog-scaling-fbd.md) | `analog-scaling-fbd` |
 | [Lista de instrucciones: llamar a un bloque de función y leer sus salidas](./esp32-s3-devkitc/function-block-call-il.md) | `function-block-call-il` |
-| [Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres cintas](./esp32-s3-devkitc/types-arithmetic-comparison-fbd.md) | `types-arithmetic-comparison-fbd` |
+| [Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres rangos](./esp32-s3-devkitc/types-arithmetic-comparison-fbd.md) | `types-arithmetic-comparison-fbd` |
 | [Lista de instrucciones: aritmética, comparación y un salto en un flanco ascendente](./esp32-s3-devkitc/types-arithmetic-comparison-il.md) | `types-arithmetic-comparison-il` |
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc <<< */}

@@ -39,7 +39,7 @@ Hold a fault in memory with SET and RESET coils, and see that in Ladder the rung
 
 ## What the evidence covers
 
-Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the alarm handling requirements of a real machine or wiring.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real plant must handle and acknowledge its alarms.
 
 ## Wiring
 

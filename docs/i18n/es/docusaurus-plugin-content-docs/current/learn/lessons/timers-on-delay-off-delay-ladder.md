@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/timers-on-delay-off-delay-ladder. Do not edit. >>> */}
 
-Coloque un TOF y un TON entre un contacto y una bobina, y compruebe que un retardo a la desconexión mantiene una luz tras soltar el botón y que un retardo a la conexión ignora un sensor que no se mantiene.
+Coloque un TOF y un TON entre un contacto y una bobina, y compruebe que un retardo a la desconexión mantiene una luz tras soltar el pulsador y que un retardo a la conexión ignora un sensor que no se mantiene.
 
 ## Datos
 
@@ -39,7 +39,7 @@ Coloque un TOF y un TON entre un contacto y una bobina, y compruebe que un retar
 
 ## Qué cubre la evidencia
 
-Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra los requisitos de filtrado de un sensor real ni el cableado.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo parpadea un sensor real ni cómo se cablea una lámpara real.
 
 ## Cableado
 

@@ -39,7 +39,7 @@ Guarde una solicitud en un bit de memoria, almacene una duración en una variabl
 
 ## Qué cubre la evidencia
 
-Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el cableado, los niveles eléctricos ni los tiempos de entradas y salidas reales.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo se cablean las entradas y salidas reales, qué tensiones usan ni con qué rapidez responden.
 
 ## En una placa
 

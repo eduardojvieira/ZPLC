@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/ld-what-is-a-plc. Do not edit. >>> */}
 
-Conozca las tres partes de toda máquina con PLC, entradas, un programa y salidas, y termine un programa de un peldaño que enciende una lámpara mientras se pulsa un botón.
+Conozca las tres partes de toda máquina con PLC, entradas, un programa y salidas, y termine un programa de un peldaño que enciende una lámpara mientras un pulsador está pulsado.
 
 ## Datos
 
@@ -25,7 +25,7 @@ Conozca las tres partes de toda máquina con PLC, entradas, un programa y salida
 ## Objetivos
 
 - Nombre las tres partes de un sistema con PLC: las entradas que leen el mundo, un programa que decide y las salidas que actúan sobre el mundo.
-- Complete un peldaño en diagrama de escalera en el que un botón pulsado enciende una lámpara, y lea el resultado en el laboratorio simulado.
+- Complete un peldaño en diagrama de escalera en el que un pulsador pulsado enciende una lámpara, y lea el resultado en el laboratorio simulado.
 
 ## Etapas
 
@@ -38,7 +38,7 @@ Conozca las tres partes de toda máquina con PLC, entradas, un programa y salida
 
 ## Qué cubre la evidencia
 
-Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo se cablea un pulsador real a un PLC.
 
 ## En una placa
 

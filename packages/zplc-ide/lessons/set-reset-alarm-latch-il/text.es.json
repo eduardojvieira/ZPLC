@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/AlarmLatch.il, S pone su operando en TRUE cuando el resultado actual es TRUE y no hace nada en otro caso; R lo pone en FALSE de la misma forma. Ambas salidas deben quedar en ON después de que Fault baja y pasar a OFF solo cuando se pulsa Ack. Cuando Fault y Ack llegan juntos, SetFirst debe seguir en ON y ResetFirst debe pasar a OFF, así que SetFirst necesita su línea R antes de su línea S, y ResetFirst al revés.",
+      "body": "En src/AlarmLatch.il, S pone su operando en TRUE cuando el resultado actual es TRUE y no hace nada en otro caso; R lo pone en FALSE de la misma forma. Ambas salidas deben quedar en ON después de que Fault baja y pasar a OFF solo cuando se pulsa Ack. Cuando Fault y Ack llegan juntos, SetFirst debe seguir en ON y ResetFirst debe pasar a OFF.",
       "checkpoint": "Puede decir cuál de las dos líneas se ejecuta al final, y por tanto gana, en cada salida."
     },
     {
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija este defecto del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia Fault a las dos salidas con ST, así que pasan a OFF a los {{t:20}} ms cuando la falla desaparece; reemplácelo por líneas S y R, cargando Ack y luego Fault para SetFirst, y Fault y luego Ack para ResetFirst, y guarde el archivo.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "body": "Corrija el programa inicial, guárdelo y después pulse {{ui:learn.check}}. El programa inicial copia Fault a las dos salidas con ST, así que pasan a OFF a los {{t:20}} ms cuando la falla desaparece. Cámbielo para que cada salida conserve su valor después de que Fault baja hasta Ack, y para que gane Fault en SetFirst y gane Ack en ResetFirst cuando llegan juntos. Escriba usted las líneas: las declaraciones ya están.",
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario se llama AlarmLatch y contiene {{assertions}} aserciones."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial copia Fault a las dos salidas con ST, así que pasan a OFF a los {{t:20}} ms cuando la falla desaparece; reemplácelo por líneas S y R, cargando Ack y luego Fault para SetFirst, y Fault y luego Ack para ResetFirst, y guarde el archivo."
+    "El programa inicial copia Fault a las dos salidas con ST, así que pasan a OFF a los {{t:20}} ms cuando la falla desaparece."
   ]
 }

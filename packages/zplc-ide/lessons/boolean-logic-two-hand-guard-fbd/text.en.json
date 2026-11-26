@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Function Block Diagram: a two-hand control with a guard",
-  "summary": "Read a Function Block Diagram and wire AND, NOT and XOR blocks so a press can only be enabled when both hands are on the buttons and the guard is closed.",
+  "summary": "Read a Function Block Diagram and wire AND, NOT and XOR blocks so a press can only be enabled when both hands are on the push buttons and the guard is closed.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Read a Function Block Diagram: blocks are joined by wires from an output port to an input port, and each output shows the result of the blocks wired to it.",
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this flaw of the starting diagram, save it, then press Check: The starting diagram enables the press with an OR block, so PressEnable is already ON at {{t:10}} ms with one hand, and GuardLamp and OneHandWarning stay OFF. Delete the OR block and the two FALSE constants. Place an AND block with LeftHand and RightHand, a second AND block with the first one and GuardClosed, and wire the second AND to PressEnable. Place a NOT block from GuardClosed to GuardLamp, and an XOR block from LeftHand and RightHand to OneHandWarning. Save the file.",
-      "checkpoint": "Each output is wired to its own blocks and the file is saved."
+      "body": "Correct the starting diagram, save it, then press {{ui:learn.check}}. The starting diagram enables the press with an OR block, so PressEnable is already ON at {{t:10}} ms with one hand, and GuardLamp and OneHandWarning stay OFF. Change the diagram so that PressEnable is ON only with both hands on their buttons and the guard closed, GuardLamp is ON while the guard is open, and OneHandWarning is ON while exactly one hand is on its button. Choose and wire the blocks yourself.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The scenario is named TwoHand and contains {{assertions}} assertions."
     },
     {

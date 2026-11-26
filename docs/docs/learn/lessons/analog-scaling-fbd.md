@@ -19,7 +19,7 @@ Edit a Function Block Diagram that scales raw analog counts from 0 to 4095 into 
 - Estimated time: 20 minutes
 - Languages: FBD
 - Tracks: Simulation, Hardware
-- Reading page: no
+- Reading page: yes
 - Plant: none
 - Prerequisites: [analog-scaling-integer](./analog-scaling-integer.md), [counter-batch-fbd](./counter-batch-fbd.md)
 

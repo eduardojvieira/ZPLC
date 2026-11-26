@@ -1,16 +1,16 @@
 ---
-title: "Cableado: Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres cintas en ESP32-S3-DevKitC-1 (N8R8)"
+title: "Cableado: Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres rangos en ESP32-S3-DevKitC-1 (N8R8)"
 sidebar_label: "types-arithmetic-comparison-fbd"
 description: "Cómo cablear la lección types-arithmetic-comparison-fbd en la ESP32-S3-DevKitC-1 (N8R8), generado a partir de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
 
-# Cableado: Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres cintas en ESP32-S3-DevKitC-1 (N8R8)
+# Cableado: Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres rangos en ESP32-S3-DevKitC-1 (N8R8)
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/esp32-s3-devkitc/types-arithmetic-comparison-fbd. Do not edit. >>> */}
 
-El cableado de la lección [Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres cintas](../../../learn/lessons/types-arithmetic-comparison-fbd.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Haga el cableado con el cable USB desconectado.
+El cableado de la lección [Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres rangos](../../../learn/lessons/types-arithmetic-comparison-fbd.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Haga el cableado con el cable USB desconectado.
 
 ## Límite de tensión
 
@@ -22,7 +22,7 @@ El cableado de la lección [Tipos, aritmética y comparación en diagrama de blo
 
 ## Diagrama
 
-![Cableado de Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres cintas en ESP32-S3-DevKitC-1 (N8R8)](/img/wiring/esp32-s3-devkitc/types-arithmetic-comparison-fbd.es.svg)
+![Cableado de Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres rangos en ESP32-S3-DevKitC-1 (N8R8)](/img/wiring/esp32-s3-devkitc/types-arithmetic-comparison-fbd.es.svg)
 
 ## Tarjeta de cableado
 

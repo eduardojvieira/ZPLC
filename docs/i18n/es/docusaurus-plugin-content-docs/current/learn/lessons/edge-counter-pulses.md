@@ -19,14 +19,14 @@ Use un contador CTU para contar tres pulsos discretos y poner la cuenta a cero.
 - Tiempo estimado: 15 minutos
 - Lenguajes: ST
 - Rutas: Simulación, Hardware
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [timers-on-delay-off-delay](./timers-on-delay-off-delay.md)
 
 ## Objetivos
 
-- Cuente tres flancos ascendentes de PulseInput con un contador CTU.
-- Ponga a cero la cuenta y CountReached con Reset.
+- Cuente los flancos ascendentes de una entrada con una instancia de CTU llamada en cada ciclo, para que un pulso largo cuente una vez.
+- Pase una salida a ON cuando la cuenta llega a su valor preestablecido, y ponga la cuenta a cero con una entrada de puesta a cero.
 
 ## Etapas
 
@@ -39,7 +39,7 @@ Use un contador CTU para contar tres pulsos discretos y poner la cuenta a cero.
 
 ## Qué cubre la evidencia
 
-Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un sensor real ni qué hace una entrada real con un pulso más corto que un ciclo.
 
 ## Cableado
 

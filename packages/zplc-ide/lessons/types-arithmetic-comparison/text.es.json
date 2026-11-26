@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
-  "title": "Tipos, aritmética y comparación: un total y tres cintas",
+  "title": "Tipos, aritmética y comparación: un total y tres rangos",
   "summary": "Mantenga un total acumulado en una variable INT, súmele un valor en cada pulsación y conviértalo en tres resultados BOOL con operadores de comparación.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador concreto.",
   "objectives": [
     "Use una variable INT para un número y una variable BOOL para un sí o un no, y vea que una comparación convierte un número en un BOOL.",
-    "Sume a un número solo en el flanco ascendente de una entrada, para que un botón mantenido varios ciclos cuente una vez."
+    "Sume a un número solo en el flanco ascendente de una entrada, para que un pulsador mantenido varios ciclos cuente una vez."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
       "body": "En src/TypedSteps.st están escritas la variable INT Total y las comparaciones Low (Total < 10), Exact (Total = 10) y High (Total > 10). Escriba la aritmética: en cada flanco ascendente de Step sume 5 a Total, y mientras Reset sea TRUE ponga Total en 0.",
-      "checkpoint": "Total pasa por 0, 5, 10 y 15, y las tres salidas muestran en qué cinta está."
+      "checkpoint": "Total pasa por 0, 5, 10 y 15, y las tres salidas muestran en qué rango está."
     },
     {
       "key": "predict",
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial declara Total y las tres comparaciones pero nunca cambia Total, así que Low queda en ON para siempre; sume 5 a Total en cada flanco ascendente de Step y bórrelo mientras Reset sea TRUE.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial declara Total y escribe los tres rangos pero nunca cambia Total, así que Low queda en ON para siempre. Cámbielo para que cada pulsación de Step sume 5 a Total una sola vez, dure lo que dure la pulsación, y Total vuelva a 0 mientras Reset esté en TRUE. Escriba usted las instrucciones: las declaraciones y las tres comparaciones ya están.",
+      "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta el programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
       "checkpoint": "El escenario se llama TypedSteps y contiene {{assertions}} aserciones."
     },
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Total es un INT, así que Total + 5 es un INT. Un flanco ascendente es Step en TRUE ahora y StepWas en FALSE en el ciclo anterior."
+      "text": "Total es un INT, así que sumarle una constante INT da un INT. Un flanco ascendente es Step en TRUE ahora y StepWas en FALSE en el ciclo anterior."
     },
     {
       "level": 2,

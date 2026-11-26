@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/timers-on-delay-off-delay-il. Do not edit. >>> */}
 
-Call a TOF timer with CAL to keep a light on after a button is released, and a TON timer to ignore a sensor blip that is too short, then read each timer output with LD.
+Call a TOF timer with CAL to keep a light on after a push button is released, and a TON timer to ignore a sensor blip that is too short, then read each timer output after its call.
 
 ## Facts
 
@@ -19,14 +19,14 @@ Call a TOF timer with CAL to keep a light on after a button is released, and a T
 - Estimated time: 15 minutes
 - Languages: IL
 - Tracks: Simulation, Hardware
-- Reading page: no
+- Reading page: yes
 - Plant: none
 - Prerequisites: [timers-on-delay-off-delay](./timers-on-delay-off-delay.md), [boolean-logic-two-hand-guard-il](./boolean-logic-two-hand-guard-il.md)
 
 ## Objectives
 
-- Call a timer instance with CAL, passing its input and its preset, and read its output with LD.
-- Keep an output on for a fixed time after its input drops, using TOF, and ignore an input that is on for less than a fixed time, using TON.
+- Call a timer instance with CAL on every scan, passing its input and its preset, and read its output after the call.
+- Keep an output on for a fixed time after its input drops, with a TOF, and ignore an input that is on for less than a fixed time, with a TON.
 
 ## Stages
 
@@ -39,7 +39,7 @@ Call a TOF timer with CAL to keep a light on after a button is released, and a T
 
 ## What the evidence covers
 
-Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show electrical debounce, sensor response or target timing.
+Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real push button bounces or how fast a real sensor answers.
 
 ## Wiring
 

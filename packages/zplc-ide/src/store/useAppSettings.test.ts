@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 
 import { SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS } from '../utils/appSettings';
-import { applyDisplaySettings, createAppSettingsStore } from './useAppSettings';
+import { applyDisplaySettings, createAppSettingsStore, mirrorLearnPolicy } from './useAppSettings';
 
 const memory = (initial: Record<string, string> = {}) => {
   const data = { ...initial };
@@ -36,5 +36,17 @@ describe('application settings store (IDE-010)', () => {
     applyDisplaySettings({ ...DEFAULT_SETTINGS, density: 'compact', language: 'es' }, root);
     expect(root.dataset.density).toBe('compact');
     expect(root.lang).toBe('es');
+  });
+
+  it('mirrors the classroom setting to the main process at start and on each change of it, and on nothing else (AIX-002)', () => {
+    const store = createAppSettingsStore(memory({ [SETTINGS_STORAGE_KEY]: JSON.stringify({ hideSolutions: true }) }));
+    const reports: unknown[] = [];
+    const stop = mirrorLearnPolicy(store, (policy) => reports.push(policy));
+    store.getState().update({ editorFontSize: 16 });
+    store.getState().update({ hideSolutions: false });
+    store.getState().update({ hideSolutions: false });
+    stop();
+    store.getState().update({ hideSolutions: true });
+    expect(reports).toEqual([{ hideSolutions: true }, { hideSolutions: false }]);
   });
 });

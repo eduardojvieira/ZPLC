@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Boolean logic: a two-hand control with a guard",
-  "summary": "Combine AND, NOT and XOR so a press can only be enabled when both hands are on the buttons and the guard is closed.",
+  "summary": "Combine AND, NOT and XOR so a press can only be enabled when both hands are on the push buttons and the guard is closed.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Write a condition that is true only when several inputs are true together.",
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this flaw of the starting program, save it, then press Check: The starting program enables the press with either hand, so PressEnable is already ON at {{t:10}} ms with one hand. Replace the starting statement with one condition for each output, save the file, and look at the result.",
-      "checkpoint": "Each output follows its own condition and the file is saved."
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program enables the press with either hand, so PressEnable is already ON at {{t:10}} ms with one hand. Give each output its own condition: PressEnable ON only with both hands on their buttons and the guard closed, GuardLamp ON while the guard is open, and OneHandWarning ON while exactly one hand is on its button. Write the statements yourself: the declarations are already there.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
       "checkpoint": "The scenario is named TwoHand and contains {{assertions}} assertions."
     },
     {
@@ -41,8 +41,8 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Try the same condition with OR instead of AND and say which input combination wrongly enables the press.",
-      "checkpoint": "OR enables the press with a single hand, which is exactly what a two-hand control exists to prevent."
+      "body": "Try the same condition with OR instead of AND and say which input combination wrongly enables the press. Then write GuardLamp as NOT GuardClosed AND LeftHand: when does the lamp stay dark although the guard is open?",
+      "checkpoint": "OR enables the press with a single hand, which is exactly what a two-hand control exists to prevent. NOT applies only to GuardClosed, so that lamp lights only while the guard is open and the left hand is on its button."
     }
   ],
   "hints": [
