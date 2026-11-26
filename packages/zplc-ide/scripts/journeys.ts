@@ -132,6 +132,9 @@ async function chooseOutlineLesson(app: App, id: string, title: string): Promise
   await app.click(css('[data-learn-outline] input'), 'the filter of the course outline');
   await app.type(title);
   await app.click(css(`[data-learn-outline] [data-row$=${JSON.stringify(`:lesson:${id}`)}]`), `the ${title} lesson`);
+  // LRN-039: a lesson with a reading page opens that page first; its Practice button starts the lesson.
+  if (LESSON_INDEX.lessons.find((lesson) => lesson.id === id)?.reading)
+    await app.click(css(`[data-learn-reading="${id}"] [data-learn-reading-practice]`), `Practice of the ${title} reading`);
 }
 
 /**
@@ -7318,6 +7321,15 @@ export const JOURNEYS: Journey[] = [
         'ArrowDown',
         await app.eval<number>(`document.querySelectorAll('[data-learn-outline] [role="treeitem"]').length`),
       );
+      await app.press('Enter');
+      // LRN-039: the lesson has a reading page, which opens first with the focus on its title; Tab reaches Practice inside the page,
+      // and Enter starts the lesson.
+      await app.until(
+        'the reading page of the lesson',
+        async () =>
+          (await app.eval<boolean>(`document.querySelector('[data-learn-reading="motor-start-stop-safe"]') !== null`)) || undefined,
+      );
+      await reach('Practice on the reading page', `el.matches('[data-learn-reading-practice]')`, 'Tab', 80);
       await app.press('Enter');
       await app.until(
         'the Safe motor start-stop lesson to be chosen',
