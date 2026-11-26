@@ -67,5 +67,7 @@
   {"id":"RCN-003","workstream":"RCN","title":"Board evidence MUST exist for two board families before the first candidate (JRN-006).","level":"MUST","mapped":false},
   {"id":"RCN-004","workstream":"RCN","title":"The candidate MUST be signed as decision D-34 says.","level":"MUST","mapped":false},
   {"id":"RCN-005","workstream":"RCN","title":"A second candidate is built only for a blocker.","level":"SHOULD","mapped":false},
-  {"id":"RCN-006","workstream":"RCN","title":"The release is cut with the version, the compiler version, the changelog and the documentation captures in one change, after the scope list…","level":"SHOULD","mapped":false}
+  {"id":"RCN-006","workstream":"RCN","title":"The release is cut with the version, the compiler version, the changelog and the documentation captures in one change, after the scope list…","level":"SHOULD","mapped":false},
+  {"id":"LNG-029","workstream":"LNG","title":"An FBD diagram MUST be able to place every function the compiler registers (getAllFnNames(), 297), and the build MUST translate each one.","level":"MUST","mapped":false},
+  {"id":"LNG-030","workstream":"LNG","title":"A Ladder rung MUST be able to place every function the compiler registers (getAllFnNames(), 297) as a box with EN and ENO as LNG-028 says,…","level":"MUST","mapped":false}
 ]
