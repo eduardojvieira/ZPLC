@@ -84,11 +84,13 @@ describe('stacker crane models (VIS-014)', () => {
     const { views } = await crane();
     const rack = views['stacker-rack']!;
     const pieces = partModel(rack)!;
-    expect(slotsOf(pieces, 'upright').length).toBe(2 * (config.columns + 1));
-    expect(new Set(slotsOf(pieces, 'upright').map((p) => p.role))).toEqual(new Set(['painted']));
+    // The two faces of the rack (C10 adds the posts across the aisle and the end frames, checked in their own test).
+    const faces = (prefix: string) => [...slotsOf(pieces, `${prefix}-front-`), ...slotsOf(pieces, `${prefix}-back-`)];
+    expect(faces('upright').length).toBe(2 * (config.columns + 1));
+    expect(new Set(faces('upright').map((p) => p.role))).toEqual(new Set(['painted']));
     expect(slotsOf(pieces, 'beam').length).toBe(2 * config.levels);
     expect(new Set(slotsOf(pieces, 'beam').map((p) => p.role))).toEqual(new Set(['steel']));
-    expect(slotsOf(pieces, 'base').length).toBe(2 * (config.columns + 1));
+    expect(faces('base').length).toBe(2 * (config.columns + 1));
     // The beams carry the cell rails: the top of the beam of level l is l levels above the floor the rack stands on.
     const floor = -rack.pose.p[1];
     for (let l = 1; l <= config.levels; l++) {

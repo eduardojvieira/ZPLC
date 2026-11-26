@@ -33,7 +33,10 @@ export const STACKER = {
   headroom: 0.4,
   mastHead: 0.065,
   shelf: 0.02, // C10: the plate of a cell that carries a load, under the cell rails
-  aisleBed: { width: 0.2, height: 0.012 }, // C10: the rack's floor bed under the crane's rail, tied to the rack's front uprights
+  aisleBed: { width: 0.2, height: 0.012 },
+  // C10: the frames that hold the aisle: a line of posts this far across the aisle from the mast's line (past the carriage and
+  // the mast head), and an end frame this far beyond each end of the crane's rail (past the aisle drive and the hoist drive).
+  aisleFrame: { across: 0.2, beyond: 0.15 }, // C10: the rack's floor bed under the crane's rail, tied to the rack's front uprights
   mastColumnX: 0.19,
   carriage: { width: 0.38, bedHeight: 0.026, sideWidth: 0.08, sideHeight: 0.28, depth: 0.22 },
   fork: { width: 0.05, thickness: 0.04, length: 0.6, offset: 0.055 }, // the fork plate of the core: 0.16 wide, 0.6 long, 0.04 thick
@@ -59,7 +62,19 @@ function diagBrace(slotName: string, p0: Vec3, p1: Vec3, thickness: number, role
 
 /** The rack: `columns` bays of `levels` levels, load beams, a shelf per cell, depth ties, side/back bracing, and the aisle bed. */
 const rack: ModelBuilder = (view, context) => {
-  const { upright: u, beam, beamDepth, basePlate, basePlateHeight: bh, cellRail: rail, headroom, shelf, aisleBed, aisleMargin } = STACKER;
+  const {
+    upright: u,
+    beam,
+    beamDepth,
+    basePlate,
+    basePlateHeight: bh,
+    cellRail: rail,
+    headroom,
+    shelf,
+    aisleBed,
+    aisleMargin,
+    aisleFrame,
+  } = STACKER;
   const [w] = view.pose.size;
   // The drawn top: the core's box ends at the top shelf; the uprights rise `headroom` over it, as high as the mast.
   const yTop = view.pose.size[1] / 2 + headroom;
@@ -76,9 +91,21 @@ const rack: ModelBuilder = (view, context) => {
   ] as const;
   const xs = [-w / 2, ...Array.from({ length: cols - 1 }, (_, i) => (i + 1.5 - (cols + 1) / 2) * bay), w / 2];
   const out: Piece[] = [];
+  // Where the aisle lies comes from the core's layout: bay 0 at the foot of the mast, the rack's back face `forkStrokeM` + 0.325 m
+  // across from it, and the bays at `bayPitchM` from bay 0. The crane's rail runs `aisleMargin` beyond bay 0 and the last bay.
+  const aisleZ = -(setting(context, 'forkStrokeM') + rail.length / 2 + 0.025);
+  const centreX = (bay * (cols + 1)) / 2;
+  const [x0, x1] = [-aisleMargin - centreX, cols * bay + aisleMargin - centreX];
+  const sideZ = aisleZ - aisleFrame.across;
+  const ends = [x0 - aisleFrame.beyond, x1 + aisleFrame.beyond] as const;
+  const post = (slot: string, x: number, z: number) =>
+    out.push(
+      piece(`upright-${slot}`, box([u, yTop - floor - bh, u]), [x, (yTop + floor + bh) / 2, z], 'painted'),
+      piece(`base-${slot}`, box([basePlate, bh, basePlate]), [x, floor + bh / 2, z], 'steel'),
+    );
 
   for (const [face, z] of faces) {
-    out.push(piece(`header-${face}`, box([w, 0.05, 0.04], 0.002), [0, yTop - 0.025, z], 'painted'));
+    out.push(piece(`header-${face}`, box([ends[1] - ends[0], 0.05, 0.04], 0.002), [(ends[0] + ends[1]) / 2, yTop - 0.025, z], 'painted'));
     xs.forEach((x, i) => {
       out.push(piece(`upright-${face}-${i}`, box([u, yTop - floor - bh, u]), [x, (yTop + floor + bh) / 2, z], 'painted'));
       out.push(piece(`base-${face}-${i}`, box([basePlate, bh, basePlate]), [x, floor + bh / 2, z], 'steel'));
@@ -115,12 +142,9 @@ const rack: ModelBuilder = (view, context) => {
   }
   xs.forEach((x, i) => out.push(piece(`tie-${i}-top`, box([0.04, 0.045, rail.length - u], 0.002), [x, yTop - 0.025, cellMidZ], 'painted')));
 
-  // The aisle is part of the store: a floor bed under the crane's rail from end to end, tied to every front upright, so the mast
-  // stands in the rack. Where the aisle lies comes from the core's layout: bay 0 at the foot of the mast, the rack's back face
-  // `forkStrokeM` + 0.325 m across from it, and the bays at `bayPitchM` from bay 0.
-  const aisleZ = -(setting(context, 'forkStrokeM') + rail.length / 2 + 0.025);
-  const centreX = (bay * (cols + 1)) / 2;
-  const [x0, x1] = [-aisleMargin - centreX, cols * bay + aisleMargin - centreX];
+  // The aisle is part of the store (C10), so the mast always stands between upright frames: a line of posts across the aisle at
+  // every bay boundary and at both ends, a top beam along them, an end frame closing each end over the aisle, and floor ties from
+  // the rack's front face to the posts across a floor bed under the crane's rail. The fork passes between the posts of a bay.
   out.push(
     piece(
       'aisle-bed',
@@ -128,18 +152,24 @@ const rack: ModelBuilder = (view, context) => {
       [(x0 + x1) / 2, floor + aisleBed.height / 2, aisleZ],
       'painted',
     ),
+    piece('aisle-beam', box([ends[1] - ends[0], 0.05, 0.04], 0.002), [(ends[0] + ends[1]) / 2, yTop - 0.025, sideZ], 'painted'),
   );
-  const tieFrom = aisleZ + aisleBed.width / 2;
-  xs.forEach((x, i) =>
+  const floorTie = (slot: string, x: number, from: number) =>
     out.push(
-      piece(
-        `aisle-tie-${i}`,
-        box([0.04, aisleBed.height, frontZ - tieFrom], 0.002),
-        [x, floor + aisleBed.height / 2, (frontZ + tieFrom) / 2],
-        'painted',
-      ),
-    ),
-  );
+      piece(slot, box([0.04, aisleBed.height, from - sideZ], 0.002), [x, floor + aisleBed.height / 2, (from + sideZ) / 2], 'painted'),
+    );
+  xs.forEach((x, i) => {
+    post(`aisle-${i}`, x, sideZ);
+    floorTie(`aisle-tie-${i}`, x, frontZ);
+  });
+  ends.forEach((x, i) => {
+    const end = i === 0 ? 'a' : 'b';
+    post(`end-${end}-aisle`, x, sideZ);
+    post(`end-${end}-front`, x, frontZ);
+    post(`end-${end}-back`, x, back);
+    floorTie(`end-tie-${end}`, x, back);
+    out.push(piece(`end-top-${end}`, box([0.04, 0.045, back - sideZ], 0.002), [x, yTop - 0.025, (back + sideZ) / 2], 'painted'));
+  });
 
   // Side end-frame Warren-truss bracing and back-face truss bracing keep all cell fronts open for stored loads.
   const yBounds = [floor + bh, ...Array.from({ length: levels }, (_, l) => floor + (l + 1) * level), yTop - 0.025];
