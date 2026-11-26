@@ -101,19 +101,42 @@ export function trackProjectSources(
     );
   };
 
-  const run = async () => {
-    const mine = ++generation;
+  // One reading of the project at a time (R-04): the changes that arrive during it are joined into one more reading
+  // after it, so a burst of writes reads the project twice, not once per write.
+  let reading = false;
+  let again = false;
+
+  const run = async (): Promise<void> => {
     const { isProjectOpen, fileTree, loadedFiles, projectConfig, projectSession } = store.getState();
     if (!isProjectOpen || !fileTree) {
+      // closing clears at once, and the reading in flight, if any, is not published
+      ++generation;
+      again = false;
       publish([]);
       return;
     }
+    if (reading) {
+      again = true;
+      return;
+    }
+    reading = true;
+    const mine = ++generation;
     const libraries = configuredLibraries(projectConfig);
-    const [sources, unlisted] = await Promise.all([
-      readProjectSources({ tree: fileTree, libraries, loaded: loadedFiles, read }),
-      unlistedSourceFiles(fileTree, libraries),
-    ]);
-    if (!stopped && mine === generation) publish(sources, unlisted, projectSession ?? 0);
+    let found: [ProjectSource[], string[]];
+    try {
+      found = await Promise.all([
+        readProjectSources({ tree: fileTree, libraries, loaded: loadedFiles, read }),
+        unlistedSourceFiles(fileTree, libraries),
+      ]);
+    } finally {
+      reading = false;
+    }
+    if (stopped) return;
+    if (again) {
+      again = false;
+      return run();
+    }
+    if (mine === generation) publish(found[0], found[1], projectSession ?? 0);
   };
 
   const runNow = () => {
