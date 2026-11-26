@@ -1,14 +1,14 @@
 ## From a signal to a number
 
-A level sensor, a thermometer or a pressure transmitter does not give the program litres, degrees or bars. It gives an electrical signal, a current or a voltage, and the analog input of the controller turns that signal into a whole number of **raw counts**: for example 0 for the lowest signal and 1000 for the highest. The program sees only the counts.
+A level sensor, a thermometer or a pressure transmitter does not give the program litres, degrees or bars. It gives an electrical signal, a current or a voltage, and the analog input of the controller turns that signal into a whole number of **raw counts**: for example 0 for the lowest signal and 4000 for the highest. The program sees only the counts.
 
 **Scaling** turns raw counts into **engineering units**, the units a person reads and a limit is written in. When both ranges start at zero, the rule is one line: the value is the raw count times the top of the units, divided by the top of the counts.
 
 | Raw counts | Fraction of the range | Percent |
 | ---------- | --------------------- | ------- |
 | 0          | none                  | 0       |
-| 250        | a quarter             | 25      |
-| 1000       | all                   | 100     |
+| 1000       | a quarter             | 25      |
+| 4000       | all                   | 100     |
 
 When the units start elsewhere, for example a thermometer from −50 to 250 °C, subtract the low end of the counts first, scale by the width of each range and add the low end of the units at the end.
 
@@ -16,17 +16,17 @@ When the units start elsewhere, for example a thermometer from −50 to 250 °C,
 
 The scaling of this lesson uses only whole numbers, INT or DINT. Whole numbers are exact and fast, but three things decide whether the result is right.
 
-**The order.** Division of whole numbers drops the remainder, so divide last. Dividing first throws the information away before the multiplication can use it.
+**The order.** Division of whole numbers drops the remainder, so divide last. Dividing first throws the information away before the multiplication can use it. Take a speed dial that gives 0 to 4000 counts for 0 to 250 revolutions per minute, read in `Dial` and scaled into `Rpm`:
 
-| Raw  | `(Raw / 1000) * 100` | `(Raw * 100) / 1000` |
-| ---- | -------------------- | -------------------- |
-| 450  | 0                    | 45                   |
-| 999  | 0                    | 99                   |
-| 1000 | 100                  | 100                  |
+| Dial | `(Dial / 4000) * 250` | `(Dial * 250) / 4000` |
+| ---- | --------------------- | --------------------- |
+| 1800 | 0                     | 112                   |
+| 3999 | 0                     | 249                   |
+| 4000 | 250                   | 250                   |
 
-**The rounding.** Even in the right order the division cuts, it does not round: 999 counts give 99, not 99.9. For values that are never negative, add half the divisor before you divide to round to the nearest: `(Raw * 100 + 500) / 1000` gives 100 for 999 counts.
+**The rounding.** Even in the right order the division cuts, it does not round: 3999 counts give 249, not 249.9. For values that are never negative, add half the divisor before you divide to round to the nearest: `(Dial * 250 + 2000) / 4000` gives 250 for 3999 counts.
 
-**The range of the product.** The largest number in the computation is the product before the division, not the raw count and not the result. Here it is 1000 × 100 = 100000, far above 32767, the largest INT. Choose the type for that product: declare the variables DINT and the product fits.
+**The range of the product.** The largest number in the computation is the product before the division, not the raw count and not the result. Here it is 4000 × 250 = 1000000, far above 32767, the largest INT. Choose the type for that product: declare the variables DINT and the product fits.
 
 ## Worked example
 
@@ -70,27 +70,27 @@ caption: The oven heats and cools; each lamp is a comparison of the temperature 
 
 - Dividing before multiplying. The result stays 0 until the input reaches full scale.
 - Expecting the division to round. `/` cuts the remainder; add half the divisor first when you need the nearest value.
-- Choosing the type from the raw count. An INT holds 1000, but `Raw * 100` reaches 100000, which does not fit in 16 bits.
-- Comparing raw counts with a limit in units. `Raw >= 80` is not 80 percent; scale first, then compare.
+- Choosing the type from the raw count. An INT holds 4000, but `Dial * 250` reaches 1000000, which does not fit in 16 bits.
+- Comparing raw counts with a limit in units. `Dial >= 200` is not 200 revolutions per minute; scale first, then compare.
 - Trusting a value outside the range. A broken wire or a short circuit gives counts below 0 or above full scale; keep the result inside its range with LIMIT, or raise a fault.
 - Dividing by a span that can be zero. When the counts' range comes from a setting, test it first: a division by zero stops the program.
 
 ## Check yourself
 
 ```quiz
-question: Raw is 450 counts of a range from 0 to 1000. The program has Percent := (Raw / 1000) * 100; with DINT variables. What is Percent?
+question: Dial is 1800 counts of a range from 0 to 4000. The program has Rpm := (Dial / 4000) * 250; with DINT variables. What is Rpm?
 options:
-  - { text: '0', correct: true, feedback: 'Yes. 450 / 1000 is 0 with whole numbers, and 0 times 100 is still 0.' }
-  - { text: '45', feedback: 'That is what (Raw * 100) / 1000 gives. Dividing first loses the 450 before it is multiplied.' }
-  - { text: '4', feedback: 'There is no remainder left to make 4: the division gives 0 at once.' }
+  - { text: '0', correct: true, feedback: 'Yes. 1800 / 4000 is 0 with whole numbers, and 0 times 250 is still 0.' }
+  - { text: '112', feedback: 'That is what multiplying first gives. Dividing first loses the 1800 before it is multiplied.' }
+  - { text: '11', feedback: 'There is no remainder left to make 11: the division gives 0 at once.' }
 ```
 
 ```quiz
-question: A thermometer gives 0 to 4000 counts and the program computes Raw * 250 before it divides by 4000. Which type do the variables of the computation need?
+question: A flow meter gives 0 to 2000 counts for 0 to 600 litres per minute, and the program computes Flow * 600 before it divides by 2000. Which type do the variables of the computation need?
 options:
-  - { text: 'DINT', correct: true, feedback: 'Right. The product reaches 1000000, far above 32767, and a DINT holds it.' }
-  - { text: 'INT, because the result is at most 250', feedback: 'The result fits, but the product is formed first, and it does not fit in an INT.' }
-  - { text: 'INT, because the count is at most 4000', feedback: 'The count fits, but the product of 4000 and 250 does not.' }
+  - { text: 'DINT', correct: true, feedback: 'Right. The product reaches 1200000, far above 32767, and a DINT holds it.' }
+  - { text: 'INT, because the result is at most 600', feedback: 'The result fits, but the product is formed first, and it does not fit in an INT.' }
+  - { text: 'INT, because the count is at most 2000', feedback: 'The count fits, but the product of 2000 and 600 does not.' }
 ```
 
 ## What you will do in the practice

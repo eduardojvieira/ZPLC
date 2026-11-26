@@ -74,4 +74,4 @@ options:
 
 ## What you will do in the practice
 
-The starting program already stores Step in StepWas and writes the three comparisons for Low, Exact and High, but nothing ever changes Total. You will make Total grow by 5 on each press of Step, however long the press lasts, and go back to 0 while Reset is TRUE. The scenario presses Step three times, the first press lasting two scans, and presses Reset at {{t:80}} ms. Then press {{ui:learn.check}}.
+The starting program writes the three comparisons for Low, Exact and High, and stores Step in StepWas on its first lines, before any condition could read the value of the previous scan. Nothing ever changes Total. You will make Total grow by 5 on each press of Step, however long the press lasts, and go back to 0 while Reset is TRUE. The scenario presses Step three times, the first press lasting two scans, and presses Reset at {{t:80}} ms. Then press {{ui:learn.check}}.

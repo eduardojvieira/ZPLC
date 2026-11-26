@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct the starting diagram, save it, then press {{ui:learn.check}}. The starting diagram multiplies Raw by 100 but never divides by 4095, so LIMIT clamps the product to 100 from the first scan and HighLevel lights at {{t:10}} ms. Change it so that Level is the level in percent, from 0 to 100, before the LIMIT and the comparison with 75. Place and wire the missing block yourself: the stand-in for Raw, the MUL, the LIMIT and the comparison are already there.",
+      "body": "Correct the starting diagram, save it, then press {{ui:learn.check}}. The starting diagram multiplies Raw by 100 but never divides by 4095, so LIMIT clamps the product to 100 from the first scan and HighLevel lights at {{t:10}} ms. Change it so that Level is the level in percent, from 0 to 100, before the LIMIT and the comparison with 75. Place and connect the missing block yourself: the stand-in for Raw, the MUL, the LIMIT and the comparison are already there.",
       "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "Place a DIV block, wire MUL.OUT to its IN1 and a DINT constant 4095 to its IN2, then wire DIV.OUT to LIMIT.IN. Leave the constant 75 and the wire to HighLevel as they are."
+      "text": "Place a DIV block, connect MUL.OUT to its IN1 and a DINT constant 4095 to its IN2, then connect DIV.OUT to LIMIT.IN. Leave the constant 75 and the connection to HighLevel as they are."
     }
   ],
   "faultCases": [

@@ -15,10 +15,10 @@ El tipo se escribe después del nombre cuando se declara la variable, y el valor
 Una **asignación** calcula la expresión a la derecha de `:=` y guarda el resultado en la variable de la izquierda. Los operadores para números enteros son `+`, `-`, `*`, `/` y `MOD`.
 
 ```st
-Total := Total + 5;
+Level := Level + 2;
 ```
 
-Esta línea lee el valor que Total tiene ahora, le suma 5 y guarda la suma otra vez en Total. Recuerde que el programa se ejecuta de arriba abajo en cada ciclo: una línea como esta, sola, suma 5 en cada ciclo, cien veces por segundo si el controlador ejecuta cien ciclos por segundo. Para sumar una vez por pulsación, póngala bajo una condición que esté en TRUE durante un solo ciclo, el flanco ascendente de la entrada: la entrada está en TRUE ahora y estaba en FALSE en el ciclo anterior.
+Esta línea lee el valor que Level tiene ahora, le suma 2 y guarda la suma otra vez en Level. Recuerde que el programa se ejecuta de arriba abajo en cada ciclo: una línea como esta, sola, suma 2 en cada ciclo, cien veces por segundo si el controlador ejecuta cien ciclos por segundo. Para sumar una vez por pulsación, póngala bajo una condición que esté en TRUE durante un solo ciclo, el flanco ascendente de la entrada: la entrada está en TRUE ahora y estaba en FALSE en el ciclo anterior.
 
 La división de números enteros da un número entero y descarta el resto: `17 / 5` es 3. `MOD` da ese resto: `17 MOD 5` es 2.
 
@@ -77,7 +77,7 @@ caption: Una cuenta por auto, por mucho que se quede sobre el sensor; Full es la
 ## Errores comunes
 
 - Sumar en cada ciclo. `Cars := Cars + 1;` sin la condición del flanco cuenta los ciclos que el auto pasa sobre el sensor, no los autos.
-- Escribir `=` donde quiere decir `:=`. `Cars = Cars + 1` es una pregunta, no una orden: no guarda nada.
+- Escribir `=` donde quiere decir `:=`. El compilador rechaza `Cars = Cars + 1;`: en una instrucción `=` solo compara dos valores, y un valor se guarda solo con `:=`.
 - Elegir la comparación equivocada. `>=` está en TRUE en el propio límite y `>` no, así que `Cars > 3` nunca encendería la lámpara en un patio de tres lugares.
 - Olvidar el rango. Un INT guarda como máximo 32767; uno más y el valor es incorrecto, da la vuelta al extremo negativo. Una cuenta que puede crecer mucho necesita un DINT.
 - Esperar un resto de `/`. `7 / 2` es 3 con números enteros; la mitad se pierde.

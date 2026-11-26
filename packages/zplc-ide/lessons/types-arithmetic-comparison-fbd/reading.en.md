@@ -1,6 +1,6 @@
-## Numbers on wires
+## Numbers on connections
 
-In a Function Block Diagram a number travels on a wire just as an ON or OFF does. The wire takes the type of the value it carries: a BOOL is a yes or a no, an INT is a whole number from −32768 to 32767. Four kinds of block do the work of this lesson.
+In a Function Block Diagram a number travels on a connection just as an ON or OFF does. The connection takes the type of the value it carries: a BOOL is a yes or a no, an INT is a whole number from −32768 to 32767. Four kinds of block do the work of this lesson.
 
 | Block          | Inputs      | Output | What it gives                                             |
 | -------------- | ----------- | ------ | --------------------------------------------------------- |
@@ -40,9 +40,9 @@ caption: One count per bottle, and the comparison turns the number into the lamp
 
 ## Common mistakes
 
-- Wiring the sensor straight to G of the SEL. G stays TRUE for every scan the bottle is there, so the sum goes back on every scan.
+- Connecting the sensor straight to G of the SEL. G stays TRUE for every scan the bottle is there, so the sum goes back on every scan.
 - Swapping IN0 and IN1 of a SEL. IN0 is the value while G is FALSE.
-- Wiring ADD.OUT straight to the variable. The total then grows on every scan.
+- Connecting ADD.OUT straight to the variable. The total then grows on every scan.
 - Giving the constant another type than the variable. Keep it INT when the total is an INT.
 - Using GE where the task asks for EQ: GE stays TRUE above the limit too.
 
@@ -57,7 +57,7 @@ options:
 ```
 
 ```quiz
-question: The input of a total is wired straight to G of the SEL, without the R_TRIG, and the ADD adds 5. A press lasts three scans. How much does the total grow?
+question: The input of a total is connected straight to G of the SEL, without the R_TRIG, and the ADD adds 5. A press lasts three scans. How much does the total grow?
 options:
   - { text: '15', correct: true, feedback: 'Right. G is TRUE on three scans, so the sum is written back three times.' }
   - { text: '5', feedback: 'That needs the R_TRIG, whose Q is TRUE on one scan only.' }

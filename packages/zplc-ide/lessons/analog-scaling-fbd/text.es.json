@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "Coloque un bloque DIV, conecte MUL.OUT a su IN1 y una constante DINT 4095 a su IN2, y luego conecte DIV.OUT a LIMIT.IN. Deje como están la constante 75 y el cable hacia HighLevel."
+      "text": "Coloque un bloque DIV, conecte MUL.OUT a su IN1 y una constante DINT 4095 a su IN2, y luego conecte DIV.OUT a LIMIT.IN. Deje como están la constante 75 y la conexión hacia HighLevel."
     }
   ],
   "faultCases": [

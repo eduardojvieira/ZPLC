@@ -74,4 +74,4 @@ options:
 
 ## Qué hará en la práctica
 
-El programa inicial ya guarda Step en StepWas y escribe las tres comparaciones para Low, Exact y High, pero nada cambia nunca Total. Usted hará que Total crezca 5 en cada pulsación de Step, dure lo que dure la pulsación, y vuelva a 0 mientras Reset esté en TRUE. El escenario pulsa Step tres veces, la primera pulsación dura dos ciclos, y pulsa Reset a los {{t:80}} ms. Después pulse {{ui:learn.check}}.
+El programa inicial escribe las tres comparaciones para Low, Exact y High, y guarda Step en StepWas en sus primeras líneas, antes de que una condición pueda leer el valor del ciclo anterior. Nada cambia nunca Total. Usted hará que Total crezca 5 en cada pulsación de Step, dure lo que dure la pulsación, y vuelva a 0 mientras Reset esté en TRUE. El escenario pulsa Step tres veces, la primera pulsación dura dos ciclos, y pulsa Reset a los {{t:80}} ms. Después pulse {{ui:learn.check}}.

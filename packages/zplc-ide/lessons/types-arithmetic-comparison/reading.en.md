@@ -15,10 +15,10 @@ The type is written after the name when you declare the variable, and the value 
 An **assignment** computes the expression on the right of `:=` and stores the result in the variable on the left. The operators for whole numbers are `+`, `-`, `*`, `/` and `MOD`.
 
 ```st
-Total := Total + 5;
+Level := Level + 2;
 ```
 
-This line reads the value Total has now, adds 5 and stores the sum back in Total. Remember that the program runs from top to bottom on every scan: a line like this, alone, adds 5 on every scan, a hundred times a second if the controller runs a hundred scans a second. To add once per press, put it under a condition that is TRUE for one scan only, the rising edge of the input: the input is TRUE now and was FALSE on the previous scan.
+This line reads the value Level has now, adds 2 and stores the sum back in Level. Remember that the program runs from top to bottom on every scan: a line like this, alone, adds 2 on every scan, a hundred times a second if the controller runs a hundred scans a second. To add once per press, put it under a condition that is TRUE for one scan only, the rising edge of the input: the input is TRUE now and was FALSE on the previous scan.
 
 Division of whole numbers gives a whole number and drops the remainder: `17 / 5` is 3. `MOD` gives that remainder: `17 MOD 5` is 2.
 
@@ -77,7 +77,7 @@ caption: One count per car, however long it stands on the sensor; Full is the an
 ## Common mistakes
 
 - Adding on every scan. `Cars := Cars + 1;` without the edge condition counts the scans while the car stands on the sensor, not the cars.
-- Writing `=` where you mean `:=`. `Cars = Cars + 1` is a question, not an order: it stores nothing.
+- Writing `=` where you mean `:=`. The compiler refuses `Cars = Cars + 1;`: in a statement `=` only compares two values, and a value is stored only with `:=`.
 - Picking the wrong comparison. `>=` is TRUE at the limit itself and `>` is not, so `Cars > 3` would never light the lamp in a yard of three places.
 - Forgetting the range. An INT holds at most 32767; one more and the value is wrong, it wraps around to the negative end. A count that can grow large needs a DINT.
 - Expecting a remainder from `/`. `7 / 2` is 3 with whole numbers; the half is gone.

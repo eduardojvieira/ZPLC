@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Total is an INT, so Total + 5 is an INT. A rising edge is Step TRUE now and StepWas FALSE on the previous scan."
+      "text": "Total is an INT, so adding an INT constant to it gives an INT. A rising edge is Step TRUE now and StepWas FALSE on the previous scan."
     },
     {
       "level": 2,

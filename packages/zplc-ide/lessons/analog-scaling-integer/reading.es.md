@@ -1,14 +1,14 @@
 ## De una señal a un número
 
-Un sensor de nivel, un termómetro o un transmisor de presión no le dan al programa litros, grados ni bares. Dan una señal eléctrica, una corriente o una tensión, y la entrada analógica del controlador convierte esa señal en un número entero de **cuentas en bruto**: por ejemplo 0 para la señal más baja y 1000 para la más alta. El programa ve solo las cuentas.
+Un sensor de nivel, un termómetro o un transmisor de presión no le dan al programa litros, grados ni bares. Dan una señal eléctrica, una corriente o una tensión, y la entrada analógica del controlador convierte esa señal en un número entero de **cuentas en bruto**: por ejemplo 0 para la señal más baja y 4000 para la más alta. El programa ve solo las cuentas.
 
 El **escalado** convierte las cuentas en bruto en **unidades de ingeniería**, las unidades que lee una persona y en las que se escribe un límite. Cuando los dos rangos empiezan en cero, la regla es una línea: el valor es la cuenta en bruto por el tope de las unidades, dividido por el tope de las cuentas.
 
 | Cuentas en bruto | Fracción del rango | Porcentaje |
 | ---------------- | ------------------ | ---------- |
 | 0                | nada               | 0          |
-| 250              | un cuarto          | 25         |
-| 1000             | todo               | 100        |
+| 1000             | un cuarto          | 25         |
+| 4000             | todo               | 100        |
 
 Cuando las unidades empiezan en otro valor, por ejemplo un termómetro de −50 a 250 °C, reste primero el extremo bajo de las cuentas, escale por el ancho de cada rango y sume al final el extremo bajo de las unidades.
 
@@ -16,17 +16,17 @@ Cuando las unidades empiezan en otro valor, por ejemplo un termómetro de −50 
 
 El escalado de esta lección usa solo números enteros, INT o DINT. Los números enteros son exactos y rápidos, pero tres cosas deciden si el resultado es correcto.
 
-**El orden.** La división de números enteros descarta el resto, así que divida al final. Dividir primero tira la información antes de que la multiplicación pueda usarla.
+**El orden.** La división de números enteros descarta el resto, así que divida al final. Dividir primero tira la información antes de que la multiplicación pueda usarla. Tome un selector de velocidad que da de 0 a 4000 cuentas para 0 a 250 revoluciones por minuto, leído en `Dial` y escalado en `Rpm`:
 
-| Raw  | `(Raw / 1000) * 100` | `(Raw * 100) / 1000` |
-| ---- | -------------------- | -------------------- |
-| 450  | 0                    | 45                   |
-| 999  | 0                    | 99                   |
-| 1000 | 100                  | 100                  |
+| Dial | `(Dial / 4000) * 250` | `(Dial * 250) / 4000` |
+| ---- | --------------------- | --------------------- |
+| 1800 | 0                     | 112                   |
+| 3999 | 0                     | 249                   |
+| 4000 | 250                   | 250                   |
 
-**El redondeo.** Aun en el orden correcto la división corta, no redondea: 999 cuentas dan 99, no 99,9. Para valores que nunca son negativos, sume la mitad del divisor antes de dividir para redondear al más cercano: `(Raw * 100 + 500) / 1000` da 100 para 999 cuentas.
+**El redondeo.** Aun en el orden correcto la división corta, no redondea: 3999 cuentas dan 249, no 249,9. Para valores que nunca son negativos, sume la mitad del divisor antes de dividir para redondear al más cercano: `(Dial * 250 + 2000) / 4000` da 250 para 3999 cuentas.
 
-**El rango del producto.** El número más grande del cálculo es el producto antes de la división, no la cuenta en bruto ni el resultado. Aquí es 1000 × 100 = 100000, muy por encima de 32767, el mayor INT. Elija el tipo para ese producto: declare las variables DINT y el producto cabe.
+**El rango del producto.** El número más grande del cálculo es el producto antes de la división, no la cuenta en bruto ni el resultado. Aquí es 4000 × 250 = 1000000, muy por encima de 32767, el mayor INT. Elija el tipo para ese producto: declare las variables DINT y el producto cabe.
 
 ## Ejemplo resuelto
 
@@ -70,27 +70,27 @@ caption: El horno se calienta y se enfría; cada lámpara es una comparación de
 
 - Dividir antes de multiplicar. El resultado queda en 0 hasta que la entrada llega al tope de la escala.
 - Esperar que la división redondee. `/` corta el resto; sume antes la mitad del divisor cuando necesite el valor más cercano.
-- Elegir el tipo según la cuenta en bruto. Un INT guarda 1000, pero `Raw * 100` llega a 100000, que no cabe en 16 bits.
-- Comparar cuentas en bruto con un límite en unidades. `Raw >= 80` no es el 80 por ciento; primero escale, después compare.
+- Elegir el tipo según la cuenta en bruto. Un INT guarda 4000, pero `Dial * 250` llega a 1000000, que no cabe en 16 bits.
+- Comparar cuentas en bruto con un límite en unidades. `Dial >= 200` no son 200 revoluciones por minuto; primero escale, después compare.
 - Confiar en un valor fuera del rango. Un cable cortado o un cortocircuito dan cuentas por debajo de 0 o por encima del tope; mantenga el resultado dentro de su rango con LIMIT, o señale una falla.
 - Dividir por un ancho que puede valer cero. Cuando el rango de las cuentas viene de un ajuste, pruébelo antes: una división por cero detiene el programa.
 
 ## Compruébelo usted
 
 ```quiz
-question: Raw vale 450 cuentas de un rango de 0 a 1000. El programa tiene Percent := (Raw / 1000) * 100; con variables DINT. ¿Cuánto vale Percent?
+question: Dial vale 1800 cuentas de un rango de 0 a 4000. El programa tiene Rpm := (Dial / 4000) * 250; con variables DINT. ¿Cuánto vale Rpm?
 options:
-  - { text: '0', correct: true, feedback: 'Sí. 450 / 1000 es 0 con números enteros, y 0 por 100 sigue siendo 0.' }
-  - { text: '45', feedback: 'Eso da (Raw * 100) / 1000. Dividir primero pierde el 450 antes de multiplicarlo.' }
-  - { text: '4', feedback: 'No queda resto con el que formar 4: la división da 0 de entrada.' }
+  - { text: '0', correct: true, feedback: 'Sí. 1800 / 4000 es 0 con números enteros, y 0 por 250 sigue siendo 0.' }
+  - { text: '112', feedback: 'Eso da multiplicar primero. Dividir primero pierde el 1800 antes de multiplicarlo.' }
+  - { text: '11', feedback: 'No queda resto con el que formar 11: la división da 0 de entrada.' }
 ```
 
 ```quiz
-question: Un termómetro da de 0 a 4000 cuentas y el programa calcula Raw * 250 antes de dividir por 4000. ¿Qué tipo necesitan las variables del cálculo?
+question: Un caudalímetro da de 0 a 2000 cuentas para 0 a 600 litros por minuto, y el programa calcula Flow * 600 antes de dividir por 2000. ¿Qué tipo necesitan las variables del cálculo?
 options:
-  - { text: 'DINT', correct: true, feedback: 'Correcto. El producto llega a 1000000, muy por encima de 32767, y un DINT lo guarda.' }
-  - { text: 'INT, porque el resultado es como máximo 250', feedback: 'El resultado cabe, pero el producto se forma primero y no cabe en un INT.' }
-  - { text: 'INT, porque la cuenta es como máximo 4000', feedback: 'La cuenta cabe, pero el producto de 4000 por 250 no.' }
+  - { text: 'DINT', correct: true, feedback: 'Correcto. El producto llega a 1200000, muy por encima de 32767, y un DINT lo guarda.' }
+  - { text: 'INT, porque el resultado es como máximo 600', feedback: 'El resultado cabe, pero el producto se forma primero y no cabe en un INT.' }
+  - { text: 'INT, porque la cuenta es como máximo 2000', feedback: 'La cuenta cabe, pero el producto de 2000 por 600 no.' }
 ```
 
 ## Qué hará en la práctica
