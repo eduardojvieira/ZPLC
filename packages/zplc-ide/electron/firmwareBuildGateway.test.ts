@@ -283,7 +283,13 @@ describe('firmware build gateway', () => {
     expect(calls).toBe(0);
     // The selection survived the refusal, so it was the platform rule that refused, not a missing selection.
     host.platform = 'linux';
-    const built = gateway.start(7, { ideId: 'nucleo_h743zi' }, async () => ready(), async () => true, async () => ({ ok: true }));
+    const built = gateway.start(
+      7,
+      { ideId: 'nucleo_h743zi' },
+      async () => ready(),
+      async () => true,
+      async () => ({ ok: true }),
+    );
     await expect(built).resolves.toEqual({ ok: true });
   });
 

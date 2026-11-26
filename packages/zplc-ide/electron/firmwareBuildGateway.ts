@@ -135,13 +135,7 @@ export function createFirmwareBuildGateway(options: { platform?: NodeJS.Platform
     approve: Approve,
     firmwareBuild: Build,
   ): Promise<unknown | null> => {
-    if (
-      !offered() ||
-      !validOwner(owner) ||
-      !isAllowedFirmwareBuildRequest(request) ||
-      !selection ||
-      selection.owner !== owner
-    )
+    if (!offered() || !validOwner(owner) || !isAllowedFirmwareBuildRequest(request) || !selection || selection.owner !== owner)
       throw unavailable();
     const operation = acquire(owner);
     const controller = new AbortController();
