@@ -106,12 +106,17 @@ export function trackProjectSources(
   let reading = false;
   let again = false;
 
+  /** A close or a project switch abandons the reading in flight: it is not published, and the next one starts at once. */
+  const abandon = () => {
+    ++generation;
+    reading = false;
+    again = false;
+  };
+
   const run = async (): Promise<void> => {
     const { isProjectOpen, fileTree, loadedFiles, projectConfig, projectSession } = store.getState();
     if (!isProjectOpen || !fileTree) {
-      // closing clears at once, and the reading in flight, if any, is not published
-      ++generation;
-      again = false;
+      abandon();
       publish([]);
       return;
     }
@@ -129,14 +134,15 @@ export function trackProjectSources(
         unlistedSourceFiles(fileTree, libraries),
       ]);
     } finally {
-      reading = false;
+      // an abandoned reading leaves the flags to the reading that replaced it
+      if (mine === generation) reading = false;
     }
-    if (stopped) return;
+    if (stopped || mine !== generation) return;
     if (again) {
       again = false;
       return run();
     }
-    if (mine === generation) publish(found[0], found[1], projectSession ?? 0);
+    publish(found[0], found[1], projectSession ?? 0);
   };
 
   const runNow = () => {
@@ -154,6 +160,7 @@ export function trackProjectSources(
   };
 
   const unsubscribe = store.subscribe((state, previous) => {
+    if (state.projectSession !== previous.projectSession) abandon();
     if (
       state.isProjectOpen !== previous.isProjectOpen ||
       state.fileTree !== previous.fileTree ||
