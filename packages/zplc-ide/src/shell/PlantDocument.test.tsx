@@ -167,6 +167,26 @@ describe('the plant document (PLS-001, PLS-002)', () => {
     }
   });
 
+  it('AIX-012 a scene written from outside shows in the plant document without a restart', async () => {
+    let scene: string | undefined;
+    const notFound = () => Promise.reject(Object.assign(new Error('missing'), { name: 'NotFoundError' }));
+    const root = {
+      getDirectoryHandle: notFound,
+      getFileHandle: async (name: string) =>
+        name === 'scene.json' && scene !== undefined ? { getFile: async () => ({ size: scene!.length, text: async () => scene! }) } : notFound(),
+    };
+    useIDEStore.setState({ directoryHandle: root as unknown as FileSystemDirectoryHandle });
+    try {
+      dom.render(<PlantDocument controller={undefined} visible />);
+      await dom.waitFor(() => expect(dom.screen.getByRole('button', { name: dom.t('studio.plant.openScene') })).toBeTruthy());
+      scene = '{}';
+      await dom.act(async () => usePlantDocument.getState().notifyExternalPlantChange());
+      await dom.waitFor(() => expect(dom.screen.queryByRole('button', { name: dom.t('studio.plant.openScene') })).toBeNull());
+    } finally {
+      useIDEStore.setState({ directoryHandle: null });
+    }
+  });
+
   it('PLS-010 visible is false while another tab of the group is active', () => {
     const { container } = dom.render(<PlantDocument controller={undefined} visible={false} />);
     expect(container.querySelector('[data-plant-document]')?.getAttribute('data-visible')).toBe('false');

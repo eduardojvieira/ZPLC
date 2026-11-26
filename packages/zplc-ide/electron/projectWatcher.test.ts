@@ -134,3 +134,42 @@ describe('project watcher (IDE-004)', () => {
     watcher.stopAll();
   });
 });
+
+describe('the watch fallback (AIX-012)', () => {
+  test('watches the root, src and tests one level deep when a recursive watch cannot start', async () => {
+    const listeners = new Map<string, (event: string, filename: string | null) => void>();
+    const calls: Array<{ path: string; recursive: boolean }> = [];
+    let closed = 0;
+    const fake = {
+      on: () => fake,
+      close: () => {
+        closed += 1;
+      },
+    };
+    const events: ProjectChange[] = [];
+    const watcher = createProjectWatcher({
+      send: (_ownerId, change) => events.push(change),
+      debounceMs: 20,
+      watch: ((path: string, options: { recursive: boolean }, callback: (event: string, filename: string | null) => void) => {
+        calls.push({ path, recursive: options.recursive });
+        if (options.recursive) throw new Error('recursive watch is not available');
+        listeners.set(path, callback);
+        return fake;
+      }) as never,
+    });
+    watcher.start(1, 'r', '/p');
+    expect(calls).toEqual([
+      { path: '/p', recursive: true },
+      { path: '/p', recursive: false },
+      { path: join('/p', 'src'), recursive: false },
+      { path: join('/p', 'tests'), recursive: false },
+    ]);
+    listeners.get('/p')!('change', 'zplc.json');
+    listeners.get(join('/p', 'src'))!('change', 'Motor.st');
+    listeners.get(join('/p', 'tests'))!('rename', 'run.scenario.json');
+    await wait(120);
+    expect(events).toEqual([{ rootId: 'r', paths: ['zplc.json', 'src/Motor.st', 'tests/run.scenario.json'], overflow: false }]);
+    watcher.stopAll();
+    expect(closed).toBe(3);
+  });
+});
