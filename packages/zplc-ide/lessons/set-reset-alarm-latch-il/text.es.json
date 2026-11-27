@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexione",
       "body": "¿Qué orden elegiría para una orden de parada, y cuál para una solicitud de arranque? Piense qué debe ganar cuando se pulsan ambas.",
-      "checkpoint": "Una parada o un reset normalmente debe ganar, así que su línea R va al final; la elección es una decisión de diseño, no un valor por defecto. Los bloques SR y RS fijan esa prioridad en el bloque, mientras que S y R la dejan al orden de sus líneas."
+      "checkpoint": "Cuál de las dos órdenes debe ganar cuando llegan juntas es una decisión de diseño, no un valor por defecto. Los bloques SR y RS fijan esa prioridad en el bloque, mientras que S y R la dejan al orden de sus líneas."
     }
   ],
   "hints": [

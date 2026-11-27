@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial mantiene Lamp en OFF todo el tiempo, así que nunca pasa a ON a los {{t:550}} ms. Cámbielo para que Lamp cambie de estado cada {{t:300}} ms mientras Enable está en ON, con el primer cambio {{t:300}} ms después de que Enable pasa a ON, y para que Lamp esté en OFF en el ciclo en que Enable cae. Escriba usted mismo las instrucciones: las declaraciones ya están.",
-      "checkpoint": "Lamp sigue a LampOn solo mientras Enable está en ON."
+      "checkpoint": "El programa se compila sin errores y usted puede decir qué hace Lamp en el ciclo en que Enable cae."
     },
     {
       "key": "run",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexione",
       "body": "Un parpadeador que ignora Enable ya estaría en ON a los {{t:350}} ms. ¿Cuál de sus líneas marca la diferencia?",
-      "checkpoint": "Poner en marcha el temporizador con Enable desplaza el primer cambio, y el AND con Enable detiene la lámpara de inmediato."
+      "checkpoint": "Puede señalar la línea suya que fija el momento del primer cambio y la línea que fija lo que muestra Lamp cuando Enable cae."
     }
   ],
   "hints": [

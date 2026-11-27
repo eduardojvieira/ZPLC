@@ -49,7 +49,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "El LED debe estar encendido en dos casos: mientras Blink es TRUE o mientras Button es TRUE. ¿Qué operador booleano expresa “o”?"
+      "text": "Mire la línea que asigna Led en el programa inicial: usa Blink e ignora Button. Diga con palabras cuándo debe estar encendido el LED y compare sus palabras con esa línea."
     },
     {
       "level": 2,

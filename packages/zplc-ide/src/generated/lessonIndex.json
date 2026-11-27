@@ -1310,7 +1310,7 @@
     },
     {
       "id": "ld-scan-cycle",
-      "version": 5,
+      "version": 6,
       "order": 8,
       "module": 1,
       "level": "foundation",
@@ -1370,7 +1370,7 @@
             {
               "key": "objective",
               "title": "Objective",
-              "body": "In src/ScanOrder.ld.json two rungs are drawn. One copies the button StartButton into a memory bit ButtonSeen, and the other shows ButtonSeen on the Lamp. They are in the wrong order, so the lamp follows the button one scan late. Make the lamp follow the button in the same scan.",
+              "body": "In src/ScanOrder.ld.json two rungs are drawn. One copies the button StartButton into a memory bit ButtonSeen, and the other shows ButtonSeen on the Lamp. The lamp follows the button one scan late. Make the lamp follow the button in the same scan.",
               "checkpoint": "You can say which of the two rungs calculates a value and which one uses it."
             },
             {
@@ -1382,7 +1382,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct the starting program, save it, then press Check. The starting program solves the lamp rung before it updates ButtonSeen, so the lamp lights one scan late, at 20 ms instead of 10 ms. Change it so that Lamp turns ON at 10 ms and OFF at 30 ms, in the same scans as StartButton. Keep every contact and coil as it is.",
+              "body": "Correct the starting program, save it, then press Check. The starting program lights the lamp one scan late, at 20 ms instead of 10 ms. Change it so that Lamp turns ON at 10 ms and OFF at 30 ms, in the same scans as StartButton. Keep every contact and coil as it is.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -1401,7 +1401,7 @@
               "key": "reflect",
               "title": "Reflect",
               "body": "A scan takes the same few milliseconds every time. Why can a one-scan delay be harmless in one machine and a problem in another? What would happen if the lamp were a fast counter input?",
-              "checkpoint": "A delay of one scan only matters when something needs the value sooner: a chain of rungs adds a scan per link, and a pulse shorter than a scan can come and go unseen. Calculating first and using later removes the delay."
+              "checkpoint": "A delay of one scan only matters when something needs the value sooner: a chain of rungs adds a scan per link, and a pulse shorter than a scan can come and go unseen."
             }
           ],
           "hints": [
@@ -1415,7 +1415,7 @@
             }
           ],
           "faultCases": [
-            "The starting program solves the lamp rung before it updates ButtonSeen, so the lamp lights one scan late, at 20 ms instead of 10 ms."
+            "The starting program lights the lamp one scan late, at 20 ms instead of 10 ms."
           ]
         },
         "es": {
@@ -1430,7 +1430,7 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/ScanOrder.ld.json hay dos peldaños dibujados. Uno copia el pulsador StartButton en un bit de memoria ButtonSeen, y el otro muestra ButtonSeen en la lámpara Lamp. Están en el orden equivocado, así que la lámpara sigue al pulsador un ciclo tarde. Haga que la lámpara siga al pulsador en el mismo ciclo.",
+              "body": "En src/ScanOrder.ld.json hay dos peldaños dibujados. Uno copia el pulsador StartButton en un bit de memoria ButtonSeen, y el otro muestra ButtonSeen en la lámpara Lamp. La lámpara sigue al pulsador un ciclo tarde. Haga que la lámpara siga al pulsador en el mismo ciclo.",
               "checkpoint": "Puede decir cuál de los dos peldaños calcula un valor y cuál lo usa."
             },
             {
@@ -1442,7 +1442,7 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija el programa inicial, guárdelo y pulse Comprobar. El programa inicial resuelve el peldaño de la lámpara antes de actualizar ButtonSeen, así que la lámpara se enciende un ciclo tarde, a los 20 ms en vez de a los 10 ms. Cámbielo para que Lamp pase a ON a los 10 ms y a OFF a los 30 ms, en los mismos ciclos que StartButton. Deje cada contacto y cada bobina como están.",
+              "body": "Corrija el programa inicial, guárdelo y pulse Comprobar. El programa inicial enciende la lámpara un ciclo tarde, a los 20 ms en vez de a los 10 ms. Cámbielo para que Lamp pase a ON a los 10 ms y a OFF a los 30 ms, en los mismos ciclos que StartButton. Deje cada contacto y cada bobina como están.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -1461,7 +1461,7 @@
               "key": "reflect",
               "title": "Reflexione",
               "body": "Un ciclo dura lo mismo, unos pocos milisegundos, cada vez. ¿Por qué un retraso de un ciclo puede ser inofensivo en una máquina y un problema en otra? ¿Qué pasaría si la lámpara fuera la entrada de un contador rápido?",
-              "checkpoint": "Un retraso de un ciclo solo importa cuando algo necesita el valor antes: una cadena de peldaños suma un ciclo por eslabón, y un pulso más corto que un ciclo puede aparecer y desaparecer sin que se vea. Calcular primero y usar después elimina el retraso."
+              "checkpoint": "Un retraso de un ciclo solo importa cuando algo necesita el valor antes: una cadena de peldaños suma un ciclo por eslabón, y un pulso más corto que un ciclo puede aparecer y desaparecer sin que se vea."
             }
           ],
           "hints": [
@@ -1475,7 +1475,7 @@
             }
           ],
           "faultCases": [
-            "El programa inicial resuelve el peldaño de la lámpara antes de actualizar ButtonSeen, así que la lámpara se enciende un ciclo tarde, a los 20 ms en vez de a los 10 ms."
+            "El programa inicial enciende la lámpara un ciclo tarde, a los 20 ms en vez de a los 10 ms."
           ]
         }
       },
@@ -2622,7 +2622,7 @@
     },
     {
       "id": "boolean-logic-two-hand-guard",
-      "version": 7,
+      "version": 8,
       "order": 15,
       "module": 2,
       "level": "foundation",
@@ -2772,8 +2772,8 @@
             {
               "key": "reflect",
               "title": "Reflect",
-              "body": "Try the same condition with OR instead of AND and say which input combination wrongly enables the press. Then write GuardLamp as NOT GuardClosed AND LeftHand: when does the lamp stay dark although the guard is open?",
-              "checkpoint": "OR enables the press with a single hand, which is exactly what a two-hand control exists to prevent. NOT applies only to GuardClosed, so that lamp lights only while the guard is open and the left hand is on its button."
+              "body": "Try the same condition with OR instead of AND and say which input combination wrongly enables the press. Then say in words the inputs on which GuardLamp must depend, and check that your line uses those and no others.",
+              "checkpoint": "OR enables the press with a single hand, which is exactly what a two-hand control exists to prevent. You can say which inputs each of your three lines reads, and why GuardLamp does not read the hands."
             }
           ],
           "hints": [
@@ -2832,14 +2832,14 @@
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "Pruebe la misma condición con OR en lugar de AND y diga qué combinación de entradas habilita la prensa por error. Después escriba GuardLamp como NOT GuardClosed AND LeftHand: ¿cuándo queda apagada la lámpara aunque la protección esté abierta?",
-              "checkpoint": "OR habilita la prensa con una sola mano, que es justo lo que un mando a dos manos existe para impedir. NOT se aplica solo a GuardClosed, así que esa lámpara se enciende solo mientras la protección está abierta y la mano izquierda está en su pulsador."
+              "body": "Pruebe la misma condición con OR en lugar de AND y diga qué combinación de entradas habilita la prensa por error. Después diga con palabras de qué entradas debe depender GuardLamp y compruebe que su línea usa esas y ninguna otra.",
+              "checkpoint": "OR habilita la prensa con una sola mano, que es justo lo que un mando a dos manos existe para impedir. Puede decir qué entradas lee cada una de sus tres líneas y por qué GuardLamp no lee las manos."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "Lea las tres frases de la etapa Edite una por vez: cada una es la condición completa de una salida. Luego mire el operador que usa el programa inicial para PressEnable."
+              "text": "Lea las tres frases de la etapa Edit una por vez: cada una es la condición completa de una salida. Luego mire el operador que usa el programa inicial para PressEnable."
             },
             {
               "level": 2,
@@ -2860,7 +2860,7 @@
     },
     {
       "id": "seal-in-ladder",
-      "version": 7,
+      "version": 8,
       "order": 16,
       "module": 2,
       "level": "foundation",
@@ -2961,7 +2961,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct the starting program, save it, then press Check. The starting program drives Motor only while StartPB is pressed, so it drops out as soon as Start is released at 20 ms. Change it so that Motor stays ON after Start is released, turns OFF when Stop is pressed at 40 ms, stays OFF when Stop is released, and stays OFF at 70 ms when Start and Stop are pressed together. Leave the StopPB contact where it is.",
+              "body": "Correct the starting program, save it, then press Check. The starting program drives Motor only while StartPB is pressed, so it drops out as soon as Start is released at 20 ms. Change it so that Motor stays ON after Start is released, turns OFF when Stop is pressed at 40 ms, stays OFF when Stop is released, and stays OFF at 70 ms when Start and Stop are pressed together.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -2979,8 +2979,8 @@
             {
               "key": "reflect",
               "title": "Reflect",
-              "body": "Why must the Stop contact sit in series before the branch? Move it into the held path and see which assertion fails.",
-              "checkpoint": "With Stop inside the held path, Start bypasses it: at 70 ms the motor runs although Stop is pressed, so that assertion fails. In series before the branch, nothing can bypass Stop."
+              "body": "At 70 ms Start and Stop are pressed together. Which assertion covers that moment, and which contact of your rung keeps the motor OFF then?",
+              "checkpoint": "You can follow the power through your rung at 70 ms and say which contact stops it, and which assertion would fail if that contact did not stop it."
             }
           ],
           "hints": [
@@ -3021,7 +3021,7 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija el programa inicial, guárdelo y pulse Comprobar. El programa inicial acciona Motor solo mientras StartPB está pulsado, así que se apaga en cuanto se suelta Start a los 20 ms. Cámbielo para que Motor siga en ON al soltar Start, pase a OFF al pulsar Stop a los 40 ms, siga en OFF al soltar Stop y quede en OFF a los 70 ms cuando se pulsan Start y Stop a la vez. Deje el contacto de StopPB donde está.",
+              "body": "Corrija el programa inicial, guárdelo y pulse Comprobar. El programa inicial acciona Motor solo mientras StartPB está pulsado, así que se apaga en cuanto se suelta Start a los 20 ms. Cámbielo para que Motor siga en ON al soltar Start, pase a OFF al pulsar Stop a los 40 ms, siga en OFF al soltar Stop y quede en OFF a los 70 ms cuando se pulsan Start y Stop a la vez.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -3039,8 +3039,8 @@
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "¿Por qué el contacto de Stop debe estar en serie antes de la rama? Muévalo a la rama de autorretención y vea qué aserción falla.",
-              "checkpoint": "Con Stop dentro del camino de retención, Start lo salta: a los 70 ms el motor funciona aunque Stop está pulsado, y esa aserción falla. En serie antes de la rama, nada puede saltar a Stop."
+              "body": "A los 70 ms se pulsan Start y Stop a la vez. ¿Qué aserción cubre ese momento y qué contacto de su peldaño mantiene el motor en OFF?",
+              "checkpoint": "Puede seguir la energía por su peldaño a los 70 ms y decir qué contacto la detiene, y qué aserción fallaría si ese contacto no la detuviera."
             }
           ],
           "hints": [
@@ -6008,7 +6008,7 @@
     },
     {
       "id": "verify-my-board",
-      "version": 5,
+      "version": 6,
       "order": 33,
       "module": 0,
       "level": "foundation",
@@ -6148,7 +6148,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "The LED must be lit in two cases: while Blink is TRUE, or while Button is TRUE. Which Boolean operator says \"or\"?"
+              "text": "Look at the line that sets Led in the starter: it uses Blink and ignores Button. Say in words when the LED must be lit, then compare your words with that line."
             },
             {
               "level": 2,
@@ -6209,7 +6209,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "El LED debe estar encendido en dos casos: mientras Blink es TRUE o mientras Button es TRUE. ¿Qué operador booleano expresa “o”?"
+              "text": "Mire la línea que asigna Led en el programa inicial: usa Blink e ignora Button. Diga con palabras cuándo debe estar encendido el LED y compare sus palabras con esa línea."
             },
             {
               "level": 2,
@@ -11118,7 +11118,7 @@
     },
     {
       "id": "blinky-ladder-timer-feedback",
-      "version": 6,
+      "version": 7,
       "order": 77,
       "module": 1,
       "level": "foundation",
@@ -11183,7 +11183,7 @@
           "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how bright a real lamp is or how exactly a real controller keeps the period.",
           "objectives": [
             "Read a two-timer Ladder oscillator: each timer runs in one half period and starts the next.",
-            "Complete it with a SET coil and a RESET coil driven by the timers' Q outputs."
+            "Make the output change state by itself, from the time that each timer measures."
           ],
           "stages": [
             {
@@ -11243,7 +11243,7 @@
           "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cuánto brilla una lámpara real ni con qué exactitud un controlador real mantiene el período.",
           "objectives": [
             "Lea un oscilador de dos temporizadores en diagrama de escalera: cada temporizador cuenta durante un semiperíodo y pone en marcha al siguiente.",
-            "Complételo con una bobina SET y una bobina RESET accionadas por las salidas Q de los temporizadores."
+            "Haga que la salida cambie de estado por sí sola, a partir del tiempo que mide cada temporizador."
           ],
           "stages": [
             {
@@ -11299,8 +11299,8 @@
         }
       },
       "reading": {
-        "en": "## A blink needs time\n\nA lamp that blinks is on for a while, off for a while, on again. So far your programs have reacted to buttons, and a button can be pressed at any moment. A blink must decide by itself, from time alone. For that the PLC needs two new tools: a **timer**, which measures time, and a way to **remember** a state between scans, which you will build with **SET** and **RESET** coils.\n\nBlinking is not only for decoration. A warning beacon on a crane, a pulsing pump that doses a chemical, and a heartbeat lamp that shows the controller is alive all use the same idea.\n\n## The on-delay timer: TON\n\nA **TON** (on-delay timer) is a block with three main connections.\n\n- **IN** is the input. While IN is TRUE, the timer counts time. When IN becomes FALSE, the timer goes back to zero.\n- **PT** is the **preset time**, how long to wait. You write it as a duration such as `T#2s` (two seconds) or `T#500ms` (half a second).\n- **Q** is the output. It stays FALSE until IN has been TRUE for the whole preset time, and then it turns TRUE. It stays TRUE as long as IN stays TRUE.\n\nThink of a phone that turns off only if you hold the power button for two seconds. If you let go early, the count starts over. Only a full, uninterrupted hold gives the answer.\n\n## Remembering a state: SET and RESET\n\nA normal coil follows its rung: power in, output on; power out, output off. A **SET** coil works differently. When power reaches it, it turns the output ON, and the output **stays on** even when the power goes away. A **RESET** coil turns the same output OFF, and it too stays off. They behave like the two buttons of a valve: one opens it, one closes it, and it remembers.\n\n```ld-figure\nsrc: reading/set-reset-valve.ld.json\ncaption: A press of OpenButton sets the valve, a press of CloseButton resets it\n```\n\nBoth coils are used on the same variable. The valve is solved from top to bottom, so when both buttons are pressed in the same scan, the RESET rung is the last one and wins.\n\n## Feedback: an output that chooses its own timer\n\nA blinker combines the two ideas. A lamp that is OFF starts one timer; when that timer finishes, a SET coil switches the lamp ON. A lamp that is ON starts a second timer; when that finishes, a RESET coil switches the lamp OFF. The lamp itself is the memory that decides which timer runs. This idea is called **feedback**: the output is fed back as an input of the same program.\n\nWhy two timers and not one? With a single timer fed by the lamp, the lamp turning on would immediately reset the timer and the lamp would flicker for a single scan, not blink. Two timers give each half of the blink its own count.\n\n## Worked example\n\nA machine asks the operator to confirm a command by holding HoldButton, so that a brush against the button does nothing. ConfirmLamp must light only after the button has been held for the preset time, and go off as soon as it is released. That is a TON with the button on IN and the lamp on Q.\n\n```ld-figure\nsrc: reading/hold-to-confirm.ld.json\ncaption: Rung 1 feeds the timer, rung 2 lights the lamp from its output Q\n```\n\nIn Ladder, the timer is a box on the right of its rung, where a coil would be. Its IN comes from the power that reaches the rung. The name `HoldTimer` is the **instance**: your program keeps one memory for each timer, and `HoldTimer.Q` reads the output of that timer in another rung.\n\n```ld-try\nsrc: reading/hold-to-confirm.ld.json\ninputs:\n  - { name: HoldButton, kind: push }\noutputs: [ConfirmLamp]\ntiming: [HoldButton, ConfirmLamp]\ncaption: Hold the button until the lamp lights, then try releasing it too early\n```\n\nPress Run and hold the button. Nothing happens for the preset time, and then the lamp lights. Release the button: the lamp goes off at once, and the timer is ready to start again. If you release before the time is up, the lamp never lights.\n\n```timing\nspan: 6000\nsignals:\n  - { name: HoldButton, edges: [500, 3500] }\n  - { name: ConfirmLamp, edges: [2500, 3500] }\nmarks:\n  - { from: 500, to: 2500, label: PT }\ncaption: The lamp lights when the button has been held for PT, and goes off when the button is released\n```\n\n## Common mistakes\n\n- Forgetting that the timer needs power on IN all the time. If power on IN flickers, the timer restarts at zero.\n- Using a SET coil without a RESET coil. The output turns on and nothing can turn it off.\n- Mixing up PT and the real duration. Add a small margin for the scan: the real time is the preset plus up to one scan.\n- Writing the times in the wrong unit. `T#500ms` is half a second and `T#5s` is five seconds.\n- Looking for the TON among the coils. A TON is a block: in ZPLC it appears as a box on the rung, with its instance name above it.\n\n> [!WARNING]\n> A lamp that warns of a danger must keep warning even if the PLC stops, so it comes from the machine's own wiring. A timer in a program delays a signal; it does not make a machine safe.\n\n## Check yourself\n\n```quiz\nquestion: A TON has the preset `T#2s`. IN is TRUE for one second and then FALSE. What is Q at the end?\noptions:\n  - { text: 'FALSE, because IN was not TRUE for the whole preset time', correct: true, feedback: 'Yes. When IN falls, the timer returns to zero and Q never became TRUE.' }\n  - { text: 'TRUE, because IN was TRUE once', feedback: 'Q becomes TRUE only after IN stays TRUE for the whole preset time.' }\n  - { text: 'TRUE for one second', feedback: 'A TON does not copy IN. It waits for the preset time first.' }\n```\n\n```quiz\nquestion: A SET coil turns an output on. The power to the coil then goes away. What does the output do?\noptions:\n  - { text: 'It stays on until a RESET coil turns it off', correct: true, feedback: 'Yes. A SET coil remembers its state.' }\n  - { text: 'It turns off at once', feedback: 'That is how a normal coil behaves. A SET coil keeps its value.' }\n  - { text: 'It turns off when the preset time is over', feedback: 'A SET coil has no time of its own. Only a RESET coil turns the output off.' }\n```\n\n## What you will do in the practice\n\nThe starting program has the two timers of a blinker already drawn: OffTimer runs while LED_Output is OFF and OnTimer while it is ON, but nothing changes the LED, so it stays OFF for ever. You will make the LED stay OFF for about 500 ms, then ON for about 500 ms, and repeat, then press Check and compare the on and off times with the plan of the lesson.\n",
-        "es": "## Un parpadeo necesita tiempo\n\nUna lámpara que parpadea está encendida un rato, apagada un rato y otra vez encendida. Hasta ahora sus programas han reaccionado a pulsadores, y un pulsador se puede pulsar en cualquier momento. Un parpadeo debe decidir por sí solo, a partir del tiempo. Para eso el PLC necesita dos herramientas nuevas: un **temporizador**, que mide el tiempo, y una manera de **recordar** un estado entre ciclos, que construirá con bobinas **SET** y **RESET**.\n\nParpadear no es solo decoración. Una baliza de advertencia en una grúa, una bomba que dosifica un químico con pulsos y una lámpara de latido que muestra que el controlador está vivo usan la misma idea.\n\n## El temporizador con retardo a la conexión: TON\n\nUn **TON** (temporizador con retardo a la conexión) es un bloque con tres conexiones principales.\n\n- **IN** es la entrada. Mientras IN es TRUE, el temporizador cuenta el tiempo. Cuando IN pasa a FALSE, el temporizador vuelve a cero.\n- **PT** es el **valor preestablecido**, cuánto hay que esperar. Se escribe como una duración, como `T#2s` (dos segundos) o `T#500ms` (medio segundo).\n- **Q** es la salida. Permanece en FALSE hasta que IN ha sido TRUE durante todo el valor preestablecido, y entonces pasa a TRUE. Permanece en TRUE mientras IN siga en TRUE.\n\nPiense en un teléfono que se apaga solo si usted mantiene pulsado el pulsador de encendido durante dos segundos. Si suelta antes, la cuenta empieza de nuevo. Solo una pulsación completa e ininterrumpida da la respuesta.\n\n## Recordar un estado: SET y RESET\n\nUna bobina normal sigue a su peldaño: con energía, la salida está en ON; sin energía, en OFF. Una bobina **SET** funciona distinto. Cuando la energía la alcanza, pone la salida en ON, y la salida **queda encendida** aunque la energía desaparezca. Una bobina **RESET** pone la misma salida en OFF, y también queda así. Se comportan como los dos pulsadores de una válvula: uno la abre, otro la cierra, y ella recuerda.\n\n```ld-figure\nsrc: reading/set-reset-valve.ld.json\ncaption: Una pulsación de OpenButton activa la válvula, una pulsación de CloseButton la desactiva\n```\n\nLas dos bobinas se usan sobre la misma variable. El programa se resuelve de arriba hacia abajo, así que cuando se pulsan los dos pulsadores en el mismo ciclo, el peldaño RESET es el último y gana.\n\n## Realimentación: una salida que elige su propio temporizador\n\nUn parpadeador combina las dos ideas. Una lámpara que está en OFF inicia un temporizador; cuando ese temporizador termina, una bobina SET pone la lámpara en ON. Una lámpara que está en ON inicia un segundo temporizador; cuando termina, una bobina RESET la pone en OFF. La propia lámpara es la memoria que decide qué temporizador corre. Esta idea se llama **realimentación**: la salida vuelve como entrada del mismo programa.\n\n¿Por qué dos temporizadores y no uno? Con un solo temporizador alimentado por la lámpara, al encenderse la lámpara el temporizador se pondría a cero de inmediato y la lámpara destellaría durante un solo ciclo, no parpadearía. Dos temporizadores dan a cada mitad del parpadeo su propia cuenta.\n\n## Ejemplo resuelto\n\nUna máquina pide al operador que confirme una orden manteniendo pulsado HoldButton, para que un roce del pulsador no haga nada. ConfirmLamp debe encenderse solo después de mantener el pulsador durante el valor preestablecido, y apagarse en cuanto se suelta. Eso es un TON con el pulsador en IN y la lámpara en Q.\n\n```ld-figure\nsrc: reading/hold-to-confirm.ld.json\ncaption: El peldaño 1 alimenta el temporizador, el peldaño 2 enciende la lámpara con su salida Q\n```\n\nEn el diagrama de escalera, el temporizador es un bloque a la derecha de su peldaño, donde iría una bobina. Su IN recibe la energía que llega al peldaño. El nombre `HoldTimer` es la **instancia**: su programa guarda una memoria para cada temporizador, y `HoldTimer.Q` lee la salida de ese temporizador en otro peldaño.\n\n```ld-try\nsrc: reading/hold-to-confirm.ld.json\ninputs:\n  - { name: HoldButton, kind: push }\noutputs: [ConfirmLamp]\ntiming: [HoldButton, ConfirmLamp]\ncaption: Mantenga el pulsador hasta que la lámpara se encienda y luego pruebe a soltarlo demasiado pronto\n```\n\nPulse Ejecutar y mantenga el pulsador. No pasa nada durante el valor preestablecido, y luego la lámpara se enciende. Suelte el pulsador: la lámpara se apaga de inmediato y el temporizador queda listo para empezar de nuevo. Si lo suelta antes de que se cumpla el tiempo, la lámpara nunca se enciende.\n\n```timing\nspan: 6000\nsignals:\n  - { name: HoldButton, edges: [500, 3500] }\n  - { name: ConfirmLamp, edges: [2500, 3500] }\nmarks:\n  - { from: 500, to: 2500, label: PT }\ncaption: La lámpara se enciende cuando el pulsador lleva pulsado PT, y se apaga cuando se suelta el pulsador\n```\n\n## Errores comunes\n\n- Olvidar que el temporizador necesita energía en IN todo el tiempo. Si la energía en IN parpadea, el temporizador reinicia desde cero.\n- Usar una bobina SET sin una bobina RESET. La salida se enciende y nada puede apagarla.\n- Confundir PT con la duración real. Agregue un pequeño margen por el ciclo: el tiempo real es el valor preestablecido más hasta un ciclo.\n- Escribir los tiempos en la unidad equivocada. `T#500ms` es medio segundo y `T#5s` son cinco segundos.\n- Buscar el TON entre las bobinas. Un TON es un bloque: en ZPLC aparece como un bloque en el peldaño, con el nombre de su instancia encima.\n\n> [!WARNING]\n> Una lámpara que avisa de un peligro debe seguir avisando aunque el PLC se detenga, así que sale del propio cableado de la máquina. Un temporizador en un programa retrasa una señal; no hace segura una máquina.\n\n## Compruébelo usted\n\n```quiz\nquestion: Un TON tiene el valor preestablecido `T#2s`. IN es TRUE durante un segundo y luego FALSE. ¿Cuánto vale Q al final?\noptions:\n  - { text: 'FALSE, porque IN no fue TRUE durante todo el valor preestablecido', correct: true, feedback: 'Correcto. Cuando IN cae, el temporizador vuelve a cero y Q nunca llegó a ser TRUE.' }\n  - { text: 'TRUE, porque IN fue TRUE una vez', feedback: 'Q pasa a TRUE solo después de que IN permanece en TRUE durante todo el valor preestablecido.' }\n  - { text: 'TRUE durante un segundo', feedback: 'Un TON no copia IN. Primero espera el valor preestablecido.' }\n```\n\n```quiz\nquestion: Una bobina SET pone una salida en ON. Después la energía de la bobina desaparece. ¿Qué hace la salida?\noptions:\n  - { text: 'Permanece encendida hasta que una bobina RESET la apaga', correct: true, feedback: 'Correcto. Una bobina SET recuerda su estado.' }\n  - { text: 'Se apaga de inmediato', feedback: 'Así se comporta una bobina normal. Una bobina SET conserva su valor.' }\n  - { text: 'Se apaga cuando termina el valor preestablecido', feedback: 'Una bobina SET no tiene un tiempo propio. Solo una bobina RESET apaga la salida.' }\n```\n\n## Qué hará en la práctica\n\nEl programa inicial tiene ya dibujados los dos temporizadores de un parpadeador: OffTimer cuenta mientras LED_Output está en OFF y OnTimer mientras está en ON, pero nada cambia el LED, así que queda en OFF para siempre. Usted hará que el LED quede en OFF unos 500 ms, luego en ON unos 500 ms, y que se repita; después pulsará Comprobar y comparará los tiempos de encendido y apagado con el plan de la lección.\n",
+        "en": "## A blink needs time\n\nA lamp that blinks is on for a while, off for a while, on again. So far your programs have reacted to buttons, and a button can be pressed at any moment. A blink must decide by itself, from time alone. For that the PLC needs two new tools: a **timer**, which measures time, and a way to **remember** a state between scans, which you will build with **SET** and **RESET** coils.\n\nBlinking is not only for decoration. A warning beacon on a crane, a pulsing pump that doses a chemical, and a heartbeat lamp that shows the controller is alive all use the same idea.\n\n## The on-delay timer: TON\n\nA **TON** (on-delay timer) is a block with three main connections.\n\n- **IN** is the input. While IN is TRUE, the timer counts time. When IN becomes FALSE, the timer goes back to zero.\n- **PT** is the **preset time**, how long to wait. You write it as a duration such as `T#2s` (two seconds) or `T#500ms` (half a second).\n- **Q** is the output. It stays FALSE until IN has been TRUE for the whole preset time, and then it turns TRUE. It stays TRUE as long as IN stays TRUE.\n\nThink of a phone that turns off only if you hold the power button for two seconds. If you let go early, the count starts over. Only a full, uninterrupted hold gives the answer.\n\n## Remembering a state: SET and RESET\n\nA normal coil follows its rung: power in, output on; power out, output off. A **SET** coil works differently. When power reaches it, it turns the output ON, and the output **stays on** even when the power goes away. A **RESET** coil turns the same output OFF, and it too stays off. They behave like the two buttons of a valve: one opens it, one closes it, and it remembers.\n\n```ld-figure\nsrc: reading/set-reset-valve.ld.json\ncaption: A press of OpenButton sets the valve, a press of CloseButton resets it\n```\n\nBoth coils are used on the same variable. The valve is solved from top to bottom, so when both buttons are pressed in the same scan, the RESET rung is the last one and wins.\n\n## Feedback: an output that chooses its own timer\n\nA blinker combines the two ideas. A lamp that is OFF counts one half period and a lamp that is ON counts the other, so the lamp itself is the memory that decides which timer runs. This idea is called **feedback**: the output is fed back as an input of the same program.\n\nWhy two timers and not one? With a single timer fed by the lamp, the lamp turning on would immediately reset the timer and the lamp would flicker for a single scan, not blink. Two timers give each half of the blink its own count.\n\n## Worked example\n\nA machine asks the operator to confirm a command by holding HoldButton, so that a brush against the button does nothing. ConfirmLamp must light only after the button has been held for the preset time, and go off as soon as it is released. That is a TON with the button on IN and the lamp on Q.\n\n```ld-figure\nsrc: reading/hold-to-confirm.ld.json\ncaption: Rung 1 feeds the timer, rung 2 lights the lamp from its output Q\n```\n\nIn Ladder, the timer is a box on the right of its rung, where a coil would be. Its IN comes from the power that reaches the rung. The name `HoldTimer` is the **instance**: your program keeps one memory for each timer, and `HoldTimer.Q` reads the output of that timer in another rung.\n\n```ld-try\nsrc: reading/hold-to-confirm.ld.json\ninputs:\n  - { name: HoldButton, kind: push }\noutputs: [ConfirmLamp]\ntiming: [HoldButton, ConfirmLamp]\ncaption: Hold the button until the lamp lights, then try releasing it too early\n```\n\nPress Run and hold the button. Nothing happens for the preset time, and then the lamp lights. Release the button: the lamp goes off at once, and the timer is ready to start again. If you release before the time is up, the lamp never lights.\n\n```timing\nspan: 6000\nsignals:\n  - { name: HoldButton, edges: [500, 3500] }\n  - { name: ConfirmLamp, edges: [2500, 3500] }\nmarks:\n  - { from: 500, to: 2500, label: PT }\ncaption: The lamp lights when the button has been held for PT, and goes off when the button is released\n```\n\n## Common mistakes\n\n- Forgetting that the timer needs power on IN all the time. If power on IN flickers, the timer restarts at zero.\n- Using a SET coil without a RESET coil. The output turns on and nothing can turn it off.\n- Mixing up PT and the real duration. Add a small margin for the scan: the real time is the preset plus up to one scan.\n- Writing the times in the wrong unit. `T#500ms` is half a second and `T#5s` is five seconds.\n- Looking for the TON among the coils. A TON is a block: in ZPLC it appears as a box on the rung, with its instance name above it.\n\n> [!WARNING]\n> A lamp that warns of a danger must keep warning even if the PLC stops, so it comes from the machine's own wiring. A timer in a program delays a signal; it does not make a machine safe.\n\n## Check yourself\n\n```quiz\nquestion: A TON has the preset `T#2s`. IN is TRUE for one second and then FALSE. What is Q at the end?\noptions:\n  - { text: 'FALSE, because IN was not TRUE for the whole preset time', correct: true, feedback: 'Yes. When IN falls, the timer returns to zero and Q never became TRUE.' }\n  - { text: 'TRUE, because IN was TRUE once', feedback: 'Q becomes TRUE only after IN stays TRUE for the whole preset time.' }\n  - { text: 'TRUE for one second', feedback: 'A TON does not copy IN. It waits for the preset time first.' }\n```\n\n```quiz\nquestion: A SET coil turns an output on. The power to the coil then goes away. What does the output do?\noptions:\n  - { text: 'It stays on until a RESET coil turns it off', correct: true, feedback: 'Yes. A SET coil remembers its state.' }\n  - { text: 'It turns off at once', feedback: 'That is how a normal coil behaves. A SET coil keeps its value.' }\n  - { text: 'It turns off when the preset time is over', feedback: 'A SET coil has no time of its own. Only a RESET coil turns the output off.' }\n```\n\n## What you will do in the practice\n\nThe starting program has the two timers of a blinker already drawn: OffTimer runs while LED_Output is OFF and OnTimer while it is ON, but nothing changes the LED, so it stays OFF for ever. You will make the LED stay OFF for about 500 ms, then ON for about 500 ms, and repeat, then press Check and compare the on and off times with the plan of the lesson.\n",
+        "es": "## Un parpadeo necesita tiempo\n\nUna lámpara que parpadea está encendida un rato, apagada un rato y otra vez encendida. Hasta ahora sus programas han reaccionado a pulsadores, y un pulsador se puede pulsar en cualquier momento. Un parpadeo debe decidir por sí solo, a partir del tiempo. Para eso el PLC necesita dos herramientas nuevas: un **temporizador**, que mide el tiempo, y una manera de **recordar** un estado entre ciclos, que construirá con bobinas **SET** y **RESET**.\n\nParpadear no es solo decoración. Una baliza de advertencia en una grúa, una bomba que dosifica un químico con pulsos y una lámpara de latido que muestra que el controlador está vivo usan la misma idea.\n\n## El temporizador con retardo a la conexión: TON\n\nUn **TON** (temporizador con retardo a la conexión) es un bloque con tres conexiones principales.\n\n- **IN** es la entrada. Mientras IN es TRUE, el temporizador cuenta el tiempo. Cuando IN pasa a FALSE, el temporizador vuelve a cero.\n- **PT** es el **valor preestablecido**, cuánto hay que esperar. Se escribe como una duración, como `T#2s` (dos segundos) o `T#500ms` (medio segundo).\n- **Q** es la salida. Permanece en FALSE hasta que IN ha sido TRUE durante todo el valor preestablecido, y entonces pasa a TRUE. Permanece en TRUE mientras IN siga en TRUE.\n\nPiense en un teléfono que se apaga solo si usted mantiene pulsado el pulsador de encendido durante dos segundos. Si suelta antes, la cuenta empieza de nuevo. Solo una pulsación completa e ininterrumpida da la respuesta.\n\n## Recordar un estado: SET y RESET\n\nUna bobina normal sigue a su peldaño: con energía, la salida está en ON; sin energía, en OFF. Una bobina **SET** funciona distinto. Cuando la energía la alcanza, pone la salida en ON, y la salida **queda encendida** aunque la energía desaparezca. Una bobina **RESET** pone la misma salida en OFF, y también queda así. Se comportan como los dos pulsadores de una válvula: uno la abre, otro la cierra, y ella recuerda.\n\n```ld-figure\nsrc: reading/set-reset-valve.ld.json\ncaption: Una pulsación de OpenButton activa la válvula, una pulsación de CloseButton la desactiva\n```\n\nLas dos bobinas se usan sobre la misma variable. El programa se resuelve de arriba hacia abajo, así que cuando se pulsan los dos pulsadores en el mismo ciclo, el peldaño RESET es el último y gana.\n\n## Realimentación: una salida que elige su propio temporizador\n\nUn parpadeador combina las dos ideas. Una lámpara que está en OFF cuenta un semiperíodo y una lámpara que está en ON cuenta el otro, así que la propia lámpara es la memoria que decide qué temporizador corre. Esta idea se llama **realimentación**: la salida vuelve como entrada del mismo programa.\n\n¿Por qué dos temporizadores y no uno? Con un solo temporizador alimentado por la lámpara, al encenderse la lámpara el temporizador se pondría a cero de inmediato y la lámpara destellaría durante un solo ciclo, no parpadearía. Dos temporizadores dan a cada mitad del parpadeo su propia cuenta.\n\n## Ejemplo resuelto\n\nUna máquina pide al operador que confirme una orden manteniendo pulsado HoldButton, para que un roce del pulsador no haga nada. ConfirmLamp debe encenderse solo después de mantener el pulsador durante el valor preestablecido, y apagarse en cuanto se suelta. Eso es un TON con el pulsador en IN y la lámpara en Q.\n\n```ld-figure\nsrc: reading/hold-to-confirm.ld.json\ncaption: El peldaño 1 alimenta el temporizador, el peldaño 2 enciende la lámpara con su salida Q\n```\n\nEn el diagrama de escalera, el temporizador es un bloque a la derecha de su peldaño, donde iría una bobina. Su IN recibe la energía que llega al peldaño. El nombre `HoldTimer` es la **instancia**: su programa guarda una memoria para cada temporizador, y `HoldTimer.Q` lee la salida de ese temporizador en otro peldaño.\n\n```ld-try\nsrc: reading/hold-to-confirm.ld.json\ninputs:\n  - { name: HoldButton, kind: push }\noutputs: [ConfirmLamp]\ntiming: [HoldButton, ConfirmLamp]\ncaption: Mantenga el pulsador hasta que la lámpara se encienda y luego pruebe a soltarlo demasiado pronto\n```\n\nPulse Ejecutar y mantenga el pulsador. No pasa nada durante el valor preestablecido, y luego la lámpara se enciende. Suelte el pulsador: la lámpara se apaga de inmediato y el temporizador queda listo para empezar de nuevo. Si lo suelta antes de que se cumpla el tiempo, la lámpara nunca se enciende.\n\n```timing\nspan: 6000\nsignals:\n  - { name: HoldButton, edges: [500, 3500] }\n  - { name: ConfirmLamp, edges: [2500, 3500] }\nmarks:\n  - { from: 500, to: 2500, label: PT }\ncaption: La lámpara se enciende cuando el pulsador lleva pulsado PT, y se apaga cuando se suelta el pulsador\n```\n\n## Errores comunes\n\n- Olvidar que el temporizador necesita energía en IN todo el tiempo. Si la energía en IN parpadea, el temporizador reinicia desde cero.\n- Usar una bobina SET sin una bobina RESET. La salida se enciende y nada puede apagarla.\n- Confundir PT con la duración real. Agregue un pequeño margen por el ciclo: el tiempo real es el valor preestablecido más hasta un ciclo.\n- Escribir los tiempos en la unidad equivocada. `T#500ms` es medio segundo y `T#5s` son cinco segundos.\n- Buscar el TON entre las bobinas. Un TON es un bloque: en ZPLC aparece como un bloque en el peldaño, con el nombre de su instancia encima.\n\n> [!WARNING]\n> Una lámpara que avisa de un peligro debe seguir avisando aunque el PLC se detenga, así que sale del propio cableado de la máquina. Un temporizador en un programa retrasa una señal; no hace segura una máquina.\n\n## Compruébelo usted\n\n```quiz\nquestion: Un TON tiene el valor preestablecido `T#2s`. IN es TRUE durante un segundo y luego FALSE. ¿Cuánto vale Q al final?\noptions:\n  - { text: 'FALSE, porque IN no fue TRUE durante todo el valor preestablecido', correct: true, feedback: 'Correcto. Cuando IN cae, el temporizador vuelve a cero y Q nunca llegó a ser TRUE.' }\n  - { text: 'TRUE, porque IN fue TRUE una vez', feedback: 'Q pasa a TRUE solo después de que IN permanece en TRUE durante todo el valor preestablecido.' }\n  - { text: 'TRUE durante un segundo', feedback: 'Un TON no copia IN. Primero espera el valor preestablecido.' }\n```\n\n```quiz\nquestion: Una bobina SET pone una salida en ON. Después la energía de la bobina desaparece. ¿Qué hace la salida?\noptions:\n  - { text: 'Permanece encendida hasta que una bobina RESET la apaga', correct: true, feedback: 'Correcto. Una bobina SET recuerda su estado.' }\n  - { text: 'Se apaga de inmediato', feedback: 'Así se comporta una bobina normal. Una bobina SET conserva su valor.' }\n  - { text: 'Se apaga cuando termina el valor preestablecido', feedback: 'Una bobina SET no tiene un tiempo propio. Solo una bobina RESET apaga la salida.' }\n```\n\n## Qué hará en la práctica\n\nEl programa inicial tiene ya dibujados los dos temporizadores de un parpadeador: OffTimer cuenta mientras LED_Output está en OFF y OnTimer mientras está en ON, pero nada cambia el LED, así que queda en OFF para siempre. Usted hará que el LED quede en OFF unos 500 ms, luego en ON unos 500 ms, y que se repita; después pulsará Comprobar y comparará los tiempos de encendido y apagado con el plan de la lección.\n",
         "files": {
           "reading/hold-to-confirm.ld.json": "{\n  \"name\": \"HoldToConfirm\",\n  \"description\": \"A lamp that lights only after the button has been held for two seconds.\",\n  \"version\": \"1.0.0\",\n  \"variables\": {\n    \"local\": [\n      {\n        \"name\": \"HoldButton\",\n        \"type\": \"BOOL\",\n        \"comment\": \"Push button: TRUE while pressed\"\n      },\n      {\n        \"name\": \"HoldTimer\",\n        \"type\": \"TON\",\n        \"comment\": \"On-delay timer of the hold\"\n      }\n    ],\n    \"outputs\": [\n      {\n        \"name\": \"ConfirmLamp\",\n        \"type\": \"BOOL\",\n        \"address\": \"%Q0.0\",\n        \"comment\": \"Lit once the hold time has passed\"\n      }\n    ]\n  },\n  \"rungs\": [\n    {\n      \"id\": \"rung_1\",\n      \"number\": 1,\n      \"comment\": \"The timer counts while the button is held. Releasing the button resets it.\",\n      \"branches\": [],\n      \"gridConfig\": {\n        \"cols\": 8,\n        \"rows\": 1,\n        \"cellWidth\": 80,\n        \"cellHeight\": 60\n      },\n      \"grid\": [\n        [\n          {\n            \"element\": {\n              \"id\": \"e0_0_1\",\n              \"type\": \"contact_no\",\n              \"variable\": \"HoldButton\",\n              \"row\": 0,\n              \"col\": 0\n            },\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": {\n              \"id\": \"e0_7_1\",\n              \"type\": \"function_block\",\n              \"fbType\": \"TON\",\n              \"instance\": \"HoldTimer\",\n              \"parameters\": {\n                \"IN\": \"CONNECTED\",\n                \"PT\": \"T#2s\"\n              },\n              \"row\": 0,\n              \"col\": 7\n            },\n            \"hasWire\": true\n          }\n        ]\n      ]\n    },\n    {\n      \"id\": \"rung_2\",\n      \"number\": 2,\n      \"comment\": \"Q becomes TRUE when the preset time has elapsed.\",\n      \"branches\": [],\n      \"gridConfig\": {\n        \"cols\": 8,\n        \"rows\": 1,\n        \"cellWidth\": 80,\n        \"cellHeight\": 60\n      },\n      \"grid\": [\n        [\n          {\n            \"element\": {\n              \"id\": \"e0_0_2\",\n              \"type\": \"contact_no\",\n              \"variable\": \"HoldTimer.Q\",\n              \"row\": 0,\n              \"col\": 0\n            },\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": {\n              \"id\": \"e0_7_2\",\n              \"type\": \"coil\",\n              \"variable\": \"ConfirmLamp\",\n              \"row\": 0,\n              \"col\": 7\n            },\n            \"hasWire\": true\n          }\n        ]\n      ]\n    }\n  ],\n  \"metadata\": {\n    \"author\": \"ZPLC Team\",\n    \"created\": \"2026-11-05\",\n    \"iecStandard\": \"IEC 61131-3\",\n    \"notes\": []\n  }\n}\n",
           "reading/set-reset-valve.ld.json": "{\n  \"name\": \"ValveLatch\",\n  \"description\": \"A valve that opens with one button and closes with another.\",\n  \"version\": \"1.0.0\",\n  \"variables\": {\n    \"local\": [\n      {\n        \"name\": \"OpenButton\",\n        \"type\": \"BOOL\",\n        \"comment\": \"Push button: TRUE while pressed\"\n      },\n      {\n        \"name\": \"CloseButton\",\n        \"type\": \"BOOL\",\n        \"comment\": \"Push button: TRUE while pressed\"\n      }\n    ],\n    \"outputs\": [\n      {\n        \"name\": \"Valve\",\n        \"type\": \"BOOL\",\n        \"address\": \"%Q0.0\",\n        \"comment\": \"Valve command\"\n      }\n    ]\n  },\n  \"rungs\": [\n    {\n      \"id\": \"rung_1\",\n      \"number\": 1,\n      \"comment\": \"A press of Open sets the valve; it stays open when the button is released.\",\n      \"branches\": [],\n      \"gridConfig\": {\n        \"cols\": 8,\n        \"rows\": 1,\n        \"cellWidth\": 80,\n        \"cellHeight\": 60\n      },\n      \"grid\": [\n        [\n          {\n            \"element\": {\n              \"id\": \"e0_0_1\",\n              \"type\": \"contact_no\",\n              \"variable\": \"OpenButton\",\n              \"row\": 0,\n              \"col\": 0\n            },\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": {\n              \"id\": \"e0_7_1\",\n              \"type\": \"coil_set\",\n              \"variable\": \"Valve\",\n              \"row\": 0,\n              \"col\": 7\n            },\n            \"hasWire\": true\n          }\n        ]\n      ]\n    },\n    {\n      \"id\": \"rung_2\",\n      \"number\": 2,\n      \"comment\": \"A press of Close resets the valve. It is the last rung, so it wins if both buttons are pressed.\",\n      \"branches\": [],\n      \"gridConfig\": {\n        \"cols\": 8,\n        \"rows\": 1,\n        \"cellWidth\": 80,\n        \"cellHeight\": 60\n      },\n      \"grid\": [\n        [\n          {\n            \"element\": {\n              \"id\": \"e0_0_2\",\n              \"type\": \"contact_no\",\n              \"variable\": \"CloseButton\",\n              \"row\": 0,\n              \"col\": 0\n            },\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": {\n              \"id\": \"e0_7_2\",\n              \"type\": \"coil_reset\",\n              \"variable\": \"Valve\",\n              \"row\": 0,\n              \"col\": 7\n            },\n            \"hasWire\": true\n          }\n        ]\n      ]\n    }\n  ],\n  \"metadata\": {\n    \"author\": \"ZPLC Team\",\n    \"created\": \"2026-11-05\",\n    \"iecStandard\": \"IEC 61131-3\",\n    \"notes\": []\n  }\n}\n"
@@ -11310,7 +11310,7 @@
     },
     {
       "id": "blink-structured-text",
-      "version": 7,
+      "version": 8,
       "order": 78,
       "module": 1,
       "level": "foundation",
@@ -11403,7 +11403,7 @@
               "key": "edit",
               "title": "Edit",
               "body": "Correct the starting program, save it, then press Check. The starting program keeps Lamp OFF all the time, so it never turns ON at 550 ms. Change it so that Lamp changes state every 300 ms while Enable is ON, with the first change 300 ms after Enable turns ON, and Lamp is OFF on the scan Enable drops. Write the statements yourself: the declarations are already there.",
-              "checkpoint": "Lamp follows LampOn only while Enable is ON."
+              "checkpoint": "The program builds without errors, and you can say what Lamp does in the scan Enable drops."
             },
             {
               "key": "run",
@@ -11421,7 +11421,7 @@
               "key": "reflect",
               "title": "Reflect",
               "body": "A blinker that ignores Enable would already be ON at 350 ms. Which of your lines makes the difference?",
-              "checkpoint": "Starting the timer from Enable moves the first change, and the AND with Enable stops the lamp at once."
+              "checkpoint": "You can point to the line of yours that sets the moment of the first change, and to the line that sets what Lamp shows when Enable drops."
             }
           ],
           "hints": [
@@ -11463,7 +11463,7 @@
               "key": "edit",
               "title": "Edite",
               "body": "Corrija el programa inicial, guárdelo y pulse Comprobar. El programa inicial mantiene Lamp en OFF todo el tiempo, así que nunca pasa a ON a los 550 ms. Cámbielo para que Lamp cambie de estado cada 300 ms mientras Enable está en ON, con el primer cambio 300 ms después de que Enable pasa a ON, y para que Lamp esté en OFF en el ciclo en que Enable cae. Escriba usted mismo las instrucciones: las declaraciones ya están.",
-              "checkpoint": "Lamp sigue a LampOn solo mientras Enable está en ON."
+              "checkpoint": "El programa se compila sin errores y usted puede decir qué hace Lamp en el ciclo en que Enable cae."
             },
             {
               "key": "run",
@@ -11481,7 +11481,7 @@
               "key": "reflect",
               "title": "Reflexione",
               "body": "Un parpadeador que ignora Enable ya estaría en ON a los 350 ms. ¿Cuál de sus líneas marca la diferencia?",
-              "checkpoint": "Poner en marcha el temporizador con Enable desplaza el primer cambio, y el AND con Enable detiene la lámpara de inmediato."
+              "checkpoint": "Puede señalar la línea suya que fija el momento del primer cambio y la línea que fija lo que muestra Lamp cuando Enable cae."
             }
           ],
           "hints": [
@@ -11746,7 +11746,7 @@
     },
     {
       "id": "set-reset-alarm-latch-il",
-      "version": 6,
+      "version": 7,
       "order": 80,
       "module": 2,
       "level": "foundation",
@@ -11878,7 +11878,7 @@
               "key": "reflect",
               "title": "Reflect",
               "body": "Which order would you choose for a stop command, and which for a start request? Think about what should win when both are pressed.",
-              "checkpoint": "A stop or reset should usually win, so its R line goes last; the choice is a design decision, not a default. The SR and RS blocks fix that priority in the block, while S and R leave it to the order of your lines."
+              "checkpoint": "Which command should win when both arrive together is a design decision, not a default. The SR and RS blocks fix that priority in the block, while S and R leave it to the order of your lines."
             }
           ],
           "hints": [
@@ -11938,7 +11938,7 @@
               "key": "reflect",
               "title": "Reflexione",
               "body": "¿Qué orden elegiría para una orden de parada, y cuál para una solicitud de arranque? Piense qué debe ganar cuando se pulsan ambas.",
-              "checkpoint": "Una parada o un reset normalmente debe ganar, así que su línea R va al final; la elección es una decisión de diseño, no un valor por defecto. Los bloques SR y RS fijan esa prioridad en el bloque, mientras que S y R la dejan al orden de sus líneas."
+              "checkpoint": "Cuál de las dos órdenes debe ganar cuando llegan juntas es una decisión de diseño, no un valor por defecto. Los bloques SR y RS fijan esa prioridad en el bloque, mientras que S y R la dejan al orden de sus líneas."
             }
           ],
           "hints": [

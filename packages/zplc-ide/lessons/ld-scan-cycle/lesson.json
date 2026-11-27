@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "ld-scan-cycle",
-  "version": 5,
+  "version": 6,
   "order": 8,
   "module": 1,
   "level": "foundation",

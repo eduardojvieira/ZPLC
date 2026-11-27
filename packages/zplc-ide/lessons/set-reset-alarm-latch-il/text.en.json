@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "Which order would you choose for a stop command, and which for a start request? Think about what should win when both are pressed.",
-      "checkpoint": "A stop or reset should usually win, so its R line goes last; the choice is a design decision, not a default. The SR and RS blocks fix that priority in the block, while S and R leave it to the order of your lines."
+      "checkpoint": "Which command should win when both arrive together is a design decision, not a default. The SR and RS blocks fix that priority in the block, while S and R leave it to the order of your lines."
     }
   ],
   "hints": [
