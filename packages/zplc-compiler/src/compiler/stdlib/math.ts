@@ -57,8 +57,9 @@ export const ABS_FN: FunctionDef = {
         }
 
         ctx.emit(`    ; ABS(IN)`);
-        ctx.emitExpression(args[0]);
         const type = ctx.typeOf?.(args[0]);
+        if (isWideInteger(type) && ctx.emitOperand) ctx.emitOperand(args[0], type!);
+        else ctx.emitExpression(args[0]);
         if (type === 'LREAL') {
             ctx.emit(`    ABSD`);
         } else if (isWideInteger(type)) {
@@ -124,8 +125,9 @@ export const NEG_FN: FunctionDef = {
         }
 
         ctx.emit(`    ; NEG(IN)`);
-        ctx.emitExpression(args[0]);
         const type = ctx.typeOf?.(args[0]);
+        if (isWideInteger(type) && ctx.emitOperand) ctx.emitOperand(args[0], type!);
+        else ctx.emitExpression(args[0]);
         ctx.emit(type === 'LREAL' ? `    NEGD` : isWideInteger(type) ? `    NEG64` : isFloatType(type) ? `    NEGF` : `    NEG`);
     },
 };
