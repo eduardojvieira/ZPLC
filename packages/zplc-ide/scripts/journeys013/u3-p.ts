@@ -75,7 +75,7 @@ export const journeysU3P: Journey[] = [
       await app.eval(`(${ACTIVITY}).querySelector('li[data-part] button').click()`);
       const speed = `[...(${INSPECTOR}).querySelectorAll('label')].find((l) => l.textContent.startsWith('speedMps'))`;
       await app.until('the part form in the Inspector', async () => {
-        const found = await app.eval<boolean>(`Boolean((${INSPECTOR}).querySelector('#plant-editor-form'))`);
+        const found = await app.eval<boolean>(`Boolean((${INSPECTOR}).querySelector('#inspector-plant-editor-form'))`);
         return found || undefined;
       });
       // a speed far above its limit is refused at its field
