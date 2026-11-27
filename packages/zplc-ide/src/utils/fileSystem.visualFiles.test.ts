@@ -36,6 +36,18 @@ let project: string;
 let dialogAnswer: string | null;
 let session = 7000;
 
+function isCaseInsensitiveDir(dir: string): boolean {
+  const probeDir = mkdtempSync(path.join(dir, 'zplc-case-probe-'));
+  try {
+    writeFileSync(path.join(probeDir, 'probe'), '');
+    return existsSync(path.join(probeDir, 'PROBE'));
+  } finally {
+    rmSync(probeDir, { recursive: true, force: true });
+  }
+}
+
+const CASE_INSENSITIVE_DISK = isCaseInsensitiveDir(tmpdir());
+
 function loopbackBridge(): ProjectFilesBridge {
   const files = createProjectFiles(async () => dialogAnswer);
   const send = (channel: string, args: unknown[]) => files.handle(1, channel, args);
@@ -227,8 +239,8 @@ describe('a name that the build already reads as an existing file (LX-7b)', () =
   ];
 
   // The table above has to say what the build reader says, or the guard and the build would drift apart.
-  // Two names that differ only by case cannot both exist on a case-insensitive disk (Windows), so those pairs are POSIX-only.
-  const coexist = (pair: (typeof PAIRS)[number]) => process.platform !== 'win32' || pair[0].toLowerCase() !== pair[3];
+  // Two names that differ only by case cannot both exist on a case-insensitive disk, so those pairs require a case-sensitive one.
+  const coexist = (pair: (typeof PAIRS)[number]) => !CASE_INSENSITIVE_DISK || pair[0].toLowerCase() !== pair[3];
   it.each(PAIRS.filter((pair) => pair[0] !== pair[3] && coexist(pair)))(
     'the build reads %s and the file made from "%s" (%s) as %s the same name: %s',
     async (existing, _typed, _language, wouldBe, twin) => {
@@ -307,8 +319,8 @@ describe('folders written by earlier versions and by hand', () => {
 
     rmSync(path.join(project, 'src', 'main.ld'));
     expect((await readWorkspace(project)).ok).toBe(true);
-    // A case-only twin cannot be created on a case-insensitive disk (Windows).
-    if (process.platform === 'win32') return;
+    // A case-only twin cannot be created on a case-insensitive disk.
+    if (CASE_INSENSITIVE_DISK) return;
     seed({ 'Main.LD.JSON': '{}' });
     expect(await readWorkspace(project)).toMatchObject({ ok: false, diagnostics: [{ code: 'WORKSPACE_DUPLICATE_SOURCE' }] });
   });

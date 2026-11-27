@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readdir, realpath, rename, rm, symlink, writeFile } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, readdir, realpath, rename, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
@@ -12,6 +12,17 @@ async function workspace(): Promise<string> {
   await writeFile(join(root, 'zplc.json'), manifest);
   await writeFile(join(root, 'src', 'Main.st'), 'PROGRAM Main\nEND_PROGRAM');
   return root;
+}
+async function isCaseInsensitiveDir(dir: string): Promise<boolean> {
+  await writeFile(join(dir, 'case-probe'), '');
+  try {
+    await access(join(dir, 'CASE-PROBE'));
+    return true;
+  } catch {
+    return false;
+  } finally {
+    await rm(join(dir, 'case-probe'), { force: true });
+  }
 }
 async function checked(run: (root: string) => Promise<void>, expected: string) {
   const root = await workspace();
@@ -119,8 +130,8 @@ describe('readWorkspace', () => {
     }, 'PROJECT_INVALID');
     const root = await workspace();
     try {
-      // Names that differ only by case cannot coexist on a case-insensitive disk, so Windows uses the legacy main.ld twin.
-      if (process.platform === 'win32') {
+      // Names that differ only by case cannot coexist on a case-insensitive disk, so those hosts use the legacy main.ld twin.
+      if (await isCaseInsensitiveDir(root)) {
         await writeFile(join(root, 'src', 'main.ld'), '{}');
         await writeFile(join(root, 'src', 'main.ld.json'), '{}');
       } else await writeFile(join(root, 'src', 'main.ST'), 'PROGRAM Main\nEND_PROGRAM');

@@ -125,74 +125,105 @@ function sceneLessons(
   return { lessons, scenes, problems: () => loadLessonPackages(lessons, undefined, scenes).problems.filter((p) => p.includes(LESSON)) };
 }
 
+// The real-core runs take ~0.3 s idle and over 5 s on a loaded runner (macOS CI): bun's default 5 s timeout cut them short.
+const REAL_CORE_TIMEOUT_MS = 120_000;
+
 describe('a lesson package may name a scene (CRS-003, CRS-004, LNK-001, PLT-013)', () => {
-  it('CRS-003 a manifest names the scene the lesson ships', () => {
-    const { lessons, scenes, problems } = sceneLessons();
-    expect(problems()).toEqual([]);
-    const loaded = loadLessonPackages(lessons, undefined, scenes);
-    const lesson = loaded.packages.find((p) => p.id === LESSON)!;
-    expect(lesson.manifest.scene).toBe(SCENE);
-    const entry = buildIndex(loaded.packages, loadCourse(lessons).course!).index.lessons.find((l) => l.id === LESSON)!;
-    expect(entry.scene).toBe(SCENE);
-    expect(entry.plant).toBeNull();
-  });
+  it(
+    'CRS-003 a manifest names the scene the lesson ships',
+    () => {
+      const { lessons, scenes, problems } = sceneLessons();
+      expect(problems()).toEqual([]);
+      const loaded = loadLessonPackages(lessons, undefined, scenes);
+      const lesson = loaded.packages.find((p) => p.id === LESSON)!;
+      expect(lesson.manifest.scene).toBe(SCENE);
+      const entry = buildIndex(loaded.packages, loadCourse(lessons).course!).index.lessons.find((l) => l.id === LESSON)!;
+      expect(entry.scene).toBe(SCENE);
+      expect(entry.plant).toBeNull();
+    },
+    REAL_CORE_TIMEOUT_MS,
+  );
 
-  it('CRS-004 a scene lesson is data only: adding one changes no application code', () => {
-    // The fixture above is a folder of JSON files and nothing else: it loads and indexes with the code of the 2.0 loader.
-    const { lessons, scenes } = sceneLessons();
-    const files = (root: string): string[] =>
-      readdirSync(root, { recursive: true })
-        .map(String)
-        .filter((f) => statSync(join(root, f)).isFile());
-    expect(files(join(lessons, LESSON)).filter((f) => /\.(ts|tsx|js)$/.test(f))).toEqual([]);
-    expect(files(join(scenes, SCENE))).toEqual(['scene.json']);
-    expect(loadLessonPackages(lessons, undefined, scenes).packages.some((p) => p.id === LESSON)).toBe(true);
-  });
+  it(
+    'CRS-004 a scene lesson is data only: adding one changes no application code',
+    () => {
+      // The fixture above is a folder of JSON files and nothing else: it loads and indexes with the code of the 2.0 loader.
+      const { lessons, scenes } = sceneLessons();
+      const files = (root: string): string[] =>
+        readdirSync(root, { recursive: true })
+          .map(String)
+          .filter((f) => statSync(join(root, f)).isFile());
+      expect(files(join(lessons, LESSON)).filter((f) => /\.(ts|tsx|js)$/.test(f))).toEqual([]);
+      expect(files(join(scenes, SCENE))).toEqual(['scene.json']);
+      expect(loadLessonPackages(lessons, undefined, scenes).packages.some((p) => p.id === LESSON)).toBe(true);
+    },
+    REAL_CORE_TIMEOUT_MS,
+  );
 
-  it('PLT-013 the 68 packages of 2.0, named by id, name no scene and validate as before', () => {
-    const loaded = loadLessonPackages();
-    expect(loaded.problems).toEqual([]);
-    const legacy = loaded.packages.filter((p) => PACKAGES_2_0.includes(p.id));
-    expect(legacy.map((p) => p.id).sort()).toEqual([...PACKAGES_2_0]);
-    expect(legacy.filter((p) => p.manifest.scene !== undefined)).toEqual([]);
-    const { index } = buildIndex(loaded.packages, loadCourse().course!);
-    expect(index.lessons.filter((entry) => PACKAGES_2_0.includes(entry.id) && 'scene' in entry)).toEqual([]);
-  });
+  it(
+    'PLT-013 the 68 packages of 2.0, named by id, name no scene and validate as before',
+    () => {
+      const loaded = loadLessonPackages();
+      expect(loaded.problems).toEqual([]);
+      const legacy = loaded.packages.filter((p) => PACKAGES_2_0.includes(p.id));
+      expect(legacy.map((p) => p.id).sort()).toEqual([...PACKAGES_2_0]);
+      expect(legacy.filter((p) => p.manifest.scene !== undefined)).toEqual([]);
+      const { index } = buildIndex(loaded.packages, loadCourse().course!);
+      expect(index.lessons.filter((entry) => PACKAGES_2_0.includes(entry.id) && 'scene' in entry)).toEqual([]);
+    },
+    REAL_CORE_TIMEOUT_MS,
+  );
 
-  it('LNK-001 a manifest with both plant and scene is rejected with a located message', () => {
-    const { problems } = sceneLessons({ manifest: { plant: 'motor-v1' } });
-    expect(problems().some((p) => p.startsWith(`${LESSON}/lesson.json: manifest.scene: `) && p.includes('plant'))).toBe(true);
-  });
+  it(
+    'LNK-001 a manifest with both plant and scene is rejected with a located message',
+    () => {
+      const { problems } = sceneLessons({ manifest: { plant: 'motor-v1' } });
+      expect(problems().some((p) => p.startsWith(`${LESSON}/lesson.json: manifest.scene: `) && p.includes('plant'))).toBe(true);
+    },
+    REAL_CORE_TIMEOUT_MS,
+  );
 
-  it('LNK-001 a scene must be a slug, and null means no scene', () => {
-    expect(sceneLessons({ manifest: { scene: '../up' } }).problems()[0]).toContain('manifest.scene');
-    expect(
-      sceneLessons({ manifest: { scene: null } })
-        .problems()
-        .some((p) => p.includes('scene')),
-    ).toBe(true);
-  });
+  it(
+    'LNK-001 a scene must be a slug, and null means no scene',
+    () => {
+      expect(sceneLessons({ manifest: { scene: '../up' } }).problems()[0]).toContain('manifest.scene');
+      expect(
+        sceneLessons({ manifest: { scene: null } })
+          .problems()
+          .some((p) => p.includes('scene')),
+      ).toBe(true);
+    },
+    REAL_CORE_TIMEOUT_MS,
+  );
 
-  it('LNK-001 the map must target the scene the manifest names, and the scene must ship', () => {
-    const wrong = sceneLessons({ map: { ...sceneMap, target: { scene: 'other' } } });
-    expect(wrong.problems()).toContain(`${LESSON}/plant-map.json: scene "other" differs from the manifest scene "${SCENE}"`);
-    const rmScene = sceneLessons();
-    rmSync(join(rmScene.scenes, SCENE), { recursive: true });
-    expect(rmScene.problems()).toContain(
-      `${LESSON}: the lesson names the scene "${SCENE}" but plant-scenes/${SCENE}/scene.json does not exist`,
-    );
-    const broken = sceneLessons({ scene: { schemaVersion: 1 } });
-    expect(broken.problems().some((p) => p.startsWith(`${LESSON}/scene ${SCENE}: `))).toBe(true);
-  });
+  it(
+    'LNK-001 the map must target the scene the manifest names, and the scene must ship',
+    () => {
+      const wrong = sceneLessons({ map: { ...sceneMap, target: { scene: 'other' } } });
+      expect(wrong.problems()).toContain(`${LESSON}/plant-map.json: scene "other" differs from the manifest scene "${SCENE}"`);
+      const rmScene = sceneLessons();
+      rmSync(join(rmScene.scenes, SCENE), { recursive: true });
+      expect(rmScene.problems()).toContain(
+        `${LESSON}: the lesson names the scene "${SCENE}" but plant-scenes/${SCENE}/scene.json does not exist`,
+      );
+      const broken = sceneLessons({ scene: { schemaVersion: 1 } });
+      expect(broken.problems().some((p) => p.startsWith(`${LESSON}/scene ${SCENE}: `))).toBe(true);
+    },
+    REAL_CORE_TIMEOUT_MS,
+  );
 
-  it('LNK-001 a scene lesson needs a scene block in its scenario and no plant there', () => {
-    const noBlock = sceneLessons();
-    const file = join(noBlock.lessons, LESSON, 'scenario.json');
-    const bare = readJson(file);
-    delete bare.scene;
-    write(file, bare);
-    expect(noBlock.problems().some((p) => p.includes('has a scenario with a "scene" block'))).toBe(true);
-    const both = sceneLessons({ scenario: { plant: 'motor-v1' } });
-    expect(both.problems().some((p) => p.includes('scenario.plant'))).toBe(true);
-  });
+  it(
+    'LNK-001 a scene lesson needs a scene block in its scenario and no plant there',
+    () => {
+      const noBlock = sceneLessons();
+      const file = join(noBlock.lessons, LESSON, 'scenario.json');
+      const bare = readJson(file);
+      delete bare.scene;
+      write(file, bare);
+      expect(noBlock.problems().some((p) => p.includes('has a scenario with a "scene" block'))).toBe(true);
+      const both = sceneLessons({ scenario: { plant: 'motor-v1' } });
+      expect(both.problems().some((p) => p.includes('scenario.plant'))).toBe(true);
+    },
+    REAL_CORE_TIMEOUT_MS,
+  );
 });
