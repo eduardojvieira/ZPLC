@@ -38,6 +38,10 @@ flowchart TD
 | Firmware Zephyr                    | Una imagen por perfil de placa, con los adaptadores del HAL de esa placa                | Depende del perfil; véase [compatibilidad de hardware](../reference/capabilities-evidence.md) |
 | Puerto FreeRTOS                    | Un segundo puerto embebido, compilado contra el simulador POSIX de FreeRTOS             | Host (simulador); ninguna placa FreeRTOS está calificada                                      |
 
+### Límite conocido en Windows
+
+En 2.1.0 el simulador en Windows no tiene los bloques Modbus ni MQTT, ni el bucle local (loopback), ni el enlace con el dispositivo, así que un bloque de esos servicios responde «no handler». Ejecútelos en Linux o macOS. Vea [la página de instalación](../getting-started/install.md#límite-conocido-en-windows-comunicación-del-simulador). Es el enunciado de un límite, no una medición.
+
 ## De la compilación a la máquina en marcha
 
 1. **Compile** el proyecto en un artefacto `.zplc`.
