@@ -2,7 +2,7 @@ import { join } from 'node:path';
 import { assert } from '../run-desktop-smoke';
 import { button, css } from '../journeyApp';
 import type { Journey } from '../journeys';
-import { openPlantDocument, runInSimulation, SHIPPED, shippedSceneProject, writeSceneProject } from '../journeys/plantSupport';
+import { openPlantDocument, runFromPalette, runInSimulation, SHIPPED, shippedSceneProject, writeSceneProject } from '../journeys/plantSupport';
 
 /** The Plant activity of the rail, as the one region that holds the signal list (the plant document has its own region). */
 const ACTIVITY = `[...document.querySelectorAll('[role="region"]')].find((r) => r.querySelector('[data-plant-signal-list]'))`;
@@ -61,6 +61,9 @@ export const journeysU3P: Journey[] = [
         const found = await app.eval<boolean>(`Boolean((${ACTIVITY}).querySelector('li[data-part] button'))`);
         return found || undefined;
       });
+      // the Inspector starts closed: open it from its command
+      await runFromPalette(app, 'view.showInspector', 'show the inspector');
+      await app.until('the Inspector', async () => (await app.eval<boolean>(`Boolean(${INSPECTOR})`)) || undefined);
       // select the first part: its form is in the Inspector
       await app.eval(`(${ACTIVITY}).querySelector('li[data-part] button').click()`);
       const speed = `[...(${INSPECTOR}).querySelectorAll('label')].find((l) => l.textContent.startsWith('speedMps'))`;
