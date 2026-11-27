@@ -15,8 +15,15 @@ export function PlantPartInspector() {
   const running = usePlantEdit((s) => s.running);
   usePlantEdit((s) => s.version); // every edit, undo and redo re-renders the form
   const [notes, setNotes] = useState<ProblemAt[]>([]);
-  if (!editor) return null;
-  const state = editor.state();
+  const [seen, setSeen] = useState('');
+  const state = editor?.state();
+  // A refusal belongs to the selection and history it was made at: a new selection, undo or redo clears it.
+  const stamp = `${state?.selection}|${state?.past}|${state?.future}`;
+  if (seen !== stamp) {
+    setSeen(stamp);
+    setNotes([]);
+  }
+  if (!editor || !state) return null;
   const part = state.scene.parts.find((p) => p.id === state.selection);
   if (!part) return null;
   const act = (fn: () => ProblemAt[] | void) => {
@@ -31,6 +38,7 @@ export function PlantPartInspector() {
         def={catalogue.get(part.part)}
         problems={[...state.problems, ...notes]}
         disabled={running}
+        idPrefix="inspector-"
         onMove={(x, z) => act(() => editor.move(part.id, [x, part.position[1], z]))}
         onRotate={(deg) => act(() => editor.rotate(part.id, deg))}
         onConfigure={(patch) =>
