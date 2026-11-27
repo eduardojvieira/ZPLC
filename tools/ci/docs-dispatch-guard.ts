@@ -58,7 +58,8 @@ export function checkDocsDispatch(cwd: string, tag: string, ref: string): GuardR
     .filter((entry) => entry.startsWith('120000 '))
     .map((entry) => entry.slice(entry.indexOf('\t') + 1));
   if (links.length > 0) {
-    return { ok: false, reason: `refused: ${ref} holds a symbolic link under docs/ (${links.slice(0, 10).join(', ')}); a link can point outside docs/.` };
+    const shown = links.slice(0, 10).join(', ');
+    return { ok: false, reason: `refused: ${ref} holds a symbolic link under docs/ (${shown}); a link can point outside docs/.` };
   }
   return { ok: true, sha };
 }

@@ -21,7 +21,13 @@ const workflows = readdirSync(folder)
 const workflow = (name: string) => workflows.find(([file]) => file === name)![1];
 
 type Step = { name?: string; run?: string; uses?: string; with?: Record<string, unknown>; env?: Record<string, string> };
-type DeployJob = { outputs?: Record<string, string>; needs?: string | string[]; if?: string; steps: Step[]; permissions?: Record<string, string> };
+type DeployJob = {
+  outputs?: Record<string, string>;
+  needs?: string | string[];
+  if?: string;
+  steps: Step[];
+  permissions?: Record<string, string>;
+};
 type DeployWorkflow = {
   on: Record<string, { branches?: string[]; types?: string[]; inputs?: Record<string, { required?: boolean }> } | null>;
   permissions?: Record<string, string>;
