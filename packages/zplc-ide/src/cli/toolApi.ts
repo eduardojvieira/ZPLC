@@ -92,6 +92,7 @@ export type CompilerCompileResult = CompilerCheckResult & {
   debugMap?: DebugMap;
   /** `build.generateDebugInfo`: the CLI writes the debug map beside the artifact (CMP-059). */
   writeDebugMap?: boolean;
+  sourceFingerprints?: Readonly<Record<string, string>>;
 };
 export interface TestSummary {
   backend: 'native-posix';
@@ -573,7 +574,8 @@ async function compile<Operation extends CompileOperation>(root: string, operati
   const diagnostics = unresolvedPrograms(loaded.workspace);
   if (diagnostics.length) return failed(operation, diagnostics) as CompileResult<Operation>;
   try {
-    const result = compileMultiTaskProject(loaded.workspace.project, compilationSources(loaded.workspace));
+    const sources = compilationSources(loaded.workspace);
+    const result = compileMultiTaskProject(loaded.workspace.project, sources);
     if (operation === 'symbols-list')
       return {
         ok: true,
@@ -608,7 +610,10 @@ async function compile<Operation extends CompileOperation>(root: string, operati
       evidence: evidence(operation, 'passed', warnings, operation === 'symbols-list' ? [] : [artifact]),
     };
     if (operation === 'compile') {
-      markProgramInputs(result.debugMap, compilationSources(loaded.workspace));
+      markProgramInputs(result.debugMap, sources);
+      const sourceFingerprints = Object.fromEntries(
+        sources.map((source) => [source.sourceRef, createHash('sha256').update(source.bytes).digest('hex')]),
+      );
       Object.defineProperties(response, {
         bytes: { value: bytes, enumerable: false },
         zplcFile: { value: result.zplcFile, enumerable: false },
@@ -619,6 +624,7 @@ async function compile<Operation extends CompileOperation>(root: string, operati
         },
         debugMap: { value: result.debugMap, enumerable: false },
         writeDebugMap: { value: options.generateDebugInfo, enumerable: false },
+        sourceFingerprints: { value: sourceFingerprints, enumerable: false },
       });
     }
     return response as CompileResult<Operation>;
