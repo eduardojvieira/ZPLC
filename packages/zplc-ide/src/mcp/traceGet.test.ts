@@ -137,7 +137,7 @@ describe('trace_get reads a trace over 512 KiB (AI-03)', () => {
       cursor: 0,
       traceSha256,
     });
-    const whole = await dispatch('trace_get', { scenarioId: 'smoke' }, signal);
+    const whole = await dispatch('trace_get', { scenarioId: 'smoke', mode: 'full' }, signal);
     expect(content(whole)).toMatchObject({ ok: false, error: 'MCP_OUTPUT_LIMIT', validValues: ['changes', 'summary', 'window'] });
     expect(content(whole).nextStep).toContain('mode');
     const summary = await dispatch('trace_get', { scenarioId: 'smoke', mode: 'summary' }, signal);
@@ -162,6 +162,7 @@ describe('trace_get reads a trace over 512 KiB (AI-03)', () => {
     const started = performance.now();
     for (const [tool, args] of [
       ['trace_get', { scenarioId: 'smoke' }],
+      ['trace_get', { scenarioId: 'smoke', mode: 'full' }],
       ['trace_get', { scenarioId: 'smoke', mode: 'summary' }],
       ['simulation_start', { scenarioId: 'smoke' }],
     ] as const) {
@@ -176,7 +177,7 @@ describe('trace_get reads a trace over 512 KiB (AI-03)', () => {
 });
 
 describe('trace_get asks for the sidecar only in the new modes (AI-08)', () => {
-  test('AI-08 a 2.0 call asks for no sidecar; a new mode asks for the inputs and the watched names', async () => {
+  test('AI-08 mode full asks for no sidecar; the other modes, and no mode, ask for the inputs and the watched names', async () => {
     const seen: unknown[] = [];
     const bytes = aggregate(2);
     const dispatch = createMcpDispatcher(
@@ -186,11 +187,18 @@ describe('trace_get asks for the sidecar only in the new modes (AI-08)', () => {
         return runValue(bytes);
       }),
     );
-    await dispatch('trace_get', { scenarioId: 'smoke' }, signal);
+    await dispatch('trace_get', { scenarioId: 'smoke', mode: 'full' }, signal);
     await dispatch('scenario_run', { scenarioId: 'smoke' }, signal);
     await dispatch('trace_get', { scenarioId: 'smoke', mode: 'changes', watchSignals: ['Main.Count'] }, signal);
     await dispatch('trace_get', { scenarioId: 'smoke', includeInputs: false }, signal);
-    expect(seen).toEqual([undefined, undefined, { inputs: true, watch: ['Main.Count'] }, { inputs: false, watch: [] }]);
+    await dispatch('trace_get', { scenarioId: 'smoke' }, signal);
+    expect(seen).toEqual([
+      undefined,
+      undefined,
+      { inputs: true, watch: ['Main.Count'] },
+      { inputs: false, watch: [] },
+      { inputs: true, watch: [] },
+    ]);
   });
 
   test('AIX-015 an unknown watched name is MCP_NOT_FOUND with the names that can be watched', async () => {
@@ -214,7 +222,7 @@ describe('trace_get asks for the sidecar only in the new modes (AI-08)', () => {
       operations(async () => runValue(aggregate(2))),
     );
     const result = await dispatch('trace_get', { scenarioId: 'smoke', mode: 'all' }, signal);
-    expect(content(result)).toMatchObject({ ok: false, error: 'MCP_INVALID_ARGUMENTS', validValues: ['changes', 'summary', 'window'] });
+    expect(content(result)).toMatchObject({ ok: false, error: 'MCP_INVALID_ARGUMENTS', validValues: ['changes', 'full', 'summary', 'window'] });
     expect(content(result).nextStep).toBeString();
   });
 });
@@ -353,7 +361,7 @@ describe('trace_get on a shipped plant lesson (AI-03, AI-08)', () => {
         ['tests_run', {}],
         ['scenario_run', { scenarioId: 'belt-to-sensor' }],
         ['scenario_run', { scenarioId: 'nope' }],
-        ['trace_get', { scenarioId: 'belt-to-sensor' }],
+        ['trace_get', { scenarioId: 'belt-to-sensor', mode: 'full' }],
         ['simulation_start', { scenarioId: 'belt-to-sensor' }],
       ] as const) {
         const body = content(await dispatch(tool, args, signal)) as unknown as Reply;
