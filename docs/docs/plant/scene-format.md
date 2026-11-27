@@ -9,6 +9,8 @@ tags: [plant, reference]
 
 A scene is a JSON file. It is data only: ZPLC reads it with a JSON parser and evaluates nothing. A scene is saved with its project. The signals a scene offers come from its parts, see the [parts reference](./parts.md). A separate plant map file ties those signals to the variables of the program. A [scenario](../reference/scenario-file.md) names the scene file and the map file in its `scene` key.
 
+The JSON Schema of the file, every catalogue part with its settings and a worked example that a test checks are on [Plant scene schema](../reference/format-scene.md).
+
 ## Example
 
 ```json
