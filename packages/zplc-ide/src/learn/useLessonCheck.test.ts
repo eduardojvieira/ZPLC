@@ -75,4 +75,21 @@ describe('the lesson check hook', () => {
     expect(calls).toEqual([]);
     expect(latest.declined('any-lesson')).toBe('cancelled');
   });
+
+  it('FLW-006 a project switch during the Ask question runs nothing', async () => {
+    dom.patchStore(useAppSettings, { settings: { ...useAppSettings.getState().settings, saveBeforeRun: 'ask' } } as never);
+    const unmount = mountConfirmHost();
+    dom.render(createElement(Probe, { per: true }));
+    const run = latest.run('any-lesson');
+    await dom.waitFor(() => expect(currentConfirmation()).not.toBeNull());
+    await dom.act(async () => {
+      // another project is opened while the question is on screen, then the learner says Save
+      const next = useIDEStore.getState().projectSession + 1;
+      useIDEStore.setState({ projectSession: next, workspaceScenarioLink: { workspaceId: 'other', projectSession: next } });
+      answerConfirmation(true);
+      await run;
+    });
+    unmount();
+    expect(calls).not.toContain('check');
+  });
 });

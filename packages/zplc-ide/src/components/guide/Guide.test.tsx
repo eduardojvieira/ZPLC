@@ -210,12 +210,12 @@ describe('The Guide asks the Assistant for a hint (AIX-003)', () => {
 
 describe('Check is one action from the Guide (GDE-004)', () => {
   const HASH = 'a'.repeat(64);
-  const record = (failed: boolean) => ({
+  const record = (failed: boolean, target = lesson) => ({
     schemaVersion: 1,
-    lessonId: lesson.id,
+    lessonId: target.id,
     lessonVersion: 1,
     track: 'simulation',
-    scenarioId: lesson.requiredScenario,
+    scenarioId: target.requiredScenario,
     scenarioSha256: HASH,
     programSha256: HASH,
     runtimeVersion: '2.1.0',
@@ -230,7 +230,7 @@ describe('Check is one action from the Guide (GDE-004)', () => {
   let tabSpy: string[];
 
   /** A project with one unsaved document, a host whose lesson check answers `answer`, and a spy on the Tests surface. */
-  function openProject(answer: unknown) {
+  function openProject(answer: unknown, target = lesson) {
     calls = [];
     requests = [];
     tabSpy = [];
@@ -250,9 +250,9 @@ describe('Check is one action from the Guide (GDE-004)', () => {
     } as never);
     dom.patchStore(useLearnProgress, { document: null, loaded: true, failed: false, recordGrade: async () => true } as never);
     dom.patchStore(useLearnUi, {
-      selected: lesson.id,
+      selected: target.id,
       starting: false,
-      workspace: { lessonId: lesson.id, session: useIDEStore.getState().projectSession },
+      workspace: { lessonId: target.id, session: useIDEStore.getState().projectSession },
     } as never);
     dom.patchStore(useIDEStore, {
       isProjectOpen: true,
@@ -332,6 +332,33 @@ describe('Check is one action from the Guide (GDE-004)', () => {
     await dom.waitFor(() => expect(calls).toEqual(['save', 'check']));
   });
 
-  // M7-K1 made the runner scene-aware (`runSceneLesson`, covered in learn/lessonScene.test.ts), but no shipped lesson names a scene yet.
-  it.skip('GDE-004 a scene lesson is graded on a plant fact (skipped: no lesson of the generated index names a scene yet)', () => {});
+  it('GDE-004 a scene lesson is graded on a plant fact: the failure names the fact and its time', async () => {
+    const entry = LESSON_INDEX.lessons.find((candidate) => candidate.scene)!;
+    const sceneLesson = learnLessonCatalog.en.find((candidate) => candidate.id === entry.id)!;
+    const expectations = JSON.parse(entry.scenario.canonical).expectations as Array<{
+      condition: Record<string, unknown>;
+      withinMs?: number;
+    }>;
+    const index = expectations.findIndex((expectation) => Object.keys(expectation.condition).some((key) => key.startsWith('fact:')));
+    const fact = Object.keys(expectations[index]!.condition).find((key) => key.startsWith('fact:'))!;
+    const failed = record(true, sceneLesson);
+    failed.failedAssertions = [
+      {
+        index,
+        kind: 'EVENTUALLY',
+        atMs: expectations[index]!.withinMs ?? 8000,
+        expected: { [fact]: true },
+        observed: { [fact]: false },
+        trace: null,
+      },
+    ] as never;
+    openProject({ ok: true, record: failed }, sceneLesson);
+    const view = dom.render(<Guide />);
+    await view.user.click(document.querySelector('[data-learn-check]')!);
+    await dom.waitFor(() => expect(document.querySelector('[data-learn-failures]')).not.toBeNull());
+    expect(requests[0]).toMatchObject({ lessonId: entry.id });
+    const text = document.querySelector('[data-learn-failures]')!.textContent!;
+    expect(text).toContain(fact);
+    expect(text).toContain(`${failed.failedAssertions[0]!.atMs} ms`);
+  });
 });
