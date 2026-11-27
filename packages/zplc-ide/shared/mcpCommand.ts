@@ -1,6 +1,7 @@
 /**
- * Where the local MCP server `zplc-mcp` is (AIX-007): `ZPLC_MCP_BIN` when it names an absolute executable file, otherwise the
- * first folder of `PATH` that holds one named `zplc-mcp`. Answers the absolute path, or null. It only looks at files: no shell,
+ * Where the local MCP server `zplc-mcp` is (AIX-007): `ZPLC_MCP_BIN` when it names an absolute executable file; otherwise the
+ * copy the installer carries in `<resourcesPath>/zplc-mcp/` (Electron sets `process.resourcesPath`; it is the version that
+ * matches this build); otherwise the first folder of `PATH` that holds one named `zplc-mcp`. Answers the absolute path, or null. It only looks at files: no shell,
  * no process. When `ZPLC_MCP_BIN` is set but wrong, the answer is null rather than a quiet fall back to another binary.
  */
 import { access, constants, stat } from 'node:fs/promises';
@@ -19,10 +20,15 @@ async function executableFile(path: string, platform: NodeJS.Platform): Promise<
 export async function resolveMcpCommand(
   env: Record<string, string | undefined>,
   platform: NodeJS.Platform = process.platform,
+  resourcesPath: string | undefined = (process as { resourcesPath?: string }).resourcesPath,
 ): Promise<string | null> {
   const chosen = env['ZPLC_MCP_BIN'];
   if (chosen) return isAbsolute(chosen) && (await executableFile(chosen, platform)) ? chosen : null;
   const name = platform === 'win32' ? 'zplc-mcp.exe' : 'zplc-mcp';
+  if (resourcesPath && isAbsolute(resourcesPath)) {
+    const bundled = join(resourcesPath, 'zplc-mcp', name);
+    if (await executableFile(bundled, platform)) return bundled;
+  }
   for (const folder of (env['PATH'] ?? '').split(delimiter)) {
     if (!isAbsolute(folder)) continue;
     const candidate = join(folder, name);
