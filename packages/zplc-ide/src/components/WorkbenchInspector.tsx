@@ -6,6 +6,8 @@ import { useSelection } from '../shell/useSelection';
 import { PanelEmptyState } from './panelStates';
 import { presentActiveDocument } from './workbenchInspectorPresentation';
 import { ControllerView } from './ControllerView';
+import { usePlantEdit } from '../plant/editSession';
+import { PlantPartInspector } from './PlantPartInspector';
 
 function Row({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
   return (
@@ -18,8 +20,9 @@ function Row({ label, value, mono = false }: { label: string; value: string; mon
 
 /**
  * The properties of the current selection (SHL-009): the active document, the selected element of a visual editor, the selected test
- * and the connected board. It repeats nothing of the status rail (project, target, connection, counts). It is read-only in 2.1: a
- * property is changed in the editor that owns it, so every change goes through that document's undo history.
+ * and the connected board. It repeats nothing of the status rail (project, target, connection, counts). It is read-only except for the
+ * part of a plant scene being edited: any other property is changed in the editor that owns it, so every change goes through that
+ * document's undo history.
  */
 export function WorkbenchInspector() {
   const { t, tn } = useT();
@@ -32,6 +35,10 @@ export function WorkbenchInspector() {
   const testPath = useSelection((state) => state.test);
   const test = useProjectTests((state) => (testPath === null ? undefined : state.tests.find((candidate) => candidate.path === testPath)));
   const record = useProjectTests((state) => (testPath === null ? undefined : state.records[testPath]));
+  const editingPart = usePlantEdit((s) => {
+    const state = s.editor?.state();
+    return Boolean(state?.scene.parts.some((p) => p.id === state.selection));
+  });
   const document = activeFile ? presentActiveDocument(activeFile) : null;
 
   return (
@@ -72,6 +79,7 @@ export function WorkbenchInspector() {
           <p className="ledger-inspector-note">{t('inspector.noElement')}</p>
         )}
       </section>
+      <PlantPartInspector />
       {testPath !== null && (
         <section aria-labelledby="inspector-test">
           <h2 id="inspector-test">{t('inspector.test')}</h2>
@@ -90,7 +98,7 @@ export function WorkbenchInspector() {
           <ControllerView />
         </section>
       )}
-      <p className="ledger-inspector-note px-[10px] pb-[10px]">{t('inspector.readOnly')}</p>
+      {!editingPart && <p className="ledger-inspector-note px-[10px] pb-[10px]">{t('inspector.readOnly')}</p>}
     </aside>
   );
 }
