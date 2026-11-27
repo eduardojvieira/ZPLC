@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 
-import { createHold, faceplateUnavailable, latestWins, sameInputValue, settleInputs } from './faceplateState';
+import { createHold, faceplateUnavailable, latestWins, plantFedPaths, sameInputValue, settleInputs } from './faceplateState';
 
 describe('an input change that waits for the next scan (LRN-017)', () => {
   it('compares a value as the runtime holds it: a REAL as a 32-bit float, an integer exactly', () => {
@@ -118,5 +118,17 @@ describe('when the faceplate cannot apply a change (LRN-017)', () => {
     expect(faceplateUnavailable({ ...ready, vmState: 'paused' })).toBe('paused');
     expect(faceplateUnavailable({ ...ready, vmState: 'idle' })).toBe('notRunning');
     expect(faceplateUnavailable({ ...ready, supported: false })).toBe('noCapability');
+  });
+});
+
+describe('the inputs the plant feeds (PLS-007)', () => {
+  it('PLS-007 lists the program inputs the plant map drives, by their Watch path', () => {
+    const resolved = { drives: { start: { path: 'Motor.Start', name: 'Start' }, level: { path: 'Tank.Level', name: 'Level' } } };
+    // a Watch row names a variable by its path or by its bare name, so both match
+    expect([...plantFedPaths(resolved)].sort()).toEqual(['Level', 'Motor.Start', 'Start', 'Tank.Level']);
+  });
+
+  it('PLS-007 an input with no plant is not listed', () => {
+    expect(plantFedPaths({ drives: {} }).size).toBe(0);
   });
 });
