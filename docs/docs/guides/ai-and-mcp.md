@@ -76,7 +76,7 @@ Most clients that run a local MCP server take a command and its arguments in a c
 
 ### One action in the app
 
-Open the project, then open **Preferences** and find **Connect an AI agent (MCP)**. Choose **Claude Code**, **Cursor** or **VS Code**. The panel shows the exact file and the exact text it would write, all inside the project folder:
+Open the project, then open **Preferences** and find **Connect an AI agent (MCP)**, or run **Connect an AI agent (MCP)** from the command palette, which opens that panel. Choose **Claude Code**, **Cursor** or **VS Code**. The panel shows the exact file and the exact text it would write, all inside the project folder:
 
 | Client      | File               | Key               |
 | ----------- | ------------------ | ----------------- |
