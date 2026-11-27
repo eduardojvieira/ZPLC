@@ -70,7 +70,7 @@ describe('UXF-4 Learn hardware track scrolls inline inside the Learn scroll cont
     expect(Boolean(home.compareDocumentPosition(hardware) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
   });
 
-  it('keeps board selection working and preserves LRN-013 order in the DOM', async () => {
+  it('keeps board selection working and preserves home-above-hardware order in the DOM', async () => {
     const onChoose = mock(() => undefined);
     const { user, container } = dom.render(
       <LearnBoardTrackView board={null} passedOnHardware={[]} onChoose={onChoose}>

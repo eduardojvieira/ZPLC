@@ -165,6 +165,30 @@ body,
   scrollbar-color: var(--color-surface-500) var(--color-surface-800);
 }
 
+/* Editor tab strip overflow scrollbar: thin and unobtrusive until hovered or focused. */
+.editor-tab-strip {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.editor-tab-strip:hover,
+.editor-tab-strip:focus-within {
+  scrollbar-color: var(--color-surface-500) transparent;
+}
+.editor-tab-strip::-webkit-scrollbar {
+  height: 3px;
+}
+.editor-tab-strip::-webkit-scrollbar-track {
+  background: transparent;
+}
+.editor-tab-strip::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 2px;
+}
+.editor-tab-strip:hover::-webkit-scrollbar-thumb,
+.editor-tab-strip:focus-within::-webkit-scrollbar-thumb {
+  background: var(--color-surface-500);
+}
+
 /* =============================================================================
    Component Overrides
    ============================================================================= */
@@ -407,6 +431,10 @@ body,
 .ledger-inspector-note {
   margin-top: 8px !important;
   color: var(--text-tertiary) !important;
+}
+.ledger-inspector > .ledger-inspector-note {
+  padding-inline: 10px;
+  padding-bottom: 10px;
 }
 
 /* Stopgap: buttons and badges put text-white on a solid accent fill, which fails contrast on the light accents of the dark

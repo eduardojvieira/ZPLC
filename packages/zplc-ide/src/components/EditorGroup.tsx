@@ -43,6 +43,17 @@ const configKindOf = (viewId: ViewId): ConfigEditorKind | null => {
   return isConfigEditorKind(kind) ? kind : null;
 };
 
+const tabWrapperClass = (active: boolean) =>
+  'group flex items-center gap-2 px-3 h-full border-r border-[var(--color-surface-600)] cursor-pointer select-none ' +
+  'transition-colors ' +
+  (active
+    ? 'bg-[var(--color-surface-700)] text-[var(--color-surface-100)]'
+    : 'bg-[var(--color-surface-800)] text-[var(--color-surface-300)] hover:bg-[var(--color-surface-700)]');
+
+const tabCloseClass = (active: boolean) =>
+  `p-0.5 rounded ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'} ` +
+  'hover:bg-[var(--color-surface-500)] focus-visible:opacity-100 focus-visible:outline transition-opacity';
+
 function ViewLoading() {
   const { t } = useT();
   return (
@@ -256,15 +267,13 @@ export function EditorGroup({
     >
       {/* Tab Bar */}
       <div className="flex h-9 shrink-0 items-center border-b border-[var(--color-surface-600)] bg-[var(--color-surface-800)]">
-        <div role="tablist" aria-label={t('workbench.editor.views')} className="flex h-full min-w-0 flex-1 items-center overflow-x-auto">
+        <div
+          role="tablist"
+          aria-label={t('workbench.editor.views')}
+          className="editor-tab-strip flex h-full min-w-0 flex-1 items-center overflow-x-auto"
+        >
           {views.includes(SETTINGS_VIEW_ID) && (
-            <div
-              role="presentation"
-              className={
-                'group flex items-center gap-2 px-3 h-full border-r border-[var(--color-surface-600)] cursor-pointer select-none ' +
-                'transition-colors bg-[var(--color-surface-700)] text-[var(--color-surface-100)]'
-              }
-            >
+            <div role="presentation" className={tabWrapperClass(showSettings)}>
               <Button
                 variant="bare"
                 id={`editor-tab-${SETTINGS_VIEW_ID}`}
@@ -283,10 +292,7 @@ export function EditorGroup({
                 variant="bare"
                 type="button"
                 onClick={() => onClose(SETTINGS_VIEW_ID)}
-                className={
-                  'p-0.5 rounded opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 ' +
-                  'hover:bg-[var(--color-surface-500)] focus-visible:opacity-100 focus-visible:outline transition-opacity'
-                }
+                className={tabCloseClass(showSettings)}
                 aria-label={t('workbench.editor.closeSettings')}
                 tooltip={t('workbench.editor.closeSettings')}
               >
@@ -310,13 +316,7 @@ export function EditorGroup({
 
           {/* The plant document (PLS-001) */}
           {plantOpen && (
-            <div
-              role="presentation"
-              className={
-                'group flex items-center gap-2 px-3 h-full border-r border-[var(--color-surface-600)] cursor-pointer select-none ' +
-                'transition-colors bg-[var(--color-surface-700)] text-[var(--color-surface-100)]'
-              }
-            >
+            <div role="presentation" className={tabWrapperClass(plantActive)}>
               <Button
                 variant="bare"
                 id={`editor-tab-${PLANT_VIEW_ID}`}
@@ -335,10 +335,7 @@ export function EditorGroup({
                 variant="bare"
                 type="button"
                 onClick={() => onClose(PLANT_VIEW_ID)}
-                className={
-                  'p-0.5 rounded opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 ' +
-                  'hover:bg-[var(--color-surface-500)] focus-visible:opacity-100 focus-visible:outline transition-opacity'
-                }
+                className={tabCloseClass(plantActive)}
                 aria-label={t('studio.plant.close')}
                 tooltip={t('studio.plant.close')}
               >
@@ -349,13 +346,7 @@ export function EditorGroup({
 
           {/* The Preferences document (SHL-011) */}
           {preferencesOpen && (
-            <div
-              role="presentation"
-              className={
-                'group flex items-center gap-2 px-3 h-full border-r border-[var(--color-surface-600)] cursor-pointer select-none ' +
-                'transition-colors bg-[var(--color-surface-700)] text-[var(--color-surface-100)]'
-              }
-            >
+            <div role="presentation" className={tabWrapperClass(preferencesActive)}>
               <Button
                 variant="bare"
                 id={`editor-tab-${PREFERENCES_VIEW_ID}`}
@@ -374,10 +365,7 @@ export function EditorGroup({
                 variant="bare"
                 type="button"
                 onClick={() => onClose(PREFERENCES_VIEW_ID)}
-                className={
-                  'p-0.5 rounded opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 ' +
-                  'hover:bg-[var(--color-surface-500)] focus-visible:opacity-100 focus-visible:outline transition-opacity'
-                }
+                className={tabCloseClass(preferencesActive)}
                 aria-label={t('preferences.close')}
                 tooltip={t('preferences.close')}
               >
@@ -388,13 +376,7 @@ export function EditorGroup({
 
           {/* The change review document (SHL-004) */}
           {reviewOpen && (
-            <div
-              role="presentation"
-              className={
-                'group flex items-center gap-2 px-3 h-full border-r border-[var(--color-surface-600)] cursor-pointer select-none ' +
-                'transition-colors bg-[var(--color-surface-700)] text-[var(--color-surface-100)]'
-              }
-            >
+            <div role="presentation" className={tabWrapperClass(reviewActive)}>
               <Button
                 variant="bare"
                 id={`editor-tab-${REVIEW_VIEW_ID}`}
@@ -413,10 +395,7 @@ export function EditorGroup({
                 variant="bare"
                 type="button"
                 onClick={() => onClose(REVIEW_VIEW_ID)}
-                className={
-                  'p-0.5 rounded opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 ' +
-                  'hover:bg-[var(--color-surface-500)] focus-visible:opacity-100 focus-visible:outline transition-opacity'
-                }
+                className={tabCloseClass(reviewActive)}
                 aria-label={t('review.close')}
                 tooltip={t('review.close')}
               >
@@ -430,18 +409,7 @@ export function EditorGroup({
             const isActive = file.id === activeViewId;
             const displayName = displayEditorFileName(file.name, file.language);
             return (
-              <div
-                key={file.id}
-                role="presentation"
-                className={
-                  `group flex items-center gap-2 px-3 h-full border-r border-[var(--color-surface-600)] cursor-pointer ` +
-                  `select-none transition-colors ${
-                    isActive
-                      ? 'bg-[var(--color-surface-700)] text-[var(--color-surface-100)]'
-                      : 'bg-[var(--color-surface-800)] text-[var(--color-surface-300)] hover:bg-[var(--color-surface-700)]'
-                  }`
-                }
-              >
+              <div key={file.id} role="presentation" className={tabWrapperClass(isActive)}>
                 <Button
                   variant="bare"
                   id={`editor-tab-${file.id}`}
@@ -461,10 +429,7 @@ export function EditorGroup({
                   variant="bare"
                   type="button"
                   onClick={() => onClose(file.id)}
-                  className={
-                    'p-0.5 rounded opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 ' +
-                    'hover:bg-[var(--color-surface-500)] focus-visible:opacity-100 focus-visible:outline transition-opacity'
-                  }
+                  className={tabCloseClass(isActive)}
                   aria-label={t('workbench.editor.closeFile', { name: displayName })}
                   tooltip={t('workbench.editor.closeFile', { name: displayName })}
                 >
