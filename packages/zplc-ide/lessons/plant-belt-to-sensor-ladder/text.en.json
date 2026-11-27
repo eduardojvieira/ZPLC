@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter has no rungs, so the belt never moves; start the belt and put a box on it with Start, and stop the belt when EyeFar sees the box.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter has no rungs, so the belt never moves; start the belt and put a box on it with Start, and stop the belt when EyeFar sees the box.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

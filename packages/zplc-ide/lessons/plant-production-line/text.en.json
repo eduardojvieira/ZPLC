@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter controls only machine A, written inline; move that control into a function block, call it for machine A and for machine B, and light Green when both have finished four cycles.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter controls only machine A, written inline; move that control into a function block, call it for machine A and for machine B, and light Green when both have finished four cycles.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

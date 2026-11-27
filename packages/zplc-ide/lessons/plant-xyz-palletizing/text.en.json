@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter commands no position, so the gantry stays on the floor; send each box, grip it, place it on the pallet in a 2 by 2 pattern of two layers, and light Green after the eighth.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter commands no position, so the gantry stays on the floor; send each box, grip it, place it on the pallet in a 2 by 2 pattern of two layers, and light Green after the eighth.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

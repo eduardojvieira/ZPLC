@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso."
+    "El programa inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso."
   ]
 }

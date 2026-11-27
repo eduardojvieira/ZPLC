@@ -365,7 +365,7 @@
     },
     {
       "id": "tank-level-fault-reset",
-      "version": 3,
+      "version": 4,
       "order": 3,
       "module": 6,
       "level": "intermediate",
@@ -448,7 +448,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter has no pump hysteresis and runs through a pump fault; keep the pump on from LevelLow until LevelHigh, latch the alarm on PumpFault or EStop, and release it only with a Reset pressed after the fault has cleared.",
+              "body": "Correct this starter omission, save it, then press Check: The starter has no pump hysteresis and runs through a pump fault; keep the pump on from LevelLow until LevelHigh, latch the alarm on PumpFault or EStop, and release it only with a Reset pressed after the fault has cleared.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -508,7 +508,7 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial no tiene histéresis en la bomba y sigue bombeando ante una falla de la bomba; mantenga la bomba encendida desde LevelLow hasta LevelHigh, retenga la alarma con PumpFault o EStop y libérela solo con un Reset pulsado después de que la falla haya desaparecido.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene histéresis en la bomba y sigue bombeando ante una falla de la bomba; mantenga la bomba encendida desde LevelLow hasta LevelHigh, retenga la alarma con PumpFault o EStop y libérela solo con un Reset pulsado después de que la falla haya desaparecido.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -909,7 +909,7 @@
     },
     {
       "id": "motor-plant-feedback",
-      "version": 3,
+      "version": 4,
       "order": 6,
       "module": 6,
       "level": "intermediate",
@@ -990,7 +990,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter loses Command when Start falls and ignores Stop; retain the request until Stop and gate Running with AtSpeed.",
+              "body": "Correct this starter omission, save it, then press Check: The starter loses Command when Start falls and ignores Stop; retain the request until Stop and gate Running with AtSpeed.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -1050,7 +1050,7 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial pierde Command cuando Start cae y no respeta Stop; retenga la solicitud hasta Stop y condicione Running con AtSpeed.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial pierde Command cuando Start cae y no respeta Stop; retenga la solicitud hasta Stop y condicione Running con AtSpeed.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -1493,7 +1493,7 @@
     },
     {
       "id": "conveyor-classification-jam",
-      "version": 3,
+      "version": 4,
       "order": 9,
       "module": 8,
       "level": "advanced",
@@ -1579,7 +1579,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter misses the deterministic jam lockout; stop the belt and light FaultLamp while the plant reports JamDetected, and do not let Reset release it while the jam remains.",
+              "body": "Correct this starter omission, save it, then press Check: The starter misses the deterministic jam lockout; stop the belt and light FaultLamp while the plant reports JamDetected, and do not let Reset release it while the jam remains.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -1639,7 +1639,7 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial no tiene el bloqueo determinista por atasco; detenga la cinta y encienda FaultLamp mientras la planta informa JamDetected, y no deje que Reset libere el bloqueo mientras el atasco continúe.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene el bloqueo determinista por atasco; detenga la cinta y encienda FaultLamp mientras la planta informa JamDetected, y no deje que Reset libere el bloqueo mientras el atasco continúe.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -1679,7 +1679,7 @@
     },
     {
       "id": "temporal-assertions-jam-fault",
-      "version": 3,
+      "version": 4,
       "order": 10,
       "module": 8,
       "level": "advanced",
@@ -1753,7 +1753,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter misses the jam latch; latch the fault on JamDetected, ignore Reset while the jam is present, release it only with Reset after the jam clears, and require a new Start to run the belt again.",
+              "body": "Correct this starter omission, save it, then press Check: The starter misses the jam latch; latch the fault on JamDetected, ignore Reset while the jam is present, release it only with Reset after the jam clears, and require a new Start to run the belt again.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -1813,7 +1813,7 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial no retiene la falla por atasco; retenga la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela solo con Reset después de que se despeje el atasco y exija un nuevo Start para volver a mover la cinta.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no retiene la falla por atasco; retenga la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela solo con Reset después de que se despeje el atasco y exija un nuevo Start para volver a mover la cinta.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -4229,7 +4229,7 @@
     },
     {
       "id": "pedestrian-crossing-states",
-      "version": 3,
+      "version": 4,
       "order": 23,
       "module": 5,
       "level": "intermediate",
@@ -4314,7 +4314,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter ignores the pedestrian request; after PedRequest run yellow, red clearance, WALK, and red recovery before returning to green, and show WALK only while the vehicles are red.",
+              "body": "Correct this starter omission, save it, then press Check: The starter ignores the pedestrian request; after PedRequest run yellow, red clearance, WALK, and red recovery before returning to green, and show WALK only while the vehicles are red.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -4374,7 +4374,7 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial ignora la solicitud peatonal; tras PedRequest, recorra amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y muestre WALK solo con los vehículos en rojo.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial ignora la solicitud peatonal; tras PedRequest, recorra amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y muestre WALK solo con los vehículos en rojo.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -12788,7 +12788,7 @@
     },
     {
       "id": "conveyor-two-parts-diagnosis",
-      "version": 3,
+      "version": 4,
       "order": 87,
       "module": 8,
       "level": "advanced",
@@ -12866,7 +12866,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter never latches metal for the diverter; hold the belt request after Start, latch metal at the classifier, and clear it only when the part reaches the diverter.",
+              "body": "Correct this starter omission, save it, then press Check: The starter never latches metal for the diverter; hold the belt request after Start, latch metal at the classifier, and clear it only when the part reaches the diverter.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -12932,7 +12932,7 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial nunca retiene el metal para el desviador; mantenga la solicitud de la cinta tras Start, memorice el metal en el clasificador y bórrelo solo cuando la pieza llegue al desviador.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial nunca retiene el metal para el desviador; mantenga la solicitud de la cinta tras Start, memorice el metal en el clasificador y bórrelo solo cuando la pieza llegue al desviador.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -13821,7 +13821,7 @@
     },
     {
       "id": "plant-latch-two-sensors",
-      "version": 2,
+      "version": 3,
       "order": 122,
       "module": 12,
       "level": "advanced",
@@ -13916,7 +13916,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter never runs the belt; set Run when EyeA sees the box and reset it when EyeB sees the box.",
+              "body": "Correct this starter omission, save it, then press Check: The starter never runs the belt; set Run when EyeA sees the box and reset it when EyeB sees the box.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -13976,7 +13976,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial nunca hace correr la cinta; active Run cuando EyeA vea la caja y bórrela cuando EyeB vea la caja.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial nunca hace correr la cinta; active Run cuando EyeA vea la caja y bórrela cuando EyeB vea la caja.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -14009,14 +14009,14 @@
             }
           ],
           "faultCases": [
-            "El inicial nunca hace correr la cinta; active Run cuando EyeA vea la caja y bórrela cuando EyeB vea la caja."
+            "El programa inicial nunca hace correr la cinta; active Run cuando EyeA vea la caja y bórrela cuando EyeB vea la caja."
           ]
         }
       }
     },
     {
       "id": "plant-counted-queue",
-      "version": 2,
+      "version": 3,
       "order": 123,
       "module": 12,
       "level": "advanced",
@@ -14127,7 +14127,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter has no counters; load three boxes with a counter at EyeIn, count the unloaded boxes with a counter at EyeOut, light Done when all three are out, and stop the belt then.",
+              "body": "Correct this starter omission, save it, then press Check: The starter has no counters; load three boxes with a counter at EyeIn, count the unloaded boxes with a counter at EyeOut, light Done when all three are out, and stop the belt then.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -14187,7 +14187,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la cinta.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la cinta.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -14220,7 +14220,7 @@
             }
           ],
           "faultCases": [
-            "El inicial no tiene contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la cinta."
+            "El programa inicial no tiene contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la cinta."
           ]
         }
       }
@@ -15224,7 +15224,7 @@
     },
     {
       "id": "plant-buffer-release",
-      "version": 3,
+      "version": 4,
       "order": 141,
       "module": 14,
       "level": "advanced",
@@ -15360,7 +15360,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter loads boxes but never holds them or releases them one at a time; add the steps and transitions that count five boxes in, hold the blade, release one per press, and finish with Done.",
+              "body": "Correct this starter omission, save it, then press Check: The starter loads boxes but never holds them or releases them one at a time; add the steps and transitions that count five boxes in, hold the blade, release one per press, and finish with Done.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -15420,7 +15420,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial carga cajas pero nunca las retiene ni las libera de una en una; añada los pasos y transiciones que cuentan cinco cajas, retienen la cuchilla, liberan una por pulsación y terminan con Done.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial carga cajas pero nunca las retiene ni las libera de una en una; añada los pasos y transiciones que cuentan cinco cajas, retienen la cuchilla, liberan una por pulsación y terminan con Done.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -15453,14 +15453,14 @@
             }
           ],
           "faultCases": [
-            "El inicial carga cajas pero nunca las retiene ni las libera de una en una; añada los pasos y transiciones que cuentan cinco cajas, retienen la cuchilla, liberan una por pulsación y terminan con Done."
+            "El programa inicial carga cajas pero nunca las retiene ni las libera de una en una; añada los pasos y transiciones que cuentan cinco cajas, retienen la cuchilla, liberan una por pulsación y terminan con Done."
           ]
         }
       }
     },
     {
       "id": "plant-merge-lines",
-      "version": 2,
+      "version": 3,
       "order": 142,
       "module": 14,
       "level": "advanced",
@@ -15601,7 +15601,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter drives no output, so nothing is loaded and no blade moves; load three boxes on each feeder, open one blade at a time, with line A first, never both together, and open the next only when the previous box has left the merge zone.",
+              "body": "Correct this starter omission, save it, then press Check: The starter drives no output, so nothing is loaded and no blade moves; load three boxes on each feeder, open one blade at a time, with line A first, never both together, and open the next only when the previous box has left the merge zone.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -15661,7 +15661,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que no se carga nada y ninguna cuchilla se mueve; cargue tres cajas en cada alimentador, abra una cuchilla a la vez, con la línea A primero, nunca ambas juntas, y abra la siguiente solo cuando la caja anterior haya salido de la zona de fusión.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no gobierna ninguna salida, así que no se carga nada y ninguna cuchilla se mueve; cargue tres cajas en cada alimentador, abra una cuchilla a la vez, con la línea A primero, nunca ambas juntas, y abra la siguiente solo cuando la caja anterior haya salido de la zona de fusión.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -15694,14 +15694,14 @@
             }
           ],
           "faultCases": [
-            "El inicial no gobierna ninguna salida, así que no se carga nada y ninguna cuchilla se mueve; cargue tres cajas en cada alimentador, abra una cuchilla a la vez, con la línea A primero, nunca ambas juntas, y abra la siguiente solo cuando la caja anterior haya salido de la zona de fusión."
+            "El programa inicial no gobierna ninguna salida, así que no se carga nada y ninguna cuchilla se mueve; cargue tres cajas en cada alimentador, abra una cuchilla a la vez, con la línea A primero, nunca ambas juntas, y abra la siguiente solo cuando la caja anterior haya salido de la zona de fusión."
           ]
         }
       }
     },
     {
       "id": "plant-belt-transfer",
-      "version": 2,
+      "version": 3,
       "order": 151,
       "module": 15,
       "level": "advanced",
@@ -15876,7 +15876,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter drives no output, so nothing moves; write the transfer: feed one box at a time, grip, carry and release each one over the outfeed, and light Done after the fourth.",
+              "body": "Correct this starter omission, save it, then press Check: The starter drives no output, so nothing moves; write the transfer: feed one box at a time, grip, carry and release each one over the outfeed, and light Done after the fourth.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -15936,7 +15936,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la cinta de salida, y encienda Done tras la cuarta.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no gobierna ninguna salida, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la cinta de salida, y encienda Done tras la cuarta.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -15969,14 +15969,14 @@
             }
           ],
           "faultCases": [
-            "El inicial no gobierna ninguna salida, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la cinta de salida, y encienda Done tras la cuarta."
+            "El programa inicial no gobierna ninguna salida, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la cinta de salida, y encienda Done tras la cuarta."
           ]
         }
       }
     },
     {
       "id": "plant-assembler",
-      "version": 3,
+      "version": 4,
       "order": 152,
       "module": 15,
       "level": "advanced",
@@ -16167,7 +16167,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter only homes the pad: add the steps and transitions that feed a lid and a base, take the lid, set it on the base, let the assembly leave, repeat three times and finish with Green.",
+              "body": "Correct this starter omission, save it, then press Check: The starter only homes the pad: add the steps and transitions that feed a lid and a base, take the lid, set it on the base, let the assembly leave, repeat three times and finish with Green.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -16227,7 +16227,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del programa inicial, guarde y ejecute: El programa inicial solo lleva el brazo a su posición de partida: agregue los pasos y transiciones que alimentan una tapa y una base, toman la tapa, la colocan sobre la base, dejan salir el ensamble, repiten tres veces y terminan con Green.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial solo lleva el brazo a su posición de partida: agregue los pasos y transiciones que alimentan una tapa y una base, toman la tapa, la colocan sobre la base, dejan salir el ensamble, repiten tres veces y terminan con Green.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -16565,7 +16565,7 @@
     },
     {
       "id": "plant-layer-palletizer",
-      "version": 4,
+      "version": 5,
       "order": 154,
       "module": 15,
       "level": "advanced",
@@ -16746,7 +16746,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter declares the array JogMs but fills nothing and drives no output, so the head never rises and no box arrives; fill JogMs with a FOR loop, then load, square, carry and set three layers of four boxes on the pallet and light Green at the end.",
+              "body": "Correct this starter omission, save it, then press Check: The starter declares the array JogMs but fills nothing and drives no output, so the head never rises and no box arrives; fill JogMs with a FOR loop, then load, square, carry and set three layers of four boxes on the pallet and light Green at the end.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -16806,7 +16806,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del programa inicial, guarde y ejecute: El programa inicial declara el arreglo JogMs pero no lo llena ni gobierna ninguna salida, así que el cabezal nunca sube y no llega ninguna caja; llene JogMs con un bucle FOR, y luego cargue, escuadre, lleve y coloque tres capas de cuatro cajas sobre la tarima y encienda Green al final.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial declara el arreglo JogMs pero no lo llena ni gobierna ninguna salida, así que el cabezal nunca sube y no llega ninguna caja; llene JogMs con un bucle FOR, y luego cargue, escuadre, lleve y coloque tres capas de cuatro cajas sobre la tarima y encienda Green al final.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -16846,7 +16846,7 @@
     },
     {
       "id": "plant-xyz-palletizing",
-      "version": 2,
+      "version": 3,
       "order": 155,
       "module": 15,
       "level": "advanced",
@@ -17043,7 +17043,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter commands no position, so the gantry stays on the floor; send each box, grip it, place it on the pallet in a 2 by 2 pattern of two layers, and light Green after the eighth.",
+              "body": "Correct this starter omission, save it, then press Check: The starter commands no position, so the gantry stays on the floor; send each box, grip it, place it on the pallet in a 2 by 2 pattern of two layers, and light Green after the eighth.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -17103,7 +17103,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no ordena ninguna posición, así que el pórtico se queda en el suelo; envíe cada caja, agárrela, colóquela sobre la tarima en un patrón de 2 por 2 de dos capas y encienda Green tras la octava.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no ordena ninguna posición, así que el pórtico se queda en el suelo; envíe cada caja, agárrela, colóquela sobre la tarima en un patrón de 2 por 2 de dos capas y encienda Green tras la octava.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -17136,14 +17136,14 @@
             }
           ],
           "faultCases": [
-            "El inicial no ordena ninguna posición, así que el pórtico se queda en el suelo; envíe cada caja, agárrela, colóquela sobre la tarima en un patrón de 2 por 2 de dos capas y encienda Green tras la octava."
+            "El programa inicial no ordena ninguna posición, así que el pórtico se queda en el suelo; envíe cada caja, agárrela, colóquela sobre la tarima en un patrón de 2 por 2 de dos capas y encienda Green tras la octava."
           ]
         }
       }
     },
     {
       "id": "plant-colour-separation",
-      "version": 3,
+      "version": 4,
       "order": 161,
       "module": 16,
       "level": "advanced",
@@ -17283,7 +17283,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter drives no output, so no belt moves and no workpiece is sorted; run the belts after Start, read IsRed once the workpiece is still, push red ones out and release blue ones.",
+              "body": "Correct this starter omission, save it, then press Check: The starter drives no output, so no belt moves and no workpiece is sorted; run the belts after Start, read IsRed once the workpiece is still, push red ones out and release blue ones.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -17343,7 +17343,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del programa inicial, guarde y ejecute: El programa inicial no gobierna ninguna salida, así que ninguna cinta se mueve y ninguna pieza se clasifica; ponga en marcha las cintas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no gobierna ninguna salida, así que ninguna cinta se mueve y ninguna pieza se clasifica; ponga en marcha las cintas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -17624,7 +17624,7 @@
     },
     {
       "id": "plant-weight-sorting",
-      "version": 2,
+      "version": 3,
       "order": 163,
       "module": 16,
       "level": "advanced",
@@ -17767,7 +17767,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter drives no output, so no belt moves and no box is weighed; run the belts after Start, hold each box on the scale and send it to the bin its weight selects.",
+              "body": "Correct this starter omission, save it, then press Check: The starter drives no output, so no belt moves and no box is weighed; run the belts after Start, hold each box on the scale and send it to the bin its weight selects.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -17827,7 +17827,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -17860,14 +17860,14 @@
             }
           ],
           "faultCases": [
-            "El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso."
+            "El programa inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso."
           ]
         }
       }
     },
     {
       "id": "plant-height-chain",
-      "version": 2,
+      "version": 3,
       "order": 164,
       "module": 16,
       "level": "advanced",
@@ -18032,7 +18032,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter drives no output, so no belt moves and no box is sorted; run the belts after Start, classify each box from the two beams and send it straight, right or left.",
+              "body": "Correct this starter omission, save it, then press Check: The starter drives no output, so no belt moves and no box is sorted; run the belts after Start, classify each box from the two beams and send it straight, right or left.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -18092,7 +18092,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, clasifique cada caja con las dos barreras y envíela de frente, a la derecha o a la izquierda.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, clasifique cada caja con las dos barreras y envíela de frente, a la derecha o a la izquierda.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -18125,14 +18125,14 @@
             }
           ],
           "faultCases": [
-            "El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, clasifique cada caja con las dos barreras y envíela de frente, a la derecha o a la izquierda."
+            "El programa inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, clasifique cada caja con las dos barreras y envíela de frente, a la derecha o a la izquierda."
           ]
         }
       }
     },
     {
       "id": "plant-height-turntable",
-      "version": 2,
+      "version": 3,
       "order": 165,
       "module": 16,
       "level": "advanced",
@@ -18309,7 +18309,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter drives no output, so no belt moves and no box is sorted; run the belts after Start, measure each box, turn the table to the belt of its class and turn it back to the centre.",
+              "body": "Correct this starter omission, save it, then press Check: The starter drives no output, so no belt moves and no box is sorted; run the belts after Start, measure each box, turn the table to the belt of its class and turn it back to the centre.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -18369,7 +18369,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, mida cada caja, gire la mesa hacia la cinta de su clase y vuélvala al centro.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, mida cada caja, gire la mesa hacia la cinta de su clase y vuélvala al centro.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -18402,14 +18402,14 @@
             }
           ],
           "faultCases": [
-            "El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, mida cada caja, gire la mesa hacia la cinta de su clase y vuélvala al centro."
+            "El programa inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, mida cada caja, gire la mesa hacia la cinta de su clase y vuélvala al centro."
           ]
         }
       }
     },
     {
       "id": "plant-vision-sorting",
-      "version": 2,
+      "version": 3,
       "order": 166,
       "module": 16,
       "level": "advanced",
@@ -18536,7 +18536,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter drives no output, so no belt moves and no item is sorted; run both belts after Start and swing the arm for each code 2 item.",
+              "body": "Correct this starter omission, save it, then press Check: The starter drives no output, so no belt moves and no item is sorted; run both belts after Start and swing the arm for each code 2 item.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -18596,7 +18596,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna pieza; ponga en marcha ambas cintas tras Start y accione el brazo para cada pieza de código 2.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna pieza; ponga en marcha ambas cintas tras Start y accione el brazo para cada pieza de código 2.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -18629,14 +18629,14 @@
             }
           ],
           "faultCases": [
-            "El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna pieza; ponga en marcha ambas cintas tras Start y accione el brazo para cada pieza de código 2."
+            "El programa inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna pieza; ponga en marcha ambas cintas tras Start y accione el brazo para cada pieza de código 2."
           ]
         }
       }
     },
     {
       "id": "plant-three-level-lifts",
-      "version": 2,
+      "version": 3,
       "order": 171,
       "module": 17,
       "level": "advanced",
@@ -18816,7 +18816,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter runs only lift A, so boxes pile up on the transfer belt; add the chain of lift B and start it from the same transition as lift A.",
+              "body": "Correct this starter omission, save it, then press Check: The starter runs only lift A, so boxes pile up on the transfer belt; add the chain of lift B and start it from the same transition as lift A.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -18876,7 +18876,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la cinta de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la cinta de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -18909,14 +18909,14 @@
             }
           ],
           "faultCases": [
-            "El inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la cinta de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A."
+            "El programa inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la cinta de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A."
           ]
         }
       }
     },
     {
       "id": "plant-lift-stacking",
-      "version": 2,
+      "version": 3,
       "order": 172,
       "module": 17,
       "level": "advanced",
@@ -19071,7 +19071,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter drives no output, so nothing moves; sequence the station: emit a crate, raise the lift, feed and count five workpieces one at a time, lower the lift and send the crate out, lighting Green when OutEye sees it.",
+              "body": "Correct this starter omission, save it, then press Check: The starter drives no output, so nothing moves; sequence the station: emit a crate, raise the lift, feed and count five workpieces one at a time, lower the lift and send the crate out, lighting Green when OutEye sees it.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -19131,7 +19131,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que nada se mueve; secuencie la estación: emita un cajón, suba el elevador, alimente y cuente cinco piezas una por una, baje el elevador y envíe el cajón, encendiendo Green cuando OutEye lo vea.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no gobierna ninguna salida, así que nada se mueve; secuencie la estación: emita un cajón, suba el elevador, alimente y cuente cinco piezas una por una, baje el elevador y envíe el cajón, encendiendo Green cuando OutEye lo vea.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -19164,14 +19164,14 @@
             }
           ],
           "faultCases": [
-            "El inicial no gobierna ninguna salida, así que nada se mueve; secuencie la estación: emita un cajón, suba el elevador, alimente y cuente cinco piezas una por una, baje el elevador y envíe el cajón, encendiendo Green cuando OutEye lo vea."
+            "El programa inicial no gobierna ninguna salida, así que nada se mueve; secuencie la estación: emita un cajón, suba el elevador, alimente y cuente cinco piezas una por una, baje el elevador y envíe el cajón, encendiendo Green cuando OutEye lo vea."
           ]
         }
       }
     },
     {
       "id": "plant-warehouse",
-      "version": 3,
+      "version": 4,
       "order": 173,
       "module": 17,
       "level": "advanced",
@@ -19365,7 +19365,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter stores boxes but has no retrieve steps, so a request is never served; add the chain that takes the box out of its cell, brings it to the dock and puts it on the outfeed, and let IDLE start it when a request waits for a cell that holds a box.",
+              "body": "Correct this starter omission, save it, then press Check: The starter stores boxes but has no retrieve steps, so a request is never served; add the chain that takes the box out of its cell, brings it to the dock and puts it on the outfeed, and let IDLE start it when a request waits for a cell that holds a box.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -19425,7 +19425,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial almacena cajas pero no tiene pasos de recuperar, así que una petición nunca se atiende; añada la cadena que saca la caja de su celda, la lleva al muelle y la pone en la cinta de salida, y deje que IDLE la inicie cuando una petición espere por una celda con caja.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial almacena cajas pero no tiene pasos de recuperar, así que una petición nunca se atiende; añada la cadena que saca la caja de su celda, la lleva al muelle y la pone en la cinta de salida, y deje que IDLE la inicie cuando una petición espere por una celda con caja.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -19458,14 +19458,14 @@
             }
           ],
           "faultCases": [
-            "El inicial almacena cajas pero no tiene pasos de recuperar, así que una petición nunca se atiende; añada la cadena que saca la caja de su celda, la lleva al muelle y la pone en la cinta de salida, y deje que IDLE la inicie cuando una petición espere por una celda con caja."
+            "El programa inicial almacena cajas pero no tiene pasos de recuperar, así que una petición nunca se atiende; añada la cadena que saca la caja de su celda, la lleva al muelle y la pone en la cinta de salida, y deje que IDLE la inicie cuando una petición espere por una celda con caja."
           ]
         }
       }
     },
     {
       "id": "plant-production-line",
-      "version": 2,
+      "version": 3,
       "order": 174,
       "module": 17,
       "level": "advanced",
@@ -19636,7 +19636,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter controls only machine A, written inline; move that control into a function block, call it for machine A and for machine B, and light Green when both have finished four cycles.",
+              "body": "Correct this starter omission, save it, then press Check: The starter controls only machine A, written inline; move that control into a function block, call it for machine A and for machine B, and light Green when both have finished four cycles.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -19696,7 +19696,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial controla solo la máquina A, escrita en línea; mueva ese control a un bloque de función, llámelo para la máquina A y para la máquina B, y encienda Green cuando ambas hayan terminado cuatro ciclos.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial controla solo la máquina A, escrita en línea; mueva ese control a un bloque de función, llámelo para la máquina A y para la máquina B, y encienda Green cuando ambas hayan terminado cuatro ciclos.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -19729,14 +19729,14 @@
             }
           ],
           "faultCases": [
-            "El inicial controla solo la máquina A, escrita en línea; mueva ese control a un bloque de función, llámelo para la máquina A y para la máquina B, y encienda Green cuando ambas hayan terminado cuatro ciclos."
+            "El programa inicial controla solo la máquina A, escrita en línea; mueva ese control a un bloque de función, llámelo para la máquina A y para la máquina B, y encienda Green cuando ambas hayan terminado cuatro ciclos."
           ]
         }
       }
     },
     {
       "id": "plant-estop-interlocks",
-      "version": 3,
+      "version": 4,
       "order": 181,
       "module": 18,
       "level": "advanced",
@@ -19917,7 +19917,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter ignores the emergency stop, so the line keeps running; stop every output while EStopOk is FALSE, light Red, keep the stop remembered after the release and run the line again only with a new press of Start.",
+              "body": "Correct this starter omission, save it, then press Check: The starter ignores the emergency stop, so the line keeps running; stop every output while EStopOk is FALSE, light Red, keep the stop remembered after the release and run the line again only with a new press of Start.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -19977,7 +19977,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial ignora el paro de emergencia, así que la línea sigue funcionando; detenga todas las salidas mientras EStopOk sea FALSE, encienda Red, mantenga recordado el paro después de soltarlo y haga funcionar la línea de nuevo solo con una nueva pulsación de Start.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial ignora el paro de emergencia, así que la línea sigue funcionando; detenga todas las salidas mientras EStopOk sea FALSE, encienda Red, mantenga recordado el paro después de soltarlo y haga funcionar la línea de nuevo solo con una nueva pulsación de Start.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -20010,14 +20010,14 @@
             }
           ],
           "faultCases": [
-            "El inicial ignora el paro de emergencia, así que la línea sigue funcionando; detenga todas las salidas mientras EStopOk sea FALSE, encienda Red, mantenga recordado el paro después de soltarlo y haga funcionar la línea de nuevo solo con una nueva pulsación de Start."
+            "El programa inicial ignora el paro de emergencia, así que la línea sigue funcionando; detenga todas las salidas mientras EStopOk sea FALSE, encienda Red, mantenga recordado el paro después de soltarlo y haga funcionar la línea de nuevo solo con una nueva pulsación de Start."
           ]
         }
       }
     },
     {
       "id": "plant-manual-auto",
-      "version": 4,
+      "version": 5,
       "order": 182,
       "module": 18,
       "level": "advanced",
@@ -20233,7 +20233,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter has no mode: a press of Start in manual starts the cycle and the jog buttons do nothing; switch with ModeBtn, allow Start only in automatic, and move the pad with the jog buttons only in manual.",
+              "body": "Correct this starter omission, save it, then press Check: The starter has no mode: a press of Start in manual starts the cycle and the jog buttons do nothing; switch with ModeBtn, allow Start only in automatic, and move the pad with the jog buttons only in manual.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -20293,7 +20293,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del programa inicial, guarde y ejecute: El programa inicial no tiene modo: una pulsación de Start en manual arranca el ciclo y los pulsadores de avance no hacen nada; cambie con ModeBtn, admita Start solo en automático y mueva el brazo con los pulsadores de avance solo en manual.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene modo: una pulsación de Start en manual arranca el ciclo y los pulsadores de avance no hacen nada; cambie con ModeBtn, admita Start solo en automático y mueva el brazo con los pulsadores de avance solo en manual.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -20598,7 +20598,7 @@
     },
     {
       "id": "plant-build-belt-scene",
-      "version": 3,
+      "version": 4,
       "order": 191,
       "module": 19,
       "level": "advanced",
@@ -20699,7 +20699,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save the scene, the plant map and the program, then run: The starter scene is an empty floor, so there is nothing to run; place Belt1, Emitter1, EyeFar and StartButton, bind their four signals in the plant map, and write the program that starts the belt and stops it when EyeFar sees the box.",
+              "body": "Correct this starter omission, save the scene, the plant map and the program, then press Check: The starter scene is an empty floor, so there is nothing to run; place Belt1, Emitter1, EyeFar and StartButton, bind their four signals in the plant map, and write the program that starts the belt and stops it when EyeFar sees the box.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -20759,7 +20759,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde la escena, el mapa de la planta y el programa, y ejecute: La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la cinta y la detiene cuando EyeFar ve la caja.",
+              "body": "Corrija esta omisión del programa inicial, guarde la escena, el mapa de la planta y el programa, y pulse Comprobar: La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la cinta y la detiene cuando EyeFar ve la caja.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -20799,7 +20799,7 @@
     },
     {
       "id": "plant-change-scene",
-      "version": 2,
+      "version": 3,
       "order": 192,
       "module": 19,
       "level": "advanced",
@@ -20940,7 +20940,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save the scene and the plant map, then run: The starter scene has no emitter for line B, so no box ever comes from feeder B; add EmitterB at the start of feeder B with a limit of three boxes, and bind EmitterB.emit to MergeLines.EmitB in the plant map.",
+              "body": "Correct this starter omission, save the scene and the plant map, then press Check: The starter scene has no emitter for line B, so no box ever comes from feeder B; add EmitterB at the start of feeder B with a limit of three boxes, and bind EmitterB.emit to MergeLines.EmitB in the plant map.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -21000,7 +21000,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde la escena y el mapa de la planta, y ejecute: La escena inicial no tiene emisor para la línea B, así que nunca llega una caja desde el alimentador B; agregue EmitterB al inicio del alimentador B con un límite de tres cajas, y enlace EmitterB.emit con MergeLines.EmitB en el mapa de la planta.",
+              "body": "Corrija esta omisión del programa inicial, guarde la escena y el mapa de la planta, y pulse Comprobar: La escena inicial no tiene emisor para la línea B, así que nunca llega una caja desde el alimentador B; agregue EmitterB al inicio del alimentador B con un límite de tres cajas, y enlace EmitterB.emit con MergeLines.EmitB en el mapa de la planta.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -21040,7 +21040,7 @@
     },
     {
       "id": "plant-belt-to-sensor-ladder",
-      "version": 3,
+      "version": 4,
       "order": 1121,
       "module": 12,
       "level": "advanced",
@@ -21140,7 +21140,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter has no rungs, so the belt never moves; start the belt and put a box on it with Start, and stop the belt when EyeFar sees the box.",
+              "body": "Correct this starter omission, save it, then press Check: The starter has no rungs, so the belt never moves; start the belt and put a box on it with Start, and stop the belt when EyeFar sees the box.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -21200,7 +21200,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que la cinta nunca se mueve; arranque la cinta y ponga una caja con Start, y detenga la cinta cuando EyeFar vea la caja.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene peldaños, así que la cinta nunca se mueve; arranque la cinta y ponga una caja con Start, y detenga la cinta cuando EyeFar vea la caja.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -21233,14 +21233,14 @@
             }
           ],
           "faultCases": [
-            "El inicial no tiene peldaños, así que la cinta nunca se mueve; arranque la cinta y ponga una caja con Start, y detenga la cinta cuando EyeFar vea la caja."
+            "El programa inicial no tiene peldaños, así que la cinta nunca se mueve; arranque la cinta y ponga una caja con Start, y detenga la cinta cuando EyeFar vea la caja."
           ]
         }
       }
     },
     {
       "id": "plant-latch-two-sensors-ladder",
-      "version": 2,
+      "version": 3,
       "order": 1122,
       "module": 12,
       "level": "advanced",
@@ -21335,7 +21335,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter has no rungs, so the belt never runs; set Run when EyeA sees the box and reset it when EyeB sees the box.",
+              "body": "Correct this starter omission, save it, then press Check: The starter has no rungs, so the belt never runs; set Run when EyeA sees the box and reset it when EyeB sees the box.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -21395,7 +21395,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que la cinta nunca corre; active Run cuando EyeA vea la caja y bórrelo cuando EyeB vea la caja.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene peldaños, así que la cinta nunca corre; active Run cuando EyeA vea la caja y bórrelo cuando EyeB vea la caja.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -21428,14 +21428,14 @@
             }
           ],
           "faultCases": [
-            "El inicial no tiene peldaños, así que la cinta nunca corre; active Run cuando EyeA vea la caja y bórrelo cuando EyeB vea la caja."
+            "El programa inicial no tiene peldaños, así que la cinta nunca corre; active Run cuando EyeA vea la caja y bórrelo cuando EyeB vea la caja."
           ]
         }
       }
     },
     {
       "id": "plant-counted-queue-ladder",
-      "version": 2,
+      "version": 3,
       "order": 1123,
       "module": 12,
       "level": "advanced",
@@ -21546,7 +21546,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter has no rungs and no counters; load three boxes with a counter at EyeIn, count the unloaded boxes with a counter at EyeOut, light Done when all three are out, and stop the belt then.",
+              "body": "Correct this starter omission, save it, then press Check: The starter has no rungs and no counters; load three boxes with a counter at EyeIn, count the unloaded boxes with a counter at EyeOut, light Done when all three are out, and stop the belt then.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -21606,7 +21606,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños ni contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la cinta.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene peldaños ni contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la cinta.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -21639,14 +21639,14 @@
             }
           ],
           "faultCases": [
-            "El inicial no tiene peldaños ni contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la cinta."
+            "El programa inicial no tiene peldaños ni contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la cinta."
           ]
         }
       }
     },
     {
       "id": "plant-timed-tank-ladder",
-      "version": 3,
+      "version": 4,
       "order": 1131,
       "module": 13,
       "level": "advanced",
@@ -21831,7 +21831,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "El inicial no tiene peldaños: ninguna válvula se abre, así que el ciclo nunca se ejecuta. Declara las entradas y las salidas. Guarde un número de paso (0 reposo, 1 llenado, 2 retención, 3 vaciado) en una variable INT, un bloque TON por cada paso temporizado, y gobierne las salidas desde el paso con un peldaño por cada salida. El llenado dura 3,5 segundos: un bloque TON con PT de T#3500ms.",
+              "body": "El programa inicial no tiene peldaños: ninguna válvula se abre, así que el ciclo nunca se ejecuta. Declara las entradas y las salidas. Guarde un número de paso (0 reposo, 1 llenado, 2 retención, 3 vaciado) en una variable INT, un bloque TON por cada paso temporizado, y gobierne las salidas desde el paso con un peldaño por cada salida. El llenado dura 3,5 segundos: un bloque TON con PT de T#3500ms.",
               "checkpoint": "El programa tiene una variable de paso, tres temporizadores y un peldaño por cada salida."
             },
             {
@@ -21864,14 +21864,14 @@
             }
           ],
           "faultCases": [
-            "El inicial no tiene peldaños: ninguna válvula se abre, así que el ciclo nunca se ejecuta."
+            "El programa inicial no tiene peldaños: ninguna válvula se abre, así que el ciclo nunca se ejecuta."
           ]
         }
       }
     },
     {
       "id": "plant-tank-level-scaling-ladder",
-      "version": 2,
+      "version": 3,
       "order": 1132,
       "module": 13,
       "level": "advanced",
@@ -22010,7 +22010,7 @@
           "summary": "Scale the raw level of a tank, a whole number from 0 to 27648, to metres with function boxes, and use it to hold the level near a set point with a proportional inlet.",
           "scope": "The grade runs the simulated tank in the simulator on this computer, with an analog level that follows the scaling rules of the plant map. It says nothing about the accuracy, noise or calibration of a real level transmitter, a real machine, its timing or its safety.",
           "objectives": [
-            "Scale an analog value to engineering units with boxes: convert to REAL first, then divide by the raw span.",
+            "Scale an analog value to engineering units with boxes so that fractions of a unit are kept.",
             "Read the plant map to find the raw range of each signal, and see what a wrong scale does to the process."
           ],
           "stages": [
@@ -22070,7 +22070,7 @@
           "summary": "Escale con cuadros de función el nivel crudo de un tanque, un número entero de 0 a 27648, a metros, y úselo para mantener el nivel cerca de un valor de consigna con una entrada proporcional.",
           "scope": "La calificación ejecuta el tanque simulado en el simulador de esta computadora, con un nivel analógico que sigue las reglas de escala del mapa de la planta. No dice nada sobre la exactitud, el ruido ni la calibración de un transmisor de nivel real, una máquina real, sus tiempos ni su seguridad.",
           "objectives": [
-            "Escalar con cuadros un valor analógico a unidades de ingeniería: convertir primero a REAL y luego dividir entre el rango crudo.",
+            "Escalar con cuadros un valor analógico a unidades de ingeniería de modo que se conserven las fracciones de una unidad.",
             "Leer el mapa de planta para hallar el rango crudo de cada señal, y ver qué hace al proceso una escala equivocada."
           ],
           "stages": [
@@ -22089,7 +22089,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "El inicial no tiene peldaños: la entrada nunca se abre, así que el tanque queda vacío y nunca llega a su banda. Declara las entradas y las salidas. Declare variables REAL locales para los valores convertidos y los metros. Copie cada valor crudo a una variable REAL con un cuadro MOVE y luego divida con un cuadro DIV entre 27648.0 o 1000.0: una división entera daría 0 para todo nivel menor de 1 m. Después escriba FillCmd a partir del error con un cuadro MUL y límitela con un cuadro LIMIT.",
+              "body": "El programa inicial no tiene peldaños: la entrada nunca se abre, así que el tanque queda vacío y nunca llega a su banda. Declara las entradas y las salidas. Declare variables REAL locales para los valores convertidos y los metros. Copie cada valor crudo a una variable REAL con un cuadro MOVE y luego divida con un cuadro DIV entre 27648.0 o 1000.0: una división entera daría 0 para todo nivel menor de 1 m. Después escriba FillCmd a partir del error con un cuadro MUL y límitela con un cuadro LIMIT.",
               "checkpoint": "El programa tiene las variables REAL convertidas, FillCmd limitada y un peldaño por cada una de las otras tres salidas."
             },
             {
@@ -22122,14 +22122,14 @@
             }
           ],
           "faultCases": [
-            "El inicial no tiene peldaños: la entrada nunca se abre, así que el tanque queda vacío y nunca llega a su banda."
+            "El programa inicial no tiene peldaños: la entrada nunca se abre, así que el tanque queda vacío y nunca llega a su banda."
           ]
         }
       }
     },
     {
       "id": "plant-merge-lines-ladder",
-      "version": 2,
+      "version": 3,
       "order": 1142,
       "module": 14,
       "level": "advanced",
@@ -22270,7 +22270,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter has no rungs, so nothing is loaded and no blade moves; load three boxes on each feeder, open one blade at a time, with line A first, never both together, and open the next only when the previous box has left the merge zone.",
+              "body": "Correct this starter omission, save it, then press Check: The starter has no rungs, so nothing is loaded and no blade moves; load three boxes on each feeder, open one blade at a time, with line A first, never both together, and open the next only when the previous box has left the merge zone.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -22330,7 +22330,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que no se carga nada y ninguna cuchilla se mueve; cargue tres cajas en cada alimentador, abra una cuchilla a la vez, con la línea A primero y nunca ambas juntas, y abra la siguiente solo cuando la caja anterior haya salido de la zona de fusión.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene peldaños, así que no se carga nada y ninguna cuchilla se mueve; cargue tres cajas en cada alimentador, abra una cuchilla a la vez, con la línea A primero y nunca ambas juntas, y abra la siguiente solo cuando la caja anterior haya salido de la zona de fusión.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -22363,14 +22363,14 @@
             }
           ],
           "faultCases": [
-            "El inicial no tiene peldaños, así que no se carga nada y ninguna cuchilla se mueve; cargue tres cajas en cada alimentador, abra una cuchilla a la vez, con la línea A primero y nunca ambas juntas, y abra la siguiente solo cuando la caja anterior haya salido de la zona de fusión."
+            "El programa inicial no tiene peldaños, así que no se carga nada y ninguna cuchilla se mueve; cargue tres cajas en cada alimentador, abra una cuchilla a la vez, con la línea A primero y nunca ambas juntas, y abra la siguiente solo cuando la caja anterior haya salido de la zona de fusión."
           ]
         }
       }
     },
     {
       "id": "plant-belt-transfer-ladder",
-      "version": 2,
+      "version": 3,
       "order": 1151,
       "module": 15,
       "level": "advanced",
@@ -22545,7 +22545,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter has no rungs, so nothing moves; write the transfer: feed one box at a time, grip, carry and release each one over the outfeed, and light Done after the fourth.",
+              "body": "Correct this starter omission, save it, then press Check: The starter has no rungs, so nothing moves; write the transfer: feed one box at a time, grip, carry and release each one over the outfeed, and light Done after the fourth.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -22605,7 +22605,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la cinta de salida, y encienda Done tras la cuarta.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene peldaños, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la cinta de salida, y encienda Done tras la cuarta.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -22638,14 +22638,14 @@
             }
           ],
           "faultCases": [
-            "El inicial no tiene peldaños, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la cinta de salida, y encienda Done tras la cuarta."
+            "El programa inicial no tiene peldaños, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la cinta de salida, y encienda Done tras la cuarta."
           ]
         }
       }
     },
     {
       "id": "plant-colour-separation-ladder",
-      "version": 3,
+      "version": 4,
       "order": 1161,
       "module": 16,
       "level": "advanced",
@@ -22785,7 +22785,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter has no rungs, so no belt moves and no workpiece is sorted; run the belts after Start, read IsRed once the workpiece is still, push red ones out and release blue ones.",
+              "body": "Correct this starter omission, save it, then press Check: The starter has no rungs, so no belt moves and no workpiece is sorted; run the belts after Start, read IsRed once the workpiece is still, push red ones out and release blue ones.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -22845,7 +22845,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del programa inicial, guarde y ejecute: El programa inicial no tiene peldaños, así que ninguna cinta se mueve y ninguna pieza se clasifica; ponga en marcha las cintas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene peldaños, así que ninguna cinta se mueve y ninguna pieza se clasifica; ponga en marcha las cintas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -22885,7 +22885,7 @@
     },
     {
       "id": "plant-weight-sorting-ladder",
-      "version": 2,
+      "version": 3,
       "order": 1163,
       "module": 16,
       "level": "advanced",
@@ -23028,7 +23028,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter has no rungs, so no belt moves and no box is weighed; run the belts after Start, hold each box on the scale and send it to the bin its weight selects.",
+              "body": "Correct this starter omission, save it, then press Check: The starter has no rungs, so no belt moves and no box is weighed; run the belts after Start, hold each box on the scale and send it to the bin its weight selects.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -23088,7 +23088,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene peldaños, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -23121,14 +23121,14 @@
             }
           ],
           "faultCases": [
-            "El inicial no tiene peldaños, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso."
+            "El programa inicial no tiene peldaños, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso."
           ]
         }
       }
     },
     {
       "id": "plant-height-chain-ladder",
-      "version": 2,
+      "version": 3,
       "order": 1164,
       "module": 16,
       "level": "advanced",
@@ -23293,7 +23293,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter has no rungs, so no belt moves and no box is sorted; run the belts after Start, classify each box from the two beams and send it straight, right or left.",
+              "body": "Correct this starter omission, save it, then press Check: The starter has no rungs, so no belt moves and no box is sorted; run the belts after Start, classify each box from the two beams and send it straight, right or left.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -23353,7 +23353,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, clasifique cada caja con las dos barreras y envíela de frente, a la derecha o a la izquierda.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene peldaños, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, clasifique cada caja con las dos barreras y envíela de frente, a la derecha o a la izquierda.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -23386,14 +23386,14 @@
             }
           ],
           "faultCases": [
-            "El inicial no tiene peldaños, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, clasifique cada caja con las dos barreras y envíela de frente, a la derecha o a la izquierda."
+            "El programa inicial no tiene peldaños, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, clasifique cada caja con las dos barreras y envíela de frente, a la derecha o a la izquierda."
           ]
         }
       }
     },
     {
       "id": "plant-estop-interlocks-ladder",
-      "version": 3,
+      "version": 4,
       "order": 1181,
       "module": 18,
       "level": "advanced",
@@ -23574,7 +23574,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter ignores the emergency stop, so the line keeps running; stop every output while EStopOk is FALSE, light Red, keep the stop remembered after the release and run the line again only with a new press of Start.",
+              "body": "Correct this starter omission, save it, then press Check: The starter ignores the emergency stop, so the line keeps running; stop every output while EStopOk is FALSE, light Red, keep the stop remembered after the release and run the line again only with a new press of Start.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -23634,7 +23634,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial ignora el paro de emergencia, así que la línea sigue funcionando; detenga todas las salidas mientras EStopOk sea FALSE, encienda Red, mantenga recordado el paro después de soltarlo y haga funcionar la línea de nuevo solo con una nueva pulsación de Start.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial ignora el paro de emergencia, así que la línea sigue funcionando; detenga todas las salidas mientras EStopOk sea FALSE, encienda Red, mantenga recordado el paro después de soltarlo y haga funcionar la línea de nuevo solo con una nueva pulsación de Start.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -23667,14 +23667,14 @@
             }
           ],
           "faultCases": [
-            "El inicial ignora el paro de emergencia, así que la línea sigue funcionando; detenga todas las salidas mientras EStopOk sea FALSE, encienda Red, mantenga recordado el paro después de soltarlo y haga funcionar la línea de nuevo solo con una nueva pulsación de Start."
+            "El programa inicial ignora el paro de emergencia, así que la línea sigue funcionando; detenga todas las salidas mientras EStopOk sea FALSE, encienda Red, mantenga recordado el paro después de soltarlo y haga funcionar la línea de nuevo solo con una nueva pulsación de Start."
           ]
         }
       }
     },
     {
       "id": "plant-manual-auto-ladder",
-      "version": 4,
+      "version": 5,
       "order": 1182,
       "module": 18,
       "level": "advanced",
@@ -23890,7 +23890,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter has no mode: a press of Start in manual starts the cycle and the jog buttons do nothing; switch with ModeBtn, allow Start only in automatic, and move the pad with the jog buttons only in manual.",
+              "body": "Correct this starter omission, save it, then press Check: The starter has no mode: a press of Start in manual starts the cycle and the jog buttons do nothing; switch with ModeBtn, allow Start only in automatic, and move the pad with the jog buttons only in manual.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -23950,7 +23950,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del programa inicial, guarde y ejecute: El programa inicial no tiene modo: una pulsación de Start en manual arranca el ciclo y los pulsadores de avance no hacen nada; cambie con ModeBtn, admita Start solo en automático y mueva el brazo con los pulsadores de avance solo en manual.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene modo: una pulsación de Start en manual arranca el ciclo y los pulsadores de avance no hacen nada; cambie con ModeBtn, admita Start solo en automático y mueva el brazo con los pulsadores de avance solo en manual.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -23990,7 +23990,7 @@
     },
     {
       "id": "plant-build-belt-scene-ladder",
-      "version": 3,
+      "version": 4,
       "order": 1191,
       "module": 19,
       "level": "advanced",
@@ -24091,7 +24091,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save the scene, the plant map and the program, then run: The starter scene is an empty floor, so there is nothing to run; place Belt1, Emitter1, EyeFar and StartButton, bind their four signals in the plant map, and write the program that starts the belt and stops it when EyeFar sees the box.",
+              "body": "Correct this starter omission, save the scene, the plant map and the program, then press Check: The starter scene is an empty floor, so there is nothing to run; place Belt1, Emitter1, EyeFar and StartButton, bind their four signals in the plant map, and write the program that starts the belt and stops it when EyeFar sees the box.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -24151,7 +24151,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde la escena, el mapa de la planta y el programa, y ejecute: La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la cinta y la detiene cuando EyeFar ve la caja.",
+              "body": "Corrija esta omisión del programa inicial, guarde la escena, el mapa de la planta y el programa, y pulse Comprobar: La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la cinta y la detiene cuando EyeFar ve la caja.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -24191,7 +24191,7 @@
     },
     {
       "id": "plant-change-scene-ladder",
-      "version": 2,
+      "version": 3,
       "order": 1192,
       "module": 19,
       "level": "advanced",
@@ -24332,7 +24332,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save the scene and the plant map, then run: The starter scene has no emitter for line B, so no box ever comes from feeder B; add EmitterB at the start of feeder B with a limit of three boxes, and bind EmitterB.emit to MergeLines.EmitB in the plant map.",
+              "body": "Correct this starter omission, save the scene and the plant map, then press Check: The starter scene has no emitter for line B, so no box ever comes from feeder B; add EmitterB at the start of feeder B with a limit of three boxes, and bind EmitterB.emit to MergeLines.EmitB in the plant map.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -24392,7 +24392,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde la escena y el mapa de la planta, y ejecute: La escena inicial no tiene emisor para la línea B, así que nunca llega una caja desde el alimentador B; agregue EmitterB al inicio del alimentador B con un límite de tres cajas, y enlace EmitterB.emit con MergeLines.EmitB en el mapa de la planta.",
+              "body": "Corrija esta omisión del programa inicial, guarde la escena y el mapa de la planta, y pulse Comprobar: La escena inicial no tiene emisor para la línea B, así que nunca llega una caja desde el alimentador B; agregue EmitterB al inicio del alimentador B con un límite de tres cajas, y enlace EmitterB.emit con MergeLines.EmitB en el mapa de la planta.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {

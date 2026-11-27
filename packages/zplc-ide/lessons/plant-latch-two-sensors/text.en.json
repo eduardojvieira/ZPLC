@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter never runs the belt; set Run when EyeA sees the box and reset it when EyeB sees the box.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter never runs the belt; set Run when EyeA sees the box and reset it when EyeB sees the box.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

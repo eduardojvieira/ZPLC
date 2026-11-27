@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter stores boxes but has no retrieve steps, so a request is never served; add the chain that takes the box out of its cell, brings it to the dock and puts it on the outfeed, and let IDLE start it when a request waits for a cell that holds a box.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter stores boxes but has no retrieve steps, so a request is never served; add the chain that takes the box out of its cell, brings it to the dock and puts it on the outfeed, and let IDLE start it when a request waits for a cell that holds a box.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

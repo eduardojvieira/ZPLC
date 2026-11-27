@@ -20,7 +20,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter drives no output, so no belt moves and no box is weighed; run the belts after Start, hold each box on the scale and send it to the bin its weight selects.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter drives no output, so no belt moves and no box is weighed; run the belts after Start, hold each box on the scale and send it to the bin its weight selects.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

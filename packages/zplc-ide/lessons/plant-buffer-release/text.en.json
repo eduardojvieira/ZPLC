@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter loads boxes but never holds them or releases them one at a time; add the steps and transitions that count five boxes in, hold the blade, release one per press, and finish with Done.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter loads boxes but never holds them or releases them one at a time; add the steps and transitions that count five boxes in, hold the blade, release one per press, and finish with Done.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter has no pump hysteresis and runs through a pump fault; keep the pump on from LevelLow until LevelHigh, latch the alarm on PumpFault or EStop, and release it only with a Reset pressed after the fault has cleared.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter has no pump hysteresis and runs through a pump fault; keep the pump on from LevelLow until LevelHigh, latch the alarm on PumpFault or EStop, and release it only with a Reset pressed after the fault has cleared.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

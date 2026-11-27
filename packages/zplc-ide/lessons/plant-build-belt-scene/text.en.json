@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save the scene, the plant map and the program, then run: The starter scene is an empty floor, so there is nothing to run; place Belt1, Emitter1, EyeFar and StartButton, bind their four signals in the plant map, and write the program that starts the belt and stops it when EyeFar sees the box.",
+      "body": "Correct this starter omission, save the scene, the plant map and the program, then press {{ui:learn.check}}: The starter scene is an empty floor, so there is nothing to run; place Belt1, Emitter1, EyeFar and StartButton, bind their four signals in the plant map, and write the program that starts the belt and stops it when EyeFar sees the box.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter runs only lift A, so boxes pile up on the transfer belt; add the chain of lift B and start it from the same transition as lift A.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter runs only lift A, so boxes pile up on the transfer belt; add the chain of lift B and start it from the same transition as lift A.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

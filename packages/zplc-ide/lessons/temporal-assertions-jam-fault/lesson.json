@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "temporal-assertions-jam-fault",
-  "version": 3,
+  "version": 4,
   "order": 10,
   "module": 8,
   "level": "advanced",

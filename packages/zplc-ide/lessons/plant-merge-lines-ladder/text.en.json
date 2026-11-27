@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter has no rungs, so nothing is loaded and no blade moves; load three boxes on each feeder, open one blade at a time, with line A first, never both together, and open the next only when the previous box has left the merge zone.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter has no rungs, so nothing is loaded and no blade moves; load three boxes on each feeder, open one blade at a time, with line A first, never both together, and open the next only when the previous box has left the merge zone.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

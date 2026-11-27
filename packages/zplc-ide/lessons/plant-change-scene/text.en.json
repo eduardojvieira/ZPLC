@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save the scene and the plant map, then run: The starter scene has no emitter for line B, so no box ever comes from feeder B; add EmitterB at the start of feeder B with a limit of three boxes, and bind EmitterB.emit to MergeLines.EmitB in the plant map.",
+      "body": "Correct this starter omission, save the scene and the plant map, then press {{ui:learn.check}}: The starter scene has no emitter for line B, so no box ever comes from feeder B; add EmitterB at the start of feeder B with a limit of three boxes, and bind EmitterB.emit to MergeLines.EmitB in the plant map.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

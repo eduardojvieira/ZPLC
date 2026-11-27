@@ -25,7 +25,7 @@ Scale the raw level of a tank, a whole number from 0 to 27648, to metres with fu
 
 ## Objectives
 
-- Scale an analog value to engineering units with boxes: convert to REAL first, then divide by the raw span.
+- Scale an analog value to engineering units with boxes so that fractions of a unit are kept.
 - Read the plant map to find the raw range of each signal, and see what a wrong scale does to the process.
 
 ## Stages

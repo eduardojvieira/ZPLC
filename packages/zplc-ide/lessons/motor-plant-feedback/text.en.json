@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter loses Command when Start falls and ignores Stop; retain the request until Stop and gate Running with AtSpeed.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter loses Command when Start falls and ignores Stop; retain the request until Stop and gate Running with AtSpeed.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

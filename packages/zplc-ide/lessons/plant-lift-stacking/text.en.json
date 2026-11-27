@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter drives no output, so nothing moves; sequence the station: emit a crate, raise the lift, feed and count five workpieces one at a time, lower the lift and send the crate out, lighting Green when OutEye sees it.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter drives no output, so nothing moves; sequence the station: emit a crate, raise the lift, feed and count five workpieces one at a time, lower the lift and send the crate out, lighting Green when OutEye sees it.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
