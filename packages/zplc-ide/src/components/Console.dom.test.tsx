@@ -84,25 +84,21 @@ describe('Output, Problems and Tests tabs (IDE-020, IDE-031) in a DOM', () => {
     expect(useIDEStore.getState().compilerMessages).toHaveLength(0);
   });
 
-  it('Problems shows an earlier-build note without saying No problems found after an outside reload, and clears it on the next build', async () => {
+  it('Problems shows an earlier-build note instead of No problems found after an outside reload', async () => {
     open('problems', {
       compilerMessages: [],
       compilerMessagesChecked: true,
       compilerResultsFromEarlierBuild: true,
     });
     dom.render(<Console />);
-    expect(
-      dom.screen.getByText('The files changed outside ZPLC after the last build. Build again to see its problems.'),
-    ).toBeTruthy();
+    expect(dom.screen.getByText('The files changed outside ZPLC after the last build. Build again to see its problems.')).toBeTruthy();
     expect(dom.screen.queryByText(dom.t('panel.problems.empty.title'))).toBeNull();
 
     await dom.act(async () => {
       useIDEStore.getState().clearCompilerMessages();
       useIDEStore.getState().markCompilerMessagesChecked();
     });
-    expect(
-      dom.screen.queryByText('The files changed outside ZPLC after the last build. Build again to see its problems.'),
-    ).toBeNull();
+    expect(dom.screen.queryByText('The files changed outside ZPLC after the last build. Build again to see its problems.')).toBeNull();
     expect(dom.screen.getByText(dom.t('panel.problems.empty.title'))).toBeTruthy();
     expect(dom.screen.getByText(dom.t('panel.problems.empty.checked'))).toBeTruthy();
   });
@@ -116,9 +112,7 @@ describe('Output, Problems and Tests tabs (IDE-020, IDE-031) in a DOM', () => {
     dom.render(<Console />);
     expect(dom.screen.getByText(dom.t('panel.problems.empty.title'))).toBeTruthy();
     expect(dom.screen.getByText(dom.t('panel.problems.empty.checked'))).toBeTruthy();
-    expect(
-      dom.screen.queryByText('The files changed outside ZPLC after the last build. Build again to see its problems.'),
-    ).toBeNull();
+    expect(dom.screen.queryByText('The files changed outside ZPLC after the last build. Build again to see its problems.')).toBeNull();
   });
 
   it('Tests says what it needs when no saved workspace is linked, as a status', () => {

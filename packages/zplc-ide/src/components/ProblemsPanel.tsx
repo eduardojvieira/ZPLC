@@ -29,6 +29,7 @@ export function ProblemsPanel({
   live,
   buildMessages,
   checked,
+  earlierBuild = false,
   fileTree,
   activeFilePath,
   onActivate,
@@ -37,6 +38,7 @@ export function ProblemsPanel({
   live: Problem[];
   buildMessages: Problem[];
   checked: boolean;
+  earlierBuild?: boolean;
   fileTree: FileTreeNode | null;
   activeFilePath?: string;
   onActivate: (message: Problem) => void;
@@ -80,6 +82,11 @@ export function ProblemsPanel({
       )}
       <section aria-label={t('console.latestBuildDiagnostics')} className="space-y-1">
         <div className="px-2 text-xs text-[var(--color-surface-300)]">{t('console.latestBuildDiagnostics')}</div>
+        {earlierBuild && (
+          <p role="status" className="px-2 py-1 text-xs text-[var(--color-surface-300)]">
+            {t('panel.problems.earlierBuild')}
+          </p>
+        )}
         {buildMessages.length === 0
           ? null
           : orderProblems(buildMessages).map((msg, idx) => {
@@ -131,7 +138,7 @@ export function ProblemsPanel({
               );
             })}
       </section>
-      {buildMessages.length === 0 && (
+      {buildMessages.length === 0 && !earlierBuild && (
         <CommandEmptyState
           title={t('panel.problems.empty.title')}
           description={checked ? t('panel.problems.empty.checked') : t('panel.problems.empty.unchecked')}

@@ -66,6 +66,7 @@ export const selectConsoleState = pickState(
   'activeConsoleTab',
   'compilerMessages',
   'compilerMessagesChecked',
+  'compilerResultsFromEarlierBuild',
   'stBufferDiagnostics',
   'activeFileId',
   'loadedFiles',

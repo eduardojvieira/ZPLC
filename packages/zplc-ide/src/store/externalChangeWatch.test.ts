@@ -280,7 +280,7 @@ describe('what an outside change leaves behind (AIX-012)', () => {
     expect(useIDEStore.getState().compilerRunId).toBe(runId + 1);
   });
 
-  it('marks build results as from an earlier build after an outside reload clears markers, and clears that state on the next build', async () => {
+  it('marks results as from an earlier build after an outside reload clears markers, and clears it on build', async () => {
     const { file, handle } = diskFile('x := 1;');
     useIDEStore.setState({
       refreshFileTree: async () => undefined,
@@ -295,11 +295,7 @@ describe('what an outside change leaves behind (AIX-012)', () => {
     file.text = 'x := 2;';
     await followExternalChange({ paths: ['src/Drive.st'], overflow: false });
 
-    const afterReload = useIDEStore.getState() as unknown as {
-      compilerMessages: unknown[];
-      compilerRunId: number;
-      compilerResultsFromEarlierBuild?: boolean;
-    };
+    const afterReload = useIDEStore.getState();
     expect(afterReload.compilerMessages).toEqual([]);
     expect(afterReload.compilerRunId).toBe(runId + 1);
     expect(afterReload.compilerResultsFromEarlierBuild).toBe(true);
@@ -307,17 +303,17 @@ describe('what an outside change leaves behind (AIX-012)', () => {
     // Next build (clean) clears the earlier-build state.
     useIDEStore.getState().clearCompilerMessages();
     useIDEStore.getState().markCompilerMessagesChecked();
-    expect((useIDEStore.getState() as unknown as { compilerResultsFromEarlierBuild?: boolean }).compilerResultsFromEarlierBuild).toBe(false);
+    expect(useIDEStore.getState().compilerResultsFromEarlierBuild).toBe(false);
 
     // Outside reload after a failed build sets it again, and a subsequent failed build also clears it.
     useIDEStore.getState().addCompilerMessage({ type: 'error', message: 'Still broken', file: 'src/Drive.st', line: 1, column: 1 });
     file.text = 'x := 3;';
     await followExternalChange({ paths: ['src/Drive.st'], overflow: false });
-    expect((useIDEStore.getState() as unknown as { compilerResultsFromEarlierBuild?: boolean }).compilerResultsFromEarlierBuild).toBe(true);
+    expect(useIDEStore.getState().compilerResultsFromEarlierBuild).toBe(true);
 
     useIDEStore.getState().clearCompilerMessages();
     useIDEStore.getState().addCompilerMessage({ type: 'error', message: 'New error', file: 'src/Drive.st', line: 1, column: 1 });
-    expect((useIDEStore.getState() as unknown as { compilerResultsFromEarlierBuild?: boolean }).compilerResultsFromEarlierBuild).toBe(false);
+    expect(useIDEStore.getState().compilerResultsFromEarlierBuild).toBe(false);
   });
 
   it('a scene the plant panel saves is its own write: no notice and no reload; an outside write still reloads', async () => {

@@ -50,6 +50,7 @@ export function Console({ debugController }: ConsoleProps) {
     activeConsoleTab: storedConsoleTab,
     compilerMessages,
     compilerMessagesChecked,
+    compilerResultsFromEarlierBuild,
     stBufferDiagnostics,
     activeFileId,
     loadedFiles,
@@ -267,6 +268,7 @@ export function Console({ debugController }: ConsoleProps) {
               live={liveSTDiagnostics}
               buildMessages={compilerMessages}
               checked={compilerMessagesChecked}
+              earlierBuild={compilerResultsFromEarlierBuild}
               fileTree={fileTree}
               activeFilePath={activeFile?.path}
               onActivate={(msg) => {

@@ -510,6 +510,7 @@ export const baseEn = {
   'panel.problems.empty.title': 'No problems found',
   'panel.problems.empty.checked': 'The latest build reported no diagnostics.',
   'panel.problems.empty.unchecked': 'Compile the project to check it for problems.',
+  'panel.problems.earlierBuild': 'The files changed outside ZPLC after the last build. Build again to see its problems.',
   'panel.trace.empty.title': 'No trace samples yet',
   'panel.trace.empty.description': 'Step the native POSIX simulation to collect trace samples.',
   'panel.watch.empty.title': 'No variables watched',
