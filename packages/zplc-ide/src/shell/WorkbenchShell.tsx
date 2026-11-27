@@ -5,6 +5,7 @@
  */
 import { useEffect, useRef, type ComponentType } from 'react';
 import { Group, Panel, useGroupCallbackRef, usePanelCallbackRef, type PanelSize } from 'react-resizable-panels';
+import { useCollapsible } from './useCollapsible';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { LearnHome } from '../components/LearnHome';
 import { LearnReadingView } from '../components/LearnReadingView';
@@ -32,15 +33,6 @@ interface WorkbenchShellProps {
 
 /** An open dialog, menu or list takes Escape first (SHL-007); the shell leaves maximise only when none is open. */
 const OPEN_OVERLAY = '[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [aria-modal="true"]';
-
-/** Keeps a collapsible panel and the visibility flag that stands for it the same, whichever one the user changed. */
-function useCollapsible(panel: ReturnType<typeof usePanelCallbackRef>[0], visible: boolean): void {
-  useEffect(() => {
-    if (!panel) return;
-    if (visible && panel.isCollapsed()) panel.expand();
-    if (!visible && !panel.isCollapsed()) panel.collapse();
-  }, [panel, visible]);
-}
 
 export function WorkbenchShell({ EditorArea, Console, debugController }: WorkbenchShellProps) {
   const { t } = useT();
@@ -165,7 +157,7 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
         <Panel
           id="primary"
           panelRef={setPrimaryPanel}
-          defaultSize="280px"
+          defaultSize={primaryVisible ? '280px' : 0}
           minSize="200px"
           maxSize="520px"
           collapsible
@@ -236,7 +228,7 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
         <Panel
           id="secondary"
           panelRef={setSecondaryPanel}
-          defaultSize="280px"
+          defaultSize={secondaryVisible ? '280px' : 0}
           minSize="200px"
           maxSize="520px"
           collapsible

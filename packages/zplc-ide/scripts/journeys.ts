@@ -2173,9 +2173,10 @@ export const JOURNEYS: Journey[] = [
       assert(long.scrollTop > 500, `Long.st did not scroll: ${JSON.stringify(long)}`);
       await app.click(editorTab('file:src/Motor.st'));
       await app.until('Motor.st in the editor', async () => hasProgram(await editorText(app), 'Motor') || undefined);
+      const separatorValue = (target: App) =>
+        target.eval<number>(`Number(document.getElementById('workspace-separator')?.getAttribute('aria-valuenow'))`);
       await app.click(css('#workspace-separator'), 'the separator above the lower panel');
       for (let step = 0; step < 3; step++) await app.press('ArrowUp');
-      const heightBefore = await editorHeight(app);
       await app.until('a session with both tabs, the active tab and the panel split on disk', () => {
         const [session] = savedSessions(root);
         return (
@@ -2186,6 +2187,8 @@ export const JOURNEYS: Journey[] = [
           undefined
         );
       });
+      const splitBefore = await separatorValue(app);
+      const heightBefore = await editorHeight(app);
       // The user moves the cursor once more and closes the app at once, before any delay could have saved it.
       await clickEditorLine(app, 12);
       await app.until('the cursor on line 12 of Motor.st', async () => (await editorView(app)).line === 12 || undefined);
@@ -2254,6 +2257,10 @@ export const JOURNEYS: Journey[] = [
       assert(
         Math.abs(restoredLong.scrollTop - long.scrollTop) <= 30,
         `Long.st is scrolled to ${restoredLong.scrollTop}, it was left at ${long.scrollTop}.`,
+      );
+      await again.until(
+        'the restored panel split to settle',
+        async () => Math.abs((await separatorValue(again)) - splitBefore) <= 1 || undefined,
       );
       const heightAfter = await editorHeight(again);
       assert(
@@ -6503,7 +6510,7 @@ export const JOURNEYS: Journey[] = [
       await app.press('Escape');
       await app.until('the dialog to close', async () => !(await app.visible(alert)) || undefined);
       assert((await answer()) === false, `Escape must answer no, it answered ${JSON.stringify(await answer())}`);
-      assert(await app.visible(button('Stop (Shift+F5)', 'prefix')), 'A cancelled deploy question must leave the program running.');
+      assert(await app.visible(css('[data-command="debug.stop"]')), 'A cancelled deploy question must leave the program running.');
 
       // The action button answers yes, and Cancel answers no.
       await ask(false, matching);

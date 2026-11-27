@@ -29,7 +29,6 @@ export function RegionError({
   error,
   onRetry,
   recovery,
-  fullWindow = false,
 }: {
   region: string;
   error: Error;
@@ -42,10 +41,7 @@ export function RegionError({
     <div
       role="alert"
       data-region-error={region}
-      className={
-        `${fullWindow ? 'h-screen w-screen' : 'h-full w-full'} flex items-center justify-center overflow-auto ` +
-        `bg-[var(--color-surface-900)] p-6 text-center`
-      }
+      className="h-full w-full flex items-center justify-center overflow-auto bg-[var(--color-surface-900)] p-6 text-center"
     >
       <div className="max-w-md">
         <p className="text-lg font-medium text-[var(--color-accent-red)]">{t('errorBoundary.stopped', { region })}</p>
