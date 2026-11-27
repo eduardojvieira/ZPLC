@@ -18,9 +18,9 @@ function recipesIn(content: string): string[] {
   return [...new Set([...content.matchAll(/\bbun run ([A-Za-z][\w:.-]*)/g)].map((match) => match[1]!))];
 }
 
-/** The section of the newest version of the changelog: from its heading line to the next version heading. */
+/** The `## Unreleased` section of the changelog: from its heading line to the next version heading. */
 function unreleasedSection(changelog: string): string {
-  const start = changelog.search(/^## \d/m);
+  const start = changelog.search(/^## Unreleased$/m);
   const end = changelog.indexOf('\n## ', start + 5);
   return changelog.slice(start, end < 0 ? undefined : end);
 }
@@ -145,6 +145,12 @@ describe('principles: the constitution is readable from the contributor pages (D
 });
 
 describe('changelog: what changed for a user, what breaks, how to migrate and what is limited (DOC-030)', () => {
+  it('reads the Unreleased section, so a change filed under a dated version is not taken for it', () => {
+    const misfiled = '# Changelog\n\n## Unreleased\n\n### What changed for you\n\n- x\n\n## 2.0.1 - 2026-11-12\n\n### Breaking changes\n\n- y\n';
+    expect(unreleasedSection(misfiled)).not.toContain('### Breaking changes');
+    expect(unreleasedSection(misfiled)).toContain('- x');
+  });
+
   const changelog = text('CHANGELOG.md');
   const results = (): RunResults => JSON.parse(text('scripts/release/fixtures/run-results.json')) as RunResults;
 

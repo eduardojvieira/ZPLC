@@ -10,10 +10,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, afterEach, describe, expect, test } from 'bun:test';
+import { InMemoryTransport } from '@modelcontextprotocol/server';
 
 import { itNative } from '../cli/nativeRuntimeGuard';
 import { scenarioRun } from '../cli/toolApi';
-import { createMcpDispatcher, executionSchema, openMcpWorkspace, type McpOperations } from './server';
+import { buildMcpServer, createMcpDispatcher, executionSchema, openMcpWorkspace, type McpOperations } from './server';
 import { MAX_INTERNAL_TRACE_BYTES } from './traceView';
 
 const temporary: string[] = [];
@@ -231,6 +232,42 @@ describe('trace_get asks for the sidecar only in the new modes (AI-08)', () => {
   });
 });
 
+describe('trace_get mode full takes no options (AIX-015)', () => {
+  const options = {
+    signals: ['Nope'],
+    watchSignals: ['Nope.x'],
+    limit: 1,
+    fromSample: 5,
+    fromMs: 0,
+    toMs: 10,
+    includeInputs: false,
+  } as const;
+  test('AIX-015 full with any other option is MCP_INVALID_ARGUMENTS naming it and pointing to changes or window', async () => {
+    const dispatch = createMcpDispatcher(
+      (await openMcpWorkspace(await workspace()))!,
+      operations(async () => runValue(aggregate(2))),
+    );
+    for (const [name, value] of Object.entries(options)) {
+      const result = await dispatch('trace_get', { scenarioId: 'smoke', mode: 'full', [name]: value }, signal);
+      expect(result.isError, name).toBe(true);
+      expect(content(result), name).toMatchObject({ ok: false, error: 'MCP_INVALID_ARGUMENTS' });
+      expect(content(result).message, name).toContain(name);
+      expect(content(result).message, name).toContain('whole 2.0 trace');
+      expect(content(result).nextStep, name).toContain('changes');
+      expect(content(result).nextStep, name).toContain('window');
+    }
+  });
+
+  test('AIX-015 plain full still answers the whole trace', async () => {
+    const dispatch = createMcpDispatcher(
+      (await openMcpWorkspace(await workspace()))!,
+      operations(async () => runValue(aggregate(2))),
+    );
+    const result = await dispatch('trace_get', { scenarioId: 'smoke', mode: 'full' }, signal);
+    expect(content(result)).toMatchObject({ ok: true, scope: 'recorded-native-posix-host', totalSamples: 2 });
+  });
+});
+
 describe('a wrong scenarioId is answered with the valid ones (AIX-015)', () => {
   test('AIX-015 every tool that takes a scenarioId answers MCP_NOT_FOUND with the sorted ids, 32 at most', async () => {
     const ids = Array.from({ length: 40 }, (_, index) => `s${String(39 - index).padStart(2, '0')}`);
@@ -376,6 +413,35 @@ describe('trace_get on a shipped plant lesson (AI-03, AI-08)', () => {
           durationMs: Date.parse(body.execution.finishedAt) - Date.parse(body.execution.startedAt),
         });
       }
+    },
+    240_000,
+  );
+
+  itNative(
+    'AIX-015 the resource zplc://runtime/trace/{scenarioId} answers changes, as trace_get without a mode does',
+    async () => {
+      const server = buildMcpServer((await openMcpWorkspace(belt()))!);
+      const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+      await server.connect(serverSide);
+      const answers = new Map<number, { contents?: Array<{ text: string }> }>();
+      clientSide.onmessage = (message) => {
+        const reply = message as { id?: number; result?: { contents?: Array<{ text: string }> } };
+        if (typeof reply.id === 'number') answers.set(reply.id, reply.result ?? {});
+      };
+      await clientSide.start();
+      const request = async (id: number, method: string, params: Record<string, unknown>) => {
+        await clientSide.send({ jsonrpc: '2.0', id, method, params } as never);
+        for (let waited = 0; !answers.has(id) && waited < 100_000; waited += 50) await new Promise((done) => setTimeout(done, 50));
+        return answers.get(id)!;
+      };
+      await request(1, 'initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'test', version: '1' } });
+      await clientSide.send({ jsonrpc: '2.0', method: 'notifications/initialized' } as never);
+      const read = await request(2, 'resources/read', { uri: 'zplc://runtime/trace/belt-to-sensor' });
+      await clientSide.close();
+      const body = JSON.parse(read.contents![0]!.text) as Record<string, unknown>;
+      expect(body).toMatchObject({ ok: expect.any(Boolean), mode: 'changes', scenarioId: 'belt-to-sensor' });
+      expect(body.samples).toBeArray();
+      expect(body.trace).toBeUndefined();
     },
     240_000,
   );
