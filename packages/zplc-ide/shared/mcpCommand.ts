@@ -1,8 +1,9 @@
 /**
  * Where the local MCP server `zplc-mcp` is (AIX-007): `ZPLC_MCP_BIN` when it names an absolute executable file; otherwise the
  * copy the installer carries in `<resourcesPath>/zplc-mcp/` (Electron sets `process.resourcesPath`; it is the version that
- * matches this build); otherwise the first folder of `PATH` that holds one named `zplc-mcp`. Answers the absolute path, or null. It only looks at files: no shell,
- * no process. When `ZPLC_MCP_BIN` is set but wrong, the answer is null rather than a quiet fall back to another binary.
+ * matches this build); otherwise the first folder of `PATH` that holds one named `zplc-mcp`. Answers the absolute path, or null.
+ * It only looks at files: no shell, no process. When `ZPLC_MCP_BIN` is set but wrong, the answer is null rather than a quiet fall
+ * back to another binary.
  */
 import { access, constants, stat } from 'node:fs/promises';
 import { delimiter, isAbsolute, join } from 'node:path';
