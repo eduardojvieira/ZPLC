@@ -327,9 +327,7 @@ async function promptGone(cdp: Cdp): Promise<void> {
 }
 const card =
   `(() => { const panel = document.querySelector('[aria-label="Live native POSIX motor"]'); if (!panel) return null; const ` +
-  `text = panel.textContent ?? ''; const get = (name) => Array.from(panel.querySelectorAll('button')).find((button) => ` +
-  `button.textContent === name)?.disabled; return { text, cycles: Number((text.match(/·\\s*(\\d+) cycles/) ?? [])[1]), startDisabled: ` +
-  `get('Start'), stopDisabled: get('Stop'), assertDisabled: get('Assert E-stop'), releaseDisabled: get('Release E-stop') }; })()`;
+  `text = panel.textContent ?? ''; return { text, cycles: Number((text.match(/·\\s*(\\d+) cycles/) ?? [])[1]) }; })()`;
 
 async function main(): Promise<void> {
   const runtime = preflight();
@@ -975,62 +973,60 @@ async function main(): Promise<void> {
         ? state
         : undefined;
     });
-    await waitFor('Start input', async () =>
-      (await cdp!.evaluate(
-        `(() => { const button = [...document.querySelectorAll('[aria-label="Live native POSIX motor"] button')].find((item) => ` +
-          `item.textContent === 'Start'); if (!button || button.disabled) return undefined; button.click(); return true; })()`,
-      )) === true
-        ? true
-        : undefined,
-    );
+    // The motor inputs belong to the faceplate in the Watch tab (PLS-007); the Trace panel only shows what they do to the outputs.
+    const openTab = (name: string) =>
+      waitFor(`${name} tab`, async () =>
+        (await cdp!.evaluate(
+          `(() => { const tab = [...document.querySelectorAll('[role="tab"]')].find((item) => ` +
+            `(item.getAttribute('aria-label') ?? item.textContent ?? '').trim().startsWith(${JSON.stringify(name)})); ` +
+            `if (!tab) return false; tab.click(); return true; })()`,
+        )) === true
+          ? true
+          : undefined,
+      );
+    // A switch is clicked only once the faceplate reads the input in the opposite state, and the click is confirmed by the read-back.
+    const switchChecked = (input: string) =>
+      `document.querySelector('[data-input="Motor.${input}"] button[role="switch"]')?.getAttribute('aria-checked')`;
+    const setInput = async (input: string, on: boolean) => {
+      await openTab('Watch');
+      await waitFor(`${input} on the faceplate`, async () =>
+        (await cdp!.evaluate(
+          `(() => { const button = document.querySelector('[data-input="Motor.${input}"] button[role="switch"]'); ` +
+            `if (!button || button.disabled || button.getAttribute('aria-checked') !== '${!on}') return undefined; ` +
+            `button.click(); return true; })()`,
+        )) === true
+          ? true
+          : undefined,
+      );
+      await waitFor(`${input} read back as ${on}`, async () =>
+        (await cdp!.evaluate(switchChecked(input))) === String(on) ? true : undefined,
+      );
+      await openTab('Trace');
+    };
+    await setInput('Start', true);
     const started = await waitFor('post-Start native scan', async () => {
       const state = (await cdp!.evaluate(card)) as { text: string; cycles: number } | null;
       return state && state.cycles > armed.cycles && state.text.includes('Motor.ForwardON') && state.text.includes('Motor.ReverseOFF')
         ? state
         : undefined;
     });
-    await waitFor('E-stop assertion', async () =>
-      (await cdp!.evaluate(
-        `(() => { const button = [...document.querySelectorAll('[aria-label="Live native POSIX motor"] button')].find((item) => ` +
-          `item.textContent === 'Assert E-stop'); if (!button || button.disabled) return undefined; button.click(); return true; })()`,
-      )) === true
-        ? true
-        : undefined,
-    );
+    await setInput('EStop', true);
     const stopped = await waitFor('post-E-stop safe scan', async () => {
-      const state = (await cdp!.evaluate(card)) as {
-        text: string;
-        cycles: number;
-        startDisabled: boolean;
-        stopDisabled: boolean;
-        assertDisabled: boolean;
-        releaseDisabled: boolean;
-      } | null;
+      const state = (await cdp!.evaluate(card)) as { text: string; cycles: number } | null;
       return state &&
         state.cycles > started.cycles &&
         state.text.includes('Motor.ForwardOFF') &&
         state.text.includes('Motor.ReverseOFF') &&
-        state.text.includes('E-stop: asserted') &&
-        state.startDisabled &&
-        state.stopDisabled &&
-        state.assertDisabled &&
-        !state.releaseDisabled
+        state.text.includes('E-stop: asserted')
         ? state
         : undefined;
     });
-    await waitFor('E-stop release', async () =>
-      (await cdp!.evaluate(
-        `(() => { const button = [...document.querySelectorAll('[aria-label="Live native POSIX motor"] button')].find((item) => ` +
-          `item.textContent === 'Release E-stop'); if (!button || button.disabled) return undefined; button.click(); return true; })()`,
-      )) === true
-        ? true
-        : undefined,
-    );
+    await setInput('EStop', false);
     await waitFor('post-release native scan', async () => {
       const state = (await cdp!.evaluate(card)) as { text: string; cycles: number } | null;
       return state && state.cycles > stopped.cycles && state.text.includes('E-stop: released') ? state : undefined;
     });
-    // The bar's Stop (Shift+F5) ends the simulator session that Run began: the Disconnect of the old bar. The motor panel has a Stop too.
+    // The bar's Stop (Shift+F5) ends the simulator session that Run began: the Disconnect of the old bar.
     await waitFor('Stop', async () =>
       (await cdp!.evaluate(
         `(() => { const stop = document.querySelector('[role="toolbar"] button[aria-label^="Stop"]'); if (!stop || stop.disabled) ` +
