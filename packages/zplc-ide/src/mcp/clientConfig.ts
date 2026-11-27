@@ -63,11 +63,7 @@ async function readExisting(path: string): Promise<{ exists: boolean; value: Rec
   return { exists: true, value: value as Record<string, unknown> };
 }
 
-export async function previewClientConfig(
-  client: McpClient,
-  folder: string,
-  options: ClientConfigOptions,
-): Promise<ClientConfigPreview> {
+export async function previewClientConfig(client: McpClient, folder: string, options: ClientConfigOptions): Promise<ClientConfigPreview> {
   check(client, folder, options);
   const { segments, key, typed } = FILES[client];
   const path = join(folder, ...segments);

@@ -30,7 +30,10 @@ const isWriteRequest = (value: unknown): value is { client: McpClient; expected:
   if (typeof value !== 'object' || value === null) return false;
   const record = value as Record<string, unknown>;
   return (
-    Object.keys(record).length === 2 && isMcpClient(record.client) && typeof record.expected === 'string' && record.expected.length <= MAX_TEXT
+    Object.keys(record).length === 2 &&
+    isMcpClient(record.client) &&
+    typeof record.expected === 'string' &&
+    record.expected.length <= MAX_TEXT
   );
 };
 const message = (error: unknown): { ok: false; message: string } => ({
@@ -73,10 +76,15 @@ export function createMcpConfigHandlers<Owner extends { ownerId: number }>(deps:
       accepts: (args) => args.length === 0,
       run: async (owner) => {
         const { folder, options } = where(owner);
-        const answer = await deps.selfCheck({ command: options.command, workspace: folder, ...(options.userData ? { userData: options.userData } : {}) });
+        const answer = await deps.selfCheck({
+          command: options.command,
+          workspace: folder,
+          ...(options.userData ? { userData: options.userData } : {}),
+        });
         try {
           const report: unknown = JSON.parse(answer.stdout);
-          if (typeof report === 'object' && report !== null && !Array.isArray(report)) return { ok: true, ready: answer.code === 0, report };
+          if (typeof report === 'object' && report !== null && !Array.isArray(report))
+            return { ok: true, ready: answer.code === 0, report };
         } catch {
           /* not a report: said below */
         }
