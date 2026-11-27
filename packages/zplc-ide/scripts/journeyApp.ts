@@ -296,8 +296,9 @@ async function connectApp(
     clickable: async (target) => (await evaluate<unknown>(centre(target))) !== null,
     visible: async (target) =>
       await evaluate<boolean>(
-        `(() => { const el = ${target}; if (!el) return false; const box = el.getBoundingClientRect(); return box.width > 0 && ` +
-          `box.height > 0; })()`,
+        `(() => { const el = ${target}; if (!el) return false; const box = el.getBoundingClientRect(); ` +
+          `const style = getComputedStyle(el); return box.width > 0 && box.height > 0 && ` +
+          `style.visibility !== 'hidden' && Number(style.opacity) > 0; })()`,
       ),
     text: () => evaluate<string>('document.body.innerText'),
     errors: page.errors,
@@ -328,6 +329,9 @@ export async function launchApp(
       electronPath,
       '--headless',
       '--disable-gpu',
+      // the window is not shown on a CI runner (macOS, Windows): do not let Chromium treat it as occluded or in the background
+      '--disable-backgrounding-occluded-windows',
+      '--disable-renderer-backgrounding',
       '--lang=en-US',
       // the X display the run was given (xvfb-run), where journey 53 finds the window with xdotool: in a Wayland session
       // Electron would otherwise open its window on the person's own desktop
