@@ -111,4 +111,12 @@ describe('the MCP connection panel (AIX-007)', () => {
     expect(view.getByText(dom.t('mcp.unavailable'))).toBeTruthy();
     expect(view.queryByRole('button', { name: dom.t('mcp.write') })).toBeNull();
   });
+
+  it('says plainly that the server was not found, and offers neither a write nor a self-check', async () => {
+    bridge({ preview: async () => ({ ok: false, missing: true, message: 'not found' }) });
+    const view = dom.render(<McpConnectionSettings />);
+    await dom.waitFor(() => expect(view.getByText(dom.t('mcp.commandMissing'))).toBeTruthy());
+    expect((view.getByRole('button', { name: dom.t('mcp.write') }) as HTMLButtonElement).disabled).toBe(true);
+    expect((view.getByRole('button', { name: dom.t('mcp.selfCheck') }) as HTMLButtonElement).disabled).toBe(true);
+  });
 });

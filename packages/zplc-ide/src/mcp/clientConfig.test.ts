@@ -120,4 +120,49 @@ describe('the MCP config of one client (AIX-007)', () => {
     await expect(previewClientConfig('cursor', `${folder}/a"b`, options)).rejects.toThrow();
     await expect(previewClientConfig('nope' as never, folder, options)).rejects.toThrow('client');
   });
+
+  it('refuses a client folder that is a link out of the project, creates nothing outside, and says why', async () => {
+    for (const [client, directory] of [
+      ['cursor', '.cursor'],
+      ['vscode', '.vscode'],
+    ] as const) {
+      const folder = await scratch();
+      const elsewhere = await scratch();
+      await symlink(elsewhere, join(folder, directory));
+      await expect(previewClientConfig(client, folder, options)).rejects.toThrow(`${directory} is a link`);
+      await expect(writeClientConfig(client, folder, options, '{}')).rejects.toThrow('link');
+      expect(await readdir(elsewhere)).toEqual([]);
+    }
+  });
+
+  it('refuses a link to a folder inside the project too, and a client folder that is a file', async () => {
+    const folder = await scratch();
+    await mkdir(join(folder, 'real'));
+    await symlink(join(folder, 'real'), join(folder, '.cursor'));
+    await expect(previewClientConfig('cursor', folder, options)).rejects.toThrow('link');
+    await writeFile(join(folder, '.vscode'), 'x');
+    await expect(previewClientConfig('vscode', folder, options)).rejects.toThrow('not a folder');
+    expect(await readdir(join(folder, 'real'))).toEqual([]);
+  });
+
+  it('keeps the first backup and writes the next ones as .bak.1, .bak.2, up to a cap, then refuses without overwriting', async () => {
+    const folder = await scratch();
+    const file = join(folder, '.mcp.json');
+    const history: string[] = [];
+    for (let round = 0; round < 3; round++) {
+      await writeFile(file, JSON.stringify({ mcpServers: { [`v${round}`]: { command: 'c' } } }));
+      history.push(await readFile(file, 'utf8'));
+      const preview = await previewClientConfig('claude-code', folder, options);
+      await writeClientConfig('claude-code', folder, options, preview.text);
+    }
+    expect(await readFile(`${file}.bak`, 'utf8')).toBe(history[0]!);
+    expect(await readFile(`${file}.bak.1`, 'utf8')).toBe(history[1]!);
+    expect(await readFile(`${file}.bak.2`, 'utf8')).toBe(history[2]!);
+    for (let n = 3; n <= 9; n++) await writeFile(`${file}.bak.${n}`, `old ${n}`);
+    await writeFile(file, '{}');
+    const preview = await previewClientConfig('claude-code', folder, options);
+    await expect(writeClientConfig('claude-code', folder, options, preview.text)).rejects.toThrow('backups');
+    expect(await readFile(file, 'utf8')).toBe('{}');
+    expect(await readFile(`${file}.bak.9`, 'utf8')).toBe('old 9');
+  });
 });

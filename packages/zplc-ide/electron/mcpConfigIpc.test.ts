@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -114,5 +114,42 @@ describe('the MCP connection channels (AIX-007)', () => {
       '--self-check',
     ]);
     expect(() => spawnVector({ kind: 'mcp-self-check', command: 'zplc-mcp --x', workspace: '/p' })).toThrow('Refused to spawn');
+  });
+
+  it(
+    'answer that the server was not found, without previewing, writing or running anything, when the command does not ' + 'resolve',
+    async () => {
+      const folder = await scratch();
+      let ran = 0;
+      const handlers = createMcpConfigHandlers<Owner>({
+        folder: () => folder,
+        userData: () => null,
+        command: async () => null,
+        selfCheck: async () => {
+          ran++;
+          return { code: 0, stdout: '{}' };
+        },
+      });
+      for (const [channel, args] of [
+        [PREVIEW, ['cursor']],
+        [WRITE, [{ client: 'cursor', expected: '{}' }]],
+        [SELF_CHECK, []],
+      ] as const)
+        expect(await handlers[channel]!.run({ ownerId: 1 }, [...args])).toMatchObject({ ok: false, missing: true });
+      expect(ran).toBe(0);
+      expect(await readdir(folder)).toEqual([]);
+    },
+  );
+
+  it('write the resolved absolute path of the server into the entry', async () => {
+    const folder = await scratch();
+    const handlers = createMcpConfigHandlers<Owner>({
+      folder: () => folder,
+      userData: () => null,
+      command: async () => '/opt/zplc/zplc-mcp',
+      selfCheck: async () => ({ code: 0, stdout: '{}' }),
+    });
+    const preview = (await handlers[PREVIEW]!.run({ ownerId: 1 }, ['cursor'])) as { text: string };
+    expect(JSON.parse(preview.text).mcpServers.zplc.command).toBe('/opt/zplc/zplc-mcp');
   });
 });
