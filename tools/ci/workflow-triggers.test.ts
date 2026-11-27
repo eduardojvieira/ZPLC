@@ -20,15 +20,64 @@ const workflows = readdirSync(folder)
   .map((name) => [name, Bun.YAML.parse(readFileSync(new URL(name, folder), 'utf8')) as Workflow] as const);
 const workflow = (name: string) => workflows.find(([file]) => file === name)![1];
 
-describe('the documentation site is deployed from the branch that holds 2.0', () => {
-  it.each(['push', 'pull_request'])('on %s: the default branches and the 2.0 branch (decision D-12 may move 2.0 to master)', (event) => {
-    expect((workflow('deploy-docs.yml').on[event] as { branches?: string[] }).branches).toEqual(
-      expect.arrayContaining(['master', 'main', 'zplc-2.0-candidate']),
-    );
+type Step = { name?: string; run?: string; uses?: string; with?: Record<string, unknown>; env?: Record<string, string> };
+type DeployJob = { needs?: string | string[]; if?: string; steps: Step[]; permissions?: Record<string, string> };
+type DeployWorkflow = {
+  on: Record<string, { branches?: string[]; types?: string[]; inputs?: Record<string, { required?: boolean }> } | null>;
+  permissions?: Record<string, string>;
+  concurrency?: { group: string; 'cancel-in-progress': boolean };
+  jobs: Record<string, DeployJob>;
+};
+
+describe('PUB-005: the documentation site is published with the release, never by a push', () => {
+  const docs = workflow('deploy-docs.yml') as unknown as DeployWorkflow;
+  const jobs = docs.jobs;
+
+  it('triggers: a published release, a dispatch that names a ref, and builds-only on pull requests', () => {
+    expect(docs.on.release?.types).toEqual(['published']);
+    expect(docs.on.workflow_dispatch?.inputs?.ref?.required).toBe(true);
+    expect(docs.on).not.toHaveProperty('push');
+    expect(docs.on.pull_request?.branches).toEqual(expect.arrayContaining(['master', 'main', 'zplc-2.0-candidate']));
   });
 
-  it('names the latest published release to the build, so that the site shows its version', () => {
-    const steps = workflow('deploy-docs.yml').jobs.build!.steps!;
+  it('deploys only on a published release or a dispatch, and never a prerelease', () => {
+    expect(jobs.deploy!.if).toContain("github.event_name == 'release'");
+    expect(jobs.deploy!.if).toContain("github.event_name == 'workflow_dispatch'");
+    expect(jobs.deploy!.if).not.toContain("'push'");
+    expect(jobs.deploy!.if).not.toContain("'pull_request'");
+    expect(jobs.build!.if).toContain('github.event.release.prerelease');
+  });
+
+  it('refuses a dispatch before any build: ancestor check and docs-only check run in a guard the build needs', () => {
+    const guard = jobs.guard!;
+    expect(guard.if).toContain("github.event_name == 'workflow_dispatch'");
+    expect(guard.steps.find((step) => step.uses?.startsWith('actions/checkout'))?.with?.['fetch-depth']).toBe(0);
+    const run = guard.steps.map((step) => step.run ?? '').join('\n');
+    expect(run).toContain('docs-dispatch-guard.ts');
+    expect(run).toContain('--exclude-drafts');
+    expect([jobs.build!.needs].flat()).toContain('guard');
+    expect(jobs.build!.if).toContain('needs.guard.result');
+    expect(guard.steps.some((step) => step.run?.includes('bun run build'))).toBe(false);
+  });
+
+  it('checks out the tag of the release, or the commit the guard accepted', () => {
+    const ref = jobs.build!.steps.find((step) => step.uses?.startsWith('actions/checkout'))?.with?.ref as string;
+    expect(ref).toContain('github.event.release.tag_name');
+    expect(ref).toContain('needs.guard.outputs.sha');
+  });
+
+  it('has least-privilege permissions and a concurrency group that serialises every deploy', () => {
+    expect(docs.permissions).toEqual({ contents: 'read' });
+    expect(jobs.guard!.permissions ?? docs.permissions).toEqual({ contents: 'read' });
+    expect(jobs.deploy!.permissions).toEqual({ pages: 'write', 'id-token': 'write' });
+    expect(docs.concurrency!['cancel-in-progress']).toBe(false);
+    expect(docs.concurrency!.group).toContain("'pages'");
+    // a build on a pull request must not share the group, or it could replace a pending deploy
+    expect(docs.concurrency!.group).toContain('github.ref');
+  });
+
+  it('names the release to the build, so that the site shows its version', () => {
+    const steps = jobs.build!.steps;
     const naming = steps.findIndex((step) => step.run?.includes('ZPLC_RELEASE_TAG'));
     expect(naming).toBeGreaterThan(-1);
     expect(naming).toBeLessThan(steps.findIndex((step) => step.run?.includes('bun run build')));
