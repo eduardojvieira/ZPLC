@@ -37,6 +37,7 @@ const showScene = (bound: boolean) => {
 
 afterEach(() => {
   usePlantEdit.getState().end();
+  usePlantEdit.getState().setRunning(false);
   usePlantChoice.setState({ request: undefined, shown: undefined });
   usePlantDocument.setState({ open: false, active: false });
 });

@@ -3,7 +3,7 @@
  * floor, the shipped scenes and the project's, the parts catalogue while the scene is being edited (PartList, mounted with the
  * props it has in the editor panel) and the signals of the scene with type, direction and binding as text (VIS-003).
  */
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { currentLocale, useT } from '../../i18n';
 import { runCommand } from '../../commands/bus';
 import { listIoMap } from '../../runtime/ioMap';
@@ -34,6 +34,7 @@ export function PlantActivityView() {
   const shown = usePlantChoice((state) => state.shown);
   const ask = usePlantChoice((state) => state.ask);
   const session = usePlantEdit();
+  const [refused, setRefused] = useState<string | undefined>();
   const rootScene = useProjectSceneTexts().scene !== undefined;
   const saved = useProjectScenes().names;
   const debugMap = useIDEStore((state) => state.debug.debugMap);
@@ -85,7 +86,8 @@ export function PlantActivityView() {
           onSelect={(id) => editing.editor?.select(id)}
           onAdd={(id) => {
             if (editing.running) return;
-            editing.editor?.place(freshIdentity(state.scene, { id }).id, id, [0, 0, 0]);
+            const placed = editing.editor?.place(freshIdentity(state.scene, { id }).id, id, [0, 0, 0]);
+            setRefused(typeof placed === 'object' ? placed.problem : undefined);
           }}
           onDuplicate={(id) => {
             if (!editing.running) editing.editor?.duplicate(id);
@@ -97,6 +99,7 @@ export function PlantActivityView() {
       ) : (
         <p>{t('plant.activity.catalogueHint')}</p>
       )}
+      {refused && editing && <p role="alert">{refused}</p>}
       <section aria-labelledby="plant-activity-signals">
         <h3 id="plant-activity-signals">{t('plant.activity.signals')}</h3>
         {signals.length === 0 ? (
