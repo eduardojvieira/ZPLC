@@ -176,3 +176,38 @@ describe('the live I/O faceplate (LRN-017)', () => {
     expect(html).toContain('aria-label="Force input Big"');
   });
 });
+
+describe('one owner per input on the faceplate (PLS-007, LNK-006)', () => {
+  const tag = (html: string, pattern: RegExp) => html.match(pattern)?.[0] ?? '';
+  const SWITCH = /<button[^>]*role="switch"[^>]*>/;
+  const HOLD = /<button[^>]*aria-pressed[^>]*>/;
+
+  it('PLS-007 an input the plant feeds says so in words and its switch and Hold are disabled, with the reason', () => {
+    const html = render({ inputs: [row({ plantFed: true })] });
+    expect(html).toContain('From the plant');
+    expect(tag(html, SWITCH)).toContain('disabled=""');
+    expect(tag(html, HOLD)).toContain('disabled=""');
+    expect(html).toContain('The plant sets this input. Force it to set it yourself.');
+  });
+
+  it('LNK-006 a forced plant-fed input can be set again, keeps its mark, and can still be forced', () => {
+    const html = render({ inputs: [row({ plantFed: true, forced: true })] });
+    expect(html).toContain('From the plant');
+    expect(tag(html, SWITCH)).not.toContain('disabled=""');
+    expect(tag(html, HOLD)).not.toContain('disabled=""');
+    const free = render({ inputs: [row({ plantFed: true })] });
+    expect(tag(free, /<input[^>]*type="checkbox"[^>]*>/)).not.toContain('disabled=""');
+  });
+
+  it('PLS-007 an input with no plant is operated as before', () => {
+    const html = render({ inputs: [row()] });
+    expect(html).not.toContain('From the plant');
+    expect(tag(html, SWITCH)).not.toContain('disabled=""');
+  });
+
+  it('LRN-017 an input not read yet cannot be switched or held: a click would set TRUE whatever it holds', () => {
+    const html = render({ inputs: [row({ value: null })] });
+    expect(tag(html, SWITCH)).toContain('disabled=""');
+    expect(tag(html, HOLD)).toContain('disabled=""');
+  });
+});
