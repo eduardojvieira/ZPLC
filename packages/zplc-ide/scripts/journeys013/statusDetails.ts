@@ -11,8 +11,11 @@ export async function statusDetailsText(app: App): Promise<string> {
       `item.closest(${JSON.stringify(rail)}) && item.textContent?.includes('Details'))`,
     'the status details',
   );
-  await app.until('the status details', async () => (await app.visible(css('[role="dialog"]'))) || undefined);
-  const text = await app.eval<string>(`document.querySelector('[role="dialog"]')?.innerText ?? ''`);
+  // the dialog shown AND filled: a popover is mounted hidden until it has been placed
+  const text = await app.until('the status details', async () => {
+    if (!(await app.visible(css('[role="dialog"]')))) return undefined;
+    return (await app.eval<string>(`document.querySelector('[role="dialog"]')?.innerText ?? ''`)).trim() || undefined;
+  });
   await app.press('Escape');
   await app.until('the status details to close', async () => !(await app.visible(css('[role="dialog"]'))) || undefined);
   return text;
