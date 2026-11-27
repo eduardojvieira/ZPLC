@@ -543,6 +543,7 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
     ),
     [AI_PROVIDER_CHANNEL.STORE_KEY]: handler(oneArgument(isAllowedAiProviderKey), (_owner, [key]: [string]) => provider().storeKey(key)),
     [AI_PROVIDER_CHANNEL.CLEAR_KEY]: handler(noArguments, () => provider().clearKey()),
+    [AI_PROVIDER_CHANNEL.TEST_CONNECTION]: handler(noArguments, () => provider().testConnection()),
     [AI_PROVIDER_CHANNEL.REQUEST]: handler(oneArgument(isAllowedAiProviderRequest), (owner, [request]: [AiRequest]) => {
       const active = provider();
       return deps.workspaceGateway.run(

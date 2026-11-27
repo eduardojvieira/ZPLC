@@ -232,13 +232,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke(AI_PROVIDER_CHANNEL.SAVE_CONFIG, config) as Promise<unknown>,
     storeKey: (key: string) => ipcRenderer.invoke(AI_PROVIDER_CHANNEL.STORE_KEY, key) as Promise<unknown>,
     clearKey: () => ipcRenderer.invoke(AI_PROVIDER_CHANNEL.CLEAR_KEY) as Promise<unknown>,
+    testConnection: () => ipcRenderer.invoke(AI_PROVIDER_CHANNEL.TEST_CONNECTION) as Promise<unknown>,
     request: (request: {
       workspaceId: string;
       mode: 'ask' | 'plan' | 'edit' | 'debug';
       prompt: string;
       activeFile?: { fileId: string; path: string };
-      diagnostics?: Array<{ code: string; path?: string; line?: number; column?: number }>;
+      diagnostics?: Array<{ code: string; message?: string; path?: string; line?: number; column?: number; element?: string }>;
       trace?: Array<{ atMs: number; signal: string; value: boolean | number }>;
+      failedScenarios?: Array<{
+        id: string;
+        assertions: Array<{ index: number; kind: string; atMs: number; checks: Array<{ signal: string; expected: unknown; observed: unknown }> }>;
+      }>;
+      facts?: Record<string, boolean | number>;
+      selection?: { startLine: number; endLine: number; text: string } | { element: string };
+      lessonContext?: { lessonId: string; stage?: string };
+      locale?: 'en' | 'es';
     }) => ipcRenderer.invoke(AI_PROVIDER_CHANNEL.REQUEST, request) as Promise<unknown>,
     cancel: () => ipcRenderer.invoke(AI_PROVIDER_CHANNEL.CANCEL) as Promise<{ requested: boolean }>,
   },
@@ -324,13 +333,22 @@ declare global {
         saveConfig: (config: { enabled: boolean; endpoint: string; model: string }) => Promise<unknown>;
         storeKey: (key: string) => Promise<unknown>;
         clearKey: () => Promise<unknown>;
+        testConnection: () => Promise<unknown>;
         request: (request: {
           workspaceId: string;
           mode: 'ask' | 'plan' | 'edit' | 'debug';
           prompt: string;
           activeFile?: { fileId: string; path: string };
-          diagnostics?: Array<{ code: string; path?: string; line?: number; column?: number }>;
+          diagnostics?: Array<{ code: string; message?: string; path?: string; line?: number; column?: number; element?: string }>;
           trace?: Array<{ atMs: number; signal: string; value: boolean | number }>;
+          failedScenarios?: Array<{
+            id: string;
+            assertions: Array<{ index: number; kind: string; atMs: number; checks: Array<{ signal: string; expected: unknown; observed: unknown }> }>;
+          }>;
+          facts?: Record<string, boolean | number>;
+          selection?: { startLine: number; endLine: number; text: string } | { element: string };
+          lessonContext?: { lessonId: string; stage?: string };
+          locale?: 'en' | 'es';
         }) => Promise<unknown>;
         cancel: () => Promise<{ requested: boolean }>;
       };

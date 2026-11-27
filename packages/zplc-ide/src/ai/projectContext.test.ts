@@ -197,6 +197,6 @@ describe('the bounds of the context are the ones of the MCP side (AIX-001)', () 
     expect(capped.list).toHaveLength(64);
     expect(capped.text).toHaveLength(256);
     expect(Object.keys(capped.wide)).toHaveLength(64);
-    expect(JSON.stringify(capped.deep).match(/next/g)).toHaveLength(8);
+    expect(JSON.stringify(capped.deep).match(/next/g)).toHaveLength(7);
   });
 });

@@ -15,7 +15,7 @@ describe('the modules of src/ai that the main process loads', () => {
       expect(build.exitCode, build.stdout.toString()).toBe(0);
       const node = Bun.which('node');
       expect(node).toBeTruthy();
-      for (const file of ['candidatePaths', 'manifestPrivacy', 'proposals']) {
+      for (const file of ['candidatePaths', 'manifestPrivacy', 'projectContext', 'providerEndpoint', 'proposals']) {
         const load = Bun.spawnSync([
           node!,
           '--input-type=module',

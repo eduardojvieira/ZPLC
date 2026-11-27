@@ -1218,11 +1218,16 @@ describe('the assistant gets the context of the project, the plant and the lesso
         schemaVersion: 1,
         id: `S${n}`,
         events: [],
-        expectations: Array.from({ length: 64 }, (_, i) => ({ kind: 'at', atMs: i, condition: { [`Plant.Signal${n}_${i}`]: true } })),
+        expectations: Array.from({ length: 64 }, (_, i) => ({ kind: 'at', atMs: i, condition: { [`Plant.Signal${n}_${i}`]: true, [`Plant.Other${n}_${i}`]: false, [`Plant.More${n}_${i}`]: 1 } })),
       });
     const { result, body, context } = await ask(
       { solutionsHidden: async () => false },
-      { failedScenarios: failed, diagnostics: [{ code: 'E_TYPE', message: 'Type mismatch on the coil' }], lessonContext: { lessonId: 'ld-no-nc-contacts' } },
+      {
+        failedScenarios: failed,
+        diagnostics: [{ code: 'E_TYPE', message: 'Type mismatch on the coil' }],
+        lessonContext: { lessonId: 'ld-no-nc-contacts' },
+        activeFile: { fileId: 'file:src/Big.st', path: 'src/Big.st' },
+      },
       async (root) => {
         for (let n = 0; n < 16; n += 1) await writeFile(join(root, 'tests', `s${n}.scenario.json`), scenario(n));
         await writeFile(join(root, 'src', 'Big.st'), `PROGRAM Big\n${'(* filler *)\n'.repeat(4000)}END_PROGRAM\n`);
@@ -1273,9 +1278,9 @@ describe('the system policy (AIX-005, AI-21, rule 8)', () => {
 });
 
 describe('a local model on loopback needs no key (AIX-006, AI-17)', () => {
-  async function local(fetchImpl: (url: string, init: RequestInit) => Promise<Response>, endpoint = 'http://localhost:11434') {
+  async function local(fetchImpl: (url: string, init: RequestInit) => Promise<Response>, endpoint = 'http://localhost:11434', backend = 'basic_text') {
     const directory = await fixture();
-    const provider = createAiProvider({ userDataPath: directory, vault: vault('basic_text'), fetch: fetchImpl });
+    const provider = createAiProvider({ userDataPath: directory, vault: vault(backend), fetch: fetchImpl });
     expect(await provider.saveConfig({ enabled: true, endpoint, model: 'llama3' })).toEqual({ ok: true });
     return { provider, directory };
   }
@@ -1302,10 +1307,14 @@ describe('a local model on loopback needs no key (AIX-006, AI-17)', () => {
       expect(await provider.request(join(directory, 'workspace'), ask, new AbortController().signal)).toMatchObject({ ok: true });
     }
     let auth: unknown;
-    const { provider, directory } = await local(async (_url, init) => {
-      auth = (init.headers as Record<string, string>).Authorization;
-      return ok();
-    });
+    const { provider, directory } = await local(
+      async (_url, init) => {
+        auth = (init.headers as Record<string, string>).Authorization;
+        return ok();
+      },
+      'http://localhost:11434',
+      'gnome_libsecret',
+    );
     await provider.storeKey('local-key');
     await provider.request(join(directory, 'workspace'), ask, new AbortController().signal);
     expect(auth).toBe('Bearer local-key');
@@ -1349,7 +1358,7 @@ describe('a local model on loopback needs no key (AIX-006, AI-17)', () => {
 describe('the connection test (AIX-006)', () => {
   const KEY = 'sk-test-key-98765';
   type Seen = { method: string; auth: string | null; body: Record<string, unknown> };
-  async function against(handler: (seen: Seen) => Response, options: { key?: boolean; timeout?: number } = {}) {
+  async function against(handler: (seen: Seen) => Response | Promise<Response>, options: { key?: boolean; timeout?: number } = {}) {
     const seen: Seen[] = [];
     const server = Bun.serve({
       port: 0,

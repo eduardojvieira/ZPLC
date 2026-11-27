@@ -719,7 +719,8 @@ describe('Electron security boundary', () => {
       { workspaceId, mode: 'edit', prompt: 'x', activeFile: { fileId: 'x', path: 'src/Main.st' }, source: 'secret' },
       { workspaceId, mode: 'edit', prompt: 'x', activeFile: { fileId: 'file:src/Other.st', path: 'src/Main.st' } },
       { workspaceId, mode: 'ask', prompt: 'x'.repeat(4097) },
-      { workspaceId, mode: 'plan', prompt: 'x', diagnostics: [] },
+      // a trace goes with a debug request only; the diagnostics of the project go with every mode (AIX-001)
+      { workspaceId, mode: 'plan', prompt: 'x', trace: [] },
       { workspaceId, mode: 'debug', prompt: 'x', terminal: 'serial' },
       { workspaceId, mode: 'debug', prompt: 'x', diagnostics: Array(33).fill({ code: 'E' }) },
     ])

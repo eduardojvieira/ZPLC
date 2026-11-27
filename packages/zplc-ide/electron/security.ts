@@ -3,6 +3,7 @@ import { ERROR_CODE_MIRROR } from './errorCodes.generated.js';
 import { parseSessionState } from './sessionStoreProtocol.js';
 import { CANDIDATE_CHANGE_CAP, isCandidateChangePath, isCandidateSourcePath } from '../src/ai/candidatePaths.js';
 import { manifestSensitivePaths } from '../src/ai/manifestPrivacy.js';
+import { canonicalAiEndpoint } from '../src/ai/providerEndpoint.js';
 
 const NATIVE_SIMULATION_METHODS = new Set([
   'program.load',
@@ -504,22 +505,129 @@ export function isAllowedCandidateChangeSetReviewRequest(
   return new Set(edits.map((edit) => candidateKey(edit!.path))).size === edits.length;
 }
 
+const AI_DIAGNOSTIC_KEYS = ['code', 'message', 'path', 'line', 'column', 'element'] as const;
+const AI_ELEMENT = /^(?:rung|block|step|transition):[A-Za-z0-9_.-]{1,64}$/;
+const AI_SIGNAL = /^[A-Za-z_][A-Za-z0-9_.:]{0,127}$/;
+const AI_FACT = /^fact:[A-Za-z0-9_.]{1,64}$/;
+const AI_LESSON_ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
+const AI_STAGE = /^[a-z][a-z0-9-]{0,63}$/;
+
+/** A record with exactly the required keys and at most the optional ones. */
+function safeKeyedRecord(value: unknown, required: readonly string[], optional: readonly string[] = []): Record<string, unknown> | null {
+  const record = safeRecord(value);
+  try {
+    if (!record) return null;
+    const names = Object.getOwnPropertyNames(record);
+    return names.every((name) => required.includes(name) || optional.includes(name)) && required.every((key) => names.includes(key))
+      ? record
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 function safeAiDiagnostic(value: unknown): boolean {
-  const diagnostic =
-    safeExactRecord(value, ['code']) ??
-    safeExactRecord(value, ['code', 'path']) ??
-    safeExactRecord(value, ['code', 'path', 'line']) ??
-    safeExactRecord(value, ['code', 'path', 'line', 'column']);
+  const diagnostic = safeKeyedRecord(value, ['code'], AI_DIAGNOSTIC_KEYS);
   if (!diagnostic || typeof ownValue(diagnostic, 'code') !== 'string' || !DIAGNOSTIC_CODE.test(ownValue(diagnostic, 'code') as string))
     return false;
+  const message = ownValue(diagnostic, 'message');
   const path = ownValue(diagnostic, 'path');
   const line = ownValue(diagnostic, 'line');
   const column = ownValue(diagnostic, 'column');
+  const element = ownValue(diagnostic, 'element');
   return (
+    (message === undefined || (typeof message === 'string' && message.length <= 256)) &&
     (path === undefined || Boolean(safeEvidencePath(path))) &&
     (line === undefined || Boolean(safeEvidenceLocation(line))) &&
-    (column === undefined || Boolean(safeEvidenceLocation(column)))
+    (column === undefined || Boolean(safeEvidenceLocation(column))) &&
+    (element === undefined || (typeof element === 'string' && AI_ELEMENT.test(element)))
   );
+}
+
+function isCheckValue(value: unknown): boolean {
+  return typeof value === 'boolean' || (typeof value === 'number' && Number.isFinite(value)) || (typeof value === 'string' && value.length <= 64);
+}
+
+/** At most 4 scenarios of at most 8 failed assertions with at most 8 checks each (the caps of `src/ai/projectContext.ts`). */
+function safeAiFailedScenarios(value: unknown): boolean {
+  const scenarios = safeDenseArray(value, 4);
+  return Boolean(
+    scenarios?.every((scenario) => {
+      const record = safeExactRecord(scenario, ['id', 'assertions']);
+      const id = record && ownValue(record, 'id');
+      const assertions = record && safeDenseArray(ownValue(record, 'assertions'), 8);
+      return (
+        typeof id === 'string' &&
+        SCENARIO_ID.test(id) &&
+        Boolean(
+          assertions?.every((item) => {
+            const assertion = safeExactRecord(item, ['index', 'kind', 'atMs', 'checks']);
+            if (!assertion) return false;
+            const index = ownValue(assertion, 'index');
+            const kind = ownValue(assertion, 'kind');
+            const atMs = ownValue(assertion, 'atMs');
+            const checks = safeDenseArray(ownValue(assertion, 'checks'), 8);
+            return (
+              Number.isSafeInteger(index) &&
+              (index as number) >= 0 &&
+              (index as number) < 10_000 &&
+              typeof kind === 'string' &&
+              /^[a-zA-Z]{1,32}$/.test(kind) &&
+              Number.isSafeInteger(atMs) &&
+              (atMs as number) >= 0 &&
+              (atMs as number) <= 86_400_000 &&
+              Boolean(
+                checks?.every((entry) => {
+                  const check = safeExactRecord(entry, ['signal', 'expected', 'observed']);
+                  const signal = check && ownValue(check, 'signal');
+                  return (
+                    typeof signal === 'string' &&
+                    AI_SIGNAL.test(signal) &&
+                    isCheckValue(ownValue(check!, 'expected')) &&
+                    isCheckValue(ownValue(check!, 'observed'))
+                  );
+                }),
+              )
+            );
+          }),
+        )
+      );
+    }),
+  );
+}
+
+function safeAiFacts(value: unknown): boolean {
+  const facts = safeRecord(value);
+  if (!facts) return false;
+  const names = Object.getOwnPropertyNames(facts);
+  return (
+    names.length <= 32 &&
+    names.every((name) => {
+      const fact = ownValue(facts, name);
+      return AI_FACT.test(name) && (typeof fact === 'boolean' || (typeof fact === 'number' && Number.isFinite(fact) && Math.abs(fact) <= 1e12));
+    })
+  );
+}
+
+/** Lines of the open program, or one element of its diagram; the text is bounded and scanned for secrets by the provider. */
+function safeAiSelection(value: unknown): boolean {
+  const range = safeExactRecord(value, ['startLine', 'endLine', 'text']);
+  if (range) {
+    const start = safeEvidenceLocation(ownValue(range, 'startLine'));
+    const end = safeEvidenceLocation(ownValue(range, 'endLine'));
+    const text = ownValue(range, 'text');
+    return start !== undefined && end !== undefined && end >= start && typeof text === 'string' && Buffer.byteLength(text) <= 4 * 1024;
+  }
+  const element = safeExactRecord(value, ['element']);
+  const name = element && ownValue(element, 'element');
+  return typeof name === 'string' && AI_ELEMENT.test(name);
+}
+
+function safeAiLessonContext(value: unknown): boolean {
+  const lesson = safeKeyedRecord(value, ['lessonId'], ['stage']);
+  const id = lesson && ownValue(lesson, 'lessonId');
+  const stage = lesson && ownValue(lesson, 'stage');
+  return typeof id === 'string' && AI_LESSON_ID.test(id) && (stage === undefined || (typeof stage === 'string' && AI_STAGE.test(stage)));
 }
 
 function safeAiTrace(value: unknown): boolean {
@@ -545,13 +653,19 @@ export function isAllowedAiProviderRequest(value: unknown): value is {
   mode: 'ask' | 'plan' | 'edit' | 'debug';
   prompt: string;
   activeFile?: { fileId: string; path: string };
-  diagnostics?: Array<{ code: string; path?: string; line?: number; column?: number }>;
+  diagnostics?: Array<{ code: string; message?: string; path?: string; line?: number; column?: number; element?: string }>;
   trace?: Array<{ atMs: number; signal: string; value: boolean | number }>;
+  failedScenarios?: unknown[];
+  facts?: Record<string, boolean | number>;
+  selection?: { startLine: number; endLine: number; text: string } | { element: string };
+  lessonContext?: { lessonId: string; stage?: string };
+  locale?: 'en' | 'es';
 } {
   const request = safeRecord(value);
   if (!request) return false;
   const keys = Object.getOwnPropertyNames(request);
-  if (!keys.every((key) => ['workspaceId', 'mode', 'prompt', 'activeFile', 'diagnostics', 'trace'].includes(key))) return false;
+  const allowedKeys = ['workspaceId', 'mode', 'prompt', 'activeFile', 'diagnostics', 'trace', 'failedScenarios', 'facts', 'selection', 'lessonContext', 'locale'];
+  if (!keys.every((key) => allowedKeys.includes(key))) return false;
   const workspaceId = ownValue(request, 'workspaceId');
   const mode = ownValue(request, 'mode');
   const prompt = ownValue(request, 'prompt');
@@ -578,7 +692,21 @@ export function isAllowedAiProviderRequest(value: unknown): value is {
   const allowedDiagnostics = diagnostics === undefined ? [] : safeDenseArray(diagnostics, 32);
   const allowedTrace = trace === undefined ? [] : safeDenseArray(trace, 32);
   if (!allowedDiagnostics || !allowedTrace || !allowedDiagnostics.every(safeAiDiagnostic) || !allowedTrace.every(safeAiTrace)) return false;
-  return mode === 'debug' || (diagnostics === undefined && trace === undefined);
+  // the context of the project (AIX-001) goes with a request in every mode; a trace only with a debug request
+  const failedScenarios = ownValue(request, 'failedScenarios');
+  const facts = ownValue(request, 'facts');
+  const selection = ownValue(request, 'selection');
+  const lessonContext = ownValue(request, 'lessonContext');
+  const locale = ownValue(request, 'locale');
+  if (
+    (failedScenarios !== undefined && !safeAiFailedScenarios(failedScenarios)) ||
+    (facts !== undefined && !safeAiFacts(facts)) ||
+    (selection !== undefined && !safeAiSelection(selection)) ||
+    (lessonContext !== undefined && !safeAiLessonContext(lessonContext)) ||
+    (locale !== undefined && locale !== 'en' && locale !== 'es')
+  )
+    return false;
+  return mode === 'debug' || trace === undefined;
 }
 
 export function isAllowedAiProviderConfig(value: unknown): value is { enabled: boolean; endpoint: string; model: string } {
@@ -586,7 +714,8 @@ export function isAllowedAiProviderConfig(value: unknown): value is { enabled: b
   return Boolean(
     config &&
     typeof ownValue(config, 'enabled') === 'boolean' &&
-    typeof ownValue(config, 'endpoint') === 'string' &&
+    // only a hosted https endpoint or exactly the loopback hosts of src/ai/providerEndpoint.ts
+    canonicalAiEndpoint(ownValue(config, 'endpoint')) !== null &&
     typeof ownValue(config, 'model') === 'string',
   );
 }

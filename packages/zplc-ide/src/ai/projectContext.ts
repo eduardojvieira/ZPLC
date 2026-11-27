@@ -79,6 +79,22 @@ export interface ProjectContext {
   };
 }
 
+/** The bounds of what an assistant or an MCP client is handed: the same on both sides (`MCP_CONTEXT_CAPS`, held equal by a test). */
+export const CONTEXT_CAPS = { listItems: 64, textChars: 256, objectKeys: 64, depth: 8 } as const;
+
+/** The value with every list, text, object and depth cut to CONTEXT_CAPS. */
+export function capContext(value: unknown, depth = 0): unknown {
+  if (typeof value === 'string') return value.slice(0, CONTEXT_CAPS.textChars);
+  if (typeof value !== 'object' || value === null) return value;
+  if (depth >= CONTEXT_CAPS.depth) return null;
+  if (Array.isArray(value)) return value.slice(0, CONTEXT_CAPS.listItems).map((item) => capContext(item, depth + 1));
+  return Object.fromEntries(
+    Object.entries(value)
+      .slice(0, CONTEXT_CAPS.objectKeys)
+      .map(([key, item]) => [key.slice(0, CONTEXT_CAPS.textChars), capContext(item, depth + 1)]),
+  );
+}
+
 const MAX_FAILED_SCENARIOS = 4;
 const MAX_FAILED_ASSERTIONS = 8;
 const MAX_FAILED_CHECKS = 8;
@@ -140,6 +156,14 @@ function scenarioOf({ path: file, input }: { path: string; input: unknown }): Js
   };
 }
 
+/** The hints by level. With solutions hidden the last one is left out: it is the one that says what to change. */
+function hintsOf(value: unknown, solutionsHidden: boolean): Array<{ level: number; text: string }> {
+  const hints = list(value)
+    .map((hint) => ({ level: typeof hint.level === 'number' ? hint.level : 0, text: text(hint.text) }))
+    .sort((a, b) => a.level - b.level);
+  return solutionsHidden ? hints.slice(0, -1) : hints;
+}
+
 function lessonOf(lesson: ProjectContextInput['lesson'], solutionsHidden: boolean): ProjectContext['lesson'] {
   if (!lesson || !isObject(lesson.manifest) || !isLessonId(lesson.manifest.id)) return undefined;
   const content = isObject(lesson.text) ? lesson.text : {};
@@ -152,7 +176,7 @@ function lessonOf(lesson: ProjectContextInput['lesson'], solutionsHidden: boolea
     goal: text(content.summary),
     objectives: strings(content.objectives),
     ...(stage ? { stage: { key: text(stage.key), title: text(stage.title) } } : {}),
-    hints: list(content.hints).map((hint) => ({ level: typeof hint.level === 'number' ? hint.level : 0, text: text(hint.text) })),
+    hints: hintsOf(content.hints, solutionsHidden),
     solutionsHidden,
   };
 }

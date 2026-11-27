@@ -49,6 +49,7 @@ export const AI_PROVIDER_CHANNEL = {
   SAVE_CONFIG: 'ai-provider:save-config',
   STORE_KEY: 'ai-provider:store-key',
   CLEAR_KEY: 'ai-provider:clear-key',
+  TEST_CONNECTION: 'ai-provider:test-connection',
   REQUEST: 'ai-provider:request',
   CANCEL: 'ai-provider:cancel',
 } as const;

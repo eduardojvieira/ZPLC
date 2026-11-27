@@ -29,6 +29,7 @@ import { createWorkspaceTestGateway } from './workspaceTestGateway.js';
 import { createToolExecutionAudit } from './toolExecutionAudit.js';
 import { createSerialPortBroker } from './serialPortBroker.js';
 import { createAiProvider } from './aiProvider.js';
+import { readSolutionsHidden } from '../shared/learnPolicyModel.js';
 import { createLearnProgressStore } from './learnProgressStore.js';
 import { createRecentProjects } from './recentProjects.js';
 import { registerAppLifecycle } from './appLifecycle.js';
@@ -600,7 +601,12 @@ app
   .then(async () => {
     const toolApi = (await import(toolApiUrl)) as Pick<ToolApiModule, 'isToolExecutionEnvelope'>;
     await toolExecutionAudit.open(app.getPath('userData'), toolApi.isToolExecutionEnvelope);
-    aiProvider = createAiProvider({ userDataPath: app.getPath('userData'), vault: safeStorage });
+    // the classroom setting is read from <userData> on every request, fail closed; the lesson text for the assistant is not wired yet
+    aiProvider = createAiProvider({
+      userDataPath: app.getPath('userData'),
+      vault: safeStorage,
+      solutionsHidden: () => readSolutionsHidden(app.getPath('userData')),
+    });
     learnProgress = createLearnProgressStore(app.getPath('userData'));
     recentProjects = createRecentProjects(app.getPath('userData'));
     sessionStore = createSessionStore(app.getPath('userData'));
