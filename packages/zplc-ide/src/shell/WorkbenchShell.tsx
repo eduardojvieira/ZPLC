@@ -14,6 +14,7 @@ import { useT } from '../i18n';
 import type { DebugController } from '../hooks/useDebugController';
 import { openLearnHome, useLearnUi } from '../learn/learnUi';
 import { useIDEStore } from '../store/useIDEStore';
+import { useLearnLayout } from '../store/useLearnLayout';
 import { usePlantDocument } from '../store/usePlantDocument';
 import { lessonSurface, startShellRouting } from './shellRouting';
 import { toggleMaximise, useShellLayout } from '../store/useShellLayout';
@@ -47,6 +48,14 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
   const { defaultLayout, onLayoutChanged } = useWorkspaceLayout();
   const shellSizes = useShellLayoutSizes();
   const maximised = useShellLayout((state) => state.maximised);
+  const reading = useLearnLayout((state) => state.reading);
+  const returnFocus = useLearnLayout((state) => state.returnFocus);
+  // The page closed for the Guide: the focus goes there now that the workbench is out of inert (Chromium refuses it before).
+  useEffect(() => {
+    if (reading || !returnFocus) return;
+    useLearnLayout.setState({ returnFocus: false });
+    document.getElementById('learn-title')?.focus();
+  }, [reading, returnFocus]);
 
   const [consolePanel, setConsolePanel] = usePanelCallbackRef();
   const [groupPanel, setGroupPanel] = useGroupCallbackRef();
@@ -131,114 +140,117 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
     };
 
   return (
-    <div className="flex min-h-0 flex-1 ledger-workspace">
-      <span role="status" className="sr-only">
-        {maximised ? t('studio.document.maximised') : ''}
-      </span>
-      <ActivityRail
-        active={activityView}
-        density={density}
-        onSelect={(view) => {
-          if (view === 'tests') {
-            showActivity('tests');
-            useIDEStore.getState().setActiveConsoleTab('tests');
-            if (useIDEStore.getState().isConsoleCollapsed) useIDEStore.getState().toggleConsole();
-          } else if (view === 'learn') openLearnHome();
-          else showActivity(view);
-        }}
-      />
-      <Group
-        orientation="horizontal"
-        className="h-full min-w-0 flex-1"
-        defaultLayout={shellSizes.defaultLayout}
-        groupRef={setShellGroup}
-        onLayoutChanged={shellSizes.onLayoutChanged}
-      >
-        <Panel
-          id="primary"
-          panelRef={setPrimaryPanel}
-          defaultSize={primaryVisible ? '280px' : 0}
-          minSize="200px"
-          maxSize="520px"
-          collapsible
-          collapsedSize={0}
-          onResize={follow(primaryVisible, setPrimaryVisible)}
-          className="overflow-hidden"
-        >
-          {primaryVisible && <PrimarySidebar />}
-        </Panel>
-        <PanelSeparator id="primary-separator" label={t('shell.resize.primary')} group={shellGroup} leading="primary" trailing="center" />
-        <Panel id="center" minSize={`${Math.round(COMPACT_MAX_WIDTH / 3)}px`} className="overflow-hidden">
-          <Group
-            orientation="vertical"
-            className="h-full min-w-0"
-            defaultLayout={sessionLayout ?? defaultLayout}
-            groupRef={setGroupPanel}
-            onLayoutChanged={(layout, meta) => {
-              onLayoutChanged(layout, meta);
-              if (meta.isUserInteraction) {
-                const split = workspaceLayoutFrom(layout);
-                if (split) setSessionLayout(split);
-              }
-            }}
-          >
-            <Panel id="editor" defaultSize="72%" minSize="30%" className="overflow-hidden">
-              <main ref={editorRegion} tabIndex={-1} aria-label={t('shell.editor.label')} className="relative h-full min-h-0">
-                <ErrorBoundary region="Editor">
-                  <EditorArea debugController={debugController} />
-                </ErrorBoundary>
-                {/* The Learn home covers the editor without unmounting it, so a lesson's buffers and cursor are where they were
-                    when it closes. */}
-                {learnHomeOpen && (
-                  <div className="absolute inset-0 z-20">
-                    <ErrorBoundary region="Editor">
-                      <LearnHome />
-                    </ErrorBoundary>
-                  </div>
-                )}
-                <ErrorBoundary region="Editor">
-                  <LearnReadingView />
-                </ErrorBoundary>
-              </main>
-            </Panel>
-            <PanelSeparator id="workspace-separator" label={t('app.resize')} group={groupPanel} leading="editor" trailing="console" />
-            <Panel
-              id="console"
-              panelRef={setConsolePanel}
-              defaultSize="28%"
-              minSize="5%"
-              maxSize="65%"
-              collapsible
-              collapsedSize={32}
-              className="overflow-hidden"
-            >
-              <ErrorBoundary region="Panel">
-                <Console debugController={debugController} />
-              </ErrorBoundary>
-            </Panel>
-          </Group>
-        </Panel>
-        <PanelSeparator
-          id="secondary-separator"
-          label={t('shell.resize.secondary')}
-          group={shellGroup}
-          leading="center"
-          trailing="secondary"
+    <div className="relative flex min-h-0 flex-1 ledger-workspace">
+      {/* A reading page covers the whole workbench (GDE-006): what is under it leaves the tab order, and stays mounted. */}
+      <div inert={reading} className="flex min-h-0 min-w-0 flex-1">
+        <span role="status" className="sr-only">
+          {maximised ? t('studio.document.maximised') : ''}
+        </span>
+        <ActivityRail
+          active={activityView}
+          density={density}
+          onSelect={(view) => {
+            if (view === 'tests') {
+              showActivity('tests');
+              useIDEStore.getState().setActiveConsoleTab('tests');
+              if (useIDEStore.getState().isConsoleCollapsed) useIDEStore.getState().toggleConsole();
+            } else if (view === 'learn') openLearnHome();
+            else showActivity(view);
+          }}
         />
-        <Panel
-          id="secondary"
-          panelRef={setSecondaryPanel}
-          defaultSize={secondaryVisible ? '280px' : 0}
-          minSize="200px"
-          maxSize="520px"
-          collapsible
-          collapsedSize={0}
-          onResize={follow(secondaryVisible, setSecondaryVisible)}
-          className="overflow-hidden"
+        <Group
+          orientation="horizontal"
+          className="h-full min-w-0 flex-1"
+          defaultLayout={shellSizes.defaultLayout}
+          groupRef={setShellGroup}
+          onLayoutChanged={shellSizes.onLayoutChanged}
         >
-          {secondaryVisible && <SecondarySidebar />}
-        </Panel>
-      </Group>
+          <Panel
+            id="primary"
+            panelRef={setPrimaryPanel}
+            defaultSize={primaryVisible ? '280px' : 0}
+            minSize="200px"
+            maxSize="520px"
+            collapsible
+            collapsedSize={0}
+            onResize={follow(primaryVisible, setPrimaryVisible)}
+            className="overflow-hidden"
+          >
+            {primaryVisible && <PrimarySidebar />}
+          </Panel>
+          <PanelSeparator id="primary-separator" label={t('shell.resize.primary')} group={shellGroup} leading="primary" trailing="center" />
+          <Panel id="center" minSize={`${Math.round(COMPACT_MAX_WIDTH / 3)}px`} className="overflow-hidden">
+            <Group
+              orientation="vertical"
+              className="h-full min-w-0"
+              defaultLayout={sessionLayout ?? defaultLayout}
+              groupRef={setGroupPanel}
+              onLayoutChanged={(layout, meta) => {
+                onLayoutChanged(layout, meta);
+                if (meta.isUserInteraction) {
+                  const split = workspaceLayoutFrom(layout);
+                  if (split) setSessionLayout(split);
+                }
+              }}
+            >
+              <Panel id="editor" defaultSize="72%" minSize="30%" className="overflow-hidden">
+                <main ref={editorRegion} tabIndex={-1} aria-label={t('shell.editor.label')} className="relative h-full min-h-0">
+                  <ErrorBoundary region="Editor">
+                    <EditorArea debugController={debugController} />
+                  </ErrorBoundary>
+                  {/* The Learn home covers the editor without unmounting it, so a lesson's buffers and cursor are where they were
+                    when it closes. */}
+                  {learnHomeOpen && (
+                    <div className="absolute inset-0 z-20">
+                      <ErrorBoundary region="Editor">
+                        <LearnHome />
+                      </ErrorBoundary>
+                    </div>
+                  )}
+                </main>
+              </Panel>
+              <PanelSeparator id="workspace-separator" label={t('app.resize')} group={groupPanel} leading="editor" trailing="console" />
+              <Panel
+                id="console"
+                panelRef={setConsolePanel}
+                defaultSize="28%"
+                minSize="5%"
+                maxSize="65%"
+                collapsible
+                collapsedSize={32}
+                className="overflow-hidden"
+              >
+                <ErrorBoundary region="Panel">
+                  <Console debugController={debugController} />
+                </ErrorBoundary>
+              </Panel>
+            </Group>
+          </Panel>
+          <PanelSeparator
+            id="secondary-separator"
+            label={t('shell.resize.secondary')}
+            group={shellGroup}
+            leading="center"
+            trailing="secondary"
+          />
+          <Panel
+            id="secondary"
+            panelRef={setSecondaryPanel}
+            defaultSize={secondaryVisible ? '280px' : 0}
+            minSize="200px"
+            maxSize="520px"
+            collapsible
+            collapsedSize={0}
+            onResize={follow(secondaryVisible, setSecondaryVisible)}
+            className="overflow-hidden"
+          >
+            {secondaryVisible && <SecondarySidebar />}
+          </Panel>
+        </Group>
+      </div>
+      <ErrorBoundary region="Editor">
+        <LearnReadingView />
+      </ErrorBoundary>
     </div>
   );
 }

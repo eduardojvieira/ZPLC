@@ -225,7 +225,7 @@ export const COMMANDS = [
 
   // Milestone U3 (plan-u3.md, Task X1a): the ids only; each is bound, and given its `enabled` rule, by the task that owns the behaviour.
   { id: 'view.guide', titleKey: 'command.view.guide', category: 'view', pending: true },
-  { id: 'view.lessonLayout', titleKey: 'command.view.lessonLayout', category: 'view', pending: true },
+  { id: 'view.lessonLayout', titleKey: 'command.view.lessonLayout', category: 'view' },
   { id: 'view.focusCommandBar', titleKey: 'command.view.focusCommandBar', category: 'view', shortcut: 'Mod+Alt+C' },
   { id: 'learn.guide.next', titleKey: 'command.learn.guide.next', category: 'help', pending: true },
   { id: 'learn.guide.back', titleKey: 'command.learn.guide.back', category: 'help', pending: true },

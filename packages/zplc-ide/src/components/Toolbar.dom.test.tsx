@@ -12,6 +12,7 @@ const { useNotifications } = await import('../store/notifications');
 const { useAppSettings } = await import('../store/useAppSettings');
 const { AI_COMMAND_PROPOSALS } = await import('../ai/proposals');
 const { COMMANDS } = await import('../commands/registry');
+const { useLearnLayout } = await import('../store/useLearnLayout');
 const { plantTransport } = await import('../runtime/transport');
 const { registerPlantTransport } = await import('../store/useTransport');
 type RunProps = Parameters<typeof RunControls>[0];
@@ -817,5 +818,29 @@ describe('What AI and MCP can start (LNK-009, constitution rule 9)', () => {
     for (const id of reachable) expect(physical).not.toContain(id);
     for (const id of ['debug.run', 'debug.step', 'online.connect', 'online.deploy', 'online.restartSimulator', 'debug.rebuildAndRestart'])
       expect(reachable).not.toContain(id);
+  });
+});
+
+describe('Command bar on a reading page (GDE-006)', () => {
+  const RUN_CONTROLS = '[data-command^="debug."], [data-command="online.connect"], [data-command="online.deploy"]';
+  const statusRail = () => dom.screen.queryByRole('region', { name: dom.t('status.label') });
+  afterEach(() => useLearnLayout.setState({ reading: false }));
+  const projectOpen = () => dom.patchStore(useIDEStore, { isProjectOpen: true } as never);
+
+  it('GDE-006 while a reading page is shown no run control of the command bar and no status rail are present', () => {
+    projectOpen();
+    useLearnLayout.setState({ reading: true });
+    const { container } = dom.render(<Toolbar debugController={debugController} />);
+    expect(container.querySelectorAll(RUN_CONTROLS).length).toBe(0);
+    expect(statusRail()).toBeNull();
+    expect(dom.screen.getByRole('toolbar', { name: dom.t('toolbar.label') })).toBeTruthy();
+  });
+
+  it('GDE-006 with the flag down the command bar renders as before: the run controls and the status rail are there', () => {
+    projectOpen();
+    useLearnLayout.setState({ reading: false });
+    const { container } = dom.render(<Toolbar debugController={debugController} />);
+    expect(container.querySelectorAll(RUN_CONTROLS).length).toBeGreaterThan(0);
+    expect(statusRail()).not.toBeNull();
   });
 });
