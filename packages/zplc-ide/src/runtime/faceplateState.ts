@@ -5,6 +5,7 @@
  *
  * Pure TypeScript with no Electron, store or component import.
  */
+import type { DebugMap } from '../compiler';
 
 /** Whether the value the runtime holds is the value that was written; a REAL is held as a 32-bit float. */
 export function sameInputValue(type: string, written: boolean | number, held: boolean | number): boolean {
@@ -95,15 +96,23 @@ export function faceplateUnavailable(state: {
   return state.supported ? null : 'noCapability';
 }
 
+/** The inputs the plant map drives (PLS-007), by their qualified path (`Motor.Start`): the plant owns them until a person forces one. */
+export function plantFedPaths(resolved: { drives: Record<string, { path: string }> }): ReadonlySet<string> {
+  return new Set(Object.values(resolved.drives).map((input) => input.path));
+}
+
 /**
- * What the Watch table calls the program inputs the plant map drives (PLS-007): the plant owns them until a person forces
- * one. A row names a variable by its path (`Motor.Start`) or by its bare name (`Start`). The path always matches; the bare
- * name only when exactly one program declares an input of that name, so a same-named input of another program stays editable.
+ * The qualified path of the variable a Watch row reads. The table resolves a name like the compiler's `findVariable`: the first
+ * program that declares the root of the path, so a bare `Start` is the `Start` of that program. Which input the plant owns is
+ * decided by this path, never by the name alone. A path that no program declares stays as it is.
  */
-export function plantFedPaths(
-  resolved: { drives: Record<string, { path: string; name: string }> },
-  inputs: ReadonlyArray<{ name: string }>,
-): ReadonlySet<string> {
-  const declared = (name: string) => inputs.filter((input) => input.name === name).length;
-  return new Set(Object.values(resolved.drives).flatMap((input) => (declared(input.name) === 1 ? [input.path, input.name] : [input.path])));
+export function watchOwnerPath(debugMap: Pick<DebugMap, 'pou'> | null | undefined, path: string): string {
+  if (!debugMap) return path;
+  const root = path.split('.')[0]!;
+  for (const [pou, info] of Object.entries(debugMap.pou)) {
+    // a variable of a function is declared as `Function.name`: the whole path is its name
+    if (info.vars[path]) return path.includes('.') ? path : `${pou}.${path}`;
+    if (info.vars[root]) return `${pou}.${path}`;
+  }
+  return path;
 }

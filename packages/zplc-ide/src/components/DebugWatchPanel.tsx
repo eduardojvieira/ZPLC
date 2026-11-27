@@ -25,6 +25,7 @@ import {
   type WatchSortDirection,
   type WatchSortKey,
 } from './watchTable';
+import { watchOwnerPath } from '../runtime/faceplateState';
 import { canEditWatchValue, canReleaseForces, canToggleForce, resolveWatchCommitAction, WATCH_COMMIT_ACTION } from './debugWatchPanelLogic';
 import { Button, Checkbox, IconButton, Select, TextField, Tooltip } from '../ui';
 import { useT } from '../i18n';
@@ -169,7 +170,12 @@ export function DebugWatchPanel({
   // Only a real device is asked before a force changes (UX-020); a simulation has nothing physical to protect.
   const device = hasActiveSerialSession ? 'hardware' : 'simulate';
   /** A plant-fed row is set by the plant, so it takes a value only once forced (PLS-007, LNK-006). */
-  const plantOwns = (path: string) => plantFed?.has(path) === true && forcedValues.get(path)?.state !== WATCH_FORCE_STATE.FORCED;
+  // A row is the variable it resolves to (the first program that declares the name), so the plant and a force that are kept
+  // under the qualified path (the faceplate's) apply to it.
+  const fedRow = (path: string) => plantFed?.has(watchOwnerPath(debugMap, path)) === true;
+  const forcedRow = (path: string) =>
+    (forcedValues.get(path) ?? forcedValues.get(watchOwnerPath(debugMap, path)))?.state === WATCH_FORCE_STATE.FORCED;
+  const plantOwns = (path: string) => fedRow(path) && !forcedRow(path);
 
   // Handle adding a new watch variable
   const handleAddVariable = () => {
@@ -572,7 +578,7 @@ export function DebugWatchPanel({
                           {formatWatchValue(result.value, result.type, format)}
                         </span>
                       )}
-                      {plantFed?.has(path) && (
+                      {fedRow(path) && (
                         <Tooltip content={t('u3Faceplate.fromPlantHint')}>
                           <span tabIndex={0} className="ml-2 text-[11px] text-[var(--color-accent-yellow)]" data-from-plant="true">
                             {t('u3Faceplate.fromPlant')}
