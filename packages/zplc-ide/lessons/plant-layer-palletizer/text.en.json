@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter declares the array JogMs but fills nothing and drives no output, so the head never rises and no box arrives; fill JogMs with a FOR loop, then load, square, carry and set three layers of four boxes on the pallet and light Green at the end.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter declares the array JogMs but fills nothing and drives no output, so the head never rises and no box arrives; fill JogMs with a FOR loop, then load, square, carry and set three layers of four boxes on the pallet and light Green at the end.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Mire qué sabe cada peldaño del otro sentido: nada. ¿Qué variable del otro sentido podría leer cada peldaño, y qué valor debe tener para que el peldaño deje pasar la energía?"
+      "text": "Mire los dos peldaños de sentido uno al lado del otro, y qué hace cada uno mientras Forward funciona y se pulsa RevPB."
     },
     {
       "level": 2,

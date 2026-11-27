@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guarde y ejecute: El programa inicial solo lleva el brazo a su posición de partida: agregue los pasos y transiciones que alimentan una tapa y una base, toman la tapa, la colocan sobre la base, dejan salir el ensamble, repiten tres veces y terminan con Green.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial solo lleva el brazo a su posición de partida: agregue los pasos y transiciones que alimentan una tapa y una base, toman la tapa, la colocan sobre la base, dejan salir el ensamble, repiten tres veces y terminan con Green.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {

@@ -5,7 +5,7 @@
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Mantenga la bomba encendida desde LevelLow hasta LevelHigh con una autorretención, con todas las condiciones de parada en serie.",
-    "Mantenga la alarma encendida después de cualquiera de las dos fallas, y libérela solo con una nueva pulsación de Reset una vez que la falla desapareció."
+    "Mantenga la alarma encendida después de cualquiera de las dos fallas, y libérela solo con una nueva pulsación de Reset una vez que la falla haya desaparecido."
   ],
   "stages": [
     {

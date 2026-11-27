@@ -4,7 +4,7 @@
   "summary": "Scale the raw level of a tank, a whole number from 0 to 27648, to metres with function boxes, and use it to hold the level near a set point with a proportional inlet.",
   "scope": "The grade runs the simulated tank in the simulator on this computer, with an analog level that follows the scaling rules of the plant map. It says nothing about the accuracy, noise or calibration of a real level transmitter, a real machine, its timing or its safety.",
   "objectives": [
-    "Scale an analog value to engineering units with boxes: convert to REAL first, then divide by the raw span.",
+    "Scale an analog value to engineering units with boxes so that fractions of a unit are kept.",
     "Read the plant map to find the raw range of each signal, and see what a wrong scale does to the process."
   ],
   "stages": [

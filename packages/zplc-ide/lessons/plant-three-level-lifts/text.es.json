@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la cinta de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la cinta de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la cinta de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A."
+    "El programa inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la cinta de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A."
   ]
 }

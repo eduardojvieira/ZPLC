@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial ignora la solicitud peatonal; tras PedRequest, recorra amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y muestre WALK solo con los vehículos en rojo.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial ignora la solicitud peatonal; tras PedRequest, recorra amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y muestre WALK solo con los vehículos en rojo.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {

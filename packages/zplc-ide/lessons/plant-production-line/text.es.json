@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial controla solo la máquina A, escrita en línea; mueva ese control a un bloque de función, llámelo para la máquina A y para la máquina B, y encienda Green cuando ambas hayan terminado cuatro ciclos.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial controla solo la máquina A, escrita en línea; mueva ese control a un bloque de función, llámelo para la máquina A y para la máquina B, y encienda Green cuando ambas hayan terminado cuatro ciclos.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El inicial controla solo la máquina A, escrita en línea; mueva ese control a un bloque de función, llámelo para la máquina A y para la máquina B, y encienda Green cuando ambas hayan terminado cuatro ciclos."
+    "El programa inicial controla solo la máquina A, escrita en línea; mueva ese control a un bloque de función, llámelo para la máquina A y para la máquina B, y encienda Green cuando ambas hayan terminado cuatro ciclos."
   ]
 }

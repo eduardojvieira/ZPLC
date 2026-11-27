@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "plant-build-belt-scene",
-  "version": 3,
+  "version": 4,
   "order": 191,
   "module": 19,
   "level": "advanced",

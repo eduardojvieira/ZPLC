@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la cinta de salida, y encienda Done tras la cuarta.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial no gobierna ninguna salida, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la cinta de salida, y encienda Done tras la cuarta.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El inicial no gobierna ninguna salida, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la cinta de salida, y encienda Done tras la cuarta."
+    "El programa inicial no gobierna ninguna salida, así que nada se mueve; escriba el traslado: alimente una caja cada vez, agarre, lleve y suelte cada una sobre la cinta de salida, y encienda Done tras la cuarta."
   ]
 }

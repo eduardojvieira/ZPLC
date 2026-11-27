@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial nunca hace correr la cinta; active Run cuando EyeA vea la caja y bórrela cuando EyeB vea la caja.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial nunca hace correr la cinta; active Run cuando EyeA vea la caja y bórrela cuando EyeB vea la caja.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -55,5 +55,5 @@
       "text": "Añada después un segundo IF que escriba FALSE cuando EyeB sea TRUE, para que el reset gane cuando ambos sensores sean TRUE."
     }
   ],
-  "faultCases": ["El inicial nunca hace correr la cinta; active Run cuando EyeA vea la caja y bórrela cuando EyeB vea la caja."]
+  "faultCases": ["El programa inicial nunca hace correr la cinta; active Run cuando EyeA vea la caja y bórrela cuando EyeB vea la caja."]
 }

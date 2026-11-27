@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "pedestrian-crossing-states",
-  "version": 3,
+  "version": 4,
   "order": 23,
   "module": 5,
   "level": "intermediate",

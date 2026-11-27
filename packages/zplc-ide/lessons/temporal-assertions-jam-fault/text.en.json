@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter misses the jam latch; latch the fault on JamDetected, ignore Reset while the jam is present, release it only with Reset after the jam clears, and require a new Start to run the belt again.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter misses the jam latch; latch the fault on JamDetected, ignore Reset while the jam is present, release it only with Reset after the jam clears, and require a new Start to run the belt again.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

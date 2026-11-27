@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial no tiene histéresis en la bomba y sigue bombeando ante una falla de la bomba; mantenga la bomba encendida desde LevelLow hasta LevelHigh, retenga la alarma con PumpFault o EStop y libérela solo con un Reset pulsado después de que la falla haya desaparecido.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial no tiene histéresis en la bomba y sigue bombeando ante una falla de la bomba; mantenga la bomba encendida desde LevelLow hasta LevelHigh, retenga la alarma con PumpFault o EStop y libérela solo con un Reset pulsado después de que la falla haya desaparecido.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {

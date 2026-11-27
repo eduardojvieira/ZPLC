@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "plant-change-scene-ladder",
-  "version": 2,
+  "version": 3,
   "order": 1192,
   "module": 19,
   "level": "advanced",

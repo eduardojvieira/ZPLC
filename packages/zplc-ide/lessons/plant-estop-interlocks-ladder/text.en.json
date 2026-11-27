@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter ignores the emergency stop, so the line keeps running; stop every output while EStopOk is FALSE, light Red, keep the stop remembered after the release and run the line again only with a new press of Start.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter ignores the emergency stop, so the line keeps running; stop every output while EStopOk is FALSE, light Red, keep the stop remembered after the release and run the line again only with a new press of Start.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "plant-counted-queue-ladder",
-  "version": 2,
+  "version": 3,
   "order": 1123,
   "module": 12,
   "level": "advanced",
