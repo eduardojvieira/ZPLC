@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objetivo",
       "body": "Las entradas del escenario son BOOL, así que esta lección no lee una entrada analógica real: src/Scaling.st suma 100 a Raw en cada ciclo mientras Enable es TRUE, como sustituto de una señal que sube de 0 a 1000. Escriba el escalado: Percent es Raw escalado de 0..1000 a 0..100.",
-      "checkpoint": "Percent sigue a Raw dividido por 10, Warn pasa a ON al 50 por ciento y Alarm al 80 por ciento."
+      "checkpoint": "Percent es el porcentaje correcto de Raw en cada paso, Warn pasa a ON al 50 por ciento y Alarm al 80 por ciento."
     },
     {
       "key": "predict",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexione",
       "body": "¿Por qué se usa DINT en esta lección? ¿Qué valores forma el programa en su camino a Percent, y cabría cada uno en un INT de 16 bits? ¿Qué cambiaría sumar la mitad del divisor antes de la división, y para qué valores de Raw?",
-      "checkpoint": "El producto se forma antes de la división, así que su rango decide el tipo, no el rango de Raw. El escenario comprueba solo los dos umbrales; no comprueba el redondeo de otros valores."
+      "checkpoint": "Puede enumerar los valores que forma el programa en su camino a Percent y decir cuáles necesitan más de 16 bits. El escenario comprueba solo los dos umbrales; no comprueba el redondeo de otros valores."
     }
   ],
   "hints": [

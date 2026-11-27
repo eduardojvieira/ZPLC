@@ -14,15 +14,11 @@ Counts are not liters. 2048 counts mean "half way" on the input, but what is hal
 
 ## Scaling with boxes
 
-For a straight line from zero, the formula is the raw value times the span of the units, divided by the span of the counts:
-
-`Level = Raw * 2000 / 4095`
-
-In Ladder these are two boxes in one rung: `MUL` and then `DIV`. A third box, `LIMIT`, keeps a value between a minimum and a maximum, so a sensor that reports something strange never pushes the program out of range.
+For a straight line from zero, the result is the raw value as a share of the span of the counts, applied to the span of the units. In Ladder each arithmetic operation is a box of its own, such as `MUL` or `DIV`, and a rung can hold several of them. Another box, `LIMIT`, keeps a value between a minimum and a maximum, so a sensor that reports something strange never pushes the program out of range.
 
 ## Two traps of integer arithmetic
 
-**The order matters.** A whole-number division throws away the decimals: 7 divided by 2 is 3. Look at what happens with a half-full tank, 2048 counts. Multiply first: 2048 times 2000 is 4 096 000, and divided by 4095 it gives 1000. Divide first: 2048 divided by 4095 is 0 with the decimals thrown away, and 0 times 2000 is 0. The level reads zero until the input is at full scale. Multiply first, divide last.
+**The order matters.** A whole-number division throws away the decimals: 7 divided by 2 is 3. Take 90 seconds and convert them to tenths of a minute, which is 90 times 10 over 60. One order gives 900 divided by 60, which is 15. The other gives 90 divided by 60, which is 1 with the decimals thrown away, and 1 times 10 is 10. The two orders do not give the same number, so before you write the boxes, ask what each division throws away.
 
 **The size of the variable matters.** An `INT` is 16 bits and holds numbers from -32768 to 32767. The product 4095 times 2000 is 8 190 000, which does not fit. The box does not warn you: the number **wraps around** and gives a wrong result without any error. A `DINT` is 32 bits and holds numbers beyond two billion, so it is the right type for the intermediate product. A `REAL` would also work: it holds decimals, and the numbers in the boxes are then written as `2000.0` and `4095.0`.
 
@@ -31,7 +27,7 @@ In Ladder these are two boxes in one rung: `MUL` and then `DIV`. A third box, `L
 
 ## Worked example
 
-Scaling also runs the other way, from engineering units to counts. A dosing pump runs at any speed from 0 to 3000 rpm, and its drive takes the speed as an analog command from 0 to 4095 counts. The operator sets the speed in rpm, and the program must turn that setpoint into counts for the drive: `Command = Rpm * 4095 / 3000`. Now the span of the counts multiplies and the span of the speed divides. `MUL` still comes first, into a DINT: at full speed the product is 12 285 000.
+Scaling also runs the other way, from engineering units to counts. A dosing pump runs at any speed from 0 to 3000 rpm, and its drive takes the speed as an analog command from 0 to 4095 counts. The operator sets the speed in rpm, and the program must turn that setpoint into counts for the drive: `Command = Rpm * 4095 / 3000`. Now the span of the counts multiplies and the span of the speed divides. The product goes into a DINT: at full speed the product is 12 285 000.
 
 ```ld-figure
 src: reading/pump-command.ld.json
@@ -55,7 +51,7 @@ After one press the setpoint is 500 rpm: 500 times 4095 is 2 047 500, divided by
 ## Common mistakes
 
 - Comparing counts with a limit written in percent. Scale first, then compare.
-- Dividing before multiplying, which throws away the part of the value that is smaller than the divisor.
+- Choosing the order of two boxes without asking what the division throws away.
 - Using an `INT` for the product. It wraps, and the program keeps running with a wrong level.
 - Taking the number of counts for their span. A 12-bit input has 4096 different counts, from 0 to 4095, and its span is the distance from the lowest to the highest.
 

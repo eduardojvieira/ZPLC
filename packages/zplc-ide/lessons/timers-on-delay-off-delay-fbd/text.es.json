@@ -41,8 +41,8 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "Intercambie mentalmente los dos bloques temporizadores: ¿qué haría un TON sobre Button y un TOF sobre Sensor con este escenario? Después imagine que se quita la constante TIME de FilterTimer, de modo que nada llega a su PT: ¿qué haría Confirmed con el pulso breve?",
-      "checkpoint": "TON retrasa el inicio y TOF retrasa el final; cada uno responde una pregunta distinta sobre una señal. Sin nada en PT el valor preestablecido es cero, así que Confirmed seguiría a Sensor y pasaría a ON con el pulso breve."
+      "body": "Piense qué responde cada temporizador: ¿cuál dice cuánto tiempo lleva en ON una señal y cuál dice hace cuánto tiempo pasó a OFF? Después imagine un temporizador al que nada llega en PT: ¿qué haría su salida con el pulso breve de los {{t:100}} ms?",
+      "checkpoint": "Un temporizador retrasa el inicio de una señal y el otro retrasa su final; cada uno responde una pregunta distinta. Sin nada en PT el valor preestablecido es cero, así que la salida seguiría a su entrada y pasaría a ON con el pulso breve."
     }
   ],
   "hints": [

@@ -41,8 +41,8 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Swap the two timer blocks in your head: what would a TON on Button and a TOF on Sensor do with this scenario? Then imagine the TIME constant of FilterTimer removed, so that nothing reaches its PT: what would Confirmed do with the short blip?",
-      "checkpoint": "TON delays the start and TOF delays the end; each answers a different question about a signal. With nothing on PT the preset is zero, so Confirmed would follow Sensor and turn ON with the short blip."
+      "body": "Think about what each timer answers: which one tells you how long a signal has been on, and which one tells you how long ago it went off? Then imagine a timer whose PT nothing reaches: what would your output do with the short blip at {{t:100}} ms?",
+      "checkpoint": "One timer delays the start of a signal and the other delays its end; each answers a different question. With nothing on PT the preset is zero, so the output would follow its input and turn ON with the short blip."
     }
   ],
   "hints": [

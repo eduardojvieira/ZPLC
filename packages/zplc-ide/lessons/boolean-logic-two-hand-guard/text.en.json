@@ -41,8 +41,8 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Try the same condition with OR instead of AND and say which input combination wrongly enables the press. Then write GuardLamp as NOT GuardClosed AND LeftHand: when does the lamp stay dark although the guard is open?",
-      "checkpoint": "OR enables the press with a single hand, which is exactly what a two-hand control exists to prevent. NOT applies only to GuardClosed, so that lamp lights only while the guard is open and the left hand is on its button."
+      "body": "Try the same condition with OR instead of AND and say which input combination wrongly enables the press. Then say in words the inputs on which GuardLamp must depend, and check that your line uses those and no others.",
+      "checkpoint": "OR enables the press with a single hand, which is exactly what a two-hand control exists to prevent. You can say which inputs each of your three lines reads, and why GuardLamp does not read the hands."
     }
   ],
   "hints": [

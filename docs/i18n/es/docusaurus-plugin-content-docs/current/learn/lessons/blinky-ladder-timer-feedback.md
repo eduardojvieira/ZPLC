@@ -26,7 +26,7 @@ Complete un parpadeador de 500 ms en diagrama de escalera, hecho con dos tempori
 ## Objetivos
 
 - Lea un oscilador de dos temporizadores en diagrama de escalera: cada temporizador cuenta durante un semiperíodo y pone en marcha al siguiente.
-- Complételo con una bobina SET y una bobina RESET accionadas por las salidas Q de los temporizadores.
+- Haga que la salida cambie de estado por sí sola, a partir del tiempo que mide cada temporizador.
 
 ## Etapas
 

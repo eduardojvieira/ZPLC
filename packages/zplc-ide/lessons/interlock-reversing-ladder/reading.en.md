@@ -73,7 +73,7 @@ In a real panel the stop button is a switch that is closed at rest. Its PLC inpu
 > [!WARNING]
 > An interlock in the program is not a safety device. An emergency stop is wired in hardware and never depends on the PLC program, and ZPLC makes no safety claim. A real reversing starter also has a mechanical or electrical lock on the contactors themselves.
 
-- Putting the lock only on one of two outputs. Each output must see the other one.
+- Testing the lock in one direction only. Try it from both directions.
 - Using a normally open contact where a normally closed one is needed, or the other way round. Check which state allows the output.
 - Forgetting that a seal-in keeps an output on. A permissive must be in series with the whole rung, including the seal-in, or the output will stay on after the permissive is gone.
 

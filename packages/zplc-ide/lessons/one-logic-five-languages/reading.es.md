@@ -37,7 +37,7 @@ OR TurnOn
 ST Beacon
 ```
 
-Léalas y compárelas con el peldaño. La condición es siempre la misma: la baliza está encendida mientras se pulsa TurnOn, o cuando ya está encendida y no se pulsa Off. La puerta de la práctica necesita la otra prioridad, y dónde va `NOT Close` para darla queda para usted.
+Léalas y compárelas con el peldaño. La condición es siempre la misma: la baliza está encendida mientras se pulsa TurnOn, o cuando ya está encendida y no se pulsa Off. El portón de la práctica necesita la otra prioridad, y dónde va `NOT Close` para darla queda para usted.
 
 ## Los cinco lenguajes
 
@@ -94,4 +94,4 @@ El curso completo está debajo de la ruta de escalera en el inicio de Aprender. 
 
 ## Qué hará en la práctica
 
-En la práctica, la lógica de la compuerta ya está escrita como una condición en texto estructurado con un error. Usted lo corrige para que la compuerta se mantenga abierta sola y se cierre a orden, y luego compara la misma lógica en los otros cuatro lenguajes. Un solo escenario califica los cinco.
+En la práctica, la lógica del portón ya está escrita como una condición en texto estructurado con un error. Usted lo corrige para que el portón se mantenga abierto sola y se cierre a orden, y luego compara la misma lógica en los otros cuatro lenguajes. Un solo escenario califica los cinco.

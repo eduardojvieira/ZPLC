@@ -41,8 +41,8 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "Una vez que pase, piense por qué el enclavamiento lee lo que hace el motor y no lo que alguien pide. ¿Y por qué LubeOk debe estar en serie antes de la bobina y no solo en el camino de arranque? Mueva LubeOk a la rama de arranque y vea qué aserción falla.",
-      "checkpoint": "Un pulsador solo dice lo que alguien pide, no lo que hace el motor: un enclavamiento con RevPB dejaría cerrar Forward con Reverse retenido. Un permisivo solo en el camino de arranque deja que un motor en marcha lo ignore. El escenario muestra solo la lógica; los arrancadores reales con inversión de giro usan además contactores con enclavamiento mecánico, y esto no es una función de seguridad."
+      "body": "Una vez que pase, siga la energía por el peldaño de Reverse mientras Forward funciona y se pulsa RevPB: ¿qué lee el contacto que agregó y qué cambiaría si leyera otra cosa? ¿Y por qué LubeOk debe estar en serie antes de la bobina y no solo en el camino de arranque? Mueva LubeOk a la rama de arranque y vea qué aserción falla.",
+      "checkpoint": "Puede decir qué lee el contacto que agregó en cada peldaño y qué sería distinto si leyera otra cosa. Un permisivo solo en el camino de arranque deja que un motor en marcha lo ignore. El escenario muestra solo la lógica; los arrancadores reales con inversión de giro usan además contactores con enclavamiento mecánico, y esto no es una función de seguridad."
     }
   ],
   "hints": [

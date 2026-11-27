@@ -24,12 +24,12 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial nunca sale del paso de mezcla: Mixer sigue en ON a los {{t:100}} ms y DrainValve sigue en OFF. La secuencia debe pasar de la mezcla al vaciado cuando termine el tiempo de mezcla, y Mixer y DrainValve nunca deben estar en ON a la vez. Dibuje el cambio en el editor de escalera.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
       "checkpoint": "El escenario se llama TankSequence y contiene {{assertions}} aserciones."
     },
     {

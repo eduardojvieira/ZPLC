@@ -5,7 +5,7 @@
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how bright a real lamp is or how exactly a real controller keeps the period.",
   "objectives": [
     "Read a two-timer Ladder oscillator: each timer runs in one half period and starts the next.",
-    "Complete it with a SET coil and a RESET coil driven by the timers' Q outputs."
+    "Make the output change state by itself, from the time that each timer measures."
   ],
   "stages": [
     {

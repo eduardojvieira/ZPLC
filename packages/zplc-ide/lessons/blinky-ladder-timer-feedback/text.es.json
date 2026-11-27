@@ -5,7 +5,7 @@
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cuánto brilla una lámpara real ni con qué exactitud un controlador real mantiene el período.",
   "objectives": [
     "Lea un oscilador de dos temporizadores en diagrama de escalera: cada temporizador cuenta durante un semiperíodo y pone en marcha al siguiente.",
-    "Complételo con una bobina SET y una bobina RESET accionadas por las salidas Q de los temporizadores."
+    "Haga que la salida cambie de estado por sí sola, a partir del tiempo que mide cada temporizador."
   ],
   "stages": [
     {

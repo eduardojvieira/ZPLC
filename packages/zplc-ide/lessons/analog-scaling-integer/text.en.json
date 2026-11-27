@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objective",
       "body": "The scenario inputs are BOOL, so this lesson does not read a real analog input: src/Scaling.st counts Raw up by 100 on each scan while Enable is TRUE, as a stand-in for a signal that rises from 0 to 1000. Write the scaling: Percent is Raw scaled from 0..1000 to 0..100.",
-      "checkpoint": "Percent follows Raw divided by 10, Warn turns ON at 50 percent and Alarm at 80 percent."
+      "checkpoint": "Percent is the right percentage of Raw at every step, Warn turns ON at 50 percent and Alarm at 80 percent."
     },
     {
       "key": "predict",
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "Why is DINT used here? Which values does the program form on its way to Percent, and would each of them fit in a 16-bit INT? What would adding half the divisor before the division change, and for which values of Raw?",
-      "checkpoint": "The product is formed before the division, so its range decides the type, not the range of Raw. The scenario checks the two thresholds only; it does not check the rounding of other values."
+      "checkpoint": "You can list the values the program forms on its way to Percent and say which of them needs more than 16 bits. The scenario checks the two thresholds only; it does not check the rounding of other values."
     }
   ],
   "hints": [
