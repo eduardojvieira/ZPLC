@@ -6,6 +6,7 @@ const dom = await setupDom();
 await stubProjectLoader();
 await stubMonaco();
 const { DEFAULT_SHELL_STATE, useShellLayout } = await import('../store/useShellLayout');
+const { useLearnLayout } = await import('../store/useLearnLayout');
 const { WorkbenchShell } = await import('./WorkbenchShell');
 const { useCollapsible } = await import('./useCollapsible');
 
@@ -189,5 +190,26 @@ describe('WorkbenchShell sidebar widths', () => {
     view.rerender(<Collapsible panel={panel} visible />);
     await dom.settle();
     expect(panel.size).toBe(340);
+  });
+});
+
+describe('WorkbenchShell under a reading page (GDE-006)', () => {
+  afterEach(() => useLearnLayout.setState({ reading: false }));
+  const shell = () =>
+    dom.render(<WorkbenchShell EditorArea={StubEditor} Console={StubConsole} debugController={{} as never} />);
+
+  it('GDE-006 a reading page covers the whole workbench: the activity rail, sidebars and results panel are not in the tab order', () => {
+    useLearnLayout.setState({ reading: true });
+    shell();
+    const inert = (el: Element | null) => Boolean(el?.closest('[inert]'));
+    expect(inert(dom.screen.getByTestId('stub-console'))).toBe(true);
+    expect(inert(document.querySelector('[data-command="view.showLearn"]'))).toBe(true);
+    expect(inert(document.querySelector('#primary'))).toBe(true);
+  });
+
+  it('GDE-006 with the flag down nothing is inert', () => {
+    useLearnLayout.setState({ reading: false });
+    shell();
+    expect(document.querySelector('[inert]')).toBeNull();
   });
 });
