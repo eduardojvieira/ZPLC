@@ -1,8 +1,10 @@
+import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { assert } from '../run-desktop-smoke';
-import { button, css } from '../journeyApp';
+import { button, css, tab, type App } from '../journeyApp';
 import type { Journey } from '../journeys';
 import {
+  copyExample,
   openPlantDocument,
   runFromPalette,
   runInSimulation,
@@ -16,6 +18,29 @@ const ACTIVITY = `[...document.querySelectorAll('[role="region"]')].find((r) => 
 
 /** The Inspector region, which holds the form of the selected part (P3). */
 const INSPECTOR = `document.querySelector('aside.ledger-inspector')`;
+
+const MOTOR = 'motor_start_stop';
+const toolbar = css('[role="toolbar"]');
+
+/** The Motor project of the examples, opened and running in the simulation, with the Watch tab shown. */
+async function runMotor(app: App, folder: string): Promise<void> {
+  mkdirSync(folder, { recursive: true });
+  copyExample(folder, MOTOR);
+  app.answer(folder);
+  await app.click(button('Open project', 'contains'), 'the Open project button');
+  await app.until('the project workbench', async () => (await app.visible(toolbar)) || undefined);
+  await runInSimulation(app);
+  await app.click(tab('Watch', 'prefix'), 'the Watch tab');
+  await app.until('the faceplate', async () => (await app.visible(css('[data-faceplate]'))) || undefined, 45_000);
+}
+
+const watchRow = (name: string) =>
+  `[...document.querySelectorAll('tbody tr')].find((r) => r.firstElementChild?.textContent === ${JSON.stringify(name)})`;
+const rowRect = (name: string) =>
+  `(() => { const box = ${watchRow(name)}?.children[1].getBoundingClientRect(); ` +
+  `return box ? { x: box.x + 12, y: box.y + box.height / 2 } : null; })()`;
+const rowText = (app: App, name: string) => app.eval<string>(`${watchRow(name)}?.textContent ?? ''`);
+const editor = (app: App, name: string) => app.eval<boolean>(`Boolean(document.querySelector('input[aria-label="New value of ${name}"]'))`);
 
 /** The journeys of task P of plan-u3.md. */
 export const journeysU3P: Journey[] = [
@@ -98,6 +123,90 @@ export const journeysU3P: Journey[] = [
         );
         return (state.disabled && /stopped/.test(state.why)) || undefined;
       });
+    },
+  },
+  {
+    // PLS-007, LNK-006: the plant owns an input it feeds. The row says so and takes no value until the person forces it.
+    name: 'U3-P7 a Watch row the plant feeds says "From the plant", takes no value, and takes one once it is forced',
+    example: 'none',
+    proves: [],
+    partly: ['PLS-007', 'LNK-006', 'UX-009'],
+    run: async (app, { root }) => {
+      // a saved scene with its own plant map: the map feeds BeltToSensor.Start; the plant runs, so its session is bound
+      const project = shippedSceneProject(SHIPPED.smallest);
+      app.answer(writeSceneProject(join(root, 'plant-fed-row'), project));
+      await app.click(button('Open project', 'contains'), 'the Open project button');
+      await app.until('the project workbench', async () => (await app.visible(toolbar)) || undefined);
+      await openPlantDocument(app, project);
+      await runInSimulation(app);
+      await app.click(tab('Watch', 'prefix'), 'the Watch tab');
+      await app.until('the faceplate', async () => (await app.visible(css('[data-faceplate]'))) || undefined, 45_000);
+      // on the faceplate: marked in words, and the switch and Hold are disabled before the force
+      const faceRow = `document.querySelector('[data-faceplate] [data-input="BeltToSensor.Start"]')`;
+      await app.until(
+        'the faceplate row to say From the plant',
+        async () => ((await app.eval<boolean>(`(${faceRow})?.textContent.includes('From the plant') ?? false`)) ? true : undefined),
+        30_000,
+      );
+      assert(
+        await app.eval<boolean>(`[...(${faceRow}).querySelectorAll('button')].every((b) => b.disabled)`),
+        'The faceplate lets a person press the input the plant feeds.',
+      );
+      await app.click(button('Add variable'), 'Add variable');
+      await app.click(css('input[placeholder^="Variable path"]'), 'the variable path');
+      await app.type('Start');
+      await app.press('Enter');
+      await app.until(
+        'Start to say From the plant',
+        async () => ((await rowText(app, 'Start')).includes('From the plant') ? true : undefined),
+        30_000,
+      );
+      // no editor: the row takes no keyboard focus, and a double-click on the value, scrolled into view, opens nothing
+      assert(
+        await app.eval<boolean>(`!${watchRow('Start')}.querySelector('[data-forced]').hasAttribute('tabindex')`),
+        'The value of a row the plant feeds can be reached to edit.',
+      );
+      await app.eval(`${watchRow('Start')}.scrollIntoView({ block: 'center' })`);
+      const { x, y } = (await app.eval<{ x: number; y: number } | null>(rowRect('Start')))!;
+      assert(
+        await app.eval<boolean>(`document.elementFromPoint(${x}, ${y})?.closest('tr') === ${watchRow('Start')}`),
+        'The value of the Start row is not on screen to be clicked.',
+      );
+      await app.clickAt(x, y, 2);
+      assert(!(await editor(app, 'Start')), 'A row the plant feeds opened its value editor.');
+      await app.click(css('input[aria-label="Force Start"]'), 'the force checkbox of Start');
+      await app.until(
+        'the force of Start to be shown',
+        async () => ((await app.eval<boolean>(`Boolean(document.querySelector('tr [data-forced="true"]'))`)) ? true : undefined),
+        30_000,
+      );
+      // the forced value takes an edit: the keyboard opens the editor the double-click opens
+      await app.eval(`${watchRow('Start')}.querySelector('[data-forced]').focus()`);
+      await app.press('Enter');
+      await app.until('the value editor of the forced row', async () => ((await editor(app, 'Start')) ? true : undefined));
+    },
+  },
+  {
+    // The faceplate of the Watch tab sets the same three inputs of the Motor program that the Trace buttons set: Start, Stop, EStop.
+    name: 'U3-P7 the faceplate sets Start, Stop and EStop of the Motor program and reads each back as applied',
+    example: 'none',
+    proves: [],
+    partly: ['PLS-007', 'UX-009'],
+    run: async (app, { root }) => {
+      await runMotor(app, join(root, 'faceplate-equivalence'));
+      for (const name of ['Start', 'Stop', 'EStop']) {
+        const input = `[data-input="Motor.${name}"]`;
+        await app.click(css(`${input} button[role="switch"]`), `the ${name} switch`);
+        await app.until(
+          `${name} to read TRUE as applied`,
+          async () => {
+            // the phase "Applied" lasts a moment; the value the runtime holds, read back, is what stays
+            const text = await app.eval<string>(`document.querySelector('${input} [data-input-value]')?.textContent ?? ''`);
+            return text.includes('TRUE') ? true : undefined;
+          },
+          30_000,
+        );
+      }
     },
   },
 ];

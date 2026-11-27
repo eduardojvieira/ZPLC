@@ -2,7 +2,6 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 import { compactSource, withEnglishMessages } from '../i18n/inlineMessages';
-import { claimMotorInputCommand, shouldClearMotorInputFailure } from './liveNativeMotorPanel';
 
 // Console.tsx and the modules split out of it (IDE-014): the pins below read the text of all of them, as they did of the one file.
 const CONSOLE_MODULES = [
@@ -20,19 +19,6 @@ const consoleSources = (): string =>
   CONSOLE_MODULES.map((file) => compactSource(readFileSync(join(import.meta.dir, file), 'utf8'))).join('\n');
 
 describe('Console tab boundary', () => {
-  it('excludes a concurrent motor command and clears a failure only after a newer sample', () => {
-    const inFlight = { current: false };
-    const failure = { current: null as number | null };
-    expect(claimMotorInputCommand(inFlight, failure)).toBe(true);
-    expect(claimMotorInputCommand(inFlight, failure)).toBe(false);
-    inFlight.current = false;
-    failure.current = 202;
-    expect(claimMotorInputCommand(inFlight, failure)).toBe(false);
-    expect(shouldClearMotorInputFailure(failure.current, 201)).toBe(false);
-    expect(shouldClearMotorInputFailure(failure.current, 202)).toBe(false);
-    expect(shouldClearMotorInputFailure(failure.current, 203)).toBe(true);
-  });
-
   it('labels live ST diagnostics separately from canonical build diagnostics', () => {
     // the two lists are drawn by ProblemsPanel (ProblemsPanel.test.tsx); Console keeps the fence that pairs the live list with this build
     const source = withEnglishMessages(consoleSources());
@@ -119,7 +105,7 @@ describe('Console tab boundary', () => {
     expect(source).not.toContain('resetPlant');
   });
 
-  it('keeps one observable native motor module inside Trace before allowing closed inputs', () => {
+  it('keeps one read-only native motor module inside Trace; the faceplate owns the inputs (PLS-007)', () => {
     const source = withEnglishMessages(consoleSources());
 
     expect(source).toContain("activeConsoleTab === 'trace'");
@@ -129,24 +115,16 @@ describe('Console tab boundary', () => {
     expect(source).toMatch(/<LiveNativeMotorPanel\s+adapterType=/);
     expect(source).not.toMatch(/<LiveNativeMotorPanel\s+key=/);
     expect(source).toContain('const controls = output ? presentLiveNativeMotorControls');
-    expect(source).toContain("command('motor.start', true)");
-    expect(source).toContain("command('motor.stop', true)");
-    expect(source).toContain("command('motor.estop', true)");
-    expect(source).toContain("command('motor.estop', false)");
-    expect(source).toContain('Input command was not confirmed; controls are unavailable until a fresh native snapshot.');
     expect(source).toContain(
       'simulationInputsAuthorized={debugController?.adapter instanceof NativeAdapter && debugController.adapter.supportsSimulationInput}',
     );
-    expect(source).toContain("disabled={disabled || controls.eStopAsserted} onClick={() => void command('motor.estop', true)}");
-    expect(source).toContain("disabled={disabled || !controls.eStopAsserted} onClick={() => void command('motor.estop', false)}");
-    expect(source).toContain('Staging host input; waiting for a fresh native snapshot.');
-    expect(source).toContain('const inFlightRef = useRef(false);');
-    expect(source).toContain('const failureAtRef = useRef<number | null>(null);');
-    expect(source).toContain('claimMotorInputCommand(inFlightRef, failureAtRef)');
-    expect(source).toContain('inFlightRef.current = false;');
     expect(source).toContain('const nowMs = Date.now();');
     expect(source).toContain('setFreshnessTick((tick) => tick + 1)');
-    expect(source).toContain('shouldClearMotorInputFailure(failureAtRef.current, sample?.receivedAtMs)');
+    expect(source).toContain('Set the inputs on the live I/O faceplate in the watch tab.');
+    // the inputs are set on the faceplate: the panel holds no command of its own
+    expect(source).not.toContain("command('motor.");
+    expect(source).not.toContain('setSimulationInput');
+    expect(source).not.toContain('Assert E-stop');
     expect(source).not.toContain('setVirtualInput(inputId');
   });
 });
