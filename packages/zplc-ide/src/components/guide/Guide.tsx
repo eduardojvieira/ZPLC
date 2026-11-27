@@ -234,7 +234,7 @@ export function Guide({ workspaceTestPresentation }: { workspaceTestPresentation
           )}
         </GuideHeader>
 
-        <GuideStages key={lesson.id} stages={lesson.stages} />
+        <GuideStages key={lesson.id} stages={lesson.stages} reflectOpen={alreadyPassed || solutionShown} />
 
         <section aria-label={t('learn.hints')} className="border-b border-[var(--color-surface-700)] pb-3">
           {visibleHints(lesson.hints, hideSolutions).map((hint, index) => (

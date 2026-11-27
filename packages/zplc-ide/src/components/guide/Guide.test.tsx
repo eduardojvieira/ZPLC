@@ -477,7 +477,15 @@ describe('Reflect is listed but locked until a pass or the solution (CRS-017)', 
         schemaVersion: 2,
         last: null,
         lessons: {
-          [lesson.id]: { state: 'started', grade: null, passedAt: null, startedAt: null, hintsShown: [], solutionShown: true, hardware: null },
+          [lesson.id]: {
+            state: 'started',
+            grade: null,
+            passedAt: null,
+            startedAt: null,
+            hintsShown: [],
+            solutionShown: true,
+            hardware: null,
+          },
         },
       },
     } as never);
