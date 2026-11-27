@@ -166,7 +166,6 @@ describe('plant I/O mode wired to the board link (PLS-008, LNK-007, LNK-008, LNK
     const cases: [string, () => void, ReturnType<typeof rig>, boolean?][] = [
       ['simulation', () => publishCommandState({ mode: 'simulate', connected: true, projectOpen: true }), rig()],
       ['not connected', () => publishCommandState({ mode: 'hardware', connected: false, projectOpen: true }), rig()],
-      ['firmware without the capability', hardware, rig({ supported: false })],
       ['a plant session runs', hardware, rig(), false],
     ];
     for (const [name, arrange, r, idle] of cases) {

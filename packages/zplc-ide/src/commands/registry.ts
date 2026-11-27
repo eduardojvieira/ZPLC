@@ -240,7 +240,14 @@ export const COMMANDS = [
   { id: 'plant.createDeclarations', titleKey: 'command.plant.createDeclarations', category: 'project', pending: true },
   { id: 'edit.undo', titleKey: 'command.edit.undo', category: 'edit', pending: true },
   { id: 'edit.redo', titleKey: 'command.edit.redo', category: 'edit', pending: true },
-  { id: 'plant.feedBoard', titleKey: 'command.plant.feedBoard', category: 'online', physical: true, enabled: (s) => feedable(s) },
+  {
+    id: 'plant.feedBoard',
+    titleKey: 'command.plant.feedBoard',
+    category: 'online',
+    physical: true,
+    pending: true,
+    enabled: (s) => feedable(s),
+  },
   { id: 'view.showPlant', titleKey: 'command.view.showPlant', category: 'view', enabled: open },
 
   // The Assistant polish (AIX-003, AIX-007, plan-aix.md 9.2 and 9.4). Opening the MCP connection panel needs no project: the panel says to

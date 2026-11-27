@@ -15,6 +15,8 @@ import type { PlantMapV2 } from '../../plants/plantMap';
 import { connectionManager } from '../../runtime/connectionManager';
 import type { FirmwareProtocol } from '../../runtime/link/firmwareProtocol';
 import type { IoMap } from '../../runtime/ioMap';
+import { LinkError } from '../../runtime/link/deviceLink';
+import { plantIoSupport } from '../board/support';
 import { bindIoModeLink, type IoModeLink, type IoModeState } from '../../store/ioModeStatus';
 import { useIDEStore } from '../../store/useIDEStore';
 import { createPlantIoController, type PlantIoController, type PlantIoPorts } from '../board/boardPlantLink';
@@ -31,6 +33,15 @@ export interface PlantIoAdapter extends IoModeLink {
 
 const messageOf = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
+/** The reason a start failed, said through the catalog in the active language (the controller's own texts are English). */
+function located(error: unknown): string {
+  if (error instanceof LinkError) return t('plant.ioMode.refused', { code: error.errorName });
+  const text = messageOf(error);
+  if (text.startsWith('plant: no signal')) return t('plant.ioMode.noSignal');
+  if (text.startsWith('plant: the board granted')) return t('plant.ioMode.grantMismatch');
+  return text;
+}
+
 /** `ports` is called only by `start`, so no controller exists before a person confirmed. */
 export function createPlantIoAdapter(
   ports: () => PlantIoPorts,
@@ -41,6 +52,8 @@ export function createPlantIoAdapter(
   let unlisten: (() => void) | null = null;
   let failure: string | null = null;
   let disposed = false;
+  /** A person pressed Stop while the entry was pending: the board exits as soon as the entry is answered. */
+  let stopAsked = false;
   const emit = () => listeners.forEach((listener) => listener());
 
   const release = () => {
@@ -54,12 +67,13 @@ export function createPlantIoAdapter(
     if (snap?.phase === 'unsupported') {
       const reason = snap.unsupported ?? { en: '', es: '' };
       failure = currentLocale() === 'es' ? reason.es : reason.en;
-    } else if (snap?.phase === 'left' && snap.reason !== 'CLOSED') failure = t('plant.ioMode.exit', { reason: snap.reason ?? 'FAULT' });
+    } else if (snap?.phase === 'left' && snap.reason !== 'CLOSED')
+      failure = t(`plantIo.exit.${snap.reason ?? 'FAULT'}` as 'plantIo.exit.FAULT');
     emit();
   };
-  const stopQuietly = async () => {
+  const stopQuietly = async (target: PlantIoController | null = controller) => {
     try {
-      await controller?.stop();
+      await target?.stop();
     } catch (error) {
       failure = messageOf(error);
     }
@@ -86,22 +100,23 @@ export function createPlantIoAdapter(
       if (disposed) return;
       release();
       failure = null;
+      stopAsked = false;
       try {
         controller = create(ports());
       } catch (error) {
-        failure = messageOf(error);
+        failure = located(error);
         emit();
-        throw error;
+        throw new Error(failure);
       }
       const started = controller;
       unlisten = started.subscribe(sync);
       try {
         await started.start();
       } catch (error) {
-        failure = messageOf(error);
+        failure = located(error);
         release();
         emit();
-        throw error;
+        throw new Error(failure);
       }
       sync();
       if (failure !== null) {
@@ -110,12 +125,14 @@ export function createPlantIoAdapter(
         emit();
         throw new Error(failure);
       }
-      // the window closed or the board went away while the entry was answered
-      if (disposed) await stopQuietly();
+      // a person pressed Stop, or the window closed or the board went away, while the entry was pending: leave now, through
+      // this start's own controller (a dispose already dropped the shared reference)
+      if (disposed || stopAsked) await stopQuietly(started);
       emit();
     },
     async stop() {
-      await stopQuietly();
+      if (controller?.snapshot().phase === 'entering') stopAsked = true;
+      else await stopQuietly();
       emit();
     },
     async setMirroring(on) {
@@ -167,14 +184,26 @@ export interface BoardPlantIoInput {
  * Binds the adapter of the connected board to the shell while the offer exists, and says whether the action is offered. The mode
  * ends with the board's connection, the project, the plant and the window.
  */
-export function useBoardPlantIo(input: BoardPlantIoInput, deps: BoardPlantIoDeps = connected): { available: boolean } {
+export function useBoardPlantIo(input: BoardPlantIoInput, deps: BoardPlantIoDeps = connected): { available: boolean; blocked?: string } {
   const { mode, connected: isConnected } = useCommandState();
   const handle = useIDEStore((state) => state.directoryHandle);
   const [, repaint] = useReducer((count: number) => count + 1, 0);
   useEffect(() => deps.subscribe(repaint), [deps]);
   const { core, map, ioMap, shortestPulseMs } = input;
-  const ready = mode === 'hardware' && isConnected && (deps.port()?.supported() ?? false) && core !== undefined && map !== undefined;
-  const available = ready && input.idle && input.visible;
+  const supported = deps.port()?.supported() ?? false;
+  const loaded = mode === 'hardware' && isConnected && core !== undefined && map !== undefined;
+  const ready = loaded && supported;
+  const empty = ioMap.inputs.length + ioMap.outputs.length === 0;
+  const available = ready && !empty && input.idle && input.visible;
+  /** Why the action is shown but disabled (LNK-012: the person is told). */
+  let blocked: string | undefined;
+  if (loaded && input.idle && input.visible) {
+    if (!supported) {
+      const support = plantIoSupport(deps.firmware());
+      const reason = support.supported ? '' : currentLocale() === 'es' ? support.reason.es : support.reason.en;
+      blocked = t('plant.ioMode.unsupported', { reason });
+    } else if (empty) blocked = t('plant.ioMode.noProgram');
+  }
 
   useEffect(() => {
     publishCommandState({ plantFeedable: available });
@@ -206,5 +235,5 @@ export function useBoardPlantIo(input: BoardPlantIoInput, deps: BoardPlantIoDeps
     };
   }, [ready, core, map, ioMap, shortestPulseMs, handle, deps]);
 
-  return { available };
+  return blocked === undefined ? { available } : { available, blocked };
 }

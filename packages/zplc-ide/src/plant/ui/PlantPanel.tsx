@@ -267,7 +267,6 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
         <Button data-plant-edit-scene aria-pressed={!!editing} disabled={!stopped || !ready || !!session.editor} onClick={startEditing}>
           {t('plant.panel.editScene')}
         </Button>
-        <PlantIoMode boardConnected={feed.available} />
         {/* Controls that appear with the scene come last: appending never moves the ones already there. */}
         {ready && view === '3d' && ready.scene.cameras.length > 0 && (
           <Select
@@ -288,6 +287,7 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
             {t('command.view.fitPlantScene')}
           </Button>
         )}
+        <PlantIoMode boardConnected={feed.available} {...(feed.blocked ? { blocked: feed.blocked } : {})} />
       </div>
       <div role="group" aria-label={t('plant.panel.sceneFile')} data-plant-scene-file className="flex flex-wrap items-end gap-3 px-2">
         <SceneChooser
