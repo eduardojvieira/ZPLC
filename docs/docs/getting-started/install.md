@@ -255,6 +255,14 @@ ZPLC keeps its preferences, recent projects, lesson progress, recovery copies an
 (`native-simulation`) in the user-data folder of the application for your account; removing the application does not
 remove it. Your project folders are never inside it.
 
+## Known limit on Windows: simulator communication
+
+In 2.1.0 the simulator on Windows has no Modbus or MQTT blocks, no loopback and no device link. The Windows runtime is
+built without the host communication sources (the same as in 2.0.1), so a block of those services answers "no handler".
+These lessons need them: `modbus-coil-fbd`, `modbus-register-round-trip` and `mqtt-publish-subscribe`. On Windows each
+one says so when it opens: you can read it and write the program, but its Check cannot run. To run it, open the same
+lesson on Linux or macOS. This is a statement of a limit, not a measurement.
+
 ## Troubleshooting
 
 | What you see                                                                 | Why                                                                                                                                                           | What to do                                                                                                     |

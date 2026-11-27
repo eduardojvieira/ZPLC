@@ -361,4 +361,29 @@ describe('Check is one action from the Guide (GDE-004)', () => {
     expect(text).toContain(fact);
     expect(text).toContain(`${failed.failedAssertions[0]!.atMs} ms`);
   });
+
+  describe('the Windows limit of the simulator communication (known limit of 2.1.0)', () => {
+    const COMM = 'modbus-coil-fbd';
+    const NO_COMM = lesson.id;
+    function openOn(platform: string, id: string) {
+      open();
+      host.electronAPI = { ...host.electronAPI, platform };
+      dom.patchStore(useLearnUi, { selected: id, workspace: { lessonId: id, session: useIDEStore.getState().projectSession } } as never);
+      dom.render(<Guide />);
+    }
+    it('shows the notice on win32 for a lesson that needs Modbus, MQTT, the loopback or the device link', () => {
+      openOn('win32', COMM);
+      const notice = document.querySelector('[data-guide-comm-limit]');
+      expect(notice).not.toBeNull();
+      expect(notice!.textContent).toContain('Windows');
+    });
+    it.each(['linux', 'darwin'])('does not show the notice on %s for that lesson', (platform) => {
+      openOn(platform, COMM);
+      expect(document.querySelector('[data-guide-comm-limit]')).toBeNull();
+    });
+    it('does not show the notice on win32 for a lesson that needs no communication', () => {
+      openOn('win32', NO_COMM);
+      expect(document.querySelector('[data-guide-comm-limit]')).toBeNull();
+    });
+  });
 });

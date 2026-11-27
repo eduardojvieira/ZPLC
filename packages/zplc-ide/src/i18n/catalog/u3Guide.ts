@@ -16,6 +16,9 @@ export const u3GuideEn = {
   'u3Guide.files.scenario': 'Scenario: {scenario}',
   'u3Guide.files.record': 'Last check: {result} on {time}',
   'u3Guide.files.noRecord': 'No check recorded yet.',
+  'u3Guide.commLimit.title': 'Not available on Windows',
+  'u3Guide.commLimit.body':
+    'On Windows the simulator has no Modbus or MQTT blocks, no loopback and no device link, so this lesson cannot run its Check here. You can still read the lesson and write the program. To run it, open the same lesson on Linux or macOS. The Raspberry Pi Pico and the ESP32-S3 of the course cannot run it either.',
   'u3Guide.nextLesson': 'Next lesson',
   'u3Guide.check.cancelled': 'The check did not start: your changes are not saved. Press Check again and agree to save them.',
   'u3Guide.check.saveFailed': 'The check did not start: some documents could not be saved. Save them and press Check again.',
@@ -40,6 +43,9 @@ export const u3GuideEs: Record<keyof typeof u3GuideEn, string> = {
   'u3Guide.files.scenario': 'Escenario: {scenario}',
   'u3Guide.files.record': 'Última comprobación: {result} el {time}',
   'u3Guide.files.noRecord': 'Aún no hay ninguna comprobación registrada.',
+  'u3Guide.commLimit.title': 'No disponible en Windows',
+  'u3Guide.commLimit.body':
+    'En Windows el simulador no tiene los bloques Modbus ni MQTT, ni el bucle local (loopback), ni el enlace con el dispositivo, así que esta lección no puede ejecutar aquí su comprobación. Puede leer la lección y escribir el programa. Para ejecutarla, abra la misma lección en Linux o macOS. La Raspberry Pi Pico y la ESP32-S3 del curso tampoco pueden ejecutarla.',
   'u3Guide.nextLesson': 'Siguiente lección',
   'u3Guide.check.cancelled': 'La comprobación no empezó: sus cambios no están guardados. Pulse Comprobar de nuevo y acepte guardarlos.',
   'u3Guide.check.saveFailed': 'La comprobación no empezó: algunos documentos no se pudieron guardar. Guárdelos y pulse Comprobar de nuevo.',
