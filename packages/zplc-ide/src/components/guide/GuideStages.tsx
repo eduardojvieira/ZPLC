@@ -3,6 +3,7 @@ import { useT } from '../../i18n';
 import { Button } from '../../ui';
 
 interface Stage {
+  key?: string;
   title: string;
   body: string;
   checkpoint: string;
@@ -10,14 +11,17 @@ interface Stage {
 
 /**
  * One stage at a time, with Back, Next and a list to jump to any stage; the stage keeps its expected checkpoint.
- * Reflect, the last stage, is listed but locked until `reflectOpen`; the locked item stays focusable so the reason can be read.
+ * Reflect, found by its stage key, is listed but locked until `reflectOpen`; the locked item stays focusable so the reason can be read.
  */
 export function GuideStages({ stages, reflectOpen }: { stages: readonly Stage[]; reflectOpen: boolean }) {
   const { t } = useT();
   const [at, setAt] = useState(0);
-  const lockedAt = reflectOpen ? -1 : stages.length - 1;
-  const lastOpen = lockedAt < 0 ? stages.length - 1 : lockedAt - 1;
-  const stage = stages[Math.min(at, lastOpen)];
+  const reflectAt = stages.findIndex((candidate) => candidate.key === 'reflect');
+  const lockedAt = reflectOpen ? -1 : reflectAt;
+  const stage = stages[Math.min(at, stages.length - 1)];
+  // Next stops before a locked Reflect; a stage after Reflect is reached by Next only once Reflect is open.
+  const nextAt = at + 1;
+  const backAt = at - 1 === lockedAt ? at - 2 : at - 1;
   if (!stage) return null;
   return (
     <section aria-label={t('learn.lessonSteps')} className="border-b border-[var(--color-surface-700)] pb-3">
@@ -57,10 +61,10 @@ export function GuideStages({ stages, reflectOpen }: { stages: readonly Stage[];
         </details>
       </div>
       <div className="mt-2 flex gap-2">
-        <Button variant="secondary" size="sm" disabled={at === 0} onClick={() => setAt(at - 1)}>
+        <Button variant="secondary" size="sm" disabled={backAt < 0} onClick={() => setAt(backAt)}>
           {t('u3Guide.back')}
         </Button>
-        <Button variant="secondary" size="sm" disabled={at >= lastOpen} onClick={() => setAt(at + 1)}>
+        <Button variant="secondary" size="sm" disabled={nextAt >= stages.length || nextAt === lockedAt} onClick={() => setAt(nextAt)}>
           {t('u3Guide.next')}
         </Button>
       </div>
