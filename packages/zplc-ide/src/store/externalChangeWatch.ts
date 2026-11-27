@@ -212,10 +212,16 @@ export async function checkOpenFiles(quiet: ReadonlySet<string> = new Set()): Pr
   if (plan.reload.length > 0) {
     // The markers of a reloaded file point at lines of the text it had: they go, and the build results are older.
     const reloaded = new Set(plan.reload.map((reload) => reload.path));
-    useIDEStore.setState((current) => ({
-      compilerMessages: current.compilerMessages.filter((message) => message.file === undefined || !reloaded.has(message.file)),
-      compilerRunId: current.compilerRunId + 1,
-    }));
+    const outsideReload = plan.reload.some((reload) => !quiet.has(reload.path));
+    useIDEStore.setState((current) => {
+      const remaining = current.compilerMessages.filter((message) => message.file === undefined || !reloaded.has(message.file));
+      const clearedMarkers = remaining.length < current.compilerMessages.length;
+      return {
+        compilerMessages: remaining,
+        compilerRunId: current.compilerRunId + 1,
+        ...(clearedMarkers || (outsideReload && current.compilerMessagesChecked) ? { compilerResultsFromEarlierBuild: true } : {}),
+      };
+    });
   }
   for (const reload of plan.reload) {
     const file = byPath.get(reload.path)!;

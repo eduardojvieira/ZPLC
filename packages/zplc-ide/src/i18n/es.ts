@@ -515,6 +515,8 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'panel.problems.empty.title': 'No se encontraron problemas',
   'panel.problems.empty.checked': 'La última compilación no informó diagnósticos.',
   'panel.problems.empty.unchecked': 'Compile el proyecto para comprobar si tiene problemas.',
+  'panel.problems.earlierBuild':
+    'Los archivos cambiaron fuera de ZPLC después de la última compilación. Compile de nuevo para ver sus problemas.',
   'panel.trace.empty.title': 'Aún no hay muestras de traza',
   'panel.trace.empty.description': 'Avance un ciclo de la simulación nativa POSIX para recoger muestras de traza.',
   'panel.watch.empty.title': 'No hay variables vigiladas',

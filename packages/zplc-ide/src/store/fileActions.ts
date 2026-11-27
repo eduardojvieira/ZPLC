@@ -285,6 +285,7 @@ export const createFileActions: StateCreator<
           openTabs: state.openTabs.includes(fileId) ? state.openTabs : [...state.openTabs, fileId],
           compilerMessages: [],
           compilerMessagesChecked: false,
+          compilerResultsFromEarlierBuild: false,
           compilerNavigationTarget: null,
           compilerRunId: state.compilerRunId + 1,
         };
@@ -358,6 +359,7 @@ export const createFileActions: StateCreator<
       activeFileId: current.activeFileId === fileId ? (openTabs.at(-1) ?? null) : current.activeFileId,
       compilerMessages: [],
       compilerMessagesChecked: false,
+      compilerResultsFromEarlierBuild: false,
       compilerNavigationTarget: null,
       compilerRunId: state.compilerRunId + 1,
       debug: { ...current.debug, breakpoints },
@@ -391,6 +393,7 @@ export const createFileActions: StateCreator<
       loadedFiles: newLoadedFiles,
       compilerMessages: [],
       compilerMessagesChecked: false,
+      compilerResultsFromEarlierBuild: false,
       compilerNavigationTarget: null,
       stBufferDiagnostics: null,
       compilerRunId: state.compilerRunId + 1,

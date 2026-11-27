@@ -77,7 +77,13 @@ async function settle(
     debug: { ...state.debug, breakpoints: next.breakpoints },
     ...(change === null
       ? {}
-      : { compilerMessages: [], compilerMessagesChecked: false, compilerNavigationTarget: null, compilerRunId: state.compilerRunId + 1 }),
+      : {
+          compilerMessages: [],
+          compilerMessagesChecked: false,
+          compilerResultsFromEarlierBuild: false,
+          compilerNavigationTarget: null,
+          compilerRunId: state.compilerRunId + 1,
+        }),
   });
 }
 

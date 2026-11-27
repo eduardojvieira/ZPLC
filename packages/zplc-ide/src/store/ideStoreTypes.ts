@@ -168,6 +168,8 @@ export interface IDEState {
   compilerMessages: CompilerMessage[];
   /** True after the current compiler result has reported diagnostics or completed cleanly. */
   compilerMessagesChecked: boolean;
+  /** True when an outside reload invalidated markers from the last build and no build has run since. */
+  compilerResultsFromEarlierBuild: boolean;
   compilerRunId: number;
   compilerNavigationTarget: CompilerNavigationTarget | null;
   /** Current editor-only ST syntax result. It is not compiler/build evidence. */
