@@ -523,7 +523,10 @@ describe('workspace tests, candidate review and the AI provider (IDE-001, IDE-01
     const h = await harness();
     await h.invoke('ai-provider:test-connection', TRUSTED);
     expect(h.touched).toContain('ai.testConnection:[]');
-    expect(await settle(h.invoke('ai-provider:test-connection', TRUSTED, 'http://evil.invalid'))).toEqual({ ok: false, message: IPC_DENIED });
+    expect(await settle(h.invoke('ai-provider:test-connection', TRUSTED, 'http://evil.invalid'))).toEqual({
+      ok: false,
+      message: IPC_DENIED,
+    });
   });
 
   it('send an AI request through the workspace gateway and cancel both the provider and the workspace run', async () => {

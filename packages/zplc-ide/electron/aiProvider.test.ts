@@ -1063,7 +1063,6 @@ describe('assistant answer shapes (AI-14 / AIX-006)', () => {
   });
 });
 
-
 const LESSON = LESSON_INDEX.lessons.find((lesson) => lesson.id === 'ld-no-nc-contacts')!;
 const SENTINEL_BODY = 'SENTINEL-stage-body-with-the-answer';
 const SENTINEL_LAST_HINT = 'SENTINEL-last-hint-swap-the-contact';
@@ -1102,7 +1101,14 @@ describe('the assistant gets the context of the project, the plant and the lesso
     );
     await writeFile(
       join(root, 'tests', 'belt.scenario.json'),
-      JSON.stringify({ schemaVersion: 1, id: 'Belt', tickMs: 10, durationMs: 500, events: [], expectations: [{ kind: 'at', atMs: 10, condition: { 'Belt.Run': true } }] }),
+      JSON.stringify({
+        schemaVersion: 1,
+        id: 'Belt',
+        tickMs: 10,
+        durationMs: 500,
+        events: [],
+        expectations: [{ kind: 'at', atMs: 10, condition: { 'Belt.Run': true } }],
+      }),
     );
     return { directory, root };
   }
@@ -1132,9 +1138,13 @@ describe('the assistant gets the context of the project, the plant and the lesso
       new AbortController().signal,
     );
     const body = seen ? (JSON.parse(String(seen.body)) as { messages: Array<{ content: string }> }) : undefined;
+    // the parsed context is read by path in every test below; a type for it would only repeat the context builder's
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return { result, seen, body, context: body ? (JSON.parse(body.messages[1]!.content) as Record<string, any>) : undefined };
   }
-  const failed = [{ id: 'Belt', assertions: [{ index: 0, kind: 'at', atMs: 10, checks: [{ signal: 'Belt.Run', expected: true, observed: false }] }] }];
+  const failed = [
+    { id: 'Belt', assertions: [{ index: 0, kind: 'at', atMs: 10, checks: [{ signal: 'Belt.Run', expected: true, observed: false }] }] },
+  ];
 
   it('sends the plant, the scenarios, the failed checks, the facts, the diagnostics with their message and the lesson goal', async () => {
     const { result, context } = await ask(
@@ -1183,7 +1193,11 @@ describe('the assistant gets the context of the project, the plant and the lesso
   });
 
   it('with solutions hidden, or unknown, the context has no solution, no stage text and no last hint, and the system says so', async () => {
-    for (const hidden of [{ solutionsHidden: async () => true }, {}, { solutionsHidden: async () => Promise.reject(new Error('unreadable')) }]) {
+    for (const hidden of [
+      { solutionsHidden: async () => true },
+      {},
+      { solutionsHidden: async () => Promise.reject(new Error('unreadable')) },
+    ]) {
       const { body, context } = await ask(hidden, { lessonContext: { lessonId: 'ld-no-nc-contacts', stage: 'edit' } });
       const text = JSON.stringify(body);
       expect(context!.context.lesson.solutionsHidden).toBe(true);
@@ -1218,7 +1232,11 @@ describe('the assistant gets the context of the project, the plant and the lesso
         schemaVersion: 1,
         id: `S${n}`,
         events: [],
-        expectations: Array.from({ length: 64 }, (_, i) => ({ kind: 'at', atMs: i, condition: { [`Plant.Signal${n}_${i}`]: true, [`Plant.Other${n}_${i}`]: false, [`Plant.More${n}_${i}`]: 1 } })),
+        expectations: Array.from({ length: 64 }, (_, i) => ({
+          kind: 'at',
+          atMs: i,
+          condition: { [`Plant.Signal${n}_${i}`]: true, [`Plant.Other${n}_${i}`]: false, [`Plant.More${n}_${i}`]: 1 },
+        })),
       });
     const { result, body, context } = await ask(
       { solutionsHidden: async () => false },
@@ -1258,7 +1276,9 @@ describe('the system policy (AIX-005, AI-21, rule 8)', () => {
     expect(SYSTEM_POLICY.startsWith('You are ZPLC Assistant.')).toBe(true);
     expect(SYSTEM_POLICY).not.toContain('ZPLC Agent');
     expect(SYSTEM_POLICY).toContain(
-      'An AI assistant or MCP never initiates them on hardware or on a session a person runs: it never forces I/O, changes RUN/STOP, flashes, deploys or opens a serial port there. It may set inputs and step a simulator that is private to it, one the MCP server starts for that agent alone (D-31, AIX-014).',
+      'An AI assistant or MCP never initiates them on hardware or on a session a person runs: it never forces I/O, changes RUN/STOP, ' +
+        'flashes, deploys or opens a serial port there. ' +
+        'It may set inputs and step a simulator that is private to it, one the MCP server starts for that agent alone (D-31, AIX-014).',
     );
     expect(SYSTEM_POLICY).toContain('Never claim hardware action');
   });
@@ -1278,7 +1298,11 @@ describe('the system policy (AIX-005, AI-21, rule 8)', () => {
 });
 
 describe('a local model on loopback needs no key (AIX-006, AI-17)', () => {
-  async function local(fetchImpl: (url: string, init: RequestInit) => Promise<Response>, endpoint = 'http://localhost:11434', backend = 'basic_text') {
+  async function local(
+    fetchImpl: (url: string, init: RequestInit) => Promise<Response>,
+    endpoint = 'http://localhost:11434',
+    backend = 'basic_text',
+  ) {
     const directory = await fixture();
     const provider = createAiProvider({ userDataPath: directory, vault: vault(backend), fetch: fetchImpl });
     expect(await provider.saveConfig({ enabled: true, endpoint, model: 'llama3' })).toEqual({ ok: true });
@@ -1294,7 +1318,10 @@ describe('a local model on loopback needs no key (AIX-006, AI-17)', () => {
       return ok();
     });
     expect(await provider.getStatus()).toMatchObject({ configured: true, enabled: true, keyStored: false });
-    expect(await provider.request(join(directory, 'workspace'), ask, new AbortController().signal)).toMatchObject({ ok: true, answer: 'hi' });
+    expect(await provider.request(join(directory, 'workspace'), ask, new AbortController().signal)).toMatchObject({
+      ok: true,
+      answer: 'hi',
+    });
     expect(seen!.url).toBe('http://localhost:11434/v1/chat/completions');
     expect(Object.keys(seen!.init.headers as Record<string, string>)).toEqual(['Content-Type']);
     expect(seen!.init.redirect).toBe('error');
@@ -1325,14 +1352,20 @@ describe('a local model on loopback needs no key (AIX-006, AI-17)', () => {
     const provider = createAiProvider({ userDataPath: directory, vault: vault(), fetch: ok });
     await provider.saveConfig({ enabled: true, endpoint: 'https://api.example.test', model: 'gpt-test' });
     expect(await provider.getStatus()).toMatchObject({ configured: false });
-    expect(await provider.request(join(directory, 'workspace'), ask, new AbortController().signal)).toEqual({ ok: false, code: 'AI_UNCONFIGURED' });
+    expect(await provider.request(join(directory, 'workspace'), ask, new AbortController().signal)).toEqual({
+      ok: false,
+      code: 'AI_UNCONFIGURED',
+    });
     for (const endpoint of ['http://localhost.evil.test', 'http://127.0.0.2', 'http://[::ffff:127.0.0.1]', 'http://example.test'])
-      expect(await provider.saveConfig({ enabled: true, endpoint, model: 'gpt-test' }), endpoint).toEqual({ ok: false, code: 'AI_CONTEXT_REJECTED' });
+      expect(await provider.saveConfig({ enabled: true, endpoint, model: 'gpt-test' }), endpoint).toEqual({
+        ok: false,
+        code: 'AI_CONTEXT_REJECTED',
+      });
   });
 
   it('does not follow a redirect: a loopback server that redirects elsewhere is an unreachable provider', async () => {
     let hits = 0;
-    const target = Bun.serve({ port: 0, hostname: '127.0.0.1', fetch: () => (hits += 1, new Response('{}')) });
+    const target = Bun.serve({ port: 0, hostname: '127.0.0.1', fetch: () => ((hits += 1), new Response('{}')) });
     const redirecting = Bun.serve({
       port: 0,
       hostname: '127.0.0.1',
@@ -1364,7 +1397,11 @@ describe('the connection test (AIX-006)', () => {
       port: 0,
       hostname: '127.0.0.1',
       async fetch(incoming) {
-        const entry = { method: incoming.method, auth: incoming.headers.get('authorization'), body: (await incoming.json()) as Record<string, unknown> };
+        const entry = {
+          method: incoming.method,
+          auth: incoming.headers.get('authorization'),
+          body: (await incoming.json()) as Record<string, unknown>,
+        };
         seen.push(entry);
         return handler(entry);
       },
@@ -1443,7 +1480,7 @@ describe('the connection test (AIX-006)', () => {
   it('needs a stored key for a hosted endpoint, and sends nothing without it', async () => {
     let calls = 0;
     const directory = await fixture();
-    const provider = createAiProvider({ userDataPath: directory, vault: vault(), fetch: async () => (calls += 1, new Response('{}')) });
+    const provider = createAiProvider({ userDataPath: directory, vault: vault(), fetch: async () => ((calls += 1), new Response('{}')) });
     await provider.saveConfig({ enabled: true, endpoint: 'https://api.example.test', model: 'm' });
     expect(await provider.testConnection()).toEqual({ ok: false, code: 'AI_UNCONFIGURED' });
     expect(calls).toBe(0);

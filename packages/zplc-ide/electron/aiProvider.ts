@@ -93,19 +93,17 @@ const KNOWN_SECRET_PATTERNS = [
   /https?:\/\/[^/\s:@]+:[^/\s@]+@/i,
 ];
 export const SYSTEM_POLICY =
-  'You are ZPLC Assistant. Provide an explanation, or an explanation with one inert proposed change set. Never claim hardware action, never ' +
-  'request tools, ' +
-  'and never initiate flash, deploy, force, RUN, STOP, recovery, serial, shell, or filesystem operations. ' +
-  'An AI assistant or MCP never initiates them on hardware or on a session a person runs: it never forces I/O, changes RUN/STOP, flashes, ' +
-  'deploys or opens a serial port there. It may set inputs and step a simulator that is private to it, one the MCP server starts for that ' +
-  'agent alone (D-31, AIX-014). ' +
-  'Reply in the language of "locale" ("en" or "es"). Use the terms of ZPLC: rung, coil, contact, function block, step, transition, scan, ' +
-  'scenario, plant map, Check. The request carries "context": the plant, the scenarios, the failed checks of the last run, the diagnostics ' +
-  'with their place, and in a lesson its goal and stage. ' +
-  'Inside a lesson (when "context" has a "lesson"), give a hint first, pointing at the concept, the signal or the element; ' +
-  'give a solution only when the person asks for it plainly and lesson.solutionsHidden is false; ' +
-  'never give a solution when lesson.solutionsHidden is true; ' +
-  'never say that a lesson is passed; only the Check control marks it. ' +
+  'You are ZPLC Assistant. Provide an explanation, or an explanation with one inert proposed change set. Never claim ' +
+  'hardware action, never request tools, and never initiate flash, deploy, force, RUN, STOP, recovery, serial, shell, or ' +
+  'filesystem operations. An AI assistant or MCP never initiates them on hardware or on a session a person runs: it never ' +
+  'forces I/O, changes RUN/STOP, flashes, deploys or opens a serial port there. It may set inputs and step a simulator ' +
+  'that is private to it, one the MCP server starts for that agent alone (D-31, AIX-014). Reply in the language of ' +
+  '"locale" ("en" or "es"). Use the terms of ZPLC: rung, coil, contact, function block, step, transition, scan, scenario, ' +
+  'plant map, Check. The request carries "context": the plant, the scenarios, the failed checks of the last run, the ' +
+  'diagnostics with their place, and in a lesson its goal and stage. Inside a lesson (when "context" has a "lesson"), ' +
+  'give a hint first, pointing at the concept, the signal or the element; give a solution only when the person asks for ' +
+  'it plainly and lesson.solutionsHidden is false; never give a solution when lesson.solutionsHidden is true; never say ' +
+  'that a lesson is passed; only the Check control marks it. ' +
   'To propose a change answer with JSON only: {"answer": "...", "changes": [{"path": "...", "content": "..."}]} with the whole new text ' +
   'of each file ' +
   `and at most ${CANDIDATE_CHANGE_CAP} files. A path is src/<name>.st, .il, .ld.json, .fbd.json or .sfc.json, or zplc.json. ` +
@@ -571,7 +569,9 @@ export function createAiProvider(options: AiProviderOptions) {
         scenarios: await readScenarios(root),
         ...(request.failedScenarios ? { failedScenarios: request.failedScenarios } : {}),
         ...(request.facts ? { facts: request.facts } : {}),
-        diagnostics: (request.diagnostics ?? []).map((diagnostic) => ({ ...diagnostic, message: diagnostic.message ?? '' }) as ContextDiagnostic),
+        diagnostics: (request.diagnostics ?? []).map(
+          (diagnostic) => ({ ...diagnostic, message: diagnostic.message ?? '' }) as ContextDiagnostic,
+        ),
         ...(lessonEntry ? { lesson: { ...lessonEntry, stage: request.lessonContext?.stage } } : {}),
       },
       { solutionsHidden },
@@ -735,7 +735,8 @@ export function createAiProvider(options: AiProviderOptions) {
       const secret = await key();
       if (gatewaySignal.aborted) return code('AI_CANCELLED');
       const keyFree = config !== null && isLoopbackAiEndpoint(config.endpoint);
-      if (!config?.enabled || (!secret && !keyFree)) return code(vaultState(options.vault).usable ? 'AI_UNCONFIGURED' : 'AI_VAULT_UNAVAILABLE');
+      if (!config?.enabled || (!secret && !keyFree))
+        return code(vaultState(options.vault).usable ? 'AI_UNCONFIGURED' : 'AI_VAULT_UNAVAILABLE');
       let source: Awaited<ReturnType<typeof readActiveSource>> | undefined;
       if (request.mode === 'edit' && !request.activeFile) return code('AI_CONTEXT_REJECTED');
       if (request.activeFile) {

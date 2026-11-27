@@ -48,7 +48,16 @@ describe('the endpoints the assistant may talk to (AIX-006, AI-17)', () => {
   });
 
   test('refuses another scheme, a query, a fragment and anything that is not a url', () => {
-    for (const endpoint of ['ftp://localhost', 'file:///etc/passwd', 'ws://localhost', 'http://localhost?x=1', 'http://localhost#x', '', 'localhost', 7])
+    for (const endpoint of [
+      'ftp://localhost',
+      'file:///etc/passwd',
+      'ws://localhost',
+      'http://localhost?x=1',
+      'http://localhost#x',
+      '',
+      'localhost',
+      7,
+    ])
       expect(canonicalAiEndpoint(endpoint), String(endpoint)).toBeNull();
   });
 });

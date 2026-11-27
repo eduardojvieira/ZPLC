@@ -107,7 +107,12 @@ declare global {
           trace?: Array<{ atMs: number; signal: string; value: boolean | number }>;
           failedScenarios?: Array<{
             id: string;
-            assertions: Array<{ index: number; kind: string; atMs: number; checks: Array<{ signal: string; expected: unknown; observed: unknown }> }>;
+            assertions: Array<{
+              index: number;
+              kind: string;
+              atMs: number;
+              checks: Array<{ signal: string; expected: unknown; observed: unknown }>;
+            }>;
           }>;
           facts?: Record<string, boolean | number>;
           selection?: { startLine: number; endLine: number; text: string } | { element: string };

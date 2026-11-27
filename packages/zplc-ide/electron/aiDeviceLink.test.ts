@@ -117,7 +117,6 @@ describe('COM-030: no AI request can carry a device link', () => {
   });
 });
 
-
 describe('AIX-001: the structured context a request may carry', () => {
   const failedScenarios = [
     { id: 'Belt', assertions: [{ index: 0, kind: 'at', atMs: 10, checks: [{ signal: 'Belt.Run', expected: true, observed: false }] }] },
@@ -134,7 +133,9 @@ describe('AIX-001: the structured context a request may carry', () => {
 
   test('accepts every field of the context, in every mode but a trace outside debug', () => {
     for (const mode of ['ask', 'plan', 'edit', 'debug'])
-      expect(isAllowedAiProviderRequest({ ...rich, mode, activeFile: { fileId: 'file:src/Main.st', path: 'src/Main.st' } }), mode).toBe(true);
+      expect(isAllowedAiProviderRequest({ ...rich, mode, activeFile: { fileId: 'file:src/Main.st', path: 'src/Main.st' } }), mode).toBe(
+        true,
+      );
     expect(isAllowedAiProviderRequest({ ...rich, selection: { element: 'block:b2' } })).toBe(true);
     expect(isAllowedAiProviderRequest({ ...rich, lessonContext: { lessonId: 'ld-no-nc-contacts' } })).toBe(true);
     expect(isAllowedAiProviderRequest({ ...VALID.ask, trace: [{ atMs: 1, signal: 'Q.Motor', value: true }] })).toBe(false);
@@ -147,7 +148,10 @@ describe('AIX-001: the structured context a request may carry', () => {
       ['message', { diagnostics: [{ code: 'E_TYPE', message: 'm'.repeat(257) }] }],
       ['scenarios', { failedScenarios: Array.from({ length: 5 }, () => base) }],
       ['assertions', { failedScenarios: [{ id: 'B', assertions: Array.from({ length: 9 }, () => base.assertions[0]) }] }],
-      ['checks', { failedScenarios: [{ id: 'B', assertions: [{ ...base.assertions[0], checks: Array.from({ length: 9 }, () => check) }] }] }],
+      [
+        'checks',
+        { failedScenarios: [{ id: 'B', assertions: [{ ...base.assertions[0], checks: Array.from({ length: 9 }, () => check) }] }] },
+      ],
       ['facts', { facts: Object.fromEntries(Array.from({ length: 33 }, (_, i) => [`fact:f${i}`, 1])) }],
       ['selection', { selection: { startLine: 1, endLine: 1, text: 'x'.repeat(4097) } }],
     ];

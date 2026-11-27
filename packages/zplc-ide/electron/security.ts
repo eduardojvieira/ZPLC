@@ -545,7 +545,9 @@ function safeAiDiagnostic(value: unknown): boolean {
 }
 
 function isCheckValue(value: unknown): boolean {
-  return typeof value === 'boolean' || (typeof value === 'number' && Number.isFinite(value)) || (typeof value === 'string' && value.length <= 64);
+  return (
+    typeof value === 'boolean' || (typeof value === 'number' && Number.isFinite(value)) || (typeof value === 'string' && value.length <= 64)
+  );
 }
 
 /** At most 4 scenarios of at most 8 failed assertions with at most 8 checks each (the caps of `src/ai/projectContext.ts`). */
@@ -604,7 +606,9 @@ function safeAiFacts(value: unknown): boolean {
     names.length <= 32 &&
     names.every((name) => {
       const fact = ownValue(facts, name);
-      return AI_FACT.test(name) && (typeof fact === 'boolean' || (typeof fact === 'number' && Number.isFinite(fact) && Math.abs(fact) <= 1e12));
+      return (
+        AI_FACT.test(name) && (typeof fact === 'boolean' || (typeof fact === 'number' && Number.isFinite(fact) && Math.abs(fact) <= 1e12))
+      );
     })
   );
 }
@@ -664,7 +668,19 @@ export function isAllowedAiProviderRequest(value: unknown): value is {
   const request = safeRecord(value);
   if (!request) return false;
   const keys = Object.getOwnPropertyNames(request);
-  const allowedKeys = ['workspaceId', 'mode', 'prompt', 'activeFile', 'diagnostics', 'trace', 'failedScenarios', 'facts', 'selection', 'lessonContext', 'locale'];
+  const allowedKeys = [
+    'workspaceId',
+    'mode',
+    'prompt',
+    'activeFile',
+    'diagnostics',
+    'trace',
+    'failedScenarios',
+    'facts',
+    'selection',
+    'lessonContext',
+    'locale',
+  ];
   if (!keys.every((key) => allowedKeys.includes(key))) return false;
   const workspaceId = ownValue(request, 'workspaceId');
   const mode = ownValue(request, 'mode');
