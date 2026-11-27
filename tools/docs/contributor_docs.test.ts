@@ -146,7 +146,8 @@ describe('principles: the constitution is readable from the contributor pages (D
 
 describe('changelog: what changed for a user, what breaks, how to migrate and what is limited (DOC-030)', () => {
   it('reads the Unreleased section, so a change filed under a dated version is not taken for it', () => {
-    const misfiled = '# Changelog\n\n## Unreleased\n\n### What changed for you\n\n- x\n\n## 2.0.1 - 2026-11-12\n\n### Breaking changes\n\n- y\n';
+    const misfiled =
+      '# Changelog\n\n## Unreleased\n\n### What changed for you\n\n- x\n\n## 2.0.1 - 2026-11-12\n\n### Breaking changes\n\n- y\n';
     expect(unreleasedSection(misfiled)).not.toContain('### Breaking changes');
     expect(unreleasedSection(misfiled)).toContain('- x');
   });
@@ -184,7 +185,7 @@ describe('changelog: what changed for a user, what breaks, how to migrate and wh
 
   it('prints the breaking changes, the migration and the limits in the notes of a release', () => {
     const unreleased = unreleasedSection(changelog);
-    const parts = changelogParts(unreleased.replace(/^## \d+\.\d+\.\d+(?:-[\w.]+)? - .*$/m, '## 2.0.0-rc.4 - 2026-10-20'), '2.0.0-rc.4');
+    const parts = changelogParts(unreleased.replace(/^## Unreleased$/m, '## 2.0.0-rc.4 - 2026-10-20'), '2.0.0-rc.4');
     const notes = renderReleaseNotes({
       ...results(),
       changes: parts.changes,

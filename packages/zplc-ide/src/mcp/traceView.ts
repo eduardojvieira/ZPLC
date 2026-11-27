@@ -104,7 +104,7 @@ function sized(content: Record<string, unknown>, isError: boolean, nextStep: str
       );
 }
 
-/** Mode full is the 2.0 answer: it and asks the run for no sidecar. */
+/** Mode full is the 2.0 answer: the whole trace, and the run is asked for no sidecar. */
 function isTraceV2(args: TraceArgs): boolean {
   return args.mode === 'full';
 }
@@ -158,9 +158,22 @@ export function traceRefusal(value: unknown, scenarioId: string): McpToolResult 
   return undefined;
 }
 
+const FULL_REFUSED_OPTIONS = ['signals', 'watchSignals', 'limit', 'fromSample', 'fromMs', 'toMs', 'includeInputs'] as const;
+/** The option that mode full would ignore, if the call names one: full is the whole 2.0 trace and takes none. */
+export function fullOption(args: Record<string, unknown>): string | undefined {
+  return own(args, 'mode') === 'full' ? FULL_REFUSED_OPTIONS.find((key) => own(args, key) !== undefined) : undefined;
+}
+
 /** The refusal of a trace_get argument (AIX-015): a wrong mode is answered with the valid modes. */
 export function traceArgumentsError(args: Record<string, unknown>): McpToolResult {
   const mode = own(args, 'mode');
+  const option = fullOption(args);
+  if (option !== undefined)
+    return traceError(
+      'MCP_INVALID_ARGUMENTS',
+      `mode "full" is the whole 2.0 trace and takes no options, and ${option} was given.`,
+      'Leave the option out, or use mode "changes" or "window" for a filtered answer.',
+    );
   if (mode !== undefined && !TRACE_MODES.includes(mode as TraceMode))
     return traceError('MCP_INVALID_ARGUMENTS', `mode ${JSON.stringify(mode)} is not a trace mode.`, 'Use one of validValues.', TRACE_MODES);
   return traceError(
