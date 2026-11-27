@@ -9,6 +9,7 @@ import { stubProjectLoader } from '../../test/dom';
 
 await stubProjectLoader();
 const { createPlantIoAdapter } = await import('./plantIoAdapter');
+const { t } = await import('../../i18n');
 
 // One sensor and one command, enough to exercise every path of the link (LNK-007, LNK-008, LNK-010, LNK-014).
 const layout = {
@@ -124,9 +125,9 @@ describe('plant I/O adapter: the M6 controller behind the shell link (PLS-008, L
 
   it('LNK-018 a refused enter is a located failure and the board is left as it was', async () => {
     const { board, adapter } = setup({ maxSlots: 0 });
-    await expect(adapter.start()).rejects.toThrow('slots');
+    await expect(adapter.start()).rejects.toThrow(t('plant.ioMode.refused', { code: 'BAD_REQUEST' }));
     expect(adapter.state).toBe('failed');
-    expect(adapter.failure).toContain('slots');
+    expect(adapter.failure).toBe(t('plant.ioMode.refused', { code: 'BAD_REQUEST' }));
     expect(board.state.active).toBe(false);
     expect(board.received.length).toBe(0);
   });
@@ -135,7 +136,7 @@ describe('plant I/O adapter: the M6 controller behind the shell link (PLS-008, L
     const { board, adapter } = setup({ timeoutMs: 20, beforeAnswer: () => new Promise<void>(() => undefined) });
     await adapter.start();
     await until(() => adapter.state === 'failed', 'the timeout');
-    expect(adapter.failure).toContain('TIMEOUT');
+    expect(adapter.failure).toBe(t('plantIo.exit.TIMEOUT'));
     await until(() => !board.state.active, 'the exit request');
     expect(board.state.mirror).toBe(false);
   });
@@ -146,7 +147,7 @@ describe('plant I/O adapter: the M6 controller behind the shell link (PLS-008, L
     await adapter.setMirroring(true);
     board.raiseExit('LINK_LOST');
     expect(adapter.state).toBe('failed');
-    expect(adapter.failure).toContain('LINK_LOST');
+    expect(adapter.failure).toBe(t('plantIo.exit.LINK_LOST'));
     expect(adapter.mirroring).toBe(false);
     expect(board.state.active).toBe(false);
   });
@@ -160,7 +161,7 @@ describe('plant I/O adapter: the M6 controller behind the shell link (PLS-008, L
     });
     await adapter.start();
     await until(() => adapter.state === 'failed', 'the failure');
-    expect(adapter.failure).toContain('PROTOCOL');
+    expect(adapter.failure).toBe(t('plantIo.exit.PROTOCOL'));
     await until(() => !board.state.active, 'the exit request');
   });
 
@@ -194,5 +195,56 @@ describe('plant I/O adapter: the M6 controller behind the shell link (PLS-008, L
     expect(adapter.state).toBe('running');
     expect(adapter.failure ?? null).toBeNull();
     await adapter.stop();
+  });
+
+  it('LNK-007 a plant with no mapped signal is said through the catalog, not as a raw English string', async () => {
+    const board = createFakeBoard();
+    const adapter = createPlantIoAdapter(() => ({
+      link: board.port,
+      core,
+      map: { ...map, signals: {} },
+      ioMap,
+      scanMs: 10,
+      frameMs: 5,
+      timeoutMs: 200,
+    }));
+    await expect(adapter.start()).rejects.toThrow(t('plant.ioMode.noSignal'));
+    expect(adapter.failure).toBe(t('plant.ioMode.noSignal'));
+    expect(board.state.active).toBe(false);
+  });
+
+  it('LNK-009 dispose while the entry is pending exits the board once the entry is answered', async () => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const board = createFakeBoard({ program: () => [true] });
+    const port = {
+      ...board.port,
+      enter: async (request: Parameters<typeof board.port.enter>[0]) => (await gate, board.port.enter(request)),
+    };
+    const adapter = createPlantIoAdapter(() => ({ link: port, core, map, ioMap, scanMs: 10, frameMs: 5, timeoutMs: 200 }));
+    const started = adapter.start();
+    await until(() => adapter.state === 'starting', 'the entry');
+    await adapter.dispose();
+    release();
+    await started;
+    expect(board.state.active).toBe(false);
+  });
+
+  it('LNK-008 stop while the entry is pending exits the board once the entry is answered', async () => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const board = createFakeBoard({ program: () => [true] });
+    const port = {
+      ...board.port,
+      enter: async (request: Parameters<typeof board.port.enter>[0]) => (await gate, board.port.enter(request)),
+    };
+    const adapter = createPlantIoAdapter(() => ({ link: port, core, map, ioMap, scanMs: 10, frameMs: 5, timeoutMs: 200 }));
+    const started = adapter.start();
+    await until(() => adapter.state === 'starting', 'the entry');
+    await adapter.stop();
+    release();
+    await started;
+    expect(board.state.active).toBe(false);
+    expect(adapter.state).toBe('off');
   });
 });
