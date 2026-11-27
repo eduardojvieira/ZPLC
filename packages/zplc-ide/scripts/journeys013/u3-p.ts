@@ -2,7 +2,14 @@ import { join } from 'node:path';
 import { assert } from '../run-desktop-smoke';
 import { button, css } from '../journeyApp';
 import type { Journey } from '../journeys';
-import { openPlantDocument, runFromPalette, runInSimulation, SHIPPED, shippedSceneProject, writeSceneProject } from '../journeys/plantSupport';
+import {
+  openPlantDocument,
+  runFromPalette,
+  runInSimulation,
+  SHIPPED,
+  shippedSceneProject,
+  writeSceneProject,
+} from '../journeys/plantSupport';
 
 /** The Plant activity of the rail, as the one region that holds the signal list (the plant document has its own region). */
 const ACTIVITY = `[...document.querySelectorAll('[role="region"]')].find((r) => r.querySelector('[data-plant-signal-list]'))`;
