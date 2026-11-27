@@ -77,6 +77,7 @@ export function PlantActivityView() {
       />
       {editing?.editor && state ? (
         <PartList
+          idPrefix="plant-activity-"
           parts={state.scene.parts}
           catalogue={catalogue.list()}
           locale={locale}
