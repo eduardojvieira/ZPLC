@@ -6,8 +6,10 @@ import type { AiProposal } from '../../ai/proposals';
 
 export type AnswerPart = { text: string } | { raw: string; place: AiProposal } | { raw: string; element: string };
 
-const PLACE =
-  /(?<![\w/.:-])(?:((?:src|tests)\/[\w-]+(?:[\w.-]*[\w-])?(?:\/[\w-]+(?:[\w.-]*[\w-])?)*|plant-map\.json|scene\.json|zplc\.json)(?::(\d{1,6}))?|((?:rung|block|step|transition):[A-Za-z0-9_%-]{1,64}))(?![\w/-])/g;
+const NAME = String.raw`[\w-]+(?:[\w.-]*[\w-])?`;
+const FILE = String.raw`(?:src|tests)\/${NAME}(?:\/${NAME})*|plant-map\.json|scene\.json|zplc\.json`;
+const ELEMENT = String.raw`(?:rung|block|step|transition):[A-Za-z0-9_%-]{1,64}`;
+const PLACE = new RegExp(String.raw`(?<![\w/.:-])(?:(${FILE})(?::(\d{1,6}))?|(${ELEMENT}))(?![\w/-])`, 'g');
 
 /** The answer cut into plain text and places, in order; joined back, the parts are the answer. */
 export function splitPlaces(answer: string): AnswerPart[] {

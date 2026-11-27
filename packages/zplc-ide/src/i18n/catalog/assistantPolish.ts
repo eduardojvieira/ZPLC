@@ -54,7 +54,7 @@ export const assistantPolishEs: Record<keyof typeof assistantPolishEn, string> =
   'assistant.mode.debug.tip': 'Depurar: el Asistente examina los problemas y la última ejecución para encontrar qué falla.',
   'assistant.askHint': 'Pedir una pista al Asistente',
   'assistant.explainProblem': 'Explicar con el Asistente',
-  'assistant.explainFailure': 'Explicar este fallo',
+  'assistant.explainFailure': 'Explicar esta falla',
   'assistant.prompt.explainProblem': 'Explique este problema y cómo corregirlo.',
   'assistant.prompt.explainFailure': 'Explique por qué falló esta prueba y qué debo revisar.',
   'assistant.prompt.hint': 'Deme una pista para esta lección. No me dé la solución.',
