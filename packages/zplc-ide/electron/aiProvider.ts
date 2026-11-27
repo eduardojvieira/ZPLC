@@ -405,7 +405,10 @@ export interface AiProviderOptions {
   /** Whether the classroom setting hides lesson solutions (`electron/learnPolicy.ts`); a failure, or no reader, means hidden. */
   solutionsHidden?: () => Promise<boolean>;
   /** The lesson's entry of `LESSON_INDEX` and its text in the interface locale, for the lesson a request names. */
-  lessonOf?: (lessonId: string, locale: 'en' | 'es') => { manifest: unknown; text: unknown } | undefined;
+  lessonOf?: (
+    lessonId: string,
+    locale: 'en' | 'es',
+  ) => { manifest: unknown; text: unknown } | undefined | Promise<{ manifest: unknown; text: unknown } | undefined>;
   /** The limit of the connection test, in ms; 10 s unless a test says otherwise. */
   probeTimeoutMs?: number;
 }
@@ -561,7 +564,9 @@ export function createAiProvider(options: AiProviderOptions) {
     } catch {
       /* unreadable: hidden */
     }
-    const lessonEntry = request.lessonContext ? options.lessonOf?.(request.lessonContext.lessonId, request.locale ?? 'en') : undefined;
+    const lessonEntry = request.lessonContext
+      ? await options.lessonOf?.(request.lessonContext.lessonId, request.locale ?? 'en')
+      : undefined;
     const context = buildProjectContext(
       {
         scene: await readJsonFile(root, 'scene.json', CONTEXT_FILE_LIMIT),
