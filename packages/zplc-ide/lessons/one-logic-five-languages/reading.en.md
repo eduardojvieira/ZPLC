@@ -6,38 +6,38 @@ This last lesson is an epilogue. It shows that the logic you learned is not tied
 
 ## One logic, drawn two ways
 
-Here is a beacon that stays on after a short press and goes off when an Off button is pressed. In Ladder it is a seal-in: `TurnOn` in parallel with the beacon's own contact, then a normally closed contact of `Off`.
+Here is a warning beacon for a loading bay. It stays on after a short press of `TurnOn` and goes off when `Off` is pressed, but a warning must never be lost: while `TurnOn` is pressed the beacon is on, even if somebody is pressing `Off` at the same time. In Ladder it is a seal-in in which the turn-on wins: `TurnOn` alone on one path, and on the other path the beacon's own contact in series with a normally closed contact of `Off`.
 
 ```ld-figure
-src: reading/beacon.ld.json
-caption: "The beacon holds itself on, and Off breaks the rung"
+src: reading/warning-beacon.ld.json
+caption: "The beacon holds itself on, and Off breaks only the held path"
 ```
 
 ```ld-try
-src: reading/beacon.ld.json
+src: reading/warning-beacon.ld.json
 inputs:
   - { name: TurnOn, kind: push }
   - { name: Off, kind: push }
 outputs: [Beacon]
-caption: "Press TurnOn and release it, then press Off"
+caption: "Press TurnOn and release it, press Off, then hold both together"
 ```
 
 The same logic in **Structured Text** (ST) is one line that reads like a formula:
 
 ```st
-Beacon := (TurnOn OR Beacon) AND NOT Off;
+Beacon := TurnOn OR (Beacon AND NOT Off);
 ```
 
 And in **Instruction List** (IL) it is a short list of steps, each acting on a "current result":
 
 ```il
-LD TurnOn
-OR Beacon
+LD Beacon
 ANDN Off
+OR TurnOn
 ST Beacon
 ```
 
-Read both and compare them with the rung. The condition is always the same: the beacon is on when a turn-on is pressed or the beacon is already on, and never while Off is pressed.
+Read both and compare them with the rung. The condition is always the same: the beacon is on while TurnOn is pressed, or when it is already on and Off is not pressed. The gate of the practice needs the other priority, and where `NOT Close` goes to give it is for you to work out.
 
 ## The five languages
 
