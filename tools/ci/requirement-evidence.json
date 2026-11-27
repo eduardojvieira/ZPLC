@@ -2699,7 +2699,9 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"14 A recent project that is gone","partial":true}
   ],
   "UX-023": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/App.dom.test.tsx","test":"App root sizing (UX-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/shell/ActivityRail.test.tsx","test":"UX-023 shows the labels in the regular shell and only the icons in the compact one"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/shell/WorkbenchShell.dom.test.tsx","test":"WorkbenchShell initial sidebar state (UX-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/shell/shellRouting.test.ts","test":"UX-023 is compact at the 1024 pixel minimum and up to the limit, and regular at 1366"},
     {"kind":"unit","ref":"packages/zplc-ide/src/shell/shellRouting.test.ts","test":"the shell density (UX-023)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"13 Welcome helps a newcomer choose","partial":true},
