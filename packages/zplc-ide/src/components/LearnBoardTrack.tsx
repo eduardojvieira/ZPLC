@@ -1,7 +1,7 @@
 /**
  * The hardware track of the Learn home (LRN-013, LRN-024): the learner's board, and the lessons passed on hardware, named
- * apart from the course's passes, which are graded in simulation. It wraps the home: the home scrolls above, the strip stays
- * below it. Choosing a board connects to nothing (LRN-015).
+ * apart from the course's passes, which are graded in simulation. It scrolls inline below the course inside the same scroll
+ * container, so narrow viewports keep the full course readable. Choosing a board connects to nothing (LRN-015).
  */
 import type { ReactNode } from 'react';
 import { LESSON_INDEX } from '../generated/lessonIndex';
@@ -47,13 +47,13 @@ export interface LearnBoardTrackViewProps {
 export function LearnBoardTrackView({ board, passedOnHardware, onChoose, children }: LearnBoardTrackViewProps) {
   const { t } = useT();
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="min-h-0 flex-1">{children}</div>
+    <div className="h-full min-h-0 overflow-y-auto bg-[var(--color-surface-900)]">
+      {children}
       <section
         aria-labelledby="learn-hardware-title"
         data-learn-hardware
         className={
-          'shrink-0 border-t border-[var(--color-surface-600)] bg-[var(--color-surface-900)] px-4 py-3 font-sans text-sm ' +
+          'border-t border-[var(--color-surface-600)] bg-[var(--color-surface-900)] px-4 py-4 font-sans text-sm ' +
           'text-[var(--color-surface-200)]'
         }
       >

@@ -110,7 +110,7 @@ export function AppPreferences() {
         {t('preferences.heading')}
       </h2>
       <p className="mt-1 text-xs text-[var(--text-tertiary)]">{t('preferences.intro')}</p>
-      <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(14rem,1fr))] gap-4">
         <ThemeControl />
         <Choice
           label={t('preferences.fontSize')}

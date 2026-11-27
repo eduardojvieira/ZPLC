@@ -70,4 +70,22 @@ describe('the Ladder palette of the compiler functions (LNG-030)', () => {
     expect(placed).toHaveLength(1);
     expect(placed[0]).toStartWith('contact');
   });
+
+  it('UXF-4 gives the toolbox root a density-invariant width instead of w-48', () => {
+    dom.render(<LDToolbox onInsert={() => undefined} />);
+    const root = document.querySelector('[data-ld-toolbox]') as HTMLElement;
+    expect(root).not.toBeNull();
+    expect(root.classList.contains('w-48')).toBe(false);
+    expect(root.className).toMatch(/(?:^|\s)(?:min-)?w-\[\d+(?:\.\d+)?(?:rem|px)\](?:\s|$)/);
+  });
+
+  it('UXF-4 keeps function block tiles single-column and insertable', async () => {
+    const placed: string[] = [];
+    const { user } = dom.render(<LDToolbox onInsert={(item) => placed.push(item.fbType ?? item.type)} />);
+    const fbTile = document.querySelector('[data-ld-toolbox-item="function_block:TON"]') as HTMLElement;
+    expect(fbTile).not.toBeNull();
+    expect(fbTile.parentElement!.classList.contains('grid-cols-1')).toBe(true);
+    await user.click(fbTile);
+    expect(placed).toEqual(['TON']);
+  });
 });
