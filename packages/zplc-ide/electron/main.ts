@@ -602,7 +602,8 @@ app
   .then(async () => {
     const toolApi = (await import(toolApiUrl)) as Pick<ToolApiModule, 'isToolExecutionEnvelope'>;
     await toolExecutionAudit.open(app.getPath('userData'), toolApi.isToolExecutionEnvelope);
-    // the classroom setting is read from <userData> on every request, fail closed; the lesson text is read from the generated index, and a failure to read it means no lesson block
+    // the classroom setting is read from <userData> on every request, fail closed;
+    // the lesson text is read from the generated index, and a failure to read it means no lesson block
     aiProvider = createAiProvider({
       userDataPath: app.getPath('userData'),
       vault: safeStorage,
