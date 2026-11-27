@@ -293,8 +293,9 @@ function segment(cell: number, name: string, x: number, y: number, z: number): P
 
 /** The decimal point of the cell centred at `x`: a dot in the gap after the digit, on its baseline. */
 function decimalPoint(cell: number, x: number, y: number, z: number): Piece {
-  const { width: w, height: h, bar, pitch } = NUMERIC_DISPLAY;
-  return piece(`d${cell}-dp`, box([bar, bar, 0.002], 0), [x + (w + pitch) / 4, y - h / 2 + bar / 2, z], 'signalRed');
+  const { height: h, pitch } = NUMERIC_DISPLAY;
+  const dot = 0.005; // wider than a segment, and in the middle of the gap, so it does not merge with the digit at scene size
+  return piece(`d${cell}-dp`, box([dot, dot, 0.002], 0), [x + pitch / 2, y - h / 2 + dot / 2, z], 'signalRed');
 }
 
 /**
