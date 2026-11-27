@@ -10,7 +10,7 @@ const { WatchTab } = await import('./WatchTab');
 
 const bool = (bitOffset: number) => ({ addr: 0x0, type: 'BOOL', region: 'IPI', size: 1, bitOffset, tags: {} }) as const;
 const program = (vars: Record<string, ReturnType<typeof bool>>) =>
-  ({ type: 'PROGRAM', entryPoint: 0, vars, sourceMap: [], breakpoints: [] }) as const;
+  ({ type: 'PROGRAM', entryPoint: 0, vars, sourceMap: [], breakpoints: [] }) as unknown as DebugMap['pou'][string];
 
 // two programs that each declare a Start; only Motor.Start is fed by the plant
 const DEBUG_MAP: DebugMap = {
