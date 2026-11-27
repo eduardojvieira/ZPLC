@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter only latches Start and runs the infeed belt, so no workpiece is read or sorted. The program must sort the eight workpieces, red ones into RedBin and blue ones into BlueBin, then light Done.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter only latches Start and runs the infeed belt, so no workpiece is read or sorted. The program must sort the eight workpieces, red ones into RedBin and blue ones into BlueBin, then light Done.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

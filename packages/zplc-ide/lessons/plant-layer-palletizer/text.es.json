@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial declara el arreglo JogMs pero no lo llena ni gobierna ninguna salida, así que el cabezal nunca sube y no llega ninguna caja; llene JogMs con un bucle FOR, y luego cargue, escuadre, lleve y coloque tres capas de cuatro cajas sobre la tarima y encienda Green al final.",
+      "body": "Corrija esta omisión del programa inicial, guarde y ejecute: El programa inicial declara el arreglo JogMs pero no lo llena ni gobierna ninguna salida, así que el cabezal nunca sube y no llega ninguna caja; llene JogMs con un bucle FOR, y luego cargue, escuadre, lleve y coloque tres capas de cuatro cajas sobre la tarima y encienda Green al final.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El inicial declara el arreglo JogMs pero no lo llena ni gobierna ninguna salida, así que el cabezal nunca sube y no llega ninguna caja; llene JogMs con un bucle FOR, y luego cargue, escuadre, lleve y coloque tres capas de cuatro cajas sobre la tarima y encienda Green al final."
+    "El programa inicial declara el arreglo JogMs pero no lo llena ni gobierna ninguna salida, así que el cabezal nunca sube y no llega ninguna caja; llene JogMs con un bucle FOR, y luego cargue, escuadre, lleve y coloque tres capas de cuatro cajas sobre la tarima y encienda Green al final."
   ]
 }

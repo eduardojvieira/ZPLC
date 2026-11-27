@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "El código inicial nunca llama al lazo: FillCmd se queda en 0 por ciento y el tanque permanece vacío. Empiece con KP := 100.0, KI := 0.0 y KD := 0.0 y observe el nivel después de que se abra el vaciado: la entrada solo crece con el error, así que el nivel se estabiliza por debajo de la banda. Suba KP hasta que se mantenga. Luego pruebe un KI pequeño para quitar el último desvío: el tanque integra el caudal, así que un término integral hace que el nivel se pase de la consigna salvo que un término derivativo lo amortigüe.",
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El código inicial nunca llama al lazo: FillCmd se queda en 0 por ciento y el tanque permanece vacío. Empiece con KP := 100.0, KI := 0.0 y KD := 0.0 y observe el nivel después de que se abra el vaciado: la entrada solo crece con el error, así que el nivel se estabiliza por debajo de la banda. Suba KP hasta que se mantenga. Luego pruebe un KI pequeño para quitar el último desvío: el tanque integra el caudal, así que un término integral hace que el nivel se pase de la consigna salvo que un término derivativo lo amortigüe.",
       "checkpoint": "Un ajuste queda guardado en src/TankLevel.st y usted puede decir qué hizo cada ganancia al cambiarla."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta src/TankLevel.st con el tanque de la escena tank-level-control, sube la consigna, abre el vaciado y baja la consigna, y comprueba {{assertions}} aserciones: el nivel dentro de la banda en dos ventanas, fuera de ella al final y sin derrame.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta src/TankLevel.st con el tanque de la escena tank-level-control, sube la consigna, abre el vaciado y baja la consigna, y comprueba {{assertions}} aserciones: el nivel dentro de la banda en dos ventanas, fuera de ella al final y sin derrame.",
       "checkpoint": "El escenario se llama tank-pid y contiene {{assertions}} aserciones y las pasa todas."
     },
     {

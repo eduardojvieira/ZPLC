@@ -4,7 +4,7 @@
   "summary": "Escale el nivel bruto de un tanque, un número entero de 0 a 27648, a metros, y úselo para mantener el nivel cerca de una consigna con una entrada proporcional.",
   "scope": "La calificación ejecuta el tanque simulado en el simulador de esta computadora, con un nivel analógico que sigue las reglas de escala del mapa de la planta. No dice nada sobre la exactitud, el ruido ni la calibración de un transmisor de nivel real, una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
-    "Escalar un valor analógico a unidades de ingeniería: convertir primero a REAL y luego dividir por el rango bruto.",
+    "Escalar un valor analógico a unidades de ingeniería de modo que se conserven las fracciones de una unidad.",
     "Leer el mapa de la planta para hallar el rango bruto de cada señal, y ver qué hace una escala errónea en el proceso."
   ],
   "stages": [
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "El código inicial no tiene lógica: la entrada nunca se abre, así que el tanque permanece vacío y nunca llega a su banda. Declara las entradas y las salidas. Escale el nivel y la consigna a metros una sola vez, antes de que otra línea los use. Cada comparación debe valer para fracciones de metro: un nivel bruto de 13824 es 0,5 m, no 0 m. Luego escriba FillCmd a partir del error, limitada de 0 a 100 por ciento.",
+      "body": "Escriba el programa, guárdelo y pulse {{ui:learn.check}}. El código inicial no tiene lógica: la entrada nunca se abre, así que el tanque permanece vacío y nunca llega a su banda. Declara las entradas y las salidas. Escale el nivel y la consigna a metros una sola vez, antes de que otra línea los use. Cada comparación debe valer para fracciones de metro: un nivel bruto de 13824 es 0,5 m, no 0 m. Luego escriba FillCmd a partir del error, limitada de 0 a 100 por ciento.",
       "checkpoint": "FillCmd se mantiene entre 0 y 100 por ciento, y las otras tres salidas siguen al nivel y al potenciómetro de vaciado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta src/TankLevel.st con el tanque de la escena tank-level-control, sube la consigna y abre el vaciado, y comprueba {{assertions}} aserciones sobre el tanque: se mantiene en su banda en dos ventanas y nunca se derrama.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta src/TankLevel.st con el tanque de la escena tank-level-control, sube la consigna y abre el vaciado, y comprueba {{assertions}} aserciones sobre el tanque: se mantiene en su banda en dos ventanas y nunca se derrama.",
       "checkpoint": "El escenario se llama tank-level-scaling y contiene {{assertions}} aserciones y las pasa todas."
     },
     {

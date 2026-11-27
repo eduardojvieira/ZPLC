@@ -14227,7 +14227,7 @@
     },
     {
       "id": "plant-timed-tank",
-      "version": 5,
+      "version": 6,
       "order": 131,
       "module": 13,
       "level": "advanced",
@@ -14333,7 +14333,7 @@
           "summary": "Run one fill, hold and drain cycle of a tank with on-delay timers, a panel start and an emergency stop.",
           "scope": "The grade runs the simulated tank in the simulator on this computer. It says nothing about a real tank, valve or sensor, its timing or its safety.",
           "objectives": [
-            "Time one step of a process with an on-delay timer (TON), using one timer for each step.",
+            "Time the steps of a process so that each timed step lasts its own time.",
             "Use a timer as a safety limit on a step that normally ends on a sensor, and let an emergency stop abort the cycle."
           ],
           "stages": [
@@ -14341,7 +14341,7 @@
               "key": "objective",
               "title": "Objective",
               "body": "The scene is a tank with a fill valve, a drain valve and a low-level switch, a Start button, an emergency stop and a stack light. In src/TimedTank.st, run one cycle for each press of Start while the emergency stop is released and the tank is idle: amber on, Fill open for a time set by a timer (the tank has no sensor at this level, so the timer is the measurement), a two-second hold, then Drain open until LevelLow or twenty seconds, then green on. The emergency stop closes both valves and lights red.",
-              "checkpoint": "The cycle is a chain of steps and each timed step has its own timer."
+              "checkpoint": "The cycle is a chain of steps, and each timed step ends after its own time."
             },
             {
               "key": "predict",
@@ -14352,7 +14352,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "The starter has no logic: no valve ever opens, so the cycle never runs. It declares the inputs and outputs. Each press of Start, while the emergency stop is released and the tank is idle, runs one cycle: Fill opens for 3.5 seconds, the tank holds for two seconds, then Drain opens until LevelLow or for twenty seconds at most; amber is on while the cycle runs and green once it has ended.",
+              "body": "Write the program, save it, then press Check. The starter has no logic: no valve ever opens, so the cycle never runs. It declares the inputs and outputs. Each press of Start, while the emergency stop is released and the tank is idle, runs one cycle: Fill opens for 3.5 seconds, the tank holds for two seconds, then Drain opens until LevelLow or for twenty seconds at most; amber is on while the cycle runs and green once it has ended.",
               "checkpoint": "The cycle runs fill, hold and drain in that order, each for its own time, and the emergency stop ends it at any point."
             },
             {
@@ -14393,7 +14393,7 @@
           "summary": "Ejecute un ciclo de llenado, espera y vaciado de un tanque con temporizadores de retardo a la conexión, un arranque desde el panel y una parada de emergencia.",
           "scope": "La calificación ejecuta el tanque simulado en el simulador de esta computadora. No dice nada sobre un tanque, una válvula o un sensor reales, sus tiempos ni su seguridad.",
           "objectives": [
-            "Medir un paso de un proceso con un temporizador de retardo a la conexión (TON), con un temporizador para cada paso.",
+            "Medir los pasos de un proceso de modo que cada paso temporizado dure su propio tiempo.",
             "Usar un temporizador como límite de seguridad en un paso que normalmente termina con un sensor, y dejar que la parada de emergencia aborte el ciclo."
           ],
           "stages": [
@@ -14401,7 +14401,7 @@
               "key": "objective",
               "title": "Objetivo",
               "body": "La escena es un tanque con una válvula de llenado, una válvula de vaciado y un interruptor de nivel bajo, un pulsador de arranque, una parada de emergencia y una luz de columna. En src/TimedTank.st, ejecute un ciclo por cada pulsación de Start mientras la parada de emergencia esté liberada y el tanque esté en reposo: ámbar encendido, Fill abierta durante un tiempo fijado por un temporizador (el tanque no tiene un sensor para este nivel, así que el temporizador es la medida), una espera de dos segundos, luego Drain abierta hasta LevelLow o veinte segundos, y después verde encendido. La parada de emergencia cierra ambas válvulas y enciende el rojo.",
-              "checkpoint": "El ciclo es una cadena de pasos y cada paso temporizado tiene su propio temporizador."
+              "checkpoint": "El ciclo es una cadena de pasos, y cada paso temporizado termina después de su propio tiempo."
             },
             {
               "key": "predict",
@@ -14412,7 +14412,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "El código inicial no tiene lógica: ninguna válvula se abre nunca, así que el ciclo no se ejecuta. Declara las entradas y las salidas. Cada pulsación de Start, con la parada de emergencia liberada y el tanque en reposo, ejecuta un ciclo: Fill se abre durante 3,5 segundos, el tanque espera dos segundos, luego Drain se abre hasta LevelLow o durante veinte segundos como máximo; el ámbar está encendido mientras corre el ciclo y el verde cuando ha terminado.",
+              "body": "Escriba el programa, guárdelo y pulse Comprobar. El código inicial no tiene lógica: ninguna válvula se abre nunca, así que el ciclo no se ejecuta. Declara las entradas y las salidas. Cada pulsación de Start, con la parada de emergencia liberada y el tanque en reposo, ejecuta un ciclo: Fill se abre durante 3,5 segundos, el tanque espera dos segundos, luego Drain se abre hasta LevelLow o durante veinte segundos como máximo; el ámbar está encendido mientras corre el ciclo y el verde cuando ha terminado.",
               "checkpoint": "El ciclo recorre llenado, espera y vaciado en ese orden, cada uno con su propio tiempo, y la parada de emergencia lo termina en cualquier momento."
             },
             {
@@ -14452,7 +14452,7 @@
     },
     {
       "id": "plant-tank-level-scaling",
-      "version": 4,
+      "version": 5,
       "order": 132,
       "module": 13,
       "level": "advanced",
@@ -14591,7 +14591,7 @@
           "summary": "Scale the raw level of a tank, a whole number from 0 to 27648, to metres, and use it to hold the level near a set point with a proportional inlet.",
           "scope": "The grade runs the simulated tank in the simulator on this computer, with an analog level that follows the scaling rules of the plant map. It says nothing about the accuracy, noise or calibration of a real level transmitter, a real machine, its timing or its safety.",
           "objectives": [
-            "Scale an analog value to engineering units: convert to REAL first, then divide by the raw span.",
+            "Scale an analog value to engineering units so that fractions of a unit are kept.",
             "Read the plant map to find the raw range of each signal, and see what a wrong scale does to the process."
           ],
           "stages": [
@@ -14610,7 +14610,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "The starter has no logic: the inlet never opens, so the tank stays empty and never reaches its band. It declares the inputs and outputs. Scale the level and the set point to metres once, before any other line uses them. Every comparison must hold for fractions of a metre: a raw level of 13824 is 0.5 m, not 0 m. Then write FillCmd from the error, limited to 0 to 100 percent.",
+              "body": "Write the program, save it, then press Check. The starter has no logic: the inlet never opens, so the tank stays empty and never reaches its band. It declares the inputs and outputs. Scale the level and the set point to metres once, before any other line uses them. Every comparison must hold for fractions of a metre: a raw level of 13824 is 0.5 m, not 0 m. Then write FillCmd from the error, limited to 0 to 100 percent.",
               "checkpoint": "FillCmd stays within 0 to 100 percent, and the other three outputs follow the level and the drain potentiometer."
             },
             {
@@ -14651,7 +14651,7 @@
           "summary": "Escale el nivel bruto de un tanque, un número entero de 0 a 27648, a metros, y úselo para mantener el nivel cerca de una consigna con una entrada proporcional.",
           "scope": "La calificación ejecuta el tanque simulado en el simulador de esta computadora, con un nivel analógico que sigue las reglas de escala del mapa de la planta. No dice nada sobre la exactitud, el ruido ni la calibración de un transmisor de nivel real, una máquina real, sus tiempos ni su seguridad.",
           "objectives": [
-            "Escalar un valor analógico a unidades de ingeniería: convertir primero a REAL y luego dividir por el rango bruto.",
+            "Escalar un valor analógico a unidades de ingeniería de modo que se conserven las fracciones de una unidad.",
             "Leer el mapa de la planta para hallar el rango bruto de cada señal, y ver qué hace una escala errónea en el proceso."
           ],
           "stages": [
@@ -14670,7 +14670,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "El código inicial no tiene lógica: la entrada nunca se abre, así que el tanque permanece vacío y nunca llega a su banda. Declara las entradas y las salidas. Escale el nivel y la consigna a metros una sola vez, antes de que otra línea los use. Cada comparación debe valer para fracciones de metro: un nivel bruto de 13824 es 0,5 m, no 0 m. Luego escriba FillCmd a partir del error, limitada de 0 a 100 por ciento.",
+              "body": "Escriba el programa, guárdelo y pulse Comprobar. El código inicial no tiene lógica: la entrada nunca se abre, así que el tanque permanece vacío y nunca llega a su banda. Declara las entradas y las salidas. Escale el nivel y la consigna a metros una sola vez, antes de que otra línea los use. Cada comparación debe valer para fracciones de metro: un nivel bruto de 13824 es 0,5 m, no 0 m. Luego escriba FillCmd a partir del error, limitada de 0 a 100 por ciento.",
               "checkpoint": "FillCmd se mantiene entre 0 y 100 por ciento, y las otras tres salidas siguen al nivel y al potenciómetro de vaciado."
             },
             {
@@ -14710,7 +14710,7 @@
     },
     {
       "id": "plant-tank-pid",
-      "version": 4,
+      "version": 5,
       "order": 133,
       "module": 13,
       "level": "advanced",
@@ -14867,7 +14867,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "The starter never calls the loop: FillCmd stays at 0 percent and the tank stays empty. Start with KP := 100.0, KI := 0.0 and KD := 0.0 and look at the level after the drain opens: the inlet only grows with the error, so the level settles below the band. Raise KP until it holds. Then try a small KI to remove the last offset: the tank integrates the flow, so an integral term makes the level overshoot unless a derivative term damps it.",
+              "body": "Correct the starting program, save it, then press Check. The starter never calls the loop: FillCmd stays at 0 percent and the tank stays empty. Start with KP := 100.0, KI := 0.0 and KD := 0.0 and look at the level after the drain opens: the inlet only grows with the error, so the level settles below the band. Raise KP until it holds. Then try a small KI to remove the last offset: the tank integrates the flow, so an integral term makes the level overshoot unless a derivative term damps it.",
               "checkpoint": "A tuning is saved in src/TankLevel.st and you can say what each gain did when you changed it."
             },
             {
@@ -14927,7 +14927,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "El código inicial nunca llama al lazo: FillCmd se queda en 0 por ciento y el tanque permanece vacío. Empiece con KP := 100.0, KI := 0.0 y KD := 0.0 y observe el nivel después de que se abra el vaciado: la entrada solo crece con el error, así que el nivel se estabiliza por debajo de la banda. Suba KP hasta que se mantenga. Luego pruebe un KI pequeño para quitar el último desvío: el tanque integra el caudal, así que un término integral hace que el nivel se pase de la consigna salvo que un término derivativo lo amortigüe.",
+              "body": "Corrija el programa inicial, guárdelo y pulse Comprobar. El código inicial nunca llama al lazo: FillCmd se queda en 0 por ciento y el tanque permanece vacío. Empiece con KP := 100.0, KI := 0.0 y KD := 0.0 y observe el nivel después de que se abra el vaciado: la entrada solo crece con el error, así que el nivel se estabiliza por debajo de la banda. Suba KP hasta que se mantenga. Luego pruebe un KI pequeño para quitar el último desvío: el tanque integra el caudal, así que un término integral hace que el nivel se pase de la consigna salvo que un término derivativo lo amortigüe.",
               "checkpoint": "Un ajuste queda guardado en src/TankLevel.st y usted puede decir qué hizo cada ganancia al cambiarla."
             },
             {
@@ -15976,7 +15976,7 @@
     },
     {
       "id": "plant-assembler",
-      "version": 2,
+      "version": 3,
       "order": 152,
       "module": 15,
       "level": "advanced",
@@ -16227,7 +16227,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial solo lleva el brazo a su posición de partida: agregue los pasos y transiciones que alimentan una tapa y una base, toman la tapa, la colocan sobre la base, dejan salir el ensamble, repiten tres veces y terminan con Green.",
+              "body": "Corrija esta omisión del programa inicial, guarde y ejecute: El programa inicial solo lleva el brazo a su posición de partida: agregue los pasos y transiciones que alimentan una tapa y una base, toman la tapa, la colocan sobre la base, dejan salir el ensamble, repiten tres veces y terminan con Green.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -16260,14 +16260,14 @@
             }
           ],
           "faultCases": [
-            "El inicial solo lleva el brazo a su posición de partida: agregue los pasos y transiciones que alimentan una tapa y una base, toman la tapa, la colocan sobre la base, dejan salir el ensamble, repiten tres veces y terminan con Green."
+            "El programa inicial solo lleva el brazo a su posición de partida: agregue los pasos y transiciones que alimentan una tapa y una base, toman la tapa, la colocan sobre la base, dejan salir el ensamble, repiten tres veces y terminan con Green."
           ]
         }
       }
     },
     {
       "id": "plant-assembler-numeric",
-      "version": 4,
+      "version": 5,
       "order": 153,
       "module": 15,
       "level": "advanced",
@@ -16465,7 +16465,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter commands no position, so the pad stays where it is; send it to the lid, grip, carry the lid to the base and release it, three times, and light Green after the third.",
+              "body": "Correct this starter omission, save it, then press Check: The starter commands no position, so the pad stays where it is; send it to the lid, grip, carry the lid to the base and release it, three times, and light Green after the third.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -16525,7 +16525,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del programa inicial, guarde y ejecute: El programa inicial no ordena ninguna posición, así que el brazo se queda donde está; envíelo a la tapa, agarre, lleve la tapa a la base y suéltela, tres veces, y encienda Green tras la tercera.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no ordena ninguna posición, así que el brazo se queda donde está; envíelo a la tapa, agarre, lleve la tapa a la base y suéltela, tres veces, y encienda Green tras la tercera.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -16565,7 +16565,7 @@
     },
     {
       "id": "plant-layer-palletizer",
-      "version": 3,
+      "version": 4,
       "order": 154,
       "module": 15,
       "level": "advanced",
@@ -16806,7 +16806,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial declara el arreglo JogMs pero no lo llena ni gobierna ninguna salida, así que el cabezal nunca sube y no llega ninguna caja; llene JogMs con un bucle FOR, y luego cargue, escuadre, lleve y coloque tres capas de cuatro cajas sobre la tarima y encienda Green al final.",
+              "body": "Corrija esta omisión del programa inicial, guarde y ejecute: El programa inicial declara el arreglo JogMs pero no lo llena ni gobierna ninguna salida, así que el cabezal nunca sube y no llega ninguna caja; llene JogMs con un bucle FOR, y luego cargue, escuadre, lleve y coloque tres capas de cuatro cajas sobre la tarima y encienda Green al final.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -16839,7 +16839,7 @@
             }
           ],
           "faultCases": [
-            "El inicial declara el arreglo JogMs pero no lo llena ni gobierna ninguna salida, así que el cabezal nunca sube y no llega ninguna caja; llene JogMs con un bucle FOR, y luego cargue, escuadre, lleve y coloque tres capas de cuatro cajas sobre la tarima y encienda Green al final."
+            "El programa inicial declara el arreglo JogMs pero no lo llena ni gobierna ninguna salida, así que el cabezal nunca sube y no llega ninguna caja; llene JogMs con un bucle FOR, y luego cargue, escuadre, lleve y coloque tres capas de cuatro cajas sobre la tarima y encienda Green al final."
           ]
         }
       }
@@ -17143,7 +17143,7 @@
     },
     {
       "id": "plant-colour-separation",
-      "version": 2,
+      "version": 3,
       "order": 161,
       "module": 16,
       "level": "advanced",
@@ -17343,7 +17343,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y ninguna pieza se clasifica; ponga en marcha las cintas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules.",
+              "body": "Corrija esta omisión del programa inicial, guarde y ejecute: El programa inicial no gobierna ninguna salida, así que ninguna cinta se mueve y ninguna pieza se clasifica; ponga en marcha las cintas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -17376,14 +17376,14 @@
             }
           ],
           "faultCases": [
-            "El inicial no gobierna ninguna salida, así que ninguna cinta se mueve y ninguna pieza se clasifica; ponga en marcha las cintas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules."
+            "El programa inicial no gobierna ninguna salida, así que ninguna cinta se mueve y ninguna pieza se clasifica; ponga en marcha las cintas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules."
           ]
         }
       }
     },
     {
       "id": "plant-colour-separation-il",
-      "version": 4,
+      "version": 5,
       "order": 162,
       "module": 16,
       "level": "advanced",
@@ -17524,7 +17524,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter only latches Start and runs the infeed belt, so no workpiece is read or sorted. The program must sort the eight workpieces, red ones into RedBin and blue ones into BlueBin, then light Done.",
+              "body": "Correct this starter omission, save it, then press Check: The starter only latches Start and runs the infeed belt, so no workpiece is read or sorted. The program must sort the eight workpieces, red ones into RedBin and blue ones into BlueBin, then light Done.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -17584,7 +17584,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del programa inicial, guarde y ejecute: El programa inicial solo memoriza Start y hace girar la cinta de entrada, así que no se lee ni se clasifica ninguna pieza. El programa debe clasificar las ocho piezas, las rojas a RedBin y las azules a BlueBin, y después encender Done.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial solo memoriza Start y hace girar la cinta de entrada, así que no se lee ni se clasifica ninguna pieza. El programa debe clasificar las ocho piezas, las rojas a RedBin y las azules a BlueBin, y después encender Done.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -20333,7 +20333,7 @@
     },
     {
       "id": "plant-fault-actions",
-      "version": 4,
+      "version": 5,
       "order": 183,
       "module": 18,
       "level": "advanced",
@@ -20498,7 +20498,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then run: The starter sorts correctly but trusts BeamHigh for ever; when the beam sticks on, boxes that are not tall are sent to BinTall, so the line must stop, and stay stopped, once High has stayed on for three seconds.",
+              "body": "Correct this starter omission, save it, then press Check: The starter sorts correctly but trusts BeamHigh for ever; when the beam sticks on, boxes that are not tall are sent to BinTall, so the line must stop, and stay stopped, once High has stayed on for three seconds.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -20558,7 +20558,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del programa inicial, guarde y ejecute: El programa inicial clasifica bien pero se fía de BeamHigh para siempre; cuando la barrera se atasca en encendido, las cajas que no son altas van a BinTall, así que la línea debe detenerse, y seguir detenida, cuando High haya permanecido en TRUE tres segundos.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial clasifica bien pero se fía de BeamHigh para siempre; cuando la barrera se atasca en encendido, las cajas que no son altas van a BinTall, así que la línea debe detenerse, y seguir detenida, cuando High haya permanecido en TRUE tres segundos.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -22645,7 +22645,7 @@
     },
     {
       "id": "plant-colour-separation-ladder",
-      "version": 2,
+      "version": 3,
       "order": 1161,
       "module": 16,
       "level": "advanced",
@@ -22845,7 +22845,7 @@
             {
               "key": "edit",
               "title": "Editar",
-              "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que ninguna cinta se mueve y ninguna pieza se clasifica; ponga en marcha las cintas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules.",
+              "body": "Corrija esta omisión del programa inicial, guarde y ejecute: El programa inicial no tiene peldaños, así que ninguna cinta se mueve y ninguna pieza se clasifica; ponga en marcha las cintas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {
@@ -22878,7 +22878,7 @@
             }
           ],
           "faultCases": [
-            "El inicial no tiene peldaños, así que ninguna cinta se mueve y ninguna pieza se clasifica; ponga en marcha las cintas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules."
+            "El programa inicial no tiene peldaños, así que ninguna cinta se mueve y ninguna pieza se clasifica; ponga en marcha las cintas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules."
           ]
         }
       }

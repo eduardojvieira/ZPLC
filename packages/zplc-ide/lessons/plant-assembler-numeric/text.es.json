@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guarde y ejecute: El programa inicial no ordena ninguna posición, así que el brazo se queda donde está; envíelo a la tapa, agarre, lleve la tapa a la base y suéltela, tres veces, y encienda Green tras la tercera.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial no ordena ninguna posición, así que el brazo se queda donde está; envíelo a la tapa, agarre, lleve la tapa a la base y suéltela, tres veces, y encienda Green tras la tercera.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {

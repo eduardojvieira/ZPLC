@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "The starter never calls the loop: FillCmd stays at 0 percent and the tank stays empty. Start with KP := 100.0, KI := 0.0 and KD := 0.0 and look at the level after the drain opens: the inlet only grows with the error, so the level settles below the band. Raise KP until it holds. Then try a small KI to remove the last offset: the tank integrates the flow, so an integral term makes the level overshoot unless a derivative term damps it.",
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starter never calls the loop: FillCmd stays at 0 percent and the tank stays empty. Start with KP := 100.0, KI := 0.0 and KD := 0.0 and look at the level after the drain opens: the inlet only grows with the error, so the level settles below the band. Raise KP until it holds. Then try a small KI to remove the last offset: the tank integrates the flow, so an integral term makes the level overshoot unless a derivative term damps it.",
       "checkpoint": "A tuning is saved in src/TankLevel.st and you can say what each gain did when you changed it."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs src/TankLevel.st against the tank of scene tank-level-control, raises the set point, opens the drain and lowers the set point, and tests {{assertions}} assertions: the level in the band in two windows, out of it at the end, and no spill.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs src/TankLevel.st against the tank of scene tank-level-control, raises the set point, opens the drain and lowers the set point, and tests {{assertions}} assertions: the level in the band in two windows, out of it at the end, and no spill.",
       "checkpoint": "The scenario is named tank-pid and contains {{assertions}} assertions and passes them all."
     },
     {

@@ -25,7 +25,7 @@ Escale el nivel bruto de un tanque, un número entero de 0 a 27648, a metros, y 
 
 ## Objetivos
 
-- Escalar un valor analógico a unidades de ingeniería: convertir primero a REAL y luego dividir por el rango bruto.
+- Escalar un valor analógico a unidades de ingeniería de modo que se conserven las fracciones de una unidad.
 - Leer el mapa de la planta para hallar el rango bruto de cada señal, y ver qué hace una escala errónea en el proceso.
 
 ## Etapas

@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter commands no position, so the pad stays where it is; send it to the lid, grip, carry the lid to the base and release it, three times, and light Green after the third.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter commands no position, so the pad stays where it is; send it to the lid, grip, carry the lid to the base and release it, three times, and light Green after the third.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
