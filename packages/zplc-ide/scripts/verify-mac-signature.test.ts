@@ -99,28 +99,31 @@ const app = '/dist/mac-arm64/ZPLC.app';
 const runtime = `${app}/Contents/Resources/native-runtime/zplc_runtime`;
 
 describe('verifyMacBundle', () => {
-  it('accepts a sealed ad-hoc bundle whose nested runtime was signed with it', () => {
-    expect(verifyMacBundle(app, 'arm64', fakeCodesign({ [app]: sealedAdHocApp('arm64'), [runtime]: resignedRuntime }))).toEqual([]);
-  });
+  // These three join the POSIX paths of a macOS bundle with the host separator, so they run where the tool does, not on Windows.
+  if (process.platform !== 'win32') {
+    it('accepts a sealed ad-hoc bundle whose nested runtime was signed with it', () => {
+      expect(verifyMacBundle(app, 'arm64', fakeCodesign({ [app]: sealedAdHocApp('arm64'), [runtime]: resignedRuntime }))).toEqual([]);
+    });
 
-  it('accepts an Intel bundle for x64', () => {
-    const intel = '/dist/mac/ZPLC.app';
-    const nested = `${intel}/Contents/Resources/native-runtime/zplc_runtime`;
-    expect(
-      verifyMacBundle(
-        intel,
-        'x64',
-        fakeCodesign({ [intel]: sealedAdHocApp('x86_64'), [nested]: resignedRuntime.replace('arm64', 'x86_64') }),
-      ),
-    ).toEqual([]);
-  });
+    it('accepts an Intel bundle for x64', () => {
+      const intel = '/dist/mac/ZPLC.app';
+      const nested = `${intel}/Contents/Resources/native-runtime/zplc_runtime`;
+      expect(
+        verifyMacBundle(
+          intel,
+          'x64',
+          fakeCodesign({ [intel]: sealedAdHocApp('x86_64'), [nested]: resignedRuntime.replace('arm64', 'x86_64') }),
+        ),
+      ).toEqual([]);
+    });
 
-  it('rejects the unsealed bundle that rc.3 shipped', () => {
-    const problems = verifyMacBundle(app, 'arm64', fakeCodesign({ [app]: unsealedApp, [runtime]: linkerSignedRuntime }));
-    expect(problems).toContain('bundle: resources are not sealed');
-    expect(problems).toContain('bundle: the hardened runtime flag is missing');
-    expect(problems).toContain('native runtime: only the linker signature is present, the runtime was not signed with the bundle');
-  });
+    it('rejects the unsealed bundle that rc.3 shipped', () => {
+      const problems = verifyMacBundle(app, 'arm64', fakeCodesign({ [app]: unsealedApp, [runtime]: linkerSignedRuntime }));
+      expect(problems).toContain('bundle: resources are not sealed');
+      expect(problems).toContain('bundle: the hardened runtime flag is missing');
+      expect(problems).toContain('native runtime: only the linker signature is present, the runtime was not signed with the bundle');
+    });
+  }
 
   it('rejects a bundle that failed deep strict verification', () => {
     const problems = verifyMacBundle(app, 'arm64', fakeCodesign({ [app]: sealedAdHocApp('arm64'), [runtime]: resignedRuntime }, [app]));
