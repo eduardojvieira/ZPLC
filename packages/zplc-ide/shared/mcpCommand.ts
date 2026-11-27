@@ -17,13 +17,13 @@ async function executableFile(path: string, platform: NodeJS.Platform): Promise<
 }
 
 export async function resolveMcpCommand(
-  env: { ZPLC_MCP_BIN?: string | undefined; PATH?: string | undefined },
+  env: Record<string, string | undefined>,
   platform: NodeJS.Platform = process.platform,
 ): Promise<string | null> {
-  const chosen = env.ZPLC_MCP_BIN;
+  const chosen = env['ZPLC_MCP_BIN'];
   if (chosen) return isAbsolute(chosen) && (await executableFile(chosen, platform)) ? chosen : null;
   const name = platform === 'win32' ? 'zplc-mcp.exe' : 'zplc-mcp';
-  for (const folder of (env.PATH ?? '').split(delimiter)) {
+  for (const folder of (env['PATH'] ?? '').split(delimiter)) {
     if (!isAbsolute(folder)) continue;
     const candidate = join(folder, name);
     if (await executableFile(candidate, platform)) return candidate;
