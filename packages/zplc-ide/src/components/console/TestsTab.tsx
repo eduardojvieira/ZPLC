@@ -40,7 +40,12 @@ export function TestsTab({ runner, workspaceScenarioLink, canonicalWorkspaceBuil
           {t('console.workspaceTestsRequireThe')}
         </p>
       ) : availability === 'project-required' ? (
-        <CommandEmptyState title={t('panel.tests.empty.title')} description={t('panel.tests.empty.description')} actions={['file.open']} />
+        <CommandEmptyState
+          title={t('panel.tests.empty.title')}
+          description={t('panel.tests.empty.description')}
+          actions={['file.open']}
+          region="tests"
+        />
       ) : (
         <>
           <div className="flex flex-wrap items-center gap-2">
