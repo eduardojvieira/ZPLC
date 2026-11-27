@@ -162,6 +162,11 @@ target_include_directories(zplc_runtime PRIVATE
 
 target_link_libraries(zplc_runtime PRIVATE zplc_core)
 
+# Windows reads a stdin pipe on a thread of its own and hands the bytes over (host_stdin_handoff.c).
+if(WIN32)
+    target_sources(zplc_runtime PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/host_stdin_handoff.c)
+endif()
+
 # POSIX-specific: librt for clock_gettime on Linux
 if(UNIX AND NOT APPLE)
     target_link_libraries(zplc_runtime PRIVATE rt)
@@ -1083,6 +1088,22 @@ target_include_directories(test_host_line_buffer PRIVATE
 )
 
 add_test(NAME test_host_line_buffer COMMAND test_host_line_buffer)
+
+# Test: the hand-off between the Windows stdin reader thread and the request waiter, on POSIX primitives
+if(NOT WIN32)
+    add_executable(test_host_stdin_handoff
+        tests/test_host_stdin_handoff.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/host_stdin_handoff.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/host_line_buffer.c
+    )
+    target_include_directories(test_host_stdin_handoff PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src
+    )
+    find_package(Threads REQUIRED)
+    target_link_libraries(test_host_stdin_handoff PRIVATE Threads::Threads)
+    add_test(NAME test_host_stdin_handoff COMMAND test_host_stdin_handoff)
+endif()
 
 # Test: POSIX HAL persistence behavior
 add_executable(test_hal_posix_persist
