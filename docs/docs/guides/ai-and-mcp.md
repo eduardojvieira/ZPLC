@@ -74,6 +74,23 @@ Most clients that run a local MCP server take a command and its arguments in a c
 }
 ```
 
+### One action in the app
+
+Open the project, then open **Preferences** and find **Connect an AI agent (MCP)**. Choose **Claude Code**, **Cursor** or **VS Code**. The panel shows the exact file and the exact text it would write, all inside the project folder:
+
+| Client      | File               | Key               |
+| ----------- | ------------------ | ----------------- |
+| Claude Code | `.mcp.json`        | `mcpServers.zplc` |
+| Cursor      | `.cursor/mcp.json` | `mcpServers.zplc` |
+| VS Code     | `.vscode/mcp.json` | `servers.zplc`    |
+
+- **Write config** asks you to confirm, then writes only the text you were shown. Your other entries stay. If the file already exists, the previous file is kept next to it as `<file>.bak`, and the new one is written to a temporary file and renamed, so a failure never leaves half a file. A file that is not valid JSON (comments included) is refused and left as it is.
+- **Copy command** copies the line `claude mcp add zplc -- zplc-mcp --workspace "<folder>"` for Claude Code, or the entry snippet for Cursor and VS Code.
+- The entry holds the `zplc-mcp` command, `--workspace` and, when ZPLC knows it, `--user-data`. It never holds a key or a secret. Set `ZPLC_MCP_BIN` to the full path of `zplc-mcp` before starting ZPLC when it is not on your `PATH`.
+- **Run self-check** runs `zplc-mcp --self-check` on the open project and shows whether it is ready, with the cause and the next step of each problem. It reads files only: it does not touch a device, a serial port or the network.
+
+The panel works on the folder that is open, so for a lesson it fills in the lesson folder for you, `<userData>/learn-workspaces/<lessonId>`, and the `--user-data` folder. That folder is `~/.config/zplc` on Linux, `~/Library/Application Support/zplc` on macOS and `%APPDATA%\zplc` on Windows.
+
 ### The protocol revision
 
 The server serves both eras of the protocol, as the SDK it uses does by default. A client of revision 2026-07-28 has no `initialize` step: it names the revision and its capabilities in the `_meta` of every request.
