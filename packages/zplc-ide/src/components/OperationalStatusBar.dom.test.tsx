@@ -10,6 +10,7 @@ const { presentConnection } = await import('./connectionPresentation');
 const { registerPlantTransport } = await import('../store/useTransport');
 const { BuildMenu } = await import('./ToolbarBuildMenu');
 const { bindCommands, runCommand, resetCommandsForTest } = await import('../commands/bus');
+const { bindIoModeLink, createFakeIoModeLink, startIoMode, setIoModeMirroring } = await import('../store/ioModeStatus');
 
 const idle = {
   mode: 'simulate' as const,
@@ -308,5 +309,82 @@ describe('MSG-007 the Build control carries a mark while the last build is not o
     stale.unmount();
     build(true);
     expect(document.querySelector('[data-build-stale]')).toBeNull();
+  });
+});
+
+describe('PLS-008 plant I/O mode is a third state of the status rail', () => {
+  const board = { ...idle, mode: 'hardware' as const, adapterType: 'serial' as const, connected: true };
+  let unbind: (() => void) | undefined;
+  const open = () => dom.patchStore(useIDEStore, { isProjectOpen: true });
+  const indicator = () => document.querySelector('[data-connection], [data-io-mode]') as HTMLElement;
+  const looks = (element: HTMLElement) => ({
+    text: element.textContent,
+    icon: element.querySelector('svg')?.getAttribute('class'),
+    tone: element.querySelector('[data-tone]')?.getAttribute('data-tone'),
+  });
+  const cleanup = () => dom.act(() => unbind?.());
+
+  it('PLS-008 the third state differs from Simulation and from Board in text, icon and colour', async () => {
+    open();
+    const sim = dom.render(<OperationalStatusBar {...idle} adapterType="native" connected />);
+    const simulation = looks(indicator());
+    sim.unmount();
+    const hw = dom.render(<OperationalStatusBar {...board} />);
+    const hardware = looks(indicator());
+    hw.unmount();
+    unbind = bindIoModeLink(createFakeIoModeLink());
+    await dom.act(() => startIoMode());
+    dom.render(<OperationalStatusBar {...board} />);
+    const mode = looks(indicator());
+    expect(indicator().getAttribute('data-io-mode')).toBe('running');
+    expect(mode.text).toContain(dom.t('status.ioMode.label'));
+    for (const other of [simulation, hardware]) {
+      expect(mode.text).not.toBe(other.text);
+      expect(mode.icon).not.toBe(other.icon);
+      expect(mode.tone).not.toBe(other.tone);
+    }
+    cleanup();
+  });
+
+  it('PLS-008 the existing states render exactly as before while the mode is off or its start failed', async () => {
+    open();
+    const plain = dom.render(<OperationalStatusBar {...board} />);
+    const before = plain.container.innerHTML;
+    plain.unmount();
+    unbind = bindIoModeLink(createFakeIoModeLink({ failStart: 'no answer' }));
+    await dom.act(() => startIoMode());
+    const after = dom.render(<OperationalStatusBar {...board} />);
+    expect(after.container.innerHTML).toBe(before);
+    expect(document.querySelector('[data-connection]')?.getAttribute('data-connection')).toBe('hardware-connected');
+    cleanup();
+  });
+
+  it('LNK-010 a mark shows while mirroring is on, and not before', async () => {
+    open();
+    unbind = bindIoModeLink(createFakeIoModeLink());
+    await dom.act(() => startIoMode());
+    dom.render(<OperationalStatusBar {...board} />);
+    expect(dom.screen.queryByText(dom.t('status.ioMode.mirroring'))).toBeNull();
+    await dom.act(() => setIoModeMirroring(true));
+    expect(dom.screen.getByText(dom.t('status.ioMode.mirroring'))).toBeTruthy();
+    cleanup();
+  });
+
+  it('LNK-014 the measured latency is in the details of the rail', async () => {
+    resetCommandsForTest();
+    open();
+    const link = createFakeIoModeLink();
+    unbind = bindIoModeLink(link);
+    await dom.act(() => startIoMode());
+    dom.act(() => link.measure({ last: 4, worst: 9 }));
+    dom.render(<OperationalStatusBar {...board} />);
+    dom.act(() => {
+      runCommand('view.statusDetails');
+    });
+    const panel = dom.screen.getByRole('dialog', { name: dom.t('studio.status.detailsLabel') });
+    expect(dom.within(panel).getByText(dom.t('status.ioMode.latency'))).toBeTruthy();
+    expect(panel.textContent).toContain('4');
+    expect(panel.textContent).toContain('9');
+    cleanup();
   });
 });
