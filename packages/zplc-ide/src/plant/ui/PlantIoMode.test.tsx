@@ -8,6 +8,7 @@ const { bindIoModeLink, createFakeIoModeLink, getIoModeStatus, requestFeedBoard 
 const { useBoardPlantIo } = await import('./plantIoAdapter');
 const { createFakeBoard } = await import('../board/fakeBoard');
 const { createPlantIoController } = await import('../board/boardPlantLink');
+
 const { getCommandState, publishCommandState, resetCommandsForTest, runCommand, bindCommands } = await import('../../commands/bus');
 const { usePlantEditCommands } = await import('../../commands/bind/plantEdit');
 const { listIoMap } = await import('../../runtime/ioMap');
@@ -15,7 +16,11 @@ const { useIDEStore } = await import('../../store/useIDEStore');
 const { menuCommands } = await import('../../commands/menuEntry');
 
 let unbind: (() => void) | undefined;
-afterEach(() => unbind?.());
+// the command state is the bus's, shared by every test file of the run: leave it as it was found
+afterEach(() => {
+  unbind?.();
+  resetCommandsForTest();
+});
 const feed = () => dom.t('command.plant.feedBoard');
 
 describe('plant I/O mode in the plant document (PLS-008, LNK-008, LNK-010)', () => {
