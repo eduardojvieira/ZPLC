@@ -36,7 +36,7 @@ export interface CreateContext {
   /** The program files a task can run, under the name a task gives them. */
   programFiles: readonly string[];
   tasks: () => readonly TaskDefinition[];
-  /** Creates the file in the project with this content, saved, and returns its path. The file opens as it is born, so it never holds less. */
+  /** Creates the file with this content, saved, and returns its path. The file opens as it is born, so it never holds less. */
   createFile: (fileName: string, language: PLCLanguage, content: string) => Promise<string>;
   setTasks: (tasks: TaskDefinition[]) => void | Promise<void>;
   /** Shows the object at its declaration. */
