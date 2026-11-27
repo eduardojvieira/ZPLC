@@ -38,7 +38,7 @@ import { GuideResult } from './GuideResult';
 import { GuideStages } from './GuideStages';
 
 export function Guide({ workspaceTestPresentation }: { workspaceTestPresentation?: WorkspaceTestPresentation }) {
-  const { t, tn } = useT();
+  const { t } = useT();
   const { locale }: { locale: LearnLocale } = useT();
   const setActiveConsoleTab = useIDEStore((state) => state.setActiveConsoleTab);
   const projectOpenError = useIDEStore((state) => state.projectOpenError);

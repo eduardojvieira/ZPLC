@@ -34,7 +34,11 @@ export function GuideResult({ grade, checkAvailable, lesson, locale }: GuideResu
                 ? { title: t('learn.grade.notChecked.title'), body: t('learn.grade.notChecked.body') }
                 : { title: t('learn.grade.notRecorded.title'), body: t('learn.grade.notRecorded.body', { scenario }) };
   return (
-    <section data-learn-grade={grade.kind} aria-label={t('learn.lessonEvidence')} className="border-y border-[var(--color-surface-600)] py-3">
+    <section
+      data-learn-grade={grade.kind}
+      aria-label={t('learn.lessonEvidence')}
+      className="border-y border-[var(--color-surface-600)] py-3"
+    >
       <div role="status" aria-live="polite" className="flex items-start gap-2">
         {grade.kind === 'passed' ? (
           <FlaskConical size={16} className="mt-0.5 shrink-0 text-[var(--color-accent-green)]" aria-hidden="true" />

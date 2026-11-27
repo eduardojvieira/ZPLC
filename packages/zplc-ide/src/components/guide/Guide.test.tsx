@@ -222,9 +222,7 @@ describe('Check is one action from the Guide (GDE-004)', () => {
     time: '2026-11-20T12:00:00.000Z',
     result: failed ? 'failed' : 'passed',
     assertions: { total: 2, passed: failed ? 1 : 2 },
-    failedAssertions: failed
-      ? [{ index: 0, kind: 'AT', atMs: 1200, expected: { Q: true }, observed: { Q: false }, trace: null }]
-      : [],
+    failedAssertions: failed ? [{ index: 0, kind: 'AT', atMs: 1200, expected: { Q: true }, observed: { Q: false }, trace: null }] : [],
   });
   const modified = { id: 'f1', path: 'src/main.st', name: 'main.st', language: 'ST', content: 'x', isModified: true, diskContent: 'y' };
   let calls: string[];
@@ -269,7 +267,7 @@ describe('Check is one action from the Guide (GDE-004)', () => {
     } as never);
   }
 
-  it('GDE-004 Check saves, builds, runs the reference scenario and shows the verdict in the Guide with the results panel closed', async () => {
+  it('GDE-004 Check saves, builds, runs the reference scenario and shows the verdict, results panel closed', async () => {
     openProject({ ok: true, record: record(false) });
     const view = dom.render(<Guide />);
     const check = document.querySelector<HTMLButtonElement>('[data-learn-check]')!;
@@ -309,7 +307,9 @@ describe('Check is one action from the Guide (GDE-004)', () => {
     dom.act(() => answerConfirmation(false));
     await click;
     unmount();
-    await dom.waitFor(() => expect(document.querySelector('[data-learn-check-status]')!.textContent).toBe(dom.t('u3Guide.check.cancelled')));
+    await dom.waitFor(() =>
+      expect(document.querySelector('[data-learn-check-status]')!.textContent).toBe(dom.t('u3Guide.check.cancelled')),
+    );
     expect(calls).toEqual([]);
     expect(tabSpy).toEqual([]);
   });

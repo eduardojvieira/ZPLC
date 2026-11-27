@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-import { createElement } from 'react';
+import { createElement, useEffect } from 'react';
 import { setupDom, stubMonaco, stubProjectLoader } from '../test/dom';
 
 const dom = await setupDom();
@@ -18,7 +18,10 @@ let calls: string[];
 let latest: Hook;
 
 function Probe({ per }: { per: boolean }) {
-  latest = useLessonCheck(() => undefined, per ? { save: 'per-preference' } : undefined);
+  const hook = useLessonCheck(() => undefined, per ? { save: 'per-preference' } : undefined);
+  useEffect(() => {
+    latest = hook;
+  });
   return null;
 }
 
@@ -51,7 +54,7 @@ describe('the lesson check hook', () => {
     expect(calls).toEqual([]);
   });
 
-  it('FLW-006 with the Guide option an unsaved document is saved per the preference and then checked, which builds what is stale', async () => {
+  it('FLW-006 with the Guide option an unsaved document is saved per the preference and then checked', async () => {
     dom.render(createElement(Probe, { per: true }));
     expect(latest.canRun).toBe(true);
     await dom.act(() => latest.run('any-lesson'));

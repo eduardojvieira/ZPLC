@@ -3055,8 +3055,10 @@
   "LRN-022": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the lesson check over the IPC boundary (LRN-022, LRN-026, IDE-002, IDE-012)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/lessonCheckProtocol.test.ts","test":"the lesson check request and answer (LRN-022, LRN-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/guide/Guide.test.tsx","test":"LRN-022 only the reference scenario of the lesson grades: the request names the lesson and nothing of the workspace"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/learnLesson.test.ts","test":"Learn grading against the lesson package (LRN-022, LRN-026)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCheck.test.ts","test":"lesson check (LRN-022, LRN-023, LRN-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/useLessonCheck.test.ts","test":"LRN-022 without the option the old gate stays: an unsaved document is refused and nothing is saved or run"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"39 Learn reports the failed assertion of a lesson","partial":true}
   ],
   "LRN-023": [
