@@ -85,4 +85,22 @@ describe('Inspector selection (SHL-009) in a DOM', () => {
     expect(dom.screen.getByRole('region', { name: dom.t('workbench.inspector.controller') })).toBeTruthy();
     dom.patchStore(useIDEStore, { connection: { status: 'disconnected' }, controllerInfo: null } as never);
   });
+
+  it('UXF-4 gives the read-only note the 10px left inset without double-padding the in-section note', () => {
+    dom.render(<WorkbenchInspector />);
+    const readOnlyNote = dom.screen.getByText(dom.t('inspector.readOnly'));
+    expect(readOnlyNote.closest('section')).toBeNull();
+    expect(readOnlyNote.className).toMatch(/(?:^|\s)(?:px|pl)-\[10px\](?:\s|$)/);
+
+    const noElementNote = dom.screen.getByText(dom.t('inspector.noElement'));
+    expect(noElementNote.closest('section')).not.toBeNull();
+    expect(noElementNote.className).not.toMatch(/(?:^|\s)(?:px|pl)-\[10px\](?:\s|$)/);
+  });
+
+  it('UXF-4 keeps the read-only note and inspector sections inside the complementary region', () => {
+    dom.render(<WorkbenchInspector />);
+    const region = dom.screen.getByRole('complementary', { name: dom.t('workbench.inspector.region') });
+    expect(region.contains(dom.screen.getByText(dom.t('inspector.readOnly')))).toBe(true);
+    expect(region.querySelectorAll('section').length).toBeGreaterThanOrEqual(2);
+  });
 });
