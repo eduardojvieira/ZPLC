@@ -10,6 +10,8 @@ import {
 } from '../src/ai/candidatePaths.js';
 import { parseProposals, type AiProposal } from '../src/ai/proposals.js';
 import { manifestForAssistant, manifestSensitivePaths } from '../src/ai/manifestPrivacy.js';
+import { buildProjectContext, capContext, type ContextDiagnostic, type FailedScenario } from '../src/ai/projectContext.js';
+import { canonicalAiEndpoint, isLoopbackAiEndpoint } from '../src/ai/providerEndpoint.js';
 
 export type AiErrorCode =
   | 'AI_UNCONFIGURED'
@@ -45,9 +47,17 @@ export interface AiRequest {
   prompt: string;
   /** The program the person has open, in any of the five languages; edit mode needs it as the baseline of a proposal. */
   activeFile?: { fileId: string; path: string };
-  diagnostics?: Array<{ code: string; path?: string; line?: number; column?: number }>;
+  diagnostics?: Array<{ code: string; message?: string; path?: string; line?: number; column?: number; element?: string }>;
   trace?: Array<{ atMs: number; signal: string; value: boolean | number }>;
+  /** From the latest run in Studio (AIX-001): the failed expectations and the plant facts. */
+  failedScenarios?: FailedScenario[];
+  facts?: Record<string, boolean | number>;
+  selection?: { startLine: number; endLine: number; text: string } | { element: string };
+  /** The lesson the person is in; whether its solutions are hidden is read here from `<userData>`, never taken from this. */
+  lessonContext?: { lessonId: string; stage?: string };
+  locale?: 'en' | 'es';
 }
+export type AiConnectionResult = { ok: true; latencyMs: number } | { ok: false; code: AiErrorCode; retryAfter?: number };
 export interface SafeStorageLike {
   isEncryptionAvailable(): boolean;
   getSelectedStorageBackend?(): string;
@@ -70,16 +80,30 @@ const MAX_PROGRAMS = 128;
 const MAX_REPLACE_BASE = 256 * 1024;
 const MAX_SOURCE_FILE = 256 * 1024;
 const MAX_BODY = 128 * 1024;
+const MAX_SCENARIO_FILES = 16;
+const MAX_SCENARIO_FILE = 64 * 1024;
+const CONTEXT_FILE_LIMIT = 128 * 1024;
+const ROOT_FILES = new Set(['zplc.json', 'scene.json', 'plant-map.json']);
+const PROBE_TIMEOUT_MS = 10_000;
+const HIDDEN_RULE = 'Solutions are hidden by the classroom setting. Give guidance and hints only; NEVER write a complete solution program.';
 const MODEL = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/;
 const KNOWN_SECRET_PATTERNS = [
   /(?:api|client|access|refresh)[_. -]?(?:key|secret|token)\b|(?:aws[_. -]?)?secret(?:[_. -]?access)?[_. -]?key\b/i,
   /(?:authorization|bearer|password|passphrase|private[_. -]?key)\b/i,
   /https?:\/\/[^/\s:@]+:[^/\s@]+@/i,
 ];
-const SYSTEM_POLICY =
-  'You are ZPLC Agent. Provide an explanation, or an explanation with one inert proposed change set. Never claim hardware action, never ' +
-  'request tools, ' +
-  'and never initiate flash, deploy, force, RUN, STOP, recovery, serial, shell, or filesystem operations. ' +
+export const SYSTEM_POLICY =
+  'You are ZPLC Assistant. Provide an explanation, or an explanation with one inert proposed change set. Never claim ' +
+  'hardware action, never request tools, and never initiate flash, deploy, force, RUN, STOP, recovery, serial, shell, or ' +
+  'filesystem operations. An AI assistant or MCP never initiates them on hardware or on a session a person runs: it never ' +
+  'forces I/O, changes RUN/STOP, flashes, deploys or opens a serial port there. It may set inputs and step a simulator ' +
+  'that is private to it, one the MCP server starts for that agent alone (D-31, AIX-014). Reply in the language of ' +
+  '"locale" ("en" or "es"). Use the terms of ZPLC: rung, coil, contact, function block, step, transition, scan, scenario, ' +
+  'plant map, Check. The request carries "context": the plant, the scenarios, the failed checks of the last run, the ' +
+  'diagnostics with their place, and in a lesson its goal and stage. Inside a lesson (when "context" has a "lesson"), ' +
+  'give a hint first, pointing at the concept, the signal or the element; give a solution only when the person asks for ' +
+  'it plainly and lesson.solutionsHidden is false; never give a solution when lesson.solutionsHidden is true; never say ' +
+  'that a lesson is passed; only the Check control marks it. ' +
   'To propose a change answer with JSON only: {"answer": "...", "changes": [{"path": "...", "content": "..."}]} with the whole new text ' +
   'of each file ' +
   `and at most ${CANDIDATE_CHANGE_CAP} files. A path is src/<name>.st, .il, .ld.json, .fbd.json or .sfc.json, or zplc.json. ` +
@@ -295,19 +319,6 @@ function exact(value: unknown, keys: readonly string[]): value is Record<string,
     keys.every((key) => Object.hasOwn(value, key))
   );
 }
-function canonicalEndpoint(value: unknown): string | null {
-  if (typeof value !== 'string' || value.length === 0 || value.length > 1024) return null;
-  try {
-    const url = new URL(value);
-    const loopback = url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '[::1]';
-    if ((url.protocol !== 'https:' && !(url.protocol === 'http:' && loopback)) || url.username || url.password || url.search || url.hash)
-      return null;
-    const pathname = url.pathname.replace(/\/+$/, '');
-    return `${url.protocol}//${url.host}${pathname}`;
-  } catch {
-    return null;
-  }
-}
 function normalizedConfig(value: unknown): AiProviderConfig | null {
   if (
     !exact(value, ['enabled', 'endpoint', 'model']) ||
@@ -316,7 +327,7 @@ function normalizedConfig(value: unknown): AiProviderConfig | null {
     !MODEL.test(value.model)
   )
     return null;
-  const endpoint = canonicalEndpoint(value.endpoint);
+  const endpoint = canonicalAiEndpoint(value.endpoint);
   return endpoint ? { enabled: value.enabled, endpoint, model: value.model } : null;
 }
 function vaultState(vault: SafeStorageLike): { usable: boolean; reason?: 'unavailable' | 'insecure-backend' } {
@@ -350,7 +361,7 @@ function parseStored(value: unknown): Stored | null {
     return null;
   if (value.schemaVersion !== 1 || typeof value.enabled !== 'boolean' || typeof value.model !== 'string' || !MODEL.test(value.model))
     return null;
-  const endpoint = canonicalEndpoint(value.endpoint);
+  const endpoint = canonicalAiEndpoint(value.endpoint);
   if (
     !endpoint ||
     (Object.hasOwn(value, 'keyCiphertext') && (typeof value.keyCiphertext !== 'string' || value.keyCiphertext.length > MAX_FILE))
@@ -387,7 +398,22 @@ async function boundedBody(response: Response, signal: AbortSignal): Promise<str
   }
 }
 
-export function createAiProvider(options: { userDataPath: string; vault: SafeStorageLike; fetch?: FetchLike }) {
+export interface AiProviderOptions {
+  userDataPath: string;
+  vault: SafeStorageLike;
+  fetch?: FetchLike;
+  /** Whether the classroom setting hides lesson solutions (`electron/learnPolicy.ts`); a failure, or no reader, means hidden. */
+  solutionsHidden?: () => Promise<boolean>;
+  /** The lesson's entry of `LESSON_INDEX` and its text in the interface locale, for the lesson a request names. */
+  lessonOf?: (
+    lessonId: string,
+    locale: 'en' | 'es',
+  ) => { manifest: unknown; text: unknown } | undefined | Promise<{ manifest: unknown; text: unknown } | undefined>;
+  /** The limit of the connection test, in ms; 10 s unless a test says otherwise. */
+  probeTimeoutMs?: number;
+}
+
+export function createAiProvider(options: AiProviderOptions) {
   const file = join(options.userDataPath, FILE);
   const fetcher = options.fetch ?? fetch;
   let active: AbortController | undefined;
@@ -444,9 +470,9 @@ export function createAiProvider(options: { userDataPath: string; vault: SafeSto
     }
   }
   /** True when `src` is a real folder of the project, not a link out of it. */
-  async function sourceFolderIsReal(root: string): Promise<boolean> {
+  async function sourceFolderIsReal(root: string, folder = 'src'): Promise<boolean> {
     try {
-      const sourceDirectory = join(root, 'src');
+      const sourceDirectory = join(root, folder);
       const status = await lstat(sourceDirectory);
       return !status.isSymbolicLink() && status.isDirectory() && (await realpath(sourceDirectory)) === sourceDirectory;
     } catch {
@@ -458,7 +484,7 @@ export function createAiProvider(options: { userDataPath: string; vault: SafeSto
     const candidate = resolve(root, path);
     if (candidate !== join(root, path)) return null;
     try {
-      if (path !== 'zplc.json' && !(await sourceFolderIsReal(root))) return null;
+      if (!ROOT_FILES.has(path) && !(await sourceFolderIsReal(root, path.split('/')[0]))) return null;
       const status = await lstat(candidate);
       if (status.isSymbolicLink() || !status.isFile() || status.size > limit) return null;
       if ((await realpath(candidate)) !== candidate) return null;
@@ -502,6 +528,60 @@ export function createAiProvider(options: { userDataPath: string; vault: SafeSto
     if (withManifest && Buffer.byteLength(manifestText) <= MAX_MANIFEST_SUMMARY && !hasKnownSecretPattern(manifestText))
       summary.manifest = manifest;
     return summary;
+  }
+  async function readJsonFile(root: string, path: string, limit: number): Promise<unknown> {
+    const text = await readProjectFile(root, path, limit);
+    try {
+      return text === null ? undefined : (JSON.parse(text) as unknown);
+    } catch {
+      return undefined;
+    }
+  }
+  /** The scenario files of `tests`, as many and as large as the limits allow; whatever is unreadable is left out. */
+  async function readScenarios(root: string): Promise<Array<{ path: string; input: unknown }>> {
+    try {
+      if (!(await sourceFolderIsReal(root, 'tests'))) return [];
+      const names = (await readdir(join(root, 'tests'), { withFileTypes: true }))
+        .filter((entry) => entry.isFile() && /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.scenario\.json$/.test(entry.name))
+        .map((entry) => entry.name)
+        .sort()
+        .slice(0, MAX_SCENARIO_FILES);
+      const found: Array<{ path: string; input: unknown }> = [];
+      for (const name of names) {
+        const input = await readJsonFile(root, `tests/${name}`, MAX_SCENARIO_FILE);
+        if (input !== undefined) found.push({ path: `tests/${name}`, input });
+      }
+      return found;
+    } catch {
+      return [];
+    }
+  }
+  /** The one project context (`src/ai/projectContext.ts`): from the saved files, the last run the renderer reports and the lesson. */
+  async function projectContext(root: string, request: AiRequest) {
+    let solutionsHidden = true;
+    try {
+      if (options.solutionsHidden) solutionsHidden = (await options.solutionsHidden()) !== false;
+    } catch {
+      /* unreadable: hidden */
+    }
+    const lessonEntry = request.lessonContext
+      ? await options.lessonOf?.(request.lessonContext.lessonId, request.locale ?? 'en')
+      : undefined;
+    const context = buildProjectContext(
+      {
+        scene: await readJsonFile(root, 'scene.json', CONTEXT_FILE_LIMIT),
+        plantMap: await readJsonFile(root, 'plant-map.json', CONTEXT_FILE_LIMIT),
+        scenarios: await readScenarios(root),
+        ...(request.failedScenarios ? { failedScenarios: request.failedScenarios } : {}),
+        ...(request.facts ? { facts: request.facts } : {}),
+        diagnostics: (request.diagnostics ?? []).map(
+          (diagnostic) => ({ ...diagnostic, message: diagnostic.message ?? '' }) as ContextDiagnostic,
+        ),
+        ...(lessonEntry ? { lesson: { ...lessonEntry, stage: request.lessonContext?.stage } } : {}),
+      },
+      { solutionsHidden },
+    );
+    return { context: capContext(context) as typeof context, solutionsHidden };
   }
   async function listPrograms(root: string): Promise<string[] | null> {
     try {
@@ -576,7 +656,7 @@ export function createAiProvider(options: { userDataPath: string; vault: SafeSto
       const storedKey = (await stored())?.keyCiphertext !== undefined;
       const vault = vaultState(options.vault);
       return {
-        configured: config !== null && (await key()) !== null,
+        configured: config !== null && (isLoopbackAiEndpoint(config.endpoint) || (await key()) !== null),
         enabled: config?.enabled ?? false,
         keyStored: storedKey,
         vaultAvailable: vault.usable,
@@ -612,6 +692,33 @@ export function createAiProvider(options: { userDataPath: string; vault: SafeSto
         ? { ok: true }
         : code('AI_UNCONFIGURED');
     },
+    /** One minimal request to the configured provider, with no project data: what is wrong, or how long it took. */
+    async testConnection(): Promise<AiConnectionResult> {
+      const config = await publicConfig();
+      if (!config) return code('AI_UNCONFIGURED');
+      const secret = await key();
+      if (!secret && !isLoopbackAiEndpoint(config.endpoint))
+        return code(vaultState(options.vault).usable ? 'AI_UNCONFIGURED' : 'AI_VAULT_UNAVAILABLE');
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), options.probeTimeoutMs ?? PROBE_TIMEOUT_MS);
+      const started = Date.now();
+      try {
+        const response = await fetcher(`${config.endpoint}/v1/chat/completions`, {
+          method: 'POST',
+          redirect: 'error',
+          signal: controller.signal,
+          headers: { ...(secret ? { Authorization: `Bearer ${secret}` } : {}), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: config.model, stream: false, max_tokens: 1, messages: [{ role: 'user', content: 'ping' }] }),
+        });
+        if (!response.ok) return httpFailure(response);
+        await response.body?.cancel().catch(() => undefined);
+        return { ok: true, latencyMs: Date.now() - started };
+      } catch {
+        return code(controller.signal.aborted ? 'AI_TIMEOUT' : 'AI_PROVIDER_UNREACHABLE');
+      } finally {
+        clearTimeout(timeout);
+      }
+    },
     cancel(): { requested: boolean } {
       if (!active) return { requested: false };
       activeCancelled = true;
@@ -623,13 +730,18 @@ export function createAiProvider(options: { userDataPath: string; vault: SafeSto
       if (
         hasKnownSecretPattern(request.prompt) ||
         request.diagnostics?.some(({ code, path }) => hasKnownSecretPattern(code) || (path !== undefined && hasKnownSecretPattern(path))) ||
-        request.trace?.some(({ signal }) => hasKnownSecretPattern(signal))
+        request.trace?.some(({ signal }) => hasKnownSecretPattern(signal)) ||
+        hasKnownSecretPattern(
+          JSON.stringify([request.diagnostics?.map(({ message }) => message), request.selection, request.failedScenarios, request.facts]),
+        )
       )
         return code('AI_CONTEXT_REJECTED');
       const config = await publicConfig();
       const secret = await key();
       if (gatewaySignal.aborted) return code('AI_CANCELLED');
-      if (!config?.enabled || !secret) return code(vaultState(options.vault).usable ? 'AI_UNCONFIGURED' : 'AI_VAULT_UNAVAILABLE');
+      const keyFree = config !== null && isLoopbackAiEndpoint(config.endpoint);
+      if (!config?.enabled || (!secret && !keyFree))
+        return code(vaultState(options.vault).usable ? 'AI_UNCONFIGURED' : 'AI_VAULT_UNAVAILABLE');
       let source: Awaited<ReturnType<typeof readActiveSource>> | undefined;
       if (request.mode === 'edit' && !request.activeFile) return code('AI_CONTEXT_REJECTED');
       if (request.activeFile) {
@@ -639,31 +751,53 @@ export function createAiProvider(options: { userDataPath: string; vault: SafeSto
         if (activeSource) source = activeSource;
         else if (request.mode === 'edit') return code('AI_CONTEXT_REJECTED');
       }
-      const contextBody = (project: Record<string, unknown> | undefined) =>
+      // the project summary and the context are not requirements: they are reduced, in this order, before a request is refused for its size
+      const summary = await readProjectSummary(root, true);
+      const { context, solutionsHidden } = await projectContext(root, request);
+      if (gatewaySignal.aborted) return code('AI_CANCELLED');
+      const state = {
+        project: summary as Record<string, unknown> | undefined,
+        context,
+        trace: request.trace ?? [],
+      };
+      const contextBody = () =>
         JSON.stringify({
           model: config.model,
           stream: false,
           messages: [
-            { role: 'system', content: SYSTEM_POLICY },
+            { role: 'system', content: request.lessonContext && solutionsHidden ? `${SYSTEM_POLICY}\n${HIDDEN_RULE}` : SYSTEM_POLICY },
             {
               role: 'user',
               content: JSON.stringify({
                 mode: request.mode,
                 prompt: request.prompt,
+                locale: request.locale ?? 'en',
+                ...(request.selection ? { selection: request.selection } : {}),
                 ...(source ? { activeFile: { path: request.activeFile!.path, language: source.language, source: source.source } } : {}),
-                ...(project ? { project } : {}),
-                ...(request.mode === 'debug' ? { diagnostics: request.diagnostics ?? [], trace: request.trace ?? [] } : {}),
+                ...(state.project ? { project: state.project } : {}),
+                context: state.context,
+                ...(request.mode === 'debug' ? { trace: state.trace } : {}),
               }),
             },
           ],
         });
-      // the project summary is context, not a requirement: it is reduced before a request is refused for its size
-      const summary = await readProjectSummary(root, true);
-      if (gatewaySignal.aborted) return code('AI_CANCELLED');
-      let body = contextBody(summary);
-      if (Buffer.byteLength(body) > MAX_BODY && summary) body = contextBody(await readProjectSummary(root, false));
-      if (Buffer.byteLength(body) > MAX_BODY && summary) body = contextBody({ programs: summary.programs });
-      if (Buffer.byteLength(body) > MAX_BODY) body = contextBody(undefined);
+      const shedding: Array<() => void> = [
+        () => state.project && delete state.project.manifest,
+        () => (state.context = { ...state.context, scenarios: [] }),
+        () => {
+          const scene = state.context.plant?.scene;
+          if (scene) state.context = { ...state.context, plant: { ...state.context.plant!, scene: { ...scene, parts: [] } } };
+        },
+        () => (state.trace = state.trace.slice(-8)),
+        () => (state.project = state.project && { programs: state.project.programs }),
+        () => (state.project = undefined),
+      ];
+      let body = contextBody();
+      for (const shed of shedding) {
+        if (Buffer.byteLength(body) <= MAX_BODY) break;
+        shed();
+        body = contextBody();
+      }
       if (Buffer.byteLength(body) > MAX_BODY) return code('AI_CONTEXT_REJECTED');
       const controller = new AbortController();
       active = controller;
@@ -676,7 +810,7 @@ export function createAiProvider(options: { userDataPath: string; vault: SafeSto
           method: 'POST',
           redirect: 'error',
           signal: controller.signal,
-          headers: { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/json' },
+          headers: { ...(secret ? { Authorization: `Bearer ${secret}` } : {}), 'Content-Type': 'application/json' },
           body,
         });
         if (!response.ok) return httpFailure(response);

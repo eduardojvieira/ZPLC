@@ -3,7 +3,8 @@ import { mkdtemp, mkdir, realpath, rm, symlink, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { createAiProvider } from './aiProvider';
+import { LESSON_INDEX } from '../src/generated/lessonIndex';
+import { createAiProvider, SYSTEM_POLICY } from './aiProvider';
 import { expectOwnerOnly } from './test/ownerOnlyAccess';
 
 const directories: string[] = [];
@@ -1059,5 +1060,429 @@ describe('assistant answer shapes (AI-14 / AIX-006)', () => {
     expect(result).toMatchObject({ ok: true, answer: message });
     expect(result).not.toHaveProperty('changes');
     expect(result).not.toHaveProperty('proposals');
+  });
+});
+
+const LESSON = LESSON_INDEX.lessons.find((lesson) => lesson.id === 'ld-no-nc-contacts')!;
+const SENTINEL_BODY = 'SENTINEL-stage-body-with-the-answer';
+const SENTINEL_LAST_HINT = 'SENTINEL-last-hint-swap-the-contact';
+const lessonText = {
+  schemaVersion: 1,
+  title: 'A stop button wired normally closed',
+  summary: 'Stop the motor when the wire breaks.',
+  scope: 'LD',
+  objectives: ['Use an NC contact for Stop'],
+  stages: [{ key: 'edit', title: 'Change the rung', body: SENTINEL_BODY, checkpoint: 'c' }],
+  hints: [
+    { level: 1, text: 'Which contact opens when the wire breaks?' },
+    { level: 2, text: SENTINEL_LAST_HINT },
+  ],
+  faultCases: [],
+};
+
+describe('the assistant gets the context of the project, the plant and the lesson (AIX-001, AIX-002, AI-15, AI-21)', () => {
+  const reply = () => new Response(JSON.stringify({ choices: [{ message: { content: 'ok' } }] }));
+  async function workspace() {
+    const directory = await fixture();
+    const root = join(directory, 'workspace');
+    await mkdir(join(root, 'tests'), { recursive: true });
+    await writeFile(
+      join(root, 'scene.json'),
+      JSON.stringify({
+        schemaVersion: 1,
+        name: 'Belt to sensor',
+        parts: [{ id: 'belt-1', part: 'belt', name: 'Belt', position: { x: 1, y: 0, z: 0 }, config: { secret: 'S3CRET' } }],
+        cameras: [],
+      }),
+    );
+    await writeFile(
+      join(root, 'plant-map.json'),
+      JSON.stringify({ schemaVersion: 2, signals: { 'Belt.Run': { direction: 'command', type: 'BOOL', point: 'Main.Run' } } }),
+    );
+    await writeFile(
+      join(root, 'tests', 'belt.scenario.json'),
+      JSON.stringify({
+        schemaVersion: 1,
+        id: 'Belt',
+        tickMs: 10,
+        durationMs: 500,
+        events: [],
+        expectations: [{ kind: 'at', atMs: 10, condition: { 'Belt.Run': true } }],
+      }),
+    );
+    return { directory, root };
+  }
+  async function ask(
+    options: { solutionsHidden?: () => Promise<boolean>; lessonOf?: boolean },
+    extra: Record<string, unknown>,
+    prepare?: (root: string) => Promise<void>,
+  ) {
+    const { directory, root } = await workspace();
+    await prepare?.(root);
+    let seen: RequestInit | undefined;
+    const provider = createAiProvider({
+      userDataPath: directory,
+      vault: vault(),
+      fetch: async (_url, init) => {
+        seen = init;
+        return reply();
+      },
+      ...(options.solutionsHidden ? { solutionsHidden: options.solutionsHidden } : {}),
+      ...(options.lessonOf === false ? {} : { lessonOf: () => ({ manifest: LESSON, text: lessonText }) }),
+    });
+    await provider.saveConfig({ enabled: true, endpoint: 'https://api.example.test', model: 'gpt-test' });
+    await provider.storeKey('secret');
+    const result = await provider.request(
+      root,
+      { workspaceId: request.workspaceId, mode: 'ask', prompt: 'Why does it not run?', ...extra } as never,
+      new AbortController().signal,
+    );
+    const body = seen ? (JSON.parse(String(seen.body)) as { messages: Array<{ content: string }> }) : undefined;
+    // the parsed context is read by path in every test below; a type for it would only repeat the context builder's
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return { result, seen, body, context: body ? (JSON.parse(body.messages[1]!.content) as Record<string, any>) : undefined };
+  }
+  const failed = [
+    { id: 'Belt', assertions: [{ index: 0, kind: 'at', atMs: 10, checks: [{ signal: 'Belt.Run', expected: true, observed: false }] }] },
+  ];
+
+  it('sends the plant, the scenarios, the failed checks, the facts, the diagnostics with their message and the lesson goal', async () => {
+    const { result, context } = await ask(
+      { solutionsHidden: async () => false },
+      {
+        failedScenarios: failed,
+        facts: { 'fact:itemsDropped': 2 },
+        diagnostics: [{ code: 'E_TYPE', message: 'Type mismatch on the coil', path: 'src/Main.st', line: 3, element: 'rung:r1' }],
+        selection: { startLine: 2, endLine: 3, text: 'Run := TRUE;' },
+        lessonContext: { lessonId: 'ld-no-nc-contacts', stage: 'edit' },
+        locale: 'es',
+      },
+    );
+    expect(result).toMatchObject({ ok: true });
+    expect(context!.locale).toBe('es');
+    expect(context!.selection).toEqual({ startLine: 2, endLine: 3, text: 'Run := TRUE;' });
+    const sent = context!.context;
+    expect(sent.plant.scene).toEqual({ name: 'Belt to sensor', parts: [{ id: 'belt-1', name: 'Belt', part: 'belt' }] });
+    expect(sent.plant.signals).toEqual([{ name: 'Belt.Run', direction: 'command', type: 'BOOL', point: 'Main.Run' }]);
+    expect(sent.scenarios[0]).toMatchObject({ id: 'Belt', path: 'tests/belt.scenario.json' });
+    expect(sent.failedScenarios).toEqual(failed);
+    expect(sent.facts).toEqual({ 'fact:itemsDropped': 2 });
+    expect(sent.diagnostics).toEqual([
+      { code: 'E_TYPE', message: 'Type mismatch on the coil', path: 'src/Main.st', line: 3, element: 'rung:r1' },
+    ]);
+    expect(sent.lesson).toMatchObject({
+      lessonId: 'ld-no-nc-contacts',
+      goal: 'Stop the motor when the wire breaks.',
+      stage: { key: 'edit', title: 'Change the rung' },
+      solutionsHidden: false,
+    });
+    expect(JSON.stringify(context)).not.toContain('S3CRET');
+  });
+
+  it('bounds what it sends: four failed scenarios, 256 characters of a message, sixty-four list items', async () => {
+    const many = Array.from({ length: 4 }, (_, i) => ({ id: `F${i}`, assertions: failed[0]!.assertions }));
+    const { context } = await ask({}, { failedScenarios: many, diagnostics: [{ code: 'E_X', message: 'm'.repeat(256) }] });
+    expect(context!.context.failedScenarios).toHaveLength(4);
+    expect(context!.context.diagnostics[0].message).toHaveLength(256);
+    const bigScene = async (root: string) => {
+      const parts = Array.from({ length: 100 }, (_, i) => ({ id: `p${i}`, part: 'belt', name: `P${i}` }));
+      await writeFile(join(root, 'scene.json'), JSON.stringify({ schemaVersion: 1, name: 'Big', parts, cameras: [] }));
+    };
+    const { context: big } = await ask({}, {}, bigScene);
+    expect(big!.context.plant.scene.parts).toHaveLength(64);
+  });
+
+  it('with solutions hidden, or unknown, the context has no solution, no stage text and no last hint, and the system says so', async () => {
+    for (const hidden of [
+      { solutionsHidden: async () => true },
+      {},
+      { solutionsHidden: async () => Promise.reject(new Error('unreadable')) },
+    ]) {
+      const { body, context } = await ask(hidden, { lessonContext: { lessonId: 'ld-no-nc-contacts', stage: 'edit' } });
+      const text = JSON.stringify(body);
+      expect(context!.context.lesson.solutionsHidden).toBe(true);
+      expect(text).not.toContain(SENTINEL_BODY);
+      expect(text).not.toContain(SENTINEL_LAST_HINT);
+      expect(text).not.toContain(LESSON.solution.project);
+      expect(body!.messages[0]!.content).toContain(
+        'Solutions are hidden by the classroom setting. Give guidance and hints only; NEVER write a complete solution program.',
+      );
+    }
+  });
+
+  it('with solutions shown it says so, keeps every hint, and still carries no solution or stage text', async () => {
+    const { body, context } = await ask({ solutionsHidden: async () => false }, { lessonContext: { lessonId: 'ld-no-nc-contacts' } });
+    expect(context!.context.lesson.solutionsHidden).toBe(false);
+    expect(context!.context.lesson.hints).toHaveLength(2);
+    expect(JSON.stringify(body)).not.toContain(SENTINEL_BODY);
+    expect(JSON.stringify(body)).not.toContain(LESSON.solution.project);
+    expect(body!.messages[0]!.content).not.toContain('Solutions are hidden by the classroom setting');
+  });
+
+  it('sends no lesson without a lesson context, and an unknown lesson id sends none either', async () => {
+    expect((await ask({}, {})).context!.context.lesson).toBeUndefined();
+    const unknown = await createAiProvider({ userDataPath: await fixture(), vault: vault() });
+    expect(unknown).toBeDefined();
+    expect((await ask({ lessonOf: false }, { lessonContext: { lessonId: 'ld-no-nc-contacts' } })).context!.context.lesson).toBeUndefined();
+  });
+
+  it('keeps what matters and drops the rest in order when the body is over 128 KiB', async () => {
+    const scenario = (n: number) =>
+      JSON.stringify({
+        schemaVersion: 1,
+        id: `S${n}`,
+        events: [],
+        expectations: Array.from({ length: 64 }, (_, i) => ({
+          kind: 'at',
+          atMs: i,
+          condition: { [`Plant.Signal${n}_${i}`]: true, [`Plant.Other${n}_${i}`]: false, [`Plant.More${n}_${i}`]: 1 },
+        })),
+      });
+    const { result, body, context } = await ask(
+      { solutionsHidden: async () => false },
+      {
+        failedScenarios: failed,
+        diagnostics: [{ code: 'E_TYPE', message: 'Type mismatch on the coil' }],
+        lessonContext: { lessonId: 'ld-no-nc-contacts' },
+        activeFile: { fileId: 'file:src/Big.st', path: 'src/Big.st' },
+      },
+      async (root) => {
+        for (let n = 0; n < 16; n += 1) await writeFile(join(root, 'tests', `s${n}.scenario.json`), scenario(n));
+        await writeFile(join(root, 'src', 'Big.st'), `PROGRAM Big\n${'(* filler *)\n'.repeat(4000)}END_PROGRAM\n`);
+      },
+    );
+    expect(result).toMatchObject({ ok: true });
+    expect(Buffer.byteLength(String(JSON.stringify(body)))).toBeLessThanOrEqual(128 * 1024);
+    expect(context!.context.failedScenarios).toEqual(failed);
+    expect(context!.context.diagnostics[0].message).toBe('Type mismatch on the coil');
+    expect(context!.context.lesson.goal).toBe('Stop the motor when the wire breaks.');
+    expect(context!.context.scenarios).toEqual([]);
+  });
+
+  it('refuses a secret-like diagnostic message or selection before calling a provider', async () => {
+    for (const extra of [
+      { diagnostics: [{ code: 'E_X', message: 'Authorization: Bearer abc123' }] },
+      { selection: { startLine: 1, endLine: 1, text: 'api_key := 1;' } },
+    ]) {
+      const { result, seen } = await ask({}, extra);
+      expect(result).toEqual({ ok: false, code: 'AI_CONTEXT_REJECTED' });
+      expect(seen).toBeUndefined();
+    }
+  });
+});
+
+describe('the system policy (AIX-005, AI-21, rule 8)', () => {
+  it('opens with the one name, and states the approved rule 8 sentence exactly', () => {
+    expect(SYSTEM_POLICY.startsWith('You are ZPLC Assistant.')).toBe(true);
+    expect(SYSTEM_POLICY).not.toContain('ZPLC Agent');
+    expect(SYSTEM_POLICY).toContain(
+      'An AI assistant or MCP never initiates them on hardware or on a session a person runs: it never forces I/O, changes RUN/STOP, ' +
+        'flashes, deploys or opens a serial port there. ' +
+        'It may set inputs and step a simulator that is private to it, one the MCP server starts for that agent alone (D-31, AIX-014).',
+    );
+    expect(SYSTEM_POLICY).toContain('Never claim hardware action');
+  });
+
+  it('carries the lesson stance of D-32: a hint first, a solution only when asked plainly and shown, never a pass', () => {
+    expect(SYSTEM_POLICY).toContain('give a hint first');
+    expect(SYSTEM_POLICY).toContain('give a solution only when the person asks for it plainly and lesson.solutionsHidden is false');
+    expect(SYSTEM_POLICY).toContain('never give a solution when lesson.solutionsHidden is true');
+    expect(SYSTEM_POLICY).toContain('never say that a lesson is passed; only the Check control marks it');
+  });
+
+  it('asks for the reply in the locale of the interface and names the glossary', () => {
+    expect(SYSTEM_POLICY).toContain('Reply in the language of "locale" ("en" or "es")');
+    for (const term of ['rung', 'coil', 'contact', 'function block', 'step', 'transition', 'scan', 'scenario', 'plant map', 'Check'])
+      expect(SYSTEM_POLICY).toContain(term);
+  });
+});
+
+describe('a local model on loopback needs no key (AIX-006, AI-17)', () => {
+  async function local(
+    fetchImpl: (url: string, init: RequestInit) => Promise<Response>,
+    endpoint = 'http://localhost:11434',
+    backend = 'basic_text',
+  ) {
+    const directory = await fixture();
+    const provider = createAiProvider({ userDataPath: directory, vault: vault(backend), fetch: fetchImpl });
+    expect(await provider.saveConfig({ enabled: true, endpoint, model: 'llama3' })).toEqual({ ok: true });
+    return { provider, directory };
+  }
+  const ok = async () => new Response(JSON.stringify({ choices: [{ message: { content: 'hi' } }] }));
+  const ask = { workspaceId: request.workspaceId, mode: 'ask' as const, prompt: 'hello' };
+
+  it('is configured without a key, and sends the request without an Authorization header', async () => {
+    let seen: { url: string; init: RequestInit } | undefined;
+    const { provider, directory } = await local(async (url, init) => {
+      seen = { url, init };
+      return ok();
+    });
+    expect(await provider.getStatus()).toMatchObject({ configured: true, enabled: true, keyStored: false });
+    expect(await provider.request(join(directory, 'workspace'), ask, new AbortController().signal)).toMatchObject({
+      ok: true,
+      answer: 'hi',
+    });
+    expect(seen!.url).toBe('http://localhost:11434/v1/chat/completions');
+    expect(Object.keys(seen!.init.headers as Record<string, string>)).toEqual(['Content-Type']);
+    expect(seen!.init.redirect).toBe('error');
+  });
+
+  it('works for the three loopback hosts, and sends a key that is stored anyway', async () => {
+    for (const endpoint of ['http://127.0.0.1:1234', 'http://[::1]:8080']) {
+      const { provider, directory } = await local(ok, endpoint);
+      expect(await provider.getStatus()).toMatchObject({ configured: true });
+      expect(await provider.request(join(directory, 'workspace'), ask, new AbortController().signal)).toMatchObject({ ok: true });
+    }
+    let auth: unknown;
+    const { provider, directory } = await local(
+      async (_url, init) => {
+        auth = (init.headers as Record<string, string>).Authorization;
+        return ok();
+      },
+      'http://localhost:11434',
+      'gnome_libsecret',
+    );
+    await provider.storeKey('local-key');
+    await provider.request(join(directory, 'workspace'), ask, new AbortController().signal);
+    expect(auth).toBe('Bearer local-key');
+  });
+
+  it('still needs a stored key for a hosted https endpoint, and refuses any other host', async () => {
+    const directory = await fixture();
+    const provider = createAiProvider({ userDataPath: directory, vault: vault(), fetch: ok });
+    await provider.saveConfig({ enabled: true, endpoint: 'https://api.example.test', model: 'gpt-test' });
+    expect(await provider.getStatus()).toMatchObject({ configured: false });
+    expect(await provider.request(join(directory, 'workspace'), ask, new AbortController().signal)).toEqual({
+      ok: false,
+      code: 'AI_UNCONFIGURED',
+    });
+    for (const endpoint of ['http://localhost.evil.test', 'http://127.0.0.2', 'http://[::ffff:127.0.0.1]', 'http://example.test'])
+      expect(await provider.saveConfig({ enabled: true, endpoint, model: 'gpt-test' }), endpoint).toEqual({
+        ok: false,
+        code: 'AI_CONTEXT_REJECTED',
+      });
+  });
+
+  it('does not follow a redirect: a loopback server that redirects elsewhere is an unreachable provider', async () => {
+    let hits = 0;
+    const target = Bun.serve({ port: 0, hostname: '127.0.0.1', fetch: () => ((hits += 1), new Response('{}')) });
+    const redirecting = Bun.serve({
+      port: 0,
+      hostname: '127.0.0.1',
+      fetch: () => new Response(null, { status: 307, headers: { Location: `http://127.0.0.1:${target.port}/stolen` } }),
+    });
+    try {
+      const directory = await fixture();
+      const provider = createAiProvider({ userDataPath: directory, vault: vault('basic_text') });
+      await provider.saveConfig({ enabled: true, endpoint: `http://127.0.0.1:${redirecting.port}`, model: 'm' });
+      expect(await provider.request(join(directory, 'workspace'), ask, new AbortController().signal)).toEqual({
+        ok: false,
+        code: 'AI_PROVIDER_UNREACHABLE',
+      });
+      expect(await provider.testConnection()).toEqual({ ok: false, code: 'AI_PROVIDER_UNREACHABLE' });
+      expect(hits).toBe(0);
+    } finally {
+      await redirecting.stop(true);
+      await target.stop(true);
+    }
+  });
+});
+
+describe('the connection test (AIX-006)', () => {
+  const KEY = 'sk-test-key-98765';
+  type Seen = { method: string; auth: string | null; body: Record<string, unknown> };
+  async function against(handler: (seen: Seen) => Response | Promise<Response>, options: { key?: boolean; timeout?: number } = {}) {
+    const seen: Seen[] = [];
+    const server = Bun.serve({
+      port: 0,
+      hostname: '127.0.0.1',
+      async fetch(incoming) {
+        const entry = {
+          method: incoming.method,
+          auth: incoming.headers.get('authorization'),
+          body: (await incoming.json()) as Record<string, unknown>,
+        };
+        seen.push(entry);
+        return handler(entry);
+      },
+    });
+    const directory = await fixture();
+    const provider = createAiProvider({
+      userDataPath: directory,
+      vault: vault(),
+      ...(options.timeout ? { probeTimeoutMs: options.timeout } : {}),
+    });
+    await provider.saveConfig({ enabled: true, endpoint: `http://127.0.0.1:${server.port}`, model: 'llama3' });
+    if (options.key) await provider.storeKey(KEY);
+    return { provider, seen, stop: () => server.stop(true) };
+  }
+
+  it('sends one minimal request with no project data and answers ok with the latency', async () => {
+    const { provider, seen, stop } = await against(() => new Response(JSON.stringify({ choices: [{ message: { content: 'pong' } }] })));
+    try {
+      const result = await provider.testConnection();
+      expect(result).toEqual({ ok: true, latencyMs: expect.any(Number) });
+      expect(seen).toHaveLength(1);
+      expect(seen[0]).toEqual({
+        method: 'POST',
+        auth: null,
+        body: { model: 'llama3', stream: false, max_tokens: 1, messages: [{ role: 'user', content: 'ping' }] },
+      });
+    } finally {
+      await stop();
+    }
+  });
+
+  it('sends the key when one is stored, and never puts it in what it answers', async () => {
+    const { provider, seen, stop } = await against(() => new Response(`rejected ${KEY}`, { status: 401 }), { key: true });
+    try {
+      const result = await provider.testConnection();
+      expect(result).toEqual({ ok: false, code: 'AI_PROVIDER_AUTH' });
+      expect(seen[0]!.auth).toBe(`Bearer ${KEY}`);
+      expect(JSON.stringify(result)).not.toContain(KEY);
+    } finally {
+      await stop();
+    }
+  });
+
+  it('says what failed: a model that is not there, a rate limit with its wait, a server error', async () => {
+    for (const [status, headers, expected] of [
+      [404, {}, { ok: false, code: 'AI_PROVIDER_MODEL' }],
+      [429, { 'Retry-After': '12' }, { ok: false, code: 'AI_PROVIDER_RATE_LIMIT', retryAfter: 12 }],
+      [500, {}, { ok: false, code: 'AI_PROVIDER_SERVER' }],
+    ] as const) {
+      const { provider, stop } = await against(() => new Response('no', { status, headers }));
+      try {
+        expect(await provider.testConnection()).toEqual(expected);
+      } finally {
+        await stop();
+      }
+    }
+  });
+
+  it('answers unreachable when nothing listens, unconfigured when nothing is saved, and times out', async () => {
+    const closed = Bun.serve({ port: 0, hostname: '127.0.0.1', fetch: () => new Response('') });
+    const port = closed.port;
+    await closed.stop(true);
+    const directory = await fixture();
+    const provider = createAiProvider({ userDataPath: directory, vault: vault() });
+    expect(await provider.testConnection()).toEqual({ ok: false, code: 'AI_UNCONFIGURED' });
+    await provider.saveConfig({ enabled: true, endpoint: `http://127.0.0.1:${port}`, model: 'm' });
+    expect(await provider.testConnection()).toEqual({ ok: false, code: 'AI_PROVIDER_UNREACHABLE' });
+    const { provider: slow, stop } = await against(() => new Promise<Response>(() => undefined), { timeout: 50 });
+    try {
+      expect(await slow.testConnection()).toEqual({ ok: false, code: 'AI_TIMEOUT' });
+    } finally {
+      await stop();
+    }
+  });
+
+  it('needs a stored key for a hosted endpoint, and sends nothing without it', async () => {
+    let calls = 0;
+    const directory = await fixture();
+    const provider = createAiProvider({ userDataPath: directory, vault: vault(), fetch: async () => ((calls += 1), new Response('{}')) });
+    await provider.saveConfig({ enabled: true, endpoint: 'https://api.example.test', model: 'm' });
+    expect(await provider.testConnection()).toEqual({ ok: false, code: 'AI_UNCONFIGURED' });
+    expect(calls).toBe(0);
   });
 });
