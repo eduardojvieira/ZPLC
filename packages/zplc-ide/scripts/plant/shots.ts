@@ -45,6 +45,16 @@ export const STATES: Readonly<Record<string, (stage: Stage) => Promise<void>>> =
     runBelts(s, true);
     await s.run(1200, 20);
   },
+  /**
+   * Every axis and rod of the scene away from rest, at positions that only the scene decides: each analogue setpoint at its own
+   * mid-stroke value, each boolean command on (a pusher out, a fork raised) except the `Right` ones and the emitters. For the pictures
+   * that show the geometry of a piece whose size follows an axis is the same before and after a change of how it is kept.
+   */
+  axes: async (s) => {
+    const commands = s.core.signals.filter((c) => c.direction === 'command');
+    s.core.apply(Object.fromEntries(commands.map((c, i) => [c.name, c.type === 'BOOL' ? !/Right$|\.emit$/.test(c.name) : 0.45 + 0.07 * i])));
+    await s.run(1500, 20);
+  },
   /** The belt has run and stopped, its box still on the way (pair with `running`, same instant). */
   stopped: async (s) => {
     await STATES.working!(s);
