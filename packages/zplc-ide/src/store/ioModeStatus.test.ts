@@ -30,7 +30,7 @@ describe('plant I/O mode status (LNK-008, LNK-010, LNK-014)', () => {
     expect(getIoModeStatus().mirroring).toBe(true);
   });
 
-  it('LNK-014 the measured latency is the link\'s, and null before the first measure', async () => {
+  it("LNK-014 the measured latency is the link's, and null before the first measure", async () => {
     const link = createFakeIoModeLink();
     unbind = bindIoModeLink(link);
     await startIoMode();
