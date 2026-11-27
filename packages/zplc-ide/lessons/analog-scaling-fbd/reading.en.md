@@ -58,7 +58,7 @@ options:
 question: Why does a scaled value of 6.0 bar become the constant 60 in the worked example?
 options:
   - { text: 'Because the diagram scales to tenths of a bar, and a whole number holds 60 but not 6.0', correct: true, feedback: 'Right. Scaling to a smaller unit keeps a decimal place with whole numbers.' }
-  - { text: 'Because 60 is the raw count at 6.0 bar', feedback: 'The raw count at 6.0 bar is 1200; the comparison uses the scaled value.' }
+  - { text: 'Because 60 is the raw count at 6.0 bar', feedback: 'The raw count at 6.0 bar is 1360; the comparison uses the scaled value.' }
   - { text: 'Because LIMIT multiplies by 10', feedback: 'LIMIT only keeps a value inside MN and MX; it does not change it otherwise.' }
 ```
 

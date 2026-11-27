@@ -12,7 +12,7 @@ Así, `LD Count`, `ADD 3`, `ST Count` leen un número, le suman y lo vuelven a g
 
 ## Ejemplo resuelto
 
-Una sala pequeña tiene 50 asientos. Un molinete a la entrada da `Pass` mientras pasa un visitante, durante varios ciclos. El programa cuenta hacia abajo los asientos libres en el INT `Seats`, que empieza en 50, y una lámpara `HallFull` se enciende cuando no queda ningún asiento. Un visitante que pasa con la sala ya llena no debe llevar la cuenta por debajo de cero.
+Una sala pequeña tiene 50 asientos. Un torniquete a la entrada da `Pass` mientras pasa un visitante, durante varios ciclos. El programa cuenta hacia abajo los asientos libres en el INT `Seats`, que empieza en 50, y una lámpara `HallFull` se enciende cuando no queda ningún asiento. Un visitante que pasa con la sala ya llena no debe llevar la cuenta por debajo de cero.
 
 Dos condiciones protegen la resta, y cada una salta por encima de ella. La primera, `LE 0`, salta con JMPC cuando no quedan asientos. La segunda es el flanco ascendente, `Pass` ahora y no en el ciclo anterior, y salta con JMPCN cuando no hay un paso nuevo.
 
@@ -34,7 +34,7 @@ done:
         ST    HallFull
 ```
 
-Siga a los últimos visitantes en el diagrama. Con 2 asientos libres, un paso largo ocupa un asiento una sola vez: en su primer ciclo no se salta ninguna de las dos veces y Seats baja en uno, y en los ciclos siguientes `PassWas` es TRUE y JMPCN salta. El visitante siguiente ocupa el último asiento y `HallFull` se enciende. Pasa un visitante más: `LE 0` es TRUE, JMPC salta, y Seats sigue en 0.
+Siga a los últimos visitantes en el diagrama. Con 2 asientos libres, un paso largo ocupa un asiento una sola vez: en su primer ciclo ninguno de los dos saltos se produce y Seats baja en uno, y en los ciclos siguientes `PassWas` es TRUE y JMPCN salta. El visitante siguiente ocupa el último asiento y `HallFull` se enciende. Pasa un visitante más: `LE 0` es TRUE, JMPC salta, y Seats sigue en 0.
 
 ```timing
 span: 4000

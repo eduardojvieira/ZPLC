@@ -4,8 +4,8 @@
   "summary": "Mantenga un total acumulado en una variable INT con bloques ADD, SEL y R_TRIG, y conviértalo en tres resultados BOOL con bloques de comparación.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador en particular.",
   "objectives": [
-    "Use una variable INT para un número: un bloque ADD calcula el valor siguiente, los bloques SEL eligen entre el total anterior, el nuevo y cero, y los bloques LT, EQ y GT convierten el número en resultados BOOL.",
-    "Sume a un número solo en el flanco ascendente de una entrada, con un bloque R_TRIG, de modo que un pulsador mantenido durante varios ciclos cuente una sola vez."
+    "Use una variable INT para un número, construya su valor siguiente con bloques aritméticos y de selección, y convierta el número en resultados BOOL con bloques LT, EQ y GT.",
+    "Sume a un número solo una vez por pulsación, de modo que un pulsador mantenido durante varios ciclos cuente una sola vez."
   ],
   "stages": [
     {

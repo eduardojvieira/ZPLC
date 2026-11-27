@@ -26,7 +26,7 @@ Coloque un CTU en un peldaño para que CountReached se active en el tercer flanc
 ## Objetivos
 
 - Coloque un bloque contador en un peldaño y fije su preset y su reset.
-- Explique que un contador suma uno en el flanco ascendente de su entrada, no en cada escaneo en que la entrada está en alto.
+- Explique que un contador suma uno en el flanco ascendente de su entrada, no en cada ciclo en que la entrada está en alto.
 
 ## Etapas
 

@@ -13,35 +13,33 @@ Una variable se puede leer a la izquierda del diagrama y escribir a la derecha. 
 
 ## Ejemplo resuelto
 
-Una cinta de acumulación entre dos máquinas guarda hasta tres bandejas. Un sensor en su entrada da `EntryEye` mientras entra una bandeja, y otro en su salida da `ExitEye` mientras sale una; una bandeja puede quedarse delante de cualquiera de los dos durante varios ciclos. La variable INT `Trays` guarda las bandejas que hay en la cinta, y una lámpara `BufferFull` debe encenderse mientras haya tres.
+El panel de control de una línea de embalaje muestra tres cosas, cada una construida con un solo bloque de esta página.
 
-Cada bandeja debe cambiar el número una sola vez, hacia arriba en la entrada y hacia abajo en la salida, así que el diagrama arma el valor siguiente en dos pasos, cada uno habilitado por un pulso:
+- **La velocidad de la cinta.** Un selector `FastMode` elige entre dos velocidades. Un bloque SEL recibe `FastMode` en G, la constante INT 300 en IN0 y la constante INT 600 en IN1, y su salida escribe `BeltSpeed`: 300 mientras el selector está apagado, 600 mientras está encendido.
+- **Las piezas del turno.** La línea cuenta las piezas buenas en `Good` y las rechazadas en `Rejected`. Un bloque ADD recibe `Good` en IN1 y `Rejected` en IN2, y su salida escribe `Parts`, así que el visor muestra siempre la suma.
+- **Un pulso de registro.** Cada pulsación del pulsador `Mark` debe escribir una línea en el registro del turno, por mucho que se mantenga pulsado. Un bloque R_TRIG llamado `MarkEdge` recibe `Mark` en CLK, y su Q escribe `LogLine`, en TRUE durante un ciclo por cada pulsación.
 
-- un R_TRIG llamado `InEdge` con `EntryEye` en CLK, y un R_TRIG llamado `OutEdge` con `ExitEye` en CLK;
-- un ADD con `Trays` en IN1 y la constante INT 1 en IN2, y un SEL con `InEdge.Q` en G, `Trays` en IN0 y ADD.OUT en IN1;
-- un SUB con el primer SEL en IN1 y la constante INT 1 en IN2, y un segundo SEL con `OutEdge.Q` en G, el primer SEL en IN0 y SUB.OUT en IN1, cuya salida escribe `Trays`.
-
-Un bloque GE con `Trays` en IN1 y la constante 3 en IN2 da `BufferFull`. En el diagrama la tercera bandeja se queda más tiempo delante del sensor de entrada y aun así cuenta una vez, y una bandeja que sale devuelve el número a dos.
+Dos bloques GE convierten los números en lámparas: `BeltSpeed` frente a 500 da `FastLamp`, y `Parts` frente a 1000 da `ShiftDone`.
 
 ```timing
 span: 5000
 signals:
-  - { name: EntryEye, edges: [400, 600, 1200, 1400, 2000, 2500] }
-  - { name: ExitEye, edges: [3300, 3500] }
-  - { name: BufferFull, edges: [2000, 3300] }
+  - { name: FastMode, edges: [1000, 3000] }
+  - { name: FastLamp, edges: [1000, 3000] }
+  - { name: Mark, edges: [1500, 2500] }
+  - { name: LogLine, edges: [1500, 1510] }
 marks:
-  - { from: 400, to: 1200, label: 'Trays 1' }
-  - { from: 1200, to: 2000, label: 'Trays 2' }
-  - { from: 2000, to: 3300, label: 'Trays 3' }
-  - { from: 3300, to: 5000, label: 'Trays 2' }
-caption: Una cuenta por bandeja en cada extremo, y la comparación convierte el número en la lámpara
+  - { from: 1000, to: 3000, label: 'BeltSpeed 600' }
+caption: SEL elige la velocidad; R_TRIG da un pulso breve para una pulsación larga de Mark
 ```
+
+Aquí cada bloque trabaja solo: ninguno alimenta a otro. La práctica necesita varios de ellos juntos, para que una pulsación cambie un número una sola vez; qué bloques necesita, y cómo se conectan al SEL que ya pone Total a cero, queda para usted.
 
 ## Errores comunes
 
-- Conectar el sensor directamente a G del SEL. G sigue en TRUE en cada ciclo en que la bandeja está ahí, así que la suma vuelve en cada ciclo.
+- Esperar que un nivel cambie un número una sola vez. Un pulsador mantenido durante varios ciclos es TRUE en cada uno de ellos, así que lo que maneje su nivel actúa en cada ciclo.
 - Intercambiar IN0 e IN1 de un SEL. IN0 es el valor mientras G es FALSE.
-- Conectar ADD.OUT directamente a la variable. Entonces el total crece en cada ciclo.
+- Escribir una variable desde dos bloques de salida. Una variable lleva un solo bloque de salida; el segundo sobrescribiría al primero.
 - Darle a la constante un tipo distinto del de la variable. Manténgala INT cuando el total es un INT.
 - Usar GE donde la tarea pide EQ: GE también sigue en TRUE por encima del límite.
 
@@ -56,11 +54,11 @@ options:
 ```
 
 ```quiz
-question: La entrada de un total está conectada directamente a G del SEL, sin el R_TRIG, y el ADD suma 5. Una pulsación dura tres ciclos. ¿Cuánto crece el total?
+question: Un R_TRIG tiene un pulsador en CLK, y el pulsador se mantiene durante tres ciclos. ¿En cuántos ciclos está su Q en TRUE?
 options:
-  - { text: '15', correct: true, feedback: 'Correcto. G está en TRUE en tres ciclos, así que la suma se vuelve a escribir tres veces.' }
-  - { text: '5', feedback: 'Para eso hace falta el R_TRIG, cuya Q está en TRUE durante un solo ciclo.' }
-  - { text: '0', feedback: 'Mientras G está en TRUE el SEL da la suma, así que el total sí crece.' }
+  - { text: '1', correct: true, feedback: 'Correcto. Q es TRUE solo en el ciclo en que CLK pasa de FALSE a TRUE.' }
+  - { text: '3', feedback: 'Ese es el nivel del pulsador. El R_TRIG da el cambio, que ocurre una vez.' }
+  - { text: '0', feedback: 'El pulsador sí sube una vez, así que Q es TRUE en ese único ciclo.' }
 ```
 
 ## Qué hará en la práctica

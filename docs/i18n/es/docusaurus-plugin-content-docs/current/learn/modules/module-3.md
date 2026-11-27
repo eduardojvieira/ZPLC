@@ -21,7 +21,7 @@ El tiempo y los eventos vienen después de la lógica: los temporizadores retras
 | Lección | Id | Lenguajes | minutos |
 | --- | --- | --- | --- |
 | [Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión](../lessons/timers-on-delay-off-delay.md) | `timers-on-delay-off-delay` | ST | 15 |
-| [Flancos en escalera: contactos P y N y pulsos de un escaneo](../lessons/ld-edges.md) | `ld-edges` | LD | 15 |
+| [Flancos en escalera: contactos P y N y pulsos de un ciclo](../lessons/ld-edges.md) | `ld-edges` | LD | 15 |
 | [Flancos y contador de pulsos](../lessons/edge-counter-pulses.md) | `edge-counter-pulses` | ST | 15 |
 | [Contadores en diagrama de bloques de función: contar piezas hasta completar un lote](../lessons/counter-batch-fbd.md) | `counter-batch-fbd` | FBD | 20 |
 | [Retardo a la conexión y a la desconexión en escalera: temporizadores como bloques en un peldaño](../lessons/timers-on-delay-off-delay-ladder.md) | `timers-on-delay-off-delay-ladder` | LD | 20 |

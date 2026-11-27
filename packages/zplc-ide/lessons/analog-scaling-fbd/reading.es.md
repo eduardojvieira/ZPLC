@@ -58,7 +58,7 @@ options:
 question: ¿Por qué un valor escalado de 6,0 bar pasa a ser la constante 60 en el ejemplo resuelto?
 options:
   - { text: 'Porque el diagrama escala a décimas de bar, y un número entero guarda 60 pero no 6,0', correct: true, feedback: 'Correcto. Escalar a una unidad más pequeña conserva un decimal con números enteros.' }
-  - { text: 'Porque 60 es la cuenta en bruto a 6,0 bar', feedback: 'La cuenta en bruto a 6,0 bar es 1200; la comparación usa el valor escalado.' }
+  - { text: 'Porque 60 es la cuenta en bruto a 6,0 bar', feedback: 'La cuenta en bruto a 6,0 bar es 1360; la comparación usa el valor escalado.' }
   - { text: 'Porque LIMIT multiplica por 10', feedback: 'LIMIT solo mantiene un valor entre MN y MX; fuera de eso no lo cambia.' }
 ```
 

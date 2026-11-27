@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexione",
       "body": "Intercambie los dos peldaños de SetFirst y ejecute de nuevo. ¿Qué aserción falla y por qué gana el peldaño que va al final?",
-      "checkpoint": "El procesador escanea los peldaños de arriba abajo en cada ciclo, así que la última bobina que escribe la variable deja su valor. Es el orden de escaneo de este runtime, no una propiedad de todos los PLC: revise la regla de orden del PLC que utilice."
+      "checkpoint": "El procesador recorre los peldaños de arriba abajo en cada ciclo, así que la última bobina que escribe la variable deja su valor. Es el orden del ciclo de este runtime, no una propiedad de todos los PLC: revise la regla de orden del PLC que utilice."
     }
   ],
   "hints": [
