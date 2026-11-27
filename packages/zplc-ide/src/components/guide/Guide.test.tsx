@@ -192,7 +192,8 @@ describe('The Guide (GDE-003)', () => {
 });
 
 describe('With solutions hidden the last hint is hidden too (CRS-017)', () => {
-  const hintTexts = () => [...dom.screen.getByRole('region', { name: dom.t('learn.hints') }).querySelectorAll('details p')].map((p) => p.textContent);
+  const hintTexts = () =>
+    [...dom.screen.getByRole('region', { name: dom.t('learn.hints') }).querySelectorAll('details p')].map((p) => p.textContent);
   const hide = (hideSolutions: boolean) =>
     dom.patchStore(useAppSettings, { settings: { ...useAppSettings.getState().settings, hideSolutions } } as never);
 
@@ -208,7 +209,7 @@ describe('With solutions hidden the last hint is hidden too (CRS-017)', () => {
     open();
     hide(false);
     dom.render(<Guide />);
-    expect(hintTexts()).toEqual(lesson.hints);
+    expect(hintTexts()).toEqual([...lesson.hints]);
     expect(document.querySelector('[data-learn-solutions-hidden]')).toBeNull();
   });
 

@@ -10,7 +10,7 @@ const catalog = {
   en: real.learnLessonCatalog.en.map((entry) => ({ ...entry, hints: entry.hints.slice(0, 1) })),
   es: real.learnLessonCatalog.es.map((entry) => ({ ...entry, hints: entry.hints.slice(0, 1) })),
 };
-mock.module('../learnLesson', () => ({ ...real, learnLessonCatalog: catalog }));
+void mock.module('../learnLesson', () => ({ ...real, learnLessonCatalog: catalog }));
 const { useAppSettings } = await import('../../store/useAppSettings');
 const { useLearnProgress } = await import('../../learn/progressState');
 const { Guide } = await import('./Guide');
