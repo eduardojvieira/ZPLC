@@ -511,3 +511,93 @@ describe('AIX-014 the recorded simulation tools answer as before', () => {
     expect(MCP_TOOL_NAMES).toContain('simulation_start');
   });
 });
+
+describe('AIX-014 a debug session reports when its source changed', () => {
+  itNative('start -> step is stale: false, workspace_write changes the program -> inspect is stale: true with nextStep, stop and start -> stale: false and new program runs', async () => {
+    const workspace = await stProject(COUNTER);
+    const call = client(workspace);
+    const first = await call('debug_session_start');
+    const step1 = await call('debug_step', { sessionId: first.sessionId, cycles: 1, watch: ['Main.x'] });
+    expect(step1).toMatchObject({ ok: true, stale: false, values: { 'Main.x': 1 } });
+    expect(step1.nextStep).toBeUndefined();
+
+    const updated = 'PROGRAM Main\nVAR x : INT; y : INT; z : INT; END_VAR\nx := x + 10;\ny := x * 2;\nz := z + 1;\nEND_PROGRAM\n';
+    const written = await call('workspace_write', { files: [{ path: 'src/Main.st', content: updated }] });
+    expect(written.ok).toBe(true);
+
+    const inspected = await call('debug_inspect', { sessionId: first.sessionId, signals: ['Main.x'] });
+    expect(inspected).toMatchObject({ ok: true, stale: true, nextStep: expect.any(String) });
+    expect(inspected.nextStep).toMatch(/stop/i);
+    expect(inspected.nextStep).toMatch(/start/i);
+
+    const bp = await call('debug_breakpoints', { sessionId: first.sessionId, action: 'list' });
+    expect(bp).toMatchObject({ ok: true, stale: true, nextStep: expect.any(String) });
+
+    const setIn = await call('debug_set_inputs', { sessionId: first.sessionId, inputs: {} });
+    expect(setIn).toMatchObject({ ok: true, stale: true, nextStep: expect.any(String) });
+
+    await call('debug_session_stop', { sessionId: first.sessionId });
+    const second = await call('debug_session_start');
+    const step2 = await call('debug_step', { sessionId: second.sessionId, cycles: 1, watch: ['Main.x'] });
+    expect(step2).toMatchObject({ ok: true, stale: false, values: { 'Main.x': 10 } });
+    expect(step2.nextStep).toBeUndefined();
+    await call('debug_session_stop', { sessionId: second.sessionId });
+  });
+
+  itNative('deleting a compiled file or referencing a new source file in a task marks the session stale: true', async () => {
+    const workspace = await stProject(COUNTER);
+    const call = client(workspace);
+    const { sessionId } = await call('debug_session_start');
+    expect((await call('debug_step', { sessionId, cycles: 1 })).stale).toBe(false);
+
+    // Adding a new source file referenced by a task in zplc.json makes the session stale
+    const helper = 'PROGRAM Helper\nVAR k : INT; END_VAR\nk := k + 1;\nEND_PROGRAM\n';
+    const manifest = JSON.stringify({
+      schemaVersion: 2,
+      name: 'Debug',
+      version: '1.0.0',
+      target: { board: 'posix' },
+      tasks: [{ name: 'T0', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st', 'Helper.st'] }],
+    });
+    expect(
+      (
+        await call('workspace_write', {
+          files: [
+            { path: 'src/Helper.st', content: helper },
+            { path: 'zplc.json', content: manifest },
+          ],
+        })
+      ).ok,
+    ).toBe(true);
+    expect(await call('debug_inspect', { sessionId })).toMatchObject({ ok: true, stale: true, nextStep: expect.any(String) });
+
+    // Deleting a compiled file makes the session stale
+    await rm(join(workspace.root, 'src', 'Main.st'));
+    const afterDelete = await call('debug_step', { sessionId, cycles: 1 });
+    expect(afterDelete).toMatchObject({ ok: true, stale: true, nextStep: expect.any(String) });
+    await call('debug_session_stop', { sessionId });
+  });
+
+  itNative('debug_step keeps all existing fields unchanged when stale is added', async () => {
+    const workspace = await stProject(COUNTER);
+    const call = client(workspace);
+    const { sessionId } = await call('debug_session_start');
+    const answer = await call('debug_step', { sessionId, cycles: 2, watch: ['Main.x', 'Main.y'] });
+    expect(Object.keys(answer).sort()).toEqual(
+      ['ok', 'evidenceLevel', 'sessionId', 'stopReason', 'atMs', 'cycles', 'state', 'cyclesExecuted', 'values', 'stale', 'audit'].sort(),
+    );
+    expect(answer).toMatchObject({
+      ok: true,
+      evidenceLevel: 'host-simulation',
+      sessionId,
+      stopReason: 'stepped',
+      atMs: 20,
+      cycles: 2,
+      state: 'idle',
+      cyclesExecuted: 2,
+      values: { 'Main.x': 2, 'Main.y': 4 },
+      stale: false,
+    });
+    await call('debug_session_stop', { sessionId });
+  });
+});
