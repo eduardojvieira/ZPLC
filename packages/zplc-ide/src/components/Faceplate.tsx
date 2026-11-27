@@ -14,7 +14,7 @@ import { inputAddressLabel, inputRange, type DeclaredInput } from '../runtime/de
 import { createHold } from '../runtime/faceplateState';
 import { outputAddressLabel, type DeclaredOutput } from '../runtime/ioMap';
 import { signalTone, type SignalTone } from '../theme/signalTone';
-import { Button, Checkbox, NumberField, RangeField, SignalValue } from '../ui';
+import { Button, Checkbox, NumberField, RangeField, SignalValue, Tooltip } from '../ui';
 
 export type InputPhase = 'idle' | 'pending' | 'applied';
 
@@ -223,9 +223,11 @@ function InputRow({
       </td>
       <td className="px-2 py-1">
         {row.plantFed && (
-          <span data-from-plant="true" className="mr-2 text-[var(--color-accent-yellow)]" title={t('u3Faceplate.fromPlantHint')}>
-            {t('u3Faceplate.fromPlant')}
-          </span>
+          <Tooltip content={t('u3Faceplate.fromPlantHint')}>
+            <span tabIndex={0} data-from-plant="true" className="mr-2 text-[var(--color-accent-yellow)]">
+              {t('u3Faceplate.fromPlant')}
+            </span>
+          </Tooltip>
         )}
         {owned && (
           <span className="sr-only" data-from-plant-reason>

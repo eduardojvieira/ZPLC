@@ -3017,6 +3017,7 @@
     {"kind":"unit","ref":"tools/docs/generate_hardware_pages.test.ts","test":"LRN-016 every wiring page states the voltage limit, in English and in Spanish"}
   ],
   "LRN-017": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/Faceplate.test.tsx","test":"LRN-017 an input not read yet cannot be switched or held: a click would set TRUE whatever it holds"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/Faceplate.test.tsx","test":"the live I/O faceplate (LRN-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"has no tool that sets a simulation input or writes memory: the faceplate is the person's control, not the agent's (LRN-017, "},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/faceplateState.test.ts","test":"a push button on the faceplate (LRN-017)"},
