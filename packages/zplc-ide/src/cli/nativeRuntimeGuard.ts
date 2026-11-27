@@ -39,7 +39,8 @@ const loopbackFound = found && existsSync(loopbackBinary);
 // POSIX: CMakeLists.txt, if(NOT WIN32)), so there the test is skipped and says why; elsewhere a missing binary is
 // skipped on a developer machine and fails in CI, as for itNative.
 export type LoopbackMode = 'run' | 'skip-platform' | 'fail' | 'skip';
-// A missing zplc_runtime is never excused by the platform: only a runtime that is there and has no loopback peer is a platform skip (VF-023).
+// A missing zplc_runtime is never excused by the platform: only a runtime that is there and has no loopback peer
+// is a platform skip (VF-023).
 export const loopbackMode = (platform: string, runtimeFound: boolean, loopbackFound: boolean, ci: boolean): LoopbackMode =>
   loopbackFound ? 'run' : platform === 'win32' && runtimeFound ? 'skip-platform' : ci ? 'fail' : 'skip';
 

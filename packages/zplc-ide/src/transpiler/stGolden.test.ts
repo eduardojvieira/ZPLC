@@ -159,8 +159,9 @@ function current(): Record<string, Entry> {
   for (const folder of SCANNED) {
     for (const path of walk(join(ROOT, folder))) {
       const language = path.endsWith('.fbd.json') ? 'FBD' : path.endsWith('.ld.json') ? 'LD' : undefined;
-      if (language) // the golden keys are POSIX paths; path.relative gives the separator of the platform (a backslash on Windows)
-      entries[relative(ROOT, path).split(sep).join('/')] = entry(readFileSync(path, 'utf8'), language, projectSources(path));
+      if (language)
+        // the golden keys are POSIX paths; path.relative gives the separator of the platform (a backslash on Windows)
+        entries[relative(ROOT, path).split(sep).join('/')] = entry(readFileSync(path, 'utf8'), language, projectSources(path));
     }
   }
   for (const [name, content] of Object.entries(FBD_FIXTURES)) entries[`fixture/fbd/${name}`] = entry(content, 'FBD');
