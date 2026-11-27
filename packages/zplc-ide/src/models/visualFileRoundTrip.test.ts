@@ -56,7 +56,7 @@ describe('LNG-014 the committed visual files', () => {
         if (!result.ok) {
           expect(result.error.fileName).toBe(path);
           expect(result.error.violations.length).toBeGreaterThan(0);
-          refused.push(relative(repositoryRoot, join(repositoryRoot, path)));
+          refused.push(relative(repositoryRoot, join(repositoryRoot, path)).replaceAll('\\', '/')); // the file names of the list below use `/`
         }
       }
     }

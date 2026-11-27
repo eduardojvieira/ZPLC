@@ -12,19 +12,23 @@ import { createNativeScenarioRuntime, createNativeScenarioSession } from './nati
 
 // The sessions of this file create their persistence roots under a temporary directory of their own, so that the
 // roots another process (a second suite, the CLI of a developer) keeps in the shared temporary directory are never
-// counted here. `tmpdir()` reads TMPDIR on every call, and the native runtime inherits it.
+// counted here. `tmpdir()` reads TMPDIR on POSIX and TEMP, then TMP, on Windows, on every call, and the native runtime
+// inherits them.
+const TEMP_VARIABLES = ['TMPDIR', 'TEMP', 'TMP'] as const;
 const sharedTemp = tmpdir();
-const previousTemp = process.env.TMPDIR;
+const previousTemp = TEMP_VARIABLES.map((name) => process.env[name]);
 let privateTemp = '';
 
 beforeAll(async () => {
   privateTemp = await realpath(await mkdtemp(join(sharedTemp, 'zplc-scenario-suite-')));
-  process.env.TMPDIR = privateTemp;
+  for (const name of TEMP_VARIABLES) process.env[name] = privateTemp;
 });
 
 afterAll(async () => {
-  if (previousTemp === undefined) delete process.env.TMPDIR;
-  else process.env.TMPDIR = previousTemp;
+  TEMP_VARIABLES.forEach((name, index) => {
+    if (previousTemp[index] === undefined) delete process.env[name];
+    else process.env[name] = previousTemp[index];
+  });
   await rm(privateTemp, { recursive: true, force: true });
 });
 

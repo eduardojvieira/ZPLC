@@ -480,7 +480,10 @@ describe('NativeSimulationSupervisor', () => {
     await startReadySession(supervisor, child);
 
     const pendingStop = supervisor.stopSession();
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    // A Windows timer is coarse, so the second kill has no fixed moment: wait for it, bounded, instead of for 20 ms.
+    for (const deadline = Date.now() + 5_000; child.kill.mock.calls.length < 2 && Date.now() < deadline; ) {
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
     expect(child.kill).toHaveBeenNthCalledWith(1, 'SIGTERM');
     expect(child.kill).toHaveBeenNthCalledWith(2, 'SIGKILL');
 
@@ -1009,7 +1012,7 @@ describe('NativeSimulationSupervisor', () => {
       cwd: '/workspace/ZPLC/packages/zplc-ide',
     });
 
-    expect(resolvedPath).toContain('firmware/lib/zplc_core/build/zplc_runtime');
+    expect(resolvedPath).toContain(path.join('firmware', 'lib', 'zplc_core', 'build', 'zplc_runtime'));
   });
 });
 

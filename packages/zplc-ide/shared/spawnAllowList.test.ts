@@ -6,16 +6,16 @@ import { TOOLCHAIN_PROBES, spawnAllowed, spawnVector, type SpawnEntry, type Spaw
 describe('the spawn allow-list (IDE-017)', () => {
   it('builds the fixed argument vector of each entry', () => {
     expect(spawnVector({ kind: 'native-runtime', binary: '/opt/zplc/zplc_runtime' })).toEqual({
-      command: '/opt/zplc/zplc_runtime',
+      command: path.resolve('/opt/zplc/zplc_runtime'),
       args: [],
     });
     expect(spawnVector({ kind: 'firmware-build', zephyrBoard: 'rpi_pico/rp2040', buildPath: '/tmp/zplc-firmware-build-1/build' })).toEqual({
       command: 'west',
-      args: ['build', '-b', 'rpi_pico/rp2040', 'firmware/app', '-d', '/tmp/zplc-firmware-build-1/build', '--pristine'],
+      args: ['build', '-b', 'rpi_pico/rp2040', 'firmware/app', '-d', path.resolve('/tmp/zplc-firmware-build-1/build'), '--pristine'],
     });
     expect(spawnVector({ kind: 'zephyr-revision', zephyrBase: '/opt/zephyr' })).toEqual({
       command: 'git',
-      args: ['-C', '/opt/zephyr', 'rev-parse', '--verify', 'HEAD'],
+      args: ['-C', path.resolve('/opt/zephyr'), 'rev-parse', '--verify', 'HEAD'],
     });
     for (const probe of Object.keys(TOOLCHAIN_PROBES) as Array<keyof typeof TOOLCHAIN_PROBES>) {
       const { command, args } = TOOLCHAIN_PROBES[probe];

@@ -49,7 +49,7 @@ describe('the build of the browser runtime inside the IDE build (IDE-025)', () =
       },
     });
     expect(seen[1]).toBe(join('/repo', 'tools', 'wasm-core', 'build.ts'));
-    expect(seen[seen.indexOf('--out') + 1]).toMatch(/zplc-ide-wasm-.*\/zplc-runtime\.wasm$/);
+    expect(seen[seen.indexOf('--out') + 1]).toMatch(/zplc-ide-wasm-.*[\\/]zplc-runtime\.wasm$/);
     expect(seen[seen.indexOf('--manifest') + 1]).toMatch(/zplc-runtime\.json$/);
   });
 

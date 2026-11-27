@@ -49,7 +49,8 @@ async function harness(
     native?: (request: NativeSimulationRequest) => Promise<unknown>;
   } = {},
 ): Promise<Harness> {
-  const folder = realpathSync(mkdtempSync(path.join(tmpdir(), 'zplc-ipc-registry-')));
+  // main.ts canonicalises with realpathSync.native, which expands the 8.3 RUNNER~1 name that the JS realpath keeps.
+  const folder = realpathSync.native(mkdtempSync(path.join(tmpdir(), 'zplc-ipc-registry-')));
   scratches.push(folder);
   mkdirSync(path.join(folder, 'project'));
   const projectRoot = path.join(folder, 'project');
@@ -461,7 +462,7 @@ describe('workspace tests, candidate review and the AI provider (IDE-001, IDE-01
   it('register the folder of the window by its id alone, as <folder>/zplc.json, and refuse any other id (IDE-001)', async () => {
     const h = await harness();
     expect(await h.invoke('workspace-tests:register-project-root', TRUSTED, { rootId: h.rootId })).toEqual({ workspaceId: WORKSPACE_ID });
-    expect(h.touched).toEqual([`gateway.register:${h.folder.replace(path.dirname(h.folder), '<scratch>')}/zplc.json@window-folder`]);
+    expect(h.touched).toEqual([`gateway.register:${path.join('<scratch>', 'project', 'zplc.json')}@window-folder`]);
     expect(await settle(h.invoke('workspace-tests:register-project-root', TRUSTED, { rootId: 'other' }))).toEqual({
       ok: false,
       message: 'Workspace operation failed',
