@@ -31,26 +31,26 @@ In Ladder these are two boxes in one rung: `MUL` and then `DIV`. A third box, `L
 
 ## Worked example
 
-A conveyor belt runs at any speed from 0 to 1500 mm/s, and a speed sensor reports it in counts from 0 to 4095. A lamp `Moving` must light from 750 mm/s and a lamp `Overspeed` above 1200 mm/s. The figure scales the counts to millimeters per second, `Speed = Raw * 1500 / 4095`: `MUL` first, into a DINT, then `DIV`. At full scale the product is 6 142 500, far above what an INT holds.
+Scaling also runs the other way, from engineering units to counts. A dosing pump runs at any speed from 0 to 3000 rpm, and its drive takes the speed as an analog command from 0 to 4095 counts. The operator sets the speed in rpm, and the program must turn that setpoint into counts for the drive: `Command = Rpm * 4095 / 3000`. Now the span of the counts multiplies and the span of the speed divides. `MUL` still comes first, into a DINT: at full speed the product is 12 285 000.
 
 ```ld-figure
-src: reading/belt-speed.ld.json
+src: reading/pump-command.ld.json
 rung: 5
-caption: Counts to millimeters per second, in two boxes
+caption: Revolutions per minute to counts, in two boxes
 ```
 
-This lab has no sensor, so a knob stands in for it: each press of TurnUp adds 512 counts and each press of TurnDown takes 512 away. Press TurnUp seven times, watching the two lamps, and then press TurnDown once.
+This lab has buttons for the setpoint: each press of SpeedUp adds 500 rpm and each press of SpeedDown takes 500 away, and LIMIT keeps the setpoint between 0 and 3000. Press SpeedUp once, then five more times, watching the two lamps, and then press SpeedDown once.
 
 ```ld-try
-src: reading/belt-speed.ld.json
+src: reading/pump-command.ld.json
 inputs:
-  - { name: TurnUp, kind: push }
-  - { name: TurnDown, kind: push }
-outputs: [Moving, Overspeed]
-caption: Moving needs 750 mm/s; Overspeed needs more than 1200 mm/s
+  - { name: SpeedUp, kind: push }
+  - { name: SpeedDown, kind: push }
+outputs: [DriveOn, FullCommand]
+caption: DriveOn needs a command above zero; FullCommand needs 4095 counts
 ```
 
-After four presses the knob is at 2048 counts: 2048 times 1500 is 3 072 000, divided by 4095 it gives 750, and `Moving` turns on. After six presses the speed is 1125 mm/s and `Overspeed` stays off. The seventh press gives 1312 mm/s and `Overspeed` turns on; one press of TurnDown takes it back to 1125. Both thresholds are written in engineering units, not in counts.
+After one press the setpoint is 500 rpm: 500 times 4095 is 2 047 500, divided by 3000 it gives 682 counts, and `DriveOn` turns on. After six presses the setpoint is 3000 rpm, the command is 4095 and `FullCommand` turns on. One press of SpeedDown takes the setpoint to 2500 rpm and the command to 3412 counts, and `FullCommand` goes out. The thresholds of the lamps are written in counts here, because the drive is what reads them.
 
 ## Common mistakes
 
@@ -65,11 +65,11 @@ After four presses the knob is at 2048 counts: 2048 times 1500 is 3 072 000, div
 ## Check yourself
 
 ```quiz
-question: On the belt of the worked example, Raw is 3000 counts. Which order gives the speed 1098 mm/s for the 0..1500 range, using whole numbers and a DINT?
+question: On the pump of the worked example, the setpoint is 1000 rpm. Which order gives the command of 1365 counts for the 0..3000 rpm range, using whole numbers and a DINT?
 options:
-  - { text: 'Raw * 1500 / 4095', correct: true, feedback: 'Right. 3000 times 1500 is 4 500 000, and divided by 4095 it is 1098 with the decimals dropped.' }
-  - { text: 'Raw / 4095 * 1500', feedback: 'Raw divided by 4095 is 0 as a whole number, and 0 times 1500 is still 0.' }
-  - { text: 'Raw / 1500 * 4095', feedback: 'This has the spans the wrong way around: it gives 8190, which is not a speed on a 0..1500 belt.' }
+  - { text: 'Rpm * 4095 / 3000', correct: true, feedback: 'Right. 1000 times 4095 is 4 095 000, and divided by 3000 it is 1365 with the decimals dropped.' }
+  - { text: 'Rpm / 3000 * 4095', feedback: 'Rpm divided by 3000 is 0 as a whole number, and 0 times 4095 is still 0.' }
+  - { text: 'Rpm * 3000 / 4095', feedback: 'This has the spans the wrong way around: it gives 732, which is not the command for 1000 rpm on a 0..3000 pump.' }
 ```
 
 ```quiz

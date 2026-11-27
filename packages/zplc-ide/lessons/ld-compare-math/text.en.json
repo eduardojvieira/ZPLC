@@ -5,7 +5,7 @@
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real level sensor reads, how it is wired or how fast a real tank fills.",
   "objectives": [
     "Use a comparison box as a condition in series, and choose between GT and GE for a limit.",
-    "Calculate with math boxes that run only while their rung has power, and guard a division with an NE comparison so that the divisor is never zero."
+    "Calculate with math boxes that run only while their rung has power, and make sure a division never runs with a zero divisor."
   ],
   "stages": [
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "The percentage needs three boxes in one rung, in series. Which comparison must come first, so that the division never sees a zero divisor?"
+      "text": "Look at the rungs after Setup: which one would turn Level into Percent, and what Capacity is before Setup is pressed."
     },
     {
       "level": 2,

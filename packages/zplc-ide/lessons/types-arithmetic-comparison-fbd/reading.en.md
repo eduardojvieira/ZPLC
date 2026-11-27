@@ -13,34 +13,33 @@ A variable can be read on the left of the diagram and written on the right. The 
 
 ## Worked example
 
-A bottling line puts four bottles in each carrier. A sensor gives `BottleSeen` while a bottle passes, and a bottle can stay in front of it for several scans. A lamp `CarrierFull` must light when the fourth bottle is in, and the count must go back to 0 when the carrier leaves, signalled by `CarrierOut`.
+A buffer conveyor between two machines holds up to three trays. A sensor at its entry gives `EntryEye` while a tray comes in, and one at its exit gives `ExitEye` while a tray leaves; a tray can stay in front of either for several scans. The INT variable `Trays` holds the trays on the buffer, and a lamp `BufferFull` must light while there are three.
 
-The diagram reads the INT variable `Bottles` and builds the next value in four blocks:
+Each tray must change the number once, up at the entry and down at the exit, so the diagram builds the next value in two steps, each gated by a pulse:
 
-- an R_TRIG named `BottleEdge` with `BottleSeen` on CLK, so each bottle gives one pulse;
-- an ADD with `Bottles` on IN1 and the constant 1, of type INT, on IN2;
-- a SEL with `BottleEdge.Q` on G, `Bottles` on IN0 and ADD.OUT on IN1: the sum only on the scan of the pulse;
-- a second SEL with `CarrierOut` on G, the first SEL on IN0 and the constant 0 on IN1, whose output writes `Bottles`.
+- an R_TRIG named `InEdge` with `EntryEye` on CLK, and an R_TRIG named `OutEdge` with `ExitEye` on CLK;
+- an ADD with `Trays` on IN1 and the INT constant 1 on IN2, and a SEL with `InEdge.Q` on G, `Trays` on IN0 and ADD.OUT on IN1;
+- a SUB with the first SEL on IN1 and the INT constant 1 on IN2, and a second SEL with `OutEdge.Q` on G, the first SEL on IN0 and SUB.OUT on IN1, whose output writes `Trays`.
 
-A GE block with `Bottles` on IN1 and the constant 4 on IN2 gives `CarrierFull`. On the diagram the third bottle stays in front of the sensor longer and still counts once.
+A GE block with `Trays` on IN1 and the constant 3 on IN2 gives `BufferFull`. On the diagram the third tray stays in front of the entry sensor longer and still counts once, and a tray that leaves takes the number back to two.
 
 ```timing
 span: 5000
 signals:
-  - { name: BottleSeen, edges: [400, 600, 1200, 1400, 2000, 2500, 2800, 3000] }
-  - { name: CarrierOut, edges: [3800, 4000] }
-  - { name: CarrierFull, edges: [2800, 3800] }
+  - { name: EntryEye, edges: [400, 600, 1200, 1400, 2000, 2500] }
+  - { name: ExitEye, edges: [3300, 3500] }
+  - { name: BufferFull, edges: [2000, 3300] }
 marks:
-  - { from: 400, to: 1200, label: 'Bottles 1' }
-  - { from: 1200, to: 2000, label: 'Bottles 2' }
-  - { from: 2000, to: 2800, label: 'Bottles 3' }
-  - { from: 2800, to: 3800, label: 'Bottles 4' }
-caption: One count per bottle, and the comparison turns the number into the lamp
+  - { from: 400, to: 1200, label: 'Trays 1' }
+  - { from: 1200, to: 2000, label: 'Trays 2' }
+  - { from: 2000, to: 3300, label: 'Trays 3' }
+  - { from: 3300, to: 5000, label: 'Trays 2' }
+caption: One count per tray at each end, and the comparison turns the number into the lamp
 ```
 
 ## Common mistakes
 
-- Connecting the sensor straight to G of the SEL. G stays TRUE for every scan the bottle is there, so the sum goes back on every scan.
+- Connecting the sensor straight to G of the SEL. G stays TRUE for every scan the tray is there, so the sum goes back on every scan.
 - Swapping IN0 and IN1 of a SEL. IN0 is the value while G is FALSE.
 - Connecting ADD.OUT straight to the variable. The total then grows on every scan.
 - Giving the constant another type than the variable. Keep it INT when the total is an INT.

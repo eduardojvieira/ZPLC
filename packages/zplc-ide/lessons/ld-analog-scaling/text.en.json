@@ -4,7 +4,7 @@
   "summary": "Scale the raw counts of an analog input to a level in percent with a MUL box and then a DIV box, keep the result in range with LIMIT, and drive two level lamps with comparison boxes.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety. The scenario sets only BOOL inputs, so the lesson does not read a real analog input, and it does not show how accurate, noisy or well calibrated a real sensor is, or how it is wired.",
   "objectives": [
-    "Scale raw analog counts to engineering units by multiplying by the span of the units and then dividing by the span of the counts, in a type that the product fits.",
+    "Scale raw analog counts to engineering units with whole numbers, without losing the small part of the value, in a type that the product fits.",
     "Keep a value inside its range with a LIMIT box, and compare the scaled value, not the raw counts, with the thresholds of the alarms."
   ],
   "stages": [

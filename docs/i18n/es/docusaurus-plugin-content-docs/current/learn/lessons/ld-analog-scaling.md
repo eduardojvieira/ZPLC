@@ -25,7 +25,7 @@ Escale las cuentas crudas de una entrada analógica a un nivel en porcentaje con
 
 ## Objetivos
 
-- Escale cuentas analógicas crudas a unidades de ingeniería multiplicando por el rango de las unidades y luego dividiendo entre el rango de las cuentas, en un tipo donde quepa el producto.
+- Escale cuentas analógicas crudas a unidades de ingeniería con números enteros, sin perder la parte pequeña del valor, en un tipo donde quepa el producto.
 - Mantenga un valor dentro de su rango con un bloque LIMIT y compare el valor escalado, no las cuentas crudas, con los umbrales de las alarmas.
 
 ## Etapas

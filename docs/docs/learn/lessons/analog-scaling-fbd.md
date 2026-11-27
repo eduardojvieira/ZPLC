@@ -25,7 +25,7 @@ Edit a Function Block Diagram that scales raw analog counts from 0 to 4095 into 
 
 ## Objectives
 
-- Scale raw analog counts to engineering units with arithmetic blocks: multiply by the span of the units, then divide by the span of the counts.
+- Scale raw analog counts to engineering units with arithmetic blocks and whole numbers, without losing the part of the value below the divisor.
 - Keep a scaled value inside its range with a LIMIT block, and compare the value in engineering units, not in raw counts, with a threshold.
 
 ## Stages

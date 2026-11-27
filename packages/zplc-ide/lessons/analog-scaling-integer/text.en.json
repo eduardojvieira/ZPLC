@@ -4,7 +4,7 @@
   "summary": "Scale a raw count from 0 to 1000 into a percentage with integer arithmetic, and raise a warning at 50 percent and an alarm at 80 percent.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the accuracy, noise or calibration of a real analog input.",
   "objectives": [
-    "Scale a raw count to engineering units with a multiplication followed by a division, in that order.",
+    "Scale a raw count to engineering units with whole numbers, without losing the part of the value below the divisor.",
     "See that integer division drops the remainder, and choose an integer type wide enough for the intermediate product."
   ],
   "stages": [

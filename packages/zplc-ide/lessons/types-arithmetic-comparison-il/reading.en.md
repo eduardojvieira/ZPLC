@@ -12,39 +12,43 @@ So `LD Count`, `ADD 3`, `ST Count` read a number, add to it and store it back, a
 
 ## Worked example
 
-A turnstile at the entrance of a hall gives `Pass` while a visitor walks through, for several scans. The program counts the visitors in the INT `Visitors`, and a lamp `Crowded` lights from the fiftieth visitor on.
+A small hall has 50 seats. A turnstile at the entrance gives `Pass` while a visitor walks through, for several scans. The program counts the free seats down in the INT `Seats`, which starts at 50, and a lamp `HallFull` lights when no seat is left. A visitor who passes when the hall is already full must not take the count below zero.
 
-The rising edge, `Pass` now and not on the previous scan, is the condition. When it is FALSE the program jumps over the three lines that add one.
+Two conditions guard the subtraction, and each one jumps over it. The first, `LE 0`, jumps with JMPC when there are no seats left. The second is the rising edge, `Pass` now and not on the previous scan, and it jumps with JMPCN when there is no new pass.
 
 ```il
+        LD    Seats
+        LE    0
+        JMPC  done
         LD    Pass
         ANDN  PassWas
-        JMPCN counted
-        LD    Visitors
-        ADD   1
-        ST    Visitors
-counted:
+        JMPCN done
+        LD    Seats
+        SUB   1
+        ST    Seats
+done:
         LD    Pass
         ST    PassWas
-        LD    Visitors
-        GE    50
-        ST    Crowded
+        LD    Seats
+        EQ    0
+        ST    HallFull
 ```
 
-Follow one visitor on the diagram. On the first scan of `Pass` the condition is TRUE, the jump does not happen and Visitors grows by one. On the following scans `PassWas` is already TRUE, the condition is FALSE and the jump skips the addition. The lines after the label run on every scan, so `PassWas` and `Crowded` are always up to date.
+Follow the last visitors on the diagram. With 2 seats left, a long pass takes one seat once: on its first scan both jumps are skipped and Seats falls by one, and on the following scans `PassWas` is TRUE and JMPCN jumps. The next visitor takes the last seat and `HallFull` lights. One more visitor passes: `LE 0` is TRUE, JMPC jumps, and Seats stays at 0.
 
 ```timing
 span: 4000
 signals:
-  - { name: Pass, edges: [500, 1500, 2500, 2700] }
-  - { name: PassWas, edges: [600, 1600, 2600, 2800] }
-  - { name: Crowded, edges: [2500, 4000] }
+  - { name: Pass, edges: [500, 1500, 2000, 2200, 3000, 3200] }
+  - { name: HallFull, edges: [2000, 4000] }
 marks:
-  - { from: 0, to: 500, label: 'Visitors 48' }
-  - { from: 500, to: 2500, label: 'Visitors 49' }
-  - { from: 2500, to: 4000, label: 'Visitors 50' }
-caption: A long pass and a short one each add one visitor; the fiftieth lights the lamp
+  - { from: 0, to: 500, label: 'Seats 2' }
+  - { from: 500, to: 2000, label: 'Seats 1' }
+  - { from: 2000, to: 4000, label: 'Seats 0' }
+caption: Each pass takes one seat once; with the hall full a pass changes nothing
 ```
+
+The lines after the label run on every scan, so `PassWas` and `HallFull` are always up to date. This hall never empties; the practice has a reset of its own, and how its lines sit among the others is for you to decide.
 
 ## Common mistakes
 

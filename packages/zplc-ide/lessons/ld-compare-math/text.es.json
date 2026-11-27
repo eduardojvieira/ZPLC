@@ -5,7 +5,7 @@
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo mide un sensor de nivel real, cómo se cablea ni con qué rapidez se llena un tanque real.",
   "objectives": [
     "Use un bloque de comparación como condición en serie y elija entre GT y GE para un límite.",
-    "Calcule con bloques matemáticos que se ejecutan solo mientras su peldaño tiene energía, y proteja una división con una comparación NE para que el divisor nunca sea cero."
+    "Calcule con bloques matemáticos que se ejecutan solo mientras su peldaño tiene energía, y asegúrese de que una división nunca se ejecute con un divisor en cero."
   ],
   "stages": [
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "El porcentaje necesita tres bloques en un mismo peldaño, en serie. ¿Qué comparación debe ir primero para que la división nunca vea un divisor en cero?"
+      "text": "Mire los peldaños que siguen a Setup: cuál convertiría Level en Percent, y cuánto vale Capacity antes de pulsar Setup."
     },
     {
       "level": 2,

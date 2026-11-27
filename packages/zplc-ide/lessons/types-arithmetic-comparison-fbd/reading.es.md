@@ -13,34 +13,33 @@ Una variable se puede leer a la izquierda del diagrama y escribir a la derecha. 
 
 ## Ejemplo resuelto
 
-Una línea de embotellado pone cuatro botellas en cada canasto. Un sensor da `BottleSeen` mientras pasa una botella, y una botella puede quedarse delante de él durante varios ciclos. Una lámpara `CarrierFull` debe encenderse cuando entra la cuarta botella, y la cuenta debe volver a 0 cuando el canasto se va, lo que indica `CarrierOut`.
+Una cinta de acumulación entre dos máquinas guarda hasta tres bandejas. Un sensor en su entrada da `EntryEye` mientras entra una bandeja, y otro en su salida da `ExitEye` mientras sale una; una bandeja puede quedarse delante de cualquiera de los dos durante varios ciclos. La variable INT `Trays` guarda las bandejas que hay en la cinta, y una lámpara `BufferFull` debe encenderse mientras haya tres.
 
-El diagrama lee la variable INT `Bottles` y arma el valor siguiente con cuatro bloques:
+Cada bandeja debe cambiar el número una sola vez, hacia arriba en la entrada y hacia abajo en la salida, así que el diagrama arma el valor siguiente en dos pasos, cada uno habilitado por un pulso:
 
-- un R_TRIG llamado `BottleEdge` con `BottleSeen` en CLK, para que cada botella dé un solo pulso;
-- un ADD con `Bottles` en IN1 y la constante 1, de tipo INT, en IN2;
-- un SEL con `BottleEdge.Q` en G, `Bottles` en IN0 y ADD.OUT en IN1: la suma solo en el ciclo del pulso;
-- un segundo SEL con `CarrierOut` en G, el primer SEL en IN0 y la constante 0 en IN1, cuya salida escribe `Bottles`.
+- un R_TRIG llamado `InEdge` con `EntryEye` en CLK, y un R_TRIG llamado `OutEdge` con `ExitEye` en CLK;
+- un ADD con `Trays` en IN1 y la constante INT 1 en IN2, y un SEL con `InEdge.Q` en G, `Trays` en IN0 y ADD.OUT en IN1;
+- un SUB con el primer SEL en IN1 y la constante INT 1 en IN2, y un segundo SEL con `OutEdge.Q` en G, el primer SEL en IN0 y SUB.OUT en IN1, cuya salida escribe `Trays`.
 
-Un bloque GE con `Bottles` en IN1 y la constante 4 en IN2 da `CarrierFull`. En el diagrama la tercera botella se queda más tiempo delante del sensor y aun así cuenta una vez.
+Un bloque GE con `Trays` en IN1 y la constante 3 en IN2 da `BufferFull`. En el diagrama la tercera bandeja se queda más tiempo delante del sensor de entrada y aun así cuenta una vez, y una bandeja que sale devuelve el número a dos.
 
 ```timing
 span: 5000
 signals:
-  - { name: BottleSeen, edges: [400, 600, 1200, 1400, 2000, 2500, 2800, 3000] }
-  - { name: CarrierOut, edges: [3800, 4000] }
-  - { name: CarrierFull, edges: [2800, 3800] }
+  - { name: EntryEye, edges: [400, 600, 1200, 1400, 2000, 2500] }
+  - { name: ExitEye, edges: [3300, 3500] }
+  - { name: BufferFull, edges: [2000, 3300] }
 marks:
-  - { from: 400, to: 1200, label: 'Bottles 1' }
-  - { from: 1200, to: 2000, label: 'Bottles 2' }
-  - { from: 2000, to: 2800, label: 'Bottles 3' }
-  - { from: 2800, to: 3800, label: 'Bottles 4' }
-caption: Una cuenta por botella, y la comparación convierte el número en la lámpara
+  - { from: 400, to: 1200, label: 'Trays 1' }
+  - { from: 1200, to: 2000, label: 'Trays 2' }
+  - { from: 2000, to: 3300, label: 'Trays 3' }
+  - { from: 3300, to: 5000, label: 'Trays 2' }
+caption: Una cuenta por bandeja en cada extremo, y la comparación convierte el número en la lámpara
 ```
 
 ## Errores comunes
 
-- Conectar el sensor directamente a G del SEL. G sigue en TRUE en cada ciclo en que la botella está ahí, así que la suma vuelve en cada ciclo.
+- Conectar el sensor directamente a G del SEL. G sigue en TRUE en cada ciclo en que la bandeja está ahí, así que la suma vuelve en cada ciclo.
 - Intercambiar IN0 e IN1 de un SEL. IN0 es el valor mientras G es FALSE.
 - Conectar ADD.OUT directamente a la variable. Entonces el total crece en cada ciclo.
 - Darle a la constante un tipo distinto del de la variable. Manténgala INT cuando el total es un INT.

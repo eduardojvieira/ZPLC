@@ -9,20 +9,20 @@ Una entrada analógica le da al programa **cuentas en bruto**, un número entero
 | LIMIT  | MN, IN, MX | IN, mantenido entre MN y MX                       |
 | GE, LT | IN1, IN2   | un BOOL: ¿IN1 es mayor o igual, o menor, que IN2? |
 
-Tres reglas deciden si el resultado es correcto. Ponga el DIV después del MUL, porque una división de números enteros descarta el resto. Elija conexiones y constantes DINT, porque el producto, 2000 × 100 en el ejemplo que sigue, está muy por encima de 32767, el mayor INT. Y compare con el límite el valor escalado, nunca las cuentas en bruto.
+Tres reglas deciden si el resultado es correcto. Ponga el DIV después del MUL, porque una división de números enteros descarta el resto. Elija conexiones y constantes DINT, porque el producto, 1600 × 100 en el ejemplo que sigue, está muy por encima de 32767, el mayor INT. Y compare con el límite el valor escalado, nunca las cuentas en bruto.
 
 ## Ejemplo resuelto
 
-Un tanque de aire comprimido tiene un transmisor de presión que da 0 cuentas a 0 bar y 2000 cuentas a 10 bar. Una lámpara `LowAir` debe encenderse mientras la presión está por debajo de 6,0 bar.
+Un tanque de aire comprimido tiene un transmisor de presión con cero vivo: da 400 cuentas a 0 bar y 2000 cuentas a 10 bar, para que un cable cortado, que da 0 cuentas, se distinga de un tanque vacío. Una lámpara `LowAir` debe encenderse mientras la presión está por debajo de 6,0 bar.
 
-Un número entero no puede guardar 6,0, pero sí 60 décimas de bar. Por eso el diagrama escala a décimas, de 0 a 100, y el límite pasa a ser 60:
+Un número entero no puede guardar 6,0, pero sí 60 décimas de bar. Por eso el diagrama escala a décimas, de 0 a 100, y el límite pasa a ser 60. Las cuentas empiezan en 400, así que el diagrama primero quita el cero vivo, y el rango de las cuentas es 2000 − 400 = 1600:
 
-- un bloque MUL con `Raw` en IN1 y la constante DINT 100 en IN2;
-- un bloque DIV con MUL.OUT en IN1 y la constante DINT 2000 en IN2;
-- un bloque LIMIT con 0 en MN, DIV.OUT en IN y 100 en MX, cuya salida escribe `Pressure`;
+- un bloque SUB con `Raw` en IN1 y la constante DINT 400 en IN2;
+- un bloque MUL con SUB.OUT en IN1 y la constante DINT 100 en IN2;
+- un bloque DIV con MUL.OUT en IN1 y la constante DINT 1600 en IN2, cuya salida escribe `Pressure`;
 - un bloque LT con `Pressure` en IN1 y la constante 60 en IN2, cuya salida escribe `LowAir`.
 
-Con 1200 cuentas el MUL da 120000, el DIV da 60 y la lámpara se apaga. El LIMIT impide que un transmisor dañado, que puede informar más de 2000 cuentas, muestre más de 10 bar.
+Con 1360 cuentas el SUB da 960, el MUL da 96000, el DIV da 60 y la lámpara se apaga. Sin el SUB, las mismas 1360 cuentas se leerían como 85 décimas, y la lámpara se apagaría mucho antes de tiempo.
 
 ```timing
 span: 5000
@@ -34,22 +34,24 @@ marks:
 caption: La lámpara sigue a la presión escalada, en décimas de bar, no a las cuentas en bruto
 ```
 
+La práctica no tiene cero vivo, pero tiene un bloque LIMIT propio; dónde va el bloque que falta entre los bloques que ya están queda para usted.
+
 ## Errores comunes
 
 - Colocar el DIV antes del MUL. El resultado queda en 0 hasta el tope de la escala.
-- Usar constantes o conexiones INT. El producto de 2000 por 100 no cabe en un INT.
+- Usar constantes o conexiones INT. El producto de 1600 por 100 no cabe en un INT.
 - Conectar las cuentas en bruto a la comparación. 75 cuentas no son el 75 por ciento.
-- Omitir el LIMIT, o ponerlo antes del DIV, donde recorta el producto en lugar del valor escalado.
+- Olvidar que un transmisor puede fallar. Las cuentas fuera del rango del transmisor indican un cable cortado o un cortocircuito, no un valor real.
 - Intercambiar IN1 e IN2 del DIV, que entonces divide el tope de las cuentas por el producto.
 
 ## Compruébelo usted
 
 ```quiz
-question: Un diagrama conecta Raw a MUL con 100, después a LIMIT 0..100, y solo después a DIV por 2000. Raw vale 300. ¿Qué llega a la comparación?
+question: En el ejemplo resuelto Raw vale 1200 cuentas. ¿Qué llega a la comparación?
 options:
-  - { text: '0', correct: true, feedback: 'Sí. MUL da 30000, LIMIT lo recorta a 100, y 100 dividido por 2000 es 0 con números enteros.' }
-  - { text: '15', feedback: 'Eso dan MUL, DIV y LIMIT en ese orden. El LIMIT antes del DIV recorta el producto.' }
-  - { text: '100', feedback: 'Esa es la salida del LIMIT; el DIV que le sigue todavía divide por 2000.' }
+  - { text: '50', correct: true, feedback: 'Sí. SUB da 800, MUL da 80000, y 80000 dividido por 1600 es 50 décimas de bar.' }
+  - { text: '75', feedback: 'Eso es 1200 por 100 dividido por 1600: no se quitó primero el cero vivo de 400 cuentas.' }
+  - { text: '0', feedback: 'Eso da un DIV antes del MUL: 800 dividido por 1600 es 0 con números enteros.' }
 ```
 
 ```quiz

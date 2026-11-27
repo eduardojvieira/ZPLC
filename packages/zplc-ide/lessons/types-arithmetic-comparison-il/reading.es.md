@@ -12,39 +12,43 @@ Así, `LD Count`, `ADD 3`, `ST Count` leen un número, le suman y lo vuelven a g
 
 ## Ejemplo resuelto
 
-Un molinete a la entrada de una sala da `Pass` mientras pasa un visitante, durante varios ciclos. El programa cuenta los visitantes en el INT `Visitors`, y una lámpara `Crowded` se enciende a partir del visitante número cincuenta.
+Una sala pequeña tiene 50 asientos. Un molinete a la entrada da `Pass` mientras pasa un visitante, durante varios ciclos. El programa cuenta hacia abajo los asientos libres en el INT `Seats`, que empieza en 50, y una lámpara `HallFull` se enciende cuando no queda ningún asiento. Un visitante que pasa con la sala ya llena no debe llevar la cuenta por debajo de cero.
 
-El flanco ascendente, `Pass` ahora y no en el ciclo anterior, es la condición. Cuando es FALSE el programa salta por encima de las tres líneas que suman uno.
+Dos condiciones protegen la resta, y cada una salta por encima de ella. La primera, `LE 0`, salta con JMPC cuando no quedan asientos. La segunda es el flanco ascendente, `Pass` ahora y no en el ciclo anterior, y salta con JMPCN cuando no hay un paso nuevo.
 
 ```il
+        LD    Seats
+        LE    0
+        JMPC  done
         LD    Pass
         ANDN  PassWas
-        JMPCN counted
-        LD    Visitors
-        ADD   1
-        ST    Visitors
-counted:
+        JMPCN done
+        LD    Seats
+        SUB   1
+        ST    Seats
+done:
         LD    Pass
         ST    PassWas
-        LD    Visitors
-        GE    50
-        ST    Crowded
+        LD    Seats
+        EQ    0
+        ST    HallFull
 ```
 
-Siga a un visitante en el diagrama. En el primer ciclo de `Pass` la condición es TRUE, el salto no ocurre y Visitors crece en uno. En los ciclos siguientes `PassWas` ya está en TRUE, la condición es FALSE y el salto omite la suma. Las líneas que siguen a la etiqueta se ejecutan en cada ciclo, así que `PassWas` y `Crowded` siempre están al día.
+Siga a los últimos visitantes en el diagrama. Con 2 asientos libres, un paso largo ocupa un asiento una sola vez: en su primer ciclo no se salta ninguna de las dos veces y Seats baja en uno, y en los ciclos siguientes `PassWas` es TRUE y JMPCN salta. El visitante siguiente ocupa el último asiento y `HallFull` se enciende. Pasa un visitante más: `LE 0` es TRUE, JMPC salta, y Seats sigue en 0.
 
 ```timing
 span: 4000
 signals:
-  - { name: Pass, edges: [500, 1500, 2500, 2700] }
-  - { name: PassWas, edges: [600, 1600, 2600, 2800] }
-  - { name: Crowded, edges: [2500, 4000] }
+  - { name: Pass, edges: [500, 1500, 2000, 2200, 3000, 3200] }
+  - { name: HallFull, edges: [2000, 4000] }
 marks:
-  - { from: 0, to: 500, label: 'Visitors 48' }
-  - { from: 500, to: 2500, label: 'Visitors 49' }
-  - { from: 2500, to: 4000, label: 'Visitors 50' }
-caption: Un paso largo y uno corto suman un visitante cada uno; el número cincuenta enciende la lámpara
+  - { from: 0, to: 500, label: 'Seats 2' }
+  - { from: 500, to: 2000, label: 'Seats 1' }
+  - { from: 2000, to: 4000, label: 'Seats 0' }
+caption: Cada paso ocupa un asiento una sola vez; con la sala llena un paso no cambia nada
 ```
+
+Las líneas después de la etiqueta se ejecutan en cada ciclo, así que `PassWas` y `HallFull` están siempre al día. Esta sala nunca se vacía; la práctica tiene su propia puesta a cero, y cómo se ubican sus líneas entre las demás queda para usted.
 
 ## Errores comunes
 

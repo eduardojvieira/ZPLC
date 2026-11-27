@@ -4,7 +4,7 @@
   "summary": "Edit a Function Block Diagram that scales raw analog counts from 0 to 4095 into a level in percent with MUL, DIV and LIMIT blocks, and lights HighLevel at 75 percent.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the accuracy, noise, calibration of a real analog input or wiring.",
   "objectives": [
-    "Scale raw analog counts to engineering units with arithmetic blocks: multiply by the span of the units, then divide by the span of the counts.",
+    "Scale raw analog counts to engineering units with arithmetic blocks and whole numbers, without losing the part of the value below the divisor.",
     "Keep a scaled value inside its range with a LIMIT block, and compare the value in engineering units, not in raw counts, with a threshold."
   ],
   "stages": [
