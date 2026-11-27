@@ -1371,6 +1371,19 @@ describe('NativeAdapter', () => {
   });
 });
 
+/**
+ * The error a request to the runtime is refused with. Bun on Windows never settles `expect(pending).rejects` while
+ * the answer still has to come through the pipe of a runtime the test started, so the request is awaited first.
+ */
+async function refusalOf(request: Promise<unknown>): Promise<Error> {
+  try {
+    await request;
+  } catch (error) {
+    return error as Error;
+  }
+  throw new Error('the runtime accepted the request');
+}
+
 describe('NativeAdapter on the native runtime (LNK-004)', () => {
   itNative('LNK-004 a Studio-path session switches to the virtual clock and steps', async () => {
     const persistRoot = await mkdtemp(join(tmpdir(), 'zplc-clock-'));
@@ -1388,16 +1401,16 @@ describe('NativeAdapter on the native runtime (LNK-004)', () => {
     try {
       await adapter.connect();
       await adapter.loadProgram(assemble('    PUSH8 9\n    STORE8 0x1000\n    HALT\n').zplcFile);
-      await expect(adapter.scenarioStep(0)).rejects.toThrow(); // a free-clock session refuses scenario.step
+      await refusalOf(adapter.scenarioStep(0)); // a free-clock session refuses scenario.step
       const { scanIntervalMs } = await adapter.setClockMode('virtual');
       expect(Number.isInteger(scanIntervalMs) && scanIntervalMs > 0).toBe(true);
       await adapter.scenarioStep(0);
       await adapter.scenarioStep(scanIntervalMs);
       expect((await adapter.peek(0x1000, 1))[0]).toBe(9);
-      await expect(adapter.start()).rejects.toThrow('scenario');
+      expect((await refusalOf(adapter.start())).message).toContain('scenario');
       await adapter.reset(); // the program halted: a reset returns the session to idle, where the clock may change
       await adapter.setClockMode('free');
-      await expect(adapter.scenarioStep(2 * scanIntervalMs)).rejects.toThrow();
+      await refusalOf(adapter.scenarioStep(2 * scanIntervalMs));
     } finally {
       await adapter.disconnect().catch(() => undefined);
       await supervisor.stopSession().catch(() => undefined);
