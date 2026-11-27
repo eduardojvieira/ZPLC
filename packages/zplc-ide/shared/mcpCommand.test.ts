@@ -34,8 +34,11 @@ describe('where the MCP server is (AIX-007)', () => {
     const first = await scratch();
     const second = await scratch();
     const wanted = await binary(second);
-    await binary(first, 'zplc-mcp', 0o644); // not executable: skipped
-    expect(await resolveMcpCommand({ PATH: [first, second].join(delimiter) }, 'linux')).toBe(wanted);
+    await mkdir(join(first, 'zplc-mcp')); // not a file: skipped on every host
+    // the execute bit is not observable on a Windows host (X_OK always passes there), so this skip is checked only where chmod works
+    const noBit = await scratch();
+    if (process.platform !== 'win32') await binary(noBit, 'zplc-mcp', 0o644);
+    expect(await resolveMcpCommand({ PATH: [first, noBit, second].join(delimiter) }, 'linux')).toBe(wanted);
   });
 
   it('is found through ZPLC_MCP_BIN first, when it is an absolute executable file', async () => {

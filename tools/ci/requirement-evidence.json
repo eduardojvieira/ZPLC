@@ -114,7 +114,8 @@
   "VF-023": [
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/nativeRuntimeGuard.test.ts","test":"VF-023 are never skipped in CI when the binary is missing, in any test file that reaches the runtime"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/nativeRuntimeGuard.test.ts","test":"VF-023 are skipped outside CI when the binary is missing, and say how to run them"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/cli/nativeRuntimeGuard.test.ts","test":"VF-023 fail in CI when the binary is missing"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/nativeRuntimeGuard.test.ts","test":"VF-023 fail in CI when the binary is missing"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/nativeRuntimeGuard.test.ts","test":"the loopback tests on each platform (VF-023)"}
   ],
   "VF-024": [
     {"kind":"manual","ref":".github/workflows/nightly-quality.yml","partial":true,"note":"the compiler and IDE unit tests run on macOS and Windows in the desktop-platforms job, nightly; configuration only, no hosted run is recorded and the IDE suite has never been run on those systems"}

@@ -78,9 +78,22 @@ function client(workspace: McpWorkspace, manager?: McpDebugSessionManager) {
   };
 }
 
-/** The host runtimes this test process started that still run (ps; Windows has no ps and answers none). */
+/** The host runtimes this test process started that still run (ps; on Windows the CIM process table, which also knows the parent). */
 function runtimeChildren(): number[] {
-  if (process.platform === 'win32') return [];
+  if (process.platform === 'win32') {
+    const image = basename(nativeRuntimeBinary).toLowerCase();
+    const query =
+      `Get-CimInstance Win32_Process -Filter 'ParentProcessId=${process.pid}' | ` +
+      `Where-Object { $_.Name.ToLower() -eq '${image.endsWith('.exe') ? image : `${image}.exe`}' } | ForEach-Object { $_.ProcessId }`;
+    const found = Bun.spawnSync(['powershell.exe', '-NoProfile', '-NonInteractive', '-Command', query]);
+    // a failed query must not read as "no child left": that would pass a leak
+    if (found.exitCode !== 0) throw new Error(`could not list the runtime processes: ${found.stderr.toString()}`);
+    return found.stdout
+      .toString()
+      .split(/\r?\n/)
+      .filter((line) => /^\d+$/.test(line.trim()))
+      .map(Number);
+  }
   const out = Bun.spawnSync(['ps', '-A', '-o', 'ppid=,pid=,args=']).stdout.toString();
   return out
     .split('\n')

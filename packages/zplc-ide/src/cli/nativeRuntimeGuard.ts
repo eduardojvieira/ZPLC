@@ -38,13 +38,20 @@ const loopbackFound = found && existsSync(loopbackBinary);
 // Registers a test that needs zplc_runtime and zplc_loopback. Windows does not build zplc_loopback (its sockets are
 // POSIX: CMakeLists.txt, if(NOT WIN32)), so there the test is skipped and says why; elsewhere a missing binary is
 // skipped on a developer machine and fails in CI, as for itNative.
+export type LoopbackMode = 'run' | 'skip-platform' | 'fail' | 'skip';
+// A missing zplc_runtime is never excused by the platform: only a runtime that is there and has no loopback peer
+// is a platform skip (VF-023).
+export const loopbackMode = (platform: string, runtimeFound: boolean, loopbackFound: boolean, ci: boolean): LoopbackMode =>
+  loopbackFound ? 'run' : platform === 'win32' && runtimeFound ? 'skip-platform' : ci ? 'fail' : 'skip';
+
+const mode = loopbackMode(process.platform, found, loopbackFound, inCi);
 export const itNativeLoopback = (
-  loopbackFound
+  mode === 'run'
     ? it
-    : process.platform === 'win32'
+    : mode === 'skip-platform'
       ? (name: string, ...rest: unknown[]) =>
           (it.skip as (...args: unknown[]) => unknown)(`${name} (zplc_loopback is not built on this platform)`, ...rest)
-      : inCi
+      : mode === 'fail'
         ? (name: string) =>
             it(name, () => {
               throw new Error(`zplc_runtime or zplc_loopback not found (${nativeRuntimeBinary}, ${loopbackBinary}); CI is set`);
