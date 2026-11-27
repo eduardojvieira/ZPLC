@@ -207,3 +207,158 @@ describe('The Guide asks the Assistant for a hint (AIX-003)', () => {
     useAssistantEntry.getState().take();
   });
 });
+
+describe('Check is one action from the Guide (GDE-004)', () => {
+  const HASH = 'a'.repeat(64);
+  const record = (failed: boolean, target = lesson) => ({
+    schemaVersion: 1,
+    lessonId: target.id,
+    lessonVersion: 1,
+    track: 'simulation',
+    scenarioId: target.requiredScenario,
+    scenarioSha256: HASH,
+    programSha256: HASH,
+    runtimeVersion: '2.1.0',
+    time: '2026-11-20T12:00:00.000Z',
+    result: failed ? 'failed' : 'passed',
+    assertions: { total: 2, passed: failed ? 1 : 2 },
+    failedAssertions: failed ? [{ index: 0, kind: 'AT', atMs: 1200, expected: { Q: true }, observed: { Q: false }, trace: null }] : [],
+  });
+  const modified = { id: 'f1', path: 'src/main.st', name: 'main.st', language: 'ST', content: 'x', isModified: true, diskContent: 'y' };
+  let calls: string[];
+  let requests: unknown[];
+  let tabSpy: string[];
+
+  /** A project with one unsaved document, a host whose lesson check answers `answer`, and a spy on the Tests surface. */
+  function openProject(answer: unknown, target = lesson) {
+    calls = [];
+    requests = [];
+    tabSpy = [];
+    host.electronAPI = {
+      ...before,
+      workspaceTests: {
+        cancel: async () => undefined,
+        lessonCheck: async (request: unknown) => {
+          calls.push('check');
+          requests.push(request);
+          return answer;
+        },
+      },
+    };
+    dom.patchStore(useAppSettings, {
+      settings: { ...useAppSettings.getState().settings, unlockAllLessons: true, hideSolutions: false, saveBeforeRun: 'always' },
+    } as never);
+    dom.patchStore(useLearnProgress, { document: null, loaded: true, failed: false, recordGrade: async () => true } as never);
+    dom.patchStore(useLearnUi, {
+      selected: target.id,
+      starting: false,
+      workspace: { lessonId: target.id, session: useIDEStore.getState().projectSession },
+    } as never);
+    dom.patchStore(useIDEStore, {
+      isProjectOpen: true,
+      workspaceScenarioLink: { workspaceId: 'w', projectSession: useIDEStore.getState().projectSession },
+      loadedFiles: new Map([['f1', { ...modified } as never]]),
+      activeConsoleTab: 'output',
+      saveAllFiles: async () => {
+        calls.push('save');
+        useIDEStore.setState({ loadedFiles: new Map([['f1', { ...modified, isModified: false } as never]]) });
+      },
+      setActiveConsoleTab: (tab: string) => tabSpy.push(tab),
+    } as never);
+  }
+
+  it('GDE-004 Check saves, builds, runs the reference scenario and shows the verdict, results panel closed', async () => {
+    openProject({ ok: true, record: record(false) });
+    const view = dom.render(<Guide />);
+    const check = document.querySelector<HTMLButtonElement>('[data-learn-check]')!;
+    expect(check.disabled).toBe(false);
+    await view.user.click(check);
+    await dom.waitFor(() => expect(document.querySelector('[data-learn-grade]')!.getAttribute('data-learn-grade')).toBe('passed'));
+    expect(calls).toEqual(['save', 'check']);
+    expect(document.querySelector('[data-test-verdict-sentence]')).not.toBeNull();
+    expect(useIDEStore.getState().activeConsoleTab).toBe('output');
+  });
+
+  it('GDE-004 a failed expectation is named with its time', async () => {
+    openProject({ ok: true, record: record(true) });
+    const view = dom.render(<Guide />);
+    await view.user.click(document.querySelector('[data-learn-check]')!);
+    await dom.waitFor(() => expect(document.querySelector('[data-learn-failures]')).not.toBeNull());
+    expect(document.querySelector('[data-learn-failures]')!.textContent).toContain('1200 ms');
+    expect(document.querySelector('[data-learn-failures]')!.textContent).toContain('expected');
+  });
+
+  it('GDE-004 Check never opens the Tests surface', async () => {
+    openProject({ ok: true, record: record(true) });
+    const view = dom.render(<Guide />);
+    await view.user.click(document.querySelector('[data-learn-check]')!);
+    await dom.waitFor(() => expect(document.querySelector('[data-learn-grade]')!.getAttribute('data-learn-grade')).toBe('failed'));
+    expect(tabSpy).toEqual([]);
+  });
+
+  it('GDE-004 a refusal is a message in the Guide that says where the Check stopped, and nothing is run', async () => {
+    openProject({ ok: true, record: record(false) });
+    dom.patchStore(useAppSettings, { settings: { ...useAppSettings.getState().settings, saveBeforeRun: 'ask' } } as never);
+    const { mountConfirmHost, answerConfirmation, currentConfirmation } = await import('../../store/actionConfirm');
+    const unmount = mountConfirmHost();
+    const view = dom.render(<Guide />);
+    const click = view.user.click(document.querySelector('[data-learn-check]')!);
+    await dom.waitFor(() => expect(currentConfirmation()).not.toBeNull());
+    dom.act(() => answerConfirmation(false));
+    await click;
+    unmount();
+    await dom.waitFor(() =>
+      expect(document.querySelector('[data-learn-check-status]')!.textContent).toBe(dom.t('u3Guide.check.cancelled')),
+    );
+    expect(calls).toEqual([]);
+    expect(tabSpy).toEqual([]);
+  });
+
+  it('LRN-022 only the reference scenario of the lesson grades: the request names the lesson and nothing of the workspace', async () => {
+    openProject({ ok: true, record: record(false) });
+    const view = dom.render(<Guide />);
+    await view.user.click(document.querySelector('[data-learn-check]')!);
+    await dom.waitFor(() => expect(requests).toHaveLength(1));
+    // the shown-project bridge adds the folder id; the learner's side names no scenario
+    expect(Object.keys(requests[0] as object).sort()).toEqual(['lessonId', 'rootId', 'workspaceId']);
+    expect(requests[0]).toMatchObject({ workspaceId: 'w', lessonId: lesson.id });
+  });
+
+  it('GDE-004 the learn.check command runs the same function as the button', async () => {
+    openProject({ ok: true, record: record(false) });
+    const { runCommand } = await import('../../commands/bus');
+    dom.render(<Guide />);
+    expect(runCommand('learn.check')).toBe('ran');
+    await dom.waitFor(() => expect(calls).toEqual(['save', 'check']));
+  });
+
+  it('GDE-004 a scene lesson is graded on a plant fact: the failure names the fact and its time', async () => {
+    const entry = LESSON_INDEX.lessons.find((candidate) => candidate.scene)!;
+    const sceneLesson = learnLessonCatalog.en.find((candidate) => candidate.id === entry.id)!;
+    const expectations = JSON.parse(entry.scenario.canonical).expectations as Array<{
+      condition: Record<string, unknown>;
+      withinMs?: number;
+    }>;
+    const index = expectations.findIndex((expectation) => Object.keys(expectation.condition).some((key) => key.startsWith('fact:')));
+    const fact = Object.keys(expectations[index]!.condition).find((key) => key.startsWith('fact:'))!;
+    const failed = record(true, sceneLesson);
+    failed.failedAssertions = [
+      {
+        index,
+        kind: 'EVENTUALLY',
+        atMs: expectations[index]!.withinMs ?? 8000,
+        expected: { [fact]: true },
+        observed: { [fact]: false },
+        trace: null,
+      },
+    ] as never;
+    openProject({ ok: true, record: failed }, sceneLesson);
+    const view = dom.render(<Guide />);
+    await view.user.click(document.querySelector('[data-learn-check]')!);
+    await dom.waitFor(() => expect(document.querySelector('[data-learn-failures]')).not.toBeNull());
+    expect(requests[0]).toMatchObject({ lessonId: entry.id });
+    const text = document.querySelector('[data-learn-failures]')!.textContent!;
+    expect(text).toContain(fact);
+    expect(text).toContain(`${failed.failedAssertions[0]!.atMs} ms`);
+  });
+});

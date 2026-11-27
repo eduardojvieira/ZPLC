@@ -229,7 +229,7 @@ export const COMMANDS = [
   { id: 'view.focusCommandBar', titleKey: 'command.view.focusCommandBar', category: 'view', shortcut: 'Mod+Alt+C' },
   { id: 'learn.guide.next', titleKey: 'command.learn.guide.next', category: 'help', pending: true },
   { id: 'learn.guide.back', titleKey: 'command.learn.guide.back', category: 'help', pending: true },
-  { id: 'learn.check', titleKey: 'command.learn.check', category: 'build', pending: true },
+  { id: 'learn.check', titleKey: 'command.learn.check', category: 'build', enabled: open },
   { id: 'plant.edit', titleKey: 'command.plant.edit', category: 'edit', pending: true },
   { id: 'plant.endEdit', titleKey: 'command.plant.endEdit', category: 'edit', pending: true },
   { id: 'plant.createDeclarations', titleKey: 'command.plant.createDeclarations', category: 'project', pending: true },
