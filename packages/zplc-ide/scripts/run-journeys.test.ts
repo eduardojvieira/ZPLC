@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { judge } from './run-journeys';
+import { judge, selectJourneys } from './run-journeys';
+import type { Journey } from './journeys';
 
 const pass = { status: 'pass' } as const;
 const fail = { status: 'fail' } as const;
@@ -38,5 +39,34 @@ describe('journey verdict', () => {
     expect(judge([{ name: 'known gap', outcome: pass }], gaps)).toEqual([
       '"known gap" passes now: remove its entry (IDE-001) from KNOWN_GAPS',
     ]);
+  });
+});
+
+const stubJourney = (name: string): Journey => ({
+  name,
+  example: 'none',
+  proves: [],
+  partly: [],
+  run: async () => {},
+});
+
+describe('WebGL journey registration', () => {
+  const base = [stubJourney('12 Restore the session')];
+  const webgl = [stubJourney('VIS-002 framing'), stubJourney('VIS-016 look')];
+
+  test('registers WebGL journeys when the runtime probe finds WebGL 2', () => {
+    const result = selectJourneys(base, webgl, { webglAvailable: true });
+    expect(result.selected.map((j) => j.name)).toEqual(['12 Restore the session', 'VIS-002 framing', 'VIS-016 look']);
+    expect(result.skippedWebgl).toEqual([]);
+  });
+
+  test('excludes WebGL journeys with a reason when WebGL 2 is unavailable', () => {
+    const result = selectJourneys(base, webgl, {
+      webglAvailable: false,
+      webglReason: 'WebGL 2 is not available on this runner',
+    });
+    expect(result.selected.map((j) => j.name)).toEqual(['12 Restore the session']);
+    expect(result.skippedWebgl.map((j) => j.name)).toEqual(['VIS-002 framing', 'VIS-016 look']);
+    expect(result.reason).toBe('WebGL 2 is not available on this runner');
   });
 });

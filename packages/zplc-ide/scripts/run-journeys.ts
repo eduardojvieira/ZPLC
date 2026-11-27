@@ -14,7 +14,7 @@ import { assert, packageRoot } from './run-desktop-smoke';
 import { NotPossible, launchApp, startHarness, type Harness } from './journeyApp';
 import { JOURNEYS, runPackagedSecurityProbes, type Journey } from './journeys';
 import { journeysPlant } from './journeys/plantJourneys';
-import { journeysPlantFraming } from './journeys013/plantFraming';
+import { journeysPlantFraming, withGlWindow } from './journeys013/plantFraming';
 import { journeysPlantLook } from './journeys013/plantLook';
 import { discoverPackagedExecutable } from './run-packaged-desktop-smoke';
 
@@ -116,19 +116,70 @@ async function runPackaged(distribution: string): Promise<void> {
   }
 }
 
+/**
+ * Decides whether the WebGL 2 plant journeys (VIS-002, VIS-016) can be registered on this host.
+ * Kept pure so unit tests can cover both branches without launching Electron.
+ */
+export function selectJourneys(
+  base: readonly Journey[],
+  webgl: readonly Journey[],
+  options: { only?: string; webglAvailable: boolean; webglReason?: string },
+): { selected: Journey[]; skippedWebgl: Journey[]; reason?: string } {
+  const matches = (journey: Journey) => !options.only || journey.name.toLowerCase().includes(options.only.toLowerCase());
+  const selectedBase = base.filter(matches);
+  const matchingWebgl = webgl.filter(matches);
+  if (options.webglAvailable || matchingWebgl.length === 0) {
+    return { selected: [...selectedBase, ...matchingWebgl], skippedWebgl: [] };
+  }
+  return {
+    selected: selectedBase,
+    skippedWebgl: matchingWebgl,
+    reason: options.webglReason ?? 'WebGL 2 is not available in headless Electron with SwiftShader on this host',
+  };
+}
+
+/** Probes whether headless Electron with SwiftShader can create a WebGL 2 context on this host. */
+async function probeWebGL2(scratch: string, runtime: string): Promise<{ available: boolean; reason: string }> {
+  const root = mkdtempSync(join(scratch, 'webgl-probe-'));
+  try {
+    const ok = await withGlWindow(root, runtime, async (page) =>
+      Boolean(await page.evaluate(`Boolean(document.createElement('canvas').getContext('webgl2'))`)),
+    );
+    return ok
+      ? { available: true, reason: '' }
+      : { available: false, reason: 'WebGL 2 is not available in headless Electron with SwiftShader on this host' };
+  } catch (error) {
+    const detail = error instanceof Error ? error.message.split('\n')[0] : String(error);
+    return { available: false, reason: `WebGL 2 probe failed in headless Electron with SwiftShader (${detail})` };
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
 async function main(): Promise<void> {
   if (process.env.ZPLC_PACKAGED_DIST) {
     await runPackaged(process.env.ZPLC_PACKAGED_DIST);
     return;
   }
   const only = process.env.ZPLC_JOURNEY_ONLY;
-  const selected = [...JOURNEYS, ...journeysPlant, ...journeysPlantFraming, ...journeysPlantLook].filter(
-    (journey) => !only || journey.name.toLowerCase().includes(only.toLowerCase()),
-  );
-  assert(selected.length > 0, `No journey matches ZPLC_JOURNEY_ONLY=${only}`);
+  const baseJourneys = [...JOURNEYS, ...journeysPlant];
+  const webglJourneys = [...journeysPlantFraming, ...journeysPlantLook];
+  const matchesOnly = (journey: Journey) => !only || journey.name.toLowerCase().includes(only.toLowerCase());
+  const needsWebgl = webglJourneys.some(matchesOnly);
+  assert(baseJourneys.some(matchesOnly) || needsWebgl, `No journey matches ZPLC_JOURNEY_ONLY=${only}`);
   const { harness, scratch, stop } = await startHarness();
   const results: Array<{ name: string; example: string; outcome: Outcome }> = [];
   try {
+    const probe = needsWebgl ? await probeWebGL2(scratch, harness.runtime) : { available: false, reason: '' };
+    const { selected, skippedWebgl, reason } = selectJourneys(baseJourneys, webglJourneys, {
+      only,
+      webglAvailable: probe.available,
+      webglReason: probe.reason,
+    });
+    if (skippedWebgl.length > 0) {
+      const names = skippedWebgl.map((journey) => journey.name.split(' ')[0]).join(', ');
+      console.log(`SKIP         ${names}: ${reason}`);
+    }
     for (const journey of selected) {
       const started = Date.now();
       const outcome = await runJourney(harness, journey, scratch);
