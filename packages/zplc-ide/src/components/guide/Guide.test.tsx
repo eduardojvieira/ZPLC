@@ -425,3 +425,64 @@ describe('Check is one action from the Guide (GDE-004)', () => {
     });
   });
 });
+
+describe('Reflect is listed but locked until a pass or the solution (CRS-017)', () => {
+  const last = lesson.stages.length;
+  const reflect = () => dom.screen.getByRole('button', { name: new RegExp(`^${dom.t('u3Guide.jump', { n: last })}`) }) as HTMLButtonElement;
+  const text = () => dom.t('u3Guide.reflectLocked');
+  const title = () => document.querySelector('[data-guide-stage] h3')!.textContent;
+  const reflectTitle = lesson.stages[last - 1]!.title;
+
+  it('CRS-017 locked with no pass and no solution: the list says what opens it; jump and Next refuse it', async () => {
+    open();
+    const { user } = dom.render(<Guide />);
+    expect(reflect().getAttribute('aria-disabled')).toBe('true');
+    expect(reflect().textContent).toContain(dom.t('u3Guide.locked'));
+    expect(document.getElementById(reflect().getAttribute('aria-describedby')!)!.textContent).toBe(text());
+    reflect().focus();
+    expect(document.activeElement).toBe(reflect());
+    await user.click(reflect());
+    expect(title()).toBe(lesson.stages[0]!.title);
+    const next = dom.screen.getByRole('button', { name: dom.t('u3Guide.next') }) as HTMLButtonElement;
+    for (let i = 0; i < last + 2; i++) if (!next.disabled) await user.click(next);
+    expect(title()).toBe(lesson.stages[last - 2]!.title);
+    expect(next.disabled).toBe(true);
+    expect(dom.screen.queryByText(reflectTitle, { selector: 'h3' })).toBeNull();
+  });
+
+  it('CRS-017 opens after a pass, in the same session and after a remount', async () => {
+    open();
+    const first = dom.render(<Guide />);
+    expect(reflect().getAttribute('aria-disabled')).toBe('true');
+    passed(lesson.id);
+    await dom.waitFor(() => expect(reflect().getAttribute('aria-disabled')).toBeNull());
+    await first.user.click(reflect());
+    expect(title()).toBe(reflectTitle);
+    first.unmount();
+    dom.render(<Guide />);
+    expect(reflect().getAttribute('aria-disabled')).toBeNull();
+  });
+
+  it('CRS-017 opens after choosing to see the solution, and stays open after a remount', async () => {
+    open();
+    const first = dom.render(<Guide />);
+    expect(reflect().getAttribute('aria-disabled')).toBe('true');
+    await first.user.click(dom.screen.getByRole('button', { name: dom.t('u3Guide.solution') }));
+    await first.user.click(dom.screen.getByRole('button', { name: dom.t('learn.solution.action') }));
+    await dom.waitFor(() => expect(reflect().getAttribute('aria-disabled')).toBeNull());
+    await first.user.click(reflect());
+    expect(title()).toBe(reflectTitle);
+    dom.patchStore(useLearnProgress, {
+      document: {
+        schemaVersion: 2,
+        last: null,
+        lessons: {
+          [lesson.id]: { state: 'started', grade: null, passedAt: null, startedAt: null, hintsShown: [], solutionShown: true, hardware: null },
+        },
+      },
+    } as never);
+    first.unmount();
+    dom.render(<Guide />);
+    expect(reflect().getAttribute('aria-disabled')).toBeNull();
+  });
+});
