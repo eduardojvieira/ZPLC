@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'bun:test';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { SCENE_INDEX } from '../../src/generated/sceneIndex';
+import type { PlantSceneFile } from '../../src/plant/contracts';
+import { createPlantCore } from '../../src/plant/core/plantCore';
 import type { DisplayMode } from '../../src/plant/view/displayModes';
-import { colourProblems, OUTLINE_MIN, PAIR_MIN, stateProblems, type ColourRecord, type StateRecord } from './e1Checks';
+import { colourProblems, OUTLINE_MIN, PAIR_MIN, statePairs, stateProblems, type ColourRecord, type StateRecord } from './e1Checks';
+import missingStateKindsScene from './missingStateKinds.scene.json';
 
 const MODES: readonly DisplayMode[] = ['light', 'dark', 'high-contrast'];
 const RECT = { x: 10, y: 20, w: 100, h: 80 };
@@ -93,10 +99,7 @@ describe('E1 stateProblems', () => {
     ]);
 
     const stalled = stateProblems({
-      records: [
-        ...allModes({ key: 'belt', motion: 0.04 }),
-        stateRecord({ key: 'belt', mode: 'light', reducedMotion: true, motion: 0.02 }),
-      ],
+      records: [...allModes({ key: 'belt', motion: 0.04 }), stateRecord({ key: 'belt', mode: 'light', reducedMotion: true, motion: 0.02 })],
       missing: [],
     });
     expect(stalled).toEqual([expect.stringContaining('moves')]);
@@ -110,6 +113,10 @@ describe('E1 stateProblems', () => {
       missing: [],
     });
     expect(frozen).toEqual([expect.stringContaining('does not move')]);
+  });
+
+  it('VIS-016 reports any stateful kind that appears in neither a shipped scene nor the capture fixture', () => {
+    expect(stateProblems({ records: allModes(), missing: ['roller'] })).toEqual([expect.stringContaining('roller')]);
   });
 });
 
@@ -128,7 +135,7 @@ describe('E1 colourProblems', () => {
 
   it('VIS-018 reports a lid whose colour matches the conveyor belt under it', () => {
     const beltHsl = { h: 220, s: 0.05, l: 0.25 };
-    const records = validColourSet('light').map((r) =>
+    const records: ColourRecord[] = validColourSet('light').map((r) =>
       r.named === 'lid' ? { ...r, hsl: beltHsl, ground: { part: 'belt-lid', rgb: [60, 62, 66], hsl: beltHsl } } : r,
     );
     const problems = colourProblems(['red', 'blue'], records);
@@ -143,5 +150,37 @@ describe('E1 colourProblems', () => {
     expect(problems).toHaveLength(1);
     expect(problems[0]).toContain('VIS-009');
     expect(problems[0]).toContain('outlined');
+  });
+});
+
+describe('missing stateful kinds capture fixture', () => {
+  const keyOf = (v: { part: string; state: Readonly<Record<string, unknown>> }) =>
+    v.part === 'sensor' ? `sensor ${String(v.state.kind)}` : v.part;
+
+  it('VIS-016 validates with the core and covers every stateful part kind absent from shipped scenes', async () => {
+    const shipped = new Set<string>();
+    const scenesRoot = join(import.meta.dir, '..', '..', 'plant-scenes');
+    for (const { id } of SCENE_INDEX) {
+      const scene = JSON.parse(readFileSync(join(scenesRoot, id, 'scene.json'), 'utf8')) as PlantSceneFile;
+      const core = await createPlantCore(scene);
+      try {
+        for (const v of core.snapshot().parts) shipped.add(keyOf(v));
+      } finally {
+        core.dispose();
+      }
+    }
+
+    const fixtureCore = await createPlantCore(missingStateKindsScene as unknown as PlantSceneFile);
+    let fixtureKinds: string[];
+    try {
+      fixtureKinds = fixtureCore.snapshot().parts.map(keyOf);
+    } finally {
+      fixtureCore.dispose();
+    }
+
+    const missingFromShipped = statePairs()
+      .map((p) => p.key)
+      .filter((k) => !shipped.has(k));
+    expect(fixtureKinds.sort()).toEqual(missingFromShipped.sort());
   });
 });

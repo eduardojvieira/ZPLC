@@ -12,14 +12,19 @@
  * the plant panel. No frame rate.
  */
 import * as THREE from 'three';
-import type { BodyPose, PlantSnapshot } from '../../src/plant/contracts';
+import type { BodyPose, PlantSceneFile, PlantSnapshot } from '../../src/plant/contracts';
 import { createPlantCore } from '../../src/plant/core/plantCore';
 import { SCENE_INDEX } from '../../src/generated/sceneIndex';
 import type { DisplayMode } from '../../src/plant/view/displayModes';
 import type { QualityLevel } from '../../src/plant/view/quality';
 import { CATALOGUE, type CatalogueKind, type CatalogueState } from './catalogueStates';
 import { HUE_TOLERANCE, NAMED_HUES } from './checks';
+import missingStateKindsScene from './missingStateKinds.scene.json';
 import { boxRect, diffFraction, draw, hsl, itemColour, loadScene, openStage, partObject, type Rect, type Stage } from './stage';
+
+/** Scene identifier used in state records for kinds drawn in the capture-only fixture (not a shipped scene). */
+export const MISSING_KINDS_FIXTURE_ID = 'fixture:missing-state-kinds';
+const MISSING_KINDS_FIXTURE = missingStateKindsScene as unknown as PlantSceneFile;
 
 /** A pixel changes when one of its channels moves by more than this (of 255). */
 export const CHANNEL_MIN = 24;
@@ -51,17 +56,19 @@ export function statePairs(): Pair[] {
 const keyOf = (v: { part: string; state: Readonly<Record<string, unknown>> }) =>
   v.part === 'sensor' ? `sensor ${String(v.state.kind)}` : v.part;
 
-/** The first shipped scene, in index order, that publishes a view of each kind: the scene and the view's id. */
+/** The first shipped scene (in index order) or the capture fixture that publishes a view of each kind: the scene and the view's id. */
 async function whereKinds(): Promise<Map<string, { scene: string; view: string; name: string }>> {
   const at = new Map<string, { scene: string; view: string; name: string }>();
-  for (const { id } of SCENE_INDEX) {
-    const core = await createPlantCore(await loadScene(id));
+  const register = async (sceneId: string, scene: PlantSceneFile) => {
+    const core = await createPlantCore(scene);
     try {
-      for (const v of core.snapshot().parts) if (!at.has(keyOf(v))) at.set(keyOf(v), { scene: id, view: v.id, name: v.name });
+      for (const v of core.snapshot().parts) if (!at.has(keyOf(v))) at.set(keyOf(v), { scene: sceneId, view: v.id, name: v.name });
     } finally {
       core.dispose();
     }
-  }
+  };
+  for (const { id } of SCENE_INDEX) await register(id, await loadScene(id));
+  await register(MISSING_KINDS_FIXTURE_ID, MISSING_KINDS_FIXTURE);
   return at;
 }
 
@@ -184,9 +191,11 @@ export interface StateRecord {
 
 const OFF = (v: boolean | number) => (typeof v === 'boolean' ? false : 0);
 
+const sceneSource = (scene: string): string | PlantSceneFile => (scene === MISSING_KINDS_FIXTURE_ID ? MISSING_KINDS_FIXTURE : scene);
+
 /** A machine in a state: a fresh core of the scene driven by the state's steps, as catalogueViews drives the one-part scene. */
 async function machineFrame(scene: string, mode: DisplayMode, k: CatalogueKind, name: string, s: CatalogueState) {
-  const stage = await openStage(scene, { quality: 'medium', mode, width: 1280, height: 720 });
+  const stage = await openStage(sceneSource(scene), { quality: 'medium', mode, width: 1280, height: 720 });
   try {
     // The items of the catalogue's one-part scene (a machining centre's blank) are added where they stand relative to the machine.
     const own = k.machine!.scene.find((p) => p.part === k.id)!;
@@ -256,7 +265,7 @@ export async function stateRecords(only?: readonly string[]): Promise<{ records:
       for (const reducedMotion of mode === 'light' ? [false, true] : [false]) {
         const list = reducedMotion ? plain.filter((p) => CONVEYORS.has(p.kind.id)) : plain;
         if (list.length === 0) continue;
-        const stage = await openStage(scene, { quality: 'medium', mode, reducedMotion, width: W, height: H });
+        const stage = await openStage(sceneSource(scene), { quality: 'medium', mode, reducedMotion, width: W, height: H });
         try {
           const base = stage.core.snapshot();
           for (const pair of list) {
@@ -300,6 +309,7 @@ export function stateProblems(result: { records: StateRecord[]; missing: string[
   for (const key of keys)
     if (result.records.filter((r) => r.key === key && !r.reducedMotion).length !== expected)
       problems.push(`VIS-016 ${key}: not drawn in each display mode`);
+  for (const key of result.missing) problems.push(`VIS-016 ${key}: no shipped scene or capture fixture holds this kind`);
   return problems;
 }
 
