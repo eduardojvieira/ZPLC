@@ -69,9 +69,13 @@ const PATH_NEXT_STEP =
   'or the root files zplc.json, scene.json and plant-map.json; see validValues. Delete or rename files in Studio or on disk.';
 const FIX_NEXT_STEP = 'Fix each diagnostic (it names the file, the place and the accepted values) and re-check with workspace_check_write.';
 
+/** A Windows device name (with any extension) or an NTFS stream: on Windows COM1.st opens a serial port (AGENTS.md rule 8). */
+const WINDOWS_DEVICE = /^(?:con|prn|aux|nul|com[0-9¹²³]|lpt[0-9¹²³])(?:\.|$)/i;
+
 /** The kind and size limit of an allowed path (plan-aix §4.1), undefined for any other path. */
 function surface(path: string): { kind: Kind; maxBytes: number } | undefined {
-  if (!logicalPath(path) || /[\r\n]/.test(path) || basename(path).startsWith('.')) return undefined;
+  if (!logicalPath(path) || /[\r\n:]/.test(path) || basename(path).startsWith('.')) return undefined;
+  if (path.split('/').some((segment) => WINDOWS_DEVICE.test(segment))) return undefined;
   if (path === 'zplc.json') return { kind: 'manifest', maxBytes: 128 * KIB };
   if (path === 'scene.json') return { kind: 'scene', maxBytes: 512 * KIB };
   if (path === 'plant-map.json') return { kind: 'plant-map', maxBytes: 128 * KIB };

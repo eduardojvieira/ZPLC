@@ -302,6 +302,20 @@ describe('a write stays inside the workspace (AIX-011, plan-aix §4.2)', () => {
     expect(await tree(root)).toEqual(before);
   });
 
+  test('refuses a Windows device name and a stream name on every platform: COM1 is a serial port (rule 8)', async () => {
+    const { root, workspace } = await project();
+    const call = caller(workspace);
+    const before = await tree(root);
+    const devices = ['src/COM1.st', 'src/com9.il', 'src/CON.st', 'src/nul.ld.json', 'src/Aux.st', 'tests/LPT1.scenario.json'];
+    for (const path of [...devices, 'src/a.st:b.st']) {
+      for (const tool of ['workspace_check_write', 'workspace_write'] as const) {
+        const body = await call(tool, { files: [{ path, content: ST }] });
+        expect(body.error, `${tool} ${path}`).toBe('MCP_PATH_FORBIDDEN');
+      }
+    }
+    expect(await tree(root)).toEqual(before);
+  });
+
   test('refuses a target that is a symbolic link, and the file it points to keeps its bytes', async () => {
     const outside = await mkdtemp(join(tmpdir(), 'zplc-mcp-outside-'));
     temporary.push(outside);
