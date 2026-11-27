@@ -6,6 +6,7 @@ import { useSelection } from '../shell/useSelection';
 import { PanelEmptyState } from './panelStates';
 import { presentActiveDocument } from './workbenchInspectorPresentation';
 import { ControllerView } from './ControllerView';
+import { PlantPartInspector } from './PlantPartInspector';
 
 function Row({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
   return (
@@ -72,6 +73,7 @@ export function WorkbenchInspector() {
           <p className="ledger-inspector-note">{t('inspector.noElement')}</p>
         )}
       </section>
+      <PlantPartInspector />
       {testPath !== null && (
         <section aria-labelledby="inspector-test">
           <h2 id="inspector-test">{t('inspector.test')}</h2>

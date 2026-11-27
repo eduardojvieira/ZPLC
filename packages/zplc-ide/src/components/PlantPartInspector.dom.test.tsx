@@ -6,6 +6,7 @@ import type { PlantSceneFile } from '../plant/contracts';
 
 const dom = await setupDom();
 await stubProjectLoader();
+await import('../plant/core/plantCore'); // registers the shipped parts, as the application does
 const { usePlantEdit } = await import('../plant/editSession');
 const { PlantPartInspector } = await import('./PlantPartInspector');
 const { WorkbenchInspector } = await import('./WorkbenchInspector');
@@ -54,8 +55,8 @@ describe('the part form in the Inspector (PLS-005, SCN-008, SCN-009)', () => {
   });
 
   it('SHL-009 the Inspector keeps its other selections', () => {
-    open();
-    dom.act(() => edit().end());
+    edit().begin({ scene, map: null }, 'belt-to-sensor');
+    edit().end();
     dom.render(<WorkbenchInspector />);
     expect(dom.screen.getByText(dom.t('inspector.noElement'))).toBeTruthy();
     expect(dom.screen.queryByLabelText(dom.t('plantEditor.name'))).toBeNull();
