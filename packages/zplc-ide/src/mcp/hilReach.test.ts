@@ -51,8 +51,12 @@ describe('hardware runs are not reachable from MCP or AI tools (HIL-003, COM-030
       'plant_inspect',
       'scenarios_list',
       'server_self_check',
+      'workspace_check_write',
+      'workspace_write',
     ]);
-    const physical = /hil|device|serial|(^|_)port|flash|deploy|force|stop|hardware|bench|(^|_)chain(_|$)|shell|write|record/i;
+    // a write is of a project file only (AIX-011): workspace_ is the one prefix a name with "write" may have
+    const physical =
+      /hil|device|serial|(^|_)port|flash|deploy|force|stop|hardware|bench|(^|_)chain(_|$)|shell|(?<!^workspace_(check_)?)write|record/i;
     expect(MCP_TOOL_NAMES.filter((name) => physical.test(name))).toEqual([]);
     // LNK-009: plant I/O mode is started by a person in Studio; no tool feeds, mirrors or enters a plant. The one named
     // exception is plant_inspect, which only reads the scene and map files (AIX-001).

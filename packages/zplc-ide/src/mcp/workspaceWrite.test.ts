@@ -139,7 +139,7 @@ describe('workspace_check_write: the same check, nothing written (AIX-011)', () 
 });
 
 describe('workspace_write writes what validates, in the stable form of the editors (AIX-011)', () => {
-  test('creates a program in each of the five languages; LD, FBD and SFC are stored in their byte-stable form, ST and IL as sent', async () => {
+  test('creates a program in each of the five languages; LD, FBD and SFC in their byte-stable form, ST and IL as sent', async () => {
     const { root, workspace } = await project();
     const call = caller(workspace);
     const body = await call('workspace_write', {
@@ -167,8 +167,7 @@ describe('workspace_write writes what validates, in the stable form of the edito
     }
     const written = body.written as Array<Record<string, unknown>>;
     expect(written.map((file) => file.canonicalized)).toEqual([false, false, true, true, true]);
-    for (const file of written)
-      expect(file.afterSha256, String(file.path)).toBe(sha256(await readFile(join(root, String(file.path)))));
+    for (const file of written) expect(file.afterSha256, String(file.path)).toBe(sha256(await readFile(join(root, String(file.path)))));
   });
 
   test('replaces zplc.json as Studio writes it, and the project still opens for the read tools', async () => {
@@ -249,8 +248,8 @@ describe('workspace_write writes what validates, in the stable form of the edito
     expect(await readFile(join(root, 'src/Main.st'), 'utf8')).not.toBe(broken);
     const loose = await call('workspace_write', { files: [{ path: 'src/Main.st', content: broken }] });
     expect(loose.isError, JSON.stringify(loose)).toBe(false);
-    // Main.st is not a program of a task here, so the project still compiles
-    expect(loose.compiled).toBe(true);
+    expect(loose.compiled).toBe(false);
+    expect((loose.compileDiagnostics as Array<{ path?: string }>).some((item) => item.path === 'src/Main.st')).toBe(true);
     expect(await readFile(join(root, 'src/Main.st'), 'utf8')).toBe(broken);
   });
 
@@ -386,7 +385,10 @@ describe('the commit protocol: a temporary file and a rename per file (plan-aix 
     expect(await readFile(join(root, 'src/Main.st'), 'utf8')).toBe(ST);
     expect(await readFile(join(root, 'tests/belt.scenario.json'), 'utf8')).toBe(pretty(scenario));
     for (const folder of ['', 'src', 'tests'])
-      expect((await readdir(join(root, folder))).filter((name) => name.endsWith('.tmp')), folder).toEqual([]);
+      expect(
+        (await readdir(join(root, folder))).filter((name) => name.endsWith('.tmp')),
+        folder,
+      ).toEqual([]);
     await access(join(root, 'src/Main.st'), constants.W_OK);
     await access(join(root, 'tests/belt.scenario.json'), constants.W_OK);
   });
@@ -477,8 +479,11 @@ describe('a lesson workspace with solutions hidden (D-32, AIX-002)', () => {
 
 describe('the two tools touch no device (AGENTS.md rule 8) and the read tools answer as before', () => {
   async function registeredTools(workspace: McpWorkspace) {
-    const tools: Array<{ name: string; inputSchema: { safeParse: (value: unknown) => { success: boolean } }; annotations: Record<string, unknown> }> =
-      [];
+    const tools: Array<{
+      name: string;
+      inputSchema: { safeParse: (value: unknown) => { success: boolean } };
+      annotations: Record<string, unknown>;
+    }> = [];
     const proto = McpServer.prototype as unknown as Record<string, (...args: unknown[]) => unknown>;
     const registerTool = proto.registerTool;
     proto.registerTool = function (this: unknown, name: string, config: (typeof tools)[number], callback: unknown) {
@@ -500,17 +505,36 @@ describe('the two tools touch no device (AGENTS.md rule 8) and the read tools an
     const file = { path: 'src/Main.st', content: ST };
     for (const tool of tools) {
       expect(tool.inputSchema.safeParse({ files: [file] }).success, tool.name).toBe(true);
-      for (const extra of ['port', 'serialPort', 'device', 'baud', 'host', 'address', 'session', 'studioSession', 'deploy', 'flash',
-        'force', 'command', 'shell', 'boardRun', 'boardStop', 'plantIo', 'mirror']) {
+      for (const extra of [
+        'port',
+        'serialPort',
+        'device',
+        'baud',
+        'host',
+        'address',
+        'session',
+        'studioSession',
+        'deploy',
+        'flash',
+        'force',
+        'command',
+        'shell',
+        'boardRun',
+        'boardStop',
+        'plantIo',
+        'mirror',
+      ]) {
         expect(tool.inputSchema.safeParse({ files: [file], [extra]: 'x' }).success, `${tool.name} took ${extra}`).toBe(false);
         expect(tool.inputSchema.safeParse({ files: [{ ...file, [extra]: 'x' }] }).success, `${tool.name} file took ${extra}`).toBe(false);
       }
       expect(tool.inputSchema.safeParse({ files: [] }).success).toBe(false);
-      expect(tool.inputSchema.safeParse({ files: Array.from({ length: 9 }, (_, index) => ({ ...file, path: `src/F${index}.st` })) }).success).toBe(
-        false,
-      );
+      expect(
+        tool.inputSchema.safeParse({ files: Array.from({ length: 9 }, (_, index) => ({ ...file, path: `src/F${index}.st` })) }).success,
+      ).toBe(false);
     }
-    expect(tools.map((tool) => [tool.name, tool.annotations.readOnlyHint, tool.annotations.destructiveHint, tool.annotations.openWorldHint])).toEqual([
+    expect(
+      tools.map((tool) => [tool.name, tool.annotations.readOnlyHint, tool.annotations.destructiveHint, tool.annotations.openWorldHint]),
+    ).toEqual([
       ['workspace_check_write', true, false, false],
       ['workspace_write', false, true, false],
     ]);
@@ -522,7 +546,9 @@ describe('the two tools touch no device (AGENTS.md rule 8) and the read tools an
     const first = await call('project_inspect');
     await call('workspace_check_write', { files: [{ path: 'src/Extra.st', content: ST }] });
     const second = await call('project_inspect');
-    await call('workspace_write', { files: [{ path: 'tests/late.scenario.json', content: compact({ ...example('scenario'), id: 'late' }) }] });
+    await call('workspace_write', {
+      files: [{ path: 'tests/late.scenario.json', content: compact({ ...example('scenario'), id: 'late' }) }],
+    });
     const third = await call('project_inspect');
     for (const body of [second, third]) {
       expect(body.isError).toBe(false);

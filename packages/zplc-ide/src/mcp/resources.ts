@@ -55,8 +55,9 @@ export const MCP_INSTRUCTIONS = [
     'program with zplc://project/source/{name}; in a lesson, read zplc://lesson/current.',
   '2. Read the format before you write a JSON file: zplc://formats/ld, zplc://formats/fbd, zplc://formats/sfc, zplc://formats/scene, ' +
     'zplc://formats/plant-map and zplc://formats/scenario give the schema, the accepted values and a worked example.',
-  '3. This server writes no file. Edit the project with your own client, then check it with project_validate, compiler_check and ' +
-    'safety_check, and read the located diagnostics.',
+  '3. Write a file of src, tests, zplc.json, scene.json or plant-map.json with workspace_write; workspace_check_write runs the same ' +
+    'check and writes nothing. A refused write leaves the file as it was and names the place and the accepted values. No tool ' +
+    'deletes or renames a file. Then check the project with project_validate, compiler_check and safety_check.',
   '4. Run it on the host simulator: scenario_run or tests_run, then trace_get or runtime_snapshot to see what happened. Read the ' +
     'failed checks of the result.',
   '5. When a tool does not answer as expected, call server_self_check.',
@@ -87,7 +88,7 @@ export function registerPrompts(server: McpServer): void {
           (['LD', 'FBD', 'SFC'].includes(language)
             ? `2. Read zplc://formats/${language.toLowerCase()} before you write the file.\n`
             : '2. Read the current program with zplc://project/source/{name}.\n') +
-          '3. Edit the file with your own client; this server writes no file.\n' +
+          '3. Write the file with workspace_write (workspace_check_write checks it without writing).\n' +
           '4. Call project_validate and compiler_check, fix each located diagnostic, then run scenario_run or tests_run.\n' +
           '5. Report what passed, with the evidence level of each result.',
       ),
@@ -172,6 +173,8 @@ export const EVIDENCE_LEVEL: Record<McpToolName, 'host-static' | 'host-simulatio
   boards_list: 'repository-metadata',
   toolchain_inspect: 'repository-metadata',
   server_self_check: 'repository-metadata',
+  workspace_check_write: 'host-static',
+  workspace_write: 'host-static',
 };
 
 export interface McpSelfCheck {
@@ -402,6 +405,24 @@ export async function scenarioResource(workspace: McpWorkspace, scenarioId: stri
 }
 
 /**
+ * The lesson id of a lesson workspace (`<userData>/learn-workspaces/<lessonId>`, or a folder of that name without `--user-data`)
+ * and whether its solutions are hidden, read with the shared fail-closed reader; undefined for a project that is not one, and
+ * `changed` when the user-data folder changed. A lesson found by its folder name alone is always hidden.
+ */
+export async function workspaceLesson(
+  workspace: McpWorkspace,
+): Promise<{ lessonId: string; solutionsHidden: boolean } | undefined | 'changed'> {
+  const userData = workspace.userData;
+  if (userData && !sameDirectoryIdentity(userData.identity, await directoryIdentity(userData.root))) return 'changed';
+  const underUserData = userData ? lessonIdOfWorkspace(workspace.root, join(userData.root, 'learn-workspaces')) : undefined;
+  const parent = dirname(workspace.root);
+  const byFolder = basename(parent) === 'learn-workspaces' ? lessonIdOfWorkspace(workspace.root, parent) : undefined;
+  const lessonId = underUserData ?? byFolder;
+  if (!lessonId) return undefined;
+  return { lessonId, solutionsHidden: underUserData ? await readSolutionsHidden(userData!.root) : true };
+}
+
+/**
  * The lesson of a lesson workspace (`<userData>/learn-workspaces/<lessonId>`): its title, goal, objectives and hints, never
  * its solution, and whether solutions are hidden. That is read from `<userData>` with `readSolutionsHidden` (shared/learnPolicyModel.ts),
  * which fails
@@ -413,16 +434,11 @@ export async function scenarioResource(workspace: McpWorkspace, scenarioId: stri
  */
 export async function lessonCurrentResource(workspace: McpWorkspace): Promise<Body> {
   if (!(await unchanged(workspace))) return { ok: false, error: 'MCP_WORKSPACE_CHANGED' };
-  const userData = workspace.userData;
-  if (userData && !sameDirectoryIdentity(userData.identity, await directoryIdentity(userData.root)))
-    return { ok: false, error: 'MCP_WORKSPACE_CHANGED' };
-  const underUserData = userData ? lessonIdOfWorkspace(workspace.root, join(userData.root, 'learn-workspaces')) : undefined;
-  const parent = dirname(workspace.root);
-  const byFolder = basename(parent) === 'learn-workspaces' ? lessonIdOfWorkspace(workspace.root, parent) : undefined;
-  const lessonId = underUserData ?? byFolder;
-  const entry = lessonId ? LESSON_INDEX.lessons.find((lesson) => lesson.id === lessonId) : undefined;
-  if (!entry) return { ok: false, error: 'MCP_NOT_FOUND', cause: 'The project is not a lesson workspace of this ZPLC.' };
-  const solutionsHidden = underUserData ? await readSolutionsHidden(userData!.root) : true;
+  const lessonOf = await workspaceLesson(workspace);
+  if (lessonOf === 'changed') return { ok: false, error: 'MCP_WORKSPACE_CHANGED' };
+  const entry = lessonOf ? LESSON_INDEX.lessons.find((lesson) => lesson.id === lessonOf.lessonId) : undefined;
+  if (!entry || !lessonOf) return { ok: false, error: 'MCP_NOT_FOUND', cause: 'The project is not a lesson workspace of this ZPLC.' };
+  const { solutionsHidden } = lessonOf;
   const { lesson } = buildProjectContext({ lesson: { manifest: entry, text: entry.text.en } }, { solutionsHidden });
   return lesson ? okBody({ lesson }) : { ok: false, error: 'MCP_NOT_FOUND', cause: 'The lesson has no text in this ZPLC.' };
 }

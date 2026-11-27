@@ -124,6 +124,8 @@ describe('local MCP adapter', () => {
       'plant_inspect',
       'scenarios_list',
       'server_self_check',
+      'workspace_check_write',
+      'workspace_write',
     ]);
     expect(MCP_RESOURCE_URIS).toEqual([
       'zplc://project/manifest',
@@ -151,9 +153,11 @@ describe('local MCP adapter', () => {
     ]);
     expect(
       MCP_TOOL_NAMES.filter((name) =>
-        ['flash', 'deploy', 'force', 'stop', 'serial', 'shell', 'write'].some((forbidden) => name.includes(forbidden)),
+        ['flash', 'deploy', 'force', 'stop', 'serial', 'shell'].some((forbidden) => name.includes(forbidden)),
       ),
     ).toEqual([]);
+    // the only tools that write are the two of project files (AIX-011)
+    expect(MCP_TOOL_NAMES.filter((name) => name.includes('write'))).toEqual(['workspace_check_write', 'workspace_write']);
   });
 
   test(
@@ -1193,8 +1197,11 @@ describe('read-only program source resources (IDE-030)', () => {
     expect(await programsResource(bound)).toEqual({ ok: false, error: 'MCP_WORKSPACE_UNREADABLE' });
   });
 
-  test('is a read of the project: no tool writes a program, and the tool names did not change', () => {
-    expect(MCP_TOOL_NAMES.filter((name) => /write|save|edit|create|apply|propose/.test(name))).toEqual([]);
+  test('a program is written only by workspace_write, checked first (AIX-011); the other tool names did not change', () => {
+    expect(MCP_TOOL_NAMES.filter((name) => /write|save|edit|create|apply|propose/.test(name))).toEqual([
+      'workspace_check_write',
+      'workspace_write',
+    ]);
   });
 });
 
