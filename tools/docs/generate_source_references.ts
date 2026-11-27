@@ -571,19 +571,23 @@ export function mcpBody(lang: Lang): string {
   const writers = mcp.tools
     .filter((tool) => !tool.readOnly)
     .map((tool) => code(tool.name))
-    .join(', ');
+    .join(lang === 'en' ? ' and ' : ' y ');
   const intro: L10n = {
     en:
       `${code('zplc-mcp')} is a local server of the Model Context Protocol over standard input and output. It ` +
       `exposes ${mcp.tools.length} tools and ${mcp.resources.length} resources for one workspace. Every tool is read-only ` +
-      `except ${writers}, which runs a local ephemeral cross-build: no tool flashes, deploys, forces, starts, stops or opens a serial ` +
-      `port or a shell. The results are evidence of a recorded host run, not of hardware.`,
+      `except ${writers}: ${code('firmware_build')} runs a local ephemeral cross-build, and ${code('workspace_write')} writes ` +
+      `project files inside the workspace after the check of ${code('workspace_check_write')}, and never deletes or renames one. ` +
+      `No tool flashes, deploys, forces, starts, stops or opens a serial port or a shell. The results are evidence of a recorded ` +
+      `host run, not of hardware.`,
     es:
       `${code('zplc-mcp')} es un servidor local del Model Context Protocol sobre entrada y salida estándar. ` +
       `Expone ${mcp.tools.length} herramientas y ${mcp.resources.length} recursos para un espacio de trabajo. Todas las herramientas son ` +
-      `de solo lectura salvo ${writers}, que ejecuta una compilación cruzada local y efímera: ninguna herramienta graba, despliega, ` +
-      `fuerza, arranca, detiene ni abre un puerto serie o una consola. Los resultados son evidencia de una ejecución registrada en ` +
-      `el host, no del hardware.`,
+      `de solo lectura salvo ${writers}: ${code('firmware_build')} ejecuta una compilación cruzada local y efímera, y ` +
+      `${code('workspace_write')} escribe archivos del proyecto dentro del espacio de trabajo tras la verificación de ` +
+      `${code('workspace_check_write')}, y nunca borra ni renombra uno. Ninguna herramienta graba, despliega, fuerza, arranca, ` +
+      `detiene ni abre un puerto serie o una consola. Los resultados son evidencia de una ejecución registrada en el host, no del ` +
+      `hardware.`,
   };
   // The entry point asks the SDK to answer a 2025-era opening with an error (`legacy: 'reject'`) or to serve it; the page says which.
   const legacy = /legacy:\s*'(reject|serve)'/.exec(read(SOURCES.mcpEntry))?.[1];
