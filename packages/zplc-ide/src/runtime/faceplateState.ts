@@ -105,7 +105,5 @@ export function plantFedPaths(
   inputs: ReadonlyArray<{ name: string }>,
 ): ReadonlySet<string> {
   const declared = (name: string) => inputs.filter((input) => input.name === name).length;
-  return new Set(
-    Object.values(resolved.drives).flatMap((input) => (declared(input.name) === 1 ? [input.path, input.name] : [input.path])),
-  );
+  return new Set(Object.values(resolved.drives).flatMap((input) => (declared(input.name) === 1 ? [input.path, input.name] : [input.path])));
 }

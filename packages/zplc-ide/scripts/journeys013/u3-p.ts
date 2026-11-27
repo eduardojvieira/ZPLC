@@ -30,8 +30,7 @@ const rowRect = (name: string) =>
   `(() => { const box = ${watchRow(name)}?.children[1].getBoundingClientRect(); ` +
   `return box ? { x: box.x + 12, y: box.y + box.height / 2 } : null; })()`;
 const rowText = (app: App, name: string) => app.eval<string>(`${watchRow(name)}?.textContent ?? ''`);
-const editor = (app: App, name: string) =>
-  app.eval<boolean>(`Boolean(document.querySelector('input[aria-label="New value of ${name}"]'))`);
+const editor = (app: App, name: string) => app.eval<boolean>(`Boolean(document.querySelector('input[aria-label="New value of ${name}"]'))`);
 
 /** The journeys of task P of plan-u3.md. */
 export const journeysU3P: Journey[] = [
