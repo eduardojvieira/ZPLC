@@ -72,7 +72,8 @@ async function harness(
     rootOf: files.rootOf,
     currentRoot: files.currentRoot,
     adoptFolder: (ownerId: number, directory: string) => {
-      note(`projectFiles.adoptFolder:${path.relative(folder, directory)}`);
+      // the logged folder is compared as a POSIX path: path.relative uses the separator of the platform
+      note(`projectFiles.adoptFolder:${path.relative(folder, directory).split(path.sep).join('/')}`);
       return files.adoptFolder(ownerId, directory);
     },
   };
