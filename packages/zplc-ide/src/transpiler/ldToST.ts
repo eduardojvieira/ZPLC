@@ -384,6 +384,8 @@ function defaultPowerInput(fbType: string): string | undefined {
 // Helpers
 // =============================================================================
 
+const BIT_STRING_TYPES = new Set(['BYTE', 'WORD', 'DWORD', 'LWORD']);
+
 function formatValue(value: unknown, dataType: string): string {
   if (value === undefined || value === null) return '0';
 
@@ -392,7 +394,8 @@ function formatValue(value: unknown, dataType: string): string {
   }
 
   if (typeof value === 'string') {
-    if (dataType.toUpperCase() === 'TIME') return value;
+    const upper = dataType.toUpperCase();
+    if (upper === 'TIME' || BIT_STRING_TYPES.has(upper)) return value;
     return `'${value.replace(/'/g, "''")}'`;
   }
 
