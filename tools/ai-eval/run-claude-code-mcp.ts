@@ -181,7 +181,8 @@ export async function main(argv: string[], io: Io = consoleIo): Promise<number> 
     });
     for (const result of evidence.results)
       io.stdout(
-        `${result.pass ? 'PASS' : 'FAIL'} ${result.id} ${result.latencyMs} ms ${result.responseBytes} bytes${result.detail ? ` (${result.detail})` : ''}`,
+        `${result.pass ? 'PASS' : 'FAIL'} ${result.id} ${result.latencyMs} ms ${result.responseBytes} bytes` +
+          (result.detail ? ` (${result.detail})` : ''),
       );
     await writeEvidence(values.out!, evidence);
     io.stdout(`${evidence.summary.passed}/${evidence.summary.total} passed; evidence written to ${values.out}`);

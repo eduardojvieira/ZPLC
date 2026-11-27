@@ -2,11 +2,11 @@
 
 A fixed set of 15 tasks kept in the repository: five languages (ST, IL, LD, FBD, SFC) times three types, all `must`.
 
-| Type | What the model does | Passes when |
-|---|---|---|
-| `write` | completes a starter program from a goal and a plant map or scenario | `compilerCheck` and `scenarioRun` pass |
-| `repair` | fixes a seeded failing program | `scenarioRun` passes |
-| `explain` | explains a failing build or a failing plant scenario | the answer names the failing signal or fact, the expected versus observed condition, and the source place (`rubric` in `tasks.json`) |
+| Type      | What the model does                                                 | Passes when                                                                                                                          |
+| --------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `write`   | completes a starter program from a goal and a plant map or scenario | `compilerCheck` and `scenarioRun` pass                                                                                               |
+| `repair`  | fixes a seeded failing program                                      | `scenarioRun` passes                                                                                                                 |
+| `explain` | explains a failing build or a failing plant scenario                | the answer names the failing signal or fact, the expected versus observed condition, and the source place (`rubric` in `tasks.json`) |
 
 `tasks.json` lists the tasks. `fixtures/<id>/project` is what the model sees; `fixtures/<id>/reference` is the reference solution or repair of a write or repair task. Fixtures are copies of projects in `packages/zplc-ide/projects`, with one seeded fault where a task needs it. Grading restores `tests/`, `scene.json` and `plant-map.json` from the fixture first, so a run cannot pass by editing the check.
 

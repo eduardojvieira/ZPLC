@@ -4,7 +4,8 @@
  * never called by CI: the owner passes the endpoint and the model, and a key only by naming the environment variable that
  * holds it (`--key-env`); a loopback endpoint needs none. The run works on a disposable copy under the temp directory.
  *
- *   bun tools/ai-eval/run-assistant-eval.ts --endpoint <url> --model <name> --out <evidence.json> [--tasks a,b|all] [--key-env NAME] [--dry-run]
+ *   bun tools/ai-eval/run-assistant-eval.ts --endpoint <url> --model <name> --out <evidence.json>
+ *     [--tasks a,b|all] [--key-env NAME] [--dry-run]
  */
 import { randomUUID } from 'node:crypto';
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
@@ -209,7 +210,8 @@ export async function main(argv: string[], io: Io = consoleIo): Promise<number> 
     });
     for (const result of evidence.results)
       io.stdout(
-        `${result.pass ? 'PASS' : 'FAIL'} ${result.id} ${result.latencyMs} ms ${result.responseBytes} bytes${result.detail ? ` (${result.detail})` : ''}`,
+        `${result.pass ? 'PASS' : 'FAIL'} ${result.id} ${result.latencyMs} ms ${result.responseBytes} bytes` +
+          (result.detail ? ` (${result.detail})` : ''),
       );
     await writeEvidence(values.out!, evidence);
     io.stdout(`${evidence.summary.passed}/${evidence.summary.total} passed; evidence written to ${values.out}`);
