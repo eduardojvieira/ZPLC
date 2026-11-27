@@ -8509,5 +8509,13 @@ async function selectOption(app: App, selector: string, label: string): Promise<
   assert(wanted >= 0, `${selector} offers ${JSON.stringify(labels)}, not ${label}`);
   await app.eval(`document.querySelector(${JSON.stringify(selector)}).focus()`);
   for (let step = 0; step < Math.abs(wanted - index); step++) await app.press(wanted > index ? 'ArrowDown' : 'ArrowUp');
+  // macOS does not move a native select with the arrow keys while its popup is closed: set the option through the element and tell
+  // React the way a change from the popup would
+  if ((await state()).index !== wanted) {
+    await app.eval(
+      `(() => { const select = document.querySelector(${JSON.stringify(selector)}); select.selectedIndex = ${wanted}; ` +
+        `select.dispatchEvent(new Event('input', { bubbles: true })); select.dispatchEvent(new Event('change', { bubbles: true })); })()`,
+    );
+  }
   await app.until(`${selector} to show ${label}`, async () => (await state()).index === wanted || undefined);
 }
