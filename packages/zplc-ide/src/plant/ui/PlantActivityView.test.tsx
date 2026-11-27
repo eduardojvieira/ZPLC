@@ -13,6 +13,7 @@ const { sensorParts } = await import('../core/parts/sensors');
 const { flowParts } = await import('../core/parts/flow');
 const { panelParts } = await import('../core/parts/panel');
 const { PlantActivityView } = await import('./PlantActivityView');
+const { EditorPanel } = await import('../editor/EditorPanel');
 const { usePlantChoice } = await import('./usePlantChoice');
 const { usePlantEdit } = await import('../editSession');
 const { usePlantDocument } = await import('../../store/usePlantDocument');
@@ -102,5 +103,24 @@ describe('the Plant activity (PLS-005, PLS-006, SCN-016)', () => {
     await user.click(dom.screen.getByRole('button', { name: dom.t('plantEditor.add') }));
     expect(dom.screen.getByRole('alert').textContent).toContain('parts[3].part: no such part');
     expect(editor.state().scene.parts.length).toBe(before);
+  });
+
+  it('PLS-005 the two part lists shown while editing have unique ids and every reference resolves to one element', () => {
+    showScene(true);
+    usePlantEdit.getState().begin({ scene, map }, 'belt-to-sensor');
+    const { editor, mapEditor } = usePlantEdit.getState();
+    const view = dom.render(
+      <>
+        <PlantActivityView />
+        <EditorPanel editor={editor!} mapEditor={mapEditor!} stopped catalogue={catalogue} />
+      </>,
+    );
+    expect(view.container.querySelectorAll('section[aria-labelledby$="parts"]').length).toBe(2);
+    const ids = [...view.container.querySelectorAll('[id]')].map((e) => e.id);
+    expect(ids.filter((id, n) => ids.indexOf(id) !== n)).toEqual([]);
+    for (const el of view.container.querySelectorAll('[aria-labelledby],[aria-describedby]'))
+      for (const name of ['aria-labelledby', 'aria-describedby'])
+        for (const id of (el.getAttribute(name) ?? '').split(' ').filter(Boolean))
+          expect(view.container.querySelectorAll(`[id="${CSS.escape(id)}"]`).length).toBe(1);
   });
 });
