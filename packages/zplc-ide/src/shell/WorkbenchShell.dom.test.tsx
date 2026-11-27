@@ -29,7 +29,17 @@ describe('WorkbenchShell initial sidebar state (UX-023)', () => {
       }
       if (this.getAttribute('data-panel') !== null) {
         const raw = this.style.flexGrow;
-        const width = raw === '0' ? 0 : raw === '' || raw === '1' ? Math.round(1366 / 3) : Math.round((Number.parseFloat(raw) / 100) * 1366);
+        const basis = this.style.flexBasis;
+        const width =
+          raw === '0'
+            ? 0
+            : raw !== ''
+              ? raw === '1'
+                ? Math.round(1366 / 3)
+                : Math.round((Number.parseFloat(raw) / 100) * 1366)
+              : basis.endsWith('px')
+                ? Math.round(Number.parseFloat(basis))
+                : 0;
         return { x: 0, y: 0, top: 0, left: 0, bottom: 768, right: width, width, height: 768, toJSON: () => ({}) } as DOMRect;
       }
       return originalRect.call(this);

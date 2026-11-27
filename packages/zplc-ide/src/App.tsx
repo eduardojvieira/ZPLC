@@ -157,7 +157,7 @@ function App() {
 
   if (!isProjectOpen) {
     return (
-      <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
+      <div className="h-full w-full flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
         <UpdateNoticeBanner />
         {learnHomeOpen ? (
           <main aria-label={t('learn.home.title')} className="flex min-h-0 flex-1 flex-col">
@@ -178,7 +178,7 @@ function App() {
   if (!workbench) {
     const failed = workbenchFailure !== null && workbenchFailure.attempt === workbenchAttempt;
     return (
-      <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
+      <div className="h-full w-full flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
         <CloseGuard />
         <SerialPortChooser />
         <CommandPalette />
@@ -201,7 +201,7 @@ function App() {
   const { Toolbar, EditorArea, Console } = workbench;
 
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
+    <div className="h-full w-full flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
       <CloseGuard />
       <SerialPortChooser />
       <CommandPalette />

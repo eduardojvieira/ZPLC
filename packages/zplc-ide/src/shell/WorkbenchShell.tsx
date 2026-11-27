@@ -165,7 +165,7 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
         <Panel
           id="primary"
           panelRef={setPrimaryPanel}
-          defaultSize="280px"
+          defaultSize={primaryVisible ? '280px' : 0}
           minSize="200px"
           maxSize="520px"
           collapsible
@@ -236,7 +236,7 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
         <Panel
           id="secondary"
           panelRef={setSecondaryPanel}
-          defaultSize="280px"
+          defaultSize={secondaryVisible ? '280px' : 0}
           minSize="200px"
           maxSize="520px"
           collapsible
