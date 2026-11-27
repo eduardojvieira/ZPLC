@@ -270,7 +270,10 @@ describe('a shortened task row can be read whole (UXV-004)', () => {
 });
 
 describe('the Plant group of the navigator (PLS-011)', () => {
-  const plantModel = (items: { key: string; label?: string; ref: never }[], onAdd = mock(async () => undefined)) => ({
+  const plantModel = (
+    items: { key: string; label?: string; ref: never }[],
+    onAdd: (template: string, name: string) => Promise<void> = async () => undefined,
+  ) => ({
     items,
     templates: [
       { value: 'empty', label: 'Empty floor' },
@@ -286,7 +289,12 @@ describe('the Plant group of the navigator (PLS-011)', () => {
 
   it('PLS-011 the navigator shows a Plant group with the scene and the plant map when the project has a plant', () => {
     const { unmount } = dom.render(
-      withPlant(plantModel([{ key: 'scene:root', label: 'scene.json', ref: { kind: 'project' } as never }, { key: 'plant-map', ref: { kind: 'project' } as never }])),
+      withPlant(
+        plantModel([
+          { key: 'scene:root', label: 'scene.json', ref: { kind: 'project' } as never },
+          { key: 'plant-map', ref: { kind: 'project' } as never },
+        ]),
+      ),
     );
     const plant = dom.within(group('plant'));
     expect(plant.getByText('scene.json')).toBeTruthy();
@@ -302,7 +310,7 @@ describe('the Plant group of the navigator (PLS-011)', () => {
   });
 
   it('PLS-011 Add a plant saves the template under a name and opens it', async () => {
-    const onAdd = mock(async (_template: string, _name: string) => undefined);
+    const onAdd = mock<(template: string, name: string) => Promise<void>>(async () => undefined);
     const { user } = dom.render(withPlant(plantModel([], onAdd)));
     await user.click(dom.within(group('plant')).getByRole('button', { name: dom.t('plant.activity.add') }));
     const dialog = dom.within(dom.screen.getByRole('dialog'));
