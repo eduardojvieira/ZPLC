@@ -65,7 +65,7 @@ Después de una pulsación la consigna es 500 rpm: 500 por 4095 es 2 047 500, di
 ## Compruébelo usted
 
 ```quiz
-question: En la bomba del ejemplo resuelto, la consigna es 1000 rpm. ¿Qué orden da la orden de 1365 cuentas para el rango de 0 a 3000 rpm, con números enteros y un DINT?
+question: En la bomba del ejemplo resuelto, la consigna es 1000 rpm. ¿Qué secuencia de operaciones da la orden de 1365 cuentas para el rango de 0 a 3000 rpm, con números enteros y un DINT?
 options:
   - { text: 'Rpm * 4095 / 3000', correct: true, feedback: 'Correcto. 1000 por 4095 es 4 095 000, y dividido entre 3000 es 1365 al descartar los decimales.' }
   - { text: 'Rpm / 3000 * 4095', feedback: 'Rpm dividido entre 3000 es 0 como número entero, y 0 por 4095 sigue siendo 0.' }

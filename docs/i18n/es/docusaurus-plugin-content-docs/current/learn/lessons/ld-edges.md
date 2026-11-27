@@ -1,12 +1,12 @@
 ---
-title: "Flancos en escalera: contactos P y N y pulsos de un escaneo"
+title: "Flancos en escalera: contactos P y N y pulsos de un ciclo"
 sidebar_label: "ld-edges"
 description: "La lección ld-edges: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Flancos en escalera: contactos P y N y pulsos de un escaneo
+# Flancos en escalera: contactos P y N y pulsos de un ciclo
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/ld-edges. Do not edit. >>> */}
 
@@ -25,8 +25,8 @@ Use un contacto de flanco ascendente y un contacto de flanco descendente para qu
 
 ## Objetivos
 
-- Convierta un nivel en un pulso de un escaneo al empezar y en un pulso de un escaneo al terminar.
-- Explique por qué una entrada retenida debe contarse una sola vez y qué escaneo ve el pulso.
+- Convierta un nivel en un pulso de un ciclo al empezar y en un pulso de un ciclo al terminar.
+- Explique por qué una entrada retenida debe contarse una sola vez y qué ciclo ve el pulso.
 
 ## Etapas
 

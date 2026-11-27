@@ -81,7 +81,7 @@ The practice counts the other way: from nothing up to a number, with a reset tha
 
 - Counting with an IF, as in `IF TabletEye THEN Count := Count + 1; END_IF`. That adds one on every scan in which the input is TRUE, hundreds for one tablet. Count rising edges with a counter block.
 - Calling the counter inside an IF. When the instance is not called it does not see CU, so an edge that comes and goes meanwhile is lost. Call it on every scan.
-- Leaving R unconnected, or giving it a signal that is always TRUE. Without R the count never returns to zero; with R always TRUE it never leaves it.
+- Giving the count no way back to its start, or a way that is always open. The count then never starts again, or never moves at all.
 - Expecting Q to fall when the count passes PV. Q is TRUE while CV is at or above PV, and only a reset turns it off.
 - Choosing the preset one too high or one too low. PV is the number of arrivals at which Q must turn on.
 - Reading Q before the call. A statement above the call sees the Q of the previous scan.

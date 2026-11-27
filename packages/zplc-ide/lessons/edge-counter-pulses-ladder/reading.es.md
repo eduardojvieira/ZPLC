@@ -14,7 +14,7 @@ El contador que usará es el **CTU**, un contador ascendente. CTU significa "cou
 - **CV**, el valor actual: la cuenta hasta el momento. Es un número entero (tipo INT) que el contador guarda por usted.
 - **Q**, la salida. Se activa cuando CV ha llegado a PV.
 
-El contador cuenta **flancos ascendentes** de CU, no el tiempo que CU permanece activa. Usted conoció esta idea en la lección de flancos: un auto permanece sobre el lazo del sensor durante muchos escaneos, pero es un solo auto. El contador mira el cambio de inactivo a activo, así que suma uno por toda la estancia. No hace falta poner un contacto de flanco delante.
+El contador cuenta **flancos ascendentes** de CU, no el tiempo que CU permanece activa. Usted conoció esta idea en la lección de flancos: un auto permanece sobre el lazo del sensor durante muchos ciclos, pero es un solo auto. El contador mira el cambio de inactivo a activo, así que suma uno por toda la estancia. No hace falta poner un contacto de flanco delante.
 
 En una planta embotelladora el mismo bloque cuenta botellas para llenar una caja. Un sensor junto al transportador ve pasar cada botella, el contador llega a doce, y su salida le indica a la empacadora que cierre la caja y comience la siguiente. Nadie cuenta a mano, y la cuenta es la misma en cada turno, porque es un número guardado dentro del programa.
 
@@ -66,7 +66,7 @@ caption: El cuarto flanco ascendente activa Q; el reinicio la desactiva
 - Poner un contacto de flanco delante de CU. No hace daño, pero no hace falta.
 - Elegir un valor preestablecido equivocado por uno. Cuente los autos que deben pasar, no los espacios entre ellos.
 - Esperar que la cuenta persista tras un reinicio. Un programa que se detiene y arranca empieza de nuevo con sus valores iniciales.
-- Confiar en cada cuenta. Un sensor que rebota puede sumar cuentas falsas, y un pulso más corto que un escaneo puede perderse por completo.
+- Confiar en cada cuenta. Un sensor que rebota puede sumar cuentas falsas, y un pulso más corto que un ciclo puede perderse por completo.
 
 > [!WARNING]
 > Una cuenta en el programa es información. No la use como única protección de un límite peligroso: una parada de emergencia se cablea en hardware y nunca depende del programa del PLC.
@@ -74,10 +74,10 @@ caption: El cuarto flanco ascendente activa Q; el reinicio la desactiva
 ## Compruébelo usted
 
 ```quiz
-question: Una caja permanece sobre un sensor durante 30 escaneos. El contador tiene el sensor en CU. ¿Cuánto sube la cuenta?
+question: Una caja permanece sobre un sensor durante 30 ciclos. El contador tiene el sensor en CU. ¿Cuánto sube la cuenta?
 options:
   - { text: 'En uno', correct: true, feedback: 'Correcto. Un contador suma uno en el flanco ascendente de CU, por más tiempo que la entrada permanezca activa.' }
-  - { text: 'En 30', feedback: 'Eso sería un contador que suma en cada escaneo con CU activa. Un CTU suma solo en el cambio de inactivo a activo.' }
+  - { text: 'En 30', feedback: 'Eso sería un contador que suma en cada ciclo con CU activa. Un CTU suma solo en el cambio de inactivo a activo.' }
   - { text: 'En cero', feedback: 'El flanco ascendente del sensor es justo lo que cuenta un CTU, así que sí suma uno.' }
 ```
 

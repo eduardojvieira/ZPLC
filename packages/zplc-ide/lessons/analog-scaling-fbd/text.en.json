@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct the starting diagram, save it, then press {{ui:learn.check}}. The starter shows the level at 100 percent from the first scan, while Raw is still low, so HighLevel lights at {{t:10}} ms. Change it so that Level is the level in percent, from 0 to 100, before the LIMIT and the comparison with 75. Place and connect the missing block yourself: the stand-in for Raw, the MUL, the LIMIT and the comparison are already there.",
+      "body": "Correct the starting diagram, save it, then press {{ui:learn.check}}. The starter shows the level at 100 percent from the first scan, while Raw is still low, so HighLevel lights at {{t:10}} ms. Change it so that Level is the level in percent, from 0 to 100, and HighLevel lights only when Level reaches 75. Place and connect the missing block yourself: the stand-in for Raw, the MUL, the LIMIT and the comparison are already there.",
       "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Look at the value that leaves the MUL block on the first scans and compare it with the range that LIMIT lets through. What must happen to it before the LIMIT?"
+      "text": "Look at the value that leaves the MUL block on the first scans and compare it with the range that LIMIT lets through. Which block of the starter is missing for Level to read 0 to 100?"
     },
     {
       "level": 2,

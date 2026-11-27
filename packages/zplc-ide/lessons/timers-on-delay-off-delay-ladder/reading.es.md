@@ -6,7 +6,7 @@ Las máquinas necesitan contar así todo el tiempo. El motor de un transportador
 
 ## La idea
 
-Un temporizador es un bloque que se coloca en un peldaño. Tiene una entrada llamada **IN**, un **tiempo preestablecido** llamado **PT** (el tiempo que cuenta, como `T#3s`, tres segundos) y una salida llamada **Q**. Por dentro mantiene un reloj en marcha. El PLC actualiza el reloj en cada escaneo, así que el temporizador no necesita más conexiones que IN, PT y Q.
+Un temporizador es un bloque que se coloca en un peldaño. Tiene una entrada llamada **IN**, un **tiempo preestablecido** llamado **PT** (el tiempo que cuenta, como `T#3s`, tres segundos) y una salida llamada **Q**. Por dentro mantiene un reloj en marcha. El PLC actualiza el reloj en cada ciclo, así que el temporizador no necesita más conexiones que IN, PT y Q.
 
 Hay dos temporizadores que usará constantemente. Son imágenes en espejo.
 
@@ -17,7 +17,7 @@ Una forma sencilla de recordarlo: TON retrasa la **subida** de una señal, y TOF
 
 ## Cómo se escribe el tiempo
 
-Un valor preestablecido es un valor de tipo TIME. Empieza con `T#` y lleva un número y una unidad: `T#300ms` para trescientos milisegundos, `T#3s` para tres segundos, `T#2m` para dos minutos. El reloj de un temporizador avanza por escaneos completos, así que un valor muy corto solo es tan exacto como el tiempo de escaneo.
+Un valor preestablecido es un valor de tipo TIME. Empieza con `T#` y lleva un número y una unidad: `T#300ms` para trescientos milisegundos, `T#3s` para tres segundos, `T#2m` para dos minutos. El reloj de un temporizador avanza por ciclos completos, así que un valor muy corto solo es tan exacto como el tiempo de ciclo.
 
 ## Ejemplo resuelto
 

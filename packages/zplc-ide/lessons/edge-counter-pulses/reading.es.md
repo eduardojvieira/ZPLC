@@ -81,7 +81,7 @@ La práctica cuenta al revés: desde nada hasta un número, con una puesta a cer
 
 - Contar con un IF, como en `IF TabletEye THEN Count := Count + 1; END_IF`. Eso suma uno en cada ciclo en que la entrada está en TRUE, cientos por un solo comprimido. Cuente flancos ascendentes con un bloque contador.
 - Llamar al contador dentro de un IF. Cuando la instancia no se llama no ve CU, así que un flanco que llega y se va mientras tanto se pierde. Llámelo en cada ciclo.
-- Dejar R sin conectar, o darle una señal que siempre está en TRUE. Sin R la cuenta nunca vuelve a cero; con R siempre en TRUE nunca sale de cero.
+- No darle a la cuenta un camino de vuelta a su inicio, o darle uno que está siempre abierto. La cuenta entonces nunca vuelve a empezar, o nunca se mueve.
 - Esperar que Q caiga cuando la cuenta pasa de PV. Q está en TRUE mientras CV está en PV o por encima, y solo una puesta a cero la apaga.
 - Elegir un valor preestablecido uno de más o uno de menos. PV es el número de llegadas con el que Q debe pasar a ON.
 - Leer Q antes de la llamada. Una instrucción que está arriba de la llamada ve la Q del ciclo anterior.

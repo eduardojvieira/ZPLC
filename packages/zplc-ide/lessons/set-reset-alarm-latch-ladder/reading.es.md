@@ -2,7 +2,7 @@
 
 Piense en el pulsador de llamada junto a una cama de hospital. El paciente lo pulsa medio segundo, y una luz sobre la puerta queda encendida hasta que llega una enfermera y la cancela. La luz debe recordar la llamada aunque el pulsador se soltó hace rato. La misma necesidad aparece en las máquinas: una alarma que debe seguir visible después de que la falla desaparece, un portón que sigue abierto tras el pulso de la orden, un indicador de lote que queda activo hasta que el operador lo borra.
 
-Una bobina simple no puede hacerlo. Una bobina simple muestra la energía que le llega en este momento, escaneo tras escaneo, y la olvida de inmediato. Esta página presenta las dos bobinas que recuerdan: **SET** y **RESET**.
+Una bobina simple no puede hacerlo. Una bobina simple muestra la energía que le llega en este momento, ciclo tras ciclo, y la olvida de inmediato. Esta página presenta las dos bobinas que recuerdan: **SET** y **RESET**.
 
 ## La idea
 
@@ -14,7 +14,7 @@ Una **bobina SET**, también llamada bobina de retención, activa su variable cu
 
 Así, una variable que guarda un estado se construye con dos peldaños: uno que la activa y otro que la desactiva. Piense en un interruptor de luz con dos pulsadores separados, uno de "encender" y otro de "apagar", y una lámpara que recuerda el último pulsador pulsado.
 
-Recuerde que el programa corre en escaneos: leer entradas, resolver los peldaños de arriba abajo, escribir salidas y repetir. Una variable que una bobina SET ha activado simplemente permanece activa en la memoria del PLC de un escaneo al siguiente.
+Recuerde que el programa corre en ciclos: leer entradas, resolver los peldaños de arriba abajo, escribir salidas y repetir. Una variable que una bobina SET ha activado simplemente permanece activa en la memoria del PLC de un ciclo al siguiente.
 
 En la industria, el mismo par de bobinas mantiene el estado de marcha de un motor en un transportador, recuerda que ocurrió un atasco de botellas o mantiene en curso un ciclo de llenado de un tanque. El patrón es siempre el mismo: un evento inicia la memoria y un evento distinto la termina. Como la memoria es una variable común, otros peldaños pueden leerla con un contacto ordinario, igual que leerían un pulsador.
 
@@ -22,7 +22,7 @@ En la industria, el mismo par de bobinas mantiene el estado de marcha de un moto
 
 ¿Qué pasa si la llamada y la cancelación se pulsan en el mismo ciclo? Los dos peldaños tienen energía. Los peldaños corren de arriba abajo, así que la bobina SET escribe `TRUE` primero y la bobina RESET escribe `FALSE` después. Decide el peldaño que va **último**.
 
-Esa es la **prioridad** del biestable, y se elige con el orden de los peldaños. Una alarma que no debe perderse suele dar prioridad a SET, para que una falla nueva nunca se borre por un reconocimiento viejo. Una función de parada suele dar prioridad a RESET. Así funciona el orden de escaneo de este runtime. Otros PLC pueden ordenar de otra manera, así que consulte el manual del PLC que use.
+Esa es la **prioridad** del biestable, y se elige con el orden de los peldaños. Una alarma que no debe perderse suele dar prioridad a SET, para que una falla nueva nunca se borre por un reconocimiento viejo. Una función de parada suele dar prioridad a RESET. Así funciona el orden del ciclo de este runtime. Otros PLC pueden ordenar de otra manera, así que consulte el manual del PLC que use.
 
 ## Ejemplo resuelto
 
@@ -76,9 +76,9 @@ caption: La válvula se recuerda desde la pulsación hasta la parada; una pulsac
 ## Compruébelo usted
 
 ```quiz
-question: El peldaño 1 tiene una bobina SET sobre Alarm gobernada por Fault. El peldaño 2 tiene una bobina RESET sobre Alarm gobernada por Ack. Fault y Ack son verdaderas en el mismo ciclo. ¿Cuánto vale Alarm después del escaneo?
+question: El peldaño 1 tiene una bobina SET sobre Alarm gobernada por Fault. El peldaño 2 tiene una bobina RESET sobre Alarm gobernada por Ack. Fault y Ack son verdaderas en el mismo ciclo. ¿Cuánto vale Alarm después del ciclo?
 options:
-  - { text: 'FALSE, porque el peldaño RESET va último', correct: true, feedback: 'Correcto. Las dos bobinas actúan, y la que se escanea al final deja su valor.' }
+  - { text: 'FALSE, porque el peldaño RESET va último', correct: true, feedback: 'Correcto. Las dos bobinas actúan, y la que se resuelve al final deja su valor.' }
   - { text: 'TRUE, porque una falla es más importante', feedback: 'La importancia no decide. Decide el orden de los peldaños.' }
   - { text: 'Conserva su valor anterior', feedback: 'Las dos bobinas tienen energía, así que la variable se escribe dos veces, y queda la última escritura.' }
 ```
