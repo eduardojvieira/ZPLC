@@ -132,10 +132,11 @@ export async function openStage(sceneOrId: string | PlantSceneFile, options: Sta
   };
 }
 
-/** Waits for every texture the renderer asked for, then draws a fresh frame and returns its pixels. */
-export async function draw(stage: Stage): Promise<ImageData> {
+/** Waits for every texture the renderer asked for, then draws a fresh frame (of `snapshot`, else the core's) and returns its pixels. */
+export async function draw(stage: Stage, snapshot?: PlantSnapshot): Promise<ImageData> {
   await stage.renderer.ready?.();
-  stage.publish();
+  if (snapshot) stage.renderer.setSnapshot(snapshot);
+  else stage.publish();
   await frames(3);
   const copy = document.createElement('canvas');
   copy.width = stage.canvas.width;
@@ -173,7 +174,11 @@ export function partRect(stage: Stage, id: string): Rect | null {
   const object = partObject(stage, id);
   if (!object) return null;
   stage.spy.world.updateMatrixWorld(true);
-  const box = new THREE.Box3().setFromObject(object);
+  return boxRect(stage, new THREE.Box3().setFromObject(object));
+}
+
+/** The projected box of a world box on the canvas, clipped to it; null when no corner is in front of the camera. */
+export function boxRect(stage: Stage, box: THREE.Box3): Rect | null {
   const xs: number[] = [];
   const ys: number[] = [];
   for (const x of [box.min.x, box.max.x])
@@ -190,16 +195,16 @@ export function partRect(stage: Stage, id: string): Rect | null {
   return x1 > x0 && y1 > y0 ? { x: x0, y: y0, w: x1 - x0, h: y1 - y0 } : null;
 }
 
-/** The share of the pixels of `rect` that differ between two frames (any channel by more than 8 of 255). */
-export function diffFraction(a: ImageData, b: ImageData, rect: Rect): number {
+/** The share of the pixels of `rect` that differ between two frames (any channel by more than `threshold` of 255). */
+export function diffFraction(a: ImageData, b: ImageData, rect: Rect, threshold = 8): number {
   let differ = 0;
   for (let y = rect.y; y < rect.y + rect.h; y++)
     for (let x = rect.x; x < rect.x + rect.w; x++) {
       const i = (y * a.width + x) * 4;
       if (
-        Math.abs(a.data[i]! - b.data[i]!) > 8 ||
-        Math.abs(a.data[i + 1]! - b.data[i + 1]!) > 8 ||
-        Math.abs(a.data[i + 2]! - b.data[i + 2]!) > 8
+        Math.abs(a.data[i]! - b.data[i]!) > threshold ||
+        Math.abs(a.data[i + 1]! - b.data[i + 1]!) > threshold ||
+        Math.abs(a.data[i + 2]! - b.data[i + 2]!) > threshold
       )
         differ++;
     }

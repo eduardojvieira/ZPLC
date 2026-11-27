@@ -13,7 +13,7 @@ import { snapshotBounds } from '../geometry';
 import { modelBounds, partModel, pieceExtent, rotate } from './index';
 import { rasterize, worldBoxes } from './raster.fixtures';
 import { beltToSensor, bottom, slot, top } from './models.fixtures';
-import { EMERGENCY_STOP, isStand, OPERATOR, POTENTIOMETER, PUSH_BUTTON } from './operator';
+import { EMERGENCY_STOP, isStand, NUMERIC_DISPLAY, OPERATOR, POTENTIOMETER, PUSH_BUTTON } from './operator';
 
 const plant = beltToSensor();
 
@@ -334,6 +334,79 @@ describe('numeric display model (VIS-014, F5)', () => {
     expect(body.at[0] + pieceExtent(body)[0]).toBeGreaterThan(0.4);
     expect(bottom(slot(a, 'station-plate'))).toBeCloseTo(-0.5, 9);
     expect(top(body)).toBeCloseTo(bottom(slot(a, 'enclosure')), 9);
+  });
+});
+
+describe('numeric display decimals (plan-vis E1 finding, VIS-003)', () => {
+  /** Lit segments of a cell, sorted, to the character they spell. */
+  const CHAR: Readonly<Record<string, string>> = {
+    abcdef: '0',
+    bc: '1',
+    abdeg: '2',
+    abcdg: '3',
+    bcfg: '4',
+    acdfg: '5',
+    acdefg: '6',
+    abc: '7',
+    abcdefg: '8',
+    abcdfg: '9',
+    g: '-',
+  };
+  /** The display drawn in its scene (the renderer hands the model its scene part), with the value set by hand. */
+  const drawn = async (config: Record<string, number | string>, value: number) => {
+    const scene = lone('numeric-display', config);
+    const view = viewOf(await coreOf(scene), 'it');
+    return partModel({ ...view, state: { ...view.state, value } }, { travel: 0, scenePart: scene.parts[0] })!;
+  };
+  /** The text the segments spell, cell by cell; a lit decimal point follows its cell; blank cells are left out. */
+  const text = async (config: Record<string, number | string>, value: number): Promise<string> => {
+    const cells = new Map<number, string[]>();
+    for (const p of await drawn(config, value)) {
+      const m = /^d(\d+)-(\w+)$/.exec(p.slot);
+      if (m) cells.set(Number(m[1]), [...(cells.get(Number(m[1])) ?? []), m[2]!]);
+    }
+    return [...cells.keys()]
+      .sort((a, b) => a - b)
+      .map((i) => {
+        const lit = cells.get(i)!;
+        return (
+          (CHAR[
+            lit
+              .filter((x) => x !== 'dp')
+              .sort()
+              .join('')
+          ] ?? '?') + (lit.includes('dp') ? '.' : '')
+        );
+      })
+      .join('');
+  };
+
+  it('draws a REAL value with the decimals its scene configures', async () => {
+    expect(await text({ type: 'REAL', min: 0, max: 1, unit: 'm', decimals: 2 }, 0.42)).toBe('0.42');
+  });
+
+  it('keeps rounding to a whole number when the display has no decimals', async () => {
+    expect(await text({ type: 'REAL', min: 0, max: 100, unit: '%', decimals: 0 }, 41.6)).toBe('42');
+  });
+
+  it('draws a negative value with its minus and decimals', async () => {
+    expect(await text({ type: 'REAL', min: -10, max: 10, unit: 'V', decimals: 1 }, -2.5)).toBe('-2.5');
+  });
+
+  it('keeps a dash in every cell outside the range, as before, one cell per digit including the decimals', async () => {
+    expect(await text({ type: 'REAL', min: 0, max: 1, unit: 'm', decimals: 2 }, 5)).toBe('---');
+  });
+
+  it('keeps the longest text of the range and decimals inside the window', async () => {
+    for (const [config, value] of [
+      [{ type: 'REAL', min: 0, max: 1, unit: 'm', decimals: 3 }, 0.999],
+      [{ type: 'REAL', min: -1000, max: 1000, unit: 'V', decimals: 3 }, -999.999],
+      [{ type: 'REAL', min: -10, max: 10, unit: 'V', decimals: 2 }, -9.99],
+    ] as const) {
+      const digits = (await drawn(config, value)).filter((p) => /^d\d+-/.test(p.slot));
+      expect(digits.length).toBeGreaterThan(0);
+      for (const p of digits) expect(Math.abs(p.at[0]) + pieceExtent(p)[0]).toBeLessThanOrEqual(NUMERIC_DISPLAY.window[0] / 2);
+    }
   });
 });
 
