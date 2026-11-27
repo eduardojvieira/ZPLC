@@ -17,6 +17,11 @@ export const u3GuideEn = {
   'u3Guide.files.record': 'Last check: {result} on {time}',
   'u3Guide.files.noRecord': 'No check recorded yet.',
   'u3Guide.nextLesson': 'Next lesson',
+  'u3Guide.check.cancelled': 'The check did not start: your changes are not saved. Press Check again and choose Save.',
+  'u3Guide.check.saveFailed': 'The check did not start: some documents could not be saved. Save them and press Check again.',
+  'u3Guide.check.noProject': 'The check did not start: open the exercise folder first.',
+  'u3Guide.check.noLink': 'The check did not start: the project could not be reached. Open the folder again and press Check.',
+  'u3Guide.check.desktop': 'The check did not start: this window cannot run it.',
 } as const;
 export const u3GuideEs: Record<keyof typeof u3GuideEn, string> = {
   'command.view.guide': 'Mostrar la guía',
@@ -36,4 +41,9 @@ export const u3GuideEs: Record<keyof typeof u3GuideEn, string> = {
   'u3Guide.files.record': 'Última comprobación: {result} el {time}',
   'u3Guide.files.noRecord': 'Aún no hay ninguna comprobación registrada.',
   'u3Guide.nextLesson': 'Siguiente lección',
+  'u3Guide.check.cancelled': 'La comprobación no empezó: sus cambios no están guardados. Pulse Comprobar de nuevo y elija Guardar.',
+  'u3Guide.check.saveFailed': 'La comprobación no empezó: algunos documentos no se pudieron guardar. Guárdelos y pulse Comprobar de nuevo.',
+  'u3Guide.check.noProject': 'La comprobación no empezó: abra primero la carpeta del ejercicio.',
+  'u3Guide.check.noLink': 'La comprobación no empezó: no se pudo llegar al proyecto. Abra la carpeta de nuevo y pulse Comprobar.',
+  'u3Guide.check.desktop': 'La comprobación no empezó: esta ventana no puede ejecutarla.',
 };

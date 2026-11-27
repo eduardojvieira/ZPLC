@@ -12,6 +12,7 @@ import { parseLessonCheckAnswer } from '../../electron/lessonCheckProtocol';
 import type { GradeRecord } from '../../shared/learnProgressModel';
 import type { LearnLessonGrade } from '../components/learnLesson';
 import { shownProjectBridge } from '../ipc/shownProjectBridge';
+import { prepareProjectTestRun, type RunRefusal } from '../projectTests/runProjectTests';
 import { useIDEStore } from '../store/useIDEStore';
 import { linkProjectWorkspace } from '../utils/workspaceTestLink';
 
@@ -19,6 +20,7 @@ type Outcome =
   | 'running'
   | { status: 'done'; record: GradeRecord }
   | { status: 'refused'; reason: string; codes: readonly string[] }
+  | { status: 'declined'; why: RunRefusal }
   | { status: 'error' };
 
 interface Check {
@@ -27,7 +29,16 @@ interface Check {
   outcome: Outcome;
 }
 
-export function useLessonCheck(onRecord: (record: GradeRecord) => void) {
+export interface LessonCheckOptions {
+  /**
+   * `per-preference` (the Guide, FLW-006): Check saves an unsaved document by the preference "Save before build and run"
+   * and then runs. Without it the panel of 2.0 keeps its gate: an unsaved document is refused.
+   */
+  save?: 'per-preference';
+}
+
+export function useLessonCheck(onRecord: (record: GradeRecord) => void, options: LessonCheckOptions = {}) {
+  const perPreference = options.save === 'per-preference';
   const bridge = shownProjectBridge(window.electronAPI?.workspaceTests);
   const available = typeof window.electronAPI?.workspaceTests?.lessonCheck === 'function';
   const projectSession = useIDEStore((state) => state.projectSession);
@@ -41,13 +52,22 @@ export function useLessonCheck(onRecord: (record: GradeRecord) => void) {
 
   const run = async (lessonId: string): Promise<void> => {
     const store = useIDEStore.getState();
-    if (!bridge || busy.current || !store.isProjectOpen || store.hasUnsavedChanges()) return;
+    if (!bridge || busy.current || !store.isProjectOpen || (!perPreference && store.hasUnsavedChanges())) return;
     busy.current = true;
     const session = store.projectSession;
     setCheck({ lessonId, projectSession: session, outcome: 'running' });
     let outcome: Outcome = { status: 'error' };
     try {
-      const link = store.workspaceScenarioLink?.projectSession === session ? store.workspaceScenarioLink : await linkProjectWorkspace();
+      let link = store.workspaceScenarioLink?.projectSession === session ? store.workspaceScenarioLink : await linkProjectWorkspace();
+      if (perPreference) {
+        // the same ask, save and link sequence as the tests (FLW-006); a refusal is the way it stopped
+        const prepared = await prepareProjectTestRun(() => void run(lessonId));
+        if (prepared.ok) link = { workspaceId: prepared.run.workspaceId, projectSession: prepared.run.projectSession };
+        else {
+          link = null;
+          outcome = { status: 'declined', why: prepared.refusal };
+        }
+      }
       if (link) {
         const answer = parseLessonCheckAnswer(await bridge.lessonCheck({ workspaceId: link.workspaceId, lessonId }));
         if (answer?.ok) outcome = { status: 'done', record: answer.record };
@@ -72,7 +92,7 @@ export function useLessonCheck(onRecord: (record: GradeRecord) => void) {
   /** The grade of the last check of this lesson in this project, in the shape the panel already shows. */
   const gradeOf = (lessonId: string): LearnLessonGrade | undefined => {
     const outcome = current(lessonId);
-    if (outcome === undefined || outcome === 'running') return undefined;
+    if (outcome === undefined || outcome === 'running' || outcome.status === 'declined') return undefined;
     if (outcome.status !== 'done') return { kind: 'unavailable' };
     const { record } = outcome;
     return record.result === 'passed'
@@ -88,12 +108,17 @@ export function useLessonCheck(onRecord: (record: GradeRecord) => void) {
       const outcome = current(lessonId);
       return typeof outcome === 'object' && outcome.status === 'refused' ? outcome : undefined;
     },
+    /** Where the last check of this lesson stopped before it ran, when the preference or the project stopped it. */
+    declined: (lessonId: string) => {
+      const outcome = current(lessonId);
+      return typeof outcome === 'object' && outcome.status === 'declined' ? outcome.why : undefined;
+    },
     failed: (lessonId: string) => {
       const outcome = current(lessonId);
       return typeof outcome === 'object' && outcome.status === 'error';
     },
     gradeOf,
-    canRun: isProjectOpen && !unsaved,
+    canRun: isProjectOpen && (perPreference || !unsaved),
     unsaved,
     isProjectOpen,
     run,

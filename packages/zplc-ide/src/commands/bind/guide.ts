@@ -1,5 +1,5 @@
 /** The Guide commands (plan-u3.md: G2 binds the lesson ones here; G5 binds the jump to the command bar). */
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { bindCommands } from '../bus';
 
 /** The control that had the focus when the person jumped to the command bar; a second press, or Escape, gives it back. */
@@ -46,4 +46,11 @@ export function useGuideCommands(): void {
       window.removeEventListener('keydown', onKeyDown, true);
     };
   }, []);
+}
+
+/** `learn.check` (GDE-004): the Guide hands over the function its Check button calls; the command is listed while a Guide is shown. */
+export function useGuideCheckCommand(check: () => void): void {
+  const latest = useRef(check);
+  latest.current = check;
+  useEffect(() => bindCommands({ 'learn.check': () => latest.current() }), []);
 }

@@ -319,7 +319,9 @@ describe('Check is one action from the Guide (GDE-004)', () => {
     const view = dom.render(<Guide />);
     await view.user.click(document.querySelector('[data-learn-check]')!);
     await dom.waitFor(() => expect(requests).toHaveLength(1));
-    expect(requests[0]).toEqual({ workspaceId: 'w', lessonId: lesson.id });
+    // the shown-project bridge adds the folder id; the learner's side names no scenario
+    expect(Object.keys(requests[0] as object).sort()).toEqual(['lessonId', 'rootId', 'workspaceId']);
+    expect(requests[0]).toMatchObject({ workspaceId: 'w', lessonId: lesson.id });
   });
 
   it('GDE-004 the learn.check command runs the same function as the button', async () => {
