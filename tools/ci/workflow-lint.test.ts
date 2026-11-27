@@ -21,6 +21,19 @@ const shardJob = (id: string) => `  ${id}:
           bun run test:ide -- "\${files[@]}"
 `;
 
+const journeyJob = `  desktop-platforms:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - name: Run the end-to-end journeys
+        env:
+          ZPLC_JOURNEY_SHARD: \${{ matrix.shard }}/4
+        run: bun run --cwd packages/zplc-ide smoke:journeys
+`;
 const GOOD: Record<string, string> = {
   'ci.yml': `on: push
 jobs:
@@ -32,7 +45,7 @@ ${shardJob('ide-tests')}  format:
 `,
   'nightly-quality.yml': `on: push
 jobs:
-${shardJob('desktop-ide-tests')}`,
+${shardJob('desktop-ide-tests')}${journeyJob}`,
   'release.yml': `on: push
 jobs:
   verify:
@@ -124,5 +137,39 @@ describe('the workflow lint', () => {
     ],
   ])('names an env of %s that sets a variable of the shard plan', (file, from, to, problem) => {
     expect(lintWith(file, from, to)).toEqual([problem]);
+  });
+
+  describe('the journey shards of nightly-quality.yml', () => {
+    const at = 'nightly-quality.yml job desktop-platforms';
+    it('names a journey job that is missing', () => {
+      expect(lintWith('nightly-quality.yml', 'desktop-platforms:', 'desktop-journeys:')).toEqual([
+        `${at}: missing; it runs the journeys in shards (ZPLC_JOURNEY_SHARD)`,
+      ]);
+    });
+
+    it('names a journey matrix that is not 1 to n', () => {
+      expect(lintWith('nightly-quality.yml', 'shard: [1, 2, 3, 4]', 'shard: [1, 2, 4]')).toEqual([
+        `${at}: the shard matrix must be the whole numbers 1 to n`,
+        `${at}: the step that runs smoke:journeys must set ZPLC_JOURNEY_SHARD to "\${{ matrix.shard }}/3", the matrix size`,
+      ]);
+    });
+
+    it('names a journey step whose shard count is not the size of the matrix', () => {
+      expect(lintWith('nightly-quality.yml', '}}/4', '}}/2')).toEqual([
+        `${at}: the step that runs smoke:journeys must set ZPLC_JOURNEY_SHARD to "\${{ matrix.shard }}/4", the matrix size`,
+      ]);
+    });
+
+    it('names a journey step that runs every journey', () => {
+      expect(lintWith('nightly-quality.yml', '        env:\n          ZPLC_JOURNEY_SHARD: ${{ matrix.shard }}/4\n', '')).toEqual([
+        `${at}: the step that runs smoke:journeys must set ZPLC_JOURNEY_SHARD to "\${{ matrix.shard }}/4", the matrix size`,
+      ]);
+    });
+
+    it('names a journey job where one failing shard cancels the others', () => {
+      expect(lintWith('nightly-quality.yml', 'fail-fast: false\n      matrix:\n        shard: [1, 2, 3, 4]', 'fail-fast: true\n      matrix:\n        shard: [1, 2, 3, 4]')).toEqual([
+        `${at}: fail-fast must be false, so that one failing shard stops no other`,
+      ]);
+    });
   });
 });
