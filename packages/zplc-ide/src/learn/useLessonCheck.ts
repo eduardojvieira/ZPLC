@@ -62,7 +62,11 @@ export function useLessonCheck(onRecord: (record: GradeRecord) => void, options:
       if (perPreference) {
         // the same ask, save and link sequence as the tests (FLW-006); a refusal is the way it stopped
         const prepared = await prepareProjectTestRun(() => void run(lessonId));
-        if (prepared.ok) link = { workspaceId: prepared.run.workspaceId, projectSession: prepared.run.projectSession };
+        // another project may have been opened while the question was on screen: nothing runs on it
+        if (prepared.ok && prepared.run.projectSession !== session) {
+          link = null;
+          outcome = { status: 'declined', why: 'noProject' };
+        } else if (prepared.ok) link = { workspaceId: prepared.run.workspaceId, projectSession: prepared.run.projectSession };
         else {
           link = null;
           outcome = { status: 'declined', why: prepared.refusal };

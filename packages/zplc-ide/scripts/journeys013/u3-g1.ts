@@ -165,16 +165,30 @@ export const journeysU3G1: Journey[] = [
         'Check to be enabled with the document unsaved',
         async () => (await app.eval<boolean>(`document.querySelector('${GUIDE} [data-learn-check]')?.disabled === false`)) || undefined,
       );
+      const testsTabBefore = await app.eval<string>(
+        `document.getElementById('console-tab-tests')?.getAttribute('aria-selected') ?? 'absent'`,
+      );
+      const selectedBefore = await app.eval<string>(
+        `[...document.querySelectorAll('[role="tab"][id^="console-tab-"][aria-selected="true"]')].map((tab) => tab.id).join()`,
+      );
       await app.click(css(`${GUIDE} [data-learn-check]`), 'Check in the Guide');
       await app.until(
         'the Guide to grade the program as passed',
         async () => (await app.eval<boolean>(`document.querySelector('${GUIDE} [data-learn-grade="passed"]') !== null`)) || undefined,
         60_000,
       );
-      assert(
-        await app.eval<boolean>(`document.querySelectorAll('[data-test-verdict]').length === 1`),
-        'The verdict is not shown once, in the Guide.',
+      // the Tests surface stayed as it was: the Tests tab is not selected and the selected console tab did not change
+      const testsTabAfter = await app.eval<string>(
+        `document.getElementById('console-tab-tests')?.getAttribute('aria-selected') ?? 'absent'`,
       );
+      const selectedAfter = await app.eval<string>(
+        `[...document.querySelectorAll('[role="tab"][id^="console-tab-"][aria-selected="true"]')].map((tab) => tab.id).join()`,
+      );
+      assert(
+        testsTabAfter === testsTabBefore && testsTabAfter !== 'true',
+        `Check touched the Tests tab: ${testsTabBefore} then ${testsTabAfter}.`,
+      );
+      assert(selectedAfter === selectedBefore, `Check changed the console tab: ${selectedBefore} then ${selectedAfter}.`);
       assert(
         await inGuide(app, `guide.querySelector('[data-test-verdict-sentence]') !== null`),
         'The Guide does not show the verdict sentence.',
