@@ -6,7 +6,7 @@ const dom = await setupDom();
 await stubProjectLoader();
 await stubMonaco();
 const { DEFAULT_SHELL_STATE, useShellLayout } = await import('../store/useShellLayout');
-const { WorkbenchShell } = await import('./WorkbenchShell');
+const { WorkbenchShell, useCollapsible } = await import('./WorkbenchShell');
 
 const StubEditor = () => <div data-testid="stub-editor" />;
 const StubConsole = () => <div data-testid="stub-console" />;
@@ -135,5 +135,58 @@ describe('WorkbenchShell initial sidebar state (UX-023)', () => {
       globalThis.ResizeObserver = originalRO;
       window.ResizeObserver = originalWindowRO;
     }
+  });
+});
+
+/** A stand-in for the library's panel handle that behaves as react-resizable-panels 4.21 does: expand() reopens at the remembered size, or at minSize. */
+function fakePanel(minSize: number) {
+  let size = 0;
+  let remembered: number | undefined;
+  const calls: string[] = [];
+  return {
+    calls,
+    get size() {
+      return size;
+    },
+    isCollapsed: () => size === 0,
+    collapse: () => {
+      remembered = size;
+      size = 0;
+      calls.push('collapse');
+    },
+    expand: () => {
+      size = remembered ?? minSize;
+      calls.push('expand');
+    },
+    resize: (to: string) => {
+      size = Number.parseFloat(to);
+      calls.push(`resize ${to}`);
+    },
+  };
+}
+
+function Collapsible({ panel, visible }: { panel: ReturnType<typeof fakePanel>; visible: boolean }) {
+  useCollapsible(panel as never, visible);
+  return null;
+}
+
+describe('WorkbenchShell sidebar widths', () => {
+  it('opens a sidebar that started closed at 280 px, not at its 200 px minimum, and a reopen restores the remembered width', async () => {
+    const panel = fakePanel(200);
+    const view = dom.render(<Collapsible panel={panel} visible={false} />);
+    await dom.settle();
+    expect(panel.size).toBe(0);
+
+    view.rerender(<Collapsible panel={panel} visible />);
+    await dom.settle();
+    expect(panel.size).toBe(280);
+
+    panel.resize('340px'); // the user drags the separator
+    view.rerender(<Collapsible panel={panel} visible={false} />);
+    await dom.settle();
+    expect(panel.size).toBe(0);
+    view.rerender(<Collapsible panel={panel} visible />);
+    await dom.settle();
+    expect(panel.size).toBe(340);
   });
 });

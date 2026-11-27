@@ -53,20 +53,26 @@ const stubJourney = (name: string): Journey => ({
 describe('WebGL journey registration', () => {
   const base = [stubJourney('12 Restore the session')];
   const webgl = [stubJourney('VIS-002 framing'), stubJourney('VIS-016 look')];
+  const names = (journeys: Array<{ name: string }>) => journeys.map((j) => j.name);
 
   test('registers WebGL journeys when the runtime probe finds WebGL 2', () => {
-    const result = selectJourneys(base, webgl, { webglAvailable: true });
-    expect(result.selected.map((j) => j.name)).toEqual(['12 Restore the session', 'VIS-002 framing', 'VIS-016 look']);
-    expect(result.skippedWebgl).toEqual([]);
+    const result = selectJourneys(base, webgl, { probe: { status: 'available' } });
+    expect(names(result.selected)).toEqual(['12 Restore the session', 'VIS-002 framing', 'VIS-016 look']);
+    expect(result.notPossible).toEqual([]);
   });
 
-  test('excludes WebGL journeys with a reason when WebGL 2 is unavailable', () => {
-    const result = selectJourneys(base, webgl, {
-      webglAvailable: false,
-      webglReason: 'WebGL 2 is not available on this runner',
-    });
-    expect(result.selected.map((j) => j.name)).toEqual(['12 Restore the session']);
-    expect(result.skippedWebgl.map((j) => j.name)).toEqual(['VIS-002 framing', 'VIS-016 look']);
-    expect(result.reason).toBe('WebGL 2 is not available on this runner');
+  test('a page that loaded without a WebGL 2 context is a not-possible result that fails the run', () => {
+    const reason = 'WebGL 2 is not available on this runner';
+    const result = selectJourneys(base, webgl, { probe: { status: 'absent', reason } });
+    expect(names(result.selected)).toEqual(['12 Restore the session']);
+    expect(names(result.notPossible)).toEqual(['VIS-002 framing', 'VIS-016 look']);
+    for (const skipped of result.notPossible) expect(skipped.outcome).toEqual({ status: 'not-possible', detail: reason, notes: [] });
+    expect(judge(result.notPossible, {})).toHaveLength(2);
+  });
+
+  test('a probe launch error, timeout or crash does not skip: the journeys run and pass or fail on their own', () => {
+    const result = selectJourneys(base, webgl, { probe: { status: 'error' } });
+    expect(names(result.selected)).toEqual(['12 Restore the session', 'VIS-002 framing', 'VIS-016 look']);
+    expect(result.notPossible).toEqual([]);
   });
 });
