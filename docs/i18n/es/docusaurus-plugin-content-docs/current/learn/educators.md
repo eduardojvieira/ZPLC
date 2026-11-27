@@ -18,7 +18,7 @@ Los dos comandos se ejecutan desde una copia del repositorio con [Bun](https://b
 1. Abra el inicio de Aprender.
 2. Active **Aula: ocultar las soluciones de referencia**.
 
-Mientras el ajuste está activo, el panel de la lección no ofrece ninguna solución de referencia y dice que el ajuste de aula la oculta. Las pistas siguen disponibles. El ajuste pertenece a esa computadora y viene desactivado; se desactiva en el mismo lugar.
+Mientras el ajuste está activo, el panel de la lección no ofrece ninguna solución de referencia y dice que el ajuste de aula la oculta. Las pistas anteriores siguen disponibles, pero la última pista de cada lección también se oculta, porque es la respuesta completa; la Guía, el asistente y `zplc://lesson/current` la omiten. El ajuste pertenece a esa computadora y viene desactivado; se desactiva en el mismo lugar.
 
 ## Revisar el archivo de progreso de un estudiante
 

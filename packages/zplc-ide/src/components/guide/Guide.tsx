@@ -20,6 +20,7 @@ import { AlertDialog } from '../../ui';
 import { announce } from '../../utils/announce';
 import { getFileContent } from '../../utils/projectLoader';
 import { isFileSystemAccessSupported } from '../../types';
+import { visibleHints } from '../../../shared/lessonHints';
 import type { GradeRecord, LessonNote } from '../../../shared/learnProgressModel';
 import {
   gradeRecordedScenarioLesson,
@@ -236,7 +237,7 @@ export function Guide({ workspaceTestPresentation }: { workspaceTestPresentation
         <GuideStages key={lesson.id} stages={lesson.stages} />
 
         <section aria-label={t('learn.hints')} className="border-b border-[var(--color-surface-700)] pb-3">
-          {lesson.hints.map((hint, index) => (
+          {visibleHints(lesson.hints, hideSolutions).map((hint, index) => (
             <details
               key={index}
               onToggle={(event) => {
