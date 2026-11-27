@@ -52,7 +52,8 @@ export const STATES: Readonly<Record<string, (stage: Stage) => Promise<void>>> =
    */
   axes: async (s) => {
     const commands = s.core.signals.filter((c) => c.direction === 'command');
-    s.core.apply(Object.fromEntries(commands.map((c, i) => [c.name, c.type === 'BOOL' ? !/Right$|\.emit$/.test(c.name) : 0.45 + 0.07 * i])));
+    const value = (c: { name: string; type: string }, i: number) => (c.type === 'BOOL' ? !/Right$|\.emit$/.test(c.name) : 0.45 + 0.07 * i);
+    s.core.apply(Object.fromEntries(commands.map((c, i) => [c.name, value(c, i)])));
     await s.run(1500, 20);
   },
   /** The belt has run and stopped, its box still on the way (pair with `running`, same instant). */
