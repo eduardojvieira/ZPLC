@@ -57,7 +57,7 @@ Motor := Clearing;
 END_PROGRAM
 ```
 
-Léalo desde arriba. El primer IF borra la memoria cada vez que la cortina ve la cinta vacía. El segundo IF la activa cada vez que se pulsa el pulsador, y como va al final, un pulsador mantenido sigue haciendo funcionar la cinta aunque el primer IF borre la memoria en cada ciclo. Cuando se suelta el pulsador con recortes todavía sobre la cinta, `Clearing` sigue en TRUE y la cinta continúa hasta que la cortina la ve vacía.
+Léalo desde arriba. El primer IF borra la memoria cada vez que la cortina ve la cinta vacía. El segundo IF la activa cada vez que se acciona el pulsador, y como va al final, un pulsador mantenido sigue haciendo funcionar la cinta aunque el primer IF borre la memoria en cada ciclo. Cuando se suelta el pulsador con recortes todavía sobre la cinta, `Clearing` sigue en TRUE y la cinta continúa hasta que la cortina la ve vacía.
 
 Esta máquina no tiene nada que colocar sobre su cinta, solo una cinta que hacer funcionar. La estación de la práctica también tiene que colocar su caja, y qué instrucción gana allí queda para que usted lo decida a partir de lo que debe pasarle a la caja.
 

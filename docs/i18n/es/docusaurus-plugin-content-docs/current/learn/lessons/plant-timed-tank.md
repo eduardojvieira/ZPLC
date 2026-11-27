@@ -25,7 +25,7 @@ Ejecute un ciclo de llenado, espera y vaciado de un tanque con temporizadores de
 
 ## Objetivos
 
-- Medir los pasos de un proceso de modo que cada paso temporizado dure su propio tiempo.
+- Temporizar los pasos de un proceso de modo que cada paso temporizado dure su propio tiempo.
 - Usar un temporizador como límite de seguridad en un paso que normalmente termina con un sensor, y dejar que la parada de emergencia aborte el ciclo.
 
 ## Etapas

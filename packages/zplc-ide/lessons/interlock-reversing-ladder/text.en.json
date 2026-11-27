@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Look at what each rung knows about the other direction: nothing. Which variable of the other direction could each rung read, and what must it be for the rung to pass power?"
+      "text": "Look at the two direction rungs side by side, and at what each of them does while Forward runs and RevPB is pressed."
     },
     {
       "level": 2,
