@@ -61,7 +61,7 @@ When the gate stops, the IN of `OffTime` turns FALSE, its Q falls on that same s
 
 ## Common mistakes
 
-- Letting the timer count while the input is off. The memory then flips from the moment the program starts, so when the input turns on the lamp may light at once and the first change does not come one preset later.
+- Forgetting the initial value of the memory. The lamp shows the memory from the first scan, so the memory must start with the value the lamp must have before the first change.
 - Expecting the stopped timer to darken the lamp. The timer stops when the input drops, but the memory keeps its last value, so the lamp can stay ON.
 - Forgetting to restart the timer inside the IF. Q stays TRUE, so the memory flips on every scan and the lamp blinks far too fast.
 - Giving the time of a full blink as the preset. The preset is the time of one state, on or off; a full blink lasts two presets.
@@ -70,11 +70,11 @@ When the gate stops, the IN of `OffTime` turns FALSE, its Q falls on that same s
 ## Check yourself
 
 ```quiz
-question: A blinker made of a timer and a memory ends with Out := Memory; and has no AND with its input Run. Run drops while Memory is TRUE. What does Out do?
+question: In the gate beacon of the worked example, the gate stops while the beacon is lit. What does Beacon do?
 options:
-  - { text: 'It stays ON, because nothing changes Memory any more', correct: true, feedback: 'Yes. The timer stops counting, Memory keeps its last value, and Out copies it.' }
-  - { text: 'It goes OFF at once', feedback: 'Nothing in that program turns Out off when Run drops. That is the job of an AND with Run.' }
-  - { text: 'It keeps blinking', feedback: 'The timer counts only while Run is TRUE, so Memory no longer changes.' }
+  - { text: 'It goes dark on that same scan', correct: true, feedback: 'Yes. Moving turns FALSE, OffTime is called with IN FALSE, its Q falls at once, and Beacon copies it.' }
+  - { text: 'It stays lit until OnTime has counted its preset', feedback: 'OnTime only decides when OffTime restarts. Beacon copies OffTime.Q, which falls as soon as its IN does.' }
+  - { text: 'It stays lit, because a memory holds it', feedback: 'This beacon has no memory: it is made of two timers, and Beacon copies one of them.' }
 ```
 
 ```quiz

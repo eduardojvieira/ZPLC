@@ -42,7 +42,7 @@ src: reading/capper-chain.ld.json
 caption: Cada peldaño lee un bit de memoria que escribe un peldaño de más abajo
 ```
 
-Siga un ciclo en el que llega una botella. El peldaño 1 lee CapReady, que todavía es FALSE desde el ciclo anterior, así que el cabezal sigue arriba. El peldaño 2 lee BottleSeen, también todavía en FALSE. Solo el peldaño 3 ve la botella y activa BottleSeen. En el ciclo siguiente el peldaño 2 lee el nuevo BottleSeen y activa CapReady, y recién en el ciclo posterior el peldaño 1 baja el cabezal. Cada peldaño que lee un valor escrito más abajo agrega un ciclo.
+Siga un ciclo en el que llega una botella. El peldaño 1 lee CapReady, que todavía es FALSE desde el ciclo anterior, así que el cabezal sigue arriba. El peldaño 2 lee BottleSeen, también todavía en FALSE. Solo el peldaño 3 ve la botella y activa BottleSeen. En el ciclo siguiente el peldaño 2 lee el nuevo BottleSeen y activa CapReady, y solo en el ciclo posterior el peldaño 1 baja el cabezal. Cada peldaño que lee un valor escrito más abajo agrega un ciclo.
 
 ```timing
 span: 80

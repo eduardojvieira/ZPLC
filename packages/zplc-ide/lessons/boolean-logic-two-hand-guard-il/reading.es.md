@@ -47,7 +47,7 @@ END_VAR
 END_PROGRAM
 ```
 
-Léalo como dos grupos, uno por salida, cada uno abierto por una carga. El primer grupo necesita dos condiciones, y ANDN incorpora el interruptor del carril invertido. El segundo grupo carga la orden que acaba de guardar, la compara con el interruptor de posición mediante XOR, y recién entonces une la cinta con AND: el orden de las líneas es el orden del trabajo, así que el XOR se hace antes que el AND.
+Léalo como dos grupos, uno por salida, cada uno abierto por una carga. El primer grupo necesita dos condiciones, y ANDN incorpora el interruptor del carril invertido. El segundo grupo carga la orden que acaba de guardar, la compara con el interruptor de posición mediante XOR, y solo entonces une la cinta con AND: el orden de las líneas es el orden del trabajo, así que el XOR se hace antes que el AND.
 
 Sígalo con la cinta en marcha. Llega una caja alta y se ordena abrir la compuerta; el interruptor de posición lo confirma un momento después, así que durante ese momento FlapFault es TRUE. La caja pasa y la compuerta vuelve a entrar, con la misma falla breve. Más tarde el carril está lleno: pasa la siguiente caja alta y la compuerta no se abre.
 

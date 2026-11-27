@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Look at which rung writes ButtonSeen and which rung reads it, and at where each of them sits in the program."
+      "text": "Look at which rung writes ButtonSeen and which rung reads it, and where each of them sits in the program."
     },
     {
       "level": 2,

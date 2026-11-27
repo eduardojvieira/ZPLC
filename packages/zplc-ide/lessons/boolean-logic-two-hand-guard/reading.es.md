@@ -41,7 +41,7 @@ Una asignación como `Flap := TallBox AND NOT LaneFull;` escribe su salida en ca
 
 ## Ejemplo resuelto
 
-Una cinta clasificadora lleva cajas frente a una compuerta que puede abrirse y empujar una caja hacia un carril lateral. Una barrera de altura, `TallBox`, es TRUE mientras pasa una caja alta; las cajas altas van al carril lateral, salvo que el carril esté lleno, lo que indica el interruptor `LaneFull`. La compuerta tiene un interruptor de posición, `FlapIsOut`, que es TRUE mientras la compuerta está realmente afuera. Mientras la cinta funciona (`BeltRunning`), la orden y el interruptor de posición deberían coincidir siempre; cuando no coinciden, la compuerta está trabada o lenta, y se enciende una lámpara de falla.
+Una cinta clasificadora lleva cajas frente a una compuerta que puede abrirse y empujar una caja hacia un carril lateral. Una barrera de altura, `TallBox`, es TRUE mientras pasa una caja alta; las cajas altas van al carril lateral, salvo que el carril esté lleno, lo que indica el interruptor `LaneFull`. La compuerta tiene un interruptor de posición, `FlapIsOut`, que es TRUE mientras la compuerta está realmente fuera. Mientras la cinta funciona (`BeltRunning`), la orden y el interruptor de posición deberían coincidir siempre; cuando no coinciden, la compuerta está trabada o lenta, y se enciende una lámpara de falla.
 
 Cada salida responde una pregunta, así que cada una recibe una instrucción:
 
