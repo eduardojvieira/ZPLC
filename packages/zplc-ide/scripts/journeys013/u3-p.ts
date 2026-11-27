@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { assert } from '../run-desktop-smoke';
 import { button, css, tab, type App } from '../journeyApp';
@@ -11,16 +11,10 @@ const ACTIVITY = `[...document.querySelectorAll('[role="region"]')].find((r) => 
 const MOTOR = 'motor_start_stop';
 const toolbar = css('[role="toolbar"]');
 
-/** The Motor project of the examples, opened and running in the simulation; with `plantMap` it also holds a plant-map.json. */
-async function runMotor(app: App, folder: string, plantMap?: object): Promise<void> {
+/** The Motor project of the examples, opened and running in the simulation, with the Watch tab shown. */
+async function runMotor(app: App, folder: string): Promise<void> {
   mkdirSync(folder, { recursive: true });
   copyExample(folder, MOTOR);
-  if (plantMap) {
-    // the project's own scene is its scene.json and its plant-map.json together: one without the other is no scene
-    const scene = { schemaVersion: 1, name: 'Motor', parts: [], cameras: [{ name: 'Overview', position: [0, 8, 8], target: [0, 0, 0] }] };
-    writeFileSync(join(folder, 'scene.json'), JSON.stringify(scene));
-    writeFileSync(join(folder, 'plant-map.json'), JSON.stringify(plantMap));
-  }
   app.answer(folder);
   await app.click(button('Open project', 'contains'), 'the Open project button');
   await app.until('the project workbench', async () => (await app.visible(toolbar)) || undefined);
@@ -78,11 +72,26 @@ export const journeysU3P: Journey[] = [
     proves: [],
     partly: ['PLS-007', 'LNK-006', 'UX-009'],
     run: async (app, { root }) => {
-      await runMotor(app, join(root, 'plant-fed-row'), {
-        schemaVersion: 2,
-        target: { scene: 'scene.json' },
-        signals: { go: { direction: 'sensor', type: 'BOOL', point: 'Motor.Start' } },
-      });
+      // a saved scene with its own plant map: the map feeds BeltToSensor.Start; the plant runs, so its session is bound
+      const project = shippedSceneProject(SHIPPED.smallest);
+      app.answer(writeSceneProject(join(root, 'plant-fed-row'), project));
+      await app.click(button('Open project', 'contains'), 'the Open project button');
+      await app.until('the project workbench', async () => (await app.visible(toolbar)) || undefined);
+      await openPlantDocument(app, project);
+      await runInSimulation(app);
+      await app.click(tab('Watch', 'prefix'), 'the Watch tab');
+      await app.until('the faceplate', async () => (await app.visible(css('[data-faceplate]'))) || undefined, 45_000);
+      // on the faceplate: marked in words, and the switch and Hold are disabled before the force
+      const faceRow = `document.querySelector('[data-faceplate] [data-input="BeltToSensor.Start"]')`;
+      await app.until(
+        'the faceplate row to say From the plant',
+        async () => ((await app.eval<boolean>(`(${faceRow})?.textContent.includes('From the plant') ?? false`)) ? true : undefined),
+        30_000,
+      );
+      assert(
+        await app.eval<boolean>(`[...(${faceRow}).querySelectorAll('button')].every((b) => b.disabled)`),
+        'The faceplate lets a person press the input the plant feeds.',
+      );
       await app.click(button('Add variable'), 'Add variable');
       await app.click(css('input[placeholder^="Variable path"]'), 'the variable path');
       await app.type('Start');
@@ -92,8 +101,17 @@ export const journeysU3P: Journey[] = [
         async () => ((await rowText(app, 'Start')).includes('From the plant') ? true : undefined),
         30_000,
       );
-      const centre = async () => (await app.eval<{ x: number; y: number } | null>(rowRect('Start')))!;
-      const { x, y } = await centre();
+      // no editor: the row takes no keyboard focus, and a double-click on the value, scrolled into view, opens nothing
+      assert(
+        await app.eval<boolean>(`!${watchRow('Start')}.querySelector('[data-forced]').hasAttribute('tabindex')`),
+        'The value of a row the plant feeds can be reached to edit.',
+      );
+      await app.eval(`${watchRow('Start')}.scrollIntoView({ block: 'center' })`);
+      const { x, y } = (await app.eval<{ x: number; y: number } | null>(rowRect('Start')))!;
+      assert(
+        await app.eval<boolean>(`document.elementFromPoint(${x}, ${y})?.closest('tr') === ${watchRow('Start')}`),
+        'The value of the Start row is not on screen to be clicked.',
+      );
       await app.clickAt(x, y, 2);
       assert(!(await editor(app, 'Start')), 'A row the plant feeds opened its value editor.');
       await app.click(css('input[aria-label="Force Start"]'), 'the force checkbox of Start');
