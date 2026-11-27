@@ -18,7 +18,7 @@ The two commands run from a checkout of the repository with [Bun](https://bun.sh
 1. Open the Learn home.
 2. Turn on **Classroom: hide reference solutions**.
 
-While the setting is on, the lesson panel offers no reference solution and says that the classroom setting hides it. Hints still work. The setting belongs to that computer and is off by default; turn it off in the same place.
+While the setting is on, the lesson panel offers no reference solution and says that the classroom setting hides it. The earlier hints still work, but the last hint of each lesson is hidden too, because it is the full answer; the Guide, the assistant and `zplc://lesson/current` all leave it out. The setting belongs to that computer and is off by default; turn it off in the same place.
 
 ## Check a student's progress file
 

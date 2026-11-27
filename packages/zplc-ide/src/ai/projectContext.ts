@@ -13,6 +13,7 @@
 import path from 'node:path';
 
 import { isLessonId } from '../../shared/learnProgressModel.js';
+import { visibleHints } from '../../shared/lessonHints.js';
 import { manifestForAssistant } from './manifestPrivacy.js';
 
 export interface FailedCheck {
@@ -156,18 +157,12 @@ function scenarioOf({ path: file, input }: { path: string; input: unknown }): Js
   };
 }
 
-/**
- * The one switch of the hint rule, read by the assistant and the MCP lesson resource alike (D-32): with solutions hidden the last
- * hint, which says what to change, is left out. Set false to show every hint while solutions are hidden.
- */
-export const HIDE_LAST_HINT_WHEN_SOLUTIONS_HIDDEN = true;
-
 /** The hints by level, after that rule. */
 function hintsOf(value: unknown, solutionsHidden: boolean): Array<{ level: number; text: string }> {
   const hints = list(value)
     .map((hint) => ({ level: typeof hint.level === 'number' ? hint.level : 0, text: text(hint.text) }))
     .sort((a, b) => a.level - b.level);
-  return solutionsHidden && HIDE_LAST_HINT_WHEN_SOLUTIONS_HIDDEN ? hints.slice(0, -1) : hints;
+  return [...visibleHints(hints, solutionsHidden)];
 }
 
 function lessonOf(lesson: ProjectContextInput['lesson'], solutionsHidden: boolean): ProjectContext['lesson'] {

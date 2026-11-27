@@ -24,6 +24,7 @@ and version when the release is cut (see `RELEASING.md`).
 
 ### What changed for you
 
+- With the classroom setting that hides solutions on, the last hint of a lesson, which is the full answer, is hidden in the Guide too, as it already was for the assistant and `zplc://lesson/current`; the earlier hints and the notice stay.
 - A Function Block Diagram and a Ladder rung place every function of the compiler, the 240 type conversions included, so a
   `REAL` is converted with a block such as `REAL_TO_INT` and no second file in Structured Text is needed. `MUX` takes up
   to eight inputs.

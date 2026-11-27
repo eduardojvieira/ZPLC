@@ -191,6 +191,44 @@ describe('The Guide (GDE-003)', () => {
   });
 });
 
+describe('With solutions hidden the last hint is hidden too (CRS-017)', () => {
+  const hintTexts = () =>
+    [...dom.screen.getByRole('region', { name: dom.t('learn.hints') }).querySelectorAll('details p')].map((p) => p.textContent);
+  const hide = (hideSolutions: boolean) =>
+    dom.patchStore(useAppSettings, { settings: { ...useAppSettings.getState().settings, hideSolutions } } as never);
+
+  it('CRS-017 hidden: every hint but the last, and the solutions-hidden notice', () => {
+    open();
+    hide(true);
+    dom.render(<Guide />);
+    expect(hintTexts()).toEqual(lesson.hints.slice(0, -1));
+    expect(document.querySelector('[data-learn-solutions-hidden]')).not.toBeNull();
+  });
+
+  it('CRS-017 shown: every hint, as before', () => {
+    open();
+    hide(false);
+    dom.render(<Guide />);
+    expect(hintTexts()).toEqual([...lesson.hints]);
+    expect(document.querySelector('[data-learn-solutions-hidden]')).toBeNull();
+  });
+
+  it('CRS-017 the assistant context gives the same hints as the Guide, in both states', async () => {
+    const { buildProjectContext } = await import('../../ai/projectContext');
+    const context = (solutionsHidden: boolean) =>
+      buildProjectContext({ lesson: { manifest: lessonEntry, text: lessonEntry.text.en } }, { solutionsHidden }).lesson!.hints.map(
+        (hint) => hint.text,
+      );
+    for (const hidden of [true, false]) {
+      open();
+      hide(hidden);
+      const { unmount } = dom.render(<Guide />);
+      expect(hintTexts()).toEqual(context(hidden));
+      unmount();
+    }
+  });
+});
+
 describe('The Guide asks the Assistant for a hint (AIX-003)', () => {
   it('AIX-003 the hint button opens the Assistant in ask mode with the lesson, and is not offered without a provider', async () => {
     open();
