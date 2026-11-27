@@ -27,7 +27,7 @@ Con el valor del ciclo anterior, un programa puede ver un cambio. Una señal que
 
 ## Ejemplo resuelto
 
-Un tanque de agua tiene un interruptor de flotador, `Float`, que es TRUE mientras el agua está por encima de él. El panel del operador lleva un registro, y necesita un pulso, `Changed`, en cada ciclo en que el flotador acaba de moverse, hacia arriba o hacia abajo. Un solo flanco no alcanza: el registro quiere los dos. Un cambio es un ciclo en que el valor de ahora difiere del valor de antes, y eso es lo que indica XOR: TRUE cuando sus dos operandos son distintos.
+Un tanque de agua tiene un interruptor de flotador, `Float`, que es TRUE mientras el agua está por encima de él. El panel del operador lleva un registro, y necesita un pulso, `Changed`, en cada ciclo en que el flotador acaba de moverse, hacia arriba o hacia abajo. Un solo flanco no basta: el registro quiere los dos. Un cambio es un ciclo en que el valor de ahora difiere del valor de antes, y eso es lo que indica XOR: TRUE cuando sus dos operandos son distintos.
 
 ```st
 PROGRAM FloatLog

@@ -49,8 +49,8 @@ Hasta el último pulso los dos bloques se comportan igual: el set pone Q1 en ON,
 
 Una estación de llenado completa un tanque por una válvula. Dos memorias la mantienen en orden.
 
-- **Rebalse.** Cuando el interruptor de nivel `LevelHigh` se dispara mientras la válvula `ValveOpen` todavía está abierta, el tanque se llenó de más, y una baliza debe seguir destellando hasta que el operador haya vaciado el exceso y pulsado `Drained`. Si el tanque vuelve a rebalsar en el mismo momento en que se pulsa `Drained`, ese rebalse nuevo no debe perderse: gana el set, así que esta memoria es un SR. El operador puede callar la baliza con `Silence` sin olvidar el rebalse.
-- **Permiso.** La estación puede llenar solo después de que el operador gira la llave `KeyOn`, y una puerta abierta, `DoorClosed` en FALSE, cancela ese permiso. Girar la llave con la puerta abierta no debe dar permiso: gana el reset, así que esta memoria es un RS.
+- **Desborde.** Cuando el interruptor de nivel `LevelHigh` se dispara mientras la válvula `ValveOpen` todavía está abierta, el tanque se llenó de más, y una baliza debe seguir destellando hasta que el operador haya vaciado el exceso y pulsado `Drained`. Si el tanque vuelve a desbordar en el mismo momento en que se pulsa `Drained`, ese desborde nuevo no debe perderse: gana el set, así que esta memoria es un SR. El operador puede silenciar la baliza con `Silence` sin olvidar el desborde.
+- **Permiso.** La estación puede llenar solo después de que el operador gire la llave `KeyOn`, y una puerta abierta, `DoorClosed` en FALSE, cancela ese permiso. Girar la llave con la puerta abierta no debe dar permiso: gana el reset, así que esta memoria es un RS.
 
 ```st
 PROGRAM FillStation
@@ -72,7 +72,7 @@ END_PROGRAM
 
 Una entrada de un biestable acepta cualquier expresión booleana, no solo una variable, y la Q1 de un biestable se puede usar en una expresión como cualquier otro BOOL: `Overfill.Q1` sigue en TRUE mientras `Silence` solo la oculta.
 
-Siga el rebalse en el diagrama, con la válvula abierta y `Silence` en FALSE todo el tiempo. Un rebalse breve activa la memoria, y la baliza sigue encendida después de que el nivel baja. `Drained` la desactiva. Más tarde un rebalse nuevo y `Drained` llegan en el mismo ciclo, y la baliza sigue encendida: gana el set.
+Siga el desborde en el diagrama, con la válvula abierta y `Silence` en FALSE todo el tiempo. Un desborde breve activa la memoria, y la baliza sigue encendida después de que el nivel baja. `Drained` la desactiva. Más tarde un desborde nuevo y `Drained` llegan en el mismo ciclo, y la baliza sigue encendida: gana el set.
 
 ```timing
 span: 5000
@@ -80,7 +80,7 @@ signals:
   - { name: LevelHigh, edges: [500, 800, 3500, 3800] }
   - { name: Drained, edges: [2000, 2300, 3500, 3800] }
   - { name: Beacon, edges: [500, 2000, 3500] }
-caption: El SR conserva el rebalse hasta Drained, y un rebalse junto con Drained queda encendido
+caption: El SR conserva el desborde hasta Drained, y un desborde junto con Drained queda encendido
 ```
 
 El permiso funciona al revés. La llave lo activa, la apertura de la puerta lo desactiva, y mientras la puerta está abierta la llave no puede activarlo, porque en un RS gana el reset.
@@ -116,7 +116,7 @@ options:
 ```
 
 ```quiz
-question: El programa de la estación de llenado llama a Overfill solo dentro de IF LevelHigh THEN ... END_IF. El tanque rebalsa un momento y el nivel vuelve a bajar, y más tarde el operador pulsa Drained. ¿Qué hace Beacon?
+question: El programa de la estación de llenado llama a Overfill solo dentro de IF LevelHigh THEN ... END_IF. El tanque desborda un momento y el nivel vuelve a bajar, y más tarde el operador pulsa Drained. ¿Qué hace Beacon?
 options:
   - { text: 'Sigue en ON, porque el biestable no se llama mientras LevelHigh está en FALSE', correct: true, feedback: 'Correcto. Una instancia cambia solo cuando se la llama, así que Drained nunca se ve. Llame al biestable en cada ciclo.' }
   - { text: 'Pasa a OFF, porque Drained hace reset del biestable', feedback: 'Drained hace reset solo durante una llamada, y la llamada se ejecuta solo mientras LevelHigh está en TRUE.' }

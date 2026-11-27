@@ -78,7 +78,7 @@ Notará dos cosas. El timbre sigue al pulsador: suena solo mientras usted lo man
 
 ## Errores comunes
 
-- Pensar que el contacto es un pulsador. El contacto es el dibujo de una pregunta: "¿esta variable es TRUE?". El pulsador está afuera, en el mundo.
+- Pensar que el contacto es un pulsador. El contacto es el dibujo de una pregunta: "¿esta variable es TRUE?". El pulsador está fuera, en el mundo.
 - Pensar que el programa se ejecuta una sola vez. Un PLC ejecuta su programa una y otra vez. La lección siguiente muestra cómo.
 - Olvidar la bobina. Un peldaño sin bobina no acciona nada.
 
