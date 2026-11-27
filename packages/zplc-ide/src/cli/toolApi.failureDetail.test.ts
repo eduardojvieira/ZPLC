@@ -58,7 +58,8 @@ describe('failure detail in the Tool API preview (TST-003, IDE-031)', () => {
   itNative('TST-003 the MCP trace of a failed run still replays and keeps the 2.0 assertion keys', async () => {
     const root = brokenCopy();
     const workspace = await openMcpWorkspace(root);
-    const result = await createMcpDispatcher(workspace!)('trace_get', { scenarioId: 'BlinkyST' }, new AbortController().signal);
+    const dispatch = createMcpDispatcher(workspace!);
+    const result = await dispatch('trace_get', { scenarioId: 'BlinkyST', mode: 'full' }, new AbortController().signal);
     const content = result.structuredContent as { assertions: Array<Record<string, unknown>>; traceSha256: string };
     expect(content.traceSha256).toMatch(/^[0-9a-f]{64}$/);
     expect(content.assertions[0]).toEqual({ kind: 'AT', passed: false, atMs: 250 });
@@ -130,7 +131,7 @@ describe('SCN-005 numeric conditions end to end (plant_belt_to_sensor)', () => {
         expect(workspace).toBeDefined();
         const dispatch = createMcpDispatcher(workspace!);
         const signal = new AbortController().signal;
-        const replay = await dispatch('trace_get', { scenarioId: 'belt-to-sensor' }, signal);
+        const replay = await dispatch('trace_get', { scenarioId: 'belt-to-sensor', mode: 'full' }, signal);
         expect((replay.structuredContent as { code?: string }).code).toBeUndefined();
         expect(replay.structuredContent).toMatchObject({ scope: 'recorded-native-posix-host', ok: false });
         const replayed = replay.structuredContent as { trace: Array<{ outputs: Record<string, boolean> }>; traceSha256: string };

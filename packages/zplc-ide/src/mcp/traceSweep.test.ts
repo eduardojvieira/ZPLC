@@ -36,15 +36,15 @@ describe('the 43-lesson trace sweep (AIX-015, AI-03, AI-08)', () => {
           cpSync(join(PROJECTS, lesson.solution.project), root, { recursive: true });
           const dispatch = createMcpDispatcher((await openMcpWorkspace(root))!);
           const sizes: string[] = [];
-          for (const args of [{}, { mode: 'changes' }, { mode: 'window', fromMs: 0, limit: 200 }, { mode: 'summary' }]) {
+          for (const args of [{}, { mode: 'full' }, { mode: 'changes' }, { mode: 'window', fromMs: 0, limit: 200 }, { mode: 'summary' }]) {
             const result = await dispatch('trace_get', { scenarioId: entry.scenarioId, ...args }, new AbortController().signal);
             const body = result.structuredContent as { error?: string; traceSha256?: string };
             const bytes = Buffer.byteLength(result.content[0]!.text);
-            const mode = 'mode' in args ? args.mode : 'whole';
+            const mode = 'mode' in args ? args.mode : 'default';
             sizes.push(`${mode} ${body.error ?? `${Math.round(bytes / 1024)} KiB`}`);
             if (bytes > MAX_OUTPUT_BYTES) problems.push(`${entry.lesson} ${mode}: ${bytes} bytes`);
             // the whole trace of a large run is refused with its next step; any other refusal is a defect
-            if (body.error !== undefined && !(mode === 'whole' && body.error === 'MCP_OUTPUT_LIMIT'))
+            if (body.error !== undefined && !(mode === 'full' && body.error === 'MCP_OUTPUT_LIMIT'))
               problems.push(`${entry.lesson} ${mode}: ${body.error}`);
             if (body.error === undefined && body.traceSha256 !== entry.traceSha256)
               problems.push(`${entry.lesson} ${mode}: traceSha256 ${body.traceSha256} != ${entry.traceSha256}`);

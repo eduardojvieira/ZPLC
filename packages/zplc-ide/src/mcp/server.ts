@@ -711,7 +711,7 @@ function validArguments(tool: McpToolName, args: ToolArguments): boolean {
     Object.keys(args).some((key) => !('value' in (Object.getOwnPropertyDescriptor(args, key) ?? {})))
   )
     return false;
-  if (tool === 'trace_get') return TRACE_INPUT.safeParse(args).success;
+  if (tool === 'trace_get') return TRACE_INPUT.safeParse(args).success && trace.fullOption(args) === undefined;
   if (tool === 'simulation_start' || tool === 'scenario_run') return SCENARIO_INPUT.safeParse(args).success;
   if (tool === 'simulation_step' || tool === 'runtime_snapshot') return REPLAY_INPUT.safeParse(args).success;
   if (tool === 'firmware_build') return FIRMWARE_BUILD_INPUT.safeParse(args).success;
@@ -1032,7 +1032,7 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
     'trace_get',
     {
       title: 'Get recorded trace',
-      description: 'Run one scenario and answer its trace: whole, changes, a window or a summary; a non-integer fact: counts if named.',
+      description: 'Run one scenario and answer its changes by default, a window, a summary, or mode full: the whole trace.',
       inputSchema: TRACE_INPUT,
       annotations: READ_ONLY,
     },
