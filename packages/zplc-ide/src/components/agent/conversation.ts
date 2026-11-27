@@ -13,9 +13,11 @@ export interface Turn {
 
 /** The turns after one more exchange: at most `HISTORY_TURNS` exchanges, oldest first. */
 export function addTurn(turns: readonly Turn[], question: string, answer: string): Turn[] {
-  return [...turns, { role: 'user' as const, text: question.slice(0, MAX_TEXT) }, { role: 'assistant' as const, text: answer.slice(0, MAX_TEXT) }].slice(
-    -2 * HISTORY_TURNS,
-  );
+  return [
+    ...turns,
+    { role: 'user' as const, text: question.slice(0, MAX_TEXT) },
+    { role: 'assistant' as const, text: answer.slice(0, MAX_TEXT) },
+  ].slice(-2 * HISTORY_TURNS);
 }
 
 export const historyOf = (turns: readonly Turn[]): Turn[] => turns.map(({ role, text }) => ({ role, text }));

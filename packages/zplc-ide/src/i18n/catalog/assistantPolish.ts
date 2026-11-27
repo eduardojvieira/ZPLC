@@ -32,7 +32,8 @@ export const assistantPolishEn = {
   'assistant.test.endpointNotAllowed':
     'This address is not allowed. Use https, or http only to localhost, 127.0.0.1 or [::1] (a model running on this computer).',
   'assistant.test.unconfigured': 'Save the address and the model first, and store a key unless the address is on this computer.',
-  'assistant.test.vault': 'This computer cannot store the key safely, so the connection cannot use one. Use a local address, or enable the system key store.',
+  'assistant.test.vault':
+    'This computer cannot store the key safely, so the connection cannot use one. Use a local address, or enable the system key store.',
   'assistant.test.timeout': 'The provider did not answer in 10 seconds. Check that it is running and that the address is right.',
   'assistant.test.unavailable': 'The connection test could not run.',
   'assistant.endpoint.placeholder': 'https://api.openai.com',
