@@ -291,23 +291,48 @@ function segment(cell: number, name: string, x: number, y: number, z: number): P
   return piece(`d${cell}-${name}`, box(size, 0), [x + dx, y + dy, z], 'signalRed');
 }
 
+/** The decimal point of the cell centred at `x`: a dot in the gap after the digit, on its baseline. */
+function decimalPoint(cell: number, x: number, y: number, z: number): Piece {
+  const { width: w, height: h, bar, pitch } = NUMERIC_DISPLAY;
+  return piece(`d${cell}-dp`, box([bar, bar, 0.002], 0), [x + (w + pitch) / 4, y - h / 2 + bar / 2, z], 'signalRed');
+}
+
+/**
+ * The decimals the display draws: those its scene part configures (an INT display has none, a REAL one 1 by default, as the
+ * core's text), as many as fit in the window beside the whole digits and the minus; none without a scene part.
+ */
+function displayDecimals(context: ModelContext, wholeCells: number): number {
+  const config = context.scenePart?.config;
+  if (!config || config.type === 'INT') return 0;
+  const wanted = typeof config.decimals === 'number' ? Math.max(0, Math.round(config.decimals)) : 1;
+  return Math.max(0, Math.min(wanted, NUMERIC_DISPLAY.maxCells - wholeCells));
+}
+
 function numericDisplayModel(view: PartView, context: ModelContext): Piece[] {
   const { window: win, pitch, maxCells } = NUMERIC_DISPLAY;
   const { value, min, max } = view.state;
   const range = typeof min === 'number' && typeof max === 'number' ? { min, max } : { min: 0, max: 100 };
   const places = Math.max(String(Math.round(Math.abs(range.min))).length, String(Math.round(Math.abs(range.max))).length);
-  const cells = Math.min(maxCells, places + (range.min < 0 ? 1 : 0));
-  const v = typeof value === 'number' ? Math.round(value) : NaN;
-  // Outside the range (or no number): a dash in every cell. Otherwise the digits, right-aligned, with the minus just before them.
-  const text = v >= Math.round(range.min) && v <= Math.round(range.max) ? String(v).padStart(cells) : '-'.repeat(cells);
+  const whole = Math.min(maxCells, places + (range.min < 0 ? 1 : 0));
+  const decimals = displayDecimals(context, whole);
+  const cells = whole + decimals;
+  // Rounded to the display's decimals (whole numbers as before when it has none); never "-0".
+  const at = (n: number) => (decimals === 0 ? Math.round(n) : Number(n.toFixed(decimals)));
+  const v = typeof value === 'number' ? at(value) : NaN;
+  const fixed = v === 0 ? (0).toFixed(decimals) : v.toFixed(decimals);
+  // Outside the range (or no number): a dash in every cell. Otherwise the digits, right-aligned, with the minus just before them;
+  // the decimal point lights on the cell before the decimals and takes no cell of its own.
+  const inRange = v >= at(range.min) && v <= at(range.max);
+  const digits = inRange ? fixed.replace('.', '').padStart(cells) : '-'.repeat(cells);
+  const point = inRange && decimals > 0 ? cells - decimals - 1 : -1;
   const face = ENCLOSURE.size[2] / 2;
   const y = ENCLOSURE.top - ENCLOSURE.size[1] / 2;
+  const x = (i: number) => (i - (cells - 1) / 2) * pitch;
   return [
     ...controlBox(view, 'housing', context.station),
     piece('window', box([win[0], win[1], 0.002], 0), [0, y, face + 0.001], 'lens'),
-    ...[...text].flatMap((ch, i) =>
-      [...(SEGMENTS[ch] ?? '')].map((name) => segment(i, name, (i - (cells - 1) / 2) * pitch, y, face + 0.003)),
-    ),
+    ...[...digits].flatMap((ch, i) => [...(SEGMENTS[ch] ?? '')].map((name) => segment(i, name, x(i), y, face + 0.003))),
+    ...(point >= 0 ? [decimalPoint(point, x(point), y, face + 0.003)] : []),
   ];
 }
 

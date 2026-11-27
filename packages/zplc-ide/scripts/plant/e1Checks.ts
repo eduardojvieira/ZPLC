@@ -217,7 +217,15 @@ export async function stateRecords(only?: readonly string[]): Promise<{ records:
   const records: StateRecord[] = [];
   const W = 1280;
   const H = 720;
-  const record = (pair: Pair, mode: DisplayMode, reducedMotion: boolean, a: ImageData, b: ImageData, rect: Rect | null) => {
+  const record = (
+    pair: Pair,
+    mode: DisplayMode,
+    reducedMotion: boolean,
+    a: ImageData,
+    b: ImageData,
+    rect: Rect | null,
+    bLabel = pair.b.label,
+  ) => {
     const at = where.get(pair.key)!;
     const region = rect ? around(rect, W, H) : null;
     return {
@@ -227,7 +235,7 @@ export async function stateRecords(only?: readonly string[]): Promise<{ records:
       mode,
       reducedMotion,
       a: pair.a.label,
-      b: pair.b.label,
+      b: bLabel,
       rect,
       fraction: rect ? diffFraction(a, b, rect, CHANNEL_MIN) : 0,
       crops: region ? ([cropPng(a, region, rect), cropPng(b, region, rect)] as [string, string]) : null,
@@ -255,10 +263,14 @@ export async function stateRecords(only?: readonly string[]): Promise<{ records:
             const { view } = where.get(pair.key)!;
             const a = await draw(stage, inState(base, view, pair, pair.a, base.timeMs));
             const ra = measuredRect(stage, view, pair.kind.id);
-            const b = await draw(stage, inState(base, view, pair, pair.b, base.timeMs + 600));
+            const second = inState(base, view, pair, pair.b, base.timeMs + 600);
+            const b = await draw(stage, second);
             const rb = measuredRect(stage, view, pair.kind.id);
             const rect = unionRect([ra, rb]);
-            const r: StateRecord = record(pair, mode, reducedMotion, a, b, rect);
+            // A display's label names the value drawn, which inState puts in the scene's own range.
+            const shown = second.parts.find((v) => v.id === view)!.state.value;
+            const label = pair.kind.id === 'numeric-display' ? `value ${Number(Number(shown).toFixed(3))}` : pair.b.label;
+            const r: StateRecord = record(pair, mode, reducedMotion, a, b, rect, label);
             if (CONVEYORS.has(pair.kind.id)) {
               const later = await draw(stage, inState(base, view, pair, pair.b, base.timeMs + 850));
               r.motion = rect ? diffFraction(b, later, rect, CHANNEL_MIN) : 0;
