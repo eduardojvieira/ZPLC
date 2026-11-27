@@ -45,39 +45,41 @@ Una llamada se escribe `Strokes(CU := PressDown, R := Oiled, PV := 500);`. La cu
 
 ## Ejemplo resuelto
 
-Un apilador recibe bandejas de una cinta. Cada bandeja se detiene debajo de un sensor, `TrayHere`, hasta que el apilador la sube a la pila, lo que tarda varios segundos. Con cuatro bandejas la pila está completa: se enciende la lámpara `StackFull`, un operario retira la pila y presiona el pulsador `StackTaken`. Un visor muestra cuántas bandejas hay ahora en la pila.
+Una dosificadora de comprimidos llena frascos. Cada frasco recibe cinco comprimidos, y cada comprimido cae frente a una barrera, `TabletEye`, que queda en TRUE un momento mientras el comprimido pasa. Cuando hay un frasco nuevo en su lugar la máquina pulsa `NewBottle`, y un visor muestra cuántos comprimidos le faltan todavía al frasco. La lámpara `BottleDone` se enciende cuando el frasco tiene los cinco.
 
-Cada bandeja mantiene `TrayHere` en TRUE durante mucho tiempo, así que el programa debe contar flancos ascendentes, que es lo que hace un CTU. El pulsador pone la cuenta a cero, y el visor lee CV.
+Aquí la cuenta natural va al revés, de cinco a cero, y la biblioteca estándar tiene un contador para eso: el **CTD**, contador descendente. Sus entradas son **CD**, cada uno de cuyos flancos ascendentes resta uno, **LD**, que carga PV en la cuenta mientras es TRUE, y **PV**. Sus salidas son **CV**, la cuenta, y **Q**, que es TRUE mientras CV está en cero o por debajo.
 
 ```st
-PROGRAM Stacker
-VAR_INPUT TrayHere : BOOL; StackTaken : BOOL; END_VAR
-VAR_OUTPUT StackFull : BOOL; TraysOnStack : INT; END_VAR
+PROGRAM Dispenser
+VAR_INPUT TabletEye : BOOL; NewBottle : BOOL; END_VAR
+VAR_OUTPUT BottleDone : BOOL; TabletsLeft : INT; END_VAR
 VAR
-  Trays : CTU;
+  Doses : CTD;
 END_VAR
-Trays(CU := TrayHere, R := StackTaken, PV := 4);
-StackFull := Trays.Q;
-TraysOnStack := Trays.CV;
+Doses(CD := TabletEye, LD := NewBottle, PV := 5);
+BottleDone := Doses.Q;
+TabletsLeft := Doses.CV;
 END_PROGRAM
 ```
 
-Sígalo en el diagrama. Cada bandeja hace subir `TrayHere` una vez, sin importar cuánto se quede. En el cuarto flanco ascendente CV llega a 4 y `StackFull` sube. Sigue encendida mientras la cuarta bandeja se va, porque un flanco descendente no cuenta. Cuando el operario presiona `StackTaken`, CV vuelve a cero y la lámpara se apaga.
+Sígalo en el diagrama. Antes del primer frasco, CV es cero, así que Q ya es TRUE: un CTD dice "listo" hasta que se lo carga. `NewBottle` carga cinco, y la lámpara se apaga. Cada comprimido hace subir `TabletEye` una vez, tarde lo que tarde en pasar, y resta uno. En el quinto flanco ascendente CV llega a cero y `BottleDone` vuelve a encenderse.
 
 ```timing
-span: 10000
+span: 6000
 signals:
-  - { name: TrayHere, edges: [500, 1800, 2500, 3800, 4500, 5800, 6500, 7800] }
-  - { name: StackFull, edges: [6500, 8800] }
-  - { name: StackTaken, edges: [8800, 9300] }
+  - { name: NewBottle, edges: [200, 400] }
+  - { name: TabletEye, edges: [1000, 1300, 2000, 2300, 3000, 3300, 4000, 4300, 5000, 5300] }
+  - { name: BottleDone, edges: [0, 200, 5000] }
 marks:
-  - { from: 6500, to: 8800, label: 'CV = 4' }
-caption: Cuatro llegadas largas cuentan cuatro; el pulsador pone a cero la cuenta y apaga la lámpara
+  - { from: 200, to: 5000, label: 'CV 5 → 0' }
+caption: NewBottle carga cinco; cinco comprimidos llevan la cuenta a cero y encienden BottleDone
 ```
+
+La práctica cuenta al revés: desde nada hasta un número, con una puesta a cero que devuelve la cuenta a nada. Qué contador necesita para eso, y a qué entrada va cada señal, queda para usted.
 
 ## Errores comunes
 
-- Contar con un IF, como en `IF TrayHere THEN Count := Count + 1; END_IF`. Eso suma uno en cada ciclo en que la entrada está en TRUE, cientos por una sola bandeja. Cuente flancos ascendentes con un CTU.
+- Contar con un IF, como en `IF TabletEye THEN Count := Count + 1; END_IF`. Eso suma uno en cada ciclo en que la entrada está en TRUE, cientos por un solo comprimido. Cuente flancos ascendentes con un bloque contador.
 - Llamar al contador dentro de un IF. Cuando la instancia no se llama no ve CU, así que un flanco que llega y se va mientras tanto se pierde. Llámelo en cada ciclo.
 - Dejar R sin conectar, o darle una señal que siempre está en TRUE. Sin R la cuenta nunca vuelve a cero; con R siempre en TRUE nunca sale de cero.
 - Esperar que Q caiga cuando la cuenta pasa de PV. Q está en TRUE mientras CV está en PV o por encima, y solo una puesta a cero la apaga.

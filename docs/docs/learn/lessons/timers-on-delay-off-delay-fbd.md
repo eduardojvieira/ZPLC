@@ -25,8 +25,8 @@ Connect a TOF block to keep a light on after a push button is released, and a TO
 
 ## Objectives
 
-- Keep an output ON for a fixed time after its input drops, with a TOF block whose PT input is wired to a TIME constant.
-- Ignore an input that is ON for less than a fixed time, with a TON block, and say which timer delays the start and which one delays the end.
+- Keep an output ON for a fixed time after its input drops, with a timer block whose PT input is wired to a TIME constant.
+- Ignore an input that is ON for less than a fixed time, and say which timer delays the start and which one delays the end.
 
 ## Stages
 

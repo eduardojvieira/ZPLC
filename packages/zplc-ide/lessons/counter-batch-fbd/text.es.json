@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Cada bloque de variable de entrada tiene un puerto de salida llamado OUT, y cada puerto de entrada de Count tiene un nombre: CU cuenta, R pone a cero."
+      "text": "Mire los puertos de entrada de Count que no tienen conexión, y los dos bloques de entrada cuya OUT no llega a ningún lado."
     },
     {
       "level": 2,

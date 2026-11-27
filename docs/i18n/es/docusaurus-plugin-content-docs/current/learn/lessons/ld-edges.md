@@ -25,7 +25,7 @@ Use un contacto de flanco ascendente y un contacto de flanco descendente para qu
 
 ## Objetivos
 
-- Use un contacto de flanco ascendente (P) y un contacto de flanco descendente (N) para convertir un nivel en un pulso de un escaneo.
+- Convierta un nivel en un pulso de un escaneo al empezar y en un pulso de un escaneo al terminar.
 - Explique por qué una entrada retenida debe contarse una sola vez y qué escaneo ve el pulso.
 
 ## Etapas

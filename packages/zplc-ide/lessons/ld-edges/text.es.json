@@ -4,7 +4,7 @@
   "summary": "Use un contacto de flanco ascendente y un contacto de flanco descendente para que una caja en un transportador dé un pulso al llegar y otro al salir, sin importar cuánto tiempo siga activo el sensor.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un sensor real, con qué rapidez responde ni cómo se cablea.",
   "objectives": [
-    "Use un contacto de flanco ascendente (P) y un contacto de flanco descendente (N) para convertir un nivel en un pulso de un escaneo.",
+    "Convierta un nivel en un pulso de un escaneo al empezar y en un pulso de un escaneo al terminar.",
     "Explique por qué una entrada retenida debe contarse una sola vez y qué escaneo ve el pulso."
   ],
   "stages": [
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Un contacto simple es verdadero mientras su variable sea verdadera. ¿Qué tipo de contacto es verdadero solo en el escaneo en que su variable cambia?"
+      "text": "Mire qué muestra cada bobina mientras la caja sigue frente al sensor, y en qué único escaneo corresponde cada pulso."
     },
     {
       "level": 2,

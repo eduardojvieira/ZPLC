@@ -25,8 +25,8 @@ Conecte un bloque TOF para mantener una luz encendida después de soltar un puls
 
 ## Objetivos
 
-- Mantenga una salida en ON durante un tiempo fijo después de que su entrada cae, con un bloque TOF cuya entrada PT está conectada a una constante TIME.
-- Ignore una entrada que está en ON menos de un tiempo fijo, con un bloque TON, y diga qué temporizador retrasa el inicio y cuál retrasa el final.
+- Mantenga una salida en ON durante un tiempo fijo después de que su entrada cae, con un bloque temporizador cuya entrada PT está conectada a una constante TIME.
+- Ignore una entrada que está en ON menos de un tiempo fijo, y diga qué temporizador retrasa el inicio y cuál retrasa el final.
 
 ## Etapas
 

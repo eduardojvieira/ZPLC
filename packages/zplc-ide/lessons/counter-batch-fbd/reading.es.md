@@ -18,34 +18,36 @@ Cada conexión lleva el valor de un puerto de salida a un puerto de entrada. Un 
 
 ## Ejemplo resuelto
 
-Una envolvedora envuelve un palé con film mientras una mesa giratoria lo hace girar. Una bandera en la mesa pasa frente a un sensor, `TurnFlag`, una vez por vuelta, y se queda frente a él un momento cada vez. Un palé queda envuelto después de seis vueltas: se enciende la lámpara `WrapDone`, y el operario presiona el pulsador `NewPallet` para el palé siguiente, lo que pone la cuenta a cero. Un visor muestra las vueltas hasta ahora, `TurnsSoFar`.
+Una dosificadora de comprimidos llena frascos con cinco comprimidos cada uno. Cada comprimido cae frente a una barrera, `TabletEye`, que queda en TRUE un momento mientras pasa. Cuando hay un frasco nuevo en su lugar la máquina pulsa `NewBottle`. La lámpara `BottleDone` se enciende cuando el frasco tiene los cinco, y un visor muestra los comprimidos que todavía faltan, `TabletsLeft`.
 
-El diagrama tiene un CTU llamado `Turns`, un bloque de constante con el valor `6` y estas conexiones:
+Esta cuenta va hacia abajo, de cinco a cero, así que el diagrama usa el contador descendente, el **CTD**. Sus puertos de entrada son CD, cada uno de cuyos flancos ascendentes resta uno, LD, que carga PV en la cuenta mientras es TRUE, y PV. Su salida Q es TRUE mientras CV está en cero o por debajo. El diagrama tiene un CTD llamado `Doses`, un bloque constante con el valor `5` y estas conexiones:
 
-| Desde              | Hacia            | Qué lleva                                          |
-| ------------------ | ---------------- | -------------------------------------------------- |
-| `TurnFlag`, OUT    | `Turns`, CU      | TRUE mientras la bandera está frente al sensor     |
-| `NewPallet`, OUT   | `Turns`, R       | TRUE mientras se mantiene presionado el pulsador   |
-| constante `6`, OUT | `Turns`, PV      | el número de vueltas de un palé                    |
-| `Turns`, Q         | `WrapDone`, IN   | TRUE desde la sexta vuelta hasta una puesta a cero |
-| `Turns`, CV        | `TurnsSoFar`, IN | el número de vueltas contadas hasta ahora          |
+| Desde              | Hacia             | Qué lleva                                   |
+| ------------------ | ----------------- | ------------------------------------------- |
+| `TabletEye`, OUT   | `Doses`, CD       | TRUE mientras un comprimido pasa la barrera |
+| `NewBottle`, OUT   | `Doses`, LD       | TRUE mientras se carga un frasco nuevo      |
+| constante `5`, OUT | `Doses`, PV       | la cantidad de comprimidos de un frasco     |
+| `Doses`, Q         | `BottleDone`, IN  | TRUE cuando la cuenta llegó a cero          |
+| `Doses`, CV        | `TabletsLeft`, IN | la cantidad de comprimidos que faltan       |
 
-Léalo de izquierda a derecha: el sensor y el pulsador alimentan el contador, la constante fija su valor preestablecido y las dos salidas del contador accionan la lámpara y el visor. Cada paso de la bandera cuenta una vez, sin importar cuánto se quede frente al sensor.
+Léalo de izquierda a derecha: la barrera y la señal de carga alimentan al contador, la constante fija el número desde el que empieza, y las dos salidas del contador manejan la lámpara y el visor. Antes del primer frasco CV es cero, así que la lámpara ya está encendida; `NewBottle` carga cinco y la apaga, y cada comprimido cuenta una vez, tarde lo que tarde en pasar.
 
 ```timing
-span: 8000
+span: 6000
 signals:
-  - { name: TurnFlag, edges: [300, 700, 1300, 1700, 2300, 2700, 3300, 3700, 4300, 4700, 5300, 5700] }
-  - { name: WrapDone, edges: [5300, 6800] }
-  - { name: NewPallet, edges: [6800, 7300] }
+  - { name: NewBottle, edges: [200, 400] }
+  - { name: TabletEye, edges: [1000, 1300, 2000, 2300, 3000, 3300, 4000, 4300, 5000, 5300] }
+  - { name: BottleDone, edges: [0, 200, 5000] }
 marks:
-  - { from: 5300, to: 6800, label: 'CV = 6' }
-caption: El sexto paso de la bandera enciende WrapDone; NewPallet pone la cuenta a cero
+  - { from: 200, to: 5000, label: 'CV 5 → 0' }
+caption: NewBottle carga cinco; cinco comprimidos llevan la cuenta a cero y encienden BottleDone
 ```
+
+El contador de la práctica es un CTU: cuenta hacia arriba desde cero y tiene los puertos CU y R en lugar de CD y LD. Qué señal llega a cada uno queda para usted.
 
 ## Errores comunes
 
-- Intercambiar CU y R. Cada paso de la bandera pone entonces la cuenta a cero, y el que cuenta es el pulsador.
+- Conectar una señal al puerto equivocado del contador. La cuenta se mueve entonces cuando debería ponerse a cero, o al revés: lea el nombre de cada puerto antes de conectarlo.
 - Dejar R sin conexión. La cuenta nunca vuelve a cero, y la lámpara sigue encendida después de presionar el pulsador.
 - Esperar que Q caiga cuando la cuenta pasa de PV. Q sigue en TRUE hasta una puesta a cero.
 - Conectar CV, un INT, donde se espera un BOOL. Q es el BOOL que dice "se llegó al valor preestablecido"; CV es el número.

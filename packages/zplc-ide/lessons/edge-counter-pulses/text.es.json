@@ -4,7 +4,7 @@
   "summary": "Use un contador CTU para contar tres pulsos discretos y poner la cuenta a cero.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un sensor real ni qué hace una entrada real con un pulso más corto que un ciclo.",
   "objectives": [
-    "Cuente los flancos ascendentes de una entrada con una instancia de CTU llamada en cada ciclo, para que un pulso largo cuente una vez.",
+    "Cuente los flancos ascendentes de una entrada con una instancia de contador llamada en cada ciclo, para que un pulso largo cuente una vez.",
     "Pase una salida a ON cuando la cuenta llega a su valor preestablecido, y ponga la cuenta a cero con una entrada de puesta a cero."
   ],
   "stages": [
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Un CTU ya cuenta solo flancos ascendentes de CU, así que un pulso largo cuenta una sola vez; no necesita detectar el flanco usted mismo."
+      "text": "Mire qué debe recordar el programa de un pulso al siguiente, en qué sentido avanza ese número y qué lo hace empezar de nuevo."
     },
     {
       "level": 2,
