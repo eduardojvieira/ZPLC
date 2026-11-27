@@ -40,7 +40,7 @@ export interface Pair {
 /** One pair per stateful kind of the catalogue, its first two states; one per beam sensor kind (each has a model of its own). */
 export function statePairs(): Pair[] {
   return CATALOGUE.filter((k) => k.stateful).flatMap((k): Pair[] => {
-    if (k.id !== 'sensor') return [{ key: k.id, kind: k, a: k.states[0]!, b: k.states[0]! }]; // RED: a pair known not to differ;
+    if (k.id !== 'sensor') return [{ key: k.id, kind: k, a: k.states[0]!, b: k.states[1]! }];
     return [...new Set(k.states.map((s) => String(s.state!.kind)))].map((v) => {
       const [a, b] = k.states.filter((s) => s.state!.kind === v);
       return { key: `sensor ${v}`, kind: k, a: a!, b: b! };
@@ -387,7 +387,7 @@ const alike = (p: { h: number; s: number; l: number }, n: { h: number; s: number
 /** Every finding as a line a person can read; empty when each colour word, the plain item, the lid, the base and the outlines hold. */
 export function colourProblems(words: readonly string[], records: readonly ColourRecord[]): string[] {
   const problems: string[] = [];
-  const hues = { ...NAMED_HUES, blue: 120 } as Readonly<Record<string, number>>; // RED: a wrong named hue
+  const hues = NAMED_HUES as Readonly<Record<string, number>>;
   for (const w of words) if (!(w in hues)) problems.push(`VIS-018 the colour word "${w}" has no named hue the renderer draws`);
   const byFrame = new Map<string, ColourRecord[]>();
   for (const r of records) byFrame.set(`${r.mode} ${r.quality}`, [...(byFrame.get(`${r.mode} ${r.quality}`) ?? []), r]);
