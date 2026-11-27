@@ -19,7 +19,7 @@ import type { DisplayMode } from '../../src/plant/view/displayModes';
 import type { QualityLevel } from '../../src/plant/view/quality';
 import { CATALOGUE, type CatalogueKind, type CatalogueState } from './catalogueStates';
 import { HUE_TOLERANCE, NAMED_HUES } from './checks';
-import { diffFraction, draw, hsl, itemColour, loadScene, openStage, partRect, project, type Rect, type Stage } from './stage';
+import { boxRect, diffFraction, draw, hsl, itemColour, loadScene, openStage, partObject, type Rect, type Stage } from './stage';
 
 /** A pixel changes when one of its channels moves by more than this (of 255). */
 export const CHANNEL_MIN = 24;
@@ -75,6 +75,12 @@ export function inState(base: PlantSnapshot, viewId: string, pair: Pair, s: Cata
     for (const key of new Set([...Object.keys(pair.a.state ?? {}), ...Object.keys(pair.b.state ?? {})]))
       if (key in k.state) state[key] = k.state[key];
     Object.assign(state, s.state);
+    // A display shows its value only inside its own range: the catalogue's value (on 0..100) is put at the same fraction of the
+    // range the scene configures (tank-level-control shows a level of 0..1 m).
+    if (k.id === 'numeric-display' && typeof s.state?.fraction === 'number') {
+      const [min, max] = [Number(v.state.min ?? 0), Number(v.state.max ?? 100)];
+      state.value = min + s.state.fraction * (max - min);
+    }
     const signals: Record<string, boolean | number> = { ...v.signals };
     for (const key of new Set([...Object.keys(pair.a.signals ?? {}), ...Object.keys(pair.b.signals ?? {})])) {
       const sample = pair.a.signals?.[key] ?? pair.b.signals?.[key];
@@ -128,6 +134,35 @@ function cropPng(image: ImageData, region: Rect, box?: Rect | null): string {
   return c.toDataURL('image/png');
 }
 
+/**
+ * The box each pair is measured in (VIS-016: "at least 1% of the pixels of the part's projected box"):
+ *
+ * - a part kind: the projected box of the pieces of its own model, without the pieces it draws for others: the pedestal of an
+ *   operator control (slots `stand-`) and the body of a control station (slots `station-`), which the station's leader draws for
+ *   every control that stands with it (view/controlStations.ts). So the emergency stop and the push button are measured on their
+ *   control box, collar, stem and head (VIS-016 "the head travels"), not on the station they stand on;
+ * - a reading, which is not one of the pairs VIS-016 lists but whose value VIS-003 says the view shows: the box of its readout
+ *   face only, the digits panel (`display` of the scale, `window` of the numeric display), which the digits lie on;
+ * - a machine that publishes several views: the union of the boxes of all its views, measured as above.
+ */
+export const READOUT_FACES: Readonly<Record<string, readonly string[]>> = { scale: ['display'], 'numeric-display': ['window'] };
+const sharedSlot = (slot: string) => slot.startsWith('stand-') || slot.startsWith('station-');
+
+export function measuredRect(stage: Stage, viewId: string, kind: string): Rect | null {
+  const object = partObject(stage, viewId);
+  if (!object) return null;
+  const face = READOUT_FACES[kind];
+  const box = new THREE.Box3();
+  stage.spy.world.updateMatrixWorld(true);
+  object.traverse((o) => {
+    const mesh = o as THREE.Mesh;
+    if (!mesh.isMesh || !mesh.visible) return;
+    const slot = String((mesh.userData as { slot?: unknown }).slot ?? '');
+    if (face ? face.includes(slot) : !sharedSlot(slot)) box.union(new THREE.Box3().setFromObject(mesh));
+  });
+  return box.isEmpty() ? null : boxRect(stage, box);
+}
+
 export interface StateRecord {
   key: string;
   scene: string;
@@ -168,7 +203,7 @@ async function machineFrame(scene: string, mode: DisplayMode, k: CatalogueKind, 
     }
     const image = await draw(stage);
     const views = stage.core.snapshot().parts.filter((v) => k.machine!.views.includes(v.part));
-    return { image, rect: unionRect(views.map((v) => partRect(stage, v.id))) };
+    return { image, rect: unionRect(views.map((v) => measuredRect(stage, v.id, v.part))) };
   } finally {
     stage.dispose();
   }
@@ -219,9 +254,9 @@ export async function stateRecords(only?: readonly string[]): Promise<{ records:
           for (const pair of list) {
             const { view } = where.get(pair.key)!;
             const a = await draw(stage, inState(base, view, pair, pair.a, base.timeMs));
-            const ra = partRect(stage, view);
+            const ra = measuredRect(stage, view, pair.kind.id);
             const b = await draw(stage, inState(base, view, pair, pair.b, base.timeMs + 600));
-            const rb = partRect(stage, view);
+            const rb = measuredRect(stage, view, pair.kind.id);
             const rect = unionRect([ra, rb]);
             const r: StateRecord = record(pair, mode, reducedMotion, a, b, rect);
             if (CONVEYORS.has(pair.kind.id)) {
@@ -274,25 +309,11 @@ export interface ColourRecord {
 }
 
 /** The projected box of an item (axis-aligned in the world), clipped to the frame. */
-function itemRect(stage: Stage, item: BodyPose): Rect | null {
-  const xs: number[] = [];
-  const ys: number[] = [];
-  for (const dx of [-1, 1])
-    for (const dy of [-1, 1])
-      for (const dz of [-1, 1]) {
-        const p = project(
-          stage,
-          new THREE.Vector3(item.p[0] + (dx * item.size[0]) / 2, item.p[1] + (dy * item.size[1]) / 2, item.p[2] + (dz * item.size[2]) / 2),
-        );
-        if (p) [xs[xs.length], ys[ys.length]] = p;
-      }
-  if (xs.length === 0) return null;
-  const x0 = Math.max(0, Math.floor(Math.min(...xs)));
-  const y0 = Math.max(0, Math.floor(Math.min(...ys)));
-  const x1 = Math.min(stage.canvas.width, Math.ceil(Math.max(...xs)));
-  const y1 = Math.min(stage.canvas.height, Math.ceil(Math.max(...ys)));
-  return x1 > x0 && y1 > y0 ? { x: x0, y: y0, w: x1 - x0, h: y1 - y0 } : null;
-}
+const itemRect = (stage: Stage, item: BodyPose): Rect | null => {
+  const half = new THREE.Vector3(...item.size).multiplyScalar(0.5);
+  const centre = new THREE.Vector3(...item.p);
+  return boxRect(stage, new THREE.Box3(centre.clone().sub(half), centre.add(half)));
+};
 
 function whiteShare(image: ImageData, rect: Rect): number {
   let n = 0;

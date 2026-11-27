@@ -174,7 +174,11 @@ export function partRect(stage: Stage, id: string): Rect | null {
   const object = partObject(stage, id);
   if (!object) return null;
   stage.spy.world.updateMatrixWorld(true);
-  const box = new THREE.Box3().setFromObject(object);
+  return boxRect(stage, new THREE.Box3().setFromObject(object));
+}
+
+/** The projected box of a world box on the canvas, clipped to it; null when no corner is in front of the camera. */
+export function boxRect(stage: Stage, box: THREE.Box3): Rect | null {
   const xs: number[] = [];
   const ys: number[] = [];
   for (const x of [box.min.x, box.max.x])

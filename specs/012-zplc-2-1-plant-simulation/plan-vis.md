@@ -37,7 +37,7 @@ so up to three run in parallel (one writer per file).
 | C7 | Process and items: tank with pipes, on/off and proportional valves, level meter, flow meter; the box heights, pallet, crate, lid, base, coloured part, and metal items drawn as metal. | VIS-014, VIS-016, VIS-018 | 1 |
 | C8 | The catalogue sheet: every part in every state, in three modes and three levels. **Owner's stop 3.** | VIS-014 | 0.5 |
 | — | Corrections the owner asks for on the sheet (one or two rounds expected). | VIS-014 | 1 to 3 |
-| E1 | Real-window evidence for the 21 scenes: one state pair per stateful part kind, the colour check over every colour word of the lessons and scenes; framing and single draw already exist. | VIS-016, VIS-017, VIS-018 | 1 |
+| E1 | Real-window evidence for the 21 scenes: one state pair per stateful part kind, the colour check over every colour word of the lessons and scenes; framing and single draw already exist. Commands (packages/zplc-ide, non-zero exit on a finding): `bun scripts/plant/capture.ts --check states` and `bun scripts/plant/capture.ts --check colours`. | VIS-016, VIS-017, VIS-018 | 1 |
 | E2 | The packaged application: textures load from `file://` under the production content security policy; the bench `frames` sequence per level on the largest scene with the GPU window and the frame cap off; installer growth measured on the package. | VIS-004, VIS-005, VIS-012, VIS-013, VIS-015 | 1 |
 | E3 | Documentation in English and Spanish: the plant pages and every plant screenshot captured again; the capture script regenerates the 21 scenes. **Owner's stop 4.** | VIS-011 | 1 |
 | V | One independent verifier at the end of the feature. | VIS-014 to VIS-019 | 1 |
