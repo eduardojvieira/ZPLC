@@ -101,8 +101,9 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{1
 // x, y and z are written on lines 3, 4 and 5: a stop at line 4 has x written and y not yet
 const COUNTER = 'PROGRAM Main\nVAR x : INT; y : INT; z : INT; END_VAR\nx := x + 1;\ny := x * 2;\nz := z + 1;\nEND_PROGRAM\n';
 const IO =
-  'PROGRAM Main\nVAR_INPUT\n  Start AT %I0.0 : BOOL;\n  Level AT %IW2 : INT;\nEND_VAR\nVAR_OUTPUT\n  Lamp AT %Q0.0 : BOOL;\n  Twice AT %QW2 : ' +
-  'INT;\nEND_VAR\nVAR\n  Delay : TON;\nEND_VAR\nDelay(IN := Start, PT := T#50ms);\nLamp := Delay.Q;\nTwice := Level * 2;\nEND_PROGRAM\n';
+  'PROGRAM Main\nVAR_INPUT\n  Start AT %I0.0 : BOOL;\n  Level AT %IW2 : INT;\nEND_VAR\nVAR_OUTPUT\n  Lamp AT %Q0.0 : BOOL;\n  ' +
+  'Twice AT %QW2 : INT;\nEND_VAR\nVAR\n  Delay : TON;\nEND_VAR\nDelay(IN := Start, PT := T#50ms);\n' +
+  'Lamp := Delay.Q;\nTwice := Level * 2;\nEND_PROGRAM\n';
 
 describe('AIX-014 a breakpoint stops a private session at its element, in each of the five languages', () => {
   // one element of each kind of place the author names: a line of ST and IL, a rung cell of LD, a block of FBD, a step of SFC
