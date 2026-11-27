@@ -351,7 +351,7 @@ describe('AIX-007 server_self_check and zplc-mcp --self-check report the folder,
         ready: true,
         folder: root,
         workspaceName: 'Plain',
-        toolCount: 20,
+        toolCount: 26,
         boundary: MCP_BOUNDARY,
         problems: [],
       });

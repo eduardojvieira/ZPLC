@@ -175,6 +175,12 @@ export const EVIDENCE_LEVEL: Record<McpToolName, 'host-static' | 'host-simulatio
   server_self_check: 'repository-metadata',
   workspace_check_write: 'host-static',
   workspace_write: 'host-static',
+  debug_session_start: 'host-simulation',
+  debug_session_stop: 'host-simulation',
+  debug_set_inputs: 'host-simulation',
+  debug_breakpoints: 'host-simulation',
+  debug_step: 'host-simulation',
+  debug_inspect: 'host-simulation',
 };
 
 export interface McpSelfCheck {

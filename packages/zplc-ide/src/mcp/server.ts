@@ -46,6 +46,7 @@ import {
 } from './resultSchemas';
 import * as trace from './traceView';
 import { workspaceWrite, type WorkspaceWriteArgs } from './workspaceWrite';
+import { debugArgumentsError, isDebugTool, McpDebugSessionManager, type DebugArgs } from './debugSession';
 
 type McpToolResult = trace.McpToolResult;
 
@@ -133,9 +134,92 @@ const WORKSPACE_WRITE_INPUT = z
       .describe('The sha256 of each replaced file as you read it; a file changed since is refused.'),
   })
   .strict();
+/** The private simulation debugger (AIX-014): a session is named by the unguessable id debug_session_start answered. */
+const DEBUG_NAME = z.string().min(1).max(256);
+const DEBUG_LOCATION = z
+  .object({
+    file: logicalPathSchema.describe('A program of src, as compiled: src/Main.st, src/Belt.ld.json.'),
+    line: z.number().int().min(1).max(1_000_000).optional().describe('The line of an ST or IL source.'),
+    element: z
+      .string()
+      .min(3)
+      .max(128)
+      .regex(/^[a-z]+:\S+$/)
+      .optional()
+      .describe('line:8, rung:r1, rung:r1/cell:0,2, block:ton_1, step:s1, transition:t1 or action:a1.'),
+  })
+  .strict()
+  .refine((location) => (location.line === undefined) !== (location.element === undefined), 'give exactly one of line or element');
+const DEBUG_PLANT_ACTION = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('operate'), signal: DEBUG_NAME, value: z.union([z.boolean(), z.number().finite()]) }).strict(),
+  z
+    .object({
+      kind: z.literal('emit'),
+      item: z.string().min(1).max(64),
+      at: z.tuple([z.number().finite(), z.number().finite(), z.number().finite()]),
+    })
+    .strict(),
+  z.object({ kind: z.literal('fault'), part: z.string().min(1).max(128), action: z.string().min(1).max(64) }).strict(),
+]);
+const DEBUG_START_INPUT = z
+  .object({
+    withScene: z.enum(['auto', 'always', 'never']).optional().describe('Couple scene.json and plant-map.json: auto when both exist.'),
+    sceneFile: z.string().max(256).refine(logicalPath).optional().describe('Scene path in the project; scene.json when omitted.'),
+    mapFile: z.string().max(256).refine(logicalPath).optional().describe('Plant map path in the project; plant-map.json when omitted.'),
+  })
+  .strict();
+const DEBUG_STOP_INPUT = z.object({ sessionId: z.string().uuid() }).strict();
+const DEBUG_INPUTS_INPUT = z
+  .object({
+    sessionId: z.string().uuid(),
+    inputs: z
+      .record(DEBUG_NAME, z.union([z.boolean(), z.number().finite()]))
+      .refine((record) => Object.keys(record).length <= 64, 'at most 64 inputs')
+      .optional()
+      .describe('Program inputs (IPI) by name, Program.Variable: true or false for a BOOL, a number otherwise.'),
+    plantActions: z.array(DEBUG_PLANT_ACTION).max(16).optional().describe('operate a panel signal, emit an item or fault a part.'),
+  })
+  .strict();
+const DEBUG_BREAKPOINTS_INPUT = z
+  .object({
+    sessionId: z.string().uuid(),
+    action: z.enum(['list', 'set', 'add', 'remove', 'clear']),
+    locations: z.array(DEBUG_LOCATION).max(32).optional().describe('Where to stop, for set, add and remove.'),
+  })
+  .strict();
+const DEBUG_STEP_INPUT = z
+  .object({
+    sessionId: z.string().uuid(),
+    mode: z.enum(['cycles', 'ms', 'continue']).optional().describe('cycles (default), ms, or continue to a breakpoint.'),
+    cycles: z.number().int().min(1).max(1000).optional().describe('Scans to run in mode cycles; 1 when omitted.'),
+    durationMs: z.number().int().min(1).max(60_000).optional().describe('Virtual time to run in mode ms, a multiple of the scan.'),
+    maxCycles: z.number().int().min(1).max(5000).optional().describe('The most scans continue runs; 1000 when omitted.'),
+    watch: z.array(DEBUG_NAME).max(32).optional().describe('Variables to read when the step stops.'),
+    includeFacts: z.boolean().optional().describe('Also answer the plant facts.'),
+  })
+  .strict();
+const DEBUG_INSPECT_INPUT = z
+  .object({
+    sessionId: z.string().uuid(),
+    signals: z.array(DEBUG_NAME).max(64).optional().describe('Variables to read; the inputs and outputs when omitted.'),
+    functionBlocks: z.array(z.string().min(1).max(128)).max(16).optional().describe('Instances to expand, Main.Delay1.'),
+    includeSfc: z.boolean().optional().describe('Active SFC steps and transitions; true when omitted.'),
+    includePlant: z.boolean().optional().describe('Plant signals and facts; true when omitted.'),
+  })
+  .strict();
+const DEBUG_SCHEMAS = {
+  debug_session_start: DEBUG_START_INPUT,
+  debug_session_stop: DEBUG_STOP_INPUT,
+  debug_set_inputs: DEBUG_INPUTS_INPUT,
+  debug_breakpoints: DEBUG_BREAKPOINTS_INPUT,
+  debug_step: DEBUG_STEP_INPUT,
+  debug_inspect: DEBUG_INSPECT_INPUT,
+} as const;
 const READ_ONLY = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false } as const;
 const WORKSPACE_WRITE_ONLY = { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false } as const;
 const FIRMWARE_BUILD_ONLY = { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false } as const;
+const DEBUG_ONLY = { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false } as const;
+const DEBUG_READ = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false } as const;
 
 export const MCP_TOOL_NAMES = [
   'project_inspect',
@@ -158,6 +242,12 @@ export const MCP_TOOL_NAMES = [
   'server_self_check',
   'workspace_check_write',
   'workspace_write',
+  'debug_session_start',
+  'debug_session_stop',
+  'debug_set_inputs',
+  'debug_breakpoints',
+  'debug_step',
+  'debug_inspect',
 ] as const;
 export const MCP_RESOURCE_URIS = [
   'zplc://project/manifest',
@@ -628,6 +718,7 @@ function validArguments(tool: McpToolName, args: ToolArguments): boolean {
   if (tool === 'plant_inspect') return PLANT_INSPECT_INPUT.safeParse(args).success;
   if (tool === 'workspace_check_write') return WORKSPACE_CHECK_INPUT.safeParse(args).success;
   if (tool === 'workspace_write') return WORKSPACE_WRITE_INPUT.safeParse(args).success;
+  if (isDebugTool(tool)) return DEBUG_SCHEMAS[tool].safeParse(args).success;
   return Object.keys(args).length === 0;
 }
 
@@ -727,26 +818,32 @@ export async function mcpSelfCheck(workspace: McpWorkspace | undefined): Promise
 export function createMcpDispatcher(
   workspace: McpWorkspace,
   operations: McpOperations = toolApi,
+  debug: McpDebugSessionManager = new McpDebugSessionManager(workspace),
 ): (tool: McpToolName, args: ToolArguments, signal: AbortSignal) => Promise<McpToolResult> {
-  const dispatch = dispatcher(workspace, operations);
+  const dispatch = dispatcher(workspace, operations, debug);
   return async (tool, args, signal) => withEvidenceLevel(tool, await dispatch(tool, args, signal));
 }
 
 function dispatcher(
   workspace: McpWorkspace,
   operations: McpOperations,
+  debug: McpDebugSessionManager,
 ): (tool: McpToolName, args: ToolArguments, signal: AbortSignal) => Promise<McpToolResult> {
   let busy = false;
   return async (tool, args, signal) => {
     if (busy) return errorResult('MCP_BUSY');
     if (signal.aborted) return errorResult('MCP_CANCELLED');
-    if (!validArguments(tool, args)) return tool === 'trace_get' ? trace.traceArgumentsError(args) : errorResult('MCP_INVALID_ARGUMENTS');
+    if (!validArguments(tool, args)) {
+      if (isDebugTool(tool)) return readResult(debugArgumentsError(DEBUG_SCHEMAS[tool].safeParse(args).error?.issues ?? []));
+      return tool === 'trace_get' ? trace.traceArgumentsError(args) : errorResult('MCP_INVALID_ARGUMENTS');
+    }
     busy = true;
     try {
       if (!sameIdentity(workspace.identity, await directoryIdentity(workspace.root))) return errorResult('MCP_WORKSPACE_CHANGED');
       if (signal.aborted) return errorResult('MCP_CANCELLED');
       if (tool === 'server_self_check') return readResult({ ok: true, summary: await mcpSelfCheck(workspace) });
       if (tool === 'scenarios_list') return readResult(await scenariosList(workspace));
+      if (isDebugTool(tool)) return readResult(await debug.call(tool, args as unknown as DebugArgs[typeof tool], signal));
       if (tool === 'workspace_check_write' || tool === 'workspace_write')
         return readResult(await workspaceWrite(workspace, args as unknown as WorkspaceWriteArgs, tool === 'workspace_write'));
       if (tool === 'plant_inspect')
@@ -808,7 +905,19 @@ function dispatcher(
 
 export function buildMcpServer(workspace: McpWorkspace): McpServer {
   const server = new McpServer({ name: 'zplc-local', version: MCP_SERVER_VERSION }, { instructions: MCP_INSTRUCTIONS });
-  const dispatch = createMcpDispatcher(workspace);
+  // the private debug sessions belong to this connection: they are torn down when it closes (AIX-014)
+  const debug = new McpDebugSessionManager(workspace);
+  const closed = server.server.onclose;
+  server.server.onclose = () => {
+    void debug.closeAll();
+    closed?.();
+  };
+  const close = server.close.bind(server);
+  server.close = async () => {
+    await debug.closeAll();
+    await close();
+  };
+  const dispatch = createMcpDispatcher(workspace, toolApi, debug);
   server.registerTool(
     'project_inspect',
     {
@@ -1008,6 +1117,67 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
       annotations: WORKSPACE_WRITE_ONLY,
     },
     (args, ctx) => dispatch('workspace_write', args, ctx.mcpReq.signal),
+  );
+  server.registerTool(
+    'debug_session_start',
+    {
+      title: 'Start a private debug session',
+      description:
+        'Compile the project and start a host simulation private to you, at 0 ms, with the scene when asked; answers a sessionId.',
+      inputSchema: DEBUG_START_INPUT,
+      annotations: DEBUG_ONLY,
+    },
+    (args, ctx) => dispatch('debug_session_start', args, ctx.mcpReq.signal),
+  );
+  server.registerTool(
+    'debug_session_stop',
+    {
+      title: 'Stop a private debug session',
+      description: 'Stop a private debug session: its simulator process ends, its plant and temporary state are removed.',
+      inputSchema: DEBUG_STOP_INPUT,
+      annotations: DEBUG_ONLY,
+    },
+    (args, ctx) => dispatch('debug_session_stop', args, ctx.mcpReq.signal),
+  );
+  server.registerTool(
+    'debug_set_inputs',
+    {
+      title: 'Set inputs of a private session',
+      description: 'Set program inputs (IPI) by name, or operate, emit or fault in the scene, of a private debug session before stepping.',
+      inputSchema: DEBUG_INPUTS_INPUT,
+      annotations: DEBUG_ONLY,
+    },
+    (args, ctx) => dispatch('debug_set_inputs', args, ctx.mcpReq.signal),
+  );
+  server.registerTool(
+    'debug_breakpoints',
+    {
+      title: 'Breakpoints of a private session',
+      description: 'List, set, add, remove or clear breakpoints of a private session by file and line (ST, IL) or element (LD, FBD, SFC).',
+      inputSchema: DEBUG_BREAKPOINTS_INPUT,
+      annotations: DEBUG_ONLY,
+    },
+    (args, ctx) => dispatch('debug_breakpoints', args, ctx.mcpReq.signal),
+  );
+  server.registerTool(
+    'debug_step',
+    {
+      title: 'Step a private session',
+      description: 'Run a private session by cycles, by ms of virtual time, or continue until a breakpoint stops it mid-scan.',
+      inputSchema: DEBUG_STEP_INPUT,
+      annotations: DEBUG_ONLY,
+    },
+    (args, ctx) => dispatch('debug_step', args, ctx.mcpReq.signal),
+  );
+  server.registerTool(
+    'debug_inspect',
+    {
+      title: 'Inspect a private session',
+      description: 'Read a private session by name: variables, function block members, active SFC steps, plant signals and facts.',
+      inputSchema: DEBUG_INSPECT_INPUT,
+      annotations: DEBUG_READ,
+    },
+    (args, ctx) => dispatch('debug_inspect', args, ctx.mcpReq.signal),
   );
   const serve = (uri: string, body: Record<string, unknown>) => {
     const text = JSON.stringify(body);

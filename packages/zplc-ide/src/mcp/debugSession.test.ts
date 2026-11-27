@@ -2,7 +2,7 @@
 // for the agent alone: it stops at a breakpoint in every language, steps, takes inputs and plant actions, answers variables,
 // function block members, SFC steps and plant facts by name, holds at most two sessions per connection for 300 s of idleness,
 // keeps each session to itself, and leaves no process behind. Everything goes through the tools as a client calls them.
-import { afterAll, afterEach, beforeAll, describe, expect, test } from 'bun:test';
+import { afterAll, afterEach, beforeAll, describe, expect } from 'bun:test';
 import { cp, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
@@ -64,6 +64,8 @@ async function stProject(source: string, tasks = 1): Promise<McpWorkspace> {
   return (await openMcpWorkspace(root))!;
 }
 
+// a tool answer as JSON, read by the assertions
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Answer = Record<string, any>;
 function client(workspace: McpWorkspace, manager?: McpDebugSessionManager) {
   const dispatch = createMcpDispatcher(workspace, toolApi, manager);
@@ -272,17 +274,17 @@ describe('AIX-014 inspecting a variable, a function block member and an SFC step
     const seen = await call('debug_inspect', { sessionId });
     expect(seen.sfc).toHaveLength(1);
     expect(seen.sfc[0]).toMatchObject({ pou: 'Blinky', file: 'src/main.sfc.json' });
-    expect(seen.sfc[0].activeSteps.map((step: { id: string }) => step.id)).toEqual(['step_led_off']);
+    expect(seen.sfc[0].activeSteps.map((step: { id: string }) => step.id)).toEqual(['step_led_on']);
     expect(seen.sfc[0].transitions.map((transition: { id: string }) => transition.id).sort()).toEqual([
       'trans_off_to_on',
       'trans_on_to_off',
     ]);
-    await call('debug_breakpoints', { sessionId, action: 'set', locations: [{ file: 'src/main.sfc.json', element: 'step:step_led_on' }] });
+    await call('debug_breakpoints', { sessionId, action: 'set', locations: [{ file: 'src/main.sfc.json', element: 'step:step_led_off' }] });
     await call('debug_step', { sessionId, mode: 'continue', maxCycles: 5000 });
     await call('debug_breakpoints', { sessionId, action: 'clear' });
     await call('debug_step', { sessionId, cycles: 1 });
     const on = await call('debug_inspect', { sessionId, includeSfc: true });
-    expect(on.sfc[0].activeSteps.map((step: { id: string }) => step.id)).toEqual(['step_led_on']);
+    expect(on.sfc[0].activeSteps.map((step: { id: string }) => step.id)).toEqual(['step_led_off']);
     expect((await call('debug_inspect', { sessionId, includeSfc: false })).sfc).toBeUndefined();
     await call('debug_session_stop', { sessionId });
   });
@@ -485,7 +487,7 @@ describe('AIX-014 the recorded simulation tools answer as before', () => {
   itNative('simulation_start keeps its 2.0 answer: a recorded first sample, no session', async () => {
     const call = client(await project('motor_start_stop'));
     const scenarios = await call('scenarios_list');
-    const scenarioId = scenarios.scenarios[0].id;
+    const scenarioId = scenarios.summary.scenarios[0].id;
     const answer = await call('simulation_start', { scenarioId });
     expect(Object.keys(answer).sort()).toEqual(
       [

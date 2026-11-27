@@ -389,7 +389,8 @@ export function watchableSignals(debugMap: DebugMap): string[] {
   return [...names].sort();
 }
 
-function readWatch(watch: ResolvedWatch, bytes: Uint8Array): boolean | number {
+/** The value of a watched variable from the bytes read at its address. */
+export function readWatch(watch: ResolvedWatch, bytes: Uint8Array): boolean | number {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   switch (watch.type) {
     case 'BOOL':
