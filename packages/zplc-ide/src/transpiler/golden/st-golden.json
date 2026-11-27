@@ -139,6 +139,11 @@
     "success": true,
     "text": "PROGRAM Beacon\n\nVAR_INPUT\n    TurnOn : BOOL; (* Turn-on pushbutton: TRUE while pressed *)\n    Off : BOOL; (* Off pushbutton: TRUE while pressed *)\nEND_VAR\n\nVAR\n    _rung1_result : BOOL;\nEND_VAR\n\nVAR_OUTPUT\n    Beacon : BOOL; (* Beacon lamp. It is also the memory that holds it on. *)\nEND_VAR\n\n(* LD Execution - Auto-generated *)\n\n(* Rung 1: TurnOn in parallel with Beacon holds the beacon; Off breaks the rung. *)\n_rung1_result := (TurnOn OR Beacon) AND NOT Off;\nBeacon := _rung1_result;\n\nEND_PROGRAM"
   },
+  "packages/zplc-ide/lessons/one-logic-five-languages/reading/warning-beacon.ld.json": {
+    "sha256": "7b56d9067ff9880e3cd321a0df44af819652352fd4b7faa393b9a3fe845dd052",
+    "success": true,
+    "text": "PROGRAM WarningBeacon\n\nVAR\n    TurnOn : BOOL; (* Turn-on push button: TRUE while pressed *)\n    Off : BOOL; (* Off push button: TRUE while pressed *)\n    _rung1_result : BOOL;\nEND_VAR\n\nVAR_OUTPUT\n    Beacon AT %Q0.0 : BOOL; (* Warning beacon *)\nEND_VAR\n\n(* LD Execution - Auto-generated *)\n\n(* Rung 1: TurnOn wins: TurnOn alone reaches the coil, and the held path is Beacon in series with the normally closed Off contact. *)\n_rung1_result := TurnOn OR (Beacon AND NOT Off);\nBeacon := _rung1_result;\n\nEND_PROGRAM"
+  },
   "packages/zplc-ide/lessons/seal-in-ladder/reading/booth-extractor.ld.json": {
     "sha256": "2e775ce513229704eb6b1555359fad7b448eebf1360bbc45f4cd4e120995c8a9",
     "success": true,
