@@ -29,7 +29,10 @@ describe('--dry-run', () => {
   it('prints the plan of the assistant run without a provider and writes nothing', async () => {
     const out = join(scratch, 'dry-assistant.json');
     const { lines, io } = sink();
-    const code = await assistantMain(['--dry-run', '--endpoint', 'http://127.0.0.1:9', '--model', 'm', '--tasks', 'st-write,sfc-explain', '--out', out], io);
+    const code = await assistantMain(
+      ['--dry-run', '--endpoint', 'http://127.0.0.1:9', '--model', 'm', '--tasks', 'st-write,sfc-explain', '--out', out],
+      io,
+    );
     expect(code).toBe(0);
     const plan = JSON.parse(lines.join('\n'));
     expect(plan.dryRun).toBe(true);
@@ -39,7 +42,10 @@ describe('--dry-run', () => {
 
   it('prints the plan of the Claude Code run without starting a client', async () => {
     const { lines, io } = sink();
-    const code = await claudeMain(['--dry-run', '--client', '/nonexistent/claude', '--model', 'm', '--out', join(scratch, 'dry-claude.json')], io);
+    const code = await claudeMain(
+      ['--dry-run', '--client', '/nonexistent/claude', '--model', 'm', '--out', join(scratch, 'dry-claude.json')],
+      io,
+    );
     expect(code).toBe(0);
     const plan = JSON.parse(lines.join('\n'));
     expect(plan.tasks.length).toBe(15);
@@ -73,7 +79,12 @@ describe('the assistant run with a fake provider', () => {
       date: '2026-11-27',
     });
     expect(Object.keys(evidence).sort()).toEqual([...FIELDS].sort());
-    expect(evidence).toMatchObject({ evidenceLevel: 'manual-model-run', model: 'fake-model', date: '2026-11-27', runner: 'run-assistant-eval' });
+    expect(evidence).toMatchObject({
+      evidenceLevel: 'manual-model-run',
+      model: 'fake-model',
+      date: '2026-11-27',
+      runner: 'run-assistant-eval',
+    });
     expect(evidence.results.map((result) => [result.id, result.pass])).toEqual([
       ['st-write', true],
       ['il-explain', true],
@@ -100,7 +111,14 @@ describe('the Claude Code run with a fake client', () => {
       },
     };
     const before = readFileSync(join(write.dir, 'project', write.program!), 'utf8');
-    const evidence = await runClaudeCodeEval({ tasks: [write, byId('st-repair')], client, clientLabel: 'fake-claude', model: 'fake-model', scratch, date: '2026-11-27' });
+    const evidence = await runClaudeCodeEval({
+      tasks: [write, byId('st-repair')],
+      client,
+      clientLabel: 'fake-claude',
+      model: 'fake-model',
+      scratch,
+      date: '2026-11-27',
+    });
     expect(Object.keys(evidence).sort()).toEqual([...FIELDS].sort());
     expect(evidence).toMatchObject({ evidenceLevel: 'manual-model-run', client: 'fake-claude', runner: 'run-claude-code-mcp' });
     expect(evidence.results.map((result) => [result.id, result.pass])).toEqual([

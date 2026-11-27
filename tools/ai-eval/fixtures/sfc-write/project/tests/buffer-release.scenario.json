@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "id": "buffer-release",
+  "tickMs": 10,
+  "durationMs": 36000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      { "atMs": 200, "operate": { "signal": "StartButton.pressed", "value": true } },
+      { "atMs": 400, "operate": { "signal": "StartButton.pressed", "value": false } },
+      { "atMs": 16000, "operate": { "signal": "ReleaseButton.pressed", "value": true } },
+      { "atMs": 16200, "operate": { "signal": "ReleaseButton.pressed", "value": false } },
+      { "atMs": 19000, "operate": { "signal": "ReleaseButton.pressed", "value": true } },
+      { "atMs": 19200, "operate": { "signal": "ReleaseButton.pressed", "value": false } },
+      { "atMs": 22000, "operate": { "signal": "ReleaseButton.pressed", "value": true } },
+      { "atMs": 22200, "operate": { "signal": "ReleaseButton.pressed", "value": false } },
+      { "atMs": 25000, "operate": { "signal": "ReleaseButton.pressed", "value": true } },
+      { "atMs": 25200, "operate": { "signal": "ReleaseButton.pressed", "value": false } },
+      { "atMs": 28000, "operate": { "signal": "ReleaseButton.pressed", "value": true } },
+      { "atMs": 28200, "operate": { "signal": "ReleaseButton.pressed", "value": false } }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    { "kind": "AT", "atMs": 100, "condition": { "BufferRelease.Hold": false, "BufferRelease.Done": false } },
+    { "kind": "AT", "atMs": 8000, "condition": { "BufferRelease.Hold": true } },
+    {
+      "kind": "AT",
+      "atMs": 15500,
+      "condition": {
+        "BufferRelease.Hold": true,
+        "fact:count:EyeFull": true,
+        "fact:count:EyeBlade": true,
+        "fact:count:EyeRelease": false,
+        "fact:itemsRemoved": false
+      }
+    },
+    { "kind": "AT", "atMs": 18500, "condition": { "BufferRelease.Hold": true, "fact:count:EyeRelease": true } },
+    { "kind": "AT", "atMs": 36000, "condition": { "BufferRelease.Done": true, "BufferRelease.Hold": true } },
+    {
+      "kind": "EVENTUALLY",
+      "fromMs": 0,
+      "withinMs": 36000,
+      "condition": { "fact:emitted:Emitter1": true, "fact:delivered:Remover1": true }
+    },
+    { "kind": "ALWAYS", "condition": { "BufferRelease.Fault": false, "fact:itemsDropped": false, "fact:itemsCollided": false } }
+  ]
+}

@@ -21,15 +21,20 @@ describe('the task set shape', () => {
     expect(tasks.length).toBe(15);
     expect(validateTasks(tasks)).toEqual([]);
     for (const language of LANGUAGES)
-      expect(tasks.filter((task) => task.language === language).map((task) => task.type).sort()).toEqual(['explain', 'repair', 'write']);
+      expect(
+        tasks
+          .filter((task) => task.language === language)
+          .map((task) => task.type)
+          .sort(),
+      ).toEqual(['explain', 'repair', 'write']);
     expect(tasks.every((task) => task.level === 'must')).toBe(true);
     expect(new Set(tasks.map((task) => task.id)).size).toBe(15);
   });
 
   it('keeps at least one seeded plant scene failure among the repair tasks and checks every fixture exists', () => {
-    expect(tasks.some((task) => task.type === 'repair' && task.failure === 'scenario' && existsSync(join(task.dir, 'project', 'scene.json')))).toBe(
-      true,
-    );
+    expect(
+      tasks.some((task) => task.type === 'repair' && task.failure === 'scenario' && existsSync(join(task.dir, 'project', 'scene.json'))),
+    ).toBe(true);
     for (const task of tasks) expect(existsSync(join(task.dir, 'project', 'zplc.json'))).toBe(true);
   });
 
