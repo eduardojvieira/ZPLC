@@ -124,11 +124,17 @@ describe('when the faceplate cannot apply a change (LRN-017)', () => {
 describe('the inputs the plant feeds (PLS-007)', () => {
   it('PLS-007 lists the program inputs the plant map drives, by their Watch path', () => {
     const resolved = { drives: { start: { path: 'Motor.Start', name: 'Start' }, level: { path: 'Tank.Level', name: 'Level' } } };
-    // a Watch row names a variable by its path or by its bare name, so both match
-    expect([...plantFedPaths(resolved)].sort()).toEqual(['Level', 'Motor.Start', 'Start', 'Tank.Level']);
+    const inputs = [{ name: 'Start' }, { name: 'Level' }];
+    // a Watch row names a variable by its path or by its bare name, so both match when one program has that input
+    expect([...plantFedPaths(resolved, inputs)].sort()).toEqual(['Level', 'Motor.Start', 'Start', 'Tank.Level']);
+  });
+
+  it('PLS-007 a bare name is listed only when exactly one program has that input', () => {
+    const resolved = { drives: { start: { path: 'Motor.Start', name: 'Start' } } };
+    expect([...plantFedPaths(resolved, [{ name: 'Start' }, { name: 'Start' }])]).toEqual(['Motor.Start']);
   });
 
   it('PLS-007 an input with no plant is not listed', () => {
-    expect(plantFedPaths({ drives: {} }).size).toBe(0);
+    expect(plantFedPaths({ drives: {} }, []).size).toBe(0);
   });
 });

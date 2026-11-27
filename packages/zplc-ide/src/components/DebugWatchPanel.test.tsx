@@ -61,7 +61,7 @@ function prepare(debug: Record<string, unknown> = {}) {
 
 const row = (path: string) => dom.screen.getByRole('cell', { name: path }).closest('tr')!;
 // the plant map binds Start of the program Motor; the Watch table names a variable by its bare name
-const fed = plantFedPaths({ drives: { start: { path: 'Motor.Start', name: 'Start' } } });
+const fed = plantFedPaths({ drives: { start: { path: 'Motor.Start', name: 'Start' } } }, [{ name: 'Start' }]);
 const fromPlant = () => dom.t('u3Faceplate.fromPlant');
 
 describe('One owner per input in the Watch tab (PLS-007, LNK-006, UX-009)', () => {
