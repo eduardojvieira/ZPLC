@@ -66,5 +66,6 @@ describe('control stations (plan-vis C4)', () => {
       'three-level-lifts': [['estop', 'start']],
       'timed-tank': [['estop', 'start']],
     });
-  });
+    // Builds a real core for each of the 21 scenes: about 5 s on a loaded CI runner, past the 5 s default.
+  }, 60_000);
 });
