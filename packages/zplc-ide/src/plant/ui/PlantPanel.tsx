@@ -9,7 +9,7 @@
  * here, with Undo, Redo and Done; the scene chooser and the save sit beside it, off the toolbar, until the Plant activity, the
  * navigator and Save all hold them (P2, P5, P6).
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { DebugController } from '../../hooks/debugControllerTypes';
 import { useT } from '../../i18n';
 import { SCENE_INDEX } from '../../generated/sceneIndex';
@@ -105,7 +105,8 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
   const handle = useIDEStore((state) => state.directoryHandle);
   const saved = useProjectScenes();
   // Until a person chooses, the panel shows the project's own scene, else its first saved one, else the first shipped scene.
-  const [choice, setRef] = useState<SceneRef | undefined>(() => usePlantChoice.getState().request);
+  const [choice, setRef] = useState<SceneRef | undefined>();
+  const panelId = useId();
   const first = saved.names[0];
   const ref: SceneRef =
     choice ??
@@ -158,26 +159,26 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
     [renderer, visible, view],
   );
 
-  // A scene the Plant activity asked for replaces the choice of this panel; the scene this panel shows is what the activity lists.
+  // A scene the Plant activity asked this panel for is taken once; a panel that edits keeps its scene (the activity says why).
   useEffect(
     () =>
-      usePlantChoice.subscribe((next, prev) => {
-        if (!next.request || next.request === prev.request) return;
+      usePlantChoice.subscribe((next) => {
+        if (next.request?.panel !== panelId) return;
+        const taken = usePlantChoice.getState().take(panelId);
         const own = usePlantEdit.getState();
-        if (own.sceneRef === refKey) own.end();
-        setRef(next.request);
+        if (taken && own.sceneRef !== refKey) setRef(taken);
       }),
-    [refKey],
+    [panelId, refKey],
   );
   const shownScene = ready?.scene;
   const shownMap = ready?.map;
   useEffect(() => {
     if (!shownScene) return;
-    usePlantChoice.getState().show({ key: refKey, scene: shownScene, map: shownMap });
+    usePlantChoice.getState().show({ panel: panelId, key: refKey, scene: shownScene, map: shownMap });
     return () => {
-      if (usePlantChoice.getState().shown?.key === refKey) usePlantChoice.getState().show(undefined);
+      if (usePlantChoice.getState().shown?.panel === panelId) usePlantChoice.getState().show(undefined);
     };
-  }, [refKey, shownScene, shownMap]);
+  }, [panelId, refKey, shownScene, shownMap]);
 
   const stopped = state === 'stopped';
   const { setRunning } = session;

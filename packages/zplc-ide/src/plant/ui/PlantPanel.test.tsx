@@ -946,15 +946,20 @@ describe('a scene picked in the Plant activity (plan-u3 P2)', () => {
     const b = rig();
     const viewA = dom.render(<PlantPanel controller={a.controller} visible deps={a.deps} />);
     await dom.waitFor(() => expect(a.scenes.length).toBe(1));
+    const viewB = dom.render(<PlantPanel controller={b.controller} visible deps={b.deps} />);
+    activity = dom.render(<PlantActivityView />).container;
+    await dom.waitFor(() => expect(b.scenes.length).toBe(1));
+    // B is on another scene than A, which is the one being edited
+    await dom.act(async () => {
+      dom.fireEvent.change(dom.within(viewB.container).getByLabelText(dom.t('plant.panel.scene')), { target: { value: 'counted-queue' } });
+    });
+    await dom.waitFor(() => expect(b.scenes.length).toBe(2));
     await dom.waitFor(() => expect(viewA.container.querySelector('[data-plant-text]')).toBeTruthy());
     await dom.act(async () => dom.fireEvent.click(viewA.container.querySelector('[data-plant-edit-scene]')!));
     expect(usePlantEdit.getState().editor).not.toBeNull();
-    dom.render(<PlantPanel controller={b.controller} visible deps={b.deps} />);
-    activity = dom.render(<PlantActivityView />).container;
-    await dom.waitFor(() => expect(b.scenes.length).toBe(1));
-    await dom.waitFor(() => expect(usePlantChoice.getState().shown).toBeDefined());
-    await pick('counted-queue');
-    await dom.waitFor(() => expect(b.scenes.length).toBe(2));
+    await dom.waitFor(() => expect(usePlantChoice.getState().shown?.key).toBe('counted-queue'));
+    await pick('merge-lines');
+    await dom.waitFor(() => expect(b.scenes.length).toBe(3));
     expect(usePlantEdit.getState().editor).not.toBeNull();
     expect(a.scenes.length).toBe(1);
   });

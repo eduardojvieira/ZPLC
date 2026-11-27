@@ -29,7 +29,9 @@ export const journeysU3P: Journey[] = [
       // the catalogue is offered while the scene is edited
       await app.click(css('[data-plant-edit-scene]'), 'Edit scene');
       await app.until('the parts catalogue in the Plant activity', async () => {
-        const found = await app.eval<boolean>(`Boolean((${ACTIVITY}).querySelector('select[aria-describedby="plant-editor-part-doc"]'))`);
+        const found = await app.eval<boolean>(
+          `Boolean((${ACTIVITY}).querySelector('select[aria-describedby="plant-activity-plant-editor-part-doc"]'))`,
+        );
         return found || undefined;
       });
       const parts = () => app.eval<number>(`(${ACTIVITY}).querySelectorAll('li[data-part]').length`);

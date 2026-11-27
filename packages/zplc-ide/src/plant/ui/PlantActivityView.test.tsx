@@ -33,7 +33,7 @@ const map = JSON.parse(read('belt-to-sensor', 'plant-map.json'));
 
 const showScene = (bound: boolean) => {
   usePlantDocument.setState({ open: true, active: true });
-  usePlantChoice.getState().show({ key: 'belt-to-sensor', scene, map: bound ? map : undefined });
+  usePlantChoice.getState().show({ panel: 'test', key: 'belt-to-sensor', scene, map: bound ? map : undefined });
 };
 
 afterEach(() => {

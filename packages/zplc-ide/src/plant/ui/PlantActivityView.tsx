@@ -35,6 +35,7 @@ export function PlantActivityView() {
   const ask = usePlantChoice((state) => state.ask);
   const session = usePlantEdit();
   const [refused, setRefused] = useState<string | undefined>();
+  const [blocked, setBlocked] = useState(false);
   const rootScene = useProjectSceneTexts().scene !== undefined;
   const saved = useProjectScenes().names;
   const debugMap = useIDEStore((state) => state.debug.debugMap);
@@ -56,7 +57,7 @@ export function PlantActivityView() {
         <EmptyState
           title={t('plant.activity.empty')}
           description={t('plant.activity.emptyHint')}
-          action={<Button onClick={() => runCommand('view.showPlant')}>{t('plant.activity.add')}</Button>}
+          action={<Button onClick={() => runCommand('view.plant')}>{t('plant.activity.add')}</Button>}
         />
       </div>
     );
@@ -72,9 +73,12 @@ export function PlantActivityView() {
         rootScene={rootScene}
         saved={saved}
         onChoose={(ref) => {
-          if (refValue(ref) !== sceneKey) ask(ref);
+          if (refValue(ref) === sceneKey) return;
+          setBlocked(!!editing);
+          if (!editing) ask(ref);
         }}
       />
+      {blocked && editing && <p role="status">{t('plant.activity.finishEditing')}</p>}
       {editing?.editor && state ? (
         <PartList
           idPrefix="plant-activity-"
