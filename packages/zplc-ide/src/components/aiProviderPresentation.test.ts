@@ -24,6 +24,29 @@ describe('AI provider presenters (IDE-030)', () => {
     expect(presentAiProviderConfig({ enabled: true, endpoint: 'https://example.test', model: 'gpt-test', keyCiphertext: 'no' })).toBeNull();
   });
 
+  it('AIX-005 a configured, enabled endpoint with no key is ready although the OS vault is unavailable', () => {
+    const noVault = { vaultAvailable: false, vaultReason: 'unavailable' as const };
+    expect(presentAiProviderStatus({ configured: true, enabled: true, keyStored: false, ...noVault })).toMatchObject({
+      kind: 'ready',
+      keyStored: false,
+    });
+    // nothing configured, or switched off: as before
+    expect(presentAiProviderStatus({ configured: false, enabled: true, keyStored: false, ...noVault })).toMatchObject({
+      kind: 'unavailable',
+    });
+    expect(presentAiProviderStatus({ configured: true, enabled: false, keyStored: false, ...noVault })).toMatchObject({
+      kind: 'unavailable',
+    });
+    // a key stored with no vault cannot be read: as before
+    expect(presentAiProviderStatus({ configured: true, enabled: true, keyStored: true, ...noVault })).toMatchObject({
+      kind: 'unavailable',
+    });
+    // with a vault every state is ready, as before
+    expect(presentAiProviderStatus({ configured: false, enabled: false, keyStored: false, vaultAvailable: true })).toMatchObject({
+      kind: 'ready',
+    });
+  });
+
   it('presents provider mutations only from their exact public result', () => {
     expect(presentAiProviderMutation({ ok: true })).toEqual({ kind: 'ok' });
     expect(presentAiProviderMutation({ ok: false, code: 'AI_VAULT_UNAVAILABLE' })).toEqual({ kind: 'error', code: 'AI_VAULT_UNAVAILABLE' });

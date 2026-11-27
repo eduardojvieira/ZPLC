@@ -14,12 +14,13 @@ const { useAssistantProvider } = await import('../shell/useSelection');
 type Sent = Record<string, unknown>;
 const sent: Sent[] = [];
 const answers: unknown[] = [];
+let status: Record<string, unknown> = { configured: true, enabled: true, keyStored: true, vaultAvailable: true };
 
 function bridge() {
   sent.length = 0;
   (window as unknown as { electronAPI?: unknown }).electronAPI = {
     aiProvider: {
-      getStatus: async () => ({ configured: true, enabled: true, keyStored: true, vaultAvailable: true }),
+      getStatus: async () => status,
       request: async (request: Sent) => {
         sent.push(request);
         return answers.shift() ?? { ok: true, answer: `answer ${sent.length}` };
@@ -44,6 +45,7 @@ afterEach(() => {
   useAssistantEntry.getState().take();
   useAssistantProvider.setState({ available: false });
   answers.length = 0;
+  status = { configured: true, enabled: true, keyStored: true, vaultAvailable: true };
 });
 
 async function render(locale: 'en' | 'es' = 'en') {
@@ -160,6 +162,16 @@ describe('places in an answer open on a click (AIX-004)', () => {
     expect(navigated).toEqual([['src/Main.st', 3, 1]]);
     expect(view.queryByRole('button', { name: 'src/Gone.st:1' })).toBeNull();
     expect(view.getByText(/src\/Gone\.st:1/)).toBeTruthy();
+  });
+});
+
+describe('a key-free endpoint without an OS vault (AIX-005)', () => {
+  it('AIX-005 is offered and sends, and the status text does not claim a key is stored', async () => {
+    status = { configured: true, enabled: true, keyStored: false, vaultAvailable: false, vaultReason: 'unavailable' };
+    const view = await render();
+    await view.ask('what is a scan?');
+    expect(sent[0]).toMatchObject({ mode: 'ask', prompt: 'what is a scan?' });
+    expect(view.queryByText(dom.tFor('en')('console.stored'), { exact: true })).toBeNull();
   });
 });
 
