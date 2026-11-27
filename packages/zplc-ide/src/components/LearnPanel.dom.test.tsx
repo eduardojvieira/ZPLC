@@ -11,6 +11,8 @@ const { useLearnUi } = await import('../learn/learnUi');
 const { useLearnProgress } = await import('../learn/progressState');
 const { learnLessonCatalog } = await import('./learnLesson');
 const { LearnPanel } = await import('./LearnPanel');
+const { useAssistantEntry } = await import('../store/useAssistantEntry');
+const { useAssistantProvider } = await import('../shell/useSelection');
 
 const en = learnLessonCatalog.en;
 const es = learnLessonCatalog.es;
@@ -143,5 +145,16 @@ describe('Learn lesson panel in a DOM (VF-007, LRN-004)', () => {
     expect(status.textContent).toBe(dom.t('welcome.folderAccessUnavailable'));
     await user.click(dom.screen.getByRole('button', { name: dom.t('learn.openTests') }));
     expect(useIDEStore.getState().activeConsoleTab).toBe('tests');
+  });
+});
+
+describe('the lesson panel asks the Assistant for a hint (AIX-003)', () => {
+  it('AIX-003 the hint button opens the Assistant in ask mode with the lesson shown', async () => {
+    dom.patchStore(useAssistantProvider, { available: true });
+    const { user } = show();
+    await user.click(dom.screen.getByRole('button', { name: dom.t('assistant.askHint') }));
+    expect(useAssistantEntry.getState().pending?.mode).toBe('ask');
+    expect(useAssistantEntry.getState().pending?.context.fields.lessonContext?.lessonId).toBeTruthy();
+    useAssistantEntry.getState().take();
   });
 });

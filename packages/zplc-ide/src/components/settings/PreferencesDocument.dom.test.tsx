@@ -212,3 +212,21 @@ describe('Preferences (SHL-011, SHL-012) in a DOM', () => {
     expect(usePreferencesDocument.getState()).toMatchObject({ open: true, active: true, anchor: 'assistant' });
   });
 });
+
+describe('the MCP connection panel as an anchor (AIX-007)', () => {
+  it('AIX-007 the palette action brings the panel into view and the focus into it', async () => {
+    dom.render(
+      <>
+        <Binder />
+        <PreferencesDocument />
+      </>,
+    );
+    await dom.act(async () => {
+      runCommand('ai.connectMcp');
+    });
+    await dom.waitFor(() => {
+      const section = document.querySelector('[data-mcp-connection]')!;
+      expect(section.contains(document.activeElement)).toBe(true);
+    });
+  });
+});

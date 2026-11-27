@@ -14,6 +14,8 @@ const { learnLessonCatalog } = await import('../learnLesson');
 const { LearnPanel } = await import('../LearnPanel');
 const { buildCourseView } = await import('../../learn/course');
 const { Guide } = await import('./Guide');
+const { useAssistantEntry } = await import('../../store/useAssistantEntry');
+const { useAssistantProvider } = await import('../../shell/useSelection');
 
 const lessonEntry = LESSON_INDEX.lessons.find((entry) => entry.reading) ?? LESSON_INDEX.lessons[0]!;
 const lesson = learnLessonCatalog.en.find((candidate) => candidate.id === lessonEntry.id)!;
@@ -186,5 +188,22 @@ describe('The Guide (GDE-003)', () => {
     open();
     dom.render(<Guide />);
     if (!lessonEntry.hardware) expect(document.querySelector('[data-guide-board]')).toBeNull();
+  });
+});
+
+describe('The Guide asks the Assistant for a hint (AIX-003)', () => {
+  it('AIX-003 the hint button opens the Assistant in ask mode with the lesson, and is not offered without a provider', async () => {
+    open();
+    dom.patchStore(useAssistantProvider, { available: false });
+    const first = dom.render(<Guide />);
+    expect(first.queryByRole('button', { name: dom.t('assistant.askHint') })).toBeNull();
+    first.unmount();
+    dom.patchStore(useAssistantProvider, { available: true });
+    const view = dom.render(<Guide />);
+    await view.user.click(view.getByRole('button', { name: dom.t('assistant.askHint') }));
+    const pending = useAssistantEntry.getState().pending;
+    expect(pending?.mode).toBe('ask');
+    expect(pending?.context.fields.lessonContext).toEqual({ lessonId: lesson.id });
+    useAssistantEntry.getState().take();
   });
 });

@@ -1192,6 +1192,23 @@ describe('the assistant gets the context of the project, the plant and the lesso
     expect(big!.context.plant.scene.parts).toHaveLength(64);
   });
 
+  it('puts the earlier exchanges of the conversation between the system text and the question, (AI-18)', async () => {
+    const history = [
+      { role: 'user', text: 'What is a scan?' },
+      { role: 'assistant', text: 'One pass of the program.' },
+    ];
+    const { body } = await ask({}, { history });
+    expect(body!.messages.map((message) => message.role)).toEqual(['system', 'user', 'assistant', 'user']);
+    expect(body!.messages[1]!.content).toBe('What is a scan?');
+    expect(JSON.parse(body!.messages[3]!.content).prompt).toBe('Why does it not run?');
+  });
+
+  it('sends no history at all when an earlier exchange holds something that looks like a key (AI-18)', async () => {
+    const { result, body } = await ask({}, { history: [{ role: 'assistant', text: 'use the api_key sk-abc' }] });
+    expect((result as { ok: boolean }).ok).toBe(true);
+    expect(body!.messages).toHaveLength(2);
+  });
+
   it('with solutions hidden, or unknown, the context has no solution, no stage text and no last hint, and the system says so', async () => {
     for (const hidden of [
       { solutionsHidden: async () => true },
@@ -1245,6 +1262,10 @@ describe('the assistant gets the context of the project, the plant and the lesso
         diagnostics: [{ code: 'E_TYPE', message: 'Type mismatch on the coil' }],
         lessonContext: { lessonId: 'ld-no-nc-contacts' },
         activeFile: { fileId: 'file:src/Big.st', path: 'src/Big.st' },
+        history: [
+          { role: 'user', text: 'u'.repeat(2048) },
+          { role: 'assistant', text: 'a'.repeat(2048) },
+        ],
       },
       async (root) => {
         for (let n = 0; n < 16; n += 1) await writeFile(join(root, 'tests', `s${n}.scenario.json`), scenario(n));

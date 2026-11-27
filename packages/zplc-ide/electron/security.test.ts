@@ -1101,3 +1101,22 @@ describe('the packaged renderer document is named by its canonical folder', () =
     );
   });
 });
+
+describe('the follow-up history of an assistant request (AI-18)', () => {
+  const workspaceId = '0f2ce877-e0d6-43ca-89a7-df17a4927f51';
+  const turn = (role: string, text = 'hello') => ({ role, text });
+  const ask = (history: unknown) => isAllowedAiProviderRequest({ workspaceId, mode: 'ask', prompt: 'And then?', history });
+
+  it('AI-18 admits at most three exchanges of plain user and assistant text', () => {
+    expect(ask([turn('user'), turn('assistant')])).toBe(true);
+    expect(ask(Array.from({ length: 6 }, (_, n) => turn(n % 2 === 0 ? 'user' : 'assistant')))).toBe(true);
+    expect(ask(Array.from({ length: 7 }, (_, n) => turn(n % 2 === 0 ? 'user' : 'assistant')))).toBe(false);
+  });
+
+  it('AI-18 refuses a system role, an extra field, an empty or an oversized text', () => {
+    expect(ask([turn('system')])).toBe(false);
+    expect(ask([{ role: 'user', text: 'x', extra: 1 }])).toBe(false);
+    expect(ask([turn('user', '')])).toBe(false);
+    expect(ask([turn('user', 'x'.repeat(2049))])).toBe(false);
+  });
+});

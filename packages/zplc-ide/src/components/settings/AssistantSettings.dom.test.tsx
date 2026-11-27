@@ -13,6 +13,7 @@ interface Bridge {
   saveConfig: () => Answer;
   storeKey: (key: string) => Answer;
   clearKey: () => Answer;
+  testConnection?: () => Answer;
 }
 
 afterEach(() => {
@@ -89,5 +90,46 @@ describe('Assistant provider settings (SHL-011) in a DOM', () => {
     await press(view, ACTIONS[1]);
     await dom.waitFor(() => expect(view.getByText(dom.t(FAILED.console, { code: 'AI_VAULT_UNAVAILABLE' }))).toBeTruthy());
     expect((view.getByLabelText(dom.t('console.apiKey')) as HTMLInputElement).value).toBe('k-1');
+  });
+});
+
+// AIX-006, AI-17: the connection test says plainly what is wrong and what to do; the form shows examples of what to type.
+describe('the connection test and the examples (AIX-006)', () => {
+  const unused = { saveConfig: () => ok, storeKey: () => ok, clearKey: () => ok };
+  const test = (view: Awaited<ReturnType<typeof render>>) => view.user.click(view.getByRole('button', { name: dom.t('assistant.test') }));
+
+  it('AIX-006 a good probe says it worked and how long it took', async () => {
+    const view = await render({ ...unused, testConnection: () => Promise.resolve({ ok: true, latencyMs: 412 }) });
+    await test(view);
+    await dom.waitFor(() => expect(view.getByText(dom.t('assistant.test.ok', { ms: 412 }))).toBeTruthy());
+  });
+
+  it('AIX-006 a refused endpoint says it is not allowed and why: https, or http to localhost, 127.0.0.1 or [::1]', async () => {
+    const view = await render({ ...unused, testConnection: () => Promise.resolve({ ok: false, code: 'AI_CONTEXT_REJECTED' }) });
+    await test(view);
+    const text = (await view.findByText(dom.t('assistant.test.endpointNotAllowed'))).textContent!;
+    for (const part of ['https', 'localhost', '127.0.0.1', '[::1]']) expect(text).toContain(part);
+    expect(text).not.toContain('AI_CONTEXT_REJECTED');
+  });
+
+  it('AIX-006 the same plain reason is given when saving an endpoint the provider refuses', async () => {
+    const view = await render({ ...unused, saveConfig: () => Promise.resolve({ ok: false, code: 'AI_CONTEXT_REJECTED' }) });
+    await view.user.clear(view.getByLabelText(dom.t('console.endpoint')));
+    await view.user.type(view.getByLabelText(dom.t('console.endpoint')), 'http://192.168.1.5:11434');
+    await view.user.click(view.getByRole('button', { name: dom.t('configEditor.save') }));
+    expect(await view.findByText(dom.t('assistant.test.endpointNotAllowed'))).toBeTruthy();
+  });
+
+  it('AIX-006 an unreachable endpoint says what to check, with no raw code', async () => {
+    const view = await render({ ...unused, testConnection: () => Promise.resolve({ ok: false, code: 'AI_PROVIDER_UNREACHABLE' }) });
+    await test(view);
+    expect(await view.findByText(dom.t('console.providerUnreachable'))).toBeTruthy();
+  });
+
+  it('AIX-006 the form shows a hosted and a local example, in both languages', async () => {
+    const view = await render({ ...unused });
+    expect(view.getByText(/https:\/\/api\.openai\.com/)).toBeTruthy();
+    expect(view.getByText(/http:\/\/localhost:11434/)).toBeTruthy();
+    expect(view.getByText(/http:\/\/localhost:1234/)).toBeTruthy();
   });
 });
