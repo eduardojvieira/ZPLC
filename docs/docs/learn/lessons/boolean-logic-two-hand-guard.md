@@ -26,7 +26,7 @@ Combine AND, NOT and XOR so a press can only be enabled when both hands are on t
 ## Objectives
 
 - Write a condition that is true only when several inputs are true together.
-- Use NOT for a warning lamp and XOR for exactly one of two inputs.
+- Turn sentences such as "while it is open" and "only one of the two" into Boolean conditions.
 
 ## Stages
 

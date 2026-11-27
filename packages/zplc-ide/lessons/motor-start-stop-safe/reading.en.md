@@ -51,7 +51,7 @@ signals:
 caption: The plain seal-in restarts the fan when the stop ends while FanStart is still held
 ```
 
-That is the one thing a seal-in alone cannot do: it does not know whether the start push button was released since the last stop. A program that follows the rule of a new press needs a second BOOL memory that remembers exactly that, cleared by every stop and at start-up, so that a press counts only once the push button has been let go. The practice asks for this rule.
+That is the one thing a seal-in alone cannot do: it does not know whether the start push button was released since the last stop. The practice asks for the rule of a new press, with three stops instead of two; what your program must remember for that rule, and when it forgets it, is for you to decide.
 
 ## Common mistakes
 

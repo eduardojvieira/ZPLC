@@ -17,46 +17,41 @@ Doing nothing is what makes the memory. `ST X` writes the current result into X 
 
 The lines of a program run from top to bottom on every scan. If the set and the reset are both TRUE, both instructions write X in the same scan, one after the other, and the one written last decides what X is at the end of the scan.
 
-- Write `R` last, and the reset wins.
-- Write `S` last, and the set wins.
-
 With `S` and `R`, the order of your lines is the whole decision: nothing else in the program says which one wins.
 
 ## Worked example
 
-A cold room has a door switch, `DoorOpen`. Whenever the door has been opened, the lamp `DoorWasOpen` must stay on until the warehouse keeper has checked the room and pressed the push button `Checked`. The keeper's check must win: if the keeper presses `Checked` while the door is still open, the lamp goes off for as long as the push button is held.
-
-The reset must win, so its lines come last:
+A packaging machine runs on compressed air. A pressure switch, `AirOK`, is TRUE while the air pressure is fine; it is wired so that a lost pressure and a broken wire both read FALSE. Whenever the air is lost while the machine is switched on (`MachineOn`), the lamp `AirLost` must stay on until the operator presses the push button `ResetAir`. If the air is still missing when the operator presses `ResetAir`, the lamp must stay on: the set must win, so its lines come last.
 
 ```il
-PROGRAM ColdRoom
+PROGRAM AirSupply
 VAR_INPUT
-    DoorOpen : BOOL;
-    Checked : BOOL;
+    AirOK : BOOL;
+    MachineOn : BOOL;
+    ResetAir : BOOL;
 END_VAR
 VAR_OUTPUT
-    DoorWasOpen : BOOL;
+    AirLost : BOOL;
 END_VAR
 
-        LD    DoorOpen
-        S     DoorWasOpen
-        LD    Checked
-        R     DoorWasOpen
+        LD    ResetAir
+        R     AirLost
+        LDN   AirOK
+        AND   MachineOn
+        S     AirLost
 END_PROGRAM
 ```
 
-Each `LD` loads the condition of the instruction below it. Follow it on the diagram. The door opens and closes, and the lamp stays on. `Checked` turns it off. Later the door opens again and `Checked` is pressed in the same scan: the lamp stays off while both are TRUE, and turns on as soon as `Checked` is released, because the door is still open.
+Each load opens the condition of the instruction below it. The set condition has two parts: `LDN` loads the opposite of `AirOK`, because the lamp must react to the pressure being lost, and `AND` adds the machine being on. Follow it on the diagram, with the machine switched on all along. The air drops out for a moment, and the lamp stays on after it comes back. `ResetAir` turns it off. Later the air is lost again in the same scan in which `ResetAir` is pressed: the lamp turns on and stays on, because the set is written last.
 
 ```timing
 span: 5000
 signals:
-  - { name: DoorOpen, edges: [500, 1000, 3000, 4000] }
-  - { name: Checked, edges: [2000, 2300, 3000, 3500] }
-  - { name: DoorWasOpen, edges: [500, 2000, 3500] }
-caption: The reset written last wins while both are TRUE; the open door sets the lamp again once Checked is released
+  - { name: AirOK, edges: [0, 500, 1000, 3500, 4000] }
+  - { name: ResetAir, edges: [2000, 2300, 3500, 3800] }
+  - { name: AirLost, edges: [500, 2000, 3500] }
+caption: The set written last wins while both are TRUE; MachineOn is TRUE all along
 ```
-
-Swap the two pairs of lines, `LD Checked` and `R` first, `LD DoorOpen` and `S` last, and the open door would win instead.
 
 ## Common mistakes
 
@@ -71,19 +66,19 @@ Swap the two pairs of lines, `LD Checked` and `R` first, `LD DoorOpen` and `S` l
 ## Check yourself
 
 ```quiz
-question: The cold-room program has LD DoorOpen, S DoorWasOpen, LD Checked, R DoorWasOpen in that order. In one scan DoorOpen and Checked are both TRUE. What is DoorWasOpen at the end of the scan?
+question: The air program has LD ResetAir, R AirLost, LDN AirOK, AND MachineOn, S AirLost in that order. In one scan ResetAir is TRUE, AirOK is FALSE and MachineOn is TRUE. What is AirLost at the end of the scan?
 options:
-  - { text: 'FALSE', correct: true, feedback: 'Yes. Both lines write DoorWasOpen, and R DoorWasOpen runs last, so the reset wins.' }
-  - { text: 'TRUE', feedback: 'S DoorWasOpen runs first and makes it TRUE, but R DoorWasOpen runs after it in the same scan.' }
-  - { text: 'It keeps the value of the previous scan', feedback: 'That happens only when both conditions are FALSE. Here both instructions write DoorWasOpen.' }
+  - { text: 'TRUE', correct: true, feedback: 'Yes. Both instructions write AirLost, and S AirLost runs last, so the set wins.' }
+  - { text: 'FALSE', feedback: 'R AirLost runs first and makes it FALSE, but S AirLost runs after it in the same scan.' }
+  - { text: 'It keeps the value of the previous scan', feedback: 'That happens only when both conditions are FALSE. Here both instructions write AirLost.' }
 ```
 
 ```quiz
-question: A version of the cold-room program has LD DoorOpen followed by ST DoorWasOpen. The door is open for one scan. What does DoorWasOpen do after that scan?
+question: A version of the air program has LDN AirOK followed by ST AirLost. The air is lost for one scan. What does AirLost do after that scan?
 options:
-  - { text: 'It turns FALSE on the next scan', correct: true, feedback: 'Right. ST writes the current result on every scan, so DoorWasOpen follows DoorOpen. Use S to keep it.' }
-  - { text: 'It stays TRUE until Checked', feedback: 'That is what S and R do. ST has no memory of its own.' }
-  - { text: 'It stays TRUE for ever', feedback: 'ST writes FALSE as soon as DoorOpen is FALSE.' }
+  - { text: 'It turns FALSE on the next scan', correct: true, feedback: 'Right. ST writes the current result on every scan, so AirLost follows the pressure switch. Use S to keep it.' }
+  - { text: 'It stays TRUE until ResetAir', feedback: 'That is what S and R do. ST has no memory of its own.' }
+  - { text: 'It stays TRUE for ever', feedback: 'ST writes FALSE as soon as AirOK is TRUE again.' }
 ```
 
 ## What you will do in the practice

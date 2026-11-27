@@ -25,7 +25,7 @@ Use a CTU counter to count three discrete pulses and reset the count.
 
 ## Objectives
 
-- Count the rising edges of an input with a CTU instance called on every scan, so that a long pulse counts once.
+- Count the rising edges of an input with a counter instance called on every scan, so that a long pulse counts once.
 - Turn an output on when the count reaches its preset, and clear the count with a reset input.
 
 ## Stages

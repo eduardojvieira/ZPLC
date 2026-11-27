@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "A normally open contact conducts when its variable is TRUE. StopButton is TRUE at rest. Which kind of contact lets the motor run when StopButton is TRUE, and which kind lights the lamp when it is FALSE?"
+      "text": "Look at the value StopButton has at rest and when Stop is pressed, and at what each of the two rungs must do in each case."
     },
     {
       "level": 2,

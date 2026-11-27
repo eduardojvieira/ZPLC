@@ -33,27 +33,27 @@ Any Boolean rule can be written with AND, OR and NOT alone. XOR is only a handy 
 
 ## Worked example
 
-One small program holds all three rules. A blender runs only with the lid closed and the button pressed: an AND. A warning lamp lights while the lid is not closed: a NOT. A stairway light is on while its two switches disagree: an XOR.
+A sorting conveyor carries boxes past a flap that pushes tall boxes into a side lane. The flap swings out for a tall box (TallBox) while the side lane is not full (LaneFull): an AND in which one condition is a NOT. A position switch, FlapIsOut, reports where the flap really is, and while the belt runs (BeltRunning) a fault lamp lights when the command and the position disagree: an XOR, in series with one more contact.
 
 ```ld-figure
-src: reading/lid-and-stairs.ld.json
-caption: AND for the blender, NOT for the lid warning, XOR for the stairway light
+src: reading/diverter-flap.ld.json
+caption: AND with a NOT for the flap, an XOR in series with the belt for the fault lamp
 ```
 
-Rung 1 is the AND. Rung 2 is the NOT. Rung 3 is the XOR, with its two parallel paths drawn one above the other.
+Rung 1 is the AND: TallBox with a normally open contact, and LaneFull with a normally closed one, because the flap may move while LaneFull is FALSE. Rung 2 begins with the XOR, its two parallel paths drawn one above the other, and the paths join before the BeltRunning contact, so the difference only counts while the belt runs. The contacts on Flap read the coil of rung 1.
 
 ```ld-try
-src: reading/lid-and-stairs.ld.json
+src: reading/diverter-flap.ld.json
 inputs:
-  - { name: LidClosed, kind: switch }
-  - { name: BlendButton, kind: push }
-  - { name: SwitchA, kind: switch }
-  - { name: SwitchB, kind: switch }
-outputs: [Blender, LidWarning, StairLight]
-caption: Close the lid and press the button, then flip each stairway switch in turn
+  - { name: TallBox, kind: switch }
+  - { name: LaneFull, kind: switch }
+  - { name: FlapIsOut, kind: switch }
+  - { name: BeltRunning, kind: switch }
+outputs: [Flap, FlapFault]
+caption: Run the belt, send a tall box, then move the flap position switch yourself
 ```
 
-Press Run. Start with the lid open: the warning lamp is on, and the blender does not run even if you press the button. Close the lid and press the button: the blender runs, and the warning lamp goes off. Now flip SwitchA, then SwitchB, then SwitchA again, and watch the stairway light follow the XOR rule.
+Press Run and switch BeltRunning on. Switch TallBox on: the flap is commanded out, and the fault lamp lights because FlapIsOut still says the flap is in. Switch FlapIsOut on, as the real flap would: the fault lamp goes off. Now switch LaneFull on: the flap command drops, and the fault lamp lights again until you switch FlapIsOut off. Switch BeltRunning off, and the fault lamp stays dark whatever the flap does.
 
 ## Common mistakes
 

@@ -11,7 +11,7 @@ La **lógica booleana** es la aritmética de esas respuestas. Con cuatro operado
 | `AND`    | los dos lados son TRUE         | `Run := Ready AND Start;`          |
 | `OR`     | al menos un lado es TRUE       | `Alarm := HighLevel OR LowLevel;`  |
 | `XOR`    | exactamente un lado es TRUE    | `Mismatch := SwitchA XOR SwitchB;` |
-| `NOT`    | el valor que lo sigue es FALSE | `DoorLamp := NOT DoorClosed;`      |
+| `NOT`    | el valor que lo sigue es FALSE | `FillValve := NOT TankFull;`       |
 
 El diagrama de tiempos da las mismas dos entradas, A y B, a cada operador. El tiempo avanza hacia la derecha; una línea está arriba mientras su señal es TRUE.
 
@@ -37,50 +37,50 @@ El texto estructurado resuelve primero NOT, después AND, después XOR y por úl
 
 NOT se aplica solo al valor que lo sigue. `NOT DoorClosed AND Ready` es `(NOT DoorClosed) AND Ready`. Para invertir una condición entera, póngala entre paréntesis: `NOT (DoorClosed AND Ready)`.
 
-Una asignación como `DoorLamp := NOT DoorClosed;` escribe su salida en cada ciclo, así que la salida sigue a su condición: cuando una entrada cambia, la salida cambia en el mismo ciclo. Dé a cada salida una instrucción que contenga su condición completa.
+Una asignación como `Flap := TallBox AND NOT LaneFull;` escribe su salida en cada ciclo, así que la salida sigue a su condición: cuando una entrada cambia, la salida cambia en el mismo ciclo. Dé a cada salida una instrucción que contenga su condición completa.
 
 ## Ejemplo resuelto
 
-Un horno de secado tiene un calefactor, un termostato `OverTemp` que pasa a TRUE cuando el horno está demasiado caliente y un selector del operador `HeatOn`. La puerta la vigilan dos interruptores, `DoorSwitchA` y `DoorSwitchB`, que son TRUE los dos mientras la puerta está cerrada. Siempre deberían coincidir; cuando no coinciden, uno de ellos está roto, y el horno enciende una lámpara de falla. Una segunda lámpara indica que la puerta está abierta.
+Una cinta clasificadora lleva cajas frente a una compuerta que puede abrirse y empujar una caja hacia un carril lateral. Una barrera de altura, `TallBox`, es TRUE mientras pasa una caja alta; las cajas altas van al carril lateral, salvo que el carril esté lleno, lo que indica el interruptor `LaneFull`. La compuerta tiene un interruptor de posición, `FlapIsOut`, que es TRUE mientras la compuerta está realmente fuera. Mientras la cinta funciona (`BeltRunning`), la orden y el interruptor de posición deberían coincidir siempre; cuando no coinciden, la compuerta está trabada o lenta, y se enciende una lámpara de falla.
 
 Cada salida responde una pregunta, así que cada una recibe una instrucción:
 
-- El calefactor puede calentar cuando el operador pide calor, los dos interruptores de la puerta dicen cerrada y el horno no está demasiado caliente. Se necesitan todas las condiciones, así que se unen con AND, y el termostato entra como `NOT OverTemp`.
-- La lámpara de puerta se enciende cuando los dos interruptores dicen abierta: `NOT DoorSwitchA AND NOT DoorSwitchB`.
-- La lámpara de falla se enciende cuando exactamente un interruptor dice cerrada: eso es XOR.
+- La compuerta se abre para una caja alta cuando el carril no está lleno: dos condiciones unidas con AND, y el interruptor del carril entra como `NOT LaneFull`.
+- La lámpara de falla se enciende cuando la orden y la posición difieren, pero solo mientras la cinta funciona: la diferencia es un XOR, y ese XOR se une a su vez con AND a la cinta.
 
 ```st
-PROGRAM DryingOven
+PROGRAM Diverter
 VAR_INPUT
-  HeatOn : BOOL;
-  DoorSwitchA : BOOL;
-  DoorSwitchB : BOOL;
-  OverTemp : BOOL;
+  TallBox : BOOL;
+  LaneFull : BOOL;
+  FlapIsOut : BOOL;
+  BeltRunning : BOOL;
 END_VAR
 VAR_OUTPUT
-  Heater : BOOL;
-  DoorLamp : BOOL;
-  SwitchFault : BOOL;
+  Flap : BOOL;
+  FlapFault : BOOL;
 END_VAR
-Heater := HeatOn AND DoorSwitchA AND DoorSwitchB AND NOT OverTemp;
-DoorLamp := NOT DoorSwitchA AND NOT DoorSwitchB;
-SwitchFault := DoorSwitchA XOR DoorSwitchB;
+Flap := TallBox AND NOT LaneFull;
+FlapFault := (Flap XOR FlapIsOut) AND BeltRunning;
 END_PROGRAM
 ```
 
-Sígalo con el calor encendido y el horno frío. La puerta se cierra: el interruptor A se cierra un momento antes que el B, así que durante ese momento SwitchFault es TRUE y el calefactor espera. Cuando los dos están cerrados, el calefactor funciona. Más tarde el interruptor B se rompe y da FALSE aunque la puerta sigue cerrada: el AND pierde una de sus condiciones, así que el calefactor se detiene, y el XOR enciende la lámpara de falla.
+La segunda instrucción lee `Flap`, que la primera instrucción acaba de escribir en el mismo ciclo. Los paréntesis importan: sin ellos, `Flap XOR FlapIsOut AND BeltRunning` significaría `Flap XOR (FlapIsOut AND BeltRunning)`, porque AND va antes que XOR.
+
+Sígalo con la cinta en marcha. Llega una caja alta y se ordena abrir la compuerta; el interruptor de posición lo confirma un momento después, así que durante ese momento FlapFault es TRUE. La caja pasa y la compuerta vuelve a entrar, con la misma falla breve. Más tarde el carril está lleno: pasa la siguiente caja alta y la compuerta no se abre.
 
 ```timing
 span: 5000
 signals:
-  - { name: DoorSwitchA, edges: [1000] }
-  - { name: DoorSwitchB, edges: [1300, 3000] }
-  - { name: Heater, edges: [1300, 3000] }
-  - { name: SwitchFault, edges: [1000, 1300, 3000] }
-caption: La puerta se cierra y después se rompe el interruptor B; HeatOn es TRUE y OverTemp FALSE todo el tiempo
+  - { name: TallBox, edges: [1000, 2000, 3500, 4500] }
+  - { name: LaneFull, edges: [3000] }
+  - { name: Flap, edges: [1000, 2000] }
+  - { name: FlapIsOut, edges: [1200, 2200] }
+  - { name: FlapFault, edges: [1000, 1200, 2000, 2200] }
+caption: Dos cajas altas, la segunda con el carril lateral lleno; BeltRunning es TRUE todo el tiempo
 ```
 
-Poner los dos interruptores en el AND es lo que hace que un interruptor roto detenga el calefactor en lugar de dejarlo funcionar. Un horno real da a los dos interruptores un tiempo breve para coincidir antes de encender la lámpara de falla; eso necesita un temporizador, que esta página deja de lado.
+Un desviador real le da a la compuerta un tiempo breve para moverse antes de encender la lámpara de falla; eso necesita un temporizador, que esta página deja de lado.
 
 ## Errores comunes
 

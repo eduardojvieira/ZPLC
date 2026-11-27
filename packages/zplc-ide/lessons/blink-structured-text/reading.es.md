@@ -27,7 +27,7 @@ Un parpadeador necesita una cosa más, una **memoria** BOOL en `VAR` que guarde 
 2. Si su Q es TRUE, invierta la memoria con `NOT` y reinicie el temporizador.
 3. Calcule la salida a partir de la memoria.
 
-Para parpadear solo mientras una entrada está en ON, esa entrada cumple dos funciones: es la IN del temporizador, así que el temporizador cuenta solo mientras la entrada está en ON, y forma parte de la salida con `AND`, así que la salida se apaga en el ciclo en que la entrada cae.
+Para parpadear solo mientras una entrada está en ON, deben cumplirse dos cosas: el temporizador no debe contar mientras la entrada está apagada, y la salida debe estar apagada en el mismo ciclo en que la entrada cae, aunque la memoria todavía conserve su último valor. Cómo logra la entrada las dos cosas es la decisión de la práctica.
 
 ## Ejemplo resuelto
 
@@ -57,12 +57,12 @@ marks:
 caption: La baliza está apagada durante el primer valor preestablecido y encendida durante el segundo, mientras el portón se mueve
 ```
 
-Cuando el portón se detiene, la IN de `OffTime` pasa a FALSE, su Q cae en ese mismo ciclo y la baliza se apaga enseguida. Un parpadeador hecho con un temporizador y una memoria, como el de la práctica, no puede contar con eso: cuando su temporizador se detiene, la memoria conserva su último valor, así que la salida necesita un `AND` con la entrada.
+Cuando el portón se detiene, la IN de `OffTime` pasa a FALSE, su Q cae en ese mismo ciclo y la baliza se apaga enseguida. Un parpadeador hecho con un temporizador y una memoria, como el de la práctica, no puede contar con eso: cuando su temporizador se detiene, la memoria conserva su último valor, y una lámpara escrita solo a partir de la memoria podría quedar encendida.
 
 ## Errores comunes
 
-- Hacer contar el temporizador con IN := TRUE. La memoria se invierte entonces desde que arranca el programa, aunque la entrada esté apagada, así que cuando la entrada se enciende la lámpara puede encenderse enseguida y el primer cambio no llega un valor preestablecido después.
-- Dejar la entrada fuera de la salida. El temporizador se detiene cuando la entrada cae, pero la memoria conserva su último valor, así que la lámpara puede quedar en ON.
+- Olvidar el valor inicial de la memoria. La lámpara muestra la memoria desde el primer ciclo, así que la memoria debe empezar con el valor que la lámpara debe tener antes del primer cambio.
+- Esperar que el temporizador detenido apague la lámpara. El temporizador se detiene cuando la entrada cae, pero la memoria conserva su último valor, así que la lámpara puede quedar en ON.
 - Olvidar reiniciar el temporizador dentro del IF. Q sigue en TRUE, así que la memoria se invierte en cada ciclo y la lámpara parpadea muy rápido.
 - Dar como valor preestablecido el tiempo de un parpadeo completo. El valor preestablecido es el tiempo de un estado, encendida o apagada; un parpadeo completo dura dos valores preestablecidos.
 - Llamar al temporizador solo dentro de un IF. Una instancia a la que no se llama no cuenta.
@@ -70,11 +70,11 @@ Cuando el portón se detiene, la IN de `OffTime` pasa a FALSE, su Q cae en ese m
 ## Compruébelo usted
 
 ```quiz
-question: Un parpadeador hecho con un temporizador y una memoria termina con Out := Memory; y no tiene un AND con su entrada Run. Run cae mientras Memory es TRUE. ¿Qué hace Out?
+question: En la baliza del portón del ejemplo resuelto, el portón se detiene mientras la baliza está encendida. ¿Qué hace Beacon?
 options:
-  - { text: 'Sigue en ON, porque ya nada cambia Memory', correct: true, feedback: 'Sí. El temporizador deja de contar, Memory conserva su último valor y Out lo copia.' }
-  - { text: 'Pasa a OFF enseguida', feedback: 'Nada en ese programa apaga Out cuando Run cae. Esa es la tarea de un AND con Run.' }
-  - { text: 'Sigue parpadeando', feedback: 'El temporizador cuenta solo mientras Run es TRUE, así que Memory ya no cambia.' }
+  - { text: 'Se apaga en ese mismo ciclo', correct: true, feedback: 'Sí. Moving pasa a FALSE, OffTime se llama con IN en FALSE, su Q cae enseguida y Beacon la copia.' }
+  - { text: 'Sigue encendida hasta que OnTime cuenta su valor preestablecido', feedback: 'OnTime solo decide cuándo se reinicia OffTime. Beacon copia OffTime.Q, que cae en cuanto cae su IN.' }
+  - { text: 'Sigue encendida, porque una memoria la mantiene', feedback: 'Esta baliza no tiene memoria: está hecha con dos temporizadores, y Beacon copia uno de ellos.' }
 ```
 
 ```quiz

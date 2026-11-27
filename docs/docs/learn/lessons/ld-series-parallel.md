@@ -26,7 +26,7 @@ Combine contacts in series for AND and in parallel for OR, read a truth table, a
 ## Objectives
 
 - Explain that contacts in series pass power only when all of them conduct (AND), and contacts in parallel pass power when any of them conducts (OR).
-- Add a parallel path to a rung so that a horn sounds when the door is open or the motor is overheated, and check it against every row of a truth table.
+- Change a rung so that a horn sounds in every situation a sentence of the machine names, and check it against every row of a truth table.
 
 ## Stages
 

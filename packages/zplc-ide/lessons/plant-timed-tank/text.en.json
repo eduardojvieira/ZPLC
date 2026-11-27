@@ -4,7 +4,7 @@
   "summary": "Run one fill, hold and drain cycle of a tank with on-delay timers, a panel start and an emergency stop.",
   "scope": "The grade runs the simulated tank in the simulator on this computer. It says nothing about a real tank, valve or sensor, its timing or its safety.",
   "objectives": [
-    "Time one step of a process with an on-delay timer (TON), using one timer for each step.",
+    "Time the steps of a process so that each timed step lasts its own time.",
     "Use a timer as a safety limit on a step that normally ends on a sensor, and let an emergency stop abort the cycle."
   ],
   "stages": [
@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objective",
       "body": "The scene is a tank with a fill valve, a drain valve and a low-level switch, a Start button, an emergency stop and a stack light. In src/TimedTank.st, run one cycle for each press of Start while the emergency stop is released and the tank is idle: amber on, Fill open for a time set by a timer (the tank has no sensor at this level, so the timer is the measurement), a two-second hold, then Drain open until LevelLow or twenty seconds, then green on. The emergency stop closes both valves and lights red.",
-      "checkpoint": "The cycle is a chain of steps and each timed step has its own timer."
+      "checkpoint": "The cycle is a chain of steps, and each timed step ends after its own time."
     },
     {
       "key": "predict",
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "The starter has no logic: no valve ever opens, so the cycle never runs. It declares the inputs and outputs. Each press of Start, while the emergency stop is released and the tank is idle, runs one cycle: Fill opens for 3.5 seconds, the tank holds for two seconds, then Drain opens until LevelLow or for twenty seconds at most; amber is on while the cycle runs and green once it has ended.",
+      "body": "Write the program, save it, then press {{ui:learn.check}}. The starter has no logic: no valve ever opens, so the cycle never runs. It declares the inputs and outputs. Each press of Start, while the emergency stop is released and the tank is idle, runs one cycle: Fill opens for 3.5 seconds, the tank holds for two seconds, then Drain opens until LevelLow or for twenty seconds at most; amber is on while the cycle runs and green once it has ended.",
       "checkpoint": "The cycle runs fill, hold and drain in that order, each for its own time, and the emergency stop ends it at any point."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs src/TimedTank.st against the tank of scene timed-tank, presses Start, operates the emergency stop and presses Start again, and tests {{assertions}} assertions: the outputs at fixed times, and that the tank never spills.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs src/TimedTank.st against the tank of scene timed-tank, presses Start, operates the emergency stop and presses Start again, and tests {{assertions}} assertions: the outputs at fixed times, and that the tank never spills.",
       "checkpoint": "The scenario is named timed-tank and contains {{assertions}} assertions and passes them all."
     },
     {

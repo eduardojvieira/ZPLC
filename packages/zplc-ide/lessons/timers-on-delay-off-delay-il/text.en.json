@@ -5,7 +5,7 @@
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real push button bounces or how fast a real sensor answers.",
   "objectives": [
     "Call a timer instance with CAL on every scan, passing its input and its preset, and read its output after the call.",
-    "Keep an output on for a fixed time after its input drops, with a TOF, and ignore an input that is on for less than a fixed time, with a TON."
+    "Keep an output on for a fixed time after its input drops, and ignore an input that is on for less than a fixed time."
   ],
   "stages": [
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Look at the two LD and ST pairs: they pass each input straight to its output, and neither timer ever runs. TOF keeps its Q on for the preset time after IN falls, and TON raises Q only after IN has been on for the preset time."
+      "text": "Look at the two LD and ST pairs: they pass each input straight to its output, and neither timer ever runs. For each output, ask whether its delay belongs to the start of its input or to its end."
     },
     {
       "level": 2,

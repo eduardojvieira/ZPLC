@@ -4,8 +4,8 @@
   "summary": "Keep a running total in an INT variable with ADD, SEL and R_TRIG blocks, and turn it into three BOOL results with comparison blocks.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the range of a real sensor or the overflow behaviour of a particular controller.",
   "objectives": [
-    "Use an INT variable for a number: an ADD block builds the next value, SEL blocks choose between the old total, the new one and zero, and LT, EQ and GT blocks turn the number into BOOL results.",
-    "Add to a number only on the rising edge of an input, with an R_TRIG block, so that a button held for several scans counts once."
+    "Use an INT variable for a number, build its next value with arithmetic and selection blocks, and turn the number into BOOL results with LT, EQ and GT blocks.",
+    "Add to a number only once per press, so that a button held for several scans counts once."
   ],
   "stages": [
     {
@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "What happens if Step goes straight to G of the SEL block, without the R_TRIG block? And if Exact uses a GE block instead of EQ? Try each and see which assertion fails.",
+      "body": "What happens to Total if Step stays pressed for many cycles, and which block of your diagram decides that? And if Exact uses a GE block instead of EQ? Try each and see which assertion fails.",
       "checkpoint": "A comparison gives a BOOL, and EQ is not the same as GE. The scenario only watches the three BOOL outputs; it does not show the value of Total itself or what happens when an INT overflows."
     }
   ],

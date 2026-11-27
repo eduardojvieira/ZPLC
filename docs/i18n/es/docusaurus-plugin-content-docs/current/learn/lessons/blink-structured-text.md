@@ -26,7 +26,7 @@ Construya un parpadeador con un temporizador TON y una variable de memoria, y ha
 ## Objetivos
 
 - Escriba el patrón de temporizador y memoria que hace cambiar una salida a intervalos fijos.
-- Condicione una salida a una entrada para que se detenga de inmediato cuando la entrada cae.
+- Haga que una salida que parpadea se apague en el mismo ciclo en que cae su entrada de habilitación.
 
 ## Etapas
 

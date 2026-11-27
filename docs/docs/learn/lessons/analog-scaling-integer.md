@@ -25,7 +25,7 @@ Scale a raw count from 0 to 1000 into a percentage with integer arithmetic, and 
 
 ## Objectives
 
-- Scale a raw count to engineering units with a multiplication followed by a division, in that order.
+- Scale a raw count to engineering units with whole numbers, without losing the part of the value below the divisor.
 - See that integer division drops the remainder, and choose an integer type wide enough for the intermediate product.
 
 ## Stages

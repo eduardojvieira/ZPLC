@@ -5,7 +5,7 @@
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no mide cuánto dura un ciclo en un controlador real.",
   "objectives": [
     "Describa el ciclo de escaneo: leer las entradas, resolver los peldaños de arriba hacia abajo, escribir las salidas y repetir.",
-    "Reordene dos peldaños para que un valor se calcule antes del peldaño que lo usa, y vea en la traza registrada la diferencia de un ciclo."
+    "Encuentre por qué una salida va un ciclo detrás de su entrada, corríjalo sin cambiar ningún contacto ni bobina, y vea en la traza registrada la diferencia de un ciclo."
   ],
   "stages": [
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Dentro de un ciclo, un peldaño solo ve lo que ya calcularon los peldaños que están arriba. ¿Qué peldaño debe calcular primero ButtonSeen?"
+      "text": "Mire qué peldaño escribe ButtonSeen y qué peldaño lo lee, y en qué lugar del programa está cada uno."
     },
     {
       "level": 2,

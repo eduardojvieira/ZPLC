@@ -42,27 +42,26 @@ Series and parallel can be combined in the same rung. Power then needs to pass t
 
 ## Worked example
 
-Take the two rules of the opening. The welder works only if the key is turned and the guard is closed: both conditions, so KeyTurned and GuardClosed go in series. The crossing light is requested if a pedestrian pressed the north button or the south button: either is enough, so NorthButton and SouthButton go in parallel.
+An air compressor fills a tank. It runs while its RunSwitch is on and the pressure switch HighPressure has not tripped: both conditions, so the two contacts go in series, and HighPressure gets a normally closed contact because the compressor must run while it is FALSE. An alarm lamp lights when the pressure is too high or when the oil level switch OilOK says the oil is low: either is enough, so the two contacts go in parallel. OilOK is TRUE while there is enough oil, so the alarm path asks the opposite question with a normally closed contact.
 
 ```ld-figure
-src: reading/welder-and-crossing.ld.json
-caption: Rung 1 is a series (AND), rung 2 is a parallel (OR)
+src: reading/compressor.ld.json
+caption: Rung 1 is a series (AND), rung 2 is a parallel (OR), each with a normally closed contact
 ```
 
-Rung 1 puts KeyTurned and GuardClosed in series before the coil Welder. Rung 2 puts NorthButton and SouthButton on two paths that join before the coil WalkRequest.
+Rung 1 puts RunSwitch and HighPressure in series before the coil Compressor. Rung 2 puts HighPressure and OilOK on two paths that join before the coil AlarmLamp. The same variable, HighPressure, appears in both rungs with opposite contacts.
 
 ```ld-try
-src: reading/welder-and-crossing.ld.json
+src: reading/compressor.ld.json
 inputs:
-  - { name: KeyTurned, kind: switch }
-  - { name: GuardClosed, kind: switch }
-  - { name: NorthButton, kind: push }
-  - { name: SouthButton, kind: push }
-outputs: [Welder, WalkRequest]
-caption: Try every combination of the switches and of the two buttons
+  - { name: RunSwitch, kind: switch }
+  - { name: HighPressure, kind: switch }
+  - { name: OilOK, kind: switch }
+outputs: [Compressor, AlarmLamp]
+caption: Try every combination of the three switches
 ```
 
-Press Run and walk through the truth tables. Switch on KeyTurned alone: the welder stays off. Switch on GuardClosed as well: it turns on. Then press NorthButton alone, SouthButton alone, and both: the walk request is on every time that at least one button is pressed.
+Press Run and walk through the truth tables. At first OilOK is FALSE, so the alarm lamp is on: switch OilOK on and it goes off. Switch RunSwitch on: the compressor runs. Switch HighPressure on: the compressor stops and the alarm lamp lights. Then switch HighPressure off and OilOK off: the compressor runs again, and the lamp lights for the oil.
 
 ## Common mistakes
 

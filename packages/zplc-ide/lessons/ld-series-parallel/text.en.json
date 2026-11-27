@@ -5,7 +5,7 @@
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real alarm horn or overheat sensor behaves.",
   "objectives": [
     "Explain that contacts in series pass power only when all of them conduct (AND), and contacts in parallel pass power when any of them conducts (OR).",
-    "Add a parallel path to a rung so that a horn sounds when the door is open or the motor is overheated, and check it against every row of a truth table."
+    "Change a rung so that a horn sounds in every situation a sentence of the machine names, and check it against every row of a truth table."
   ],
   "stages": [
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "The horn must sound when either condition is TRUE. Contacts in series need both. Which arrangement gives power two different ways to reach the coil?"
+      "text": "Look at the horn rung: list the situations in which power must reach Horn, and count the ways the rung gives it to reach the coil now."
     },
     {
       "level": 2,

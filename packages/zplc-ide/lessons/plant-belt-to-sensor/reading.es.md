@@ -40,29 +40,32 @@ caption: Una pulsación corta activa la memoria, el sensor la borra y la cinta s
 
 El sensor sigue en TRUE mientras la caja está delante de él, así que mantiene la memoria borrada. Eso es lo que se busca: la caja espera al final de la cinta hasta que alguien la retire.
 
-Cuando la activación y el borrado están los dos en TRUE en el mismo ciclo, gana la instrucción escrita al final, porque las instrucciones se ejecutan de arriba abajo. Decida cuál debe ganar: aquí una parada del sensor importa más que un arranque.
+Cuando la activación y el borrado están los dos en TRUE en el mismo ciclo, gana la instrucción escrita al final, porque las instrucciones se ejecutan de arriba abajo. Cuál debe ganar es una decisión de la máquina, no del lenguaje.
 
 ## Ejemplo resuelto
 
-Una cortina enrollable sobre una puerta de carga tiene un pulsador Open y un final de carrera superior. Una pulsación corta debe abrir la cortina del todo: el motor funciona hasta que el final de carrera indica que la cortina está arriba. Es el mismo problema que el de la cinta, resuelto aquí con una autorretención:
+Una cinta de recortes debajo de una máquina de corte lleva los sobrantes a un contenedor. Una pulsación breve de `ClearBelt` debe hacer funcionar la cinta hasta que una cortina de luz en su extremo, `BeltEmpty`, indique que no queda nada sobre ella. Pero el operador también usa el pulsador para mover la cinta a impulsos: mientras `ClearBelt` está pulsado, la cinta debe funcionar aunque la cortina indique que está vacía. Así que aquí gana el arranque, y su IF va al final:
 
 ```st
-PROGRAM Shutter
-VAR_INPUT OpenButton : BOOL; TopLimit : BOOL; END_VAR
+PROGRAM ScrapBelt
+VAR_INPUT ClearBelt : BOOL; BeltEmpty : BOOL; END_VAR
 VAR_OUTPUT Motor : BOOL; END_VAR
-VAR Opening : BOOL; END_VAR
-Opening := (OpenButton OR Opening) AND NOT TopLimit;
-Motor := Opening;
+VAR Clearing : BOOL; END_VAR
+IF BeltEmpty THEN Clearing := FALSE; END_IF;
+IF ClearBelt THEN Clearing := TRUE; END_IF;
+Motor := Clearing;
 END_PROGRAM
 ```
 
-Lea la asignación desde la derecha. `OpenButton OR Opening` sigue en TRUE después de soltar el pulsador, porque Opening se mantiene a sí misma. `AND NOT TopLimit` corta esa retención en cuanto el final de carrera se cierra, y también gana cuando los dos están en TRUE. Dos instrucciones IF, una que activa Opening y otra después que la borra, hacen lo mismo de una forma que a muchos programadores les resulta más fácil de leer.
+Léalo desde arriba. El primer IF borra la memoria cada vez que la cortina ve la cinta vacía. El segundo IF la activa cada vez que se pulsa el pulsador, y como va al final, un pulsador mantenido sigue haciendo funcionar la cinta aunque el primer IF borre la memoria en cada ciclo. Cuando se suelta el pulsador con recortes todavía sobre la cinta, `Clearing` sigue en TRUE y la cinta continúa hasta que la cortina la ve vacía.
+
+Esta máquina no tiene nada que colocar sobre su cinta, solo una cinta que hacer funcionar. La estación de la práctica también tiene que colocar su caja, y qué instrucción gana allí queda para que usted lo decida a partir de lo que debe pasarle a la caja.
 
 ## Errores comunes
 
 - Accionar la cinta directamente desde el pulsador. La cinta se mueve solo mientras se mantiene el pulsador, y la caja se detiene a mitad de camino.
 - Activar la memoria y no borrarla nunca. La cinta lleva la caja más allá del sensor y la hace caer por el extremo.
-- Borrar antes de activar, de modo que un pulsador mantenido vuelve a arrancar la cinta mientras la caja sigue delante del sensor.
+- Leer el sensor como un pulso. EyeFar sigue en TRUE mientras la caja esté en su haz, no solo en el ciclo en que llega la caja.
 - Olvidar declarar la memoria. Toda variable que usa el programa se declara, y una memoria del programa va en `VAR`.
 
 > [!NOTE]
@@ -79,11 +82,11 @@ options:
 ```
 
 ```quiz
-question: En el mismo ciclo Start y EyeFar están los dos en TRUE. El programa activa la memoria primero y la borra en la instrucción siguiente. ¿Qué vale la memoria al final del ciclo?
+question: En la cinta de recortes del ejemplo resuelto, BeltEmpty y ClearBelt están los dos en TRUE en el mismo ciclo. ¿Qué vale Clearing al final del ciclo?
 options:
-  - { text: 'FALSE', correct: true, feedback: 'Correcto. Las instrucciones se ejecutan de arriba abajo, así que gana el borrado, escrito al final.' }
-  - { text: 'TRUE', feedback: 'La activación se ejecutó primero, pero el borrado se ejecutó después en el mismo ciclo.' }
-  - { text: 'Cambia en cada ciclo', feedback: 'Las dos condiciones dan el mismo resultado en cada ciclo: el borrado siempre va al final.' }
+  - { text: 'TRUE', correct: true, feedback: 'Correcto. Las instrucciones se ejecutan de arriba abajo, así que gana el IF de ClearBelt, escrito al final.' }
+  - { text: 'FALSE', feedback: 'El IF de BeltEmpty la borra primero, pero el IF de ClearBelt la vuelve a activar después en el mismo ciclo.' }
+  - { text: 'Cambia en cada ciclo', feedback: 'Los dos IF se ejecutan en cada ciclo en el mismo orden, así que el resultado es el mismo cada vez.' }
 ```
 
 ## Qué hará en la práctica

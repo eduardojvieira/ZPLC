@@ -2,7 +2,7 @@
 
 Un sensor de nivel, un termómetro o un transmisor de presión no le dan al programa litros, grados ni bares. Dan una señal eléctrica, una corriente o una tensión, y la entrada analógica del controlador convierte esa señal en un número entero de **cuentas en bruto**: por ejemplo 0 para la señal más baja y 4000 para la más alta. El programa ve solo las cuentas.
 
-El **escalado** convierte las cuentas en bruto en **unidades de ingeniería**, las unidades que lee una persona y en las que se escribe un límite. Cuando los dos rangos empiezan en cero, la regla es una línea: el valor es la cuenta en bruto por el tope de las unidades, dividido por el tope de las cuentas.
+El **escalado** convierte las cuentas en bruto en **unidades de ingeniería**, las unidades que lee una persona y en las que se escribe un límite. Cuando los dos rangos empiezan en cero, el valor es la misma fracción de las unidades que la cuenta en bruto es de las cuentas.
 
 | Cuentas en bruto | Fracción del rango | Porcentaje |
 | ---------------- | ------------------ | ---------- |
@@ -12,47 +12,48 @@ El **escalado** convierte las cuentas en bruto en **unidades de ingeniería**, l
 
 Cuando las unidades empiezan en otro valor, por ejemplo un termómetro de −50 a 250 °C, reste primero el extremo bajo de las cuentas, escale por el ancho de cada rango y sume al final el extremo bajo de las unidades.
 
-## Orden, redondeo y rango con números enteros
+## Restos, redondeo y rango con números enteros
 
 El escalado de esta lección usa solo números enteros, INT o DINT. Los números enteros son exactos y rápidos, pero tres cosas deciden si el resultado es correcto.
 
-**El orden.** La división de números enteros descarta el resto, así que divida al final. Dividir primero tira la información antes de que la multiplicación pueda usarla. Tome un selector de velocidad que da de 0 a 4000 cuentas para 0 a 250 revoluciones por minuto, leído en `Dial` y escalado en `Rpm`:
+**El resto.** La división de números enteros descarta el resto: `7 / 2` es 3, y `7 MOD 2` es el 1 que se descartó. Cada división descarta su propio resto, así que el lugar donde un cálculo divide decide cuánto pierde. Tome dos balanzas bajo una misma bandeja, leídas en `A` y `B` en gramos, y el peso promedio de las dos:
 
-| Dial | `(Dial / 4000) * 250` | `(Dial * 250) / 4000` |
-| ---- | --------------------- | --------------------- |
-| 1800 | 0                     | 112                   |
-| 3999 | 0                     | 249                   |
-| 4000 | 250                   | 250                   |
+| A   | B   | `A / 2 + B / 2` | `(A + B) / 2` |
+| --- | --- | --------------- | ------------- |
+| 7   | 9   | 7               | 8             |
+| 5   | 5   | 4               | 5             |
+| 8   | 8   | 8               | 8             |
 
-**El redondeo.** Aun en el orden correcto la división corta, no redondea: 3999 cuentas dan 249, no 249,9. Para valores que nunca son negativos, sume la mitad del divisor antes de dividir para redondear al más cercano: `(Dial * 250 + 2000) / 4000` da 250 para 3999 cuentas.
+La primera forma divide dos veces y descarta dos restos; la segunda suma primero y divide una sola vez.
 
-**El rango del producto.** El número más grande del cálculo es el producto antes de la división, no la cuenta en bruto ni el resultado. Aquí es 4000 × 250 = 1000000, muy por encima de 32767, el mayor INT. Elija el tipo para ese producto: declare las variables DINT y el producto cabe.
+**El redondeo.** Una división corta, no redondea: `(7 + 8) / 2` da 7, no 7,5. Para valores que nunca son negativos, sume la mitad del divisor antes de dividir para redondear al más cercano: `(7 + 8 + 1) / 2` da 8.
+
+**El rango de un valor intermedio.** El número más grande de un cálculo puede ser un valor que forma en el camino, no la cuenta en bruto ni el resultado. Una cuenta de 4000 por un ancho de 250 es 1000000, muy por encima de 32767, el mayor INT. Elija el tipo para el valor más grande que forma el cálculo: declare las variables DINT y cabe.
 
 ## Ejemplo resuelto
 
-Un horno tiene un termómetro cuya entrada da 0 cuentas a −50 °C y 4000 cuentas a 250 °C. Una lámpara `Ready` debe encenderse desde 180 °C, cuando el horno se puede cargar, y una lámpara `OverTemp` desde 240 °C.
+Un horno tiene dos termómetros, ya escalados a décimas de grado en `T1` y `T2`, porque uno solo puede leer alto cerca de la puerta. Una lámpara `Ready` debe encenderse cuando el promedio llega a 180,0 °C, cuando el horno se puede cargar, y una lámpara `OverTemp` cuando llega a 240,0 °C.
 
-Las unidades tienen 300 °C de ancho y las cuentas 4000, y el extremo bajo de las unidades es −50. El producto llega a 4000 × 300 = 1200000, así que cada variable del cálculo es un DINT. Sumar 2000, la mitad de 4000, redondea al grado más cercano; la división va al final y el −50 se suma después, así que el redondeo solo ve números positivos.
+El promedio es la suma dividida por dos, con la mitad del divisor sumada para redondear a la décima más cercana. La suma de dos temperaturas de hasta 3000 décimas es 6000, que un INT guardaría, pero el programa del horno usa DINT en todas las variables de sus cálculos, para que un cambio posterior no pueda desbordarlo.
 
 ```st
 PROGRAM Oven
-VAR_INPUT Raw : DINT; END_VAR
+VAR_INPUT T1 : DINT; T2 : DINT; END_VAR
 VAR_OUTPUT Ready : BOOL; OverTemp : BOOL; END_VAR
-VAR Temp : DINT; END_VAR
-Temp := (Raw * 300 + 2000) / 4000 - 50;
-Ready := Temp >= 180;
-OverTemp := Temp >= 240;
+VAR Avg : DINT; END_VAR
+Avg := (T1 + T2 + 1) / 2;
+Ready := Avg >= 1800;
+OverTemp := Avg >= 2400;
 END_PROGRAM
 ```
 
-| Raw  | Valor exacto | Temp |
-| ---- | ------------ | ---- |
-| 0    | −50 °C       | −50  |
-| 1013 | 25,975 °C    | 26   |
-| 2000 | 100 °C       | 100  |
-| 4000 | 250 °C       | 250  |
+| T1   | T2   | Promedio exacto | Avg  |
+| ---- | ---- | --------------- | ---- |
+| 1799 | 1800 | 1799,5          | 1800 |
+| 1790 | 1801 | 1795,5          | 1796 |
+| 2400 | 2401 | 2400,5          | 2401 |
 
-Sin el 2000, 1013 cuentas darían 25 °C. Las dos lámparas comparan el valor escalado, en grados, con límites escritos en grados, así que una persona puede verificarlos con el indicador del horno.
+Sin el 1, 1799 y 1800 darían 1799, y el horno esperaría una décima más. Las dos lámparas comparan el promedio, en décimas de grado, con límites escritos en décimas, así que una persona puede comprobarlos con el indicador del horno.
 
 ```timing
 span: 5000
@@ -61,36 +62,38 @@ signals:
   - { name: Ready, edges: [1800, 4600] }
   - { name: OverTemp, edges: [3000, 3800] }
 marks:
-  - { from: 1800, to: 3000, label: 'Temp 180..239' }
-  - { from: 3000, to: 3800, label: 'Temp >= 240' }
-caption: El horno se calienta y se enfría; cada lámpara es una comparación de la temperatura en grados
+  - { from: 1800, to: 3000, label: 'Avg 1800..2399' }
+  - { from: 3000, to: 3800, label: 'Avg >= 2400' }
+caption: El horno calienta y se enfría; cada lámpara es una comparación del promedio en décimas de grado
 ```
+
+La práctica escala una cuenta en bruto, no un promedio. Cómo conserva su línea el resto que necesita queda para usted.
 
 ## Errores comunes
 
-- Dividir antes de multiplicar. El resultado queda en 0 hasta que la entrada llega al tope de la escala.
+- Dividir cada parte antes de sumar las partes. `7 / 2 + 9 / 2` es 7, no 8: cada división descarta su propio resto.
 - Esperar que la división redondee. `/` corta el resto; sume antes la mitad del divisor cuando necesite el valor más cercano.
-- Elegir el tipo según la cuenta en bruto. Un INT guarda 4000, pero `Dial * 250` llega a 1000000, que no cabe en 16 bits.
-- Comparar cuentas en bruto con un límite en unidades. `Dial >= 200` no son 200 revoluciones por minuto; primero escale, después compare.
+- Elegir el tipo según la cuenta en bruto. Un INT guarda 4000, pero un producto de 4000 por 250 llega a 1000000, que no cabe en 16 bits.
+- Comparar cuentas en bruto con un límite en unidades. 200 cuentas no son 200 revoluciones por minuto; primero escale, después compare.
 - Confiar en un valor fuera del rango. Un cable cortado o un cortocircuito dan cuentas por debajo de 0 o por encima del tope; mantenga el resultado dentro de su rango con LIMIT, o señale una falla.
 - Dividir por un ancho que puede valer cero. Cuando el rango de las cuentas viene de un ajuste, pruébelo antes: una división por cero detiene el programa.
 
 ## Compruébelo usted
 
 ```quiz
-question: Dial vale 1800 cuentas de un rango de 0 a 4000. El programa tiene Rpm := (Dial / 4000) * 250; con variables DINT. ¿Cuánto vale Rpm?
+question: A vale 7 y B vale 9. El programa tiene Avg := A / 2 + B / 2; con variables DINT. ¿Cuánto vale Avg?
 options:
-  - { text: '0', correct: true, feedback: 'Sí. 1800 / 4000 es 0 con números enteros, y 0 por 250 sigue siendo 0.' }
-  - { text: '112', feedback: 'Eso da multiplicar primero. Dividir primero pierde el 1800 antes de multiplicarlo.' }
-  - { text: '11', feedback: 'No queda resto con el que formar 11: la división da 0 de entrada.' }
+  - { text: '7', correct: true, feedback: 'Sí. 7 / 2 es 3 y 9 / 2 es 4 con números enteros; cada división descarta su propio resto.' }
+  - { text: '8', feedback: 'Eso da (A + B) / 2: suma primero y descarta un solo resto.' }
+  - { text: '7,5', feedback: 'Los números enteros no tienen mitades: cada división descarta su resto.' }
 ```
 
 ```quiz
-question: Un caudalímetro da de 0 a 2000 cuentas para 0 a 600 litros por minuto, y el programa calcula Flow * 600 antes de dividir por 2000. ¿Qué tipo necesitan las variables del cálculo?
+question: Un totalizador suma las cuentas de dos líneas, cada una de hasta 30000, antes de promediarlas. ¿Qué tipo necesitan las variables del cálculo?
 options:
-  - { text: 'DINT', correct: true, feedback: 'Correcto. El producto llega a 1200000, muy por encima de 32767, y un DINT lo guarda.' }
-  - { text: 'INT, porque el resultado es como máximo 600', feedback: 'El resultado cabe, pero el producto se forma primero y no cabe en un INT.' }
-  - { text: 'INT, porque la cuenta es como máximo 2000', feedback: 'La cuenta cabe, pero el producto de 2000 por 600 no.' }
+  - { text: 'DINT', correct: true, feedback: 'Correcto. La suma llega a 60000, por encima de 32767, y un DINT la guarda.' }
+  - { text: 'INT, porque el promedio es como máximo 30000', feedback: 'El promedio cabe, pero la suma se forma en el camino y no cabe en un INT.' }
+  - { text: 'INT, porque cada cuenta es como máximo 30000', feedback: 'Cada cuenta cabe, pero la suma de dos de ellas no.' }
 ```
 
 ## Qué hará en la práctica

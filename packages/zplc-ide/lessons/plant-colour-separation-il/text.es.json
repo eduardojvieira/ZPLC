@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guarde y ejecute: El programa inicial solo memoriza Start y hace girar la cinta de entrada, así que no se lee ni se clasifica ninguna pieza. El programa debe clasificar las ocho piezas, las rojas a RedBin y las azules a BlueBin, y después encender Done.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial solo memoriza Start y hace girar la cinta de entrada, así que no se lee ni se clasifica ninguna pieza. El programa debe clasificar las ocho piezas, las rojas a RedBin y las azules a BlueBin, y después encender Done.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {

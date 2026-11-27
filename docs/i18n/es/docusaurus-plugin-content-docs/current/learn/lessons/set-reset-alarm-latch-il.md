@@ -26,7 +26,7 @@ Mantenga una falla en memoria con las instrucciones S y R y vea que, cuando la f
 ## Objetivos
 
 - Retenga una alarma después de que la falla desaparece, hasta que se reconozca, con las instrucciones IL S y R.
-- Use el orden de dos líneas para decidir si gana set o reset, y distíngalo de los bloques SR y RS.
+- Dé a dos salidas prioridades opuestas entre set y reset con S y R, y distíngalo de los bloques SR y RS.
 
 ## Etapas
 

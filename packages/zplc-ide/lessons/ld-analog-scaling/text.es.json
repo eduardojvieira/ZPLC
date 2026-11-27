@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "title": "Escalado analógico en escalera: de cuentas a porcentaje con MUL, DIV y LIMIT",
-  "summary": "Escale las cuentas crudas de una entrada analógica a un nivel en porcentaje con un bloque MUL y luego un bloque DIV, mantenga el resultado en rango con LIMIT y gobierne dos lámparas de nivel con cajas de comparación.",
+  "summary": "Escale las cuentas en bruto de una entrada analógica a un nivel en porcentaje con un bloque MUL y luego un bloque DIV, mantenga el resultado en rango con LIMIT y gobierne dos lámparas de nivel con cajas de comparación.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad. El escenario solo fija entradas BOOL, así que la lección no lee una entrada analógica real, y no muestra cuán preciso, ruidoso o bien calibrado es un sensor real, ni cómo se cablea.",
   "objectives": [
-    "Escale cuentas analógicas crudas a unidades de ingeniería multiplicando por el rango de las unidades y luego dividiendo entre el rango de las cuentas, en un tipo donde quepa el producto.",
-    "Mantenga un valor dentro de su rango con un bloque LIMIT y compare el valor escalado, no las cuentas crudas, con los umbrales de las alarmas."
+    "Escale cuentas analógicas en bruto a unidades de ingeniería con números enteros, sin perder la parte pequeña del valor, en un tipo donde quepa el producto.",
+    "Mantenga un valor dentro de su rango con un bloque LIMIT y compare el valor escalado, no las cuentas en bruto, con los umbrales de las alarmas."
   ],
   "stages": [
     {

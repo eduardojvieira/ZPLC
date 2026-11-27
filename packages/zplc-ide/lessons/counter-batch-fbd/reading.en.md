@@ -18,34 +18,36 @@ Each connection carries the value of one output port to one input port. An input
 
 ## Worked example
 
-A stretch wrapper wraps a pallet in film while a turntable spins it. A flag on the table passes a sensor, `TurnFlag`, once per turn, and stays in front of it for a moment each time. A pallet is wrapped after six turns: the lamp `WrapDone` lights, and the operator presses the push button `NewPallet` for the next pallet, which clears the count. A display shows the turns so far, `TurnsSoFar`.
+A tablet dispenser fills bottles with five tablets each. Each tablet drops past an eye, `TabletEye`, that stays TRUE for a moment while it passes. When a new bottle is in place the machine presses `NewBottle`. The lamp `BottleDone` lights when the bottle has all five, and a display shows the tablets still missing, `TabletsLeft`.
 
-The diagram has one CTU named `Turns`, a constant block with the value `6`, and these connections:
+This count runs down, from five to zero, so the diagram uses the down counter, the **CTD**. Its input ports are CD, whose rising edges each take one away, LD, which loads PV into the count while it is TRUE, and PV. Its output Q is TRUE while CV is at or below zero. The diagram has one CTD named `Doses`, a constant block with the value `5`, and these connections:
 
-| From              | To               | What it carries                        |
-| ----------------- | ---------------- | -------------------------------------- |
-| `TurnFlag`, OUT   | `Turns`, CU      | TRUE while the flag is at the sensor   |
-| `NewPallet`, OUT  | `Turns`, R       | TRUE while the push button is held     |
-| constant `6`, OUT | `Turns`, PV      | the number of turns of a pallet        |
-| `Turns`, Q        | `WrapDone`, IN   | TRUE from the sixth turn until a reset |
-| `Turns`, CV       | `TurnsSoFar`, IN | the number of turns counted so far     |
+| From              | To                | What it carries                     |
+| ----------------- | ----------------- | ----------------------------------- |
+| `TabletEye`, OUT  | `Doses`, CD       | TRUE while a tablet passes the eye  |
+| `NewBottle`, OUT  | `Doses`, LD       | TRUE while a new bottle is loaded   |
+| constant `5`, OUT | `Doses`, PV       | the number of tablets of a bottle   |
+| `Doses`, Q        | `BottleDone`, IN  | TRUE once the count is down to zero |
+| `Doses`, CV       | `TabletsLeft`, IN | the number of tablets still missing |
 
-Read it from left to right: the sensor and the push button feed the counter, the constant sets its preset, and the counter's two outputs drive the lamp and the display. Each pass of the flag counts once, however long the flag stays at the sensor.
+Read it from left to right: the eye and the load signal feed the counter, the constant sets the number it starts from, and the counter's two outputs drive the lamp and the display. Before the first bottle CV is zero, so the lamp is already lit; `NewBottle` loads five and puts it out, and each tablet counts once, however long it takes to pass.
 
 ```timing
-span: 8000
+span: 6000
 signals:
-  - { name: TurnFlag, edges: [300, 700, 1300, 1700, 2300, 2700, 3300, 3700, 4300, 4700, 5300, 5700] }
-  - { name: WrapDone, edges: [5300, 6800] }
-  - { name: NewPallet, edges: [6800, 7300] }
+  - { name: NewBottle, edges: [200, 400] }
+  - { name: TabletEye, edges: [1000, 1300, 2000, 2300, 3000, 3300, 4000, 4300, 5000, 5300] }
+  - { name: BottleDone, edges: [0, 200, 5000] }
 marks:
-  - { from: 5300, to: 6800, label: 'CV = 6' }
-caption: The sixth pass of the flag lights WrapDone; NewPallet clears the count
+  - { from: 200, to: 5000, label: 'CV 5 → 0' }
+caption: NewBottle loads five; five tablets bring the count to zero and light BottleDone
 ```
+
+The counter of the practice is a CTU: it counts up from zero and has the ports CU and R instead of CD and LD. Which signal reaches which of them is for you to work out.
 
 ## Common mistakes
 
-- Swapping CU and R. Each pass of the flag then clears the count, and the push button counts instead.
+- Connecting a signal to the wrong port of the counter. The count then moves when it should be cleared, or the other way round: read the name of each port before you connect it.
 - Leaving R without a connection. The count never returns to zero, and the lamp stays lit after the push button is pressed.
 - Expecting Q to fall when the count passes PV. Q stays TRUE until a reset.
 - Connecting CV, an INT, where a BOOL is expected. Q is the BOOL that says "the preset is reached"; CV is the number.
@@ -53,11 +55,11 @@ caption: The sixth pass of the flag lights WrapDone; NewPallet clears the count
 ## Check yourself
 
 ```quiz
-question: In a diagram, a CTU has its preset and its Q connected, a photocell connected to CU, and nothing connected to R. The preset is reached and the operator presses Reset. What does Q do?
+question: In the worked example, NewBottle is held while two tablets pass the eye, and then it is released. What is the CV of Doses?
 options:
-  - { text: 'It stays TRUE', correct: true, feedback: 'Yes. Reset is not connected to the counter, so R stays FALSE and nothing clears the count.' }
-  - { text: 'It turns FALSE', feedback: 'Only a TRUE on R clears the count, and no connection carries Reset to R.' }
-  - { text: 'It turns FALSE at the next part', feedback: 'A new part adds one to the count; it never clears it.' }
+  - { text: '5', correct: true, feedback: 'Yes. While LD is TRUE the counter loads PV on every scan, so the two tablets are not taken away.' }
+  - { text: '3', feedback: 'The tablets passed while LD was TRUE, and LD loads PV again on every one of those scans.' }
+  - { text: '0', feedback: 'LD loads PV, it does not clear the count: the CTD starts again from five.' }
 ```
 
 ```quiz

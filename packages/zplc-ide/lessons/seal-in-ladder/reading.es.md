@@ -11,48 +11,49 @@ El truco es dejar que la salida **mantenga vivo su propio peldaño**. Se agrega 
 1. Al pulsar Start, la energía llega a la bobina. La salida pasa a ON.
 2. Ahora el contacto de la salida también es TRUE. Da a la energía un segundo camino hacia la bobina.
 3. Al soltar Start desaparece el primer camino, pero el segundo sigue ahí. La salida permanece en ON.
-4. Al pulsar Stop se corta el peldaño **antes** de la rama. Ningún camino puede llegar ya a la bobina, así que la salida pasa a OFF, y como la salida está en OFF, el segundo camino también deja de existir. El peldaño queda apagado aunque se suelte Stop.
+4. Al pulsar Stop se debe cortar todo camino que todavía llegue a la bobina. Entonces la salida pasa a OFF, y como la salida está en OFF, el segundo camino también deja de existir. El peldaño queda apagado aunque se suelte Stop.
 
 El ciclo de escaneo que estudió antes es lo que hace funcionar esto. En un ciclo, la salida se calcula a partir del estado que tenía al final del ciclo anterior.
 
-## Por qué los contactos de parada van antes de la rama
+## Quién gana cuando se pulsan los dos
 
-Los contactos de parada están en serie con **toda la rama**. Eso da prioridad a la parada. Si un contacto de parada estuviera dentro del camino de retención, pulsar Start junto con Stop encendería la máquina, porque el camino de Start saltaría el contacto de Stop. Una parada que se puede saltar no es una parada. Ponga toda condición que siempre deba poder detener la máquina **en serie, antes de la rama**.
+Una autorretención también debe responder una pregunta: cuando Start y Stop se pulsan en el mismo ciclo, ¿cuál gana? La respuesta depende solo de dónde está el contacto de parada en el peldaño, respecto de la rama. Algunas máquinas quieren que gane el inicio, y el ejemplo resuelto de abajo es una de ellas; un motor que siempre debe poder detenerse quiere lo contrario. Antes de dibujar una autorretención, decida cuál necesita su máquina, y pruebe el momento en que se pulsan los dos pulsadores a la vez.
 
 ## Ejemplo resuelto
 
-Vuelva al ventilador del taller, ahora con dos motivos para detenerse: un pulsador de apagado y un relé de sobrecarga que se dispara cuando el motor se calienta demasiado. El pulsador de apagado y la sobrecarga se leen con contactos normalmente cerrados, en serie antes de la rama.
+Una cabina de pintura tiene un extractor de humos. Cuando alguien pide extracción con StartFan, el ventilador debe funcionar, aunque otra persona esté pulsando StopFan en ese mismo momento: los vapores en una cabina son el peligro mayor, así que aquí gana el inicio. StopFan es un pulsador que es TRUE mientras está pulsado, así que se lee con un contacto normalmente cerrado.
 
 ```ld-figure
-src: reading/fan-seal-in.ld.json
-caption: El contacto de Fan bajo OnButton mantiene encendida la bobina una vez que arrancó
+src: reading/booth-extractor.ld.json
+caption: El contacto de Fan mantiene activada la bobina, y el contacto de StopFan está solo en el camino de retención
 ```
 
-Léalo de izquierda a derecha. La energía pasa por OffButton y Overload solo cuando ambos son FALSE, es decir, cuando nadie pulsó apagar y la sobrecarga no se ha disparado. Luego llega a la rama: o OnButton está pulsado, o el contacto de Fan es TRUE. Después llega a la bobina Fan.
+Léalo de izquierda a derecha. La energía tiene dos caminos hacia la bobina Fan. El camino de arriba es StartFan solo. El camino de abajo es el de retención: el contacto de Fan, en serie con StopFan. Una vez que el ventilador funciona, el camino de abajo lo mantiene en marcha después de soltar StartFan, hasta que StopFan abre ese camino. Pero nada en el camino de arriba lee StopFan, así que mientras StartFan está pulsado, el ventilador funciona haga lo que haga StopFan.
 
 ```ld-try
-src: reading/fan-seal-in.ld.json
+src: reading/booth-extractor.ld.json
 inputs:
-  - { name: OnButton, kind: push }
-  - { name: OffButton, kind: push }
-  - { name: Overload, kind: switch }
+  - { name: StartFan, kind: push }
+  - { name: StopFan, kind: push }
 outputs: [Fan]
-timing: [OnButton, OffButton, Fan]
-caption: Pulse On y suelte, luego pulse Off. Después pruebe el interruptor de sobrecarga
+timing: [StartFan, StopFan, Fan]
+caption: Pulse StartFan y suéltelo, luego pulse StopFan. Después mantenga los dos a la vez
 ```
 
-Pulse Ejecutar, pulse y suelte OnButton: el ventilador sigue funcionando. Pulse OffButton: se detiene. Vuelva a arrancarlo y luego active la sobrecarga: el ventilador se detiene, y pulsar OnButton no hace nada hasta que desactive la sobrecarga.
+Pulse Ejecutar, pulse y suelte StartFan: el ventilador sigue funcionando. Pulse StopFan: se detiene. Ahora mantenga StopFan y pulse StartFan al mismo tiempo: el ventilador funciona, y sigue funcionando cuando suelta los dos.
 
 ```timing
 span: 6000
 signals:
-  - { name: OnButton, edges: [500, 1000] }
-  - { name: OffButton, edges: [3500, 4000] }
-  - { name: Fan, edges: [500, 3500] }
+  - { name: StartFan, edges: [500, 1000, 4000, 4500] }
+  - { name: StopFan, edges: [2500, 3000, 4000, 4500] }
+  - { name: Fan, edges: [500, 2500, 4000] }
 marks:
-  - { from: 1000, to: 3500, label: ON }
-caption: Fan arranca con la pulsación de OnButton, sigue encendido tras soltarlo y se detiene con OffButton
+  - { from: 1000, to: 2500, label: ON }
+caption: El ventilador se mantiene solo, se detiene con StopFan y arranca cuando se pulsan los dos a la vez
 ```
+
+El motor de la práctica no debe comportarse como este extractor cuando se pulsan los dos pulsadores a la vez.
 
 ## Errores comunes
 
@@ -76,11 +77,11 @@ options:
 ```
 
 ```quiz
-question: ¿Dónde debe ir el contacto Stop para que Stop gane a Start?
+question: En el extractor de la cabina, el ventilador está apagado y StartFan y StopFan se pulsan en el mismo ciclo. ¿Qué hace el ventilador?
 options:
-  - { text: 'En serie, antes de la rama de Start y del contacto de retención', correct: true, feedback: 'Correcto. Nada puede saltarlo.' }
-  - { text: 'En paralelo con el contacto de retención', feedback: 'Entonces el pulsador Start aún podría energizar la bobina mientras se pulsa Stop.' }
-  - { text: 'Después de la bobina, al final del peldaño', feedback: 'Un peldaño termina en su bobina. Una condición debe ir antes de la bobina para decidir si la energía llega a ella.' }
+  - { text: 'Arranca, porque el camino de StartFan no lee StopFan', correct: true, feedback: 'Correcto. StopFan está solo en el camino de retención, así que el camino de inicio llega a la bobina.' }
+  - { text: 'Queda apagado, porque StopFan está pulsado', feedback: 'StopFan abre solo el camino de retención. El camino de StartFan sigue llegando a la bobina.' }
+  - { text: 'Arranca durante un ciclo y luego se detiene', feedback: 'Mientras StartFan está pulsado, su camino mantiene la energía en la bobina en cada ciclo.' }
 ```
 
 ## Qué hará en la práctica

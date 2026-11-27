@@ -25,7 +25,7 @@ Use a positive transition contact and a negative transition contact so that a bo
 
 ## Objectives
 
-- Use a positive transition contact (P) and a negative transition contact (N) to turn a level into a pulse of one scan.
+- Turn a level into a pulse of one scan at its start and a pulse of one scan at its end.
 - Explain why a held input must be counted once, and which scan sees the pulse.
 
 ## Stages

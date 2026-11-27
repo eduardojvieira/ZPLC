@@ -1,0 +1,148 @@
+{
+  "name": "BoothExtractor",
+  "description": "The smoke extractor of a paint booth held on by a seal-in in which Start wins over Stop.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "StartFan",
+        "type": "BOOL",
+        "comment": "Start push button: TRUE while pressed"
+      },
+      {
+        "name": "StopFan",
+        "type": "BOOL",
+        "comment": "Stop push button: TRUE while pressed"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Fan",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Extractor fan contactor command"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Start wins: StartFan alone reaches the coil, and the held path is Fan in series with the normally closed StopFan contact.",
+      "branches": [
+        {
+          "id": "branch_1",
+          "startCol": 0,
+          "endCol": 1,
+          "rows": [0, 1]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "e0_0_1",
+              "type": "contact_no",
+              "variable": "StartFan",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e0_7_1",
+              "type": "coil",
+              "variable": "Fan",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "e1_0_1",
+              "type": "contact_no",
+              "variable": "Fan",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e1_1_1",
+              "type": "contact_nc",
+              "variable": "StopFan",
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-26",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

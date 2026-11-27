@@ -4,7 +4,7 @@
   "summary": "Scale a raw count from 0 to 1000 into a percentage with integer arithmetic, and raise a warning at 50 percent and an alarm at 80 percent.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the accuracy, noise or calibration of a real analog input.",
   "objectives": [
-    "Scale a raw count to engineering units with a multiplication followed by a division, in that order.",
+    "Scale a raw count to engineering units with whole numbers, without losing the part of the value below the divisor.",
     "See that integer division drops the remainder, and choose an integer type wide enough for the intermediate product."
   ],
   "stages": [
@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Why is DINT used here? Raw times 100 reaches 100000, more than a 16-bit INT holds, so the intermediate product needs a wider type. What would adding half the divisor before the division change, and for which values of Raw?",
+      "body": "Why is DINT used here? Which values does the program form on its way to Percent, and would each of them fit in a 16-bit INT? What would adding half the divisor before the division change, and for which values of Raw?",
       "checkpoint": "The product is formed before the division, so its range decides the type, not the range of Raw. The scenario checks the two thresholds only; it does not check the rounding of other values."
     }
   ],

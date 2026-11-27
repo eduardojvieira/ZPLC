@@ -4,8 +4,8 @@
   "summary": "Connect a TOF block to keep a light on after a push button is released, and a TON block to ignore a sensor blip that is too short.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real push button bounces or how fast a real sensor answers.",
   "objectives": [
-    "Keep an output ON for a fixed time after its input drops, with a TOF block whose PT input is wired to a TIME constant.",
-    "Ignore an input that is ON for less than a fixed time, with a TON block, and say which timer delays the start and which one delays the end."
+    "Keep an output ON for a fixed time after its input drops, with a timer block whose PT input is wired to a TIME constant.",
+    "Ignore an input that is ON for less than a fixed time, and say which timer delays the start and which one delays the end."
   ],
   "stages": [
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "TOF keeps its Q ON for the preset time after IN falls, and TON raises Q only after IN has been ON for the preset time."
+      "text": "Look at the two connections that run straight from an input to an output. For each output, ask whether its delay belongs to the start of its input or to its end."
     },
     {
       "level": 2,

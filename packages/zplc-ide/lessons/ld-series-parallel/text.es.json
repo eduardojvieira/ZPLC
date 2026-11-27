@@ -5,7 +5,7 @@
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo se comporta una bocina de alarma o un sensor de sobrecalentamiento reales.",
   "objectives": [
     "Explique que los contactos en serie dejan pasar la energía solo cuando todos conducen (AND), y los contactos en paralelo cuando alguno conduce (OR).",
-    "Agregue un camino en paralelo a un peldaño para que una bocina suene cuando la puerta está abierta o el motor se sobrecalienta, y compruébelo con cada fila de una tabla de verdad."
+    "Cambie un peldaño para que una bocina suene en cada situación que nombra una frase de la máquina, y compruébelo con cada fila de una tabla de verdad."
   ],
   "stages": [
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "La bocina debe sonar cuando cualquiera de las dos condiciones es TRUE. Los contactos en serie exigen ambas. ¿Qué disposición da a la energía dos maneras distintas de llegar a la bobina?"
+      "text": "Mire el peldaño de la bocina: anote las situaciones en que la energía debe llegar a Horn, y cuente de cuántas maneras le permite ahora el peldaño llegar a la bobina."
     },
     {
       "level": 2,

@@ -21,15 +21,15 @@ Structured Text has two latch blocks, and they differ only in that answer. Each 
 
 ```st
 VAR
-  CallLatch : SR;
+  Overfill : SR;
 END_VAR
 ```
 
 - **SR** is the **set-dominant** latch. Its inputs are **S1** (set) and **R** (reset). When both are TRUE, the set wins and Q1 is TRUE.
 - **RS** is the **reset-dominant** latch. Its inputs are **S** (set) and **R1** (reset). When both are TRUE, the reset wins and Q1 is FALSE.
-- Both have one output, **Q1**, the state of the memory. You read it after the call, as `CallLatch.Q1`.
+- Both have one output, **Q1**, the state of the memory. You read it after the call, as `Overfill.Q1`.
 
-The figure 1 in an input name marks the input that wins. A call names each input with `:=`, as in `CallLatch(S1 := Call, R := Served);`.
+The figure 1 in an input name marks the input that wins. A call names each input with `:=`, as in `Overfill(S1 := LevelHigh AND ValveOpen, R := Drained);`.
 
 The timing diagram shows both blocks fed with the same two signals. Time runs to the right; a line is up while its signal is ON. Watch the moment when S and R rise together.
 
@@ -47,34 +47,52 @@ Until the last pulse the two blocks behave the same: the set turns Q1 on, Q1 sta
 
 ## Worked example
 
-A packing table has a lamp, `CallLamp`, that calls the forklift driver when the table runs out of empty boxes. The operator presses the push button `Call`; the driver brings boxes and presses the push button `Served`. The lamp must stay on after `Call` is released, until `Served` is pressed.
+A filling station tops up a tank through a valve. Two memories keep it in order.
 
-Which one wins? If the operator presses `Call` at the same moment the driver presses `Served`, the operator is asking for more boxes, and that call must not be lost. So the set must win, and the block is an SR.
+- **Overfill.** When the level switch `LevelHigh` trips while the valve `ValveOpen` is still open, the tank has been overfilled, and a beacon must keep flashing until the operator has drained the excess and pressed `Drained`. If the tank overfills again at the very moment `Drained` is pressed, that new overfill must not be lost: the set wins, so this memory is an SR. The operator can quiet the beacon with `Silence` without forgetting the overfill.
+- **Permit.** The station may fill only after the operator turns the key `KeyOn`, and an open door, `DoorClosed` FALSE, cancels that permit. Turning the key while the door is open must not give a permit: the reset wins, so this memory is an RS.
 
 ```st
-PROGRAM PackingCall
-VAR_INPUT Call : BOOL; Served : BOOL; END_VAR
-VAR_OUTPUT CallLamp : BOOL; END_VAR
-VAR
-  CallLatch : SR;
+PROGRAM FillStation
+VAR_INPUT
+  LevelHigh : BOOL; ValveOpen : BOOL; Drained : BOOL; Silence : BOOL;
+  KeyOn : BOOL; DoorClosed : BOOL;
 END_VAR
-CallLatch(S1 := Call, R := Served);
-CallLamp := CallLatch.Q1;
+VAR_OUTPUT Beacon : BOOL; Permit : BOOL; END_VAR
+VAR
+  Overfill : SR;
+  PermitLatch : RS;
+END_VAR
+Overfill(S1 := LevelHigh AND ValveOpen, R := Drained);
+Beacon := Overfill.Q1 AND NOT Silence;
+PermitLatch(S := KeyOn, R1 := NOT DoorClosed);
+Permit := PermitLatch.Q1;
 END_PROGRAM
 ```
 
-Follow it on the diagram. A short press of `Call` sets the latch and the lamp stays on after the finger is gone. `Served` resets it. Later both push buttons are pressed in the same scan, and the lamp stays on: the call wins.
+An input of a latch takes any Boolean expression, not only a variable, and the Q1 of a latch can be used in an expression like any other BOOL: `Overfill.Q1` stays TRUE while `Silence` only hides it.
+
+Follow the overfill on the diagram, with the valve open and `Silence` FALSE all along. A short overfill sets the memory, and the beacon stays on after the level drops. `Drained` resets it. Later a new overfill and `Drained` arrive in the same scan, and the beacon stays on: the set wins.
 
 ```timing
 span: 5000
 signals:
-  - { name: Call, edges: [500, 800, 3500, 3800] }
-  - { name: Served, edges: [2000, 2300, 3500, 3800] }
-  - { name: CallLamp, edges: [500, 2000, 3500] }
-caption: A short call keeps the lamp on until Served; a call and a Served together leave it on
+  - { name: LevelHigh, edges: [500, 800, 3500, 3800] }
+  - { name: Drained, edges: [2000, 2300, 3500, 3800] }
+  - { name: Beacon, edges: [500, 2000, 3500] }
+caption: The SR keeps the overfill until Drained, and an overfill together with Drained stays on
 ```
 
-Had the designer decided that the driver's word is final, the same program with an RS, `CallLatch(S := Call, R1 := Served);`, would turn the lamp off in that last moment.
+The permit works the other way round. The key sets it, the door opening resets it, and while the door is open the key cannot set it, because in an RS the reset wins.
+
+```timing
+span: 5000
+signals:
+  - { name: KeyOn, edges: [500, 800, 3000, 3600] }
+  - { name: DoorClosed, edges: [0, 2000, 4000] }
+  - { name: Permit, edges: [500, 2000] }
+caption: The RS gives the permit with the key, drops it with the door, and refuses the key while the door is open
+```
 
 ## Common mistakes
 
@@ -90,7 +108,7 @@ Had the designer decided that the driver's word is final, the same program with 
 ## Check yourself
 
 ```quiz
-question: In the packing-table program, CallLatch is an SR with S1 := Call and R := Served. In one scan Call and Served are both TRUE. What is CallLatch.Q1 at the end of the call?
+question: In the filling-station program, Overfill is an SR with S1 := LevelHigh AND ValveOpen and R := Drained. In one scan LevelHigh, ValveOpen and Drained are all TRUE. What is Overfill.Q1 at the end of the call?
 options:
   - { text: 'TRUE', correct: true, feedback: 'Yes. An SR is set-dominant, so the set wins when both inputs are TRUE.' }
   - { text: 'FALSE', feedback: 'That is what an RS does. In an SR the figure 1 is on S1, the set, and the set wins.' }
@@ -98,11 +116,11 @@ options:
 ```
 
 ```quiz
-question: The packing-table program calls CallLatch only inside IF Call THEN ... END_IF. The operator presses Call and lets go, and later the driver presses Served. What does CallLamp do?
+question: The filling-station program calls Overfill only inside IF LevelHigh THEN ... END_IF. The tank overfills for a moment and the level drops again, and later the operator presses Drained. What does Beacon do?
 options:
-  - { text: 'It stays ON, because the latch is not called while Call is FALSE', correct: true, feedback: 'Right. An instance changes only when it is called, so Served is never seen. Call the latch on every scan.' }
-  - { text: 'It turns OFF, because Served resets the latch', feedback: 'Served resets the latch only during a call, and the call runs only while Call is TRUE.' }
-  - { text: 'It turns OFF when Call is released', feedback: 'Then the latch would not remember anything. Its Q1 keeps the last value it was given.' }
+  - { text: 'It stays ON, because the latch is not called while LevelHigh is FALSE', correct: true, feedback: 'Right. An instance changes only when it is called, so Drained is never seen. Call the latch on every scan.' }
+  - { text: 'It turns OFF, because Drained resets the latch', feedback: 'Drained resets the latch only during a call, and the call runs only while LevelHigh is TRUE.' }
+  - { text: 'It turns OFF when the level drops', feedback: 'Then the latch would not remember anything. Its Q1 keeps the last value it was given.' }
 ```
 
 ## What you will do in the practice

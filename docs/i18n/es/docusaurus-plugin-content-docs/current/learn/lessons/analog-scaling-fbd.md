@@ -25,7 +25,7 @@ Edite un diagrama de bloques de función que escala cuentas analógicas en bruto
 
 ## Objetivos
 
-- Escale cuentas analógicas en bruto a unidades de ingeniería con bloques aritméticos: multiplique por el rango de las unidades y luego divida por el rango de las cuentas.
+- Escale cuentas analógicas en bruto a unidades de ingeniería con bloques aritméticos y números enteros, sin perder la parte del valor que queda por debajo del divisor.
 - Mantenga un valor escalado dentro de su rango con un bloque LIMIT, y compare con un umbral el valor en unidades de ingeniería, no en cuentas en bruto.
 
 ## Etapas

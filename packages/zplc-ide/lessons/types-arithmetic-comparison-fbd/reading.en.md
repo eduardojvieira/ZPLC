@@ -13,36 +13,33 @@ A variable can be read on the left of the diagram and written on the right. The 
 
 ## Worked example
 
-A bottling line puts four bottles in each carrier. A sensor gives `BottleSeen` while a bottle passes, and a bottle can stay in front of it for several scans. A lamp `CarrierFull` must light when the fourth bottle is in, and the count must go back to 0 when the carrier leaves, signalled by `CarrierOut`.
+The control panel of a packing line shows three things, each built from one block of this page on its own.
 
-The diagram reads the INT variable `Bottles` and builds the next value in four blocks:
+- **The belt speed.** A selector switch `FastMode` chooses between two speeds. A SEL block takes `FastMode` on G, the INT constant 300 on IN0 and the INT constant 600 on IN1, and its output writes `BeltSpeed`: 300 while the switch is off, 600 while it is on.
+- **The parts of the shift.** The line counts good parts in `Good` and rejected parts in `Rejected`. An ADD block takes `Good` on IN1 and `Rejected` on IN2, and its output writes `Parts`, so the display always shows the sum.
+- **A log pulse.** Each press of the push button `Mark` must write one line in the shift log, however long the button is held. An R_TRIG block named `MarkEdge` takes `Mark` on CLK, and its Q writes `LogLine`, TRUE on one scan for each press.
 
-- an R_TRIG named `BottleEdge` with `BottleSeen` on CLK, so each bottle gives one pulse;
-- an ADD with `Bottles` on IN1 and the constant 1, of type INT, on IN2;
-- a SEL with `BottleEdge.Q` on G, `Bottles` on IN0 and ADD.OUT on IN1: the sum only on the scan of the pulse;
-- a second SEL with `CarrierOut` on G, the first SEL on IN0 and the constant 0 on IN1, whose output writes `Bottles`.
-
-A GE block with `Bottles` on IN1 and the constant 4 on IN2 gives `CarrierFull`. On the diagram the third bottle stays in front of the sensor longer and still counts once.
+Two GE blocks turn the numbers into lamps: `BeltSpeed` against 500 gives `FastLamp`, and `Parts` against 1000 gives `ShiftDone`.
 
 ```timing
 span: 5000
 signals:
-  - { name: BottleSeen, edges: [400, 600, 1200, 1400, 2000, 2500, 2800, 3000] }
-  - { name: CarrierOut, edges: [3800, 4000] }
-  - { name: CarrierFull, edges: [2800, 3800] }
+  - { name: FastMode, edges: [1000, 3000] }
+  - { name: FastLamp, edges: [1000, 3000] }
+  - { name: Mark, edges: [1500, 2500] }
+  - { name: LogLine, edges: [1500, 1510] }
 marks:
-  - { from: 400, to: 1200, label: 'Bottles 1' }
-  - { from: 1200, to: 2000, label: 'Bottles 2' }
-  - { from: 2000, to: 2800, label: 'Bottles 3' }
-  - { from: 2800, to: 3800, label: 'Bottles 4' }
-caption: One count per bottle, and the comparison turns the number into the lamp
+  - { from: 1000, to: 3000, label: 'BeltSpeed 600' }
+caption: SEL chooses the speed; R_TRIG gives one short pulse for a long press of Mark
 ```
+
+Each block here works alone: none of them feeds another. The practice needs several of them together, so that a press changes a number once; which blocks it needs, and how they are wired into the SEL that already clears Total, is for you to work out.
 
 ## Common mistakes
 
-- Connecting the sensor straight to G of the SEL. G stays TRUE for every scan the bottle is there, so the sum goes back on every scan.
+- Expecting a level to change a number once. A button held for several scans is TRUE on every one of them, so whatever its level drives acts on every scan.
 - Swapping IN0 and IN1 of a SEL. IN0 is the value while G is FALSE.
-- Connecting ADD.OUT straight to the variable. The total then grows on every scan.
+- Writing one variable from two output blocks. A variable takes one output block; the second one would overwrite the first.
 - Giving the constant another type than the variable. Keep it INT when the total is an INT.
 - Using GE where the task asks for EQ: GE stays TRUE above the limit too.
 
@@ -57,11 +54,11 @@ options:
 ```
 
 ```quiz
-question: The input of a total is connected straight to G of the SEL, without the R_TRIG, and the ADD adds 5. A press lasts three scans. How much does the total grow?
+question: An R_TRIG has a push button on CLK, and the button is held for three scans. On how many scans is its Q TRUE?
 options:
-  - { text: '15', correct: true, feedback: 'Right. G is TRUE on three scans, so the sum is written back three times.' }
-  - { text: '5', feedback: 'That needs the R_TRIG, whose Q is TRUE on one scan only.' }
-  - { text: '0', feedback: 'While G is TRUE the SEL gives the sum, so the total does grow.' }
+  - { text: '1', correct: true, feedback: 'Right. Q is TRUE only on the scan in which CLK goes from FALSE to TRUE.' }
+  - { text: '3', feedback: 'That is the level of the button. The R_TRIG gives the change, which happens once.' }
+  - { text: '0', feedback: 'The button does rise once, so Q is TRUE on that one scan.' }
 ```
 
 ## What you will do in the practice

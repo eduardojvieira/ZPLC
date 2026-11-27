@@ -5,7 +5,7 @@
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Write a condition that is true only when several inputs are true together.",
-    "Use NOT for a warning lamp and XOR for exactly one of two inputs."
+    "Turn sentences such as \"while it is open\" and \"only one of the two\" into Boolean conditions."
   ],
   "stages": [
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "AND is true only when every part is true, so PressEnable needs the three inputs joined with AND."
+      "text": "Read the three sentences of the Edit stage one at a time: each one is the whole condition of one output. Then look at the operator the starting program uses for PressEnable."
     },
     {
       "level": 2,

@@ -71,11 +71,11 @@ caption: La ola nunca llega a la bomba; la bomba sigue funcionando después de q
 ## Compruébelo usted
 
 ```quiz
-question: Una lámpara debe seguir encendida T#10s después de que se cierra una puerta, para que una persona encuentre la salida. El interruptor de la puerta está en TRUE mientras la puerta está abierta. ¿Qué bloque acciona la lámpara desde el interruptor de la puerta?
+question: Un TOF tiene T#10s en PT. Su IN pasa a TRUE durante dos segundos y luego a FALSE. ¿Cuándo pasa su Q a FALSE?
 options:
-  - { text: 'Un TOF con T#10s en PT', correct: true, feedback: 'Sí. La lámpara sigue al interruptor enseguida y queda encendida durante el valor preestablecido después de que el interruptor cae.' }
-  - { text: 'Un TON con T#10s en PT', feedback: 'Un TON encendería la lámpara solo después de que la puerta estuvo abierta diez segundos, y la apagaría apenas se cierra la puerta.' }
-  - { text: 'Ningún temporizador, el interruptor conectado a la lámpara', feedback: 'Entonces la lámpara se apaga apenas se cierra la puerta.' }
+  - { text: 'Diez segundos después de que cae IN', correct: true, feedback: 'Sí. Un TOF deja pasar la subida enseguida y retrasa la caída en su valor preestablecido.' }
+  - { text: 'Diez segundos después de que sube IN', feedback: 'Un TOF cuenta desde la caída de IN, no desde su subida.' }
+  - { text: 'Cuando cae IN', feedback: 'Eso hace una conexión directa. Un TOF mantiene Q en ON durante su valor preestablecido después de que cae IN.' }
 ```
 
 ```quiz

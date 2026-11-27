@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter sorts correctly but trusts BeamHigh for ever; when the beam sticks on, boxes that are not tall are sent to BinTall, so the line must stop, and stay stopped, once High has stayed on for three seconds.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter sorts correctly but trusts BeamHigh for ever; when the beam sticks on, boxes that are not tall are sent to BinTall, so the line must stop, and stay stopped, once High has stayed on for three seconds.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

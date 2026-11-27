@@ -27,30 +27,30 @@ Con el valor del ciclo anterior, un programa puede ver un cambio. Una señal que
 
 ## Ejemplo resuelto
 
-Un sensor al final de una cinta, `Eye`, es TRUE mientras hay una caja delante de él. La línea necesita un pulso, `Left`, en el ciclo en que una caja acaba de irse, para contar las cajas que salen. Ese es el cambio de TRUE a FALSE, el flanco descendente, así que la prueba es el reflejo de la anterior: antes era TRUE y ahora no lo es.
+Un tanque de agua tiene un interruptor de flotador, `Float`, que es TRUE mientras el agua está por encima de él. El panel del operador lleva un registro, y necesita un pulso, `Changed`, en cada ciclo en que el flotador acaba de moverse, hacia arriba o hacia abajo. Un solo flanco no basta: el registro quiere los dos. Un cambio es un ciclo en que el valor de ahora difiere del valor de antes, y eso es lo que indica XOR: TRUE cuando sus dos operandos son distintos.
 
 ```st
-PROGRAM BoxLeaves
-VAR_INPUT Eye : BOOL; END_VAR
-VAR_OUTPUT Left : BOOL; END_VAR
-VAR EyeBefore : BOOL := FALSE; END_VAR
-Left := EyeBefore AND NOT Eye;
-EyeBefore := Eye;
+PROGRAM FloatLog
+VAR_INPUT Float : BOOL; END_VAR
+VAR_OUTPUT Changed : BOOL; END_VAR
+VAR FloatBefore : BOOL := FALSE; END_VAR
+Changed := Float XOR FloatBefore;
+FloatBefore := Float;
 END_PROGRAM
 ```
 
-El diagrama muestra un ciclo cada diez milisegundos. EyeBefore se dibuja tal como la lee la primera instrucción, antes de que la última instrucción la actualice, así que sigue a Eye un ciclo después. Left es TRUE solo en el ciclo en que EyeBefore todavía es TRUE y Eye ya es FALSE.
+El diagrama muestra un ciclo cada diez milisegundos. FloatBefore se dibuja tal como la lee la primera instrucción, antes de que la última instrucción la actualice, así que sigue a Float un ciclo después. Changed es TRUE en los dos ciclos en que Float y FloatBefore difieren: cuando el agua sube por encima del interruptor y cuando vuelve a bajar.
 
 ```timing
 span: 60
 signals:
-  - { name: Eye, edges: [10, 40] }
-  - { name: EyeBefore, edges: [20, 50] }
-  - { name: Left, edges: [40, 50] }
-caption: EyeBefore es Eye un ciclo tarde, y Left dura un ciclo
+  - { name: Float, edges: [10, 40] }
+  - { name: FloatBefore, edges: [20, 50] }
+  - { name: Changed, edges: [10, 20, 40, 50] }
+caption: FloatBefore es Float un ciclo tarde, y Changed dura un ciclo en cada cambio
 ```
 
-Si se intercambian las dos instrucciones, el programa deja de funcionar: EyeBefore tomaría primero el valor de Eye, la prueba compararía Eye consigo misma y Left nunca se encendería.
+Este programa tiene una memoria y una sola instrucción que la lee. La práctica pide más a su memoria: dos salidas que necesitan el valor del ciclo anterior, y un flanco en un solo sentido. Dónde va cada instrucción queda para usted.
 
 ## Errores comunes
 

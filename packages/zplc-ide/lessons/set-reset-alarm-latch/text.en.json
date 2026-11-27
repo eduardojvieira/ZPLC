@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "SR has the inputs S1 and R and gives priority to set; RS has the inputs S and R1 and gives priority to reset."
+      "text": "Look at the moment at {{t:50}} ms, when Fault and Ack arrive together: which output must keep its value then, and which of the two declared blocks keeps it?"
     },
     {
       "level": 2,

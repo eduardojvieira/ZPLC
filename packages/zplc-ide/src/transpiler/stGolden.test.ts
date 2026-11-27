@@ -172,9 +172,15 @@ describe('LNG-029 the ST of every existing diagram, and of every rung for the La
   if (process.env.ZPLC_RECORD_ST_GOLDEN === '1') writeFileSync(GOLDEN, `${JSON.stringify(now, null, 2)}\n`);
   const golden = JSON.parse(readFileSync(GOLDEN, 'utf8')) as Record<string, Entry>;
 
-  it('covers the 167 files and the 23 synthetic fixtures', () => {
+  // 173 = the 167 files recorded for LNG-029 plus six new reading figures of course column 1 (owner 2026-11-26), recorded by this
+  // test's own code with every earlier entry unchanged: ld-scan-cycle/reading/capper-chain, ld-no-nc-contacts/reading/tank-fill,
+  // ld-series-parallel/reading/compressor, seal-in-ladder/reading/booth-extractor,
+  // boolean-logic-two-hand-guard-ladder/reading/diverter-flap and set-reset-alarm-latch-ladder/reading/tank-filling.
+  // 174 adds ld-analog-scaling/reading/pump-command, the module 4 figure of the same course column 1 (owner 2026-11-26).
+  // 175 adds one-logic-five-languages/reading/warning-beacon, the module 9 figure of the same course column 1.
+  it('covers the 175 files and the 23 synthetic fixtures', () => {
     const keys = Object.keys(golden);
-    expect(keys.filter((key) => !key.startsWith('fixture/')).length).toBe(167);
+    expect(keys.filter((key) => !key.startsWith('fixture/')).length).toBe(175);
     expect(keys.filter((key) => key.startsWith('fixture/')).length).toBe(23);
     expect(Object.keys(now).sort()).toEqual(keys.sort());
   });

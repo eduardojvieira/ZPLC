@@ -26,7 +26,7 @@ Edit a Ladder rung so that a Start press keeps the motor on after the button is 
 ## Objectives
 
 - Read a Ladder rung as a path of contacts that must all pass power to reach a coil.
-- Hold a coil on with a contact of its own output in parallel with Start, and keep Stop in series so that Stop wins.
+- Make a coil hold itself on after Start is released, in a rung where Stop always wins over Start.
 
 ## Stages
 

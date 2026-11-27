@@ -4,7 +4,7 @@
   "summary": "Use a positive transition contact and a negative transition contact so that a box on a conveyor gives one pulse when it arrives and one when it leaves, however long the sensor stays on.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real sensor bounces, how fast it answers or how it is wired.",
   "objectives": [
-    "Use a positive transition contact (P) and a negative transition contact (N) to turn a level into a pulse of one scan.",
+    "Turn a level into a pulse of one scan at its start and a pulse of one scan at its end.",
     "Explain why a held input must be counted once, and which scan sees the pulse."
   ],
   "stages": [
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "A plain contact is true for as long as its variable is true. Which kind of contact is true only in the scan in which its variable changes?"
+      "text": "Look at what each coil shows while the box stays in front of the sensor, and at the one scan in which each pulse belongs."
     },
     {
       "level": 2,

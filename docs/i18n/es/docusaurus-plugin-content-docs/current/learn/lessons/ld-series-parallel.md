@@ -26,7 +26,7 @@ Combine contactos en serie para AND y en paralelo para OR, lea una tabla de verd
 ## Objetivos
 
 - Explique que los contactos en serie dejan pasar la energía solo cuando todos conducen (AND), y los contactos en paralelo cuando alguno conduce (OR).
-- Agregue un camino en paralelo a un peldaño para que una bocina suene cuando la puerta está abierta o el motor se sobrecalienta, y compruébelo con cada fila de una tabla de verdad.
+- Cambie un peldaño para que una bocina suene en cada situación que nombra una frase de la máquina, y compruébelo con cada fila de una tabla de verdad.
 
 ## Etapas
 

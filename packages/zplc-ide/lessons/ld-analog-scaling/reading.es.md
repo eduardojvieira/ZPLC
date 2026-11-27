@@ -31,33 +31,33 @@ En escalera son dos bloques en un mismo peldaño: `MUL` y luego `DIV`. Un tercer
 
 ## Ejemplo resuelto
 
-Una cinta transportadora marcha a cualquier velocidad entre 0 y 1500 mm/s, y un sensor de velocidad la informa en cuentas de 0 a 4095. Una lámpara `Moving` debe encenderse desde 750 mm/s y una lámpara `Overspeed` por encima de 1200 mm/s. La figura escala las cuentas a milímetros por segundo, `Speed = Raw * 1500 / 4095`: primero `MUL`, hacia un DINT, y luego `DIV`. A plena escala el producto es 6 142 500, muy por encima de lo que guarda un INT.
+El escalado también va en el otro sentido, de unidades de ingeniería a cuentas. Una bomba dosificadora gira a cualquier velocidad de 0 a 3000 rpm, y su variador recibe la velocidad como una orden analógica de 0 a 4095 cuentas. El operador fija la velocidad en rpm, y el programa debe convertir esa consigna en cuentas para el variador: `Command = Rpm * 4095 / 3000`. Ahora el rango de las cuentas multiplica y el rango de la velocidad divide. `MUL` sigue yendo primero, en un DINT: a velocidad máxima el producto es 12 285 000.
 
 ```ld-figure
-src: reading/belt-speed.ld.json
+src: reading/pump-command.ld.json
 rung: 5
-caption: De cuentas a milímetros por segundo, en dos bloques
+caption: Revoluciones por minuto a cuentas, en dos bloques
 ```
 
-Este laboratorio no tiene sensor, así que una perilla ocupa su lugar: cada pulsación de TurnUp suma 512 cuentas y cada pulsación de TurnDown quita 512. Pulse TurnUp siete veces, mirando las dos lámparas, y luego pulse TurnDown una vez.
+Este laboratorio tiene pulsadores para la consigna: cada pulsación de SpeedUp suma 500 rpm y cada pulsación de SpeedDown resta 500, y LIMIT mantiene la consigna entre 0 y 3000. Pulse SpeedUp una vez, luego cinco veces más, mirando las dos lámparas, y después pulse SpeedDown una vez.
 
 ```ld-try
-src: reading/belt-speed.ld.json
+src: reading/pump-command.ld.json
 inputs:
-  - { name: TurnUp, kind: push }
-  - { name: TurnDown, kind: push }
-outputs: [Moving, Overspeed]
-caption: Moving necesita 750 mm/s; Overspeed necesita más de 1200 mm/s
+  - { name: SpeedUp, kind: push }
+  - { name: SpeedDown, kind: push }
+outputs: [DriveOn, FullCommand]
+caption: DriveOn necesita una orden mayor que cero; FullCommand necesita 4095 cuentas
 ```
 
-Tras cuatro pulsaciones la perilla está en 2048 cuentas: 2048 por 1500 es 3 072 000, dividido entre 4095 da 750, y `Moving` se enciende. Tras seis pulsaciones la velocidad es de 1125 mm/s y `Overspeed` sigue apagada. La séptima pulsación da 1312 mm/s y `Overspeed` se enciende; una pulsación de TurnDown la devuelve a 1125. Los dos umbrales están escritos en unidades de ingeniería, no en cuentas.
+Después de una pulsación la consigna es 500 rpm: 500 por 4095 es 2 047 500, dividido entre 3000 da 682 cuentas, y `DriveOn` se enciende. Después de seis pulsaciones la consigna es 3000 rpm, la orden es 4095 y `FullCommand` se enciende. Una pulsación de SpeedDown lleva la consigna a 2500 rpm y la orden a 3412 cuentas, y `FullCommand` se apaga. Aquí los umbrales de las lámparas están escritos en cuentas, porque es el variador el que las lee.
 
 ## Errores comunes
 
 - Comparar cuentas con un límite escrito en porcentaje. Primero se escala y luego se compara.
 - Dividir antes de multiplicar, lo que descarta la parte del valor que es menor que el divisor.
 - Usar un `INT` para el producto. Da la vuelta, y el programa sigue funcionando con un nivel erróneo.
-- Olvidar que la división es entre el rango de las cuentas, 4095, y no entre 4096.
+- Tomar la cantidad de cuentas por su rango. Una entrada de 12 bits tiene 4096 cuentas distintas, de 0 a 4095, y su rango es la distancia de la más baja a la más alta.
 
 > [!WARNING]
 > Una alarma de nivel en el programa es información. Un corte por nivel alto que protege a las personas o al equipo se cablea en el hardware, y una parada de emergencia nunca depende del programa del PLC.
@@ -65,11 +65,11 @@ Tras cuatro pulsaciones la perilla está en 2048 cuentas: 2048 por 1500 es 3 072
 ## Compruébelo usted
 
 ```quiz
-question: En la cinta del ejemplo resuelto, Raw vale 3000 cuentas. ¿Qué orden da la velocidad de 1098 mm/s para el rango de 0 a 1500, con números enteros y un DINT?
+question: En la bomba del ejemplo resuelto, la consigna es 1000 rpm. ¿Qué secuencia de operaciones da la orden de 1365 cuentas para el rango de 0 a 3000 rpm, con números enteros y un DINT?
 options:
-  - { text: 'Raw * 1500 / 4095', correct: true, feedback: 'Correcto. 3000 por 1500 es 4 500 000, y dividido entre 4095 es 1098 al descartar los decimales.' }
-  - { text: 'Raw / 4095 * 1500', feedback: 'Raw dividido entre 4095 es 0 como número entero, y 0 por 1500 sigue siendo 0.' }
-  - { text: 'Raw / 1500 * 4095', feedback: 'Aquí los rangos están al revés: da 8190, que no es una velocidad de una cinta de 0 a 1500.' }
+  - { text: 'Rpm * 4095 / 3000', correct: true, feedback: 'Correcto. 1000 por 4095 es 4 095 000, y dividido entre 3000 es 1365 al descartar los decimales.' }
+  - { text: 'Rpm / 3000 * 4095', feedback: 'Rpm dividido entre 3000 es 0 como número entero, y 0 por 4095 sigue siendo 0.' }
+  - { text: 'Rpm * 3000 / 4095', feedback: 'Aquí los rangos están al revés: da 732, que no es la orden para 1000 rpm en una bomba de 0 a 3000.' }
 ```
 
 ```quiz

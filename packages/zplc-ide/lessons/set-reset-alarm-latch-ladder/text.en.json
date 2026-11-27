@@ -5,7 +5,7 @@
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real plant must handle and acknowledge its alarms.",
   "objectives": [
     "Hold an alarm after the fault has gone with a SET coil, and clear it only with a RESET coil.",
-    "Decide the priority between set and reset by the order of the rungs: the last one scanned wins."
+    "Give two outputs opposite priorities between set and reset, and check the scan in which both arrive together."
   ],
   "stages": [
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "A plain coil forgets its value on every scan. Which kind of coil keeps its value after the power that set it is gone?"
+      "text": "Look at the coils of the starting program: what does each of them do in the scan after Fault drops? Then look at the scan at {{t:50}} ms."
     },
     {
       "level": 2,

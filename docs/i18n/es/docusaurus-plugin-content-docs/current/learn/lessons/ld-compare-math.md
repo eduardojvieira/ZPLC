@@ -26,7 +26,7 @@ Use bloques de comparación como condiciones y bloques matemáticos como cálcul
 ## Objetivos
 
 - Use un bloque de comparación como condición en serie y elija entre GT y GE para un límite.
-- Calcule con bloques matemáticos que se ejecutan solo mientras su peldaño tiene energía, y proteja una división con una comparación NE para que el divisor nunca sea cero.
+- Calcule con bloques matemáticos que se ejecutan solo mientras su peldaño tiene energía, y asegúrese de que una división nunca se ejecute con un divisor en cero.
 
 ## Etapas
 

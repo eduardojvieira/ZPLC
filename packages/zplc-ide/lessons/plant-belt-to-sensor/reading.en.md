@@ -40,29 +40,32 @@ caption: A short press sets the memory, the sensor clears it, and the belt follo
 
 The sensor stays TRUE while the box stands in front of it, so it keeps the memory cleared. That is what you want: the box waits at the end of the belt until someone takes it away.
 
-When the set and the clear are both TRUE in the same scan, the statement written last wins, because the statements run from top to bottom. Decide which one should win: here a stop from the sensor matters more than a start.
+When the set and the clear are both TRUE in the same scan, the statement written last wins, because the statements run from top to bottom. Which one should win is a decision of the machine, not of the language.
 
 ## Worked example
 
-A roller shutter over a loading door has an Open button and a top limit switch. A short press must open the shutter all the way: the motor runs until the limit switch says the shutter is up. This is the same problem as the belt, solved here with a seal-in:
+A scrap conveyor under a cutting machine carries offcuts to a bin. A short press of `ClearBelt` must run the belt until a light curtain at its end, `BeltEmpty`, says that nothing is left on it. But the operator also uses the button to jog the belt: while `ClearBelt` is held, the belt must run even when the curtain says empty. So here the start wins, and its IF comes last:
 
 ```st
-PROGRAM Shutter
-VAR_INPUT OpenButton : BOOL; TopLimit : BOOL; END_VAR
+PROGRAM ScrapBelt
+VAR_INPUT ClearBelt : BOOL; BeltEmpty : BOOL; END_VAR
 VAR_OUTPUT Motor : BOOL; END_VAR
-VAR Opening : BOOL; END_VAR
-Opening := (OpenButton OR Opening) AND NOT TopLimit;
-Motor := Opening;
+VAR Clearing : BOOL; END_VAR
+IF BeltEmpty THEN Clearing := FALSE; END_IF;
+IF ClearBelt THEN Clearing := TRUE; END_IF;
+Motor := Clearing;
 END_PROGRAM
 ```
 
-Read the assignment from the right. `OpenButton OR Opening` stays TRUE after the button is released, because Opening holds itself. `AND NOT TopLimit` breaks the hold as soon as the limit switch closes, and it also wins when both are TRUE. Two IF statements, one that sets Opening and one after it that clears it, do the same thing in a form many programmers find easier to read.
+Read it from the top. The first IF clears the memory whenever the curtain sees an empty belt. The second IF sets it whenever the button is pressed, and because it comes last, a held button keeps the belt running even while the first IF clears the memory on every scan. When the button is released with offcuts still on the belt, `Clearing` stays TRUE and the belt goes on until the curtain sees it empty.
+
+This machine has nothing to place on its belt, only a belt to run. The station of the practice also has to place its box, and which statement wins there is for you to decide from what must happen to the box.
 
 ## Common mistakes
 
 - Driving the belt straight from the button. The belt moves only while the button is held, and the box stops halfway.
 - Setting the memory and never clearing it. The belt carries the box past the sensor and off the end of the belt.
-- Clearing before setting, so that a held button restarts the belt while the box is still in front of the sensor.
+- Reading the sensor as a pulse. EyeFar stays TRUE for as long as the box stands in its beam, not only on the scan the box arrives.
 - Forgetting to declare the memory. Every variable the program uses is declared, and a memory of the program goes in `VAR`.
 
 > [!NOTE]
@@ -79,11 +82,11 @@ options:
 ```
 
 ```quiz
-question: In the same scan Start and EyeFar are both TRUE. The program sets the memory first and clears it in the next statement. What is the memory at the end of the scan?
+question: In the scrap belt of the worked example, BeltEmpty and ClearBelt are both TRUE in the same scan. What is Clearing at the end of the scan?
 options:
-  - { text: 'FALSE', correct: true, feedback: 'Right. The statements run from top to bottom, so the clear, written last, wins.' }
-  - { text: 'TRUE', feedback: 'The set ran first, but the clear ran after it in the same scan.' }
-  - { text: 'It changes on every scan', feedback: 'Both conditions give the same result on every scan: the clear always comes last.' }
+  - { text: 'TRUE', correct: true, feedback: 'Right. The statements run from top to bottom, so the IF on ClearBelt, written last, wins.' }
+  - { text: 'FALSE', feedback: 'The IF on BeltEmpty clears it first, but the IF on ClearBelt sets it again after it in the same scan.' }
+  - { text: 'It changes on every scan', feedback: 'Both IFs run on every scan in the same order, so the result is the same each time.' }
 ```
 
 ## What you will do in the practice

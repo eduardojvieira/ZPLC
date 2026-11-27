@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Look at what each rung knows about the other direction: nothing. An interlock keeps a coil OFF while the other coil is ON; which kind of contact passes power only while its variable is FALSE?"
+      "text": "Look at what each rung knows about the other direction: nothing. Which variable of the other direction could each rung read, and what must it be for the rung to pass power?"
     },
     {
       "level": 2,

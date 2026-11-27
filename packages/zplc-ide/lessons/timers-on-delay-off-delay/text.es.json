@@ -4,8 +4,8 @@
   "summary": "Use un temporizador TOF para mantener una luz encendida después de soltar un pulsador, y un TON para ignorar un pulso de sensor demasiado corto.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un pulsador real ni con qué rapidez responde un sensor real.",
   "objectives": [
-    "Mantenga una salida encendida durante un tiempo fijo después de que su entrada caiga, con una instancia de TOF que se llama en cada ciclo.",
-    "Ignore una entrada que permanezca en ON menos de un tiempo fijo, con una instancia de TON."
+    "Mantenga una salida encendida durante un tiempo fijo después de que su entrada caiga, con una instancia de temporizador que se llama en cada ciclo.",
+    "Ignore una entrada que permanezca en ON menos de un tiempo fijo, y diga cuál de los dos retardos corresponde al inicio de una señal y cuál a su final."
   ],
   "stages": [
     {

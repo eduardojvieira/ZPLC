@@ -35,29 +35,30 @@ When you press only SetButton, the lamp turns on and stays on, because a SET coi
 
 ## Worked example
 
-A part sensor must sound a horn. The program passes PartSensor through a **memory bit**, PartSeen: a variable that is not connected to a real input or output, which the program uses to remember a result. Here are its two rungs, written in the wrong order.
+A capping station must lower its capping head, Capper, when a bottle is under it. The program passes the bottle sensor BottleHere through two **memory bits**, BottleSeen and CapReady: variables that are not connected to a real input or output, which the program uses to remember a result. In a real program each step of such a chain would add a condition; here they only copy, so that the timing is easy to follow. The three rungs are drawn in the worst order: every rung reads a variable that a rung below it writes.
 
 ```ld-figure
-src: reading/lagging-order.ld.json
-caption: The horn rung is solved before the rung that updates PartSeen
+src: reading/capper-chain.ld.json
+caption: Each rung reads a memory bit that a rung below it writes
 ```
 
-When a part arrives, the second rung sets PartSeen. But the first rung already ran in this scan, so the horn does not see it. In the next scan the first rung reads the new value of PartSeen, and only then the horn sounds. The horn is one scan late.
+Follow one scan in which a bottle arrives. Rung 1 reads CapReady, which is still FALSE from the previous scan, so the capper stays up. Rung 2 reads BottleSeen, also still FALSE. Only rung 3 sees the bottle and sets BottleSeen. In the next scan rung 2 reads the new BottleSeen and sets CapReady, and only in the scan after that does rung 1 lower the capper. Each rung that reads a value written further down adds one scan.
 
 ```timing
-span: 60
+span: 80
 signals:
-  - { name: PartSensor, edges: [10, 30] }
-  - { name: PartSeen, edges: [10, 30] }
-  - { name: Horn, edges: [20, 40] }
+  - { name: BottleHere, edges: [10, 40] }
+  - { name: BottleSeen, edges: [10, 40] }
+  - { name: CapReady, edges: [20, 50] }
+  - { name: Capper, edges: [30, 60] }
 marks:
-  - { from: 10, to: 20, label: 'T#10ms' }
-caption: With the rungs in the wrong order, Horn follows PartSeen one scan late
+  - { from: 10, to: 30, label: 'T#20ms' }
+caption: Two rungs read upwards, so Capper follows BottleHere two scans late
 ```
 
-The diagram is a **timing diagram**. Time runs to the right, and each line goes up when the signal turns ON and down when it turns OFF. Compare PartSeen and Horn: the horn rises exactly one scan after the memory bit.
+The diagram is a **timing diagram**. Time runs to the right, and each line goes up when the signal turns ON and down when it turns OFF. Compare BottleHere and Capper: the capper goes down two scans after the bottle arrives, and up again two scans after it leaves.
 
-One scan is short, and a lag of one scan is often harmless. It becomes a real problem when many rungs depend on each other in a chain, or when a fast event, like a pulse, is missed because it came and went between two readings. Putting the rungs in a logical order, "calculate first, use later", avoids the problem for free: with the PartSeen rung first, Horn rises in the same scan as PartSensor.
+One scan is short, and a lag of one scan is often harmless. It becomes a real problem when many rungs depend on each other in a chain, like this one, or when a fast event, like a pulse, is missed because it came and went between two readings. The practice has a chain of its own, shorter than this one; which rung has to move, and where, is for you to find.
 
 ## Common mistakes
 

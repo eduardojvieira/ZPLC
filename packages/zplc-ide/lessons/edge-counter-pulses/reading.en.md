@@ -45,41 +45,43 @@ A call looks like `Strokes(CU := PressDown, R := Oiled, PV := 500);`. The count 
 
 ## Worked example
 
-A tray stacker receives trays from a conveyor. Each tray stops under a sensor, `TrayHere`, until the stacker lifts it onto the stack, which takes several seconds. After four trays the stack is full: the lamp `StackFull` lights, an operator takes the stack away and presses the push button `StackTaken`. A display shows how many trays are on the stack now.
+A tablet dispenser fills bottles. Each bottle gets five tablets, and each tablet drops past an eye, `TabletEye`, that stays TRUE for a moment while the tablet passes. When a new bottle is in place the machine presses `NewBottle`, and a display shows how many tablets the bottle still needs. The lamp `BottleDone` lights when the bottle has all five.
 
-Each tray keeps `TrayHere` TRUE for a long time, so the program must count rising edges, which is what a CTU does. The push button clears the count, and the display reads CV.
+Here the natural count runs the other way, from five down to zero, and the standard library has a counter for that: the **CTD**, count down. Its inputs are **CD**, each rising edge of which takes one away, **LD**, which loads PV into the count while it is TRUE, and **PV**. Its outputs are **CV**, the count, and **Q**, which is TRUE while CV is at or below zero.
 
 ```st
-PROGRAM Stacker
-VAR_INPUT TrayHere : BOOL; StackTaken : BOOL; END_VAR
-VAR_OUTPUT StackFull : BOOL; TraysOnStack : INT; END_VAR
+PROGRAM Dispenser
+VAR_INPUT TabletEye : BOOL; NewBottle : BOOL; END_VAR
+VAR_OUTPUT BottleDone : BOOL; TabletsLeft : INT; END_VAR
 VAR
-  Trays : CTU;
+  Doses : CTD;
 END_VAR
-Trays(CU := TrayHere, R := StackTaken, PV := 4);
-StackFull := Trays.Q;
-TraysOnStack := Trays.CV;
+Doses(CD := TabletEye, LD := NewBottle, PV := 5);
+BottleDone := Doses.Q;
+TabletsLeft := Doses.CV;
 END_PROGRAM
 ```
 
-Follow it on the diagram. Each tray makes `TrayHere` rise once, however long it stays. On the fourth rising edge CV reaches 4 and `StackFull` rises. It stays on while the fourth tray leaves, because a falling edge does not count. When the operator presses `StackTaken`, CV goes back to zero and the lamp goes out.
+Follow it on the diagram. Before the first bottle, CV is zero, so Q is already TRUE: a CTD says "done" until it is loaded. `NewBottle` loads five, and the lamp goes out. Each tablet makes `TabletEye` rise once, however long it takes to pass, and takes one away. On the fifth rising edge CV reaches zero and `BottleDone` lights again.
 
 ```timing
-span: 10000
+span: 6000
 signals:
-  - { name: TrayHere, edges: [500, 1800, 2500, 3800, 4500, 5800, 6500, 7800] }
-  - { name: StackFull, edges: [6500, 8800] }
-  - { name: StackTaken, edges: [8800, 9300] }
+  - { name: NewBottle, edges: [200, 400] }
+  - { name: TabletEye, edges: [1000, 1300, 2000, 2300, 3000, 3300, 4000, 4300, 5000, 5300] }
+  - { name: BottleDone, edges: [0, 200, 5000] }
 marks:
-  - { from: 6500, to: 8800, label: 'CV = 4' }
-caption: Four long arrivals count four; the push button clears the count and the lamp
+  - { from: 200, to: 5000, label: 'CV 5 → 0' }
+caption: NewBottle loads five; five tablets bring the count to zero and light BottleDone
 ```
+
+The practice counts the other way: from nothing up to a number, with a reset that brings the count back to nothing. Which counter that needs, and which of its inputs each signal goes to, is for you to choose.
 
 ## Common mistakes
 
-- Counting with an IF, as in `IF TrayHere THEN Count := Count + 1; END_IF`. That adds one on every scan in which the input is TRUE, hundreds for one tray. Count rising edges with a CTU.
+- Counting with an IF, as in `IF TabletEye THEN Count := Count + 1; END_IF`. That adds one on every scan in which the input is TRUE, hundreds for one tablet. Count rising edges with a counter block.
 - Calling the counter inside an IF. When the instance is not called it does not see CU, so an edge that comes and goes meanwhile is lost. Call it on every scan.
-- Leaving R unconnected, or giving it a signal that is always TRUE. Without R the count never returns to zero; with R always TRUE it never leaves it.
+- Giving the count no way back to its start, or a way that is always open. The count then never starts again, or never moves at all.
 - Expecting Q to fall when the count passes PV. Q is TRUE while CV is at or above PV, and only a reset turns it off.
 - Choosing the preset one too high or one too low. PV is the number of arrivals at which Q must turn on.
 - Reading Q before the call. A statement above the call sees the Q of the previous scan.

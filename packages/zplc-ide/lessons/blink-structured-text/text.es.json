@@ -5,7 +5,7 @@
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Escriba el patrón de temporizador y memoria que hace cambiar una salida a intervalos fijos.",
-    "Condicione una salida a una entrada para que se detenga de inmediato cuando la entrada cae."
+    "Haga que una salida que parpadea se apague en el mismo ciclo en que cae su entrada de habilitación."
   ],
   "stages": [
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "El temporizador solo debe contar mientras Enable está en ON, así que Enable es la entrada IN de Clock."
+      "text": "Mire dos momentos: qué hace Clock mientras Enable está en OFF, y qué muestra Lamp en el ciclo en que Enable cae mientras LampOn todavía es TRUE."
     },
     {
       "level": 2,

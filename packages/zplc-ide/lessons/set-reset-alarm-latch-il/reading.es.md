@@ -17,46 +17,41 @@ No hacer nada es lo que crea la memoria. `ST X` escribe el resultado actual en X
 
 Las líneas de un programa se ejecutan de arriba abajo en cada ciclo. Si el set y el reset están los dos en TRUE, las dos instrucciones escriben X en el mismo ciclo, una después de la otra, y la que está escrita al final decide cuánto vale X al terminar el ciclo.
 
-- Escriba `R` al final, y gana el reset.
-- Escriba `S` al final, y gana el set.
-
 Con `S` y `R`, el orden de sus líneas es toda la decisión: nada más en el programa dice cuál gana.
 
 ## Ejemplo resuelto
 
-Una cámara frigorífica tiene un interruptor de puerta, `DoorOpen`. Cada vez que la puerta se abrió, la lámpara `DoorWasOpen` debe seguir encendida hasta que el encargado del depósito revisó la cámara y pulsó el pulsador `Checked`. La revisión del encargado debe ganar: si el encargado pulsa `Checked` mientras la puerta sigue abierta, la lámpara se apaga mientras se mantiene el pulsador.
-
-Debe ganar el reset, así que sus líneas van al final:
+Una máquina de embalaje funciona con aire comprimido. Un presostato, `AirOK`, es TRUE mientras la presión del aire es correcta; está cableado para que una pérdida de presión y un cable roto lean FALSE. Cada vez que se pierde el aire con la máquina encendida (`MachineOn`), la lámpara `AirLost` debe quedar encendida hasta que el operador pulse el pulsador `ResetAir`. Si el aire todavía falta cuando el operador pulsa `ResetAir`, la lámpara debe seguir encendida: debe ganar el set, así que sus líneas van al final.
 
 ```il
-PROGRAM ColdRoom
+PROGRAM AirSupply
 VAR_INPUT
-    DoorOpen : BOOL;
-    Checked : BOOL;
+    AirOK : BOOL;
+    MachineOn : BOOL;
+    ResetAir : BOOL;
 END_VAR
 VAR_OUTPUT
-    DoorWasOpen : BOOL;
+    AirLost : BOOL;
 END_VAR
 
-        LD    DoorOpen
-        S     DoorWasOpen
-        LD    Checked
-        R     DoorWasOpen
+        LD    ResetAir
+        R     AirLost
+        LDN   AirOK
+        AND   MachineOn
+        S     AirLost
 END_PROGRAM
 ```
 
-Cada `LD` carga la condición de la instrucción que está debajo. Sígalo en el diagrama. La puerta se abre y se cierra, y la lámpara sigue encendida. `Checked` la apaga. Más tarde la puerta se abre otra vez y se pulsa `Checked` en el mismo ciclo: la lámpara sigue apagada mientras los dos están en TRUE, y se enciende en cuanto se suelta `Checked`, porque la puerta sigue abierta.
+Cada carga abre la condición de la instrucción que está debajo. La condición del set tiene dos partes: `LDN` carga lo contrario de `AirOK`, porque la lámpara debe reaccionar a la pérdida de presión, y `AND` agrega la máquina encendida. Sígalo en el diagrama, con la máquina encendida todo el tiempo. El aire falta un momento, y la lámpara sigue encendida cuando vuelve. `ResetAir` la apaga. Más tarde el aire se pierde otra vez en el mismo ciclo en que se pulsa `ResetAir`: la lámpara se enciende y sigue encendida, porque el set está escrito al final.
 
 ```timing
 span: 5000
 signals:
-  - { name: DoorOpen, edges: [500, 1000, 3000, 4000] }
-  - { name: Checked, edges: [2000, 2300, 3000, 3500] }
-  - { name: DoorWasOpen, edges: [500, 2000, 3500] }
-caption: El reset escrito al final gana mientras los dos están en TRUE; la puerta abierta vuelve a encender la lámpara al soltar Checked
+  - { name: AirOK, edges: [0, 500, 1000, 3500, 4000] }
+  - { name: ResetAir, edges: [2000, 2300, 3500, 3800] }
+  - { name: AirLost, edges: [500, 2000, 3500] }
+caption: El set escrito al final gana mientras los dos están en TRUE; MachineOn es TRUE todo el tiempo
 ```
-
-Si se intercambian los dos pares de líneas, `LD Checked` y `R` primero, `LD DoorOpen` y `S` al final, ganaría la puerta abierta.
 
 ## Errores comunes
 
@@ -71,19 +66,19 @@ Si se intercambian los dos pares de líneas, `LD Checked` y `R` primero, `LD Doo
 ## Compruébelo usted
 
 ```quiz
-question: El programa de la cámara frigorífica tiene LD DoorOpen, S DoorWasOpen, LD Checked, R DoorWasOpen en ese orden. En un ciclo DoorOpen y Checked están los dos en TRUE. ¿Cuánto vale DoorWasOpen al terminar el ciclo?
+question: El programa del aire tiene LD ResetAir, R AirLost, LDN AirOK, AND MachineOn, S AirLost en ese orden. En un ciclo ResetAir es TRUE, AirOK es FALSE y MachineOn es TRUE. ¿Cuánto vale AirLost al terminar el ciclo?
 options:
-  - { text: 'FALSE', correct: true, feedback: 'Sí. Las dos líneas escriben DoorWasOpen, y R DoorWasOpen se ejecuta al final, así que gana el reset.' }
-  - { text: 'TRUE', feedback: 'S DoorWasOpen se ejecuta primero y la pone en TRUE, pero R DoorWasOpen se ejecuta después en el mismo ciclo.' }
-  - { text: 'Conserva el valor del ciclo anterior', feedback: 'Eso pasa solo cuando las dos condiciones están en FALSE. Aquí las dos instrucciones escriben DoorWasOpen.' }
+  - { text: 'TRUE', correct: true, feedback: 'Sí. Las dos instrucciones escriben AirLost, y S AirLost se ejecuta al final, así que gana el set.' }
+  - { text: 'FALSE', feedback: 'R AirLost se ejecuta primero y la pone en FALSE, pero S AirLost se ejecuta después en el mismo ciclo.' }
+  - { text: 'Conserva el valor del ciclo anterior', feedback: 'Eso pasa solo cuando las dos condiciones están en FALSE. Aquí las dos instrucciones escriben AirLost.' }
 ```
 
 ```quiz
-question: Una versión del programa de la cámara frigorífica tiene LD DoorOpen seguido de ST DoorWasOpen. La puerta está abierta durante un ciclo. ¿Qué hace DoorWasOpen después de ese ciclo?
+question: Una versión del programa del aire tiene LDN AirOK seguido de ST AirLost. El aire se pierde durante un ciclo. ¿Qué hace AirLost después de ese ciclo?
 options:
-  - { text: 'Pasa a FALSE en el ciclo siguiente', correct: true, feedback: 'Correcto. ST escribe el resultado actual en cada ciclo, así que DoorWasOpen sigue a DoorOpen. Use S para conservarla.' }
-  - { text: 'Sigue en TRUE hasta Checked', feedback: 'Eso es lo que hacen S y R. ST no tiene memoria propia.' }
-  - { text: 'Sigue en TRUE para siempre', feedback: 'ST escribe FALSE en cuanto DoorOpen está en FALSE.' }
+  - { text: 'Pasa a FALSE en el ciclo siguiente', correct: true, feedback: 'Correcto. ST escribe el resultado actual en cada ciclo, así que AirLost sigue al presostato. Use S para conservarla.' }
+  - { text: 'Sigue en TRUE hasta ResetAir', feedback: 'Eso es lo que hacen S y R. ST no tiene memoria propia.' }
+  - { text: 'Sigue en TRUE para siempre', feedback: 'ST escribe FALSE en cuanto AirOK vuelve a TRUE.' }
 ```
 
 ## Qué hará en la práctica

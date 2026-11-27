@@ -25,8 +25,8 @@ Use un temporizador TOF para mantener una luz encendida después de soltar un pu
 
 ## Objetivos
 
-- Mantenga una salida encendida durante un tiempo fijo después de que su entrada caiga, con una instancia de TOF que se llama en cada ciclo.
-- Ignore una entrada que permanezca en ON menos de un tiempo fijo, con una instancia de TON.
+- Mantenga una salida encendida durante un tiempo fijo después de que su entrada caiga, con una instancia de temporizador que se llama en cada ciclo.
+- Ignore una entrada que permanezca en ON menos de un tiempo fijo, y diga cuál de los dos retardos corresponde al inicio de una señal y cuál a su final.
 
 ## Etapas
 

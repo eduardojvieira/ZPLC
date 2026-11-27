@@ -71,11 +71,11 @@ caption: The wave never reaches the pump; the pump runs on after the float falls
 ## Check yourself
 
 ```quiz
-question: A lamp must stay on for T#10s after a door closes, so that a person can find the way out. The door switch is TRUE while the door is open. Which block drives the lamp from the door switch?
+question: A TOF has T#10s on PT. Its IN turns TRUE for two seconds and then FALSE. When does its Q turn FALSE?
 options:
-  - { text: 'A TOF with T#10s on PT', correct: true, feedback: 'Yes. The lamp follows the switch at once and stays on for the preset after the switch falls.' }
-  - { text: 'A TON with T#10s on PT', feedback: 'A TON would light the lamp only after the door had been open for ten seconds, and put it out as soon as the door closes.' }
-  - { text: 'No timer, the door switch connected to the lamp', feedback: 'Then the lamp goes out as soon as the door closes.' }
+  - { text: 'Ten seconds after IN falls', correct: true, feedback: 'Yes. A TOF passes the rise at once and delays the fall by its preset.' }
+  - { text: 'Ten seconds after IN rises', feedback: 'A TOF counts from the fall of IN, not from its rise.' }
+  - { text: 'When IN falls', feedback: 'That is what a plain connection does. A TOF keeps Q on for its preset after IN falls.' }
 ```
 
 ```quiz

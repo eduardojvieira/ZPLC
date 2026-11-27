@@ -4,7 +4,7 @@
   "summary": "Edite un diagrama de bloques de función que escala cuentas analógicas en bruto de 0 a 4095 a un nivel en porcentaje con los bloques MUL, DIV y LIMIT, y enciende HighLevel al 75 por ciento.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la exactitud, el ruido, la calibración de una entrada analógica real ni el cableado.",
   "objectives": [
-    "Escale cuentas analógicas en bruto a unidades de ingeniería con bloques aritméticos: multiplique por el rango de las unidades y luego divida por el rango de las cuentas.",
+    "Escale cuentas analógicas en bruto a unidades de ingeniería con bloques aritméticos y números enteros, sin perder la parte del valor que queda por debajo del divisor.",
     "Mantenga un valor escalado dentro de su rango con un bloque LIMIT, y compare con un umbral el valor en unidades de ingeniería, no en cuentas en bruto."
   ],
   "stages": [
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija el diagrama inicial, guárdelo y pulse {{ui:learn.check}}. El diagrama inicial muestra el nivel al 100 por ciento desde el primer ciclo, cuando Raw todavía es bajo, así que HighLevel se enciende a los {{t:10}} ms. Cámbielo para que Level sea el nivel en porcentaje, de 0 a 100, antes del LIMIT y de la comparación con 75. Coloque y conecte usted el bloque que falta: el sustituto de Raw, el MUL, el LIMIT y la comparación ya están.",
+      "body": "Corrija el diagrama inicial, guárdelo y pulse {{ui:learn.check}}. El diagrama inicial muestra el nivel al 100 por ciento desde el primer ciclo, cuando Raw todavía es bajo, así que HighLevel se enciende a los {{t:10}} ms. Cámbielo para que Level sea el nivel en porcentaje, de 0 a 100, y HighLevel se encienda solo cuando Level llegue a 75. Coloque y conecte usted el bloque que falta: el sustituto de Raw, el MUL, el LIMIT y la comparación ya están.",
       "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Mire el valor que sale del bloque MUL en los primeros ciclos y compárelo con el rango que deja pasar LIMIT. ¿Qué le tiene que pasar antes del LIMIT?"
+      "text": "Mire el valor que sale del bloque MUL en los primeros ciclos y compárelo con el rango que deja pasar LIMIT. ¿Qué bloque le falta al diagrama inicial para que Level lea de 0 a 100?"
     },
     {
       "level": 2,

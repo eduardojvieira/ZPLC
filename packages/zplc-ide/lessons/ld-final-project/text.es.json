@@ -4,7 +4,7 @@
   "summary": "Convierta la descripción escrita de una pequeña estación de empaque en un programa en escalera con una autorretención, un paro y un paro de emergencia cableados normalmente cerrados, un contador, un temporizador y una falla retenida, y compruébelo con un escenario que también verifica lo que no debe ocurrir.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra requisitos de una línea de empaque, el comportamiento de una función de seguridad, la temporización de sensores ni el comportamiento de ninguna máquina real.",
   "objectives": [
-    "Convertir cinco requisitos escritos en un programa en escalera que combine una autorretención, paros normalmente cerrados, un contador, un temporizador y una falla retenida.",
+    "Convertir cinco requisitos escritos en un programa en escalera, planificando las entradas, las salidas, los pasos y las pruebas antes de dibujar.",
     "Leer un escenario que verifica tanto lo que debe ocurrir como lo que no debe ocurrir, y usar sus aserciones fallidas para encontrar el requisito que omitió."
   ],
   "stages": [

@@ -37,12 +37,13 @@ After the CAL, `LD FanRunOn.Q` loads Q into the current result and an ST stores 
 
 An air compressor starts when its pressure switch, `PressureLow`, reports low pressure. The switch flickers when air is drawn in short bursts, so the motor must start only when `PressureLow` has stayed on for `T#1s`. Its cooling fan must keep running for `T#4s` after the motor stops.
 
-"Wait before turning on" is a TON on the switch; "stay on after" is a TOF on the motor. Each timer has its own CAL, its own LD and its own ST.
+"Wait before turning on" is a TON on the switch; "stay on after" is a TOF on the motor. Each timer has its own CAL and its own LD, and the motor also needs its overload relay, `Overload`, not to have tripped, so an ANDN sits between the LD of the timer and the ST.
 
 ```il
 PROGRAM Compressor
 VAR_INPUT
     PressureLow : BOOL;
+    Overload : BOOL;
 END_VAR
 VAR_OUTPUT
     Motor : BOOL;
@@ -55,6 +56,7 @@ END_VAR
 
         CAL   StartDelay(IN := PressureLow, PT := T#1s)
         LD    StartDelay.Q
+        ANDN  Overload
         ST    Motor
         CAL   FanRunOn(IN := Motor, PT := T#4s)
         LD    FanRunOn.Q
@@ -73,7 +75,7 @@ signals:
 marks:
   - { from: 2000, to: 3000, label: 'T#1s' }
   - { from: 6000, to: 10000, label: 'T#4s' }
-caption: The flicker never starts the motor; the fan runs on after the motor stops
+caption: The flicker never starts the motor; the fan runs on after the motor stops; Overload is FALSE all along
 ```
 
 ## Common mistakes

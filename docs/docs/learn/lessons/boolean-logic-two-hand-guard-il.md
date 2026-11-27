@@ -26,7 +26,7 @@ Read an Instruction List program as one current result that each line combines w
 ## Objectives
 
 - Read an Instruction List (IL) program as one current result that each instruction combines with an operand, from top to bottom.
-- Use LD, LDN, AND, XOR and ST to turn three inputs into three outputs.
+- Turn three inputs into three outputs with load, combine and store instructions.
 
 ## Stages
 

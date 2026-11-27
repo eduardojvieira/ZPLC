@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "La energía llega a PressEnable solo por contactos que estén todos cerrados. ¿Qué contacto falta en el peldaño?"
+      "text": "Mire el peldaño de PressEnable: ¿cuál de las tres entradas que nombra la etapa Edite todavía no lee, y qué valor tiene esa entrada cuando la prensa puede moverse?"
     },
     {
       "level": 2,
