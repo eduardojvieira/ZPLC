@@ -35,6 +35,9 @@ and version when the release is cut (see `RELEASING.md`).
 - An AI agent writes project files through MCP: `workspace_write` creates or replaces programs in the five languages,
   `zplc.json`, scenarios, `scene.json` and `plant-map.json` only after they pass the check `workspace_check_write` runs
   without writing; a refused file is left as it was, and no tool deletes or renames a file.
+- An AI agent debugs in a simulation private to it: six `debug_*` MCP tools start a session, stop it at a breakpoint in
+  any of the five languages, step it, set its inputs or plant actions and read variables, function block members, SFC
+  steps and plant facts by name; two sessions at most, each stopped after 300 s idle and when the client disconnects.
 
 ### Known limits
 

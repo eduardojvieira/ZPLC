@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/mcp. Do not edit. >>> */}
 
-`zplc-mcp` is a local server of the Model Context Protocol over standard input and output. It exposes 20 tools and 26 resources for one workspace. Every tool is read-only except `firmware_build` and `workspace_write`: `firmware_build` runs a local ephemeral cross-build, and `workspace_write` writes project files inside the workspace after the check of `workspace_check_write`, and never deletes or renames one. No tool flashes, deploys, forces, starts, stops or opens a serial port or a shell. The results are evidence of a recorded host run, not of hardware.
+`zplc-mcp` is a local server of the Model Context Protocol over standard input and output. It exposes 26 tools and 26 resources for one workspace. Every tool is read-only except `firmware_build`, `workspace_write`, `debug_session_start`, `debug_session_stop`, `debug_set_inputs`, `debug_breakpoints` and `debug_step`: `firmware_build` runs a local ephemeral cross-build, `workspace_write` writes project files inside the workspace after the check of `workspace_check_write`, and never deletes or renames one, and the `debug_` tools start, step and stop a host simulation that the server runs for the agent alone. No tool flashes, deploys, forces, opens a serial port or a shell, or starts or stops a program on a device or in a session a person runs. The results are evidence of a host run, not of hardware.
 
 This table is read off the source file `packages/zplc-ide/src/mcp/server.ts`; its text is the source's own, so it is the same in English and in Spanish.
 
@@ -47,6 +47,12 @@ The server serves the 2025 handshake (`initialize`) as well as revision 2026-07-
 | `server_self_check` | Check this server |   | yes | Answer what this server serves: project name, optional folders, simulator, protocols, counts and the boundary. |
 | `workspace_check_write` | Check a write | `files`, `compileCheck` | yes | Check 1 to 8 files to create or replace as workspace_write checks them; it writes nothing and names each problem. |
 | `workspace_write` | Write project files | `files`, `requireCompile`, `expectedBaseSha256` | no | Check and write 1 to 8 files of src, tests, zplc.json, scene.json, plant-map.json; never deletes or renames. |
+| `debug_session_start` | Start a private debug session | `withScene`, `sceneFile`, `mapFile` | no | Compile the project and start a host simulation private to you at 0 ms, with the scene; answers a sessionId. |
+| `debug_session_stop` | Stop a private debug session | `sessionId` | no | Stop a private debug session: its simulator process ends, its plant and temporary state are removed. |
+| `debug_set_inputs` | Set inputs of a private session | `sessionId`, `inputs`, `plantActions` | no | Set program inputs (IPI) by name, or operate, emit or fault in the scene, of a private debug session before stepping. |
+| `debug_breakpoints` | Breakpoints of a private session | `sessionId`, `action`, `locations` | no | List, set, add, remove or clear breakpoints of a private session by file and line (ST, IL) or element (LD, FBD, SFC). |
+| `debug_step` | Step a private session | `sessionId`, `mode`, `cycles`, `durationMs`, `maxCycles`, `watch`, `includeFacts` | no | Run a private session by cycles, by ms of virtual time, or continue until a breakpoint stops it mid-scan. |
+| `debug_inspect` | Inspect a private session | `sessionId`, `signals`, `functionBlocks`, `includeSfc`, `includePlant` | yes | Read a private session by name: variables, function block members, active SFC steps, plant signals and facts. |
 
 ## Resources
 
