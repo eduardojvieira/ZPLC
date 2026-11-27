@@ -5539,7 +5539,7 @@
     },
     {
       "id": "interlock-reversing-ladder",
-      "version": 10,
+      "version": 11,
       "order": 31,
       "module": 6,
       "level": "intermediate",
@@ -5695,7 +5695,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "Look at what each rung knows about the other direction: nothing. An interlock keeps a coil OFF while the other coil is ON; which kind of contact passes power only while its variable is FALSE?"
+              "text": "Look at what each rung knows about the other direction: nothing. Which variable of the other direction could each rung read, and what must it be for the rung to pass power?"
             },
             {
               "level": 2,
@@ -5755,7 +5755,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "Mire qué sabe cada peldaño del otro sentido: nada. Un enclavamiento mantiene una bobina en OFF mientras la otra está en ON; ¿qué tipo de contacto deja pasar la energía solo cuando su variable es FALSE?"
+              "text": "Mire qué sabe cada peldaño del otro sentido: nada. ¿Qué variable del otro sentido podría leer cada peldaño, y qué valor debe tener para que el peldaño deje pasar la energía?"
             },
             {
               "level": 2,

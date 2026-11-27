@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Mire qué sabe cada peldaño del otro sentido: nada. Un enclavamiento mantiene una bobina en OFF mientras la otra está en ON; ¿qué tipo de contacto deja pasar la energía solo cuando su variable es FALSE?"
+      "text": "Mire qué sabe cada peldaño del otro sentido: nada. ¿Qué variable del otro sentido podría leer cada peldaño, y qué valor debe tener para que el peldaño deje pasar la energía?"
     },
     {
       "level": 2,
