@@ -2413,6 +2413,7 @@
   ],
   "UX-009": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/DebugWatchPanel.dom.test.tsx","test":"Watch and force (CMP-054, IDE-019, UX-009) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/DebugWatchPanel.test.tsx","test":"One owner per input in the Watch tab (PLS-007, LNK-006, UX-009)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 does not call a transition forced because a word of its condition is a keyword or a literal"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 draws a diagram nobody forces and the poll read completely with no forced or fault cue"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 draws the faulted pin of a timer red with a triangle and the word FAULT, and its Q as it was"},

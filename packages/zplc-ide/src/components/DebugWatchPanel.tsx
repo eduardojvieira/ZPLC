@@ -64,6 +64,8 @@ interface DebugWatchPanelProps {
   toggleForceValue?: ToggleForceValueFn;
   clearAllForcedValues?: () => Promise<void>;
   hasActiveSerialSession?: boolean;
+  /** Rows the plant feeds (PLS-007): read-only until forced, marked "from the plant". See `plantFedPaths`. */
+  plantFed?: ReadonlySet<string>;
 }
 
 /** Inline editor state — only one cell editable at a time */
@@ -127,6 +129,7 @@ export function DebugWatchPanel({
   toggleForceValue,
   clearAllForcedValues,
   hasActiveSerialSession = false,
+  plantFed,
 }: DebugWatchPanelProps): React.ReactElement {
   const { t, tn } = useT();
   const [newVarInput, setNewVarInput] = useState('');
@@ -165,6 +168,8 @@ export function DebugWatchPanel({
   const releaseEnabled = canReleaseForces(hasActiveSerialSession, hasForceEvidence, releaseBusy);
   // Only a real device is asked before a force changes (UX-020); a simulation has nothing physical to protect.
   const device = hasActiveSerialSession ? 'hardware' : 'simulate';
+  /** A plant-fed row is set by the plant, so it takes a value only once forced (PLS-007, LNK-006). */
+  const plantOwns = (path: string) => plantFed?.has(path) === true && forcedValues.get(path)?.state !== WATCH_FORCE_STATE.FORCED;
 
   // Handle adding a new watch variable
   const handleAddVariable = () => {
@@ -202,7 +207,7 @@ export function DebugWatchPanel({
     currentValue: number | boolean | string | undefined,
     maxLength?: number,
   ) => {
-    if (address === null || !type || controlsBlocked) return;
+    if (address === null || !type || controlsBlocked || plantOwns(path)) return;
 
     const forceState = variables.find((entry) => entry.path === path)?.result.forceEntry?.state;
     const action = resolveWatchCommitAction(forceState, hasActiveSerialSession);
@@ -221,6 +226,7 @@ export function DebugWatchPanel({
 
   /** Write one value the way the row allows: a set, or a change of the force it holds. Errors become the force-change error. */
   const commitValue = async (cell: EditingCell, coerced: number | boolean | string): Promise<void> => {
+    if (plantOwns(cell.path)) return;
     const currentRow = variables.find((entry) => entry.path === cell.path);
     const action = resolveWatchCommitAction(currentRow?.result.forceEntry?.state, hasActiveSerialSession);
     if (!canEditWatchValue(action, Boolean(setValue), Boolean(toggleForceValue))) return;
@@ -498,7 +504,10 @@ export function DebugWatchPanel({
                 const action = resolveWatchCommitAction(result.forceEntry?.state, hasActiveSerialSession);
                 const forceable = canToggleForce(!result.forced, result.value !== null || editing?.path === path);
                 const valueEditable =
-                  result.address !== null && !controlsBlocked && canEditWatchValue(action, Boolean(setValue), Boolean(toggleForceValue));
+                  result.address !== null &&
+                  !controlsBlocked &&
+                  !plantOwns(path) &&
+                  canEditWatchValue(action, Boolean(setValue), Boolean(toggleForceValue));
 
                 return (
                   <tr key={path} className="border-t border-[var(--color-surface-700)] hover:bg-[var(--color-surface-700)]/50">
@@ -561,6 +570,13 @@ export function DebugWatchPanel({
                         >
                           {formatWatchValue(result.value, result.type, format)}
                         </span>
+                      )}
+                      {plantFed?.has(path) && (
+                        <Tooltip content={t('u3Faceplate.fromPlantHint')}>
+                          <span tabIndex={0} className="ml-2 text-[11px] text-[var(--color-accent-yellow)]" data-from-plant="true">
+                            {t('u3Faceplate.fromPlant')}
+                          </span>
+                        </Tooltip>
                       )}
                       {prepared.has(path) && editing?.path !== path && (
                         <span className="ml-2 text-[11px] text-[var(--color-accent-yellow)]" data-prepared="true">

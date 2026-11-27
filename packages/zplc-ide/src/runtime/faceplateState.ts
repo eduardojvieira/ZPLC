@@ -94,3 +94,12 @@ export function faceplateUnavailable(state: {
   if (state.vmState !== 'running') return 'notRunning';
   return state.supported ? null : 'noCapability';
 }
+
+/**
+ * What the Watch table calls the program inputs the plant map drives (PLS-007): the plant owns them until a person forces
+ * one. A row names a variable by its path (`Motor.Start`) or by its bare name (`Start`), so both match.
+ * ponytail: two programs with an input of the same name both match the bare name; qualify the row to tell them apart.
+ */
+export function plantFedPaths(resolved: { drives: Record<string, { path: string; name: string }> }): ReadonlySet<string> {
+  return new Set(Object.values(resolved.drives).flatMap((input) => [input.path, input.name]));
+}

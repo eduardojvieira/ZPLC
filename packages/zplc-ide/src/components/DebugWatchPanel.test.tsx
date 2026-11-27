@@ -107,9 +107,7 @@ describe('One owner per input in the Watch tab (PLS-007, LNK-006, UX-009)', () =
 
   it('LNK-006 a forced plant-fed input shows the force, keeps its mark, and its forced value can be changed', async () => {
     prepare({
-      forcedValues: new Map([
-        ['Start', { path: 'Start', address: 0, type: 'BOOL', bytesHex: '00', state: WATCH_FORCE_STATE.FORCED }],
-      ]),
+      forcedValues: new Map([['Start', { path: 'Start', address: 0, type: 'BOOL', bytesHex: '00', state: WATCH_FORCE_STATE.FORCED }]]),
     });
     const { user } = dom.render(<DebugWatchPanel plantFed={fed} toggleForceValue={async () => {}} setValue={async () => {}} />);
     expect(row('Start').querySelector('[data-forced="true"]')).toBeTruthy();
