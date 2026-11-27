@@ -10,6 +10,8 @@ const { createFakeBoard } = await import('../board/fakeBoard');
 const { createPlantIoController } = await import('../board/boardPlantLink');
 
 const { getCommandState, publishCommandState, resetCommandsForTest, runCommand, bindCommands } = await import('../../commands/bus');
+const { listedCommands } = await import('../../commands/bus');
+const { COMMAND_LIST } = await import('../../commands/registry');
 const { usePlantEditCommands } = await import('../../commands/bind/plantEdit');
 const { listIoMap } = await import('../../runtime/ioMap');
 const { useIDEStore } = await import('../../store/useIDEStore');
@@ -202,7 +204,7 @@ describe('plant I/O mode wired to the board link (PLS-008, LNK-007, LNK-008, LNK
     hardware();
     const r = rig();
     const { user } = dom.render(<Harness deps={r.deps} core={makeCore()} />);
-    expect(runCommand('plant.feedBoard')).toBe('ran');
+    expect(runCommand('online.feedBoardFromPlant')).toBe('ran');
     await dom.screen.findByRole('alertdialog');
     expect(r.log).toEqual({ controllers: 0, enters: 0 });
     await user.keyboard('{Escape}');
@@ -268,11 +270,11 @@ describe('plant I/O mode wired to the board link (PLS-008, LNK-007, LNK-008, LNK
     }
   });
 
-  it('FND-002 plant.feedBoard stays a person-only command: the binding refuses it outside hardware mode', () => {
+  it('FND-002 the feed command stays person-only: the binding refuses it outside hardware mode', () => {
     resetCommandsForTest();
     const unbind = bindCommands({});
     publishCommandState({ mode: 'simulate', connected: true });
-    runCommand('plant.feedBoard');
+    runCommand('online.feedBoardFromPlant');
     expect(getIoModeStatus().confirming).toBe(false);
     unbind();
   });
@@ -349,6 +351,9 @@ describe('plant I/O mode wired to the board link (PLS-008, LNK-007, LNK-008, LNK
     hardware();
     const r = rig();
     dom.render(<Harness deps={r.deps} core={makeCore()} />);
+    expect(listedCommands(COMMAND_LIST).filter((command) => command.titleKey.includes('feedBoard'))).toEqual([
+      expect.objectContaining({ id: 'online.feedBoardFromPlant' }),
+    ]);
     expect(runCommand('online.feedBoardFromPlant', { respectEnabled: true })).toBe('ran');
     await dom.screen.findByRole('alertdialog');
     expect(r.log).toEqual({ controllers: 0, enters: 0 });

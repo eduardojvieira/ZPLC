@@ -7,7 +7,7 @@ const ask = (): void => {
   if (state.mode === 'hardware' && state.connected && state.plantFeedable) requestFeedBoard(true);
 };
 
-/** Plant commands bound here: P8's "Feed the board from the plant" only asks; the dialog starts it (LNK-008). P5 adds the edit ones. */
+/** `plant.feedBoard` is declared for the plant document's button and stays unbound, so the menu and the palette list the action once. Bound here: P8's "Feed the board from the plant" only asks; the dialog starts it (LNK-008). P5 adds the edit ones. */
 export function usePlantEditCommands(): void {
-  useEffect(() => bindCommands({ 'plant.feedBoard': ask, 'online.feedBoardFromPlant': ask }), []);
+  useEffect(() => bindCommands({ 'online.feedBoardFromPlant': ask }), []);
 }
