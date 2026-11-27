@@ -3,8 +3,9 @@ import { assert } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
 import type { Journey } from '../journeys';
 
-const LESSON = 'boolean-logic-two-hand-guard-ladder';
-const PATH = LESSON_INDEX.course.paths!.find((path) => path.lessons.includes(LESSON))!;
+// The first lesson of the Ladder path: open to a fresh profile, and its page has a lab.
+const PATH = LESSON_INDEX.course.paths![0]!;
+const LESSON = PATH.lessons[0]!;
 
 /** What is on screen and could be reached: not inert, not hidden. */
 const reachable = (selector: string) =>
