@@ -10,8 +10,6 @@
  * navigator and Save all hold them (P2, P5, P6).
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { create } from 'zustand';
-import type { PlantMapV2 } from '../../plants/plantMap';
 import type { DebugController } from '../../hooks/debugControllerTypes';
 import { useT } from '../../i18n';
 import { SCENE_INDEX } from '../../generated/sceneIndex';
@@ -25,6 +23,7 @@ import { SaveSceneButton, SceneChooser } from './SceneChooser';
 import { catalogue } from '../core/catalogue';
 import { EditorPanel } from '../editor/EditorPanel';
 import { usePlantEdit } from '../editSession';
+import { usePlantChoice } from './usePlantChoice';
 import { schematicFor } from '../schematic/schematic';
 import { describePlant } from '../text/describe';
 import type { DisplayPrefs } from '../view/displayModes';
@@ -54,26 +53,6 @@ export interface PlantPanelProps {
 }
 
 const NO_DEPS: PlantPanelDeps = {};
-
-/**
- * What the Plant activity (plan-u3 P2) and the plant document tell each other: `request` is a scene the activity asks the document
- * to show (each panel adopts it, and a panel that mounts later starts on it); `shown` is the scene a panel is showing, which the
- * activity lists. Neither holds an edit: that is the edit session's.
- */
-type ShownScene = { key: string; scene: PlantSceneFile; map: PlantMapV2 | undefined };
-// A hook beside its component: its own file is outside the surfaces of P2 (move it to `usePlantChoice.ts` with P4).
-// eslint-disable-next-line react-refresh/only-export-components
-export const usePlantChoice = create<{
-  request: SceneRef | undefined;
-  shown: ShownScene | undefined;
-  ask: (ref: SceneRef) => void;
-  show: (shown: ShownScene | undefined) => void;
-}>()((set) => ({
-  request: undefined,
-  shown: undefined,
-  ask: (request) => set({ request: { ...request } }),
-  show: (shown) => set({ shown }),
-}));
 
 /** A scene name as `sceneFilePath` accepts it, from a scene's display name. */
 const saveName = (name: string) =>

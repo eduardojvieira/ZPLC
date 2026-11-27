@@ -13,7 +13,7 @@ const { sensorParts } = await import('../core/parts/sensors');
 const { flowParts } = await import('../core/parts/flow');
 const { panelParts } = await import('../core/parts/panel');
 const { PlantActivityView } = await import('./PlantActivityView');
-const { usePlantChoice } = await import('./PlantPanel');
+const { usePlantChoice } = await import('./usePlantChoice');
 const { usePlantEdit } = await import('../editSession');
 const { usePlantDocument } = await import('../../store/usePlantDocument');
 const { parseScene } = await import('../core/scene');
@@ -89,5 +89,17 @@ describe('the Plant activity (PLS-005, PLS-006, SCN-016)', () => {
     const options = [...view.container.querySelectorAll('select option')].map((o) => (o as HTMLOptionElement).value);
     expect(options).toContain('empty');
     for (const s of SCENE_INDEX) expect(options).toContain(s.id);
+  });
+
+  it('PLS-005 a part that cannot be placed is said in the Plant activity, with the text the editor panel uses', async () => {
+    showScene(true);
+    usePlantEdit.getState().begin({ scene, map }, 'belt-to-sensor');
+    const editor = usePlantEdit.getState().editor!;
+    editor.place = () => ({ problem: 'parts[3].part: no such part' });
+    const { user } = dom.render(<PlantActivityView />);
+    const before = editor.state().scene.parts.length;
+    await user.click(dom.screen.getByRole('button', { name: dom.t('plantEditor.add') }));
+    expect(dom.screen.getByRole('alert').textContent).toContain('parts[3].part: no such part');
+    expect(editor.state().scene.parts.length).toBe(before);
   });
 });

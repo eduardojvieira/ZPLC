@@ -16,7 +16,7 @@ import { freshIdentity } from '../editor/commands';
 import { createSceneEditor } from '../editor/model';
 import { PartList } from '../editor/PartList';
 import { usePlantEdit } from '../editSession';
-import { usePlantChoice } from './PlantPanel';
+import { usePlantChoice } from './usePlantChoice';
 import { SceneChooser } from './SceneChooser';
 import { refValue, useProjectSceneTexts, useProjectScenes } from './usePlantSession';
 
