@@ -1,0 +1,4 @@
+# Check out text files with LF on every platform: the goldens, hashes and fixtures are byte-compared (Windows CI).
+* text=auto eol=lf
+# A conformance case about CRLF source text: kept byte for byte.
+conformance/cmp/cmp-006-crlf-line-endings.st -text
