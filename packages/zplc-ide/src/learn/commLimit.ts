@@ -1,10 +1,12 @@
-/**
- * The lessons that talk to the Modbus TCP server or the MQTT broker that the simulation starts. A Windows runtime is built without
- * the host communication sources (firmware/lib/zplc_core/CMakeLists.txt, `if(NOT WIN32)`), so these lessons cannot run there:
- * a known limit of 2.1.0. Guarded by commLimit.test.ts against a new lesson that names Modbus or MQTT in its hardware reason.
- */
-const COMM_LESSONS: ReadonlySet<string> = new Set(['modbus-coil-fbd', 'modbus-register-round-trip', 'mqtt-publish-subscribe']);
+import { LESSON_INDEX } from '../generated/lessonIndex';
 
+/**
+ * A lesson that talks to the Modbus TCP server or the MQTT broker that the simulation starts says so in its hardware reason
+ * (lesson.json `unsupported.hardware`). A Windows runtime is built without the host communication sources
+ * (firmware/lib/zplc_core/CMakeLists.txt, `if(NOT WIN32)`), so such a lesson cannot run there: a known limit of 2.1.0.
+ * ponytail: read from the prose of the reason; a `needsComm` manifest field is the upgrade when a lesson needs comm without it.
+ */
 export function lessonNeedsComm(lessonId: string): boolean {
-  return COMM_LESSONS.has(lessonId);
+  const reason = LESSON_INDEX.lessons.find((lesson) => lesson.id === lessonId)?.unsupported.hardware?.reason.en ?? '';
+  return /Modbus|MQTT/.test(reason);
 }

@@ -214,7 +214,14 @@ export function Guide({ workspaceTestPresentation }: { workspaceTestPresentation
             </p>
           )}
           {window.electronAPI?.platform === 'win32' && lessonNeedsComm(lesson.id) && (
-            <div role="note" data-guide-comm-limit className="mt-2 max-w-[68ch] rounded border border-[var(--color-accent-yellow)] p-2 text-xs leading-5 text-[var(--color-surface-200)]">
+            <div
+              role="note"
+              data-guide-comm-limit
+              className={
+                'mt-2 max-w-[68ch] rounded border border-[var(--color-accent-yellow)] ' +
+                'p-2 text-xs leading-5 text-[var(--color-surface-200)]'
+              }
+            >
               <p className="font-semibold">{t('u3Guide.commLimit.title')}</p>
               <p>{t('u3Guide.commLimit.body')}</p>
             </div>
