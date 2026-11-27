@@ -5982,6 +5982,11 @@ export const JOURNEYS: Journey[] = [
       );
       await focus('[data-learn-continue]');
       await app.press('Enter');
+      // GDE-006: the reading page covers the Guide; Practice opens the lesson layout, where the Guide board section is reachable.
+      if (onBoard.reading) {
+        await app.until('the reading page', async () => (await app.visible(css('[data-learn-reading-practice]'))) || undefined, 30_000);
+        await app.click(css('[data-learn-reading-practice]'), 'Practice on the reading page');
+      }
       // GDE-009: the Guide keeps the board section closed until the learner opens it; open it by keyboard before reading or switching.
       await app.until('the Guide board section summary', async () => (await app.visible(css('[data-guide-board] > summary'))) || undefined);
       await focus('[data-guide-board] > summary');
