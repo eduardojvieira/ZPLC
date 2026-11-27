@@ -6552,14 +6552,14 @@ export const JOURNEYS: Journey[] = [
 
       // the assistant is optional: until a provider is configured it is not offered, and its command (the Agent tab of 2.0 went to
       // the Assistant view, SHL-004) opens Preferences where one is configured, which says so (SHL-008, SHL-011)
-      await fromPalette(app, 'view.agent', 'Show the agent');
+      await fromPalette(app, 'view.agent', 'Show the Assistant');
       const settings = await app.until('the Assistant section of Preferences', async () => {
         const text = await app.eval<string>(`document.getElementById('assistant')?.innerText ?? ''`);
-        return text.includes('Without one, the assistant is not offered.') ? text : undefined;
+        return text.includes('Without one, the Assistant is not offered.') ? text : undefined;
       });
       assert(settings !== '', 'Preferences do not say that the assistant is offered only with a provider.');
       assert(
-        !(await app.visible(css('[aria-label="Optional agent"]'))) && !(await app.clickable(button('Send request'))),
+        !(await app.visible(css('[aria-label="Assistant request"]'))) && !(await app.clickable(button('Send request'))),
         'The assistant can be asked although no provider is configured.',
       );
       // Preferences took the editor area: back to the program
