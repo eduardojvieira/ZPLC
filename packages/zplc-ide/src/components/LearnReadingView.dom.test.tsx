@@ -287,3 +287,32 @@ describe('the reading frame and the lesson layout (GDE-006, GDE-007)', () => {
   });
 });
 const dialog2 = (lesson: { text: { en: { title: string } } }) => dom.screen.getByRole('dialog', { name: lesson.text.en.title });
+
+describe('the lesson layout and the flag (UX-023)', () => {
+  const widthBefore = window.innerWidth;
+  afterEach(() => {
+    window.innerWidth = widthBefore;
+    dom.patchStore(useShellLayout, { maximised: false } as never);
+  });
+
+  it('GDE-007 the lesson layout does not show the secondary sidebar in compact density', async () => {
+    const { user } = await practiceSetup(NO_PLANT);
+    window.innerWidth = 900;
+    await user.click(dom.screen.getByRole('button', { name: dom.t('learnReading.view.practice') }));
+    expect(useShellLayout.getState().secondaryVisible).toBe(false);
+  });
+
+  it('GDE-007 the lesson layout does not show the secondary sidebar while the editor is maximised', async () => {
+    const { user } = await practiceSetup(NO_PLANT);
+    window.innerWidth = 1400;
+    dom.patchStore(useShellLayout, { maximised: true } as never);
+    await user.click(dom.screen.getByRole('button', { name: dom.t('learnReading.view.practice') }));
+    expect(useShellLayout.getState().secondaryVisible).toBe(false);
+  });
+
+  it('GDE-006 a reading page of a lesson missing from the index leaves the workbench not inert', async () => {
+    dom.patchStore(useLearnUi, { reading: 'no-such-lesson' } as never);
+    dom.render(<LearnReadingView />);
+    expect(useLearnLayout.getState().reading).toBe(false);
+  });
+});

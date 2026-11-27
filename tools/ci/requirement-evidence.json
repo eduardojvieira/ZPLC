@@ -2700,6 +2700,7 @@
   ],
   "UX-023": [
     {"kind":"unit","ref":"packages/zplc-ide/src/App.dom.test.tsx","test":"App root sizing (UX-023)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"the lesson layout and the flag (UX-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/shell/ActivityRail.test.tsx","test":"UX-023 shows the labels in the regular shell and only the icons in the compact one"},
     {"kind":"unit","ref":"packages/zplc-ide/src/shell/WorkbenchShell.dom.test.tsx","test":"WorkbenchShell initial sidebar state (UX-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/shell/shellRouting.test.ts","test":"UX-023 is compact at the 1024 pixel minimum and up to the limit, and regular at 1366"},
@@ -3278,7 +3279,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 starting a lesson with a reading page shows it full screen: module, title as h1, time and the page"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 the lesson panel offers Read again, which reopens the page"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"the reading view (LRN-039)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnContent.v1.test.ts","test":"the reading page in the Learn content (LRN-039)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnContent.v1.test.ts","test":"the reading page in the Learn content (LRN-039)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/shell/WorkbenchShell.dom.test.tsx","test":"LRN-039 the focus goes back to the Guide once the workbench has left inert, not while it is still inert"}
   ],
   "LRN-040": [
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/reading/ReadingPage.dom.test.tsx","test":"reading page rendering (LRN-040)"},
