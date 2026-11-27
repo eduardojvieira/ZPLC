@@ -2265,7 +2265,7 @@ describe('useIDEStore project folders over the project-files bridge', () => {
   let pickerCalls: number;
 
   beforeEach(() => {
-    sandbox = realpathSync(mkdtempSync(join(tmpdir(), 'zplc-store-bridge-')));
+    sandbox = realpathSync.native(mkdtempSync(join(tmpdir(), 'zplc-store-bridge-')));
     folder = join(sandbox, 'plant');
     mkdirSync(folder);
     answer = folder;
@@ -2644,7 +2644,7 @@ describe('useIDEStore recent projects and session restore (IDE-008)', () => {
   let stopPersistence: (() => void) | null;
 
   beforeEach(() => {
-    sandbox = realpathSync(mkdtempSync(join(tmpdir(), 'zplc-store-recent-')));
+    sandbox = realpathSync.native(mkdtempSync(join(tmpdir(), 'zplc-store-recent-')));
     folder = join(sandbox, 'plant');
     mkdirSync(join(folder, 'src'), { recursive: true });
     writeFileSync(join(folder, 'zplc.json'), JSON.stringify({ ...DEFAULT_ZPLC_CONFIG, name: 'plant' }));

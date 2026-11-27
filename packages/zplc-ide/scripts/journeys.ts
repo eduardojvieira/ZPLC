@@ -692,7 +692,7 @@ async function writeProjectOfSize(folder: string, bytes: number): Promise<void> 
 
 /** The project of the path probes: a folder with a file, a file outside it, and two links that leave it. */
 export function writeSecurityFixture(base: string): { project: string; outside: string; secret: string } {
-  const outside = realpathSync(mkdtempSync(join(base, 'security-')));
+  const outside = realpathSync.native(mkdtempSync(join(base, 'security-')));
   // A real example, so that the project that the probes work in can also be built and tested afterwards.
   const project = join(outside, 'project');
   cpSync(join(packageRoot, 'projects', 'motor_start_stop'), project, { recursive: true });
