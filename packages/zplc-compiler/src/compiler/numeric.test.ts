@@ -1088,3 +1088,73 @@ END_PROGRAM`);
         }
     });
 });
+
+describe('executed programs: 64-bit typed literals as operand of NOT', () => {
+    const execute = (program: string): Uint8Array => {
+        const memory = new Uint8Array(0x10000);
+        run(compileToBinary(program).assembly, memory);
+        return memory;
+    };
+    const readWide = (memory: Uint8Array, signed: boolean): bigint => {
+        const view = new DataView(memory.buffer, 0x1000, 8);
+        return signed ? view.getBigInt64(0, true) : view.getBigUint64(0, true);
+    };
+    const wideTypes = [
+        { name: 'LWORD', literal: (v: string) => `LWORD#16#${v}`, signed: false },
+        { name: 'ULINT', literal: (v: string) => `ULINT#${BigInt(`0x${v}`)}`, signed: false },
+        { name: 'LINT', literal: (v: string) => `LINT#${BigInt(`0x${v}`)}`, signed: true },
+    ];
+
+    it('NOT(<64-bit literal>) complements the full 64-bit pattern', () => {
+        for (const { name, literal, signed } of wideTypes) {
+            const zero = execute(`PROGRAM T
+VAR r AT %QD0 : ${name}; END_VAR
+  r := NOT(${literal('0')});
+END_PROGRAM`);
+            expect(readWide(zero, signed)).toBe(signed ? -1n : 0xffffffffffffffffn);
+
+            const high = execute(`PROGRAM T
+VAR r AT %QD0 : ${name}; END_VAR
+  r := NOT(${literal('1')});
+END_PROGRAM`);
+            expect(readWide(high, signed)).toBe(signed ? -2n : 0xfffffffffffffffen);
+        }
+        const mixed = execute(`PROGRAM T
+VAR r AT %QD0 : LWORD; END_VAR
+  r := NOT(LWORD#16#FFFFFFFF00000000);
+END_PROGRAM`);
+        expect(readWide(mixed, false)).toBe(0x00000000ffffffffn);
+    });
+
+    it('NOT <64-bit literal> (the operator form) complements the full 64-bit pattern', () => {
+        for (const { name, literal, signed } of wideTypes) {
+            const memory = execute(`PROGRAM T
+VAR r AT %QD0 : ${name}; END_VAR
+  r := NOT ${literal('0')};
+END_PROGRAM`);
+            expect(readWide(memory, signed)).toBe(signed ? -1n : 0xffffffffffffffffn);
+        }
+    });
+
+    it('a 64-bit literal on either side of AND, OR and XOR still gives the full-width value', () => {
+        const memory = execute(`PROGRAM T
+VAR r AT %QD0 : LWORD; END_VAR
+  r := LWORD#16#F0 AND LWORD#16#FF00000000000F0F;
+END_PROGRAM`);
+        expect(readWide(memory, false)).toBe(0x00n);
+    });
+
+    it('DWORD#1 and an untyped 1 under NOT compile as before', () => {
+        for (const literal of ['DWORD#1', '1']) {
+            const compiled = compileToBinary(`PROGRAM T
+VAR r AT %QD0 : DWORD; END_VAR
+  r := NOT(${literal});
+END_PROGRAM`);
+            expect(compiled.assembly).not.toContain('SWAP');
+            const memory = new Uint8Array(0x10000);
+            run(compiled.assembly, memory);
+            // an untyped 1 under NOT keeps its pre-existing boolean-style result (masked to 0 or 1)
+            expect(new DataView(memory.buffer, 0x1000, 4).getUint32(0, true)).toBe(literal === '1' ? 0 : 0xfffffffe);
+        }
+    });
+});
