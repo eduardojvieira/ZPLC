@@ -25,7 +25,7 @@ Convierta la descripción escrita de una pequeña estación de empaque en un pro
 
 ## Objetivos
 
-- Convertir cinco requisitos escritos en un programa en escalera que combine una autorretención, paros normalmente cerrados, un contador, un temporizador y una falla retenida.
+- Convertir cinco requisitos escritos en un programa en escalera, planificando las entradas, las salidas, los pasos y las pruebas antes de dibujar.
 - Leer un escenario que verifica tanto lo que debe ocurrir como lo que no debe ocurrir, y usar sus aserciones fallidas para encontrar el requisito que omitió.
 
 ## Etapas
