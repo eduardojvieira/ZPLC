@@ -1,5 +1,6 @@
 /** The Guide commands (plan-u3.md: G2 binds the lesson ones here; G5 binds the jump to the command bar). */
 import { useEffect } from 'react';
+import { applyLessonLayout } from '../../store/useLearnLayout';
 import { bindCommands } from '../bus';
 
 /** The control that had the focus when the person jumped to the command bar; a second press, or Escape, gives it back. */
@@ -31,7 +32,7 @@ export function focusCommandBar(): void {
 
 export function useGuideCommands(): void {
   useEffect(() => {
-    const unbind = bindCommands({ 'view.focusCommandBar': focusCommandBar });
+    const unbind = bindCommands({ 'view.focusCommandBar': focusCommandBar, 'view.lessonLayout': () => applyLessonLayout() });
     const onKeyDown = (event: KeyboardEvent): void => {
       const active = document.activeElement;
       if (event.key === 'Escape' && origin && commandBar()?.contains(active) && !popupOwnsEscape(active)) {

@@ -195,8 +195,7 @@ describe('WorkbenchShell sidebar widths', () => {
 
 describe('WorkbenchShell under a reading page (GDE-006)', () => {
   afterEach(() => useLearnLayout.setState({ reading: false }));
-  const shell = () =>
-    dom.render(<WorkbenchShell EditorArea={StubEditor} Console={StubConsole} debugController={{} as never} />);
+  const shell = () => dom.render(<WorkbenchShell EditorArea={StubEditor} Console={StubConsole} debugController={{} as never} />);
 
   it('GDE-006 a reading page covers the whole workbench: the activity rail, sidebars and results panel are not in the tab order', () => {
     useLearnLayout.setState({ reading: true });

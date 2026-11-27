@@ -3268,6 +3268,7 @@
   ],
   "LRN-039": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 Back to course closes the view and opens the Learn home, never both at once"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 Escape closes the page and gives the focus back to the Guide"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 Escape does what Practice does"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 Practice closes the view and moves the focus to the lesson panel"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 a lesson without a reading page opens as before: the workspace, the lesson panel and no reading view"},

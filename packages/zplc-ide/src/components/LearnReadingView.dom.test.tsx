@@ -200,7 +200,13 @@ async function practiceSetup(lesson: (typeof LESSON_INDEX.lessons)[number]) {
   dom.patchStore(usePlantDocument, { open: false, active: false } as never);
   dom.patchStore(useShellLayout, { secondaryVisible: false } as never);
   dom.patchStore(useIDEStore, {
-    fileTree: { id: 'dir:/', name: 'p', type: 'directory', path: '', children: [{ id: `file:${lesson.starter.program}`, name: 'f', type: 'file', path: lesson.starter.program }] },
+    fileTree: {
+      id: 'dir:/',
+      name: 'p',
+      type: 'directory',
+      path: '',
+      children: [{ id: `file:${lesson.starter.program}`, name: 'f', type: 'file', path: lesson.starter.program }],
+    },
     openFile: async (id: string) => void opened.push(id),
   } as never);
   dom.patchStore(useLearnUi, {
