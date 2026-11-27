@@ -81,7 +81,7 @@ describe('writeZip (IDE-022)', () => {
       const result = spawnSync('python3', ['-I', '-c', script, archive], { encoding: 'utf8' });
       if (result.error) return; // no python3 on this machine: the reader tests above and below carry the format
       expect(result.status).toBe(0);
-      expect(result.stdout).toBe('empty/:0|src/Main.st:25|zplc.json:8\n{"x":1}\n');
+      expect(result.stdout.replaceAll('\r\n', '\n')).toBe('empty/:0|src/Main.st:25|zplc.json:8\n{"x":1}\n');
     } finally {
       rmSync(folder, { recursive: true, force: true });
     }

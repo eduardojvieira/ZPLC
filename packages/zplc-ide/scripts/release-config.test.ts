@@ -619,7 +619,7 @@ describe('third-party notices are generated at packaging time and ship in every 
     // a variable path: the hook is plain JavaScript with no declaration file
     const hookPath = './before-pack.mjs';
     const hook = (await import(hookPath)) as { noticesCommand(projectDir: string): { command: string; args: string[] } };
-    const command = hook.noticesCommand('/repo/packages/zplc-ide');
+    const command = hook.noticesCommand(path.resolve('/repo/packages/zplc-ide'));
     expect(command).toEqual({
       command: 'bun',
       args: [
