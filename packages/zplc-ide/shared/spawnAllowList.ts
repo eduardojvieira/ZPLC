@@ -38,7 +38,9 @@ export type SpawnEntry =
    * The tool worker (a script of the application, started with no argument by Electron's utility process): compile,
    * safety check, tests.
    */
-  | { kind: 'tool-worker'; script: string };
+  | { kind: 'tool-worker'; script: string }
+  /** `zplc-mcp --self-check` on the open project (AIX-007): reads files and prints a report; it reaches no device, port or peer. */
+  | { kind: 'mcp-self-check'; command: string; workspace: string; userData?: string };
 
 export interface SpawnVector {
   command: string;
@@ -76,6 +78,21 @@ export function spawnVector(entry: SpawnEntry): SpawnVector {
     }
     case 'tool-worker':
       return { command: absolute(entry.script, 'the tool worker script'), args: [] };
+    case 'mcp-self-check': {
+      const bareName = typeof entry.command === 'string' && /^[A-Za-z0-9._-]{1,64}$/.test(entry.command);
+      if (!bareName && !(typeof entry.command === 'string' && path.isAbsolute(entry.command)))
+        throw new Error('Refused to spawn: the MCP server command is neither a name nor an absolute path');
+      const command = bareName ? entry.command : absolute(entry.command, 'the MCP server command');
+      return {
+        command,
+        args: [
+          '--workspace',
+          absolute(entry.workspace, 'the project folder'),
+          ...(entry.userData === undefined ? [] : ['--user-data', absolute(entry.userData, 'the user-data folder')]),
+          '--self-check',
+        ],
+      };
+    }
     case 'zephyr-revision':
       return { command: 'git', args: ['-C', absolute(entry.zephyrBase, 'the Zephyr checkout'), 'rev-parse', '--verify', 'HEAD'] };
     default:

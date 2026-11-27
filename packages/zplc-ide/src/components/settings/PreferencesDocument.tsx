@@ -8,6 +8,7 @@ import { useT } from '../../i18n';
 import { usePreferencesDocument } from '../../store/usePreferencesDocument';
 import { AppPreferences } from './AppPreferences';
 import { AssistantSettings, ASSISTANT_SECTION_ID } from './AssistantSettings';
+import { McpConnectionSettings } from './McpConnectionSettings';
 
 export function PreferencesDocument() {
   const { t } = useT();
@@ -36,6 +37,7 @@ export function PreferencesDocument() {
         </h1>
         <AppPreferences />
         <AssistantSettings />
+        <McpConnectionSettings />
       </div>
     </div>
   );

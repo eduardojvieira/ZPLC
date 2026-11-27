@@ -68,6 +68,16 @@ export const LEARN_PROGRESS_CHANNEL = {
 /** Opening the app-owned workspace of a lesson (LRN-003): one lesson id in, the window's project folder out. */
 export const LEARN_WORKSPACE_CHANNEL = { OPEN: 'learn-workspace:open' } as const;
 
+/**
+ * The MCP connection panel (AIX-007): preview the config of one client, write exactly that preview, run the local self-check.
+ * Each takes a client name or nothing; the main process picks the folder and computes every path.
+ */
+export const MCP_CONNECTION_CHANNEL = {
+  PREVIEW: 'mcp-connection:preview',
+  WRITE: 'mcp-connection:write',
+  SELF_CHECK: 'mcp-connection:self-check',
+} as const;
+
 export const SESSION_CHANNEL = { LOAD: 'session:load', SAVE: 'session:save' } as const;
 
 /**
@@ -154,6 +164,7 @@ export const IPC_INVOKE_CHANNELS: readonly string[] = [
   ...values(AI_PROVIDER_CHANNEL),
   ...values(LEARN_PROGRESS_CHANNEL),
   ...values(LEARN_WORKSPACE_CHANNEL),
+  ...values(MCP_CONNECTION_CHANNEL),
   ...values(SESSION_CHANNEL),
   PORT_CHOICE_CHANNEL.CHOOSE,
   PORT_CHOICE_CHANNEL.LIST,

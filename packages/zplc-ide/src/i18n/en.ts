@@ -49,6 +49,7 @@ import { u2AssistantEn } from './catalog/u2Assistant';
 import { u2NavigatorEn } from './catalog/u2Navigator';
 import { u2LayoutEn } from './catalog/u2Layout';
 import { u2PreferencesEn } from './catalog/u2Preferences';
+import { mcpConnectionEn } from './catalog/mcpConnection';
 import { u2PanelEn } from './catalog/u2Panel';
 import { u3GuideEn } from './catalog/u3Guide';
 import { u3LearnEn } from './catalog/u3Learn';
@@ -689,6 +690,7 @@ export const en = {
   ...u2NavigatorEn,
   ...u2LayoutEn,
   ...u2PreferencesEn,
+  ...mcpConnectionEn,
   ...u2PanelEn,
   ...u3GuideEn,
   ...u3LearnEn,

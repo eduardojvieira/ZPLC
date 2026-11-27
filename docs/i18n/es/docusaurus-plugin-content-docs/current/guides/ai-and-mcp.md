@@ -76,6 +76,23 @@ La mayoría de los clientes que ejecutan un servidor MCP local reciben un comand
 }
 ```
 
+### Una acción en la aplicación
+
+Abra el proyecto, luego abra **Preferencias** y busque **Conectar un agente de IA (MCP)**. Elija **Claude Code**, **Cursor** o **VS Code**. El panel muestra el archivo exacto y el texto exacto que escribiría, todo dentro de la carpeta del proyecto:
+
+| Cliente     | Archivo            | Clave             |
+| ----------- | ------------------ | ----------------- |
+| Claude Code | `.mcp.json`        | `mcpServers.zplc` |
+| Cursor      | `.cursor/mcp.json` | `mcpServers.zplc` |
+| VS Code     | `.vscode/mcp.json` | `servers.zplc`    |
+
+- **Escribir la configuración** le pide confirmar y luego escribe solo el texto que usted vio. Sus otras entradas se conservan. Si el archivo ya existe, el anterior se guarda al lado como `<archivo>.bak`; la primera copia nunca se sobrescribe, las siguientes son `.bak.1`, `.bak.2` y así hasta diez, y ZPLC se niega a escribir cuando ya hay diez. También se niega a escribir si `.cursor` o `.vscode` es un enlace, para que una escritura nunca salga de la carpeta del proyecto. El nuevo se escribe en un archivo temporal que luego se renombra, así que una falla nunca deja un archivo a medias. Un archivo que no es JSON válido (los comentarios incluidos) se rechaza y se deja como estaba.
+- **Copiar el comando** copia la línea `claude mcp add zplc -- zplc-mcp --workspace "<carpeta>"` para Claude Code, o el fragmento de la entrada para Cursor y VS Code.
+- La entrada contiene el comando `zplc-mcp`, `--workspace` y, cuando ZPLC la conoce, `--user-data`. Nunca contiene una clave ni un secreto. ZPLC encuentra `zplc-mcp` por sí mismo: primero `ZPLC_MCP_BIN`, que debe ser la ruta completa de un archivo ejecutable, y luego las carpetas de su `PATH`. La entrada contiene la ruta completa que encontró. `zplc-mcp` es un archivo aparte de la versión, no forma parte de la aplicación: descargue el de su sistema. Cuando ZPLC no lo encuentra, el panel lo dice y mantiene apagados **Escribir la configuración** y **Ejecutar la autocomprobación** hasta que defina `ZPLC_MCP_BIN` o agregue su carpeta al `PATH` y vuelva a iniciar ZPLC.
+- **Ejecutar la autocomprobación** ejecuta `zplc-mcp --self-check` sobre el proyecto abierto y muestra si está listo, con la causa y el siguiente paso de cada problema. Solo lee archivos: no toca un dispositivo, un puerto serie ni la red.
+
+El panel trabaja sobre la carpeta abierta, así que en una lección rellena por usted la carpeta de la lección, `<userData>/learn-workspaces/<lessonId>`, y la carpeta de `--user-data`. Esa carpeta es `~/.config/zplc` en Linux, `~/Library/Application Support/zplc` en macOS y `%APPDATA%\zplc` en Windows.
+
 ### La revisión del protocolo
 
 El servidor atiende las dos eras del protocolo, como lo hace por defecto el SDK que usa. Un cliente de la revisión 2026-07-28 no tiene paso `initialize`: nombra la revisión y sus capacidades en el `_meta` de cada solicitud.

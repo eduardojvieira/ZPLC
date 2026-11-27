@@ -134,6 +134,7 @@ describe('preload bridge (IDE-017)', () => {
       'importProgress',
     ]);
     expect(methods('learnWorkspace')).toEqual(['open']);
+    expect(methods('mcpConnection')).toEqual(['preview', 'write', 'selfCheck']);
   });
 
   it('invokes every channel of the contract, and only those', () => {

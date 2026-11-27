@@ -84,6 +84,12 @@ declare global {
       learnWorkspace?: {
         open: (lessonId: string) => Promise<unknown>;
       };
+      /** The MCP connection panel (AIX-007); every answer is validated by the caller. */
+      mcpConnection?: {
+        preview: (client: string) => Promise<unknown>;
+        write: (request: { client: string; expected: string }) => Promise<unknown>;
+        selfCheck: () => Promise<unknown>;
+      };
       candidateChangeSet?: {
         review: (
           request:

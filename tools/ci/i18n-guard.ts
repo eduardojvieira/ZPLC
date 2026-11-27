@@ -430,6 +430,9 @@ export const PROPER_PHRASES: readonly string[] = [
   'Function Block Diagram',
   'Ladder Diagram',
   'Sequential Function Chart',
+  'Claude Code',
+  'VS Code',
+  'Cursor',
 ];
 /**
  * Rioplatense voseo, which decision D-10 leaves out of the interface (UX-030): the pronoun "vos", the present forms of
