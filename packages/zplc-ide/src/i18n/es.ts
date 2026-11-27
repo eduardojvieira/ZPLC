@@ -50,6 +50,7 @@ import { u2AssistantEs } from './catalog/u2Assistant';
 import { u2NavigatorEs } from './catalog/u2Navigator';
 import { u2LayoutEs } from './catalog/u2Layout';
 import { u2PreferencesEs } from './catalog/u2Preferences';
+import { mcpConnectionEs } from './catalog/mcpConnection';
 import { u2PanelEs } from './catalog/u2Panel';
 import { u3GuideEs } from './catalog/u3Guide';
 import { u3LearnEs } from './catalog/u3Learn';
@@ -693,6 +694,7 @@ export const es: Record<MessageKey, string> = {
   ...u2NavigatorEs,
   ...u2LayoutEs,
   ...u2PreferencesEs,
+  ...mcpConnectionEs,
   ...u2PanelEs,
   ...u3GuideEs,
   ...u3LearnEs,

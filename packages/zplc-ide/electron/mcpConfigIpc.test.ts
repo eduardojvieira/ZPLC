@@ -108,7 +108,11 @@ describe('the MCP connection channels (AIX-007)', () => {
       command: 'zplc-mcp',
       args: ['--workspace', '/p', '--user-data', '/u', '--self-check'],
     });
-    expect(spawnVector({ kind: 'mcp-self-check', command: '/opt/zplc-mcp', workspace: '/p' }).args).toEqual(['--workspace', '/p', '--self-check']);
+    expect(spawnVector({ kind: 'mcp-self-check', command: '/opt/zplc-mcp', workspace: '/p' }).args).toEqual([
+      '--workspace',
+      '/p',
+      '--self-check',
+    ]);
     expect(() => spawnVector({ kind: 'mcp-self-check', command: 'zplc-mcp --x', workspace: '/p' })).toThrow('Refused to spawn');
   });
 });

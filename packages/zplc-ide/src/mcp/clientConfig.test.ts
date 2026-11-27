@@ -86,14 +86,17 @@ describe('the MCP config of one client (AIX-007)', () => {
     expect((await readdir(join(folder, '.vscode'))).sort()).toEqual(['mcp.json', 'mcp.json.bak']);
   });
 
-  it('refuses to write text other than the one it would preview now, so a file that changed after the preview is not overwritten', async () => {
-    const folder = await scratch();
-    const preview = await previewClientConfig('claude-code', folder, options);
-    await writeFile(join(folder, '.mcp.json'), JSON.stringify({ mcpServers: { late: { command: 'l' } } }));
-    await expect(writeClientConfig('claude-code', folder, options, preview.text)).rejects.toThrow('changed since');
-    expect(JSON.parse(await readFile(join(folder, '.mcp.json'), 'utf8'))).toEqual({ mcpServers: { late: { command: 'l' } } });
-    await expect(writeClientConfig('claude-code', folder, options, '{}')).rejects.toThrow('changed since');
-  });
+  it(
+    'refuses to write text other than the one it would preview now, so a file that changed after the preview is not ' + 'overwritten',
+    async () => {
+      const folder = await scratch();
+      const preview = await previewClientConfig('claude-code', folder, options);
+      await writeFile(join(folder, '.mcp.json'), JSON.stringify({ mcpServers: { late: { command: 'l' } } }));
+      await expect(writeClientConfig('claude-code', folder, options, preview.text)).rejects.toThrow('changed since');
+      expect(JSON.parse(await readFile(join(folder, '.mcp.json'), 'utf8'))).toEqual({ mcpServers: { late: { command: 'l' } } });
+      await expect(writeClientConfig('claude-code', folder, options, '{}')).rejects.toThrow('changed since');
+    },
+  );
 
   it('refuses an existing file that is not valid JSON, or not an object, with a clear message, and never overwrites it', async () => {
     const folder = await scratch();

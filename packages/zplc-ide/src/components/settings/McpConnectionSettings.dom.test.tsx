@@ -20,7 +20,6 @@ const preview = (client: string) => ({
 
 function bridge(overrides: Record<string, unknown> = {}) {
   const calls: string[] = [];
-  const copied: string[] = [];
   (window as unknown as { electronAPI?: unknown }).electronAPI = {
     mcpConnection: {
       preview: async (client: string) => {
@@ -38,8 +37,7 @@ function bridge(overrides: Record<string, unknown> = {}) {
       ...overrides,
     },
   };
-  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (text: string) => void copied.push(text) } });
-  return { calls, copied };
+  return { calls };
 }
 
 /** A keyboard press: focus the control (what Tab does) and press Enter. */
@@ -53,9 +51,9 @@ describe('the MCP connection panel (AIX-007)', () => {
   it('chooses a client, shows the exact file and text, writes only after a confirmation, and says it was written', async () => {
     const { calls } = bridge();
     const view = dom.render(<McpConnectionSettings />);
-    await dom.waitFor(() => expect(view.getByText('/proj/claude-code.json')).toBeTruthy());
+    await dom.waitFor(() => expect(view.getByText(dom.t('mcp.file', { path: '/proj/claude-code.json' }))).toBeTruthy());
     await key(view, view.getByRole('button', { name: dom.t('mcp.client.cursor') }));
-    await dom.waitFor(() => expect(view.getByText('/proj/cursor.json')).toBeTruthy());
+    await dom.waitFor(() => expect(view.getByText(dom.t('mcp.file', { path: '/proj/cursor.json' }))).toBeTruthy());
     const shown = view.getByLabelText(dom.t('mcp.preview')) as HTMLElement;
     expect(shown.textContent).toBe(preview('cursor').text);
 
@@ -67,14 +65,15 @@ describe('the MCP connection panel (AIX-007)', () => {
   });
 
   it('writes nothing when the person cancels, and copies the command with the keyboard', async () => {
-    const { calls, copied } = bridge();
+    const { calls } = bridge();
     const view = dom.render(<McpConnectionSettings />);
-    await dom.waitFor(() => expect(view.getByText('/proj/claude-code.json')).toBeTruthy());
+    await dom.waitFor(() => expect(view.getByText(dom.t('mcp.file', { path: '/proj/claude-code.json' }))).toBeTruthy());
     await key(view, view.getByRole('button', { name: dom.t('mcp.write') }));
     await key(view, view.getByRole('button', { name: dom.t('mcp.cancel') }));
     expect(view.queryByRole('button', { name: dom.t('mcp.confirm') })).toBeNull();
     await key(view, view.getByRole('button', { name: dom.t('mcp.copy') }));
-    await dom.waitFor(() => expect(copied).toEqual(['copy-of-claude-code']));
+    await dom.waitFor(() => expect(view.getByText(dom.t('mcp.copied'))).toBeTruthy());
+    expect(await navigator.clipboard.readText()).toBe('copy-of-claude-code');
     expect(calls.some((call) => call.startsWith('write:'))).toBe(false);
   });
 
@@ -91,7 +90,11 @@ describe('the MCP connection panel (AIX-007)', () => {
       selfCheck: async () =>
         ready
           ? { ok: true, ready: true, report: { folder: '/proj', toolCount: 12, problems: [] } }
-          : { ok: true, ready: false, report: { folder: '/proj', toolCount: 12, problems: [{ cause: 'no simulator', nextStep: 'build it' }] } },
+          : {
+              ok: true,
+              ready: false,
+              report: { folder: '/proj', toolCount: 12, problems: [{ cause: 'no simulator', nextStep: 'build it' }] },
+            },
     });
     const view = dom.render(<McpConnectionSettings />);
     await key(view, view.getByRole('button', { name: dom.t('mcp.selfCheck') }));
