@@ -55,6 +55,8 @@ describe('AIX-002 zplc://lesson/current reads the lesson goal and never its solu
     expect(lesson.goal).toBe(entry.text.en.summary);
     expect(lesson.objectives.length).toBeGreaterThan(0);
     expect(lesson.hints.length).toBeGreaterThan(0);
+    // CRS-017: the Guide and the assistant show the same hints, the last one left out.
+    expect(lesson.hints.map((hint: { text: string }) => hint.text)).toEqual(entry.text.en.hints.slice(0, -1).map((hint) => hint.text));
     expectNoSolution(body, await solutionText());
   });
 
