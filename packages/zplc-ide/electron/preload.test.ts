@@ -113,7 +113,7 @@ describe('preload bridge (IDE-017)', () => {
     expect(methods('toolchain')).toEqual(['inspect']);
     expect(methods('firmwareBuild')).toEqual(['start', 'cancel']);
     expect(methods('toolExecutionAudit')).toEqual(['list']);
-    expect(methods('aiProvider')).toEqual(['getStatus', 'getConfig', 'saveConfig', 'storeKey', 'clearKey', 'request', 'cancel']);
+    expect(methods('aiProvider')).toEqual(['getStatus', 'getConfig', 'saveConfig', 'storeKey', 'clearKey', 'testConnection', 'request', 'cancel']);
     expect(methods('nativeSimulation')).toEqual(['startSession', 'stopSession', 'request', 'onEvent']);
     expect(methods('learnProgress')).toEqual([
       'read',

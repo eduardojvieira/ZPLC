@@ -2,7 +2,8 @@ import { describe, expect, test } from 'bun:test';
 import path from 'node:path';
 
 import { LESSON_INDEX } from '../generated/lessonIndex';
-import { buildProjectContext, lessonIdOfWorkspace, type ProjectContextInput } from './projectContext';
+import { MCP_CONTEXT_CAPS } from '../mcp/resources';
+import { buildProjectContext, capContext, CONTEXT_CAPS, lessonIdOfWorkspace, type ProjectContextInput } from './projectContext';
 
 const lessonEntry = LESSON_INDEX.lessons.find((lesson) => lesson.id === 'ld-no-nc-contacts')!;
 const lessonText = {
@@ -123,21 +124,35 @@ describe('one project context for the assistant and an MCP client (AIX-001)', ()
 });
 
 describe('the lesson in the context (AIX-002, D-32)', () => {
-  test('gives the goal, the stage and the hints, and never a solution, whether solutions are shown or hidden', () => {
+  test('gives the goal and the stage, and never a solution, whether solutions are shown or hidden', () => {
     for (const solutionsHidden of [false, true]) {
       const context = buildProjectContext(input(), { solutionsHidden });
-      expect(context.lesson).toEqual({
+      expect(context.lesson).toMatchObject({
         lessonId: 'ld-no-nc-contacts',
         title: 'A stop button wired normally closed',
         languages: ['LD'],
         goal: 'Stop the motor when the wire breaks.',
         objectives: ['Use an NC contact for Stop'],
         stage: { key: 'edit', title: 'Change the rung' },
-        hints: [{ level: 1, text: 'Which contact opens when the wire breaks?' }],
         solutionsHidden,
       });
       expect(JSON.stringify(context)).not.toContain(lessonEntry.solution.project);
     }
+  });
+
+  test('with solutions hidden the last hint, which gives the answer away, is left out; shown, every hint is there', () => {
+    const two = {
+      ...input(),
+      lesson: {
+        ...input().lesson!,
+        text: { ...lessonText, hints: [...lessonText.hints, { level: 2, text: 'Swap the contact for a normally open one.' }] },
+      },
+    };
+    expect(buildProjectContext(two, { solutionsHidden: true }).lesson?.hints).toEqual([
+      { level: 1, text: 'Which contact opens when the wire breaks?' },
+    ]);
+    expect(buildProjectContext(two, { solutionsHidden: false }).lesson?.hints).toHaveLength(2);
+    expect(JSON.stringify(buildProjectContext(two, undefined))).not.toContain('normally open one');
   });
 
   test('a renderer-side value cannot turn solutions back on: only the policy the main process read decides', () => {
@@ -162,5 +177,26 @@ describe('the lesson in the context (AIX-002, D-32)', () => {
     for (const policy of [undefined, null]) {
       expect(buildProjectContext(input(), policy as never).lesson?.solutionsHidden).toBe(true);
     }
+  });
+});
+
+describe('the bounds of the context are the ones of the MCP side (AIX-001)', () => {
+  test('CONTEXT_CAPS is MCP_CONTEXT_CAPS', () => {
+    expect(CONTEXT_CAPS).toEqual(MCP_CONTEXT_CAPS);
+  });
+
+  test('capContext cuts lists, text, keys and depth to those caps', () => {
+    const wide = Object.fromEntries(Array.from({ length: 80 }, (_, i) => [`k${i}`, i]));
+    const deep = (n: number): unknown => (n === 0 ? 'leaf' : { next: deep(n - 1) });
+    const capped = capContext({ list: Array.from({ length: 100 }, (_, i) => i), text: 'x'.repeat(400), wide, deep: deep(12) }) as {
+      list: number[];
+      text: string;
+      wide: Record<string, number>;
+      deep: unknown;
+    };
+    expect(capped.list).toHaveLength(64);
+    expect(capped.text).toHaveLength(256);
+    expect(Object.keys(capped.wide)).toHaveLength(64);
+    expect(JSON.stringify(capped.deep).match(/next/g)).toHaveLength(8);
   });
 });

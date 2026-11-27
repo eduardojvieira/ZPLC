@@ -116,3 +116,71 @@ describe('COM-030: no AI request can carry a device link', () => {
       expect(text.includes(primitive), primitive).toBe(false);
   });
 });
+
+
+describe('AIX-001: the structured context a request may carry', () => {
+  const failedScenarios = [
+    { id: 'Belt', assertions: [{ index: 0, kind: 'at', atMs: 10, checks: [{ signal: 'Belt.Run', expected: true, observed: false }] }] },
+  ];
+  const rich = {
+    ...VALID.ask,
+    diagnostics: [{ code: 'E_TYPE', message: 'Type mismatch', path: 'src/Main.st', line: 3, column: 2, element: 'rung:r1' }],
+    failedScenarios,
+    facts: { 'fact:itemsDropped': 2, 'fact:lit': true },
+    selection: { startLine: 1, endLine: 2, text: 'Run := TRUE;' },
+    lessonContext: { lessonId: 'ld-no-nc-contacts', stage: 'edit' },
+    locale: 'es',
+  };
+
+  test('accepts every field of the context, in every mode but a trace outside debug', () => {
+    for (const mode of ['ask', 'plan', 'edit', 'debug'])
+      expect(isAllowedAiProviderRequest({ ...rich, mode, activeFile: { fileId: 'file:src/Main.st', path: 'src/Main.st' } }), mode).toBe(true);
+    expect(isAllowedAiProviderRequest({ ...rich, selection: { element: 'block:b2' } })).toBe(true);
+    expect(isAllowedAiProviderRequest({ ...rich, lessonContext: { lessonId: 'ld-no-nc-contacts' } })).toBe(true);
+    expect(isAllowedAiProviderRequest({ ...VALID.ask, trace: [{ atMs: 1, signal: 'Q.Motor', value: true }] })).toBe(false);
+  });
+
+  test('refuses what exceeds a bound: 256 characters of a message, 4 scenarios, 8 assertions, 8 checks, 32 facts', () => {
+    const base = failedScenarios[0]!;
+    const check = base.assertions[0]!.checks[0]!;
+    const refused: Array<[string, unknown]> = [
+      ['message', { diagnostics: [{ code: 'E_TYPE', message: 'm'.repeat(257) }] }],
+      ['scenarios', { failedScenarios: Array.from({ length: 5 }, () => base) }],
+      ['assertions', { failedScenarios: [{ id: 'B', assertions: Array.from({ length: 9 }, () => base.assertions[0]) }] }],
+      ['checks', { failedScenarios: [{ id: 'B', assertions: [{ ...base.assertions[0], checks: Array.from({ length: 9 }, () => check) }] }] }],
+      ['facts', { facts: Object.fromEntries(Array.from({ length: 33 }, (_, i) => [`fact:f${i}`, 1])) }],
+      ['selection', { selection: { startLine: 1, endLine: 1, text: 'x'.repeat(4097) } }],
+    ];
+    for (const [name, extra] of refused) expect(isAllowedAiProviderRequest({ ...VALID.ask, ...(extra as object) }), name).toBe(false);
+  });
+
+  test('refuses a locale, an element, a lesson id and a fact name that are not of the closed forms', () => {
+    const refused: Array<[string, object]> = [
+      ['locale', { locale: 'fr' }],
+      ['element', { diagnostics: [{ code: 'E_TYPE', message: 'm', element: '../../etc' }] }],
+      ['selection element', { selection: { element: 'file:/etc/passwd' } }],
+      ['lesson id', { lessonContext: { lessonId: '../learn' } }],
+      ['fact name', { facts: { 'Main.Run': true } }],
+      ['fact value', { facts: { 'fact:x': 'on' } }],
+      ['selection order', { selection: { startLine: 5, endLine: 2, text: 'x' } }],
+    ];
+    for (const [name, extra] of refused) expect(isAllowedAiProviderRequest({ ...VALID.ask, ...extra }), name).toBe(false);
+  });
+
+  test('the classroom setting and every device or port key stay refused, also inside the new fields', () => {
+    for (const field of ['solutionsHidden', 'hideSolutions', 'endpoint', 'port', 'session'])
+      expect(isAllowedAiProviderRequest({ ...rich, [field]: false }), field).toBe(false);
+    expect(isAllowedAiProviderRequest({ ...rich, selection: { startLine: 1, endLine: 1, text: 'x', port: '/dev/ttyUSB0' } })).toBe(false);
+    expect(isAllowedAiProviderRequest({ ...rich, lessonContext: { lessonId: 'ld-no-nc-contacts', solutionsHidden: false } })).toBe(false);
+    expect(isAllowedAiProviderRequest({ ...rich, failedScenarios: [{ ...failedScenarios[0], device: 'x' }] })).toBe(false);
+    expect(isAllowedAiProviderRequest({ ...rich, diagnostics: [{ code: 'E_TYPE', message: 'm', port: '/dev/ttyUSB0' }] })).toBe(false);
+  });
+
+  test('the channel of the connection test takes no argument and no endpoint', async () => {
+    const { isAllowedAiProviderConfig } = await import('./security');
+    expect(isAllowedAiProviderConfig({ enabled: true, endpoint: 'http://localhost:11434', model: 'llama3' })).toBe(true);
+    expect(isAllowedAiProviderConfig({ enabled: true, endpoint: 'http://localhost.evil.test', model: 'llama3' })).toBe(false);
+    expect(isAllowedAiProviderConfig({ enabled: true, endpoint: 'http://127.0.0.2', model: 'llama3' })).toBe(false);
+    expect(isAllowedAiProviderConfig({ enabled: true, endpoint: 'https://api.openai.com', model: 'gpt' })).toBe(true);
+  });
+});
