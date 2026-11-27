@@ -10,6 +10,8 @@
  * navigator and Save all hold them (P2, P5, P6).
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { create } from 'zustand';
+import type { PlantMapV2 } from '../../plants/plantMap';
 import type { DebugController } from '../../hooks/debugControllerTypes';
 import { useT } from '../../i18n';
 import { SCENE_INDEX } from '../../generated/sceneIndex';
@@ -52,6 +54,26 @@ export interface PlantPanelProps {
 }
 
 const NO_DEPS: PlantPanelDeps = {};
+
+/**
+ * What the Plant activity (plan-u3 P2) and the plant document tell each other: `request` is a scene the activity asks the document
+ * to show (each panel adopts it, and a panel that mounts later starts on it); `shown` is the scene a panel is showing, which the
+ * activity lists. Neither holds an edit: that is the edit session's.
+ */
+type ShownScene = { key: string; scene: PlantSceneFile; map: PlantMapV2 | undefined };
+// A hook beside its component: its own file is outside the surfaces of P2 (move it to `usePlantChoice.ts` with P4).
+// eslint-disable-next-line react-refresh/only-export-components
+export const usePlantChoice = create<{
+  request: SceneRef | undefined;
+  shown: ShownScene | undefined;
+  ask: (ref: SceneRef) => void;
+  show: (shown: ShownScene | undefined) => void;
+}>()((set) => ({
+  request: undefined,
+  shown: undefined,
+  ask: (request) => set({ request: { ...request } }),
+  show: (shown) => set({ shown }),
+}));
 
 /** A scene name as `sceneFilePath` accepts it, from a scene's display name. */
 const saveName = (name: string) =>
@@ -104,7 +126,7 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
   const handle = useIDEStore((state) => state.directoryHandle);
   const saved = useProjectScenes();
   // Until a person chooses, the panel shows the project's own scene, else its first saved one, else the first shipped scene.
-  const [choice, setRef] = useState<SceneRef | undefined>();
+  const [choice, setRef] = useState<SceneRef | undefined>(() => usePlantChoice.getState().request);
   const first = saved.names[0];
   const ref: SceneRef =
     choice ??
@@ -156,6 +178,27 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
     () => (renderer && visible && view === '3d' ? offerSceneFit(() => renderer.fitScene?.()) : undefined),
     [renderer, visible, view],
   );
+
+  // A scene the Plant activity asked for replaces the choice of this panel; the scene this panel shows is what the activity lists.
+  useEffect(
+    () =>
+      usePlantChoice.subscribe((next, prev) => {
+        if (!next.request || next.request === prev.request) return;
+        const own = usePlantEdit.getState();
+        if (own.sceneRef === refKey) own.end();
+        setRef(next.request);
+      }),
+    [refKey],
+  );
+  const shownScene = ready?.scene;
+  const shownMap = ready?.map;
+  useEffect(() => {
+    if (!shownScene) return;
+    usePlantChoice.getState().show({ key: refKey, scene: shownScene, map: shownMap });
+    return () => {
+      if (usePlantChoice.getState().shown?.key === refKey) usePlantChoice.getState().show(undefined);
+    };
+  }, [refKey, shownScene, shownMap]);
 
   const stopped = state === 'stopped';
   const { setRunning } = session;
