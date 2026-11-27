@@ -1,0 +1,17 @@
+PROGRAM LatchTwoSensors
+VAR_INPUT
+    EyeA AT %I0.0 : BOOL;
+    EyeB AT %I0.1 : BOOL;
+END_VAR
+VAR_OUTPUT
+    Run AT %Q0.0 : BOOL;
+END_VAR
+
+IF EyeA THEN
+    Run := TRUE;
+END_IF;
+IF EyeB THEN
+    Run := TRUE;
+END_IF;
+
+END_PROGRAM

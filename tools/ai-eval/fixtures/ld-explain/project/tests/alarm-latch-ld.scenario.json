@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "id": "AlarmLatchLd",
+  "tickMs": 10,
+  "durationMs": 70,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "AlarmLatchLd.Fault": false,
+        "AlarmLatchLd.Ack": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "AlarmLatchLd.Fault": true,
+        "AlarmLatchLd.Ack": false
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "AlarmLatchLd.Fault": false,
+        "AlarmLatchLd.Ack": false
+      }
+    },
+    {
+      "atMs": 30,
+      "set": {
+        "AlarmLatchLd.Fault": false,
+        "AlarmLatchLd.Ack": true
+      }
+    },
+    {
+      "atMs": 40,
+      "set": {
+        "AlarmLatchLd.Fault": false,
+        "AlarmLatchLd.Ack": false
+      }
+    },
+    {
+      "atMs": 50,
+      "set": {
+        "AlarmLatchLd.Fault": true,
+        "AlarmLatchLd.Ack": true
+      }
+    },
+    {
+      "atMs": 60,
+      "set": {
+        "AlarmLatchLd.Fault": false,
+        "AlarmLatchLd.Ack": true
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "AlarmLatchLd.SetFirst": false,
+        "AlarmLatchLd.ResetFirst": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "AlarmLatchLd.SetFirst": true,
+        "AlarmLatchLd.ResetFirst": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 20,
+      "condition": {
+        "AlarmLatchLd.SetFirst": true,
+        "AlarmLatchLd.ResetFirst": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 30,
+      "condition": {
+        "AlarmLatchLd.SetFirst": false,
+        "AlarmLatchLd.ResetFirst": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 40,
+      "condition": {
+        "AlarmLatchLd.SetFirst": false,
+        "AlarmLatchLd.ResetFirst": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "AlarmLatchLd.SetFirst": true,
+        "AlarmLatchLd.ResetFirst": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 60,
+      "condition": {
+        "AlarmLatchLd.SetFirst": false,
+        "AlarmLatchLd.ResetFirst": false
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 10,
+      "withinMs": 0,
+      "condition": {
+        "AlarmLatchLd.SetFirst": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 30,
+      "withinMs": 0,
+      "condition": {
+        "AlarmLatchLd.SetFirst": false
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "AlarmLatchLd.SetFirst": false,
+        "AlarmLatchLd.ResetFirst": true
+      }
+    }
+  ]
+}

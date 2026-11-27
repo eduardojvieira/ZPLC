@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "id": "MotorInterlock",
+  "plant": "motor-v1",
+  "tickMs": 10,
+  "durationMs": 140,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "MotorPlant.Start": false,
+        "MotorPlant.Stop": false,
+        "MotorPlant.GuardClosed": true
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "MotorPlant.Start": true
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "MotorPlant.Start": false
+      }
+    },
+    {
+      "atMs": 50,
+      "set": {
+        "MotorPlant.GuardClosed": false
+      }
+    },
+    {
+      "atMs": 60,
+      "set": {
+        "MotorPlant.Start": true
+      }
+    },
+    {
+      "atMs": 70,
+      "set": {
+        "MotorPlant.Start": false
+      }
+    },
+    {
+      "atMs": 80,
+      "set": {
+        "MotorPlant.GuardClosed": true
+      }
+    },
+    {
+      "atMs": 90,
+      "set": {
+        "MotorPlant.Start": true
+      }
+    },
+    {
+      "atMs": 100,
+      "set": {
+        "MotorPlant.Start": false
+      }
+    },
+    {
+      "atMs": 120,
+      "set": {
+        "MotorPlant.Stop": true
+      }
+    },
+    {
+      "atMs": 130,
+      "set": {
+        "MotorPlant.Stop": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "MotorPlant.Command": false,
+        "MotorPlant.Running": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "MotorPlant.Command": true,
+        "MotorPlant.Running": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 30,
+      "condition": {
+        "MotorPlant.Command": true,
+        "MotorPlant.Running": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "MotorPlant.Command": false,
+        "MotorPlant.Running": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 60,
+      "condition": {
+        "MotorPlant.Command": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 80,
+      "condition": {
+        "MotorPlant.Command": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 90,
+      "condition": {
+        "MotorPlant.Command": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 110,
+      "condition": {
+        "MotorPlant.Command": true,
+        "MotorPlant.Running": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 120,
+      "condition": {
+        "MotorPlant.Command": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 60,
+      "forMs": 20,
+      "condition": {
+        "MotorPlant.Command": false
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 50,
+      "withinMs": 0,
+      "condition": {
+        "MotorPlant.Running": false
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "MotorPlant.Running": true,
+        "MotorPlant.Command": false
+      }
+    }
+  ]
+}
