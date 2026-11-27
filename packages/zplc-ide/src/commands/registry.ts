@@ -237,6 +237,16 @@ export const COMMANDS = [
   { id: 'edit.redo', titleKey: 'command.edit.redo', category: 'edit', pending: true },
   { id: 'plant.feedBoard', titleKey: 'command.plant.feedBoard', category: 'online', physical: true, pending: true },
   { id: 'view.showPlant', titleKey: 'command.view.showPlant', category: 'view', enabled: open },
+
+  // The Assistant polish (AIX-003, AIX-007, plan-aix.md 9.2 and 9.4). Opening the MCP connection panel needs no project: the panel says to
+  // open one.
+  {
+    id: 'ai.askAboutSelection',
+    titleKey: 'command.ai.askAboutSelection',
+    category: 'view',
+    enabled: (s) => s.projectOpen && s.hasActiveFile,
+  },
+  { id: 'ai.connectMcp', titleKey: 'command.ai.connectMcp', category: 'help' },
 ] as const satisfies readonly CommandDefinition[];
 
 export type CommandId = (typeof COMMANDS)[number]['id'];

@@ -232,7 +232,9 @@ export default function LDToolbox({ onInsert }: LDToolboxProps) {
 
   return (
     <div
-      className="w-48 h-full bg-[var(--color-surface-800)] border-r border-[var(--color-surface-600)] p-2 overflow-y-auto flex-shrink-0"
+      className={
+        'w-[12rem] h-full bg-[var(--color-surface-800)] border-r border-[var(--color-surface-600)] ' + 'p-2 overflow-y-auto flex-shrink-0'
+      }
       data-ld-toolbox
     >
       <h2 className="text-xs font-bold text-[var(--color-surface-100)] mb-2 px-1">{t('editors.ld.toolbox')}</h2>

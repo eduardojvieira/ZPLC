@@ -1137,10 +1137,10 @@ describe('the assistant gets the context of the project, the plant and the lesso
       { workspaceId: request.workspaceId, mode: 'ask', prompt: 'Why does it not run?', ...extra } as never,
       new AbortController().signal,
     );
-    const body = seen ? (JSON.parse(String(seen.body)) as { messages: Array<{ content: string }> }) : undefined;
+    const body = seen ? (JSON.parse(String(seen.body)) as { messages: Array<{ role: string; content: string }> }) : undefined;
     // the parsed context is read by path in every test below; a type for it would only repeat the context builder's
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return { result, seen, body, context: body ? (JSON.parse(body.messages[1]!.content) as Record<string, any>) : undefined };
+    return { result, seen, body, context: body ? (JSON.parse(body.messages.at(-1)!.content) as Record<string, any>) : undefined };
   }
   const failed = [
     { id: 'Belt', assertions: [{ index: 0, kind: 'at', atMs: 10, checks: [{ signal: 'Belt.Run', expected: true, observed: false }] }] },
@@ -1190,6 +1190,23 @@ describe('the assistant gets the context of the project, the plant and the lesso
     };
     const { context: big } = await ask({}, {}, bigScene);
     expect(big!.context.plant.scene.parts).toHaveLength(64);
+  });
+
+  it('puts the earlier exchanges of the conversation between the system text and the question, (AI-18)', async () => {
+    const history = [
+      { role: 'user', text: 'What is a scan?' },
+      { role: 'assistant', text: 'One pass of the program.' },
+    ];
+    const { body } = await ask({}, { history });
+    expect(body!.messages.map((message) => message.role)).toEqual(['system', 'user', 'assistant', 'user']);
+    expect(body!.messages[1]!.content).toBe('What is a scan?');
+    expect(JSON.parse(body!.messages[3]!.content).prompt).toBe('Why does it not run?');
+  });
+
+  it('sends no history at all when an earlier exchange holds something that looks like a key (AI-18)', async () => {
+    const { result, body } = await ask({}, { history: [{ role: 'assistant', text: 'use the api_key sk-abc' }] });
+    expect((result as { ok: boolean }).ok).toBe(true);
+    expect(body!.messages).toHaveLength(2);
   });
 
   it('with solutions hidden, or unknown, the context has no solution, no stage text and no last hint, and the system says so', async () => {
@@ -1245,6 +1262,10 @@ describe('the assistant gets the context of the project, the plant and the lesso
         diagnostics: [{ code: 'E_TYPE', message: 'Type mismatch on the coil' }],
         lessonContext: { lessonId: 'ld-no-nc-contacts' },
         activeFile: { fileId: 'file:src/Big.st', path: 'src/Big.st' },
+        history: [
+          { role: 'user', text: 'u'.repeat(2048) },
+          { role: 'assistant', text: 'a'.repeat(2048) },
+        ],
       },
       async (root) => {
         for (let n = 0; n < 16; n += 1) await writeFile(join(root, 'tests', `s${n}.scenario.json`), scenario(n));

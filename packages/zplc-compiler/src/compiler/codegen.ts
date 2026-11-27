@@ -3420,9 +3420,11 @@ function emitUnaryExpr(state: CodeGenState, expr: UnaryExpr): void {
         fail('TYPE_MISMATCH', expr.operand, `Type mismatch: the negation takes a number and this is a BOOL`);
     }
 
-    emitExpression(state, expr.operand);
     const type = staticType(state, expr.operand);
     const info = numericInfo(type);
+    // a 64-bit typed literal is two cells, like every other 64-bit operand
+    if (isWide(type) && !isFloatType(type)) emitConverted(state, expr.operand, type);
+    else emitExpression(state, expr.operand);
 
     if (isWide(type) && !isFloatType(type)) {
         // Two cells [lo hi]

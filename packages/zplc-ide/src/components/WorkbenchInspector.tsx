@@ -90,7 +90,7 @@ export function WorkbenchInspector() {
           <ControllerView />
         </section>
       )}
-      <p className="ledger-inspector-note">{t('inspector.readOnly')}</p>
+      <p className="ledger-inspector-note px-[10px] pb-[10px]">{t('inspector.readOnly')}</p>
     </aside>
   );
 }

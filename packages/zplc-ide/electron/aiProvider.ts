@@ -56,6 +56,8 @@ export interface AiRequest {
   /** The lesson the person is in; whether its solutions are hidden is read here from `<userData>`, never taken from this. */
   lessonContext?: { lessonId: string; stage?: string };
   locale?: 'en' | 'es';
+  /** The last exchanges of this conversation (AI-18), oldest first; dropped first when the body is too large. */
+  history?: Array<{ role: 'user' | 'assistant'; text: string }>;
 }
 export type AiConnectionResult = { ok: true; latencyMs: number } | { ok: false; code: AiErrorCode; retryAfter?: number };
 export interface SafeStorageLike {
@@ -759,6 +761,8 @@ export function createAiProvider(options: AiProviderOptions) {
         project: summary as Record<string, unknown> | undefined,
         context,
         trace: request.trace ?? [],
+        // an earlier answer that holds something key-like is not sent back: the follow-up goes without it, not refused
+        history: request.history?.some(({ text }) => hasKnownSecretPattern(text)) ? [] : (request.history ?? []),
       };
       const contextBody = () =>
         JSON.stringify({
@@ -766,6 +770,7 @@ export function createAiProvider(options: AiProviderOptions) {
           stream: false,
           messages: [
             { role: 'system', content: request.lessonContext && solutionsHidden ? `${SYSTEM_POLICY}\n${HIDDEN_RULE}` : SYSTEM_POLICY },
+            ...state.history.map(({ role, text }) => ({ role, content: text })),
             {
               role: 'user',
               content: JSON.stringify({
@@ -782,6 +787,7 @@ export function createAiProvider(options: AiProviderOptions) {
           ],
         });
       const shedding: Array<() => void> = [
+        () => (state.history = []),
         () => state.project && delete state.project.manifest,
         () => (state.context = { ...state.context, scenarios: [] }),
         () => {

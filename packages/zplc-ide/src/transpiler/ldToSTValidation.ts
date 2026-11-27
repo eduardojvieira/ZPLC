@@ -148,9 +148,65 @@ function validateVariable(value: unknown, section: SymbolInfo['section'], symbol
   }
 }
 
+const BIT_STRING_MAX: Record<string, bigint> = {
+  BYTE: 255n,
+  WORD: 65535n,
+  DWORD: 4294967295n,
+  LWORD: 18446744073709551615n,
+};
+const BIT_STRING_TYPED = /^([A-Za-z_]+)#(.+)$/;
+const BIT_STRING_DECIMAL = /^-?\d+(?:_\d+)*$/;
+const BIT_STRING_BASED = /^(2|8|16)#([0-9A-Fa-f]+(?:_[0-9A-Fa-f]+)*)$/;
+const BASED_DIGIT_PATTERNS: Record<string, { valid: RegExp; prefix: string }> = {
+  '2': { valid: /^[01]+$/, prefix: '0b' },
+  '8': { valid: /^[0-7]+$/, prefix: '0o' },
+  '16': { valid: /^[0-9A-Fa-f]+$/, prefix: '0x' },
+};
+
+function validateBitStringInitialValue(value: unknown, type: string, subject: string, errors: Problems): void {
+  const max = BIT_STRING_MAX[type]!;
+  let exact: bigint;
+  if (typeof value === 'number') {
+    if (!Number.isSafeInteger(value)) {
+      errors.push(`${subject} initialValue must be a ${type} literal`);
+      return;
+    }
+    exact = BigInt(value);
+  } else if (typeof value === 'string') {
+    let body = value;
+    const typed = BIT_STRING_TYPED.exec(value);
+    if (typed) {
+      if (typed[1]!.toUpperCase() !== type) {
+        errors.push(`${subject} initialValue '${value}' must be a ${type} literal`);
+        return;
+      }
+      body = typed[2]!;
+    }
+    if (BIT_STRING_DECIMAL.test(body)) {
+      exact = BigInt(body.replace(/_/g, ''));
+    } else {
+      const based = BIT_STRING_BASED.exec(body);
+      const spec = based ? BASED_DIGIT_PATTERNS[based[1]!] : undefined;
+      const digits = based ? based[2]!.replace(/_/g, '') : '';
+      if (!spec || !spec.valid.test(digits)) {
+        errors.push(`${subject} initialValue '${value}' must be a ${type} literal`);
+        return;
+      }
+      exact = BigInt(`${spec.prefix}${digits}`);
+    }
+  } else {
+    errors.push(`${subject} initialValue must be a ${type} literal`);
+    return;
+  }
+  if (exact < 0n || exact > max) {
+    errors.push(`${subject} initialValue '${String(value)}' is out of range for ${type} (0 to ${max})`);
+  }
+}
+
 function validateInitialValue(value: unknown, type: string, subject: string, errors: Problems): void {
   const normalized = type.toUpperCase();
   if (normalized === 'BOOL' && typeof value !== 'boolean') errors.push(`${subject} initialValue must be BOOL`);
+  else if (normalized in BIT_STRING_MAX) validateBitStringInitialValue(value, normalized, subject, errors);
   else if (
     ['SINT', 'USINT', 'INT', 'UINT', 'DINT', 'UDINT', 'LINT', 'ULINT'].includes(normalized) &&
     (!isInteger(value) || !integerFits(value, normalized))

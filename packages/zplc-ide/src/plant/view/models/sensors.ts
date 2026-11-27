@@ -242,6 +242,7 @@ function sensorBody(kind: unknown, on: boolean, length: number, floor: number): 
           piece('nut-b', box([0.006, 0.024, 0.024], 0.001), [-0.012, 0, 0], 'collar'),
           piece('bezel', rod(0.0095, 0.002, 'x'), [-0.004, 0, 0], lit(on)),
           piece('lamp', rod(0.0095, 0.008, 'x'), [-0.064, 0, 0], lit(on)),
+          piece('field', rod(0.03, 0.004, 'x'), [0.004, 0, 0], 'lamp', on), // the target field, drawn only while it detects
         ],
       };
     }
@@ -257,6 +258,7 @@ function sensorBody(kind: unknown, on: boolean, length: number, floor: number): 
           piece('knob', rod(0.007, 0.024, 'y'), [-0.055, 0.032, 0], 'steel'),
           piece('bezel', rod(0.021, 0.002, 'x'), [-0.008, 0, 0], lit(on)),
           piece('lamp', rod(0.0205, 0.01, 'x'), [-0.08, 0, 0], lit(on)),
+          piece('field', rod(0.045, 0.004, 'x'), [0.004, 0, 0], 'lamp', on), // the target field, drawn only while it detects
         ],
       };
     }

@@ -78,7 +78,7 @@ La mayoría de los clientes que ejecutan un servidor MCP local reciben un comand
 
 ### Una acción en la aplicación
 
-Abra el proyecto, luego abra **Preferencias** y busque **Conectar un agente de IA (MCP)**. Elija **Claude Code**, **Cursor** o **VS Code**. El panel muestra el archivo exacto y el texto exacto que escribiría, todo dentro de la carpeta del proyecto:
+Abra el proyecto, luego abra **Preferencias** y busque **Conectar un agente de IA (MCP)**, o ejecute **Conectar un agente de IA (MCP)** desde la paleta de comandos, que abre ese panel. Elija **Claude Code**, **Cursor** o **VS Code**. El panel muestra el archivo exacto y el texto exacto que escribiría, todo dentro de la carpeta del proyecto:
 
 | Cliente     | Archivo            | Clave             |
 | ----------- | ------------------ | ----------------- |

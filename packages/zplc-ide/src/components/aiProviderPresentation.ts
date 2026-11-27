@@ -119,3 +119,40 @@ export function presentAiProviderMutation(value: unknown): AiProviderMutationPre
     ? { kind: 'error', code: item.code }
     : { kind: 'invalid' };
 }
+
+export type AiConnectionPresentation =
+  { kind: 'ok'; latencyMs: number } | { kind: 'error'; code: string; retryAfter?: number } | { kind: 'invalid' };
+
+/** The answer of the connection test (AIX-006): how long the probe took, or the code of what is wrong; anything else is not trusted. */
+export function presentAiConnection(value: unknown): AiConnectionPresentation {
+  const item = record(value);
+  if (!item) return { kind: 'invalid' };
+  const keys = Object.keys(item);
+  if (item.ok === true && keys.length === 2 && Number.isFinite(item.latencyMs) && (item.latencyMs as number) >= 0)
+    return { kind: 'ok', latencyMs: Math.round(item.latencyMs as number) };
+  if (item.ok === false && typeof item.code === 'string' && ERROR_CODES.has(item.code)) {
+    if (keys.length === 2) return { kind: 'error', code: item.code };
+    if (keys.length === 3 && Number.isInteger(item.retryAfter) && (item.retryAfter as number) >= 1)
+      return { kind: 'error', code: item.code, retryAfter: item.retryAfter as number };
+  }
+  return { kind: 'invalid' };
+}
+
+/**
+ * What is wrong, in a sentence with the next step. `AI_CONTEXT_REJECTED` is the code of a refused endpoint (and of other refused input), so
+ * the sentence names the rule instead of the code: https, or http to localhost, 127.0.0.1 or [::1] (AIX-006).
+ */
+export function connectionErrorText(translator: Translator, code: string, retryAfter?: number): string {
+  switch (code) {
+    case 'AI_CONTEXT_REJECTED':
+      return translator.t('assistant.test.endpointNotAllowed');
+    case 'AI_UNCONFIGURED':
+      return translator.t('assistant.test.unconfigured');
+    case 'AI_VAULT_UNAVAILABLE':
+      return translator.t('assistant.test.vault');
+    case 'AI_TIMEOUT':
+      return translator.t('assistant.test.timeout');
+    default:
+      return providerErrorText(translator, code, retryAfter);
+  }
+}

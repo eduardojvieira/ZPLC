@@ -183,6 +183,36 @@ describe('sensor kinds (owner decision 4; VIS-014)', () => {
     expect(slot(capacitive!, 'barrel').role).toBe('housing');
   });
 
+  it('VIS-016, VIS-003 the inductive and capacitive sensors draw a target field in front of the face only while they detect', async () => {
+    const ids = ['sensor-inductive', 'sensor-capacitive'];
+    const parts = ids.map((part, i) => ({
+      id: `s${i}`,
+      part,
+      name: `S${i}`,
+      position: [0, 0.5, i] as [number, number, number],
+      rotationYDeg: 0,
+      config: {},
+    }));
+    const { core, view } = await open({ schemaVersion: 1, name: 'field', parts, cameras: [] });
+    const visible = (id: string) =>
+      new Set(
+        partModel(view(id))!
+          .filter((p) => p.visible && !p.slot.startsWith('dash-'))
+          .map((p) => p.slot),
+      );
+    for (const [i, name] of [
+      [0, 'S0'],
+      [1, 'S1'],
+    ] as const) {
+      const clear = visible(`s${i}`);
+      core.act(name, 'stuckOn');
+      core.advance(5);
+      const detecting = visible(`s${i}`);
+      expect(clear.has('field')).toBe(false);
+      expect(detecting.has('field')).toBe(true);
+    }
+  });
+
   it('every kind keeps the cues of VIS-016: the output lamp, the bezel and the beam, solid or dashed', async () => {
     for (const m of await kinds()) for (const s of ['lamp', 'bezel', 'beam', 'dash-0']) expect(slot(m, s)).toBeDefined();
   });
