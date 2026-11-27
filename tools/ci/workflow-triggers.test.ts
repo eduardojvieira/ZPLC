@@ -54,7 +54,7 @@ describe('PUB-005: the documentation site is published with the release, never b
     expect(run).toContain('--latest');
     expect(run).toContain('::notice::');
     expect(run).toContain('stale=true');
-    expect(run).not.toContain('--limit 1');
+    expect(run).not.toMatch(/--limit 1\b/);
     expect(jobs.guard!.outputs).toHaveProperty('stale');
     expect(jobs.build!.if).toContain("needs.guard.outputs.stale != 'true'");
   });

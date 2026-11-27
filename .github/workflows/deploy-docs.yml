@@ -2,12 +2,27 @@ name: Deploy Documentation
 
 # PUB-005: the site changes with the release and not before. It is published when a person publishes a release (built from
 # the tag of that release), or by a manual dispatch for a docs-only fix: the dispatched ref must descend from the latest
-# published release tag and change nothing outside docs/ (tools/ci/docs-dispatch-guard.ts). A push builds nothing here.
-# Pull requests build the site to check it and never deploy.
+# published release tag and change nothing outside docs/ (tools/ci/docs-dispatch-guard.ts). A release that is not the highest
+# stable version (a 2.0.x backport after 2.1.0) is not deployed. A push to master and a pull request build the site to
+# check it and never deploy.
 
 on:
   release:
     types: [published]
+  push:
+    branches: [master]
+    paths:
+      - 'docs/**'
+      - 'tools/docs/**'
+      - 'tools/hil/validate_docs_parity.py'
+      - 'firmware/lib/zplc_core/include/**'
+      - 'firmware/app/boards/boards.json'
+      - 'packages/zplc-ide/**'
+      - 'packages/zplc-compiler/**'
+      - 'tools/wasm-core/**'
+      - 'firmware/lib/zplc_core/src/**'
+      - 'firmware/apps/posix_host/src/**'
+      - '.github/workflows/deploy-docs.yml'
   pull_request:
     branches: [master, main, zplc-2.0-candidate]
     paths:
@@ -39,14 +54,16 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Runs only for a dispatch, before anything is built: every refusal fails this job and so the whole run.
+  # Runs for a dispatch and for a published release, before anything is built. A dispatch that is refused fails this job and
+  # so the whole run; a release that is not the highest stable version only sets `stale`, which skips the build and deploy.
   guard:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'release' && !github.event.release.prerelease)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
       sha: ${{ steps.check.outputs.sha }}
       tag: ${{ steps.check.outputs.tag }}
+      stale: ${{ steps.check.outputs.stale }}
     steps:
       - name: Checkout the requested ref with every tag
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -63,17 +80,27 @@ jobs:
         id: check
         env:
           GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
+          set -euo pipefail
           git fetch --force --tags origin
-          tag="$(gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --exclude-pre-releases --limit 1 --json tagName --jq '.[0].tagName // empty')"
-          if [ -z "$tag" ]; then echo "refused: no published release to descend from." >&2; exit 1; fi
+          # the highest stable semver of the published releases, not the newest one: a 2.0.x backport made after 2.1.0 is not the latest
+          tag="$(gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --exclude-pre-releases --limit 100 --json tagName --jq '.[].tagName' | bun tools/ci/docs-dispatch-guard.ts --latest)"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if [ "$EVENT_NAME" = release ]; then
+            if [ "$RELEASE_TAG" != "$tag" ]; then
+              echo "::notice::$RELEASE_TAG is not the highest published release ($tag): the site is not deployed from it."
+              echo "stale=true" >> "$GITHUB_OUTPUT"
+            fi
+            exit 0
+          fi
           out="$(bun tools/ci/docs-dispatch-guard.ts --tag "$tag" --ref HEAD)"
           echo "$out" >> "$GITHUB_OUTPUT"
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
   build:
     needs: guard
-    if: ${{ !cancelled() && (needs.guard.result == 'success' || needs.guard.result == 'skipped') && (github.event_name != 'release' || !github.event.release.prerelease) }}
+    if: ${{ !cancelled() && (needs.guard.result == 'success' || needs.guard.result == 'skipped') && needs.guard.outputs.stale != 'true' && (github.event_name != 'release' || !github.event.release.prerelease) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20 # generating and validating took 1 s and the documentation build 134 s on 4 cores
     steps:
