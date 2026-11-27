@@ -123,4 +123,31 @@ describe('the Plant activity (PLS-005, PLS-006, SCN-016)', () => {
         for (const id of (el.getAttribute(name) ?? '').split(' ').filter(Boolean))
           expect(view.container.querySelectorAll(`[id="${CSS.escape(id)}"]`).length).toBe(1);
   });
+
+  it('PLS-005 "Add a plant" runs the command that opens the plant document', async () => {
+    const { bindCommands } = await import('../../commands/bus');
+    const ran: string[] = [];
+    const unbind = bindCommands({
+      'view.plant': () => void ran.push('view.plant'),
+      'view.showPlant': () => void ran.push('view.showPlant'),
+    });
+    try {
+      const { user } = dom.render(<PlantActivityView />);
+      await user.click(dom.screen.getByRole('button', { name: dom.t('plant.activity.add') }));
+      expect(ran).toEqual(['view.plant']);
+    } finally {
+      unbind();
+    }
+  });
+
+  it('PLS-005 the refusal note goes away when editing ends', async () => {
+    showScene(true);
+    usePlantEdit.getState().begin({ scene, map }, 'belt-to-sensor');
+    usePlantEdit.getState().editor!.place = () => ({ problem: 'parts[3].part: no such part' });
+    const { user } = dom.render(<PlantActivityView />);
+    await user.click(dom.screen.getByRole('button', { name: dom.t('plantEditor.add') }));
+    expect(dom.screen.getByRole('alert')).toBeTruthy();
+    await dom.act(async () => void usePlantEdit.getState().end());
+    expect(dom.screen.queryByRole('alert')).toBeNull();
+  });
 });
