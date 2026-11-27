@@ -6,7 +6,8 @@ const dom = await setupDom();
 await stubProjectLoader();
 await stubMonaco();
 const { DEFAULT_SHELL_STATE, useShellLayout } = await import('../store/useShellLayout');
-const { WorkbenchShell, useCollapsible } = await import('./WorkbenchShell');
+const { WorkbenchShell } = await import('./WorkbenchShell');
+const { useCollapsible } = await import('./useCollapsible');
 
 const StubEditor = () => <div data-testid="stub-editor" />;
 const StubConsole = () => <div data-testid="stub-console" />;
@@ -138,7 +139,7 @@ describe('WorkbenchShell initial sidebar state (UX-023)', () => {
   });
 });
 
-/** A stand-in for the library's panel handle that behaves as react-resizable-panels 4.21 does: expand() reopens at the remembered size, or at minSize. */
+/** A stand-in for the panel handle as react-resizable-panels 4.21 behaves: expand() reopens at the remembered size, else at minSize. */
 function fakePanel(minSize: number) {
   let size = 0;
   let remembered: number | undefined;
