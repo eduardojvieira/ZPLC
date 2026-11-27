@@ -5,6 +5,7 @@
  *
  * Pure TypeScript with no Electron, store or component import.
  */
+import type { DebugMap } from '../compiler';
 
 /** Whether the value the runtime holds is the value that was written; a REAL is held as a 32-bit float. */
 export function sameInputValue(type: string, written: boolean | number, held: boolean | number): boolean {
@@ -93,4 +94,25 @@ export function faceplateUnavailable(state: {
   if (state.vmState === 'paused') return 'paused';
   if (state.vmState !== 'running') return 'notRunning';
   return state.supported ? null : 'noCapability';
+}
+
+/** The inputs the plant map drives (PLS-007), by their qualified path (`Motor.Start`): the plant owns them until a person forces one. */
+export function plantFedPaths(resolved: { drives: Record<string, { path: string }> }): ReadonlySet<string> {
+  return new Set(Object.values(resolved.drives).map((input) => input.path));
+}
+
+/**
+ * The qualified path of the variable a Watch row reads. The table resolves a name like the compiler's `findVariable`: the first
+ * program that declares the root of the path, so a bare `Start` is the `Start` of that program. Which input the plant owns is
+ * decided by this path, never by the name alone. A path that no program declares stays as it is.
+ */
+export function watchOwnerPath(debugMap: Pick<DebugMap, 'pou'> | null | undefined, path: string): string {
+  if (!debugMap) return path;
+  const root = path.split('.')[0]!;
+  for (const [pou, info] of Object.entries(debugMap.pou)) {
+    // a variable of a function is declared as `Function.name`: the whole path is its name
+    if (info.vars[path]) return path.includes('.') ? path : `${pou}.${path}`;
+    if (info.vars[root]) return `${pou}.${path}`;
+  }
+  return path;
 }

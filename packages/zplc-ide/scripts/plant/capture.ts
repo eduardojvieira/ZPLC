@@ -2,7 +2,7 @@
  * Captures of the 3D plant from the product's own renderer (spec 012 VIS-014, VIS-015, VIS-016), for a person to judge the look:
  *
  *   bun scripts/plant/capture.ts [--out <dir>] [--scenes a,b] [--sizes 480x640,1280x720] [--modes light,dark] [--levels low,high]
- *                                [--no-states] [--no-looks]
+ *                                [--no-states] [--no-looks] [--state working]
  *   bun scripts/plant/capture.ts --catalogue [--out <dir>] [--modes light,dark] [--levels low,high]
  *   bun scripts/plant/capture.ts --fps [--uncapped] [--scenes a,b] [--seconds 30]
  *   bun scripts/plant/capture.ts --concepts <dir of the concept images> [--out <dir>]
@@ -178,7 +178,7 @@ async function captures(page: Cdp): Promise<void> {
     for (const [w, h] of sizes)
       for (const mode of MODES)
         for (const quality of LEVELS) {
-          const spec = { scene, quality, mode, width: w, height: h, state: 'working' };
+          const spec = { scene, quality, mode, width: w, height: h, state: flag('state') ?? 'working' };
           const { png } = (await call(page, `m.shot(${JSON.stringify(spec)})`)) as { png: string };
           const name = `${scene}-${w}x${h}-${mode}-${quality}.png`;
           save(name, png);

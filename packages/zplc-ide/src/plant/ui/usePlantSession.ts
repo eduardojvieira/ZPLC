@@ -160,6 +160,32 @@ export interface PlantBinding {
 
 export const UI_TICK_MS = 100;
 
+let boundMap: PlantMapV2 | undefined;
+const mapListeners = new Set<() => void>();
+
+/** Records the plant map the session now bound runs by (PLS-007); the returned function clears it. */
+export function bindPlantMap(map: PlantMapV2): () => void {
+  boundMap = map;
+  mapListeners.forEach((listener) => listener());
+  return () => {
+    if (boundMap === map) {
+      boundMap = undefined;
+      mapListeners.forEach((listener) => listener());
+    }
+  };
+}
+
+/** The map of the plant session that is bound now, whatever scene it came from; none while no plant session is bound. */
+export function useBoundPlantMap(): PlantMapV2 | undefined {
+  return useSyncExternalStore(
+    (listener) => {
+      mapListeners.add(listener);
+      return () => void mapListeners.delete(listener);
+    },
+    () => boundMap,
+  );
+}
+
 const fileText = (files: ReadonlyMap<string, { path: string; content: string }>, path: string): string | undefined =>
   [...files.values()].find((file) => file.path === path)?.content;
 const NEVER = () => () => undefined;
@@ -335,6 +361,7 @@ export function usePlantSession(
   useEffect(() => {
     if (!session || !transport) return;
     const unregister = registerPlantTransport(transport);
+    const unbind = bindPlantMap(map!);
     const off = session.onChange((event) => {
       if (event.kind === 'scan') push(event.snapshot);
       if (event.kind === 'slowdown') {
@@ -344,10 +371,11 @@ export function usePlantSession(
     });
     return () => {
       off();
+      unbind();
       unregister();
       if (session.state !== 'idle' && session.state !== 'stopped') void session.stop().catch(() => undefined);
     };
-  }, [session, transport, push]);
+  }, [session, transport, push, map]);
   const state = useSyncExternalStore(
     useCallback((notify: () => void) => (transport ? transport.onChange(notify) : NEVER()), [transport]),
     () => transport?.state ?? 'stopped',

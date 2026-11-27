@@ -1,6 +1,7 @@
 /**
- * AIX-015, AI-03, AI-08, AI-12: trace_get answers a recorded run in agent-sized form. With no new parameter the answer is the
- * 2.0 one; `changes`, `window` and `summary` are opt-in, carry the compact envelope, and every refusal says what to do next.
+ * AIX-015, AI-03, AI-08, AI-12: trace_get answers a recorded run in agent-sized form. With no mode the answer is `changes`;
+ * the 2.0 answer is `mode: "full"`; `changes`, `window` and `summary` carry the compact envelope, and every refusal says what
+ * to do next.
  */
 import { describe, expect, test } from 'bun:test';
 
@@ -53,9 +54,31 @@ const body = (result: { structuredContent: Record<string, unknown> }) => result.
 const indices = (result: { structuredContent: Record<string, unknown> }) =>
   (body(result).samples as Array<{ index: number }>).map((sample) => sample.index);
 
-describe('trace_get with no new parameter answers as 2.0 (AIX-015 contract)', () => {
-  test('AI-12 the 2.0 keys, in the 2.0 order, with the whole trace', () => {
+/** The 2.0 answer of replay(), recorded from the 2.0 code with JSON.stringify before the default changed. */
+const ANSWER_2_0 =
+  '{"ok":false,"scope":"recorded-native-posix-host","scenarioId":"belt","traceSha256":"cccccccccccccccccccccccccc' +
+  'cccccccccccccccccccccccccccccccccccccc","totalSamples":6,"assertions":[{"kind":"AT","passed":false,"atMs":30}]' +
+  ',"trace":[{"atMs":0,"outputs":{"P.Run":false,"fact:count:Eye":false}},{"atMs":10,"outputs":{"P.Run":false,"fac' +
+  't:count:Eye":false}},{"atMs":20,"outputs":{"P.Run":true,"fact:count:Eye":false}},{"atMs":30,"outputs":{"P.Run"' +
+  ':true,"fact:count:Eye":false}},{"atMs":40,"outputs":{"P.Run":true,"fact:count:Eye":true}},{"atMs":50,"outputs"' +
+  ':{"P.Run":true,"fact:count:Eye":true}}],"evidence":{"schemaVersion":1,"operation":"scenario-run","outcome":"fa' +
+  'iled","diagnostics":[],"artifacts":[]},"execution":{"schemaVersion":1,"jobId":"6f1c7c1e-8f43-4f7e-9a51-2b1f0b6' +
+  'f8a10","actor":"mcp","permission":"tests:run","operation":"scenario-run","outcome":"failed","startedAt":"2026-' +
+  '11-26T10:00:00.000Z","finishedAt":"2026-11-26T10:00:01.250Z"},"note":"Recorded native POSIX host result; not l' +
+  'ive runtime, hardware, or HIL."}';
+
+describe('trace_get mode full is the 2.0 answer; no mode is changes (AIX-015 contract)', () => {
+  test('AIX-015 a call with no mode answers in mode changes, in the shape of an explicit changes call', () => {
     const result = traceAnswer(replay(), 'belt', {});
+    expect(body(result).mode).toBe('changes');
+    expect(result.content[0]!.text).toBe(traceAnswer(replay(), 'belt', { mode: 'changes' }).content[0]!.text);
+    expect(result.content[0]!.text).not.toBe(ANSWER_2_0);
+  });
+
+  test('AI-12 AIX-015 mode full is the 2.0 answer byte for byte: the 2.0 keys, in the 2.0 order, with the whole trace', () => {
+    const result = traceAnswer(replay(), 'belt', { mode: 'full' });
+    expect(result.content[0]!.text).toBe(ANSWER_2_0);
+    expect(JSON.stringify(result.structuredContent)).toBe(ANSWER_2_0);
     expect(Object.keys(body(result))).toEqual([
       'ok',
       'scope',
@@ -72,7 +95,7 @@ describe('trace_get with no new parameter answers as 2.0 (AIX-015 contract)', ()
     expect(result.isError).toBe(true);
   });
 
-  test('AI-03 a whole trace over 512 KiB is refused with the modes that read it', () => {
+  test('AI-03 AIX-015 mode full over 512 KiB is refused with the smaller modes that read it', () => {
     const big = replay();
     big.samples = Array.from({ length: 3000 }, (_, index) => ({
       atMs: index * 10,
@@ -80,10 +103,10 @@ describe('trace_get with no new parameter answers as 2.0 (AIX-015 contract)', ()
     }));
     big.totalSamples = big.samples.length;
     delete big.observed;
-    const result = traceAnswer(big, 'belt', {});
+    const result = traceAnswer(big, 'belt', { mode: 'full' });
     expect(body(result)).toMatchObject({ ok: false, error: 'MCP_OUTPUT_LIMIT', validValues: ['changes', 'summary', 'window'] });
     expect(body(result).message).toContain('512 KiB');
-    expect(body(result).nextStep).toContain('mode');
+    expect(body(result).nextStep).toContain('"changes", "window" or "summary"');
     expect(result.content[0]!.text.length).toBeLessThan(2048);
   });
 });

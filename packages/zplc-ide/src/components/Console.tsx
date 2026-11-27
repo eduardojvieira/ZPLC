@@ -300,7 +300,6 @@ export function Console({ debugController }: ConsoleProps) {
                 debugMap={debugMap}
                 sample={latestNativeTrace}
                 currentCompilerRunId={compilerRunId}
-                setSimulationInput={debugController?.setSimulationInput}
               />
               {nativeTrace.length === 0 ? (
                 <CommandEmptyState

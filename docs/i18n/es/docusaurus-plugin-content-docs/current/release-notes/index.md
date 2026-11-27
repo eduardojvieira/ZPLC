@@ -18,6 +18,11 @@ qué deja de funcionar, los pasos para pasar desde 1.x y qué no se ha verificad
 ZPLC 2.1.0 es la versión posterior a 2.0.1. Este sitio muestra 2.1 solo cuando esa versión está publicada: lo que añade 2.1
 y los pasos para pasar desde 2.0 se escriben junto con la versión. Las notas que siguen son las de 2.0.0.
 
+Límite conocido de 2.1.0 en Windows: el simulador no tiene los bloques Modbus ni MQTT, ni el bucle local (loopback), ni el
+enlace con el dispositivo, igual que en 2.0.1. Las lecciones que los necesitan (`modbus-coil-fbd`,
+`modbus-register-round-trip`, `mqtt-publish-subscribe`) lo dicen al abrirse y se ejecutan en Linux y macOS. Es el
+enunciado de un límite, no una medición.
+
 :::
 
 ## Lo más destacado
