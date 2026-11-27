@@ -586,6 +586,7 @@ export function Sidebar() {
                 description={t('panel.explorer.empty.description')}
                 actionLabel={t('explorer.newFile')}
                 onAction={handleOpenNewFileModal}
+                region="navigator"
               />
             )
           ) : (

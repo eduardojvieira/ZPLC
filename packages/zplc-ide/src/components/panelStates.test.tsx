@@ -12,7 +12,7 @@ const { TestsTab } = await import('./console/TestsTab');
 const { EMPTY_STATE_KEY, useEmptyStateSeen } = await import('./emptyStateSeen');
 
 beforeEach(() => {
-  window.localStorage.removeItem(EMPTY_STATE_KEY);
+  useEmptyStateSeen.persist.getOptions().storage!.removeItem(EMPTY_STATE_KEY);
   useEmptyStateSeen.setState({ taken: {} });
 });
 afterEach(() => resetCommandsForTest());
@@ -59,11 +59,19 @@ describe('panel empty states (UX-021)', () => {
 });
 
 const problems = () => (
-  <ProblemsPanel summary="" live={[]} buildMessages={[]} checked={false} fileTree={null} activeFilePath={null} onActivate={() => undefined} />
+  <ProblemsPanel
+    summary=""
+    live={[]}
+    buildMessages={[]}
+    checked={false}
+    fileTree={null}
+    activeFilePath={undefined}
+    onActivate={() => undefined}
+  />
 );
 const tests = () => (
   <TestsTab
-    runner={{ workspaceTestAvailabilityState: { availability: 'project-required' } } as never}
+    runner={{ workspaceTestAvailabilityState: 'project-required' } as never}
     projectSession={0}
     compilerRunId={0}
     workspaceScenarioLink={null as never}
@@ -91,7 +99,9 @@ describe('the real panels remember that their next action was taken (GDE-012)', 
     const first = dom.render(problems());
     await first.user.click(first.container.querySelector('button')!);
     first.unmount();
-    expect(JSON.parse(window.localStorage.getItem(EMPTY_STATE_KEY)!).state.taken).toEqual({ problems: true });
+    // read through the store's own storage: the module outlives the window of one test file
+    const saved = await useEmptyStateSeen.persist.getOptions().storage!.getItem(EMPTY_STATE_KEY);
+    expect(saved!.state.taken).toEqual({ problems: true });
     await useEmptyStateSeen.persist.rehydrate();
     const again = dom.render(problems());
     expect(again.container.querySelectorAll('button').length).toBe(0);
