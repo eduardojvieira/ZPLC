@@ -32,6 +32,9 @@ and version when the release is cut (see `RELEASING.md`).
   16 MiB is refused before it is read. A plain `trace_get` call answers as in 2.0.
 - Every MCP reply that carries `execution` also carries `audit` with its job id, permission and duration, and a wrong
   scenario, signal or mode is answered with the valid values. The 2.0 fields keep their shape and values.
+- An AI agent writes project files through MCP: `workspace_write` creates or replaces programs in the five languages,
+  `zplc.json`, scenarios, `scene.json` and `plant-map.json` only after they pass the check `workspace_check_write` runs
+  without writing; a refused file is left as it was, and no tool deletes or renames a file.
 
 ### Known limits
 

@@ -222,7 +222,7 @@ function visualViolationSentence(detail: VisualFileViolation, legacy: string): s
 }
 
 /** Every Ladder, FBD and SFC file of the project, loaded as Studio opens it, the FBD types checked against the project's blocks. */
-function visualFileDiagnostics(workspace: WorkspaceProject): LocatedDiagnostic[] {
+export function visualFileDiagnostics(workspace: WorkspaceProject): LocatedDiagnostic[] {
   let blocks: ReturnType<typeof collectProjectBlocks> | undefined;
   return workspace.sources.flatMap((source) => {
     const loaded =
@@ -1433,4 +1433,73 @@ export function scenarioRun(root: string, scenarioId: string, options: ScenarioR
   if (typeof scenarioId !== 'string' || scenarioId.length === 0 || scenarioId.length > 128 || scenarioId.includes('\0'))
     return Promise.resolve(testFailed('scenario-run', [testDiagnostic('TEST_SCENARIO_INVALID', 'tests')]));
   return runWorkspaceScenarios(root, 'scenario-run', scenarioId, options);
+}
+
+/**
+ * The scenarios at `paths` compiled against the program of the workspace as a run compiles them, without running them
+ * (AIX-011): the diagnostics of each one that does not bind, with its place and the accepted values; empty when they all
+ * bind. The program must compile; when it does not, the answer is the compiler's diagnostics.
+ */
+export async function scenariosCheck(root: string, paths: readonly string[]): Promise<LocatedDiagnostic[]> {
+  const loaded = await readWorkspace(root);
+  if (!loaded.ok) return loaded.diagnostics;
+  const scenariosRead = await readWorkspaceScenarios(loaded.workspace.root);
+  if (!scenariosRead.ok) return scenariosRead.diagnostics;
+  let compiled: ReturnType<typeof compileMultiTaskProject>;
+  try {
+    compiled = compileMultiTaskProject(loaded.workspace.project, compilationSources(loaded.workspace));
+  } catch (error) {
+    return safeCompilerDiagnostics(error);
+  }
+  const intervalMs = cyclicTaskStepMs(loaded.workspace);
+  const ids = new Map(scenariosRead.scenarios.map((source) => [(source.input as { id?: unknown })?.id, source.path] as const));
+  const cores: Array<Awaited<ReturnType<typeof createPlantCore>>> = [];
+  const out: LocatedDiagnostic[] = [];
+  try {
+    for (const source of scenariosRead.scenarios.filter((scenario) => paths.includes(scenario.path))) {
+      let scenario: CompiledScenario;
+      try {
+        const sceneBlock = sceneBlockOf(source.input);
+        if (!sceneBlock) scenario = compileScenario(source.input, compiled.debugMap);
+        else {
+          const context = await loadSceneContext(loaded.workspace.root, { scene: sceneBlock });
+          if (!context.ok) {
+            out.push(...context.diagnostics);
+            continue;
+          }
+          const problems = validateScene(context.scene, catalogue);
+          if (problems.length > 0) {
+            out.push(...problems.map((problem) => sceneDiagnostic(source.path, sceneBlock.file, context.scene, problem)));
+            continue;
+          }
+          const core = await createPlantCore(context.scene);
+          cores.push(core);
+          try {
+            scenario = compileScenario(source.input, compiled.debugMap, { port: { core, map: context.map }, scene: context.scene });
+          } catch (error) {
+            out.push(sceneBindingProblem(context.mapFile, error));
+            continue;
+          }
+        }
+      } catch (error) {
+        out.push(scenarioDiagnostic(source, error));
+        continue;
+      }
+      // the ids are told apart without case, as a run tells them; the tick is the task's
+      const sameId = [...ids].find(
+        ([id, path]) => path !== source.path && typeof id === 'string' && id.toLowerCase() === scenario.id.toLowerCase(),
+      );
+      if (sameId)
+        out.push({ code: 'TEST_DUPLICATE_SCENARIO', path: source.path, message: `The id ${scenario.id} is also the id of ${sameId[1]}` });
+      else if (scenario.tickMs !== intervalMs)
+        out.push({
+          code: 'SCENARIO_TICK_MISMATCH',
+          path: source.path,
+          message: `tickMs is ${scenario.tickMs}; it must be the task interval, ${String(intervalMs)} ms`,
+        });
+    }
+  } finally {
+    for (const core of cores) core.dispose();
+  }
+  return out;
 }

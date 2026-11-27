@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/mcp. Do not edit. >>> */}
 
-`zplc-mcp` es un servidor local del Model Context Protocol sobre entrada y salida estándar. Expone 18 herramientas y 26 recursos para un espacio de trabajo. Todas las herramientas son de solo lectura salvo `firmware_build`, que ejecuta una compilación cruzada local y efímera: ninguna herramienta graba, despliega, fuerza, arranca, detiene ni abre un puerto serie o una consola. Los resultados son evidencia de una ejecución registrada en el host, no del hardware.
+`zplc-mcp` es un servidor local del Model Context Protocol sobre entrada y salida estándar. Expone 20 herramientas y 26 recursos para un espacio de trabajo. Todas las herramientas son de solo lectura salvo `firmware_build` y `workspace_write`: `firmware_build` ejecuta una compilación cruzada local y efímera, y `workspace_write` escribe archivos del proyecto dentro del espacio de trabajo tras la verificación de `workspace_check_write`, y nunca borra ni renombra uno. Ninguna herramienta graba, despliega, fuerza, arranca, detiene ni abre un puerto serie o una consola. Los resultados son evidencia de una ejecución registrada en el host, no del hardware.
 
 Esta tabla se lee del archivo fuente `packages/zplc-ide/src/mcp/server.ts`; su texto es el de la propia fuente, por eso es igual en inglés y en español.
 
@@ -45,6 +45,8 @@ El servidor atiende el apretón de manos de 2025 (`initialize`) además de la re
 | `plant_inspect` | Inspect plant scene and map | `sceneFile`, `mapFile` | sí | Read the plant scene, the signals it offers, the plant map and the map points the compiled program does not have. |
 | `scenarios_list` | List scenarios |   | sí | List every scenario of tests with its id, timing, scene and a summary of each expectation; use the ids to run them. |
 | `server_self_check` | Check this server |   | sí | Answer what this server serves: project name, optional folders, simulator, protocols, counts and the boundary. |
+| `workspace_check_write` | Check a write | `files`, `compileCheck` | sí | Check 1 to 8 files to create or replace as workspace_write checks them; it writes nothing and names each problem. |
+| `workspace_write` | Write project files | `files`, `requireCompile`, `expectedBaseSha256` | no | Check and write 1 to 8 files of src, tests, zplc.json, scene.json, plant-map.json; never deletes or renames. |
 
 ## Recursos
 

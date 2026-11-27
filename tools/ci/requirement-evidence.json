@@ -2294,6 +2294,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/components/workspaceTestPresentation.test.ts","test":"presentCandidateChangeSetReview (IDE-030)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/deviceLink.test.ts","test":"IDE-030: the tools an assistant can call are a closed list that names no physical operation (AGENTS.md rule 8)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"read-only program source resources (IDE-030)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/workspaceWrite.test.ts","test":"refuses a credential in zplc.json with the field named and never its value (IDE-030)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"43 A change is reviewed as a difference and saved by a person, and Studio works without the assistant","partial":true},
     {"kind":"manual","ref":"packages/zplc-ide/scripts/journeys.ts","test":"43 A change is reviewed as a difference and saved by a person, and Studio works without the assistant","partial":true,"note":"The assistant's own proposal is not driven end to end by a journey: the provider keeps its key in the secret store of the system, which a headless Linux host does not have. A proposal takes the road that this journey drives (the review of the Changes tab, then the person's own save); the boundary of the provider (an inert answer, no tools, no field that names a device) is held by electron/aiProvider.test.ts and electron/aiDeviceLink.test.ts, and the closed list of MCP tools by src/mcp/deviceLink.test.ts."}
   ],
