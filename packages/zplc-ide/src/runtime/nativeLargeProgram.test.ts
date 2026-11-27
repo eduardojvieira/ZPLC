@@ -59,6 +59,19 @@ async function waitFor<T>(read: () => Promise<T | undefined> | T | undefined, wh
   }
 }
 
+/**
+ * The error a request to the runtime is refused with. Bun on Windows never settles `expect(pending).rejects` while
+ * the answer still has to come through the pipe of a runtime the test started, so the request is awaited first.
+ */
+async function refusalOf(request: Promise<unknown>): Promise<Error> {
+  try {
+    await request;
+  } catch (error) {
+    return error as Error;
+  }
+  throw new Error('the runtime accepted the request');
+}
+
 class FakeChild extends EventEmitter {
   readonly stdin = new PassThrough();
   readonly stdout = new PassThrough();
@@ -216,14 +229,16 @@ describe('native simulation of a large program', () => {
         await expect(adapter.loadProgram(oneMore)).rejects.toThrow(tooLarge(NATIVE_PROGRAM_MAX_BYTES + 1));
 
         // The runtime refuses it too, in the same words, when a client skips the IDE (a script, a CLI).
-        const direct = supervisor.request({
-          id: 'direct-oversize',
-          type: 'request',
-          method: 'program.load',
-          params: { bytecode_hex: bytesToHex(oneMore) },
-        });
-        await expect(direct).rejects.toThrow(tooLarge(NATIVE_PROGRAM_MAX_BYTES + 1));
-        await expect(direct).rejects.not.toThrow('unable to parse request envelope');
+        const direct = await refusalOf(
+          supervisor.request({
+            id: 'direct-oversize',
+            type: 'request',
+            method: 'program.load',
+            params: { bytecode_hex: bytesToHex(oneMore) },
+          }),
+        );
+        expect(direct.message).toContain(tooLarge(NATIVE_PROGRAM_MAX_BYTES + 1));
+        expect(direct.message).not.toContain('unable to parse request envelope');
 
         // The refusal left the session as it was: the largest program is still loaded and runs again.
         await adapter.start();
