@@ -29,7 +29,10 @@ import { describePlant } from '../text/describe';
 import type { DisplayPrefs } from '../view/displayModes';
 import { qualityLevels, type QualityLevel } from '../view/quality';
 import type { PlantRenderer } from '../view/renderer';
+import { listIoMap } from '../../runtime/ioMap';
 import { OperatePanel } from './OperatePanel';
+import { PlantIoMode } from './PlantIoMode';
+import { useBoardPlantIo } from './plantIoAdapter';
 import { PlantCanvas } from './PlantCanvas';
 import {
   refValue,
@@ -129,6 +132,17 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
   const binding = usePlantSession(controller, ref, deps, edited?.key === refKey ? edited.texts : undefined);
   const { load, snapshot, state } = binding;
   const ready = load.phase === 'ready' ? load : undefined;
+  // Plant I/O mode (PLS-008): offered only with a connected board that can be fed and no simulation driving this core.
+  const debugMap = useIDEStore((store) => store.debug.debugMap);
+  const ioMap = useMemo(() => listIoMap(debugMap), [debugMap]);
+  const feed = useBoardPlantIo({
+    core: ready?.core,
+    map: ready?.map,
+    ioMap,
+    idle: state === 'stopped',
+    visible,
+    shortestPulseMs: ready?.scene.shortestPulseMs,
+  });
 
   const display = useMemo<DisplayPrefs>(() => {
     const dark =
@@ -253,6 +267,7 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
         <Button data-plant-edit-scene aria-pressed={!!editing} disabled={!stopped || !ready || !!session.editor} onClick={startEditing}>
           {t('plant.panel.editScene')}
         </Button>
+        <PlantIoMode boardConnected={feed.available} />
         {/* Controls that appear with the scene come last: appending never moves the ones already there. */}
         {ready && view === '3d' && ready.scene.cameras.length > 0 && (
           <Select

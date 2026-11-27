@@ -17,7 +17,17 @@ function everyState(): CommandState[] {
           for (const projectOpen of BOOLS)
             for (const plantFeedable of BOOLS)
               for (const vmState of VM_STATES)
-                states.push({ ...INITIAL_COMMAND_STATE, mode, connected, compiled, busy, projectOpen, hasActiveFile: projectOpen, vmState, plantFeedable });
+                states.push({
+                  ...INITIAL_COMMAND_STATE,
+                  mode,
+                  connected,
+                  compiled,
+                  busy,
+                  projectOpen,
+                  hasActiveFile: projectOpen,
+                  vmState,
+                  plantFeedable,
+                });
   return states;
 }
 

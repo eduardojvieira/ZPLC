@@ -5,10 +5,24 @@ import type { PlantMapV2 } from '../../plants/plantMap';
 import { listIoMap } from '../../runtime/ioMap';
 import type { PlantCore } from '../contracts';
 import { createFakeBoard, type FakeBoardOptions } from '../board/fakeBoard';
-import { createPlantIoAdapter } from './plantIoAdapter';
+import { stubProjectLoader } from '../../test/dom';
+
+await stubProjectLoader();
+const { createPlantIoAdapter } = await import('./plantIoAdapter');
 
 // One sensor and one command, enough to exercise every path of the link (LNK-007, LNK-008, LNK-010, LNK-014).
-const layout = { ipiBase: 0, ipiSize: 128, opiBase: 0x1000, opiSize: 128, workBase: 0x2000, workSize: 1, retainBase: 0x3000, retainSize: 1, codeBase: 0x4000, codeSize: 1 };
+const layout = {
+  ipiBase: 0,
+  ipiSize: 128,
+  opiBase: 0x1000,
+  opiSize: 128,
+  workBase: 0x2000,
+  workSize: 1,
+  retainBase: 0x3000,
+  retainSize: 1,
+  codeBase: 0x4000,
+  codeSize: 1,
+};
 const debug: DebugMap = {
   version: '1.0.0',
   programName: 'Cell',

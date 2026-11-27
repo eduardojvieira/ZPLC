@@ -13,7 +13,9 @@ export const u3IoModeEn = {
   'plant.ioMode.cancel': 'Cancel',
   'plant.ioMode.mirror': 'Mirror the outputs on the board',
   'plant.ioMode.stop': 'Stop feeding the board',
-  'plant.ioMode.failed': 'Plant I/O mode did not start: {reason}.',
+  'plant.ioMode.failed': 'Plant I/O mode is not running: {reason}.',
+  'plant.ioMode.exit': 'the board left the mode ({reason})',
+  'plant.ioMode.noPort': 'no board is connected',
   'plant.ioMode.failedStaysBoard': 'The board stays as it was.',
 } as const;
 export const u3IoModeEs: Record<keyof typeof u3IoModeEn, string> = {
@@ -30,6 +32,8 @@ export const u3IoModeEs: Record<keyof typeof u3IoModeEn, string> = {
   'plant.ioMode.cancel': 'Cancelar',
   'plant.ioMode.mirror': 'Replicar las salidas en la placa',
   'plant.ioMode.stop': 'Dejar de alimentar la placa',
-  'plant.ioMode.failed': 'El modo E/S de planta no se inició: {reason}.',
+  'plant.ioMode.failed': 'El modo E/S de planta no está en marcha: {reason}.',
+  'plant.ioMode.exit': 'la placa salió del modo ({reason})',
+  'plant.ioMode.noPort': 'no hay una placa conectada',
   'plant.ioMode.failedStaysBoard': 'La placa queda como estaba.',
 };

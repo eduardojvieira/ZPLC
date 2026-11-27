@@ -9,7 +9,7 @@ export function usePlantEditCommands(): void {
       bindCommands({
         'plant.feedBoard': () => {
           const state = getCommandState();
-          if (state.mode === 'hardware' && state.connected) requestFeedBoard(true);
+          if (state.mode === 'hardware' && state.connected && state.plantFeedable) requestFeedBoard(true);
         },
       }),
     [],

@@ -391,14 +391,28 @@ describe('PLS-008 plant I/O mode is a third state of the status rail', () => {
     cleanup();
   });
 
-  it('PLS-008 the rail shows off, starting, running with mirroring and latency, then Board again when the link ends, from the real link', async () => {
+  it('PLS-008 the rail shows starting, running and mirroring, then Board when the real link ends', async () => {
     resetCommandsForTest();
     open();
     const board = createFakeBoard({ program: () => [true] });
     let release: () => void = () => undefined;
     const gate = new Promise<void>((resolve) => (release = resolve));
-    const port = { ...board.port, enter: async (request: Parameters<typeof board.port.enter>[0]) => (await gate, board.port.enter(request)) };
-    const layout = { ipiBase: 0, ipiSize: 128, opiBase: 0x1000, opiSize: 128, workBase: 0x2000, workSize: 1, retainBase: 0x3000, retainSize: 1, codeBase: 0x4000, codeSize: 1 };
+    const port = {
+      ...board.port,
+      enter: async (request: Parameters<typeof board.port.enter>[0]) => (await gate, board.port.enter(request)),
+    };
+    const layout = {
+      ipiBase: 0,
+      ipiSize: 128,
+      opiBase: 0x1000,
+      opiSize: 128,
+      workBase: 0x2000,
+      workSize: 1,
+      retainBase: 0x3000,
+      retainSize: 1,
+      codeBase: 0x4000,
+      codeSize: 1,
+    };
     const { listIoMap } = await import('../runtime/ioMap');
     const ioMap = listIoMap({
       version: '1.0.0',

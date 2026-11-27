@@ -12,6 +12,8 @@ export interface IoModeLink {
   readonly state: IoModeState;
   readonly mirroring: boolean;
   readonly latencyMs: { last: number; worst: number } | null;
+  /** Why the link is not running when it ended or could not start, as located text; absent or null otherwise. */
+  readonly failure?: string | null;
   start(): Promise<void>;
   stop(): Promise<void>;
   setMirroring(on: boolean): Promise<void>;
@@ -38,7 +40,7 @@ const listeners = new Set<() => void>();
 
 function refresh(): void {
   snapshot = link
-    ? { state: link.state, mirroring: link.mirroring, latencyMs: link.latencyMs, failure, confirming }
+    ? { state: link.state, mirroring: link.mirroring, latencyMs: link.latencyMs, failure: failure ?? link.failure ?? null, confirming }
     : { ...OFF, failure, confirming };
   listeners.forEach((listener) => listener());
 }

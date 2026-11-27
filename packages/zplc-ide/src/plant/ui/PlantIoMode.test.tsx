@@ -77,7 +77,18 @@ describe('plant I/O mode in the plant document (PLS-008, LNK-008, LNK-010)', () 
 });
 
 // The wiring to the real M6 link, with the fake board: nothing here opens a port (rule 8).
-const layout = { ipiBase: 0, ipiSize: 128, opiBase: 0x1000, opiSize: 128, workBase: 0x2000, workSize: 1, retainBase: 0x3000, retainSize: 1, codeBase: 0x4000, codeSize: 1 };
+const layout = {
+  ipiBase: 0,
+  ipiSize: 128,
+  opiBase: 0x1000,
+  opiSize: 128,
+  workBase: 0x2000,
+  workSize: 1,
+  retainBase: 0x3000,
+  retainSize: 1,
+  codeBase: 0x4000,
+  codeSize: 1,
+};
 const ioMap = listIoMap({
   version: '1.0.0',
   programName: 'Cell',
@@ -118,7 +129,10 @@ function rig(options: { supported?: boolean; maxSlots?: number } = {}) {
     port: () => port,
     firmware: () => null,
     subscribe: () => () => undefined,
-    create: ((ports: Parameters<typeof createPlantIoController>[0]) => (log.controllers++, createPlantIoController(ports))) as typeof createPlantIoController,
+    create: ((ports: Parameters<typeof createPlantIoController>[0]) => (
+      log.controllers++,
+      createPlantIoController(ports)
+    )) as typeof createPlantIoController,
   };
   return { board, log, deps };
 }
@@ -135,7 +149,7 @@ const hardware = () => {
 };
 
 describe('plant I/O mode wired to the board link (PLS-008, LNK-007, LNK-008, LNK-009, LNK-010)', () => {
-  it('PLS-008 the action and the commands are offered only in hardware mode, connected, supported and with a plant that no session drives', () => {
+  it('PLS-008 the action is offered only in hardware mode, connected, supported, with a plant no session drives', () => {
     const core = makeCore();
     const cases: [string, () => void, ReturnType<typeof rig>, boolean?][] = [
       ['simulation', () => publishCommandState({ mode: 'simulate', connected: true, projectOpen: true }), rig()],

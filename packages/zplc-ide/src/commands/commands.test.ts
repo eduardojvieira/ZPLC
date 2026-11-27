@@ -535,7 +535,14 @@ describe('milestone U3 command contract (FND-002)', () => {
     const pending = COMMAND_LIST.filter((command) => command.pending).map((command) => command.id);
     expect(pending.sort()).toEqual(
       Object.keys(U3_COMMANDS)
-        .filter((id) => id !== 'view.showPlant' && id !== 'view.focusCommandBar' && id !== 'learn.check' && id !== 'view.lessonLayout')
+        .filter(
+          (id) =>
+            id !== 'view.showPlant' &&
+            id !== 'view.focusCommandBar' &&
+            id !== 'learn.check' &&
+            id !== 'view.lessonLayout' &&
+            id !== 'plant.feedBoard',
+        )
         .sort(),
     );
     const listed = menuCommands.map((command) => command.id);
