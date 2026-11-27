@@ -55,11 +55,11 @@ The counter of the practice is a CTU: it counts up from zero and has the ports C
 ## Check yourself
 
 ```quiz
-question: In a diagram, a CTU has its preset and its Q connected, a photocell connected to CU, and nothing connected to R. The preset is reached and the operator presses Reset. What does Q do?
+question: In the worked example, NewBottle is held while two tablets pass the eye, and then it is released. What is the CV of Doses?
 options:
-  - { text: 'It stays TRUE', correct: true, feedback: 'Yes. Reset is not connected to the counter, so R stays FALSE and nothing clears the count.' }
-  - { text: 'It turns FALSE', feedback: 'Only a TRUE on R clears the count, and no connection carries Reset to R.' }
-  - { text: 'It turns FALSE at the next part', feedback: 'A new part adds one to the count; it never clears it.' }
+  - { text: '5', correct: true, feedback: 'Yes. While LD is TRUE the counter loads PV on every scan, so the two tablets are not taken away.' }
+  - { text: '3', feedback: 'The tablets passed while LD was TRUE, and LD loads PV again on every one of those scans.' }
+  - { text: '0', feedback: 'LD loads PV, it does not clear the count: the CTD starts again from five.' }
 ```
 
 ```quiz

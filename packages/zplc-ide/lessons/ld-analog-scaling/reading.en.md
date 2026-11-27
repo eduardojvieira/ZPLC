@@ -57,7 +57,7 @@ After one press the setpoint is 500 rpm: 500 times 4095 is 2 047 500, divided by
 - Comparing counts with a limit written in percent. Scale first, then compare.
 - Dividing before multiplying, which throws away the part of the value that is smaller than the divisor.
 - Using an `INT` for the product. It wraps, and the program keeps running with a wrong level.
-- Forgetting that the division is by the span of the counts, 4095, and not by 4096.
+- Taking the number of counts for their span. A 12-bit input has 4096 different counts, from 0 to 4095, and its span is the distance from the lowest to the highest.
 
 > [!WARNING]
 > A level alarm in the program is information. A high level cut-off that protects people or equipment is wired in hardware, and an emergency stop never depends on the PLC program.

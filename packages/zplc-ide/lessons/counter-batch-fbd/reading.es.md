@@ -55,11 +55,11 @@ El contador de la práctica es un CTU: cuenta hacia arriba desde cero y tiene lo
 ## Compruébelo usted
 
 ```quiz
-question: En un diagrama, un CTU tiene conectados su valor preestablecido y su Q, una fotocélula conectada a CU y nada conectado a R. Se llega al valor preestablecido y el operario pulsa Reset. ¿Qué hace Q?
+question: En el ejemplo resuelto, NewBottle se mantiene mientras pasan dos comprimidos por la barrera, y luego se suelta. ¿Cuánto vale la CV de Doses?
 options:
-  - { text: 'Sigue en TRUE', correct: true, feedback: 'Sí. Reset no está conectado al contador, así que R sigue en FALSE y nada pone la cuenta a cero.' }
-  - { text: 'Pasa a FALSE', feedback: 'Solo un TRUE en R pone la cuenta a cero, y ninguna conexión lleva Reset hasta R.' }
-  - { text: 'Pasa a FALSE con la pieza siguiente', feedback: 'Una pieza nueva suma uno a la cuenta; nunca la pone a cero.' }
+  - { text: '5', correct: true, feedback: 'Sí. Mientras LD es TRUE el contador carga PV en cada ciclo, así que los dos comprimidos no se restan.' }
+  - { text: '3', feedback: 'Los comprimidos pasaron mientras LD era TRUE, y LD vuelve a cargar PV en cada uno de esos ciclos.' }
+  - { text: '0', feedback: 'LD carga PV, no pone la cuenta a cero: el CTD vuelve a empezar desde cinco.' }
 ```
 
 ```quiz

@@ -57,7 +57,7 @@ Después de una pulsación la consigna es 500 rpm: 500 por 4095 es 2 047 500, di
 - Comparar cuentas con un límite escrito en porcentaje. Primero se escala y luego se compara.
 - Dividir antes de multiplicar, lo que descarta la parte del valor que es menor que el divisor.
 - Usar un `INT` para el producto. Da la vuelta, y el programa sigue funcionando con un nivel erróneo.
-- Olvidar que la división es entre el rango de las cuentas, 4095, y no entre 4096.
+- Tomar la cantidad de cuentas por su rango. Una entrada de 12 bits tiene 4096 cuentas distintas, de 0 a 4095, y su rango es la distancia de la más baja a la más alta.
 
 > [!WARNING]
 > Una alarma de nivel en el programa es información. Un corte por nivel alto que protege a las personas o al equipo se cablea en el hardware, y una parada de emergencia nunca depende del programa del PLC.
