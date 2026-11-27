@@ -61,7 +61,13 @@ describe('opening a plant waits for the panel only so long (PLS-011)', () => {
     bindCommands({ 'view.plant': () => undefined });
     usePlantChoice.setState({ shown: undefined, request: undefined, ask: (ref) => void asks.push(ref) });
   };
-  afterEach(() => usePlantChoice.getState().show(undefined));
+  const realAsk = usePlantChoice.getState().ask;
+  const realHandle = useIDEStore.getState().directoryHandle;
+  afterEach(() => {
+    usePlantChoice.setState({ shown: undefined, request: undefined, ask: realAsk });
+    useIDEStore.setState({ directoryHandle: realHandle });
+    resetCommandsForTest();
+  });
   const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
   it('PLS-011 a panel that shows after the request is asked once', () => {
@@ -78,7 +84,6 @@ describe('opening a plant waits for the panel only so long (PLS-011)', () => {
     useIDEStore.setState({ directoryHandle: {} as never });
     usePlantChoice.setState({ shown: shownScene });
     expect(asks).toEqual([]);
-    useIDEStore.setState({ directoryHandle: null as never });
   });
 
   it('PLS-011 the timeout means no ask later', async () => {
