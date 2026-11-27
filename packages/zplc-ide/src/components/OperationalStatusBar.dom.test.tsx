@@ -10,7 +10,9 @@ const { presentConnection } = await import('./connectionPresentation');
 const { registerPlantTransport } = await import('../store/useTransport');
 const { BuildMenu } = await import('./ToolbarBuildMenu');
 const { bindCommands, runCommand, resetCommandsForTest } = await import('../commands/bus');
-const { bindIoModeLink, createFakeIoModeLink, startIoMode, setIoModeMirroring } = await import('../store/ioModeStatus');
+const { bindIoModeLink, createFakeIoModeLink, startIoMode, stopIoMode, setIoModeMirroring } = await import('../store/ioModeStatus');
+const { createPlantIoAdapter } = await import('../plant/ui/plantIoAdapter');
+const { createFakeBoard } = await import('../plant/board/fakeBoard');
 
 const idle = {
   mode: 'simulate' as const,
@@ -314,6 +316,7 @@ describe('MSG-007 the Build control carries a mark while the last build is not o
 
 describe('PLS-008 plant I/O mode is a third state of the status rail', () => {
   const board = { ...idle, mode: 'hardware' as const, adapterType: 'serial' as const, connected: true };
+  const hardwareLine = board;
   let unbind: (() => void) | undefined;
   const open = () => dom.patchStore(useIDEStore, { isProjectOpen: true });
   const indicator = () => document.querySelector('[data-connection], [data-io-mode]') as HTMLElement;
@@ -386,5 +389,67 @@ describe('PLS-008 plant I/O mode is a third state of the status rail', () => {
     expect(panel.textContent).toContain('4');
     expect(panel.textContent).toContain('9');
     cleanup();
+  });
+
+  it('PLS-008 the rail shows off, starting, running with mirroring and latency, then Board again when the link ends, from the real link', async () => {
+    resetCommandsForTest();
+    open();
+    const board = createFakeBoard({ program: () => [true] });
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const port = { ...board.port, enter: async (request: Parameters<typeof board.port.enter>[0]) => (await gate, board.port.enter(request)) };
+    const layout = { ipiBase: 0, ipiSize: 128, opiBase: 0x1000, opiSize: 128, workBase: 0x2000, workSize: 1, retainBase: 0x3000, retainSize: 1, codeBase: 0x4000, codeSize: 1 };
+    const { listIoMap } = await import('../runtime/ioMap');
+    const ioMap = listIoMap({
+      version: '1.0.0',
+      programName: 'Cell',
+      compilerVersion: 'test',
+      generatedAt: '',
+      memoryLayout: layout,
+      pou: {
+        Cell: {
+          type: 'PROGRAM',
+          sourceMap: [],
+          breakpoints: [],
+          vars: {
+            Start: { addr: 8, type: 'BOOL', region: 'IPI', size: 1, bitOffset: 1 },
+            Run: { addr: 0x1008, type: 'BOOL', region: 'OPI', size: 1, bitOffset: 3 },
+          },
+        },
+      },
+    });
+    const map = {
+      schemaVersion: 2 as const,
+      target: { scene: 'tank' },
+      signals: {
+        'start.pressed': { direction: 'sensor' as const, type: 'BOOL' as const, point: 'Cell.Start' },
+        'pump.run': { direction: 'command' as const, type: 'BOOL' as const, point: 'Cell.Run' },
+      },
+    };
+    const core = { stepMs: 5, signals: [], apply: () => undefined, advance: () => undefined, sense: () => ({}) } as never;
+    const adapter = createPlantIoAdapter(() => ({ link: port, core, map, ioMap, scanMs: 10, frameMs: 5, timeoutMs: 200 }));
+    unbind = bindIoModeLink(adapter);
+    dom.render(<OperationalStatusBar {...hardwareLine} />);
+    expect(indicator().getAttribute('data-connection')).toBe('hardware-connected');
+    let started: Promise<void> = Promise.resolve();
+    await dom.act(async () => {
+      started = startIoMode();
+    });
+    expect(indicator().getAttribute('data-io-mode')).toBe('starting');
+    await dom.act(async () => {
+      release();
+      await started;
+    });
+    expect(indicator().getAttribute('data-io-mode')).toBe('running');
+    await dom.act(async () => {
+      await setIoModeMirroring(true);
+      await new Promise<void>((resolve) => setTimeout(resolve, 30));
+    });
+    expect(dom.screen.getByText(dom.t('status.ioMode.mirroring'))).toBeTruthy();
+    await dom.act(async () => board.raiseExit('LINK_LOST'));
+    expect(indicator().getAttribute('data-connection')).toBe('hardware-connected');
+    await dom.act(() => stopIoMode());
+    await cleanup();
+    await adapter.dispose();
   });
 });

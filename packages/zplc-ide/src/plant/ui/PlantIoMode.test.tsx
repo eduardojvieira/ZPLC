@@ -5,6 +5,12 @@ const dom = await setupDom();
 await stubProjectLoader();
 const { PlantIoMode } = await import('./PlantIoMode');
 const { bindIoModeLink, createFakeIoModeLink, getIoModeStatus, requestFeedBoard } = await import('../../store/ioModeStatus');
+const { useBoardPlantIo } = await import('./plantIoAdapter');
+const { createFakeBoard } = await import('../board/fakeBoard');
+const { createPlantIoController } = await import('../board/boardPlantLink');
+const { getCommandState, publishCommandState, resetCommandsForTest, runCommand, bindCommands } = await import('../../commands/bus');
+const { usePlantEditCommands } = await import('../../commands/bind/plantEdit');
+const { listIoMap } = await import('../../runtime/ioMap');
 
 let unbind: (() => void) | undefined;
 afterEach(() => unbind?.());
@@ -67,5 +73,177 @@ describe('plant I/O mode in the plant document (PLS-008, LNK-008, LNK-010)', () 
     requestFeedBoard(true);
     await dom.screen.findByRole('alertdialog');
     expect(link.calls).toEqual([]);
+  });
+});
+
+// The wiring to the real M6 link, with the fake board: nothing here opens a port (rule 8).
+const layout = { ipiBase: 0, ipiSize: 128, opiBase: 0x1000, opiSize: 128, workBase: 0x2000, workSize: 1, retainBase: 0x3000, retainSize: 1, codeBase: 0x4000, codeSize: 1 };
+const ioMap = listIoMap({
+  version: '1.0.0',
+  programName: 'Cell',
+  compilerVersion: 'test',
+  generatedAt: '',
+  memoryLayout: layout,
+  pou: {
+    Cell: {
+      type: 'PROGRAM',
+      sourceMap: [],
+      breakpoints: [],
+      vars: {
+        Start: { addr: 8, type: 'BOOL', region: 'IPI', size: 1, bitOffset: 1 },
+        Run: { addr: 0x1008, type: 'BOOL', region: 'OPI', size: 1, bitOffset: 3 },
+      },
+    },
+  },
+});
+const plantMap = {
+  schemaVersion: 2 as const,
+  target: { scene: 'tank' },
+  signals: {
+    'start.pressed': { direction: 'sensor' as const, type: 'BOOL' as const, point: 'Cell.Start' },
+    'pump.run': { direction: 'command' as const, type: 'BOOL' as const, point: 'Cell.Run' },
+  },
+};
+const makeCore = () =>
+  ({ stepMs: 5, signals: [], apply: () => undefined, advance: () => undefined, sense: () => ({ 'start.pressed': true }) }) as never;
+
+function rig(options: { supported?: boolean; maxSlots?: number } = {}) {
+  const board = createFakeBoard({ program: () => [true], ...options });
+  const log = { controllers: 0, enters: 0 };
+  const port = {
+    ...board.port,
+    enter: (request: Parameters<typeof board.port.enter>[0]) => (log.enters++, board.port.enter(request)),
+  };
+  const deps = {
+    port: () => port,
+    firmware: () => null,
+    subscribe: () => () => undefined,
+    create: ((ports: Parameters<typeof createPlantIoController>[0]) => (log.controllers++, createPlantIoController(ports))) as typeof createPlantIoController,
+  };
+  return { board, log, deps };
+}
+
+function Harness({ deps, core, idle = true }: { deps: ReturnType<typeof rig>['deps']; core: never; idle?: boolean }) {
+  const { available } = useBoardPlantIo({ core, map: plantMap, ioMap, idle, visible: true }, deps);
+  usePlantEditCommands();
+  return <PlantIoMode boardConnected={available} />;
+}
+
+const hardware = () => {
+  resetCommandsForTest();
+  publishCommandState({ mode: 'hardware', connected: true, projectOpen: true });
+};
+
+describe('plant I/O mode wired to the board link (PLS-008, LNK-007, LNK-008, LNK-009, LNK-010)', () => {
+  it('PLS-008 the action and the commands are offered only in hardware mode, connected, supported and with a plant that no session drives', () => {
+    const core = makeCore();
+    const cases: [string, () => void, ReturnType<typeof rig>, boolean?][] = [
+      ['simulation', () => publishCommandState({ mode: 'simulate', connected: true, projectOpen: true }), rig()],
+      ['not connected', () => publishCommandState({ mode: 'hardware', connected: false, projectOpen: true }), rig()],
+      ['firmware without the capability', hardware, rig({ supported: false })],
+      ['a plant session runs', hardware, rig(), false],
+    ];
+    for (const [name, arrange, r, idle] of cases) {
+      resetCommandsForTest();
+      arrange();
+      const view = dom.render(<Harness deps={r.deps} core={core} idle={idle ?? true} />);
+      expect([name, dom.screen.queryByRole('button', { name: feed() }), getCommandState().plantFeedable]).toEqual([name, null, false]);
+      view.unmount();
+    }
+    hardware();
+    const r = rig();
+    dom.render(<Harness deps={r.deps} core={core} />);
+    expect(dom.screen.getByRole('button', { name: feed() })).toBeTruthy();
+    expect(getCommandState().plantFeedable).toBe(true);
+    expect(r.log).toEqual({ controllers: 0, enters: 0 });
+  });
+
+  it('LNK-008 Cancel builds no controller and the board is never entered', async () => {
+    hardware();
+    const r = rig();
+    const { user } = dom.render(<Harness deps={r.deps} core={makeCore()} />);
+    await user.click(dom.screen.getByRole('button', { name: feed() }));
+    await user.click(dom.screen.getByRole('button', { name: dom.t('plant.ioMode.cancel') }));
+    expect(r.log).toEqual({ controllers: 0, enters: 0 });
+    expect(r.board.state.active).toBe(false);
+  });
+
+  it('LNK-008 no physical action happens without the dialog: the commands and the Escape key only ask', async () => {
+    hardware();
+    const r = rig();
+    const { user } = dom.render(<Harness deps={r.deps} core={makeCore()} />);
+    expect(runCommand('plant.feedBoard')).toBe('ran');
+    await dom.screen.findByRole('alertdialog');
+    expect(r.log).toEqual({ controllers: 0, enters: 0 });
+    await user.keyboard('{Escape}');
+    expect(dom.screen.queryByRole('alertdialog')).toBeNull();
+    requestFeedBoard(true);
+    await dom.screen.findByRole('alertdialog');
+    expect(r.log).toEqual({ controllers: 0, enters: 0 });
+    expect(r.board.state.active).toBe(false);
+    requestFeedBoard(false);
+  });
+
+  it('LNK-007 confirm, enter, frames, mirror on and off, stop: the board ends as it was', async () => {
+    hardware();
+    const r = rig();
+    const { user } = dom.render(<Harness deps={r.deps} core={makeCore()} />);
+    await user.click(dom.screen.getByRole('button', { name: feed() }));
+    await user.click(dom.screen.getByRole('button', { name: dom.t('plant.ioMode.confirm') }));
+    const box = (await dom.screen.findByRole('checkbox', { name: dom.t('plant.ioMode.mirror') })) as HTMLInputElement;
+    expect(r.log).toEqual({ controllers: 1, enters: 1 });
+    expect(r.board.state.active).toBe(true);
+    expect(getIoModeStatus().state).toBe('running');
+    await user.click(box);
+    expect(r.board.state.mirror).toBe(true);
+    await user.click(box);
+    expect(r.board.state.mirror).toBe(false);
+    await user.click(dom.screen.getByRole('button', { name: dom.t('plant.ioMode.stop') }));
+    await dom.screen.findByRole('button', { name: feed() });
+    expect(r.board.state.active).toBe(false);
+    expect(getIoModeStatus().state).toBe('off');
+  });
+
+  it('LNK-018 a refused entry is a located message and the board stays as it was', async () => {
+    hardware();
+    const r = rig({ maxSlots: 0 });
+    const { user } = dom.render(<Harness deps={r.deps} core={makeCore()} />);
+    await user.click(dom.screen.getByRole('button', { name: feed() }));
+    await user.click(dom.screen.getByRole('button', { name: dom.t('plant.ioMode.confirm') }));
+    const alert = await dom.screen.findByRole('alert');
+    expect(alert.textContent).toContain('slots');
+    expect(alert.textContent).toContain(dom.t('plant.ioMode.failedStaysBoard'));
+    expect(r.board.state.active).toBe(false);
+  });
+
+  it('LNK-009 the mode stops when the board disconnects, when the plant changes and when the panel closes (app close)', async () => {
+    for (const how of ['disconnect', 'project change', 'close'] as const) {
+      hardware();
+      const r = rig();
+      const core = makeCore();
+      const view = dom.render(<Harness deps={r.deps} core={core} />);
+      await view.user.click(dom.screen.getByRole('button', { name: feed() }));
+      await view.user.click(dom.screen.getByRole('button', { name: dom.t('plant.ioMode.confirm') }));
+      await dom.screen.findByRole('checkbox', { name: dom.t('plant.ioMode.mirror') });
+      await view.user.click(dom.screen.getByRole('checkbox', { name: dom.t('plant.ioMode.mirror') }));
+      expect([how, r.board.state.active, r.board.state.mirror]).toEqual([how, true, true]);
+      await dom.act(async () => {
+        if (how === 'disconnect') publishCommandState({ connected: false });
+        else if (how === 'project change') view.rerender(<Harness deps={r.deps} core={makeCore()} />);
+        else window.dispatchEvent(new Event('beforeunload'));
+        await new Promise<void>((resolve) => setTimeout(resolve, 50));
+      });
+      expect([how, r.board.state.active, r.board.state.mirror]).toEqual([how, false, false]);
+      view.unmount();
+    }
+  });
+
+  it('FND-002 plant.feedBoard stays a person-only command: the binding refuses it outside hardware mode', () => {
+    resetCommandsForTest();
+    const unbind = bindCommands({});
+    publishCommandState({ mode: 'simulate', connected: true });
+    runCommand('plant.feedBoard');
+    expect(getIoModeStatus().confirming).toBe(false);
+    unbind();
   });
 });
