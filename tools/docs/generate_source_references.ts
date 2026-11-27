@@ -568,26 +568,26 @@ export function mcpBody(lang: Lang): string {
   const mcp = parseMcp(read(SOURCES.mcp));
   const usage = /Usage: (zplc-mcp [^\\']+?)\\n/.exec(read(SOURCES.mcpEntry))?.[1];
   if (!usage) throw new Error(`${SOURCES.mcpEntry}: the usage line of zplc-mcp was not found`);
-  const writers = mcp.tools
-    .filter((tool) => !tool.readOnly)
-    .map((tool) => code(tool.name))
-    .join(lang === 'en' ? ' and ' : ' y ');
+  const writerNames = mcp.tools.filter((tool) => !tool.readOnly).map((tool) => code(tool.name));
+  const writers = `${writerNames.slice(0, -1).join(', ')}${lang === 'en' ? ' and ' : ' y '}${writerNames.at(-1)}`;
   const intro: L10n = {
     en:
       `${code('zplc-mcp')} is a local server of the Model Context Protocol over standard input and output. It ` +
       `exposes ${mcp.tools.length} tools and ${mcp.resources.length} resources for one workspace. Every tool is read-only ` +
-      `except ${writers}: ${code('firmware_build')} runs a local ephemeral cross-build, and ${code('workspace_write')} writes ` +
-      `project files inside the workspace after the check of ${code('workspace_check_write')}, and never deletes or renames one. ` +
-      `No tool flashes, deploys, forces, starts, stops or opens a serial port or a shell. The results are evidence of a recorded ` +
-      `host run, not of hardware.`,
+      `except ${writers}: ${code('firmware_build')} runs a local ephemeral cross-build, ${code('workspace_write')} writes ` +
+      `project files inside the workspace after the check of ${code('workspace_check_write')}, and never deletes or renames one, ` +
+      `and the ${code('debug_')} tools start, step and stop a host simulation that the server runs for the agent alone. ` +
+      `No tool flashes, deploys, forces, opens a serial port or a shell, or starts or stops a program on a device or in a ` +
+      `session a person runs. The results are evidence of a host run, not of hardware.`,
     es:
       `${code('zplc-mcp')} es un servidor local del Model Context Protocol sobre entrada y salida estándar. ` +
       `Expone ${mcp.tools.length} herramientas y ${mcp.resources.length} recursos para un espacio de trabajo. Todas las herramientas son ` +
-      `de solo lectura salvo ${writers}: ${code('firmware_build')} ejecuta una compilación cruzada local y efímera, y ` +
+      `de solo lectura salvo ${writers}: ${code('firmware_build')} ejecuta una compilación cruzada local y efímera, ` +
       `${code('workspace_write')} escribe archivos del proyecto dentro del espacio de trabajo tras la verificación de ` +
-      `${code('workspace_check_write')}, y nunca borra ni renombra uno. Ninguna herramienta graba, despliega, fuerza, arranca, ` +
-      `detiene ni abre un puerto serie o una consola. Los resultados son evidencia de una ejecución registrada en el host, no del ` +
-      `hardware.`,
+      `${code('workspace_check_write')}, y nunca borra ni renombra uno, y las herramientas ${code('debug_')} arrancan, avanzan ` +
+      `y detienen una simulación en el host que el servidor ejecuta solo para ese agente. Ninguna herramienta graba, despliega, ` +
+      `fuerza, abre un puerto serie o una consola, ni arranca o detiene un programa en un equipo o en una sesión que maneja una ` +
+      `persona. Los resultados son evidencia de una ejecución en el host, no del hardware.`,
   };
   // The entry point asks the SDK to answer a 2025-era opening with an error (`legacy: 'reject'`) or to serve it; the page says which.
   const legacy = /legacy:\s*'(reject|serve)'/.exec(read(SOURCES.mcpEntry))?.[1];

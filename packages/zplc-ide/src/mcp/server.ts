@@ -1122,8 +1122,7 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
     'debug_session_start',
     {
       title: 'Start a private debug session',
-      description:
-        'Compile the project and start a host simulation private to you, at 0 ms, with the scene when asked; answers a sessionId.',
+      description: 'Compile the project and start a host simulation private to you at 0 ms, with the scene; answers a sessionId.',
       inputSchema: DEBUG_START_INPUT,
       annotations: DEBUG_ONLY,
     },
