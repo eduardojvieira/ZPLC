@@ -35,6 +35,7 @@ import { domAuditExpression, type DomAuditResult } from './domAudit';
 import { attachEmulatedDevice } from './emulatedDevice';
 import { findTextOutOfBox } from './textFit';
 import { JOURNEYS_013 } from './journeys013';
+import { practiceFromReading } from './journeys/learnReading';
 import { journeysManipulator } from './journeys/plantManipulator';
 import { journeysSorting } from './journeys/plantSorting';
 import { journeysStations } from './journeys/plantStations';
@@ -1914,6 +1915,7 @@ export const JOURNEYS: Journey[] = [
 
       // 3. Start the course: the workspace is made from the starter and opened, with no folder dialog (none is answered here).
       await app.click(css('[data-learn-continue]'), 'the Start the course button');
+      await practiceFromReading(app, Boolean(LESSON_INDEX.lessons.find(({ id }) => id === FIRST)?.reading));
       await app.until('the project workbench to appear', async () => (await app.visible(toolbar)) || undefined);
       const starter = JSON.parse(disk(join(packageRoot, 'projects', entry.starter.project, 'zplc.json'))) as { name: string };
       assert(
@@ -5982,11 +5984,7 @@ export const JOURNEYS: Journey[] = [
       );
       await focus('[data-learn-continue]');
       await app.press('Enter');
-      // GDE-006: the reading page covers the Guide; Practice opens the lesson layout, where the Guide board section is reachable.
-      if (onBoard.reading) {
-        await app.until('the reading page', async () => (await app.visible(css('[data-learn-reading-practice]'))) || undefined, 30_000);
-        await app.click(css('[data-learn-reading-practice]'), 'Practice on the reading page');
-      }
+      await practiceFromReading(app, Boolean(onBoard.reading));
       // GDE-009: the Guide keeps the board section closed until the learner opens it; open it by keyboard before reading or switching.
       await app.until('the Guide board section summary', async () => (await app.visible(css('[data-guide-board] > summary'))) || undefined);
       await focus('[data-guide-board] > summary');
@@ -6180,6 +6178,7 @@ export const JOURNEYS: Journey[] = [
         `Continue does not offer to start the course with "${first.text.en.title}": ${startText}`,
       );
       await press(css('[data-learn-continue]'), 'Start the course on the Learn home');
+      await practiceFromReading(app, Boolean(first.reading));
       await app.until(
         'the lesson beside its workspace',
         async () =>
@@ -6276,6 +6275,7 @@ export const JOURNEYS: Journey[] = [
       const doLesson = async (id: string, start: Target, running: () => Promise<void>) => {
         const entry = LESSON_INDEX.lessons.find((lesson) => lesson.id === id)!;
         await app.click(start, `Start for ${id}`);
+        await practiceFromReading(app, Boolean(entry.reading));
         await app.until(
           `the lesson ${id} beside its workspace`,
           async () =>
