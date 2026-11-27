@@ -30,6 +30,8 @@ export interface TestVerdictProps {
   live?: boolean;
   onScenarioStep?: (failure: VerdictFailure) => void;
   onTraceTime?: (failure: VerdictFailure) => void;
+  /** Ask the Assistant to explain one failure (AIX-003); absent where there is no Assistant or the verdict is a lesson check. */
+  onExplain?: (failure: VerdictFailure) => void;
 }
 
 const KINDS = new Set(['AT', 'WITHIN', 'FOR', 'EVENTUALLY', 'ALWAYS', 'NEVER', 'UNTIL', 'RISING', 'FALLING']);
@@ -43,6 +45,7 @@ export function TestVerdict({
   live = true,
   onScenarioStep,
   onTraceTime,
+  onExplain,
 }: TestVerdictProps) {
   const { t } = useT();
   const word = (key: string) => t(key as Parameters<typeof t>[0]);
@@ -124,6 +127,17 @@ export function TestVerdict({
                   {onTraceTime && failure.atMs !== undefined && (
                     <Button variant="ghost" size="sm" className="underline underline-offset-2" onClick={() => onTraceTime(failure)}>
                       {t('u2Tests.trace.open')}
+                    </Button>
+                  )}
+                  {onExplain && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="underline underline-offset-2"
+                      data-command-exempt="opens the Assistant with this failed test attached (view.agent)"
+                      onClick={() => onExplain(failure)}
+                    >
+                      {t('assistant.explainFailure')}
                     </Button>
                   )}
                 </p>

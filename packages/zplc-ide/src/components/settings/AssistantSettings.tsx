@@ -6,13 +6,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Checkbox, TextField } from '../../ui';
 import { useT } from '../../i18n';
+import { canonicalAiEndpoint } from '../../ai/providerEndpoint';
 import { useAssistantProvider } from '../../shell/useSelection';
-import { presentAiProviderConfig, presentAiProviderMutation } from '../aiProviderPresentation';
+import { connectionErrorText, presentAiConnection, presentAiProviderConfig, presentAiProviderMutation } from '../aiProviderPresentation';
 
 export const ASSISTANT_SECTION_ID = 'assistant';
 
 export function AssistantSettings() {
-  const { t } = useT();
+  const translator = useT();
+  const { t } = translator;
   const aiProvider = window.electronAPI?.aiProvider;
   const refreshAvailability = useAssistantProvider((state) => state.refresh);
   const [config, setConfig] = useState({ enabled: false, endpoint: '', model: '' });
@@ -60,6 +62,27 @@ export function AssistantSettings() {
     }
   };
 
+  /** One minimal request to the saved provider, with no project data: how long it took, or what is wrong and what to do (AIX-006). */
+  const testConnection = async () => {
+    if (!aiProvider) return;
+    setBusy(true);
+    setMessage(t('assistant.test.running'));
+    try {
+      const result = presentAiConnection(await aiProvider.testConnection());
+      setMessage(
+        result.kind === 'ok'
+          ? t('assistant.test.ok', { ms: result.latencyMs })
+          : result.kind === 'error'
+            ? connectionErrorText(translator, result.code, result.retryAfter)
+            : t('assistant.test.unavailable'),
+      );
+    } catch {
+      setMessage(t('assistant.test.unavailable'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <section
       id={ASSISTANT_SECTION_ID}
@@ -83,6 +106,8 @@ export function AssistantSettings() {
             onChange={(event) => setConfig((current) => ({ ...current, endpoint: event.target.value }))}
             className="mt-1 block w-full"
             label={t('console.endpoint')}
+            placeholder={t('assistant.endpoint.placeholder')}
+            hint={t('assistant.endpoint.examples')}
           />
           <TextField
             value={config.model}
@@ -108,7 +133,11 @@ export function AssistantSettings() {
               if (!aiProvider) return;
               void mutate(() => aiProvider.saveConfig(config), {
                 ok: t('assistant.configSaved'),
-                failed: (code) => t('assistant.configNotSaved', { code }),
+                // a refused endpoint says the rule, not the code (AIX-006)
+                failed: (code) =>
+                  code === 'AI_CONTEXT_REJECTED' && canonicalAiEndpoint(config.endpoint) === null
+                    ? t('assistant.test.endpointNotAllowed')
+                    : t('assistant.configNotSaved', { code }),
                 untrusted: t('assistant.configUntrusted'),
                 thrown: t('assistant.configNotSavedThrown'),
               });
@@ -151,6 +180,9 @@ export function AssistantSettings() {
             }}
           >
             {t('console.clearKey')}
+          </Button>
+          <Button variant="secondary" size="sm" disabled={!aiProvider} onClick={() => void testConnection()}>
+            {t('assistant.test')}
           </Button>
         </div>
       </fieldset>

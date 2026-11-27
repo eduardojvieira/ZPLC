@@ -47,6 +47,7 @@ import { u2FindEs } from './catalog/u2Find';
 import { u2SearchEs } from './catalog/u2Search';
 import { u2ReviewEs } from './catalog/u2Review';
 import { u2AssistantEs } from './catalog/u2Assistant';
+import { assistantPolishEs } from './catalog/assistantPolish';
 import { u2NavigatorEs } from './catalog/u2Navigator';
 import { u2LayoutEs } from './catalog/u2Layout';
 import { u2PreferencesEs } from './catalog/u2Preferences';
@@ -691,6 +692,7 @@ export const es: Record<MessageKey, string> = {
   ...u2SearchEs,
   ...u2ReviewEs,
   ...u2AssistantEs,
+  ...assistantPolishEs,
   ...u2NavigatorEs,
   ...u2LayoutEs,
   ...u2PreferencesEs,

@@ -46,6 +46,7 @@ import { u2FindEn } from './catalog/u2Find';
 import { u2SearchEn } from './catalog/u2Search';
 import { u2ReviewEn } from './catalog/u2Review';
 import { u2AssistantEn } from './catalog/u2Assistant';
+import { assistantPolishEn } from './catalog/assistantPolish';
 import { u2NavigatorEn } from './catalog/u2Navigator';
 import { u2LayoutEn } from './catalog/u2Layout';
 import { u2PreferencesEn } from './catalog/u2Preferences';
@@ -687,6 +688,7 @@ export const en = {
   ...u2SearchEn,
   ...u2ReviewEn,
   ...u2AssistantEn,
+  ...assistantPolishEn,
   ...u2NavigatorEn,
   ...u2LayoutEn,
   ...u2PreferencesEn,

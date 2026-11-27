@@ -1,18 +1,11 @@
 import { afterEach, describe, expect, it } from 'bun:test';
 import { bindCommands } from '../commands/bus';
 import { isAllowedAiProviderRequest } from '../../electron/security';
-import {
-  diagnosticIntent,
-  failureIntent,
-  lessonIntent,
-  openAssistantWith,
-  selectionIntent,
-  useAssistantEntry,
-} from './useAssistantEntry';
+import { diagnosticIntent, failureIntent, lessonIntent, openAssistantWith, selectionIntent, useAssistantEntry } from './useAssistantEntry';
 
 // AIX-003, AI-18: four places open the Assistant with their context attached, through the one request the provider accepts.
 const base = { workspaceId: '0f2ce877-e0d6-43ca-89a7-df17a4927f51', prompt: 'x' };
-const accepted = (mode: string, fields: Record<string, unknown>) => isAllowedAiProviderRequest({ ...base, mode, ...fields });
+const accepted = (mode: string, fields: object) => isAllowedAiProviderRequest({ ...base, mode, ...fields });
 
 afterEach(() => useAssistantEntry.getState().take());
 

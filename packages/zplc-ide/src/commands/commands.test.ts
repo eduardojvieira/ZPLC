@@ -587,9 +587,9 @@ describe('Assistant command contract (AIX-003, AIX-007)', () => {
   it('AIX-007 the MCP connection is offered with no project open (its panel says to open one), the selection question needs a file', () => {
     expect(isCommandEnabled(commandById('ai.connectMcp' as never), INITIAL_COMMAND_STATE)).toBe(true);
     expect(isCommandEnabled(commandById('ai.askAboutSelection' as never), INITIAL_COMMAND_STATE)).toBe(false);
-    expect(isCommandEnabled(commandById('ai.askAboutSelection' as never), { ...INITIAL_COMMAND_STATE, projectOpen: true, hasActiveFile: true })).toBe(
-      true,
-    );
+    expect(
+      isCommandEnabled(commandById('ai.askAboutSelection' as never), { ...INITIAL_COMMAND_STATE, projectOpen: true, hasActiveFile: true }),
+    ).toBe(true);
   });
 });
 

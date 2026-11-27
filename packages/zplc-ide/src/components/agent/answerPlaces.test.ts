@@ -16,7 +16,7 @@ describe('the places of an answer (AIX-004)', () => {
   it('AIX-004 finds an element of a diagram and keeps the text between places unchanged', () => {
     const text = 'Check rung:r1 and block:and_1, then step:s2.';
     const parts = splitPlaces(text);
-    expect(parts.map((part) => ('place' in part ? part.raw : part.text)).join('')).toBe(text);
+    expect(parts.map((part) => ('raw' in part ? part.raw : part.text)).join('')).toBe(text);
     expect(parts.filter((part) => 'element' in part).map((part) => 'element' in part && part.element)).toEqual([
       'rung:r1',
       'block:and_1',

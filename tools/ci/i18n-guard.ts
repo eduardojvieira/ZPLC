@@ -369,6 +369,12 @@ export const PROPER_NOUNS: ReadonlySet<string> = new Set([
   'Studio',
   'Learn',
   'Tests',
+  // the one name of the assistant in both languages (AI-20), the lesson control of the Spanish catalog, and a local model server
+  'Assistant',
+  'Asistente',
+  'Check',
+  'Comprobar',
+  'Ollama',
   'English',
   'Español',
   'GitHub',

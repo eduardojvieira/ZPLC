@@ -11,6 +11,8 @@ import { findFileInTree } from '../utils/fileSystem';
 import type { FileTreeNode } from '../types';
 import { CommandEmptyState } from './panelStates';
 import { orderProblems } from './consoleAttention';
+import { AskAssistantButton } from './agent/AskAssistantButton';
+import { diagnosticIntent } from '../store/useAssistantEntry';
 
 // The two lists have the shape the compiler reports; the panel reads what it shows.
 type Problem = {
@@ -73,6 +75,11 @@ export function ProblemsPanel({
                     {msg.errorCode}
                   </span>
                 )}
+                <AskAssistantButton
+                  className="ml-2 underline underline-offset-2"
+                  label={t('assistant.explainProblem')}
+                  intent={() => diagnosticIntent({ ...msg, file: msg.file ?? activeFilePath })}
+                />
               </div>
             </div>
           ))}
@@ -112,21 +119,31 @@ export function ProblemsPanel({
                   </div>
                 </>
               );
+              const ask = (
+                <AskAssistantButton
+                  label={t('assistant.explainProblem')}
+                  intent={() => diagnosticIntent(msg)}
+                  className="shrink-0 self-center underline underline-offset-2"
+                />
+              );
               return navigable ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  key={idx}
-                  onClick={() => {
-                    void onActivate(msg);
-                  }}
-                  className="h-auto w-full items-start justify-start whitespace-normal py-1 text-left"
-                >
-                  {content}
-                </Button>
+                <div key={idx} className="flex items-start gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      void onActivate(msg);
+                    }}
+                    className="h-auto min-w-0 flex-1 items-start justify-start whitespace-normal py-1 text-left"
+                  >
+                    {content}
+                  </Button>
+                  {ask}
+                </div>
               ) : (
-                <div key={idx} className="flex items-start gap-2 rounded px-2 py-1">
-                  {content}
+                <div key={idx} className="flex items-start gap-1">
+                  <div className="flex min-w-0 flex-1 items-start gap-2 rounded px-2 py-1">{content}</div>
+                  {ask}
                 </div>
               );
             })}

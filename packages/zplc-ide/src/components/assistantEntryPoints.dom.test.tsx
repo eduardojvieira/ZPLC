@@ -16,7 +16,15 @@ const offered = (available: boolean) => dom.patchStore(useAssistantProvider, { a
 describe('the Problems panel asks the Assistant (AIX-003)', () => {
   const build = [{ type: 'error', message: 'Undeclared variable Run', file: 'src/Main.st', line: 14, column: 3, code: 'E_UNDECLARED' }];
   const panel = () => (
-    <ProblemsPanel summary="1 error" live={[]} buildMessages={build} checked fileTree={null} activeFilePath="src/Main.st" onActivate={() => undefined} />
+    <ProblemsPanel
+      summary="1 error"
+      live={[]}
+      buildMessages={build}
+      checked
+      fileTree={null}
+      activeFilePath="src/Main.st"
+      onActivate={() => undefined}
+    />
   );
 
   it('AIX-003 "Explain with Assistant" opens debug mode with that diagnostic and its place', async () => {
@@ -41,9 +49,22 @@ describe('the test results ask the Assistant (AIX-003)', () => {
   it('AIX-003 "Explain failure" opens debug mode with the failed scenario, assertion and checks', async () => {
     offered(true);
     const { openAssistantWith, failureIntent } = await import('../store/useAssistantEntry');
-    const failure = { id: 'motor', path: 'tests/motor.scenario.json', kind: 'AT', atMs: 10, index: 1, checks: [{ signal: 'Motor.Forward', expected: false, observed: true }] };
+    const failure = {
+      id: 'motor',
+      path: 'tests/motor.scenario.json',
+      kind: 'AT',
+      atMs: 10,
+      index: 1,
+      checks: [{ signal: 'Motor.Forward', expected: false, observed: true }],
+    };
     const view = dom.render(
-      <TestVerdict sentence="1 of 3 failed" ok={false} failures={[failure]} boundary={null} onExplain={(f) => openAssistantWith(failureIntent(f))} />,
+      <TestVerdict
+        sentence="1 of 3 failed"
+        ok={false}
+        failures={[failure]}
+        boundary={null}
+        onExplain={(f) => openAssistantWith(failureIntent(f))}
+      />,
     );
     await view.user.click(view.getByRole('button', { name: dom.t('assistant.explainFailure') }));
     const pending = useAssistantEntry.getState().pending!;
@@ -52,7 +73,9 @@ describe('the test results ask the Assistant (AIX-003)', () => {
   });
 
   it('AIX-003 a verdict without the handler shows no such button (existing behaviour of the lesson check)', () => {
-    const view = dom.render(<TestVerdict sentence="failed" ok={false} failures={[{ id: 'a', path: 'tests/a.scenario.json' }]} boundary={null} />);
+    const view = dom.render(
+      <TestVerdict sentence="failed" ok={false} failures={[{ id: 'a', path: 'tests/a.scenario.json' }]} boundary={null} />,
+    );
     expect(view.queryByRole('button', { name: dom.t('assistant.explainFailure') })).toBeNull();
   });
 });

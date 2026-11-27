@@ -1137,10 +1137,10 @@ describe('the assistant gets the context of the project, the plant and the lesso
       { workspaceId: request.workspaceId, mode: 'ask', prompt: 'Why does it not run?', ...extra } as never,
       new AbortController().signal,
     );
-    const body = seen ? (JSON.parse(String(seen.body)) as { messages: Array<{ content: string }> }) : undefined;
+    const body = seen ? (JSON.parse(String(seen.body)) as { messages: Array<{ role: string; content: string }> }) : undefined;
     // the parsed context is read by path in every test below; a type for it would only repeat the context builder's
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return { result, seen, body, context: body ? (JSON.parse(body.messages[1]!.content) as Record<string, any>) : undefined };
+    return { result, seen, body, context: body ? (JSON.parse(body.messages.at(-1)!.content) as Record<string, any>) : undefined };
   }
   const failed = [
     { id: 'Belt', assertions: [{ index: 0, kind: 'at', atMs: 10, checks: [{ signal: 'Belt.Run', expected: true, observed: false }] }] },

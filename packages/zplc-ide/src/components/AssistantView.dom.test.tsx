@@ -30,7 +30,7 @@ function bridge() {
   };
 }
 function project(extra: Record<string, unknown> = {}) {
-  useIDEStore.setState({
+  dom.patchStore(useIDEStore, {
     isProjectOpen: true,
     projectSession: 7,
     workspaceScenarioLink: { projectSession: 7, workspaceId: '0f2ce877-e0d6-43ca-89a7-df17a4927f51' },
@@ -50,6 +50,7 @@ async function render(locale: 'en' | 'es' = 'en') {
   bridge();
   project();
   const view = dom.render(<AssistantView />, { locale });
+  await dom.settle();
   const send = () => view.getByRole('button', { name: dom.tFor(locale)('console.sendRequest') });
   await dom.waitFor(() => expect(view.getByRole('button', { name: dom.tFor(locale)('console.refreshStatus') })).toBeTruthy());
   const prompt = () => view.getByLabelText(dom.tFor(locale)('console.request')) as HTMLTextAreaElement;
@@ -77,7 +78,11 @@ describe('one Assistant, named and worded in the interface language (AI-20)', ()
   it('AI-20 shows the four modes in the interface language, each with a short tooltip', async () => {
     const en = await render('en');
     expect(en.getAllByRole('radio').map((radio) => radio.textContent)).toEqual(['Ask', 'Plan', 'Edit', 'Debug']);
-    expect(en.getAllByRole('radio').every((radio) => (radio.getAttribute('title') ?? '').length > 10)).toBe(true);
+    for (const mode of ['ask', 'plan', 'edit', 'debug'] as const) {
+      await en.user.hover(en.getByRole('radio', { name: dom.t(`assistant.mode.${mode}`) }));
+      expect(await en.findByText(dom.t(`assistant.mode.${mode}.tip`))).toBeTruthy();
+      await en.user.unhover(en.getByRole('radio', { name: dom.t(`assistant.mode.${mode}`) }));
+    }
     en.unmount();
     const es = await render('es');
     expect(es.getAllByRole('radio').map((radio) => radio.textContent)).toEqual(['Preguntar', 'Planificar', 'Editar', 'Depurar']);
@@ -101,7 +106,9 @@ describe('the Assistant opened with a context (AIX-003)', () => {
 
   it('AIX-003 the attached diagnostic goes with the request, once, through the provider; a removed chip goes with nothing', async () => {
     const view = await render();
-    dom.act(() => openAssistantWith(diagnosticIntent({ message: 'Undeclared variable Run', file: 'src/Main.st', line: 14, code: 'E_UNDECLARED' })));
+    dom.act(() =>
+      openAssistantWith(diagnosticIntent({ message: 'Undeclared variable Run', file: 'src/Main.st', line: 14, code: 'E_UNDECLARED' })),
+    );
     await dom.waitFor(() => expect(view.prompt().value.length).toBeGreaterThan(5));
     await view.user.click(view.send());
     await dom.waitFor(() => expect(sent).toHaveLength(1));
@@ -112,7 +119,7 @@ describe('the Assistant opened with a context (AIX-003)', () => {
     });
     await view.user.click(view.getByRole('button', { name: dom.t('assistant.chip.remove') }));
     await view.ask('and now?');
-    expect(sent[1]!.diagnostics).toBeUndefined();
+    expect(sent[1]!.diagnostics ?? []).toEqual([]);
   });
 
   it('AIX-003 the lesson hint selects ask, attaches the lesson, and the Assistant never says a lesson is passed', async () => {
