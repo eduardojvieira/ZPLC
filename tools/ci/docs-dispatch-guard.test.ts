@@ -12,8 +12,8 @@ mkdirSync(dirname(base), { recursive: true });
 const root = mkdtempSync(base);
 afterAll(() => rmSync(root, { recursive: true, force: true }));
 
-const git = (cwd: string, ...args: string[]) =>
-  execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@example.com', '-c', 'commit.gpgsign=false', ...args], { cwd, stdio: 'pipe' }).toString();
+const identity = ['-c', 'user.name=t', '-c', 'user.email=t@example.com', '-c', 'commit.gpgsign=false'];
+const git = (cwd: string, ...args: string[]) => execFileSync('git', [...identity, ...args], { cwd, stdio: 'pipe' }).toString();
 const commit = (cwd: string, file: string, text: string) => {
   mkdirSync(dirname(join(cwd, file)), { recursive: true });
   writeFileSync(join(cwd, file), text);
