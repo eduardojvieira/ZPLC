@@ -43,7 +43,7 @@ are evidence-gated; source presence alone is not a product qualification.
    program: sources, tests, scripts and CI tooling). A warning is a failure.
 8. **Physical operations**: building firmware, flashing, deploying a program,
    forcing I/O, RUN/STOP, raw serial and shell access are separate operations
-   that a person starts. An AI assistant or MCP never initiates them. A hardware
+   that a person starts. An AI assistant or MCP never initiates them on hardware or on a session a person runs: it never forces I/O, changes RUN/STOP, flashes, deploys or opens a serial port there. It may set inputs and step a simulator that is private to it, one the MCP server starts for that agent alone (D-31, AIX-014). A hardware
    record (a bench run bound to a firmware commit and image hash) is made by a
    person; never write one, and never raise a board above `cross-build` by hand:
    the level is derived from the records that `boards.json` references.

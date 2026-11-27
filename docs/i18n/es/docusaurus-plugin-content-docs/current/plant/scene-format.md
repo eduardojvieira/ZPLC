@@ -9,6 +9,8 @@ tags: [plant, reference]
 
 Una escena es un archivo JSON. Son solo datos: ZPLC lo lee con un analizador de JSON y no evalúa nada. Una escena se guarda con su proyecto. Las señales que ofrece una escena salen de sus piezas; consulte la [referencia de piezas](./parts.md). Un archivo aparte, el mapa de la planta, une esas señales con las variables del programa. Un [escenario](../reference/scenario-file.md) nombra el archivo de escena y el archivo de mapa en su clave `scene`.
 
+El esquema JSON del archivo, cada parte del catálogo con sus ajustes y un ejemplo resuelto que una prueba comprueba están en [Esquema de la escena de planta](../reference/format-scene.md).
+
 ## Ejemplo
 
 ```json

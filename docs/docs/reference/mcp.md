@@ -23,6 +23,15 @@ zplc-mcp --workspace <absolute-path-of-a-project> [--repository <absolute-path-o
 
 The server serves the 2025 handshake (`initialize`) as well as revision 2026-07-28: its entry point starts the transport with `legacy: 'serve'`.
 
+## Fields of a reply
+
+| Field | Meaning |
+| --- | --- |
+| `evidenceLevel` | Stated once at the top of a reply: what kind of run the result is evidence of. The repeated note and scope texts of 2.0 are gone. |
+| `execution` | The record of the job, as in 2.0: `schemaVersion`, `jobId`, `actor`, `permission`, `operation`, `outcome`, `startedAt`, `finishedAt`. It is unchanged in 2.1 and it is deprecated: a later release may remove it. |
+| `audit` | Beside `execution` in every reply that carries it: `jobId` and `permission`, the same as in `execution`, and `durationMs`, the milliseconds the job took. `workspace_write` and `workspace_check_write` answer `audit` with the permission `project:write` or `project:read`, and the `debug_` tools with `tests:run`. |
+| `validValues` | In a refusal of a wrong name (a scenario, a signal, a mode, a file, a session): the valid names sorted alphabetically, at most 32, with `more` counting the rest. The refusal also carries `error`, `message` and `nextStep`. |
+
 ## Tools
 
 | Tool | Title | Input | Read only | Description |

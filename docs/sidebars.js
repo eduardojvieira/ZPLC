@@ -169,6 +169,11 @@ const sidebars = {
           items: [
             'reference/project-file',
             'reference/scenario-file',
+            'reference/plant-map-file',
+            'reference/format-ld',
+            'reference/format-fbd',
+            'reference/format-sfc',
+            'reference/format-scene',
             'plant/index',
             'plant/clock',
             'plant/scene-format',
