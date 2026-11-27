@@ -15,7 +15,12 @@ const toolbar = css('[role="toolbar"]');
 async function runMotor(app: App, folder: string, plantMap?: object): Promise<void> {
   mkdirSync(folder, { recursive: true });
   copyExample(folder, MOTOR);
-  if (plantMap) writeFileSync(join(folder, 'plant-map.json'), JSON.stringify(plantMap));
+  if (plantMap) {
+    // the project's own scene is its scene.json and its plant-map.json together: one without the other is no scene
+    const scene = { schemaVersion: 1, name: 'Motor', parts: [], cameras: [{ name: 'Overview', position: [0, 8, 8], target: [0, 0, 0] }] };
+    writeFileSync(join(folder, 'scene.json'), JSON.stringify(scene));
+    writeFileSync(join(folder, 'plant-map.json'), JSON.stringify(plantMap));
+  }
   app.answer(folder);
   await app.click(button('Open project', 'contains'), 'the Open project button');
   await app.until('the project workbench', async () => (await app.visible(toolbar)) || undefined);
@@ -88,7 +93,7 @@ export const journeysU3P: Journey[] = [
         30_000,
       );
       const centre = async () => (await app.eval<{ x: number; y: number } | null>(rowRect('Start')))!;
-      let { x, y } = await centre();
+      const { x, y } = await centre();
       await app.clickAt(x, y, 2);
       assert(!(await editor(app, 'Start')), 'A row the plant feeds opened its value editor.');
       await app.click(css('input[aria-label="Force Start"]'), 'the force checkbox of Start');
@@ -97,8 +102,9 @@ export const journeysU3P: Journey[] = [
         async () => ((await app.eval<boolean>(`Boolean(document.querySelector('tr [data-forced="true"]'))`)) ? true : undefined),
         30_000,
       );
-      ({ x, y } = await centre());
-      await app.clickAt(x, y, 2);
+      // the forced value takes an edit: the keyboard opens the editor the double-click opens
+      await app.eval(`${watchRow('Start')}.querySelector('[data-forced]').focus()`);
+      await app.press('Enter');
       await app.until('the value editor of the forced row', async () => ((await editor(app, 'Start')) ? true : undefined));
     },
   },
