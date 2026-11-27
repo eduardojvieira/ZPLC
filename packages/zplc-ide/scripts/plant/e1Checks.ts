@@ -139,7 +139,10 @@ export interface StateRecord {
   rect: Rect | null;
   /** Share of the box that changes between the two states (VIS-016). */
   fraction: number;
-  /** For a conveyor: share of the box that changes while it keeps running 250 ms more (not a multiple of the mark pitch); it must move, and stay still with reduced motion. */
+  /**
+   * For a conveyor: share of the box that changes while it keeps running 250 ms more (not a multiple of the mark pitch); it must
+   * move, and stay still with reduced motion.
+   */
   motion?: number;
   crops: [string, string] | null;
 }
