@@ -20,16 +20,23 @@ import { useIDEStore } from '../store/useIDEStore';
 import { Button, ToggleGroup } from '../ui';
 import { useWorkspaceTestResult } from './workspaceTestResult';
 
-export function PlantDocument({
-  controller,
-  visible,
-  deps,
-}: {
+interface PlantDocumentProps {
   controller: DebugController | undefined;
   visible: boolean;
   /** What a test replaces in the scene panel (`PlantPanelProps.deps`). */
   deps?: PlantPanelProps['deps'];
-}) {
+}
+
+/**
+ * A change made outside Studio to `scene.json` or `plant-map.json` (AIX-012) mounts the document again, so that it reads the
+ * scene from the disk and builds the plant and its 3D view anew, framed afresh.
+ */
+export function PlantDocument(props: PlantDocumentProps) {
+  const sceneRevision = usePlantDocument((state) => state.sceneRevision);
+  return <PlantDocumentView key={sceneRevision} {...props} />;
+}
+
+function PlantDocumentView({ controller, visible, deps }: PlantDocumentProps) {
   const { t } = useT();
   const debugMap = useIDEStore((state) => state.debug.debugMap);
   const rootScene = useProjectSceneTexts().scene !== undefined;

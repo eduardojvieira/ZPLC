@@ -11,6 +11,7 @@ import { sha256Text } from '../candidateSources';
 import type { CandidateChangeSetReviewPresentation } from '../workspaceTestPresentation';
 import { t } from '../../i18n';
 import { presentChangeSetReview } from './changeSetPresentation';
+import { forgetOwnWrite, recordOwnWrite } from '../../plant/persistence/sceneFiles';
 
 export interface ChangeSetFileSnapshot {
   path: string;
@@ -255,8 +256,16 @@ async function writeChangeSet(
       } else if (file.fileId) {
         getState().updateFileContent(file.fileId, file.candidate);
         if (!(await getState().saveFile(file.fileId))) return stop(file.path);
-      } else if (file.handle) await writeFileContent(file.handle, file.candidate);
-      else return stop(file.path);
+      } else if (file.handle) {
+        // A closed file: Studio's own write, which the watcher then reports, is not an outside change (AIX-012).
+        recordOwnWrite(file.path, file.candidate);
+        try {
+          await writeFileContent(file.handle, file.candidate);
+        } catch (error) {
+          forgetOwnWrite(file.path);
+          throw error;
+        }
+      } else return stop(file.path);
       progress.written += 1;
     }
     return 'saved';

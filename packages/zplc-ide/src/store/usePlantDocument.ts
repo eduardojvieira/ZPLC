@@ -11,6 +11,9 @@ interface PlantDocumentState {
   requests: number;
   /** Counts the asks to show the replay of the last recorded run (TST-007). */
   replayRequests: number;
+  /** Counts the changes made outside Studio to `scene.json` or `plant-map.json`: the document reads its scene again on each (AIX-012). */
+  sceneRevision: number;
+  notifyExternalPlantChange: () => void;
   /** Opens the document and makes it the active view. */
   show: () => void;
   /** Makes another view active: the document stays open. */
@@ -26,6 +29,8 @@ export const usePlantDocument = create<PlantDocumentState>((set) => ({
   active: false,
   requests: 0,
   replayRequests: 0,
+  sceneRevision: 0,
+  notifyExternalPlantChange: () => set((state) => ({ sceneRevision: state.sceneRevision + 1 })),
   show: () => set((state) => ({ open: true, active: true, requests: state.requests + 1 })),
   showReplay: () => set((state) => ({ open: true, active: true, requests: state.requests + 1, replayRequests: state.replayRequests + 1 })),
   deselect: () => set((state) => (state.active ? { active: false } : state)),

@@ -4,10 +4,14 @@
  * writes is one batch, a flood is one "overflow" (look at everything), and what Studio and the tools write for
  * themselves (the temporary file of an atomic save, version-control and build folders) is never reported.
  *
+ * Where a recursive watch cannot start (an older kernel or file system), the root, `src` and `tests` are watched one level
+ * deep, so that `zplc.json`, the scene files, the sources and the tests are still followed (AIX-012).
+ *
  * ponytail: `fs.watch` with `recursive` walks the whole folder on Linux, including folders this ignores. Upgrade: one
  * watch per listed folder, or a native watcher, if a project with a very large tree makes the start slow.
  */
 import { watch as fsWatch, type FSWatcher, type WatchListener } from 'node:fs';
+import { join } from 'node:path';
 
 import { PROJECT_CHANGE_LIMITS, type ProjectChange } from './projectFilesProtocol.js';
 
@@ -25,7 +29,10 @@ export function relevantChange(filename: string): string | null {
   return path;
 }
 
-type WatchFunction = (path: string, options: { recursive: true; persistent: false }, listener: WatchListener<string>) => FSWatcher;
+type WatchFunction = (path: string, options: { recursive: boolean; persistent: false }, listener: WatchListener<string>) => FSWatcher;
+
+/** The folders watched one level deep when a recursive watch cannot start, as prefixes of the paths they report. */
+const FALLBACK_FOLDERS = ['', 'src', 'tests'];
 
 export interface ProjectWatcherOptions {
   send(ownerId: number, change: ProjectChange): void;
@@ -41,17 +48,19 @@ export function createProjectWatcher({
   maxPaths = PROJECT_CHANGE_LIMITS.maxPaths,
   watch = fsWatch as WatchFunction,
 }: ProjectWatcherOptions) {
-  const active = new Map<number, { watcher: FSWatcher; timer: ReturnType<typeof setTimeout> | null }>();
+  const active = new Map<number, { watchers: FSWatcher[]; timer: ReturnType<typeof setTimeout> | null }>();
 
   function stop(ownerId: number): void {
     const entry = active.get(ownerId);
     if (!entry) return;
     active.delete(ownerId);
     if (entry.timer !== null) clearTimeout(entry.timer);
-    try {
-      entry.watcher.close();
-    } catch {
-      /* already closed */
+    for (const watcher of entry.watchers) {
+      try {
+        watcher.close();
+      } catch {
+        /* already closed */
+      }
     }
   }
 
@@ -61,30 +70,45 @@ export function createProjectWatcher({
       stop(ownerId);
       const pending = new Set<string>();
       let overflow = false;
-      let watcher: FSWatcher;
-      try {
-        watcher = watch(root, { recursive: true, persistent: false }, (_event, filename) => {
-          const current = active.get(ownerId);
-          if (!current || current.watcher !== watcher) return;
-          const path = filename === null ? null : relevantChange(String(filename));
+      const entry: { watchers: FSWatcher[]; timer: ReturnType<typeof setTimeout> | null } = { watchers: [], timer: null };
+      const listener =
+        (prefix: string): WatchListener<string> =>
+        (_event, filename) => {
+          if (active.get(ownerId) !== entry) return;
+          const path = filename === null ? null : relevantChange(prefix + String(filename));
           if (path === null) return;
           if (pending.size >= maxPaths) overflow = true;
           else pending.add(path);
-          if (current.timer !== null) clearTimeout(current.timer);
-          current.timer = setTimeout(() => {
-            current.timer = null;
+          if (entry.timer !== null) clearTimeout(entry.timer);
+          entry.timer = setTimeout(() => {
+            entry.timer = null;
             const paths = overflow ? [] : [...pending];
             const change: ProjectChange = { rootId, paths, overflow };
             pending.clear();
             overflow = false;
             send(ownerId, change);
           }, debounceMs);
-        });
+        };
+      try {
+        entry.watchers.push(watch(root, { recursive: true, persistent: false }, listener('')));
       } catch {
-        return;
+        for (const folder of FALLBACK_FOLDERS) {
+          try {
+            entry.watchers.push(
+              watch(
+                folder === '' ? root : join(root, folder),
+                { recursive: false, persistent: false },
+                listener(folder === '' ? '' : `${folder}/`),
+              ),
+            );
+          } catch {
+            /* a folder the project does not have */
+          }
+        }
       }
-      watcher.on('error', () => stop(ownerId));
-      active.set(ownerId, { watcher, timer: null });
+      if (entry.watchers.length === 0) return;
+      for (const watcher of entry.watchers) watcher.on('error', () => stop(ownerId));
+      active.set(ownerId, entry);
     },
     stop,
     stopAll(): void {
