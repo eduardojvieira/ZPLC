@@ -47,6 +47,7 @@ export function McpConnectionSettings() {
   const bridge = window.electronAPI?.mcpConnection;
   const [client, setClient] = useState<Client>('claude-code');
   const [preview, setPreview] = useState<Answer<Preview> | null>(null);
+  const [missing, setMissing] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [check, setCheck] = useState<Answer<{ ready: boolean; report: Report }> | 'running' | null>(null);
@@ -55,7 +56,9 @@ export function McpConnectionSettings() {
     async (which: Client) => {
       if (!bridge) return;
       try {
-        setPreview(asPreview(await bridge.preview(which)) ?? { ok: false, message: t('mcp.noProject') });
+        const raw = await bridge.preview(which);
+        setMissing(record(raw)?.missing === true);
+        setPreview(asPreview(raw) ?? { ok: false, message: t('mcp.noProject') });
       } catch {
         setPreview({ ok: false, message: t('mcp.noProject') });
       }
@@ -133,7 +136,12 @@ export function McpConnectionSettings() {
         onValueChange={choose}
         options={CLIENTS.map((value) => ({ value, label: t(`mcp.client.${value}`) }))}
       />
-      {preview?.ok === false && (
+      {missing && (
+        <p role="status" className="mt-3 text-xs text-[var(--color-status-stopped)]">
+          {t('mcp.commandMissing')}
+        </p>
+      )}
+      {preview?.ok === false && !missing && (
         <p role="status" className="mt-3 text-xs text-[var(--color-status-stopped)]">
           {t('mcp.refused', { message: preview.message })}
         </p>
@@ -174,7 +182,7 @@ export function McpConnectionSettings() {
         {note}
       </p>
       <div className="mt-3">
-        <Button variant="secondary" size="sm" disabled={check === 'running'} onClick={() => void runCheck()}>
+        <Button variant="secondary" size="sm" disabled={check === 'running' || missing || preview === null} onClick={() => void runCheck()}>
           {t('mcp.selfCheck')}
         </Button>
         <div role="status" className="mt-2 text-xs">

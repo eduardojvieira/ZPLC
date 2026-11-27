@@ -19,6 +19,8 @@ export const mcpConnectionEn = {
   'mcp.copied': 'Copied.',
   'mcp.written': 'Written to {path}.',
   'mcp.refused': 'Not written: {message}',
+  'mcp.commandMissing':
+    'ZPLC could not find the zplc-mcp server on this computer. Download the zplc-mcp release asset for your system, then either set ZPLC_MCP_BIN to its full path or put its folder on the PATH, and start ZPLC again.',
   'mcp.noProject': 'Open a project first: the config is written inside the project folder.',
   'mcp.unavailable': 'Connecting an agent is available in the desktop app.',
   'mcp.selfCheck': 'Run self-check',
@@ -48,6 +50,8 @@ export const mcpConnectionEs: Record<keyof typeof mcpConnectionEn, string> = {
   'mcp.copied': 'Copiado.',
   'mcp.written': 'Escrito en {path}.',
   'mcp.refused': 'No se escribió: {message}',
+  'mcp.commandMissing':
+    'ZPLC no encontró el servidor zplc-mcp en este equipo. Descargue el archivo zplc-mcp de la versión para su sistema, y luego defina ZPLC_MCP_BIN con su ruta completa o agregue su carpeta al PATH, y vuelva a iniciar ZPLC.',
   'mcp.noProject': 'Abra primero un proyecto: la configuración se escribe dentro de la carpeta del proyecto.',
   'mcp.unavailable': 'Conectar un agente está disponible en la aplicación de escritorio.',
   'mcp.selfCheck': 'Ejecutar la autocomprobación',

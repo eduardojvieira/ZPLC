@@ -97,6 +97,7 @@ describe('the MCP connection panel (AIX-007)', () => {
             },
     });
     const view = dom.render(<McpConnectionSettings />);
+    await dom.waitFor(() => expect((view.getByRole('button', { name: dom.t('mcp.selfCheck') }) as HTMLButtonElement).disabled).toBe(false));
     await key(view, view.getByRole('button', { name: dom.t('mcp.selfCheck') }));
     await dom.waitFor(() => expect(view.getByText(dom.t('mcp.selfCheck.ready', { count: 12 }))).toBeTruthy());
     ready = false;

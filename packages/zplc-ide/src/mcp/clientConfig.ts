@@ -7,8 +7,9 @@
  * that is there, keeps every other entry, keeps the previous file as `<file>.bak` and renames a finished temporary file over it.
  * A file that is not a JSON object is refused and left as it is. No Electron import (IDE-033).
  */
-import { copyFile, lstat, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
-import { dirname, isAbsolute, join } from 'node:path';
+import { constants } from 'node:fs';
+import { copyFile, lstat, mkdir, readFile, realpath, rename, rm, writeFile } from 'node:fs/promises';
+import { dirname, isAbsolute, join, sep } from 'node:path';
 
 export const MCP_CLIENTS = ['claude-code', 'cursor', 'vscode'] as const;
 export type McpClient = (typeof MCP_CLIENTS)[number];
@@ -47,6 +48,27 @@ function check(client: McpClient, folder: string, options: ClientConfigOptions):
   if (options.command.length === 0) throw new Error('The command of the server is empty.');
 }
 
+/** Every folder of the client's path below the project folder is a real folder, never a link: a link could lead the write elsewhere. */
+async function checkSegments(folder: string, segments: string[]): Promise<void> {
+  let current = folder;
+  for (const segment of segments.slice(0, -1)) {
+    current = join(current, segment);
+    const info = await lstat(current).catch(() => null);
+    if (info === null) return; // nothing below a missing folder exists yet; the write creates it and checks again
+    if (info.isSymbolicLink())
+      throw new Error(`${segment} is a link; the config is only written inside the project folder, so nothing was written.`);
+    if (!info.isDirectory()) throw new Error(`${current} is not a folder; nothing was written.`);
+  }
+}
+
+/** The real folder that holds the file lies inside the real project folder. */
+async function checkInside(folder: string, directory: string): Promise<void> {
+  const root = await realpath(folder);
+  const real = await realpath(directory);
+  if (real !== root && !real.startsWith(root.endsWith(sep) ? root : root + sep))
+    throw new Error('The config folder is outside the project folder; nothing was written.');
+}
+
 async function readExisting(path: string): Promise<{ exists: boolean; value: Record<string, unknown> }> {
   const info = await lstat(path).catch(() => null);
   if (info === null) return { exists: false, value: {} };
@@ -66,6 +88,7 @@ async function readExisting(path: string): Promise<{ exists: boolean; value: Rec
 export async function previewClientConfig(client: McpClient, folder: string, options: ClientConfigOptions): Promise<ClientConfigPreview> {
   check(client, folder, options);
   const { segments, key, typed } = FILES[client];
+  await checkSegments(folder, segments);
   const path = join(folder, ...segments);
   const args = ['--workspace', folder, ...(options.userData ? ['--user-data', options.userData] : [])];
   const entry = { ...(typed ? { type: 'stdio' } : {}), command: options.command, args };
@@ -81,6 +104,16 @@ export async function previewClientConfig(client: McpClient, folder: string, opt
   return { path, exists, text, copy };
 }
 
+const MAX_BACKUPS = 10;
+/** `<file>.bak` the first time, then `.bak.1`, `.bak.2`...: the oldest backups are kept and none is overwritten. */
+async function freeBackupName(path: string): Promise<string> {
+  for (let n = 0; n < MAX_BACKUPS; n++) {
+    const name = n === 0 ? `${path}.bak` : `${path}.bak.${n}`;
+    if (!(await lstat(name).catch(() => null))) return name;
+  }
+  throw new Error(`There are already ${MAX_BACKUPS} backups next to ${path}; delete the old ones (.bak, .bak.1...) and try again.`);
+}
+
 /**
  * Writes the config of a client, but only the text that the preview shows now: a file that changed since the person looked at it
  * is not overwritten. The previous file is copied to `<file>.bak`, the new one is written to a temporary file next to it and renamed.
@@ -93,12 +126,19 @@ export async function writeClientConfig(
 ): Promise<{ path: string; backup: string | null }> {
   const preview = await previewClientConfig(client, folder, options);
   if (preview.text !== expectedText) throw new Error('The config changed since it was shown; look at it again before writing.');
-  await mkdir(dirname(preview.path), { recursive: true });
-  const backup = preview.exists ? `${preview.path}.bak` : null;
-  if (backup !== null) await copyFile(preview.path, backup);
+  const directory = dirname(preview.path);
+  await mkdir(directory, { recursive: true });
+  await checkInside(folder, directory);
+  let backup: string | null = null;
+  if (preview.exists) {
+    backup = await freeBackupName(preview.path);
+    await copyFile(preview.path, backup, constants.COPYFILE_EXCL);
+  }
   const temporary = `${preview.path}.${process.pid}.tmp`;
   try {
     await writeFile(temporary, preview.text, { flag: 'wx' });
+    await checkSegments(folder, FILES[client].segments);
+    await checkInside(folder, directory);
     await rename(temporary, preview.path);
   } catch (error) {
     await rm(temporary, { force: true });

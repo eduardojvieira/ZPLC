@@ -21,7 +21,8 @@ export interface McpConfigDeps {
   /** The real path of the window's project folder, or null when it has none. */
   folder(ownerId: number): string | null;
   userData(): string | null;
-  command(): string;
+  /** The absolute path of the local `zplc-mcp` (`shared/mcpCommand.ts`), or null when it cannot be found. */
+  command(): Promise<string | null>;
   selfCheck(request: McpSelfCheckRequest): Promise<{ code: number | null; stdout: string }>;
 }
 
@@ -36,23 +37,32 @@ const isWriteRequest = (value: unknown): value is { client: McpClient; expected:
     record.expected.length <= MAX_TEXT
   );
 };
+const NOT_FOUND = {
+  ok: false,
+  missing: true,
+  message: 'zplc-mcp was not found: set ZPLC_MCP_BIN to its full path, or put its folder on the PATH.',
+} as const;
 const message = (error: unknown): { ok: false; message: string } => ({
   ok: false,
   message: error instanceof Error ? error.message : 'The config could not be read or written.',
 });
 
 export function createMcpConfigHandlers<Owner extends { ownerId: number }>(deps: McpConfigDeps): Record<string, IpcHandler<Owner>> {
-  const where = (owner: Owner) => {
+  const where = async (owner: Owner) => {
     const folder = deps.folder(owner.ownerId);
     if (folder === null) throw new Error(IPC_DENIED);
+    const command = await deps.command();
+    if (command === null) return null;
     const userData = deps.userData();
-    return { folder, options: { command: deps.command(), ...(userData ? { userData } : {}) } };
+    return { folder, options: { command, ...(userData ? { userData } : {}) } };
   };
   return {
     [MCP_CONNECTION_CHANNEL.PREVIEW]: {
       accepts: (args) => args.length === 1 && isMcpClient(args[0]),
       run: async (owner, [client]) => {
-        const { folder, options } = where(owner);
+        const found = await where(owner);
+        if (found === null) return NOT_FOUND;
+        const { folder, options } = found;
         try {
           return { ok: true, ...(await previewClientConfig(client as McpClient, folder, options)) };
         } catch (error) {
@@ -63,7 +73,9 @@ export function createMcpConfigHandlers<Owner extends { ownerId: number }>(deps:
     [MCP_CONNECTION_CHANNEL.WRITE]: {
       accepts: (args) => args.length === 1 && isWriteRequest(args[0]),
       run: async (owner, [request]) => {
-        const { folder, options } = where(owner);
+        const found = await where(owner);
+        if (found === null) return NOT_FOUND;
+        const { folder, options } = found;
         const { client, expected } = request as { client: McpClient; expected: string };
         try {
           return { ok: true, ...(await writeClientConfig(client, folder, options, expected)) };
@@ -75,7 +87,9 @@ export function createMcpConfigHandlers<Owner extends { ownerId: number }>(deps:
     [MCP_CONNECTION_CHANNEL.SELF_CHECK]: {
       accepts: (args) => args.length === 0,
       run: async (owner) => {
-        const { folder, options } = where(owner);
+        const found = await where(owner);
+        if (found === null) return NOT_FOUND;
+        const { folder, options } = found;
         const answer = await deps.selfCheck({
           command: options.command,
           workspace: folder,

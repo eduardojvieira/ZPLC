@@ -25,7 +25,7 @@ const handlersFor = (folder: string | null, selfCheck = async () => ({ code: 0 a
   const handlers = createMcpConfigHandlers<Owner>({
     folder: (ownerId) => (ownerId === 7 ? folder : null),
     userData: () => '/user/data',
-    command: () => 'zplc-mcp',
+    command: async () => 'zplc-mcp',
     selfCheck: async (request) => {
       asked.push(request);
       return selfCheck();

@@ -105,7 +105,7 @@ export interface IpcDeps {
   /** The user-data folder of this installation, for the MCP connection panel (AIX-007); null when unknown. */
   userDataFolder(): string | null;
   /** The command that a client config names for the local MCP server: `zplc-mcp`, or the path of the binary. */
-  mcpCommand(): string;
+  mcpCommand(): Promise<string | null>;
   /** Runs `zplc-mcp --self-check` through the spawn allow-list and answers its exit code and standard output. */
   mcpSelfCheck(request: McpSelfCheckRequest): Promise<{ code: number | null; stdout: string }>;
   aiProvider(): ReturnType<typeof createAiProvider> | null;

@@ -44,6 +44,7 @@ import { createCloseGuard } from './closeGuard.js';
 import { completeGuardedAction, createReloadRequest, guardReloadChord, guardWindowClose } from './windowGuards.js';
 import { createProjectFiles } from './projectFiles.js';
 import { createIpcHandlers, type RendererOwner, type ToolApiModule } from './ipcHandlers.js';
+import { resolveMcpCommand } from '../shared/mcpCommand.js';
 import { spawnAllowed, spawnVector } from '../shared/spawnAllowList.js';
 import { createToolWorkerHost, type ToolWorkerProcess } from './toolWorkerHost.js';
 import { registerIpcHandlers } from './ipcRegistry.js';
@@ -504,7 +505,7 @@ function setupIPC(): void {
     learnProgress: () => learnProgress,
     learnWorkspaceRoot: () => path.join(app.getPath('userData'), 'learn-workspaces'),
     userDataFolder: () => app.getPath('userData'),
-    mcpCommand: () => process.env.ZPLC_MCP_BIN || 'zplc-mcp',
+    mcpCommand: () => resolveMcpCommand(process.env),
     mcpSelfCheck: (request) =>
       new Promise((resolve) => {
         const child = spawnAllowed(

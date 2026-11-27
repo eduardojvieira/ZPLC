@@ -141,7 +141,7 @@ async function harness(
     serialPorts: { choose: () => undefined, list: () => null },
     learnWorkspaceRoot: () => path.join(folder, 'learn-workspaces'),
     userDataFolder: () => path.join(folder, 'user-data'),
-    mcpCommand: () => 'zplc-mcp',
+    mcpCommand: async () => '/opt/zplc-mcp',
     mcpSelfCheck: async () => ({ code: 0, stdout: '{"ready":true}' }),
     learnProgress: () => store('learn', { read: async () => new Set(['a']), merge: async (ids: string[]) => new Set(ids) }) as never,
     aiProvider: () => store('ai', { cancel: () => ({ requested: false }), request: async () => ({ ok: true }) }) as never,
