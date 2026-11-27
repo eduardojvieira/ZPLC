@@ -11,11 +11,7 @@ import { coil, contact, ldFile, variable } from './ldFunctionFixture';
 import type { LDVariable } from '../models/ld';
 
 function ldWithLocal(localVar: LDVariable): Record<string, unknown> {
-  return ldFile(
-    { local: [variable('Start', 'BOOL'), variable('Lamp', 'BOOL'), localVar] },
-    contact('c1', 'Start'),
-    coil('k1', 'Lamp'),
-  );
+  return ldFile({ local: [variable('Start', 'BOOL'), variable('Lamp', 'BOOL'), localVar] }, contact('c1', 'Start'), coil('k1', 'Lamp'));
 }
 
 function build(content: Record<string, unknown>): string[] {
