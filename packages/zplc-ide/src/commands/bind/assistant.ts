@@ -3,7 +3,10 @@
  * compact shell.
  */
 import { useEffect } from 'react';
-import { useAssistantProvider, useSecondaryView, type SecondaryView } from '../../shell/useSelection';
+import { selectionOfFile } from '../../langsvc/monacoProviders';
+import { useAssistantProvider, useSecondaryView, useSelection, type SecondaryView } from '../../shell/useSelection';
+import { useIDEStore } from '../../store/useIDEStore';
+import { openAssistantWith, selectionIntent } from '../../store/useAssistantEntry';
 import { shellDensity } from '../../shell/shellDensity';
 import { useShellLayout } from '../../store/useShellLayout';
 import { usePreferencesDocument } from '../../store/usePreferencesDocument';
@@ -32,6 +35,21 @@ function showAssistant(): void {
   else usePreferencesDocument.getState().show('assistant');
 }
 
+const DIAGRAM_ELEMENT = /^(?:rung|block|step|transition):[A-Za-z0-9_.-]{1,64}$/;
+
+/**
+ * `ai.askAboutSelection` (AIX-003): the open file, and in it the selected element of a diagram (the rung, block, step or transition
+ * that holds it) or the selected lines of a text program. With nothing selected the question is still about the open file.
+ */
+function askAboutSelection(): void {
+  const file = useIDEStore.getState().getActiveFile();
+  if (!file) return;
+  const chosen = useSelection.getState().element;
+  const head = chosen && chosen.file === file.path ? chosen.element.split('/')[0] : undefined;
+  const selection = head && DIAGRAM_ELEMENT.test(head) ? { element: head } : selectionOfFile(file.path);
+  openAssistantWith(selectionIntent(file.path, selection));
+}
+
 export function useAssistantCommands(): void {
   useEffect(() => {
     // the first reading of the provider decides whether the Assistant is offered
@@ -39,6 +57,7 @@ export function useAssistantCommands(): void {
     const unbind = bindCommands({
       'view.agent': showAssistant,
       'view.showInspector': () => showSecondaryView('inspector'),
+      'ai.askAboutSelection': askAboutSelection,
     });
     return () => {
       window.clearTimeout(timer);

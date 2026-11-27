@@ -11,6 +11,8 @@ import { describeFailure } from '../../learn/gradeRecord';
 import { useLearnUi } from '../../learn/learnUi';
 import { useLearnProgress } from '../../learn/progressState';
 import { useLessonCheck } from '../../learn/useLessonCheck';
+import { AskAssistantButton } from '../agent/AskAssistantButton';
+import { lessonIntent } from '../../store/useAssistantEntry';
 import { useT } from '../../i18n';
 import { useGiveFocusBack } from '../../hooks/useGiveFocusBack';
 import { useAppSettings } from '../../store/useAppSettings';
@@ -237,6 +239,11 @@ export function Guide({ workspaceTestPresentation }: { workspaceTestPresentation
               <p className="mt-1 leading-5">{hint}</p>
             </details>
           ))}
+          <AskAssistantButton
+            label={t('assistant.askHint')}
+            intent={() => lessonIntent(lesson.id, lesson.title)}
+            className="mt-1 underline underline-offset-2"
+          />
           {hideSolutions ? (
             <p data-learn-solutions-hidden className="mt-2 text-xs leading-5 text-[var(--color-surface-300)]">
               {t('learn.solutionsHidden')}

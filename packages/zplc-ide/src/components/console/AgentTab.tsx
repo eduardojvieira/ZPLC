@@ -1,8 +1,12 @@
-import { CircleStop, FileDiff, Send } from 'lucide-react';
+import { CircleStop, FileDiff, Send, X } from 'lucide-react';
+import type { Ref } from 'react';
 import { Button, Textarea } from '../../ui';
 import { useT } from '../../i18n';
 import { usePreferencesDocument } from '../../store/usePreferencesDocument';
 import { AgentProposals } from '../agent/AgentProposals';
+import { AnswerText } from '../agent/AnswerText';
+import { HISTORY_TURNS } from '../agent/conversation';
+import type { AttachedContext } from '../../store/useAssistantEntry';
 import { visualViolationText } from '../../models/visualFileText';
 import { AgentStatus, type AgentState } from '../ConsoleReviewPanels';
 import { providerErrorText, type AiProviderMode, type AiProviderStatusPresentation } from '../aiProviderPresentation';
@@ -24,6 +28,13 @@ export interface AgentTabProps {
   agentTraceCount: number;
   hasCurrentWorkspaceLink: boolean;
   workspaceTestBusy: boolean;
+  /** The context an entry point attached (AIX-003), removable. */
+  chip: AttachedContext | null;
+  removeChip: () => void;
+  /** Turns held for the follow-up (AI-18) and the way to start again. */
+  turnCount: number;
+  newConversation: () => void;
+  promptRef: Ref<HTMLTextAreaElement>;
   refreshAiProvider: () => Promise<void>;
   sendAgentRequest: () => Promise<void>;
   cancelAgentRequest: () => Promise<void>;
@@ -47,6 +58,11 @@ export function AgentTab({
   agentTraceCount,
   hasCurrentWorkspaceLink,
   workspaceTestBusy,
+  chip,
+  removeChip,
+  turnCount,
+  newConversation,
+  promptRef,
   refreshAiProvider,
   sendAgentRequest,
   cancelAgentRequest,
@@ -62,7 +78,7 @@ export function AgentTab({
       >
         <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--color-surface-600)] pb-2">
           <div>
-            <h2 className="font-medium text-[var(--color-surface-100)]">{t('console.tab.agent')}</h2>
+            <h2 className="font-medium text-[var(--color-surface-100)]">{t('assistant.heading')}</h2>
             <p className="mt-1 text-xs text-[var(--color-surface-400)]">{t('console.providerResponseNotEvidence')}</p>
           </div>
           <Button
@@ -107,6 +123,7 @@ export function AgentTab({
                 }
               }}
               id={`agent-mode-${mode}`}
+              tooltip={t(`assistant.mode.${mode}.tip`)}
               className={
                 `border px-2.5 py-1 text-xs font-medium capitalize disabled:cursor-not-allowed ` +
                 `disabled:opacity-60 ${
@@ -116,11 +133,23 @@ export function AgentTab({
                 }`
               }
             >
-              {mode}
+              {t(`assistant.mode.${mode}`)}
             </Button>
           ))}
         </div>
+        {chip && (
+          <div role="group" aria-label={t('assistant.chip.region')} className="space-y-1">
+            <div className="inline-flex max-w-full items-center gap-1 border border-[var(--color-accent-blue)] px-2 py-1 text-xs">
+              <span className="min-w-0 break-words text-[var(--color-surface-100)]">{chip.label}</span>
+              <Button variant="ghost" size="sm" aria-label={t('assistant.chip.remove')} disabled={agentBusy} onClick={removeChip}>
+                <X size={12} aria-hidden="true" />
+              </Button>
+            </div>
+            {chip.kind === 'lesson' && <p className="text-xs text-[var(--color-surface-300)]">{t('assistant.lessonStance')}</p>}
+          </div>
+        )}
         <Textarea
+          ref={promptRef}
           label={t('console.request')}
           value={agentPrompt}
           disabled={agentBusy}
@@ -141,7 +170,7 @@ export function AgentTab({
         >
           <h3 className="font-medium text-[var(--color-surface-200)]">{t('console.contextPreview')}</h3>
           <ul className="mt-1 list-disc space-y-1 pl-4">
-            <li>{t('console.modePromptLength', { agentMode, length: agentPrompt.trim().length })}</li>
+            <li>{t('console.modePromptLength', { agentMode: t(`assistant.mode.${agentMode}`), length: agentPrompt.trim().length })}</li>
             <li>{hasCurrentWorkspaceLink ? t('console.workspaceLinkedSavedWorkspace') : t('console.workspaceChooseZplcJson')}</li>
             <li>
               {agentMode === 'edit'
@@ -156,6 +185,8 @@ export function AgentTab({
             {agentMode === 'debug' && (
               <li>{t('console.boundedDiagnosticsHostTrace', { length: agentDiagnosticCount, length2: agentTraceCount })}</li>
             )}
+            {chip && <li>{chip.label}</li>}
+            {turnCount > 0 && <li>{t('assistant.followUp', { count: HISTORY_TURNS })}</li>}
             <li>{t('console.doNotPutSecrets')}</li>
           </ul>
         </section>
@@ -171,6 +202,11 @@ export function AgentTab({
             <Send size={14} aria-hidden="true" />
             {t('console.sendRequest')}
           </Button>
+          {turnCount > 0 && (
+            <Button variant="secondary" size="sm" disabled={agentBusy} onClick={newConversation}>
+              {t('assistant.newConversation')}
+            </Button>
+          )}
           {agentBusy && (
             <Button
               variant="secondary"
@@ -188,13 +224,15 @@ export function AgentTab({
         <AgentStatus state={agentState} status={agentStatus} />
         {typeof agentState === 'object' && agentState.kind === 'response' && (
           <section className="space-y-2 border-t border-[var(--color-surface-600)] pt-2">
-            <p className="whitespace-pre-wrap text-[var(--color-surface-100)]">
-              {agentState.presentation.kind === 'answer' || agentState.presentation.kind === 'refused'
-                ? agentState.presentation.answer
-                : agentState.presentation.kind === 'error'
+            {agentState.presentation.kind === 'answer' || agentState.presentation.kind === 'refused' ? (
+              <AnswerText text={agentState.presentation.answer} />
+            ) : (
+              <p className="whitespace-pre-wrap text-[var(--color-surface-100)]">
+                {agentState.presentation.kind === 'error'
                   ? providerErrorText(translator, agentState.presentation.code, agentState.presentation.retryAfter)
                   : t('console.providerResponseCouldNot')}
-            </p>
+              </p>
+            )}
             <p className="text-xs text-[var(--color-surface-400)]">{t('console.providerResponseNotEvidence2')}</p>
             {agentState.presentation.kind === 'refused' && (
               <div role="alert" className="text-xs text-[var(--color-accent-yellow)]">

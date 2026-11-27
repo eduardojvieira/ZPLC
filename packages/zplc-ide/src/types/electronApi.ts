@@ -124,6 +124,7 @@ declare global {
           selection?: { startLine: number; endLine: number; text: string } | { element: string };
           lessonContext?: { lessonId: string; stage?: string };
           locale?: 'en' | 'es';
+          history?: Array<{ role: 'user' | 'assistant'; text: string }>;
         }) => Promise<unknown>;
         cancel: () => Promise<{ requested: boolean }>;
       };

@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, ToggleGroup } from '../../ui';
 import { useT } from '../../i18n';
+import { MCP_SECTION_ID } from '../../store/usePreferencesDocument';
 
 type Client = 'claude-code' | 'cursor' | 'vscode';
 const CLIENTS: readonly Client[] = ['claude-code', 'cursor', 'vscode'];
@@ -72,8 +73,14 @@ export function McpConnectionSettings() {
 
   if (!bridge)
     return (
-      <section data-mcp-connection className="mb-6 border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] p-4">
-        <h2 className="text-xs font-bold uppercase tracking-[0.08em] text-[var(--text-secondary)]">{t('mcp.heading')}</h2>
+      <section
+        id={MCP_SECTION_ID}
+        data-mcp-connection
+        className="mb-6 border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] p-4"
+      >
+        <h2 tabIndex={-1} className="text-xs font-bold uppercase tracking-[0.08em] text-[var(--text-secondary)]">
+          {t('mcp.heading')}
+        </h2>
         <p className="mt-1 text-xs text-[var(--text-tertiary)]">{t('mcp.unavailable')}</p>
       </section>
     );
@@ -120,12 +127,12 @@ export function McpConnectionSettings() {
 
   return (
     <section
-      id="mcp-connection"
+      id={MCP_SECTION_ID}
       aria-labelledby="mcp-connection-heading"
       data-mcp-connection
       className="mb-6 border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] p-4"
     >
-      <h2 id="mcp-connection-heading" className="text-xs font-bold uppercase tracking-[0.08em] text-[var(--text-secondary)]">
+      <h2 id="mcp-connection-heading" tabIndex={-1} className="text-xs font-bold uppercase tracking-[0.08em] text-[var(--text-secondary)]">
         {t('mcp.heading')}
       </h2>
       <p className="mt-1 text-xs text-[var(--text-tertiary)]">{t('mcp.intro')}</p>
