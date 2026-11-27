@@ -45,7 +45,15 @@ describe('the project navigator in a browser (SHL-016)', () => {
       // the narrowest the person can make the sidebar, by the keyboard on its separator: every wider one has more room
       await app.eval(`document.getElementById('primary-separator').focus()`);
       const width = () => app.eval<number>(`Math.round(document.getElementById('primary').getBoundingClientRect().width)`);
-      for (let step = 0; step < 20 && (await width()) > 200; step++) await app.press('ArrowLeft');
+      for (let step = 0; step < 20; step++) {
+        const current = await width();
+        if (current <= 200) break;
+        await app.press('ArrowLeft');
+        await app.until(
+          'the primary sidebar to resize',
+          `Math.round(document.getElementById('primary').getBoundingClientRect().width) !== ${current}`,
+        );
+      }
       expect(await width()).toBe(200);
       const found: string[] = [];
       for (const density of ['comfortable', 'compact'] as const) {

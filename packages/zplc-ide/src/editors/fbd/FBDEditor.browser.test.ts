@@ -45,7 +45,8 @@ describe('Function block diagram editor in a browser (VF-007, LNG-012)', () => {
     expect(await app.eval<number>('document.querySelectorAll(".react-flow__node").length')).toBe(9);
     await select(app, 'ton_off');
     expect(await selected(app)).toEqual(['ton_off']);
-    expect((await app.focused())?.name).toBe(label('TON', 'OffTimer'));
+    const focusedBlock = await app.untilFocused('the TON block to hold the focus', (node) => node.name === label('TON', 'OffTimer'));
+    expect(focusedBlock.name).toBe(label('TON', 'OffTimer'));
   });
 
   test('Alt+ArrowRight selects the nearest block to the right, says which, and moves nothing', async () => {
