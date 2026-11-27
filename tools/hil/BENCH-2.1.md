@@ -216,12 +216,14 @@ ports, above). Then:
 
 1. Open Studio on the project of the echo program and a scene whose plant map binds `%IX0.0` to `%IX0.3`. Choose
    hardware mode and **Connect**. Open the plant document.
-2. Look before you press anything: the button **Feed the board from the plant** and the Online menu command are present
-   and enabled only now (connected, hardware mode, PLANT capability). Simulation mode or a disconnected board must show
-   neither enabled. The LEDs are off and the status bar says Board.
+2. Look before you press anything: the button **Feed the board from the plant** of the plant document is enabled only
+   now (connected, hardware mode, PLANT capability, a compiled program). In simulation mode or with a disconnected board
+   it is absent; with a board that lacks the capability it is disabled and says why. The Online menu entry never looks
+   disabled (the application menu does not grey items): in those cases pressing it must open nothing. The LEDs are off
+   and the status bar says Board.
 3. Press **Feed the board from the plant**. Read the dialog: it says the outputs stay safe and mirroring is off. The
    focus is on **Cancel**. Press **Cancel**: nothing changes on the board (LEDs off, status bar still Board).
-4. Press the action again and **Feed the board** (confirm). Watch the status bar: **Starting**, then **Plant I/O mode**
+4. Press the action again and **Feed the board** (confirm). Watch the status bar: **Plant I/O mode starting**, then **Plant I/O mode**
    (running), a different text, icon and colour from Board. Open its details and read the **last** and **worst**
    response time. The LEDs stay **off**: mirroring is off by default.
 5. Tick **Mirror the outputs on the board**: the status bar shows the mirroring mark and the LEDs follow the outputs.
@@ -232,7 +234,9 @@ ports, above). Then:
 7. Repeat 4, with mirroring on, and end the mode three other ways, one each time: **pull the data cable**, press
    **Disconnect**, and close Studio. After each, the LEDs must be **off** and the board stopped as in step 6; with the
    cable pulled, the status bar must leave the running state and the plant document must name the reason (the board
-   left the mode, or no answer within the timeout).
+   left the mode, or no answer within the timeout). **Disconnect** and closing the window close the connection before
+   the exit can go out, so the board ends these two by its own timeout (`TIMEOUT`, 500 ms; LNK-011): the LEDs go off
+   within about half a second, not at once. Record how long they took.
 
 **Record** (the owner, by hand): the board id, the transport, the date, the commit of the Studio and firmware builds, the
 operating system, and for every step yes or no. For steps 4 and 7 also the last and worst response time of the status bar
