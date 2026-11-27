@@ -55,4 +55,40 @@ describe('where the MCP server is (AIX-007)', () => {
     for (const bad of [join(onPath, 'missing'), onPath, 'relative/zplc-mcp'])
       expect(await resolveMcpCommand({ ZPLC_MCP_BIN: bad, PATH: onPath }, 'linux')).toBeNull();
   });
+
+  describe('the copy inside the installer', () => {
+    const bundled = async (resources: string, name = 'zplc-mcp') => binary(join(resources, 'zplc-mcp'), name);
+
+    it('is preferred over PATH in a packaged app, as an absolute path', async () => {
+      const resources = await scratch();
+      const onPath = await scratch();
+      await binary(onPath);
+      const wanted = await bundled(resources);
+      expect(await resolveMcpCommand({ PATH: onPath }, 'linux', resources)).toBe(wanted);
+    });
+
+    it('looks for zplc-mcp.exe on Windows, where there is no execute bit', async () => {
+      const resources = await scratch();
+      const wanted = await bundled(resources, 'zplc-mcp.exe');
+      expect(await resolveMcpCommand({}, 'win32', resources)).toBe(wanted);
+    });
+
+    it('lets ZPLC_MCP_BIN win, and still refuses a wrong one without falling back to the copy', async () => {
+      const resources = await scratch();
+      await bundled(resources);
+      const chosen = await binary(await scratch(), 'my-mcp');
+      expect(await resolveMcpCommand({ ZPLC_MCP_BIN: chosen }, 'linux', resources)).toBe(chosen);
+      expect(await resolveMcpCommand({ ZPLC_MCP_BIN: join(resources, 'missing') }, 'linux', resources)).toBeNull();
+    });
+
+    it('falls back to PATH when the copy is missing, and is not looked for outside a packaged app', async () => {
+      const resources = await scratch();
+      const onPath = await scratch();
+      const onPathBinary = await binary(onPath);
+      expect(await resolveMcpCommand({ PATH: onPath }, 'linux', resources)).toBe(onPathBinary);
+      await bundled(resources);
+      expect(await resolveMcpCommand({ PATH: onPath }, 'linux')).toBe(onPathBinary);
+      expect(await resolveMcpCommand({}, 'linux')).toBeNull();
+    });
+  });
 });
