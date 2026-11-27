@@ -18,6 +18,8 @@ export interface PartListProps {
   disabled: boolean;
   /** Options in `<optgroup>`s by family (default). `false` keeps the flat list. */
   grouped?: boolean;
+  /** Put before the ids of the list, so two lists on one screen never share one. The default keeps the ids as they were. */
+  idPrefix?: string;
   onSelect(id: string): void;
   onAdd(catalogueId: string): void;
   onDuplicate(id: string): void;
@@ -28,7 +30,9 @@ export interface PartListProps {
 const firstSentence = (doc: string) => doc.match(/^.*?[.!?](?=\s|$)/s)?.[0] ?? doc;
 
 export function PartList(props: PartListProps) {
-  const { parts, catalogue, locale, selection, problems, disabled, grouped = true } = props;
+  const { parts, catalogue, locale, selection, problems, disabled, grouped = true, idPrefix = '' } = props;
+  const headingId = `${idPrefix}plant-editor-parts`;
+  const docId = `${idPrefix}plant-editor-part-doc`;
   const { t } = useT();
   const text = translatorFor(locale).t; // the catalogue speaks the language it is shown in
   const [choice, setChoice] = useState('');
@@ -46,15 +50,15 @@ export function PartList(props: PartListProps) {
     shown.length === 0 ? text('plantEditor.noPartMatches') : firstSentence(catalogue.find((d) => d.id === chosen)?.doc[locale] ?? '');
   const label = (id: string) => catalogue.find((d) => d.id === id)?.names[locale] ?? id;
   return (
-    <section aria-labelledby="plant-editor-parts" className="flex flex-col gap-2">
-      <h3 id="plant-editor-parts">{t('plantEditor.partsHeading')}</h3>
+    <section aria-labelledby={headingId} className="flex flex-col gap-2">
+      <h3 id={headingId}>{t('plantEditor.partsHeading')}</h3>
       <TextField label={text('plantEditor.filterLabel')} value={filter} disabled={disabled} onChange={(e) => setFilter(e.target.value)} />
       <div className="flex items-end gap-2">
         <Select
           label={t('plantEditor.addLabel')}
           value={chosen}
           disabled={disabled}
-          aria-describedby="plant-editor-part-doc"
+          aria-describedby={docId}
           onChange={(e) => setChoice(e.target.value)}
         >
           {grouped
@@ -69,7 +73,7 @@ export function PartList(props: PartListProps) {
           {t('plantEditor.add')}
         </Button>
       </div>
-      <p id="plant-editor-part-doc" aria-live="polite">
+      <p id={docId} aria-live="polite">
         {description}
       </p>
       {parts.length === 0 ? (
@@ -78,7 +82,7 @@ export function PartList(props: PartListProps) {
         <ul aria-label={t('plantEditor.listLabel')} className="flex flex-col gap-1">
           {parts.map((p) => {
             const here = problems.filter((q) => q.partId === p.id);
-            const note = `plant-editor-problems-${p.id}`;
+            const note = `${idPrefix}plant-editor-problems-${p.id}`;
             return (
               <li key={p.id} data-part={p.id} className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">

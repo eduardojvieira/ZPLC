@@ -1,0 +1,568 @@
+{
+  "name": "TankLevel",
+  "description": "Scale the raw level of a tank to metres and hold it near a set point.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "LevelF",
+        "type": "REAL",
+        "comment": "The raw level as a REAL"
+      },
+      {
+        "name": "SetF",
+        "type": "REAL",
+        "comment": "The raw set point as a REAL"
+      },
+      {
+        "name": "DrainF",
+        "type": "REAL",
+        "comment": "The raw drain value as a REAL"
+      },
+      {
+        "name": "LevelM",
+        "type": "REAL",
+        "comment": "The level in m"
+      },
+      {
+        "name": "SetM",
+        "type": "REAL",
+        "comment": "The set point in m"
+      },
+      {
+        "name": "Err",
+        "type": "REAL",
+        "comment": "Set point minus level, in m"
+      },
+      {
+        "name": "Band",
+        "type": "REAL",
+        "comment": "5 percent of the set point, in m"
+      },
+      {
+        "name": "Lo",
+        "type": "REAL",
+        "comment": "Lower edge of the green band, in m"
+      },
+      {
+        "name": "Hi",
+        "type": "REAL",
+        "comment": "Upper edge of the green band, in m"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "LevelRaw",
+        "type": "INT",
+        "address": "%IW0",
+        "comment": "Tank1.level: 0 to 27648 is 0 to 1 m"
+      },
+      {
+        "name": "SetPointRaw",
+        "type": "INT",
+        "address": "%IW1",
+        "comment": "SetPoint.value: 0 to 1000 is 0 to 1 m"
+      },
+      {
+        "name": "DrainRaw",
+        "type": "INT",
+        "address": "%IW2",
+        "comment": "DrainPot.value: 0 to 1000 is 0 to 100 percent"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "FillCmd",
+        "type": "REAL",
+        "address": "%QD0",
+        "comment": "Tank1.fill: 0 to 100 percent of the inlet valve"
+      },
+      {
+        "name": "DrainCmd",
+        "type": "REAL",
+        "address": "%QD1",
+        "comment": "Tank1.drain: 0 to 100 percent of the discharge valve"
+      },
+      {
+        "name": "LevelShown",
+        "type": "REAL",
+        "address": "%QD2",
+        "comment": "LevelDisplay.value: the level in m"
+      },
+      {
+        "name": "Green",
+        "type": "BOOL",
+        "address": "%QX12.0",
+        "comment": "StackLight1.green: the level is within 5 percent of the set point"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Scale the level to metres: convert to REAL first, then divide by the raw span.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r1_0_0",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["LevelRaw"],
+              "output": "LevelF",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r1_0_1",
+              "type": "function",
+              "functionName": "DIV",
+              "operands": ["LevelF", "27648.0"],
+              "output": "LevelM",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "Scale the set point to metres: 0 to 1000 is 0 to 1 m.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r2_0_0",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["SetPointRaw"],
+              "output": "SetF",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r2_0_1",
+              "type": "function",
+              "functionName": "DIV",
+              "operands": ["SetF", "1000.0"],
+              "output": "SetM",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "Proportional inlet: 800 percent per metre of error, limited to 0 to 100 percent.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r3_0_0",
+              "type": "function",
+              "functionName": "SUB",
+              "operands": ["SetM", "LevelM"],
+              "output": "Err",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r3_0_1",
+              "type": "function",
+              "functionName": "MUL",
+              "operands": ["800.0", "Err"],
+              "output": "FillCmd",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r3_0_2",
+              "type": "function",
+              "functionName": "LIMIT",
+              "operands": ["0.0", "FillCmd", "100.0"],
+              "output": "FillCmd",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_4",
+      "number": 4,
+      "comment": "The operator disturbance: DrainPot opens the discharge, 0 to 1000 is 0 to 100 percent.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r4_0_0",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["DrainRaw"],
+              "output": "DrainF",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r4_0_1",
+              "type": "function",
+              "functionName": "DIV",
+              "operands": ["DrainF", "10.0"],
+              "output": "DrainCmd",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_5",
+      "number": 5,
+      "comment": "The display shows the level in m.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r5_0_0",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["LevelM"],
+              "output": "LevelShown",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_6",
+      "number": 6,
+      "comment": "The green band is 5 percent of the set point on each side of it.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r6_0_0",
+              "type": "function",
+              "functionName": "MUL",
+              "operands": ["SetM", "0.05"],
+              "output": "Band",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r6_0_1",
+              "type": "function",
+              "functionName": "SUB",
+              "operands": ["SetM", "Band"],
+              "output": "Lo",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r6_0_2",
+              "type": "function",
+              "functionName": "ADD",
+              "operands": ["SetM", "Band"],
+              "output": "Hi",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_7",
+      "number": 7,
+      "comment": "Green while the level is inside the band.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r7_0_0",
+              "type": "function",
+              "functionName": "GE",
+              "operands": ["LevelM", "Lo"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r7_0_1",
+              "type": "function",
+              "functionName": "LE",
+              "operands": ["LevelM", "Hi"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r7_0_2",
+              "type": "coil",
+              "variable": "Green",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

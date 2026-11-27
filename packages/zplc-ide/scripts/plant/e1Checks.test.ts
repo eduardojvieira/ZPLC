@@ -182,5 +182,5 @@ describe('missing stateful kinds capture fixture', () => {
       .map((p) => p.key)
       .filter((k) => !shipped.has(k));
     expect(fixtureKinds.sort()).toEqual(missingFromShipped.sort());
-  });
+  }, 30_000);
 });

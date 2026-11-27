@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "id": "BatchCount",
+  "tickMs": 10,
+  "durationMs": 120,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "BatchCount.PartSensor": false,
+        "BatchCount.Reset": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "BatchCount.PartSensor": true
+      }
+    },
+    {
+      "atMs": 30,
+      "set": {
+        "BatchCount.PartSensor": false
+      }
+    },
+    {
+      "atMs": 40,
+      "set": {
+        "BatchCount.PartSensor": true
+      }
+    },
+    {
+      "atMs": 50,
+      "set": {
+        "BatchCount.PartSensor": false
+      }
+    },
+    {
+      "atMs": 60,
+      "set": {
+        "BatchCount.PartSensor": true
+      }
+    },
+    {
+      "atMs": 70,
+      "set": {
+        "BatchCount.PartSensor": false
+      }
+    },
+    {
+      "atMs": 80,
+      "set": {
+        "BatchCount.Reset": true
+      }
+    },
+    {
+      "atMs": 90,
+      "set": {
+        "BatchCount.Reset": false
+      }
+    },
+    {
+      "atMs": 100,
+      "set": {
+        "BatchCount.PartSensor": true
+      }
+    },
+    {
+      "atMs": 110,
+      "set": {
+        "BatchCount.PartSensor": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "BatchCount.BatchFull": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 30,
+      "condition": {
+        "BatchCount.BatchFull": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "BatchCount.BatchFull": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 60,
+      "condition": {
+        "BatchCount.BatchFull": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 70,
+      "condition": {
+        "BatchCount.BatchFull": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 80,
+      "condition": {
+        "BatchCount.BatchFull": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 110,
+      "condition": {
+        "BatchCount.BatchFull": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 60,
+      "forMs": 10,
+      "condition": {
+        "BatchCount.BatchFull": true
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 60,
+      "withinMs": 0,
+      "condition": {
+        "BatchCount.BatchFull": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 80,
+      "withinMs": 0,
+      "condition": {
+        "BatchCount.BatchFull": false
+      }
+    }
+  ]
+}

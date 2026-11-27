@@ -114,7 +114,8 @@
   "VF-023": [
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/nativeRuntimeGuard.test.ts","test":"VF-023 are never skipped in CI when the binary is missing, in any test file that reaches the runtime"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/nativeRuntimeGuard.test.ts","test":"VF-023 are skipped outside CI when the binary is missing, and say how to run them"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/cli/nativeRuntimeGuard.test.ts","test":"VF-023 fail in CI when the binary is missing"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/nativeRuntimeGuard.test.ts","test":"VF-023 fail in CI when the binary is missing"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/nativeRuntimeGuard.test.ts","test":"the loopback tests on each platform (VF-023)"}
   ],
   "VF-024": [
     {"kind":"manual","ref":".github/workflows/nightly-quality.yml","partial":true,"note":"the compiler and IDE unit tests run on macOS and Windows in the desktop-platforms job, nightly; configuration only, no hosted run is recorded and the IDE suite has never been run on those systems"}
@@ -2700,6 +2701,7 @@
   ],
   "UX-023": [
     {"kind":"unit","ref":"packages/zplc-ide/src/App.dom.test.tsx","test":"App root sizing (UX-023)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"the lesson layout and the flag (UX-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/shell/ActivityRail.test.tsx","test":"UX-023 shows the labels in the regular shell and only the icons in the compact one"},
     {"kind":"unit","ref":"packages/zplc-ide/src/shell/WorkbenchShell.dom.test.tsx","test":"WorkbenchShell initial sidebar state (UX-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/shell/shellRouting.test.ts","test":"UX-023 is compact at the 1024 pixel minimum and up to the limit, and regular at 1366"},
@@ -3057,8 +3059,10 @@
   "LRN-022": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the lesson check over the IPC boundary (LRN-022, LRN-026, IDE-002, IDE-012)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/lessonCheckProtocol.test.ts","test":"the lesson check request and answer (LRN-022, LRN-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/guide/Guide.test.tsx","test":"LRN-022 only the reference scenario of the lesson grades: the request names the lesson and nothing of the workspace"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/learnLesson.test.ts","test":"Learn grading against the lesson package (LRN-022, LRN-026)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCheck.test.ts","test":"lesson check (LRN-022, LRN-023, LRN-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/useLessonCheck.test.ts","test":"LRN-022 without the option the old gate stays: an unsaved document is refused and nothing is saved or run"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"39 Learn reports the failed assertion of a lesson","partial":true}
   ],
   "LRN-023": [
@@ -3266,6 +3270,7 @@
   ],
   "LRN-039": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 Back to course closes the view and opens the Learn home, never both at once"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 Escape closes the page and gives the focus back to the Guide"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 Escape does what Practice does"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 Practice closes the view and moves the focus to the lesson panel"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 a lesson without a reading page opens as before: the workspace, the lesson panel and no reading view"},
@@ -3275,7 +3280,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 starting a lesson with a reading page shows it full screen: module, title as h1, time and the page"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 the lesson panel offers Read again, which reopens the page"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"the reading view (LRN-039)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnContent.v1.test.ts","test":"the reading page in the Learn content (LRN-039)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnContent.v1.test.ts","test":"the reading page in the Learn content (LRN-039)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/shell/WorkbenchShell.dom.test.tsx","test":"LRN-039 the focus goes back to the Guide once the workbench has left inert, not while it is still inert"}
   ],
   "LRN-040": [
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/reading/ReadingPage.dom.test.tsx","test":"reading page rendering (LRN-040)"},

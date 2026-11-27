@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "name": "Latch between two sensors",
+  "shortestPulseMs": 800,
+  "parts": [
+    {
+      "id": "belt",
+      "part": "belt",
+      "name": "Belt1",
+      "position": [0, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": { "length": 3, "speedMps": 0.5 }
+    },
+    { "id": "crate", "part": "box", "name": "Crate", "position": [-1, 0.5, 0], "rotationYDeg": 0, "config": {} },
+    {
+      "id": "eye-a",
+      "part": "sensor-diffuse",
+      "name": "EyeA",
+      "position": [-1, 0.5, -0.5],
+      "rotationYDeg": 270,
+      "config": { "rangeM": 1 }
+    },
+    {
+      "id": "eye-b",
+      "part": "sensor-diffuse",
+      "name": "EyeB",
+      "position": [0.8, 0.5, -0.5],
+      "rotationYDeg": 270,
+      "config": { "rangeM": 1 }
+    }
+  ],
+  "cameras": [{ "name": "Overview", "position": [0, 2.2, 2.6], "target": [0, 0.5, 0] }]
+}

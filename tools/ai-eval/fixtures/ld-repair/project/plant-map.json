@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 2,
+  "target": { "scene": "tank-level-control" },
+  "signals": {
+    "Tank1.level": {
+      "direction": "sensor",
+      "type": "INT",
+      "point": "TankLevel.LevelRaw",
+      "range": { "raw_min": 0, "raw_max": 27648, "eng_min": 0, "eng_max": 1, "unit": "m" }
+    },
+    "SetPoint.value": {
+      "direction": "sensor",
+      "type": "INT",
+      "point": "TankLevel.SetPointRaw",
+      "range": { "raw_min": 0, "raw_max": 1000, "eng_min": 0, "eng_max": 1, "unit": "m" }
+    },
+    "DrainPot.value": {
+      "direction": "sensor",
+      "type": "INT",
+      "point": "TankLevel.DrainRaw",
+      "range": { "raw_min": 0, "raw_max": 1000, "eng_min": 0, "eng_max": 100, "unit": "%" }
+    },
+    "Tank1.fill": {
+      "direction": "command",
+      "type": "REAL",
+      "point": "TankLevel.FillCmd",
+      "range": { "raw_min": 0, "raw_max": 100, "eng_min": 0, "eng_max": 100, "unit": "%" }
+    },
+    "Tank1.drain": {
+      "direction": "command",
+      "type": "REAL",
+      "point": "TankLevel.DrainCmd",
+      "range": { "raw_min": 0, "raw_max": 100, "eng_min": 0, "eng_max": 100, "unit": "%" }
+    },
+    "LevelDisplay.value": {
+      "direction": "command",
+      "type": "REAL",
+      "point": "TankLevel.LevelShown",
+      "range": { "raw_min": 0, "raw_max": 1, "eng_min": 0, "eng_max": 1, "unit": "m" }
+    },
+    "StackLight1.green": { "direction": "command", "type": "BOOL", "point": "TankLevel.Green" }
+  }
+}

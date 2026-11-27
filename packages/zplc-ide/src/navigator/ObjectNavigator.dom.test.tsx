@@ -107,19 +107,17 @@ describe('creation from the navigator (SHL-013)', () => {
     expect(dom.screen.getAllByRole('menuitem').map((entry) => entry.textContent)).toEqual([dom.t('command.project.rename')]);
   });
 
-  it('SHL-013 creating a function block makes the file, saves its skeleton and opens it at its declaration', async () => {
+  it('SHL-013 creating a function block makes the file with its skeleton and opens it at its declaration', async () => {
     reset();
-    const createFile = mock<(name: string, language: string) => Promise<string>>(async () => 'file:src/Pump.st');
-    const updateFileContent = mock<(id: string, content: string) => void>(() => undefined);
-    const saveFile = mock(async () => true);
+    const createFile = mock<(name: string, language: string, parent: string, content: string) => Promise<string>>(
+      async () => 'file:src/Pump.st',
+    );
     const navigate = mock<(path: string, line: number, column: number) => Promise<boolean>>(async () => true);
     dom.patchStore(useIDEStore, {
       fileTree: tree as never,
       projectConfig: config,
       loadedFiles: new Map([['file:src/Pump.st', { path: 'src/Pump.st' }]]) as never,
       createFile,
-      updateFileContent,
-      saveFile,
       navigateToCompilerDiagnostic: navigate,
     } as never);
     const { user } = dom.render(<NavigatorDialogs />);
@@ -132,9 +130,8 @@ describe('creation from the navigator (SHL-013)', () => {
     await user.clear(input);
     await user.type(input, 'Pump{Enter}');
     await dom.waitFor(() => expect(navigate).toHaveBeenCalledWith('src/Pump.st', 1, 1));
-    expect(createFile).toHaveBeenCalledWith('Pump.st', 'ST');
-    expect(updateFileContent.mock.calls[0]![1]).toContain('FUNCTION_BLOCK Pump');
-    expect(saveFile).toHaveBeenCalled();
+    expect(createFile.mock.calls[0]!.slice(0, 3)).toEqual(['Pump.st', 'ST', 'src']);
+    expect(createFile.mock.calls[0]![3]).toContain('FUNCTION_BLOCK Pump');
     expect(dom.screen.queryByRole('dialog')).toBeNull();
   });
 

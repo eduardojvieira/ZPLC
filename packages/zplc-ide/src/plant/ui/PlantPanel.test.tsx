@@ -18,6 +18,8 @@ const { sensorParts } = await import('../core/parts/sensors');
 const { flowParts } = await import('../core/parts/flow');
 const { panelParts } = await import('../core/parts/panel');
 const { PlantPanel } = await import('./PlantPanel');
+const { PlantActivityView } = await import('./PlantActivityView');
+const { usePlantChoice } = await import('./usePlantChoice');
 const { PlantDocument } = await import('../../shell/PlantDocument');
 import { SCENE_INDEX } from '../../generated/sceneIndex';
 import type { PlantCore, PlantSession, PlantSessionEvent, PlantSnapshot } from '../contracts';
@@ -928,5 +930,84 @@ describe('one plant edit session and the plant toolbar (PLS-004, PLS-005, PLS-00
     expect(text()).not.toBe('');
     expect(r.scenes.length).toBe(1); // one core, built once from the scene as shipped
     expect(r.scenes[0]!.parts.length).toBe(JSON.parse(sceneFiles(SCENE_INDEX[0]!.id).scene).parts.length);
+  });
+});
+
+describe('a scene picked in the Plant activity (plan-u3 P2)', () => {
+  let activity: HTMLElement;
+  const pick = (value: string) =>
+    dom.act(async () => void dom.fireEvent.change(dom.within(activity).getByLabelText(dom.t('plant.panel.scene')), { target: { value } }));
+  const defaultName = () => (JSON.parse(sceneFiles(SCENE_INDEX[0]!.id).scene) as { name: string }).name;
+
+  it('PLS-005 an activity pick is taken by one panel only and never ends the edit session of another', async () => {
+    const { usePlantEdit } = await import('../editSession');
+    dom.patchStore(useIDEStore, { loadedFiles: new Map() as never });
+    const a = rig();
+    const b = rig();
+    const viewA = dom.render(<PlantPanel controller={a.controller} visible deps={a.deps} />);
+    await dom.waitFor(() => expect(a.scenes.length).toBe(1));
+    const viewB = dom.render(<PlantPanel controller={b.controller} visible deps={b.deps} />);
+    activity = dom.render(<PlantActivityView />).container;
+    await dom.waitFor(() => expect(b.scenes.length).toBe(1));
+    // B is on another scene than A, which is the one being edited
+    await dom.act(async () => {
+      dom.fireEvent.change(dom.within(viewB.container).getByLabelText(dom.t('plant.panel.scene')), { target: { value: 'counted-queue' } });
+    });
+    await dom.waitFor(() => expect(b.scenes.length).toBe(2));
+    await dom.waitFor(() => expect(viewA.container.querySelector('[data-plant-text]')).toBeTruthy());
+    await dom.act(async () => dom.fireEvent.click(viewA.container.querySelector('[data-plant-edit-scene]')!));
+    expect(usePlantEdit.getState().editor).not.toBeNull();
+    await dom.waitFor(() => expect(usePlantChoice.getState().shown?.key).toBe('counted-queue'));
+    await pick('merge-lines');
+    await dom.waitFor(() => expect(b.scenes.length).toBe(3));
+    expect(usePlantEdit.getState().editor).not.toBeNull();
+    expect(a.scenes.length).toBe(1);
+  });
+
+  it('PLS-005 a panel that is editing keeps its scene and the activity says to finish editing first', async () => {
+    const { usePlantEdit } = await import('../editSession');
+    dom.patchStore(useIDEStore, { loadedFiles: new Map() as never });
+    const a = rig();
+    const view = dom.render(<PlantPanel controller={a.controller} visible deps={a.deps} />);
+    activity = dom.render(<PlantActivityView />).container;
+    await dom.waitFor(() => expect(a.scenes.length).toBe(1));
+    await dom.waitFor(() => expect(usePlantChoice.getState().shown).toBeDefined());
+    await dom.waitFor(() => expect(view.container.querySelector('[data-plant-text]')).toBeTruthy());
+    await dom.act(async () => dom.fireEvent.click(view.container.querySelector('[data-plant-edit-scene]')!));
+    await pick('counted-queue');
+    expect(dom.screen.getByText(dom.t('plant.activity.finishEditing'))).toBeTruthy();
+    expect(usePlantEdit.getState().editor).not.toBeNull();
+    expect(a.scenes.length).toBe(1);
+  });
+
+  it('PLS-005 a panel opened later starts on the default scene, not on an earlier pick', async () => {
+    dom.patchStore(useIDEStore, { loadedFiles: new Map() as never });
+    const a = rig();
+    const first = dom.render(<PlantPanel controller={a.controller} visible deps={a.deps} />);
+    activity = dom.render(<PlantActivityView />).container;
+    await dom.waitFor(() => expect(usePlantChoice.getState().shown).toBeDefined());
+    await pick('counted-queue');
+    await dom.waitFor(() => expect(a.scenes.length).toBe(2));
+    await pick('merge-lines');
+    await dom.waitFor(() => expect(a.scenes.length).toBe(3));
+    first.unmount();
+    const b = rig();
+    dom.render(<PlantPanel controller={b.controller} visible deps={b.deps} />);
+    await dom.waitFor(() => expect(b.scenes.length).toBe(1));
+    expect((b.scenes[0] as { name?: string }).name).toBe(defaultName());
+  });
+
+  it('PLS-005 a project switch clears a pending scene request', () => {
+    usePlantChoice
+      .getState()
+      .show({ panel: 'x', key: 'belt-to-sensor', scene: JSON.parse(sceneFiles('belt-to-sensor').scene), map: undefined });
+    usePlantChoice.getState().ask({ kind: 'file', name: 'line' });
+    expect(usePlantChoice.getState().request).toBeDefined();
+    dom.patchStore(useIDEStore, { directoryHandle: {} as FileSystemDirectoryHandle });
+    try {
+      expect(usePlantChoice.getState().request).toBeUndefined();
+    } finally {
+      dom.patchStore(useIDEStore, { directoryHandle: null });
+    }
   });
 });

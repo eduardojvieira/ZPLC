@@ -23,6 +23,15 @@ zplc-mcp --workspace <absolute-path-of-a-project> [--repository <absolute-path-o
 
 El servidor atiende el apretón de manos de 2025 (`initialize`) además de la revisión 2026-07-28: su punto de entrada inicia el transporte con `legacy: 'serve'`.
 
+## Campos de una respuesta
+
+| Campo | Significado |
+| --- | --- |
+| `evidenceLevel` | Se dice una vez al inicio de una respuesta: de qué clase de ejecución es evidencia el resultado. Los textos repetidos de nota y alcance de 2.0 ya no están. |
+| `execution` | El registro del trabajo, como en 2.0: `schemaVersion`, `jobId`, `actor`, `permission`, `operation`, `outcome`, `startedAt`, `finishedAt`. No cambia en 2.1 y está obsoleto: una versión posterior puede quitarlo. |
+| `audit` | Junto a `execution` en cada respuesta que lo lleva: `jobId` y `permission`, iguales a los de `execution`, y `durationMs`, los milisegundos que tardó el trabajo. `workspace_write` y `workspace_check_write` responden `audit` con el permiso `project:write` o `project:read`, y las herramientas `debug_` con `tests:run`. |
+| `validValues` | En el rechazo de un nombre erróneo (un escenario, una señal, un modo, un archivo, una sesión): los nombres válidos en orden alfabético, como máximo 32, con `more` que cuenta el resto. El rechazo también lleva `error`, `message` y `nextStep`. |
+
 ## Herramientas
 
 | Herramienta | Título | Entrada | Solo lectura | Descripción |

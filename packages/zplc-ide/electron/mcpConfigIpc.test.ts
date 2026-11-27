@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'bun:test';
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import path, { join } from 'node:path';
 
 import { MCP_TOOL_NAMES } from '../src/mcp/server';
 import { spawnVector } from '../shared/spawnAllowList';
@@ -106,11 +106,12 @@ describe('the MCP connection channels (AIX-007)', () => {
   it('start the self-check as a literal vector of the allow-list: the server, the folders and --self-check, no shell, no device', () => {
     expect(spawnVector({ kind: 'mcp-self-check', command: 'zplc-mcp', workspace: '/p', userData: '/u' })).toEqual({
       command: 'zplc-mcp',
-      args: ['--workspace', '/p', '--user-data', '/u', '--self-check'],
+      // the vector holds absolute paths: on Windows '/p' resolves to a drive path, so expect what path.resolve says
+      args: ['--workspace', path.resolve('/p'), '--user-data', path.resolve('/u'), '--self-check'],
     });
-    expect(spawnVector({ kind: 'mcp-self-check', command: '/opt/zplc-mcp', workspace: '/p' }).args).toEqual([
+    expect(spawnVector({ kind: 'mcp-self-check', command: path.resolve('/opt/zplc-mcp'), workspace: '/p' }).args).toEqual([
       '--workspace',
-      '/p',
+      path.resolve('/p'),
       '--self-check',
     ]);
     expect(() => spawnVector({ kind: 'mcp-self-check', command: 'zplc-mcp --x', workspace: '/p' })).toThrow('Refused to spawn');

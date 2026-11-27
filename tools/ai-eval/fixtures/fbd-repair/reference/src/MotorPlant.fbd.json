@@ -1,0 +1,348 @@
+{
+  "name": "MotorPlant",
+  "description": "Hold the motor command with an RS bistable that the Stop button or an open guard resets; Running needs the plant to report AtSpeed.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Start push button"
+      },
+      {
+        "name": "Stop",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Stop push button"
+      },
+      {
+        "name": "AtSpeed",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "Speed feedback from the motor plant"
+      },
+      {
+        "name": "GuardClosed",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "Guard closed: the permissive of the motor"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Command",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Motor command"
+      },
+      {
+        "name": "Running",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Command and speed reached"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "var_start",
+      "type": "variable",
+      "variableName": "Start",
+      "direction": "read",
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 40,
+        "y": 40
+      }
+    },
+    {
+      "id": "var_stop",
+      "type": "variable",
+      "variableName": "Stop",
+      "direction": "read",
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 40,
+        "y": 140
+      }
+    },
+    {
+      "id": "var_guard",
+      "type": "variable",
+      "variableName": "GuardClosed",
+      "direction": "read",
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 40,
+        "y": 240
+      }
+    },
+    {
+      "id": "var_speed",
+      "type": "variable",
+      "variableName": "AtSpeed",
+      "direction": "read",
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 40,
+        "y": 340
+      }
+    },
+    {
+      "id": "out_cmd",
+      "type": "output",
+      "variableName": "Command",
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 720,
+        "y": 80
+      }
+    },
+    {
+      "id": "out_run",
+      "type": "output",
+      "variableName": "Running",
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 720,
+        "y": 300
+      }
+    },
+    {
+      "id": "hold",
+      "type": "RS",
+      "instanceName": "Hold",
+      "inputs": [
+        {
+          "name": "S",
+          "type": "BOOL"
+        },
+        {
+          "name": "R1",
+          "type": "BOOL"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "Q1",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 480,
+        "y": 80
+      },
+      "comment": "Remembers the start until a reset"
+    },
+    {
+      "id": "not_guard",
+      "type": "NOT",
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 260,
+        "y": 240
+      },
+      "comment": "TRUE while the guard is open"
+    },
+    {
+      "id": "or_reset",
+      "type": "OR",
+      "inputs": [
+        {
+          "name": "IN1",
+          "type": "BOOL"
+        },
+        {
+          "name": "IN2",
+          "type": "BOOL"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 260,
+        "y": 140
+      },
+      "comment": "Stop or an open guard"
+    },
+    {
+      "id": "and_run",
+      "type": "AND",
+      "inputs": [
+        {
+          "name": "IN1",
+          "type": "BOOL"
+        },
+        {
+          "name": "IN2",
+          "type": "BOOL"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 480,
+        "y": 300
+      },
+      "comment": "Commanded and at speed"
+    }
+  ],
+  "connections": [
+    {
+      "id": "conn_var_start_out_hold_s",
+      "from": {
+        "block": "var_start",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "hold",
+        "port": "S"
+      }
+    },
+    {
+      "id": "conn_var_guard_out_not_guard_in",
+      "from": {
+        "block": "var_guard",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "not_guard",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_var_stop_out_or_reset_in1",
+      "from": {
+        "block": "var_stop",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "or_reset",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "conn_not_guard_out_or_reset_in2",
+      "from": {
+        "block": "not_guard",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "or_reset",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "conn_or_reset_out_hold_r1",
+      "from": {
+        "block": "or_reset",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "hold",
+        "port": "R1"
+      }
+    },
+    {
+      "id": "conn_hold_q1_out_cmd_in",
+      "from": {
+        "block": "hold",
+        "port": "Q1"
+      },
+      "to": {
+        "block": "out_cmd",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_hold_q1_and_run_in1",
+      "from": {
+        "block": "hold",
+        "port": "Q1"
+      },
+      "to": {
+        "block": "and_run",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "conn_var_speed_out_and_run_in2",
+      "from": {
+        "block": "var_speed",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "and_run",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "conn_and_run_out_out_run_in",
+      "from": {
+        "block": "and_run",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out_run",
+        "port": "IN"
+      }
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-24",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

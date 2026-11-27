@@ -3,13 +3,12 @@
  * last check, and the action bar fixed at the bottom edge. The state is what `LearnPanel` reads today; the lesson text is the generated
  * index's, unchanged.
  */
-import { FlaskConical, Info } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { LESSON_INDEX } from '../../generated/lessonIndex';
 import { buildCourseView, trackSupport } from '../../learn/course';
-import { describeFailure } from '../../learn/gradeRecord';
 import { useLearnUi } from '../../learn/learnUi';
 import { useLearnProgress } from '../../learn/progressState';
+import { useGuideCheckCommand } from '../../commands/bind/guide';
 import { useLessonCheck } from '../../learn/useLessonCheck';
 import { AskAssistantButton } from '../agent/AskAssistantButton';
 import { lessonIntent } from '../../store/useAssistantEntry';
@@ -32,14 +31,14 @@ import {
 import { ConnectionIndicator } from '../ConnectionIndicator';
 import { presentConnection } from '../connectionPresentation';
 import { LearnBoardLesson } from '../LearnBoardLesson';
-import { TestVerdict } from '../TestVerdict';
 import type { WorkspaceTestPresentation } from '../workspaceTestPresentation';
 import { GuideActionBar } from './GuideActionBar';
 import { GuideHeader } from './GuideHeader';
+import { GuideResult } from './GuideResult';
 import { GuideStages } from './GuideStages';
 
 export function Guide({ workspaceTestPresentation }: { workspaceTestPresentation?: WorkspaceTestPresentation }) {
-  const { t, tn } = useT();
+  const { t } = useT();
   const { locale }: { locale: LearnLocale } = useT();
   const setActiveConsoleTab = useIDEStore((state) => state.setActiveConsoleTab);
   const projectOpenError = useIDEStore((state) => state.projectOpenError);
@@ -77,9 +76,13 @@ export function Guide({ workspaceTestPresentation }: { workspaceTestPresentation
   const lessonEntry = LESSON_INDEX.lessons.find((candidate) => candidate.id === lesson.id);
   const folderAccess = isFileSystemAccessSupported();
   const grade = gradeRecordedScenarioLesson(lesson, workspaceTestPresentation);
-  const lessonCheck = useLessonCheck((record: GradeRecord) => {
-    void useLearnProgress.getState().recordGrade(record);
-  });
+  // FLW-006: Check saves by the preference and runs; it never asks the learner to save first.
+  const lessonCheck = useLessonCheck(
+    (record: GradeRecord) => {
+      void useLearnProgress.getState().recordGrade(record);
+    },
+    { save: 'per-preference' },
+  );
   const checkAvailable = lessonCheck.available;
   const checked = lessonCheck.gradeOf(lesson.id);
   const shownGrade: LearnLessonGrade = checkAvailable ? (checked ?? { kind: 'not-run' }) : grade;
@@ -90,21 +93,12 @@ export function Guide({ workspaceTestPresentation }: { workspaceTestPresentation
     void useLearnProgress.getState().markPassed(lesson.id);
   }, [checkAvailable, grade.kind, progressLoaded, alreadyPassed, locked, lesson.id]);
   const scenario = lesson.requiredScenario;
-  const gradeCopy =
-    shownGrade.kind === 'passed'
-      ? { title: t('learn.grade.passed.title'), body: tn('learn.grade.passed.body', shownGrade.assertions, { scenario }) }
-      : shownGrade.kind === 'failed'
-        ? { title: t('learn.grade.failed.title'), body: tn('learn.grade.failed.body', shownGrade.assertions, { scenario }) }
-        : shownGrade.kind === 'unrelated'
-          ? { title: t('learn.grade.unrelated.title'), body: t('learn.grade.unrelated.body', { scenario }) }
-          : shownGrade.kind === 'unavailable'
-            ? { title: t('learn.grade.unavailable.title'), body: t('learn.grade.unavailable.body') }
-            : shownGrade.kind === 'scenario-changed'
-              ? { title: t('learn.grade.changed.title'), body: t('learn.grade.changed.body', { scenario }) }
-              : checkAvailable
-                ? { title: t('learn.grade.notChecked.title'), body: t('learn.grade.notChecked.body') }
-                : { title: t('learn.grade.notRecorded.title'), body: t('learn.grade.notRecorded.body', { scenario }) };
 
+  // the button and the command `learn.check` are one function
+  const runCheck = () => {
+    if (!lessonCheck.running(lesson.id)) void lessonCheck.run(lesson.id);
+  };
+  useGuideCheckCommand(runCheck);
   const workspaceOpen = workspace?.lessonId === lesson.id && workspace.session === projectSession;
   const resetButton = useRef<HTMLButtonElement>(null);
   const resetStarted = useGiveFocusBack(resetStatus === 'working', resetButton);
@@ -125,11 +119,14 @@ export function Guide({ workspaceTestPresentation }: { workspaceTestPresentation
     setShownHere((previous) => new Set([...previous, lesson.id]));
     note({ lessonId: lesson.id, solution: true });
   };
-  const refusalText = refusal
-    ? t('learn.refusal', { reason: refusal.codes.join(', ') || refusal.reason })
-    : lessonCheck.failed(lesson.id)
-      ? t('learn.checkDidNotFinish')
-      : '';
+  const declined = lessonCheck.declined(lesson.id);
+  const refusalText = declined
+    ? t(`u3Guide.check.${declined}` as 'u3Guide.check.cancelled')
+    : refusal
+      ? t('learn.refusal', { reason: refusal.codes.join(', ') || refusal.reason })
+      : lessonCheck.failed(lesson.id)
+        ? t('learn.checkDidNotFinish')
+        : '';
   const startNext = async (id: string) => {
     if (starting || !folderAccess) return;
     setResetStatus('idle');
@@ -264,63 +261,7 @@ export function Guide({ workspaceTestPresentation }: { workspaceTestPresentation
           )}
         </section>
 
-        <section
-          data-learn-grade={shownGrade.kind}
-          aria-label={t('learn.lessonEvidence')}
-          className="border-y border-[var(--color-surface-600)] py-3"
-        >
-          <div role="status" aria-live="polite" className="flex items-start gap-2">
-            {shownGrade.kind === 'passed' ? (
-              <FlaskConical size={16} className="mt-0.5 shrink-0 text-[var(--color-accent-green)]" aria-hidden="true" />
-            ) : (
-              <Info size={16} className="mt-0.5 shrink-0 text-[var(--color-surface-300)]" aria-hidden="true" />
-            )}
-            <div className="min-w-0">
-              {(shownGrade.kind === 'passed' || shownGrade.kind === 'failed') && (
-                <div className="mb-2">
-                  <TestVerdict
-                    live={false}
-                    ok={shownGrade.kind === 'passed'}
-                    boundary="simulation"
-                    sentence={t('u2Tests.verdict.counts', { passed: shownGrade.kind === 'passed' ? 1 : 0, total: 1 })}
-                  />
-                </div>
-              )}
-              <h3 className="font-medium text-[var(--color-surface-100)]">{gradeCopy.title}</h3>
-              <p className="mt-1 leading-5 text-[var(--color-surface-300)]">{gradeCopy.body}</p>
-              <p className="mt-1 text-xs leading-5 text-[var(--color-surface-400)]">{lesson.scope}</p>
-              <p className="mt-1 text-xs leading-5 text-[var(--color-surface-400)]">
-                <span className="font-medium text-[var(--color-surface-200)]">{t('learn.faultToCorrect')}</span>{' '}
-                {lesson.faultCases.join(' ')}
-              </p>
-              {lesson.authorScenarioIds.length > 0 && (
-                <p className="mt-1 text-xs leading-5 text-[var(--color-surface-400)]">
-                  <span className="font-medium text-[var(--color-surface-200)]">{t('learn.includedRegressions')}</span>{' '}
-                  {lesson.authorScenarioIds.join(', ')}
-                </p>
-              )}
-              {shownGrade.kind === 'failed' && (
-                <ul
-                  data-learn-failures
-                  aria-label={t('learn.failedAssertions')}
-                  className="mt-2 space-y-1 text-xs leading-5 text-[var(--color-surface-300)]"
-                >
-                  {shownGrade.failures.map((failure) => (
-                    <li key={failure.index}>
-                      {describeFailure(failure, lesson.scenario.expectations[failure.index], locale)}
-                      {failure.trace && (
-                        <>
-                          {' '}
-                          · <code className="break-all text-[var(--color-surface-400)]">{failure.trace.uri}</code>
-                        </>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-        </section>
+        <GuideResult grade={shownGrade} checkAvailable={checkAvailable} lesson={lesson} locale={locale} />
 
         <details data-guide-files className="border-b border-[var(--color-surface-700)] pb-3 text-xs text-[var(--color-surface-400)]">
           <summary className="cursor-pointer select-none font-medium text-[var(--color-accent-blue)]">{t('u3Guide.files.title')}</summary>
@@ -358,11 +299,7 @@ export function Guide({ workspaceTestPresentation }: { workspaceTestPresentation
         </p>
         {checkAvailable && (
           <p role="status" data-learn-check-status className="text-xs text-[var(--color-surface-400)]">
-            {!lessonCheck.isProjectOpen
-              ? t('learn.openTheExerciseFolder')
-              : lessonCheck.unsaved
-                ? t('learn.saveYourChangesCtrl')
-                : refusalText}
+            {!lessonCheck.isProjectOpen ? t('learn.openTheExerciseFolder') : refusalText}
           </p>
         )}
         {projectOpenError && resetStatus === 'failed' && (
@@ -377,9 +314,7 @@ export function Guide({ workspaceTestPresentation }: { workspaceTestPresentation
           available: checkAvailable,
           running: lessonCheck.running(lesson.id),
           canRun: lessonCheck.canRun,
-          onCheck: () => {
-            if (!lessonCheck.running(lesson.id)) void lessonCheck.run(lesson.id);
-          },
+          onCheck: runCheck,
           onCancel: lessonCheck.cancel,
         }}
         onOpenTests={() => setActiveConsoleTab('tests')}

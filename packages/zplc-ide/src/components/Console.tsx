@@ -307,6 +307,7 @@ export function Console({ debugController }: ConsoleProps) {
                   title={t('panel.trace.empty.title')}
                   description={t('panel.trace.empty.description')}
                   actions={['debug.step', 'online.connect']}
+                  region="trace"
                 />
               ) : (
                 <div className="overflow-x-auto">

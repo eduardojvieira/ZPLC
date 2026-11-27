@@ -160,6 +160,7 @@ export function ProblemsPanel({
           title={t('panel.problems.empty.title')}
           description={checked ? t('panel.problems.empty.checked') : t('panel.problems.empty.unchecked')}
           actions={['build.compile']}
+          region="problems"
         />
       )}
     </div>

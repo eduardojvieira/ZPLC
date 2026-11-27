@@ -4,7 +4,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';
+import { itNative, loopbackMode, nativeRuntimeBinary } from './nativeRuntimeGuard';
 
 // Runs the three test files that need the native runtime binary in a child bun, the way CI runs them.
 const guardedFiles = ['nativeScenarioRuntime', 'toolApi', 'blinkyVisualPosix'].map((name) => join(import.meta.dir, `${name}.test.ts`));
@@ -91,4 +91,19 @@ describe('tests that need the native runtime binary', () => {
     },
     120_000,
   );
+});
+
+describe('the loopback tests on each platform (VF-023)', () => {
+  it('skips with a reason on Windows only when the runtime is there and the loopback peer is not built', () => {
+    expect(loopbackMode('win32', true, false, true)).toBe('skip-platform');
+  });
+  it('fails in CI on Windows when the runtime binary itself is missing, never a platform skip', () => {
+    expect(loopbackMode('win32', false, false, true)).toBe('fail');
+  });
+  it('keeps the other platforms as they were: run with both binaries, fail in CI and skip locally without', () => {
+    expect(loopbackMode('linux', true, true, true)).toBe('run');
+    expect(loopbackMode('linux', true, false, true)).toBe('fail');
+    expect(loopbackMode('darwin', true, false, false)).toBe('skip');
+    expect(loopbackMode('win32', false, false, false)).toBe('skip');
+  });
 });
