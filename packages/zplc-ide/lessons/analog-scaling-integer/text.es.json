@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "¿Por qué se usa DINT en esta lección? Raw por 100 llega a 100000, más de lo que cabe en un INT de 16 bits, así que el producto intermedio necesita un tipo de mayor rango. ¿Qué cambiaría sumar la mitad del divisor antes de la división, y para qué valores de Raw?",
+      "body": "¿Por qué se usa DINT en esta lección? ¿Qué valores forma el programa en su camino a Percent, y cabría cada uno en un INT de 16 bits? ¿Qué cambiaría sumar la mitad del divisor antes de la división, y para qué valores de Raw?",
       "checkpoint": "El producto se forma antes de la división, así que su rango decide el tipo, no el rango de Raw. El escenario comprueba solo los dos umbrales; no comprueba el redondeo de otros valores."
     }
   ],

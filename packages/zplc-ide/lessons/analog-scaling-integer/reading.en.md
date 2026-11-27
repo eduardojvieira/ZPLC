@@ -89,11 +89,11 @@ options:
 ```
 
 ```quiz
-question: A flow meter gives 0 to 2000 counts for 0 to 600 litres per minute, and the computation forms the product of the count and 600 on its way to litres per minute. Which type do the variables of the computation need?
+question: A totaliser adds the counts of two lines, each of up to 30000, before it averages them. Which type do the variables of the computation need?
 options:
-  - { text: 'DINT', correct: true, feedback: 'Right. The product reaches 1200000, far above 32767, and a DINT holds it.' }
-  - { text: 'INT, because the result is at most 600', feedback: 'The result fits, but the product is formed on the way, and it does not fit in an INT.' }
-  - { text: 'INT, because the count is at most 2000', feedback: 'The count fits, but the product of 2000 and 600 does not.' }
+  - { text: 'DINT', correct: true, feedback: 'Right. The sum reaches 60000, above 32767, and a DINT holds it.' }
+  - { text: 'INT, because the average is at most 30000', feedback: 'The average fits, but the sum is formed on the way, and it does not fit in an INT.' }
+  - { text: 'INT, because each count is at most 30000', feedback: 'Each count fits, but the sum of two of them does not.' }
 ```
 
 ## What you will do in the practice

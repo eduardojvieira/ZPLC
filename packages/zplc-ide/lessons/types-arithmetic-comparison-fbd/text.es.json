@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "¿Qué pasa si Step va directo a G del bloque SEL, sin el bloque R_TRIG? ¿Y si Exact usa un bloque GE en lugar de EQ? Pruebe cada caso y vea qué aserción falla.",
+      "body": "¿Qué le pasa a Total si Step queda presionado durante muchos ciclos, y qué bloque de su diagrama lo decide? ¿Y si Exact usa un bloque GE en lugar de EQ? Pruebe cada caso y vea qué aserción falla.",
       "checkpoint": "Una comparación da un BOOL, y EQ no es lo mismo que GE. El escenario solo observa las tres salidas BOOL; no muestra el valor de Total ni qué pasa cuando un INT se desborda."
     }
   ],

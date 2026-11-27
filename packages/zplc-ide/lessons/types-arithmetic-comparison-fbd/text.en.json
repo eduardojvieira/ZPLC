@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "What happens if Step goes straight to G of the SEL block, without the R_TRIG block? And if Exact uses a GE block instead of EQ? Try each and see which assertion fails.",
+      "body": "What happens to Total if Step stays pressed for many cycles, and which block of your diagram decides that? And if Exact uses a GE block instead of EQ? Try each and see which assertion fails.",
       "checkpoint": "A comparison gives a BOOL, and EQ is not the same as GE. The scenario only watches the three BOOL outputs; it does not show the value of Total itself or what happens when an INT overflows."
     }
   ],

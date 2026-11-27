@@ -89,11 +89,11 @@ options:
 ```
 
 ```quiz
-question: Un caudalímetro da de 0 a 2000 cuentas para 0 a 600 litros por minuto, y el cálculo forma el producto de la cuenta por 600 en su camino a litros por minuto. ¿Qué tipo necesitan las variables del cálculo?
+question: Un totalizador suma las cuentas de dos líneas, cada una de hasta 30000, antes de promediarlas. ¿Qué tipo necesitan las variables del cálculo?
 options:
-  - { text: 'DINT', correct: true, feedback: 'Correcto. El producto llega a 1200000, muy por encima de 32767, y un DINT lo guarda.' }
-  - { text: 'INT, porque el resultado es como máximo 600', feedback: 'El resultado cabe, pero el producto se forma en el camino y no cabe en un INT.' }
-  - { text: 'INT, porque la cuenta es como máximo 2000', feedback: 'La cuenta cabe, pero el producto de 2000 por 600 no.' }
+  - { text: 'DINT', correct: true, feedback: 'Correcto. La suma llega a 60000, por encima de 32767, y un DINT la guarda.' }
+  - { text: 'INT, porque el promedio es como máximo 30000', feedback: 'El promedio cabe, pero la suma se forma en el camino y no cabe en un INT.' }
+  - { text: 'INT, porque cada cuenta es como máximo 30000', feedback: 'Cada cuenta cabe, pero la suma de dos de ellas no.' }
 ```
 
 ## Qué hará en la práctica

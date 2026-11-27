@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Why is DINT used here? Raw times 100 reaches 100000, more than a 16-bit INT holds, so the intermediate product needs a wider type. What would adding half the divisor before the division change, and for which values of Raw?",
+      "body": "Why is DINT used here? Which values does the program form on its way to Percent, and would each of them fit in a 16-bit INT? What would adding half the divisor before the division change, and for which values of Raw?",
       "checkpoint": "The product is formed before the division, so its range decides the type, not the range of Raw. The scenario checks the two thresholds only; it does not check the rounding of other values."
     }
   ],
