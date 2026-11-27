@@ -2674,6 +2674,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"44 The connection indicator, the deploy dialog and the alert dialogs","partial":true}
   ],
   "UX-021": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/EmptyState.test.tsx","test":"first-time empty states (GDE-012, UX-021)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/panelStates.test.tsx","test":"UX-021 disables the action when no listed command is offered, instead of hiding the panel guidance"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/panelStates.test.tsx","test":"UX-021 gives a panel its own next action when it is not a command"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/panelStates.test.tsx","test":"UX-021 offers the first next step the state allows: Step once connected, Connect before"},
