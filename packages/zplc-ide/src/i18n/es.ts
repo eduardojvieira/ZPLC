@@ -403,7 +403,8 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'recovery.restoreAll': 'Restaurar todo',
   // A file changed outside ZPLC
   'externalChange.title': `Modificado fuera de ${PRODUCT_NAME}`,
-  'externalChange.intro': 'Estos archivos tienen cambios sin guardar y también cambiaron en el disco. Elija qué versión conservar.',
+  'externalChange.intro':
+    'Estos archivos cambiaron en el disco y tienen cambios sin guardar. Si conserva los suyos, al guardar reemplaza la versión del disco.',
   'externalChange.deleted': 'Eliminado en el disco',
   'externalChange.changed': 'Modificado en el disco',
   'externalChange.keep': 'Conservar mi versión',

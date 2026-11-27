@@ -399,7 +399,8 @@ export const baseEn = {
   'recovery.restoreAll': 'Restore all',
   // A file changed outside ZPLC
   'externalChange.title': `Changed outside ${PRODUCT_NAME}`,
-  'externalChange.intro': 'These files have changes that are not saved, and they also changed on disk. Choose which version to keep.',
+  'externalChange.intro':
+    'These files changed on disk and have unsaved changes. If you keep yours, your next save replaces the version on disk.',
   'externalChange.deleted': 'Deleted on disk',
   'externalChange.changed': 'Changed on disk',
   'externalChange.keep': 'Keep my version',
