@@ -1,11 +1,11 @@
 // PUB-005: a docs-only dispatch is accepted only for a ref that descends from the published tag and changes nothing but docs/.
 import { afterAll, describe, expect, it } from 'bun:test';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { checkDocsDispatch } from './docs-dispatch-guard';
+import { checkDocsDispatch, latestReleaseTag } from './docs-dispatch-guard';
 
 const base = join(process.env.TMPDIR ?? join(homedir(), '.cache', 'zplc-tmp'), 'docs-guard-');
 mkdirSync(dirname(base), { recursive: true });
@@ -37,6 +37,10 @@ function fixture() {
   git(cwd, 'checkout', '-q', '-b', 'moves-outside-docs', 'v1.0.0');
   git(cwd, 'mv', 'docs/a.md', 'a.md');
   git(cwd, 'commit', '-q', '-m', 'move out of docs');
+  git(cwd, 'checkout', '-q', '-b', 'docs-symlink', 'v1.0.0');
+  symlinkSync('../packages/x.ts', join(cwd, 'docs/link.md'));
+  git(cwd, 'add', '-A');
+  git(cwd, 'commit', '-q', '-m', 'docs symlink out of docs');
   return cwd;
 }
 const cwd = fixture();
@@ -65,5 +69,28 @@ describe('checkDocsDispatch', () => {
     expect(checkDocsDispatch(cwd, 'v9.9.9', 'docs-only').ok).toBe(false);
     expect(checkDocsDispatch(cwd, 'v1.0.0', 'nope').ok).toBe(false);
     expect(checkDocsDispatch(cwd, 'v1.0.0', '--output=x').ok).toBe(false);
+  });
+});
+
+describe('checkDocsDispatch and symlinks', () => {
+  it('refuses a symlink under docs/ that points outside it', () => {
+    const result = checkDocsDispatch(cwd, 'v1.0.0', 'docs-symlink');
+    expect(result.ok).toBe(false);
+    expect(!result.ok && result.reason).toContain('docs/link.md');
+    expect(!result.ok && result.reason).toContain('symbolic link');
+  });
+});
+
+describe('latestReleaseTag: the highest stable semver, not the newest release', () => {
+  it('prefers 2.1.0 over a later 2.0.x backport, and compares numbers, not text', () => {
+    expect(latestReleaseTag(['v2.0.9', 'v2.0.10', 'v2.1.0', 'v2.0.11'])).toBe('v2.1.0');
+    expect(latestReleaseTag(['v2.0.9', 'v2.0.10'])).toBe('v2.0.10');
+  });
+  it('ignores prereleases and names that are not a release tag', () => {
+    expect(latestReleaseTag(['v2.2.0-rc.1', 'v2.1.0', 'nightly', 'v2.1'])).toBe('v2.1.0');
+  });
+  it('is undefined when there is no stable release', () => {
+    expect(latestReleaseTag(['v2.2.0-rc.1'])).toBeUndefined();
+    expect(latestReleaseTag([])).toBeUndefined();
   });
 });

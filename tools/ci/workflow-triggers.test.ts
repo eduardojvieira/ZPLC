@@ -21,7 +21,7 @@ const workflows = readdirSync(folder)
 const workflow = (name: string) => workflows.find(([file]) => file === name)![1];
 
 type Step = { name?: string; run?: string; uses?: string; with?: Record<string, unknown>; env?: Record<string, string> };
-type DeployJob = { needs?: string | string[]; if?: string; steps: Step[]; permissions?: Record<string, string> };
+type DeployJob = { outputs?: Record<string, string>; needs?: string | string[]; if?: string; steps: Step[]; permissions?: Record<string, string> };
 type DeployWorkflow = {
   on: Record<string, { branches?: string[]; types?: string[]; inputs?: Record<string, { required?: boolean }> } | null>;
   permissions?: Record<string, string>;
@@ -36,8 +36,27 @@ describe('PUB-005: the documentation site is published with the release, never b
   it('triggers: a published release, a dispatch that names a ref, and builds-only on pull requests', () => {
     expect(docs.on.release?.types).toEqual(['published']);
     expect(docs.on.workflow_dispatch?.inputs?.ref?.required).toBe(true);
-    expect(docs.on).not.toHaveProperty('push');
+    expect(docs.on.push?.branches).toEqual(['master']);
     expect(docs.on.pull_request?.branches).toEqual(expect.arrayContaining(['master', 'main', 'zplc-2.0-candidate']));
+  });
+
+  it('a push to master builds the site and never deploys it', () => {
+    const condition = jobs.build!.if ?? '';
+    expect(condition).not.toContain("github.event_name == 'push'"); // the build has no event filter that excludes a push
+    expect(jobs.deploy!.if).not.toContain('push');
+    expect(jobs.deploy!.if).toBe("github.event_name == 'release' || github.event_name == 'workflow_dispatch'");
+    expect(docs.concurrency!.group).toContain('docs-build-');
+  });
+
+  it('skips the deploy, with a notice, when the released tag is not the highest stable release', () => {
+    expect(jobs.guard!.if).toContain("github.event_name == 'release'");
+    const run = jobs.guard!.steps.map((step) => step.run ?? '').join('\n');
+    expect(run).toContain('--latest');
+    expect(run).toContain('::notice::');
+    expect(run).toContain('stale=true');
+    expect(run).not.toContain('--limit 1');
+    expect(jobs.guard!.outputs).toHaveProperty('stale');
+    expect(jobs.build!.if).toContain("needs.guard.outputs.stale != 'true'");
   });
 
   it('deploys only on a published release or a dispatch, and never a prerelease', () => {
