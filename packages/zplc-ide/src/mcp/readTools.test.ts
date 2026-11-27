@@ -315,8 +315,8 @@ describe('AIX-007 server_self_check and zplc-mcp --self-check report the folder,
     expect(result.content[0]!.text).not.toContain(root);
   });
 
-  test('the counts are 20 tools and 22 fixed resources plus 4 templates', () => {
-    expect(MCP_TOOL_NAMES.length).toBe(20);
+  test('the counts are 26 tools and 22 fixed resources plus 4 templates', () => {
+    expect(MCP_TOOL_NAMES.length).toBe(26);
     expect(MCP_RESOURCE_URIS.length).toBe(22);
     expect(MCP_RESOURCE_TEMPLATES.length).toBe(4);
   });
@@ -351,7 +351,7 @@ describe('AIX-007 server_self_check and zplc-mcp --self-check report the folder,
         ready: true,
         folder: root,
         workspaceName: 'Plain',
-        toolCount: 20,
+        toolCount: 26,
         boundary: MCP_BOUNDARY,
         problems: [],
       });

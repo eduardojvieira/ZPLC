@@ -187,6 +187,23 @@ function cancelled(): Error {
   return error;
 }
 
+/** The supervisor of a private host runtime on the virtual clock, its persistent state in `persistRoot`, and its adapter. */
+export function nativeScenarioLifecycle(
+  environment: NodeJS.ProcessEnv,
+  persistRoot: string,
+): { supervisor: NativeSimulationSupervisor; adapter: NativeAdapter } {
+  const supervisor = new NativeSimulationSupervisor({
+    clientName: 'zplc-cli',
+    clientVersion: productManifest.version,
+    environment: {
+      ...withNativeCommunicationEnvironment(environment),
+      ZPLC_PERSIST_ROOT: persistRoot,
+      ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK: '1',
+    },
+  });
+  return { supervisor, adapter: new NativeAdapter(supervisor) };
+}
+
 export async function createNativeScenarioSession(
   environment: NodeJS.ProcessEnv = process.env,
   options: NativeScenarioSessionOptions = {},
@@ -197,20 +214,7 @@ export async function createNativeScenarioSession(
     await rm(persistRoot, { recursive: true, force: true });
     throw cancelled();
   }
-  const lifecycle =
-    options.createLifecycle?.(persistRoot) ??
-    (() => {
-      const supervisor = new NativeSimulationSupervisor({
-        clientName: 'zplc-cli',
-        clientVersion: productManifest.version,
-        environment: {
-          ...withNativeCommunicationEnvironment(environment),
-          ZPLC_PERSIST_ROOT: persistRoot,
-          ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK: '1',
-        },
-      });
-      return { supervisor, adapter: new NativeAdapter(supervisor) };
-    })();
+  const lifecycle = options.createLifecycle?.(persistRoot) ?? nativeScenarioLifecycle(environment, persistRoot);
   const { supervisor, adapter } = lifecycle;
   let closePromise: Promise<void> | undefined;
   const closeOnAbort = () => {

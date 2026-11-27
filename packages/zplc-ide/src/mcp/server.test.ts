@@ -126,6 +126,12 @@ describe('local MCP adapter', () => {
       'server_self_check',
       'workspace_check_write',
       'workspace_write',
+      'debug_session_start',
+      'debug_session_stop',
+      'debug_set_inputs',
+      'debug_breakpoints',
+      'debug_step',
+      'debug_inspect',
     ]);
     expect(MCP_RESOURCE_URIS).toEqual([
       'zplc://project/manifest',
@@ -151,11 +157,12 @@ describe('local MCP adapter', () => {
       'zplc://formats/plant-map',
       'zplc://formats/scenario',
     ]);
+    // debug_session_stop stops a private debug session the server started for the agent, never a program a person runs (AIX-014)
     expect(
       MCP_TOOL_NAMES.filter((name) =>
         ['flash', 'deploy', 'force', 'stop', 'serial', 'shell'].some((forbidden) => name.includes(forbidden)),
       ),
-    ).toEqual([]);
+    ).toEqual(['debug_session_stop']);
     // the only tools that write are the two of project files (AIX-011)
     expect(MCP_TOOL_NAMES.filter((name) => name.includes('write'))).toEqual(['workspace_check_write', 'workspace_write']);
   });
@@ -164,7 +171,9 @@ describe('local MCP adapter', () => {
     "has no tool that sets a simulation input or writes memory: the faceplate is the person's control, not the agent's (LRN-017, " +
       'AGENTS rule 8)',
     () => {
-      expect(MCP_TOOL_NAMES.filter((name) => /input|memory|poke|faceplate|hold|press/.test(name))).toEqual([]);
+      // the one exception is the private debugger (AIX-014, plan-aix §2.1a): it sets the inputs of a simulation the server
+      // started for the agent alone, never of the person's simulation or a device, and never by raw address
+      expect(MCP_TOOL_NAMES.filter((name) => /input|memory|poke|faceplate|hold|press/.test(name))).toEqual(['debug_set_inputs']);
     },
   );
 
