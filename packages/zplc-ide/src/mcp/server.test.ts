@@ -126,6 +126,12 @@ describe('local MCP adapter', () => {
       'server_self_check',
       'workspace_check_write',
       'workspace_write',
+      'debug_session_start',
+      'debug_session_stop',
+      'debug_set_inputs',
+      'debug_breakpoints',
+      'debug_step',
+      'debug_inspect',
     ]);
     expect(MCP_RESOURCE_URIS).toEqual([
       'zplc://project/manifest',

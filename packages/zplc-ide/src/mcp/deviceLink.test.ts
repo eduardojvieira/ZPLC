@@ -9,22 +9,25 @@
 //      would use, and none of them is touched.
 //
 // What the MCP can do beside the stateless checks is run the repository's own native runtime for a scenario
-// (a child process that exits) and a local cross-build: both are listed below by the module that spawns them.
+// (a child process that exits), run it as a private debug session the server started for the agent alone (AIX-014),
+// and a local cross-build: they are listed below by the module that spawns them, and the debug tools run under the traps too.
 // The other half of COM-030 is the last test of this file: the hardware scenario command (packages/zplc-hil) and the
 // bench commands of tools/hil (the chain of HIL-012 and the comparison of HIL-015), started without an interactive
 // terminal, exit with an error before they open anything.
 import { afterEach, describe, expect, test } from 'bun:test';
 import { fileURLToPath } from 'node:url';
 import dgram from 'node:dgram';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import net from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import tls from 'node:tls';
 import { McpServer } from '@modelcontextprotocol/server';
+import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
 import { buildMcpServer, createMcpDispatcher, MCP_RESOURCE_URIS, MCP_TOOL_NAMES, openMcpWorkspace } from './server';
 
 const temporary: string[] = [];
+const SESSION = '7c9e6679-7425-40de-944b-e07fc1f99a4b';
 afterEach(async () => {
   await Promise.all(temporary.splice(0).map((path) => rm(path, { recursive: true, force: true })));
 });
@@ -93,6 +96,45 @@ async function registered(): Promise<Registered> {
   return record;
 }
 
+/** Runs `body` with a trap on every way out of the process a device link would use; answers the traps that were touched. */
+async function withLinkTraps(body: () => Promise<void>): Promise<string[]> {
+  const touched: string[] = [];
+  const trap = (what: string) => () => {
+    touched.push(what);
+    throw new Error(`device link touched: ${what}`);
+  };
+  const originalNet = net.Socket.prototype.connect;
+  const originalDgram = dgram.createSocket;
+  const originalTls = tls.connect;
+  const originalNetConnect = net.connect;
+  const serial = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  const bunRecord = Bun as unknown as Record<string, unknown>;
+  const originalBun = { connect: bunRecord.connect, listen: bunRecord.listen, udpSocket: bunRecord.udpSocket };
+  net.Socket.prototype.connect = trap('net.Socket.connect') as never;
+  net.connect = trap('net.connect') as never;
+  (dgram as unknown as Record<string, unknown>).createSocket = trap('dgram.createSocket');
+  (tls as unknown as Record<string, unknown>).connect = trap('tls.connect');
+  bunRecord.connect = trap('Bun.connect');
+  bunRecord.listen = trap('Bun.listen');
+  bunRecord.udpSocket = trap('Bun.udpSocket');
+  Object.defineProperty(globalThis, 'navigator', {
+    configurable: true,
+    value: { serial: new Proxy({}, { get: trap('navigator.serial'), has: trap('navigator.serial') }) },
+  });
+  try {
+    await body();
+  } finally {
+    net.Socket.prototype.connect = originalNet as never;
+    net.connect = originalNetConnect;
+    (dgram as unknown as Record<string, unknown>).createSocket = originalDgram;
+    (tls as unknown as Record<string, unknown>).connect = originalTls;
+    Object.assign(bunRecord, originalBun);
+    if (serial) Object.defineProperty(globalThis, 'navigator', serial);
+    else delete (globalThis as Record<string, unknown>).navigator;
+  }
+  return touched;
+}
+
 describe('IDE-030: the tools an assistant can call are a closed list that names no physical operation (AGENTS.md rule 8)', () => {
   test('the list is the one below, and no name flashes, deploys, forces, stops, resets or opens a serial line or a shell', () => {
     expect([...MCP_TOOL_NAMES]).toEqual([
@@ -116,16 +158,25 @@ describe('IDE-030: the tools an assistant can call are a closed list that names 
       'server_self_check',
       'workspace_check_write',
       'workspace_write',
+      'debug_session_start',
+      'debug_session_stop',
+      'debug_set_inputs',
+      'debug_breakpoints',
+      'debug_step',
+      'debug_inspect',
     ]);
     // plan-aix §2.4: `plant` alone is a read (plant_inspect); plant I/O mode is what stays forbidden. `write` alone is a write of
-    // a project file (workspace_write, AIX-011); writing course progress is what stays forbidden
+    // a project file (workspace_write, AIX-011); writing course progress is what stays forbidden. `debug` and `stop` name the
+    // private simulation debugger (AIX-014): debug_session_stop ends a session the server started for the agent, never a board
     for (const name of MCP_TOOL_NAMES)
       expect(name, name).not.toMatch(
         new RegExp(
-          'flash|deploy|force|upload|connect|serial|shell|poke|stop|erase|provision|reset|debug|plant_io|feed|mirror|attach|' +
+          'flash|deploy|force|upload|connect|serial|shell|poke|erase|provision|reset|board_|plant_io|feed|mirror|attach|' +
             'delete|remove|progress_write|unlock|solution',
         ),
       );
+    // and the words that stay forbidden alone are only ever the debugger's own, on a debug_ tool
+    for (const name of MCP_TOOL_NAMES.filter((tool) => /stop|debug/.test(tool))) expect(name).toMatch(/^debug_/);
   });
 
   test('the resources are read-only documents and snapshots: none of them is a command', () => {
@@ -148,7 +199,21 @@ describe('COM-030: the MCP server cannot open the device link', () => {
     // project files to check or write with how to check them (AIX-011): a path and a text, never a device, port or session.
     const trace = ['mode', 'signals', 'includeInputs', 'watchSignals', 'fromMs', 'toMs', 'fromSample', 'limit'];
     const write = ['files', 'compileCheck', 'requireCompile', 'expectedBaseSha256'];
-    const allowed = new Set(['scenarioId', 'cursor', 'traceSha256', 'ideId', 'sceneFile', 'mapFile', ...trace, ...write]);
+    // the private debugger (AIX-014): a session the server started, named by its id, and how to step, set and read it
+    const debug = ['sessionId', 'withScene', 'inputs', 'plantActions', 'action', 'locations', 'cycles', 'durationMs', 'maxCycles'];
+    const debugReads = ['watch', 'includeFacts', 'functionBlocks', 'includeSfc', 'includePlant'];
+    const allowed = new Set([
+      'scenarioId',
+      'cursor',
+      'traceSha256',
+      'ideId',
+      'sceneFile',
+      'mapFile',
+      ...trace,
+      ...write,
+      ...debug,
+      ...debugReads,
+    ]);
     for (const tool of tools) {
       for (const key of Object.keys(tool.inputSchema.shape)) expect(allowed.has(key), `${tool.name} takes '${key}'`).toBe(true);
       // And an argument that names a port, a device or a session is refused, whatever else is supplied.
@@ -161,7 +226,11 @@ describe('COM-030: the MCP server cannot open the device link', () => {
               ? { scenarioId: 'smoke' }
               : tool.name.startsWith('workspace_')
                 ? { files: [{ path: 'src/Main.st', content: 'PROGRAM Main\nEND_PROGRAM\n' }] }
-                : {};
+                : tool.name === 'debug_breakpoints'
+                  ? { sessionId: SESSION, action: 'list' }
+                  : tool.name.startsWith('debug_') && tool.name !== 'debug_session_start'
+                    ? { sessionId: SESSION }
+                    : {};
       expect(tool.inputSchema.safeParse(base).success, `${tool.name} refused its base arguments`).toBe(true);
       for (const extra of [
         'port',
@@ -185,13 +254,25 @@ describe('COM-030: the MCP server cannot open the device link', () => {
         expect(tool.inputSchema.safeParse({ ...base, [extra]: 'x' }).success, `${tool.name} accepted '${extra}'`).toBe(false);
       }
     }
-    // Nothing the server offers writes to a device: two tools are not read-only (a local cross-build and a write of project
-    // files inside the workspace), only the write replaces files (plan-aix §2.4), and none reaches outside the workspace and
-    // the repository.
-    expect(tools.filter((tool) => tool.annotations.readOnlyHint !== true).map((tool) => tool.name)).toEqual([
-      'firmware_build',
-      'workspace_write',
-    ]);
+    // Nothing the server offers writes to a device: the tools that are not read-only are a local cross-build, a write of project
+    // files inside the workspace and the private debugger's five commands on a simulation it started (plan-aix §2.4); only the
+    // write replaces files, and none reaches outside the workspace and the repository.
+    expect(
+      tools
+        .filter((tool) => tool.annotations.readOnlyHint !== true)
+        .map((tool) => tool.name)
+        .sort(),
+    ).toEqual(
+      [
+        'workspace_write',
+        'debug_session_start',
+        'debug_session_stop',
+        'debug_set_inputs',
+        'debug_breakpoints',
+        'debug_step',
+        'firmware_build',
+      ].sort(),
+    );
     expect(tools.every((tool) => tool.annotations.openWorldHint === false)).toBe(true);
     expect(tools.filter((tool) => tool.annotations.destructiveHint !== false).map((tool) => tool.name)).toEqual(['workspace_write']);
   });
@@ -267,31 +348,7 @@ describe('COM-030: the MCP server cannot open the device link', () => {
     const root = await workspace();
     const bound = await openMcpWorkspace(root);
     expect(bound).toBeDefined();
-
-    const touched: string[] = [];
-    const trap = (what: string) => () => {
-      touched.push(what);
-      throw new Error(`device link touched: ${what}`);
-    };
-    const originalNet = net.Socket.prototype.connect;
-    const originalDgram = dgram.createSocket;
-    const originalTls = tls.connect;
-    const originalNetConnect = net.connect;
-    const serial = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
-    const bunRecord = Bun as unknown as Record<string, unknown>;
-    const originalBun = { connect: bunRecord.connect, listen: bunRecord.listen, udpSocket: bunRecord.udpSocket };
-    net.Socket.prototype.connect = trap('net.Socket.connect') as never;
-    net.connect = trap('net.connect') as never;
-    (dgram as unknown as Record<string, unknown>).createSocket = trap('dgram.createSocket');
-    (tls as unknown as Record<string, unknown>).connect = trap('tls.connect');
-    bunRecord.connect = trap('Bun.connect');
-    bunRecord.listen = trap('Bun.listen');
-    bunRecord.udpSocket = trap('Bun.udpSocket');
-    Object.defineProperty(globalThis, 'navigator', {
-      configurable: true,
-      value: { serial: new Proxy({}, { get: trap('navigator.serial'), has: trap('navigator.serial') }) },
-    });
-    try {
+    const touched = await withLinkTraps(async () => {
       const dispatch = createMcpDispatcher(bound!);
       const signal = new AbortController().signal;
       for (const tool of [
@@ -319,16 +376,44 @@ describe('COM-030: the MCP server cannot open the device link', () => {
         const out = await resource.read(new URL(resource.uri as string), {}, { mcpReq: { signal } });
         expect(out.contents.length).toBeGreaterThan(0);
       }
-    } finally {
-      net.Socket.prototype.connect = originalNet as never;
-      net.connect = originalNetConnect;
-      (dgram as unknown as Record<string, unknown>).createSocket = originalDgram;
-      (tls as unknown as Record<string, unknown>).connect = originalTls;
-      Object.assign(bunRecord, originalBun);
-      if (serial) Object.defineProperty(globalThis, 'navigator', serial);
-      else delete (globalThis as Record<string, unknown>).navigator;
-    }
+    });
     expect(touched).toEqual([]);
+  });
+
+  // AIX-014 and AGENTS.md rule 8: the six debug tools run a private host runtime over its stdio pipes, with the plant of the
+  // scene in this process; with every way out to a socket, a datagram or a serial port poisoned, none of them is touched
+  itNative('the six debug tools, with a scene attached, open no socket, port or datagram', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-mcp-link-'));
+    temporary.push(root);
+    await cp(fileURLToPath(new URL('../../projects/plant_belt_to_sensor/', import.meta.url)), root, { recursive: true });
+    const bound = await openMcpWorkspace(root);
+    const saved = process.env.ZPLC_NATIVE_SIM_BIN;
+    process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
+    const answers: unknown[] = [];
+    try {
+      const touched = await withLinkTraps(async () => {
+        const dispatch = createMcpDispatcher(bound!);
+        const signal = new AbortController().signal;
+        const call = async (tool: (typeof MCP_TOOL_NAMES)[number], args: Record<string, unknown>) => {
+          const result = await dispatch(tool, args, signal);
+          answers.push(result.structuredContent);
+          expect(result.isError ?? false, `${tool}: ${JSON.stringify(result.structuredContent)}`).toBe(false);
+          return result.structuredContent as Record<string, unknown>;
+        };
+        const { sessionId } = await call('debug_session_start', { withScene: 'always' });
+        const location = { file: 'src/BeltToSensor.st', line: 22 };
+        await call('debug_breakpoints', { sessionId, action: 'set', locations: [location] });
+        await call('debug_set_inputs', { sessionId, plantActions: [{ kind: 'operate', signal: 'StartButton.pressed', value: true }] });
+        await call('debug_step', { sessionId, mode: 'continue', maxCycles: 10, watch: ['BeltToSensor.Running'], includeFacts: true });
+        await call('debug_inspect', { sessionId });
+        await call('debug_session_stop', { sessionId });
+      });
+      expect(touched).toEqual([]);
+      expect(answers).toHaveLength(6);
+    } finally {
+      if (saved === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN;
+      else process.env.ZPLC_NATIVE_SIM_BIN = saved;
+    }
   });
 
   // AIX-007 and AGENTS.md rule 8: the self-check only looks at files; it starts no process, so no board, flash, deploy or port.
