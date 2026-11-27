@@ -1,6 +1,13 @@
-import { describe, expect, it } from 'bun:test';
+import { afterEach, describe, expect, it } from 'bun:test';
 import { SCENE_INDEX } from '../generated/sceneIndex';
-import { addPlant, plantItems, plantTemplates } from './plantGroup';
+import { setupDom, stubProjectLoader } from '../test/dom';
+
+await setupDom();
+await stubProjectLoader();
+const { bindCommands, resetCommandsForTest } = await import('../commands/bus');
+const { usePlantChoice } = await import('../plant/ui/usePlantChoice');
+const { useIDEStore } = await import('../store/useIDEStore');
+const { addPlant, openPlant, plantItems, plantTemplates } = await import('./plantGroup');
 
 /** A directory handle that keeps what is written to it, for the saved files to be read back. */
 function memoryDirectory(files: Map<string, string>, prefix = ''): FileSystemDirectoryHandle {
@@ -42,5 +49,43 @@ describe('the Plant group of the navigator (PLS-011)', () => {
       open: () => undefined,
     });
     expect(JSON.parse(files.get('scenes/floor.scene.json')!).parts).toEqual([]);
+  });
+});
+
+describe('opening a plant waits for the panel only so long (PLS-011)', () => {
+  const shownScene = { panel: 'p', key: 'k', scene: { schemaVersion: 1, name: 'S', parts: [], cameras: [] }, map: undefined } as never;
+  const asks: unknown[] = [];
+  const reset = () => {
+    asks.length = 0;
+    resetCommandsForTest();
+    bindCommands({ 'view.plant': () => undefined });
+    usePlantChoice.setState({ shown: undefined, request: undefined, ask: (ref) => void asks.push(ref) });
+  };
+  afterEach(() => usePlantChoice.getState().show(undefined));
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  it('PLS-011 a panel that shows after the request is asked once', () => {
+    reset();
+    openPlant({ kind: 'file', name: 'a' }, 1000);
+    usePlantChoice.setState({ shown: shownScene });
+    usePlantChoice.setState({ shown: { ...(shownScene as object), key: 'k2' } as never });
+    expect(asks).toEqual([{ kind: 'file', name: 'a' }]);
+  });
+
+  it('PLS-011 a project switch before the panel shows means no ask later', () => {
+    reset();
+    openPlant({ kind: 'file', name: 'a' }, 1000);
+    useIDEStore.setState({ directoryHandle: {} as never });
+    usePlantChoice.setState({ shown: shownScene });
+    expect(asks).toEqual([]);
+    useIDEStore.setState({ directoryHandle: null as never });
+  });
+
+  it('PLS-011 the timeout means no ask later', async () => {
+    reset();
+    openPlant({ kind: 'file', name: 'a' }, 5);
+    await sleep(30);
+    usePlantChoice.setState({ shown: shownScene });
+    expect(asks).toEqual([]);
   });
 });

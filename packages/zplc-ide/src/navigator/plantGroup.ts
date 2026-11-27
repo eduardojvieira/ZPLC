@@ -7,6 +7,7 @@ import { SCENE_INDEX } from '../generated/sceneIndex';
 import { runCommand } from '../commands/bus';
 import { parseScene } from '../plant/core/scene';
 import { saveScene } from '../plant/persistence/sceneFiles';
+import { useIDEStore } from '../store/useIDEStore';
 import { usePlantChoice } from '../plant/ui/usePlantChoice';
 import { EMPTY, type SceneRef } from '../plant/ui/usePlantSession';
 
@@ -82,14 +83,27 @@ export async function addPlant(root: FileSystemDirectoryHandle, template: string
   deps.open({ kind: 'file', name });
 }
 
-/** Opens the plant document on `ref`: the panel takes the request once it shows its scene. */
-export function openPlant(ref: SceneRef): void {
+/** How long a request waits for the panel to show its scene. */
+export const PLANT_WAIT_MS = 10_000;
+
+/**
+ * Opens the plant document on `ref`: the panel takes the request once it shows its scene. The wait ends at the first `shown`, at a
+ * change of project or after `waitMs`, so a panel shown later never adopts a pick nobody is waiting for.
+ */
+export function openPlant(ref: SceneRef, waitMs = PLANT_WAIT_MS): void {
   runCommand('view.plant');
   const { shown, ask } = usePlantChoice.getState();
   if (shown) return ask(ref);
-  const off = usePlantChoice.subscribe((state) => {
-    if (!state.shown) return;
-    off();
-    state.ask(ref);
-  });
+  const stops: Array<() => void> = [];
+  const stop = () => stops.forEach((off) => off());
+  const timer = setTimeout(stop, waitMs);
+  stops.push(
+    () => clearTimeout(timer),
+    useIDEStore.subscribe((state, previous) => state.directoryHandle !== previous.directoryHandle && stop()),
+    usePlantChoice.subscribe((state) => {
+      if (!state.shown) return;
+      stop();
+      state.ask(ref);
+    }),
+  );
 }
