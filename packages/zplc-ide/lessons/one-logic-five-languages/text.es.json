@@ -41,8 +41,8 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "Elija uno de los otros lenguajes, elimine src/Gate.st, cree en la misma carpeta el archivo de ese lenguaje, agréguelo a la tarea de zplc.json, escriba la misma condición y pulse Comprobar. Después cambie el orden para que la retención quede después de Close y vea qué aserción falla.",
-      "checkpoint": "El orden de las operaciones decide el resultado en todos los lenguajes: una retención aplicada después de Close vuelve a encender la salida. Un gráfico o un diagrama de escalera muestran el mismo orden en forma de imagen. El escenario muestra solo la lógica; no es un controlador de portón."
+      "body": "Elija uno de los otros lenguajes, elimine src/Gate.st, cree en la misma carpeta el archivo de ese lenguaje, agréguelo a la tarea de zplc.json, escriba la misma condición y pulse Comprobar. Después diga qué línea suya decide quién gana cuando Request y Close llegan juntas, y qué aserción fallaría si Close no ganara.",
+      "checkpoint": "El orden de las operaciones decide el resultado en todos los lenguajes. Un gráfico o un diagrama de escalera muestran el mismo orden en forma de imagen. El escenario muestra solo la lógica; no es un controlador de portón."
     }
   ],
   "hints": [

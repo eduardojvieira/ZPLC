@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/TankMonitor.ld.json the program keeps the liters of a tank in Level, which is the liters that came in with Fill (25 on each scan) minus the liters that went out with Drain. Setup copies the capacity, 200 liters, into Capacity. The rung that turns Level into a percentage of Capacity is missing. Add it with a guard, so that HighAlarm turns ON when the tank reaches 75 percent.",
+      "body": "In src/TankMonitor.ld.json the program keeps the liters of a tank in Level, which is the liters that came in with Fill (25 on each scan) minus the liters that went out with Drain. Setup copies the capacity, 200 liters, into Capacity. The rung that turns Level into a percentage of Capacity is missing. Add it so that HighAlarm turns ON when the tank reaches 75 percent and no division ever runs on a zero Capacity.",
       "checkpoint": "Percent follows Level, no division ever receives a zero Capacity, and HighAlarm turns ON at 75 percent."
     },
     {
@@ -41,8 +41,8 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Capacity is 0 until Setup is pressed. What would the DIV box do on the first scan without the NE box, and why does a comparison in series prevent it? What would change if you used GT instead of GE for the alarm?",
-      "checkpoint": "The virtual machine would divide by zero and fault, ending the scan. NE conducts only when Capacity is not zero, so DIV gets no power and Percent keeps its value. Without the guard {{ui:learn.check}} cannot grade the program, because the run fails on the first scan, when Capacity is still 0. With GT the alarm would wait until the level is above 75 percent, and the scenario would fail at {{t:80}} ms."
+      "body": "Capacity is 0 until Setup is pressed. What would a division by Capacity do on the first scan, and what in your rung keeps it from running then? What would change if you used GT instead of GE for the alarm?",
+      "checkpoint": "The virtual machine would divide by zero and fault, ending the scan. A box without power does not run, so Percent keeps its value. If the division could run while Capacity is 0, {{ui:learn.check}} could not grade the program, because the run fails on the first scan, when Capacity is still 0. With GT the alarm would wait until the level is above 75 percent, and the scenario would fail at {{t:80}} ms."
     }
   ],
   "hints": [

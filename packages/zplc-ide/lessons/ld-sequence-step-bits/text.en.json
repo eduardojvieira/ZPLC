@@ -24,12 +24,12 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter never leaves the mix step: Mixer stays ON at {{t:100}} ms and DrainValve stays OFF. The sequence must go from mixing to draining when the mix time is over, and Mixer and DrainValve must never be ON together. Draw the change in the Ladder editor.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson.",
       "checkpoint": "The scenario is named TankSequence and contains {{assertions}} assertions."
     },
     {

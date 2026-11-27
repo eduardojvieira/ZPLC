@@ -41,8 +41,8 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Choose one of the other languages, delete src/Gate.st, create the file for that language in the same folder, add it to the task of zplc.json, write the same condition and press Check. Then swap the order so that the hold comes after Close, and see which assertion fails.",
-      "checkpoint": "The order of operations decides the result in every language: a hold applied after Close puts the output back on. A graph or a ladder shows the same order as a picture. The scenario shows the logic only; it is not a gate controller."
+      "body": "Choose one of the other languages, delete src/Gate.st, create the file for that language in the same folder, add it to the task of zplc.json, write the same condition and press Check. Then say which of your lines decides who wins when Request and Close arrive together, and which assertion would fail if Close did not win.",
+      "checkpoint": "The order of operations decides the result in every language. A graph or a ladder shows the same order as a picture. The scenario shows the logic only; it is not a gate controller."
     }
   ],
   "hints": [

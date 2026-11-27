@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexione",
       "body": "¿Importa el orden de la multiplicación y la división? Calcule, con números enteros, qué da cada orden para Raw = 3280. ¿Por qué Scaled es un DINT? ¿De qué protegería el bloque LIMIT si el sensor informara un valor fuera de 0..4095?",
-      "checkpoint": "Dividir Raw entre 4095 primero da 0 para todo Raw menor que 4095, así que el nivel se quedaría en 0 hasta la plena escala. A plena escala el producto supera con mucho los 32767 que guarda un INT, y un INT daría la vuelta sin ningún error. LIMIT mantiene Raw dentro de 0..4095 haga lo que haga la entrada, así que Level queda dentro de 0..100."
+      "checkpoint": "Puede decir qué da cada orden para Raw = 3280 y qué hace una división con la parte del valor menor que su divisor. A plena escala el producto supera con mucho los 32767 que guarda un INT, y un INT daría la vuelta sin ningún error. LIMIT mantiene Raw dentro de 0..4095 haga lo que haga la entrada, así que Level queda dentro de 0..100."
     }
   ],
   "hints": [

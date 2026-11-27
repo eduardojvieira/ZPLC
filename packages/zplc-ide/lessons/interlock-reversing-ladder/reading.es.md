@@ -73,7 +73,7 @@ En un tablero real, el pulsador de paro es un interruptor cerrado en reposo. Su 
 > [!WARNING]
 > Un enclavamiento en el programa no es un dispositivo de seguridad. Una parada de emergencia se cablea en hardware y nunca depende del programa del PLC, y ZPLC no hace ninguna afirmación de seguridad. Un arrancador reversible real también tiene un bloqueo mecánico o eléctrico en los propios contactores.
 
-- Poner el bloqueo solo en una de las dos salidas. Cada salida debe ver a la otra.
+- Probar el bloqueo en un solo sentido. Pruébelo desde los dos sentidos.
 - Usar un contacto normalmente abierto donde hace falta uno normalmente cerrado, o al revés. Compruebe qué estado permite la salida.
 - Olvidar que una autorretención mantiene una salida en ON. Un permisivo debe estar en serie con todo el peldaño, incluida la autorretención, o la salida seguirá en ON después de que desaparezca el permisivo.
 

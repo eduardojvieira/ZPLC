@@ -14,15 +14,11 @@ Las cuentas no son litros. 2048 cuentas significan "a la mitad" en la entrada, p
 
 ## Escalar con bloques
 
-Para una recta que parte de cero, la fórmula es el valor crudo multiplicado por el rango de las unidades y dividido entre el rango de las cuentas:
-
-`Level = Raw * 2000 / 4095`
-
-En escalera son dos bloques en un mismo peldaño: `MUL` y luego `DIV`. Un tercer bloque, `LIMIT`, mantiene un valor entre un mínimo y un máximo, de modo que un sensor que informe algo extraño nunca saque al programa de rango.
+Para una recta que parte de cero, el resultado es el valor crudo como una parte del rango de las cuentas, aplicada al rango de las unidades. En escalera cada operación aritmética es un bloque propio, como `MUL` o `DIV`, y un peldaño puede contener varios. Otro bloque, `LIMIT`, mantiene un valor entre un mínimo y un máximo, de modo que un sensor que informe algo extraño nunca saque al programa de rango.
 
 ## Dos trampas de la aritmética entera
 
-**El orden importa.** Una división de números enteros descarta los decimales: 7 dividido entre 2 es 3. Veamos qué pasa con un tanque a la mitad, 2048 cuentas. Multiplicando primero: 2048 por 2000 es 4 096 000, y dividido entre 4095 da 1000. Dividiendo primero: 2048 dividido entre 4095 es 0 al descartar los decimales, y 0 por 2000 es 0. El nivel marca cero hasta que la entrada llega a plena escala. Se multiplica primero y se divide al final.
+**El orden importa.** Una división de números enteros descarta los decimales: 7 dividido entre 2 es 3. Tome 90 segundos y conviértalos a décimas de minuto, que es 90 por 10 sobre 60. Un orden da 900 dividido entre 60, que es 15. El otro da 90 dividido entre 60, que es 1 al descartar los decimales, y 1 por 10 es 10. Los dos órdenes no dan el mismo número, así que antes de escribir los bloques pregunte qué descarta cada división.
 
 **El tamaño de la variable importa.** Un `INT` tiene 16 bits y guarda números de -32768 a 32767. El producto 4095 por 2000 es 8 190 000, que no cabe. El bloque no avisa: el número **da la vuelta** y produce un resultado erróneo sin ningún error. Un `DINT` tiene 32 bits y guarda números de más de dos mil millones, así que es el tipo correcto para el producto intermedio. Un `REAL` también serviría: guarda decimales, y entonces los números de los bloques se escriben como `2000.0` y `4095.0`.
 
@@ -31,7 +27,7 @@ En escalera son dos bloques en un mismo peldaño: `MUL` y luego `DIV`. Un tercer
 
 ## Ejemplo resuelto
 
-El escalado también va en el otro sentido, de unidades de ingeniería a cuentas. Una bomba dosificadora gira a cualquier velocidad de 0 a 3000 rpm, y su variador recibe la velocidad como una orden analógica de 0 a 4095 cuentas. El operador fija la velocidad en rpm, y el programa debe convertir esa consigna en cuentas para el variador: `Command = Rpm * 4095 / 3000`. Ahora el rango de las cuentas multiplica y el rango de la velocidad divide. `MUL` sigue yendo primero, en un DINT: a velocidad máxima el producto es 12 285 000.
+El escalado también va en el otro sentido, de unidades de ingeniería a cuentas. Una bomba dosificadora gira a cualquier velocidad de 0 a 3000 rpm, y su variador recibe la velocidad como una orden analógica de 0 a 4095 cuentas. El operador fija la velocidad en rpm, y el programa debe convertir esa consigna en cuentas para el variador: `Command = Rpm * 4095 / 3000`. Ahora el rango de las cuentas multiplica y el rango de la velocidad divide. El producto va a un DINT: a velocidad máxima el producto es 12 285 000.
 
 ```ld-figure
 src: reading/pump-command.ld.json
@@ -55,7 +51,7 @@ Después de una pulsación la consigna es 500 rpm: 500 por 4095 es 2 047 500, di
 ## Errores comunes
 
 - Comparar cuentas con un límite escrito en porcentaje. Primero se escala y luego se compara.
-- Dividir antes de multiplicar, lo que descarta la parte del valor que es menor que el divisor.
+- Elegir el orden de dos bloques sin preguntar qué descarta la división.
 - Usar un `INT` para el producto. Da la vuelta, y el programa sigue funcionando con un nivel erróneo.
 - Tomar la cantidad de cuentas por su rango. Una entrada de 12 bits tiene 4096 cuentas distintas, de 0 a 4095, y su rango es la distancia de la más baja a la más alta.
 

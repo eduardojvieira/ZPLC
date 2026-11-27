@@ -41,8 +41,8 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Once it passes, ask why the interlock reads what the motor is doing and not what someone asks for. And why must LubeOk sit in series before the coil and not only in the start path? Move LubeOk into the start branch and see which assertion fails.",
-      "checkpoint": "A pushbutton only says what someone asks, not what the motor is doing: an interlock on RevPB would let Forward close while Reverse is held in. A permissive in the start path only lets a running motor ignore it. The scenario shows the logic only; real reversing starters also use mechanically interlocked contactors, and this is not a safety function."
+      "body": "Once it passes, follow the power through the Reverse rung while Forward runs and RevPB is pressed: what does the contact you added read, and what would change if it read something else? And why must LubeOk sit in series before the coil and not only in the start path? Move LubeOk into the start branch and see which assertion fails.",
+      "checkpoint": "You can say what the contact you added reads in each rung, and what would differ if it read something else. A permissive in the start path only lets a running motor ignore it. The scenario shows the logic only; real reversing starters also use mechanically interlocked contactors, and this is not a safety function."
     }
   ],
   "hints": [

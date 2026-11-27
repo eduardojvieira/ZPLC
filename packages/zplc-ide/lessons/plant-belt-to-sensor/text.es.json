@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexione",
       "body": "El escenario prueba que el sensor vio la caja antes de los {{t:8000}} ms y que la cinta está detenida al final. ¿Qué haría una segunda pulsación de Start mientras la caja avanza? ¿Y con la caja todavía delante del sensor?",
-      "checkpoint": "Mientras la caja avanza, una segunda pulsación mantiene la cinta en marcha y pone una segunda caja en ella. Con la caja delante del sensor, y el borrado escrito después de la activación, la cinta sigue detenida hasta que se retira la caja, aunque la pulsación igual pone una caja nueva al comienzo de la cinta."
+      "checkpoint": "Mientras la caja avanza, una segunda pulsación mantiene la cinta en marcha y pone una segunda caja en ella. Con la caja todavía delante del sensor y Start pulsado, puede decir qué hace la cinta y qué línea suya lo decide; la pulsación igual pone una caja nueva al comienzo de la cinta."
     }
   ],
   "hints": [
