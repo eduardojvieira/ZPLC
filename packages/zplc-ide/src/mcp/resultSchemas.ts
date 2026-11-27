@@ -339,3 +339,97 @@ export const aggregateTraceSchema = z
     scenarios: z.array(aggregateScenarioSchema).min(1).max(8),
   })
   .strict();
+
+const debugStaleFields = {
+  stale: z.boolean(),
+  nextStep: shortText.optional(),
+};
+
+const debugPositionFields = {
+  atMs: z.number().int().nonnegative(),
+  cycles: z.number().int().nonnegative(),
+  state: z.enum(['idle', 'paused', 'error']),
+  location: z
+    .object({
+      pou: z.string().min(1).max(128).optional(),
+      file: logicalPathSchema.optional(),
+      element: z.string().min(1).max(128).optional(),
+      line: z.number().int().positive().optional(),
+      pc: z.number().int().nonnegative(),
+    })
+    .strict()
+    .optional(),
+};
+
+export const debugSetInputsResultSchema = z
+  .object({
+    ok: z.literal(true),
+    sessionId: z.string().uuid(),
+    stagedInputs: z.array(z.string().min(1).max(256)),
+    stagedPlantActions: z.number().int().nonnegative(),
+    ...debugStaleFields,
+  })
+  .strict();
+
+export const debugBreakpointsResultSchema = z
+  .object({
+    ok: z.literal(true),
+    sessionId: z.string().uuid(),
+    breakpoints: z.array(
+      z
+        .object({
+          file: logicalPathSchema,
+          element: z.string().min(1).max(128),
+          line: z.number().int().positive().optional(),
+          pc: z.number().int().nonnegative(),
+          active: z.boolean(),
+        })
+        .strict(),
+    ),
+    ...debugStaleFields,
+  })
+  .strict();
+
+export const debugStepResultSchema = z
+  .object({
+    ok: z.literal(true),
+    sessionId: z.string().uuid(),
+    stopReason: z.enum(['stepped', 'breakpoint', 'fault', 'budget_reached']),
+    ...debugPositionFields,
+    cyclesExecuted: z.number().int().nonnegative(),
+    vmError: z.number().int().nonnegative().optional(),
+    values: z.record(z.string().min(1).max(256), z.union([z.boolean(), z.number()])).optional(),
+    plantFacts: z.record(z.string(), z.unknown()).optional(),
+    ...debugStaleFields,
+  })
+  .strict();
+
+export const debugInspectResultSchema = z
+  .object({
+    ok: z.literal(true),
+    sessionId: z.string().uuid(),
+    ...debugPositionFields,
+    signals: z.record(
+      z.string().min(1).max(256),
+      z
+        .object({
+          type: z.string().min(1).max(64),
+          region: z.string().min(1).max(16),
+          value: z.union([z.boolean(), z.number()]),
+        })
+        .strict(),
+    ),
+    functionBlocks: z
+      .record(z.string().min(1).max(256), z.record(z.string().min(1).max(256), z.union([z.boolean(), z.number()])))
+      .optional(),
+    sfc: z.array(z.record(z.string(), z.unknown())).optional(),
+    plant: z
+      .object({
+        signals: z.record(z.string(), z.union([z.boolean(), z.number()])),
+        facts: z.record(z.string(), z.unknown()),
+      })
+      .strict()
+      .optional(),
+    ...debugStaleFields,
+  })
+  .strict();

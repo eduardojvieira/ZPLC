@@ -8,8 +8,8 @@
  * clock: a `scenario.step` that hits an armed PC holds the scan, and the next step with the same `at_ms` finishes it. No C and
  * no code generation changed for it.
  */
-import { randomUUID } from 'node:crypto';
-import { stat } from 'node:fs/promises';
+import { createHash, randomUUID } from 'node:crypto';
+import { readFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import * as toolApi from '../cli/toolApi';
 import { createNativeScenarioSession, nativeScenarioLifecycle, type NativeScenarioSession } from '../cli/nativeScenarioRuntime';
@@ -77,6 +77,8 @@ export interface DebugArgs {
 
 interface Session {
   readonly id: string;
+  readonly root: string;
+  readonly sourceFingerprints: ReadonlyMap<string, string>;
   readonly native: NativeScenarioSession;
   readonly adapter: NativeAdapter;
   readonly debugMap: DebugMap;
@@ -98,6 +100,14 @@ interface Session {
 const VM_HALTED = 9;
 const VM_PAUSED = 10;
 const BOUNDARY = 'AGENTS.md rule 8';
+const STALE_NEXT_STEP =
+  'The project sources changed since this session started; call debug_session_stop and start a new session with ' +
+  'debug_session_start to run the changed program.';
+
+async function sha256File(path: string): Promise<string | undefined> {
+  const bytes = await readFile(path).catch(() => undefined);
+  return bytes ? createHash('sha256').update(bytes).digest('hex') : undefined;
+}
 
 function failure(error: string, message: string, cause: string, nextStep: string, extra: Body = {}): Body {
   return { ok: false, error, message, cause, nextStep, ...extra };
@@ -157,16 +167,22 @@ export class McpDebugSessionManager {
     }
     this.touch(session);
     try {
+      let body: Body;
       switch (tool) {
         case 'debug_set_inputs':
-          return await this.setInputs(session, args as DebugArgs['debug_set_inputs']);
+          body = await this.setInputs(session, args as DebugArgs['debug_set_inputs']);
+          break;
         case 'debug_breakpoints':
-          return await this.breakpoints(session, args as DebugArgs['debug_breakpoints']);
+          body = await this.breakpoints(session, args as DebugArgs['debug_breakpoints']);
+          break;
         case 'debug_step':
-          return await this.step(session, args as DebugArgs['debug_step'], signal);
+          body = await this.step(session, args as DebugArgs['debug_step'], signal);
+          break;
         default:
-          return await this.inspect(session, args as DebugArgs['debug_inspect']);
+          body = await this.inspect(session, args as DebugArgs['debug_inspect']);
       }
+      const stale = await this.isStale(session);
+      return { ...body, stale, ...(stale && body.nextStep === undefined ? { nextStep: STALE_NEXT_STEP } : {}) };
     } catch (error) {
       // the runtime of this session failed: it is torn down, the other session is untouched
       await this.close(session);
@@ -238,6 +254,7 @@ export class McpDebugSessionManager {
     const compiled = (await toolApi.compilerCompile(root)) as Awaited<ReturnType<typeof toolApi.compilerCompile>> & {
       zplcFile?: Uint8Array;
       debugMap?: DebugMap;
+      sourceFingerprints?: Readonly<Record<string, string>>;
     };
     if (!compiled.ok || !compiled.zplcFile || !compiled.debugMap)
       return failure(
@@ -327,8 +344,11 @@ export class McpDebugSessionManager {
         );
       }
       const info = await adapter!.getInfo();
+      const sourceFingerprints = await this.captureFingerprints(root, debugMap, compiled.sourceFingerprints);
       const session: Session = {
         id: randomUUID(),
+        root,
+        sourceFingerprints,
         native,
         adapter: adapter!,
         debugMap,
@@ -375,6 +395,34 @@ export class McpDebugSessionManager {
     } finally {
       this.starting -= 1;
     }
+  }
+
+  private async captureFingerprints(
+    root: string,
+    debugMap: DebugMap,
+    compiledFingerprints?: Readonly<Record<string, string>>,
+  ): Promise<Map<string, string>> {
+    const fingerprints = new Map<string, string>();
+    if (compiledFingerprints) {
+      for (const [path, hash] of Object.entries(compiledFingerprints)) fingerprints.set(path, hash);
+    } else {
+      for (const pou of Object.values(debugMap.pou)) {
+        if (!pou.sourceRef || fingerprints.has(pou.sourceRef)) continue;
+        const hash = await sha256File(join(root, pou.sourceRef));
+        if (hash) fingerprints.set(pou.sourceRef, hash);
+      }
+    }
+    const manifestHash = await sha256File(join(root, 'zplc.json'));
+    if (manifestHash) fingerprints.set('zplc.json', manifestHash);
+    return fingerprints;
+  }
+
+  private async isStale(session: Session): Promise<boolean> {
+    for (const [relativePath, expectedSha256] of session.sourceFingerprints) {
+      const current = await sha256File(join(session.root, relativePath));
+      if (current !== expectedSha256) return true;
+    }
+    return false;
   }
 
   private inputNames(session: Session): string[] {
