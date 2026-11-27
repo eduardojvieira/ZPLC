@@ -25,6 +25,7 @@ and version when the release is cut (see `RELEASING.md`).
 ### What changed for you
 
 - With the classroom setting that hides solutions on, the last hint of a lesson, which is the full answer, is hidden in the Guide too, as it already was for the assistant and `zplc://lesson/current`; the earlier hints and the notice stay.
+- **Feed the board from the plant** (the Online menu and a button of the plant document) now works with a connected board whose firmware offers plant I/O: it asks for confirmation first, the status bar shows the mode with its mirroring mark and response time, and the mode ends, leaving the board as it was, on Stop, disconnection, a project or plant change and closing ZPLC. It is tested with a fake board, the native simulator and the board builds; the proof on a physical board is pending the owner's bench record, and on Windows and macOS it is not measured.
 - A Function Block Diagram and a Ladder rung place every function of the compiler, the 240 type conversions included, so a
   `REAL` is converted with a block such as `REAL_TO_INT` and no second file in Structured Text is needed. `MUX` takes up
   to eight inputs.

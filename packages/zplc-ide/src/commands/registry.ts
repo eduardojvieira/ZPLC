@@ -28,6 +28,8 @@ export interface CommandState {
   compiled: boolean;
   /** A connection, a mode change or a deploy is in progress. */
   busy: boolean;
+  /** A plant is loaded, no simulation drives it, and the connected board advertises the PLANT capability (LNK-012). */
+  plantFeedable: boolean;
 }
 
 export const INITIAL_COMMAND_STATE: CommandState = {
@@ -39,6 +41,7 @@ export const INITIAL_COMMAND_STATE: CommandState = {
   vmState: 'idle',
   compiled: false,
   busy: false,
+  plantFeedable: false,
 };
 
 export interface CommandDefinition {
@@ -58,6 +61,8 @@ export interface CommandDefinition {
 const open = (s: CommandState): boolean => s.projectOpen;
 const idle = (s: CommandState): boolean => s.projectOpen && !s.busy;
 const online = (s: CommandState): boolean => s.connected && !s.busy;
+/** Plant I/O mode is offered in hardware mode, with a connected board that can be fed and a plant to feed it from (PLS-008). */
+const feedable = (s: CommandState): boolean => s.mode === 'hardware' && online(s) && s.plantFeedable;
 const stoppable = (s: CommandState): boolean => online(s) && (s.vmState === 'running' || s.vmState === 'paused');
 
 export const COMMANDS = [
@@ -121,8 +126,8 @@ export const COMMANDS = [
     titleKey: 'command.online.feedBoardFromPlant',
     category: 'online',
     physical: true,
-    // Disabled until U3 mounts the indicator that shows the mode is on; U3 enables it in that same commit (LNK-008).
-    enabled: () => false,
+    // Only asks: the confirmation dialog is what starts the mode (LNK-008).
+    enabled: (s) => feedable(s),
   },
   {
     id: 'online.disconnect',
@@ -235,7 +240,14 @@ export const COMMANDS = [
   { id: 'plant.createDeclarations', titleKey: 'command.plant.createDeclarations', category: 'project', pending: true },
   { id: 'edit.undo', titleKey: 'command.edit.undo', category: 'edit', pending: true },
   { id: 'edit.redo', titleKey: 'command.edit.redo', category: 'edit', pending: true },
-  { id: 'plant.feedBoard', titleKey: 'command.plant.feedBoard', category: 'online', physical: true, pending: true },
+  {
+    id: 'plant.feedBoard',
+    titleKey: 'command.plant.feedBoard',
+    category: 'online',
+    physical: true,
+    pending: true,
+    enabled: (s) => feedable(s),
+  },
   { id: 'view.showPlant', titleKey: 'command.view.showPlant', category: 'view', enabled: open },
 
   // The Assistant polish (AIX-003, AIX-007, plan-aix.md 9.2 and 9.4). Opening the MCP connection panel needs no project: the panel says to

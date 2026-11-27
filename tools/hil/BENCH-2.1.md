@@ -203,6 +203,46 @@ python3 tools/hil/validate_plant_io_evidence.py --level hil $EV/plant-io-*-usb-s
 and the measured worst gap per board goes into `docs/docs/plant/io-mode.md` (both languages) and `tools/hil/README.md`
 (LNK-014: "the worst case per transport MUST be published as evidence").
 
+## Studio's plant I/O mode (Task P8, the owner's session)
+
+The same session also tries the Studio action that drives the link, on one board at a time. **[agent]**: nothing. The
+agent never opens Studio against a board, never presses the action and never records the result (rule 8). Studio's tests
+(`plantIoAdapter.test.ts`, `PlantIoMode.test.tsx`, `OperationalStatusBar.dom.test.tsx`) use the fake board; this is the
+only run against a real one. Windows and macOS stay "not measured" unless the owner runs these steps there.
+
+**[person]** What to connect: the board of the run flashed with the echo program as in the bench above, its USB data
+cable to the computer, the LEDs on DO0 and DO1, nothing on the inputs, and no bench script holding the port (free
+ports, above). Then:
+
+1. Open Studio on the project of the echo program and a scene whose plant map binds `%IX0.0` to `%IX0.3`. Choose
+   hardware mode and **Connect**. Open the plant document.
+2. Look before you press anything: the button **Feed the board from the plant** of the plant document is enabled only
+   now (connected, hardware mode, PLANT capability, a compiled program). In simulation mode or with a disconnected board
+   it is absent; with a board that lacks the capability it is disabled and says why. The Online menu entry never looks
+   disabled (the application menu does not grey items): in those cases pressing it must open nothing. The LEDs are off
+   and the status bar says Board.
+3. Press **Feed the board from the plant**. Read the dialog: it says the outputs stay safe and mirroring is off. The
+   focus is on **Cancel**. Press **Cancel**: nothing changes on the board (LEDs off, status bar still Board).
+4. Press the action again and **Feed the board** (confirm). Watch the status bar: **Plant I/O mode starting**, then **Plant I/O mode**
+   (running), a different text, icon and colour from Board. Open its details and read the **last** and **worst**
+   response time. The LEDs stay **off**: mirroring is off by default.
+5. Tick **Mirror the outputs on the board**: the status bar shows the mirroring mark and the LEDs follow the outputs.
+   Untick it: the mark goes and the LEDs go off.
+6. Press **Stop feeding the board**: the status bar returns to Board, the action is offered again. Read the board:
+   `zplc sched status --json` must be `idle` (the program is stopped) and the output image all zero. Run the program
+   again by hand if you want it back.
+7. Repeat 4, with mirroring on, and end the mode three other ways, one each time: **pull the data cable**, press
+   **Disconnect**, and close Studio. After each, the LEDs must be **off** and the board stopped as in step 6; with the
+   cable pulled, the status bar must leave the running state and the plant document must name the reason (the board
+   left the mode, or no answer within the timeout). **Disconnect** and closing the window close the connection before
+   the exit can go out, so the board ends these two by its own timeout (`TIMEOUT`, 500 ms; LNK-011): the LEDs go off
+   within about half a second, not at once. Record how long they took.
+
+**Record** (the owner, by hand): the board id, the transport, the date, the commit of the Studio and firmware builds, the
+operating system, and for every step yes or no. For steps 4 and 7 also the last and worst response time of the status bar
+and how each ending was shown. A "no" or a missing step means no hardware evidence; do not round it up. Until this record
+exists, `docs/docs/plant/io-mode.md` says the proof on a board is pending, and the page cites no time.
+
 ## What the owner must have ready
 
 - [ ] **Boards.** An ESP32-S3-DevKitC-1 **N8R8** (module ESP32-S3-WROOM-1-N8R8: the image needs the 8 MB octal PSRAM
