@@ -66,6 +66,9 @@ async function boot(records: WasmRecordStore, clock: { now: number }) {
   };
 }
 
+// The real-core runs take ~0.3 s idle and over 5 s on a loaded runner (macOS CI): bun's default 5 s timeout cut them short.
+const REAL_CORE_TIMEOUT_MS = 120_000;
+
 describe('RETAIN on the WebAssembly runtime follows the rules of the firmware (RT-025, RT-027)', () => {
   itWasm('continues a counter in a new session, and a different program starts from an initialised region', async () => {
     const records = new MemoryRecordStore();
@@ -109,45 +112,49 @@ describe('RETAIN on the WebAssembly runtime follows the rules of the firmware (R
     again.end();
   });
 
-  itWasm('refuses a record that is damaged, and one that was written for another layout, and says which', async () => {
-    const records = new MemoryRecordStore();
-    const clock = { now: 0 };
-    const first = await boot(records, clock);
-    first.load(COUNTER);
-    first.send('execution.start');
-    first.ticks(SCAN_MS, 2 * SCAN_MS);
-    first.send('execution.stop');
-    first.end();
-    // a record is stored in chunks of at most 1024 bytes under "retain_a0", "retain_a1", ... (zplc_retain.h)
-    const chunks = [0, 1, 2, 3, 4].map((index) => records.get(`retain_a${index}`)!);
-    expect(chunks.every((chunk) => chunk !== undefined)).toBe(true);
-    expect(records.get('retain_a5')).toBeUndefined();
-    const intact = new Uint8Array(chunks.flatMap((chunk) => [...chunk]));
-    const store = (record: Uint8Array) =>
-      chunks.forEach((_, index) => records.set(`retain_a${index}`, record.slice(index * 1024, (index + 1) * 1024)));
+  itWasm(
+    'refuses a record that is damaged, and one that was written for another layout, and says which',
+    async () => {
+      const records = new MemoryRecordStore();
+      const clock = { now: 0 };
+      const first = await boot(records, clock);
+      first.load(COUNTER);
+      first.send('execution.start');
+      first.ticks(SCAN_MS, 2 * SCAN_MS);
+      first.send('execution.stop');
+      first.end();
+      // a record is stored in chunks of at most 1024 bytes under "retain_a0", "retain_a1", ... (zplc_retain.h)
+      const chunks = [0, 1, 2, 3, 4].map((index) => records.get(`retain_a${index}`)!);
+      expect(chunks.every((chunk) => chunk !== undefined)).toBe(true);
+      expect(records.get('retain_a5')).toBeUndefined();
+      const intact = new Uint8Array(chunks.flatMap((chunk) => [...chunk]));
+      const store = (record: Uint8Array) =>
+        chunks.forEach((_, index) => records.set(`retain_a${index}`, record.slice(index * 1024, (index + 1) * 1024)));
 
-    // one flipped bit of the payload: the checksum no longer matches
-    const damaged = new Uint8Array(intact);
-    damaged[28] ^= 0x01;
-    store(damaged);
-    const afterDamage = await boot(records, clock);
-    afterDamage.load(COUNTER);
-    expect(afterDamage.status()).toMatchObject({ reason: 'corrupt', restored: false });
-    expect(afterDamage.counter()).toBe(0);
-    afterDamage.end();
+      // one flipped bit of the payload: the checksum no longer matches
+      const damaged = new Uint8Array(intact);
+      damaged[28] ^= 0x01;
+      store(damaged);
+      const afterDamage = await boot(records, clock);
+      afterDamage.load(COUNTER);
+      expect(afterDamage.status()).toMatchObject({ reason: 'corrupt', restored: false });
+      expect(afterDamage.counter()).toBe(0);
+      afterDamage.end();
 
-    // the same record with another layout hash and a correct checksum: a record of another draft or version
-    const stale = new Uint8Array(intact);
-    new DataView(stale.buffer).setUint32(20, new DataView(stale.buffer).getUint32(20, true) ^ 0xa5a5a5a5, true);
-    const body = stale.subarray(0, stale.length - 4);
-    new DataView(stale.buffer).setUint32(stale.length - 4, Bun.hash.crc32(body) >>> 0, true);
-    store(stale);
-    const afterStale = await boot(records, clock);
-    afterStale.load(COUNTER);
-    expect(afterStale.status()).toMatchObject({ reason: 'layout_mismatch', restored: false });
-    expect(afterStale.counter()).toBe(0);
-    afterStale.end();
-  });
+      // the same record with another layout hash and a correct checksum: a record of another draft or version
+      const stale = new Uint8Array(intact);
+      new DataView(stale.buffer).setUint32(20, new DataView(stale.buffer).getUint32(20, true) ^ 0xa5a5a5a5, true);
+      const body = stale.subarray(0, stale.length - 4);
+      new DataView(stale.buffer).setUint32(stale.length - 4, Bun.hash.crc32(body) >>> 0, true);
+      store(stale);
+      const afterStale = await boot(records, clock);
+      afterStale.load(COUNTER);
+      expect(afterStale.status()).toMatchObject({ reason: 'layout_mismatch', restored: false });
+      expect(afterStale.counter()).toBe(0);
+      afterStale.end();
+    },
+    REAL_CORE_TIMEOUT_MS,
+  );
 
   itWasm('saves on the interval, skips a region that did not change, and stores only on STOP when the interval is 0', async () => {
     // the interval of the POSIX host is the environment variable ZPLC_RETAIN_SAVE_INTERVAL_MS (30 s without it); a module has no
@@ -198,38 +205,42 @@ describe('RETAIN on the WebAssembly runtime follows the rules of the firmware (R
     next.end();
   });
 
-  itWasm('reports a store that fails as an error of the save and keeps the previous record', async () => {
-    const records = new MemoryRecordStore();
-    const clock = { now: 0 };
-    const run = await boot(records, clock);
-    run.load(COUNTER);
-    run.send('execution.start');
-    run.ticks(SCAN_MS, SCAN_MS);
-    run.send('execution.stop');
-    expect(run.status().saves).toBe(1);
-    // the next save cannot be written
-    const failing: WasmRecordStore = {
-      get: (key) => records.get(key),
-      set: () => {
-        throw new Error('disk full');
-      },
-      delete: (key) => records.delete(key),
-    };
-    run.end();
-    const broken = await boot(failing, clock);
-    broken.load(COUNTER);
-    expect(broken.status().reason).toBe('restored');
-    broken.send('execution.start');
-    broken.ticks(SCAN_MS, SCAN_MS);
-    broken.send('execution.stop');
-    expect(broken.status().save_errors).toBeGreaterThanOrEqual(1);
-    broken.end();
-    // the previous record is intact
-    const after = await boot(records, clock);
-    after.load(COUNTER);
-    expect(after.counter()).toBe(1);
-    after.end();
-  });
+  itWasm(
+    'reports a store that fails as an error of the save and keeps the previous record',
+    async () => {
+      const records = new MemoryRecordStore();
+      const clock = { now: 0 };
+      const run = await boot(records, clock);
+      run.load(COUNTER);
+      run.send('execution.start');
+      run.ticks(SCAN_MS, SCAN_MS);
+      run.send('execution.stop');
+      expect(run.status().saves).toBe(1);
+      // the next save cannot be written
+      const failing: WasmRecordStore = {
+        get: (key) => records.get(key),
+        set: () => {
+          throw new Error('disk full');
+        },
+        delete: (key) => records.delete(key),
+      };
+      run.end();
+      const broken = await boot(failing, clock);
+      broken.load(COUNTER);
+      expect(broken.status().reason).toBe('restored');
+      broken.send('execution.start');
+      broken.ticks(SCAN_MS, SCAN_MS);
+      broken.send('execution.stop');
+      expect(broken.status().save_errors).toBeGreaterThanOrEqual(1);
+      broken.end();
+      // the previous record is intact
+      const after = await boot(records, clock);
+      after.load(COUNTER);
+      expect(after.counter()).toBe(1);
+      after.end();
+    },
+    REAL_CORE_TIMEOUT_MS,
+  );
 });
 
 // ---------------------------------------------------------------------------------------------------------------------

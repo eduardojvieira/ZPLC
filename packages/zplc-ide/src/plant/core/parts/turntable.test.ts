@@ -82,6 +82,9 @@ const pathHash = async (cmds: Record<string, boolean>): Promise<string> => {
   return h.digest('hex');
 };
 
+// The real-core runs take ~0.3 s idle and over 5 s on a loaded runner (macOS CI): bun's default 5 s timeout cut them short.
+const REAL_CORE_TIMEOUT_MS = 120_000;
+
 describe('turntable', () => {
   it(
     'PRT-003 the platform turns to the left and the right position at degPerS and back to the centre, reporting the ' + 'at-sensors',
@@ -224,6 +227,7 @@ describe('turntable', () => {
       expect(() => stuck.tt.act('melt')).toThrow('part "tt" has no action "melt"');
       expect(def.actions).toEqual(['stall', 'turnStuck', 'jam']);
     },
+    REAL_CORE_TIMEOUT_MS,
   );
 
   it('PRT-003 a pair of conflicting commands does nothing', async () => {
@@ -277,27 +281,31 @@ describe('turntable', () => {
     expect(names({ allowReverse: true })).toContain('tt.runReverse');
   });
 
-  it('PLT-006 a turn uses no libm trigonometry and the pose sequence is identical on three runs', async () => {
-    const cmds = { toRight: true, run: true };
-    const a = await pathHash(cmds);
-    expect(await pathHash(cmds)).toBe(a);
-    expect(await pathHash(cmds)).toBe(a);
-    // The step loop reads the yaw table: with sin, cos, atan2 and random unavailable the same turn gives the same poses.
-    const real = { sin: Math.sin, cos: Math.cos, atan2: Math.atan2, random: Math.random };
-    const boom = () => {
-      throw new Error('libm call in a step');
-    };
-    const r = await plant([table(), box('b1', [0.1, TOP, 0.05])]);
-    r.set(cmds);
-    Object.assign(Math, { sin: boom, cos: boom, atan2: boom, random: boom });
-    try {
-      const h = createHash('sha256');
-      r.run(3000, () => h.update(JSON.stringify(r.world.bodies())));
-      expect(h.digest('hex')).toBe(a);
-    } finally {
-      Object.assign(Math, real);
-    }
-  });
+  it(
+    'PLT-006 a turn uses no libm trigonometry and the pose sequence is identical on three runs',
+    async () => {
+      const cmds = { toRight: true, run: true };
+      const a = await pathHash(cmds);
+      expect(await pathHash(cmds)).toBe(a);
+      expect(await pathHash(cmds)).toBe(a);
+      // The step loop reads the yaw table: with sin, cos, atan2 and random unavailable the same turn gives the same poses.
+      const real = { sin: Math.sin, cos: Math.cos, atan2: Math.atan2, random: Math.random };
+      const boom = () => {
+        throw new Error('libm call in a step');
+      };
+      const r = await plant([table(), box('b1', [0.1, TOP, 0.05])]);
+      r.set(cmds);
+      Object.assign(Math, { sin: boom, cos: boom, atan2: boom, random: boom });
+      try {
+        const h = createHash('sha256');
+        r.run(3000, () => h.update(JSON.stringify(r.world.bodies())));
+        expect(h.digest('hex')).toBe(a);
+      } finally {
+        Object.assign(Math, real);
+      }
+    },
+    REAL_CORE_TIMEOUT_MS,
+  );
 
   it('PLT-012 a capture mid-turn is the same exact state on a fresh run, and the runs end in the same state', async () => {
     const go = async () => {

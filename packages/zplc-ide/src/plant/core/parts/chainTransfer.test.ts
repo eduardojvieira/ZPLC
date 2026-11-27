@@ -73,6 +73,9 @@ const chain = (config: ScenePart['config'] = {}) => part('chain', 'chain-transfe
 const box = (at: [number, number, number]) => part('b1', 'box', at, { height: '0.2' });
 const feeder = (id: string, x: number) => part(id, 'belt', [x, TOP, 0], { length: 4 });
 
+// The real-core runs take ~0.3 s idle and over 5 s on a loaded runner (macOS CI): bun's default 5 s timeout cut them short.
+const REAL_CORE_TIMEOUT_MS = 120_000;
+
 describe('chain transfer', () => {
   it('PLT-007 a lowered chain transfer carries a box along +x like a belt and passes it to the next belt', async () => {
     const p = await plant([feeder('in', -2.4), chain(), feeder('out', 2.4), box([-1.5, TOP, 0])]);
@@ -247,51 +250,55 @@ describe('chain transfer', () => {
     expect(snaps[1]!.accepts).toContain('belt');
   });
 
-  it('PLT-006 no Math function beyond abs, min, max, round and floor and an identical pose sequence on three runs', async () => {
-    // The runtime's own code (not the physics engine) must not reach for libm, a clock or a random source.
-    const forbidden = ['sqrt', 'pow', 'exp', 'log', 'sin', 'cos', 'tan', 'atan2', 'hypot', 'cbrt', 'random'] as const;
-    const math = Math as unknown as Record<string, unknown>;
-    const saved = new Map<string, unknown>(forbidden.map((k) => [k, math[k]]));
-    const guarded = <T>(fn: () => T): T => {
-      for (const k of forbidden)
-        math[k] = () => {
-          throw new Error(`Math.${k} used by the chain transfer`);
-        };
-      try {
-        return fn();
-      } finally {
-        for (const [k, v] of saved) math[k] = v;
-      }
-    };
-    const guard = (rt: PartRuntime): PartRuntime => ({
-      ...rt,
-      beforeStep: (c) => guarded(() => rt.beforeStep(c)),
-      views: () => guarded(() => rt.views()),
-      sense: () => guarded(() => rt.sense()),
-    });
-    const trace = async () => {
-      const p = await plant([chain({ allowReverse: true }), box([0, TOP, 0])]);
-      p.runtimes[0] = guard(p.runtimes[0]!);
-      const h = createHash('sha256');
-      const script: Array<Record<string, boolean>> = [
-        { 'chain.run': true },
-        { 'chain.lift': true },
-        { 'chain.lift': true, 'chain.moveRight': true },
-        {},
-        { 'chain.runReverse': true },
-      ];
-      for (const c of script) {
-        p.set(c);
-        for (let i = 0; i < 100; i += 1) {
-          p.run(5);
-          p.runtimes[0]!.views();
-          h.update(JSON.stringify([p.body('chain').p, p.body('b1').p, p.body('b1').q]));
+  it(
+    'PLT-006 no Math function beyond abs, min, max, round and floor and an identical pose sequence on three runs',
+    async () => {
+      // The runtime's own code (not the physics engine) must not reach for libm, a clock or a random source.
+      const forbidden = ['sqrt', 'pow', 'exp', 'log', 'sin', 'cos', 'tan', 'atan2', 'hypot', 'cbrt', 'random'] as const;
+      const math = Math as unknown as Record<string, unknown>;
+      const saved = new Map<string, unknown>(forbidden.map((k) => [k, math[k]]));
+      const guarded = <T>(fn: () => T): T => {
+        for (const k of forbidden)
+          math[k] = () => {
+            throw new Error(`Math.${k} used by the chain transfer`);
+          };
+        try {
+          return fn();
+        } finally {
+          for (const [k, v] of saved) math[k] = v;
         }
-      }
-      return h.digest('hex');
-    };
-    const [a, b, c] = [await trace(), await trace(), await trace()];
-    expect(b).toBe(a);
-    expect(c).toBe(a);
-  });
+      };
+      const guard = (rt: PartRuntime): PartRuntime => ({
+        ...rt,
+        beforeStep: (c) => guarded(() => rt.beforeStep(c)),
+        views: () => guarded(() => rt.views()),
+        sense: () => guarded(() => rt.sense()),
+      });
+      const trace = async () => {
+        const p = await plant([chain({ allowReverse: true }), box([0, TOP, 0])]);
+        p.runtimes[0] = guard(p.runtimes[0]!);
+        const h = createHash('sha256');
+        const script: Array<Record<string, boolean>> = [
+          { 'chain.run': true },
+          { 'chain.lift': true },
+          { 'chain.lift': true, 'chain.moveRight': true },
+          {},
+          { 'chain.runReverse': true },
+        ];
+        for (const c of script) {
+          p.set(c);
+          for (let i = 0; i < 100; i += 1) {
+            p.run(5);
+            p.runtimes[0]!.views();
+            h.update(JSON.stringify([p.body('chain').p, p.body('b1').p, p.body('b1').q]));
+          }
+        }
+        return h.digest('hex');
+      };
+      const [a, b, c] = [await trace(), await trace(), await trace()];
+      expect(b).toBe(a);
+      expect(c).toBe(a);
+    },
+    REAL_CORE_TIMEOUT_MS,
+  );
 });
