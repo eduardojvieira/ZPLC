@@ -13,6 +13,11 @@ ZPLC 2.0 es una versión mayor nueva de la aplicación, el compilador y el runti
 qué deja de funcionar, los pasos para pasar desde 1.x y qué no se ha verificado. El registro técnico completo está en
 `CHANGELOG.md` en el repositorio.
 
+## ZPLC 2.1.0
+
+ZPLC 2.1.0 es la versión posterior a 2.0.1. Este sitio muestra 2.1 solo cuando esa versión está publicada: lo que añade 2.1
+y los pasos para pasar desde 2.0 se escriben junto con la versión. Las notas de 2.0.0 siguen a continuación.
+
 ## Lo más destacado
 
 - **Un curso dentro de la aplicación.** Aprender tiene 68 lecciones en español e inglés, una ruta de escalera que parte de

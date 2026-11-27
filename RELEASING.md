@@ -132,6 +132,16 @@ tag, and that nobody uploads an asset) is proven by a hosted run: REL-030.
 
 Publish the draft in the GitHub interface. This is the only step that makes the release public.
 
+Publishing also publishes the documentation site (PUB-005): `.github/workflows/deploy-docs.yml` runs on `release: published`,
+builds the site from the tag of that release and names that tag in the footer. A prerelease (`-rc.<n>`) does not deploy the
+site, and a push to a branch never does: the site changes with the release and not before. Then open the public address and
+check the version shown, each install link, both languages and the search, and record the result in the release evidence.
+
+To fix a page between releases, run the workflow "Deploy Documentation" by hand (Actions, Run workflow) with the `ref` to
+publish. The first job (`guard`) refuses, before any build, unless that ref descends from the latest published release tag
+(`git merge-base --is-ancestor`) and changes nothing outside `docs/` since that tag (`tools/ci/docs-dispatch-guard.ts`); the
+run then fails with the reason. A change to anything else needs a release.
+
 ### 8. Channels that follow a published release
 
 None of these is automated yet; each needs an account of the owner (see the table below).

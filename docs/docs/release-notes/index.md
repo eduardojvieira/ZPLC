@@ -13,6 +13,11 @@ ZPLC 2.0 is a new major version of the application, the compiler and the runtime
 what stops working, the steps to move from 1.x, and what has not been verified. The full engineering record is in
 `CHANGELOG.md` in the repository.
 
+## ZPLC 2.1.0
+
+ZPLC 2.1.0 is the release after 2.0.1. This site shows 2.1 only once that release is published: what 2.1 adds and the
+steps to move from 2.0 are written with the release. The notes of 2.0.0 follow.
+
 ## Highlights
 
 - **A course inside the application.** Learn has 68 lessons in English and Spanish, a Ladder path that starts at zero,

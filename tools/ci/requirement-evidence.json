@@ -3613,7 +3613,7 @@
     {"kind":"manual","ref":".github/workflows/release.yml","test":"verify-linux-x64-payload-reproducibility","note":"Recorded hosted runs 40229883140 on commit 35cb34b4 (2026-10-25) and 40371553429 on commit 3284708c (2026-10-26) of release.yml, workflow_dispatch with rehearsal=true, version 2.0.0-rc.3: both completed with success, 35 jobs passed and the 6 publish jobs were skipped as a rehearsal does; the job verify-linux-x64-payload-reproducibility ran and passed in each run; it is continue-on-error and no other job needs it, so it does not block a release run"}
   ],
   "REL-033": [
-    {"kind":"unit","ref":"tools/ci/workflow-triggers.test.ts","test":"the documentation site is deployed from the branch that holds 2.0","partial":true,"note":"parses deploy-docs.yml triggers and the step that names the latest release; authored, not executed in CI"},
+    {"kind":"unit","ref":"tools/ci/workflow-triggers.test.ts","test":"PUB-005: the documentation site is published with the release, never by a push","partial":true,"note":"parses deploy-docs.yml triggers, guard, permissions, concurrency and the step that names the release; authored, not executed in CI"},
     {"kind":"unit","ref":"tools/docs/check-docs-config.test.ts","test":"the site footer names the latest release","partial":true,"note":"the footer shows the tag the deploy workflow passes, or the version of the tree; docs deploy-docs.yml now builds from zplc-2.0-candidate as well as master and main. A hosted deploy has not run: the Pages environment must allow the branch (owner), and D-12 decides when 2.0 moves to master"}
   ],
   "REL-034": [
