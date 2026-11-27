@@ -1032,7 +1032,7 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
     'trace_get',
     {
       title: 'Get recorded trace',
-      description: 'Run one scenario and answer its trace: whole, changes, a window or a summary; a non-integer fact: counts if named.',
+      description: 'Run one scenario and answer its changes by default, a window, a summary, or mode full: the whole trace.',
       inputSchema: TRACE_INPUT,
       annotations: READ_ONLY,
     },

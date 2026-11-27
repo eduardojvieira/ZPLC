@@ -58,7 +58,8 @@ describe('failure detail in the Tool API preview (TST-003, IDE-031)', () => {
   itNative('TST-003 the MCP trace of a failed run still replays and keeps the 2.0 assertion keys', async () => {
     const root = brokenCopy();
     const workspace = await openMcpWorkspace(root);
-    const result = await createMcpDispatcher(workspace!)('trace_get', { scenarioId: 'BlinkyST', mode: 'full' }, new AbortController().signal);
+    const dispatch = createMcpDispatcher(workspace!);
+    const result = await dispatch('trace_get', { scenarioId: 'BlinkyST', mode: 'full' }, new AbortController().signal);
     const content = result.structuredContent as { assertions: Array<Record<string, unknown>>; traceSha256: string };
     expect(content.traceSha256).toMatch(/^[0-9a-f]{64}$/);
     expect(content.assertions[0]).toEqual({ kind: 'AT', passed: false, atMs: 250 });

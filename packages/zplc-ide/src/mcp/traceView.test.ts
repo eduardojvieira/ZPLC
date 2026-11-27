@@ -55,7 +55,17 @@ const indices = (result: { structuredContent: Record<string, unknown> }) =>
   (body(result).samples as Array<{ index: number }>).map((sample) => sample.index);
 
 /** The 2.0 answer of replay(), recorded from the 2.0 code with JSON.stringify before the default changed. */
-const ANSWER_2_0 = "{\"ok\":false,\"scope\":\"recorded-native-posix-host\",\"scenarioId\":\"belt\",\"traceSha256\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"totalSamples\":6,\"assertions\":[{\"kind\":\"AT\",\"passed\":false,\"atMs\":30}],\"trace\":[{\"atMs\":0,\"outputs\":{\"P.Run\":false,\"fact:count:Eye\":false}},{\"atMs\":10,\"outputs\":{\"P.Run\":false,\"fact:count:Eye\":false}},{\"atMs\":20,\"outputs\":{\"P.Run\":true,\"fact:count:Eye\":false}},{\"atMs\":30,\"outputs\":{\"P.Run\":true,\"fact:count:Eye\":false}},{\"atMs\":40,\"outputs\":{\"P.Run\":true,\"fact:count:Eye\":true}},{\"atMs\":50,\"outputs\":{\"P.Run\":true,\"fact:count:Eye\":true}}],\"evidence\":{\"schemaVersion\":1,\"operation\":\"scenario-run\",\"outcome\":\"failed\",\"diagnostics\":[],\"artifacts\":[]},\"execution\":{\"schemaVersion\":1,\"jobId\":\"6f1c7c1e-8f43-4f7e-9a51-2b1f0b6f8a10\",\"actor\":\"mcp\",\"permission\":\"tests:run\",\"operation\":\"scenario-run\",\"outcome\":\"failed\",\"startedAt\":\"2026-11-26T10:00:00.000Z\",\"finishedAt\":\"2026-11-26T10:00:01.250Z\"},\"note\":\"Recorded native POSIX host result; not live runtime, hardware, or HIL.\"}";
+const ANSWER_2_0 =
+  '{"ok":false,"scope":"recorded-native-posix-host","scenarioId":"belt","traceSha256":"cccccccccccccccccccccccccc' +
+  'cccccccccccccccccccccccccccccccccccccc","totalSamples":6,"assertions":[{"kind":"AT","passed":false,"atMs":30}]' +
+  ',"trace":[{"atMs":0,"outputs":{"P.Run":false,"fact:count:Eye":false}},{"atMs":10,"outputs":{"P.Run":false,"fac' +
+  't:count:Eye":false}},{"atMs":20,"outputs":{"P.Run":true,"fact:count:Eye":false}},{"atMs":30,"outputs":{"P.Run"' +
+  ':true,"fact:count:Eye":false}},{"atMs":40,"outputs":{"P.Run":true,"fact:count:Eye":true}},{"atMs":50,"outputs"' +
+  ':{"P.Run":true,"fact:count:Eye":true}}],"evidence":{"schemaVersion":1,"operation":"scenario-run","outcome":"fa' +
+  'iled","diagnostics":[],"artifacts":[]},"execution":{"schemaVersion":1,"jobId":"6f1c7c1e-8f43-4f7e-9a51-2b1f0b6' +
+  'f8a10","actor":"mcp","permission":"tests:run","operation":"scenario-run","outcome":"failed","startedAt":"2026-' +
+  '11-26T10:00:00.000Z","finishedAt":"2026-11-26T10:00:01.250Z"},"note":"Recorded native POSIX host result; not l' +
+  'ive runtime, hardware, or HIL."}';
 
 describe('trace_get mode full is the 2.0 answer; no mode is changes (AIX-015 contract)', () => {
   test('AIX-015 a call with no mode answers in mode changes, in the shape of an explicit changes call', () => {

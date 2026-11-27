@@ -222,7 +222,11 @@ describe('trace_get asks for the sidecar only in the new modes (AI-08)', () => {
       operations(async () => runValue(aggregate(2))),
     );
     const result = await dispatch('trace_get', { scenarioId: 'smoke', mode: 'all' }, signal);
-    expect(content(result)).toMatchObject({ ok: false, error: 'MCP_INVALID_ARGUMENTS', validValues: ['changes', 'full', 'summary', 'window'] });
+    expect(content(result)).toMatchObject({
+      ok: false,
+      error: 'MCP_INVALID_ARGUMENTS',
+      validValues: ['changes', 'full', 'summary', 'window'],
+    });
     expect(content(result).nextStep).toBeString();
   });
 });

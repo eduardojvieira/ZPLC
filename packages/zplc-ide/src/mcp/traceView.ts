@@ -1,20 +1,21 @@
 /**
- * The agent-sized forms of a recorded trace (AIX-015, AI-03, AI-08, AI-12). A `trace_get` call with no new parameter answers
- * as 2.0 did; `changes`, `window` and `summary` read the same recorded trace, and the inputs and watched variables of the
- * run's sidecar, which is never part of the trace, so `traceSha256` stays the 2.0 one.
+ * The agent-sized forms of a recorded trace (AIX-015, AI-03, AI-08, AI-12). A `trace_get` call with no mode answers
+ * in mode `changes`; `full` answers as 2.0 did; `changes`, `window` and `summary` read the same recorded trace, and the
+ * inputs and watched variables of the run's sidecar, which is never part of the trace, so `traceSha256` stays the 2.0 one.
  */
 
 /** The largest answer of a tool or a resource, in bytes of its JSON text. */
 export const MAX_OUTPUT_BYTES = 512 * 1024;
 /** The largest recorded trace the server reads (AI-03): bounded by the 10,000 samples of the scenario engine. */
 export const MAX_INTERNAL_TRACE_BYTES = 16 * 1024 * 1024;
-export const TRACE_MODES = ['changes', 'summary', 'window'] as const;
+export const TRACE_MODES = ['changes', 'summary', 'window', 'full'] as const;
 export type TraceMode = (typeof TRACE_MODES)[number];
 /** What each new trace_get parameter means, as the tool's input schema describes it. */
 export const TRACE_HELP = {
   mode:
     'changes: first sample, every change of a program signal, failed expectations, last sample; a fact: that is not a whole ' +
-    'number counts only when signals names it. window: every sample of a range. summary: per signal.',
+    'number counts only when signals names it. window: every sample of a range. summary: per signal. full: the whole trace, as ' +
+    'ZPLC 2.0 answered, refused when over 512 KiB. Default: changes.',
   signals: 'Only these signals, by name from availableSignals; all of them when omitted. Name a fact: here to count its every change.',
   includeInputs: 'Include the inputs the run wrote (default true).',
   watchSignals: 'Program variables or block members (Program.T1.ET) to read after each step; the recorded trace is unchanged.',
@@ -103,12 +104,12 @@ function sized(content: Record<string, unknown>, isError: boolean, nextStep: str
       );
 }
 
-/** A 2.0 call names only the scenario: it gets the 2.0 answer and asks the run for no sidecar. */
+/** Mode full is the 2.0 answer: it and asks the run for no sidecar. */
 function isTraceV2(args: TraceArgs): boolean {
-  return Object.keys(args).every((key) => key === 'scenarioId');
+  return args.mode === 'full';
 }
 
-/** What the Tool API is asked to record beside the trace; nothing for a 2.0 call. */
+/** What the Tool API is asked to record beside the trace; nothing for mode full. */
 export function traceObserve(args: TraceArgs): { inputs: boolean; watch: string[] } | undefined {
   return isTraceV2(args) ? undefined : { inputs: args.includeInputs !== false, watch: args.watchSignals ?? [] };
 }
@@ -196,7 +197,7 @@ export function traceAnswer(replay: Replay, scenarioId: string, args: TraceArgs)
       },
       !replay.ok,
       'Call trace_get again with mode "changes", "window" or "summary".',
-      TRACE_MODES,
+      TRACE_MODES.filter((mode) => mode !== 'full'),
     );
   const total = replay.samples.length;
   const sidecar = (rows: Signals[] | undefined) => (rows && rows.length === total ? rows : undefined);

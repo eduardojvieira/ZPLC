@@ -29,7 +29,7 @@ and version when the release is cut (see `RELEASING.md`).
   to eight inputs.
 - An AI agent reads a long simulation trace in pieces: `trace_get` answers the changes, a window of samples or a
   summary per signal, and a whole trace over 512 KiB is refused with the modes to use instead. A trace file over
-  16 MiB is refused before it is read. A plain `trace_get` call answers as in 2.0.
+  16 MiB is refused before it is read.
 - Every MCP reply that carries `execution` also carries `audit` with its job id, permission and duration, and a wrong
   scenario, signal or mode is answered with the valid values. The 2.0 fields keep their shape and values.
 - An AI agent writes project files through MCP: `workspace_write` creates or replaces programs in the five languages,
@@ -66,11 +66,16 @@ ZPLC 2.0.1 fixes the simulation for anyone who used an earlier ZPLC on the same 
 
 ### Breaking changes
 
-None.
+- `trace_get` without `mode` now answers in mode `changes`; the 2.0 answer is `mode: "full"`. Before, a call with only
+  `scenarioId` answered the whole recorded trace; now it answers the first sample, every change of a program signal, the
+  failed expectations and the last sample. To get the whole trace as 2.0 answered it, byte for byte, pass
+  `mode: "full"`; a trace over 512 KiB is then refused with `MCP_OUTPUT_LIMIT` and a next step that names the modes
+  `changes`, `window` and `summary`.
 
 ### Migration
 
-1. The program that the simulation of ZPLC 2.0.0 or an earlier version kept in `~/.zplc`, with its retained values, is
+1. If an MCP client calls `trace_get` with only `scenarioId` and needs the whole trace, add `mode: "full"` to the call.
+2. The program that the simulation of ZPLC 2.0.0 or an earlier version kept in `~/.zplc`, with its retained values, is
    not carried over to the new folder: open your project and start the simulation again. `~/.zplc` stays in place for
    the command line.
 
