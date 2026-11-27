@@ -165,11 +165,13 @@ describe('the workflow lint', () => {
     });
 
     it('names a journey step that runs every journey', () => {
-      expect(lintWith('nightly-quality.yml', '        env:\n          ZPLC_JOURNEY_SHARD: ${{ matrix.shard }}/${{ matrix.shards }}\n', '')).toEqual([step]);
+      const env = '        env:\n          ZPLC_JOURNEY_SHARD: ${{ matrix.shard }}/${{ matrix.shards }}\n';
+      expect(lintWith('nightly-quality.yml', env, '')).toEqual([step]);
     });
 
     it('names a journey job where one failing shard cancels the others', () => {
-      expect(lintWith('nightly-quality.yml', 'fail-fast: false\n      matrix:\n        include', 'fail-fast: true\n      matrix:\n        include')).toEqual([
+      const from = 'fail-fast: false\n      matrix:\n        include';
+      expect(lintWith('nightly-quality.yml', from, from.replace('false', 'true'))).toEqual([
         `${at}: fail-fast must be false, so that one failing shard stops no other`,
       ]);
     });

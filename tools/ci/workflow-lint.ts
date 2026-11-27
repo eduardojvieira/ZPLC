@@ -23,7 +23,7 @@ interface Job {
   uses?: string;
   env?: Env;
   'timeout-minutes'?: unknown;
-  strategy?: { 'fail-fast'?: unknown; matrix?: { shard?: unknown } };
+  strategy?: { 'fail-fast'?: unknown; matrix?: { shard?: unknown; include?: unknown[] } };
   steps?: Array<{ name?: string; run?: string; env?: Env }>;
 }
 interface Workflow {
@@ -76,8 +76,8 @@ export function lintWorkflows(workflows: Record<string, string>, longestShardMin
         `${at}: timeout-minutes ${limit} must be above ${longestShardMinutes.toFixed(1)}, the longest shard of tools/ci/test-shards.ts`,
       );
   }
-  // The journeys of macOS and Windows run in shards of run-journeys.ts (ZPLC_JOURNEY_SHARD=k/n): the matrix is 1 to n and every
-  // step that runs the journeys names its shard and n, so that the shards together run each journey once.
+  // The journeys of macOS and Windows run in shards of run-journeys.ts (ZPLC_JOURNEY_SHARD=k/n), each system with its own n: the
+  // matrix lists the shards 1 to n of every system with shards: n, and the step that runs the journeys names both.
   for (const [file, id] of Object.entries(JOURNEY_JOBS)) {
     const job = parsed.get(file)?.jobs?.[id];
     const at = `${file} job ${id}`;
@@ -85,15 +85,18 @@ export function lintWorkflows(workflows: Record<string, string>, longestShardMin
       problems.push(`${at}: missing; it runs the journeys in shards (ZPLC_JOURNEY_SHARD)`);
       continue;
     }
-    const matrix = job.strategy?.matrix?.shard;
-    const count = Array.isArray(matrix) ? matrix.length : 0;
-    if (JSON.stringify(matrix) !== JSON.stringify(Array.from({ length: count }, (_, index) => index + 1)) || count === 0)
-      problems.push(`${at}: the shard matrix must be the whole numbers 1 to n`);
+    const entries = (job.strategy?.matrix?.include ?? []) as Array<{ runner?: string; shard?: number; shards?: number }>;
+    const bySystem = new Map<string | undefined, typeof entries>();
+    for (const entry of entries) bySystem.set(entry.runner, [...(bySystem.get(entry.runner) ?? []), entry]);
+    const consistent =
+      entries.length > 0 &&
+      [...bySystem.values()].every((group) => group.every((entry, index) => entry.shard === index + 1 && entry.shards === group.length));
+    if (!consistent) problems.push(`${at}: matrix.include must list the shards 1 to n of each system, with shards: n on every entry`);
     if (job.strategy?.['fail-fast'] !== false) problems.push(`${at}: fail-fast must be false, so that one failing shard stops no other`);
     const steps = (job.steps ?? []).filter((step) => (step.run ?? '').includes('smoke:journeys'));
-    const expected = `\${{ matrix.shard }}/${count}`;
+    const expected = '${{ matrix.shard }}/${{ matrix.shards }}';
     if (steps.length === 0 || steps.some((step) => step.env?.ZPLC_JOURNEY_SHARD !== expected))
-      problems.push(`${at}: the step that runs smoke:journeys must set ZPLC_JOURNEY_SHARD to "${expected}", the matrix size`);
+      problems.push(`${at}: the step that runs smoke:journeys must set ZPLC_JOURNEY_SHARD to "${expected}"`);
   }
   return problems;
 }

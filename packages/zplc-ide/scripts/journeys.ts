@@ -729,7 +729,8 @@ export async function probeSecurity(
         `document.head.appendChild(script);
       const image = document.createElement('img'); image.setAttribute('onerror', 'window.__zplcHandler = true'); image.src = ` +
         `'zplc-probe-missing.png'; document.body.appendChild(image);
-      await pause(400);
+      // journey-time: runs inside the page
+      await new Promise((resolve) => setTimeout(resolve, 400));
       return { ran: window.__zplcInline === true, handlerRan: window.__zplcHandler === true, violations };`,
     );
     assert(!inline.ran, 'An inline script that the page injected ran.');
@@ -745,7 +746,8 @@ export async function probeSecurity(
     const violated = [];
     document.addEventListener('securitypolicyviolation', (event) => violated.push(event.violatedDirective));
     const blocked = await fetch('https://example.invalid/zplc-probe').then(() => false, () => true);
-    await pause(100);
+    // journey-time: runs inside the page
+    await new Promise((resolve) => setTimeout(resolve, 100));
     return { blocked, violated };`);
   assert(
     connect.blocked && connect.violated.includes('connect-src'),
@@ -795,7 +797,8 @@ export async function probeSecurity(
     const link = document.createElement('a'); link.href = 'https://example.invalid/zplc-link'; link.target = '_blank'; ` +
       `document.body.appendChild(link); link.click(); link.remove();
     location.assign('https://example.invalid/zplc-navigation');
-    await pause(500);
+    // journey-time: runs inside the page
+    await new Promise((resolve) => setTimeout(resolve, 500));
     return { sameDocument: location.href === href, opened: opened !== null, openedSame: openedSame !== null };`,
   );
   assert(navigation.sameDocument, 'The page navigated away from the application document.');

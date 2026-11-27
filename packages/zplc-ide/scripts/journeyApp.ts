@@ -22,7 +22,7 @@ import {
   stop,
   type OwnedProcess,
 } from './run-desktop-smoke';
-import { pause, scaleWait, waitFor } from './journeyTiming';
+import { pause, scaleWait, waiting, waitFor } from './journeyTiming';
 
 export class NotPossible extends Error {}
 /** A journey that cannot be performed because the product has no way to do it. */
@@ -191,6 +191,7 @@ async function connectApp(
   // machine at a load average of 40 to 100 needs several times the seconds it needs alone. Journeys that measure time do so
   // with Date.now() around their own work, never through this bound.
   const until: App['until'] = async (description, check, bound = 20_000) => {
+    waiting.what = description;
     const timeoutMs = scaleWait(bound * LOAD_PATIENCE);
     const started = Date.now();
     let last: unknown;

@@ -13,6 +13,7 @@ import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { assert, packageRoot } from './run-desktop-smoke';
+import { journeyFactor, waiting } from './journeyTiming';
 import { NotPossible, launchApp, startHarness, type Harness } from './journeyApp';
 import { JOURNEYS, runPackagedSecurityProbes, type Journey } from './journeys';
 import { journeysPlant } from './journeys/plantJourneys';
@@ -66,6 +67,45 @@ export function shardJourneys<T>(journeys: readonly T[], spec: string | undefine
   return own;
 }
 
+/**
+ * The longest one journey may take, so that one hang cannot eat the budget of a shard: the factor of the system times 75 s,
+ * rounded up to 50 s (200 s on macOS, 300 s on Windows). Linux, whose factor is 1, has none.
+ */
+export function journeyCapSeconds(platform: string = process.platform): number | undefined {
+  const factor = journeyFactor(platform);
+  return factor === 1 ? undefined : Math.ceil((factor * 75) / 50) * 50;
+}
+
+const capMessage = (name: string, capMs: number) =>
+  `TIME: "${name}" ran past its cap of ${capMs / 1000} s while waiting for ${waiting.what || 'nothing named'}`;
+
+/**
+ * `capMs` with a TIME failure that names the wait it was in. runJourney cuts its own journey at the cap, which stops its
+ * application; this outer cut, given a grace to do that, is the backstop when a journey does not end even then.
+ */
+export function capJourney(name: string, run: Promise<Outcome>, capMs: number | undefined): Promise<Outcome> {
+  if (capMs === undefined) return run;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const cut = new Promise<Outcome>((resolve) => {
+    timer = setTimeout(
+      () =>
+        resolve({
+          status: 'fail',
+          detail: capMessage(name, capMs),
+          notes: [],
+        }),
+      capMs,
+    );
+  });
+  return Promise.race([run, cut]).finally(() => clearTimeout(timer));
+}
+
+/** The line a journey that did not pass leaves in the log the moment it ends: a shard that is cancelled still shows what failed. */
+export function failureLine(name: string, outcome: Outcome): string | undefined {
+  if (outcome.status === 'pass') return undefined;
+  return `  ${outcome.status === 'fail' ? 'FAILED' : 'NOT POSSIBLE'} ${name}: ${outcome.detail.split('\n')[0]}`;
+}
+
 async function runJourney(harness: Harness, journey: Journey, scratch: string): Promise<Outcome> {
   const root = mkdtempSync(join(scratch, 'journey-'));
   const project = join(root, 'project');
@@ -86,7 +126,14 @@ async function runJourney(harness: Harness, journey: Journey, scratch: string): 
       launched = await launchApp(harness, root, journey.environment);
       return launched.app;
     };
-    await journey.run(launched.app, { root, project, runtime: harness.runtime, relaunch, crash });
+    const capMs = (journeyCapSeconds() ?? 0) * 1000;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const cut = new Promise<never>((_, reject) => {
+      if (capMs > 0) timer = setTimeout(() => reject(new Error(capMessage(journey.name, capMs))), capMs);
+    });
+    const ran = journey.run(launched.app, { root, project, runtime: harness.runtime, relaunch, crash });
+    ran.catch(() => undefined); // a journey cut at its cap fails later, when its application is gone
+    await Promise.race([ran, cut]).finally(() => clearTimeout(timer));
     notes.push(...launched.notes);
     return { status: 'pass', detail: '', notes };
   } catch (error) {
@@ -218,11 +265,15 @@ async function main(): Promise<void> {
     }
     for (const journey of selected) {
       const started = Date.now();
-      const outcome = await runJourney(harness, journey, scratch);
+      waiting.what = '';
+      const seconds = journeyCapSeconds();
+      const outcome = await capJourney(journey.name, runJourney(harness, journey, scratch), seconds && (seconds + 30) * 1000);
       results.push({ name: journey.name, example: journey.example, outcome });
       console.log(
         `${outcome.status.toUpperCase().padEnd(12)} ${journey.name} (${journey.example}, ${((Date.now() - started) / 1000).toFixed(1)}s)`,
       );
+      const line = failureLine(journey.name, outcome);
+      if (line) console.log(line);
     }
   } finally {
     await stop();

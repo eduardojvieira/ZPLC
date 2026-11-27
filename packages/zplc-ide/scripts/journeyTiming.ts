@@ -17,6 +17,9 @@
  */
 export const JOURNEY_TIME_FACTOR: Record<'linux' | 'darwin' | 'win32', number> = { linux: 1, darwin: 2.5, win32: 4 };
 
+/** The description of the wait the running journey is in (set by `until`), so a journey cut at its cap names its step. */
+export const waiting = { what: '' };
+
 /** The factor of `platform`; a system without an entry waits as on Linux. */
 export const journeyFactor = (platform: string = process.platform): number =>
   (JOURNEY_TIME_FACTOR as Record<string, number | undefined>)[platform] ?? 1;

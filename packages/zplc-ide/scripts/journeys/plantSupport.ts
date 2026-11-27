@@ -9,7 +9,7 @@ import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { PlantSceneFile, ScenePart } from '../../src/plant/contracts';
 import { assert, Cdp, drain, freePort, HOST, packageRoot, stop, type OwnedProcess } from '../run-desktop-smoke';
-import { pause, scaleWait, waitFor } from '../journeyTiming';
+import { pause, scaleWait, waiting, waitFor } from '../journeyTiming';
 import { button, css, type App } from '../journeyApp';
 
 /** What a journey or the bench uses of an app; the development host's `App` and the launcher below both have it. */
@@ -305,6 +305,7 @@ export async function launchPackaged(
       await page.command('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
     const evaluate = <T>(expression: string) => page.evaluate(expression) as Promise<T>;
     const until: DriveApp['until'] = async (description, check, bound = 20_000) => {
+      waiting.what = description;
       const timeoutMs = scaleWait(bound * 3);
       const started = Date.now();
       let last: unknown;
