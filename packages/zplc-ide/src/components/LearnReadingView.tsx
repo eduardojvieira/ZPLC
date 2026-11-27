@@ -33,6 +33,7 @@ function ReadingSurface({ lessonId }: { lessonId: string }) {
   const heading = useRef<HTMLHeadingElement>(null);
   const leaving = useRef<'panel' | 'home'>('panel');
   const entry = LESSON_INDEX.lessons.find((lesson) => lesson.id === lessonId);
+  const entryFound = useRef(entry !== undefined);
   const page = entry?.reading?.[locale];
   // The React Compiler memoizes this on `page`; the lab does not depend on it, since it is told apart by content (useLdTry.ts).
   const parsed = page === undefined ? null : parseReading(page);
@@ -68,7 +69,8 @@ function ReadingSurface({ lessonId }: { lessonId: string }) {
     useLearnUi.getState().showHome();
   };
   useEffect(() => {
-    useLearnLayout.getState().setReading(true);
+    // A lesson missing from the index shows nothing, so it covers nothing.
+    if (entryFound.current) useLearnLayout.getState().setReading(true);
     heading.current?.focus();
     const onKey = (event: KeyboardEvent): void => {
       if (event.key === 'Escape' && !event.defaultPrevented) {
@@ -79,7 +81,7 @@ function ReadingSurface({ lessonId }: { lessonId: string }) {
     window.addEventListener('keydown', onKey);
     return () => {
       window.removeEventListener('keydown', onKey);
-      useLearnLayout.getState().setReading(false);
+      useLearnLayout.getState().setReading(false, leaving.current === 'panel');
       // The panel takes the keyboard when the page closes; the home takes it itself when that is where the learner went.
       if (leaving.current === 'panel') document.getElementById('learn-title')?.focus();
     };

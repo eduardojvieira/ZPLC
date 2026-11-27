@@ -196,6 +196,7 @@ function CommandsHost() {
 /** A workspace of `lesson` is open with the lesson's first file in the tree; the page is showing. */
 async function practiceSetup(lesson: (typeof LESSON_INDEX.lessons)[number]) {
   (lesson as { reading?: unknown }).reading = PAGE;
+  window.innerWidth = 1400; // regular density: the lesson layout shows the Guide
   const opened: string[] = [];
   dom.patchStore(usePlantDocument, { open: false, active: false } as never);
   dom.patchStore(useShellLayout, { secondaryVisible: false } as never);

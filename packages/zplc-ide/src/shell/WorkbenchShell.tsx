@@ -49,6 +49,13 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
   const shellSizes = useShellLayoutSizes();
   const maximised = useShellLayout((state) => state.maximised);
   const reading = useLearnLayout((state) => state.reading);
+  const returnFocus = useLearnLayout((state) => state.returnFocus);
+  // The page closed for the Guide: the focus goes there now that the workbench is out of inert (Chromium refuses it before).
+  useEffect(() => {
+    if (reading || !returnFocus) return;
+    useLearnLayout.setState({ returnFocus: false });
+    document.getElementById('learn-title')?.focus();
+  }, [reading, returnFocus]);
 
   const [consolePanel, setConsolePanel] = usePanelCallbackRef();
   const [groupPanel, setGroupPanel] = useGroupCallbackRef();
@@ -135,7 +142,7 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
   return (
     <div className="relative flex min-h-0 flex-1 ledger-workspace">
       {/* A reading page covers the whole workbench (GDE-006): what is under it leaves the tab order, and stays mounted. */}
-      <div inert={reading} className="flex min-h-0 flex-1">
+      <div inert={reading} className="flex min-h-0 min-w-0 flex-1">
         <span role="status" className="sr-only">
           {maximised ? t('studio.document.maximised') : ''}
         </span>

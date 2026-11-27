@@ -9,16 +9,20 @@ import { useLearnUi } from '../learn/learnUi';
 import { findFileInTree, fileTreeFileId } from '../utils/fileSystem';
 import { useIDEStore } from './useIDEStore';
 import { usePlantDocument } from './usePlantDocument';
+import { shellDensity } from '../shell/shellDensity';
 import { useShellLayout } from './useShellLayout';
 
 interface LearnLayoutState {
   reading: boolean;
-  setReading: (reading: boolean) => void;
+  /** Set when the page closed for the panel: the shell gives the focus to the Guide once the workbench has left inert. */
+  returnFocus: boolean;
+  setReading: (reading: boolean, returnFocus?: boolean) => void;
 }
 
 export const useLearnLayout = create<LearnLayoutState>((set) => ({
   reading: false,
-  setReading: (reading) => set({ reading }),
+  returnFocus: false,
+  setReading: (reading, returnFocus = false) => set({ reading, returnFocus: !reading && returnFocus }),
 }));
 
 /** The lesson's first file, the plant beside it when the lesson names a plant or a scene, and the Guide. */
@@ -29,5 +33,7 @@ export function applyLessonLayout(lessonId?: string): void {
   const { fileTree, openFile } = useIDEStore.getState();
   if (fileTree && findFileInTree(fileTree, entry.starter.program)) void openFile(fileTreeFileId(entry.starter.program));
   if (entry.plant !== null || entry.scene !== undefined) usePlantDocument.getState().show();
-  useShellLayout.getState().setSecondaryVisible(true);
+  // UX-023: no room for it in compact density, and none while the editor is maximised.
+  const { maximised, setSecondaryVisible } = useShellLayout.getState();
+  if (shellDensity(window.innerWidth) !== 'compact' && !maximised) setSecondaryVisible(true);
 }
