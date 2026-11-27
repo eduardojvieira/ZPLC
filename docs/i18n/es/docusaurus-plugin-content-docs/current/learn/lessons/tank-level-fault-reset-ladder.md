@@ -26,7 +26,7 @@ Controle la bomba de un tanque con una autorretención, enclave una falla con bo
 ## Objetivos
 
 - Mantenga la bomba encendida desde LevelLow hasta LevelHigh con una autorretención, con todas las condiciones de parada en serie.
-- Enclave la alarma con PumpFault o EStop mediante una bobina SET y libérela con una bobina RESET a la que solo llegue una nueva pulsación de Reset.
+- Mantenga la alarma encendida después de cualquiera de las dos fallas, y libérela solo con una nueva pulsación de Reset una vez que la falla desapareció.
 
 ## Etapas
 

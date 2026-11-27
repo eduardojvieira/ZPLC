@@ -7286,7 +7286,7 @@
     },
     {
       "id": "tank-level-fault-reset-ladder",
-      "version": 7,
+      "version": 8,
       "order": 44,
       "module": 6,
       "level": "intermediate",
@@ -7352,7 +7352,7 @@
           "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
           "objectives": [
             "Keep the pump on from LevelLow until LevelHigh with a seal-in, with every stop condition in series.",
-            "Latch the alarm on PumpFault or EStop with a SET coil, and release it with a RESET coil that only a fresh Reset press can reach."
+            "Keep the alarm on after either fault, and release it only with a fresh Reset press after the fault has gone."
           ],
           "stages": [
             {
@@ -7412,7 +7412,7 @@
           "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
           "objectives": [
             "Mantenga la bomba encendida desde LevelLow hasta LevelHigh con una autorretención, con todas las condiciones de parada en serie.",
-            "Enclave la alarma con PumpFault o EStop mediante una bobina SET y libérela con una bobina RESET a la que solo llegue una nueva pulsación de Reset."
+            "Mantenga la alarma encendida después de cualquiera de las dos fallas, y libérela solo con una nueva pulsación de Reset una vez que la falla desapareció."
           ],
           "stages": [
             {
