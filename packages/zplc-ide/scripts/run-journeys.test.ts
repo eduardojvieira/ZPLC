@@ -1,7 +1,16 @@
 import { describe, expect, test } from 'bun:test';
-import { allJourneys, judge, parseShard, selectJourneys, shardJourneys } from './run-journeys';
+import {
+  allJourneys,
+  capJourney,
+  failureLine,
+  journeyCapSeconds,
+  judge,
+  parseShard,
+  selectJourneys,
+  shardJourneys,
+} from './run-journeys';
 import { bypassingWaits } from './journeysWaitScan';
-import { JOURNEY_TIME_FACTOR, journeyFactor, scaleWait } from './journeyTiming';
+import { JOURNEY_TIME_FACTOR, journeyFactor, scaleWait, waiting } from './journeyTiming';
 import type { Journey } from './journeys';
 
 const pass = { status: 'pass' } as const;
@@ -118,5 +127,37 @@ describe('journey time factor', () => {
   // see journeysWaitScan.ts
   test('no wait of a journey bypasses the factor', () => {
     expect(bypassingWaits()).toEqual([]);
+  });
+});
+
+describe('the cap of one journey', () => {
+  test('is the factor times 75 s rounded up to 50 s on macOS and Windows, and none on Linux', () => {
+    expect(journeyCapSeconds('linux')).toBeUndefined();
+    expect(journeyCapSeconds('darwin')).toBe(200);
+    expect(journeyCapSeconds('win32')).toBe(300);
+  });
+
+  test('a journey that hangs is cut at the cap and reported as a TIME failure naming the step it waited on', async () => {
+    waiting.what = 'the Welcome screen';
+    const outcome = await capJourney('11 A journey', new Promise<never>(() => {}), 20);
+    expect(outcome.status).toBe('fail');
+    expect(outcome.detail).toBe('TIME: "11 A journey" ran past its cap of 0.02 s while waiting for the Welcome screen');
+  });
+
+  test('a journey that ends before the cap keeps its own result', async () => {
+    expect(await capJourney('a', Promise.resolve({ status: 'pass', detail: '', notes: [] }), 1_000)).toEqual({
+      status: 'pass',
+      detail: '',
+      notes: [],
+    });
+    expect(await capJourney('a', Promise.resolve({ status: 'pass', detail: '', notes: [] }), undefined)).toMatchObject({ status: 'pass' });
+  });
+
+  test('a failure is written as it happens, with the first line of its error only', () => {
+    expect(failureLine('7 Name', { status: 'fail', detail: 'Timed out waiting for X\n    at a.ts:1\n--- app output ---', notes: [] })).toBe(
+      '  FAILED 7 Name: Timed out waiting for X',
+    );
+    expect(failureLine('7 Name', { status: 'not-possible', detail: 'no way', notes: [] })).toBe('  NOT POSSIBLE 7 Name: no way');
+    expect(failureLine('7 Name', { status: 'pass', detail: '', notes: [] })).toBeUndefined();
   });
 });
