@@ -32,6 +32,7 @@ interface Workflow {
 }
 
 const SHARD_JOBS = { 'ci.yml': 'ide-tests', 'nightly-quality.yml': 'desktop-ide-tests' };
+const JOURNEY_JOBS = { 'nightly-quality.yml': 'desktop-platforms' };
 const SHARD_VARIABLES = new Set(['ZPLC_IDE_SHARD_FILES', ...Object.values(SPLIT).map(({ variable }) => variable)]);
 const SELECT = 'bun tools/ci/test-shards.ts env "${{ matrix.shard }}" | tee -a "${GITHUB_ENV}"';
 const FILES = '"${ZPLC_IDE_SHARD_FILES:?}"';
@@ -74,6 +75,25 @@ export function lintWorkflows(workflows: Record<string, string>, longestShardMin
       problems.push(
         `${at}: timeout-minutes ${limit} must be above ${longestShardMinutes.toFixed(1)}, the longest shard of tools/ci/test-shards.ts`,
       );
+  }
+  // The journeys of macOS and Windows run in shards of run-journeys.ts (ZPLC_JOURNEY_SHARD=k/n): the matrix is 1 to n and every
+  // step that runs the journeys names its shard and n, so that the shards together run each journey once.
+  for (const [file, id] of Object.entries(JOURNEY_JOBS)) {
+    const job = parsed.get(file)?.jobs?.[id];
+    const at = `${file} job ${id}`;
+    if (!job) {
+      problems.push(`${at}: missing; it runs the journeys in shards (ZPLC_JOURNEY_SHARD)`);
+      continue;
+    }
+    const matrix = job.strategy?.matrix?.shard;
+    const count = Array.isArray(matrix) ? matrix.length : 0;
+    if (JSON.stringify(matrix) !== JSON.stringify(Array.from({ length: count }, (_, index) => index + 1)) || count === 0)
+      problems.push(`${at}: the shard matrix must be the whole numbers 1 to n`);
+    if (job.strategy?.['fail-fast'] !== false) problems.push(`${at}: fail-fast must be false, so that one failing shard stops no other`);
+    const steps = (job.steps ?? []).filter((step) => (step.run ?? '').includes('smoke:journeys'));
+    const expected = `\${{ matrix.shard }}/${count}`;
+    if (steps.length === 0 || steps.some((step) => step.env?.ZPLC_JOURNEY_SHARD !== expected))
+      problems.push(`${at}: the step that runs smoke:journeys must set ZPLC_JOURNEY_SHARD to "${expected}", the matrix size`);
   }
   return problems;
 }

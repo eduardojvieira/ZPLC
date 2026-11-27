@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { allJourneys, judge, parseShard, selectJourneys, shardJourneys } from './run-journeys';
+import { bypassingWaits } from './journeysWaitScan';
 import { JOURNEY_TIME_FACTOR, journeyFactor, scaleWait } from './journeyTiming';
 import type { Journey } from './journeys';
 
@@ -101,7 +100,8 @@ describe('journey shards', () => {
   });
 
   test('a malformed shard, or one with no journey, is an error and never a silent skip', () => {
-    for (const bad of ['', '0/4', '5/4', '1/0', 'x/4', '1/2/3', '1.5/4', '-1/4']) expect(() => parseShard(bad)).toThrow(/ZPLC_JOURNEY_SHARD/);
+    for (const bad of ['', '0/4', '5/4', '1/0', 'x/4', '1/2/3', '1.5/4', '-1/4'])
+      expect(() => parseShard(bad)).toThrow(/ZPLC_JOURNEY_SHARD/);
     expect(() => shardJourneys([stubJourney('a')], '2/3')).toThrow(/no journey/);
   });
 });
@@ -115,34 +115,8 @@ describe('journey time factor', () => {
     expect(journeyFactor('freebsd')).toBe(1);
   });
 
-  // The waits of the journeys are written as plain numbers and scaled in one place (journeyTiming.ts). A wait that bypasses it
-  // is found here: mark a measurement that must not scale with `// journey-time: <why>` on its line.
+  // see journeysWaitScan.ts
   test('no wait of a journey bypasses the factor', () => {
-    const here = import.meta.dir;
-    const files = [
-      'journeyApp.ts',
-      'journeys.ts',
-      'journeys013.ts',
-      ...['journeys', 'journeys013'].flatMap((dir) => readdirSync(join(here, dir)).map((file) => join(dir, file))),
-    ].filter((file) => file.endsWith('.ts'));
-    const raw = [
-      /Bun\.sleep\(\s*(?!100\))[\d_]+/,
-      /setTimeout\(\s*\w+,\s*[\d_]+/,
-      /Date\.now\(\)\s*\+\s*[\d_]+/,
-      /[<>]=?\s*[\d_]{5,}\s*\)/,
-      /import\s*\{[^}]*\bwaitFor\b[^}]*\}\s*from\s*'[./]*run-desktop-smoke'/s,
-    ];
-    const found: string[] = [];
-    for (const file of files) {
-      const text = readFileSync(join(here, file), 'utf8');
-      text.split('\n').forEach((line, index) => {
-        if (line.includes('journey-time:')) return;
-        if (raw.slice(0, 4).some((pattern) => pattern.test(line))) found.push(`${file}:${index + 1}: ${line.trim()}`);
-      });
-      if (raw[4]!.test(text)) found.push(`${file}: imports waitFor from run-desktop-smoke; use journeyTiming`);
-      for (const match of text.matchAll(/const until[^\n]*=>\s*\{\n[^\n]*\n/g))
-        if (!match[0].includes('scaleWait(')) found.push(`${file}: an until() that does not scale its bound`);
-    }
-    expect(found).toEqual([]);
+    expect(bypassingWaits()).toEqual([]);
   });
 });

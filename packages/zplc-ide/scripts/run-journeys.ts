@@ -5,6 +5,8 @@
  *
  *   bun run smoke:journeys                      all journeys
  *   ZPLC_JOURNEY_ONLY=breakpoint bun run ...    the journeys whose name contains the text (no exit judgement)
+ *   ZPLC_JOURNEY_SHARD=k/n bun run ...          shard k of n: journey i of the list runs in shard (i mod n) + 1; the shards together
+ *                                               run every journey once, each shard is judged like a full run, and it lists what it ran
  *   ZPLC_JOURNEY_SHOTS=<dir> bun run ...        also save a screenshot of the screen where a journey failed
  */
 import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -40,6 +42,28 @@ export function judge(results: Array<{ name: string; outcome: Pick<Outcome, 'sta
       problems.push(`"${name}" ${outcome.status === 'fail' ? 'failed' : 'is not possible'} and is not a known gap`);
   }
   return problems;
+}
+
+/** The journeys of the run, in their fixed order: the shards are positions in this list. */
+export const allJourneys = (): Journey[] => [...JOURNEYS, ...journeysPlant, ...journeysPlantFraming, ...journeysPlantLook];
+
+/** `k/n` of ZPLC_JOURNEY_SHARD; anything else is an error, never a run of everything or of nothing. */
+export function parseShard(spec: string): { index: number; count: number } {
+  const match = /^(\d+)\/(\d+)$/.exec(spec);
+  const index = Number(match?.[1]);
+  const count = Number(match?.[2]);
+  if (!match || index < 1 || count < 1 || index > count)
+    throw new Error(`ZPLC_JOURNEY_SHARD=${spec} must be k/n with 1 <= k <= n, for example 2/4`);
+  return { index, count };
+}
+
+/** The journeys of shard `spec` (k/n): the 1st, (n+1)th... of the list for shard 1, and so on. Without a shard, all of them. */
+export function shardJourneys<T>(journeys: readonly T[], spec: string | undefined): T[] {
+  if (spec === undefined) return [...journeys];
+  const { index, count } = parseShard(spec);
+  const own = journeys.filter((_, position) => position % count === index - 1);
+  if (own.length === 0) throw new Error(`ZPLC_JOURNEY_SHARD=${spec} has no journey: the list holds ${journeys.length}`);
+  return own;
 }
 
 async function runJourney(harness: Harness, journey: Journey, scratch: string): Promise<Outcome> {
@@ -171,8 +195,15 @@ async function main(): Promise<void> {
     return;
   }
   const only = process.env.ZPLC_JOURNEY_ONLY;
-  const baseJourneys = [...JOURNEYS, ...journeysPlant];
-  const webglJourneys = [...journeysPlantFraming, ...journeysPlantLook];
+  const shard = process.env.ZPLC_JOURNEY_SHARD;
+  const everything = allJourneys();
+  const own = new Set(shardJourneys(everything, shard));
+  if (shard !== undefined)
+    console.log(
+      `Shard ${shard}: ${own.size} of ${everything.length} journeys:\n${[...own].map((journey) => `  ${journey.name}`).join('\n')}`,
+    );
+  const baseJourneys = [...JOURNEYS, ...journeysPlant].filter((journey) => own.has(journey));
+  const webglJourneys = [...journeysPlantFraming, ...journeysPlantLook].filter((journey) => own.has(journey));
   const matchesOnly = (journey: Journey) => !only || journey.name.toLowerCase().includes(only.toLowerCase());
   const needsWebgl = webglJourneys.some(matchesOnly);
   assert(baseJourneys.some(matchesOnly) || needsWebgl, `No journey matches ZPLC_JOURNEY_ONLY=${only}`);

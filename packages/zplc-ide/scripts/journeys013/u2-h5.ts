@@ -5,6 +5,7 @@ import { assert } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
 import type { Journey } from '../journeys';
 import { findTextOutOfBox } from '../textFit';
+import { pause } from '../journeyTiming';
 
 const PUMP = ['PROGRAM Pump', 'VAR', '  Running : BOOL;', 'END_VAR', 'Running := TRUE;', 'END_PROGRAM', ''].join('\n');
 const SETTINGS_KEY = 'zplc-ide-settings';
@@ -98,7 +99,7 @@ export const journeysU2H5: Journey[] = [
               (await app.eval<boolean>(`Boolean(document.querySelector('[data-editor-group="editor-panel-second"]'))`)) || undefined,
           );
           await app.click(css('#console-tab-output'), 'the Output tab');
-          await new Promise((resolve) => setTimeout(resolve, 500));
+          await pause(500);
 
           const regions = ['[role="toolbar"]', `[aria-label=${JSON.stringify(translate(locale, 'status.label'))}]`, '[role="tablist"]'];
           const problems = await app.eval<string[]>(

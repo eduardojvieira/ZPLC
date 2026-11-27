@@ -20,9 +20,9 @@ import {
   preflight,
   smokeVitePort,
   stop,
-  waitFor,
   type OwnedProcess,
 } from './run-desktop-smoke';
+import { pause, scaleWait, waitFor } from './journeyTiming';
 
 export class NotPossible extends Error {}
 /** A journey that cannot be performed because the product has no way to do it. */
@@ -191,7 +191,7 @@ async function connectApp(
   // machine at a load average of 40 to 100 needs several times the seconds it needs alone. Journeys that measure time do so
   // with Date.now() around their own work, never through this bound.
   const until: App['until'] = async (description, check, bound = 20_000) => {
-    const timeoutMs = bound * LOAD_PATIENCE;
+    const timeoutMs = scaleWait(bound * LOAD_PATIENCE);
     const started = Date.now();
     let last: unknown;
     while (Date.now() - started < timeoutMs) {
@@ -360,7 +360,7 @@ export async function launchApp(
   // Browser.close is not awaited: with unsaved changes the app answers it with a prompt, not a reply.
   const dispose = async () => {
     if (cdp) void cdp.command('Browser.close').catch(() => undefined);
-    await Promise.race([electron.exited, Bun.sleep(3_000)]);
+    await Promise.race([electron.exited, pause(3_000)]);
     cdp?.close();
     await stop(electron);
   };
@@ -441,7 +441,7 @@ export async function launchPackagedApp(
   let cdp: Cdp | undefined;
   const stopApp = async () => {
     if (cdp) void cdp.command('Browser.close').catch(() => undefined);
-    await Promise.race([electron.exited, Bun.sleep(3_000)]);
+    await Promise.race([electron.exited, pause(3_000)]);
     cdp?.close();
     await stop(electron);
   };

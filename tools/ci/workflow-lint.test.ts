@@ -167,9 +167,13 @@ describe('the workflow lint', () => {
     });
 
     it('names a journey job where one failing shard cancels the others', () => {
-      expect(lintWith('nightly-quality.yml', 'fail-fast: false\n      matrix:\n        shard: [1, 2, 3, 4]', 'fail-fast: true\n      matrix:\n        shard: [1, 2, 3, 4]')).toEqual([
-        `${at}: fail-fast must be false, so that one failing shard stops no other`,
-      ]);
+      expect(
+        lintWith(
+          'nightly-quality.yml',
+          'fail-fast: false\n      matrix:\n        shard: [1, 2, 3, 4]',
+          'fail-fast: true\n      matrix:\n        shard: [1, 2, 3, 4]',
+        ),
+      ).toEqual([`${at}: fail-fast must be false, so that one failing shard stops no other`]);
     });
   });
 });
