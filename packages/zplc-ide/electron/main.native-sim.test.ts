@@ -481,7 +481,7 @@ describe('NativeSimulationSupervisor', () => {
 
     const pendingStop = supervisor.stopSession();
     // A Windows timer is coarse, so the second kill has no fixed moment: wait for it, bounded, instead of for 20 ms.
-    for (const deadline = Date.now() + 5_000; child.kill.mock.calls.length < 2 && Date.now() < deadline; ) {
+    for (const deadline = Date.now() + 5_000; child.kill.mock.calls.length < 2 && Date.now() < deadline;) {
       await new Promise((resolve) => setTimeout(resolve, 5));
     }
     expect(child.kill).toHaveBeenNthCalledWith(1, 'SIGTERM');
