@@ -1,0 +1,398 @@
+{
+  "name": "BufferRelease",
+  "description": "A buffer station: load five boxes, hold them at a blade, release one per button press.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Loaded",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "Boxes put on the buffer belt"
+      },
+      {
+        "name": "Sent",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "Boxes released"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "StartButton.pressed: start loading the buffer"
+      },
+      {
+        "name": "ReleaseCmd",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "ReleaseButton.pressed: one press releases one box"
+      },
+      {
+        "name": "EyeFull",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "EyeFull.detect: sees the fifth box in the queue"
+      },
+      {
+        "name": "EyeBlade",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "EyeBlade.detect: sees the box waiting at the blade"
+      },
+      {
+        "name": "EyeRelease",
+        "type": "BOOL",
+        "address": "%I0.4",
+        "comment": "EyeRelease.detect: sees each box that leaves the blade"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "RunBuffer",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Buffer1.run"
+      },
+      {
+        "name": "RunRelease",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Release1.run"
+      },
+      {
+        "name": "Emit",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "Emitter1.emit"
+      },
+      {
+        "name": "Hold",
+        "type": "BOOL",
+        "address": "%Q0.3",
+        "comment": "Blade1.extend: the blade holds the queue while true"
+      },
+      {
+        "name": "Done",
+        "type": "BOOL",
+        "address": "%Q0.4",
+        "comment": "DoneLight.lit"
+      },
+      {
+        "name": "Fault",
+        "type": "BOOL",
+        "address": "%Q0.5",
+        "comment": "FaultLight.lit"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "step_idle",
+      "name": "IDLE",
+      "isInitial": true,
+      "position": {
+        "x": 200,
+        "y": 50
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_IDLE",
+          "comment": "Everything off"
+        }
+      ]
+    },
+    {
+      "id": "step_loading",
+      "name": "LOADING",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 250
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_EMIT",
+          "comment": "Put one box on the buffer belt"
+        },
+        {
+          "qualifier": "P1",
+          "actionName": "A_COUNT_IN",
+          "comment": "Count the box once"
+        }
+      ]
+    },
+    {
+      "id": "step_wait",
+      "name": "WAIT",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 450
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_WAIT",
+          "comment": "Queue held, wait for the next box"
+        }
+      ]
+    },
+    {
+      "id": "step_queued",
+      "name": "QUEUED",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 650
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_QUEUED",
+          "comment": "Queue held at the blade, fault if a box gets through"
+        }
+      ]
+    },
+    {
+      "id": "step_releasing",
+      "name": "RELEASING",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 850
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_RELEASE",
+          "comment": "Blade down, one box leaves"
+        }
+      ]
+    },
+    {
+      "id": "step_passing",
+      "name": "PASSING",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 1050
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_RELEASE",
+          "comment": "The box is passing EyeRelease"
+        }
+      ]
+    },
+    {
+      "id": "step_count",
+      "name": "COUNT",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 1250
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_QUEUE_RUN",
+          "comment": "Blade up again"
+        },
+        {
+          "qualifier": "P1",
+          "actionName": "A_COUNT_OUT",
+          "comment": "Count the released box once"
+        }
+      ]
+    },
+    {
+      "id": "step_finished",
+      "name": "FINISHED",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 1450
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_DONE",
+          "comment": "Five boxes released"
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t_start",
+      "fromStep": "step_idle",
+      "toStep": "step_loading",
+      "condition": "Start",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 150
+      }
+    },
+    {
+      "id": "t_emit_full",
+      "fromStep": "step_loading",
+      "toStep": "step_queued",
+      "condition": "step_loading.T >= T#10ms AND Loaded >= 5",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 350
+      },
+      "priority": 1
+    },
+    {
+      "id": "t_emit_next",
+      "fromStep": "step_loading",
+      "toStep": "step_wait",
+      "condition": "step_loading.T >= T#10ms",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 350
+      },
+      "priority": 2
+    },
+    {
+      "id": "t_wait_done",
+      "fromStep": "step_wait",
+      "toStep": "step_loading",
+      "condition": "step_wait.T >= T#2s",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 550
+      }
+    },
+    {
+      "id": "t_release",
+      "fromStep": "step_queued",
+      "toStep": "step_releasing",
+      "condition": "ReleaseCmd AND EyeBlade",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 750
+      }
+    },
+    {
+      "id": "t_box_seen",
+      "fromStep": "step_releasing",
+      "toStep": "step_passing",
+      "condition": "EyeRelease",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 950
+      }
+    },
+    {
+      "id": "t_box_gone",
+      "fromStep": "step_passing",
+      "toStep": "step_count",
+      "condition": "NOT EyeRelease",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 1150
+      }
+    },
+    {
+      "id": "t_all_sent",
+      "fromStep": "step_count",
+      "toStep": "step_finished",
+      "condition": "step_count.T >= T#10ms AND Sent >= 5",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 1350
+      },
+      "priority": 1
+    },
+    {
+      "id": "t_next",
+      "fromStep": "step_count",
+      "toStep": "step_queued",
+      "condition": "step_count.T >= T#10ms",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 1350
+      },
+      "priority": 2
+    }
+  ],
+  "actions": [
+    {
+      "id": "A_IDLE",
+      "name": "A_IDLE",
+      "type": "ST",
+      "body": "RunBuffer := FALSE; RunRelease := FALSE; Emit := FALSE; Hold := FALSE; Done := FALSE; Fault := FALSE;"
+    },
+    {
+      "id": "A_EMIT",
+      "name": "A_EMIT",
+      "type": "ST",
+      "body": "RunBuffer := TRUE; RunRelease := TRUE; Emit := TRUE; Hold := TRUE; Done := FALSE;"
+    },
+    {
+      "id": "A_WAIT",
+      "name": "A_WAIT",
+      "type": "ST",
+      "body": "RunBuffer := TRUE; RunRelease := TRUE; Emit := FALSE; Hold := TRUE; Done := FALSE;"
+    },
+    {
+      "id": "A_QUEUED",
+      "name": "A_QUEUED",
+      "type": "ST",
+      "body": "RunBuffer := TRUE; RunRelease := TRUE; Emit := FALSE; Hold := TRUE; Done := FALSE; IF EyeRelease THEN Fault := TRUE; END_IF;"
+    },
+    {
+      "id": "A_RELEASE",
+      "name": "A_RELEASE",
+      "type": "ST",
+      "body": "RunBuffer := FALSE; RunRelease := TRUE; Emit := FALSE; Hold := FALSE; Done := FALSE;"
+    },
+    {
+      "id": "A_QUEUE_RUN",
+      "name": "A_QUEUE_RUN",
+      "type": "ST",
+      "body": "RunBuffer := TRUE; RunRelease := TRUE; Emit := FALSE; Hold := TRUE; Done := FALSE;"
+    },
+    {
+      "id": "A_DONE",
+      "name": "A_DONE",
+      "type": "ST",
+      "body": "RunBuffer := TRUE; RunRelease := TRUE; Emit := FALSE; Hold := TRUE; Done := TRUE;"
+    },
+    {
+      "id": "A_COUNT_IN",
+      "name": "A_COUNT_IN",
+      "type": "ST",
+      "body": "Loaded := Loaded + 1;"
+    },
+    {
+      "id": "A_COUNT_OUT",
+      "name": "A_COUNT_OUT",
+      "type": "ST",
+      "body": "Sent := Sent + 1;"
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

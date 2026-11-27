@@ -486,6 +486,7 @@ export function DebugWatchPanel({
             description={t('panel.watch.empty.description')}
             actionLabel={t('panel.watch.empty.action')}
             onAction={() => setShowAddForm(true)}
+            region="watch"
           />
         ) : (
           <table className="w-full">

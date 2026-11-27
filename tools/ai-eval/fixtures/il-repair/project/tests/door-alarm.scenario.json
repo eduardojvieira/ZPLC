@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "id": "DoorAlarm",
+  "tickMs": 10,
+  "durationMs": 120,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "DoorAlarm.Armed": true,
+        "DoorAlarm.DoorOpen": false,
+        "DoorAlarm.Silence": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "DoorAlarm.DoorOpen": true
+      }
+    },
+    {
+      "atMs": 30,
+      "set": {
+        "DoorAlarm.DoorOpen": false
+      }
+    },
+    {
+      "atMs": 50,
+      "set": {
+        "DoorAlarm.Silence": true
+      }
+    },
+    {
+      "atMs": 60,
+      "set": {
+        "DoorAlarm.Silence": false
+      }
+    },
+    {
+      "atMs": 70,
+      "set": {
+        "DoorAlarm.DoorOpen": true,
+        "DoorAlarm.Armed": false
+      }
+    },
+    {
+      "atMs": 90,
+      "set": {
+        "DoorAlarm.Armed": true
+      }
+    },
+    {
+      "atMs": 100,
+      "set": {
+        "DoorAlarm.Silence": true
+      }
+    },
+    {
+      "atMs": 110,
+      "set": {
+        "DoorAlarm.Silence": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "DoorAlarm.Siren": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "DoorAlarm.Siren": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 40,
+      "condition": {
+        "DoorAlarm.Siren": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "DoorAlarm.Siren": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 60,
+      "condition": {
+        "DoorAlarm.Siren": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 80,
+      "condition": {
+        "DoorAlarm.Siren": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 90,
+      "condition": {
+        "DoorAlarm.Siren": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 100,
+      "condition": {
+        "DoorAlarm.Siren": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 110,
+      "condition": {
+        "DoorAlarm.Siren": true
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 10,
+      "withinMs": 0,
+      "condition": {
+        "DoorAlarm.Siren": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 50,
+      "withinMs": 0,
+      "condition": {
+        "DoorAlarm.Siren": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 30,
+      "forMs": 10,
+      "condition": {
+        "DoorAlarm.Siren": true
+      }
+    }
+  ]
+}

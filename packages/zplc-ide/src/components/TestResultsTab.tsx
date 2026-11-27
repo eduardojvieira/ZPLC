@@ -9,6 +9,8 @@ import { useT } from '../i18n';
 import { locateJsonPointer } from '../refs/jsonPlace';
 import { useProjectTests } from '../projectTests/useProjectTests';
 import { usePlantDocument } from '../store/usePlantDocument';
+import { useAssistantProvider } from '../shell/useSelection';
+import { failureIntent, openAssistantWith } from '../store/useAssistantEntry';
 import { useWorkspaceTestResult } from '../shell/workspaceTestResult';
 import { useIDEStore } from '../store/useIDEStore';
 import { findFileInTree } from '../utils/fileSystem';
@@ -92,6 +94,7 @@ export function TestResultsTab({ runDisabled = false, workspaceScenarioLink, can
   const records = useProjectTests((state) => state.records);
   const running = useProjectTests((state) => state.running);
   const run = useProjectTests((state) => state.run);
+  const assistantAvailable = useAssistantProvider((state) => state.available);
   const safety = useProjectTests((state) => state.safety);
   const runScenario = useProjectTests((state) => state.runScenario);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -171,6 +174,7 @@ export function TestResultsTab({ runDisabled = false, workspaceScenarioLink, can
         passedIds={verdict.passedIds}
         boundary={presentation.hasEvidence ? 'simulation' : null}
         onScenarioStep={(failure) => void openStep(failure)}
+        onExplain={assistantAvailable ? (failure) => openAssistantWith(failureIntent(failure)) : undefined}
         onTraceTime={(failure) => {
           setHighlight({ scenarioId: failure.id, atMs: failure.atMs! });
           setDetailsOpen(true);

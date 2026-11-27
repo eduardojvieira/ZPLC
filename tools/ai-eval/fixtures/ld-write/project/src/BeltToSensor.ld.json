@@ -1,0 +1,49 @@
+{
+  "name": "BeltToSensor",
+  "description": "Start a belt with a button press and stop it when a box reaches the sensor.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Running",
+        "type": "BOOL",
+        "comment": "Memory: the belt has been started and the box has not arrived"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "StartButton.pressed: start the belt"
+      },
+      {
+        "name": "EyeFar",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "EyeFar.detect: the sensor at the far end"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Run",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Belt1.run: run the belt"
+      },
+      {
+        "name": "Emit",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Emitter1.emit: put one box on the belt"
+      }
+    ]
+  },
+  "rungs": [],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

@@ -141,4 +141,22 @@ describe('catalogue for learners', () => {
     expect(select.querySelectorAll('optgroup').length).toBe(0);
     expect(values(select)).toEqual(flat.map((d) => d.id));
   });
+
+  it('without an idPrefix the ids and their references are the ones of before', () => {
+    const view = dom.render(
+      <PartList
+        {...base}
+        catalogue={all}
+        locale="en"
+        parts={[{ id: 'p1', part: all[0]!.id, name: 'P1' } as never]}
+        problems={[{ partId: 'p1', path: 'x', message: 'bad' }]}
+      />,
+    );
+    expect(view.container.querySelector('section')!.getAttribute('aria-labelledby')).toBe('plant-editor-parts');
+    expect(view.container.querySelector('#plant-editor-parts')).toBeTruthy();
+    expect(view.container.querySelector('select')!.getAttribute('aria-describedby')).toBe('plant-editor-part-doc');
+    expect(view.container.querySelector('#plant-editor-part-doc')).toBeTruthy();
+    expect(view.container.querySelector('#plant-editor-problems-p1')).toBeTruthy();
+    expect(view.container.querySelector('li[data-part="p1"] button')!.getAttribute('aria-describedby')).toBe('plant-editor-problems-p1');
+  });
 });

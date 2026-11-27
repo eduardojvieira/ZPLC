@@ -47,3 +47,8 @@ export function useGuideCommands(): void {
     };
   }, []);
 }
+
+/** `learn.check` (GDE-004): the Guide hands over the function its Check button calls; the command is listed while a Guide is shown. */
+export function useGuideCheckCommand(check: () => void): void {
+  useEffect(() => bindCommands({ 'learn.check': check }), [check]);
+}

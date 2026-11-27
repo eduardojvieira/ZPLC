@@ -8,6 +8,8 @@ import { isFileSystemAccessSupported } from '../types';
 import { useIDEStore } from '../store/useIDEStore';
 import { useAppSettings } from '../store/useAppSettings';
 import { useT, type MessageKey } from '../i18n';
+import { AskAssistantButton } from './agent/AskAssistantButton';
+import { lessonIntent } from '../store/useAssistantEntry';
 import type { WorkspaceTestPresentation } from './workspaceTestPresentation';
 import { describeFailure } from '../learn/gradeRecord';
 import type { GradeRecord, LessonNote } from '../../shared/learnProgressModel';
@@ -321,6 +323,11 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
               <p className="mt-1 leading-5">{hint}</p>
             </details>
           ))}
+          <AskAssistantButton
+            label={t('assistant.askHint')}
+            intent={() => lessonIntent(lesson.id, lesson.title)}
+            className="mt-1 underline underline-offset-2"
+          />
           {hideSolutions ? (
             <p data-learn-solutions-hidden className="mt-2 text-xs leading-5 text-[var(--color-surface-300)]">
               {t('learn.solutionsHidden')}

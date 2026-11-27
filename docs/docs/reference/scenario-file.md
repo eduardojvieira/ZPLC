@@ -107,6 +107,522 @@ An event has `atMs` and `set`.
 }
 ```
 
+## The file as a schema
+
+The schema, the accepted values and worked examples of `tests/*.scenario.json`. A scenario with a `scene` block runs on the project scene: its script presses the panel, and its expectations can read plant facts (`fact:<name>`).
+
+### JSON Schema
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "zplc://formats/scenario",
+  "title": "ZPLC test scenario (tests/*.scenario.json)",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "id",
+    "tickMs",
+    "durationMs",
+    "events",
+    "expectations"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "At most 128 characters."
+    },
+    "tickMs": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The task interval; a multiple of the plant step (5 ms) with a scene."
+    },
+    "durationMs": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "A multiple of tickMs; at most 10000 samples."
+    },
+    "plant": {
+      "enum": [
+        "motor-v1",
+        "conveyor-v1",
+        "tank-v1",
+        "pedestrian-v1"
+      ],
+      "description": "A 2.0 plant; excludes `scene`."
+    },
+    "scene": {
+      "type": "object",
+      "required": [
+        "file",
+        "map",
+        "script"
+      ],
+      "additionalProperties": false,
+      "description": "Runs on the project scene; excludes `plant`.",
+      "properties": {
+        "file": {
+          "type": "string",
+          "description": "scene.json"
+        },
+        "map": {
+          "type": "string",
+          "description": "plant-map.json"
+        },
+        "script": {
+          "type": "array",
+          "description": "Each event has atMs and exactly one of operate, emit, fault.",
+          "items": {
+            "type": "object",
+            "required": [
+              "atMs"
+            ],
+            "properties": {
+              "atMs": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Milliseconds, a multiple of tickMs, at most durationMs."
+              },
+              "operate": {
+                "type": "object",
+                "required": [
+                  "signal",
+                  "value"
+                ],
+                "properties": {
+                  "signal": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "type": [
+                      "boolean",
+                      "number"
+                    ]
+                  }
+                }
+              },
+              "emit": {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "at"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string"
+                  },
+                  "at": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                }
+              },
+              "fault": {
+                "type": "object",
+                "required": [
+                  "part",
+                  "action"
+                ],
+                "properties": {
+                  "part": {
+                    "type": "string"
+                  },
+                  "action": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "atMs",
+          "set"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "atMs": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Milliseconds, a multiple of tickMs, at most durationMs."
+          },
+          "set": {
+            "type": "object",
+            "description": "`Program.Input` -> true/false: inputs (IPI) the plant does not own.",
+            "additionalProperties": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "expectations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "required": [
+              "kind",
+              "atMs",
+              "condition"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "enum": [
+                  "AT"
+                ]
+              },
+              "atMs": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Milliseconds, a multiple of tickMs, at most durationMs."
+              },
+              "condition": {
+                "type": "object",
+                "description": "`Program.Output` -> true/false (an output, OPI). In a scene scenario also `fact:<name>` -> true/false, an exact whole number for an integer fact, or { \"min\", \"max\" } (either or both) for a real fact. 1-64 entries.",
+                "additionalProperties": {
+                  "type": [
+                    "boolean",
+                    "number",
+                    "object"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "kind",
+              "fromMs",
+              "withinMs",
+              "condition"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "enum": [
+                  "WITHIN",
+                  "EVENTUALLY",
+                  "RISING",
+                  "FALLING"
+                ]
+              },
+              "fromMs": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Milliseconds, a multiple of tickMs, at most durationMs."
+              },
+              "withinMs": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Milliseconds, a multiple of tickMs, at most durationMs."
+              },
+              "condition": {
+                "type": "object",
+                "description": "`Program.Output` -> true/false (an output, OPI). In a scene scenario also `fact:<name>` -> true/false, an exact whole number for an integer fact, or { \"min\", \"max\" } (either or both) for a real fact. 1-64 entries.",
+                "additionalProperties": {
+                  "type": [
+                    "boolean",
+                    "number",
+                    "object"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "kind",
+              "fromMs",
+              "forMs",
+              "condition"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "enum": [
+                  "FOR"
+                ]
+              },
+              "fromMs": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Milliseconds, a multiple of tickMs, at most durationMs."
+              },
+              "forMs": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Milliseconds, a multiple of tickMs, at most durationMs."
+              },
+              "condition": {
+                "type": "object",
+                "description": "`Program.Output` -> true/false (an output, OPI). In a scene scenario also `fact:<name>` -> true/false, an exact whole number for an integer fact, or { \"min\", \"max\" } (either or both) for a real fact. 1-64 entries.",
+                "additionalProperties": {
+                  "type": [
+                    "boolean",
+                    "number",
+                    "object"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "kind",
+              "fromMs",
+              "condition",
+              "until"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "enum": [
+                  "UNTIL"
+                ]
+              },
+              "fromMs": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Milliseconds, a multiple of tickMs, at most durationMs."
+              },
+              "condition": {
+                "type": "object",
+                "description": "`Program.Output` -> true/false (an output, OPI). In a scene scenario also `fact:<name>` -> true/false, an exact whole number for an integer fact, or { \"min\", \"max\" } (either or both) for a real fact. 1-64 entries.",
+                "additionalProperties": {
+                  "type": [
+                    "boolean",
+                    "number",
+                    "object"
+                  ]
+                }
+              },
+              "until": {
+                "type": "object",
+                "description": "`Program.Input` -> true/false: inputs (IPI) the plant does not own.",
+                "additionalProperties": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "kind",
+              "condition"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "enum": [
+                  "ALWAYS",
+                  "NEVER"
+                ]
+              },
+              "condition": {
+                "type": "object",
+                "description": "`Program.Output` -> true/false (an output, OPI). In a scene scenario also `fact:<name>` -> true/false, an exact whole number for an integer fact, or { \"min\", \"max\" } (either or both) for a real fact. 1-64 entries.",
+                "additionalProperties": {
+                  "type": [
+                    "boolean",
+                    "number",
+                    "object"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+### Accepted values
+
+#### Kinds of expectation
+
+`AT`, `WITHIN`, `FOR`, `EVENTUALLY`, `ALWAYS`, `NEVER`, `UNTIL`, `RISING`, `FALLING`
+
+#### Plant models
+
+`motor-v1`, `conveyor-v1`, `tank-v1`, `pedestrian-v1`
+
+#### Events of a scene script
+
+`operate`, `emit`, `fault`
+
+#### Integer facts (compared as a count)
+
+`itemsEmitted`, `itemsRemoved`, `itemsDropped`, `itemsCollided`, `itemsAssembled`, `emitted:<Name>`, `delivered:<Name>`, `count:<Name>`, `highs:<Name>`, `picked:<Name>`, `placed:<Name>`, `drops:<Name>`, `sorted:<Name>`, `misrouted:<Name>`, `stored:<Name>`, `produced:<Name>`, `misfires:<Name>`, `blocked:<Name>`, `stacked:pallet:<index>`, `layers:pallet:<index>`, `loaded:crate:<index>`
+
+#### Real facts (compared with min and max)
+
+`position:<box\|pallet>:<index>`, `level:<Name>`, `volume:<Name>`, `spilledL:<Name>`, `axis:<Name>:<x\|y\|z>`
+
+#### Boolean facts
+
+`inBand:<Name>`, `cell:<Name>:<column>:<level>`
+
+### Worked examples
+
+#### Plain I/O: events drive the inputs, five kinds of expectation
+
+```json
+{
+  "schemaVersion": 1,
+  "id": "belt-latch",
+  "tickMs": 10,
+  "durationMs": 2000,
+  "events": [
+    {
+      "atMs": 100,
+      "set": {
+        "Belt.Start": true
+      }
+    },
+    {
+      "atMs": 200,
+      "set": {
+        "Belt.Start": false
+      }
+    },
+    {
+      "atMs": 1000,
+      "set": {
+        "Belt.EyeFar": true
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "Belt.Run": false
+      }
+    },
+    {
+      "kind": "WITHIN",
+      "fromMs": 100,
+      "withinMs": 50,
+      "condition": {
+        "Belt.Run": true
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 300,
+      "forMs": 600,
+      "condition": {
+        "Belt.Run": true
+      }
+    },
+    {
+      "kind": "EVENTUALLY",
+      "fromMs": 1000,
+      "withinMs": 100,
+      "condition": {
+        "Belt.Run": false
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "Belt.Late": true
+      }
+    }
+  ]
+}
+```
+
+#### On the scene, with a fact count and a real fact range
+
+```json
+{
+  "schemaVersion": 1,
+  "id": "belt-to-sensor",
+  "tickMs": 10,
+  "durationMs": 8000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      {
+        "atMs": 200,
+        "operate": {
+          "signal": "StartButton.pressed",
+          "value": true
+        }
+      },
+      {
+        "atMs": 400,
+        "operate": {
+          "signal": "StartButton.pressed",
+          "value": false
+        }
+      }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 100,
+      "condition": {
+        "Belt.Run": false
+      }
+    },
+    {
+      "kind": "EVENTUALLY",
+      "fromMs": 0,
+      "withinMs": 8000,
+      "condition": {
+        "fact:count:EyeFar": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 8000,
+      "condition": {
+        "Belt.Run": false,
+        "fact:position:box:0": {
+          "min": 0.2,
+          "max": 1.2
+        }
+      }
+    },
+    {
+      "kind": "ALWAYS",
+      "condition": {
+        "fact:itemsDropped": false
+      }
+    }
+  ]
+}
+```
+
 {/* <<< END GENERATED: reference/scenario-file <<< */}
 
 This page is generated: to change it, change its source and run `bun run docs:generate`.

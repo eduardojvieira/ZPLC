@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "name": "Buffer and release",
+  "shortestPulseMs": 800,
+  "parts": [
+    {
+      "id": "buffer-belt",
+      "part": "belt",
+      "name": "Buffer1",
+      "position": [-1.9, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": { "length": 3, "speedMps": 0.5 }
+    },
+    {
+      "id": "release-belt",
+      "part": "belt",
+      "name": "Release1",
+      "position": [0.6, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": { "length": 2, "speedMps": 0.5 }
+    },
+    { "id": "emitter", "part": "emitter", "name": "Emitter1", "position": [-3.2, 0.5, 0], "rotationYDeg": 0, "config": { "maxItems": 5 } },
+    { "id": "blade", "part": "stop-blade", "name": "Blade1", "position": [0, 0.5, 0], "rotationYDeg": 0, "config": {} },
+    {
+      "id": "eye-full",
+      "part": "sensor-diffuse",
+      "name": "EyeFull",
+      "position": [-1.8, 0.5, -0.5],
+      "rotationYDeg": 270,
+      "config": { "rangeM": 1 }
+    },
+    {
+      "id": "eye-blade",
+      "part": "sensor-diffuse",
+      "name": "EyeBlade",
+      "position": [-0.2, 0.5, -0.5],
+      "rotationYDeg": 270,
+      "config": { "rangeM": 1 }
+    },
+    {
+      "id": "eye-release",
+      "part": "sensor-diffuse",
+      "name": "EyeRelease",
+      "position": [0.1, 0.5, -0.5],
+      "rotationYDeg": 270,
+      "config": { "rangeM": 1 }
+    },
+    {
+      "id": "remover",
+      "part": "remover",
+      "name": "Remover1",
+      "position": [1.5, 0.65, 0],
+      "rotationYDeg": 0,
+      "config": { "width": 0.4, "height": 0.6, "depth": 0.6 }
+    },
+    { "id": "start", "part": "push-button", "name": "StartButton", "position": [-3.2, 0.5, -0.7], "rotationYDeg": 0, "config": {} },
+    { "id": "release", "part": "push-button", "name": "ReleaseButton", "position": [-0.5, 0.5, -0.7], "rotationYDeg": 0, "config": {} },
+    { "id": "done", "part": "indicator-light", "name": "DoneLight", "position": [1.3, 0.5, -0.7], "rotationYDeg": 0, "config": {} },
+    { "id": "fault", "part": "indicator-light", "name": "FaultLight", "position": [1.0, 0.5, -0.7], "rotationYDeg": 0, "config": {} }
+  ],
+  "cameras": [{ "name": "Overview", "position": [-0.8, 2.6, 3.4], "target": [-0.8, 0.5, 0] }]
+}

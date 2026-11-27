@@ -48,6 +48,14 @@ export const journeysU2T2: Journey[] = [
       assert((await rowStatus(app, paths[0]!)).includes('Not run'), 'Running one test must leave the others as they were');
 
       // break the program in the editor: the run saves it first (FLW-006), and the earlier result is older than the sources
+      await app.until(
+        'the program in the editor',
+        async () =>
+          (await app.eval<boolean>(
+            `(async () => { const monaco = await ${MONACO_MODULE}; ` +
+              `return Boolean(monaco.editor.getEditors()[0]?.getModel()?.getValue().includes('BeltCommand')); })()`,
+          )) || undefined,
+      );
       const broken = await app.eval<boolean>(
         `(async () => { const monaco = await ${MONACO_MODULE}; const model = monaco.editor.getEditors()[0]?.getModel(); ` +
           `if (!model) return false; const text = model.getValue(); const next = text.replace('BeltCommand := Requested AND NOT ` +

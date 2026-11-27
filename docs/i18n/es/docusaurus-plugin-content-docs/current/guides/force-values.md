@@ -14,7 +14,7 @@ Un forzado mantiene una variable en un valor que usted elige, sin importar lo qu
 :::danger Forzar es una acción humana
 En el simulador un forzado es inofensivo. En un controlador conectado a una planta, un forzado puede arrancar un motor. Requiere una persona con la autoridad para hacerlo y un procedimiento de la instalación.
 
-Los asistentes de IA y el servidor MCP nunca fuerzan un valor, ni en un simulador ni en un dispositivo (regla 8 de AGENTS.md). Un forzado siempre parte del clic de una persona o de su comando en la consola. Vea [IA, privacidad y revisión humana](../ide/ai-privacy.md).
+Los asistentes de IA y el servidor MCP nunca fuerzan un valor, nunca cambian RUN/STOP, nunca graban firmware, nunca despliegan y nunca abren un puerto serie en un equipo ni en una sesión que maneja una persona (regla 8 de AGENTS.md). Un agente puede fijar entradas y avanzar paso a paso un simulador privado suyo, uno que el servidor MCP arranca solo para ese agente; eso no es un forzado y nunca llega a su simulador ni a su controlador. Un forzado siempre parte del clic de una persona o de su comando en la consola. Vea [IA, privacidad y revisión humana](../ide/ai-privacy.md).
 :::
 
 ## En el simulador

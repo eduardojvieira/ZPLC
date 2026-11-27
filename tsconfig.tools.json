@@ -25,6 +25,7 @@
   },
   "include": [
     "tools/ci/**/*.ts",
+    "tools/ai-eval/**/*.ts",
     "tools/contract/**/*.ts",
     "tools/docs/**/*.ts",
     "tools/fuzz/**/*.ts",

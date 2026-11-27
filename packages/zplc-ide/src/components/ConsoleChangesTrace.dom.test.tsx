@@ -227,7 +227,7 @@ describe('the assistant proposes a change set that a person reviews and saves (I
   };
   const ask = async (user: ReturnType<typeof dom.render>['user']) => {
     await ready(user);
-    await user.click(dom.screen.getByRole('radio', { name: 'edit' }));
+    await user.click(dom.screen.getByRole('radio', { name: dom.t('assistant.mode.edit') }));
     await user.type(panel().getByRole('textbox', { name: dom.t('console.request') }), 'Add a lamp');
     await dom.waitFor(() =>
       expect((panel().getByRole('button', { name: dom.t('console.sendRequest') }) as HTMLButtonElement).disabled).toBe(false),
@@ -498,6 +498,7 @@ describe('the assistant proposes a change set that a person reviews and saves (I
       workspaceId: 'w1',
       mode: 'ask',
       prompt: 'What does it do?',
+      locale: 'en',
       activeFile: { fileId: 'file:src/Main.st', path: 'src/Main.st' },
     });
   });

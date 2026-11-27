@@ -634,6 +634,19 @@ function safeAiLessonContext(value: unknown): boolean {
   return typeof id === 'string' && AI_LESSON_ID.test(id) && (stage === undefined || (typeof stage === 'string' && AI_STAGE.test(stage)));
 }
 
+/** The earlier exchanges of one conversation (AI-18): at most three, each a user or assistant text of at most 2 KiB. */
+function safeAiHistory(value: unknown): boolean {
+  const turns = safeDenseArray(value, 6);
+  return Boolean(
+    turns?.every((entry) => {
+      const turn = safeExactRecord(entry, ['role', 'text']);
+      const role = turn && ownValue(turn, 'role');
+      const text = turn && ownValue(turn, 'text');
+      return (role === 'user' || role === 'assistant') && typeof text === 'string' && text.length > 0 && Buffer.byteLength(text) <= 2048;
+    }),
+  );
+}
+
 function safeAiTrace(value: unknown): boolean {
   const trace = safeExactRecord(value, ['atMs', 'signal', 'value']);
   if (!trace) return false;
@@ -664,6 +677,7 @@ export function isAllowedAiProviderRequest(value: unknown): value is {
   selection?: { startLine: number; endLine: number; text: string } | { element: string };
   lessonContext?: { lessonId: string; stage?: string };
   locale?: 'en' | 'es';
+  history?: Array<{ role: 'user' | 'assistant'; text: string }>;
 } {
   const request = safeRecord(value);
   if (!request) return false;
@@ -680,6 +694,7 @@ export function isAllowedAiProviderRequest(value: unknown): value is {
     'selection',
     'lessonContext',
     'locale',
+    'history',
   ];
   if (!keys.every((key) => allowedKeys.includes(key))) return false;
   const workspaceId = ownValue(request, 'workspaceId');
@@ -714,7 +729,9 @@ export function isAllowedAiProviderRequest(value: unknown): value is {
   const selection = ownValue(request, 'selection');
   const lessonContext = ownValue(request, 'lessonContext');
   const locale = ownValue(request, 'locale');
+  const history = ownValue(request, 'history');
   if (
+    (history !== undefined && !safeAiHistory(history)) ||
     (failedScenarios !== undefined && !safeAiFailedScenarios(failedScenarios)) ||
     (facts !== undefined && !safeAiFacts(facts)) ||
     (selection !== undefined && !safeAiSelection(selection)) ||

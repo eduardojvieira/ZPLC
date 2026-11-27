@@ -14,7 +14,7 @@ import { assert, packageRoot } from './run-desktop-smoke';
 import { NotPossible, launchApp, startHarness, type Harness } from './journeyApp';
 import { JOURNEYS, runPackagedSecurityProbes, type Journey } from './journeys';
 import { journeysPlant } from './journeys/plantJourneys';
-import { journeysPlantFraming } from './journeys013/plantFraming';
+import { journeysPlantFraming, withGlWindow } from './journeys013/plantFraming';
 import { journeysPlantLook } from './journeys013/plantLook';
 import { discoverPackagedExecutable } from './run-packaged-desktop-smoke';
 
@@ -116,19 +116,75 @@ async function runPackaged(distribution: string): Promise<void> {
   }
 }
 
+/**
+ * What the probe learned about WebGL 2. Only a page that loaded and returned no context is `absent`; a launch error, a timeout or a
+ * crash proves nothing about the host, so it is `error` and the journeys run and pass or fail on their own.
+ */
+export type WebGlProbe = { status: 'available' } | { status: 'error' } | { status: 'absent'; reason: string };
+
+/**
+ * Decides which WebGL 2 plant journeys (VIS-002, VIS-016) run. A really absent context turns them into `not-possible` results, so the
+ * summary lists them and `judge` fails the run unless they are in KNOWN_GAPS. Kept pure so unit tests need no Electron.
+ */
+export function selectJourneys(
+  base: readonly Journey[],
+  webgl: readonly Journey[],
+  options: { only?: string; probe: WebGlProbe },
+): { selected: Journey[]; notPossible: Array<{ name: string; example: string; outcome: Outcome }> } {
+  const matches = (journey: Journey) => !options.only || journey.name.toLowerCase().includes(options.only.toLowerCase());
+  const selectedBase = base.filter(matches);
+  const matchingWebgl = webgl.filter(matches);
+  const { probe } = options;
+  if (probe.status !== 'absent') return { selected: [...selectedBase, ...matchingWebgl], notPossible: [] };
+  return {
+    selected: selectedBase,
+    notPossible: matchingWebgl.map(({ name, example }) => ({
+      name,
+      example,
+      outcome: { status: 'not-possible', detail: probe.reason, notes: [] },
+    })),
+  };
+}
+
+/** Probes whether headless Electron with SwiftShader can create a WebGL 2 context on this host. */
+async function probeWebGL2(scratch: string, runtime: string): Promise<WebGlProbe> {
+  const root = mkdtempSync(join(scratch, 'webgl-probe-'));
+  try {
+    const ok = await withGlWindow(root, runtime, async (page) =>
+      Boolean(await page.evaluate(`Boolean(document.createElement('canvas').getContext('webgl2'))`)),
+    );
+    return ok
+      ? { status: 'available' }
+      : { status: 'absent', reason: 'WebGL 2 is not available in headless Electron with SwiftShader on this host' };
+  } catch (error) {
+    const detail = error instanceof Error ? error.message.split('\n')[0] : String(error);
+    console.log(`WebGL 2 probe could not run (${detail}); the journeys run.`);
+    return { status: 'error' };
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
 async function main(): Promise<void> {
   if (process.env.ZPLC_PACKAGED_DIST) {
     await runPackaged(process.env.ZPLC_PACKAGED_DIST);
     return;
   }
   const only = process.env.ZPLC_JOURNEY_ONLY;
-  const selected = [...JOURNEYS, ...journeysPlant, ...journeysPlantFraming, ...journeysPlantLook].filter(
-    (journey) => !only || journey.name.toLowerCase().includes(only.toLowerCase()),
-  );
-  assert(selected.length > 0, `No journey matches ZPLC_JOURNEY_ONLY=${only}`);
+  const baseJourneys = [...JOURNEYS, ...journeysPlant];
+  const webglJourneys = [...journeysPlantFraming, ...journeysPlantLook];
+  const matchesOnly = (journey: Journey) => !only || journey.name.toLowerCase().includes(only.toLowerCase());
+  const needsWebgl = webglJourneys.some(matchesOnly);
+  assert(baseJourneys.some(matchesOnly) || needsWebgl, `No journey matches ZPLC_JOURNEY_ONLY=${only}`);
   const { harness, scratch, stop } = await startHarness();
   const results: Array<{ name: string; example: string; outcome: Outcome }> = [];
   try {
+    const probe: WebGlProbe = needsWebgl ? await probeWebGL2(scratch, harness.runtime) : { status: 'available' };
+    const { selected, notPossible } = selectJourneys(baseJourneys, webglJourneys, { only, probe });
+    for (const skipped of notPossible) {
+      results.push(skipped);
+      console.log(`${skipped.outcome.status.toUpperCase().padEnd(12)} ${skipped.name} (${skipped.example}): ${skipped.outcome.detail}`);
+    }
     for (const journey of selected) {
       const started = Date.now();
       const outcome = await runJourney(harness, journey, scratch);

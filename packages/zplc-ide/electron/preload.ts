@@ -261,6 +261,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
       selection?: { startLine: number; endLine: number; text: string } | { element: string };
       lessonContext?: { lessonId: string; stage?: string };
       locale?: 'en' | 'es';
+      history?: Array<{ role: 'user' | 'assistant'; text: string }>;
     }) => ipcRenderer.invoke(AI_PROVIDER_CHANNEL.REQUEST, request) as Promise<unknown>,
     cancel: () => ipcRenderer.invoke(AI_PROVIDER_CHANNEL.CANCEL) as Promise<{ requested: boolean }>,
   },
@@ -372,6 +373,7 @@ declare global {
           selection?: { startLine: number; endLine: number; text: string } | { element: string };
           lessonContext?: { lessonId: string; stage?: string };
           locale?: 'en' | 'es';
+          history?: Array<{ role: 'user' | 'assistant'; text: string }>;
         }) => Promise<unknown>;
         cancel: () => Promise<{ requested: boolean }>;
       };

@@ -1,0 +1,145 @@
+{
+  "name": "BufferRelease",
+  "description": "A buffer station: load five boxes, hold them at a blade, release one per button press.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "StartButton.pressed: start loading the buffer"
+      },
+      {
+        "name": "ReleaseCmd",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "ReleaseButton.pressed: one press releases one box"
+      },
+      {
+        "name": "EyeFull",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "EyeFull.detect: sees the fifth box in the queue"
+      },
+      {
+        "name": "EyeBlade",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "EyeBlade.detect: sees the box waiting at the blade"
+      },
+      {
+        "name": "EyeRelease",
+        "type": "BOOL",
+        "address": "%I0.4",
+        "comment": "EyeRelease.detect: sees each box that leaves the blade"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "RunBuffer",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Buffer1.run"
+      },
+      {
+        "name": "RunRelease",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Release1.run"
+      },
+      {
+        "name": "Emit",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "Emitter1.emit"
+      },
+      {
+        "name": "Hold",
+        "type": "BOOL",
+        "address": "%Q0.3",
+        "comment": "Blade1.extend: the blade holds the queue while true"
+      },
+      {
+        "name": "Done",
+        "type": "BOOL",
+        "address": "%Q0.4",
+        "comment": "DoneLight.lit"
+      },
+      {
+        "name": "Fault",
+        "type": "BOOL",
+        "address": "%Q0.5",
+        "comment": "FaultLight.lit"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "step_idle",
+      "name": "IDLE",
+      "isInitial": true,
+      "position": {
+        "x": 200,
+        "y": 50
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_IDLE",
+          "comment": "Everything off"
+        }
+      ]
+    },
+    {
+      "id": "step_load",
+      "name": "LOAD",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 250
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_LOAD",
+          "comment": "Belts on and a box on the buffer"
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t_start",
+      "fromStep": "step_idle",
+      "toStep": "step_load",
+      "condition": "Start",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 150
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "A_IDLE",
+      "name": "A_IDLE",
+      "type": "ST",
+      "body": "RunBuffer := FALSE; RunRelease := FALSE; Emit := FALSE; Hold := FALSE; Done := FALSE; Fault := FALSE;"
+    },
+    {
+      "id": "A_LOAD",
+      "name": "A_LOAD",
+      "type": "ST",
+      "body": "RunBuffer := TRUE; RunRelease := TRUE; Emit := TRUE; Hold := FALSE; Done := FALSE;"
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

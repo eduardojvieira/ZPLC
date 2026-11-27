@@ -4,6 +4,7 @@
     { "pattern": "packages/zplc-ide/**/*.test.{ts,tsx}", "job": "ide-tests", "command": "bun run test:ide" },
     { "pattern": "tools/ci/**/*.test.ts", "job": "typescript", "command": "bun test ./tools/ci" },
     { "pattern": "tools/docs/**/*.test.ts", "job": "typescript", "command": "bun test ./tools/docs" },
+    { "pattern": "tools/ai-eval/**/*.test.ts", "job": "typescript", "command": "bun test ./tools/ai-eval" },
     { "pattern": "tools/history/**/*.test.ts", "job": "typescript", "command": "bun test ./tools/history" },
     { "pattern": "scripts/release-artifacts.test.mjs", "job": "typescript", "command": "node --test scripts/release-artifacts.test.mjs" },
     {

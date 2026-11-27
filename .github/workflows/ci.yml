@@ -64,6 +64,13 @@ jobs:
           test -x "$ZPLC_NATIVE_SIM_BIN"
           bun test ./tools/docs
 
+      # AIX-009: the fixed evaluation task set checks itself on the native runtime (every seeded failure fails, every reference
+      # passes) and the owner-launched run scripts are tried in their dry mode only; no model is called here.
+      - name: Test the AI evaluation task set
+        env:
+          ZPLC_NATIVE_SIM_BIN: ${{ runner.temp }}/zplc-native-sim-build/zplc_runtime
+        run: bun test ./tools/ai-eval
+
       # The end-to-end rewrite case needs the pinned git-filter-repo and skips itself here; the list parsing runs.
       - name: Test history rewrite tooling
         run: bun test ./tools/history

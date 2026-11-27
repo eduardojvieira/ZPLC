@@ -3,28 +3,29 @@ slug: /guides/ai-and-mcp
 id: ai-and-mcp
 title: Use an AI assistant and MCP safely
 sidebar_label: AI and MCP
-description: 'Give an AI assistant read access to one project through the local MCP server, what it can ask for, what it can never do, and how to review what it proposes.'
+description: 'Connect an AI assistant to one project through the local MCP server: what it can read, write and debug, what it can never do, and how to review what it proposes.'
 tags: [how-to, ai, mcp, safety]
 ---
 
 # Use an AI assistant and MCP safely
 
-`zplc-mcp` is a local server of the Model Context Protocol. It lets an AI assistant inspect one project, read the source of its programs, compile it, run its scenario tests and read the evidence, so the assistant works from what the build and the simulator say and not from a guess. It runs on your computer and talks to the assistant over standard input and output. It opens no network port and no serial port.
+`zplc-mcp` is a local server of the Model Context Protocol. It lets an AI assistant inspect one project, read and write the source of its programs, compile it, run its scenario tests, debug it in a simulation of its own and read the evidence, so the assistant works from what the build and the simulator say and not from a guess. It runs on your computer and talks to the assistant over standard input and output. It opens no network port and no serial port.
 
 :::danger The assistant cannot touch a machine
-No tool of the server flashes a board, deploys a program, forces a value, starts or stops a device, opens a serial port or runs a shell (AGENTS.md rule 8). Those actions stay in ZPLC, where a person chooses them. The only tool that is not read-only, `firmware_build`, runs a local cross-build and stops there.
+No tool of the server forces a value, changes RUN/STOP, flashes a board, deploys a program, opens a serial port or runs a shell on hardware or on a session a person runs (AGENTS.md rule 8). Those actions stay in ZPLC, where a person chooses them. An agent may set inputs and step only a simulator that is private to it, one the server starts for that agent alone; that is not a force, and it never reaches your simulator or your controller. The tools that are not read-only are `workspace_write`, which writes project files inside the folder, the six `debug_` tools of the private simulation, and `firmware_build`, which runs a local cross-build and stops there.
 :::
 
 ## What the assistant may and may not do
 
-| The assistant may                                                          | The assistant may not                                                  |
-| -------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Read the saved source of your programs and a summary of the project        | Read unsaved editor content, or any file outside the project folder    |
-| Validate the project file, compile, list symbols                           | Write outside the project, write a credential, delete or rename a file |
-| Write a program, `zplc.json`, a scenario or the plant files, checked first | Write while a lesson hides its solutions                               |
-| Run your scenario tests on the simulator and read the trace                | Flash, deploy, force, run, stop, step a device, recover a board        |
-| Read which lessons of the course you passed (a read-only resource)         | Change your progress, or unlock a lesson                               |
-| Describe the boards of the manifest, with no probe of hardware             | Open a serial port, a socket or a shell                                |
+| The assistant may                                                          | The assistant may not                                                     |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Read the saved source of your programs and a summary of the project        | Read unsaved editor content, or any file outside the project folder       |
+| Validate the project file, compile, list symbols                           | Write outside the project, write a credential, delete or rename a file    |
+| Write a program, `zplc.json`, a scenario or the plant files, checked first | Write while a lesson hides its solutions                                  |
+| Run your scenario tests on the simulator and read the trace                | Flash, deploy, force, run, stop, step a device, recover a board           |
+| Set inputs and step a simulation the server starts for it alone            | Attach to your running simulation or to a device, or enter plant I/O mode |
+| Read which lessons of the course you passed (a read-only resource)         | Change your progress, or unlock a lesson                                  |
+| Describe the boards of the manifest, with no probe of hardware             | Open a serial port, a socket or a shell                                   |
 
 AI inside ZPLC follows the same boundary and has its own data rules: see [AI, privacy and human review](../ide/ai-privacy.md).
 
@@ -76,7 +77,7 @@ Most clients that run a local MCP server take a command and its arguments in a c
 
 ### One action in the app
 
-Open the project, then open **Preferences** and find **Connect an AI agent (MCP)**. Choose **Claude Code**, **Cursor** or **VS Code**. The panel shows the exact file and the exact text it would write, all inside the project folder:
+Open the project, then open **Preferences** and find **Connect an AI agent (MCP)**, or run **Connect an AI agent (MCP)** from the command palette, which opens that panel. Choose **Claude Code**, **Cursor** or **VS Code**. The panel shows the exact file and the exact text it would write, all inside the project folder:
 
 | Client      | File               | Key               |
 | ----------- | ------------------ | ----------------- |
@@ -89,7 +90,7 @@ Open the project, then open **Preferences** and find **Connect an AI agent (MCP)
 - The entry holds the `zplc-mcp` command, `--workspace` and, when ZPLC knows it, `--user-data`. It never holds a key or a secret. ZPLC finds `zplc-mcp` itself: first `ZPLC_MCP_BIN`, which must be the full path of an executable file, then the folders of your `PATH`. The entry holds the full path it found. `zplc-mcp` is a separate release asset, not part of the app: download the one for your system. When ZPLC cannot find it, the panel says so and keeps **Write config** and **Run self-check** off until you set `ZPLC_MCP_BIN` or add its folder to the `PATH` and start ZPLC again.
 - **Run self-check** runs `zplc-mcp --self-check` on the open project and shows whether it is ready, with the cause and the next step of each problem. It reads files only: it does not touch a device, a serial port or the network.
 
-The panel works on the folder that is open, so for a lesson it fills in the lesson folder for you, `<userData>/learn-workspaces/<lessonId>`, and the `--user-data` folder. That folder is `~/.config/zplc` on Linux, `~/Library/Application Support/zplc` on macOS and `%APPDATA%\zplc` on Windows.
+The panel works on the folder that is open, so for a lesson it fills in the lesson folder for you, `<userData>/learn-workspaces/<lessonId>`, and the `--user-data` folder. That folder is `~/.config/zplc` on Linux, `~/Library/Application Support/zplc` on macOS and `%APPDATA%\zplc` on Windows. So the folder of a lesson is `~/.config/zplc/learn-workspaces/<lessonId>` on Linux, `~/Library/Application Support/zplc/learn-workspaces/<lessonId>` on macOS and `%APPDATA%\zplc\learn-workspaces\<lessonId>` on Windows; you never have to look for it.
 
 ### The protocol revision
 
@@ -129,7 +130,7 @@ Ask for what a tool returns, so every claim of the assistant has a result behind
 | "What does this lesson ask?"              | `zplc://lesson/current`                                             | The goal, objectives and hints of the lesson, never its solution                                          |
 | "How is a Ladder file written?"           | `zplc://formats/{ld,fbd,sfc,scene,plant-map,scenario}`              | The JSON Schema, the accepted values and worked examples of the format                                    |
 
-[The MCP reference](../reference/mcp.md) lists all 26 tools and 26 resources. Every result states its `evidenceLevel` once, and the server gives a client instructions on how to work.
+[The MCP reference](../reference/mcp.md) lists all 26 tools and 26 resources. The file formats that the `zplc://formats/` resources serve are also pages: [Ladder](../reference/format-ld.md), [FBD](../reference/format-fbd.md), [SFC](../reference/format-sfc.md), [the scene](../reference/format-scene.md), [the plant map](../reference/plant-map-file.md) and [the scenario](../reference/scenario-file.md). Every result states its `evidenceLevel` once, and the server gives a client instructions on how to work.
 
 - **Program resources.** Both are read-only. They return the saved source of a program in any of the five languages, within the size limits of the project reader. `zplc://project/source/{name}` takes the file name as written in the URI (a space is `%20`). A name that is not in `src` answers `MCP_NOT_FOUND`, a name with a separator answers `MCP_INVALID_ARGUMENTS`, and a project the reader refuses answers `MCP_WORKSPACE_UNREADABLE`.
 - **Course progress.** The resource reads the progress file ZPLC keeps and answers which lessons are passed. It has no operation that writes progress, and a progress file of the first release is migrated in memory only, never written back. Without `--user-data` it answers `MCP_CAPABILITY_UNAVAILABLE`.
@@ -142,7 +143,7 @@ Ask for what a tool returns, so every claim of the assistant has a result behind
 
 ## 4. Review what the assistant proposes
 
-1. No tool or resource of the server changes your project: every tool is read-only, and `firmware_build` builds in an ephemeral place. When the client of the assistant edits files, read the change as a difference before you keep it.
+1. Only `workspace_write` changes your project, and only after `workspace_check_write` passes on the same files; the private simulation and `firmware_build` work in ephemeral places. Read what the assistant wrote as a difference before you keep it, and use your version control to return to the previous state: no tool deletes or renames a file.
 2. Compile and run the scenarios yourself, or ask for `compiler_check` and `tests_run` and read the diagnostics.
 3. For a change that moves an output, read the [safety page](../safety-and-limitations.md) and ask for `safety_check`, which checks the coverage of the incompatible outputs the project declares, before the change goes near a board.
 4. Put a program on a board only from ZPLC, where a person chooses the action.
@@ -153,7 +154,7 @@ AI inside ZPLC reads the open program and a project summary, and proposes a chan
 
 | Part                                                                                                                                                                                                                                            | Verified                                                                                                                                                                                      | Level |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
-| The server lists 15 tools when asked; `project_validate`, `compiler_check` and `tests_run` pass on a bundled project; `boards_list` answers with `--repository`; a client that opens with `initialize` of revision 2025-11-25 lists the tools   | Run by hand with a script that sends the requests over standard input and output, through `bun run --cwd=packages/zplc-ide mcp`, on the bundled project `pico_blinky_ton`; not repeated by CI | Host  |
+| The server lists its tools when asked; `project_validate`, `compiler_check` and `tests_run` pass on a bundled project; `boards_list` answers with `--repository`; a client that opens with `initialize` of revision 2025-11-25 lists the tools  | Run by hand with a script that sends the requests over standard input and output, through `bun run --cwd=packages/zplc-ide mcp`, on the bundled project `pico_blinky_ton`; not repeated by CI | Host  |
 | The built executable starts and lists its tools the way a 2026-07-28 client asks                                                                                                                                                                | The release build starts the executable and counts the tools                                                                                                                                  | Host  |
 | No tool reaches a device, a socket or a serial port                                                                                                                                                                                             | A test lists the registered tools and resources of the live server and traps every socket and serial entry point                                                                              | Host  |
 | The two program resources return the text and language of each of the five languages, and refuse a name that is not a program of `src`, a link and an oversized file; only `workspace_write` writes, inside the project                         | `packages/zplc-ide/src/mcp/server.test.ts` and `deviceLink.test.ts`                                                                                                                           | Host  |

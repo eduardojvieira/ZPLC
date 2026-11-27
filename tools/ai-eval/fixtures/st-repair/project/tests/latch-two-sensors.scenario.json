@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "latch-two-sensors",
+  "tickMs": 10,
+  "durationMs": 8000,
+  "scene": { "file": "scene.json", "map": "plant-map.json", "script": [] },
+  "events": [],
+  "expectations": [
+    { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 100, "condition": { "fact:count:EyeA": true } },
+    { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 8000, "condition": { "fact:count:EyeB": true } },
+    { "kind": "AT", "atMs": 8000, "condition": { "LatchTwoSensors.Run": false } },
+    { "kind": "ALWAYS", "condition": { "fact:itemsDropped": false } }
+  ]
+}

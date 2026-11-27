@@ -72,6 +72,16 @@ odd/
 /docs/i18n/es/docusaurus-plugin-content-docs/current/reference/shell-commands.md
 /docs/docs/reference/device-protocol.md
 /docs/i18n/es/docusaurus-plugin-content-docs/current/reference/device-protocol.md
+/docs/docs/reference/format-ld.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/format-ld.md
+/docs/docs/reference/format-fbd.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/format-fbd.md
+/docs/docs/reference/format-sfc.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/format-sfc.md
+/docs/docs/reference/format-scene.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/format-scene.md
+/docs/docs/reference/plant-map-file.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/plant-map-file.md
 
 # Files that tools/contract/generate.py and generate_protocol.py write whole, and the golden vectors they record.
 /packages/zplc-compiler/src/contract.generated.ts

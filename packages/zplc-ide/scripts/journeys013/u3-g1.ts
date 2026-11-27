@@ -111,4 +111,89 @@ export const journeysU3G1: Journey[] = [
       void en;
     },
   },
+  {
+    name: 'U3-G2 Check from the Guide saves an unsaved program, grades it and never opens the Tests surface',
+    example: 'none',
+    proves: ['GDE-004', 'FLW-006'],
+    partly: ['LRN-026'],
+    run: async (app, { root }) => {
+      const lesson = lessonOf;
+      const solution = readFileSync(join(packageRoot, 'projects', lesson.referenceExampleId, lesson.solutionProgram), 'utf8');
+      const folder = join(root, 'guide-lesson-g2');
+      mkdirSync(folder);
+      await app.eval(
+        `(() => { const key = 'zplc-ide-settings'; const stored = JSON.parse(localStorage.getItem(key) || '{}'); const target = ` +
+          `stored.settings ?? stored; target.unlockAllLessons = true; localStorage.setItem(key, JSON.stringify(stored)); })()`,
+      );
+      await app.cdp.command('Page.reload');
+      await app.until('the Welcome screen', async () => (await app.visible(button('Open project', 'contains'))) || undefined);
+      await app.cdp.command('Emulation.setFocusEmulationEnabled', { enabled: true });
+      await app.cdp.command('Page.bringToFront');
+      await app.click(button('Learn', 'prefix'), 'the Learn button on the Welcome screen');
+      await app.until('the Learn home', async () => (await app.visible(css(`[data-learn-start="${LESSON}"]`))) || undefined);
+      app.answer(folder);
+      await app.click(css(`[data-learn-start="${LESSON}"]`), 'the start of the lesson');
+      await app.until(
+        'the Guide of the lesson',
+        async () => (await app.visible(css(`${GUIDE} [data-guide-actions]`))) || undefined,
+        30_000,
+      );
+
+      // reads the stage: one stage at a time, with the files and the board closed
+      assert(await inGuide(app, `guide.querySelectorAll('[data-guide-stage]').length === 1`), 'The Guide does not show one stage.');
+      assert(
+        await inGuide(app, `guide.querySelector('[data-guide-files]')?.open === false`),
+        'The files and record of the lesson are not a closed disclosure.',
+      );
+      assert(await inGuide(app, `guide.querySelector('[data-learn-lesson-button]') === null`), 'The Guide holds a list of lessons.');
+      assert(await inGuide(app, `guide.querySelector('[data-guide-next-lesson]') === null`), 'Next lesson is offered before a pass.');
+
+      // changes the program and does NOT save it: Check saves it by the preference "Save before build and run" (Always)
+      await app.until(
+        'the editor with the program',
+        async () =>
+          (await app.eval<boolean>(
+            `(async () => { const monaco = await ${MONACO_MODULE}; return monaco.editor.getEditors().length > 0; })()`,
+          )) || undefined,
+        30_000,
+      );
+      await app.eval(
+        `(async () => { const monaco = await ${MONACO_MODULE}; ` +
+          `monaco.editor.getEditors()[0].getModel().setValue(${JSON.stringify(solution)}); })()`,
+      );
+      await app.until(
+        'Check to be enabled with the document unsaved',
+        async () => (await app.eval<boolean>(`document.querySelector('${GUIDE} [data-learn-check]')?.disabled === false`)) || undefined,
+      );
+      const testsTabBefore = await app.eval<string>(
+        `document.getElementById('console-tab-tests')?.getAttribute('aria-selected') ?? 'absent'`,
+      );
+      const selectedBefore = await app.eval<string>(
+        `[...document.querySelectorAll('[role="tab"][id^="console-tab-"][aria-selected="true"]')].map((tab) => tab.id).join()`,
+      );
+      await app.click(css(`${GUIDE} [data-learn-check]`), 'Check in the Guide');
+      await app.until(
+        'the Guide to grade the program as passed',
+        async () => (await app.eval<boolean>(`document.querySelector('${GUIDE} [data-learn-grade="passed"]') !== null`)) || undefined,
+        60_000,
+      );
+      // the Tests surface stayed as it was: the Tests tab is not selected and the selected console tab did not change
+      const testsTabAfter = await app.eval<string>(
+        `document.getElementById('console-tab-tests')?.getAttribute('aria-selected') ?? 'absent'`,
+      );
+      const selectedAfter = await app.eval<string>(
+        `[...document.querySelectorAll('[role="tab"][id^="console-tab-"][aria-selected="true"]')].map((tab) => tab.id).join()`,
+      );
+      assert(
+        testsTabAfter === testsTabBefore && testsTabAfter !== 'true',
+        `Check touched the Tests tab: ${testsTabBefore} then ${testsTabAfter}.`,
+      );
+      assert(selectedAfter === selectedBefore, `Check changed the console tab: ${selectedBefore} then ${selectedAfter}.`);
+      assert(
+        await inGuide(app, `guide.querySelector('[data-test-verdict-sentence]') !== null`),
+        'The Guide does not show the verdict sentence.',
+      );
+      assert(app.errors.length === 0, `Renderer errors: ${app.errors.join('; ')}`);
+    },
+  },
 ];
