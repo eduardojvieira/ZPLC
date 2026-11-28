@@ -465,7 +465,7 @@ describe('the plant panel (VIS-001, VIS-006, VIS-010, PLS-003, PLS-004, PLS-010)
     dom.act(() => void usePlantEdit.getState().editor!.place('belt-x', 'belt', [4, 0, 4]));
     expect((await saveAllDocuments()).saved).toBe(1);
     expect(written.filter((name) => name.endsWith('.scene.json'))).toHaveLength(1);
-    expect(written.every((name) => name.endsWith('.scene.json'))).toBe(true);
+    expect(written.every((name) => /\.(scene|plant-map)\.json$/.test(name))).toBe(true); // the scene and its map, nothing else
     expect(useIDEStore.getState().loadedFiles.get('a')).toEqual(files.get('a') as never);
     expect((await saveAllDocuments()).saved).toBe(0);
   });

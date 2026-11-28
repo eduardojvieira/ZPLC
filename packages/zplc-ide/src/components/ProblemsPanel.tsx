@@ -13,6 +13,7 @@ import { CommandEmptyState } from './panelStates';
 import { orderProblems } from './consoleAttention';
 import { AskAssistantButton } from './agent/AskAssistantButton';
 import { diagnosticIntent } from '../store/useAssistantEntry';
+import { activatePlantProblem, usePlantProblems } from '../plant/ui/plantProblems';
 
 // The two lists have the shape the compiler reports; the panel reads what it shows.
 type Problem = {
@@ -46,6 +47,7 @@ export function ProblemsPanel({
   onActivate: (message: Problem) => void;
 }): React.ReactElement {
   const { t } = useT();
+  const plant = usePlantProblems();
   return (
     <div className="p-2 space-y-1">
       <div className="pb-1 text-xs tabular-nums text-[var(--color-surface-300)] border-b border-[var(--color-surface-700)]">{summary}</div>
@@ -84,6 +86,24 @@ export function ProblemsPanel({
                 />
               </div>
             </div>
+          ))}
+        </section>
+      )}
+      {plant.length > 0 && (
+        <section aria-label={t('panel.problems.plant')} className="space-y-1 pb-2 border-b border-[var(--color-surface-700)]">
+          <div className="px-2 text-xs text-[var(--color-surface-300)]">{t('panel.problems.plant')}</div>
+          {plant.map((entry, idx) => (
+            <Button
+              key={idx}
+              variant="ghost"
+              size="sm"
+              onClick={() => activatePlantProblem(entry)}
+              className="h-auto w-full min-w-0 items-start justify-start whitespace-normal py-1 text-left"
+            >
+              <AlertCircle size={14} className="text-[var(--color-accent-yellow)] mt-0.5 flex-shrink-0" />
+              <span className="text-[var(--color-surface-100)]">{entry.message}</span>
+              <span className="ml-2 text-[var(--color-surface-400)] text-xs">{t('panel.problems.plant')}</span>
+            </Button>
           ))}
         </section>
       )}
@@ -155,7 +175,7 @@ export function ProblemsPanel({
               );
             })}
       </section>
-      {buildMessages.length === 0 && !earlierBuild && (
+      {buildMessages.length === 0 && !earlierBuild && plant.length === 0 && (
         <CommandEmptyState
           title={t('panel.problems.empty.title')}
           description={checked ? t('panel.problems.empty.checked') : t('panel.problems.empty.unchecked')}

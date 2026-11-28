@@ -1,15 +1,13 @@
 /**
  * The scene editor, usable with no pointer (SCN-014, UX-025): add a part from a list, position it with numeric fields, bind its
  * signals, with each problem shown at the part that causes it (SCN-015). Editing needs the plant stopped (SCN-008). Undo and redo
- * are the Edit menu's (SCN-010); the host re-renders the panel after them. A modified scene joins "Save all" (FLW-005).
+ * are the Edit menu's (SCN-010); the host re-renders the panel after them.
+ * A modified scene joins "Save all" through the plant session (FLW-005).
  */
-import { useEffect, useReducer, useRef, useState } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import { currentLocale, useT } from '../../i18n';
-import { useIDEStore } from '../../store/useIDEStore';
-import { registerSaveAllParticipant } from '../../store/saveAll';
 import type { SignalRange } from '../../plants/plantMap';
 import { catalogue as shipped, type Catalogue } from '../core/catalogue';
-import { saveProjectScene, saveScene } from '../persistence/sceneFiles';
 import { freshIdentity } from './commands';
 import { createMapEditor, type MapEditor } from './mapEditor';
 import type { SceneEditor } from './model';
@@ -26,8 +24,6 @@ export interface EditorPanelProps {
   catalogue?: Catalogue;
   /** Called when the signals of the scene change and the map editor had to be rebuilt; the host keeps this one. */
   onMapEditor?: (mapEditor: MapEditor) => void;
-  /** The scene is the project's own (`scene.json` at the root): Save all writes it there, not into `scenes/`. */
-  projectScene?: boolean;
 }
 
 const signalKey = (editor: SceneEditor) =>
@@ -35,39 +31,18 @@ const signalKey = (editor: SceneEditor) =>
     .signals()
     .map((s) => `${s.name}:${s.type}:${s.direction}`)
     .join('|');
-const fileName = (name: string) => name.replace(/[^A-Za-z0-9._ -]/g, '-').slice(0, 64);
 
-export function EditorPanel({ editor, mapEditor, stopped, catalogue = shipped, onMapEditor, projectScene }: EditorPanelProps) {
+export function EditorPanel({ editor, mapEditor, stopped, catalogue = shipped, onMapEditor }: EditorPanelProps) {
   const { t } = useT();
   const [, refresh] = useReducer((n: number) => n + 1, 0);
   const [notes, setNotes] = useState<ProblemAt[]>([]);
   const [map, setMap] = useState(mapEditor);
   const [keyed, setKeyed] = useState(() => signalKey(editor));
-  const savedRef = useRef(JSON.stringify(editor.toFile()));
-  const handle = useIDEStore((s) => s.directoryHandle);
 
   useEffect(() => {
     editor.setRunning(!stopped);
     refresh();
   }, [editor, stopped]);
-
-  useEffect(
-    () =>
-      registerSaveAllParticipant(async () => {
-        const file = editor.toFile();
-        const text = JSON.stringify(file);
-        if (text === savedRef.current || !handle) return { saved: 0, failed: [] };
-        try {
-          if (projectScene) await saveProjectScene(handle, file);
-          else await saveScene(handle, fileName(file.name), file);
-          savedRef.current = text;
-          return { saved: 1, failed: [] };
-        } catch (error) {
-          return { saved: 0, failed: [error instanceof Error ? error.message : String(error)] };
-        }
-      }),
-    [editor, handle, projectScene],
-  );
 
   // The map editor knows the signals it was built with: when parts change them, it is rebuilt with the bindings kept.
   const state = editor.state();

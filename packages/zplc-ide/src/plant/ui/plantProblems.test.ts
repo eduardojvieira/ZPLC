@@ -47,7 +47,11 @@ describe('the problems of the plant in the Problems tab (SCN-015, PLS-005)', () 
     });
     const { user } = panel();
     const section = dom.screen.getByRole('region', { name: dom.t('panel.problems.plant') });
-    const entry = dom.within(section).getByRole('button', { name: new RegExp(editor.state().problems[0]!.message) });
+    const message = editor.state().problems[0]!.message;
+    const entry = dom
+      .within(section)
+      .getAllByRole('button')
+      .find((button) => button.textContent?.includes(message))!;
     expect(entry.textContent).toContain(dom.t('panel.problems.plant')); // its source
     await user.click(entry);
     expect(editor.state().selection).toBe(copy); // the Inspector and the Plant activity read this selection

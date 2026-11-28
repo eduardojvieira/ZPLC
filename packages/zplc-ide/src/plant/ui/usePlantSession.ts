@@ -10,11 +10,13 @@ import { validatePlantMap, type PlantMapV2 } from '../../plants/plantMap';
 import { listIoMap } from '../../runtime/ioMap';
 import { plantTransport, type TransportState } from '../../runtime/transport';
 import { useIDEStore } from '../../store/useIDEStore';
+import { registerSaveAllParticipant } from '../../store/saveAll';
 import { registerPlantTransport } from '../../store/useTransport';
 import { announce } from '../../utils/announce';
 import type { PlantCore, PlantSceneFile, PlantSnapshot } from '../contracts';
 import { parseScene } from '../core/scene';
-import { listScenes, readProjectSceneTexts, readSceneTexts } from '../persistence/sceneFiles';
+import { usePlantEdit } from '../editSession';
+import { listScenes, readProjectSceneTexts, readSceneTexts, saveProjectScene, saveScene } from '../persistence/sceneFiles';
 import { createPlantSession, type PlantSessionHandle, type PlantSessionPorts } from '../session/plantSession';
 import { loadPlantEngine, type PlantEngine } from './loadPlantEngine';
 
@@ -256,6 +258,19 @@ export function jsonBreakAt(text: string): { line: number; column: number } | un
   return { line: before.split('\n').length, column: i - before.lastIndexOf('\n') };
 }
 
+/** What the session holds of the scene being edited, as the text Save compares: the scene, and its plant map once anything is bound. */
+function editedTexts(session: ReturnType<typeof usePlantEdit.getState>): { file: PlantSceneFile; map: string; text: string } | undefined {
+  if (!session.editor || !session.mapEditor) return undefined;
+  const file = session.editor.toFile();
+  const map = session.mapEditor.map();
+  const bound = Object.keys(map.signals).length > 0 || session.hadMap;
+  return { file, map: bound ? JSON.stringify(map) : '', text: JSON.stringify([file, bound ? map : null]) };
+}
+
+/** The text of each edit session at its last save (or when it began): a scene is saved only when it differs. */
+const savedTexts = new WeakMap<object, string>();
+const sceneFileName = (name: string) => name.replace(/[^A-Za-z0-9._ -]/g, '-').slice(0, 64);
+
 export function usePlantSession(
   controller: DebugController | undefined,
   ref: SceneRef,
@@ -266,6 +281,38 @@ export function usePlantSession(
   const debugMap = useIDEStore((state) => state.debug.debugMap);
   const ioMap = useMemo(() => listIoMap(debugMap), [debugMap]);
   const adapter = controller?.adapter ?? null;
+
+  // The scene being edited joins "Save all" (FLW-005) from here, so it does while no editor panel is mounted. The project's own scene
+  // is written at the project root, a saved scene under its name, and any other under the name it carries.
+  const handle = useIDEStore((state) => state.directoryHandle);
+  const editedEditor = usePlantEdit((state) => state.editor);
+  const refKey = refValue(ref);
+  const sceneName = ref.kind === 'file' ? ref.name : undefined;
+  const isProject = ref.kind === 'project';
+  useEffect(() => {
+    const session = usePlantEdit.getState();
+    const edited = editedTexts(session);
+    if (edited && session.sceneRef === refKey && editedEditor && !savedTexts.has(editedEditor)) savedTexts.set(editedEditor, edited.text);
+  }, [editedEditor, refKey]);
+  useEffect(
+    () =>
+      registerSaveAllParticipant(async () => {
+        const session = usePlantEdit.getState();
+        const edited = editedTexts(session);
+        if (!edited || !session.editor || session.sceneRef !== refKey || !handle || savedTexts.get(session.editor) === edited.text)
+          return { saved: 0, failed: [] };
+        try {
+          const map = edited.map || undefined;
+          if (isProject) await saveProjectScene(handle, edited.file, map);
+          else await saveScene(handle, sceneName ?? sceneFileName(edited.file.name), edited.file, map);
+          savedTexts.set(session.editor, edited.text);
+          return { saved: 1, failed: [] };
+        } catch (error) {
+          return { saved: 0, failed: [error instanceof Error ? error.message : String(error)] };
+        }
+      }),
+    [refKey, handle, isProject, sceneName],
+  );
 
   const latest = useRef<PlantSnapshot | undefined>(undefined);
   const arrived = useRef(0);
