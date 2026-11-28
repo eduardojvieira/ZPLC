@@ -4,15 +4,15 @@
   "summary": "Add a mode to the two-axis assembly: jog the pad by hand in manual, run the assembly cycle in automatic, and never let one leak into the other.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
-    "Keep the mode in a memory that one press of ModeBtn switches, and let the machine power up in manual.",
+    "Switch between manual and automatic with each press of the mode button, and power up in manual.",
     "Move the pad with the jog buttons only in manual, never past a limit switch, and start the cycle with Start only in automatic."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/ManualAuto.st, the automatic cycle is already written. Add the mode as statements: an Auto memory switched by ModeBtn, jog outputs that follow JogXPlus, JogXMinus, JogYPlus and JogYMinus in manual, and a Start that counts only in automatic.",
-      "checkpoint": "Auto starts FALSE (manual); every pad output is the cycle in automatic and the jog in manual, never both."
+      "body": "In src/ManualAuto.st the automatic cycle is already written, but the machine has no mode. Add one: it powers up in manual, and each press of the mode button, ModeBtn, switches between manual and automatic. In manual the jog buttons JogXPlus, JogXMinus, JogYPlus and JogYMinus move the pad and Start does nothing. In automatic the cycle runs and the jog buttons do nothing.",
+      "checkpoint": "The machine powers up in manual; every pad output follows the cycle in automatic and the jog buttons in manual, never both."
     },
     {
       "key": "predict",
@@ -42,17 +42,17 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The AT assertions pin the idle machine, the pad at each limit, the quiet Start in manual and the running cycle; the facts prove that the assembly finished without a dropped part.",
-      "checkpoint": "A real manual mode also needs a guarded jog speed and a safety function; passing here does not make the machine safe for an operator."
+      "checkpoint": "Passing shows that the modes switch and that the jogs stop at their limits. A real manual mode also needs a guarded jog speed and a protective function, which this scenario does not model."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Switch Auto with an edge of ModeBtn, not with its level, so that holding the button flips the mode once. Clear the cycle (Active, Step and the counters) whenever Auto is FALSE."
+      "text": "The mode button is held for many scans. What makes the mode change once per press and not once per scan? And what should the cycle do when the machine goes back to manual halfway through it? The end of the scenario shows what the outputs must be."
     },
     {
       "level": 2,
-      "text": "Make a jog output TRUE only when Auto is FALSE, its button is held, the opposite button is not and its limit switch is not reached; make Begin the Start press AND Auto, and use Begin where the cycle used Start."
+      "text": "Declare Auto : BOOL, ModeEdge : R_TRIG and Begin : BOOL in VAR. Before the statements of the cycle, call ModeEdge(CLK := ModeBtn) and, when ModeEdge.Q is TRUE, write Auto := NOT Auto, so that holding the button flips the mode once and the machine powers up in manual. Whenever Auto is FALSE, clear the cycle: Active := FALSE, Step := 0, Cycles := 0, FreeBase := FALSE, LidsFed := 0 and BasesFed := 0. Write Begin := Start AND Auto and use Begin everywhere the starter uses Start (the IF that sets Active, Go(CLK := Begin) and IF Step = 0 AND Begin). Add the jog to each pad output with OR, keeping the cycle's own term: XPlus gets OR (NOT Auto AND JogXPlus AND NOT JogXMinus AND NOT XAtMax), XMinus gets OR (NOT Auto AND JogXMinus AND NOT JogXPlus AND NOT XAtMin), YPlus gets OR (NOT Auto AND JogYPlus AND NOT JogYMinus AND NOT YAtMax) and YMinus gets OR (NOT Auto AND JogYMinus AND NOT JogYPlus AND NOT YAtMin)."
     }
   ],
   "faultCases": [
