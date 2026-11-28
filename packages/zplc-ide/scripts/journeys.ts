@@ -8066,10 +8066,15 @@ export const JOURNEYS: Journey[] = [
       const compact = await measure();
       assert(compact.density === 'compact', `The root says ${compact.density}, not compact.`);
       for (const key of ['control', 'row', 'spacing', 'field'] as const) {
-        const style = await app.eval<string>(
-          `(() => { const s = getComputedStyle(document.querySelector('[data-setting="density"]')); ` +
-            `return JSON.stringify({ height: s.height, minHeight: s.minHeight, appearance: s.appearance, boxSizing: s.boxSizing }); })()`,
-        );
+        const style = await app
+          .eval<string>(
+            `(() => { const e = document.querySelector('[data-setting="density"]'); if (!e) return 'absent'; const s = ` +
+              `getComputedStyle(e); ` +
+              `return JSON.stringify({ density: document.documentElement.dataset.density, height: s.height, minHeight: s.minHeight, ` +
+              `lineHeight: s.lineHeight, fontFamily: s.fontFamily, fontSize: s.fontSize, paddingTop: s.paddingTop, ` +
+              `borderTopWidth: s.borderTopWidth, boxSizing: s.boxSizing }); })()`,
+          )
+          .catch(String);
         assert(
           compact[key] < comfortable[key],
           `Compact does not shrink ${key}: ${JSON.stringify({ comfortable, compact })}; density select style ${style}`,

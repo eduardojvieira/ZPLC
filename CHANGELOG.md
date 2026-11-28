@@ -24,7 +24,7 @@ and version when the release is cut (see `RELEASING.md`).
 
 ### What changed for you
 
-- On macOS and Windows, the Density setting is a drop-down that now shrinks with the rest of the controls when you choose Compact; it used to stay at its comfortable height.
+- Drop-downs now take exactly the control height of the chosen density (UX-008: on macOS and Windows the Density drop-down measured its comfortable height in Compact).
 - The installer now carries `zplc-mcp`, the same executable the release publishes as a separate download (which remains), and the MCP panel writes its full path into the client configuration.
 - Releasing a forced variable no longer leaves a stale force in the Watch table. Editing the value in the Watch table after forcing it from the Live I/O panel used to add a second record under the short name. The simulator had released the force, but that record stayed and showed the variable as forced. On a board, releasing the stale row later made the device answer "Force entry not found" and marked every force unconfirmed. The Live I/O panel is not available on a board, so only the Watch table could do this there. The Live I/O panel now reads a force the way the Watch table does, so both show the same forces. Bits that share a byte are forced and released together, as the runtime always did.
 - With a plant document open and Run pressed, the Live I/O panel no longer says the simulation is paused while the status bar says it is running; its inputs and forces work again.
