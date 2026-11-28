@@ -1,6 +1,6 @@
 import { assert } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
-import { selectOption } from '../journeyKeys';
+import { chooseOption } from '../journeyKeys';
 import type { Journey } from '../journeys';
 
 const theme = (app: App) => app.eval<string | null>(`document.documentElement.getAttribute('data-theme')`);
@@ -23,7 +23,7 @@ export const journeysU2H2: Journey[] = [
         'Preferences must hold exactly one theme control.',
       );
       assert(!(await app.visible(css('[data-open-config-editor]'))), 'Preferences shows a project field with no project open.');
-      await selectOption(app, 'select[data-theme-control]', 'Dark');
+      await chooseOption(app, 'select[data-theme-control]', 'Dark');
       await app.until('the dark theme', async () => (await theme(app)) === 'dark' || undefined);
 
       // A project opens with that choice kept; Project settings is another document, without the preferences.

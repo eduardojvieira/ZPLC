@@ -43,7 +43,7 @@ import { journeysStations } from './journeys/plantStations';
 import { journeysCourse } from './journeys/plantCourse';
 import { journeysOperator } from './journeys/plantOperator';
 import { pause } from './journeyTiming';
-import { chooseByKeys, pressMod, selectOption, shortcutName, shortcutText } from './journeyKeys';
+import { chooseByKeys, chooseOption, pressMod, selectOption, shortcutName, shortcutText, toggleTabFocus } from './journeyKeys';
 
 export interface JourneyContext {
   root: string;
@@ -2932,7 +2932,7 @@ export const JOURNEYS: Journey[] = [
     partly: ['IDE-010'],
     run: async (app, { project, relaunch }) => {
       const file = join(project, 'src', 'Motor.st');
-      const choose = selectOption;
+      const choose = chooseOption;
       const chosen = (target: App, selector: string) =>
         target.eval<string>(
           `(() => { const select = document.querySelector(${JSON.stringify(selector)}); return ` +
@@ -7120,14 +7120,14 @@ export const JOURNEYS: Journey[] = [
 
       // no keyboard trap in the code editor: Tab types a tab there, and Ctrl+M (Monaco's Tab focus mode) makes Tab and Shift+Tab move the
       // focus
-      await app.press('Ctrl+M');
+      await toggleTabFocus(app);
       await app.press('Tab');
       assert(
         await app.eval<boolean>(`document.activeElement?.closest('.monaco-editor') === null`),
         'Tab stayed in the code editor after Ctrl+M (toggle Tab focus mode).',
       );
       await reach('the code editor again', `el.closest('.monaco-editor') !== null`, 'Shift+Tab', 8);
-      await app.press('Ctrl+M');
+      await toggleTabFocus(app);
 
       // 3. Build: Ctrl+B; the result is written to Output and announced
       await app.press('Ctrl+B');
@@ -7362,7 +7362,7 @@ export const JOURNEYS: Journey[] = [
       await pressMod(app, 'Ctrl+S');
       await app.until('the save to be announced', async () => /Saved/.test(await live('polite')) || undefined);
       // Ctrl+M lets Tab leave the code editor (step 2).
-      await app.press('Ctrl+M');
+      await toggleTabFocus(app);
       await app.until('the Check button to be enabled', async () => (await isEnabled('[data-learn-check]')) || undefined);
       await reach('the Check button', `el.matches('[data-learn-check]')`, 'Tab', 80);
       // each stage's checkpoint disclosure has its own name (the Guide shows one stage at a time, so the names are read from the

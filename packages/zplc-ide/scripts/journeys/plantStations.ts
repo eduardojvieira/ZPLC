@@ -8,7 +8,7 @@
 import { join } from 'node:path';
 import { assert } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
-import { chooseByKeys } from '../journeyKeys';
+import { chooseByKeys, toggleTabFocus } from '../journeyKeys';
 import type { Journey } from '../journeys';
 import { holdPushButton, openPlantDocument, plantFacts, runInSimulation, shippedSceneProject, writeSceneProject } from './plantSupport';
 import { pause } from '../journeyTiming';
@@ -28,7 +28,7 @@ const activeIs = (app: App, attribute: string, value: string) =>
 
 /** The code editor keeps Tab as a character; Ctrl+M (Tab focus mode) is the way out when the walk starts there. */
 async function leaveEditor(app: App): Promise<void> {
-  if (await app.eval<boolean>(`Boolean(document.activeElement?.closest('.monaco-editor'))`)) await app.press('Ctrl+M');
+  if (await app.eval<boolean>(`Boolean(document.activeElement?.closest('.monaco-editor'))`)) await toggleTabFocus(app);
 }
 
 /** Presses Tab (or Shift+Tab) until the focused element carries `attribute=value`; names the path walked when it never does. */

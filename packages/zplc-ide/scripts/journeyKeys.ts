@@ -81,16 +81,7 @@ export async function chooseByKeys(
   }
 }
 
-/**
- * Chooses the option with this text in the native select; fails when the select does not offer it or does not end on it. On linux and
- * win32 it walks the select with the arrow keys, as a keyboard user would; on macOS it sets the option through the element.
- */
-export async function selectOption(
-  app: Pick<App, 'eval' | 'until' | 'press'>,
-  selector: string,
-  label: string,
-  platform: NodeJS.Platform = process.platform,
-): Promise<void> {
+async function optionState(app: Pick<App, 'eval'>, selector: string, label: string) {
   const element = `document.querySelector(${JSON.stringify(selector)})`;
   const state = () =>
     app.eval<{ labels: string[]; index: number }>(
@@ -100,6 +91,44 @@ export async function selectOption(
   const { labels, index } = await state();
   const wanted = labels.indexOf(label);
   if (wanted < 0) throw new Error(`${selector} offers ${JSON.stringify(labels)}, not ${label}`);
+  return { element, state, index, wanted };
+}
+
+/**
+ * Chooses the option with this text in the native select by keyboard, strictly: if the arrow keys do not move the select to it, the
+ * journey fails. On macOS, where the keys only open the popup, it sets the option through the element and says so once.
+ */
+export async function chooseOption(
+  app: Pick<App, 'eval' | 'until' | 'press'> & Partial<Pick<App, 'note'>>,
+  selector: string,
+  label: string,
+  platform: NodeJS.Platform = process.platform,
+): Promise<void> {
+  const { element, state, index, wanted } = await optionState(app, selector, label);
+  await chooseByKeys(
+    app,
+    element,
+    wanted,
+    async () => {
+      await app.eval(`${element}.focus()`);
+      for (let step = 0; step < Math.abs(wanted - index); step++) await app.press(wanted > index ? 'ArrowDown' : 'ArrowUp');
+    },
+    platform,
+  );
+  await app.until(`${selector} to show ${label}`, async () => (await state()).index === wanted || undefined);
+}
+
+/**
+ * Chooses the option with this text in the native select; fails when the select does not offer it or does not end on it. It walks the
+ * select with the arrow keys and, if the select did not move (macOS), sets the option through the element.
+ */
+export async function selectOption(
+  app: Pick<App, 'eval' | 'until' | 'press'>,
+  selector: string,
+  label: string,
+  platform: NodeJS.Platform = process.platform,
+): Promise<void> {
+  const { element, state, index, wanted } = await optionState(app, selector, label);
   if (platform === 'darwin') await setSelectIndex(app, element, wanted);
   else {
     await app.eval(`${element}.focus()`);
@@ -108,4 +137,9 @@ export async function selectOption(
     if ((await state()).index !== wanted) await setSelectIndex(app, element, wanted);
   }
   await app.until(`${selector} to show ${label}`, async () => (await state()).index === wanted || undefined);
+}
+
+/** Monaco's Tab focus mode: Ctrl+M, and Ctrl+Shift+M on macOS (toggleTabFocusMode.js). */
+export async function toggleTabFocus(app: Pick<App, 'press'>, platform: NodeJS.Platform = process.platform): Promise<void> {
+  await app.press(platform === 'darwin' ? 'Ctrl+Shift+M' : 'Ctrl+M');
 }
