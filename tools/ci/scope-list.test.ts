@@ -1,9 +1,9 @@
 // FRZ-001 & PUB-001: the scope of 2.1.0 is one list in the repository (specs/014-zplc-2-1-release-quality/scope.md):
 // five columns, a known state, real commits for what is done, requirement ids that exist,
 // and English+Spanish doc pages (or an explicit "none: <reason>") for every row.
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { isAbsolute, join, relative, resolve } from 'node:path';
 import { describe, expect, it, spyOn } from 'bun:test';
 
 const ROOT = resolve(import.meta.dir, '../..');
@@ -26,8 +26,15 @@ function parseScopeTable(markdown: string): { header: string[]; body: string[][]
   return { header, body };
 }
 
+function isInsideDir(baseDir: string, targetPath: string): boolean {
+  const rel = relative(baseDir, targetPath);
+  return rel.length > 0 && !rel.startsWith('..') && !isAbsolute(rel);
+}
+
 function checkScopePages(body: string[][], enDocsDir: string, esDocsDir: string): string[] {
+  const releaseGate = process.env.ZPLC_RELEASE_GATE === '1';
   const errors: string[] = [];
+  const gaps: string[] = [];
   for (const row of body) {
     const item = row[0] ?? '<unnamed row>';
     const pagesCell = row[4];
@@ -35,28 +42,55 @@ function checkScopePages(body: string[][], enDocsDir: string, esDocsDir: string)
       errors.push(`${item}: missing Pages cell`);
       continue;
     }
-    if (/^none\b/i.test(pagesCell)) {
-      const reason = pagesCell.match(/^none:\s*(.+)$/i)?.[1]?.trim() ?? '';
-      if (reason.length === 0) {
-        errors.push(`${item}: "none:" requires a reason`);
-      }
-      continue;
-    }
-    const pages = pagesCell.split(',').map((entry) => entry.trim());
-    for (const page of pages) {
-      if (page.length === 0) {
+    const segments = pagesCell.split(';').map((segment) => segment.trim());
+    for (const segment of segments) {
+      if (segment.length === 0) {
         errors.push(`${item}: empty page entry in "${pagesCell}"`);
         continue;
       }
-      const enPath = resolve(enDocsDir, page);
-      const esPath = resolve(esDocsDir, page);
-      if (!existsSync(enPath)) {
-        errors.push(`${item}: missing English page docs/docs/${page}`);
+      if (/^none\b/i.test(segment)) {
+        const reason = segment.match(/^none:\s*(.+)$/i)?.[1]?.trim() ?? '';
+        if (reason.length === 0) {
+          errors.push(`${item}: "none:" requires a reason`);
+        } else if (/\(PUB-001 gap\)/i.test(reason)) {
+          gaps.push(`${item}: ${reason}`);
+          if (releaseGate) {
+            errors.push(`${item}: unresolved PUB-001 gap (${reason})`);
+          }
+        }
+        continue;
       }
-      if (!existsSync(esPath)) {
-        errors.push(`${item}: missing Spanish page docs/i18n/es/docusaurus-plugin-content-docs/current/${page}`);
+      const pages = segment.split(',').map((entry) => entry.trim());
+      for (const page of pages) {
+        if (page.length === 0) {
+          errors.push(`${item}: empty page entry in "${pagesCell}"`);
+          continue;
+        }
+        if (isAbsolute(page) || !/\.mdx?$/i.test(page)) {
+          errors.push(`${item}: page "${page}" must be a relative .md or .mdx file inside the docs root`);
+          continue;
+        }
+        const enPath = resolve(enDocsDir, page);
+        const esPath = resolve(esDocsDir, page);
+        if (!isInsideDir(enDocsDir, enPath) || !isInsideDir(esDocsDir, esPath)) {
+          errors.push(`${item}: page "${page}" escapes the docs root`);
+          continue;
+        }
+        if (!existsSync(enPath)) {
+          errors.push(`${item}: missing English page docs/docs/${page}`);
+        } else if (!statSync(enPath).isFile()) {
+          errors.push(`${item}: English page docs/docs/${page} is not a file`);
+        }
+        if (!existsSync(esPath)) {
+          errors.push(`${item}: missing Spanish page docs/i18n/es/docusaurus-plugin-content-docs/current/${page}`);
+        } else if (!statSync(esPath).isFile()) {
+          errors.push(`${item}: Spanish page docs/i18n/es/docusaurus-plugin-content-docs/current/${page} is not a file`);
+        }
       }
     }
+  }
+  if (gaps.length > 0 && !releaseGate) {
+    console.warn(`PUB-001 open doc gaps (${gaps.length}):\n${gaps.map((g) => `  - ${g}`).join('\n')}`);
   }
   return errors;
 }
