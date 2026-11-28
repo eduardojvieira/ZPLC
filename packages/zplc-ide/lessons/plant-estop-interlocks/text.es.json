@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/ThreeLevelLifts.st, añada una memoria Stopped: actívela cuando EStopOk sea FALSE, bórrela solo con Start, y haga que borre Active y encienda Red.",
-      "checkpoint": "Todas las salidas ya dependen de Active, así que borrar Active detiene las cintas y los elevadores a la vez."
+      "body": "El proyecto inicial en src/ThreeLevelLifts.st hace funcionar la línea y no tiene paro. Mientras el paro de emergencia está pulsado, todas las cintas y elevadores deben estar apagados y la lámpara roja encendida; la línea debe seguir detenida cuando se suelta el pulsador y volver a funcionar solo tras una nueva pulsación de Start.",
+      "checkpoint": "Puede decir qué salidas deben estar apagadas durante el paro, qué debe mostrar Red y qué debe seguir cumpliéndose después de soltar el pulsador."
     },
     {
       "key": "predict",
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial ignora el paro de emergencia, así que la línea sigue funcionando; detenga todas las salidas mientras EStopOk sea FALSE, encienda Red, mantenga recordado el paro después de soltarlo y haga funcionar la línea de nuevo solo con una nueva pulsación de Start.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial ignora el paro de emergencia, así que la línea sigue funcionando; detenga todas las salidas mientras EStopOk sea FALSE, encienda Red, mantenga la línea detenida después de soltarlo y hágala funcionar de nuevo solo con una nueva pulsación de Start.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -42,20 +42,20 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "Las aserciones AT fijan el paro a los 16 s, el paro mantenido a los 17,3 s y el reinicio a los 18 s; los enclavamientos que ya estaban en el programa son la misma idea de la lección 2.0 interlock-guard-permissive.",
-      "checkpoint": "Es un paro escrito en el programa del PLC, no un circuito de seguridad, así que no es una función de seguridad y no da tiempo de parada. La calificación no puede ver un elevador que se desplaza después del paro."
+      "checkpoint": "Este paro es solo lo que el programa hace con la señal EStopOk: no es un circuito de paro de emergencia y no da tiempo de parada. La calificación no puede ver un elevador que sigue subiendo un poco después del paro."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Compruebe EStopOk primero: cuando sea FALSE active Stopped y borre Active; haga funcionar la línea de nuevo solo en una rama ELSIF Start."
+      "text": "Mire los 17,3 s, después de soltar el pulsador: EStopOk vuelve a estar en TRUE, y aun así Red sigue encendida y las salidas siguen apagadas. ¿Qué variable de su programa puede decir eso, y qué la hace cambiar?"
     },
     {
       "level": 2,
-      "text": "Encienda Red desde Stopped; las salidas ya dependen de Active, así que ninguna salida necesita su propia lógica de paro."
+      "text": "Declare Stopped : BOOL en VAR. Sustituya las líneas de Start del principio por IF NOT EStopOk THEN Stopped := TRUE; Active := FALSE; ELSIF Start THEN Stopped := FALSE; Active := TRUE; END_IF; y sustituya Red := FALSE por Red := Stopped;. Todas las salidas ya dependen de Active, así que ninguna salida necesita su propia lógica de paro."
     }
   ],
   "faultCases": [
-    "El programa inicial ignora el paro de emergencia, así que la línea sigue funcionando; detenga todas las salidas mientras EStopOk sea FALSE, encienda Red, mantenga recordado el paro después de soltarlo y haga funcionar la línea de nuevo solo con una nueva pulsación de Start."
+    "El programa inicial ignora el paro de emergencia, así que la línea sigue funcionando; detenga todas las salidas mientras EStopOk sea FALSE, encienda Red, mantenga la línea detenida después de soltarlo y hágala funcionar de nuevo solo con una nueva pulsación de Start."
   ]
 }
