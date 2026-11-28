@@ -43,17 +43,15 @@ Aquí cada eje es numérico: usted escribe un destino en cuentas enteras (`0` a 
 Gobernar un pórtico numérico a través de una pila repetida se apoya en tres ideas:
 
 - **Escalar metros a cuentas.** Cuando una carrera de `S` metros se asigna a `0..1000`, una posición `p` en metros pasa a ser `round(p / S * 1000)` cuentas. Por ejemplo, en un eje de `2.0 m`, `1.0 m` son `500` cuentas; en un eje de `1.6 m`, una cuenta equivale a `1.6 mm`.
-- **Llegada dentro de una banda.** El escalado entero puede dejar la realimentación a una cuenta de la orden. En lugar de probar igualdad exacta (`Pos = Cmd`), compare cada eje contra una banda estrecha (`Pos >= Cmd - tol AND Pos <= Cmd + tol`), combine todos los ejes en un solo BOOL y haga que cada estado con movimiento lo espere.
+- **Llegada dentro de una banda.** Un accionamiento real puede quedar a una o dos cuentas de su orden. En lugar de probar igualdad exacta (`Pos = Cmd`), compare cada eje contra una banda estrecha (`Pos >= Cmd - tol AND Pos <= Cmd + tol`), combine todos los ejes en un solo BOOL y haga que cada estado con movimiento lo espere.
 - **Un solo contador para todo el patrón.** En vez de escribir pasos distintos para cada pieza, mantenga un contador de piezas `n` que empiece en cero. El resto `n MOD huecosPorCapa` elige el hueco dentro de la capa actual, y `n / huecosPorCapa` (o una comparación con `huecosPorCapa`) elige la altura de la capa.
 
 ```timing
-span: 4000
+span: 6000
 signals:
-  - { name: EyePick, edges: [200, 1400] }
-  - { name: InBand, edges: [0, 600, 1000, 1600, 2600, 3200, 3600, 4000] }
-  - { name: Vacuum, edges: [1000, 3200] }
-  - { name: Held, edges: [1100, 3250] }
-caption: El vacío se activa solo cuando la ventosa está en banda sobre la caja, y se apaga solo tras entrar en banda en la altura de descarga
+  - { name: Grip, edges: [3310, 5420] }
+  - { name: Gripped, edges: [3310, 5420] }
+caption: En la primera caja de una ejecución, Grip está encendido de 3.3 s a 5.4 s y Gripped lo sigue en el mismo paso de la planta, porque una ventosa agarra y suelta al instante
 ```
 
 Moverse en vertical antes de desplazarse en horizontal mantiene la pieza libre de la cinta y de las cajas ya apiladas sobre la tarima.
@@ -128,14 +126,13 @@ END_PROGRAM
 
 Observe el orden de movimientos: `State 0` eleva Y hasta la altura segura de traslado (`850`) antes de que X se mueva, `State 1` viaja en horizontal al hueco calculado, `State 2` baja a la altura de la capa y `State 3` vuelve a elevar Y antes de regresar X a `0`.
 
-Esta empacadora tiene solo dos ejes, coloca tres latas en línea por capa y no tiene cinta, tope retráctil ni ventosa. En la práctica, el pórtico se mueve en tres ejes (X, Y y Z) sobre una cuadrícula de 2 por 2, toma cajas de una cinta detenida y espera tiempos breves de asentamiento y liberación.
+Esta empacadora tiene solo dos ejes, coloca tres latas en línea por capa y no tiene cinta, tope retráctil ni ventosa. En la práctica, el pórtico se mueve en tres ejes (X, Y y Z) sobre una cuadrícula de 2 por 2, toma cada caja retenida en el tope retráctil de una cinta en marcha y espera tiempos breves de asentamiento y liberación.
 
 ## Errores comunes
 
-- Probar igualdad exacta `XPos = XCmd`. Una diferencia de una cuenta por redondeo deja la comparación en FALSE para siempre y detiene la secuencia.
-- Mover X o Z antes de elevar Y. La ventosa o la caja transportada barre la cinta o derriba cajas ya apoyadas sobre la tarima.
+- Probar igualdad exacta `XPos = XCmd`. Aquí pasa, porque el eje simulado se detiene exactamente en su orden, pero un accionamiento real queda a una o dos cuentas y el paso espera para siempre.
+- Desplazarse en X o Z por debajo de la altura segura. La caja transportada golpea la primera capa y derriba cajas, y Check falla por una caja caída.
 - Apagar `Grip` antes de que el pórtico llegue a la altura de descarga. La caja cae desde arriba y cuenta como pieza caída.
-- Emitir la caja siguiente mientras la ventosa aún está sobre la cinta, u olvidar dejar de emitir una vez enviadas las ocho cajas.
 
 > [!NOTE]
 > Elija la altura segura de traslado de modo que la base de una caja transportada pase por encima de la parte superior de la capa más alta sobre la tarima.
@@ -153,11 +150,11 @@ options:
 ```quiz
 question: ¿Por qué una secuencia de ejes numéricos comprueba una banda pequeña de tolerancia alrededor de la orden en lugar de Pos = Cmd?
 options:
-  - { text: 'Porque el escalado entero puede dejar la realimentación a una cuenta de la orden, lo que trabaría una igualdad exacta', correct: true, feedback: 'Correcto. Una banda estrecha como ±1 cuenta deja avanzar el paso de forma confiable sin perder precisión.' }
+  - { text: 'Porque un eje real puede quedar a una cuenta de su orden, lo que trabaría una igualdad exacta', correct: true, feedback: 'Correcto. Una banda estrecha como ±1 cuenta deja avanzar el paso de forma confiable sin perder precisión.' }
   - { text: 'Porque Texto Estructurado no admite = con variables INT', feedback: 'Texto Estructurado admite = con INT; la banda hace falta por cómo se redondean las posiciones físicas a cuentas enteras.' }
   - { text: 'Porque el pórtico se mueve más rápido cuando se usa una banda de tolerancia', feedback: 'La banda de tolerancia solo decide cuándo el PLC da por terminado el movimiento, no la velocidad del eje.' }
 ```
 
 ## Qué hará en la práctica
 
-El programa inicial en `src/Palletizing.st` declara las posiciones y órdenes de los tres ejes, y las señales de la cinta, el tope, la ventosa y las lámparas, y todavía no ordena ninguna posición. Al pulsar `Start`, que el escenario acciona a los {{t:200}} ms, usted elevará el pórtico fuera de la cinta, tomará cada caja junto al tope, colocará ocho cajas en un patrón de 2 por 2 de dos capas sobre `Pallet1` y encenderá `Green` tras la octava. Después pulse {{ui:learn.check}}.
+El proyecto inicial en `src/Palletizing.st` declara las posiciones y órdenes de los tres ejes, y las señales de la cinta, el tope, la ventosa y las lámparas, y todavía no ordena ninguna posición. Al pulsar `Start`, que el escenario acciona a los {{t:200}} ms, usted elevará el pórtico fuera de la cinta, tomará cada caja junto al tope, colocará ocho cajas en un patrón de 2 por 2 de dos capas sobre `Pallet1` y encenderá `Green` tras la octava. Después pulse {{ui:learn.check}}.

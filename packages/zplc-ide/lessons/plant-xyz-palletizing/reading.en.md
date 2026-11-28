@@ -43,17 +43,15 @@ Here every axis is numeric: you write a target in integer counts (`0` to `1000`)
 Driving a numeric gantry through a repeated stack rests on three ideas:
 
 - **Scaling metres to counts.** When a stroke of `S` metres maps to `0..1000`, a position `p` metres becomes `round(p / S * 1000)` counts. For example, on a `2.0 m` axis, `1.0 m` is `500` counts; on a `1.6 m` axis, one count is `1.6 mm`.
-- **Arrival within a band.** Integer scaling can leave the feedback one count away from the command. Instead of testing exact equality (`Pos = Cmd`), compare each axis against a narrow band (`Pos >= Cmd - tol AND Pos <= Cmd + tol`), combine all axes into one BOOL, and let every moving state wait for it.
+- **Arrival within a band.** A real drive can settle a count or two away from its command. Instead of testing exact equality (`Pos = Cmd`), compare each axis against a narrow band (`Pos >= Cmd - tol AND Pos <= Cmd + tol`), combine all axes into one BOOL, and let every moving state wait for it.
 - **One counter for the whole pattern.** Rather than writing separate steps for each item, keep one zero-based item counter `n`. The remainder `n MOD slotsPerLayer` picks the slot inside the current layer, and `n / slotsPerLayer` (or a comparison against `slotsPerLayer`) picks the layer height.
 
 ```timing
-span: 4000
+span: 6000
 signals:
-  - { name: EyePick, edges: [200, 1400] }
-  - { name: InBand, edges: [0, 600, 1000, 1600, 2600, 3200, 3600, 4000] }
-  - { name: Vacuum, edges: [1000, 3200] }
-  - { name: Held, edges: [1100, 3250] }
-caption: Vacuum turns on only once the pad is in band on the box, and turns off only after the axis is in band at the drop height
+  - { name: Grip, edges: [3310, 5420] }
+  - { name: Gripped, edges: [3310, 5420] }
+caption: On the first box of a run, Grip is on from 3.3 s to 5.4 s and Gripped follows it in the same plant step, because a vacuum pad attaches and releases at once
 ```
 
 Moving vertically before moving horizontally keeps the carried item clear of the belt and of the boxes already stacked on the pallet.
@@ -128,14 +126,13 @@ END_PROGRAM
 
 Notice the order of moves: `State 0` raises Y to the safe travel height (`850`) before X ever moves, `State 1` travels horizontally to the computed slot, `State 2` lowers to the layer height, and `State 3` raises Y again before returning X to `0`.
 
-This packer has only two axes, places three cans in a line per layer, and has no belt, stop blade or vacuum pad. In the practice, the gantry moves in three axes (X, Y and Z) over a 2 by 2 grid, grips boxes off a stopped belt, and waits for a short settle and release time.
+This packer has only two axes, places three cans in a line per layer, and has no belt, stop blade or vacuum pad. In the practice, the gantry moves in three axes (X, Y and Z) over a 2 by 2 grid, grips each box held at the stop blade of a running belt, and waits for a short settle and release time.
 
 ## Common mistakes
 
-- Testing exact equality `XPos = XCmd`. A one-count rounding difference keeps the comparison FALSE forever and stalls the sequence.
-- Moving X or Z before raising Y. The vacuum pad or the carried box sweeps across the belt or knocks over boxes already on the pallet.
+- Testing exact equality `XPos = XCmd`. It passes in this simulation, where the axis stops exactly on its command, but a real drive settles a count or two away and the step waits forever.
+- Travelling in X or Z below the safe height. The carried box hits the first layer and knocks boxes off, and Check fails on a dropped box.
 - Turning `Grip` off before the gantry arrives at the drop height. The box falls from above and counts as a dropped item.
-- Emitting the next box while the pad is still over the belt, or forgetting to stop emitting once all eight boxes have been sent.
 
 > [!NOTE]
 > Choose the safe travel height so that the bottom of a carried box stays above the top of the highest layer on the pallet.
@@ -153,7 +150,7 @@ options:
 ```quiz
 question: Why does a numeric-axis sequence check a small tolerance band around the command instead of Pos = Cmd?
 options:
-  - { text: 'Because integer scaling can leave the feedback one count away from the command, which would stall an exact check', correct: true, feedback: 'Right. A narrow band such as ±1 count lets the step advance reliably without sacrificing accuracy.' }
+  - { text: 'Because a real axis can settle one count away from its command, which would stall an exact check', correct: true, feedback: 'Right. A narrow band such as ±1 count lets the step advance reliably without sacrificing accuracy.' }
   - { text: 'Because Structured Text does not support = on INT variables', feedback: 'Structured Text supports = on INT; the band is needed because of how physical positions round to integer counts.' }
   - { text: 'Because the gantry moves faster when a tolerance band is used', feedback: 'The tolerance band only affects when the PLC considers the move finished, not the axis speed.' }
 ```
