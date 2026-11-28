@@ -4,15 +4,15 @@
   "summary": "Añada un modo al ensamblaje de dos ejes: avance el brazo a mano en manual, ejecute el ciclo en automático y no deje que uno se filtre en el otro.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
-    "Guardar el modo en una memoria que cambie con una pulsación de ModeBtn, y dejar que la máquina arranque en manual.",
+    "Cambiar entre manual y automático con cada pulsación del pulsador de modo, y arrancar en manual.",
     "Mover el brazo con los pulsadores de avance solo en manual, sin pasar de un final de carrera, y arrancar el ciclo con Start solo en automático."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/ManualAuto.ld.json, el ciclo automático ya está escrito. En el editor de diagrama de escalera, añada el modo como peldaños: una memoria Auto que cambia con ModeBtn, salidas de avance que siguen a JogXPlus, JogXMinus, JogYPlus y JogYMinus en manual, y un Start que cuenta solo en automático.",
-      "checkpoint": "Auto empieza en FALSE (manual); cada salida del brazo es el ciclo en automático y el avance en manual, nunca los dos."
+      "body": "En src/ManualAuto.ld.json el ciclo automático ya está escrito, pero la máquina no tiene modo. En el editor de diagrama de escalera, añada uno: arranca en manual, y cada pulsación del pulsador de modo, ModeBtn, cambia entre manual y automático. En manual los pulsadores de avance JogXPlus, JogXMinus, JogYPlus y JogYMinus mueven el brazo y Start no hace nada. En automático el ciclo corre y los pulsadores de avance no hacen nada.",
+      "checkpoint": "La máquina arranca en manual; cada salida del brazo sigue al ciclo en automático y a los pulsadores de avance en manual, nunca a los dos."
     },
     {
       "key": "predict",
@@ -42,17 +42,17 @@
       "key": "reflect",
       "title": "Reflexionar",
       "body": "Las aserciones AT fijan la máquina en reposo, el brazo en cada final de carrera, el Start silencioso en manual y el ciclo en marcha; los hechos prueban que el ensamblaje terminó sin una pieza caída.",
-      "checkpoint": "Un modo manual real exige además una velocidad de avance protegida y una función de seguridad; aprobar aquí no vuelve segura la máquina para el operario."
+      "checkpoint": "Aprobar muestra que los modos cambian y que los avances se detienen en sus límites. Un modo manual real exige además una velocidad de avance protegida y una función de protección, que este escenario no modela."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Cambie Auto con un flanco de ModeBtn, no con su nivel, para que mantener presionado el pulsador cambie el modo una sola vez. Limpie el ciclo (Active, Step y los contadores) siempre que Auto sea FALSE."
+      "text": "El pulsador de modo se mantiene durante muchos ciclos de escaneo. ¿Qué hace que el modo cambie una vez por pulsación y no una vez por ciclo de escaneo? ¿Y qué debe hacer el ciclo cuando la máquina vuelve a manual a mitad de él? El final del escenario muestra cómo deben quedar las salidas."
     },
     {
       "level": 2,
-      "text": "Haga una salida de avance TRUE solo cuando Auto sea FALSE, su pulsador esté pulsado, el pulsador opuesto no lo esté y su final de carrera no se haya alcanzado; haga que Begin sea la pulsación de Start Y Auto, y use Begin donde el ciclo usaba Start."
+      "text": "Añada las variables locales Auto, ToAuto, ToManual y Begin, todas BOOL. Dibuje cuatro peldaños para el modo: un contacto de flanco positivo (P) sobre ModeBtn en serie con un contacto normalmente cerrado sobre Auto activa la bobina ToAuto; el mismo contacto de flanco en serie con un contacto normalmente abierto sobre Auto activa la bobina ToManual; un contacto sobre ToAuto activa una bobina SET sobre Auto; un contacto sobre ToManual activa una bobina RESET sobre Auto. Así la máquina arranca en manual. Dibuje un peldaño que empiece con un contacto normalmente cerrado sobre Auto y, cuando conduzca, ponga a cero Active y mueva 0 a Step, Cycles, LidsFed y BasesFed, y otro con un contacto normalmente cerrado sobre Auto que ponga a cero FreeBase. Dibuje un peldaño en el que un contacto sobre Start en serie con un contacto sobre Auto active la bobina Begin, y use un contacto sobre Begin en todos los lugares donde el proyecto inicial usa un contacto sobre Start (el peldaño que activa Active, el peldaño del flanco Go y el peldaño que comienza el paso 0). En cada uno de los cuatro peldaños de salida del brazo, añada una rama en paralelo bajo los contactos del ciclo: un contacto normalmente cerrado sobre Auto, un contacto sobre el pulsador de avance y un contacto normalmente cerrado sobre el pulsador de avance opuesto, unidas antes del contacto del final de carrera de esa salida."
     }
   ],
   "faultCases": [
