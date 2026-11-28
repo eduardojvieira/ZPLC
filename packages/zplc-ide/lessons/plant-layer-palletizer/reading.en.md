@@ -61,10 +61,10 @@ signals:
   - { name: JogDown, edges: [200, 600] }
   - { name: Moving, edges: [200, 1000] }
   - { name: OpenClamp, edges: [1200, 2400] }
-caption: A 400 ms jog on Palletizer1 comes to rest 800 ms after it starts, and only then does the clamp open
+caption: A 0.4 s jog on Palletizer1 comes to rest 0.8 s after it starts, and only then does the clamp open
 ```
 
-Notice the gap between `JogDown` turning off and `OpenClamp` turning on. Releasing the jog output only begins braking; the head is still moving until it comes to rest. On `Palletizer1` this 400 ms jog is a short jog, so the head needs another 400 ms to stop: it comes to rest 800 ms after the jog began (`d = 2 * 0.4 * 0.4 = 0.32 m`). The diagram shows an ideal jog of exactly 400 ms. In the simulator the output follows the program one scan (10 ms) late, so a jog set to `PT` lasts `PT + 10 ms` and the head stops a little further down.
+Notice the gap between `JogDown` turning off and `OpenClamp` turning on. Releasing the jog output only begins braking; the head is still moving until it comes to rest. On `Palletizer1` this 0.4 s jog is a short jog, so the head needs another 0.4 s to stop: it comes to rest 0.8 s after the jog began (`d = 2 * 0.4 * 0.4 = 0.32 m`). The diagram shows an ideal jog of exactly 0.4 s. In the simulator the output follows the program one scan late, so a jog set to `PT` lasts one scan longer than `PT` and the head stops a little further down.
 
 ## Worked example
 
