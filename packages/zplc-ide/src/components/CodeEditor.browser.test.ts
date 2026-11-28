@@ -92,13 +92,15 @@ describe('Structured Text editor in a browser (VF-007, LNG-015)', () => {
     );
   });
 
+  // Monaco binds "toggle Tab key moves focus" to Ctrl+M, and on macOS to Ctrl+Shift+M (toggleTabFocusMode.js: mac: WinCtrl | Shift | M)
+  const TOGGLE_TAB_FOCUS = process.platform === 'darwin' ? 'Ctrl+Shift+M' : 'Ctrl+M';
   test('Tab is a character until Ctrl+M, then it moves the focus out of the editor', async () => {
     const app = await browserApp();
     await app.open({ name: 'main.st', language: 'ST', content: ST });
     await caretOnBlankLine(app);
     await app.press('Tab');
     expect(await app.fileContent()).toMatch(/END_VAR\n +\nEND_PROGRAM/);
-    await app.press('Ctrl+M');
+    await app.press(TOGGLE_TAB_FOCUS);
     await app.press('Tab');
     const focused = await app.untilFocused('focus to leave the code editor', (node) => node.name !== editorName('src/main.st', en));
     expect(focused).toBeDefined();
