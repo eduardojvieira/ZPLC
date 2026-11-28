@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "st-if-then-else",
+  "version": 1,
+  "order": 83,
+  "module": 1,
+  "level": "foundation",
+  "prerequisites": ["scan-cycle-one-scan-memory"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson reads two level switches and drives three lamps of a tank; a learner board has no tank, and the scenario supplies the switches.",
+        "es": "La lección lee dos interruptores de nivel y maneja tres lámparas de un tanque; una placa del estudiante no tiene tanque, y el escenario aporta los interruptores."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the level switches are part of the scenario.",
+        "es": "Complétela en Simulación, donde los interruptores de nivel forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 12,
+  "starter": {
+    "project": "st_if_then_else_starter",
+    "program": "src/TankLamp.st"
+  },
+  "solution": {
+    "project": "st_if_then_else",
+    "program": "src/TankLamp.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "TankLamp",
+    "path": "tests/tank-lamp.scenario.json",
+    "sha256": "18014fe1425d0861bec3c17ec765a71691667d9652aaca1a63e681925a283b4b"
+  },
+  "regressionScenarios": []
+}

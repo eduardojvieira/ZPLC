@@ -9,7 +9,7 @@ tags: [learn, lessons, course]
 
 # Course outline
 
-This page is the map of the whole course: every module in order, with its 97 lessons, and for each lesson the languages, tracks, plant, time and prerequisites. Use it to pick where to start or to see what a module needs first. If you have never programmed a PLC, take the Ladder path of 21 of these lessons, _Ladder diagram from zero_, described in [Learn](./index.md).
+This page is the map of the whole course: every module in order, with its 98 lessons, and for each lesson the languages, tracks, plant, time and prerequisites. Use it to pick where to start or to see what a module needs first. If you have never programmed a PLC, take the Ladder path of 21 of these lessons, _Ladder diagram from zero_, described in [Learn](./index.md).
 
 The page follows `packages/zplc-ide/lessons/course.json` and the lesson packages beside it. A CI check fails when a lesson is missing here or a row disagrees with its lesson. Each module and each lesson also has its own generated page: start from the [course modules](./modules/index.md), and see the [lesson plants](./plants.md) for the simulated machines.
 
@@ -26,7 +26,7 @@ You see a result first: the tour of module 0 ends in a blinking output in simula
 
 Each module below says why it sits where it does. The Learn home shows the same words, because both read the same course file.
 
-Available today: **97**. Planned: **0**. In all: **97**.
+Available today: **98**. Planned: **0**. In all: **98**.
 
 ## Languages
 
@@ -62,19 +62,21 @@ Foundation. Requires module: 0. Tracks: Simulation, Hardware.
 
 A PLC repeats one cycle: read the inputs, run the program, write the outputs. Seal-in, edges and timers cannot be understood without the scan cycle, so it comes first, and a first blink in Ladder and in Structured Text follows at once.
 
-| Lesson                                                             | Status    | Languages | Tracks               | Plant | Minutes | Requires                     |
-| ------------------------------------------------------------------ | --------- | --------- | -------------------- | ----- | ------- | ---------------------------- |
-| `ld-what-is-a-plc` What a PLC is: your first rung                  | Available | LD        | Simulation           | -     | 15      | -                            |
-| `ld-scan-cycle` The scan cycle: why the order of the rungs matters | Available | LD        | Simulation           | -     | 15      | `ld-what-is-a-plc`           |
-| `scan-cycle-one-scan-memory` Scan cycle and one-scan memory        | Available | ST        | Simulation, Hardware | -     | 10      | `first-blink-simulation`     |
-| `blinky-ladder-timer-feedback` TON oscillator and output feedback  | Available | LD        | Simulation, Hardware | -     | 20      | `scan-cycle-one-scan-memory` |
-| `blink-structured-text` Write a blinker in Structured Text         | Available | ST        | Simulation, Hardware | -     | 15      | `scan-cycle-one-scan-memory` |
+| Lesson                                                               | Status    | Languages | Tracks               | Plant | Minutes | Requires                     |
+| -------------------------------------------------------------------- | --------- | --------- | -------------------- | ----- | ------- | ---------------------------- |
+| `ld-what-is-a-plc` What a PLC is: your first rung                    | Available | LD        | Simulation           | -     | 15      | -                            |
+| `ld-scan-cycle` The scan cycle: why the order of the rungs matters   | Available | LD        | Simulation           | -     | 15      | `ld-what-is-a-plc`           |
+| `scan-cycle-one-scan-memory` Scan cycle and one-scan memory          | Available | ST        | Simulation, Hardware | -     | 10      | `first-blink-simulation`     |
+| `blinky-ladder-timer-feedback` TON oscillator and output feedback    | Available | LD        | Simulation, Hardware | -     | 20      | `scan-cycle-one-scan-memory` |
+| `blink-structured-text` Write a blinker in Structured Text           | Available | ST        | Simulation, Hardware | -     | 15      | `scan-cycle-one-scan-memory` |
+| `st-if-then-else` Choose one of three states with IF, ELSIF and ELSE | Available | ST        | Simulation           | -     | 12      | `scan-cycle-one-scan-memory` |
 
 Objectives of the available lessons:
 
 - **Scan cycle and one-scan memory**: See that a variable keeps its value from one scan to the next. Build a one-scan delay and a one-scan pulse from a single memory.
 - **TON oscillator and output feedback**: Read a two-timer Ladder oscillator: each timer runs in one half period and starts the next. Complete it with a SET coil and a RESET coil driven by the timers' Q outputs.
 - **Write a blinker in Structured Text**: Write the timer-and-memory pattern that makes an output change state at a fixed interval. Gate an output with an input so that it stops at once when the input drops.
+- **Choose one of three states with IF, ELSIF and ELSE**: Write one IF statement with ELSIF branches that picks one state out of three. Make exactly one of three outputs ON at any time, whatever the level did before.
 - **What a PLC is: your first rung**: Name the three parts of a PLC system: inputs that read the world, a program that decides, and outputs that act on the world. Complete a Ladder rung in which a pressed button lights a lamp, and read the result in the simulated lab.
 - **The scan cycle: why the order of the rungs matters**: Describe the scan cycle: read the inputs, solve the rungs from top to bottom, write the outputs, and repeat. Reorder two rungs so that a value is calculated before the rung that uses it, and see the difference of one scan in the recorded trace.
 

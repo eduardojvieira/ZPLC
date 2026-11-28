@@ -13,7 +13,7 @@ unlisted: true
 | Módulo | Nivel | Lecciones |
 | --- | --- | --- |
 | [0: Primeros pasos: un recorrido por ZPLC, la simulación y, para hardware, la verificación de su placa](./module-0.md) | Fundamentos | 2 |
-| [1: Cómo piensa un PLC: el ciclo de escaneo y un primer parpadeo](./module-1.md) | Fundamentos | 5 |
+| [1: Cómo piensa un PLC: el ciclo de escaneo y un primer parpadeo](./module-1.md) | Fundamentos | 6 |
 | [2: Lógica booleana y retención: contactos, bobinas, autorretención, set y reset, parada segura](./module-2.md) | Fundamentos | 11 |
 | [3: Temporizadores, flancos y contadores](./module-3.md) | Fundamentos | 9 |
 | [4: Datos: tipos, aritmética, comparación y escalado analógico](./module-4.md) | Intermedio | 8 |

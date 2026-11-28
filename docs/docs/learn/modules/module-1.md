@@ -25,6 +25,7 @@ A PLC repeats one cycle: read the inputs, run the program, write the outputs. Se
 | [Scan cycle and one-scan memory](../lessons/scan-cycle-one-scan-memory.md) | `scan-cycle-one-scan-memory` | ST | 10 |
 | [TON oscillator and output feedback](../lessons/blinky-ladder-timer-feedback.md) | `blinky-ladder-timer-feedback` | LD | 20 |
 | [Write a blinker in Structured Text](../lessons/blink-structured-text.md) | `blink-structured-text` | ST | 15 |
+| [Choose one of three states with IF, ELSIF and ELSE](../lessons/st-if-then-else.md) | `st-if-then-else` | ST | 12 |
 
 {/* <<< END GENERATED: learn/modules/module-1 <<< */}
 

@@ -9,7 +9,7 @@ tags: [learn, lessons, course]
 
 # Esquema del curso
 
-Esta página es el mapa de todo el curso: cada módulo en orden, con sus 97 lecciones, y para cada lección los lenguajes, las rutas, la planta, el tiempo y los requisitos. Úsela para elegir por dónde empezar o para ver qué necesita un módulo antes. Si nunca programó un PLC, tome la ruta de escalera de 21 de estas lecciones, _Diagrama de escalera desde cero_, descrita en [Aprender](./index.md).
+Esta página es el mapa de todo el curso: cada módulo en orden, con sus 98 lecciones, y para cada lección los lenguajes, las rutas, la planta, el tiempo y los requisitos. Úsela para elegir por dónde empezar o para ver qué necesita un módulo antes. Si nunca programó un PLC, tome la ruta de escalera de 21 de estas lecciones, _Diagrama de escalera desde cero_, descrita en [Aprender](./index.md).
 
 La página sigue `packages/zplc-ide/lessons/course.json` y los paquetes de lección que lo acompañan. Una verificación de CI falla cuando falta una lección o cuando una fila no coincide con su lección. Cada módulo y cada lección tiene además su propia página generada: empiece por los [módulos del curso](./modules/index.md) y vea las [plantas de las lecciones](./plants.md) para las máquinas simuladas.
 
@@ -26,7 +26,7 @@ Primero se ve un resultado: el recorrido del módulo 0 termina con una salida qu
 
 Cada módulo indica a continuación por qué está donde está. La página de inicio de Aprender muestra las mismas palabras, porque ambas leen el mismo archivo del curso.
 
-Disponibles hoy: **97**. Planeadas: **0**. En total: **97**.
+Disponibles hoy: **98**. Planeadas: **0**. En total: **98**.
 
 ## Lenguajes
 
@@ -69,12 +69,14 @@ Un PLC repite un ciclo: leer las entradas, ejecutar el programa y escribir las s
 | `scan-cycle-one-scan-memory` Ciclo de escaneo y memoria de un ciclo           | Disponible | ST        | Simulación, Hardware | -      | 10      | `first-blink-simulation`     |
 | `blinky-ladder-timer-feedback` Oscilador TON y realimentación de salida       | Disponible | LD        | Simulación, Hardware | -      | 20      | `scan-cycle-one-scan-memory` |
 | `blink-structured-text` Escriba un parpadeador en texto estructurado          | Disponible | ST        | Simulación, Hardware | -      | 15      | `scan-cycle-one-scan-memory` |
+| `st-if-then-else` Elegir uno de tres estados con IF, ELSIF y ELSE             | Disponible | ST        | Simulación           | -      | 12      | `scan-cycle-one-scan-memory` |
 
 Objetivos de las lecciones disponibles:
 
 - **Ciclo de escaneo y memoria de un ciclo**: Compruebe que una variable conserva su valor de un ciclo al siguiente. Construya un retardo de un ciclo y un pulso de un ciclo con una única memoria.
 - **Oscilador TON y realimentación de salida**: Lea un oscilador de dos temporizadores en diagrama de escalera: cada temporizador cuenta durante un semiperíodo y pone en marcha al siguiente. Complételo con una bobina SET y una bobina RESET accionadas por las salidas Q de los temporizadores.
 - **Escriba un parpadeador en texto estructurado**: Escriba el patrón de temporizador y memoria que hace cambiar una salida a intervalos fijos. Condicione una salida a una entrada para que se detenga de inmediato cuando la entrada cae.
+- **Elegir uno de tres estados con IF, ELSIF y ELSE**: Escriba una instrucción IF con ramas ELSIF que elija un estado entre tres. Haga que exactamente una de tres salidas esté encendida en todo momento, sea cual sea el nivel anterior.
 - **Qué es un PLC: su primer peldaño**: Nombre las tres partes de un sistema con PLC: las entradas que leen el mundo, un programa que decide y las salidas que actúan sobre el mundo. Complete un peldaño en diagrama de escalera en el que un botón pulsado enciende una lámpara, y lea el resultado en el laboratorio simulado.
 - **El ciclo de escaneo: por qué importa el orden de los peldaños**: Describa el ciclo de escaneo: leer las entradas, resolver los peldaños de arriba hacia abajo, escribir las salidas y repetir. Reordene dos peldaños para que un valor se calcule antes del peldaño que lo usa, y vea en la traza registrada la diferencia de un ciclo.
 

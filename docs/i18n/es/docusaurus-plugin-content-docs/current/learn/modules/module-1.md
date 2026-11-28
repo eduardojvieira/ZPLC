@@ -25,6 +25,7 @@ Un PLC repite un ciclo: leer las entradas, ejecutar el programa y escribir las s
 | [Ciclo de escaneo y memoria de un ciclo](../lessons/scan-cycle-one-scan-memory.md) | `scan-cycle-one-scan-memory` | ST | 10 |
 | [Oscilador TON y realimentación de salida](../lessons/blinky-ladder-timer-feedback.md) | `blinky-ladder-timer-feedback` | LD | 20 |
 | [Escriba un parpadeador en texto estructurado](../lessons/blink-structured-text.md) | `blink-structured-text` | ST | 15 |
+| [Elegir uno de tres estados con IF, ELSIF y ELSE](../lessons/st-if-then-else.md) | `st-if-then-else` | ST | 12 |
 
 {/* <<< END GENERATED: learn/modules/module-1 <<< */}
 

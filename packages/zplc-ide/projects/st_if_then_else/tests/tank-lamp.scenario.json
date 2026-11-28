@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "id": "TankLamp",
+  "tickMs": 10,
+  "durationMs": 900,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "TankLamp.AboveLow": true,
+        "TankLamp.AboveHigh": false
+      }
+    },
+    {
+      "atMs": 100,
+      "set": {
+        "TankLamp.AboveLow": false,
+        "TankLamp.AboveHigh": false
+      }
+    },
+    {
+      "atMs": 200,
+      "set": {
+        "TankLamp.AboveLow": true,
+        "TankLamp.AboveHigh": false
+      }
+    },
+    {
+      "atMs": 300,
+      "set": {
+        "TankLamp.AboveLow": true,
+        "TankLamp.AboveHigh": true
+      }
+    },
+    {
+      "atMs": 400,
+      "set": {
+        "TankLamp.AboveLow": true,
+        "TankLamp.AboveHigh": false
+      }
+    },
+    {
+      "atMs": 500,
+      "set": {
+        "TankLamp.AboveLow": false,
+        "TankLamp.AboveHigh": false
+      }
+    },
+    {
+      "atMs": 600,
+      "set": {
+        "TankLamp.AboveLow": true,
+        "TankLamp.AboveHigh": false
+      }
+    },
+    {
+      "atMs": 700,
+      "set": {
+        "TankLamp.AboveLow": true,
+        "TankLamp.AboveHigh": true
+      }
+    },
+    {
+      "atMs": 800,
+      "set": {
+        "TankLamp.AboveLow": false,
+        "TankLamp.AboveHigh": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "TankLamp.LampLow": false,
+        "TankLamp.LampOk": true,
+        "TankLamp.LampHigh": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 150,
+      "condition": {
+        "TankLamp.LampLow": true,
+        "TankLamp.LampOk": false,
+        "TankLamp.LampHigh": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 250,
+      "condition": {
+        "TankLamp.LampLow": false,
+        "TankLamp.LampOk": true,
+        "TankLamp.LampHigh": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 350,
+      "condition": {
+        "TankLamp.LampLow": false,
+        "TankLamp.LampOk": false,
+        "TankLamp.LampHigh": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 450,
+      "condition": {
+        "TankLamp.LampLow": false,
+        "TankLamp.LampOk": true,
+        "TankLamp.LampHigh": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 550,
+      "condition": {
+        "TankLamp.LampLow": true,
+        "TankLamp.LampOk": false,
+        "TankLamp.LampHigh": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 650,
+      "condition": {
+        "TankLamp.LampLow": false,
+        "TankLamp.LampOk": true,
+        "TankLamp.LampHigh": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 750,
+      "condition": {
+        "TankLamp.LampLow": false,
+        "TankLamp.LampOk": false,
+        "TankLamp.LampHigh": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 850,
+      "condition": {
+        "TankLamp.LampLow": true,
+        "TankLamp.LampOk": false,
+        "TankLamp.LampHigh": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 210,
+      "forMs": 80,
+      "condition": {
+        "TankLamp.LampLow": false,
+        "TankLamp.LampOk": true,
+        "TankLamp.LampHigh": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 310,
+      "forMs": 80,
+      "condition": {
+        "TankLamp.LampLow": false,
+        "TankLamp.LampOk": false,
+        "TankLamp.LampHigh": true
+      }
+    }
+  ]
+}

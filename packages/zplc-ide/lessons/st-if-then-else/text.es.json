@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Elegir uno de tres estados con IF, ELSIF y ELSE",
+  "summary": "Muestre el estado de un tanque en tres lámparas con una sola instrucción IF, de modo que haya exactamente una lámpara encendida en todo momento.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
+  "objectives": [
+    "Escriba una instrucción IF con ramas ELSIF que elija un estado entre tres.",
+    "Haga que exactamente una de tres salidas esté encendida en todo momento, sea cual sea el nivel anterior."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/TankLamp.st, las entradas AboveLow y AboveHigh son dos interruptores de nivel de un tanque: cada una es TRUE mientras el agua está por encima de su marca. Las salidas LampLow, LampOk y LampHigh son tres lámparas. En todo momento debe haber exactamente una lámpara encendida: LampLow mientras el agua está por debajo de la marca baja, LampHigh mientras está por encima de la marca alta y LampOk entre las dos marcas.",
+      "checkpoint": "Usted puede decir qué lámpara debe estar encendida para cada una de las tres combinaciones de los dos interruptores, y que la combinación con solo AboveHigh no ocurre en un tanque real."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "El escenario empieza con el agua entre las marcas. A los {{t:100}} ms baja de la marca baja, a los {{t:200}} ms vuelve a estar entre las marcas y a los {{t:300}} ms sube por encima de la marca alta. Antes de ejecutar, prediga las tres lámparas a los {{t:150}}, {{t:250}} y {{t:350}} ms.",
+      "checkpoint": "{{v:TankLamp.LampLow=true,TankLamp.LampOk=false,TankLamp.LampHigh=false@150|solo LampLow}} a los {{t:150}} ms, {{v:TankLamp.LampLow=false,TankLamp.LampOk=true,TankLamp.LampHigh=false@250|solo LampOk}} a los {{t:250}} ms, {{v:TankLamp.LampLow=false,TankLamp.LampOk=false,TankLamp.LampHigh=true@350|solo LampHigh}} a los {{t:350}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija el proyecto inicial, guárdelo y pulse {{ui:learn.check}}. El proyecto inicial deja más de una lámpara encendida a los {{t:250}} ms, después de que el agua ha subido desde debajo de la marca baja. Haga que muestre exactamente una lámpara en cada momento del escenario, también cuando el agua pasa de un estado a otro. Conserve el IF con sus dos ramas ELSIF; usted decide qué hace cada rama.",
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
+      "checkpoint": "El escenario se llama TankLamp y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Siga las tres lámparas en la traza: una a la vez, y a los {{t:800}} ms, cuando el agua baja de encima de la marca alta a debajo de la marca baja en un solo paso, la lámpara pasa de LampHigh a LampLow sin ningún momento en que ambas estén encendidas.",
+      "checkpoint": "En cada muestra de la traza hay exactamente una lámpara encendida, también en el ciclo de escaneo en que cambia un interruptor."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "A los {{t:800}} ms los dos interruptores pasan a OFF en el mismo ciclo de escaneo. ¿Qué rama de su IF se ejecuta en ese ciclo y qué muestra cada lámpara después?",
+      "checkpoint": "Usted puede nombrar la rama que se ejecuta y explicar por qué una lámpara que su programa no escribe en un ciclo de escaneo conserva el valor que tenía en el ciclo anterior."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Abra la traza a los {{t:250}} ms: ¿qué lámparas están encendidas y qué rama de su programa se ejecutó en ese ciclo de escaneo?"
+    },
+    {
+      "level": 2,
+      "text": "Conserve las tres condiciones del proyecto inicial y dé a cada rama una instrucción para cada una de las tres lámparas. En la primera rama escriba LampLow := TRUE; LampOk := FALSE; LampHigh := FALSE; en la segunda LampLow := FALSE; LampOk := TRUE; LampHigh := FALSE; en la tercera LampLow := FALSE; LampOk := FALSE; LampHigh := TRUE;"
+    }
+  ],
+  "faultCases": [
+    "El proyecto inicial deja más de una lámpara encendida a los {{t:250}} ms, después de que el agua ha subido desde debajo de la marca baja."
+  ]
+}

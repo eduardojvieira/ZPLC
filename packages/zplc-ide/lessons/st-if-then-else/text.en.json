@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "title": "Choose one of three states with IF, ELSIF and ELSE",
+  "summary": "Show the state of a tank on three lamps with one IF statement, so that exactly one lamp is ON at any time.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
+  "objectives": [
+    "Write one IF statement with ELSIF branches that picks one state out of three.",
+    "Make exactly one of three outputs ON at any time, whatever the level did before."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/TankLamp.st the inputs AboveLow and AboveHigh are two level switches of a tank: each is TRUE while the water is above its mark. The outputs LampLow, LampOk and LampHigh are three lamps. At any time exactly one lamp must be ON: LampLow while the water is below the low mark, LampHigh while it is above the high mark, and LampOk between the two marks.",
+      "checkpoint": "You can say which lamp must be ON for each of the three combinations of the two switches, and that the combination with only AboveHigh does not occur in a real tank."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "The scenario starts with the water between the marks. At {{t:100}} ms it falls below the low mark, at {{t:200}} ms it is between the marks again, at {{t:300}} ms it rises above the high mark. Before running, predict the three lamps at {{t:150}}, {{t:250}} and {{t:350}} ms.",
+      "checkpoint": "{{v:TankLamp.LampLow=true,TankLamp.LampOk=false,TankLamp.LampHigh=false@150|only LampLow}} at {{t:150}} ms, {{v:TankLamp.LampLow=false,TankLamp.LampOk=true,TankLamp.LampHigh=false@250|only LampOk}} at {{t:250}} ms, {{v:TankLamp.LampLow=false,TankLamp.LampOk=false,TankLamp.LampHigh=true@350|only LampHigh}} at {{t:350}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program leaves more than one lamp ON at {{t:250}} ms, after the water has risen from below the low mark. Make it show exactly one lamp at every moment of the scenario, also when the water goes from one state to another. Keep the IF with its two ELSIF branches; you decide what each branch does.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
+      "checkpoint": "The scenario is named TankLamp and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Follow the three lamps in the trace: one at a time, and at {{t:800}} ms, when the water falls from above the high mark to below the low mark in one step, the lamp changes from LampHigh to LampLow with no moment in which both are ON.",
+      "checkpoint": "At every sample of the trace exactly one lamp is ON, including the scan on which a switch changes."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "At {{t:800}} ms both switches turn OFF on the same scan. Which branch of your IF runs on that scan, and what does each lamp show afterwards?",
+      "checkpoint": "You can name the branch that runs and say why a lamp that your program does not write on a scan keeps the value it had on the scan before."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Open the trace at {{t:250}} ms: which lamps are ON, and which branch of your program ran on that scan?"
+    },
+    {
+      "level": 2,
+      "text": "Keep the three conditions of the starting program and give every branch one statement for each of the three lamps. In the first branch write LampLow := TRUE; LampOk := FALSE; LampHigh := FALSE; in the second LampLow := FALSE; LampOk := TRUE; LampHigh := FALSE; in the third LampLow := FALSE; LampOk := FALSE; LampHigh := TRUE;"
+    }
+  ],
+  "faultCases": ["The starting program leaves more than one lamp ON at {{t:250}} ms, after the water has risen from below the low mark."]
+}
