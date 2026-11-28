@@ -8067,8 +8067,8 @@ export const JOURNEYS: Journey[] = [
       assert(compact.density === 'compact', `The root says ${compact.density}, not compact.`);
       for (const key of ['control', 'row', 'spacing', 'field'] as const) {
         const style = await app.eval<string>(
-          `(() => { const s = getComputedStyle(document.querySelector('[data-setting="density"]')); return JSON.stringify({ height: s.height, ` +
-            `minHeight: s.minHeight, appearance: s.appearance, boxSizing: s.boxSizing }); })()`,
+          `(() => { const s = getComputedStyle(document.querySelector('[data-setting="density"]')); ` +
+            `return JSON.stringify({ height: s.height, minHeight: s.minHeight, appearance: s.appearance, boxSizing: s.boxSizing }); })()`,
         );
         assert(
           compact[key] < comfortable[key],
