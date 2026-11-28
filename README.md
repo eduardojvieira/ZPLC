@@ -2,18 +2,22 @@
 
 # ZPLC
 
-**Open-source IEC 61131-3 PLC runtime and development environment on Zephyr RTOS.**
+**One free, open-source desktop application that takes you from your first rung of Ladder to a real board controlling a machine.**
 
-ZPLC is a desktop application and a small C99 runtime. You write a program in
-Structured Text, Instruction List, Ladder, Function Block Diagram or Sequential
-Function Chart, compile it to one bytecode format, and run it on your computer in a
-simulator or, in a cross-build, on a Zephyr board.
+ZPLC joins four legs into one path — for learners, makers, teachers, and people working with the built-in assistant or an AI agent over MCP — and states at every step what has been verified and at what evidence level:
 
-- **Build a controller:** [Install ZPLC](docs/docs/getting-started/install.md), then follow [Blink without hardware](docs/docs/tutorials/blink-without-hardware.md).
-- **Learn PLC programming:** open **Learn** in the application: a course from zero, with a Ladder path.
+| Leg                     | What you do                                              | What ZPLC gives                                                                                                                                           |
+| ----------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Learn**               | Understand an idea and practise it                       | The built-in course inside ZPLC, in five IEC 61131-3 languages (English and Spanish)                                                                      |
+| **Program**             | Write, read and change a program                         | Desktop editors for ST, IL, LD, FBD and SFC, the compiler, the built-in assistant and an MCP server                                                       |
+| **Simulate and check**  | See the program run a plant and know whether it is right | A 3D plant with physics, scripted scenario tests and deterministic grading, with no hardware needed                                                       |
+| **Take it to hardware** | Run the same bytecode on a board                         | A small C99 runtime on low-cost Zephyr microcontrollers (seven board profiles, cross-build only) and a connected board that can drive the simulated plant |
 
-> **Status:** ZPLC 2.0. What it does not do, and what to test before it runs a
-> machine: [Safety and limitations](docs/docs/safety-and-limitations.md).
+- **Install ZPLC:** [Windows](docs/docs/getting-started/install.md#windows) · [macOS](docs/docs/getting-started/install.md#macos) · [Linux](docs/docs/getting-started/install.md#linux) ([full install guide](docs/docs/getting-started/install.md) · [GitHub Releases](https://github.com/eduardojvieira/ZPLC/releases))
+- **First lesson:** [Your first blink in simulation](docs/docs/learn/lessons/first-blink-simulation.md) (module 0) · [What a PLC is: your first rung](docs/docs/learn/lessons/ld-what-is-a-plc.md) (Ladder from zero) · [Course overview](docs/docs/learn/index.md)
+- **Quick tutorial:** [Blink without hardware](docs/docs/tutorials/blink-without-hardware.md)
+
+> **Status:** ZPLC 2.1 (release files and `SHA256SUMS` for 2.1.0 are published on [GitHub Releases](https://github.com/eduardojvieira/ZPLC/releases) when the release is cut). What ZPLC does not do, and what to test before it runs a machine: [Safety and limitations](docs/docs/safety-and-limitations.md) · [Hardware support](docs/docs/reference/capabilities-evidence.md).
 
 [Download ZPLC](https://github.com/eduardojvieira/ZPLC/releases) ·
 [Documentation](https://eduardojvieira.github.io/ZPLC/) · MIT licence
@@ -26,38 +30,36 @@ simulator or, in a cross-build, on a Zephyr board.
 ## Download
 
 Installers are files of a [GitHub release](https://github.com/eduardojvieira/ZPLC/releases),
-the only channel that exists today. Check the file against `SHA256SUMS`, then open it
-([Install ZPLC](docs/docs/getting-started/install.md)):
+the only channel that exists today. The 2.1.0 installers and their `SHA256SUMS` are published there when 2.1.0 is cut. Check the file against `SHA256SUMS`, then open it ([Install ZPLC](docs/docs/getting-started/install.md)):
 
-- **Windows:** the `setup-unsigned.exe` installer. It is unsigned: choose **More info**,
-  then **Run anyway** when SmartScreen warns; Smart App Control blocks it outright.
-- **macOS:** the `.dmg` or `.zip` for your chip. The app is signed ad hoc and not
-  notarized: choose **Done**, then **Privacy & Security**, **Open Anyway**.
-- **Linux:** the `.deb` or `.rpm`; the AppImage if neither fits. They are unsigned, so
-  the checksum is your check.
+- **[Windows](docs/docs/getting-started/install.md#windows):** the `setup-unsigned.exe` installer or `portable-unsigned.exe`. It is unsigned: choose **More info**, then **Run anyway** when SmartScreen warns; Smart App Control blocks it outright.
+- **[macOS](docs/docs/getting-started/install.md#macos):** the `.dmg` or `.zip` for your chip (`arm64` or `x64`). The app is signed ad hoc and not notarized: choose **Done**, then **Privacy & Security**, **Open Anyway**.
+- **[Linux](docs/docs/getting-started/install.md#linux):** the `.deb` or `.rpm`; the AppImage if neither fits. They are unsigned, so the checksum is your check.
 
 ## What you can do today
 
-- Write programs in Structured Text, Instruction List, Ladder, FBD or SFC in ZPLC.
-- Compile them to `.zplc` bytecode and run them in the simulator, with no hardware.
-- Test them with scenarios: scripted inputs and timed checks on outputs, run from the Tests activity, with the verdict in the Test results tab.
+- Write programs in Structured Text, Instruction List, Ladder, FBD or SFC in ZPLC, including every standard function of the compiler in FBD and Ladder.
+- Compile them to `.zplc` bytecode and run them in the bundled host simulator, with no hardware.
+- Watch programs drive simulated 3D plants with physics, and test them with scripted scenarios from the Tests activity or `zplc-cli`.
 - Start from one of 124 example projects, such as a tank level controller, a conveyor, motor start/stop and a pedestrian crossing. They are in [`packages/zplc-ide/projects/`](packages/zplc-ide/projects/) and on the Welcome screen.
-- Learn PLC programming from zero with the built-in course: 97 lessons, 14 of them in two languages (Structured Text or Ladder), in English and Spanish, with a Ladder path whose lessons open on a reading page over the workbench, with a try-it lab.
-- Build the runtime for seven Zephyr boards.
+- Learn PLC programming from zero with the built-in course: 97 lessons in 20 modules, 14 of them in two languages (Structured Text or Ladder), in English and Spanish, with reading pages and try-it labs.
+- Use the built-in assistant for reviewed code proposals, or connect an external AI agent over the bundled `zplc-mcp` server to read, write, build, test and debug in a private simulation; neither ever acts on hardware or on a session a person is running ([AI assistant and MCP](docs/docs/guides/ai-and-mcp.md)).
+- Build the runtime for seven Zephyr boards (cross-build only).
 
 ## What it runs on
 
-| Part                | Runs on                                                                                                                                                                                                                                                                                                          |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Desktop application | Windows, macOS and Linux. The installers are unsigned.                                                                                                                                                                                                                                                           |
-| Simulator           | Your computer, as a host build of the same C runtime. The desktop application bundles it.                                                                                                                                                                                                                        |
-| Boards              | Raspberry Pi Pico (RP2040), Arduino GIGA R1, ESP32-S3 DevKitC, STM32F746G Discovery, STM32 Nucleo-H743ZI, Arduino Opta WiFi and Waveshare RP2040-Zero. All seven cross-build only: the firmware builds in CI and has not been run on a board ([Hardware support](docs/docs/reference/capabilities-evidence.md)). |
+| Part                | Runs on                                                                                                                                                                                                                                                                                                                   |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Desktop application | Windows, macOS and Linux. The installers are unsigned. On Windows, the host simulator does not include Modbus, MQTT, loopback or device link ([known limit](docs/docs/getting-started/install.md#known-limit-on-windows-simulator-communication)).                                                                        |
+| Simulator           | Your computer, as a host build of the same C runtime. The desktop application bundles it.                                                                                                                                                                                                                                 |
+| Boards              | Raspberry Pi Pico (RP2040), Arduino GIGA R1, ESP32-S3 DevKitC, STM32F746G Discovery, STM32 Nucleo-H743ZI, Arduino Opta WiFi and Waveshare RP2040-Zero. All seven cross-build only: the firmware builds in CI and has not been run on a physical board ([Hardware support](docs/docs/reference/capabilities-evidence.md)). |
 
 ## Try it
 
-1. Download the installer for your system from [GitHub Releases](https://github.com/eduardojvieira/ZPLC/releases) and check it: [Install ZPLC](docs/docs/getting-started/install.md).
-2. Open it. Windows and macOS warn about unsigned apps; the install page shows how to continue.
-3. In ZPLC, copy the **Blinky (Structured Text)** example, compile it, choose **Simulate**, press **Connect** and then **Run**. The tutorial [Blink without hardware](docs/docs/tutorials/blink-without-hardware.md) walks through it, ending in a passing scenario test.
+1. Download the installer for your system from [GitHub Releases](https://github.com/eduardojvieira/ZPLC/releases) and verify it: [Windows](docs/docs/getting-started/install.md#windows) · [macOS](docs/docs/getting-started/install.md#macos) · [Linux](docs/docs/getting-started/install.md#linux).
+2. Open ZPLC. Windows and macOS warn about unsigned apps; the install page shows how to continue.
+3. To start learning from zero, choose **Learn** on the Welcome screen and press **Start the course** ([Your first blink in simulation](docs/docs/learn/lessons/first-blink-simulation.md), or start the Ladder path at [What a PLC is: your first rung](docs/docs/learn/lessons/ld-what-is-a-plc.md)).
+4. Or copy the **Blinky (structured text)** example, compile it, check that the target selector says **Simulation**, and press **Run** (a simulation needs no **Connect**). The tutorial [Blink without hardware](docs/docs/tutorials/blink-without-hardware.md) walks through it, ending in a passing scenario test.
 
 ## How it compares
 
@@ -81,6 +83,9 @@ The full documentation, including the runtime architecture, board references and
 language references, is on the **[documentation site](https://eduardojvieira.github.io/ZPLC/)**.
 
 - [Getting started](https://eduardojvieira.github.io/ZPLC/docs/getting-started)
+- [Learn (the built-in course)](docs/docs/learn/index.md)
+- [Simulated plants](docs/docs/plant/index.md)
+- [AI assistant and MCP](docs/docs/guides/ai-and-mcp.md)
 - [Platform overview](https://eduardojvieira.github.io/ZPLC/docs/platform-overview)
 - [System architecture](https://eduardojvieira.github.io/ZPLC/docs/architecture)
 - [Runtime and hardware abstraction layer (HAL)](https://eduardojvieira.github.io/ZPLC/docs/runtime)
@@ -95,15 +100,13 @@ language references, is on the **[documentation site](https://eduardojvieira.git
 
 ### Desktop application (Linux and macOS)
 
-You need Bun 1.3.14, CMake and a C compiler. The simulator of the desktop
-application is a separate program: build it first and point the application to it.
+You need Bun 1.3.14, CMake (3.20 or newer) and a C99 compiler. `bun run setup`
+installs the locked dependencies, builds the compiler package and builds the
+native simulator (`firmware/lib/zplc_core/build/zplc_runtime`):
 
 ```bash
-cmake -S firmware/lib/zplc_core -B firmware/lib/zplc_core/build
-cmake --build firmware/lib/zplc_core/build
-bun install --frozen-lockfile
-ZPLC_NATIVE_SIM_BIN="$PWD/firmware/lib/zplc_core/build/zplc_runtime" \
-  bun run --cwd=packages/zplc-ide electron:dev
+bun run setup
+bun run dev
 ```
 
 `bun run --cwd=packages/zplc-ide electron:build` builds the installers. The
@@ -115,12 +118,11 @@ for Linux, macOS and Windows; there is no hosted browser version.
 
 ```bash
 git clone https://github.com/eduardojvieira/ZPLC.git
-cd ZPLC/firmware/lib/zplc_core
-mkdir build && cd build
-cmake ..
-make
-ctest --output-on-failure   # run the C tests
-./zplc_runtime              # run the demo runtime
+cd ZPLC
+cmake -S firmware/lib/zplc_core -B firmware/lib/zplc_core/build -DCMAKE_BUILD_TYPE=Release
+cmake --build firmware/lib/zplc_core/build --parallel
+ctest --test-dir firmware/lib/zplc_core/build --output-on-failure   # run the C tests
+./firmware/lib/zplc_core/build/zplc_runtime                         # run the demo runtime
 ```
 
 ### Firmware for a board
@@ -220,16 +222,17 @@ CONFIG_ZPLC_MAX_TASKS=4
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Contributions that use AI assistants
-follow [AGENTS.md](AGENTS.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to build, run the checks for each layer, and have a change reviewed. Contributions that use AI assistants follow [AGENTS.md](AGENTS.md).
 
 ```bash
-# C runtime (from firmware/lib/zplc_core/build)
-cmake .. && make && ctest --output-on-failure
+# Install dependencies, build the compiler and build the native runtime
+bun run setup
 
-# TypeScript (monorepo)
-bun install --frozen-lockfile
-bun run test
+# C runtime with sanitizers
+bun run test:core
+
+# Compiler tests (CI check)
+bun run test:compiler:ci
 
 # One compiler test file
 bun test packages/zplc-compiler/src/compiler/compiler.test.ts
