@@ -69,7 +69,7 @@ caption: El escenario pone la línea en marcha, pulsa el paro de emergencia (ESt
 
 El diagrama es lo que hace un programa correcto en el escenario, según una ejecución de la solución sobre la planta de esta lección. La cinta de salida sigue a la línea: funciona tras la primera pulsación de `Start`, cae en el ciclo de escaneo de la pulsación del paro, sigue apagada tras soltarlo y vuelve a funcionar tras la segunda pulsación. Cada tiempo es el del escenario, con un ciclo de escaneo de diferencia como mucho.
 
-La máquina no se detiene de golpe. En esa ejecución el elevador A, que llevaba la primera caja y llevaba subiendo cerca de medio segundo, todavía subió unos 0,1 m después de que cayera su salida de subir, y luego quedó quieto hasta el reinicio. La caja no se cayó: la ejecución entregó las cinco cajas al contenedor y no dejó caer ninguna. El escenario no mide ese avance; comprueba las salidas.
+La máquina no se detiene de golpe. En esa ejecución el elevador A, que transportaba la primera caja y llevaba subiendo cerca de medio segundo, todavía subió unos 0,1 m después de que cayera su salida de subir, y luego quedó quieto hasta el reinicio. La caja no se cayó: la ejecución entregó las cinco cajas al contenedor y no dejó caer ninguna. El escenario no mide ese avance; comprueba las salidas.
 
 ## Ejemplo resuelto
 
@@ -95,7 +95,7 @@ Este compresor puede arrancar de nuevo solo: el final de su pausa lo marca un se
 - Leer `EStopOk` como "pulsado". Está en TRUE mientras el pulsador está liberado, así que un programa que detiene la línea cuando `EStopOk` está en TRUE la detiene mientras nadie pulsa nada.
 - Dejar que la línea funcione otra vez al soltar. El escenario comprueba a los 17,3 s, 0,3 s después de soltar, que Red sigue encendida y la cinta de salida apagada.
 - Detener solo algunas salidas. A los 16 s el escenario comprueba nueve salidas: las tres cintas, y las señales de subir, bajar y funcionar de los dos elevadores.
-- Encender Red desde el pulsador en lugar de desde la memoria. A los 17,3 s el pulsador está liberado, y aun así Red debe seguir encendida.
+- Encender Red desde el pulsador. A los 17,3 s el pulsador está liberado, y aun así Red debe seguir encendida.
 - Olvidar declarar la memoria. Toda variable que usa el programa se declara, y una memoria del programa va en `VAR`.
 
 > [!NOTE]
