@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/VisionSorting.st, ponga en marcha ambas cintas tras Start. Doce piezas llegan de a una, cada una con un código: toda pieza de código 1 debe terminar en Product1 y toda pieza de código 2 en Product2, así que el brazo debe estar cruzado cuando una pieza de código 2 lo alcanza y en reposo cuando lo alcanza una de código 1. Done debe encenderse tras doce piezas.",
+      "body": "En src/VisionSorting.st, ponga en marcha ambas cintas tras Start. Doce piezas llegan una a una, cada una con un código: toda pieza de código 1 debe terminar en Product1 y toda pieza de código 2 en Product2, así que el brazo debe estar cruzado cuando una pieza de código 2 lo alcanza y en reposo cuando lo alcanza una de código 1. Done debe encenderse tras doce piezas.",
       "checkpoint": "Las piezas de código 1 terminan en Product1, las de código 2 en Product2, y Done se enciende tras doce piezas."
     },
     {
@@ -52,10 +52,8 @@
     },
     {
       "level": 2,
-      "text": "Cuente ciclos en vez de usar un temporizador: cuando Code no sea 0 y el bloqueo esté libre, sume uno a Handled, fije un bloqueo hasta que la pieza salga del campo y, para código 2, un retardo antes del giro. Cuando el retardo llegue a 0 active Divert y cargue un contador de retención; cuando este llegue a 0 desactive Divert. Done := Handled >= 12."
+      "text": "Memorice Start en Active y accione RunIn y RunSide mientras Active esté en TRUE. Cuente ciclos de escaneo de 0,01 s con tres variables INT, Lock, Wait y ArmHold, cada una descontada en uno por ciclo mientras sea mayor que 0. Cuando Active esté en TRUE, Lock = 0 y Code <> 0, sume uno a Handled, fije Lock en 450 para que la pieza se cuente una sola vez y, si Code = 2, fije Wait en 70. Cuando Wait llegue a 0, active Divert y cargue ArmHold con 530, de modo que una pieza de código 2 leída mientras el brazo sigue cruzado renueve la retención; cuando ArmHold llegue a 0, desactive Divert. Done := Handled >= 12; Busy := Active AND NOT Done."
     }
   ],
-  "faultCases": [
-    "El programa inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna pieza; ponga en marcha ambas cintas tras Start y accione el brazo para cada pieza de código 2."
-  ]
+  "faultCases": ["El proyecto inicial no acciona ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna pieza."]
 }

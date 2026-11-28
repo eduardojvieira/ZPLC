@@ -52,10 +52,8 @@
     },
     {
       "level": 2,
-      "text": "Count scans instead of using a timer: when Code is not 0 and the lock is free, add one to Handled, set a lock for the item to leave the field and, for code 2, a delay before the swing. When the delay reaches 0 set Divert and load a hold counter; when the hold counter reaches 0 clear Divert. Done := Handled >= 12."
+      "text": "Latch Start into Active and run RunIn and RunSide while Active. Count scans of 0.01 s with three INT variables, Lock, Wait and ArmHold, each counted down by one per scan while above 0. When Active is TRUE, Lock = 0 and Code <> 0, add one to Handled, set Lock to 450 so the item is counted once, and if Code = 2 set Wait to 70. When Wait comes down to 0, set Divert and load ArmHold with 530, so a code 2 item read while the arm is still across renews the hold; when ArmHold comes down to 0, clear Divert. Done := Handled >= 12; Busy := Active AND NOT Done."
     }
   ],
-  "faultCases": [
-    "The starter drives no output, so no belt moves and no item is sorted; run both belts after Start and swing the arm for each code 2 item."
-  ]
+  "faultCases": ["The starting program drives no output, so no belt moves and no item is sorted."]
 }

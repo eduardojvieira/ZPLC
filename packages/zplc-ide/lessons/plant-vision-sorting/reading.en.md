@@ -6,31 +6,31 @@ This station sorts items by the code each one carries, and it is the first machi
 
 The tables say what each part is in a real plant and what its signal means to your program. The PLC variable is the name the program uses: the plant map of the lesson binds each signal of the scene to it.
 
-| Part | Kind | What it is in a real plant |
-| --- | --- | --- |
-| `Infeed` | Belt conveyor | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines. |
-| `SideBelt` | Belt conveyor | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines. |
-| `Source1` | Item emitter | Stands for whatever feeds the line: the machine before it, an operator, or a magazine that releases one item. |
-| `Vision1` | Vision sensor | A camera with its own software that reads a code printed on the item. |
-| `Arm1` | Diverter arm | A swinging arm over the belt that steers items off to a side line. |
-| `Product1` | Item remover | Stands for whatever takes items away at the end of the line: the next machine, a bin, or an operator. |
-| `Product2` | Item remover | Stands for whatever takes items away at the end of the line: the next machine, a bin, or an operator. |
-| `StartButton` | Push button | A button on the operator panel that is pressed only while a finger holds it. |
-| `Beacon` | Stack light | A tower of coloured lamps that shows from afar what the machine is doing. |
+| Part          | Kind          | What it is in a real plant                                                                                    |
+| ------------- | ------------- | ------------------------------------------------------------------------------------------------------------- |
+| `Infeed`      | Belt conveyor | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines.              |
+| `SideBelt`    | Belt conveyor | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines.              |
+| `Source1`     | Item emitter  | Stands for whatever feeds the line: the machine before it, an operator, or a magazine that releases one item. |
+| `Vision1`     | Vision sensor | A camera with its own software that reads a code printed on the item.                                         |
+| `Arm1`        | Diverter arm  | A swinging arm over the belt that steers items off to a side line.                                            |
+| `Product1`    | Item remover  | Stands for whatever takes items away at the end of the line: the next machine, a bin, or an operator.         |
+| `Product2`    | Item remover  | Stands for whatever takes items away at the end of the line: the next machine, a bin, or an operator.         |
+| `StartButton` | Push button   | A button on the operator panel that is pressed only while a finger holds it.                                  |
+| `Beacon`      | Stack light   | A tower of coloured lamps that shows from afar what the machine is doing.                                     |
 
-| Variable | Signal | Direction & type | Meaning |
-| --- | --- | --- | --- |
-| `RunIn` | `Infeed.run` | PLC output · BOOL | TRUE runs the belt forward. |
-| `RunSide` | `SideBelt.run` | PLC output · BOOL | TRUE runs the belt forward. |
-| — | `Source1` | — | Not wired to the PLC. |
-| `Seen` | `Vision1.detect` | PLC input · BOOL | TRUE while an item is in the field of view. |
-| `Code` | `Vision1.code` | PLC input · INT, 0 to 9 code | The code read from the item; 0 when there is none. |
-| `Divert` | `Arm1.divert` | PLC output · BOOL | TRUE swings the arm across the belt; FALSE brings it back to rest. |
-| — | `Product1` | — | Not wired to the PLC. |
-| — | `Product2` | — | Not wired to the PLC. |
-| `Start` | `StartButton.pressed` | PLC input · BOOL | TRUE while the button is held down. |
-| `Busy` | `Beacon.amber` | PLC output · BOOL | TRUE lights the amber lamp. |
-| `Done` | `Beacon.green` | PLC output · BOOL | TRUE lights the green lamp. |
+| Variable  | Signal                | Direction & type             | Meaning                                                            |
+| --------- | --------------------- | ---------------------------- | ------------------------------------------------------------------ |
+| `RunIn`   | `Infeed.run`          | PLC output · BOOL            | TRUE runs the belt forward.                                        |
+| `RunSide` | `SideBelt.run`        | PLC output · BOOL            | TRUE runs the belt forward.                                        |
+| —         | `Source1`             | —                            | Not wired to the PLC.                                              |
+| `Seen`    | `Vision1.detect`      | PLC input · BOOL             | TRUE while an item is in the field of view.                        |
+| `Code`    | `Vision1.code`        | PLC input · INT, 0 to 9 code | The code read from the item; 0 when there is none.                 |
+| `Divert`  | `Arm1.divert`         | PLC output · BOOL            | TRUE swings the arm across the belt; FALSE brings it back to rest. |
+| —         | `Product1`            | —                            | Not wired to the PLC.                                              |
+| —         | `Product2`            | —                            | Not wired to the PLC.                                              |
+| `Start`   | `StartButton.pressed` | PLC input · BOOL             | TRUE while the button is held down.                                |
+| `Busy`    | `Beacon.amber`        | PLC output · BOOL            | TRUE lights the amber lamp.                                        |
+| `Done`    | `Beacon.green`        | PLC output · BOOL            | TRUE lights the green lamp.                                        |
 
 A PLC output drives a part of the machine; a PLC input is what a part reports. The emitter and the two bins are not wired: your program never sees an item except through the vision sensor, and only the scenario counts the items that reach each bin. The scenario releases twelve items, one every 5 seconds, eight with code 1 and four with code 2. Both belts run at 0.5 metres per second. Code 1 items belong in the first bin, `Product1`, and code 2 items in the second, `Product2`. The arm takes about 0.4 seconds to swing across and the same to come back.
 
