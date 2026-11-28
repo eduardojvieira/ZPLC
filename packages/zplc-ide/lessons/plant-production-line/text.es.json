@@ -5,7 +5,7 @@
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Mover el control de una máquina a un bloque de función y usar una instancia para cada máquina.",
-    "Equilibrar dos máquinas de distinta velocidad alternando las piezas entre ellas."
+    "Dar a dos máquinas de distinta velocidad el mismo control, para que cada una termine cuatro ciclos."
   ],
   "stages": [
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Escriba el programa, guárdelo y pulse {{ui:learn.check}}. El proyecto inicial controla solo la máquina A, con instrucciones escritas en el propio programa, así que la máquina B nunca recibe una pieza en su cámara y no se hace ninguna base. Dé a la máquina B el mismo control sin escribirlo una segunda vez, y encienda Green cuando ambas máquinas hayan terminado cuatro ciclos.",
+      "body": "Escriba el programa, guárdelo y pulse {{ui:learn.check}}. El proyecto inicial controla solo la máquina A, así que la máquina B nunca recibe una pieza en su cámara, no se hace ninguna base y Green nunca se enciende. Dé a la máquina B el mismo control sin escribirlo una segunda vez, y encienda Green cuando ambas máquinas hayan terminado cuatro ciclos.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "Escriba un bloque de función, por ejemplo Cell. Pase Active, Seen, Ready y Done como entradas y tome Feed, Start y Cycles como salidas; guarde Step y los dos temporizadores dentro de él, para que dos instancias nunca los compartan. Ponga Start en FALSE al principio para que dure un solo ciclo de escaneo, y llame a cada instancia una vez por ciclo de escaneo. En el programa, declare MachA : Cell y MachB : Cell, llámelas con Seen := EyeA y EyeB, Ready := ReadyA y ReadyB, Done := DoneA y DoneB, copie Feed y Start a FeedA, StartA, FeedB y StartB, y encienda Green cuando ambos Cycles sean al menos 4."
+      "text": "Guarde Step, los temporizadores y la cuenta dentro del bloque, para que dos instancias nunca los compartan. Escriba un bloque de función, por ejemplo Cell. Pase a él las instrucciones de la máquina A, desde StartA := FALSE; hasta la línea de FeedA, cambiando StepA, TravelA, EjectA y CyclesA por Step, Travel, Eject y Cycles, y EyeA, ReadyA, DoneA, FeedA y StartA por Seen, Ready, Done, Feed y Start, y bórrelas del programa junto con esas variables. Pase Active, Seen, Ready y Done como entradas y tome Feed, Start y Cycles como salidas; guarde Step y los dos temporizadores dentro de él, para que dos instancias nunca los compartan. Ponga Start en FALSE al principio para que dure un solo ciclo de escaneo, y llame a cada instancia una vez por ciclo de escaneo. En el programa, declare MachA : Cell y MachB : Cell, llámelas con Active := Active, Seen := EyeA y EyeB, Ready := ReadyA y ReadyB, Done := DoneA y DoneB, copie Feed y Start a FeedA, StartA, FeedB y StartB, y encienda Green cuando ambos Cycles sean al menos 4."
     }
   ],
   "faultCases": [

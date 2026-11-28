@@ -100,7 +100,7 @@ END_PROGRAM
 
 Lea primero el programa. `Left` y `Right` son dos instancias de `Stamper`. En cada ciclo de escaneo, el programa llama a cada una con su propio sensor de pieza y luego copia la salida de cada una a su propia prensa. Ahora lea el bloque: `Busy` y `Hold` están declaradas dentro de él, así que cada instancia tiene las suyas.
 
-Por eso las dos prensas no se estorban. En una ejecución de este programa, una pieza llega a la prensa izquierda a 1 s y su prensa funciona hasta los 3 s. Una pieza llega a la prensa derecha a los 2 s, cuando la izquierda sigue funcionando, y su prensa funciona de los 2 s a los 4 s. Una segunda pieza en la prensa izquierda, a los 5 s, funciona de los 5 s a los 7 s. Las cuentas también están separadas: a los 7 s la prensa izquierda ha estampado dos piezas y la derecha una, así que el total es tres.
+Por eso las dos prensas no se estorban. En una ejecución de este programa, una pieza llega a la prensa izquierda en el segundo 1 y su prensa funciona hasta los 3 s. Una pieza llega a la prensa derecha a los 2 s, cuando la izquierda sigue funcionando, y su prensa funciona de los 2 s a los 4 s. Una segunda pieza en la prensa izquierda, a los 5 s, funciona de los 5 s a los 7 s. Las cuentas también están separadas: a los 7 s la prensa izquierda ha estampado dos piezas y la derecha una, así que el total es tres.
 
 ```timing
 span: 8000
