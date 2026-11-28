@@ -227,10 +227,13 @@ export function AgentStatus({ state, status }: { state: AgentState; status: AiPr
     );
   return (
     <p role="status" className="text-xs text-[var(--color-surface-400)]">
-      {t('console.providerStatus', {
-        provider: status.enabled ? t('console.enabled') : t('console.disabled'),
-        key: status.keyStored ? t('console.stored') : t('console.notStored'),
-      })}
+      {status.vaultAvailable
+        ? t('console.providerStatus', {
+            provider: status.enabled ? t('console.enabled') : t('console.disabled'),
+            key: status.keyStored ? t('console.stored') : t('console.notStored'),
+          })
+        : // ready without a vault: a configured provider that needs no key (AIX-006)
+          t('console.providerStatusNoVault', { provider: status.enabled ? t('console.enabled') : t('console.disabled') })}
     </p>
   );
 }

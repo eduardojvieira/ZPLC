@@ -36,6 +36,7 @@ import { attachEmulatedDevice } from './emulatedDevice';
 import { findTextOutOfBox } from './textFit';
 import { JOURNEYS_013 } from './journeys013';
 import { practiceFromReading } from './journeys/learnReading';
+import { JOURNEYS_014 } from './journeys014';
 import { journeysManipulator } from './journeys/plantManipulator';
 import { journeysSorting } from './journeys/plantSorting';
 import { journeysStations } from './journeys/plantStations';
@@ -8507,6 +8508,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   ...JOURNEYS_013,
+  ...JOURNEYS_014,
   ...journeysOperator,
   ...journeysManipulator,
   ...journeysSorting,
