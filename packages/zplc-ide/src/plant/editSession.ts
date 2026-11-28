@@ -32,6 +32,8 @@ export interface PlantEditSession {
   readonly hadMap: boolean;
   /** What the scene was when it was last saved, or when it began: the session is modified when it differs (FLW-005). */
   readonly baseline: string | null;
+  /** The project the session began in: what it holds is never written into another one. */
+  readonly project: unknown;
   /** Scenes edited and closed with Done and not saved yet, by scene reference: they stay a target of Save and Save all (FLW-005). */
   readonly unsaved: Readonly<Record<string, UnsavedScene>>;
 }
@@ -58,7 +60,7 @@ export interface PlantEditActions {
   touch(): void;
 }
 
-const CLOSED = { editor: null, mapEditor: null, sceneRef: null, hadMap: false, baseline: null } as const;
+const CLOSED = { editor: null, mapEditor: null, sceneRef: null, hadMap: false, baseline: null, project: null } as const;
 
 /** The scene and the plant map of a session as Save writes them, and the text that tells whether they changed. */
 function textsOf(editor: SceneEditor, mapEditor: MapEditor, hadMap: boolean): { file: PlantSceneFile; map: string; text: string } {
@@ -132,16 +134,16 @@ export const usePlantEdit = create<PlantEditSession & PlantEditActions>()((set, 
           sceneRef: ref,
           hadMap,
           baseline: pending ? pending.baseline : textsOf(editor, mapEditor, hadMap).text,
+          project: useIDEStore.getState().directoryHandle,
           unsaved: others,
           version: state.version + 1,
         };
       });
     },
     end() {
-      const { editor, mapEditor, hadMap, sceneRef, baseline } = get();
+      const { editor, mapEditor, hadMap, sceneRef, baseline, project } = get();
       if (!editor || !mapEditor || sceneRef === null) return null;
       const { file, map, text } = textsOf(editor, mapEditor, hadMap);
-      const project = useIDEStore.getState().directoryHandle;
       set((state) => ({
         ...CLOSED,
         unsaved: text === baseline ? state.unsaved : { ...state.unsaved, [sceneRef]: { file, map, baseline, project } },
@@ -190,7 +192,7 @@ export async function saveEditedScenes(only?: string): Promise<SaveAllResult & {
   if (!handle) return result;
   const targets: Array<{ ref: string; file: PlantSceneFile; map: string; done: () => void }> = [];
   const live = usePlantEdit.getState();
-  if (live.editor && live.mapEditor && live.sceneRef !== null && hasEditedScene(live.sceneRef)) {
+  if (live.editor && live.mapEditor && live.sceneRef !== null && live.project === handle && hasEditedScene(live.sceneRef)) {
     const { file, map, text } = textsOf(live.editor, live.mapEditor, live.hadMap);
     targets.push({ ref: live.sceneRef, file, map, done: () => usePlantEdit.setState({ baseline: text }) });
   }
@@ -231,3 +233,21 @@ registerSaveAllParticipant(async () => {
   const { saved, failed } = await saveEditedScenes();
   return { saved, failed };
 });
+
+/** The names of the scenes with edits that were never saved: the one being edited, if it changed, and those closed with Done. */
+export function unsavedSceneNames(): string[] {
+  const { editor, mapEditor, sceneRef, hadMap, baseline, unsaved } = usePlantEdit.getState();
+  const live =
+    editor && mapEditor && sceneRef !== null && textsOf(editor, mapEditor, hadMap).text !== baseline ? [editor.toFile().name] : [];
+  return [
+    ...live,
+    ...Object.entries(unsaved)
+      .filter(([ref]) => ref !== sceneRef)
+      .map(([, scene]) => scene.file.name),
+  ];
+}
+
+/** Drops every edit that was not saved: the session in progress without recording it, and the scenes closed with Done. */
+export function discardEditedScenes(): void {
+  usePlantEdit.setState({ ...CLOSED, unsaved: {}, version: usePlantEdit.getState().version + 1 });
+}

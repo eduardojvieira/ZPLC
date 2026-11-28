@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it } from 'bun:test';
+import { afterEach, describe, expect, it } from 'bun:test';
 import { setupDom, stubProjectLoader } from '../../test/dom';
 
 const dom = await setupDom();
@@ -197,6 +197,12 @@ function rig(mode: 'ok' | 'unavailable' = 'ok', initialState: PlantSession['stat
   const controller = { adapter: runtimePort(), vmState: 'idle', debugCapabilities: null } as never;
   return { log, cores, scenes, sessions, renderer, deps, controller };
 }
+
+// A scene edited and left unsaved stays pending in the session by design: a test starts without the last one's.
+afterEach(async () => {
+  const { usePlantEdit } = await import('../editSession');
+  usePlantEdit.setState({ unsaved: {} });
+});
 
 const text = () => document.querySelector('[data-plant-text]')?.textContent ?? '';
 const ready = () => dom.waitFor(() => expect(document.querySelector('[data-plant-text]')).toBeTruthy());

@@ -7,6 +7,7 @@
  */
 
 import { offerVisualHistory } from '../commands/bind/plantEdit';
+import { discardEditedScenes, saveEditedScenes, unsavedSceneNames } from '../plant/editSession';
 import { useMemo, useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Group, Panel, useGroupCallbackRef } from 'react-resizable-panels';
 import { useT } from '../i18n';
@@ -424,14 +425,31 @@ export function EditorArea({ debugController }: { debugController?: DebugControl
     focusTab(selectedFileId);
   }, [focusTab, selectedFileId, toggleSettings]);
 
+  const [closingPlant, setClosingPlant] = useState(false);
+  const closePlant = () => {
+    usePlantDocument.getState().close();
+    focusTab(selectedFileId);
+  };
+  const answerPlantClose = async (choice: UnsavedChoice) => {
+    if (choice === 'save') {
+      setSavingTab(true);
+      await saveEditedScenes();
+      setSavingTab(false);
+    }
+    if (choice === 'discard') discardEditedScenes();
+    if (unsavedOutcome(choice, unsavedSceneNames().length > 0) === 'proceed') closePlant();
+    setClosingPlant(false);
+  };
+
   const closeView = (viewId: ViewId) => {
     const config = configKindOf(viewId);
     if (viewId === PREFERENCES_VIEW_ID) {
       usePreferencesDocument.getState().close();
       focusTab(selectedFileId);
     } else if (viewId === PLANT_VIEW_ID) {
-      usePlantDocument.getState().close();
-      focusTab(selectedFileId);
+      // a scene edited and not saved is asked about, as a modified program is (FLW-005)
+      if (unsavedSceneNames().length > 0) setClosingPlant(true);
+      else closePlant();
     } else if (viewId === REVIEW_VIEW_ID) {
       useReviewDocument.getState().close();
       focusTab(selectedFileId);
@@ -573,6 +591,16 @@ export function EditorArea({ debugController }: { debugController?: DebugControl
         />
       )}
       {closingConfig && <ConfigCloseDialog busy={savingConfig} onChoice={(choice) => void answerConfigClose(choice)} />}
+      {closingPlant && (
+        <UnsavedChangesDialog
+          title={t('workbench.editor.unsavedTab')}
+          items={unsavedSceneNames()}
+          busy={savingTab}
+          saveLabel="Save and close"
+          discardLabel="Discard and close"
+          onChoice={(choice) => void answerPlantClose(choice)}
+        />
+      )}
       {unsavedTabId && (
         <UnsavedChangesDialog
           title={t('workbench.editor.unsavedTab')}

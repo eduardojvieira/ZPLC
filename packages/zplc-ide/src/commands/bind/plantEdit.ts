@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
-import { bindCommands, getCommandState } from '../bus';
+import { bindCommands, getCommandState, runCommand } from '../bus';
 import type { CommandHandler } from '../bus';
 import { t } from '../../i18n';
 import { usePlantEdit } from '../../plant/editSession';
 import { requestFeedBoard } from '../../store/ioModeStatus';
+import { useIDEStore } from '../../store/useIDEStore';
 import { usePlantDocument } from '../../store/usePlantDocument';
+import { projectPathFromModelPath } from '../../utils/sessionState';
 import { announce } from '../../utils/announce';
 
 const ask = (): void => {
@@ -41,9 +43,12 @@ export function offerVisualHistory(apply: (direction: 'undo' | 'redo') => boolea
   };
 }
 
-/** A field with a history of its own: an input or text area that is not the hidden text area of a code editor. */
+const TEXT_ENTRY = new Set(['', 'text', 'search', 'email', 'number', 'password', 'tel', 'url']);
+
+/** A field with a history of its own: a text-entry input or a text area that is not the hidden text area of a code editor. */
 const isPlainField = (element: Element | null): boolean =>
-  (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) && !element.closest('.monaco-editor');
+  (element instanceof HTMLTextAreaElement || (element instanceof HTMLInputElement && TEXT_ENTRY.has(element.type))) &&
+  !element.closest('.monaco-editor');
 
 /**
  * Undo and Redo of the Edit menu go, in this order, to: a focused plain text field (its own history, which on macOS the menu key is
@@ -70,7 +75,13 @@ const history =
     const focused = editors.find((editor) => editor.hasTextFocus());
     if (focused) return void focused.trigger('edit.menu', direction, null);
     if (visualHistory?.(direction)) return;
-    editors[0]?.trigger('edit.menu', direction, null);
+    // the editor that shows the active file; with none, nothing is undone that the person did not have in view
+    const path = useIDEStore.getState().getActiveFile()?.path;
+    const shown = editors.find((editor) => {
+      const model = editor.getModel();
+      return path !== undefined && model !== null && projectPathFromModelPath(model.uri.path) === path;
+    });
+    shown?.trigger('edit.menu', direction, null);
   };
 
 /**
@@ -87,6 +98,34 @@ export const plantEditHandlers = (): Partial<
   'edit.redo': history('redo'),
 });
 
+/** Whether a key was pressed where the plant edit may take it: not in a text field, a menu, or a code editor. */
+const keyBelongsToPlant = (target: EventTarget | null): boolean => {
+  if (!(target instanceof Element)) return true;
+  if (target.closest('.monaco-editor, select, [contenteditable=""], [contenteditable="true"]')) return false;
+  return !(target instanceof HTMLInputElement ? TEXT_ENTRY.has(target.type) : target instanceof HTMLTextAreaElement);
+};
+
+/**
+ * Ctrl+Z, Ctrl+Shift+Z and Ctrl+Y (Cmd on macOS, without Y) while the plant edit is on screen: the menu shows these keys but does not
+ * register them on Windows and Linux, and a registry shortcut would also undo in the visual editors, which handle the key themselves.
+ */
+function undoKeys(event: KeyboardEvent): void {
+  if (event.defaultPrevented || event.altKey || (!event.ctrlKey && !event.metaKey)) return;
+  const key = event.key.toLowerCase();
+  const mac = /Mac|iPhone|iPad/.test(navigator.platform);
+  const command = key === 'z' ? (event.shiftKey ? 'edit.redo' : 'edit.undo') : key === 'y' && !mac && !event.shiftKey ? 'edit.redo' : null;
+  if (!command || !usePlantDocument.getState().active || !usePlantEdit.getState().editor || !keyBelongsToPlant(event.target)) return;
+  event.preventDefault();
+  runCommand(command);
+}
+
 export function usePlantEditCommands(): void {
-  useEffect(() => bindCommands(plantEditHandlers()), []);
+  useEffect(() => {
+    window.addEventListener('keydown', undoKeys);
+    const unbind = bindCommands(plantEditHandlers());
+    return () => {
+      window.removeEventListener('keydown', undoKeys);
+      unbind();
+    };
+  }, []);
 }

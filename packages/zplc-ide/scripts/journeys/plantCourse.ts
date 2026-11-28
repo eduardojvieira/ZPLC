@@ -32,8 +32,12 @@ async function reach(app: App, how: How, target: string, what: string): Promise<
     await app.until(
       `${what} to take the keyboard focus`,
       async () => {
+        const held = () => app.eval<boolean>(`document.activeElement === (${target})`);
         await app.eval(`(${target}).focus()`);
-        return (await app.eval<boolean>(`document.activeElement === (${target})`)) || undefined;
+        if (!(await held())) return undefined;
+        // the focus the palette gives back arrives late and takes it: the control must still hold it after that moment
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        return (await held()) || undefined;
       },
       10_000,
     );

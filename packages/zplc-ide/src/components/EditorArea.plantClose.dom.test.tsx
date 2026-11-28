@@ -29,7 +29,13 @@ afterEach(() => {
 
 function prepare() {
   resetCommandsForTest();
-  dom.patchStore(useIDEStore, { loadedFiles: new Map(), openTabs: [], activeFileId: null, showSettings: false, projectSession: 1 } as never);
+  dom.patchStore(useIDEStore, {
+    loadedFiles: new Map(),
+    openTabs: [],
+    activeFileId: null,
+    showSettings: false,
+    projectSession: 1,
+  } as never);
   dom.patchStore(useEditorGroups, { groups: ONE_GROUP, activeFirst: null, pendingFor: -1 } as never);
   usePlantDocument.setState({ open: true, active: true });
 }

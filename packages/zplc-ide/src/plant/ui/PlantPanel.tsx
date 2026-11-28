@@ -129,6 +129,9 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
     session.editor && session.mapEditor && session.sceneRef === refKey
       ? { editor: session.editor, mapEditor: session.mapEditor }
       : undefined;
+  // A scene edited, closed with Done and not saved is shown as it was edited, also when the document is closed and opened again.
+  const pending = usePlantEdit((state) => state.unsaved[refKey]);
+  if (pending && edited?.key !== refKey) setEdited({ key: refKey, texts: { scene: JSON.stringify(pending.file), map: pending.map } });
   const binding = usePlantSession(controller, ref, deps, edited?.key === refKey ? edited.texts : undefined);
   const { load, snapshot, state } = binding;
   const ready = load.phase === 'ready' ? load : undefined;
@@ -217,6 +220,7 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
   };
   const finishEditing = () => {
     if (usePlantEdit.getState().sceneRef !== refKey) return;
+    if (!stopped) return announce(t('plantEditor.running')); // SCN-008: ending the edit rebuilds the plant, which cannot run
     const texts = session.end();
     if (texts) setEdited({ key: refKey, texts });
   };

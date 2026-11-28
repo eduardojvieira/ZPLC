@@ -259,13 +259,13 @@ export function Toolbar({ debugController }: ToolbarProps) {
       const { names, failed } = await saveEditedScenes(plantScene);
       const name = names[0] ?? plantScene;
       useNotifications.getState().report(
-        failed.length === 0
+        failed.length === 0 && names.length > 0
           ? { kind: 'save', status: 'success', title: t('toolbarMsg.saved', { name }), details: 'output' }
           : {
               kind: 'save',
               status: 'error',
               title: t('toolbarMsg.couldNotSave', { name }),
-              detail: failed.join('; '),
+              detail: failed.length > 0 ? failed.join('; ') : t('toolbarMsg.theFileStaysModified'),
               details: 'output',
               recover: { label: t('toolbarMsg.trySavingAgain'), run: () => void handleSaveFile() },
             },
