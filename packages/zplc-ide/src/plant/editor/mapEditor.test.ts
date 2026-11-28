@@ -140,4 +140,11 @@ describe('generated declarations', () => {
     const built = compileSingleFileWithTask(source, 'ST', { programName: 'Main', sourceRef: 'src/main.st' });
     expect(built.bytecode.length).toBeGreaterThan(0);
   });
+
+  it('a loaded map keeps the scene id it targets when it is saved', () => {
+    const editor = createMapEditor(signals, 'Belt to sensor');
+    editor.load({ schemaVersion: 2, target: { scene: 'belt-to-sensor' }, signals: {} } as PlantMap);
+    expect(JSON.stringify(editor.map().target)).toBe('{"scene":"belt-to-sensor"}');
+    expect(JSON.stringify(createMapEditor(signals, 'Belt to sensor').map().target)).toBe('{"scene":"Belt to sensor"}');
+  });
 });

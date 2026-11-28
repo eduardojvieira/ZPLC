@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'bun:test';
-import { applyDeclarations } from './plantMapProblems';
+import { stubProjectLoader } from '../../test/dom';
+
+await stubProjectLoader();
+const { applyDeclarations } = await import('./plantMapProblems');
 
 const block = 'VAR_INPUT\n  Belt1_run : BOOL;\nEND_VAR\n';
 const text = { kind: 'text' as const, language: 'ST' as const, block };
@@ -34,5 +37,12 @@ describe('applyDeclarations in a text program (SCN-013)', () => {
     const out = applyDeclarations(body, text)!.content;
     expect(out).toContain('Belt1_run');
     expect(out.replace(/\r\n/g, '')).not.toContain('\n');
+  });
+
+  it('only a declaration inside the target program counts, not one of a function block before it', () => {
+    const body = 'FUNCTION_BLOCK Fb\n  VAR_INPUT\n    Belt1_run : BOOL;\n  END_VAR\nEND_FUNCTION_BLOCK\nPROGRAM Main\nEND_PROGRAM\n';
+    const out = applyDeclarations(body, text, 'Main')!;
+    expect(out.added).toBe(1);
+    expect(out.content.indexOf('Belt1_run', out.content.indexOf('PROGRAM Main'))).toBeGreaterThan(0);
   });
 });
