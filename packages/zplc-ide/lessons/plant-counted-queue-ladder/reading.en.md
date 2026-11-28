@@ -1,6 +1,6 @@
 ## The machine
 
-This station runs a fixed batch of three boxes along a belt conveyor. On the left, an emitter places boxes on the belt beside a start button and an entrance sensor `EyeIn`. On the right, an exit sensor `EyeOut` watches boxes leave the belt into a remover chute, and an indicator light `DoneLight` shows when the whole batch has been unloaded.
+This station runs a fixed batch of three boxes along a belt conveyor. On the left, an emitter places boxes on the belt beside a start button and an entrance sensor `EyeIn`. On the right, an exit sensor `EyeOut` watches boxes leave the belt into a remover chute, and an indicator light `DoneLight` shows when the batch is done.
 
 ![The counted-queue scene seen from the front. A belt conveyor on legs runs from left to right. Near the left end, cyan corner marks show the emitter zone, with StartButton behind the belt and the optical sensor EyeIn further right. Near the right end stand the optical sensor EyeOut, the indicator lamp DoneLight, and a boxed remover chute at the far end. Each part has a label with its name, its kind and its wired signal.](images/machine.en.png)
 
@@ -42,7 +42,7 @@ signals:
 caption: Each item adds one on its rising edge; at the preset, BatchFull stops the conveyor and lights BatchDone
 ```
 
-When items travel down a belt, **loading** and **unloading** happen at different times. Stopping the belt as soon as the third item passes the entrance sensor leaves that item stranded on the belt. And releasing a second item onto the belt before the previous one has moved clear causes a collision.
+When items travel down a belt, **loading** and **unloading** happen at different times. Stopping the belt as soon as the third item passes the entrance sensor leaves that item stranded on the belt. And releasing a second item onto the belt before the previous one has moved clear makes them ride on touching, so the sensors see them as one object and count them once.
 
 ## Worked example
 
@@ -72,8 +72,8 @@ This capping station counts at one sensor and never has to emit items itself. In
 
 ## Common mistakes
 
-- Using one counter for both loading and unloading. If the belt stops when the third box enters, the boxes never reach the remover.
-- Releasing a new box while the previous box is still in the emitter zone. Two boxes overlap and collide.
+- Using one counter for both loading and unloading. If the belt stops when the third box enters, the last two boxes stay on the belt and never reach the remover.
+- Releasing a new box while the previous box is still in the emitter zone. The boxes ride on touching, and the sensors count them as one.
 - Forgetting that `Emit` acts on a **rising edge**. Keeping `Emit` stuck TRUE releases only the first box; it must drop back to FALSE before the next rising edge.
 - Forgetting to bind `Q` of a `CTU` block to a local variable, or using a normally open contact where a normally closed contact is needed to stop an action when the count is reached.
 
@@ -100,4 +100,4 @@ options:
 
 ## What you will do in the practice
 
-The starting program declares the inputs Start, EyeIn and EyeOut, the outputs Run, Emit and Done, and local variables including two CTU counters, with no rungs yet. A press of Start at {{t:200}} ms must start a batch of three boxes: load three boxes onto the belt one by one without collisions, carry all three past EyeOut to the remover, then light Done and stop the belt. Then press {{ui:learn.check}}.
+The starting program declares the inputs Start, EyeIn and EyeOut, the outputs Run, Emit and Done, and local variables including two CTU counters, with no rungs yet. A press of Start at {{t:200}} ms must start a batch of three boxes: load three boxes onto the belt one by one without collisions, carry them along the belt, and light Done and stop the belt as soon as the third box reaches EyeOut. Then press {{ui:learn.check}}.

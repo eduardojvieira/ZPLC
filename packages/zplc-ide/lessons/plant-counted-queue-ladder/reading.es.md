@@ -1,6 +1,6 @@
 ## La máquina
 
-Esta estación ejecuta un lote fijo de tres cajas a lo largo de una cinta transportadora. A la izquierda, un emisor coloca cajas sobre la cinta junto a un pulsador de inicio y un sensor de entrada `EyeIn`. A la derecha, un sensor de salida `EyeOut` detecta las cajas que salen de la cinta hacia un retirador, y un piloto luminoso `DoneLight` indica cuando todo el lote ha sido descargado.
+Esta estación ejecuta un lote fijo de tres cajas a lo largo de una cinta transportadora. A la izquierda, un emisor coloca cajas sobre la cinta junto a un pulsador de inicio y un sensor de entrada `EyeIn`. A la derecha, un sensor de salida `EyeOut` detecta las cajas que salen de la cinta hacia un retirador, y un piloto luminoso `DoneLight` indica cuando el lote ha terminado.
 
 ![La escena de cola contada vista de frente. Una cinta transportadora sobre patas va de izquierda a derecha. Cerca del extremo izquierdo, cuatro marcas cian en las esquinas muestran la zona del emisor, con StartButton detrás de la cinta y el sensor óptico EyeIn más a la derecha. Cerca del extremo derecho están el sensor óptico EyeOut, el piloto luminoso DoneLight y un retirador en el extremo final. Cada elemento tiene una etiqueta con su nombre, su tipo y su señal conectada.](images/machine.es.png)
 
@@ -42,7 +42,7 @@ signals:
 caption: Cada pieza suma uno en su flanco ascendente; al llegar al valor preestablecido, BatchFull detiene la cinta y enciende BatchDone
 ```
 
-Cuando las piezas recorren una cinta, la **carga** y la **descarga** ocurren en momentos distintos. Detener la cinta en cuanto la tercera pieza pasa el sensor de entrada deja esa pieza varada sobre la cinta. Y soltar una segunda pieza antes de que la anterior haya despejado la zona provoca una colisión.
+Cuando las piezas recorren una cinta, la **carga** y la **descarga** ocurren en momentos distintos. Detener la cinta en cuanto la tercera pieza pasa el sensor de entrada deja esa pieza varada sobre la cinta. Y soltar una segunda pieza antes de que la anterior haya despejado la zona hace que viajen pegadas, y los sensores las ven como un solo objeto y las cuentan una vez.
 
 ## Ejemplo resuelto
 
@@ -72,8 +72,8 @@ Esta estación de tapado cuenta en un solo sensor y nunca tiene que emitir pieza
 
 ## Errores comunes
 
-- Usar un solo contador para carga y descarga. Si la cinta se detiene cuando entra la tercera caja, las cajas nunca llegan al retirador.
-- Soltar una caja nueva mientras la anterior sigue en la zona del emisor. Dos cajas se superponen y chocan.
+- Usar un solo contador para carga y descarga. Si la cinta se detiene cuando entra la tercera caja, las dos últimas cajas quedan sobre la cinta y nunca llegan al retirador.
+- Soltar una caja nueva mientras la anterior sigue en la zona del emisor. Las cajas viajan pegadas y los sensores las cuentan como una.
 - Olvidar que `Emit` actúa por **flanco ascendente**. Dejar `Emit` fijo en TRUE suelta solo la primera caja; debe volver a FALSE antes del siguiente flanco ascendente.
 - Olvidar enlazar `Q` de un bloque `CTU` a una variable local, o usar un contacto normalmente abierto donde hace falta uno normalmente cerrado para detener una acción cuando se alcanza la cuenta.
 
@@ -100,4 +100,4 @@ options:
 
 ## Qué hará en la práctica
 
-El programa inicial declara las entradas Start, EyeIn y EyeOut, las salidas Run, Emit y Done, y variables locales que incluyen dos contadores CTU, todavía sin peldaños. Una pulsación de Start a los {{t:200}} ms debe iniciar un lote de tres cajas: cargar tres cajas sobre la cinta una por una sin colisiones, llevar las tres más allá de EyeOut hasta el retirador, y entonces encender Done y detener la cinta. Después pulse {{ui:learn.check}}.
+El programa inicial declara las entradas Start, EyeIn y EyeOut, las salidas Run, Emit y Done, y variables locales que incluyen dos contadores CTU, todavía sin peldaños. Una pulsación de Start a los {{t:200}} ms debe iniciar un lote de tres cajas: cargar tres cajas sobre la cinta una por una sin colisiones, llevarlas por la cinta, y encender Done y detener la cinta en cuanto la tercera caja llegue a EyeOut. Después pulse {{ui:learn.check}}.
