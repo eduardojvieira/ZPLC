@@ -118,8 +118,9 @@ describe('electron-builder.yml macOS signing (REL-001)', () => {
   });
 
   it('signs the nested native runtime from the place where the packager puts it', () => {
-    expect(builder.mac.binaries).toEqual(['Contents/Resources/native-runtime/zplc_runtime']);
-    expect(builder.extraResources).toContainEqual({ from: 'dist-native', to: 'native-runtime', filter: ['**/*'] });
+    expect(builder.mac.binaries).toEqual(['Contents/Resources/native-runtime/zplc_runtime', 'Contents/Resources/zplc-mcp/zplc-mcp']);
+    expect(builder.extraResources).toContainEqual({ from: 'dist-native', to: 'native-runtime', filter: ['**/*', '!mcp/**'] });
+    expect(builder.extraResources).toContainEqual({ from: 'dist-native/mcp', to: 'zplc-mcp', filter: ['**/*'] });
   });
 
   it('grants the two entitlements an ad-hoc signed Electron application needs, and no others', () => {

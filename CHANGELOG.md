@@ -24,6 +24,7 @@ and version when the release is cut (see `RELEASING.md`).
 
 ### What changed for you
 
+- The installer now carries `zplc-mcp`, the same executable the release publishes as a separate download (which remains), and the MCP panel writes its full path into the client configuration.
 - A Function Block Diagram and a Ladder rung place every function of the compiler, the 240 type conversions included, so a
   `REAL` is converted with a block such as `REAL_TO_INT` and no second file in Structured Text is needed. `MUX` takes up
   to eight inputs.
