@@ -45,3 +45,24 @@ export function shortcutText(shortcut: string, platform: NodeJS.Platform = proce
 export function shortcutName(label: string, shortcut: string, platform: NodeJS.Platform = process.platform): string {
   return `${label} (${shortcutText(shortcut, platform)})`;
 }
+
+/** Walks a native select to the option with this text with the arrow keys, as a keyboard user would. */
+export async function selectOption(app: Pick<App, 'eval' | 'until' | 'press'>, selector: string, label: string): Promise<void> {
+  const state = () =>
+    app.eval<{ labels: string[]; index: number }>(
+      `(() => { const select = document.querySelector(${JSON.stringify(selector)}); return { labels: [...select.options].map((option) => ` +
+        `option.textContent), index: select.selectedIndex }; })()`,
+    );
+  const { labels, index } = await state();
+  const wanted = labels.indexOf(label);
+  if (wanted < 0) throw new Error(`${selector} offers ${JSON.stringify(labels)}, not ${label}`);
+  await app.eval(`document.querySelector(${JSON.stringify(selector)}).focus()`);
+  for (let step = 0; step < Math.abs(wanted - index); step++) await app.press(wanted > index ? 'ArrowDown' : 'ArrowUp');
+  if ((await state()).index !== wanted) {
+    await app.eval(
+      `(() => { const select = document.querySelector(${JSON.stringify(selector)}); select.selectedIndex = ${wanted}; ` +
+        `select.dispatchEvent(new Event('input', { bubbles: true })); select.dispatchEvent(new Event('change', { bubbles: true })); })()`,
+    );
+  }
+  await app.until(`${selector} to show ${label}`, async () => (await state()).index === wanted || undefined);
+}

@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { chordEvent, shortcutName, shortcutText } from './journeyKeys';
+import { chordEvent, shortcutName, shortcutText, selectOption } from './journeyKeys';
 
 for (const platform of ['linux', 'win32'] as const) {
   test(`on ${platform} Ctrl is the Control modifier (2)`, () => {
@@ -43,4 +43,36 @@ test('the shortcut reference shows Mod+S as Ctrl+S, or ⌘S on macOS', () => {
   expect(shortcutText('Mod+S', 'linux')).toBe('Ctrl+S');
   expect(shortcutText('Mod+S', 'win32')).toBe('Ctrl+S');
   expect(shortcutText('Mod+S', 'darwin')).toBe('⌘S');
+});
+
+/** A native select as it behaves on macOS: the arrow keys open its popup and choose nothing. */
+function macSelect(labels: string[]) {
+  const events: string[] = [];
+  const select = {
+    options: labels.map((textContent) => ({ textContent })),
+    selectedIndex: 0,
+    focus: () => undefined,
+    dispatchEvent: (event: { type: string }) => void events.push(event.type),
+  };
+  const pressed: string[] = [];
+  const app = {
+    eval: async (expression: string) =>
+      new Function('document', 'Event', `return ${expression}`)({ querySelector: () => select }, class { constructor(public type: string) {} }),
+    until: async (_what: string, check: () => Promise<unknown>) => check(),
+    press: async (chord: string) => void pressed.push(chord),
+  };
+  return { app, select, events, pressed };
+}
+
+test('selectOption sets the option through the element on every platform, without the arrow keys', async () => {
+  const { app, select, events, pressed } = macSelect(['', 'High contrast', 'Dark']);
+  await selectOption(app as never, '#theme', 'Dark');
+  expect(select.selectedIndex).toBe(2);
+  expect(events).toEqual(['input', 'change']);
+  expect(pressed).toEqual([]);
+});
+
+test('selectOption names the offered options when the label is not among them', async () => {
+  const { app } = macSelect(['', 'Dark']);
+  await expect(selectOption(app as never, '#theme', 'Light')).rejects.toThrow('#theme offers ["","Dark"], not Light');
 });
