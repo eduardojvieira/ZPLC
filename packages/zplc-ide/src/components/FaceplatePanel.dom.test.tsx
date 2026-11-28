@@ -77,4 +77,18 @@ describe('The faceplate agrees with the status rail about running (spec 014, fou
     open('running');
     expect(dom.screen.getByText(paused())).toBeTruthy();
   });
+
+  it('a held scan reads paused, a faulted plant faulted and a stopped plant not running, as the rail words them', () => {
+    for (const [state, key] of [
+      ['held', 'faceplate.paused'],
+      ['faulted', 'faceplate.faulted'],
+      ['stopped', 'faceplate.notRunning'],
+    ] as const) {
+      unregister = registerPlantTransport(plant(state));
+      const view = open('running');
+      expect(dom.screen.getByText(dom.t(key))).toBeTruthy();
+      view.unmount();
+      unregister();
+    }
+  });
 });
