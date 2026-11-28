@@ -566,7 +566,8 @@ async function captureCondition(
     if (
       plan.surface.area !== 'Dialogs' &&
       (await app.eval<boolean>(
-        `Boolean(document.querySelector('[aria-modal="true"]:not([data-learn-reading]), [role="dialog"]:not([data-learn-reading]), [role="alertdialog"]'))`,
+        `Boolean(document.querySelector('[aria-modal="true"]:not([data-learn-reading]), ` +
+          `[role="dialog"]:not([data-learn-reading]), [role="alertdialog"]'))`,
       ))
     ) {
       failed.push({ surface: plan.surface.id, reason: 'not reached: a dialog is open over it' });
