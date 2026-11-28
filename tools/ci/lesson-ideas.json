@@ -13,6 +13,7 @@
     "function-blocks": { "explainedBy": "ld-function-blocks" },
     "diagnosis": { "explainedBy": "ld-diagnosis-debugger" },
     "timers": { "explainedBy": "timers-on-delay-off-delay" },
+    "pulse-timer": { "explainedBy": "timer-pulse-tp" },
     "sfc": { "explainedBy": "sfc-fill-mix-sequence" }
   },
   "practises": {
@@ -31,6 +32,7 @@
     "ld-no-nc-contacts": ["no-nc-contacts"],
     "ld-series-parallel": ["series-parallel"],
     "timers-on-delay-off-delay": ["timers"],
+    "timer-pulse-tp": ["timers"],
     "edge-counter-pulses": ["edges"],
     "counter-batch-fbd": ["edges"],
     "edge-counter-pulses-ladder": ["edges"],

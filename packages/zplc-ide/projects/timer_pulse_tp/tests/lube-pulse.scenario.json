@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "id": "LubePulse",
+  "tickMs": 10,
+  "durationMs": 3400,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "LubePulse.Press": false,
+        "LubePulse.GuardClosed": true
+      }
+    },
+    {
+      "atMs": 100,
+      "set": {
+        "LubePulse.Press": true,
+        "LubePulse.GuardClosed": true
+      }
+    },
+    {
+      "atMs": 1000,
+      "set": {
+        "LubePulse.Press": false,
+        "LubePulse.GuardClosed": true
+      }
+    },
+    {
+      "atMs": 1200,
+      "set": {
+        "LubePulse.Press": true,
+        "LubePulse.GuardClosed": true
+      }
+    },
+    {
+      "atMs": 1300,
+      "set": {
+        "LubePulse.Press": false,
+        "LubePulse.GuardClosed": true
+      }
+    },
+    {
+      "atMs": 2000,
+      "set": {
+        "LubePulse.Press": false,
+        "LubePulse.GuardClosed": false
+      }
+    },
+    {
+      "atMs": 2100,
+      "set": {
+        "LubePulse.Press": true,
+        "LubePulse.GuardClosed": false
+      }
+    },
+    {
+      "atMs": 2200,
+      "set": {
+        "LubePulse.Press": false,
+        "LubePulse.GuardClosed": false
+      }
+    },
+    {
+      "atMs": 2300,
+      "set": {
+        "LubePulse.Press": false,
+        "LubePulse.GuardClosed": true
+      }
+    },
+    {
+      "atMs": 2700,
+      "set": {
+        "LubePulse.Press": true,
+        "LubePulse.GuardClosed": true
+      }
+    },
+    {
+      "atMs": 2800,
+      "set": {
+        "LubePulse.Press": false,
+        "LubePulse.GuardClosed": true
+      }
+    },
+    {
+      "atMs": 2900,
+      "set": {
+        "LubePulse.Press": false,
+        "LubePulse.GuardClosed": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "LubePulse.Pump": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 300,
+      "condition": {
+        "LubePulse.Pump": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 800,
+      "condition": {
+        "LubePulse.Pump": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 1500,
+      "condition": {
+        "LubePulse.Pump": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 1800,
+      "condition": {
+        "LubePulse.Pump": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 2400,
+      "condition": {
+        "LubePulse.Pump": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 3000,
+      "condition": {
+        "LubePulse.Pump": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 3300,
+      "condition": {
+        "LubePulse.Pump": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 110,
+      "forMs": 380,
+      "condition": {
+        "LubePulse.Pump": true
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 2110,
+      "forMs": 500,
+      "condition": {
+        "LubePulse.Pump": false
+      }
+    }
+  ]
+}

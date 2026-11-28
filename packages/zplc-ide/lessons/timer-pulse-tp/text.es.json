@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Un pulso de duración fija con TP",
+  "summary": "Encienda una bomba de lubricación durante un tiempo fijo con una pulsación, por mucho que se mantenga el pulsador y haga lo que haga el resguardo después.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
+  "objectives": [
+    "Encienda una salida durante un tiempo fijo con una pulsación, por mucho que se mantenga pulsado el pulsador.",
+    "Haga que una pulsación inicie un pulso solo cuando se cumple una segunda condición, y que un pulso ya iniciado llegue hasta su final."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/LubePulse.st, la entrada Press es el pulsador de una bomba de lubricación, GuardClosed es TRUE mientras el resguardo de la máquina está cerrado y Pump es la bomba. Cada pulsación con el resguardo cerrado debe encender Pump durante {{t:500}} ms, por mucho que se mantenga pulsado el pulsador. Una pulsación con el resguardo abierto no hace nada, ni siquiera si el resguardo se cierra poco después. Un pulso ya iniciado siempre llega hasta su final, aunque el resguardo se abra antes.",
+      "checkpoint": "Usted puede decir cuánto tiempo debe estar Pump encendida después de una pulsación y qué hace una pulsación mientras el resguardo está abierto."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "El escenario pulsa el pulsador a los {{t:100}} ms y lo mantiene hasta los {{t:1000}} ms. A los {{t:2100}} ms lo pulsa de nuevo con el resguardo abierto; el resguardo se cierra a los {{t:2300}} ms. A los {{t:2700}} ms lo pulsa con el resguardo cerrado, y el resguardo se abre a los {{t:2900}} ms. Antes de ejecutar, prediga Pump a los {{t:300}}, {{t:800}}, {{t:2400}} y {{t:3000}} ms.",
+      "checkpoint": "{{v:LubePulse.Pump=true@300|ON}} a los {{t:300}} ms, {{v:LubePulse.Pump=false@800|OFF}} a los {{t:800}} ms, {{v:LubePulse.Pump=false@2400|OFF}} a los {{t:2400}} ms, {{v:LubePulse.Pump=true@3000|ON}} a los {{t:3000}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija el proyecto inicial, guárdelo y pulse {{ui:learn.check}}. El proyecto inicial copia el pulsador a la bomba, así que Pump sigue en ON a los {{t:800}} ms, mucho después de que una pulsación de medio segundo debería haber terminado. Haga que Pump siga lo que dice el objetivo en cada momento del escenario. Las entradas y la salida ya están declaradas; usted escribe el resto.",
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
+      "checkpoint": "El escenario se llama LubePulse y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Siga Press, GuardClosed y Pump en la traza: la primera pulsación, mantenida {{t:900}} ms, da un solo pulso de {{t:500}} ms, de {{t:100}} a {{t:600}} ms. La pulsación de los {{t:2100}} ms, con el resguardo abierto, no da ninguno. El pulso que empieza a los {{t:2700}} ms termina igualmente a los {{t:3200}} ms aunque el resguardo se abrió a los {{t:2900}} ms.",
+      "checkpoint": "Pump está en ON durante {{t:500}} ms después de cada pulsación que el resguardo permite, y en ningún otro momento."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "Press está en ON de {{t:100}} ms a {{t:1000}} ms, y el pulso termina a los {{t:600}} ms. ¿Por qué Pump no vuelve a pasar a ON a los {{t:600}} ms, mientras Press sigue en ON?",
+      "checkpoint": "Usted puede decir qué tiene que pasar con Press antes de que su programa pueda iniciar otro pulso."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Abra la traza a los {{t:800}} ms. Press sigue en ON ahí: ¿está Pump en ON mientras lo está Press y qué instrucción de su programa decide cuándo Pump pasa a OFF? Después mire la traza a los {{t:2400}} ms y a los {{t:3000}} ms. Cuando el resguardo está abierto, ¿qué debe hacer una pulsación y qué debe hacer el resguardo con un pulso que ya está en marcha?"
+    },
+    {
+      "level": 2,
+      "text": "Añada VAR Shot : TP; END_VAR debajo de las declaraciones de las entradas y de la salida, borre la instrucción Pump := Press; y escriba Shot(IN := Press AND GuardClosed, PT := T#500ms); Pump := Shot.Q; La llamada va en el programa en cada ciclo de escaneo. El AND está dentro de la llamada, así que una pulsación con el resguardo abierto nunca inicia el pulso. Pump no se combina otra vez con GuardClosed después de la llamada, así que un pulso ya iniciado termina por sí solo."
+    }
+  ],
+  "faultCases": [
+    "El proyecto inicial copia el pulsador a la bomba, así que Pump sigue en ON a los {{t:800}} ms, mucho después de que una pulsación de medio segundo debería haber terminado."
+  ]
+}

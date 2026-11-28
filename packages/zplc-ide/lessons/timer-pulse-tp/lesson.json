@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "timer-pulse-tp",
+  "version": 1,
+  "order": 84,
+  "module": 3,
+  "level": "foundation",
+  "prerequisites": ["timers-on-delay-off-delay"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson drives a lubrication pump from a button and a guard switch; a learner board has no pump, and the scenario supplies the button and the guard.",
+        "es": "La lección maneja una bomba de lubricación desde un pulsador y un interruptor de resguardo; una placa del estudiante no tiene bomba, y el escenario aporta el pulsador y el resguardo."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the button and the guard are part of the scenario.",
+        "es": "Complétela en Simulación, donde el pulsador y el resguardo forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 15,
+  "starter": {
+    "project": "timer_pulse_tp_starter",
+    "program": "src/LubePulse.st"
+  },
+  "solution": {
+    "project": "timer_pulse_tp",
+    "program": "src/LubePulse.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "LubePulse",
+    "path": "tests/lube-pulse.scenario.json",
+    "sha256": "ef07e2c35fcba0a81a6f88431dc282dcf69a6a9cd3421eae62858b38df828d64"
+  },
+  "regressionScenarios": []
+}

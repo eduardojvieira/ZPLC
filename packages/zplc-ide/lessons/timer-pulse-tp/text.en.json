@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "A pulse of fixed length with TP",
+  "summary": "Switch a lubrication pump ON for a fixed time with one press, however long the button is held and whatever the guard does afterwards.",
+  "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
+  "objectives": [
+    "Switch an output ON for a fixed time with one press, however long the button stays pressed.",
+    "Let a press start a pulse only when a second condition holds, and let a pulse that has started run to its end."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/LubePulse.st the input Press is the button of a lubrication pump, GuardClosed is TRUE while the guard of the machine is closed, and Pump is the pump. Each press while the guard is closed must switch Pump ON for {{t:500}} ms, however long the button stays pressed. A press while the guard is open does nothing, not even if the guard closes soon after. A pulse that has started always runs to its end, even when the guard opens before it.",
+      "checkpoint": "You can say how long Pump must be ON after a press, and what a press does while the guard is open."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "The scenario presses the button at {{t:100}} ms and holds it until {{t:1000}} ms. At {{t:2100}} ms it presses it again while the guard is open; the guard closes at {{t:2300}} ms. At {{t:2700}} ms it presses it with the guard closed, and the guard opens at {{t:2900}} ms. Before running, predict Pump at {{t:300}}, {{t:800}}, {{t:2400}} and {{t:3000}} ms.",
+      "checkpoint": "{{v:LubePulse.Pump=true@300|ON}} at {{t:300}} ms, {{v:LubePulse.Pump=false@800|OFF}} at {{t:800}} ms, {{v:LubePulse.Pump=false@2400|OFF}} at {{t:2400}} ms, {{v:LubePulse.Pump=true@3000|ON}} at {{t:3000}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program copies the button to the pump, so Pump is still ON at {{t:800}} ms, long after a press of half a second should have ended. Make Pump follow what the objective says at every moment of the scenario. The inputs and the output are declared; you write the rest.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
+      "checkpoint": "The scenario is named LubePulse and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Follow Press, GuardClosed and Pump in the trace: the first press, held for {{t:900}} ms, gives one pulse of {{t:500}} ms, from {{t:100}} to {{t:600}} ms. The press at {{t:2100}} ms, with the guard open, gives none. The pulse that starts at {{t:2700}} ms still ends at {{t:3200}} ms although the guard opened at {{t:2900}} ms.",
+      "checkpoint": "Pump is ON for {{t:500}} ms after each press that the guard allows, and for no other time."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Press stays ON from {{t:100}} ms to {{t:1000}} ms, and the pulse ends at {{t:600}} ms. Why does Pump not come ON again at {{t:600}} ms, while Press is still ON?",
+      "checkpoint": "You can say what has to happen to Press before your program can start another pulse."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Open the trace at {{t:800}} ms. Press is still ON there: is Pump ON for as long as Press is, and which statement of your program decides when Pump goes OFF? Then look at the trace at {{t:2400}} ms and at {{t:3000}} ms. When the guard is open, what should a press do, and what should the guard do to a pulse that is already running?"
+    },
+    {
+      "level": 2,
+      "text": "Add VAR Shot : TP; END_VAR under the declarations of the inputs and the output, delete the statement Pump := Press; and write Shot(IN := Press AND GuardClosed, PT := T#500ms); Pump := Shot.Q; The call goes in the program on every scan. The AND stands inside the call, so a press with the guard open never starts the pulse. Pump is not combined with GuardClosed again after the call, so a pulse that has started ends by itself."
+    }
+  ],
+  "faultCases": [
+    "The starting program copies the button to the pump, so Pump is still ON at {{t:800}} ms, long after a press of half a second should have ended."
+  ]
+}

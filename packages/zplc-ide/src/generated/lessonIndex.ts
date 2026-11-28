@@ -69,6 +69,7 @@ export const LESSON_IDS = [
   "edge-counter-pulses-il",
   "analog-scaling-fbd",
   "st-if-then-else",
+  "timer-pulse-tp",
   "conveyor-sorting-sfc",
   "function-block-call-il",
   "conveyor-two-parts-diagnosis",

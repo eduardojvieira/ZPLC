@@ -24,7 +24,8 @@ and version when the release is cut (see `RELEASING.md`).
 
 ### What changed for you
 
-- A new lesson in module 1, `st-if-then-else`, teaches IF, ELSIF and ELSE in Structured Text with a tank of three lamps: exactly one lamp must be ON, whatever the level did before. It brings the course to 98 lessons.
+- A new lesson in module 3, `timer-pulse-tp`, teaches the TP pulse timer in Structured Text with a lubrication pump: each press switches the pump ON for half a second however long the button is held, a press with the guard open does nothing, and a pulse that has started runs to its end. It brings the course to 99 lessons.
+- A new lesson in module 1, `st-if-then-else`, teaches IF, ELSIF and ELSE in Structured Text with a tank of three lamps: exactly one lamp must be ON, whatever the level did before.
 - The installer now carries `zplc-mcp`, the same executable the release publishes as a separate download (which remains), and the MCP panel writes its full path into the client configuration.
 - Releasing a forced variable no longer leaves a stale force in the Watch table. Editing the value in the Watch table after forcing it from the Live I/O panel used to add a second record under the short name. The simulator had released the force, but that record stayed and showed the variable as forced. On a board, releasing the stale row later made the device answer "Force entry not found" and marked every force unconfirmed. The Live I/O panel is not available on a board, so only the Watch table could do this there. The Live I/O panel now reads a force the way the Watch table does, so both show the same forces. Bits that share a byte are forced and released together, as the runtime always did.
 - With a plant document open and Run pressed, the Live I/O panel no longer says the simulation is paused while the status bar says it is running; its inputs and forces work again.

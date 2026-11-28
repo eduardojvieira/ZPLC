@@ -63,7 +63,7 @@ const landingPageContent = {
       },
       learn: {
         title: 'Learn PLC programming',
-        text: 'Take 98 lessons in 20 modules, starting from zero, in the same application. Every lesson checks the program you write.',
+        text: 'Take 99 lessons in 20 modules, starting from zero, in the same application. Every lesson checks the program you write.',
         action: 'Start learning',
         note: 'The course is in English and Spanish.',
         more: 'For educators',
@@ -244,7 +244,7 @@ const landingPageContent = {
     learn: {
       title: 'Learn PLC programming without buying a PLC',
       lead:
-        'The course has 98 lessons in 20 modules, 14 of them in two languages (Structured Text or Ladder), in English and Spanish, and ' +
+        'The course has 99 lessons in 20 modules, 14 of them in two languages (Structured Text or Ladder), in English and Spanish, and ' +
         'it needs no earlier knowledge. Begin with the ' +
         'Ladder path from zero. Each of its lessons opens on a reading page over the main area of the workbench, with figures ' +
         'and try-it labs that run live inside the page. When you are ready, you practise on a simulated machine, and ZPLC ' +
@@ -334,7 +334,7 @@ const landingPageContent = {
         { label: 'Communication', value: 'Function blocks for Modbus, MQTT with Sparkplug B, and Azure and AWS cloud services.' },
         { label: 'Debugging', value: 'Breakpoints, pause, one-cycle step, watch, force and the live I/O faceplate.' },
         { label: 'Testing', value: 'Scenario tests in the application, and in `zplc-cli` for a CI job.' },
-        { label: 'Examples', value: '125 example projects, bundled on the Welcome screen.' },
+        { label: 'Examples', value: '126 example projects, bundled on the Welcome screen.' },
         { label: 'Application', value: 'A desktop application for Windows, macOS and Linux, in English and Spanish.' },
         {
           label: 'AI assistants',
@@ -440,7 +440,7 @@ const landingPageContent = {
       },
       learn: {
         title: 'Aprenda a programar PLC',
-        text: 'Siga 98 lecciones en 20 módulos, desde cero, en la misma aplicación. Cada lección comprueba el programa que usted escribe.',
+        text: 'Siga 99 lecciones en 20 módulos, desde cero, en la misma aplicación. Cada lección comprueba el programa que usted escribe.',
         action: 'Empezar a aprender',
         note: 'El curso está en inglés y en español.',
         more: 'Para docentes',
@@ -648,7 +648,7 @@ const landingPageContent = {
     learn: {
       title: 'Aprenda a programar PLC sin comprar un PLC',
       lead:
-        'El curso tiene 98 lecciones en 20 módulos, 14 de ellas en dos lenguajes (texto estructurado o escalera), en inglés y en ' +
+        'El curso tiene 99 lecciones en 20 módulos, 14 de ellas en dos lenguajes (texto estructurado o escalera), en inglés y en ' +
         'español, y no exige conocimientos previos. Empiece por la ruta ' +
         'de diagrama de escalera desde cero. Cada una de sus lecciones abre con una página de lectura sobre el área principal del ' +
         'banco de trabajo, con figuras y laboratorios para probar que se ejecutan dentro de la página. Cuando esté listo, practique ' +
@@ -762,7 +762,7 @@ const landingPageContent = {
           value: 'Puntos de parada, pausa, avance de un ciclo, observación, forzado y el panel de E/S en vivo.',
         },
         { label: 'Pruebas', value: 'Pruebas de escenario en la aplicación y en `zplc-cli` para un trabajo de CI.' },
-        { label: 'Ejemplos', value: '125 proyectos de ejemplo, incluidos en la pantalla de bienvenida.' },
+        { label: 'Ejemplos', value: '126 proyectos de ejemplo, incluidos en la pantalla de bienvenida.' },
         { label: 'Aplicación', value: 'Una aplicación de escritorio para Windows, macOS y Linux, en inglés y en español.' },
         {
           label: 'Asistentes de IA',

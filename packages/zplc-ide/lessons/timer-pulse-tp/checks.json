@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [
+    {
+      "intent": "the guard comes first in the condition of the pulse",
+      "files": {
+        "src/LubePulse.st": "PROGRAM LubePulse\nVAR_INPUT Press AT %I0.0 : BOOL; GuardClosed AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT Pump AT %QX0.0 : BOOL; END_VAR\nVAR Shot : TP; END_VAR\nShot(IN := GuardClosed AND Press, PT := T#500ms);\nPump := Shot.Q;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "the condition of the pulse is a variable of its own",
+      "files": {
+        "src/LubePulse.st": "PROGRAM LubePulse\nVAR_INPUT Press AT %I0.0 : BOOL; GuardClosed AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT Pump AT %QX0.0 : BOOL; END_VAR\nVAR Shot : TP; Start : BOOL; END_VAR\nStart := Press AND GuardClosed;\nShot(IN := Start, PT := T#500ms);\nPump := Shot.Q;\nEND_PROGRAM\n"
+      }
+    }
+  ],
+  "wrong": [
+    {
+      "intent": "the guard is checked only on the output, so a press with the guard open still runs a hidden pulse",
+      "files": {
+        "src/LubePulse.st": "PROGRAM LubePulse\nVAR_INPUT Press AT %I0.0 : BOOL; GuardClosed AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT Pump AT %QX0.0 : BOOL; END_VAR\nVAR Shot : TP; END_VAR\nShot(IN := Press, PT := T#500ms);\nPump := Shot.Q AND GuardClosed;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "the guard is checked on the start and on the output, so an opening guard cuts the pulse",
+      "files": {
+        "src/LubePulse.st": "PROGRAM LubePulse\nVAR_INPUT Press AT %I0.0 : BOOL; GuardClosed AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT Pump AT %QX0.0 : BOOL; END_VAR\nVAR Shot : TP; END_VAR\nShot(IN := Press AND GuardClosed, PT := T#500ms);\nPump := Shot.Q AND GuardClosed;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "the guard is not used at all",
+      "files": {
+        "src/LubePulse.st": "PROGRAM LubePulse\nVAR_INPUT Press AT %I0.0 : BOOL; GuardClosed AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT Pump AT %QX0.0 : BOOL; END_VAR\nVAR Shot : TP; END_VAR\nShot(IN := Press, PT := T#500ms);\nPump := Shot.Q;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "the pulse timer is called but the pump still copies the button",
+      "files": {
+        "src/LubePulse.st": "PROGRAM LubePulse\nVAR_INPUT Press AT %I0.0 : BOOL; GuardClosed AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT Pump AT %QX0.0 : BOOL; END_VAR\nVAR Shot : TP; END_VAR\nShot(IN := Press AND GuardClosed, PT := T#500ms);\nPump := Press AND GuardClosed;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "the pulse lasts 300 ms instead of 500 ms",
+      "files": {
+        "src/LubePulse.st": "PROGRAM LubePulse\nVAR_INPUT Press AT %I0.0 : BOOL; GuardClosed AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT Pump AT %QX0.0 : BOOL; END_VAR\nVAR Shot : TP; END_VAR\nShot(IN := Press AND GuardClosed, PT := T#300ms);\nPump := Shot.Q;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "the call of the timer is skipped while the guard is open, so the clock stops in the middle of a pulse",
+      "files": {
+        "src/LubePulse.st": "PROGRAM LubePulse\nVAR_INPUT Press AT %I0.0 : BOOL; GuardClosed AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT Pump AT %QX0.0 : BOOL; END_VAR\nVAR Shot : TP; END_VAR\nIF GuardClosed THEN\n    Shot(IN := Press, PT := T#500ms);\nEND_IF;\nPump := Shot.Q;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "an off-delay timer instead of a pulse timer, so a long press stretches the pump time",
+      "files": {
+        "src/LubePulse.st": "PROGRAM LubePulse\nVAR_INPUT Press AT %I0.0 : BOOL; GuardClosed AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT Pump AT %QX0.0 : BOOL; END_VAR\nVAR Hold : TOF; END_VAR\nHold(IN := Press AND GuardClosed, PT := T#500ms);\nPump := Hold.Q;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "an on-delay timer cuts the pump after 500 ms of a press, so a short press gives a short pump time",
+      "files": {
+        "src/LubePulse.st": "PROGRAM LubePulse\nVAR_INPUT Press AT %I0.0 : BOOL; GuardClosed AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT Pump AT %QX0.0 : BOOL; END_VAR\nVAR Hold : TON; END_VAR\nHold(IN := Press AND GuardClosed, PT := T#500ms);\nPump := Press AND GuardClosed AND NOT Hold.Q;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "the pulse is started by the guard alone",
+      "files": {
+        "src/LubePulse.st": "PROGRAM LubePulse\nVAR_INPUT Press AT %I0.0 : BOOL; GuardClosed AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT Pump AT %QX0.0 : BOOL; END_VAR\nVAR Shot : TP; END_VAR\nShot(IN := GuardClosed, PT := T#500ms);\nPump := Shot.Q;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "the pump copies the button and the guard, and no timer is used",
+      "files": {
+        "src/LubePulse.st": "PROGRAM LubePulse\nVAR_INPUT Press AT %I0.0 : BOOL; GuardClosed AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT Pump AT %QX0.0 : BOOL; END_VAR\nPump := Press AND GuardClosed;\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

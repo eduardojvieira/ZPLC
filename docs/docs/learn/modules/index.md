@@ -15,7 +15,7 @@ unlisted: true
 | [0: Getting ready: a tour of ZPLC, the simulation and, for hardware, checking your board](./module-0.md) | Foundation | 2 |
 | [1: How a PLC thinks: the scan cycle, then a first blink](./module-1.md) | Foundation | 6 |
 | [2: Boolean logic and latching: contacts, coils, seal-in, set and reset, safe stop](./module-2.md) | Foundation | 11 |
-| [3: Timers, edges and counters](./module-3.md) | Foundation | 9 |
+| [3: Timers, edges and counters](./module-3.md) | Foundation | 10 |
 | [4: Data: types, arithmetic, comparison, analog scaling](./module-4.md) | Intermediate | 8 |
 | [5: State machines and sequences](./module-5.md) | Intermediate | 8 |
 | [6: Feedback, faults and interlocks](./module-6.md) | Intermediate | 8 |

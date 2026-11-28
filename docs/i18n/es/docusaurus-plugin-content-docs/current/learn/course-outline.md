@@ -9,7 +9,7 @@ tags: [learn, lessons, course]
 
 # Esquema del curso
 
-Esta página es el mapa de todo el curso: cada módulo en orden, con sus 98 lecciones, y para cada lección los lenguajes, las rutas, la planta, el tiempo y los requisitos. Úsela para elegir por dónde empezar o para ver qué necesita un módulo antes. Si nunca programó un PLC, tome la ruta de escalera de 21 de estas lecciones, _Diagrama de escalera desde cero_, descrita en [Aprender](./index.md).
+Esta página es el mapa de todo el curso: cada módulo en orden, con sus 99 lecciones, y para cada lección los lenguajes, las rutas, la planta, el tiempo y los requisitos. Úsela para elegir por dónde empezar o para ver qué necesita un módulo antes. Si nunca programó un PLC, tome la ruta de escalera de 21 de estas lecciones, _Diagrama de escalera desde cero_, descrita en [Aprender](./index.md).
 
 La página sigue `packages/zplc-ide/lessons/course.json` y los paquetes de lección que lo acompañan. Una verificación de CI falla cuando falta una lección o cuando una fila no coincide con su lección. Cada módulo y cada lección tiene además su propia página generada: empiece por los [módulos del curso](./modules/index.md) y vea las [plantas de las lecciones](./plants.md) para las máquinas simuladas.
 
@@ -26,7 +26,7 @@ Primero se ve un resultado: el recorrido del módulo 0 termina con una salida qu
 
 Cada módulo indica a continuación por qué está donde está. La página de inicio de Aprender muestra las mismas palabras, porque ambas leen el mismo archivo del curso.
 
-Disponibles hoy: **98**. Planeadas: **0**. En total: **98**.
+Disponibles hoy: **99**. Planeadas: **0**. En total: **99**.
 
 ## Lenguajes
 
@@ -131,6 +131,7 @@ El tiempo y los eventos vienen después de la lógica: los temporizadores retras
 | `timers-on-delay-off-delay-fbd` Temporizadores en diagrama de bloques de función: una luz con retardo a la desconexión y un filtro con retardo a la conexión | Disponible | FBD       | Simulación, Hardware | -      | 20      | `timers-on-delay-off-delay`, `boolean-logic-two-hand-guard-fbd` |
 | `timers-on-delay-off-delay-il` Lista de instrucciones: llamar a un temporizador de retardo a la desconexión y a la conexión                                  | Disponible | IL        | Simulación, Hardware | -      | 15      | `timers-on-delay-off-delay`, `boolean-logic-two-hand-guard-il`  |
 | `edge-counter-pulses-il` Lista de instrucciones: contar pulsos con un CTU                                                                                    | Disponible | IL        | Simulación, Hardware | -      | 15      | `edge-counter-pulses`, `boolean-logic-two-hand-guard-il`        |
+| `timer-pulse-tp` Un pulso de duración fija con TP                                                                                                            | Disponible | ST        | Simulación           | -      | 15      | `timers-on-delay-off-delay`                                     |
 
 Objetivos de las lecciones disponibles:
 
@@ -142,6 +143,7 @@ Objetivos de las lecciones disponibles:
 - **Temporizadores en diagrama de bloques de función: una luz con retardo a la desconexión y un filtro con retardo a la conexión**: Mantenga una salida en ON durante un tiempo fijo después de que su entrada cae, con un bloque TOF cuya entrada PT está conectada a una constante TIME. Ignore una entrada que está en ON menos de un tiempo fijo, con un bloque TON, y diga qué temporizador retrasa el inicio y cuál retrasa el final.
 - **Lista de instrucciones: llamar a un temporizador de retardo a la desconexión y a la conexión**: Llame a una instancia de temporizador con CAL, pasándole su entrada y su valor preestablecido, y lea su salida con LD. Mantenga una salida encendida un tiempo fijo después de que su entrada baja, con TOF, e ignore una entrada que está en ON menos de un tiempo fijo, con TON.
 - **Lista de instrucciones: contar pulsos con un CTU**: Llame a un contador CTU con CAL y lea su salida con LD Count.Q. Cuente los flancos ascendentes de PulseInput hasta un valor preestablecido de 3, y borre la cuenta con Reset.
+- **Un pulso de duración fija con TP**: Encienda una salida durante un tiempo fijo con una pulsación, por mucho que se mantenga pulsado el pulsador. Haga que una pulsación inicie un pulso solo cuando se cumple una segunda condición, y que un pulso ya iniciado llegue hasta su final.
 - **Flancos en escalera: contactos P y N y pulsos de un escaneo**: Use un contacto de transición positiva (P) y un contacto de transición negativa (N) para convertir un nivel en un pulso de un escaneo. Explique por qué una entrada retenida debe contarse una sola vez y qué escaneo ve el pulso.
 
 ## Módulo 4: Datos: tipos, aritmética, comparación y escalado analógico

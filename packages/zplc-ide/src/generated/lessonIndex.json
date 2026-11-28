@@ -12549,6 +12549,184 @@
       }
     },
     {
+      "id": "timer-pulse-tp",
+      "version": 1,
+      "order": 84,
+      "module": 3,
+      "level": "foundation",
+      "prerequisites": [
+        "timers-on-delay-off-delay"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson drives a lubrication pump from a button and a guard switch; a learner board has no pump, and the scenario supplies the button and the guard.",
+            "es": "La lección maneja una bomba de lubricación desde un pulsador y un interruptor de resguardo; una placa del estudiante no tiene bomba, y el escenario aporta el pulsador y el resguardo."
+          },
+          "instead": {
+            "en": "Complete it in Simulation, where the button and the guard are part of the scenario.",
+            "es": "Complétela en Simulación, donde el pulsador y el resguardo forman parte del escenario."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 15,
+      "starter": {
+        "project": "timer_pulse_tp_starter",
+        "program": "src/LubePulse.st"
+      },
+      "solution": {
+        "project": "timer_pulse_tp",
+        "program": "src/LubePulse.st"
+      },
+      "scenario": {
+        "id": "LubePulse",
+        "path": "tests/lube-pulse.scenario.json",
+        "sha256": "ef07e2c35fcba0a81a6f88431dc282dcf69a6a9cd3421eae62858b38df828d64",
+        "tickMs": 10,
+        "durationMs": 3400,
+        "assertions": 10,
+        "canonical": "{\"durationMs\":3400,\"events\":[{\"atMs\":0,\"set\":{\"LubePulse.GuardClosed\":true,\"LubePulse.Press\":false}},{\"atMs\":100,\"set\":{\"LubePulse.GuardClosed\":true,\"LubePulse.Press\":true}},{\"atMs\":1000,\"set\":{\"LubePulse.GuardClosed\":true,\"LubePulse.Press\":false}},{\"atMs\":1200,\"set\":{\"LubePulse.GuardClosed\":true,\"LubePulse.Press\":true}},{\"atMs\":1300,\"set\":{\"LubePulse.GuardClosed\":true,\"LubePulse.Press\":false}},{\"atMs\":2000,\"set\":{\"LubePulse.GuardClosed\":false,\"LubePulse.Press\":false}},{\"atMs\":2100,\"set\":{\"LubePulse.GuardClosed\":false,\"LubePulse.Press\":true}},{\"atMs\":2200,\"set\":{\"LubePulse.GuardClosed\":false,\"LubePulse.Press\":false}},{\"atMs\":2300,\"set\":{\"LubePulse.GuardClosed\":true,\"LubePulse.Press\":false}},{\"atMs\":2700,\"set\":{\"LubePulse.GuardClosed\":true,\"LubePulse.Press\":true}},{\"atMs\":2800,\"set\":{\"LubePulse.GuardClosed\":true,\"LubePulse.Press\":false}},{\"atMs\":2900,\"set\":{\"LubePulse.GuardClosed\":false,\"LubePulse.Press\":false}}],\"expectations\":[{\"atMs\":50,\"condition\":{\"LubePulse.Pump\":false},\"kind\":\"AT\"},{\"atMs\":300,\"condition\":{\"LubePulse.Pump\":true},\"kind\":\"AT\"},{\"atMs\":800,\"condition\":{\"LubePulse.Pump\":false},\"kind\":\"AT\"},{\"atMs\":1500,\"condition\":{\"LubePulse.Pump\":true},\"kind\":\"AT\"},{\"atMs\":1800,\"condition\":{\"LubePulse.Pump\":false},\"kind\":\"AT\"},{\"atMs\":2400,\"condition\":{\"LubePulse.Pump\":false},\"kind\":\"AT\"},{\"atMs\":3000,\"condition\":{\"LubePulse.Pump\":true},\"kind\":\"AT\"},{\"atMs\":3300,\"condition\":{\"LubePulse.Pump\":false},\"kind\":\"AT\"},{\"condition\":{\"LubePulse.Pump\":true},\"forMs\":380,\"fromMs\":110,\"kind\":\"FOR\"},{\"condition\":{\"LubePulse.Pump\":false},\"forMs\":500,\"fromMs\":2110,\"kind\":\"FOR\"}],\"id\":\"LubePulse\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "hardware": null,
+      "text": {
+        "en": {
+          "title": "A pulse of fixed length with TP",
+          "summary": "Switch a lubrication pump ON for a fixed time with one press, however long the button is held and whatever the guard does afterwards.",
+          "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
+          "objectives": [
+            "Switch an output ON for a fixed time with one press, however long the button stays pressed.",
+            "Let a press start a pulse only when a second condition holds, and let a pulse that has started run to its end."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/LubePulse.st the input Press is the button of a lubrication pump, GuardClosed is TRUE while the guard of the machine is closed, and Pump is the pump. Each press while the guard is closed must switch Pump ON for 500 ms, however long the button stays pressed. A press while the guard is open does nothing, not even if the guard closes soon after. A pulse that has started always runs to its end, even when the guard opens before it.",
+              "checkpoint": "You can say how long Pump must be ON after a press, and what a press does while the guard is open."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "The scenario presses the button at 100 ms and holds it until 1000 ms. At 2100 ms it presses it again while the guard is open; the guard closes at 2300 ms. At 2700 ms it presses it with the guard closed, and the guard opens at 2900 ms. Before running, predict Pump at 300, 800, 2400 and 3000 ms.",
+              "checkpoint": "ON at 300 ms, OFF at 800 ms, OFF at 2400 ms, ON at 3000 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct the starting program, save it, then press Check. The starting program copies the button to the pump, so Pump is still ON at 800 ms, long after a press of half a second should have ended. Make Pump follow what the objective says at every moment of the scenario. The inputs and the output are declared; you write the rest.",
+              "checkpoint": "Check reports the scenario of this lesson as passed."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson and lists every assertion that failed.",
+              "checkpoint": "The scenario is named LubePulse and contains 10 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Follow Press, GuardClosed and Pump in the trace: the first press, held for 900 ms, gives one pulse of 500 ms, from 100 to 600 ms. The press at 2100 ms, with the guard open, gives none. The pulse that starts at 2700 ms still ends at 3200 ms although the guard opened at 2900 ms.",
+              "checkpoint": "Pump is ON for 500 ms after each press that the guard allows, and for no other time."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Press stays ON from 100 ms to 1000 ms, and the pulse ends at 600 ms. Why does Pump not come ON again at 600 ms, while Press is still ON?",
+              "checkpoint": "You can say what has to happen to Press before your program can start another pulse."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Open the trace at 800 ms. Press is still ON there: is Pump ON for as long as Press is, and which statement of your program decides when Pump goes OFF? Then look at the trace at 2400 ms and at 3000 ms. When the guard is open, what should a press do, and what should the guard do to a pulse that is already running?"
+            },
+            {
+              "level": 2,
+              "text": "Add VAR Shot : TP; END_VAR under the declarations of the inputs and the output, delete the statement Pump := Press; and write Shot(IN := Press AND GuardClosed, PT := T#500ms); Pump := Shot.Q; The call goes in the program on every scan. The AND stands inside the call, so a press with the guard open never starts the pulse. Pump is not combined with GuardClosed again after the call, so a pulse that has started ends by itself."
+            }
+          ],
+          "faultCases": [
+            "The starting program copies the button to the pump, so Pump is still ON at 800 ms, long after a press of half a second should have ended."
+          ]
+        },
+        "es": {
+          "title": "Un pulso de duración fija con TP",
+          "summary": "Encienda una bomba de lubricación durante un tiempo fijo con una pulsación, por mucho que se mantenga el pulsador y haga lo que haga el resguardo después.",
+          "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
+          "objectives": [
+            "Encienda una salida durante un tiempo fijo con una pulsación, por mucho que se mantenga pulsado el pulsador.",
+            "Haga que una pulsación inicie un pulso solo cuando se cumple una segunda condición, y que un pulso ya iniciado llegue hasta su final."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/LubePulse.st, la entrada Press es el pulsador de una bomba de lubricación, GuardClosed es TRUE mientras el resguardo de la máquina está cerrado y Pump es la bomba. Cada pulsación con el resguardo cerrado debe encender Pump durante 500 ms, por mucho que se mantenga pulsado el pulsador. Una pulsación con el resguardo abierto no hace nada, ni siquiera si el resguardo se cierra poco después. Un pulso ya iniciado siempre llega hasta su final, aunque el resguardo se abra antes.",
+              "checkpoint": "Usted puede decir cuánto tiempo debe estar Pump encendida después de una pulsación y qué hace una pulsación mientras el resguardo está abierto."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "El escenario pulsa el pulsador a los 100 ms y lo mantiene hasta los 1000 ms. A los 2100 ms lo pulsa de nuevo con el resguardo abierto; el resguardo se cierra a los 2300 ms. A los 2700 ms lo pulsa con el resguardo cerrado, y el resguardo se abre a los 2900 ms. Antes de ejecutar, prediga Pump a los 300, 800, 2400 y 3000 ms.",
+              "checkpoint": "ON a los 300 ms, OFF a los 800 ms, OFF a los 2400 ms, ON a los 3000 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija el proyecto inicial, guárdelo y pulse Comprobar. El proyecto inicial copia el pulsador a la bomba, así que Pump sigue en ON a los 800 ms, mucho después de que una pulsación de medio segundo debería haber terminado. Haga que Pump siga lo que dice el objetivo en cada momento del escenario. Las entradas y la salida ya están declaradas; usted escribe el resto.",
+              "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección y enumera cada aserción que falló.",
+              "checkpoint": "El escenario se llama LubePulse y contiene 10 aserciones."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Siga Press, GuardClosed y Pump en la traza: la primera pulsación, mantenida 900 ms, da un solo pulso de 500 ms, de 100 a 600 ms. La pulsación de los 2100 ms, con el resguardo abierto, no da ninguno. El pulso que empieza a los 2700 ms termina igualmente a los 3200 ms aunque el resguardo se abrió a los 2900 ms.",
+              "checkpoint": "Pump está en ON durante 500 ms después de cada pulsación que el resguardo permite, y en ningún otro momento."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "Press está en ON de 100 ms a 1000 ms, y el pulso termina a los 600 ms. ¿Por qué Pump no vuelve a pasar a ON a los 600 ms, mientras Press sigue en ON?",
+              "checkpoint": "Usted puede decir qué tiene que pasar con Press antes de que su programa pueda iniciar otro pulso."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Abra la traza a los 800 ms. Press sigue en ON ahí: ¿está Pump en ON mientras lo está Press y qué instrucción de su programa decide cuándo Pump pasa a OFF? Después mire la traza a los 2400 ms y a los 3000 ms. Cuando el resguardo está abierto, ¿qué debe hacer una pulsación y qué debe hacer el resguardo con un pulso que ya está en marcha?"
+            },
+            {
+              "level": 2,
+              "text": "Añada VAR Shot : TP; END_VAR debajo de las declaraciones de las entradas y de la salida, borre la instrucción Pump := Press; y escriba Shot(IN := Press AND GuardClosed, PT := T#500ms); Pump := Shot.Q; La llamada va en el programa en cada ciclo de escaneo. El AND está dentro de la llamada, así que una pulsación con el resguardo abierto nunca inicia el pulso. Pump no se combina otra vez con GuardClosed después de la llamada, así que un pulso ya iniciado termina por sí solo."
+            }
+          ],
+          "faultCases": [
+            "El proyecto inicial copia el pulsador a la bomba, así que Pump sigue en ON a los 800 ms, mucho después de que una pulsación de medio segundo debería haber terminado."
+          ]
+        }
+      },
+      "reading": {
+        "en": "## A pulse that does not depend on the button\n\nSometimes a machine needs an output ON for an exact time, started by a signal that lasts for any time: a dose of soap, a puff of oil, a short horn blast. If the output simply copied the button, a person who holds the button for a long time would get a long dose.\n\nThe **TP** timer, the **pulse timer**, solves this. It is a function block like the TON and the TOF of the timers lesson: you declare an instance, call it once on every scan with `IN` and `PT`, and read its output `Q`.\n\n```st\nVAR\n    Dose : TP;\nEND_VAR\nDose(IN := Hand, PT := T#400ms);\n```\n\n- When `IN` goes from OFF to ON, `Q` goes ON on that scan and the clock starts.\n- `Q` stays ON until the preset `PT` has run out. What `IN` does in the meantime changes nothing: it may fall, or come back, or stay ON.\n- When `PT` has run out, `Q` goes OFF. `IN` has to be OFF and then ON again before a new pulse can start. A new rise of `IN` while `Q` is ON is ignored.\n\nSo the length of the pulse belongs to the program, not to the person at the button. The timing diagram below is from a run of the worked example.\n\n```timing\nspan: 2600\nsignals:\n  - { name: Hand, edges: [100, 1000, 1200, 1260, 1500, 1520, 2000, 2020] }\n  - { name: Valve, edges: [100, 500, 1200, 1600, 2000, 2400] }\ncaption: The valve opens for 400 ms per touch, not for as long as the hand stays\n```\n\n## Worked example\n\nA soap dispenser has a sensor, `Hand`, that is TRUE while a hand is under it. The valve must open for 400 ms each time a hand arrives, however long the hand stays.\n\n```st\nPROGRAM Dispenser\nVAR_INPUT Hand AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Valve AT %QX0.0 : BOOL; END_VAR\nVAR\n    Dose : TP;\nEND_VAR\nDose(IN := Hand, PT := T#400ms);\nValve := Dose.Q;\nEND_PROGRAM\n```\n\nZPLC ran this program against a scenario with four touches. In the first, the hand stays from 100 ms to 1000 ms. `Valve` came ON at 100 ms and went OFF at 500 ms, a pulse of 400 ms, and it stayed OFF for the rest of that touch, although `Hand` was still ON for another 500 ms. The second touch, a short one from 1200 ms to 1260 ms, gave a pulse of the same length, from 1200 ms to 1600 ms.\n\nThe third touch, from 1500 ms to 1520 ms, came while that pulse was still running. It did not make the pulse longer and it did not start another one: `Valve` went OFF at 1600 ms as before. The fourth touch, at 2000 ms, started a new pulse that ended at 2400 ms.\n\n## Common mistakes\n\n- Expecting `Q` to follow `IN`. `Q` follows the preset: it stays ON for `PT` even when `IN` falls, and it goes OFF after `PT` even when `IN` is still ON.\n- Expecting a held button to repeat the pulse. The next pulse needs `IN` to fall and rise again.\n- Not calling the TP on every scan. A call that is skipped leaves the clock where it was.\n- Expecting a new press during a pulse to extend it. It is ignored.\n\n## Check yourself\n\n```quiz\nquestion: In the soap dispenser, a hand stays under the sensor for 900 ms. How long is the valve ON?\noptions:\n  - { text: 'The 400 ms of the preset', correct: true, feedback: 'Yes. In the run the valve opened at {{t:100}} ms and closed at {{t:500}} ms, although Hand stayed ON until {{t:1000}} ms.' }\n  - { text: 'The 900 ms that the hand stays', feedback: 'That is what the output would do if it copied Hand. A pulse timer ends its pulse by itself, after its preset.' }\n  - { text: '400 ms, then another 400 ms while the hand is still there', feedback: 'The pulse does not repeat while the input stays ON. A new pulse needs the input to fall and rise again.' }\n```\n\n```quiz\nquestion: The valve is ON for a dose and a hand touches the sensor again before the dose ends. What happens?\noptions:\n  - { text: 'The dose ends at its time, and the touch is ignored', correct: true, feedback: 'Right. In the run the touch at {{t:1500}} ms came during the pulse that started at {{t:1200}} ms: the valve closed at {{t:1600}} ms and opened again only with the touch at {{t:2000}} ms.' }\n  - { text: 'The dose is extended by 400 ms', feedback: 'A rise of the input while Q is ON does not restart the clock.' }\n  - { text: 'The valve closes at once and a new dose starts', feedback: 'The pulse runs to its end whatever the input does.' }\n```\n\n## What you will do in the practice\n\nA lubrication pump has a button and a guard switch. The starting program copies the button to the pump. You will make each press give a pulse of 500 ms, and you will decide what the guard may and may not do, then press Check. The scenario holds the button for 900 ms and opens and closes the guard in 3400 ms.\n",
+        "es": "## Un pulso que no depende del pulsador\n\nA veces una máquina necesita una salida encendida durante un tiempo exacto, iniciada por una señal que dura lo que sea: una dosis de jabón, una gota de aceite, un toque breve de bocina. Si la salida se limitara a copiar el pulsador, una persona que lo mantenga pulsado mucho tiempo obtendría una dosis larga.\n\nEl temporizador **TP**, el **temporizador de pulso**, lo resuelve. Es un bloque de función como el TON y el TOF de la lección de temporizadores: se declara una instancia, se llama una vez en cada ciclo de escaneo con `IN` y `PT`, y se lee su salida `Q`.\n\n```st\nVAR\n    Dosis : TP;\nEND_VAR\nDosis(IN := Mano, PT := T#400ms);\n```\n\n- Cuando `IN` pasa de OFF a ON, `Q` pasa a ON en ese ciclo de escaneo y el reloj empieza a contar.\n- `Q` sigue en ON hasta que se agota el valor preestablecido `PT`. Lo que haga `IN` mientras tanto no cambia nada: puede caer, puede volver o puede seguir en ON.\n- Cuando `PT` se agota, `Q` pasa a OFF. `IN` tiene que pasar a OFF y luego a ON otra vez para que pueda empezar un pulso nuevo. Una nueva subida de `IN` mientras `Q` está en ON se ignora.\n\nAsí, la duración del pulso pertenece al programa y no a la persona que está en el pulsador. El diagrama de tiempos siguiente es de una ejecución del ejemplo resuelto.\n\n```timing\nspan: 2600\nsignals:\n  - { name: Hand, edges: [100, 1000, 1200, 1260, 1500, 1520, 2000, 2020] }\n  - { name: Valve, edges: [100, 500, 1200, 1600, 2000, 2400] }\ncaption: La válvula se abre 400 ms por contacto, no mientras la mano permanece\n```\n\n## Ejemplo resuelto\n\nUn dispensador de jabón tiene un sensor, `Hand`, que es TRUE mientras hay una mano debajo. La válvula debe abrirse 400 ms cada vez que llega una mano, por mucho que la mano permanezca.\n\n```st\nPROGRAM Dispenser\nVAR_INPUT Hand AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Valve AT %QX0.0 : BOOL; END_VAR\nVAR\n    Dose : TP;\nEND_VAR\nDose(IN := Hand, PT := T#400ms);\nValve := Dose.Q;\nEND_PROGRAM\n```\n\nZPLC ejecutó este programa con un escenario de cuatro contactos. En el primero, la mano permanece de 100 ms a 1000 ms. `Valve` pasó a ON a los 100 ms y a OFF a los 500 ms, un pulso de 400 ms, y siguió en OFF durante el resto de ese contacto, aunque `Hand` siguió en ON otros 500 ms. El segundo contacto, breve, de 1200 ms a 1260 ms, dio un pulso de la misma duración, de 1200 ms a 1600 ms.\n\nEl tercer contacto, de 1500 ms a 1520 ms, llegó mientras ese pulso seguía en marcha. No alargó el pulso ni inició otro: `Valve` pasó a OFF a los 1600 ms como antes. El cuarto contacto, a los 2000 ms, inició un pulso nuevo que terminó a los 2400 ms.\n\n## Errores comunes\n\n- Esperar que `Q` siga a `IN`. `Q` sigue al valor preestablecido: permanece en ON durante `PT` aunque `IN` caiga, y pasa a OFF después de `PT` aunque `IN` siga en ON.\n- Esperar que un pulsador mantenido repita el pulso. El pulso siguiente necesita que `IN` caiga y vuelva a subir.\n- No llamar al TP en cada ciclo de escaneo. Una llamada omitida deja el reloj donde estaba.\n- Esperar que una pulsación nueva durante un pulso lo alargue. Se ignora.\n\n## Compruébelo usted\n\n```quiz\nquestion: En el dispensador de jabón, una mano permanece 900 ms bajo el sensor. ¿Cuánto tiempo está la válvula en ON?\noptions:\n  - { text: 'Los 400 ms del valor preestablecido', correct: true, feedback: 'Sí. En la ejecución la válvula se abrió a los {{t:100}} ms y se cerró a los {{t:500}} ms, aunque Hand siguió en ON hasta los {{t:1000}} ms.' }\n  - { text: 'Los 900 ms que permanece la mano', feedback: 'Eso es lo que haría la salida si copiara Hand. Un temporizador de pulso termina su pulso por sí solo, después de su valor preestablecido.' }\n  - { text: '400 ms, y otros 400 ms mientras la mano sigue ahí', feedback: 'El pulso no se repite mientras la entrada sigue en ON. Un pulso nuevo necesita que la entrada caiga y vuelva a subir.' }\n```\n\n```quiz\nquestion: La válvula está en ON por una dosis y una mano toca el sensor otra vez antes de que termine la dosis. ¿Qué pasa?\noptions:\n  - { text: 'La dosis termina a su hora y el contacto se ignora', correct: true, feedback: 'Correcto. En la ejecución el contacto de los {{t:1500}} ms llegó durante el pulso que empezó a los {{t:1200}} ms: la válvula se cerró a los {{t:1600}} ms y volvió a abrirse solo con el contacto de los {{t:2000}} ms.' }\n  - { text: 'La dosis se alarga 400 ms', feedback: 'Una subida de la entrada mientras Q está en ON no reinicia el reloj.' }\n  - { text: 'La válvula se cierra de inmediato y empieza una dosis nueva', feedback: 'El pulso llega hasta su final haga lo que haga la entrada.' }\n```\n\n## Qué hará en la práctica\n\nUna bomba de lubricación tiene un pulsador y un interruptor de resguardo. El proyecto inicial copia el pulsador a la bomba. Usted hará que cada pulsación dé un pulso de 500 ms y decidirá qué puede y qué no puede hacer el resguardo, y después pulsará Comprobar. El escenario mantiene el pulsador 900 ms y abre y cierra el resguardo en 3400 ms.\n",
+        "files": {},
+        "images": []
+      }
+    },
+    {
       "id": "conveyor-sorting-sfc",
       "version": 2,
       "order": 85,

@@ -9,7 +9,7 @@ tags: [learn, lessons, course]
 
 # Course outline
 
-This page is the map of the whole course: every module in order, with its 98 lessons, and for each lesson the languages, tracks, plant, time and prerequisites. Use it to pick where to start or to see what a module needs first. If you have never programmed a PLC, take the Ladder path of 21 of these lessons, _Ladder diagram from zero_, described in [Learn](./index.md).
+This page is the map of the whole course: every module in order, with its 99 lessons, and for each lesson the languages, tracks, plant, time and prerequisites. Use it to pick where to start or to see what a module needs first. If you have never programmed a PLC, take the Ladder path of 21 of these lessons, _Ladder diagram from zero_, described in [Learn](./index.md).
 
 The page follows `packages/zplc-ide/lessons/course.json` and the lesson packages beside it. A CI check fails when a lesson is missing here or a row disagrees with its lesson. Each module and each lesson also has its own generated page: start from the [course modules](./modules/index.md), and see the [lesson plants](./plants.md) for the simulated machines.
 
@@ -26,7 +26,7 @@ You see a result first: the tour of module 0 ends in a blinking output in simula
 
 Each module below says why it sits where it does. The Learn home shows the same words, because both read the same course file.
 
-Available today: **98**. Planned: **0**. In all: **98**.
+Available today: **99**. Planned: **0**. In all: **99**.
 
 ## Languages
 
@@ -131,6 +131,7 @@ Time and events come after logic: timers delay or hold a signal, edges turn a le
 | `timers-on-delay-off-delay-fbd` Timers in Function Block Diagram: an off-delay light and an on-delay filter | Available | FBD       | Simulation, Hardware | -     | 20      | `timers-on-delay-off-delay`, `boolean-logic-two-hand-guard-fbd` |
 | `timers-on-delay-off-delay-il` Instruction List: calling an off-delay and an on-delay timer                 | Available | IL        | Simulation, Hardware | -     | 15      | `timers-on-delay-off-delay`, `boolean-logic-two-hand-guard-il`  |
 | `edge-counter-pulses-il` Instruction List: counting pulses with a CTU                                       | Available | IL        | Simulation, Hardware | -     | 15      | `edge-counter-pulses`, `boolean-logic-two-hand-guard-il`        |
+| `timer-pulse-tp` A pulse of fixed length with TP                                                            | Available | ST        | Simulation           | -     | 15      | `timers-on-delay-off-delay`                                     |
 
 Objectives of the available lessons:
 
@@ -142,6 +143,7 @@ Objectives of the available lessons:
 - **Timers in Function Block Diagram: an off-delay light and an on-delay filter**: Keep an output ON for a fixed time after its input drops, with a TOF block whose PT input is wired to a TIME constant. Ignore an input that is ON for less than a fixed time, with a TON block, and say which timer delays the start and which one delays the end.
 - **Instruction List: calling an off-delay and an on-delay timer**: Call a timer instance with CAL, passing its input and its preset, and read its output with LD. Keep an output on for a fixed time after its input drops, using TOF, and ignore an input that is on for less than a fixed time, using TON.
 - **Instruction List: counting pulses with a CTU**: Call a CTU counter with CAL and read its output with LD Count.Q. Count the rising edges of PulseInput up to a preset of 3, and clear the count with Reset.
+- **A pulse of fixed length with TP**: Switch an output ON for a fixed time with one press, however long the button stays pressed. Let a press start a pulse only when a second condition holds, and let a pulse that has started run to its end.
 - **Edges in Ladder: P and N contacts and one-scan pulses**: Use a positive transition contact (P) and a negative transition contact (N) to turn a level into a pulse of one scan. Explain why a held input must be counted once, and which scan sees the pulse.
 
 ## Module 4: Data: types, arithmetic, comparison, analog scaling
