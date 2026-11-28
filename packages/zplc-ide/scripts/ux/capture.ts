@@ -17,7 +17,7 @@
  * host with the native POSIX runtime, one fresh profile per condition. Nothing here touches a board, deploys, forces or runs.
  */
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { parseArgs } from 'node:util';
 
 import { translate } from '../../src/i18n/translate';
@@ -45,14 +45,22 @@ const REPOSITORY = resolve(import.meta.dir, '..', '..', '..', '..');
 const SCREENS = join(REPOSITORY, 'specs', '014-zplc-2-1-release-quality', 'screens.md');
 
 /**
- * Commands a capture must not run: they close the project, save, act on a board or a program, start long work, or reach
- * hardware (AGENTS.md rule 8). The Learn commands that only move through a lesson are allowed; learn.check grades one.
+ * The only commands a capture may run (AGENTS.md rule 8): they show a view, open a configuration editor or a dialog, or move
+ * through a lesson. Anything else (build, save, delete, rename, deploy, connect, run, debug, grade, assistant connections) is refused.
  */
-const NEVER = new RegExp(
-  '^(file\\.(closeProject|open|export|save)|online\\.|debug\\.|learn\\.check$|plant\\.feedBoard$|build\\.downloadProgram$|' +
-    'build\\.(runAllTests|runFailedTests|checkInterlocks)|plant\\.(createDeclarations|endEdit))',
+const ALLOWED = new RegExp(
+  '^(view\\.|help\\.|project\\.(settings|tasks|io|network|communication|target|plantMap|newProgram)$|file\\.(new|preferences)$|' +
+    'build\\.generateSt$|learn\\.guide\\.(next|back)$)',
 );
-export const isNever = (command: string): boolean => NEVER.test(command);
+export const isNever = (command: string): boolean => !ALLOWED.test(command);
+
+/** `--out` is emptied before a run: it must be a folder inside a `.cache` folder, never a place that holds real work. */
+export function assertSafeOut(out: string): void {
+  const parts = resolve(out).split(sep);
+  const cache = parts.lastIndexOf('.cache');
+  if (cache < 0 || cache >= parts.length - 1)
+    throw new Error(`--out ${out} must be a folder inside a .cache folder (the run empties it); try ${join(REPOSITORY, '.cache', 'uxv')}`);
+}
 /** The surfaces the open workbench shows with no command, and the state they are in there. */
 const ON_OPEN: Array<[string, string]> = [
   ['shell.commandBar', 'idle'],
@@ -73,10 +81,28 @@ const LESSON_SAMPLE = 'ld-no-nc-contacts';
 /** Surfaces reached another way than their command of screens.md, or that cannot be reached yet, and why. */
 const SPECIAL: Record<
   string,
-  { command: string; click?: string; state: string } | { lesson: { id: string; stage: LessonKind }; state: string } | { unreached: string }
+  | { command: string; click?: string; state: string }
+  | { lesson: { id: string; stage: LessonKind }; command?: string; state: string }
+  | { script: string; state: string }
+  | { unreached: string }
 > = {
   // the plant document shows the operate panel beside the 3D view as soon as the fixture scene is open (no run, no board)
   'plant.operate': { command: 'view.plant', state: 'idle' },
+  'plant.chooser': { command: 'view.plant', state: 'normal' },
+  'activity.plant.group': { command: 'view.showProject', state: 'scenes' },
+  // a lesson with a plant: its live plant shows when no scene is open and the lesson's plant map binds to the program
+  'plant.live': { lesson: { id: 'tank-level-fault-reset', stage: 'exercise' }, command: 'view.plant', state: 'live' },
+  // view.agent opens Preferences while no provider is set; the Assistant view itself is shown as the command does when one is
+  'secondary.assistant': {
+    state: 'no provider',
+    script:
+      `(async () => { const { useSecondaryView } = await import('/src/shell/useSelection.ts'); ` +
+      `const { useShellLayout } = await import('/src/store/useShellLayout.ts'); ` +
+      `const { shellDensity } = await import('/src/shell/shellDensity.ts'); ` +
+      `const compact = shellDensity(window.innerWidth) === 'compact'; useSecondaryView.getState().show('assistant'); ` +
+      `useSecondaryView.getState().setInPrimary(compact); ` +
+      `if (compact) useShellLayout.getState().setPrimaryVisible(true); else useShellLayout.getState().setSecondaryVisible(true); return 'ran'; })()`,
+  },
   // a lesson with a reading, opened as a person opens it from the Learn home: its reading, the try-it in it, then the exercise
   'learn.reading': { lesson: { id: LESSON_SAMPLE, stage: 'reading' }, state: 'normal' },
   'learn.readingFrame': { lesson: { id: LESSON_SAMPLE, stage: 'reading' }, state: 'normal' },
@@ -103,12 +129,9 @@ const REASONS: Record<string, string> = {
   'editor.controller': 'no command opens it and the fixture project has no controller to open',
   'learn.lab': 'opens beside a lesson with a plant, which needs a plant lesson with a recorded replay; the panel has no marker to wait for',
   'learn.boardTrack': 'opens from the hardware track, which asks for a board; a capture touches no board',
-  'plant.chooser': 'the chooser has no marker the tool can wait for (SceneChooser.tsx has only the save controls); needs a data- marker',
-  'plant.live': 'opens beside a plant lesson with no scene; needs a plant lesson fixture and PlantLivePanel is not marked by lesson',
   'plant.faceplate': 'shown only while a program runs, which a capture never starts',
-  'activity.plant.group':
-    'a part of the Project explorer with no marker of its own the tool can wait for (needs a data- marker on PlantSection)',
-  'editor.plantMap': 'opens from the plant-map item of the navigator, which has no marker to wait for and no command of its own',
+  'editor.config.plantMap':
+    'on this branch the plant-map item of the navigator opens the plant document (editor.plant); it becomes a config editor with U3-P4',
   'learn.result': 'shown only after learn.check grades a lesson, which runs the program',
   'dialog.modal': 'a generic modal with no command of its own: each dialog above is one of them',
 };
@@ -131,6 +154,8 @@ interface Plan {
   open?: string;
   /** A control to click once the command ran. */
   click?: string;
+  /** A page expression that shows the surface where its command shows something else. */
+  script?: string;
   /** A lesson to start, as the Learn home does, and the stage of it to show. */
   lesson?: { id: string; stage: LessonKind };
 }
@@ -141,7 +166,7 @@ export function markerOf(surface: string, locale: 'en' | 'es'): string | null {
   const tab = (view: string) => sel(`[id="editor-tab-${view}"][aria-selected="true"]`);
   const activity = (view: string) => sel(`[data-activity="${view}"][aria-current="true"]`);
   const secondary = (key: 'shell.secondary.inspector' | 'shell.secondary.assistant' | 'shell.secondary.lesson') =>
-    `[...document.querySelectorAll('[data-sidebar-kind="secondary"] h2')]` +
+    `[...document.querySelectorAll('[data-sidebar-kind] h2')]` +
     `.some((heading) => heading.textContent.trim() === ${JSON.stringify(translate(locale, key))})`;
   const editor = EDITORS[surface];
   if (editor)
@@ -177,6 +202,11 @@ export function markerOf(surface: string, locale: 'en' | 'es'): string | null {
     'learn.tryIt': sel('[data-reading-block="ld-try"]'),
     'learn.exercise': `${secondary('shell.secondary.lesson')} && ${sel('[data-guide-stage]')}`,
     'plant.operate': sel('[data-plant-operate]'),
+    'plant.chooser':
+      `[...document.querySelectorAll('[data-plant-document] label')].some((label) => ` +
+      `label.textContent.trim() === ${JSON.stringify(translate(locale, 'plant.panel.scene'))})`,
+    'plant.live': sel('[data-plant-panel]'),
+    'activity.plant.group': sel('[data-navigator-group="plant"]'),
     'editor.changes': tab('review:changes'),
     'editor.plant': `${tab('plant')} && ${sel('[data-plant-document]')}`,
     'plant.editor': sel('[data-plant-editor]'),
@@ -199,8 +229,12 @@ export function plan(surfaces: Surface[]): { reached: Plan[]; unreached: Array<{
       unreached.push({ surface: surface.id, reason: special.unreached });
       continue;
     }
+    if (special && 'script' in special) {
+      reached.push({ surface, state: special.state, command: null, script: special.script });
+      continue;
+    }
     if (special && 'lesson' in special) {
-      reached.push({ surface, state: special.state, command: null, lesson: special.lesson });
+      reached.push({ surface, state: special.state, command: special.command ?? null, lesson: special.lesson });
       continue;
     }
     if (special) {
@@ -320,7 +354,7 @@ async function captureCondition(
   const { launchApp, button, css } = await import('../journeyApp');
   const ui = (key: Parameters<typeof translate>[1]) => translate(condition.locale, key);
   const { harness, scratch } = shared;
-  const launched = await launchApp(harness, mkdtempSync(join(scratch, 'uxv-')));
+  const launched = await launchApp(harness, mkdtempSync(join(scratch, 'uxv-')), {}, { gl: 'software' });
   const app = launched.app;
   const captures: CaptureRecord[] = [];
   const failed: Array<{ surface: string; reason: string }> = [];
@@ -476,13 +510,23 @@ async function captureCondition(
             continue;
           }
           if (plan.lesson.stage === 'exercise') await toExercise();
+          if (plan.command && (await run(plan.command)) !== 'ran') {
+            failed.push({ surface: plan.surface.id, reason: `${plan.command} did not run after the lesson` });
+            continue;
+          }
           await still();
           await takeIfShowing(plan);
           continue;
         }
         await reset();
-        const how = plan.command ?? (plan.open ? `open ${plan.open}` : null);
-        const outcome = plan.command ? await run(plan.command) : plan.open ? await openFile(plan.open) : 'ran';
+        const how = plan.command ?? (plan.open ? `open ${plan.open}` : plan.script ? 'its script' : null);
+        const outcome = plan.script
+          ? await app.eval<string>(plan.script)
+          : plan.command
+            ? await run(plan.command)
+            : plan.open
+              ? await openFile(plan.open)
+              : 'ran';
         if (outcome !== 'ran') {
           failed.push({ surface: plan.surface.id, reason: `${how} is ${outcome} with the fixture project open` });
           continue;
@@ -613,6 +657,7 @@ async function main(): Promise<void> {
     },
   });
   const out = resolve(values.out ?? join(REPOSITORY, '.cache', 'claude-ux-review', 'uxv'));
+  assertSafeOut(out);
   const surfaces = parseScreens(readFileSync(SCREENS, 'utf8'));
   for (const id of values.surface ?? [])
     if (!surfaces.some((surface) => surface.id === id)) throw new Error(`${id} is not a surface of screens.md`);

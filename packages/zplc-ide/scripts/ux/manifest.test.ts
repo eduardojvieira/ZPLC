@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 
-import { isNever, markerOf, plan } from './capture';
+import { assertSafeOut, isNever, markerOf, plan } from './capture';
 import {
   captureName,
   captureRecord,
@@ -195,7 +195,19 @@ describe('the lessons of UXV-007', () => {
 
 describe('what a capture must never run (AGENTS.md rule 8)', () => {
   test('UXV-007 opening a lesson is allowed; checking, running, saving, deploying, connecting and feeding a board are not', () => {
-    for (const ok of ['learn.guide.next', 'learn.guide.back', 'view.showLearn', 'view.plant', 'view.guide'])
+    for (const ok of [
+      'learn.guide.next',
+      'learn.guide.back',
+      'view.showLearn',
+      'view.plant',
+      'view.guide',
+      'help.learn',
+      'project.tasks',
+      'file.new',
+      'file.preferences',
+      'project.newProgram',
+      'build.generateSt',
+    ])
       expect({ ok, never: isNever(ok) }).toEqual({ ok, never: false });
     for (const bad of [
       'learn.check',
@@ -211,6 +223,14 @@ describe('what a capture must never run (AGENTS.md rule 8)', () => {
       'file.export',
       'build.downloadProgram',
       'build.runAllTests',
+      'build.runTestAtCursor',
+      'build.compile',
+      'build.newTest',
+      'project.delete',
+      'project.rename',
+      'project.moveFile',
+      'ai.connectMcp',
+      'something.new',
     ])
       expect({ bad, never: isNever(bad) }).toEqual({ bad, never: true });
   });
@@ -223,7 +243,7 @@ describe('the surfaces that only lacked a way in', () => {
     expect(by.get('learn.reading')?.lesson).toEqual({ id: 'ld-no-nc-contacts', stage: 'reading' });
     expect(by.get('learn.tryIt')?.lesson?.stage).toBe('reading');
     expect(by.get('learn.readingFrame')?.lesson?.stage).toBe('reading');
-    expect(unreached.find((entry) => entry.surface === 'editor.plantMap')?.reason).toContain('marker');
+    expect(unreached.find((entry) => entry.surface === 'editor.config.plantMap')?.reason).toContain('U3-P4');
     expect(by.get('secondary.guide')?.lesson?.stage).toBe('exercise');
     expect(by.get('learn.exercise')?.lesson?.stage).toBe('exercise');
     expect(by.get('plant.operate')?.command).toBe('view.plant');
@@ -242,5 +262,14 @@ describe('the conditions of the golden-journey surfaces (D-36)', () => {
       expect(golden).toContain(extra);
     expect(names('editor.config.tasks')).not.toContain('1920x1080-light-en');
     expect(names('editor.config.tasks')).toContain('1440x900-light-en');
+  });
+});
+
+describe('where a capture may write (S2)', () => {
+  test('UXV-003 an --out is refused unless it is a folder inside a .cache folder, so that a typo never deletes real work', () => {
+    for (const bad of ['/', '/home/someone', '/home/someone/Documents', '/tmp/x', '/home/someone/.cache', 'relative/dir'])
+      expect(() => assertSafeOut(bad)).toThrow('--out');
+    for (const good of ['/home/someone/.cache/zplc-tmp/uxv', '/repo/.cache/claude-ux-review/uxv/smoke'])
+      expect(() => assertSafeOut(good)).not.toThrow();
   });
 });

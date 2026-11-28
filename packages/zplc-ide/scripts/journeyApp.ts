@@ -318,6 +318,8 @@ export async function launchApp(
   harness: Harness,
   root: string,
   environment: Record<string, string> = {},
+  /** `gl: 'software'` gives the window SwiftShader (WebGL 2 on a machine with no GPU); the default launch has none (`--disable-gpu`). */
+  options: { gl?: 'software' } = {},
 ): Promise<{ app: App; notes: string[]; stop(): Promise<void>; crash(): Promise<void> }> {
   const notes: string[] = [];
   const answerFile = join(root, 'folder-answer.txt');
@@ -329,7 +331,9 @@ export async function launchApp(
     [
       electronPath,
       '--headless',
-      '--disable-gpu',
+      ...(options.gl === 'software'
+        ? ['--use-angle=swiftshader-webgl', '--use-gl=angle', '--enable-unsafe-swiftshader']
+        : ['--disable-gpu']),
       // the window is not shown on a CI runner (macOS, Windows): do not let Chromium treat it as occluded or in the background
       '--disable-backgrounding-occluded-windows',
       '--disable-renderer-backgrounding',
