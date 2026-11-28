@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/Assembler.sfc.json, build the chart: FEEDPAIR and HOMING to start, WAITING and SETTLING to wait for the parts, LOWERING, GRABBING, LIFTING, CARRYING, PLACING and RELEASING to move one lid, RAISING, RETURNING, CLEARING, CLEARED and FEEDBASE to prepare the next pair, and FINISHED.",
+      "body": "In src/Assembler.sfc.json, build a chart in which the assembler brings a lid and a base to their belts, waits for both parts, sets the lid on the base, lets the assembly leave, prepares the next pair and, after the third assembly, stops with Green on.",
       "checkpoint": "Each step sets every output, so reading the active step tells you what the assembler does."
     },
     {

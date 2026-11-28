@@ -52,7 +52,7 @@ Observe cómo se gobierna `Pick1` en esta escena: cuatro salidas de dirección (
 
 ## Un paso por movimiento y una rama según una cuenta
 
-Una unidad de manipulación con dos ejes nunca debe cruzar de una cinta a otra mientras está abajo, porque golpearía las piezas y los topes. En un diagrama de funciones secuenciales, la forma más clara de imponer ese orden es dar a cada movimiento su propio paso y hacer que su transición espere el final de carrera al término de ese movimiento.
+Una unidad de manipulación con dos ejes nunca debe cruzar de una cinta a otra mientras está abajo: en una máquina real golpearía las piezas y los topes. Esta escena no modela esa colisión, así que solo el orden de sus pasos mantiene el brazo arriba. En un diagrama de funciones secuenciales, la forma más clara de imponer ese orden es dar a cada movimiento su propio paso y hacer que su transición espere el final de carrera al término de ese movimiento.
 
 - **Un movimiento por paso:** un movimiento vertical avanza hasta que `YAtMin` o `YAtMax` está en TRUE; un movimiento horizontal se ejecuta solo cuando el eje vertical está arriba y espera `XAtMin` o `XAtMax`.
 - **Cada paso escribe todas las salidas:** una acción `N` se ejecuta mientras su paso está activo, y las salidas conservan su último valor cuando el paso termina. Escribir todas las salidas en la acción `N` de cada paso garantiza que ninguna orden de dirección, válvula de vacío o pulso de emisor quede activada por descuido.
@@ -95,8 +95,7 @@ El polipasto de inmersión tiene un solo eje y ninguna pieza que alimentar, rete
 
 - Incrementar un contador de ciclos dentro de una acción `N` en lugar de una acción `P1`. El contador sube en cada ciclo de escaneo mientras el paso está activo y alcanza el objetivo en el primer ciclo.
 - Dejar una salida sin escribir en la acción `N` de un paso. Una orden de dirección, un pulso de emisor o la salida de vacío queda en TRUE después de terminar el paso.
-- Iniciar un movimiento horizontal antes de que el eje vertical haya llegado a su final de carrera superior. El brazo barre las cintas estando abajo y tira las piezas.
-- Soltar una pieza retenida en la cinta antes de que la pinza la haya liberado, o volver a cerrar un tope retráctil mientras una pieza que sale sigue delante de su sensor.
+- Iniciar un movimiento horizontal antes de que el eje vertical haya llegado a su final de carrera superior. En una máquina real el brazo bajado tiraría las piezas; aquí nada se lo impide, así que compruebe usted mismo el orden.
 - Dar a un paso con ramificación dos transiciones cuyas condiciones pueden ser ambas TRUE sin una prioridad clara, u olvidar la rama que vuelve atrás para el siguiente ciclo.
 
 > [!NOTE]

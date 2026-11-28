@@ -52,7 +52,7 @@ Notice how `Pick1` is driven in this scene: four direction outputs (`XPlus`, `XM
 
 ## One step per move, and a branch on a count
 
-A handling unit with two axes must never cross from one belt to another while lowered, or it will strike the parts and the blades. In a sequential function chart, the cleanest way to enforce that order is to give each move its own step and make its transition wait for the limit switch at the end of that move.
+A handling unit with two axes must never cross from one belt to another while lowered: on a real machine it would strike the parts and the blades. This scene does not model that collision, so only the order of your steps keeps the pad up. In a sequential function chart, the cleanest way to enforce that order is to give each move its own step and make its transition wait for the limit switch at the end of that move.
 
 - **One move per step:** a vertical move runs until `YAtMin` or `YAtMax` is TRUE; a horizontal move runs only after the vertical axis is up and waits for `XAtMin` or `XAtMax`.
 - **Every step writes every output:** an `N` action runs while its step is active, and outputs keep their last value when a step ends. Writing all outputs in each step's `N` action guarantees that no direction command, vacuum valve or emitter pulse stays stuck on.
@@ -95,8 +95,7 @@ The dipping hoist has only one axis and no parts to feed, hold or grip. In the p
 
 - Incrementing a cycle counter inside an `N` action instead of a `P1` action. The counter climbs on every scan while the step is active and reaches the target on the first cycle.
 - Leaving an output unwritten in a step's `N` action. A direction command, emitter pulse or vacuum output stays TRUE after the step ends.
-- Starting a horizontal move before the vertical axis has reached its upper limit switch. The pad sweeps across the belts while down and knocks parts off.
-- Releasing a held part on the belt before the gripper has let go, or closing a stop blade again while an exiting part is still in front of its sensor.
+- Starting a horizontal move before the vertical axis has reached its upper limit switch. On a real machine the lowered pad would knock parts off; here nothing stops you, so check the order yourself.
 - Giving a branching step two transitions whose conditions can both be TRUE without a clear priority, or forgetting the branch that loops back for the next cycle.
 
 > [!NOTE]
