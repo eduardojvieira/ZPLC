@@ -19,14 +19,14 @@ Secuencie un carro con pinza usando finales de carrera y la señal de agarre par
 - Tiempo estimado: 40 minutos
 - Lenguajes: LD
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Transferencia entre cintas](../../plant/scenes/belt-to-belt-transfer.md)
 - Requisitos previos: [plant-counted-queue](./plant-counted-queue.md)
 
 ## Objetivos
 
-- Secuenciar un tomar y colocar con un estado por movimiento, cada uno a la espera de su final de carrera.
-- Esperar la señal de agarre antes de elevar y mantener detenida la cinta receptora mientras se deja una caja.
+- Secuenciar un tomar y colocar de modo que cada movimiento empiece solo cuando el anterior haya terminado.
+- Elevar una caja solo cuando la pinza informa que la sostiene, y dejar cada caja sin molestarla.
 
 ## Etapas
 

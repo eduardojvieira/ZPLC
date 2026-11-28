@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-counted-queue-ladder. Do not edit. >>> */}
 
-Cuente cajas con dos bloques CTU para ejecutar un lote fijo: cargue tres, descargue tres y encienda Done.
+Cuente cajas para ejecutar un lote fijo: cargue tres, descargue tres y encienda Done.
 
 ## Datos
 
@@ -19,7 +19,7 @@ Cuente cajas con dos bloques CTU para ejecutar un lote fijo: cargue tres, descar
 - Tiempo estimado: 30 minutos
 - Lenguajes: LD
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Cola contada](../../plant/scenes/counted-queue.md)
 - Requisitos previos: [plant-latch-two-sensors](./plant-latch-two-sensors.md), [edge-counter-pulses](./edge-counter-pulses.md)
 
@@ -31,11 +31,11 @@ Cuente cajas con dos bloques CTU para ejecutar un lote fijo: cargue tres, descar
 ## Etapas
 
 1. **Objetivo**
-2. **Predecir**
-3. **Editar**
-4. **Ejecutar**
-5. **Observar**
-6. **Reflexionar**
+2. **Prediga**
+3. **Edite**
+4. **Ejecute**
+5. **Observe**
+6. **Reflexione**
 
 ## Qué cubre la evidencia
 

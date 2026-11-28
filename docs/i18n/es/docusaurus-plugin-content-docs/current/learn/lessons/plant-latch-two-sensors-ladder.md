@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-latch-two-sensors-ladder. Do not edit. >>> */}
 
-Secuencie un movimiento con una bobina de activación y una de borrado: haga correr la cinta desde el sensor A hasta que la caja llegue al sensor B.
+Mantenga una cinta en marcha entre dos sensores: arranque la cinta cuando el sensor A vea una caja y deténgala cuando llegue al sensor B.
 
 ## Datos
 
@@ -19,23 +19,23 @@ Secuencie un movimiento con una bobina de activación y una de borrado: haga cor
 - Tiempo estimado: 20 minutos
 - Lenguajes: LD
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Biestable entre dos sensores](../../plant/scenes/latch-two-sensors.md)
 - Requisitos previos: [plant-belt-to-sensor](./plant-belt-to-sensor.md)
 
 ## Objetivos
 
-- Usar un set y un reset para mantener una salida entre dos eventos.
+- Mantener una salida activa entre dos eventos de sensor sin una variable de memoria aparte.
 - Explicar por qué un sensor que se apaga no puede mantener la salida por sí solo.
 
 ## Etapas
 
 1. **Objetivo**
-2. **Predecir**
-3. **Editar**
-4. **Ejecutar**
-5. **Observar**
-6. **Reflexionar**
+2. **Prediga**
+3. **Edite**
+4. **Ejecute**
+5. **Observe**
+6. **Reflexione**
 
 ## Qué cubre la evidencia
 

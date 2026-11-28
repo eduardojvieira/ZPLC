@@ -342,9 +342,9 @@ Your first programs now move real parts. Each one reads a sensor and drives a be
 Objectives of the available lessons:
 
 - **Move a box to a sensor**: Start an actuator from a button press and remember that it is running. Stop the actuator when a sensor sees the box.
-- **Move a box to a sensor in Ladder**: Start an actuator from a button press with a set coil and remember that it is running. Stop the actuator with a reset coil when a sensor sees the box.
+- **Move a box to a sensor in Ladder**: Start an actuator from a button press and remember that it is running. Stop the actuator when a sensor sees the box.
 - **From sensor A to sensor B**: Use a set and a reset to hold an output between two events. Explain why a sensor that goes dark cannot hold the output by itself.
-- **From sensor A to sensor B in Ladder**: Use a set and a reset to hold an output between two events. Explain why a sensor that goes dark cannot hold the output by itself.
+- **From sensor A to sensor B in Ladder**: Hold an output on between two sensor events without a separate memory variable. Explain why a sensor that goes dark cannot hold the output by itself.
 - **Load and unload three boxes**: Count items with a counter that has a preset value. Use one counter to stop loading and another to know the batch is finished.
 - **Load and unload three boxes in Ladder**: Count items with a counter that has a preset value. Use one counter to stop loading and another to know the batch is finished.
 
@@ -407,8 +407,8 @@ Manipulators add steps that must happen in order. Pick, place and assembly use t
 
 Objectives of the available lessons:
 
-- **Pick from one belt, place on another**: Sequence a pick and place with one state per move, each move waiting for its limit sensor. Wait for the grip feedback before lifting, and keep the receiving belt still while a box is put down.
-- **Pick from one belt, place on another in Ladder**: Sequence a pick and place with one state per move, each move waiting for its limit sensor. Wait for the grip feedback before lifting, and keep the receiving belt still while a box is put down.
+- **Pick from one belt, place on another**: Sequence a pick and place so that each move starts only when the previous one is complete. Lift a box only when the clamp reports that it holds it, and put each box down without disturbing it.
+- **Pick from one belt, place on another in Ladder**: Sequence a pick and place so that each move starts only when the previous one is complete. Lift a box only when the clamp reports that it holds it, and put each box down without disturbing it.
 - **Assemble lids and bases**: Coordinate two axes and a vacuum pad in one sequence, with one step for each move. Choose between two next steps with transition conditions that exclude each other.
 - **The same with numeric positions**: Send an axis to a named position with a setpoint and read its position back. Decide that a move is done when the position is within a tolerance of the setpoint, not when it is equal to it.
 - **Palletize in layers**: Build a layer by counting pairs of boxes, and square it before the clamp takes it. Keep the jog of each layer in an array and fill it with a FOR loop, so each layer sets down one box height higher than the one below.

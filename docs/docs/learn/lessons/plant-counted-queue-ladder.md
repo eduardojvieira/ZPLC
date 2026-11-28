@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-counted-queue-ladder. Do not edit. >>> */}
 
-Count boxes with two CTU blocks to run a fixed batch: load three, unload three, then light Done.
+Count boxes to run a fixed batch: load three, unload three, then light Done.
 
 ## Facts
 
@@ -19,7 +19,7 @@ Count boxes with two CTU blocks to run a fixed batch: load three, unload three, 
 - Estimated time: 30 minutes
 - Languages: LD
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Counted queue](../../plant/scenes/counted-queue.md)
 - Prerequisites: [plant-latch-two-sensors](./plant-latch-two-sensors.md), [edge-counter-pulses](./edge-counter-pulses.md)
 

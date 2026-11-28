@@ -342,9 +342,9 @@ Sus primeros programas ahora mueven piezas. Cada uno lee un sensor y gobierna un
 Objetivos de las lecciones disponibles:
 
 - **Mover una caja hasta un sensor**: Arrancar un actuador con la pulsación de un pulsador y recordar que está en marcha. Detener el actuador cuando un sensor ve la caja.
-- **Mover una caja hasta un sensor en diagrama de escalera**: Arrancar un actuador con la pulsación de un pulsador mediante una bobina de activación y recordar que está en marcha. Detener el actuador con una bobina de borrado cuando un sensor ve la caja.
+- **Mover una caja hasta un sensor en diagrama de escalera**: Arrancar un actuador con la pulsación de un pulsador y recordar que está en marcha. Detener el actuador cuando un sensor ve la caja.
 - **Del sensor A al sensor B**: Usar un set y un reset para mantener una salida entre dos eventos. Explicar por qué un sensor que se apaga no puede mantener la salida por sí solo.
-- **Del sensor A al sensor B en diagrama de escalera**: Usar un set y un reset para mantener una salida entre dos eventos. Explicar por qué un sensor que se apaga no puede mantener la salida por sí solo.
+- **Del sensor A al sensor B en diagrama de escalera**: Mantener una salida activa entre dos eventos de sensor sin una variable de memoria aparte. Explicar por qué un sensor que se apaga no puede mantener la salida por sí solo.
 - **Cargar y descargar tres cajas**: Contar elementos con un contador de valor preestablecido. Usar un contador para dejar de cargar y otro para saber que el lote terminó.
 - **Cargar y descargar tres cajas en diagrama de escalera**: Contar elementos con un contador de valor preestablecido. Usar un contador para dejar de cargar y otro para saber que el lote terminó.
 
@@ -407,8 +407,8 @@ Los manipuladores añaden pasos que deben ocurrir en orden. Tomar, colocar y ens
 
 Objetivos de las lecciones disponibles:
 
-- **Tomar de una cinta y dejar en otra**: Secuenciar un tomar y colocar con un estado por movimiento, cada uno a la espera de su final de carrera. Esperar la señal de agarre antes de elevar y mantener detenida la cinta receptora mientras se deja una caja.
-- **Tomar de una cinta y dejar en otra en diagrama de escalera**: Secuenciar un tomar y colocar con un estado por movimiento, cada uno a la espera de su final de carrera. Esperar la señal de agarre antes de elevar y mantener detenida la cinta receptora mientras se deja una caja.
+- **Tomar de una cinta y dejar en otra**: Secuenciar un tomar y colocar de modo que cada movimiento empiece solo cuando el anterior haya terminado. Elevar una caja solo cuando la pinza informa que la sostiene, y dejar cada caja sin molestarla.
+- **Tomar de una cinta y dejar en otra en diagrama de escalera**: Secuenciar un tomar y colocar de modo que cada movimiento empiece solo cuando el anterior haya terminado. Elevar una caja solo cuando la pinza informa que la sostiene, y dejar cada caja sin molestarla.
 - **Ensamblar tapas y bases**: Coordinar dos ejes y una ventosa en una sola secuencia, con un paso por movimiento. Elegir entre dos pasos siguientes con condiciones de transición que se excluyen entre sí.
 - **Lo mismo con posiciones numéricas**: Enviar un eje a una posición con nombre mediante una consigna y leer su posición de vuelta. Decidir que un movimiento terminó cuando la posición está dentro de una tolerancia de la consigna, no cuando es igual a ella.
 - **Paletizar por capas**: Formar una capa contando pares de cajas y escuadrarla antes de que la pinza la tome. Guardar el descenso de cada capa en un arreglo y llenarlo con un bucle FOR, de modo que cada capa se coloque una altura de caja más arriba que la inferior.
