@@ -13,6 +13,8 @@ export interface Surface {
   states: string[];
   /** The registered command ids that open it. */
   reachedBy: string[];
+  /** The journeys or pictures that show it today (J6, Q2, shots, doc:..., none), from the last column of screens.md. */
+  shownBy?: string[];
 }
 
 export interface Condition {
@@ -21,6 +23,8 @@ export interface Condition {
   theme: 'light' | 'dark' | 'high-contrast';
   locale: 'en' | 'es';
   density: 'comfortable' | 'compact';
+  /** The display scale (Electron deviceScaleFactor); 1 when absent. */
+  scale?: number;
 }
 
 const cells = (line: string) =>
@@ -48,6 +52,7 @@ export function parseScreens(markdown: string): Surface[] {
         .map((state) => state.trim())
         .filter(Boolean),
       reachedBy: [...row[5]!.matchAll(/`([^`]+)`/g)].map((match) => match[1]!),
+      shownBy: [...(row[6] ?? '').matchAll(/\b([JQ]\d+[a-z]?)\b/g)].map((match) => match[1]!),
     });
   }
   return surfaces;
@@ -60,7 +65,7 @@ const slug = (text: string) =>
     .replace(/^-|-$/g, '');
 
 export const conditionName = (condition: Condition): string =>
-  `${condition.width}x${condition.height}-${condition.theme}-${condition.locale}${condition.density === 'compact' ? '-compact' : ''}`;
+  `${condition.width}x${condition.height}-${condition.theme}-${condition.locale}${condition.density === 'compact' ? '-compact' : ''}${condition.scale && condition.scale !== 1 ? `-x${Math.round(condition.scale * 100)}` : ''}`;
 
 export function captureName(surfaces: Surface[], surface: string, state: string, condition: Condition): string {
   const found = surfaces.find((candidate) => candidate.id === surface);
@@ -71,8 +76,8 @@ export function captureName(surfaces: Surface[], surface: string, state: string,
 
 /**
  * The covering set of decision D-36 that every surface gets: 1440 by 900 light and dark in both languages, 1024 by 768 in
- * Spanish, high contrast in English, and the compact density. The sizes, scale and systems D-36 gives only to the surfaces of
- * the golden journeys, and the conditions of the 3D view, are not here yet.
+ * Spanish, high contrast in English, and the compact density. The surfaces of the golden journeys get the other sizes and the
+ * 150 % scale too; the conditions of the 3D view are not here (see the header of capture.ts).
  */
 export function conditionsFor(surface: Surface): Condition[] {
   const at = (
@@ -81,12 +86,14 @@ export function conditionsFor(surface: Surface): Condition[] {
     theme: Condition['theme'],
     locale: Condition['locale'],
     density: Condition['density'] = 'comfortable',
-  ) => ({
+    scale = 1,
+  ): Condition => ({
     width,
     height,
     theme,
     locale,
     density,
+    ...(scale === 1 ? {} : { scale }),
   });
   const set: Condition[] = [
     at(1440, 900, 'light', 'en'),
@@ -97,6 +104,15 @@ export function conditionsFor(surface: Surface): Condition[] {
     at(1440, 900, 'high-contrast', 'en'),
   ];
   if (surface.area !== 'Outside Studio') set.push(at(1440, 900, 'light', 'en', 'compact'));
+  // the surfaces of the golden journeys (a J or Q number in screens.md): the other sizes, the 150 % scale, and a usable area under
+  // the minimum window of 1024 by 768 (electron/main.ts), which the window cannot be smaller than but a screen can be
+  if ((surface.shownBy ?? []).length > 0)
+    set.push(
+      at(1366, 768, 'light', 'en'),
+      at(1920, 1080, 'light', 'en'),
+      at(1440, 900, 'light', 'en', 'comfortable', 1.5),
+      at(1024, 600, 'light', 'en'),
+    );
   return set;
 }
 

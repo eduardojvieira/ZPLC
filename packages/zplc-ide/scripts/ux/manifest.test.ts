@@ -102,7 +102,7 @@ describe('the names and the manifest of a capture run (UXV-003)', () => {
   });
 
   test('UXV-003 every surface gets the covering set of conditions of D-36', () => {
-    const names = conditionsFor(surfaces.find((surface) => surface.id === 'dialog.palette')!).map(conditionName);
+    const names = conditionsFor(surfaces.find((surface) => surface.id === 'editor.config.tasks')!).map(conditionName);
     expect(names).toEqual([
       '1440x900-light-en',
       '1440x900-light-es',
@@ -230,5 +230,17 @@ describe('the surfaces that only lacked a way in', () => {
     for (const entry of reached) expect(entry.surface.states).toContain(entry.state);
     for (const id of ['shell.toast', 'plant.faceplate', 'learn.result'])
       expect(unreached.find((entry) => entry.surface === id)?.reason.length).toBeGreaterThan(20);
+  });
+});
+
+describe('the conditions of the golden-journey surfaces (D-36)', () => {
+  const names = (id: string) => conditionsFor(surfaces.find((surface) => surface.id === id)!).map(conditionName);
+
+  test('UXV-002 a surface a golden journey shows also gets 1366 by 768, 1920 by 1080, a 150 % scale and a screen under the minimum window', () => {
+    const golden = names('editor.learn');
+    for (const extra of ['1366x768-light-en', '1920x1080-light-en', '1440x900-light-en-x150', '1024x600-light-en'])
+      expect(golden).toContain(extra);
+    expect(names('editor.config.tasks')).not.toContain('1920x1080-light-en');
+    expect(names('editor.config.tasks')).toContain('1440x900-light-en');
   });
 });

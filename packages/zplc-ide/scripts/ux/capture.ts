@@ -416,7 +416,7 @@ async function captureCondition(
     await app.cdp.command('Emulation.setDeviceMetricsOverride', {
       width: condition.width,
       height: condition.height,
-      deviceScaleFactor: 1,
+      deviceScaleFactor: condition.scale ?? 1,
       mobile: false,
     });
     await app.cdp.command('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
@@ -435,7 +435,10 @@ async function captureCondition(
     );
     await still();
     await app.until('the Welcome screen', async () => (await app.visible(button(ui('welcome.open.title'), 'contains'))) || undefined);
-    const welcome = plans.find((plan) => plan.surface.id === 'shell.welcome');
+    const welcome = plans.find(
+      (plan) =>
+        plan.surface.id === 'shell.welcome' && conditionsFor(plan.surface).some((c) => conditionName(c) === conditionName(condition)),
+    );
     if (welcome) await takeIfShowing(welcome);
 
     app.answer(project);
@@ -453,6 +456,7 @@ async function captureCondition(
     const ordered = plans.filter((candidate) => candidate.surface.id !== 'shell.welcome');
     ordered.sort((a, b) => Number(Boolean(a.lesson)) - Number(Boolean(b.lesson)));
     for (const plan of ordered) {
+      if (!conditionsFor(plan.surface).some((c) => conditionName(c) === conditionName(condition))) continue;
       try {
         if (plan.lesson) {
           if (!(await startLesson(plan.lesson.id))) {
@@ -632,11 +636,16 @@ async function main(): Promise<void> {
   rmSync(out, { recursive: true, force: true });
   mkdirSync(out, { recursive: true });
   // every Studio surface has the same covering set; one launch per condition holds every surface in it
-  let conditions = conditionsFor({ id: '', area: '', states: [], reachedBy: [] });
+  const seen = new Set<string>();
+  let conditions = chosen
+    .flatMap((surface) => conditionsFor(surface))
+    .filter((condition) => !seen.has(conditionName(condition)) && seen.add(conditionName(condition)));
   // only lessons: just the conditions a lesson is captured in
   if (reached.length === 0) {
-    const wanted = new Set((['reading', 'exercise'] as const).flatMap((kind) => lessonConditions(kind).map(conditionName)));
-    conditions = conditions.filter((condition) => wanted.has(conditionName(condition)));
+    const wanted = new Map(
+      ([...lessonConditions('reading'), ...lessonConditions('exercise')] as Condition[]).map((c) => [conditionName(c), c]),
+    );
+    conditions = [...wanted.values()];
   }
   if (values.condition) conditions = conditions.filter((condition) => values.condition!.includes(conditionName(condition)));
   // one Vite server for the whole run, as run-journeys.ts has; every condition launches its own Electron against it
