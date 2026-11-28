@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { assert } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
+import { pressMod } from '../journeyKeys';
 import type { Journey } from '../journeys';
 import { runFromPalette } from './w3';
 
@@ -38,7 +39,7 @@ async function search(app: App, text: string): Promise<void> {
   await app.click(css('[data-activity="search"]'), 'the Search activity');
   await app.until('the search field', async () => (await app.visible(css('#project-search'))) || undefined);
   await app.click(css('#project-search'), 'the search field');
-  await app.press('Ctrl+A');
+  await pressMod(app, 'Ctrl+A');
   await app.type(text);
 }
 

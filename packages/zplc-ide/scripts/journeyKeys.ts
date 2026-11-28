@@ -1,18 +1,36 @@
 import type { App } from './journeyApp';
 
-/** The CDP modifier bits of a chord such as `Ctrl+Shift+Z`; `Ctrl` is the primary modifier of the platform. */
+const EDIT_COMMANDS: Record<string, string> = { A: 'selectAll', C: 'copy', V: 'paste', X: 'cut', Z: 'undo' };
+
+/**
+ * The CDP key event of a chord such as `Ctrl+Shift+Z`. `Ctrl` stands for the primary modifier of the platform: Control, or Meta
+ * (Cmd) on macOS, where the editing commands travel with the key as Chromium's own keyboard map would send them.
+ */
 export function chordEvent(
-  _platform: NodeJS.Platform,
+  platform: NodeJS.Platform,
   chord: string,
 ): { key: string; code: string; keyCode: number; modifiers: number; commands?: string[] } {
   const parts = chord.split('+');
   const name = parts.pop()!;
-  const modifiers = (parts.includes('Alt') ? 1 : 0) | (parts.includes('Ctrl') ? 2 : 0) | (parts.includes('Shift') ? 8 : 0);
-  return { key: name.toLowerCase(), code: `Key${name.toUpperCase()}`, keyCode: name.toUpperCase().charCodeAt(0), modifiers };
+  const mac = platform === 'darwin';
+  const shift = parts.includes('Shift');
+  const modifiers = (parts.includes('Alt') ? 1 : 0) | (parts.includes('Ctrl') ? (mac ? 4 : 2) : 0) | (shift ? 8 : 0);
+  const letter = name.toUpperCase();
+  const command = mac && parts.includes('Ctrl') ? (letter === 'Z' && shift ? 'redo' : EDIT_COMMANDS[letter]) : undefined;
+  return {
+    key: name.toLowerCase(),
+    code: `Key${letter}`,
+    keyCode: letter.charCodeAt(0),
+    modifiers,
+    ...(command ? { commands: [command] } : {}),
+  };
 }
 
-/** Sends an editing chord (select all, undo, paste, save) the way the platform's own primary modifier does. */
+/** Sends an editing chord (select all, undo, paste, save) with the primary modifier of the platform; other platforms send it unchanged. */
 export async function pressMod(app: App, chord: string, platform: NodeJS.Platform = process.platform): Promise<void> {
-  void platform;
-  await app.press(chord);
+  if (platform !== 'darwin') return app.press(chord);
+  const event = chordEvent(platform, chord);
+  const { commands, ...base } = event;
+  await app.cdp.command('Input.dispatchKeyEvent', { type: 'keyDown', ...base, windowsVirtualKeyCode: event.keyCode, commands });
+  await app.cdp.command('Input.dispatchKeyEvent', { type: 'keyUp', ...base, windowsVirtualKeyCode: event.keyCode });
 }

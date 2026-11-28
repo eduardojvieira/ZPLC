@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { assert, packageRoot } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
+import { pressMod } from '../journeyKeys';
 import type { Journey } from '../journeys';
 import { LESSON_INDEX } from '../../src/generated/lessonIndex';
 import { courseOrder } from '../../src/learn/course';
@@ -35,7 +36,7 @@ async function reach(app: App, how: How, target: string, what: string): Promise<
 /** Writes `text` in a field and commits it with Enter (the field applies on Enter or on blur). */
 async function fill(app: App, how: How, label: string, text: string): Promise<void> {
   await reach(app, how, control(label), `the field "${label}"`);
-  await app.press('Ctrl+A');
+  await pressMod(app, 'Ctrl+A');
   await app.type(text);
   await app.press('Enter');
 }

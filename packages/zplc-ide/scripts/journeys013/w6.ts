@@ -3,6 +3,7 @@ import { join } from 'node:path';
 
 import { assert, MONACO_MODULE } from '../run-desktop-smoke';
 import { button, css, menuItem, tab, type App } from '../journeyApp';
+import { pressMod } from '../journeyKeys';
 import type { Journey } from '../journeys';
 import { cyclesFromDetails } from './statusDetails';
 
@@ -116,7 +117,7 @@ export const journeysW6: Journey[] = [
       const interval = css('input[type="number"][min="1"][max="10000"]');
       await app.until('the task interval field', async () => (await app.visible(interval)) || undefined);
       await app.click(interval);
-      await app.press('Ctrl+A');
+      await pressMod(app, 'Ctrl+A');
       await app.type('25');
 
       // Save all is offered because more than the active file is modified, and it saves the configuration too.

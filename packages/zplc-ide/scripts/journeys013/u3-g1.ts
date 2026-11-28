@@ -6,6 +6,7 @@ import { buildCourseView } from '../../src/learn/course';
 import { translate } from '../../src/i18n/translate';
 import { assert, MONACO_MODULE, packageRoot } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
+import { pressMod } from '../journeyKeys';
 import type { Journey } from '../journeys';
 
 const en = (key: Parameters<typeof translate>[1]) => translate('en', key);
@@ -80,7 +81,7 @@ export const journeysU3G1: Journey[] = [
         `(async () => { const monaco = await ${MONACO_MODULE}; ` +
           `monaco.editor.getEditors()[0].getModel().setValue(${JSON.stringify(solution)}); })()`,
       );
-      await app.press('Ctrl+S');
+      await pressMod(app, 'Ctrl+S');
 
       // Check from the Guide, the results panel left closed
       await app.until(

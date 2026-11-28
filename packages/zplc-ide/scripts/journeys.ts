@@ -43,6 +43,7 @@ import { journeysStations } from './journeys/plantStations';
 import { journeysCourse } from './journeys/plantCourse';
 import { journeysOperator } from './journeys/plantOperator';
 import { pause } from './journeyTiming';
+import { pressMod } from './journeyKeys';
 
 export interface JourneyContext {
   root: string;
@@ -1289,7 +1290,7 @@ export const JOURNEYS: Journey[] = [
           (await app.eval<boolean>(`document.querySelector('[data-new-project="name"]')?.value === 'empty-project'`)) || undefined,
       );
       await app.click(field, 'the name field');
-      await app.press('Ctrl+A');
+      await pressMod(app, 'Ctrl+A');
       await app.type('Packing line');
       await selectOption(app, '[data-new-project="language"]', 'Ladder Diagram');
       await app.click(button('Create project'), 'the Create project button');
@@ -1347,7 +1348,7 @@ export const JOURNEYS: Journey[] = [
       await cursorAtEndOfLine(app, 1);
       await app.type(EDIT);
       await app.until('the editor to hold the typed text', async () => (await editorText(app)).includes(EDIT) || undefined);
-      await app.press('Ctrl+S');
+      await pressMod(app, 'Ctrl+S');
       await app.until(
         'Ctrl+S to write the typed text to the file (the cursor is in the editor)',
         () => disk(file).includes(EDIT) || undefined,
@@ -1484,7 +1485,7 @@ export const JOURNEYS: Journey[] = [
       );
       // undoing the typing clears it the next time the project is checked
       await clickEditorLine(app, last + 1);
-      for (let key = 0; key < 3; key++) await app.press('Ctrl+Z');
+      for (let key = 0; key < 3; key++) await pressMod(app, 'Ctrl+Z');
       await app.until(
         'the live diagnostics to be gone',
         async () => !(await app.eval<string>(`${live}?.innerText ?? ''`)).includes('UndefinedVariable') || undefined,
@@ -1666,7 +1667,7 @@ export const JOURNEYS: Journey[] = [
         ),
         'The add field does not offer Start for "Sta".',
       );
-      await app.press('Ctrl+A');
+      await pressMod(app, 'Ctrl+A');
       await app.type('Start');
       await app.press('Enter');
       await watch(app, 'Forward');
@@ -1694,7 +1695,7 @@ export const JOURNEYS: Journey[] = [
         'the value editor of Start to take focus',
         async () => (await app.eval(`document.activeElement === ${watchRow('Start')}?.querySelector('input[type="text"]')`)) || undefined,
       );
-      await app.press('Ctrl+A');
+      await pressMod(app, 'Ctrl+A');
       await app.type('1');
       await app.press('Shift+Enter');
       await app.until(
@@ -1804,13 +1805,13 @@ export const JOURNEYS: Journey[] = [
       await app.click(editorTab('file:src/Motor.st'));
       await app.until('Motor.st in the editor', async () => hasProgram(await editorText(app), 'Motor') || undefined);
       await clickEditorLine(app, 5);
-      await app.press('Ctrl+Z');
+      await pressMod(app, 'Ctrl+Z');
       await app.until('undo in Motor.st', async () => (await modelText(app, 'Motor.st')) === original || undefined);
       assert((await modelText(app, 'Second.st')) === appendToFirstLine(second, ' XY'), 'Undo in Motor.st changed the second file.');
       await app.click(editorTab('file:src/Second.st'));
       await app.until('Second.st in the editor', async () => (await editorText(app)) === appendToFirstLine(second, ' XY') || undefined);
       await clickEditorLine(app, 1);
-      await app.press('Ctrl+Z');
+      await pressMod(app, 'Ctrl+Z');
       await app.until('undo in Second.st', async () => (await modelText(app, 'Second.st')) === second || undefined);
       assert((await modelText(app, 'Motor.st')) === original, 'Undo in Second.st changed Motor.st.');
     },
@@ -2482,7 +2483,7 @@ export const JOURNEYS: Journey[] = [
       const rungs = (await ladderRungs(app)) as number;
       await app.click(button('Add rung', 'contains'), 'the Add rung button');
       await app.until('one more rung in the editor', async () => (await ladderRungs(app)) === rungs + 1 || undefined);
-      await app.press('Ctrl+S');
+      await pressMod(app, 'Ctrl+S');
       const saved = await app.until('pump.ld.json on disk', () => {
         const found = findOnDisk(project, 'pump.ld.json');
         return found.length === 1 ? found[0] : undefined;
@@ -3145,7 +3146,7 @@ export const JOURNEYS: Journey[] = [
       const typeName = async (name: string) => {
         await app.until('the name dialog', async () => (await app.visible(entryDialog)) || undefined);
         await app.eval(`document.getElementById('entry-name').focus()`);
-        await app.press('Ctrl+A');
+        await pressMod(app, 'Ctrl+A');
         await app.type(name);
       };
 
@@ -4030,13 +4031,13 @@ export const JOURNEYS: Journey[] = [
       const moved = await place();
       // one undo takes the whole drag back, and one redo does it again
       await app.click(node, 'the dragged block');
-      await app.press('Ctrl+Z');
+      await pressMod(app, 'Ctrl+Z');
       await app
         .until('the block back where it was', async () => (await place()) === original || undefined)
         .catch(async (error: Error) => {
           throw new Error(`${error.message}: the block is at ${await place()}, was at ${original} and was put down at ${moved}`);
         });
-      await app.press('Ctrl+Shift+Z');
+      await pressMod(app, 'Ctrl+Shift+Z');
       await app.until('the drag done again', async () => (await place()) === moved || undefined);
     },
   },
@@ -6636,7 +6637,7 @@ export const JOURNEYS: Journey[] = [
       await app.click(button('Close the changes'), 'Close the changes');
       await showExplorer(app);
       await clickEditorLine(app, last + 1);
-      for (let attempt = 0; attempt < 6 && (await editorText(app)) !== before; attempt++) await app.press('Ctrl+Z');
+      for (let attempt = 0; attempt < 6 && (await editorText(app)) !== before; attempt++) await pressMod(app, 'Ctrl+Z');
       assert((await editorText(app)) === before, 'The journey could not undo its statement.');
       await cursorAtEndOfLine(app, last);
       await app.press('Enter');
@@ -6804,7 +6805,7 @@ export const JOURNEYS: Journey[] = [
       await cursorAtEndOfLine(app, 9);
       await app.type('  ');
       await app.until('the typed text in the editor', async () => (await editorText(app)).split('\n')[8] === '  ' || undefined);
-      await app.press('Ctrl+S');
+      await pressMod(app, 'Ctrl+S');
       const built = await compile(app);
       assert(built.kind === 'built', `The example does not build at 1366: ${built.message}`);
       await connectAndRun(app);
@@ -7113,8 +7114,8 @@ export const JOURNEYS: Journey[] = [
           `document.activeElement?.getAttribute('aria-label') ` + `?? ''`,
         )}`,
       );
-      await app.press('Ctrl+A');
-      await app.press('Ctrl+V');
+      await pressMod(app, 'Ctrl+A');
+      await pressMod(app, 'Ctrl+V');
       await app.until('the solution in the editor', async () => (await editorText(app)).includes('Forward') || undefined);
       // Monaco tells the workspace about a paste a few milliseconds after its model holds it, and Save writes what the workspace
       // holds: wait for the tab to show the file as modified, as a person sees it before saving.
@@ -7122,7 +7123,7 @@ export const JOURNEYS: Journey[] = [
         'the tab of Motor.st to show the paste as unsaved',
         async () => (await app.eval<string>(`${editorTab('file:src/Motor.st')}?.textContent ?? ''`)).includes('*') || undefined,
       );
-      await app.press('Ctrl+S');
+      await pressMod(app, 'Ctrl+S');
       await app.until('the save to be announced', async () => /Saved/.test(await live('polite')) || undefined);
 
       // no keyboard trap in the code editor: Tab types a tab there, and Ctrl+M (Monaco's Tab focus mode) makes Tab and Shift+Tab move the
@@ -7359,14 +7360,14 @@ export const JOURNEYS: Journey[] = [
           `area.select(); document.execCommand('copy'); area.remove(); })()`,
       );
       await reach('the code editor of the lesson workspace', `el.closest('.monaco-editor') !== null`, 'Tab', 80);
-      await app.press('Ctrl+A');
-      await app.press('Ctrl+V');
+      await pressMod(app, 'Ctrl+A');
+      await pressMod(app, 'Ctrl+V');
       await app.until('the solution in the lesson workspace', async () => (await editorText(app)).includes('Forward') || undefined);
       await app.until(
         'the tab of Motor.st to show the paste as unsaved',
         async () => (await app.eval<string>(`${editorTab('file:src/Motor.st')}?.textContent ?? ''`)).includes('*') || undefined,
       );
-      await app.press('Ctrl+S');
+      await pressMod(app, 'Ctrl+S');
       await app.until('the save to be announced', async () => /Saved/.test(await live('polite')) || undefined);
       // Ctrl+M lets Tab leave the code editor (step 2).
       await app.press('Ctrl+M');
