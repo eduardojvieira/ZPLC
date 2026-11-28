@@ -62,7 +62,8 @@ export async function selectOption(app: Pick<App, 'eval' | 'until'>, selector: s
   const element = `document.querySelector(${JSON.stringify(selector)})`;
   const state = () =>
     app.eval<{ labels: string[]; index: number }>(
-      `(() => { const select = ${element}; return { labels: [...select.options].map((option) => option.textContent), index: select.selectedIndex }; })()`,
+      `(() => { const select = ${element}; return { labels: [...select.options].map((option) => option.textContent), ` +
+        `index: select.selectedIndex }; })()`,
     );
   const wanted = (await state()).labels.indexOf(label);
   if (wanted < 0) throw new Error(`${selector} offers ${JSON.stringify((await state()).labels)}, not ${label}`);
