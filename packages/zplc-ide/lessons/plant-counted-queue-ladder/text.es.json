@@ -55,7 +55,5 @@
       "text": "Active Active con Start. Coloque dos bloques CTU con R en FALSE y PV en 3: Loaded alimentado por EyeIn con Q enlazada a LoadedQ, y Unloaded alimentado por EyeOut con Q enlazada a UnloadedQ. Accione Emit desde Start en paralelo con un contacto de flanco descendente sobre EyeIn, en serie con Active y un contacto normalmente cerrado de LoadedQ. Accione Done desde UnloadedQ, y Run desde Active en serie con un contacto normalmente cerrado de UnloadedQ."
     }
   ],
-  "faultCases": [
-    "El programa inicial no tiene peldaños ni contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la cinta."
-  ]
+  "faultCases": ["El programa inicial no tiene peldaños, así que no se carga ninguna caja y la cinta nunca se mueve."]
 }

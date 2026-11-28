@@ -55,5 +55,5 @@
       "text": "Draw a rung with an EyeA contact and a SET coil on Run, and add a second rung below it with an EyeB contact and a RESET coil on Run so the reset wins when both sensors are TRUE."
     }
   ],
-  "faultCases": ["The starter has no rungs, so the belt never runs; set Run when EyeA sees the box and reset it when EyeB sees the box."]
+  "faultCases": ["The starting program has no rungs, so the belt never runs."]
 }

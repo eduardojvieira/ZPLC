@@ -21139,7 +21139,7 @@
     },
     {
       "id": "plant-belt-to-sensor-ladder",
-      "version": 5,
+      "version": 6,
       "order": 1121,
       "module": 12,
       "level": "advanced",
@@ -21272,7 +21272,7 @@
             }
           ],
           "faultCases": [
-            "The starter has no rungs, so the belt never moves; start the belt and put a box on it with Start, and stop the belt when EyeFar sees the box."
+            "The starting program has no rungs, so the belt never moves and no box arrives."
           ]
         },
         "es": {
@@ -21332,7 +21332,7 @@
             }
           ],
           "faultCases": [
-            "El programa inicial no tiene peldaños, así que la cinta nunca se mueve; arranque la cinta y ponga una caja con Start, y detenga la cinta cuando EyeFar vea la caja."
+            "El programa inicial no tiene peldaños, así que la cinta nunca se mueve y no llega ninguna caja."
           ]
         }
       },
@@ -21350,7 +21350,7 @@
     },
     {
       "id": "plant-latch-two-sensors-ladder",
-      "version": 4,
+      "version": 5,
       "order": 1122,
       "module": 12,
       "level": "advanced",
@@ -21478,7 +21478,7 @@
             }
           ],
           "faultCases": [
-            "The starter has no rungs, so the belt never runs; set Run when EyeA sees the box and reset it when EyeB sees the box."
+            "The starting program has no rungs, so the belt never runs."
           ]
         },
         "es": {
@@ -21538,7 +21538,7 @@
             }
           ],
           "faultCases": [
-            "El programa inicial no tiene peldaños, así que la cinta nunca corre; active Run cuando EyeA vea la caja y bórrelo cuando EyeB vea la caja."
+            "El programa inicial no tiene peldaños, así que la cinta nunca corre."
           ]
         }
       },
@@ -21556,7 +21556,7 @@
     },
     {
       "id": "plant-counted-queue-ladder",
-      "version": 4,
+      "version": 5,
       "order": 1123,
       "module": 12,
       "level": "advanced",
@@ -21700,7 +21700,7 @@
             }
           ],
           "faultCases": [
-            "The starter has no rungs and no counters; load three boxes with a counter at EyeIn, count the unloaded boxes with a counter at EyeOut, light Done when all three are out, and stop the belt then."
+            "The starting program has no rungs, so no box is loaded and the belt never moves."
           ]
         },
         "es": {
@@ -21760,7 +21760,7 @@
             }
           ],
           "faultCases": [
-            "El programa inicial no tiene peldaños ni contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la cinta."
+            "El programa inicial no tiene peldaños, así que no se carga ninguna caja y la cinta nunca se mueve."
           ]
         }
       },

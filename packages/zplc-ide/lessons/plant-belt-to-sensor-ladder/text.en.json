@@ -52,7 +52,5 @@
       "text": "Draw a rung from a Start contact to a SET coil on Running, then a rung below it from an EyeFar contact to a RESET coil on Running so EyeFar wins when both are TRUE; then add one rung from a Running contact to the Run coil and one from a Start contact to the Emit coil."
     }
   ],
-  "faultCases": [
-    "The starter has no rungs, so the belt never moves; start the belt and put a box on it with Start, and stop the belt when EyeFar sees the box."
-  ]
+  "faultCases": ["The starting program has no rungs, so the belt never moves and no box arrives."]
 }

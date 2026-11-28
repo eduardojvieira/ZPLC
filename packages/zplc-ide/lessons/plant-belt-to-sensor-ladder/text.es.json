@@ -55,7 +55,5 @@
       "text": "Dibuje un peldaño de un contacto Start a una bobina SET sobre Running, luego un peldaño debajo de un contacto EyeFar a una bobina RESET sobre Running para que EyeFar gane cuando ambos sean TRUE; luego agregue un peldaño de un contacto Running a la bobina Run y otro de un contacto Start a la bobina Emit."
     }
   ],
-  "faultCases": [
-    "El programa inicial no tiene peldaños, así que la cinta nunca se mueve; arranque la cinta y ponga una caja con Start, y detenga la cinta cuando EyeFar vea la caja."
-  ]
+  "faultCases": ["El programa inicial no tiene peldaños, así que la cinta nunca se mueve y no llega ninguna caja."]
 }

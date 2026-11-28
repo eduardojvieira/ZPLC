@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "plant-latch-two-sensors-ladder",
-  "version": 4,
+  "version": 5,
   "order": 1122,
   "module": 12,
   "level": "advanced",

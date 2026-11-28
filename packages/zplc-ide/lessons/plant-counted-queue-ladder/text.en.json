@@ -55,7 +55,5 @@
       "text": "Set Active with Start. Place two CTU blocks with R set to FALSE and PV set to 3: Loaded fed by EyeIn with Q bound to LoadedQ, and Unloaded fed by EyeOut with Q bound to UnloadedQ. Drive Emit from Start in parallel with a falling-edge contact on EyeIn, in series with Active and a normally closed LoadedQ. Drive Done from UnloadedQ, and Run from Active in series with a normally closed UnloadedQ."
     }
   ],
-  "faultCases": [
-    "The starter has no rungs and no counters; load three boxes with a counter at EyeIn, count the unloaded boxes with a counter at EyeOut, light Done when all three are out, and stop the belt then."
-  ]
+  "faultCases": ["The starting program has no rungs, so no box is loaded and the belt never moves."]
 }

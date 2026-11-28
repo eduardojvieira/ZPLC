@@ -55,7 +55,5 @@
       "text": "Dibuje un peldaño con un contacto EyeA y una bobina SET sobre Run, y agregue debajo un segundo peldaño con un contacto EyeB y una bobina RESET sobre Run para que el borrado gane cuando ambos sensores sean TRUE."
     }
   ],
-  "faultCases": [
-    "El programa inicial no tiene peldaños, así que la cinta nunca corre; active Run cuando EyeA vea la caja y bórrelo cuando EyeB vea la caja."
-  ]
+  "faultCases": ["El programa inicial no tiene peldaños, así que la cinta nunca corre."]
 }
