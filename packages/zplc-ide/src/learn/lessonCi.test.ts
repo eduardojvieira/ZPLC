@@ -26,7 +26,8 @@ const loaded = loadLessonPackages();
 /**
  * The lessons that a Windows simulator cannot grade: it has no Modbus, MQTT, loopback or device link (firmware/lib/zplc_core/
  * CMakeLists.txt, if(NOT WIN32)), so their passing programs get 2 of 6 assertions there. The list is lessonNeedsComm (commLimit.ts),
- * the one declaration the Guide notice reads too. On those lessons the "PASSES" cases are registered as skips that carry this reason; Linux and macOS run them.
+ * the one declaration the Guide notice reads too. On those lessons the "PASSES" cases are registered as skips that
+ * carry this reason; Linux and macOS run them.
  */
 const WINDOWS_REASON = 'known limit on win32: the Windows simulator has no Modbus, MQTT, loopback or device link';
 const NO_COMMUNICATION_ON_WINDOWS = Object.fromEntries(
