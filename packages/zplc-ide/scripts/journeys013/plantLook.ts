@@ -20,6 +20,7 @@ import { assert } from '../run-desktop-smoke';
 import type { Journey } from '../journeys';
 import type { lookProblems as LookProblems } from '../plant/checks';
 import { withGlWindow } from './plantFraming';
+import { scaleWait } from '../journeyTiming';
 
 type Records = Parameters<typeof LookProblems>[0];
 
@@ -38,7 +39,8 @@ export const journeysPlantLook: Journey[] = [
             `return true; })()`,
         );
         let result: { ok?: Records; problems?: string[]; err?: string } | undefined;
-        for (const deadline = Date.now() + 900_000; !result?.ok && Date.now() < deadline; await Bun.sleep(500)) {
+        for (const deadline = Date.now() + scaleWait(900_000); !result?.ok && Date.now() < deadline; await Bun.sleep(500)) {
+          // journey-time: poll interval
           result = (await page.evaluate('window.__look')) as typeof result;
           if (result?.err) throw new Error(result.err);
         }

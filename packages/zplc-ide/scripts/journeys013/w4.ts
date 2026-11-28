@@ -6,6 +6,7 @@ import { assert } from '../run-desktop-smoke';
 import { button, css, menuItem, type App } from '../journeyApp';
 import type { Journey } from '../journeys';
 import { runFromPalette } from './w3';
+import { pause } from '../journeyTiming';
 
 /** The journeys of task W4 of the M1 plan (spec 013): the command bar is the one transport. */
 
@@ -36,7 +37,6 @@ export const journeysW4: Journey[] = [
       mkdirSync(folder);
       const patiently = <T>(description: string, check: () => Promise<T | undefined | false> | T | undefined | false) =>
         app.until(description, check, 45_000);
-      const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
       const fact = () => app.eval<string>(`document.querySelector('[data-plant-fact]')?.getAttribute('data-plant-fact') ?? ''`);
 
       await unlockAllLessons(app);
