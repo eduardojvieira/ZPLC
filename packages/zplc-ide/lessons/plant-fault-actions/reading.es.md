@@ -87,7 +87,7 @@ END_PROGRAM
 
 Léalo desde arriba. El primer IF encuentra el hecho: los dos finales de carrera en TRUE a la vez no puede ocurrir. Activa `DoorFault`, y nada en el programa lo borra nunca. El motor necesita `Raise`, una puerta que aún no está abierta y ninguna falla. Suponga que la puerta sube y los dos finales de carrera pasan a TRUE a la vez, y luego uno de ellos vuelve a FALSE. Sin la memoria, el motor arrancaría otra vez en cuanto `IsOpen` pasara a FALSE con `Raise` aún pulsado; con `DoorFault`, sigue detenido y `Alarm` sigue encendida.
 
-Esta máquina tiene un hecho que basta un ciclo de escaneo para leer: dos finales de carrera que no pueden estar en TRUE a la vez. La barrera de la clasificadora está encendido o apagado en cualquiera de los dos casos, así que un ciclo de escaneo no prueba nada. Qué prueba su falla, y con qué rapidez debe actuar el programa, debe decidirlo usted a partir de lo que la máquina le dice sobre sus cajas. La puerta además tiene un solo motor que detener; la clasificadora tiene varias partes, y cuáles detener también lo decide usted.
+Esta máquina tiene un hecho que basta un ciclo de escaneo para leer: dos finales de carrera que no pueden estar en TRUE a la vez. La barrera de la clasificadora está encendida o apagada en cualquiera de los dos casos, así que un ciclo de escaneo no prueba nada. Qué prueba su falla, y con qué rapidez debe actuar el programa, debe decidirlo usted a partir de lo que la máquina le dice sobre sus cajas. La puerta además tiene un solo motor que detener; la clasificadora tiene varias partes, y cuáles detener también lo decide usted.
 
 ## Errores comunes
 
