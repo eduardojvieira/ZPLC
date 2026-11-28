@@ -1,61 +1,61 @@
 {
   "schemaVersion": 1,
-  "title": "Modificar una escena: agregar el segundo emisor",
-  "summary": "Abra la escena de fusión terminada, agregue el emisor de la línea B que le falta y enlace su señal en el mapa de la planta, sin tocar el programa que ya arbitra las dos líneas.",
+  "title": "Modificar una escena: alimentar la segunda línea",
+  "summary": "Abra la escena de fusión terminada y cámbiela, sin tocar el programa que arbitra las dos líneas, hasta que las dos líneas entreguen sus cajas.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
-    "Agregar una pieza a una escena existente y colocarla donde el resto de la escena la espera.",
-    "Enlazar la señal de la pieza nueva en el mapa de la planta con la variable del programa que ya la gobierna, sin cambiar el programa."
+    "Leer una escena terminada frente al programa y al escenario que se ejecutan sobre ella, y encontrar lo que la escena necesita.",
+    "Cambiar una escena en el editor de escenas y su mapa de planta, dejando el programa sin cambios."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "Abra scene.json en el Editor de escenas: la escena de fusión no tiene emisor para la línea B. Agregue un emisor llamado EmitterB al inicio del alimentador B, con un límite de tres cajas, y en plant-map.json enlace EmitterB.emit con MergeLines.EmitB. El programa de src/MergeLines.ld.json ya gobierna EmitB; déjelo como está.",
-      "checkpoint": "La escena tiene EmitterB, el mapa de la planta enlaza EmitterB.emit y el programa es el que se le dio."
+      "body": "En su proyecto, scene.json es la escena de fusión y src/MergeLines.ld.json es un programa terminado: ya acciona todas las salidas de la estación y deja pasar las dos líneas de una en una. El escenario arranca la estación con el pulsador de inicio y espera cajas de los dos alimentadores en la cinta de salida y Done encendida al final; el programa enciende Done cuando seis cajas, tres de cada alimentador, han cruzado la zona de fusión. Tal como está el proyecto, la línea B no recibe cajas. Cambie la escena y su mapa de planta, no el programa, hasta que Comprobar apruebe.",
+      "checkpoint": "Salen cajas de los dos alimentadores, los únicos archivos que cambió son la escena y su mapa de planta, y el programa es el que se le dio."
     },
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, piense en qué cambia cuando la línea B recibe su emisor: ahora llegan tres cajas a cada alimentador, y el arbitraje debe dejarlas pasar de una en una, como antes.",
-      "checkpoint": "Al principio ambas cuchillas retienen las líneas; luego se abre una cuchilla a la vez, primero la línea A; las seis cajas salen y Done se enciende."
+      "body": "Antes de ejecutar, siga las cajas: el programa ya pide cajas a la línea B, pero tal como está el proyecto no llega ninguna. Prediga qué hacen los topes cuando las dos líneas reciben cajas, y qué hace Done.",
+      "checkpoint": "Al principio los dos topes retienen sus líneas; después los topes se abren de uno en uno, nunca los dos a la vez, y salen las cajas de las dos líneas; Done se enciende al final."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guarde la escena y el mapa de la planta, y pulse {{ui:learn.check}}: La escena inicial no tiene emisor para la línea B, así que nunca llega una caja desde el alimentador B; agregue EmitterB al inicio del alimentador B con un límite de tres cajas, y enlace EmitterB.emit con MergeLines.EmitB en el mapa de la planta.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "body": "Cambie la escena y su mapa de planta, guárdelos y pulse {{ui:learn.check}}. La escena inicial no da cajas a la línea B, así que solo las tres cajas de la línea A llegan a la cinta de salida y Done nunca se enciende. Su cambio debe lograr que las dos líneas entreguen; el programa se queda como está.",
+      "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse {{ui:toolbar.run.label}} (F5) y abra la {{ui:plant.panel.view3d}}.",
       "checkpoint": "El escenario requerido se llama change-scene y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe cómo el alimentador B se llena de cajas y espera en su cuchilla; si falta la pieza o su enlace, lea el mensaje de la Comprobación: nombra lo que no encuentra.",
+      "body": "Observe cómo el alimentador B se llena de cajas y espera en su tope. Si siguen sin llegar cajas, lea lo que informa Comprobar: nombra lo que no encuentra, o enumera las aserciones que fallaron con lo que observó.",
       "checkpoint": "Las seis cajas se entregan por turnos, ninguna choca ni cae, y Done está encendida al final."
     },
     {
       "key": "reflect",
       "title": "Reflexionar",
-      "body": "El programa no cambió, así que la escena sola decidió el resultado; una pieza agregada pero sin enlazar está tan ausente como una pieza que nunca se agregó.",
-      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
+      "body": "El programa no cambió, así que la escena y su mapa de planta decidieron solos el resultado. ¿Qué hechos de la planta y qué salidas del programa leyó el escenario?",
+      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más. Usted puede nombrar los hechos de la planta y las salidas que lee el escenario."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Copie los ajustes de EmitterA: un emisor con un límite de tres cajas; EmitterB va sobre la línea del alimentador B, en la posición 0, 0.65, 1.95 y girado 90 grados."
+      "text": "Compare los dos alimentadores en la escena: qué hay en el alimentador A que le falta al B, y cómo está colocado, girado y ajustado. Después revise el mapa de planta para cada salida que acciona el programa."
     },
     {
       "level": 2,
-      "text": "En el mapa de la planta la señal es EmitterB.emit, un comando, y su punto es MergeLines.EmitB; revise el nombre letra por letra, porque la Comprobación lo lee exactamente."
+      "text": "En el Editor de escenas, pulse Duplicar en la fila de EmitterA de la lista de piezas: la copia conserva su altura y su límite de tres cajas, mientras que {{ui:plantEditor.add}} dejaría una pieza nueva en el suelo, donde el formulario no puede subirla. Cambie el nombre de la copia a EmitterB, ponga Posición X en 0, Posición Z en 2 y Rotación en 90, para que quede al inicio del alimentador B. En la tabla de señales enlace EmitterB.emit, un comando, con MergeLines.EmitB, letra por letra, porque Comprobar lee el nombre exactamente. Después pulse {{ui:plantEditor.done}}, {{ui:plant.panel.saveToProject}} y {{ui:learn.check}}."
     }
   ],
   "faultCases": [
-    "La escena inicial no tiene emisor para la línea B, así que nunca llega una caja desde el alimentador B; agregue EmitterB al inicio del alimentador B con un límite de tres cajas, y enlace EmitterB.emit con MergeLines.EmitB en el mapa de la planta."
+    "La escena inicial no da cajas a la línea B, así que solo las tres cajas de la línea A llegan a la cinta de salida y Done nunca se enciende."
   ]
 }
