@@ -19,13 +19,13 @@ Gobierne un pórtico de tres ejes a través de un patrón calculado de 2 por 2 p
 - Tiempo estimado: 50 minutos
 - Lenguajes: ST
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Paletizado de tres ejes](../../plant/scenes/three-axis-palletizing.md)
 - Requisitos previos: [plant-layer-palletizer](./plant-layer-palletizer.md)
 
 ## Objetivos
 
-- Ordenar tres ejes con cuentas enteras y comparar cada posición con su orden con un margen de una cuenta.
+- Ordenar tres ejes con cuentas enteras y hacer que cada movimiento espere a que cada eje haya llegado.
 - Elegir el lugar de cada caja a partir de su número: el hueco en la capa y la altura de la capa.
 
 ## Etapas

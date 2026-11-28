@@ -19,7 +19,7 @@ Model a buffer station as a state machine: load five boxes, hold them at a blade
 - Estimated time: 45 minutes
 - Languages: SFC
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Buffer and release](../../plant/scenes/buffer-release.md)
 - Prerequisites: [sfc-fill-mix-sequence](./sfc-fill-mix-sequence.md), [plant-counted-queue](./plant-counted-queue.md)
 

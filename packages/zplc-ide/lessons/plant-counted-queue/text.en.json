@@ -18,7 +18,7 @@
       "key": "predict",
       "title": "Predict",
       "body": "Before running, count the boxes: three are loaded, one after the other, and then the belt unloads them.",
-      "checkpoint": "The belt runs and boxes appear until three have passed EyeIn; Done stays off until the third box has passed EyeOut, and then the belt stops."
+      "checkpoint": "The belt runs and boxes appear until three have passed EyeIn; Done stays off until the third box has reached EyeOut, and then the belt stops."
     },
     {
       "key": "edit",
@@ -36,7 +36,7 @@
       "key": "observe",
       "title": "Observe",
       "body": "Watch the boxes enter one by one and leave at the other end; the counters change once per box, not once per scan.",
-      "checkpoint": "All three boxes are delivered, none is dropped or collides, and Done is on when the belt stops."
+      "checkpoint": "Boxes are delivered, none is dropped or collides, and Done is on when the belt stops."
     },
     {
       "key": "reflect",

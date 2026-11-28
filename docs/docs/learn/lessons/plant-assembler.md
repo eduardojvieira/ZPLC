@@ -19,7 +19,7 @@ Model a two-axis assembler as a chart: take a lid from one belt, set it on a bas
 - Estimated time: 50 minutes
 - Languages: SFC
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Two-axis assembly](../../plant/scenes/two-axis-assembly.md)
 - Prerequisites: [sfc-fill-mix-sequence](./sfc-fill-mix-sequence.md), [plant-belt-transfer](./plant-belt-transfer.md)
 

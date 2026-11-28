@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "plant-latch-two-sensors",
-  "version": 3,
+  "version": 4,
   "order": 122,
   "module": 12,
   "level": "advanced",

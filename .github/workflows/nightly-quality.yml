@@ -100,24 +100,41 @@ jobs:
           west twister -T zplc/firmware/tests -p native_sim/native/64 --inline-logs --outdir "${RUNNER_TEMP}/zplc-twister-1"
           west twister -T zplc/firmware/tests -p native_sim/native/64 --inline-logs --outdir "${RUNNER_TEMP}/zplc-twister-2"
 
-  # VF-024, VF-009: the compiler and IDE unit tests, and the end-to-end journeys, on the desktop systems that the
-  # pull-request jobs (Linux) do not cover. The commands are those of the typescript and ide-tests jobs of ci.yml, and the
-  # IDE unit tests run in the same shards (tools/ci/test-shards.ts) in desktop-ide-tests below. A result here is the
-  # evidence of the system it ran on and no other: nothing in it is hardware, timing or a signed installer.
+  # VF-024, VF-009: the compiler tests (shard 1 of each system), and the end-to-end journeys in shards, on the desktop systems
+  # that the pull-request jobs (Linux) do not cover: 6 on macOS and 8 on Windows. The journeys of a shard are those of
+  # ZPLC_JOURNEY_SHARD=k/n (run-journeys.ts), and every shard is judged like a full run. The waits of the journeys scale by the
+  # platform factor of packages/zplc-ide/scripts/journeyTiming.ts, and one journey is cut at 75 s x that factor (200 s on macOS,
+  # 300 s on Windows), reported as a TIME failure. The IDE unit tests run in the shards of tools/ci/test-shards.ts in
+  # desktop-ide-tests below. A result here is the evidence of the system it ran on and no other: nothing in it is hardware,
+  # timing or a signed installer.
   desktop-platforms:
-    name: Compiler tests and journeys (${{ matrix.name }})
+    name: Compiler tests and journeys (${{ matrix.name }}, shard ${{ matrix.shard }}/${{ matrix.shards }})
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 90 # on Linux the compiler tests, IDE build and journeys took 47 min on 4 cores; macOS and Windows not measured
+    # Basis, from the nightly 46068702940 of this branch: with 4 shards every Windows shard and one macOS shard ran into the cap,
+    # and about 80% of their time went to waits that ran out. The time of the journeys that failed there sums to about 197 min on
+    # Windows and 165 min on macOS (these shrink as the failures are fixed, they do not grow). Windows: 197 / 8 shards = 25 min
+    # plus 3.5 min of set-up. macOS: 165 / 6 shards = 27.5 min plus 3 min of set-up. So 45 min holds each shard with a margin of
+    # 1.5x on Windows and 1.5x on macOS, and the cap of one journey keeps a single hang from using it.
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
+        # shard 1 to n of each system, n in shards (tools/ci/workflow-lint.ts checks that they agree)
         include:
-          - name: macOS arm64
-            id: macos-arm64
-            runner: macos-15
-          - name: Windows x64
-            id: windows-x64
-            runner: windows-2025
+          - { name: macOS arm64, runner: macos-15, shard: 1, shards: 6 }
+          - { name: macOS arm64, runner: macos-15, shard: 2, shards: 6 }
+          - { name: macOS arm64, runner: macos-15, shard: 3, shards: 6 }
+          - { name: macOS arm64, runner: macos-15, shard: 4, shards: 6 }
+          - { name: macOS arm64, runner: macos-15, shard: 5, shards: 6 }
+          - { name: macOS arm64, runner: macos-15, shard: 6, shards: 6 }
+          - { name: Windows x64, runner: windows-2025, shard: 1, shards: 8 }
+          - { name: Windows x64, runner: windows-2025, shard: 2, shards: 8 }
+          - { name: Windows x64, runner: windows-2025, shard: 3, shards: 8 }
+          - { name: Windows x64, runner: windows-2025, shard: 4, shards: 8 }
+          - { name: Windows x64, runner: windows-2025, shard: 5, shards: 8 }
+          - { name: Windows x64, runner: windows-2025, shard: 6, shards: 8 }
+          - { name: Windows x64, runner: windows-2025, shard: 7, shards: 8 }
+          - { name: Windows x64, runner: windows-2025, shard: 8, shards: 8 }
     defaults:
       run:
         shell: bash
@@ -178,12 +195,15 @@ jobs:
           echo "ZPLC_NATIVE_SIM_BIN=${runtime}" >> "${GITHUB_ENV}"
 
       - name: Test the compiler
+        if: ${{ matrix.shard == 1 }}
         run: |
           status=0
           bun run test:compiler -- --reporter=junit --reporter-outfile="${RUNNER_TEMP}/junit-compiler.xml" || status=$?
           bun tools/ci/check-expected-failures.ts --exit-code "${status}" "packages/zplc-compiler=${RUNNER_TEMP}/junit-compiler.xml"
 
       - name: Run the end-to-end journeys
+        env:
+          ZPLC_JOURNEY_SHARD: ${{ matrix.shard }}/${{ matrix.shards }}
         run: |
           bun run build:ide
           # Electron 45 has no install script: its binary is downloaded here, or a fresh install has no electron/dist.

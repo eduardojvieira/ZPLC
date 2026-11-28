@@ -19,13 +19,13 @@ Drive a three-axis gantry through a computed 2 by 2 pattern to stack eight boxes
 - Estimated time: 50 minutes
 - Languages: ST
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Three-axis palletizing](../../plant/scenes/three-axis-palletizing.md)
 - Prerequisites: [plant-layer-palletizer](./plant-layer-palletizer.md)
 
 ## Objectives
 
-- Command three axes with integer counts and compare each position with its command within one count.
+- Command three axes with integer counts and let every move wait until each axis has arrived.
 - Choose the place of each box from its number: the slot in the layer and the height of the layer.
 
 ## Stages

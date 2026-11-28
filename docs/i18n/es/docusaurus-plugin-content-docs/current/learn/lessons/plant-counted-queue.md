@@ -19,7 +19,7 @@ Cuente cajas con dos contadores para ejecutar un lote fijo: cargue tres, descarg
 - Tiempo estimado: 30 minutos
 - Lenguajes: ST
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Cola contada](../../plant/scenes/counted-queue.md)
 - Requisitos previos: [plant-latch-two-sensors](./plant-latch-two-sensors.md), [edge-counter-pulses](./edge-counter-pulses.md)
 

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Cargar y descargar tres cajas en diagrama de escalera",
-  "summary": "Cuente cajas con dos bloques CTU para ejecutar un lote fijo: cargue tres, descargue tres y encienda Done.",
+  "summary": "Cuente cajas para ejecutar un lote fijo: cargue tres, descargue tres y encienda Done.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Contar elementos con un contador de valor preestablecido.",
@@ -11,48 +11,48 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/CountedQueue.ld.json, cuente las cajas en EyeIn con un bloque CTU de valor preestablecido 3 y las cajas en EyeOut con un segundo bloque CTU de valor preestablecido 3.",
-      "checkpoint": "Cargue una caja a la vez, deje de cargar en la tercera y encienda Done cuando el segundo contador llegue a 3."
+      "body": "En src/CountedQueue.ld.json están declaradas las entradas Start, EyeIn y EyeOut, las salidas Run, Emit y Done, y variables locales que incluyen dos contadores, y todavía no hay peldaños. Una pulsación de Start debe iniciar un lote de tres cajas: cargarlas sobre la cinta una tras otra sin colisiones, llevarlas por la cinta, y entonces encender Done y detener la cinta en cuanto la tercera caja llegue a EyeOut.",
+      "checkpoint": "Usted puede decir por qué la estación necesita una cuenta en la entrada y otra en la salida, y cuándo debe detenerse la cinta."
     },
     {
       "key": "predict",
-      "title": "Predecir",
-      "body": "Antes de ejecutar, cuente las cajas: se cargan tres, una tras otra, y luego la cinta las descarga.",
-      "checkpoint": "La cinta corre y aparecen cajas hasta que tres han pasado por EyeIn; Done sigue apagada hasta que la tercera caja pasa por EyeOut, y entonces la cinta se detiene."
+      "title": "Prediga",
+      "body": "El escenario acciona Start a los {{t:200}} ms y lo suelta a los {{t:400}} ms. Antes de ejecutar, siga el lote: se cargan tres cajas una tras otra y luego la cinta las lleva hacia EyeOut.",
+      "checkpoint": "{{v:CountedQueue.Run=false@100|Run en OFF}} y {{v:CountedQueue.Done=false@100|Done en OFF}} a los {{t:100}} ms; entran cajas hasta que tres pasan por EyeIn; al final, a los {{t:20000}} ms, {{v:CountedQueue.Done=true@20000|Done está en ON}} y {{v:CountedQueue.Run=false@20000|Run está en OFF}}."
     },
     {
       "key": "edit",
-      "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial no tiene peldaños ni contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la cinta.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "title": "Edite",
+      "body": "Dibuje los peldaños, guarde el programa y pulse {{ui:learn.check}}. El programa inicial no tiene peldaños, así que no se carga ninguna caja y la cinta nunca se mueve. Una pulsación de Start debe iniciar el lote, soltar tres cajas una por una sin colisiones, llevarlas hacia el extremo final y encender Done y detener la cinta en cuanto la tercera caja llegue a EyeOut.",
+      "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
       "key": "run",
-      "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
+      "title": "Ejecute",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la máquina, pulse {{ui:toolbar.run.label}} (F5) y abra la {{ui:plant.panel.view3d}}.",
       "checkpoint": "El escenario requerido se llama counted-queue y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
-      "title": "Observar",
-      "body": "Observe las cajas entrar una a una y salir por el otro extremo; los contadores cambian una vez por caja, no una vez por ciclo.",
-      "checkpoint": "Las tres cajas se entregan, ninguna cae ni choca, y Done está encendida cuando la cinta se detiene."
+      "title": "Observe",
+      "body": "Observe en la {{ui:plant.panel.view3d}} cómo las cajas entran una a una y avanzan por la cinta; compare EyeIn, EyeOut, Run y Done en la traza.",
+      "checkpoint": "Dos cajas llegan al retirador y la tercera se detiene delante de EyeOut; ninguna cae ni choca, y Done está encendida cuando la cinta se detiene."
     },
     {
       "key": "reflect",
-      "title": "Reflexionar",
-      "body": "Un contador cuenta flancos ascendentes, así que una caja que permanece bajo un sensor cuenta una sola vez; la aserción AT final fija Done y la cinta detenida.",
-      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
+      "title": "Reflexione",
+      "body": "El escenario comprueba que una caja llegó al retirador, que nada cayó ni chocó, y que Done está encendida y Run apagada a los {{t:20000}} ms. ¿Por qué la estación necesita un segundo contador en EyeOut en lugar de detener la cinta cuando la cuenta en EyeIn llega a 3?",
+      "checkpoint": "Cuando la tercera caja pasa por EyeIn todavía está cerca del comienzo de la cinta; solo la cuenta en EyeOut indica que las tres cajas llegaron a EyeOut."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Coloque dos bloques CTU, cada uno en un peldaño que empiece con el contacto de su sensor; ponga R en FALSE y PV en 3, y enlace Q a una variable: se enciende cuando la cuenta llega al valor preestablecido."
+      "text": "Pregúntese qué debe recordar la estación, qué debe contar y dónde, y cuál de esas cosas lee cada salida. ¿Cuándo es seguro soltar la caja siguiente?"
     },
     {
       "level": 2,
-      "text": "Emita una caja nueva con Start y cada vez que la caja anterior haya salido de EyeIn (un contacto de flanco de bajada sobre EyeIn), hasta que el primer contador termine; luego Done sigue al segundo contador y Run es Active Y NO ese contador."
+      "text": "Active Active con Start. Coloque dos bloques CTU con R en FALSE y PV en 3: Loaded alimentado por EyeIn con Q enlazada a LoadedQ, y Unloaded alimentado por EyeOut con Q enlazada a UnloadedQ. Accione Emit desde Start en paralelo con un contacto de flanco descendente sobre EyeIn, en serie con Active y un contacto normalmente cerrado de LoadedQ. Accione Done desde UnloadedQ, y Run desde Active en serie con un contacto normalmente cerrado de UnloadedQ."
     }
   ],
   "faultCases": [

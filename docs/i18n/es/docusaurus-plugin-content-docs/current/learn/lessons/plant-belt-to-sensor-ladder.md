@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-belt-to-sensor-ladder. Do not edit. >>> */}
 
-Arranque una cinta con un pulsador mediante una bobina de activación y deténgala con una bobina de borrado cuando una caja llegue al sensor del extremo.
+Arranque una cinta con un pulsador y deténgala cuando una caja llegue al sensor del extremo.
 
 ## Datos
 
@@ -19,23 +19,23 @@ Arranque una cinta con un pulsador mediante una bobina de activación y deténga
 - Tiempo estimado: 20 minutos
 - Lenguajes: LD
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Cinta hasta un sensor](../../plant/scenes/belt-to-sensor.md)
 - Requisitos previos: [motor-start-stop-safe](./motor-start-stop-safe.md)
 
 ## Objetivos
 
-- Arrancar un actuador con la pulsación de un pulsador mediante una bobina de activación y recordar que está en marcha.
-- Detener el actuador con una bobina de borrado cuando un sensor ve la caja.
+- Arrancar un actuador con la pulsación de un pulsador y recordar que está en marcha.
+- Detener el actuador cuando un sensor ve la caja.
 
 ## Etapas
 
 1. **Objetivo**
-2. **Predecir**
-3. **Editar**
-4. **Ejecutar**
-5. **Observar**
-6. **Reflexionar**
+2. **Prediga**
+3. **Edite**
+4. **Ejecute**
+5. **Observe**
+6. **Reflexione**
 
 ## Qué cubre la evidencia
 

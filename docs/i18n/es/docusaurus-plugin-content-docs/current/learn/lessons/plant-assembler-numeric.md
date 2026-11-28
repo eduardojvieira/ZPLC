@@ -19,7 +19,7 @@ Ordene a un ensamblador de dos ejes con consignas numéricas en centímetros y u
 - Tiempo estimado: 40 minutos
 - Lenguajes: ST
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Ensamble de dos ejes, numérico](../../plant/scenes/two-axis-assembly-numeric.md)
 - Requisitos previos: [plant-assembler](./plant-assembler.md)
 

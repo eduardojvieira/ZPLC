@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-buffer-release. Do not edit. >>> */}
 
-Modele una estación de búfer como una máquina de estados: cargue cinco cajas, retenga en una cuchilla y libere una por cada pulsación del pulsador.
+Modele una estación de búfer como una máquina de estados: cargue cinco cajas, retenga en un tope retráctil y libere una por cada pulsación del pulsador.
 
 ## Datos
 
@@ -19,7 +19,7 @@ Modele una estación de búfer como una máquina de estados: cargue cinco cajas,
 - Tiempo estimado: 45 minutos
 - Lenguajes: SFC
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Búfer y liberación](../../plant/scenes/buffer-release.md)
 - Requisitos previos: [sfc-fill-mix-sequence](./sfc-fill-mix-sequence.md), [plant-counted-queue](./plant-counted-queue.md)
 

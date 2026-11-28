@@ -4,21 +4,21 @@
   "summary": "Sequence a clamp carriage with limit sensors and a grip feedback to move four boxes from an infeed belt to an outfeed belt.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
-    "Sequence a pick and place with one state per move, each move waiting for its limit sensor.",
-    "Wait for the grip feedback before lifting, and keep the receiving belt still while a box is put down."
+    "Sequence a pick and place so that each move starts only when the previous one is complete.",
+    "Lift a box only when the clamp reports that it holds it, and put each box down without disturbing it."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/BeltTransfer.ld.json, write a ladder state machine (State is an INT: an EQ block tests it and a MOVE block changes it): for each box lower the clamp, close it and wait for Gripped, lift, carry the box over the outfeed, lower, open the clamp and let the box settle, lift and return. Do it for four boxes and light Done when the fourth has passed EyeOut.",
-      "checkpoint": "Every move starts when the limit sensor of the previous one is on, and the outputs follow the state."
+      "body": "In src/BeltTransfer.ld.json, write a ladder state machine (State is an INT: an EQ block tests it and a MOVE block changes it): for each box lower the clamp, close it on the box, lift, carry the box over the outfeed, lower, open the clamp, lift and return. Do it for four boxes and light Done when the fourth has passed EyeOut.",
+      "checkpoint": "Every move starts only when the previous one is complete."
     },
     {
       "key": "predict",
       "title": "Predict",
-      "body": "Before running, follow one box: the blade holds it at EyePick, the clamp comes down, closes, lifts and crosses to XMax, and the outfeed belt stands still while the box is put down and settles.",
-      "checkpoint": "Grip is on from the moment the clamp closes until the box is on the outfeed; Hold stays on during the job; the outfeed runs again after the box is at rest."
+      "body": "Before running, follow one box: the blade holds it at EyePick, the clamp comes down, closes, lifts and crosses to XMax, and the box is put down on the outfeed.",
+      "checkpoint": "Grip is on from the moment the clamp closes until the box is on the outfeed; Hold stays on during the job."
     },
     {
       "key": "edit",
@@ -35,7 +35,7 @@
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Watch the clamp in the 3D view: it stays closed and still until the box is held, and the box lies still on the outfeed before that belt runs again.",
+      "body": "Watch the clamp in the 3D view: it stays closed and still until the box is held, and the box lies still where it is put down.",
       "checkpoint": "No box falls, and the clamp opens only over the outfeed belt."
     },
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Give each move its own state number and let the transition wait for one limit sensor: YMin after lowering, Gripped after closing, YMax after lifting, XMax after carrying."
+      "text": "Look at what tells you that each move is complete: which signal is on when the clamp is down, when the box is held, when the clamp is up, and when it is over the outfeed."
     },
     {
       "level": 2,

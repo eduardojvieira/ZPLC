@@ -1,0 +1,221 @@
+{
+  "name": "ScrapBelt",
+  "description": "A scrap conveyor where a short press starts clearing until empty, and holding the button jogs the belt even when empty.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Clearing",
+        "type": "BOOL",
+        "comment": "Memory: the scrap belt should be running"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "ClearBelt",
+        "type": "BOOL",
+        "comment": "Push button: starts clearing and jogs while held"
+      },
+      {
+        "name": "BeltEmpty",
+        "type": "BOOL",
+        "comment": "Light curtain: TRUE when no offcuts remain on the belt"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Motor",
+        "type": "BOOL",
+        "comment": "Scrap belt motor"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "The empty curtain clears the memory first.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r1_0_0",
+              "type": "contact_no",
+              "variable": "BeltEmpty",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r1_0_7",
+              "type": "coil_reset",
+              "variable": "Clearing",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "The button sets the memory last, so holding it jogs even when empty.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r2_0_0",
+              "type": "contact_no",
+              "variable": "ClearBelt",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r2_0_7",
+              "type": "coil_set",
+              "variable": "Clearing",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "The motor follows the memory.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r3_0_0",
+              "type": "contact_no",
+              "variable": "Clearing",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r3_0_7",
+              "type": "coil",
+              "variable": "Motor",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-28",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

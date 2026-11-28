@@ -22,7 +22,7 @@
       {
         "name": "Seen",
         "type": "BOOL",
-        "comment": "The box of the grant has been seen in the zone"
+        "comment": "A memory you may need to end a grant"
       },
       {
         "name": "LoadedA",

@@ -19,14 +19,14 @@ Sequence a clamp carriage with limit sensors and a grip feedback to move four bo
 - Estimated time: 40 minutes
 - Languages: ST
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Transfer between belts](../../plant/scenes/belt-to-belt-transfer.md)
 - Prerequisites: [plant-counted-queue](./plant-counted-queue.md)
 
 ## Objectives
 
-- Sequence a pick and place with one state per move, each move waiting for its limit sensor.
-- Wait for the grip feedback before lifting, and keep the receiving belt still while a box is put down.
+- Sequence a pick and place so that each move starts only when the previous one is complete.
+- Lift a box only when the clamp reports that it holds it, and put each box down without disturbing it.
 
 ## Stages
 

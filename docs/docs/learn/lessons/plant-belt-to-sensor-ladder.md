@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-belt-to-sensor-ladder. Do not edit. >>> */}
 
-Start a belt from a button with a set coil and stop it with a reset coil when a box reaches the sensor at the far end.
+Start a belt from a button and stop it when a box reaches the sensor at the far end.
 
 ## Facts
 
@@ -19,14 +19,14 @@ Start a belt from a button with a set coil and stop it with a reset coil when a 
 - Estimated time: 20 minutes
 - Languages: LD
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Belt to sensor](../../plant/scenes/belt-to-sensor.md)
 - Prerequisites: [motor-start-stop-safe](./motor-start-stop-safe.md)
 
 ## Objectives
 
-- Start an actuator from a button press with a set coil and remember that it is running.
-- Stop the actuator with a reset coil when a sensor sees the box.
+- Start an actuator from a button press and remember that it is running.
+- Stop the actuator when a sensor sees the box.
 
 ## Stages
 

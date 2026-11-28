@@ -11,13 +11,13 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/BufferRelease.sfc.json, build the chart: IDLE, LOADING and WAIT to load five boxes, QUEUED to hold them, RELEASING, PASSING and COUNT to let one go, and FINISHED.",
+      "body": "In src/BufferRelease.sfc.json, build the chart of the station: a press of the start button puts five boxes on the buffer belt and holds them at the blade; each press of the release button lets exactly one box past EyeRelease; after the fifth, Done lights, and a box that gets past the blade while the queue waits lights Fault.",
       "checkpoint": "Each step sets every output, so reading the active step tells you what the station does."
     },
     {
       "key": "predict",
       "title": "Predict",
-      "body": "Before running, walk the chart: the start press moves it from IDLE into the loading steps, which turn on the buffer and emit a box every two seconds.",
+      "body": "Before running, walk the chart: the start press moves it from IDLE into the loading steps, which turn on the buffer and emit one box at a time.",
       "checkpoint": "The blade holds the queue after the fifth box; each press of the release button lets exactly one box pass EyeRelease; after the fifth release Done turns on and Fault stays off."
     },
     {
@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "Add a COUNT step after PASSING for the released boxes, and let its transitions wait a short step time so the new count is visible; leave the blade up (Hold TRUE) in every step except RELEASING and PASSING."
+      "text": "Add a COUNT step after PASSING for the released boxes; leave the blade up (Hold TRUE) in every step except RELEASING and PASSING."
     }
   ],
   "faultCases": [

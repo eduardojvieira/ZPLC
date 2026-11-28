@@ -14,6 +14,7 @@ const { learnLessonCatalog } = await import('../learnLesson');
 const { LearnPanel } = await import('../LearnPanel');
 const { buildCourseView } = await import('../../learn/course');
 const { Guide } = await import('./Guide');
+const { GuideStages } = await import('./GuideStages');
 const { useAssistantEntry } = await import('../../store/useAssistantEntry');
 const { useAssistantProvider } = await import('../../shell/useSelection');
 
@@ -423,5 +424,111 @@ describe('Check is one action from the Guide (GDE-004)', () => {
       openOn('win32', NO_COMM);
       expect(document.querySelector('[data-guide-comm-limit]')).toBeNull();
     });
+  });
+});
+
+describe('Reflect is listed but locked until a pass or the solution (CRS-017)', () => {
+  const last = lesson.stages.length;
+  const reflect = () => dom.screen.getByRole('button', { name: new RegExp(`^${dom.t('u3Guide.jump', { n: last })}`) }) as HTMLButtonElement;
+  const text = () => dom.t('u3Guide.reflectLocked');
+  const title = () => document.querySelector('[data-guide-stage] h3')!.textContent;
+  const reflectTitle = lesson.stages[last - 1]!.title;
+
+  it('CRS-017 locked with no pass and no solution: the list says what opens it; jump and Next refuse it', async () => {
+    open();
+    const { user } = dom.render(<Guide />);
+    expect(reflect().getAttribute('aria-disabled')).toBe('true');
+    expect(reflect().textContent).toContain(dom.t('u3Guide.locked'));
+    expect(document.getElementById(reflect().getAttribute('aria-describedby')!)!.textContent).toBe(text());
+    reflect().focus();
+    expect(document.activeElement).toBe(reflect());
+    await user.click(reflect());
+    expect(title()).toBe(lesson.stages[0]!.title);
+    const next = dom.screen.getByRole('button', { name: dom.t('u3Guide.next') }) as HTMLButtonElement;
+    for (let i = 0; i < last + 2; i++) if (!next.disabled) await user.click(next);
+    expect(title()).toBe(lesson.stages[last - 2]!.title);
+    expect(next.disabled).toBe(true);
+    expect(dom.screen.queryByText(reflectTitle, { selector: 'h3' })).toBeNull();
+  });
+
+  it('CRS-017 opens after a pass, in the same session and after a remount', async () => {
+    open();
+    const first = dom.render(<Guide />);
+    expect(reflect().getAttribute('aria-disabled')).toBe('true');
+    passed(lesson.id);
+    await dom.waitFor(() => expect(reflect().getAttribute('aria-disabled')).toBeNull());
+    await first.user.click(reflect());
+    expect(title()).toBe(reflectTitle);
+    first.unmount();
+    dom.render(<Guide />);
+    expect(reflect().getAttribute('aria-disabled')).toBeNull();
+  });
+
+  it('CRS-017 opens after choosing to see the solution, and stays open after a remount', async () => {
+    open();
+    const first = dom.render(<Guide />);
+    expect(reflect().getAttribute('aria-disabled')).toBe('true');
+    await first.user.click(dom.screen.getByRole('button', { name: dom.t('u3Guide.solution') }));
+    await first.user.click(dom.screen.getByRole('button', { name: dom.t('learn.solution.action') }));
+    await dom.waitFor(() => expect(reflect().getAttribute('aria-disabled')).toBeNull());
+    await first.user.click(reflect());
+    expect(title()).toBe(reflectTitle);
+    dom.patchStore(useLearnProgress, {
+      document: {
+        schemaVersion: 2,
+        last: null,
+        lessons: {
+          [lesson.id]: {
+            state: 'started',
+            grade: null,
+            passedAt: null,
+            startedAt: null,
+            hintsShown: [],
+            solutionShown: true,
+            hardware: null,
+          },
+        },
+      },
+    } as never);
+    first.unmount();
+    dom.render(<Guide />);
+    expect(reflect().getAttribute('aria-disabled')).toBeNull();
+  });
+});
+
+describe('Reflect is found by its stage key (CRS-017)', () => {
+  const stage = (key: string) => ({ key, title: `T-${key}`, body: `B-${key}`, checkpoint: `C-${key}` });
+  const jump = (n: number) => dom.screen.getByRole('button', { name: new RegExp(`^${dom.t('u3Guide.jump', { n })}`) }) as HTMLButtonElement;
+  const title = () => document.querySelector('[data-guide-stage] h3')!.textContent;
+
+  it('CRS-017 a stage after Reflect: only Reflect is locked; Next stops before it and the later stage is jumpable', async () => {
+    const stages = ['objective', 'reflect', 'extra'].map(stage);
+    const { user } = dom.render(<GuideStages stages={stages} reflectOpen={false} />);
+    expect(jump(1).getAttribute('aria-disabled')).toBeNull();
+    expect(jump(2).getAttribute('aria-disabled')).toBe('true');
+    expect(jump(3).getAttribute('aria-disabled')).toBeNull();
+    const next = dom.screen.getByRole('button', { name: dom.t('u3Guide.next') }) as HTMLButtonElement;
+    expect(next.disabled).toBe(true);
+    await user.click(jump(3));
+    expect(title()).toBe('T-extra');
+    const back = dom.screen.getByRole('button', { name: dom.t('u3Guide.back') }) as HTMLButtonElement;
+    await user.click(back);
+    expect(title()).toBe('T-objective');
+  });
+
+  it('CRS-017 with Reflect open, Next walks through Reflect to the later stage', async () => {
+    const stages = ['objective', 'reflect', 'extra'].map(stage);
+    const { user } = dom.render(<GuideStages stages={stages} reflectOpen />);
+    const next = dom.screen.getByRole('button', { name: dom.t('u3Guide.next') });
+    await user.click(next);
+    expect(title()).toBe('T-reflect');
+    await user.click(next);
+    expect(title()).toBe('T-extra');
+  });
+
+  it('CRS-017 a lesson without Reflect locks nothing', () => {
+    dom.render(<GuideStages stages={['objective', 'run'].map(stage)} reflectOpen={false} />);
+    expect(document.querySelector('[data-guide-stage-locked]')).toBeNull();
+    expect(jump(2).getAttribute('aria-disabled')).toBeNull();
   });
 });

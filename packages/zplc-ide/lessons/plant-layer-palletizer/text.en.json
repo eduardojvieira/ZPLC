@@ -17,7 +17,7 @@
     {
       "key": "predict",
       "title": "Predict",
-      "body": "Before running, follow the head: it starts at its lowest and rises first, the first layer goes down to YMin, and each later layer comes down for the jog JogMs[Layer], less than the layer below by one box height, so it stops one box height higher.",
+      "body": "Before running, follow the head: it starts at its lowest and rises first, the first layer goes down to YMin, and each later layer comes down for the jog JogMs[Layer] and stops one box height higher than the layer below.",
       "checkpoint": "The pusher is retracted before the head moves; the clamp opens only over the pallet; Green lights after the third layer."
     },
     {
@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "Declare JogMs : ARRAY[0..2] OF INT and an INT index i. Slot 0 is not used, because the first layer goes down to YMin. On Start, FOR i := 1 TO 2 DO JogMs[i] := 720 - 140 * i; END_FOR; gives the jogs 580 and 440, so each layer stops one box height higher than the previous. While Layer is below 3, use INT_TO_TIME(JogMs[Layer]) as the preset of the timer that runs while the head comes down onto the pallet."
+      "text": "Declare JogMs : ARRAY[0..2] OF INT and an INT index i. Slot 0 is not used, because the first layer goes down to YMin. On Start, FOR i := 1 TO 2 DO JogMs[i] := 720 - 140 * i; END_FOR; gives the jogs 580 and 440, so each layer stops about one box height higher than the previous (the jogs are short, so equal heights are not equal times). While Layer is below 3, use INT_TO_TIME(JogMs[Layer]) as the preset of the timer that runs while the head comes down onto the pallet."
     }
   ],
   "faultCases": [

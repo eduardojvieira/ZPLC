@@ -17,7 +17,7 @@
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, prediga las salidas en {{t:100}} ms (antes de la pulsación), en {{t:800}} ms (el ciclo ha comenzado) y en {{t:1500}} ms (se pulsa la parada de emergencia). Luego prediga dónde está el ciclo en {{t:25000}} ms, después de una segunda pulsación en {{t:4000}} ms.",
+      "body": "Antes de ejecutar, prediga las salidas en {{t:100}} ms (antes de la pulsación), en {{t:800}} ms (el ciclo ha comenzado) y en {{t:1500}} ms (la parada de emergencia ya se pulsó). Luego prediga dónde está el ciclo en {{t:25000}} ms, después de una segunda pulsación en {{t:4000}} ms.",
       "checkpoint": "{{v:TimedTank.Fill=false,TimedTank.Drain=false,TimedTank.Green=false,TimedTank.Red=false@100|Todo apagado}} en {{t:100}} ms; {{v:TimedTank.Fill=true,TimedTank.Amber=true,TimedTank.Green=false@800|Fill y Amber encendidas}} en {{t:800}} ms; {{v:TimedTank.Fill=false,TimedTank.Drain=false,TimedTank.Red=true@1500|ambas válvulas cerradas y Red encendida}} en {{t:1500}} ms; {{v:TimedTank.Green=true,TimedTank.Drain=false,TimedTank.Red=false@25000|Green encendida y el vaciado cerrado}} en {{t:25000}} ms."
     },
     {

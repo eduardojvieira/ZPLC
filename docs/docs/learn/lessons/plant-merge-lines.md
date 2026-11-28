@@ -19,7 +19,7 @@ Arbitrate two feeders that share one outfeed: give line A priority, let one box 
 - Estimated time: 45 minutes
 - Languages: ST
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Merge two lines](../../plant/scenes/merge-lines.md)
 - Prerequisites: [plant-counted-queue](./plant-counted-queue.md), [interlock-guard-permissive](./interlock-guard-permissive.md)
 

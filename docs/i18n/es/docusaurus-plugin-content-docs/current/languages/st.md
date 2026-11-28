@@ -104,9 +104,9 @@ La división o `MOD` por cero termina el ciclo con la falla de la VM `ZPLC_VM_DI
 
 ### Desplazamientos, rotaciones y lógica de bits
 
-- `SHL(IN, N)`, `SHR(IN, N)`, `ROL(IN, N)` y `ROR(IN, N)` son funciones. Un desplazamiento de 32 o más, o con un contador negativo, da 0 (`cmp-016-shift-by-the-width-or-more`). `SHR` es lógico: entran ceros por la izquierda.
+- `SHL(IN, N)`, `SHR(IN, N)`, `ROL(IN, N)` y `ROR(IN, N)` son funciones. Un desplazamiento de 32 o más, o con un contador negativo, da 0 (`cmp-016-shift-by-the-width-or-more`). `SHR` es lógico: entran ceros por la izquierda. Un literal entero sin tipo mide 32 bits, así que `ROL(16#8000, 1)` asignado a una `WORD` da 0: el bit sale de los 16 bits bajos. Escriba el literal con su tipo para rotar o desplazar dentro de su ancho: `ROL(WORD#16#8000, 1)` da 1.
 - Un `BYTE`, un `WORD` y los enteros de 8 y 16 bits se desplazan y rotan dentro de su propio ancho (`cmp-014-shl-byte-keeps-8-bits`, `cmp-014-rol-byte-rotates-within-8-bits`). En `LWORD`, `LINT` y `ULINT` el ancho es 64: un desplazamiento de 64 o más da 0, y una rotación toma su contador módulo 64 y conserva todos los bits (`cmp-015-lword-shifts-and-rotates-use-64-bits`).
-- `AND`, `OR`, `XOR` y `NOT` actúan sobre todo el ancho declarado (`cmp-014-not-byte`, `cmp-014-and-or-xor-word`).
+- `AND`, `OR`, `XOR` y `NOT` actúan sobre todo el ancho declarado (`cmp-014-not-byte`, `cmp-014-and-or-xor-word`). `NOT` de un literal entero sin tipo, o de una expresión formada solo por literales, toma el ancho de su contexto igual que `AND`, `OR` y `XOR` (32 bits; 64 cuando el destino es de 64 bits): `X : DWORD := NOT(1)` da `16#FFFFFFFE`.
 - `w.0` lee y escribe un bit de un `BYTE`, `WORD`, `INT`, `DWORD` o `LWORD`, de un miembro de estructura y de un elemento de arreglo; una escritura deja intactos los demás bits. Un número de bit fuera del ancho y un bit de un `BOOL` son errores de compilación (`cmp-032-bit-access`, `cmp-032-bit-number-out-of-range`).
 
 ### Conversiones

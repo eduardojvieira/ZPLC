@@ -1,58 +1,58 @@
 {
   "schemaVersion": 1,
   "title": "Del sensor A al sensor B en diagrama de escalera",
-  "summary": "Secuencie un movimiento con una bobina de activación y una de borrado: haga correr la cinta desde el sensor A hasta que la caja llegue al sensor B.",
+  "summary": "Mantenga una cinta en marcha entre dos sensores: arranque la cinta cuando el sensor A vea una caja y deténgala cuando llegue al sensor B.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
-    "Usar un set y un reset para mantener una salida entre dos eventos.",
+    "Mantener una salida activa entre dos eventos de sensor sin una variable de memoria aparte.",
     "Explicar por qué un sensor que se apaga no puede mantener la salida por sí solo."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/LatchTwoSensors.ld.json, haga de Run un enclavamiento: un peldaño con un contacto EyeA y una bobina de activación sobre Run, y un segundo peldaño con un contacto EyeB y una bobina de borrado sobre Run.",
-      "checkpoint": "Run se mantiene entre los dos sensores, y el reset gana sobre el set."
+      "body": "En src/LatchTwoSensors.ld.json están declaradas las entradas EyeA y EyeB y la salida Run, y todavía no hay peldaños. Una caja comienza delante de EyeA; la cinta debe arrancar cuando EyeA vea la caja, seguir en marcha después de que la caja deje EyeA y detenerse cuando EyeB vea la caja.",
+      "checkpoint": "Usted puede decir por qué la cinta debe seguir en marcha después de que EyeA se apague, y qué debe hacer la cinta si EyeA y EyeB ven ambos una caja."
     },
     {
       "key": "predict",
-      "title": "Predecir",
-      "body": "Antes de ejecutar, siga la caja: el sensor A la ve un instante, luego la caja avanza y A se apaga.",
-      "checkpoint": "Run se enciende cuando A ve la caja, sigue encendida mientras la caja viaja y se apaga cuando B la ve, y así se queda."
+      "title": "Prediga",
+      "body": "Antes de ejecutar, siga la caja: el sensor A la ve al inicio, luego la caja avanza y A se apaga mucho antes de que B la vea.",
+      "checkpoint": "Run se enciende cuando A ve la caja, sigue encendida mientras la caja avanza y se apaga cuando B la ve, {{v:LatchTwoSensors.Run=false@8000|siguiendo en OFF}} a los {{t:8000}} ms."
     },
     {
       "key": "edit",
-      "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial no tiene peldaños, así que la cinta nunca corre; active Run cuando EyeA vea la caja y bórrelo cuando EyeB vea la caja.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "title": "Edite",
+      "body": "Dibuje los peldaños, guarde el programa y pulse {{ui:learn.check}}. El programa inicial no tiene peldaños, así que la cinta nunca corre. La cinta debe arrancar cuando EyeA vea la caja, seguir en marcha una vez que la caja salga de EyeA y detenerse en cuanto EyeB vea la caja.",
+      "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
       "key": "run",
-      "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
+      "title": "Ejecute",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la máquina, pulse {{ui:toolbar.run.label}} (F5) y abra la {{ui:plant.panel.view3d}}.",
       "checkpoint": "El escenario requerido se llama latch-two-sensors y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
-      "title": "Observar",
-      "body": "Compare el instante en que A se apaga con el instante en que B se enciende: la cinta sigue corriendo entre ambos porque Run conserva su valor.",
-      "checkpoint": "Ambos sensores cuentan la caja, Run está apagada al final y ninguna caja cae."
+      "title": "Observe",
+      "body": "Observe en la {{ui:plant.panel.view3d}} cómo la caja sale de EyeA y avanza hasta EyeB; compare en la traza el instante en que EyeA se apaga con el instante en que EyeB se enciende.",
+      "checkpoint": "Ambos sensores cuentan la caja, Run se mantiene encendida en el centro de la cinta, Run está apagada al final y ninguna caja cae."
     },
     {
       "key": "reflect",
-      "title": "Reflexionar",
-      "body": "Las aserciones comprueban la cuenta en ambos sensores y el estado final; no dicen nada sobre cuánto dura el movimiento en la vida real.",
-      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
+      "title": "Reflexione",
+      "body": "El escenario comprueba que ambos sensores vieron la caja y que Run está apagada a los {{t:8000}} ms. ¿Qué ocurriría si una segunda caja llegara delante de EyeA mientras la primera sigue esperando delante de EyeB?",
+      "checkpoint": "Con EyeA y EyeB en TRUE en el mismo ciclo, usted puede decir si la cinta sigue detenida o se mueve, y cuál de sus peldaños lo decide."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "La propia salida puede ser la memoria: una bobina de activación sobre Run, alimentada por un contacto EyeA, conserva el valor en los ciclos siguientes."
+      "text": "La caja sale de EyeA mucho antes de llegar a EyeB, así que una bobina simple accionada por EyeA detendría la cinta enseguida. La propia salida Run puede conservar el estado entre los dos eventos: un evento la enciende y la deja encendida, y el otro la apaga."
     },
     {
       "level": 2,
-      "text": "Agregue después un segundo peldaño con un contacto EyeB y una bobina de borrado sobre Run, para que el borrado gane cuando ambos sensores sean TRUE."
+      "text": "Dibuje un peldaño con un contacto EyeA y una bobina SET sobre Run, y agregue debajo un segundo peldaño con un contacto EyeB y una bobina RESET sobre Run para que el borrado gane cuando ambos sensores sean TRUE."
     }
   ],
   "faultCases": [

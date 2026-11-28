@@ -168,7 +168,10 @@ export const createDebugActions: StateCreator<
   setForcedValue: (entry) =>
     set((state) => {
       const forcedValues = new Map(state.debug.forcedValues);
-      forcedValues.set(entry.path, entry);
+      // One force per address: a second spelling of the path (`Start` for `Motor.Start`) updates the force that is there.
+      const held = Array.from(forcedValues.values()).find((other) => other.address === entry.address);
+      const path = held?.path ?? entry.path;
+      forcedValues.set(path, { ...entry, path });
       return {
         debug: { ...state.debug, forcedValues },
       };

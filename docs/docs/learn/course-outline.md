@@ -342,9 +342,9 @@ Your first programs now move real parts. Each one reads a sensor and drives a be
 Objectives of the available lessons:
 
 - **Move a box to a sensor**: Start an actuator from a button press and remember that it is running. Stop the actuator when a sensor sees the box.
-- **Move a box to a sensor in Ladder**: Start an actuator from a button press with a set coil and remember that it is running. Stop the actuator with a reset coil when a sensor sees the box.
+- **Move a box to a sensor in Ladder**: Start an actuator from a button press and remember that it is running. Stop the actuator when a sensor sees the box.
 - **From sensor A to sensor B**: Use a set and a reset to hold an output between two events. Explain why a sensor that goes dark cannot hold the output by itself.
-- **From sensor A to sensor B in Ladder**: Use a set and a reset to hold an output between two events. Explain why a sensor that goes dark cannot hold the output by itself.
+- **From sensor A to sensor B in Ladder**: Hold an output on between two sensor events without a separate memory variable. Explain why a sensor that goes dark cannot hold the output by itself.
 - **Load and unload three boxes**: Count items with a counter that has a preset value. Use one counter to stop loading and another to know the batch is finished.
 - **Load and unload three boxes in Ladder**: Count items with a counter that has a preset value. Use one counter to stop loading and another to know the batch is finished.
 
@@ -365,10 +365,10 @@ Plants have time and continuous values. Timers, analog scaling and a PID loop co
 
 Objectives of the available lessons:
 
-- **Fill and drain with timers**: Time one step of a process with an on-delay timer (TON), using one timer for each step. Use a timer as a safety limit on a step that normally ends on a sensor, and let an emergency stop abort the cycle.
+- **Fill and drain with timers**: Time the steps of a process so that each timed step lasts its own time. Use a timer as a safety limit on a step that normally ends on a sensor, and let an emergency stop abort the cycle.
 - **Fill and drain with timers in Ladder**: Time one step of a process with an on-delay timer (TON), using one timer for each step. Use a timer as a safety limit on a step that normally ends on a sensor, and let an emergency stop abort the cycle.
-- **Read the level**: Scale an analog value to engineering units: convert to REAL first, then divide by the raw span. Read the plant map to find the raw range of each signal, and see what a wrong scale does to the process.
-- **Read the level in Ladder**: Scale an analog value to engineering units with boxes: convert to REAL first, then divide by the raw span. Read the plant map to find the raw range of each signal, and see what a wrong scale does to the process.
+- **Read the level**: Scale an analog value to engineering units so that fractions of a unit are kept. Read the plant map to find the raw range of each signal, and see what a wrong scale does to the process.
+- **Read the level in Ladder**: Scale an analog value to engineering units with boxes so that fractions of a unit are kept. Read the plant map to find the raw range of each signal, and see what a wrong scale does to the process.
 - **Hold the level with PID**: Run a PID loop with PID_Compact: set point, process value, gains, scan time and output limits. Tune the gains from the response of the level, and tell the effect of the proportional, integral and derivative terms apart.
 - **The same loop in function blocks**: Wire a PID_Compact function block in a diagram: set point, process value, gains, scan time and output limits on the left, the output on the right. Follow one value across the diagram, from the raw whole number of the level to metres and on to the inlet valve.
 
@@ -407,12 +407,12 @@ Manipulators add steps that must happen in order. Pick, place and assembly use t
 
 Objectives of the available lessons:
 
-- **Pick from one belt, place on another**: Sequence a pick and place with one state per move, each move waiting for its limit sensor. Wait for the grip feedback before lifting, and keep the receiving belt still while a box is put down.
-- **Pick from one belt, place on another in Ladder**: Sequence a pick and place with one state per move, each move waiting for its limit sensor. Wait for the grip feedback before lifting, and keep the receiving belt still while a box is put down.
+- **Pick from one belt, place on another**: Sequence a pick and place so that each move starts only when the previous one is complete. Lift a box only when the clamp reports that it holds it, and put each box down without disturbing it.
+- **Pick from one belt, place on another in Ladder**: Sequence a pick and place so that each move starts only when the previous one is complete. Lift a box only when the clamp reports that it holds it, and put each box down without disturbing it.
 - **Assemble lids and bases**: Coordinate two axes and a vacuum pad in one sequence, with one step for each move. Choose between two next steps with transition conditions that exclude each other.
 - **The same with numeric positions**: Send an axis to a named position with a setpoint and read its position back. Decide that a move is done when the position is within a tolerance of the setpoint, not when it is equal to it.
 - **Palletize in layers**: Build a layer by counting pairs of boxes, and square it before the clamp takes it. Keep the jog of each layer in an array and fill it with a FOR loop, so each layer sets down one box height higher than the one below.
-- **Palletize with a gantry**: Command three axes with integer counts and compare each position with its command within one count. Choose the place of each box from its number: the slot in the layer and the height of the layer.
+- **Palletize with a gantry**: Command three axes with integer counts and let every move wait until each axis has arrived. Choose the place of each box from its number: the slot in the layer and the height of the layer.
 
 ## Module 16: Sorting: decide a route from what the sensors report
 

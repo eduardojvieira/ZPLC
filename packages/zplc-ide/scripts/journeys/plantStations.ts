@@ -10,6 +10,7 @@ import { assert } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
 import type { Journey } from '../journeys';
 import { holdPushButton, openPlantDocument, plantFacts, runInSimulation, shippedSceneProject, writeSceneProject } from './plantSupport';
+import { pause } from '../journeyTiming';
 
 async function openScene(app: App, root: string, id: string) {
   const scene = shippedSceneProject(id);
@@ -96,7 +97,7 @@ export const journeysStations: Journey[] = [
       await app.press('Enter');
       await untilFacts(app, 'the red lamp to light', async () => (await lamp(app, 'red')).startsWith('●'), 30_000);
       const held = delivered(await plantFacts(app));
-      await Bun.sleep(3_000);
+      await pause(3_000);
       assert(delivered(await plantFacts(app)) === held, 'A box was delivered after the emergency stop.');
       assert(
         (await app.eval<string>(`document.querySelector('[data-plant-estop="EStop1"]').getAttribute('aria-pressed')`)) === 'true',

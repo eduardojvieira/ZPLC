@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-latch-two-sensors-ladder. Do not edit. >>> */}
 
-Sequence a move with a set coil and a reset coil: run the belt from sensor A until the box reaches sensor B.
+Hold a belt on between two sensors: run the belt when sensor A sees a box and stop it when the box reaches sensor B.
 
 ## Facts
 
@@ -19,13 +19,13 @@ Sequence a move with a set coil and a reset coil: run the belt from sensor A unt
 - Estimated time: 20 minutes
 - Languages: LD
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Latch between two sensors](../../plant/scenes/latch-two-sensors.md)
 - Prerequisites: [plant-belt-to-sensor](./plant-belt-to-sensor.md)
 
 ## Objectives
 
-- Use a set and a reset to hold an output between two events.
+- Hold an output on between two sensor events without a separate memory variable.
 - Explain why a sensor that goes dark cannot hold the output by itself.
 
 ## Stages

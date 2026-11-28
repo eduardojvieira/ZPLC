@@ -1,0 +1,376 @@
+{
+  "name": "BottleBatch",
+  "description": "A bottle-capping station that runs a conveyor for a batch of four bottles, lights BatchDone at four, and resets on ResetBatch.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "BatchRun",
+        "type": "BOOL",
+        "comment": "Memory: the batch has been started"
+      },
+      {
+        "name": "Bottles",
+        "type": "CTU",
+        "comment": "Counts the bottles passing the capping sensor"
+      },
+      {
+        "name": "BatchFull",
+        "type": "BOOL",
+        "comment": "Bottles.Q: four bottles have been counted"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "CycleStart",
+        "type": "BOOL",
+        "comment": "Push button: starts the batch"
+      },
+      {
+        "name": "CapSensor",
+        "type": "BOOL",
+        "comment": "Optical sensor: TRUE while a bottle is under the capper"
+      },
+      {
+        "name": "ResetBatch",
+        "type": "BOOL",
+        "comment": "Push button: clears the batch memory and counter"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Conveyor",
+        "type": "BOOL",
+        "comment": "Conveyor motor"
+      },
+      {
+        "name": "BatchDone",
+        "type": "BOOL",
+        "comment": "Indicator lamp: lit when four bottles have passed"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "CycleStart latches the batch memory.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r1_0_0",
+              "type": "contact_no",
+              "variable": "CycleStart",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r1_0_7",
+              "type": "coil_set",
+              "variable": "BatchRun",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "ResetBatch clears the batch memory.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r2_0_0",
+              "type": "contact_no",
+              "variable": "ResetBatch",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r2_0_7",
+              "type": "coil_reset",
+              "variable": "BatchRun",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "Count each bottle passing CapSensor up to four; bind Q to BatchFull.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r3_0_0",
+              "type": "contact_no",
+              "variable": "CapSensor",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r3_0_1",
+              "type": "function_block",
+              "fbType": "CTU",
+              "instance": "Bottles",
+              "parameters": {
+                "CU": "CONNECTED",
+                "R": "ResetBatch",
+                "PV": "4"
+              },
+              "outputs": {
+                "Q": "BatchFull"
+              },
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_4",
+      "number": 4,
+      "comment": "The conveyor runs while the batch is active and not yet full.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r4_0_0",
+              "type": "contact_no",
+              "variable": "BatchRun",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r4_0_1",
+              "type": "contact_nc",
+              "variable": "BatchFull",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r4_0_7",
+              "type": "coil",
+              "variable": "Conveyor",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_5",
+      "number": 5,
+      "comment": "BatchDone lights when the counter reaches four.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r5_0_0",
+              "type": "contact_no",
+              "variable": "BatchFull",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r5_0_7",
+              "type": "coil",
+              "variable": "BatchDone",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-28",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
