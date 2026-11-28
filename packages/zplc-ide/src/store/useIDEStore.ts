@@ -258,7 +258,7 @@ export interface UnsavedSource {
 }
 const unsavedSources = new Set<UnsavedSource>();
 
-/** A document that lives outside `loadedFiles` (the plant scene) is unsaved work for every guard, which can name and discard it (FLW-005). */
+/** A document outside `loadedFiles` (the plant scene) is unsaved work for every guard, which can name and discard it (FLW-005). */
 export function registerUnsavedSource(source: UnsavedSource): () => void {
   unsavedSources.add(source);
   return () => void unsavedSources.delete(source);
