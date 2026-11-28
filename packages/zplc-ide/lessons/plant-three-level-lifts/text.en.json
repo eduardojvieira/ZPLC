@@ -36,7 +36,7 @@
       "key": "observe",
       "title": "Observe",
       "body": "Watch both lifts in the {{ui:plant.panel.view3d}}: at times they move at the same time, and the transfer belt at level 2 is the only part that both of them use.",
-      "checkpoint": "Neither lift moves while its surface runs, and no box is dropped."
+      "checkpoint": "Both lifts are seen moving at the same time for a while, boxes reach the outfeed one after another, and no box is dropped."
     },
     {
       "key": "reflect",
@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "Copy the five steps of lift A and rename them B_LOAD to B_LOWER; lift B reads BAtLow, BAtHigh and BoxOnB, and sets BLoading instead of RunInfeed. Then start both chains with one transition: give the start transition a second target in toSteps, and keep the two chains apart from then on."
+      "text": "Copy the five steps of lift A and rename them B_LOAD to B_LOWER; lift B reads BAtLow, BAtHigh and BoxOnB, and sets BLoading instead of RunInfeed. Copy their actions and transitions; B writes BRun, BUp and BDown where A writes ARun, AUp and ADown; B_LOWER returns to B_LOAD. Then start both chains with one transition: give the start transition a second target in toSteps, which is B_LOAD, and keep the two chains apart from then on."
     }
   ],
   "faultCases": ["The starting program runs only lift A, so the boxes pile up on the transfer belt and none reaches the bin."]

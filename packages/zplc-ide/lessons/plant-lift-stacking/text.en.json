@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "Count a workpiece when CountEye ends (an F_TRIG), not when it starts. Wait for it to land before feeding the next one, with a TON of about two seconds (a workpiece settles in about a second, so two is enough), and between workpieces run the platform surface for a short moment so the workpieces do not pile on one spot."
+      "text": "Keep an INT Step and a Parts count, latch Start into Active and give EmitCrate the press. Step 1: run RunIn and RunLift until CrateEye sees the crate at AtLevel1. Step 2: Up, with RunLift FALSE, until AtLevel2. Step 3: give EmitPart one rising edge and run the feeder; on the falling edge of CountEye (an F_TRIG) add one to Parts. Step 4: keep the feeder running and wait about two seconds with a TON for the workpiece to land (it settles in about a second). Step 5: run RunLift for 0.3 s so the workpieces do not pile on one spot, then back to step 3, or to step 6 after the fifth. Step 6: Down until AtLevel1. Step 7: run RunLift and RunOut, and light Green on the falling edge of OutEye."
     }
   ],
   "faultCases": ["The starting program drives no output, so nothing moves."]

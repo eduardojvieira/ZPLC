@@ -78,7 +78,7 @@ La señal de un sensor tiene un comienzo y un final, y el programa puede actuar 
 
 Una llenadora de bolsas deja caer cuatro tornillos, uno por uno, en una bolsa, y enciende `Done` cuando la bolsa está llena. La entrada `ScrewEye` está en TRUE mientras un tornillo cae frente a un ojo bajo la tolva. Cada flanco ascendente de `Drop` suelta un tornillo.
 
-Los trabajos son: esperar `Start`, soltar un tornillo, esperar a que pase frente al ojo y terminar cuando han pasado cuatro. Cuatro trabajos dan cuatro pasos. Un conteo, `Screws`, decide si el paso 2 vuelve al paso 1 o sigue al paso 3.
+Los trabajos son: esperar una pulsación de `Start`, soltar un tornillo, esperar a que pase frente al ojo y terminar cuando han pasado cuatro. Cuatro trabajos dan cuatro pasos. Un conteo, `Screws`, decide si el paso 2 vuelve al paso 1 o sigue al paso 3.
 
 ```st
 PROGRAM BagFiller
@@ -88,11 +88,13 @@ VAR
     Step : INT;   (* 0 wait, 1 drop a screw, 2 wait for it to pass the eye, 3 bag full *)
     Screws : INT;
     Seen : R_TRIG;
+    Pressed : R_TRIG;
 END_VAR
 Seen(CLK := ScrewEye);
+Pressed(CLK := Start);
 Drop := FALSE;
 IF Step = 0 THEN
-    IF Start THEN
+    IF Pressed.Q THEN
         Screws := 0;
         Step := 1;
     END_IF;
@@ -109,15 +111,16 @@ ELSIF Step = 2 THEN
         END_IF;
     END_IF;
 ELSIF Step = 3 THEN
-    IF NOT Start THEN
-        Step := 0;
+    IF Pressed.Q THEN
+        Screws := 0;
+        Step := 1;
     END_IF;
 END_IF;
 Done := Step = 3;
 END_PROGRAM
 ```
 
-Léalo desde arriba. `Drop` está en FALSE en todos los ciclos de escaneo salvo aquel en que el paso 1 lo enciende, así que cada tornillo recibe un solo flanco ascendente. El paso 2 espera a `Seen.Q`, que está en TRUE durante un ciclo de escaneo cuando el ojo se activa, y cuenta el tornillo una sola vez, por mucho que permanezca en el haz. Tras el cuarto tornillo el programa pasa al paso 3, que enciende `Done` hasta que se suelta `Start`.
+Léalo desde arriba. `Drop` está en FALSE en todos los ciclos de escaneo salvo aquel en que el paso 1 lo enciende, así que cada tornillo recibe un solo flanco ascendente. El paso 2 espera a `Seen.Q`, que está en TRUE durante un ciclo de escaneo cuando el ojo se activa, y cuenta el tornillo una sola vez, por mucho que permanezca en el haz. Tras el cuarto tornillo el programa pasa al paso 3, que enciende `Done` hasta la pulsación siguiente de `Start`, que empieza la bolsa siguiente.
 
 Esta máquina no tiene elevador ni cajón, y un tornillo se cuenta cuando llega al ojo. La estación de la práctica tiene que traer un cajón, mover un elevador y echar cinco piezas, y cuándo cuenta cada una lo decide usted a partir de lo que hace la máquina.
 

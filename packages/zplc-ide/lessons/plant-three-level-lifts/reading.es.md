@@ -53,7 +53,7 @@ El elevador A reposa en el nivel 1 o en el nivel 2 de la planta. El elevador B r
 
 Datos de esta escena, de una ejecución de un programa terminado, en segundos desde el inicio:
 
-- El emisor de cajas `Source1` no está conectado al PLC. Pone una caja en la cinta de entrada cada 10 s haga lo que haga el programa, cinco cajas en total, la primera hacia los 10 s de la ejecución.
+- El emisor de cajas `Source1` no está cableado al PLC. Pone una caja en la cinta de entrada cada 10 s haga lo que haga el programa, cinco cajas en total, la primera hacia los 10 s de la ejecución.
 - Una caja tarda unos 4,5 s en recorrer la cinta de entrada desde que se suelta hasta `EyeFoot`. Una plataforma tarda unos 1,4 s en ir de su parte baja a su parte alta, o a la inversa.
 - La primera caja llega al depósito hacia los 26,7 s de la ejecución, y la quinta hacia los 68,7 s. El escenario pulsa Start a los {{t:200}} ms, lo suelta a los {{t:400}} ms y termina a los {{t:80000}} ms.
 - El paro de emergencia y la lámpara roja están conectados, pero el escenario nunca pulsa el paro y el programa terminado no lo lee.

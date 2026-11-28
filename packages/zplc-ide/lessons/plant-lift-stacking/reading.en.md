@@ -78,7 +78,7 @@ A sensor signal has a start and an end, and the program can act on either one. W
 
 A bag filler drops four screws, one at a time, into a bag, and lights `Done` when the bag is full. The input `ScrewEye` is TRUE while a screw falls past an eye under the chute. Each rising edge of `Drop` releases one screw.
 
-The jobs are: wait for `Start`, drop a screw, wait for it to pass the eye, and finish when four have passed. Four jobs give four steps. A count, `Screws`, decides whether step 2 goes back to step 1 or on to step 3.
+The jobs are: wait for a press of `Start`, drop a screw, wait for it to pass the eye, and finish when four have passed. Four jobs give four steps. A count, `Screws`, decides whether step 2 goes back to step 1 or on to step 3.
 
 ```st
 PROGRAM BagFiller
@@ -88,11 +88,13 @@ VAR
     Step : INT;   (* 0 wait, 1 drop a screw, 2 wait for it to pass the eye, 3 bag full *)
     Screws : INT;
     Seen : R_TRIG;
+    Pressed : R_TRIG;
 END_VAR
 Seen(CLK := ScrewEye);
+Pressed(CLK := Start);
 Drop := FALSE;
 IF Step = 0 THEN
-    IF Start THEN
+    IF Pressed.Q THEN
         Screws := 0;
         Step := 1;
     END_IF;
@@ -109,15 +111,16 @@ ELSIF Step = 2 THEN
         END_IF;
     END_IF;
 ELSIF Step = 3 THEN
-    IF NOT Start THEN
-        Step := 0;
+    IF Pressed.Q THEN
+        Screws := 0;
+        Step := 1;
     END_IF;
 END_IF;
 Done := Step = 3;
 END_PROGRAM
 ```
 
-Read it from the top. `Drop` is FALSE on every scan except the one in which step 1 turns it on, so each screw gets one rising edge. Step 2 waits for `Seen.Q`, which is TRUE for one scan when the eye turns on, and counts the screw once, however long it stays in the beam. After the fourth screw the program goes to step 3, which lights `Done` until `Start` is released.
+Read it from the top. `Drop` is FALSE on every scan except the one in which step 1 turns it on, so each screw gets one rising edge. Step 2 waits for `Seen.Q`, which is TRUE for one scan when the eye turns on, and counts the screw once, however long it stays in the beam. After the fourth screw the program goes to step 3, which lights `Done` until the next press of `Start`, which begins the next bag.
 
 This machine has no lift and no crate, and a screw is counted when it reaches the eye. The station of the practice has to bring in a crate, move a lift and feed five workpieces, and when each one counts is for you to decide from what the machine does.
 

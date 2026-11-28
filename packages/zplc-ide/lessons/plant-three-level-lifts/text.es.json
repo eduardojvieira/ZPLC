@@ -36,7 +36,7 @@
       "key": "observe",
       "title": "Observar",
       "body": "Observe ambos elevadores en la {{ui:plant.panel.view3d}}: a ratos se mueven a la vez, y la cinta de transferencia del nivel 2 es el único elemento que usan los dos.",
-      "checkpoint": "Ningún elevador se mueve mientras su superficie corre, y no cae ninguna caja."
+      "checkpoint": "Se ve a ambos elevadores moverse a la vez durante un rato, las cajas llegan a la cinta de salida una tras otra, y no cae ninguna caja."
     },
     {
       "key": "reflect",
@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "Copie los cinco pasos del elevador A y renómbrelos de B_LOAD a B_LOWER; el elevador B lee BAtLow, BAtHigh y BoxOnB, y fija BLoading en lugar de RunInfeed. Después arranque ambas cadenas con una transición: dé a la transición de arranque un segundo destino en toSteps, y mantenga las dos cadenas separadas desde ahí."
+      "text": "Copie los cinco pasos del elevador A y renómbrelos de B_LOAD a B_LOWER; el elevador B lee BAtLow, BAtHigh y BoxOnB, y fija BLoading en lugar de RunInfeed. Copie sus acciones y transiciones; B escribe BRun, BUp y BDown donde A escribe ARun, AUp y ADown; B_LOWER vuelve a B_LOAD. Después arranque ambas cadenas con una transición: dé a la transición de arranque un segundo destino en toSteps, que es B_LOAD, y mantenga las dos cadenas separadas desde ahí."
     }
   ],
   "faultCases": [

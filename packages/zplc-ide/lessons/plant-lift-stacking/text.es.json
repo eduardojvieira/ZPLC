@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Escriba el programa de la estación, guárdelo y pulse {{ui:learn.check}}. El proyecto inicial no acciona ninguna salida, así que nada se mueve. Tras Start, debe emitirse un cajón y llevarlo al elevador, el elevador debe subirlo, deben echarse cinco piezas dentro de él una por una, el elevador debe bajarlo y el cajón debe salir por la cinta de salida, con Green encendida cuando OutEye lo ha visto.",
+      "body": "Escriba el programa de la estación, guárdelo y pulse {{ui:learn.check}}. El proyecto inicial no acciona ninguna salida, así que nada se mueve. Tras Start, debe emitirse un cajón y llevarse al elevador, el elevador debe subirlo, deben echarse cinco piezas dentro de él una por una, el elevador debe bajarlo y el cajón debe salir por la cinta de salida, con Green encendida cuando OutEye lo ha visto.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "Cuente una pieza cuando CountEye termina (un F_TRIG), no cuando empieza. Espere a que aterrice antes de alimentar la siguiente, con un TON de unos dos segundos (una pieza se asienta en cerca de un segundo, así que dos bastan), y entre piezas haga correr la superficie de la plataforma un instante para que las piezas no se amontonen en un punto."
+      "text": "Mantenga un Step INT y un conteo Parts, retenga Start en Active y dé a EmitCrate la pulsación. Paso 1: haga funcionar RunIn y RunLift hasta que CrateEye vea el cajón en AtLevel1. Paso 2: Up, con RunLift en FALSE, hasta AtLevel2. Paso 3: dé a EmitPart un flanco ascendente y haga funcionar el alimentador; en el flanco descendente de CountEye (un F_TRIG) sume uno a Parts. Paso 4: mantenga el alimentador en marcha y espere unos dos segundos con un TON a que la pieza aterrice (se asienta en cerca de un segundo). Paso 5: haga funcionar RunLift durante 0,3 s para que las piezas no se amontonen en un punto, y vuelva al paso 3, o al paso 6 tras la quinta. Paso 6: Down hasta AtLevel1. Paso 7: haga funcionar RunLift y RunOut, y encienda Green en el flanco descendente de OutEye."
     }
   ],
   "faultCases": ["El proyecto inicial no acciona ninguna salida, así que nada se mueve."]
