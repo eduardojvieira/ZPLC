@@ -55,7 +55,7 @@ describe('the providers of the palette (FND-001)', () => {
     expect(titles('files')).toContain('Main.st');
     expect(titles('objects')).toEqual(expect.arrayContaining(['Pump', 'gCount', 'MainTask']));
     expect(titles('io')).toEqual(['StartPB', 'Motor']);
-    expect(titles('editors')).toHaveLength(5);
+    expect(titles('editors')).toHaveLength(6); // the five forms and the plant map (P4)
     expect(titles('lessons')).toEqual(['Seal-in in Ladder']);
     expect(titles('preferences').length).toBe(PREFERENCE_ENTRIES.length);
     expect(titles('scenes')).toEqual(['scene.json', 'line.scene.json']);

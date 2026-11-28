@@ -4,7 +4,7 @@
  */
 import type { MessageKey } from '../i18n';
 
-export const CONFIG_EDITOR_KINDS = ['tasks', 'io', 'network', 'communication', 'target'] as const;
+export const CONFIG_EDITOR_KINDS = ['tasks', 'io', 'plantMap', 'network', 'communication', 'target'] as const;
 export type ConfigEditorKind = (typeof CONFIG_EDITOR_KINDS)[number];
 
 export const isConfigEditorKind = (value: unknown): value is ConfigEditorKind =>
@@ -13,6 +13,7 @@ export const isConfigEditorKind = (value: unknown): value is ConfigEditorKind =>
 export const CONFIG_EDITOR_TITLE_KEYS: Record<ConfigEditorKind, MessageKey> = {
   tasks: 'configEditor.tasks.title',
   io: 'configEditor.io.title',
+  plantMap: 'configEditor.plantMap.title',
   network: 'configEditor.network.title',
   communication: 'configEditor.communication.title',
   target: 'configEditor.target.title',
@@ -27,3 +28,9 @@ export const configEditorViewId = (kind: ConfigEditorKind): string => `config:${
  */
 export const configCloseNeedsConfirmation = (configDirty: boolean, otherViewsOfConfiguration: number): boolean =>
   configDirty && otherViewsOfConfiguration === 0;
+
+/** The kind a view id stands for, or null: a layout kept from before a kind existed, or any other view, names none. */
+export const configKindOfViewId = (viewId: string): ConfigEditorKind | null => {
+  const kind = viewId.startsWith('config:') ? viewId.slice('config:'.length) : null;
+  return isConfigEditorKind(kind) ? kind : null;
+};

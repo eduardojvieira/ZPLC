@@ -248,6 +248,7 @@ export const COMMANDS = [
     pending: true,
     enabled: (s) => feedable(s),
   },
+  { id: 'project.plantMap', titleKey: 'command.project.plantMap', category: 'project', enabled: open },
   { id: 'view.showPlant', titleKey: 'command.view.showPlant', category: 'view', enabled: open },
 
   // The Assistant polish (AIX-003, AIX-007, plan-aix.md 9.2 and 9.4). Opening the MCP connection panel needs no project: the panel says to

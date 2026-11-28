@@ -65,9 +65,11 @@ describe('the plant map editor (PLS-006, SCN-012, SCN-013, LNK-002)', () => {
     const point = 'Main.Wrong';
     const io = {
       inputs: bool.direction === 'sensor' ? [{ path: point, pou: 'Main', name: 'Wrong', type: 'INT' }] : [],
-      outputs: bool.direction === 'command' ? [{ path: point, pou: 'Main', name: 'Wrong', type: 'INT', region: 'OPI', address: 0, size: 2 }] : [],
+      outputs:
+        bool.direction === 'command' ? [{ path: point, pou: 'Main', name: 'Wrong', type: 'INT', region: 'OPI', address: 0, size: 2 }] : [],
     } as unknown as IoMap;
-    const map = { schemaVersion: 2, target: { scene: scene.name }, signals: { [bool.name]: { direction: bool.direction, type: 'BOOL', point } } };
+    const entry = { direction: bool.direction, type: 'BOOL', point };
+    const map = { schemaVersion: 2, target: { scene: scene.name }, signals: { [bool.name]: entry } };
     const view = dom.render(<PlantMapEditor scene={scene} map={map as never} ioMap={io} />);
     expect(usePlantMapProblems.getState().problems.find((p) => p.signal === bool.name)?.kind).toBe('mismatch');
     await view.user.click(view.container.querySelector<HTMLButtonElement>(`[data-problem-signal="${bool.name}"]`)!);
@@ -90,11 +92,14 @@ describe('the plant map editor (PLS-006, SCN-012, SCN-013, LNK-002)', () => {
     expect(text).toMatch(/VAR_INPUT|VAR_OUTPUT/);
     view.unmount();
 
-    const ld = JSON.stringify({ name: 'Main', variables: { local: [{ name: 'Mine', type: 'INT' }], outputs: [] }, rungs: [] }, null, 2) + '\n';
+    const ld =
+      JSON.stringify({ name: 'Main', variables: { local: [{ name: 'Mine', type: 'INT' }], outputs: [] }, rungs: [] }, null, 2) + '\n';
     open(file('Main.ld.json', 'LD', ld));
     const again = dom.render(<PlantMapEditor scene={scene} ioMap={EMPTY} />);
     await again.user.click(dom.screen.getByRole('button', { name: dom.t('plantEditor.declCreate') }));
-    const model = JSON.parse(content('Main.ld.json')) as { variables: { local: { name: string }[]; inputs?: unknown[]; outputs: unknown[] } };
+    const model = JSON.parse(content('Main.ld.json')) as {
+      variables: { local: { name: string }[]; inputs?: unknown[]; outputs: unknown[] };
+    };
     expect(model.variables.local.map((v) => v.name)).toEqual(['Mine']);
     expect((model.variables.inputs?.length ?? 0) + model.variables.outputs.length).toBe(signals.length);
   });
@@ -108,7 +113,9 @@ describe('the plant map editor (PLS-006, SCN-012, SCN-013, LNK-002)', () => {
     expect(view.container.querySelectorAll('tr[data-signal]').length).toBe(signals.length);
     expect(usePlantMapProblems.getState().problems.filter((p) => p.kind === 'unbound').length).toBe(signals.length);
     view.unmount();
-    open(file('Main.fbd.json', 'FBD', JSON.stringify({ name: 'Main', variables: { local: [], outputs: [] }, blocks: [], connections: [] })));
+    open(
+      file('Main.fbd.json', 'FBD', JSON.stringify({ name: 'Main', variables: { local: [], outputs: [] }, blocks: [], connections: [] })),
+    );
     const again = dom.render(<PlantMapEditor scene={scene} ioMap={EMPTY} />);
     await again.user.click(dom.screen.getByRole('button', { name: dom.t('plantEditor.declCreate') }));
     expect(content('Main.fbd.json')).not.toContain('address');

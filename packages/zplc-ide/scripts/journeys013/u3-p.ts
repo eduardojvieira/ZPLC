@@ -209,4 +209,27 @@ export const journeysU3P: Journey[] = [
       }
     },
   },
+  // U3-P4: the plant map is a configuration editor.
+  {
+    name: 'U3-P4 the plant map opens as a configuration editor, a problem opens its row, and Create the declarations reports',
+    example: 'none',
+    proves: [],
+    partly: ['PLS-006', 'SCN-012', 'SCN-013'],
+    run: async (app, { root }) => {
+      const project = shippedSceneProject(SHIPPED.smallest);
+      app.answer(writeSceneProject(join(root, 'plant-map-editor'), project));
+      await app.click(button('Open project', 'contains'), 'the Open project button');
+      await app.until('the project workbench', async () => (await app.visible(toolbar)) || undefined);
+      await openPlantDocument(app, project);
+      await runFromPalette(app, 'project.plantMap', 'open the plant map');
+      await app.until('the plant map editor', async () => (await app.visible(css('[data-plant-map-editor]'))) || undefined, 30_000);
+      const problem = css('[data-plant-map-problems] button[data-problem-kind="unbound"]');
+      await app.until('an unbound signal as a problem', async () => (await app.visible(problem)) || undefined);
+      await app.click(problem, 'the first unbound signal problem');
+      const focused = await app.eval<boolean>(`document.activeElement?.closest('tr[data-signal]') !== null`);
+      assert(focused, 'The problem did not put the focus in the row of its signal.');
+      await app.click(button('Create declarations', 'contains'), 'Create declarations');
+      await app.until('what the action did', async () => (await app.visible(css('[data-plant-map-editor] [role="status"]'))) || undefined);
+    },
+  },
 ];

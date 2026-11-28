@@ -2505,6 +2505,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/navigator/ConfigEditorHost.test.tsx","test":"UX-013 renders exactly what the old section rendered: nothing is added to the form and nothing is dropped from it"},
     {"kind":"unit","ref":"packages/zplc-ide/src/navigator/ConfigEditorHost.test.tsx","test":"UX-013 shows, in the editor of each kind, the value of every setting that kind holds"},
     {"kind":"unit","ref":"packages/zplc-ide/src/navigator/ConfigEditorHost.test.tsx","test":"configuration editors keep every setting of the old page (UX-013)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/navigator/configEditors.test.ts","test":"configuration editor kinds (UX-013, PLS-006)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/store/useConfigEditors.test.ts","test":"UX-013 asks about unsaved edits only when no other view of zplc.json stays open"},
     {"kind":"unit","ref":"packages/zplc-ide/src/store/useConfigEditors.test.ts","test":"UX-013 has one editor for each of tasks, I/O mapping, network, communication and target"},
     {"kind":"unit","ref":"packages/zplc-ide/src/store/useConfigEditors.test.ts","test":"UX-013 leaves the tab open but not selected when a file is shown"},

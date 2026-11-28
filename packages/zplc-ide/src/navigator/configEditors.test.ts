@@ -3,9 +3,8 @@ import { projectLoaderStub } from '../test/projectLoaderStub';
 import { mock } from 'bun:test';
 
 await mock.module('../utils/projectLoader', () => projectLoaderStub());
-const { CONFIG_EDITOR_KINDS, CONFIG_EDITOR_TITLE_KEYS, configEditorViewId, configKindOfViewId, isConfigEditorKind } = await import(
-  './configEditors'
-);
+const { CONFIG_EDITOR_KINDS, CONFIG_EDITOR_TITLE_KEYS, configEditorViewId, configKindOfViewId, isConfigEditorKind } =
+  await import('./configEditors');
 const { editorsProvider } = await import('../commands/paletteSources/editors');
 const { SURFACES } = await import('../shell/surfaces');
 const { isCommandId } = await import('../commands/registry');

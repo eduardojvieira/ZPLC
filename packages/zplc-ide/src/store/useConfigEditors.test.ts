@@ -6,8 +6,8 @@ afterEach(() => useConfigEditors.getState().reset());
 
 describe('configuration editor tabs (UX-013)', () => {
   it('UX-013 has one editor for each of tasks, I/O mapping, network, communication and target', () => {
-    expect([...CONFIG_EDITOR_KINDS]).toEqual(['tasks', 'io', 'network', 'communication', 'target']);
-    expect(new Set(CONFIG_EDITOR_KINDS.map(configEditorViewId)).size).toBe(5);
+    expect([...CONFIG_EDITOR_KINDS]).toEqual(['tasks', 'io', 'plantMap', 'network', 'communication', 'target']);
+    expect(new Set(CONFIG_EDITOR_KINDS.map(configEditorViewId)).size).toBe(6);
   });
 
   it('UX-013 opens an editor as a tab, shows it, and does not open a second tab for the same editor', () => {

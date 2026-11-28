@@ -93,6 +93,7 @@ export function useShellCommands(): void {
         'view.terminal': showPanel('terminal'),
         'project.tasks': () => openConfigEditorFromNavigator('tasks'),
         'project.io': () => openConfigEditorFromNavigator('io'),
+        'project.plantMap': () => openConfigEditorFromNavigator('plantMap'),
         'project.network': () => openConfigEditorFromNavigator('network'),
         'project.communication': () => openConfigEditorFromNavigator('communication'),
         'project.target': () => openConfigEditorFromNavigator('target'),
