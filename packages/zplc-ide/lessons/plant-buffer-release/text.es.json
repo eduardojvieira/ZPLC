@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Acumular y liberar",
-  "summary": "Modele una estación de búfer como una máquina de estados: cargue cinco cajas, retenga en una cuchilla y libere una por cada pulsación del pulsador.",
+  "summary": "Modele una estación de búfer como una máquina de estados: cargue cinco cajas, retenga en un tope retráctil y libere una por cada pulsación del pulsador.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Modelar una estación con pasos y transiciones, un paso por cada cosa que hace la estación.",
@@ -11,19 +11,19 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/BufferRelease.sfc.json, construya el diagrama: IDLE, LOADING y WAIT para cargar cinco cajas, QUEUED para retenerlas, RELEASING, PASSING y COUNT para dejar salir una, y FINISHED.",
+      "body": "En src/BufferRelease.sfc.json, construya el diagrama de la estación: una pulsación del pulsador de inicio pone cinco cajas en la cinta del búfer y las retiene en el tope retráctil; cada pulsación del pulsador de liberación deja pasar exactamente una caja por EyeRelease; tras la quinta se enciende Done, y una caja que pasa el tope retráctil mientras la cola espera enciende Fault.",
       "checkpoint": "Cada paso fija todas las salidas, así que ver el paso activo dice qué hace la estación."
     },
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, recorra el diagrama: la pulsación de inicio lo lleva de IDLE a los pasos de carga, que encienden el búfer y emiten una caja cada dos segundos.",
-      "checkpoint": "La cuchilla retiene la cola tras la quinta caja; cada pulsación del pulsador de liberación deja pasar exactamente una caja por EyeRelease; tras la quinta liberación Done se enciende y Fault sigue apagada."
+      "body": "Antes de ejecutar, recorra el diagrama: la pulsación de inicio lo lleva de IDLE a los pasos de carga, que encienden el búfer y emiten una caja a la vez.",
+      "checkpoint": "El tope retráctil retiene la cola tras la quinta caja; cada pulsación del pulsador de liberación deja pasar exactamente una caja por EyeRelease; tras la quinta liberación Done se enciende y Fault sigue apagada."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial carga cajas pero nunca las retiene ni las libera de una en una; añada los pasos y transiciones que cuentan cinco cajas, retienen la cuchilla, liberan una por pulsación y terminan con Done.",
+      "body": "Corrija esta omisión del proyecto inicial, guárdelo y pulse {{ui:learn.check}}: El proyecto inicial carga cajas pero nunca las retiene ni las libera de una en una; añada los pasos y transiciones que cuentan cinco cajas, retienen el tope retráctil, liberan una por pulsación y terminan con Done.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -35,8 +35,8 @@
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe cómo cambia el paso activo en la vista del diagrama mientras las cajas hacen cola en la cuchilla y salen de una en una.",
-      "checkpoint": "La cuchilla baja solo mientras se libera una caja, pasa una caja por pulsación y Fault sigue apagada."
+      "body": "Observe cómo cambia el paso activo en la vista del diagrama mientras las cajas hacen cola en el tope retráctil y salen de una en una.",
+      "checkpoint": "El tope retráctil baja solo mientras se libera una caja, pasa una caja por pulsación y Fault sigue apagada."
     },
     {
       "key": "reflect",
@@ -52,10 +52,10 @@
     },
     {
       "level": 2,
-      "text": "Añada un paso COUNT tras PASSING para las cajas liberadas y haga que sus transiciones esperen un tiempo de paso corto para que la nueva cuenta sea visible; deje la cuchilla arriba (Hold TRUE) en todos los pasos salvo RELEASING y PASSING."
+      "text": "Añada un paso COUNT tras PASSING para las cajas liberadas; deje el tope retráctil arriba (Hold TRUE) en todos los pasos salvo RELEASING y PASSING."
     }
   ],
   "faultCases": [
-    "El programa inicial carga cajas pero nunca las retiene ni las libera de una en una; añada los pasos y transiciones que cuentan cinco cajas, retienen la cuchilla, liberan una por pulsación y terminan con Done."
+    "El proyecto inicial carga cajas pero nunca las retiene ni las libera de una en una; añada los pasos y transiciones que cuentan cinco cajas, retienen el tope retráctil, liberan una por pulsación y terminan con Done."
   ]
 }

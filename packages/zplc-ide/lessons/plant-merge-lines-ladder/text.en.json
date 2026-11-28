@@ -18,12 +18,12 @@
       "key": "predict",
       "title": "Predict",
       "body": "Before running, think about the merge point: both feeders carry boxes, but the outfeed fits one box at a time.",
-      "checkpoint": "Both blades hold the lines at first; then one blade opens at a time, line A first, and the next opens only after the box has left the zone; all six boxes leave and Done turns on."
+      "checkpoint": "Both blades hold the lines at first; then one blade opens at a time — line A wins when both boxes wait together — and the next opens only after the box has left the zone; all six boxes leave and Done turns on."
     },
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter has no rungs, so nothing is loaded and no blade moves; load three boxes on each feeder, open one blade at a time, with line A first, never both together, and open the next only when the previous box has left the merge zone.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter has no rungs, so nothing is loaded and no blade moves; load three boxes on each feeder, open one blade at a time, line A first when both wait, never both together, and open the next only when the previous box has left the merge zone.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "The ALWAYS assertion on collisions is the interlock check: a design that opened both blades could pass the delivery check and still fail it.",
+      "body": "The ALWAYS assertion on collisions is the interlock check: it fails the run if two boxes ever meet in the merge.",
       "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "The starter has no rungs, so nothing is loaded and no blade moves; load three boxes on each feeder, open one blade at a time, with line A first, never both together, and open the next only when the previous box has left the merge zone."
+    "The starter has no rungs, so nothing is loaded and no blade moves; load three boxes on each feeder, open one blade at a time, line A first when both wait, never both together, and open the next only when the previous box has left the merge zone."
   ]
 }
