@@ -18,6 +18,7 @@ const sceneOf = (id: string): PlantSceneFile => {
 afterEach(() => {
   usePlantEdit.getState().setRunning(false);
   usePlantEdit.getState().end();
+  usePlantEdit.setState({ unsaved: {} });
 });
 
 describe('the plant edit session (SCN-008, PLS-005)', () => {

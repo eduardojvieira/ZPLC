@@ -55,6 +55,7 @@ afterEach(() => {
   offerVisualHistory(() => false)();
   session().setRunning(false);
   session().end();
+  usePlantEdit.setState({ unsaved: {} });
   usePlantChoice.setState({ request: undefined, shown: undefined });
   usePlantDocument.setState({ open: false, active: false });
   resetCommandsForTest();

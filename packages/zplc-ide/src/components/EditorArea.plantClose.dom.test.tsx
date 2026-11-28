@@ -8,9 +8,11 @@ await stubMonaco();
 const realCodeEditor = { ...(await import('./CodeEditor')) };
 await mock.module('./CodeEditor', () => ({ ...realCodeEditor, CodeEditor: () => null }));
 // the plant document itself is not under test: the tab is
-await mock.module('../shell/PlantDocument', () => ({ PlantDocument: () => null }));
+const realPlantDocument = { ...(await import('../shell/PlantDocument')) };
+await mock.module('../shell/PlantDocument', () => ({ ...realPlantDocument, PlantDocument: () => null }));
 afterAll(async () => {
   await mock.module('./CodeEditor', () => realCodeEditor);
+  await mock.module('../shell/PlantDocument', () => realPlantDocument);
 });
 await import('../plant/core/plantCore'); // registers the shipped parts, as the application does
 const { useIDEStore } = await import('../store/useIDEStore');

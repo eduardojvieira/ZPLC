@@ -1,5 +1,5 @@
 import { createElement } from 'react';
-import { describe, expect, it } from 'bun:test';
+import { afterEach, describe, expect, it } from 'bun:test';
 import { setupDom, stubProjectLoader } from '../../test/dom';
 
 const dom = await setupDom();
@@ -31,6 +31,11 @@ function Host() {
   usePlantSession(undefined, { kind: 'empty' }, deps);
   return null;
 }
+
+afterEach(() => {
+  usePlantEdit.getState().end();
+  usePlantEdit.setState({ unsaved: {} });
+});
 
 describe('the plant session (SCN-006, FLW-005)', () => {
   it('FLW-005 Save all saves an edited scene and no other document is affected', async () => {

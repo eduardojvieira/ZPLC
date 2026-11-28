@@ -19,6 +19,7 @@ const session = usePlantEdit.getState;
 
 afterEach(() => {
   session().end();
+  usePlantEdit.setState({ unsaved: {} });
   usePlantMapProblems.setState({ problems: [], row: null });
 });
 

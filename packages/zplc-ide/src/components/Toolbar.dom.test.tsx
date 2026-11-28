@@ -725,6 +725,7 @@ describe('Save of the plant document (FLW-005) in a DOM', () => {
   };
   afterEach(() => {
     usePlantEdit.getState().end();
+    usePlantEdit.setState({ unsaved: {} });
     usePlantDocument.setState({ open: false, active: false });
   });
   const save = () => dom.screen.getByRole('button', { name: new RegExp(dom.t('toolbar.save.label')) });
