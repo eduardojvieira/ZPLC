@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "Copy the five steps of lift A and rename them B_LOAD to B_LOWER; lift B reads BAtLow, BAtHigh and BoxOnB, and sets BLoading instead of RunInfeed. Copy their actions and transitions; B writes BRun, BUp and BDown where A writes ARun, AUp and ADown; B_LOWER returns to B_LOAD. Then start both chains with one transition: give the start transition a second target in toSteps, which is B_LOAD, and keep the two chains apart from then on."
+      "text": "Copy the five steps of lift A and rename them B_LOAD to B_LOWER; lift B reads BAtLow, BAtHigh and BoxOnB, and sets BLoading instead of RunInfeed. Copy their actions and transitions; B writes BRun, BUp and BDown where A writes ARun, AUp and ADown; B_LOWER returns to B_LOAD, and B's actions leave out A's AUnloading assignments. Then start both chains with one transition: give the start transition a second target in toSteps, which is B_LOAD, and keep the two chains apart from then on."
     }
   ],
   "faultCases": ["The starting program runs only lift A, so the boxes pile up on the transfer belt and none reaches the bin."]

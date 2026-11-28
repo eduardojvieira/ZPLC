@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "Copie los cinco pasos del elevador A y renómbrelos de B_LOAD a B_LOWER; el elevador B lee BAtLow, BAtHigh y BoxOnB, y fija BLoading en lugar de RunInfeed. Copie sus acciones y transiciones; B escribe BRun, BUp y BDown donde A escribe ARun, AUp y ADown; B_LOWER vuelve a B_LOAD. Después arranque ambas cadenas con una transición: dé a la transición de arranque un segundo destino en toSteps, que es B_LOAD, y mantenga las dos cadenas separadas desde ahí."
+      "text": "Copie los cinco pasos del elevador A y renómbrelos de B_LOAD a B_LOWER; el elevador B lee BAtLow, BAtHigh y BoxOnB, y fija BLoading en lugar de RunInfeed. Copie sus acciones y transiciones; B escribe BRun, BUp y BDown donde A escribe ARun, AUp y ADown; B_LOWER vuelve a B_LOAD, y las acciones de B dejan fuera las asignaciones de AUnloading de A. Después arranque ambas cadenas con una transición: dé a la transición de arranque un segundo destino en toSteps, que es B_LOAD, y mantenga las dos cadenas separadas desde ahí."
     }
   ],
   "faultCases": [
