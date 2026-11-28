@@ -13,11 +13,11 @@ import { Modal } from '../components/Modal';
 import { DeleteFolderDialog, EntryNameDialog, MoveDialog } from '../components/ExplorerDialogs';
 import { saveAllDocuments } from '../store/saveAll';
 import { CloseProjectModal } from '../components/SidebarDialogs';
-import { useIDEStore } from '../store/useIDEStore';
+import { useIDEStore, unsavedSourceNames } from '../store/useIDEStore';
 import { collectFolders, parentPath } from '../project/treeOperations';
 import { createObject, renameTaskRow, type ObjectKind } from '../project/newObject';
 import { PLC_LANGUAGES, type FileTreeNode, type PLCLanguage } from '../types';
-import { unsavedOutcome } from '../utils/unsavedChanges';
+import { unsavedItems, unsavedOutcome } from '../utils/unsavedChanges';
 import type { ItemSubject } from './navigatorGroups';
 import { askNew, liveCreateContext, nodeOf, useNavigatorRequests, type ItemOperation } from './navigatorRequests';
 
@@ -213,6 +213,8 @@ function ItemDialog({ operation, subject, onDone }: { operation: ItemOperation; 
 }
 
 function CloseProjectDialog({ onDone }: { onDone: () => void }) {
+  const loadedFiles = useIDEStore((state) => state.loadedFiles);
+  const projectConfigDirty = useIDEStore((state) => state.projectConfigDirty);
   const [saving, setSaving] = useState(false);
   const afterClose = (closed: boolean): void => {
     onDone();
@@ -232,6 +234,7 @@ function CloseProjectDialog({ onDone }: { onDone: () => void }) {
   return (
     <CloseProjectModal
       isOpen
+      items={[...unsavedItems(loadedFiles.values(), projectConfigDirty), ...unsavedSourceNames()]}
       busy={saving}
       onSave={() => void saveAndClose()}
       onConfirm={() => afterClose(useIDEStore.getState().closeProject({ discardUnsaved: true }))}

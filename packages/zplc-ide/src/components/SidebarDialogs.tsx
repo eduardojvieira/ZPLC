@@ -80,9 +80,11 @@ export interface CloseProjectModalProps {
   onConfirm: () => void;
   onSave: () => void;
   onCancel: () => void;
+  /** The names of what is unsaved: the modified files and the scenes (FLW-005). */
+  items?: string[];
 }
 
-export function CloseProjectModal({ isOpen, busy, onConfirm, onSave, onCancel }: CloseProjectModalProps) {
+export function CloseProjectModal({ isOpen, busy, onConfirm, onSave, onCancel, items = [] }: CloseProjectModalProps) {
   const { t } = useT();
   return (
     <AlertDialog
@@ -95,6 +97,14 @@ export function CloseProjectModal({ isOpen, busy, onConfirm, onSave, onCancel }:
       busy={busy}
       onAction={onSave}
       onCancel={onCancel}
-    />
+    >
+      {items.length > 0 && (
+        <ul className="list-disc pl-5 text-sm text-[var(--color-surface-100)]" data-unsaved-changes-dialog>
+          {items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      )}
+    </AlertDialog>
   );
 }
