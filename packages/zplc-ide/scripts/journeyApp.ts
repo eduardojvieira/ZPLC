@@ -332,7 +332,13 @@ export async function launchApp(
       electronPath,
       '--headless',
       ...(options.gl === 'software'
-        ? ['--use-angle=swiftshader-webgl', '--use-gl=angle', '--enable-unsafe-swiftshader', '--disable-gpu-compositing']
+        ? [
+            '--use-angle=swiftshader-webgl',
+            '--use-gl=angle',
+            '--enable-unsafe-swiftshader',
+            '--disable-gpu-compositing',
+            '--disable-gpu-rasterization',
+          ]
         : ['--disable-gpu']),
       // pictures that two runs can compare: one raster thread, no sub-pixel text, one colour profile (opt-in)
       ...(options.stable ? ['--num-raster-threads=1', '--disable-lcd-text', '--force-color-profile=srgb'] : []),
