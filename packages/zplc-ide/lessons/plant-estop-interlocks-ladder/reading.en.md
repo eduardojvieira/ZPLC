@@ -104,7 +104,7 @@ This compressor may start again by itself: the end of its pause is a sensor, not
 - Reading `EStopOk` as "pressed". It is TRUE while the button is released, so a rung that reacts to a normally open contact of `EStopOk` reacts while nobody pushes anything.
 - Letting the line run again at the release. The scenario checks at 17.3 s, 0.3 s after the release, that Red is still lit and the outfeed belt is off.
 - Stopping only some outputs. At 16 s the scenario checks nine outputs: the three belts, and the up, down and run signals of both lifts.
-- Lighting Red from a contact of `EStopOk` instead of from the memory. At 17.3 s the button is released, yet Red must still be lit.
+- Lighting Red from a contact of `EStopOk`. At 17.3 s the button is released, yet Red must still be lit.
 - Forgetting to declare the memory. Every variable the program uses is declared, and a memory of the program is a local variable.
 
 > [!NOTE]

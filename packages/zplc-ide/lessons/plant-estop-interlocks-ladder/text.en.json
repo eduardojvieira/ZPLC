@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter ignores the emergency stop, so the line keeps running; stop every output while EStopOk is FALSE, light Red, keep the line stopped after the release and run it again only with a new press of Start.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter ignores the emergency stop: at 16 s, with it pressed, the line keeps running and Red stays off. While EStopOk is FALSE, every output must be off and Red lit; after the release the line must stay stopped and run again only with a new press of Start.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "The AT assertions pin the stop at 16 s, the held stop at 17.3 s and the restart at 18 s; the interlocks that were already in the program are the same idea as in the 2.0 lesson interlock-guard-permissive.",
+      "body": "The AT assertions pin the stop at 16 s, the held stop at 17.3 s and Red off at 18 s; the interlocks that were already in the program are the same idea as in the 2.0 lesson interlock-guard-permissive.",
       "checkpoint": "This stop is only what the program does with the EStopOk signal: it is not an emergency-stop circuit and it gives no stopping time. The grade cannot see a lift that keeps rising a little after the stop."
     }
   ],
@@ -52,10 +52,8 @@
     },
     {
       "level": 2,
-      "text": "Add a local BOOL variable Stopped. Draw the Start rungs first: with a normally open contact of Start in series with one of EStopOk, one rung sets Active and another resets Stopped. Then draw the stop rungs after them: with a normally closed contact of EStopOk, one rung sets Stopped and another resets Active, so the stop wins in the same scan. Light Red from Stopped with a contact and a coil. Every output already depends on Active, so no output needs its own stop logic."
+      "text": "Add a local BOOL variable Stopped. Replace the first rung, where Start sets Active, with two Start rungs: a normally open contact of Start in series with a normally open contact of EStopOk, one rung setting Active and the other resetting Stopped. Then draw the stop rungs after them: with a normally closed contact of EStopOk, one rung sets Stopped and another resets Active. In a last rung, a normally open contact of Stopped drives a coil Red. Every output already depends on Active, so no output needs its own stop logic."
     }
   ],
-  "faultCases": [
-    "The starter ignores the emergency stop, so the line keeps running; stop every output while EStopOk is FALSE, light Red, keep the line stopped after the release and run it again only with a new press of Start."
-  ]
+  "faultCases": ["The starter ignores the emergency stop: at 16 s, with it pressed, the line keeps running and Red stays off."]
 }
