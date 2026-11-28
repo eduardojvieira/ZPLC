@@ -56,7 +56,7 @@ describe('OSS-005 cross-reference guard', () => {
     expect(checkCrossrefs(makeFixture())).toEqual([]);
   });
 
-  test('fails when physical operations cite AGENTS.md rule 7 or guideline 7', () => {
+  test('fails when physical operations cite the wrong AGENTS.md guideline number', () => {
     const dir = makeFixture();
     write(dir, 'specs/001-demo/plan.md', 'No flash or force (AGENTS.md guideline 7).\n');
     const findings = checkCrossrefs(dir);
