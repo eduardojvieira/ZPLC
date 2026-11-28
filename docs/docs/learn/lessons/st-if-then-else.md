@@ -25,7 +25,7 @@ Show the state of a tank on three lamps with one IF statement, so that exactly o
 
 ## Objectives
 
-- Write one IF statement with ELSIF branches that picks one state out of three.
+- Write one IF statement with ELSIF and ELSE branches that picks one state out of three.
 - Make exactly one of three outputs ON at any time, whatever the level did before.
 
 ## Stages

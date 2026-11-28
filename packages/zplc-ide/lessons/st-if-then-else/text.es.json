@@ -4,7 +4,7 @@
   "summary": "Muestre el estado de un tanque en tres lámparas con una sola instrucción IF, de modo que haya exactamente una lámpara encendida en todo momento.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
-    "Escriba una instrucción IF con ramas ELSIF que elija un estado entre tres.",
+    "Escriba una instrucción IF con ramas ELSIF y ELSE que elija un estado entre tres.",
     "Haga que exactamente una de tres salidas esté encendida en todo momento, sea cual sea el nivel anterior."
   ],
   "stages": [
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Amplíe el proyecto inicial, guárdelo y pulse {{ui:learn.check}}. El proyecto inicial no muestra ninguna lámpara a los {{t:50}} ms, mientras el agua está entre las marcas. Haga que muestre exactamente una lámpara en cada momento del escenario, también cuando el agua pasa de un estado a otro. Escriba un IF con ramas ELSIF; usted decide qué hace cada rama.",
+      "body": "Amplíe el proyecto inicial, guárdelo y pulse {{ui:learn.check}}. El proyecto inicial no muestra ninguna lámpara a los {{t:50}} ms, mientras el agua está entre las marcas. Haga que muestre exactamente una lámpara en cada momento del escenario, también cuando el agua pasa de un estado a otro. Escriba un IF con ramas ELSIF y ELSE; usted decide qué hace cada rama.",
       "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {

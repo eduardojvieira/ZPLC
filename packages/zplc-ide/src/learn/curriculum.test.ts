@@ -202,23 +202,27 @@ describe('LRN-006 the course follows the curriculum table of the spec, in its or
     },
   );
 
-  it('LRN-006 begins with the tour of module 0, then the scan cycle, then the first blink in Ladder and in Structured Text', () => {
-    const ids = order.map((lesson) => lesson.id);
-    const tour = order.filter((lesson) => lesson.module === 0).map((lesson) => lesson.id);
-    expect(tour[0]).toBe('first-blink-simulation');
-    expect(ids.slice(0, tour.length)).toEqual(tour);
-    // S-13: in the full course an explanation comes before the practice that uses it, so the two reading lessons open module 1.
-    expect(ids.slice(tour.length, tour.length + 6)).toEqual([
-      'ld-what-is-a-plc',
-      'ld-scan-cycle',
-      'scan-cycle-one-scan-memory',
-      'st-if-then-else',
-      'blinky-ladder-timer-feedback',
-      'blink-structured-text',
-    ]);
-    // Kahn's order never takes a later module first: the module numbers only grow along the course.
-    expect(order.map((lesson) => lesson.module)).toEqual([...order.map((lesson) => lesson.module)].sort((a, b) => a - b));
-  });
+  it(
+    'LRN-006 begins with the tour of module 0, then the scan cycle, IF in Structured Text, then the first blink in Ladder and in ' +
+      'Structured Text',
+    () => {
+      const ids = order.map((lesson) => lesson.id);
+      const tour = order.filter((lesson) => lesson.module === 0).map((lesson) => lesson.id);
+      expect(tour[0]).toBe('first-blink-simulation');
+      expect(ids.slice(0, tour.length)).toEqual(tour);
+      // S-13: in the full course an explanation comes before the practice that uses it, so the two reading lessons open module 1.
+      expect(ids.slice(tour.length, tour.length + 6)).toEqual([
+        'ld-what-is-a-plc',
+        'ld-scan-cycle',
+        'scan-cycle-one-scan-memory',
+        'st-if-then-else',
+        'blinky-ladder-timer-feedback',
+        'blink-structured-text',
+      ]);
+      // Kahn's order never takes a later module first: the module numbers only grow along the course.
+      expect(order.map((lesson) => lesson.module)).toEqual([...order.map((lesson) => lesson.module)].sort((a, b) => a - b));
+    },
+  );
 
   it('LRN-006 states why the course is in this order, and why each module sits where it does, in both languages', () => {
     const { course } = LESSON_INDEX;

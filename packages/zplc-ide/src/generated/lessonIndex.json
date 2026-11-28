@@ -9599,7 +9599,7 @@
     },
     {
       "id": "st-if-then-else",
-      "version": 3,
+      "version": 4,
       "order": 69,
       "module": 1,
       "level": "foundation",
@@ -9652,7 +9652,7 @@
           "summary": "Show the state of a tank on three lamps with one IF statement, so that exactly one lamp is ON at any time.",
           "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
           "objectives": [
-            "Write one IF statement with ELSIF branches that picks one state out of three.",
+            "Write one IF statement with ELSIF and ELSE branches that picks one state out of three.",
             "Make exactly one of three outputs ON at any time, whatever the level did before."
           ],
           "stages": [
@@ -9671,7 +9671,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Extend the starting program, save it, then press Check. The starting program shows no lamp at 50 ms, while the water is between the marks. Make it show exactly one lamp at every moment of the scenario, also when the water goes from one state to another. Write one IF with ELSIF branches; you decide what each branch does.",
+              "body": "Extend the starting program, save it, then press Check. The starting program shows no lamp at 50 ms, while the water is between the marks. Make it show exactly one lamp at every moment of the scenario, also when the water goes from one state to another. Write one IF with ELSIF and ELSE branches; you decide what each branch does.",
               "checkpoint": "Check reports the scenario of this lesson as passed."
             },
             {
@@ -9712,7 +9712,7 @@
           "summary": "Muestre el estado de un tanque en tres lámparas con una sola instrucción IF, de modo que haya exactamente una lámpara encendida en todo momento.",
           "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
           "objectives": [
-            "Escriba una instrucción IF con ramas ELSIF que elija un estado entre tres.",
+            "Escriba una instrucción IF con ramas ELSIF y ELSE que elija un estado entre tres.",
             "Haga que exactamente una de tres salidas esté encendida en todo momento, sea cual sea el nivel anterior."
           ],
           "stages": [
@@ -9731,7 +9731,7 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Amplíe el proyecto inicial, guárdelo y pulse Comprobar. El proyecto inicial no muestra ninguna lámpara a los 50 ms, mientras el agua está entre las marcas. Haga que muestre exactamente una lámpara en cada momento del escenario, también cuando el agua pasa de un estado a otro. Escriba un IF con ramas ELSIF; usted decide qué hace cada rama.",
+              "body": "Amplíe el proyecto inicial, guárdelo y pulse Comprobar. El proyecto inicial no muestra ninguna lámpara a los 50 ms, mientras el agua está entre las marcas. Haga que muestre exactamente una lámpara en cada momento del escenario, también cuando el agua pasa de un estado a otro. Escriba un IF con ramas ELSIF y ELSE; usted decide qué hace cada rama.",
               "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
             },
             {

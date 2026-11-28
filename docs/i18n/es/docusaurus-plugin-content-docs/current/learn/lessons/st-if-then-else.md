@@ -25,7 +25,7 @@ Muestre el estado de un tanque en tres lámparas con una sola instrucción IF, d
 
 ## Objetivos
 
-- Escriba una instrucción IF con ramas ELSIF que elija un estado entre tres.
+- Escriba una instrucción IF con ramas ELSIF y ELSE que elija un estado entre tres.
 - Haga que exactamente una de tres salidas esté encendida en todo momento, sea cual sea el nivel anterior.
 
 ## Etapas
