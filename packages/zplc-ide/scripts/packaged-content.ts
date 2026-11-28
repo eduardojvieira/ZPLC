@@ -168,6 +168,10 @@ export function checkPackagedContent({ resources, repoRoot, requireFirmware = fa
       problems.push(`examples/${name} in the resources differs from the repository file`);
   }
 
+  // REL-026: the same zplc-mcp the release publishes as a separate download (electron-builder.yml extraResources)
+  if (!['zplc-mcp', 'zplc-mcp.exe'].some((name) => existsSync(join(resources, 'zplc-mcp', name))))
+    problems.push('zplc-mcp/zplc-mcp is not in the resources');
+
   // the licence notices: shipped, and naming every package and font that the archive holds
   const noticesPath = join(resources, 'THIRD-PARTY-NOTICES.txt');
   if (!existsSync(noticesPath) || statSync(noticesPath).size === 0) {

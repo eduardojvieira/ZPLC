@@ -403,12 +403,19 @@ jobs:
         if: ${{ steps.firmware.outcome == 'success' }}
         run: bun scripts/release/firmware-images.ts stage --bundle firmware-set --out packages/zplc-ide/dist-firmware
 
+      # REL-026: the CLI and the MCP server as standalone executables, built and run on this architecture. They are built before
+      # the installer because the installer carries the same zplc-mcp (resources/zplc-mcp).
+      - name: Build and smoke the standalone CLI and MCP server (macOS ${{ matrix.arch }})
+        run: bun scripts/release/binaries.ts --targets mac-${{ matrix.arch }} --out dist-bin --smoke --native
+
       - name: Build Electron app (macOS ${{ matrix.arch }})
         working-directory: packages/zplc-ide
         run: |
           bun run scripts/package-mac-release.mjs ${{ matrix.arch }}
         env:
           ZPLC_MAC_COPY_APP_BUNDLE: '1'
+          # the packaging script stages this zplc-mcp (built above) into its copy of the repository
+          ZPLC_MCP_DIST: ${{ github.workspace }}/dist-bin
 
       # Hosted macOS runners are the only place this can run (REL-002): ad-hoc signature, sealed resources,
       # hardened runtime, and the native runtime signed with the bundle, on each architecture.
@@ -475,10 +482,6 @@ jobs:
         env:
           ZPLC_REQUIRE_FIRMWARE: ${{ steps.firmware.outcome == 'success' && '1' || '0' }}
         run: bun run smoke:packaged-content
-
-      # REL-026: the CLI and the MCP server as standalone executables, built and run on this architecture.
-      - name: Build and smoke the standalone CLI and MCP server (macOS ${{ matrix.arch }})
-        run: bun scripts/release/binaries.ts --targets mac-${{ matrix.arch }} --out dist-bin --smoke --native
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -578,6 +581,15 @@ jobs:
             cp firmware/lib/zplc_core/build/Release/zplc_runtime.exe packages/zplc-ide/dist-native/
           fi
 
+      # REL-026: the CLI and the MCP server as standalone executables, built and run on this architecture. They are built before
+      # the installer because the installer carries the same zplc-mcp (resources/zplc-mcp).
+      - name: Build and smoke the standalone CLI and MCP server (Windows ${{ matrix.arch }})
+        run: bun scripts/release/binaries.ts --targets win-${{ matrix.arch }} --out dist-bin --smoke --native
+
+      - name: Stage zplc-mcp for the installer
+        working-directory: packages/zplc-ide
+        run: bun scripts/stage-mcp.ts --from ../../dist-bin
+
       - name: Build Electron app (Windows ${{ matrix.arch }})
         working-directory: packages/zplc-ide
         shell: pwsh
@@ -646,10 +658,6 @@ jobs:
         env:
           ZPLC_REQUIRE_FIRMWARE: ${{ steps.firmware.outcome == 'success' && '1' || '0' }}
         run: bun run smoke:packaged-content
-
-      # REL-026: the CLI and the MCP server as standalone executables, built and run on this architecture.
-      - name: Build and smoke the standalone CLI and MCP server (Windows ${{ matrix.arch }})
-        run: bun scripts/release/binaries.ts --targets win-${{ matrix.arch }} --out dist-bin --smoke --native
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -745,6 +753,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y rpm xvfb
 
+      # REL-026: the CLI and the MCP server as standalone executables, built and run on this architecture. They are built before
+      # the installer because the installer carries the same zplc-mcp (resources/zplc-mcp).
+      - name: Build and smoke the standalone CLI and MCP server (Linux ${{ matrix.arch }})
+        run: bun scripts/release/binaries.ts --targets linux-${{ matrix.arch }} --out dist-bin --smoke --native
+
+      - name: Stage zplc-mcp for the installer
+        working-directory: packages/zplc-ide
+        run: bun scripts/stage-mcp.ts --from ../../dist-bin
+
       - name: Build Electron app (Linux ${{ matrix.arch }})
         working-directory: packages/zplc-ide
         run: |
@@ -792,10 +809,6 @@ jobs:
         env:
           ZPLC_REQUIRE_FIRMWARE: ${{ steps.firmware.outcome == 'success' && '1' || '0' }}
         run: bun run smoke:packaged-content
-
-      # REL-026: the CLI and the MCP server as standalone executables, built and run on this architecture.
-      - name: Build and smoke the standalone CLI and MCP server (Linux ${{ matrix.arch }})
-        run: bun scripts/release/binaries.ts --targets linux-${{ matrix.arch }} --out dist-bin --smoke --native
 
       # Docker Hub tags, not actions: Debian 13, Ubuntu 24.04 and the current Fedora are the targets of REL-011.
       - name: Install and launch the .deb in clean Debian 13 and Ubuntu 24.04 containers
