@@ -27,6 +27,25 @@ import { discoverPackagedExecutable } from './run-packaged-desktop-smoke';
  */
 export const KNOWN_GAPS: Record<string, string> = {};
 
+const PROC = 'the process tree of the app is read from /proc, which only Linux has';
+const XDOTOOL = 'the real key press is made with xdotool on an X display, which only the Linux host has';
+/**
+ * Journeys that cannot run on a platform, with the reason (owner, L868). There a not-possible result is a visible skip, printed as not
+ * measured, and a failure still fails the run. What they cover has no evidence on that platform.
+ */
+export const PLATFORM_NOT_POSSIBLE: Partial<Record<NodeJS.Platform, Record<string, string>>> = {
+  win32: {
+    '35 A long test run can be cancelled and leaves no process behind': PROC,
+    '53 Ctrl+R in the development host asks before it discards unsaved work, through a real key press': XDOTOOL,
+  },
+  darwin: {
+    '35 A long test run can be cancelled and leaves no process behind': PROC,
+    '53 Ctrl+R in the development host asks before it discards unsaved work, through a real key press': XDOTOOL,
+    'VIS-016 the state of belt-to-sensor parts is drawn, the look follows the quality level and item colours match (real window)':
+      'the hosted macOS runner has no WebGL 2; the 3D view on macOS is checked by hand in the Mac rehearsal',
+  },
+};
+
 /**
  * `detail` is the evidence of a failure or the reason a journey is not possible; `notes` are steps the journey needed that a user should
  * not.
@@ -34,9 +53,14 @@ export const KNOWN_GAPS: Record<string, string> = {};
 export type Outcome = { status: 'pass' | 'fail' | 'not-possible'; detail: string; notes: string[] };
 
 /** The exit decision, kept apart from the runner so that it can be checked without launching anything. */
-export function judge(results: Array<{ name: string; outcome: Pick<Outcome, 'status'> }>, knownGaps: Record<string, string>): string[] {
+export function judge(
+  results: Array<{ name: string; outcome: Pick<Outcome, 'status'> }>,
+  knownGaps: Record<string, string>,
+  platformLimits: Record<string, string> = {},
+): string[] {
   const problems: string[] = [];
   for (const { name, outcome } of results) {
+    if (outcome.status === 'not-possible' && platformLimits[name]) continue;
     const known = knownGaps[name];
     if (outcome.status === 'pass' && known) problems.push(`"${name}" passes now: remove its entry (${known}) from KNOWN_GAPS`);
     if (outcome.status !== 'pass' && !known)
@@ -296,7 +320,10 @@ async function main(): Promise<void> {
           KNOWN_GAPS[name] ? ` (known gap ${KNOWN_GAPS[name]})` : ''
         }\n${outcome.detail}`,
       );
-  const problems = only ? [] : judge(results, KNOWN_GAPS);
+  const limits = PLATFORM_NOT_POSSIBLE[process.platform] ?? {};
+  for (const { name, outcome } of results)
+    if (outcome.status === 'not-possible' && limits[name]) console.log(`\nNOT MEASURED on ${process.platform}: ${name}: ${limits[name]}`);
+  const problems = only ? [] : judge(results, KNOWN_GAPS, limits);
   if (problems.length > 0) {
     console.error(`\n${problems.join('\n')}`);
     process.exit(1);

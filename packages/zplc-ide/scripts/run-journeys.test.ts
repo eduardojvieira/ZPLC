@@ -1,5 +1,15 @@
 import { describe, expect, test } from 'bun:test';
-import { allJourneys, capJourney, failureLine, journeyCapSeconds, judge, parseShard, selectJourneys, shardJourneys } from './run-journeys';
+import {
+  allJourneys,
+  capJourney,
+  failureLine,
+  journeyCapSeconds,
+  judge,
+  parseShard,
+  PLATFORM_NOT_POSSIBLE,
+  selectJourneys,
+  shardJourneys,
+} from './run-journeys';
 import { bypassingWaits } from './journeysWaitScan';
 import { JOURNEY_TIME_FACTOR, journeyFactor, scaleWait, waiting } from './journeyTiming';
 import type { Journey } from './journeys';
@@ -23,6 +33,27 @@ describe('journey verdict', () => {
 
   test('a listed gap that is not possible counts as the gap, not as a new failure', () => {
     expect(judge([{ name: 'known gap', outcome: { status: 'not-possible' } }], gaps)).toEqual([]);
+  });
+
+  // owner L868: a journey that cannot run on a platform is a visible skip there, never a silent one, and a failure still fails
+  test('a journey registered as not possible on this platform is a skip there, and its failure still fails the run', () => {
+    const limits = { 'only on linux': 'reads /proc' };
+    expect(judge([{ name: 'only on linux', outcome: { status: 'not-possible' } }], {}, limits)).toEqual([]);
+    expect(judge([{ name: 'only on linux', outcome: fail }], {}, limits)).toEqual(['"only on linux" failed and is not a known gap']);
+    expect(judge([{ name: 'only on linux', outcome: pass }], {}, limits)).toEqual([]);
+  });
+
+  test('35 and 53 are not possible on Windows and macOS, VIS-016 on macOS, each with its reason, and nothing on Linux', () => {
+    const names = new Set(allJourneys().map((journey) => journey.name));
+    const short = (platform: NodeJS.Platform) => Object.keys(PLATFORM_NOT_POSSIBLE[platform] ?? {}).map((name) => name.split(' ')[0]);
+    expect(short('win32')).toEqual(['35', '53']);
+    expect(short('darwin')).toEqual(['35', '53', 'VIS-016']);
+    expect(PLATFORM_NOT_POSSIBLE.linux).toBeUndefined();
+    for (const limits of Object.values(PLATFORM_NOT_POSSIBLE))
+      for (const [name, reason] of Object.entries(limits ?? {})) {
+        expect(names.has(name)).toBe(true);
+        expect(reason.length).toBeGreaterThan(20);
+      }
   });
 
   test('names a failure that is not listed', () => {
