@@ -34,3 +34,13 @@ export async function pressMod(app: App, chord: string, platform: NodeJS.Platfor
   await app.cdp.command('Input.dispatchKeyEvent', { type: 'keyDown', ...base, windowsVirtualKeyCode: event.keyCode, commands });
   await app.cdp.command('Input.dispatchKeyEvent', { type: 'keyUp', ...base, windowsVirtualKeyCode: event.keyCode });
 }
+
+/** A shortcut as the app names it on this platform (`Shift+F5`, or `⇧F5` on macOS). */
+export function shortcutText(shortcut: string, _platform: NodeJS.Platform = process.platform): string {
+  return shortcut.replace('Mod', 'Ctrl');
+}
+
+/** The accessible name of a control that carries its shortcut: `Stop (Shift+F5)`. */
+export function shortcutName(label: string, shortcut: string, platform: NodeJS.Platform = process.platform): string {
+  return `${label} (${shortcutText(shortcut, platform)})`;
+}

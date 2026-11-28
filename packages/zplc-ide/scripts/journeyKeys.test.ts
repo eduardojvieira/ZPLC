@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { chordEvent } from './journeyKeys';
+import { chordEvent, shortcutName, shortcutText } from './journeyKeys';
 
 for (const platform of ['linux', 'win32'] as const) {
   test(`on ${platform} Ctrl is the Control modifier (2)`, () => {
@@ -31,4 +31,16 @@ test('pressMod on darwin sends one Meta key down and up through the page, and on
     ['Input.dispatchKeyEvent', 'keyUp', 4],
     ['press', 'Ctrl+A'],
   ]);
+});
+
+test('the Stop button is named as the app names it on each platform', () => {
+  expect(shortcutName('Stop', 'Shift+F5', 'linux')).toBe('Stop (Shift+F5)');
+  expect(shortcutName('Stop', 'Shift+F5', 'win32')).toBe('Stop (Shift+F5)');
+  expect(shortcutName('Stop', 'Shift+F5', 'darwin')).toBe('Stop (⇧F5)');
+});
+
+test('the shortcut reference shows Mod+S as Ctrl+S, or ⌘S on macOS', () => {
+  expect(shortcutText('Mod+S', 'linux')).toBe('Ctrl+S');
+  expect(shortcutText('Mod+S', 'win32')).toBe('Ctrl+S');
+  expect(shortcutText('Mod+S', 'darwin')).toBe('⌘S');
 });
