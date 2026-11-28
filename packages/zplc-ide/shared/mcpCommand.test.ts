@@ -3,7 +3,7 @@ import { chmod, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { delimiter, join } from 'node:path';
 
-import { resolveMcpCommand } from './mcpCommand';
+import { resolveMcpCommand, transientResources } from './mcpCommand';
 
 // AIX-007: where zplc-mcp is, with a temporary PATH; the real PATH and home are never read.
 const temporary: string[] = [];
@@ -79,6 +79,30 @@ describe('where the MCP server is (AIX-007)', () => {
       const chosen = await binary(await scratch(), 'my-mcp');
       expect(await resolveMcpCommand({ ZPLC_MCP_BIN: chosen }, 'linux', resources)).toBe(chosen);
       expect(await resolveMcpCommand({ ZPLC_MCP_BIN: join(resources, 'missing') }, 'linux', resources)).toBeNull();
+    });
+
+    // an AppImage mounts its resources on a new folder at each launch, the Windows portable unpacks them to a temporary folder it
+    // deletes on exit, and macOS runs a quarantined or not-yet-moved app from a translocated or mounted copy: a path written there into
+    // a client configuration stops existing, so the copy is not offered and PATH answers
+    it.each([
+      ['an AppImage', { APPIMAGE: '/home/u/zplc.AppImage' }, 'linux'],
+      ['the Windows portable executable', { PORTABLE_EXECUTABLE_DIR: 'C:\\Users\\u\\Downloads' }, 'win32'],
+    ] as const)('is not offered from %s, whose resources do not outlive the app', async (_name, env, platform) => {
+      const resources = await scratch();
+      const onPath = await scratch();
+      const exe = platform === 'win32' ? 'zplc-mcp.exe' : 'zplc-mcp';
+      const onPathBinary = await binary(onPath, exe);
+      await bundled(resources, exe);
+      expect(await resolveMcpCommand({ ...env, PATH: onPath }, platform, resources)).toBe(onPathBinary);
+      expect(await resolveMcpCommand({ ...env }, platform, resources)).toBeNull();
+    });
+
+    it('is not offered from a translocated or mounted macOS app, and is offered from /Applications', () => {
+      expect(transientResources({}, 'darwin', '/private/var/folders/x/AppTranslocation/ABC/d/ZPLC.app/Contents/Resources')).toBe(true);
+      expect(transientResources({}, 'darwin', '/Volumes/ZPLC 2.1.0/ZPLC.app/Contents/Resources')).toBe(true);
+      expect(transientResources({}, 'darwin', '/Applications/ZPLC.app/Contents/Resources')).toBe(false);
+      expect(transientResources({}, 'linux', '/opt/ZPLC/resources')).toBe(false);
+      expect(transientResources({}, 'win32', 'C:\\Program Files\\ZPLC\\resources')).toBe(false);
     });
 
     it('falls back to PATH when the copy is missing, and is not looked for outside a packaged app', async () => {

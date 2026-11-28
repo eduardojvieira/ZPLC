@@ -3,7 +3,7 @@
 //
 //   bun scripts/stage-mcp.ts --from ../../dist-bin   the release workflow, after scripts/release/binaries.ts built it
 //   bun scripts/stage-mcp.ts                          a local build: builds the host's executable with binaries.ts first
-import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readdirSync } from 'node:fs';
+import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -30,5 +30,10 @@ if (import.meta.main) {
     });
     if (built.exitCode !== 0) process.exit(built.exitCode ?? 1);
   }
-  console.log(`stage-mcp: ${stageMcp(from, join(ide, 'dist-native', 'mcp'))}`);
+  try {
+    console.log(`stage-mcp: ${stageMcp(from, join(ide, 'dist-native', 'mcp'))}`);
+  } finally {
+    // the folder this run built the executables into (about 200 MB); a --from folder is the caller's and stays
+    if (flag < 0) rmSync(from, { recursive: true, force: true });
+  }
 }
