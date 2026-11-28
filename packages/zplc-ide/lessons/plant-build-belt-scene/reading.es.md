@@ -22,20 +22,20 @@ La estación tiene cuatro elementos. Las tablas dicen qué es cada uno en una pl
 
 Una salida del PLC acciona un elemento de la máquina; una entrada del PLC es lo que informa un elemento. Su programa solo ve las cuatro variables: nunca ve la caja misma, solo lo que el sensor dice de ella.
 
-## Una escena es piezas, nombres y enlaces
+## Una escena es elementos, nombres y enlaces
 
-La escena es una lista de piezas. Cada pieza tiene un nombre, una posición en el suelo, una rotación y ajustes propios, como el largo de una cinta. El nombre es la primera mitad de las señales de la pieza: una pieza llamada `Belt1` ofrece `Belt1.run`.
+La escena es una lista de elementos. Cada elemento tiene un nombre, una posición en el suelo, una rotación y ajustes propios, como el largo de una cinta. El nombre es la primera mitad de las señales del elemento: un elemento llamado `Belt1` ofrece `Belt1.run`.
 
 Una señal llega a su programa solo cuando usted la enlaza. En el editor se escribe el punto del programa, con la forma `Programa.Variable`, y se pulsa Enlazar; ZPLC nunca adivina una variable a partir de un nombre. Los enlaces se guardan en el mapa de planta, junto a la escena. Comprobar lee los dos archivos en la raíz del proyecto: `scene.json` y `plant-map.json`.
 
-El escenario de la lección busca dos piezas por su nombre: pulsa `StartButton` y lee cuántas cajas ha visto `EyeFar`. Si `EyeFar` falta o está mal escrito, Comprobar dice que el escenario nombra una pieza que la escena no tiene, la nombra y enumera las piezas que la escena sí tiene. Use los nombres de la sección de la máquina para los cuatro elementos.
+El escenario de la lección busca dos elementos por su nombre: pulsa `StartButton` y lee cuántas cajas ha visto `EyeFar`. Si `EyeFar` falta o está mal escrito, Comprobar dice que el escenario nombra un elemento que la escena no tiene, lo nombra y enumera los elementos que la escena sí tiene. Use los nombres de la sección de la máquina para los cuatro elementos.
 
 ## Construirla en el editor de escenas
 
 1. Abra la planta con {{ui:command.view.plant}} en la paleta de comandos. En {{ui:plant.panel.scene}}, la escena de la lección aparece como {{ui:plant.panel.projectScene}}. Déjela seleccionada: es la escena que lee Comprobar.
 2. Pulse {{ui:plant.panel.editScene}}. El editor necesita que la planta esté detenida.
-3. En {{ui:plantEditor.filterLabel}} y {{ui:plantEditor.addLabel}}, elija una pieza y pulse {{ui:plantEditor.add}}. La pieza aparece en el origen del suelo y queda seleccionada.
-4. En {{ui:plantEditor.formHeading}}, escriba el nombre, la posición X y Z en metros, la rotación en grados y los ajustes de la pieza. Un campo se aplica al pulsar Intro o al salir del campo. Las posiciones siguen una cuadrícula de 0,25 m, las rotaciones van en pasos de 15 grados, y una pieza soltada a menos de 0,15 m de un punto de enganche de otra pieza, como el extremo de una cinta, se engancha a él.
+3. En {{ui:plantEditor.filterLabel}} y {{ui:plantEditor.addLabel}}, elija un elemento y pulse {{ui:plantEditor.add}}. El elemento aparece en el origen del suelo y queda seleccionado.
+4. En {{ui:plantEditor.formHeading}}, escriba el nombre, la posición X y Z en metros, la rotación en grados y los ajustes del elemento. Un campo se aplica al pulsar Intro o al salir del campo. Las posiciones siguen una cuadrícula de 0,25 m, las rotaciones van en pasos de 15 grados, y un elemento soltado a menos de 0,15 m de un punto de enganche de otro elemento, como el extremo de una cinta, se engancha a él.
 5. En {{ui:plantEditor.signalsHeading}}, escriba el punto del programa de cada señal que aún no esté enlazada y pulse Enlazar.
 6. Pulse {{ui:plantEditor.done}} y después {{ui:plant.panel.saveToProject}}. Para la escena de la lección no pide un nombre y escribe `scene.json` y `plant-map.json` en la raíz del proyecto.
 
@@ -43,7 +43,7 @@ Si en cambio elige {{ui:plant.panel.emptyFloor}} en {{ui:plant.panel.scene}}, {{
 
 ## Cómo ve una caja un sensor difuso
 
-El haz de un sensor óptico difuso parte de la posición de la pieza y avanza por el eje +x propio de la pieza tantos metros como indique su ajuste de alcance. Una cinta también avanza por +x. La rotación gira el haz alrededor del eje vertical: con rotación 0 el sensor mira a lo largo de la cinta, y una rotación de 90 grados lo gira de +x hacia -z. En la imagen de la máquina el haz es la fina línea roja de puntos.
+El haz de un sensor óptico difuso parte de la posición del elemento y avanza por el eje +x propio del elemento tantos metros como indique su ajuste de alcance. Una cinta también avanza por +x. La rotación gira el haz alrededor del eje vertical: con rotación 0 el sensor mira a lo largo de la cinta, y una rotación de 90 grados lo gira de +x hacia -z. En la imagen de la máquina el haz es la fina línea roja de puntos.
 
 Deben cumplirse tres cosas para que el sensor vea una caja. El haz debe cruzar el camino de la caja. Debe ser lo bastante largo para llegar a la caja. Y la caja debe estar en él: el sensor está en TRUE solo mientras la caja está en el haz, y vuelve a FALSE en cuanto la caja ha pasado.
 
@@ -90,9 +90,9 @@ options:
 ```
 
 ```quiz
-question: 'Usted construye la escena con {{ui:plant.panel.emptyFloor}} elegido en la lista de escenas y pulsa {{ui:plant.panel.saveToProject}}. ¿Por qué Comprobar sigue diciendo que el escenario nombra una pieza que la escena no tiene?'
+question: 'Usted construye la escena con {{ui:plant.panel.emptyFloor}} elegido en la lista de escenas y pulsa {{ui:plant.panel.saveToProject}}. ¿Por qué Comprobar sigue diciendo que el escenario nombra un elemento que la escena no tiene?'
 options:
-  - { text: 'Porque el editor guarda solo las piezas que ya están enlazadas', feedback: 'El editor guarda todas las piezas que usted colocó. El problema es adónde fue el archivo.' }
+  - { text: 'Porque el editor guarda solo los elementos que ya están enlazados', feedback: 'El editor guarda todos los elementos que usted colocó. El problema es adónde fue el archivo.' }
   - { text: 'Porque la planta tiene que ejecutarse una vez antes de que Comprobar pueda leer la escena', feedback: 'Comprobar lee los archivos guardados; la planta no tiene que ejecutarse.' }
   - { text: 'Porque se guardó en scenes/<nombre>.scene.json, y Comprobar lee scene.json en la raíz', correct: true, feedback: 'Correcto. Solo la escena de la lección se guarda en su lugar, en la raíz.' }
 ```
