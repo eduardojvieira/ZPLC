@@ -223,6 +223,8 @@ export const journeysU3P: Journey[] = [
       await openPlantDocument(app, project);
       await runFromPalette(app, 'project.plantMap', 'open the plant map');
       await app.until('the plant map editor', async () => (await app.visible(css('[data-plant-map-editor]'))) || undefined, 30_000);
+      // The shipped map binds every signal: unbinding one through the editor creates the situation to check.
+      await app.click(button('Unbind ', 'prefix'), 'the Unbind button of the first bound signal');
       const problem = css('[data-plant-map-problems] button[data-problem-kind="unbound"]');
       await app.until('an unbound signal as a problem', async () => (await app.visible(problem)) || undefined);
       await app.click(problem, 'the first unbound signal problem');
