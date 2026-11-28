@@ -1,0 +1,110 @@
+{
+  "schema": 1,
+  "licence": "Original illustrations made for ZPLC (P17, SCN-003): generated from generic prompts that name no product, brand or logo. Distributed under the MIT License of the repository (LICENSE).",
+  "assets": {
+    "hero-rung-to-terminal.avif": {
+      "tool": "Antigravity CLI (agy) 1.4.5 image generation tool, run in a scratch folder outside the repository",
+      "model": "not reported by tool on success (agy 1.4.5 image generation backend)",
+      "prompt": "docs/design/prompts/h1-hero-rung-to-terminal.try3.txt",
+      "date": "2026-10-24",
+      "postProcessing": "Reviewed by eye against docs/design/image-plan.md and converted once to AVIF with ImageMagick: magick <generated>.png -quality 72 hero-rung-to-terminal.avif",
+      "licence": "MIT (LICENSE)"
+    },
+    "hero-rung-to-terminal-720.avif": {
+      "tool": "Antigravity CLI (agy) 1.4.5 image generation tool, run in a scratch folder outside the repository",
+      "model": "not reported by tool on success (agy 1.4.5 image generation backend)",
+      "prompt": "docs/design/prompts/h1-hero-rung-to-terminal.try3.txt",
+      "date": "2026-10-24",
+      "postProcessing": "Resized and converted to AVIF from the hero-rung-to-terminal.avif source with ImageMagick: magick <generated>.png -resize 720x -quality 72 hero-rung-to-terminal-720.avif",
+      "licence": "MIT (LICENSE)"
+    },
+    "hero-rung-to-terminal-1080.avif": {
+      "tool": "Antigravity CLI (agy) 1.4.5 image generation tool, run in a scratch folder outside the repository",
+      "model": "not reported by tool on success (agy 1.4.5 image generation backend)",
+      "prompt": "docs/design/prompts/h1-hero-rung-to-terminal.try3.txt",
+      "date": "2026-10-24",
+      "postProcessing": "Resized and converted to AVIF from the hero-rung-to-terminal.avif source with ImageMagick: magick <generated>.png -resize 1080x -quality 72 hero-rung-to-terminal-1080.avif",
+      "licence": "MIT (LICENSE)"
+    },
+    "plant-tank-light.avif": {
+      "tool": "Antigravity CLI (agy) 1.4.5 image generation tool, run in a scratch folder outside the repository",
+      "model": "not reported by tool on success (agy 1.4.5 image generation backend)",
+      "prompt": "docs/design/prompts/g1-plant-tank-light.txt",
+      "date": "2026-10-22",
+      "postProcessing": "Reviewed by eye against docs/design/image-plan.md and converted to AVIF with ImageMagick: magick <generated>.png -resize 900x672 -quality 72 plant-tank-light.avif",
+      "licence": "MIT (LICENSE)"
+    },
+    "plant-tank-dark.avif": {
+      "tool": "Antigravity CLI (agy) 1.4.5 image generation tool, run in a scratch folder outside the repository",
+      "model": "not reported by tool on success (agy 1.4.5 image generation backend)",
+      "prompt": "docs/design/prompts/g1-plant-tank-dark.txt (with plant-tank-light as reference)",
+      "date": "2026-10-22",
+      "postProcessing": "Reviewed by eye against docs/design/image-plan.md and converted to AVIF with ImageMagick: magick <generated>.png -resize 900x672 -quality 72 plant-tank-dark.avif",
+      "licence": "MIT (LICENSE)"
+    },
+    "plant-conveyor-light.avif": {
+      "tool": "Antigravity CLI (agy) 1.4.5 image generation tool, run in a scratch folder outside the repository",
+      "model": "not reported by tool on success (agy 1.4.5 image generation backend)",
+      "prompt": "docs/design/prompts/g2-plant-conveyor-light.txt",
+      "date": "2026-10-22",
+      "postProcessing": "Reviewed by eye against docs/design/image-plan.md and converted to AVIF with ImageMagick: magick <generated>.png -resize 900x672 -quality 72 plant-conveyor-light.avif",
+      "licence": "MIT (LICENSE)"
+    },
+    "plant-conveyor-dark.avif": {
+      "tool": "Antigravity CLI (agy) 1.4.5 image generation tool, run in a scratch folder outside the repository",
+      "model": "not reported by tool on success (agy 1.4.5 image generation backend)",
+      "prompt": "docs/design/prompts/g2-plant-conveyor-dark.txt (with plant-conveyor-light as reference)",
+      "date": "2026-10-22",
+      "postProcessing": "Reviewed by eye against docs/design/image-plan.md and converted to AVIF with ImageMagick: magick <generated>.png -resize 900x672 -quality 72 plant-conveyor-dark.avif",
+      "licence": "MIT (LICENSE)"
+    },
+    "plant-motor-light.avif": {
+      "tool": "Antigravity CLI (agy) 1.4.5 image generation tool, run in a scratch folder outside the repository",
+      "model": "not reported by tool on success (agy 1.4.5 image generation backend)",
+      "prompt": "docs/design/prompts/g3-plant-motor-light.txt",
+      "date": "2026-10-22",
+      "postProcessing": "Reviewed by eye against docs/design/image-plan.md and converted to AVIF with ImageMagick: magick <generated>.png -resize 900x672 -quality 72 plant-motor-light.avif",
+      "licence": "MIT (LICENSE)"
+    },
+    "plant-motor-dark.avif": {
+      "tool": "Antigravity CLI (agy) 1.4.5 image generation tool, run in a scratch folder outside the repository",
+      "model": "not reported by tool on success (agy 1.4.5 image generation backend)",
+      "prompt": "docs/design/prompts/g3-plant-motor-dark.txt (with plant-motor-light as reference)",
+      "date": "2026-10-22",
+      "postProcessing": "Reviewed by eye against docs/design/image-plan.md and converted to AVIF with ImageMagick: magick <generated>.png -resize 900x672 -quality 72 plant-motor-dark.avif",
+      "licence": "MIT (LICENSE)"
+    },
+    "plant-crossing-light.avif": {
+      "tool": "Antigravity CLI (agy) 1.4.5 image generation tool, run in a scratch folder outside the repository",
+      "model": "not reported by tool on success (agy 1.4.5 image generation backend)",
+      "prompt": "docs/design/prompts/g4-plant-crossing-light.txt",
+      "date": "2026-10-22",
+      "postProcessing": "Reviewed by eye against docs/design/image-plan.md and converted to AVIF with ImageMagick: magick <generated>.png -resize 900x672 -quality 72 plant-crossing-light.avif",
+      "licence": "MIT (LICENSE)"
+    },
+    "plant-crossing-dark.avif": {
+      "tool": "ImageMagick (derived from plant-crossing-light.avif, originally generated with agy 1.4.5)",
+      "model": "none (deterministic Lab lightness inversion of plant-crossing-light.avif)",
+      "prompt": "none: derived from plant-crossing-light.avif (prompt docs/design/prompts/g4-plant-crossing-light.txt)",
+      "date": "2026-10-22",
+      "postProcessing": "Lab lightness inverted and remapped with ImageMagick: magick g4-light.png -colorspace Lab -channel R -negate +channel -colorspace sRGB +level-colors '#070F13','#E9F0EE' and converted with -resize 900x672 -quality 72",
+      "licence": "MIT (LICENSE)"
+    },
+    "boards-on-rail-light.avif": {
+      "tool": "Antigravity CLI (agy) 1.4.5 image generation tool, run in a scratch folder outside the repository",
+      "model": "not reported by tool on success (agy 1.4.5 image generation backend)",
+      "prompt": "docs/design/prompts/g5-boards-light.txt",
+      "date": "2026-10-24",
+      "postProcessing": "Reviewed by eye against docs/design/image-plan.md and converted once to AVIF with ImageMagick: magick <generated>.png -quality 72 boards-on-rail-light.avif",
+      "licence": "MIT (LICENSE)"
+    },
+    "boards-on-rail-dark.avif": {
+      "tool": "Antigravity CLI (agy) 1.4.5 image generation tool, run in a scratch folder outside the repository",
+      "model": "not reported by tool on success (agy 1.4.5 image generation backend)",
+      "prompt": "docs/design/prompts/g5-boards-dark.txt (with boards-on-rail-light as reference)",
+      "date": "2026-10-24",
+      "postProcessing": "Reviewed by eye against docs/design/image-plan.md and converted once to AVIF with ImageMagick: magick <generated>.png -quality 72 boards-on-rail-dark.avif",
+      "licence": "MIT (LICENSE)"
+    }
+  }
+}

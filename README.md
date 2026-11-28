@@ -239,7 +239,7 @@ bun test packages/zplc-compiler/src/compiler/compiler.test.ts
 
 ## Licence
 
-ZPLC is licensed under the MIT License. See [LICENSE](LICENSE).
+ZPLC source code and course content are licensed under the MIT License. See [LICENSE](LICENSE), [NOTICE.md](NOTICE.md) and [Licences and asset origin records](docs/docs/reference/licences.md) for the licence of every bundled asset family and the origin records of generated assets.
 
 ## Acknowledgments
 
