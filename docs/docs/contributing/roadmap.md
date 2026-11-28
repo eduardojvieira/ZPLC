@@ -17,7 +17,7 @@ Each item is merged and backed by a check that CI or a repeatable local command 
 
 - **Five languages.** Structured Text, Instruction List, Ladder Diagram, Function Block Diagram and Sequential Function Chart compile for the same runtime, each with its own editor, online values and breakpoints. The [conformance matrix](../reference/capabilities-evidence.md) records which elements work, which are rejected on purpose and which are not proven.
 - **Simulation and debugging.** The simulator is the native runtime itself, bundled with the application. It supports pause, one-cycle step, watch, force, a live I/O faceplate and scenario tests that also run from `zplc-cli` in CI.
-- **Learn.** A course of 97 lessons in 20 modules, 14 of them in two languages (Structured Text or Ladder), in English and Spanish, with a Ladder path from zero whose lessons open on reading pages with figures and labs you can try. See [Learn](../learn/index.md).
+- **Learn.** A course of 98 lessons in 20 modules, 14 of them in two languages (Structured Text or Ladder), in English and Spanish, with a Ladder path from zero whose lessons open on reading pages with figures and labs you can try. See [Learn](../learn/index.md).
 - **Boards.** Seven board profiles cross-build with a flash and RAM budget each, and a port conformance suite checks the hardware abstraction layer. The level of every board is `cross-build`; see [Hardware support](../reference/capabilities-evidence.md).
 - **A firmware test method on Linux.** The Zephyr suites run on `native_sim` and on QEMU Cortex-M targets. See [Firmware testing](../development/firmware-testing.md).
 - **One generated source for the binary contract**, with a draft counter that the compiler, the loader, the runtime and the application compare.

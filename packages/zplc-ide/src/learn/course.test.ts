@@ -45,8 +45,15 @@ describe('the course view', () => {
     expect(view.modules.map((module) => module.id)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
     const one = view.modules[1]!;
     expect(one).toMatchObject({ level: 'foundation', requires: 0 });
-    expect(one.lessons.map((lesson) => lesson.id)).toEqual(['ld-what-is-a-plc', 'ld-scan-cycle', SECOND, THIRD, 'blink-structured-text']);
-    expect(one.estimatedMinutes).toBe(75);
+    expect(one.lessons.map((lesson) => lesson.id)).toEqual([
+      'ld-what-is-a-plc',
+      'ld-scan-cycle',
+      SECOND,
+      THIRD,
+      'blink-structured-text',
+      'st-if-then-else',
+    ]);
+    expect(one.estimatedMinutes).toBe(87);
     expect(one.title).toContain('scan cycle');
   });
 
