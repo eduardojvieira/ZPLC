@@ -24,19 +24,19 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter has no mode: a press of Start in manual starts the cycle and the jog buttons do nothing; switch with ModeBtn, allow Start only in automatic, and move the pad with the jog buttons only in manual.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press {{ui:toolbar.run.label}} (F5) and open the {{ui:plant.panel.view3d}}.",
       "checkpoint": "The required scenario is named plant-manual-auto and contains {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Observe",
       "body": "Watch the pad follow the jog buttons in the first seconds, ignore Start, then assemble three lids on three bases in automatic while a jog button is held.",
-      "checkpoint": "The amber light is off in manual and on in automatic; the green light shows when three assemblies are done, and the return to manual leaves every output off."
+      "checkpoint": "The amber light is off in manual and on while the automatic cycle runs; the green light shows when three assemblies are done, and the return to manual leaves every output off."
     },
     {
       "key": "reflect",

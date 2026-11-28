@@ -1,10 +1,10 @@
 ## La máquina
 
-Esta estación une dos piezas en una sola: una tapa llega por la cinta izquierda, una base llega por la cinta central, y un manipulador de dos ejes levanta la tapa con una ventosa y la coloca sobre la base. Una vez colocada la tapa, el tope retráctil de la cinta de bases se abre y el ensamble terminado sale por la cinta de salida hacia el retirador.
+Esta estación une dos piezas en una sola: una tapa llega por la cinta izquierda, una base llega por la cinta central, y un manipulador de dos ejes levanta la tapa con una ventosa y la coloca sobre la base. Una vez colocada la tapa, el tope retráctil de la cinta de bases se abre y el ensamblaje terminado sale por la cinta de salida hacia el retirador.
 
 ![La escena del ensamblador de dos ejes vista de frente. Tres cintas transportadoras están en línea de izquierda a derecha: LidBelt con LidEmitter, LidBlade y LidEye a la izquierda; BaseBelt con BaseEmitter, BaseBlade y BaseEye en el centro; y ExitBelt terminando en Remover1 a la derecha. Un bastidor manipulador de dos ejes, Pick1, une LidBelt y BaseBelt. StartButton está detrás de LidBelt y StackLight1 está junto a ExitBelt. Cada elemento tiene una etiqueta con su nombre, su tipo y sus señales conectadas.](images/machine.es.png)
 
-La estación tiene trece elementos. Las tablas dicen qué es cada uno en una planta real y qué significan sus señales para su programa. La variable del PLC es el nombre que usa el programa: el mapa de planta de la lección une cada señal de la escena con ella.
+La imagen y las tablas muestran trece de sus elementos. Las tablas dicen qué es cada uno en una planta real y qué significan sus señales para su programa. La variable del PLC es el nombre que usa el programa: el mapa de planta de la lección une cada señal de la escena con ella.
 
 | Elemento      | Tipo                    | Qué es en una planta real                                                                                                             |
 | ------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
@@ -97,7 +97,7 @@ Esta máquina tiene un pulsador y un solo significado para él. La estación de 
 
 ## Errores comunes
 
-- Gobernar con el nivel del pulsador un trabajo que debe ocurrir una vez. Si `Release` fuera `Take AND NOT Empty`, estaría en TRUE en cada ciclo de escaneo de la pulsación, y en la ejecución una pulsación de 0,4 s contó al menos 39 tickets en vez de uno.
+- Gobernar con el nivel del pulsador un trabajo que debe ocurrir una vez. Si `Release` fuera `Take AND NOT Empty`, estaría en TRUE en cada ciclo de escaneo de la pulsación, y en la ejecución una pulsación de 0,4 s contó 40 tickets en vez de uno.
 - Gobernar con el flanco un trabajo que debe durar mientras se mantiene el pulsador. El flanco dura un ciclo de escaneo, así que la salida también duraría uno, no lo que dura el dedo.
 - Dejar que Start actúe en todos los modos. En el proyecto inicial, una pulsación de Start con la máquina en manual arranca el ciclo de inmediato: en el escenario, cuando se pulsa Start a los 5,2 s, las cintas corren y se pone una tapa y una base en sus cintas.
 

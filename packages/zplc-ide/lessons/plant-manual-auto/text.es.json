@@ -24,19 +24,19 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial no tiene modo: una pulsación de Start en manual arranca el ciclo y los pulsadores de avance no hacen nada; cambie con ModeBtn, admita Start solo en automático y mueva el brazo con los pulsadores de avance solo en manual.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse {{ui:toolbar.run.label}} (F5) y abra la {{ui:plant.panel.view3d}}.",
       "checkpoint": "El escenario requerido se llama plant-manual-auto y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observar",
       "body": "Observe cómo el brazo sigue los pulsadores de avance en los primeros segundos, ignora Start, y luego ensambla tres tapas sobre tres bases en automático mientras se mantiene un pulsador de avance.",
-      "checkpoint": "La luz ámbar está apagada en manual y encendida en automático; la luz verde aparece al terminar los tres ensamblajes, y la vuelta a manual deja todas las salidas apagadas."
+      "checkpoint": "La luz ámbar está apagada en manual y encendida mientras corre el ciclo automático; la luz verde aparece al terminar los tres ensamblajes, y la vuelta a manual deja todas las salidas apagadas."
     },
     {
       "key": "reflect",
