@@ -59,12 +59,12 @@ span: 2400
 signals:
   - { name: AtTop, edges: [0, 200] }
   - { name: JogDown, edges: [200, 600] }
-  - { name: Moving, edges: [200, 850] }
-  - { name: OpenClamp, edges: [1250, 2400] }
-caption: Al terminar el desplazamiento temporizado, el eje aún frena por inercia antes de abrir la pinza
+  - { name: Moving, edges: [200, 1000] }
+  - { name: OpenClamp, edges: [1200, 2400] }
+caption: Un desplazamiento de 400 ms en Palletizer1 queda en reposo 800 ms después de empezar, y solo entonces se abre la pinza
 ```
 
-Observe el margen entre el apagado de `JogDown` y el encendido de `OpenClamp`. Soltar la salida solo inicia el frenado; el cabezal sigue moviéndose hasta quedar en reposo.
+Observe el margen entre el apagado de `JogDown` y el encendido de `OpenClamp`. Soltar la salida solo inicia el frenado; el cabezal sigue moviéndose hasta quedar en reposo. En `Palletizer1` este desplazamiento de 400 ms es corto, así que el cabezal necesita otros 400 ms para detenerse: queda en reposo 800 ms después de que empezó el desplazamiento (`d = 2 * 0.4 * 0.4 = 0.32 m`). El diagrama muestra un desplazamiento ideal de exactamente 400 ms. En el simulador la salida sigue al programa con un ciclo de escaneo (10 ms) de retraso, así que un desplazamiento fijado en `PT` dura `PT + 10 ms` y el cabezal se detiene un poco más abajo.
 
 ## Ejemplo resuelto
 

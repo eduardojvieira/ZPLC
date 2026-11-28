@@ -33,8 +33,9 @@ END_VAR
 
 (* Goal: on Start, stack three layers of four boxes on Pallet1.
    Raise the head first: it starts at its lowest and the boxes would meet it.
-   Fill JogMs with a FOR loop on Start: the second layer sets down 580 ms
-   below YMax and each layer after it is one box height (140 ms) higher.
+   Fill JogMs with a FOR loop on Start: each layer after the first sets
+   down one box height (0.3 m) higher than the one below; work out each jog
+   from the axis speed and acceleration (see the reading).
    For each layer, load two pairs of boxes (one Emit1 and one Emit2 pulse
    makes a pair; count the pairs with EyeIn), run the Infeed until
    LayerReady, then Square the block and wait for Squared. Retract the

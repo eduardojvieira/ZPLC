@@ -17,7 +17,7 @@
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, siga el cabezal: parte de su posición más baja y sube primero, la primera capa baja hasta YMin y cada capa posterior baja el descenso JogMs[Layer], menos que la inferior en una altura de caja, así que se detiene una altura de caja más arriba.",
+      "body": "Antes de ejecutar, siga el cabezal: parte de su posición más baja y sube primero, la primera capa baja hasta YMin y cada capa posterior baja el descenso JogMs[Layer] y se detiene una altura de caja más arriba que la capa inferior.",
       "checkpoint": "El empujador se retrae antes de que el cabezal se mueva; la pinza se abre solo sobre la tarima; Green se enciende tras la tercera capa."
     },
     {
@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "Declare JogMs : ARRAY[0..2] OF INT y un índice INT i. La posición 0 no se usa, porque la primera capa baja hasta YMin. Al pulsar Start, FOR i := 1 TO 2 DO JogMs[i] := 720 - 140 * i; END_FOR; da los descensos 580 y 440, de modo que cada capa se detenga una altura de caja más arriba que la anterior. Mientras Layer sea menor que 3, use INT_TO_TIME(JogMs[Layer]) como preselección del temporizador que corre mientras el cabezal baja sobre la tarima."
+      "text": "Declare JogMs : ARRAY[0..2] OF INT y un índice INT i. La posición 0 no se usa, porque la primera capa baja hasta YMin. Al pulsar Start, FOR i := 1 TO 2 DO JogMs[i] := 720 - 140 * i; END_FOR; da los descensos 580 y 440, de modo que cada capa se detenga aproximadamente una altura de caja más arriba que la anterior (los desplazamientos son cortos, así que alturas iguales no son tiempos iguales). Mientras Layer sea menor que 3, use INT_TO_TIME(JogMs[Layer]) como preselección del temporizador que corre mientras el cabezal baja sobre la tarima."
     }
   ],
   "faultCases": [
