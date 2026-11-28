@@ -101,7 +101,8 @@ const SPECIAL: Record<
       `const { shellDensity } = await import('/src/shell/shellDensity.ts'); ` +
       `const compact = shellDensity(window.innerWidth) === 'compact'; useSecondaryView.getState().show('assistant'); ` +
       `useSecondaryView.getState().setInPrimary(compact); ` +
-      `if (compact) useShellLayout.getState().setPrimaryVisible(true); else useShellLayout.getState().setSecondaryVisible(true); return 'ran'; })()`,
+      `const layout = useShellLayout.getState(); if (compact) layout.setPrimaryVisible(true); else layout.setSecondaryVisible(true); ` +
+      `return 'ran'; })()`,
   },
   // a lesson with a reading, opened as a person opens it from the Learn home: its reading, the try-it in it, then the exercise
   'learn.reading': { lesson: { id: LESSON_SAMPLE, stage: 'reading' }, state: 'normal' },
@@ -116,6 +117,16 @@ const SPECIAL: Record<
       'opened by the Import a project archive button of the Welcome screen, which asks for an archive file through a native ' +
       'dialog the capture cannot answer yet; screens.md maps it to file.export and file.exportProjectJson, which export instead',
   },
+};
+/**
+ * The state each surface really shows with the fixture (Blinky open, one output, the assembler scene, nothing run, a fresh profile),
+ * where it is not the first state screens.md lists. A capture is named by the state on screen; the others are not produced.
+ */
+const SHOWN: Record<string, string> = {
+  'activity.tests': 'empty',
+  'activity.plant': 'normal',
+  'results.output': 'normal',
+  'editor.plant': 'waiting for Run',
 };
 /** Why a surface has no way in yet; what a fixture cannot show without a real failure or a hook in the product code. */
 const REASONS: Record<string, string> = {
@@ -280,6 +291,7 @@ export function plan(surfaces: Surface[]): { reached: Plan[]; unreached: Array<{
     }
     reached.push({ surface, state: surface.states[0]!, command });
   }
+  for (const entry of reached) if (SHOWN[entry.surface.id]) entry.state = SHOWN[entry.surface.id]!;
   return { reached, unreached };
 }
 
@@ -732,6 +744,16 @@ async function main(): Promise<void> {
   }
   const lessonCaptures = captures.filter((capture) => capture.surface.startsWith('lesson.'));
   if (lessonCaptures.length > 0) writeFileSync(join(out, 'sheet-lessons.html'), sheet('Lessons', lessonCaptures));
+  for (const condition of conditions) {
+    const name = conditionName(condition);
+    const planned =
+      reached.filter((entry) => conditionsFor(entry.surface).some((c) => conditionName(c) === name)).length +
+      lessons.flatMap((lesson) => lesson.kinds).filter((kind) => lessonConditions(kind).some((c) => conditionName(c) === name)).length;
+    const got = captures.filter((capture) => capture.condition === name).length;
+    const missed = failed.filter((entry) => entry.reason.startsWith(`${name}: `));
+    console.log(`  ${name}: ${got} of ${planned} planned captured, ${missed.length} failed`);
+    for (const entry of missed) console.log(`    failed: ${entry.surface}: ${entry.reason.slice(name.length + 2)}`);
+  }
   const defects = captures.reduce((total, capture) => total + capture.defects.length, 0);
   const summary = defectSummary(captures);
   console.log(`uxv: ${captures.length} captures, ${defects} measured defects, ${notReached.length} surfaces not reached; ${out}`);
@@ -739,7 +761,8 @@ async function main(): Promise<void> {
   for (const [kind, count] of Object.entries(summary.byKind)) console.log(`    ${kind}: ${count}`);
   for (const note of notes) console.log(`  note: ${note}`);
   for (const { condition, error } of failedConditions) console.log(`  condition ${condition} failed: ${error.split('\n')[0]}`);
-  process.exit(defects === 0 && failedConditions.length === 0 ? 0 : 1);
+  // a planned surface that did not show is a failure of the run, whatever the defects say
+  process.exit(defects === 0 && failedConditions.length === 0 && failed.length === 0 ? 0 : 1);
 }
 
 if (import.meta.main) await main();
