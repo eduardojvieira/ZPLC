@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objective",
       "body": "In src/LatchTwoSensors.ld.json the inputs EyeA and EyeB and the output Run are declared, and there are no rungs yet. A box starts in front of EyeA; the belt must start when EyeA sees the box, keep running after the box leaves EyeA, and stop when EyeB sees the box.",
-      "checkpoint": "You can say why the belt must keep running after EyeA goes dark, and which sensor wins if both see a box."
+      "checkpoint": "You can say why the belt must keep running after EyeA goes dark, and what the belt must do if EyeA and EyeB both see a box."
     },
     {
       "key": "predict",
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Draw the rungs, save the program, then press {{ui:learn.check}}. The starting program has no rungs, so the belt never runs. The belt must start when EyeA sees the box, keep running once the box leaves EyeA, and stop as soon as EyeB sees the box, with the stop taking priority if both sensors are active together.",
+      "body": "Draw the rungs, save the program, then press {{ui:learn.check}}. The starting program has no rungs, so the belt never runs. The belt must start when EyeA sees the box, keep running once the box leaves EyeA, and stop as soon as EyeB sees the box.",
       "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The scenario checks that both sensors saw the box and that Run is off at {{t:8000}} ms. What would happen if a second box arrived in front of EyeA while the first box was still waiting in front of EyeB?",
-      "checkpoint": "With both EyeA and EyeB TRUE in the same scan, you can say whether the belt stays stopped or moves, and which rung order decides it."
+      "checkpoint": "With both EyeA and EyeB TRUE in the same scan, you can say whether the belt stays stopped or moves, and which of your rungs decides it."
     }
   ],
   "hints": [

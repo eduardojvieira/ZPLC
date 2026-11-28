@@ -1,10 +1,10 @@
 ## The machine
 
-This station moves one crate from the left end of a belt to the right end without an operator button. The crate starts already resting in front of sensor `EyeA`. Once the belt moves, the crate leaves `EyeA` behind and travels across the empty middle of the belt until it reaches sensor `EyeB`, where it must stop.
+This station moves one box from the left end of a belt to the right end without an operator button. The box starts already resting in front of sensor `EyeA`. Once the belt moves, the box leaves `EyeA` behind and travels across the empty middle of the belt until it reaches sensor `EyeB`, where it must stop.
 
-![The latch-two-sensors scene seen from the front. A belt conveyor on legs runs from left to right with a cardboard crate resting near its left end, directly in front of the EyeA sensor. Near the right end, a second optical sensor EyeB looks across the belt. Each part has a label with its name, its kind and its wired signal.](images/machine.en.png)
+![The latch-two-sensors scene seen from the front. A belt conveyor on legs runs from left to right with a cardboard box resting near its left end, directly in front of the EyeA sensor. Near the right end, a second optical sensor EyeB looks across the belt. Each part has a label with its name, its kind and its wired signal.](images/machine.en.png)
 
-The station has four parts. The crate itself is not wired to the PLC: your program knows where it is only from the two sensors.
+The station has four parts. The box itself is not wired to the PLC: your program knows where it is only from the two sensors.
 
 | Part    | Kind                   | What it is in a real plant                                                                        |
 | ------- | ---------------------- | ------------------------------------------------------------------------------------------------- |
@@ -22,17 +22,17 @@ The station has four parts. The crate itself is not wired to the PLC: your progr
 
 ## Holding an output between two sensors
 
-As soon as the belt moves the crate a few centimetres, the crate leaves the beam of `EyeA`, and `EyeA` goes FALSE. For most of the trip, **neither sensor sees the crate**. If a plain coil on `Run` were driven straight from `EyeA`, the belt would inch forward until the crate cleared the first beam and then stop in the middle of the belt.
+As soon as the belt moves the box about 20 cm, the box leaves the beam of `EyeA`, and `EyeA` goes FALSE. For most of the trip, **neither sensor sees the box**. If a plain coil on `Run` were driven straight from `EyeA`, the belt would inch forward until the box cleared the first beam and then stop in the middle of the belt.
 
 In Ladder, you do not always need a separate memory variable for this. An output variable can hold its own state when you drive it with a **SET coil** `(S)` on one rung and a **RESET coil** `(R)` on another rung. Once the SET rung conducts, the output stays TRUE scan after scan even after the first sensor goes dark, until the RESET rung conducts and clears it.
 
 ```timing
 span: 6000
 signals:
-  - { name: EyeA, edges: [0, 600] }
-  - { name: EyeB, edges: [4600, 6000] }
-  - { name: Run, edges: [0, 4600] }
-caption: EyeA goes dark long before EyeB sees the crate, so Run must stay latched in between
+  - { name: EyeA, edges: [0, 660] }
+  - { name: EyeB, edges: [3460, 6000] }
+  - { name: Run, edges: [0, 3460] }
+caption: EyeA goes dark long before EyeB sees the box, so Run must stay latched in between
 ```
 
 Two choices depend on the machine:
@@ -63,11 +63,11 @@ caption: Turn LowLevel on, pulse HighLevel on and off, then turn LowLevel off; t
 
 Press Run. Switch `LowLevel` on, then switch `HighLevel` on and back off: `Pump` stays on between the two levels. Switch `LowLevel` off: `Pump` stops. Now switch `HighLevel` on while `LowLevel` is still off: `Pump` runs, because rung 2 comes last.
 
-Your belt station uses two optical sensors that both turn TRUE when they see a crate, and its stop priority is for you to decide from what must happen if both sensors ever see a crate at once.
+In your belt station, the signal table tells you how each sensor reads, and which rung wins is for you to decide from what must happen to a box already waiting at EyeB when another box reaches EyeA.
 
 ## Common mistakes
 
-- Driving a plain `Run` coil from `EyeA`. The crate moves just clear of `EyeA` and stops halfway down the belt.
+- Driving a plain `Run` coil from `EyeA`. The box moves just clear of `EyeA` and stops halfway down the belt.
 - Choosing the contact type by habit instead of reading the signal table. Check whether the sensor is TRUE or FALSE at the moment it must act.
 - Drawing the SET and RESET rungs in the wrong order for the machine's priority. Always check what happens if both conditions are TRUE in the same scan.
 - Driving the same output with both a plain coil and a SET or RESET coil. A latched output is written only by its SET and RESET rungs.
@@ -78,11 +78,11 @@ Your belt station uses two optical sensors that both turn TRUE when they see a c
 ## Check yourself
 
 ```quiz
-question: 'Why does a plain coil from EyeA to Run fail to move the crate to EyeB?'
+question: 'Why does a plain coil from EyeA to Run fail to move the box to EyeB?'
 options:
-  - { text: 'Because EyeA turns FALSE as soon as the crate leaves its beam, so a plain coil turns Run off before the crate reaches EyeB', correct: true, feedback: 'Yes. Neither sensor sees the crate across the middle of the belt, so Run must stay latched.' }
+  - { text: 'Because EyeA turns FALSE as soon as the box leaves its beam, so a plain coil turns Run off before the box reaches EyeB', correct: true, feedback: 'Yes. Neither sensor sees the box across the middle of the belt, so Run must stay latched.' }
   - { text: 'Because EyeA cannot drive an output coil directly', feedback: 'A contact can drive a coil directly; the problem is that EyeA goes dark too soon.' }
-  - { text: 'Because EyeB overrides EyeA while the crate is in the middle', feedback: 'EyeB is FALSE while the crate is in the middle of the belt.' }
+  - { text: 'Because EyeB overrides EyeA while the box is in the middle', feedback: 'EyeB is FALSE while the box is in the middle of the belt.' }
 ```
 
 ```quiz
@@ -95,4 +95,4 @@ options:
 
 ## What you will do in the practice
 
-The starting program declares the inputs EyeA and EyeB and the output Run, and has no rungs yet. A crate starts in front of EyeA; you will draw the rungs so the belt starts when EyeA sees the crate, keeps running after EyeA goes dark, and stops when EyeB sees the crate, with the stop winning if both sensors are active together. Then press {{ui:learn.check}}.
+The starting program declares the inputs EyeA and EyeB and the output Run, and has no rungs yet. A box starts in front of EyeA; you will draw the rungs so the belt starts when EyeA sees the box, keeps running after EyeA goes dark, and stops when EyeB sees the box. Then press {{ui:learn.check}}.

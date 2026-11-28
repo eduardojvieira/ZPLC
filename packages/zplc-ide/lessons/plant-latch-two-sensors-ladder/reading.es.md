@@ -22,16 +22,16 @@ La estación tiene cuatro elementos. La caja misma no está cableada al PLC: su 
 
 ## Mantener una salida entre dos sensores
 
-En cuanto la cinta desplaza la caja unos centímetros, la caja sale del haz de `EyeA` y `EyeA` pasa a FALSE. Durante casi todo el recorrido, **ningún sensor ve la caja**. Si una bobina simple en `Run` se accionara directamente desde `EyeA`, la cinta avanzaría apenas hasta sacar la caja del primer haz y se detendría a mitad de camino.
+En cuanto la cinta desplaza la caja unos 20 cm, la caja sale del haz de `EyeA` y `EyeA` pasa a FALSE. Durante casi todo el recorrido, **ningún sensor ve la caja**. Si una bobina simple en `Run` se accionara directamente desde `EyeA`, la cinta avanzaría apenas hasta sacar la caja del primer haz y se detendría a mitad de camino.
 
 En diagrama de escalera no siempre hace falta una variable de memoria aparte para esto. Una variable de salida puede conservar su propio estado cuando usted la gobierna con una **bobina de activación (SET)** `(S)` en un peldaño y una **bobina de borrado (RESET)** `(R)` en otro peldaño. Una vez que el peldaño SET conduce, la salida sigue en TRUE ciclo tras ciclo aunque el primer sensor se apague, hasta que el peldaño RESET conduce y la borra.
 
 ```timing
 span: 6000
 signals:
-  - { name: EyeA, edges: [0, 600] }
-  - { name: EyeB, edges: [4600, 6000] }
-  - { name: Run, edges: [0, 4600] }
+  - { name: EyeA, edges: [0, 660] }
+  - { name: EyeB, edges: [3460, 6000] }
+  - { name: Run, edges: [0, 3460] }
 caption: EyeA se apaga mucho antes de que EyeB vea la caja, así que Run debe seguir enclavada en el medio
 ```
 
@@ -63,7 +63,7 @@ caption: Active LowLevel, active y desactive HighLevel, luego desactive LowLevel
 
 Pulse Ejecutar. Active `LowLevel`, luego active y vuelva a desactivar `HighLevel`: `Pump` sigue encendida entre los dos niveles. Desactive `LowLevel`: `Pump` se detiene. Ahora active `HighLevel` mientras `LowLevel` sigue inactivo: `Pump` funciona, porque el peldaño 2 va al final.
 
-Su estación de cinta usa dos sensores ópticos que pasan ambos a TRUE cuando ven una caja, y su prioridad de parada queda para que usted la decida a partir de lo que debe ocurrir si ambos sensores ven una caja a la vez.
+En su estación de cinta, la tabla de señales le dice cómo lee cada sensor, y qué peldaño gana queda para que usted lo decida a partir de lo que debe pasarle a una caja que ya espera en EyeB cuando otra llega a EyeA.
 
 ## Errores comunes
 
@@ -95,4 +95,4 @@ options:
 
 ## Qué hará en la práctica
 
-El programa inicial declara las entradas EyeA y EyeB y la salida Run, y todavía no tiene peldaños. Una caja comienza delante de EyeA; usted dibujará los peldaños para que la cinta arranque cuando EyeA vea la caja, siga en marcha después de que EyeA se apague y se detenga cuando EyeB vea la caja, con la parada ganando si ambos sensores se activan a la vez. Después pulse {{ui:learn.check}}.
+El programa inicial declara las entradas EyeA y EyeB y la salida Run, y todavía no tiene peldaños. Una caja comienza delante de EyeA; usted dibujará los peldaños para que la cinta arranque cuando EyeA vea la caja, siga en marcha después de que EyeA se apague y se detenga cuando EyeB vea la caja. Después pulse {{ui:learn.check}}.

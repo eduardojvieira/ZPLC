@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objetivo",
       "body": "En src/LatchTwoSensors.ld.json están declaradas las entradas EyeA y EyeB y la salida Run, y todavía no hay peldaños. Una caja comienza delante de EyeA; la cinta debe arrancar cuando EyeA vea la caja, seguir en marcha después de que la caja deje EyeA y detenerse cuando EyeB vea la caja.",
-      "checkpoint": "Usted puede decir por qué la cinta debe seguir en marcha después de que EyeA se apague, y qué sensor gana si ambos ven una caja."
+      "checkpoint": "Usted puede decir por qué la cinta debe seguir en marcha después de que EyeA se apague, y qué debe hacer la cinta si EyeA y EyeB ven ambos una caja."
     },
     {
       "key": "predict",
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Dibuje los peldaños, guarde el programa y pulse {{ui:learn.check}}. El programa inicial no tiene peldaños, así que la cinta nunca corre. La cinta debe arrancar cuando EyeA vea la caja, seguir en marcha una vez que la caja salga de EyeA y detenerse en cuanto EyeB vea la caja, con la parada teniendo prioridad si ambos sensores están activos a la vez.",
+      "body": "Dibuje los peldaños, guarde el programa y pulse {{ui:learn.check}}. El programa inicial no tiene peldaños, así que la cinta nunca corre. La cinta debe arrancar cuando EyeA vea la caja, seguir en marcha una vez que la caja salga de EyeA y detenerse en cuanto EyeB vea la caja.",
       "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflexione",
       "body": "El escenario comprueba que ambos sensores vieron la caja y que Run está apagada a los {{t:8000}} ms. ¿Qué ocurriría si una segunda caja llegara delante de EyeA mientras la primera sigue esperando delante de EyeB?",
-      "checkpoint": "Con EyeA y EyeB en TRUE en el mismo ciclo, usted puede decir si la cinta sigue detenida o se mueve, y qué orden de peldaños lo decide."
+      "checkpoint": "Con EyeA y EyeB en TRUE en el mismo ciclo, usted puede decir si la cinta sigue detenida o se mueve, y cuál de sus peldaños lo decide."
     }
   ],
   "hints": [
