@@ -11,51 +11,49 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/LiftStacking.st, keep a Step variable for the sequence and a Parts count: bring the crate onto the lift, raise it, feed five workpieces, lower it and send the crate out.",
-      "checkpoint": "Each step turns on only the outputs it needs, so Step tells you what the station does."
+      "body": "In src/LiftStacking.st the inputs and outputs of the station are declared, and the program drives nothing yet. After the press of Start, one crate must come in and ride the lift up to the feeder, five workpieces must be fed into it one at a time, and the full crate must go down and leave on the out belt, with Green lit when OutEye has seen it leave.",
+      "checkpoint": "You can say what the station is doing at any moment, and what must be true before it goes on to the next job."
     },
     {
       "key": "predict",
       "title": "Predict",
-      "body": "Before running, follow the crate and the workpieces: the crate stops on the lift when CrateEye sees it; at level 2 the feeder puts down one workpiece at a time, and each needs about two seconds to land before the next one.",
-      "checkpoint": "Up and RunLift are never TRUE together, Parts reaches five, and Green lights after OutEye sees the crate leave."
+      "body": "Before running, follow the crate and the workpieces: the crate stops on the lift when CrateEye sees it; at level 2 the feeder puts down one workpiece at a time, and each needs a moment to settle in the crate before the next one comes.",
+      "checkpoint": "The platform's belt never runs while the platform moves, five workpieces enter the crate, and Green lights after OutEye sees the crate leave."
     },
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter drives no output, so nothing moves; sequence the station: emit a crate, raise the lift, feed and count five workpieces one at a time, lower the lift and send the crate out, lighting Green when OutEye sees it.",
+      "body": "Write the program of the station, save it, then press {{ui:learn.check}}. The starting program drives no output, so nothing moves. After Start, one crate must be emitted and brought onto the lift, the lift must raise it, five workpieces must be fed into it one at a time, the lift must lower it and the crate must leave on the out belt, with Green lit when OutEye has seen it.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press {{ui:toolbar.run.label}} (F5) and open the {{ui:plant.panel.view3d}}.",
       "checkpoint": "The required scenario is named lift-stacking and contains {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Watch the workpieces land in the crate in the 3D view and read loaded:crate:0 in the facts text.",
-      "checkpoint": "The crate carries its workpieces while the lift travels, and none lands outside it."
+      "body": "Watch the workpieces land in the crate in the {{ui:plant.panel.view3d}} and read the line \"Crate 1 holds … items\" in the facts text.",
+      "checkpoint": "The number in that line rises to five before the crate leaves the lift."
     },
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "The loaded:crate:0 fact is TRUE once at least one workpiece rests inside the crate, and the delivered fact proves the crate reached its bin.",
+      "body": "The assertion on loaded:crate:0, which is the number of workpieces resting in the crate, holds as soon as at least one rests inside, and the delivered assertion proves the crate reached its bin.",
       "checkpoint": "The grade cannot count the workpieces: it does not tell four from five, because an expectation has no numeric comparison; read the count in the facts."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Count a workpiece when CountEye ends (an F_TRIG), not when it starts, and wait for the landing before feeding the next one."
+      "text": "A workpiece is in front of CountEye for a moment and keeps moving after it has gone by. When is it safe to say that this one is done and feed the next? And what keeps the workpieces from piling on one spot of the platform?"
     },
     {
       "level": 2,
-      "text": "Use a TON for the landing wait; between workpieces run the platform surface for a short moment so the workpieces do not pile on one spot."
+      "text": "Count a workpiece when CountEye ends (an F_TRIG), not when it starts. Wait for it to land before feeding the next one, with a TON of about two seconds (a workpiece settles in about a second, so two is enough), and between workpieces run the platform surface for a short moment so the workpieces do not pile on one spot."
     }
   ],
-  "faultCases": [
-    "The starter drives no output, so nothing moves; sequence the station: emit a crate, raise the lift, feed and count five workpieces one at a time, lower the lift and send the crate out, lighting Green when OutEye sees it."
-  ]
+  "faultCases": ["The starting program drives no output, so nothing moves."]
 }
