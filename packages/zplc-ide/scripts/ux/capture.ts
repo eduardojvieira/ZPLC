@@ -461,6 +461,19 @@ async function captureCondition(
   const take = async (plan: Plan) => takeAs(captureName(surfaces, plan.surface.id, plan.state, condition), plan.surface.id, plan.state);
   const takeAs = async (name: string, surface: string, state: string) => {
     await app.eval('document.fonts.ready.then(() => true)');
+    // lazy chunks load on demand from the dev server: nothing is waiting for one when no loading text shows and no request is new
+    const loadingTexts = (['workbench.editor.loading', 'app.workbenchLoading', 'explorer.loading', 'plant.panel.loading'] as const).map(ui);
+    let quiet = 0;
+    for (let attempt = 0; attempt < 75 && quiet < 3; attempt++) {
+      const before = await app.eval<number>(`performance.getEntriesByType('resource').length`);
+      await Bun.sleep(400);
+      const busy = await app.eval<boolean>(
+        `performance.getEntriesByType('resource').length !== ${before} || ` +
+          `[...document.querySelectorAll('body *')].some((e) => e.children.length === 0 && ` +
+          `${JSON.stringify(loadingTexts)}.includes(e.textContent.trim()))`,
+      );
+      quiet = busy ? 0 : quiet + 1;
+    }
     // the scene's parts reach a new renderer with the first state the plant gives it: Reset plant, as a person would press it, gives
     // one at once (and puts nothing on a board); without it the first picture can be the empty floor
     await app.eval(
