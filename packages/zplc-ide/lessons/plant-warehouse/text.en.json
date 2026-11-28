@@ -11,19 +11,19 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/Warehouse.sfc.json, add the retrieve chain R_PICK to R_FINISH: take the box out of the requested cell, bring it to the dock and put it on the outfeed.",
-      "checkpoint": "The IDLE step is the only place where the next job is chosen: a box at the infeed stores, a waiting request for a cell that holds a box retrieves."
+      "body": "In src/Warehouse.sfc.json the crane already stores every box that reaches the infeed, but a press of a request button does nothing. Make the crane serve a request: take the box out of the requested cell, bring it to the dock and put it on the outfeed belt.",
+      "checkpoint": "You can say what makes the crane store a box, what makes it retrieve one, and what it does with a request pressed while it is busy."
     },
     {
       "key": "predict",
       "title": "Predict",
-      "body": "Before running, follow the crane: it takes the box onto the fork, retracts, moves to the cell, extends, lowers the fork and retracts again; to retrieve, it reverses the sequence and delivers the box at the dock.",
-      "checkpoint": "The crane moves only with the fork retracted, every move waits 0.3 s before it trusts InPos, and Green lights after two boxes have left on the outfeed."
+      "body": "Before running, follow one box from the infeed to its cell, and from its cell to the outfeed when its request button is pressed. At each end of the journey, predict where the crane stands and what its fork does.",
+      "checkpoint": "The crane holds still while its fork is out, and Green lights after two boxes have been put on the outfeed."
     },
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter stores boxes but has no retrieve steps, so a request is never served; add the chain that takes the box out of its cell, brings it to the dock and puts it on the outfeed, and let IDLE start it when a request waits for a cell that holds a box.",
+      "body": "Write the missing behaviour, save it, then press {{ui:learn.check}}. The starting project stores boxes, but a request is never served: when a request waits for a cell that holds a box, the crane must fetch that box and put it on the outfeed belt.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -48,14 +48,14 @@
   "hints": [
     {
       "level": 1,
-      "text": "Choose the cell in a P1 action, which runs once when the step is entered; Bay and Level can be set in the same action and they keep their value."
+      "text": "Look at how the store chain chooses the cell it goes to, and at what the crane remembers about the cells and the requests. A retrieve needs the same kind of choice, from the cells that hold a box and the requests that wait."
     },
     {
       "level": 2,
-      "text": "Wait for the step time of 0.3 s and for InPos before extending the fork, and change Bay or Level only in a step where the fork is retracted."
+      "text": "Add the retrieve chain and start it from IDLE with a transition of priority 2, after the store transition, when (Want1 AND Held1) OR (Want2 AND Held2) OR (Want3 AND Held3). Choose the cell in a P1 action, which runs once when the step is entered: the first cell with its Want and Held both TRUE; Bay and Level can be set in the same action and they keep their value. Wait for the step time of 0.3 s and for InPos before extending the fork, and change Bay or Level only in a step where the fork is retracted. Give every step its own action that writes every crane output, and the common action. The chain is: R_PICK goes to the cell (0.3 s and InPos); R_FORK_OUT extends the fork to the right until AtRight; R_RAISE raises it until Raised; R_LIFTED waits 0.3 s; R_RETRACT retracts the fork until Centre; R_TO_DOCK goes to Bay 0 and Level 0 (0.3 s and InPos); R_DOCK_OUT extends the fork to the right until AtRight; R_UNLOAD runs BeltRight until NOT Loaded; R_CLEAR waits 0.8 s; R_BACK retracts the fork until Centre; R_FINISH waits 0.5 s and, in a P1 action, clears Held and Want of the cell and adds 1 to Served."
     }
   ],
   "faultCases": [
-    "The starter stores boxes but has no retrieve steps, so a request is never served; add the chain that takes the box out of its cell, brings it to the dock and puts it on the outfeed, and let IDLE start it when a request waits for a cell that holds a box."
+    "The starting project stores boxes, but a request is never served: the box stays in its cell, no box reaches the outfeed bin and Green never lights."
   ]
 }
