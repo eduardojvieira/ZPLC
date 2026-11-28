@@ -4,26 +4,26 @@
   "summary": "Gobierne un pórtico de tres ejes a través de un patrón calculado de 2 por 2 para apilar ocho cajas en dos capas sobre una tarima.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
-    "Ordenar tres ejes con cuentas enteras y comparar cada posición con su orden con un margen de una cuenta.",
+    "Ordenar tres ejes con cuentas enteras y hacer que cada movimiento espere a que cada eje haya llegado.",
     "Elegir el lugar de cada caja a partir de su número: el hueco en la capa y la altura de la capa."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/Palletizing.st, envíe una caja, baje la ventosa sobre ella, agarre, eleve, desplácese en X y Z hasta el hueco que da Cycle MOD 4, baje hasta la tarima o hasta la primera capa, suelte, eleve y regrese. Hágalo con ocho cajas y encienda Green tras la octava.",
+      "body": "En src/Palletizing.st, envíe una caja, baje la ventosa sobre ella, agarre, eleve, desplácese en X y Z hasta el siguiente lugar de un patrón de 2 por 2, baje hasta la tarima o hasta la primera capa, suelte, eleve y regrese. Hágalo con ocho cajas y encienda Green tras la octava.",
       "checkpoint": "Arrived compara los tres ejes con sus órdenes, y cada estado lo espera."
     },
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, siga las cuentas: Y sube a 917 antes de que nada cruce la cinta, baja a 500 sobre la caja, sube de nuevo, pasa al hueco en X y Z, y baja a 372 para la primera capa o a 622 para la segunda.",
-      "checkpoint": "El hueco sigue a Cycle MOD 4 y la altura sigue a Cycle: cuatro cajas sobre la tarima y luego cuatro encima."
+      "body": "Antes de ejecutar, siga el cabezal: sube por encima de una segunda capa completa antes de que nada cruce la cinta, baja sobre la caja, sube de nuevo, pasa sobre el hueco en X y Z, y baja sobre la tarima para la primera capa o sobre la primera capa para la segunda.",
+      "checkpoint": "Cuatro cajas quedan sobre la tarima y luego cuatro encima."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial no ordena ninguna posición, así que el pórtico se queda en el suelo; envíe cada caja, agárrela, colóquela sobre la tarima en un patrón de 2 por 2 de dos capas y encienda Green tras la octava.",
+      "body": "Corrija esta omisión del proyecto inicial, guárdelo y pulse {{ui:learn.check}}: El proyecto inicial no ordena ninguna posición, así que el pórtico se queda en el suelo; envíe cada caja, agárrela, colóquela sobre la tarima en un patrón de 2 por 2 de dos capas y encienda Green tras la octava.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial no ordena ninguna posición, así que el pórtico se queda en el suelo; envíe cada caja, agárrela, colóquela sobre la tarima en un patrón de 2 por 2 de dos capas y encienda Green tras la octava."
+    "El proyecto inicial no ordena ninguna posición, así que el pórtico se queda en el suelo; envíe cada caja, agárrela, colóquela sobre la tarima en un patrón de 2 por 2 de dos capas y encienda Green tras la octava."
   ]
 }

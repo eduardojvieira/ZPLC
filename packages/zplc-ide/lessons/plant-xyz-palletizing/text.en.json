@@ -4,21 +4,21 @@
   "summary": "Drive a three-axis gantry through a computed 2 by 2 pattern to stack eight boxes in two layers on a pallet.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
-    "Command three axes with integer counts and compare each position with its command within one count.",
+    "Command three axes with integer counts and let every move wait until each axis has arrived.",
     "Choose the place of each box from its number: the slot in the layer and the height of the layer."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/Palletizing.st, send one box, lower the pad onto it, grip, lift, travel in X and Z to the slot that Cycle MOD 4 gives, lower to the pallet or to the first layer, release, lift and return. Do it for eight boxes and light Green after the eighth.",
+      "body": "In src/Palletizing.st, send one box, lower the pad onto it, grip, lift, travel in X and Z to the next place of a 2 by 2 pattern, lower to the pallet or to the first layer, release, lift and return. Do it for eight boxes and light Green after the eighth.",
       "checkpoint": "Arrived compares the three axes with their commands, and each state waits for it."
     },
     {
       "key": "predict",
       "title": "Predict",
-      "body": "Before running, follow the counts: Y goes up to 917 before anything crosses the belt, down to 500 on the box, up again, over to the slot in X and Z, and down to 372 for the first layer or 622 for the second.",
-      "checkpoint": "The slot follows Cycle MOD 4 and the height follows Cycle: four boxes on the pallet, then four on top of them."
+      "body": "Before running, follow the head: it rises above a full second layer before anything crosses the belt, comes down onto the box, rises again, travels over the slot in X and Z, and comes down onto the pallet for the first layer or onto the first layer for the second.",
+      "checkpoint": "Four boxes sit on the pallet, then four on top of them."
     },
     {
       "key": "edit",
