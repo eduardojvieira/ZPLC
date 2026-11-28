@@ -1,0 +1,579 @@
+{
+  "name": "DipHoist",
+  "description": "A single-axis dipping hoist sequenced with an INT state variable, EQ comparisons, MOVE boxes, and limit feedback.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Step",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "0 idle, 1 lock hook, 2 lower, 3 soak, 4 lift, 5 unlock"
+      },
+      {
+        "name": "Soak",
+        "type": "TON",
+        "comment": "Times how long the part stays in the quench tank"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "PartReady",
+        "type": "BOOL",
+        "comment": "A part hangs on the hook ready to dip"
+      },
+      {
+        "name": "Locked",
+        "type": "BOOL",
+        "comment": "Hook latch closed feedback"
+      },
+      {
+        "name": "Bottom",
+        "type": "BOOL",
+        "comment": "Hoist at bottom limit"
+      },
+      {
+        "name": "Top",
+        "type": "BOOL",
+        "comment": "Hoist at top limit"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Lock",
+        "type": "BOOL",
+        "comment": "Close the hook latch while true"
+      },
+      {
+        "name": "GoDown",
+        "type": "BOOL",
+        "comment": "Lower the hoist while true"
+      },
+      {
+        "name": "GoUp",
+        "type": "BOOL",
+        "comment": "Lift the hoist while true"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Run the soak timer only while Step is 3.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r1_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "3"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          { "element": null, "hasWire": true },
+          { "element": null, "hasWire": true },
+          { "element": null, "hasWire": true },
+          {
+            "element": {
+              "id": "r1_4",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "Soak",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#2s"
+              },
+              "row": 0,
+              "col": 4
+            },
+            "hasWire": true
+          },
+          { "element": null, "hasWire": true }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "Step 5 to 0: once the latch opens, return to idle.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r2_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "5"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r2_1",
+              "type": "contact_nc",
+              "variable": "Locked",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          { "element": null, "hasWire": true },
+          { "element": null, "hasWire": true },
+          { "element": null, "hasWire": true },
+          {
+            "element": {
+              "id": "r2_5",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["0"],
+              "output": "Step",
+              "row": 0,
+              "col": 5
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "Step 4 to 5: when the hoist reaches Top, unlock the hook.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r3_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "4"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r3_1",
+              "type": "contact_no",
+              "variable": "Top",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          { "element": null, "hasWire": true },
+          { "element": null, "hasWire": true },
+          { "element": null, "hasWire": true },
+          {
+            "element": {
+              "id": "r3_5",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["5"],
+              "output": "Step",
+              "row": 0,
+              "col": 5
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_4",
+      "number": 4,
+      "comment": "Step 3 to 4: when the soak timer finishes, start lifting.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r4_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "3"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r4_1",
+              "type": "contact_no",
+              "variable": "Soak.Q",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          { "element": null, "hasWire": true },
+          { "element": null, "hasWire": true },
+          { "element": null, "hasWire": true },
+          {
+            "element": {
+              "id": "r4_5",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["4"],
+              "output": "Step",
+              "row": 0,
+              "col": 5
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_5",
+      "number": 5,
+      "comment": "Step 2 to 3: when the hoist reaches Bottom, begin soaking.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r5_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "2"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r5_1",
+              "type": "contact_no",
+              "variable": "Bottom",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          { "element": null, "hasWire": true },
+          { "element": null, "hasWire": true },
+          { "element": null, "hasWire": true },
+          {
+            "element": {
+              "id": "r5_5",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["3"],
+              "output": "Step",
+              "row": 0,
+              "col": 5
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_6",
+      "number": 6,
+      "comment": "Step 1 to 2: wait for Locked feedback before lowering.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r6_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "1"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r6_1",
+              "type": "contact_no",
+              "variable": "Locked",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          { "element": null, "hasWire": true },
+          { "element": null, "hasWire": true },
+          { "element": null, "hasWire": true },
+          {
+            "element": {
+              "id": "r6_5",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["2"],
+              "output": "Step",
+              "row": 0,
+              "col": 5
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_7",
+      "number": 7,
+      "comment": "Step 0 to 1: start when a part is ready and the hoist is at Top.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r7_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "0"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r7_1",
+              "type": "contact_no",
+              "variable": "PartReady",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r7_2",
+              "type": "contact_no",
+              "variable": "Top",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          { "element": null, "hasWire": true },
+          { "element": null, "hasWire": true },
+          {
+            "element": {
+              "id": "r7_5",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["1"],
+              "output": "Step",
+              "row": 0,
+              "col": 5
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_8",
+      "number": 8,
+      "comment": "Keep the hook latch closed from step 1 through step 4.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r8_0",
+              "type": "function",
+              "functionName": "GE",
+              "operands": ["Step", "1"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r8_1",
+              "type": "function",
+              "functionName": "LE",
+              "operands": ["Step", "4"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          { "element": null, "hasWire": true },
+          { "element": null, "hasWire": true },
+          { "element": null, "hasWire": true },
+          {
+            "element": {
+              "id": "r8_5",
+              "type": "coil",
+              "variable": "Lock",
+              "row": 0,
+              "col": 5
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_9",
+      "number": 9,
+      "comment": "Lower in step 2 until the bottom limit turns on.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r9_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "2"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r9_1",
+              "type": "contact_nc",
+              "variable": "Bottom",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          { "element": null, "hasWire": true },
+          { "element": null, "hasWire": true },
+          { "element": null, "hasWire": true },
+          {
+            "element": {
+              "id": "r9_5",
+              "type": "coil",
+              "variable": "GoDown",
+              "row": 0,
+              "col": 5
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_10",
+      "number": 10,
+      "comment": "Lift in step 4 until the top limit turns on.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r10_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "4"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r10_1",
+              "type": "contact_nc",
+              "variable": "Top",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          { "element": null, "hasWire": true },
+          { "element": null, "hasWire": true },
+          { "element": null, "hasWire": true },
+          {
+            "element": {
+              "id": "r10_5",
+              "type": "coil",
+              "variable": "GoUp",
+              "row": 0,
+              "col": 5
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ]
+}
