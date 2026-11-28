@@ -17,25 +17,25 @@
     {
       "key": "predict",
       "title": "Predict",
-      "body": "Before running, follow the box: the emitter puts it on the near end, the belt carries it to the far end, and the sensor tells the program to stop the belt. A scene that lacks a part the scenario reads cannot do any of that, and the Check says which part it cannot find.",
+      "body": "Before running, follow the box: the emitter puts it on the near end, the belt carries it to the far end, and the sensor tells the program to stop the belt. A scene that lacks a part the scenario reads cannot do any of that, and {{ui:learn.check}} says which part it cannot find.",
       "checkpoint": "Belt off before the press; on after it, with one box on it; off again as soon as EyeFar sees the box, and it stays off."
     },
     {
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save the scene, the plant map and the program, then press {{ui:learn.check}}: The starter scene is an empty floor, so there is nothing to run; place Belt1, Emitter1, EyeFar and StartButton, bind their four signals in the plant map, and write the program that starts the belt and stops it when EyeFar sees the box.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press {{ui:toolbar.run.label}} (F5) and open the {{ui:plant.panel.view3d}}.",
       "checkpoint": "The required scenario is named build-belt-scene and contains {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Watch the box ride the belt you placed and stop where the beam of the sensor you placed meets it; if EyeFar is missing, read the message of the Check: it names the part and the file where the fix goes.",
+      "body": "Watch the box ride the belt you placed and stop where the beam of the sensor you placed meets it; if EyeFar is missing, read the message of {{ui:learn.check}}: it names the part and the file where the fix goes.",
       "checkpoint": "Run falls when the sensor turns on, not before, and the box is never dropped."
     },
     {
@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Show the plant, keep {{ui:plant.panel.projectScene}} selected and press {{ui:plant.panel.editScene}}: the scene of this lesson is the empty floor. Each part you add is named and placed in {{ui:plantEditor.formHeading}}; the reading lists the steps of the editor."
+      "text": "Open the plant with {{ui:command.view.plant}}, keep {{ui:plant.panel.projectScene}} selected and press {{ui:plant.panel.editScene}}: the scene of this lesson is the empty floor. Each part you add is named and placed in {{ui:plantEditor.formHeading}}; the reading lists the steps of the editor."
     },
     {
       "level": 2,
-      "text": "Add a belt, an emitter, a diffuse optical sensor and a push button, and name them Belt1, Emitter1, EyeFar and StartButton. Put Belt1 at X 0, Z 0, Emitter1 at X -1, Z 0, EyeFar at X 0.75, Z -0.5 with rotation 270 and StartButton beside the belt, at X -1, Z -0.75. The settings of the parts may stay at their defaults (the finished scene of the lesson uses a belt length of 2.4, a belt speed of 0.5 and a sensor range of 1). Bind the four signals to the points of the table in the reading, then press {{ui:plantEditor.done}} and {{ui:plant.panel.saveToProject}}. In the program, put a contact on Run in parallel with the Start contact so the belt holds itself on, and keep the EyeFar contact normally closed so it breaks the rung when the box arrives."
+      "text": "Add a belt, an emitter, a diffuse optical sensor and a push button, and name them Belt1, Emitter1, EyeFar and StartButton. Put Belt1 at X 0, Z 0, Emitter1 at X -1, Z 0, EyeFar at X 0.75, Z -0.5 with rotation 270 and StartButton beside the belt, at X -1, Z -0.75. The settings of the parts may stay at their defaults (the finished scene of the lesson uses a belt length of 2.4 m, a belt speed of 0.5 m/s and a sensor range of 1 m). Bind StartButton.pressed to BeltToSensor.Start, EyeFar.detect to BeltToSensor.EyeFar, Belt1.run to BeltToSensor.Run and Emitter1.emit to BeltToSensor.Emit, then press {{ui:plantEditor.done}} and {{ui:plant.panel.saveToProject}}. In the program, keep the rung from Start to the coil Emit and draw a new rung for the belt: a normally closed contact on EyeFar, then a contact on Start with a contact on Run in parallel with it so the belt holds itself on, ending in the coil Run; the EyeFar contact breaks the rung when the box arrives."
     }
   ],
   "faultCases": [
