@@ -46,8 +46,7 @@ const controller = (vmState: string) =>
   }) as never;
 const plant = (state: string, slowdown = 1) => ({ kind: 'plant', state, slowdown, onChange: () => () => undefined }) as never;
 const paused = () => dom.t('faceplate.paused');
-const inputSwitch = () =>
-  document.querySelector('[data-faceplate] [data-input="Motor.Start"] button[role="switch"]') as HTMLButtonElement;
+const inputSwitch = () => document.querySelector('[data-faceplate] [data-input="Motor.Start"] button[role="switch"]') as HTMLButtonElement;
 
 let unregister = () => {};
 afterEach(() => unregister());

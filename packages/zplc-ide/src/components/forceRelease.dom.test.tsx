@@ -35,9 +35,13 @@ const release = (path: string) => dom.act(() => api().toggleForceValue(path, 0x1
 function start() {
   held.clear();
   dom.patchStore(useIDEStore, { debug: { ...useIDEStore.getState().debug, forcedValues: new Map(), forcesUnconfirmed: false } } as never);
-  dom.render(<Harness onApi={(api) => {
+  dom.render(
+    <Harness
+      onApi={(api) => {
         mine.api = api;
-      }} />);
+      }}
+    />,
+  );
 }
 
 describe('A released variable keeps no force, under any spelling of its path (spec 014, found by V-P7)', () => {
