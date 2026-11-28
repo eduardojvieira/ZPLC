@@ -15,7 +15,7 @@ import { createMapEditor, type MapEditor } from './editor/mapEditor';
 import { createSceneEditor, type SceneEditor } from './editor/model';
 import { saveProjectScene, saveScene } from './persistence/sceneFiles';
 import { registerSaveAllParticipant, type SaveAllResult } from '../store/saveAll';
-import { useIDEStore } from '../store/useIDEStore';
+import { registerUnsavedSource, useIDEStore } from '../store/useIDEStore';
 import { usePlantDocument } from '../store/usePlantDocument';
 
 export interface PlantEditSession {
@@ -235,8 +235,8 @@ registerSaveAllParticipant(async () => {
 });
 
 /** The names of the scenes with edits that were never saved: the one being edited, if it changed, and those closed with Done. */
-export function unsavedSceneNames(): string[] {
-  const { editor, mapEditor, sceneRef, hadMap, baseline, unsaved } = usePlantEdit.getState();
+function unsavedNames(state: ReturnType<typeof usePlantEdit.getState>): string[] {
+  const { editor, mapEditor, sceneRef, hadMap, baseline, unsaved } = state;
   const live =
     editor && mapEditor && sceneRef !== null && textsOf(editor, mapEditor, hadMap).text !== baseline ? [editor.toFile().name] : [];
   return [
@@ -246,6 +246,14 @@ export function unsavedSceneNames(): string[] {
       .map(([, scene]) => scene.file.name),
   ];
 }
+
+export const unsavedSceneNames = (): string[] => unsavedNames(usePlantEdit.getState());
+
+/** Whether a scene has edits that were not saved, for the modified mark of the plant tab; read again after every edit. */
+export const useSceneUnsaved = (): boolean => usePlantEdit((state) => unsavedNames(state).length > 0);
+
+// The window close, the lesson Check and the other guards ask the store: the scene is unsaved work like a modified file.
+registerUnsavedSource(() => unsavedSceneNames().length > 0);
 
 /** Drops every edit that was not saved: the session in progress without recording it, and the scenes closed with Done. */
 export function discardEditedScenes(): void {

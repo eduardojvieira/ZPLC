@@ -118,7 +118,7 @@ describe('UXF-4 editor tab strip consistency', () => {
 
 describe('the modified mark of the plant tab (FLW-005)', () => {
   it('FLW-005 the plant tab shows the modified mark while a scene is edited and not saved, and not once it is discarded', () => {
-    renderGroup(FILE.id);
+    renderGroup(PREFERENCES_VIEW_ID);
     const mark = () => tabParts(PLANT_VIEW_ID).tabButton.textContent?.includes('*');
     expect(mark()).toBe(false);
     dom.act(() =>
