@@ -439,8 +439,8 @@ Objetivos de las lecciones disponibles:
 - **La misma clasificación en Lista de instrucciones**: Convertir los estados de una secuencia de clasificación en bloques de comparar y saltar. Llamar a un TON desde Lista de instrucciones con CAL y leer su salida Q.
 - **Clasificar por peso**: Clasificar una pieza comparando un valor analógico con un límite. Leer el valor solo cuando la báscula indica que es estable.
 - **Clasificar por peso en diagrama de escalera**: Clasificar una pieza comparando un valor analógico con un límite. Leer el valor solo cuando la báscula indica que es estable.
-- **Clasificar por altura, transferencia de cadenas**: Decidir una ruta a partir de una combinación de dos sensores. Recordar una decisión mientras la caja siguiente ya pasa por los sensores.
-- **Clasificar por altura, transferencia de cadenas en diagrama de escalera**: Decidir una ruta a partir de una combinación de dos sensores. Recordar una decisión mientras la caja siguiente ya pasa por los sensores.
+- **Clasificar por altura, transferencia de cadenas**: Decidir una ruta a partir de una combinación de dos sensores. Recordar una decisión mientras la caja siguiente ya pasa por los sensores de altura.
+- **Clasificar por altura, transferencia de cadenas en diagrama de escalera**: Decidir una ruta a partir de una combinación de dos sensores. Recordar una decisión mientras la caja siguiente ya pasa por los sensores de altura.
 - **Clasificar por altura, mesa giratoria**: Reducir un flujo de lecturas a un valor, el máximo, y clasificarlo con dos límites. Coordinar una mesa giratoria con la decisión: detener, girar, sacar la caja y volver a girar.
 - **Clasificar por código de identidad**: Encaminar piezas por un código entero y no por un interruptor. Sincronizar un actuador con el recorrido de una pieza ya leída.
 

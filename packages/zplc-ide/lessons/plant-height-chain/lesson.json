@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "plant-height-chain",
-  "version": 3,
+  "version": 4,
   "order": 164,
   "module": 16,
   "level": "advanced",

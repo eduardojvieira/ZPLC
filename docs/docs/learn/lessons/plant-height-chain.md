@@ -19,7 +19,7 @@ Tell three box heights apart with two beams, remember the answer until the box r
 - Estimated time: 60 minutes
 - Languages: ST
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Height sorting with a chain transfer](../../plant/scenes/height-sorting-chain.md)
 - Prerequisites: [plant-colour-separation](./plant-colour-separation.md)
 

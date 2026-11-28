@@ -19,7 +19,7 @@ Write the colour-sorting logic as an instruction list: one current result, label
 - Estimated time: 50 minutes
 - Languages: IL
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Colour separation](../../plant/scenes/colour-separation.md)
 - Prerequisites: [plant-colour-separation](./plant-colour-separation.md), [instruction-list-door-alarm](./instruction-list-door-alarm.md)
 

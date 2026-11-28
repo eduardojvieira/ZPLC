@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-weight-sorting-ladder. Do not edit. >>> */}
 
-Compare la lectura de una báscula con un límite y envíe las cajas pesadas a la cinta lateral y las ligeras de frente.
+Compare la lectura de una báscula con un límite y envíe las cajas pesadas a la cinta lateral y las livianas de frente.
 
 ## Datos
 
@@ -19,7 +19,7 @@ Compare la lectura de una báscula con un límite y envíe las cajas pesadas a l
 - Tiempo estimado: 50 minutos
 - Lenguajes: LD
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Clasificación por peso](../../plant/scenes/weight-sorting.md)
 - Requisitos previos: [plant-colour-separation](./plant-colour-separation.md), [plant-tank-level-scaling](./plant-tank-level-scaling.md)
 
