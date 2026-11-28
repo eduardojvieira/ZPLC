@@ -19,7 +19,7 @@ Load four boxes into a layer, square it, carry it with a clamp head and stack th
 - Estimated time: 50 minutes
 - Languages: ST
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Layer palletizer](../../plant/scenes/layer-palletizer.md)
 - Prerequisites: [structures-arrays-call-panel](./structures-arrays-call-panel.md), [plant-assembler-numeric](./plant-assembler-numeric.md)
 

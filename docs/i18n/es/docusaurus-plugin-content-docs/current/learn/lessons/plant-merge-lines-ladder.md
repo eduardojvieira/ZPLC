@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-merge-lines-ladder. Do not edit. >>> */}
 
-Arbitre con peldaños de enclavamiento dos alimentadores que comparten una salida: dé prioridad a la línea A, deje pasar una caja a la vez y bloquee entre sí las dos cuchillas.
+Arbitre con peldaños de enclavamiento dos alimentadores que comparten una salida: dé prioridad a la línea A, deje pasar una caja a la vez y bloquee entre sí los dos topes retráctiles.
 
 ## Datos
 
@@ -19,7 +19,7 @@ Arbitre con peldaños de enclavamiento dos alimentadores que comparten una salid
 - Tiempo estimado: 45 minutos
 - Lenguajes: LD
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Unión de dos líneas](../../plant/scenes/merge-lines.md)
 - Requisitos previos: [plant-counted-queue](./plant-counted-queue.md), [interlock-guard-permissive](./interlock-guard-permissive.md)
 

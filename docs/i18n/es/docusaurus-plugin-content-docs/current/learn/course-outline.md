@@ -412,7 +412,7 @@ Objetivos de las lecciones disponibles:
 - **Ensamblar tapas y bases**: Coordinar dos ejes y una ventosa en una sola secuencia, con un paso por movimiento. Elegir entre dos pasos siguientes con condiciones de transición que se excluyen entre sí.
 - **Lo mismo con posiciones numéricas**: Enviar un eje a una posición con nombre mediante una consigna y leer su posición de vuelta. Decidir que un movimiento terminó cuando la posición está dentro de una tolerancia de la consigna, no cuando es igual a ella.
 - **Paletizar por capas**: Formar una capa contando pares de cajas y escuadrarla antes de que la pinza la tome. Guardar el descenso de cada capa en un arreglo y llenarlo con un bucle FOR, de modo que cada capa se coloque una altura de caja más arriba que la inferior.
-- **Paletizar con un pórtico**: Ordenar tres ejes con cuentas enteras y comparar cada posición con su orden con un margen de una cuenta. Elegir el lugar de cada caja a partir de su número: el hueco en la capa y la altura de la capa.
+- **Paletizar con un pórtico**: Ordenar tres ejes con cuentas enteras y hacer que cada movimiento espere a que cada eje haya llegado. Elegir el lugar de cada caja a partir de su número: el hueco en la capa y la altura de la capa.
 
 ## Módulo 16: Clasificación: decidir una ruta según lo que informan los sensores
 

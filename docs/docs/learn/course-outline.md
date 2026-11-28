@@ -412,7 +412,7 @@ Objectives of the available lessons:
 - **Assemble lids and bases**: Coordinate two axes and a vacuum pad in one sequence, with one step for each move. Choose between two next steps with transition conditions that exclude each other.
 - **The same with numeric positions**: Send an axis to a named position with a setpoint and read its position back. Decide that a move is done when the position is within a tolerance of the setpoint, not when it is equal to it.
 - **Palletize in layers**: Build a layer by counting pairs of boxes, and square it before the clamp takes it. Keep the jog of each layer in an array and fill it with a FOR loop, so each layer sets down one box height higher than the one below.
-- **Palletize with a gantry**: Command three axes with integer counts and compare each position with its command within one count. Choose the place of each box from its number: the slot in the layer and the height of the layer.
+- **Palletize with a gantry**: Command three axes with integer counts and let every move wait until each axis has arrived. Choose the place of each box from its number: the slot in the layer and the height of the layer.
 
 ## Module 16: Sorting: decide a route from what the sensors report
 
