@@ -46,6 +46,13 @@ extraResources:
     to: native-runtime
     filter:
       - '**/*'
+      - '!mcp/**'
+  # The same standalone zplc-mcp the release publishes as a separate download. scripts/stage-mcp.ts puts it in dist-native/mcp;
+  # electron/../shared/mcpCommand.ts finds it at resources/zplc-mcp/ and the MCP panel writes that absolute path.
+  - from: dist-native/mcp
+    to: zplc-mcp
+    filter:
+      - '**/*'
   # The licence notices of every third-party package and font in the application (REL-019).
   - from: build/THIRD-PARTY-NOTICES.txt
     to: THIRD-PARTY-NOTICES.txt
@@ -82,9 +89,10 @@ mac:
   # No paid certificate exists, so the bundle is signed ad hoc and sealed, never notarized (REL-001, REL-003).
   # The identity is explicit: electron-builder does not fall back to ad hoc by itself.
   identity: '-'
-  # The native runtime is copied by extraResources; listing it signs it with the bundle.
+  # The native runtime and the MCP server are copied by extraResources; listing them signs them with the bundle.
   binaries:
     - Contents/Resources/native-runtime/zplc_runtime
+    - Contents/Resources/zplc-mcp/zplc-mcp
   hardenedRuntime: true
   gatekeeperAssess: false
   notarize: false

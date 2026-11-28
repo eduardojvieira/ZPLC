@@ -150,7 +150,7 @@ Resultado tras un ciclo: `Result` = `TRUE`.
 
 `ROL(IN : DWORD, N : INT) : DWORD`
 
-Rota a la izquierda N posiciones los 32 bits de IN; los bits que salen por la izquierda entran por la derecha.
+Rota a la izquierda N posiciones los 32 bits de IN; los bits que salen por la izquierda entran por la derecha. Un literal entero sin tipo mide 32 bits: ROL(16#8000, 1) asignado a una WORD da 0, y ROL(WORD#16#8000, 1) da 1.
 
 ```pascal runnable expect="Result=3"
 PROGRAM Example
@@ -169,7 +169,7 @@ Resultado tras un ciclo: `Result` = `3`.
 
 `ROR(IN : DWORD, N : INT) : DWORD`
 
-Rota a la derecha N posiciones los 32 bits de IN; los bits que salen por la derecha entran por la izquierda.
+Rota a la derecha N posiciones los 32 bits de IN; los bits que salen por la derecha entran por la izquierda. Un literal entero sin tipo mide 32 bits: ROR(16#0001, 1) asignado a una WORD da 0, y ROR(WORD#16#0001, 1) da 16#8000.
 
 ```pascal runnable expect="Result=2147483649"
 PROGRAM Example
@@ -187,7 +187,7 @@ Resultado tras un ciclo: `Result` = `2147483649`.
 
 `SHL(IN : ANY_BIT, N : INT) : ANY_BIT`
 
-Desplaza IN a la izquierda N posiciones; entran ceros por la derecha.
+Desplaza IN a la izquierda N posiciones; entran ceros por la derecha. Un literal entero sin tipo mide 32 bits: SHL(16#8000, 1) se calcula en 32 bits. Escriba WORD#16#8000 para trabajar dentro de 16 bits.
 
 ```pascal runnable expect="Result=16"
 PROGRAM Example
@@ -205,7 +205,7 @@ Resultado tras un ciclo: `Result` = `16`.
 
 `SHR(IN : ANY_BIT, N : INT) : ANY_BIT`
 
-Desplaza IN a la derecha N posiciones; entran ceros por la izquierda.
+Desplaza IN a la derecha N posiciones; entran ceros por la izquierda. Un literal entero sin tipo mide 32 bits: SHR(16#8000, 1) se calcula en 32 bits. Escriba WORD#16#8000 para trabajar dentro de 16 bits.
 
 ```pascal runnable expect="Result=1"
 PROGRAM Example

@@ -215,8 +215,10 @@ export const FUNCTION_DOCS: Record<string, FunctionDoc> = {
             ['N', 'INT'],
         ],
         'DWORD',
-        'Rotates the 32 bits of IN left by N places; the bits that leave on the left enter on the right.',
-        'Rota a la izquierda N posiciones los 32 bits de IN; los bits que salen por la izquierda entran por la derecha.',
+        'Rotates the 32 bits of IN left by N places; the bits that leave on the left enter on the right.' +
+            ' An untyped integer literal is 32 bits wide: ROL(16#8000, 1) assigned to a WORD gives 0, and ROL(WORD#16#8000, 1) gives 1.',
+        'Rota a la izquierda N posiciones los 32 bits de IN; los bits que salen por la izquierda entran por la derecha.' +
+            ' Un literal entero sin tipo mide 32 bits: ROL(16#8000, 1) asignado a una WORD da 0, y ROL(WORD#16#8000, 1) da 1.',
         'VAR\n    Value : DWORD := 16#80000001;\n    Result : DWORD;\nEND_VAR\n\nResult := ROL(Value, 1);',
         'Result=3',
     ),
@@ -227,8 +229,11 @@ export const FUNCTION_DOCS: Record<string, FunctionDoc> = {
             ['N', 'INT'],
         ],
         'DWORD',
-        'Rotates the 32 bits of IN right by N places; the bits that leave on the right enter on the left.',
-        'Rota a la derecha N posiciones los 32 bits de IN; los bits que salen por la derecha entran por la izquierda.',
+        'Rotates the 32 bits of IN right by N places; the bits that leave on the right enter on the left.' +
+            ' An untyped integer literal is 32 bits wide:' +
+            ' ROR(16#0001, 1) assigned to a WORD gives 0, and ROR(WORD#16#0001, 1) gives 16#8000.',
+        'Rota a la derecha N posiciones los 32 bits de IN; los bits que salen por la derecha entran por la izquierda.' +
+            ' Un literal entero sin tipo mide 32 bits: ROR(16#0001, 1) asignado a una WORD da 0, y ROR(WORD#16#0001, 1) da 16#8000.',
         'VAR\n    Result : DWORD;\nEND_VAR\n\nResult := ROR(16#00000003, 1);',
         'Result=2147483649',
     ),
@@ -239,8 +244,12 @@ export const FUNCTION_DOCS: Record<string, FunctionDoc> = {
             ['N', 'INT'],
         ],
         'ANY_BIT',
-        'Shifts IN left by N places; zeros enter on the right.',
-        'Desplaza IN a la izquierda N posiciones; entran ceros por la derecha.',
+        'Shifts IN left by N places; zeros enter on the right.' +
+            ' An untyped integer literal is 32 bits wide: SHL(16#8000, 1) is computed in 32 bits.' +
+            ' Write WORD#16#8000 to work within 16 bits.',
+        'Desplaza IN a la izquierda N posiciones; entran ceros por la derecha.' +
+            ' Un literal entero sin tipo mide 32 bits: SHL(16#8000, 1) se calcula en 32 bits.' +
+            ' Escriba WORD#16#8000 para trabajar dentro de 16 bits.',
         'VAR\n    Result : WORD;\nEND_VAR\n\nResult := SHL(16#0001, 4);',
         'Result=16',
     ),
@@ -251,8 +260,12 @@ export const FUNCTION_DOCS: Record<string, FunctionDoc> = {
             ['N', 'INT'],
         ],
         'ANY_BIT',
-        'Shifts IN right by N places; zeros enter on the left.',
-        'Desplaza IN a la derecha N posiciones; entran ceros por la izquierda.',
+        'Shifts IN right by N places; zeros enter on the left.' +
+            ' An untyped integer literal is 32 bits wide: SHR(16#8000, 1) is computed in 32 bits.' +
+            ' Write WORD#16#8000 to work within 16 bits.',
+        'Desplaza IN a la derecha N posiciones; entran ceros por la izquierda.' +
+            ' Un literal entero sin tipo mide 32 bits: SHR(16#8000, 1) se calcula en 32 bits.' +
+            ' Escriba WORD#16#8000 para trabajar dentro de 16 bits.',
         'VAR\n    Result : WORD;\nEND_VAR\n\nResult := SHR(16#0010, 4);',
         'Result=1',
     ),

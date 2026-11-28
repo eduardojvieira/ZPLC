@@ -14,12 +14,13 @@ const { useAssistantProvider } = await import('../shell/useSelection');
 type Sent = Record<string, unknown>;
 const sent: Sent[] = [];
 const answers: unknown[] = [];
+let status: Record<string, unknown> = { configured: true, enabled: true, keyStored: true, vaultAvailable: true };
 
 function bridge() {
   sent.length = 0;
   (window as unknown as { electronAPI?: unknown }).electronAPI = {
     aiProvider: {
-      getStatus: async () => ({ configured: true, enabled: true, keyStored: true, vaultAvailable: true }),
+      getStatus: async () => status,
       request: async (request: Sent) => {
         sent.push(request);
         return answers.shift() ?? { ok: true, answer: `answer ${sent.length}` };
@@ -29,6 +30,9 @@ function bridge() {
     workspaceTests: undefined,
   };
 }
+const setStatus = (next: Record<string, unknown>) => {
+  status = next;
+};
 function project(extra: Record<string, unknown> = {}) {
   dom.patchStore(useIDEStore, {
     isProjectOpen: true,
@@ -44,6 +48,7 @@ afterEach(() => {
   useAssistantEntry.getState().take();
   useAssistantProvider.setState({ available: false });
   answers.length = 0;
+  status = { configured: true, enabled: true, keyStored: true, vaultAvailable: true };
 });
 
 async function render(locale: 'en' | 'es' = 'en') {
@@ -160,6 +165,43 @@ describe('places in an answer open on a click (AIX-004)', () => {
     expect(navigated).toEqual([['src/Main.st', 3, 1]]);
     expect(view.queryByRole('button', { name: 'src/Gone.st:1' })).toBeNull();
     expect(view.getByText(/src\/Gone\.st:1/)).toBeTruthy();
+  });
+});
+
+describe('a key-free endpoint without an OS vault (AIX-006, AI-17)', () => {
+  const status = (vaultReason: string) => ({ configured: true, enabled: true, keyStored: false, vaultAvailable: false, vaultReason });
+
+  it('AIX-006 is offered and sends, and the status line says there is no key vault, never that one is available', async () => {
+    for (const [locale, line] of [
+      ['en', 'Provider enabled · no key stored · no OS key vault, so a key cannot be stored.'],
+      [
+        'es',
+        'Proveedor habilitado · sin clave almacenada · sin almacén de claves del sistema, por lo que no se puede almacenar una clave.',
+      ],
+    ] as const) {
+      for (const reason of ['unavailable', 'insecure-backend']) {
+        setStatus(status(reason));
+        const view = await render(locale);
+        await dom.waitFor(() => expect(view.getByText(line, { exact: true }), `${locale} ${reason}`).toBeTruthy());
+        expect(view.container.textContent).not.toMatch(/vault available|almacén de claves disponible/);
+        await view.ask('what is a scan?');
+        expect(sent.at(-1)).toMatchObject({ mode: 'ask', prompt: 'what is a scan?' });
+        view.unmount();
+      }
+    }
+  }, 30_000);
+
+  it('AIX-006 with a vault the status line is the one it always was', async () => {
+    const view = await render('en');
+    await dom.waitFor(() => expect(view.getByText('Provider enabled · key stored · vault available.', { exact: true })).toBeTruthy());
+  });
+
+  it('AIX-006 with a vault and no key the Spanish line is the one it always was', async () => {
+    setStatus({ configured: true, enabled: true, keyStored: false, vaultAvailable: true });
+    const view = await render('es');
+    await dom.waitFor(() =>
+      expect(view.getByText('Proveedor habilitado · clave no almacenada · almacén de claves disponible.', { exact: true })).toBeTruthy(),
+    );
   });
 });
 
