@@ -1,23 +1,67 @@
-// FRZ-001: the scope of 2.1.0 is one list in the repository (specs/014-zplc-2-1-release-quality/scope.md):
-// four columns, a known state, real commits for what is done, and requirement ids that exist.
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+// FRZ-001 & PUB-001: the scope of 2.1.0 is one list in the repository (specs/014-zplc-2-1-release-quality/scope.md):
+// five columns, a known state, real commits for what is done, requirement ids that exist,
+// and English+Spanish doc pages (or an explicit "none: <reason>") for every row.
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 
 const ROOT = resolve(import.meta.dir, '../..');
+const EN_DOCS = resolve(ROOT, 'docs/docs');
+const ES_DOCS = resolve(ROOT, 'docs/i18n/es/docusaurus-plugin-content-docs/current');
 const STATES = ['done', 'in progress', 'waiting', 'not started'];
-const COLUMNS = ['Item', 'Spec', 'State', 'Blocked by'];
+const COLUMNS = ['Item', 'Spec', 'State', 'Blocked by', 'Pages'];
 
-const rows = readFileSync(resolve(ROOT, 'specs/014-zplc-2-1-release-quality/scope.md'), 'utf8')
-  .split('\n')
-  .filter((line) => line.startsWith('|'))
-  .map((line) =>
-    line
-      .slice(1, -1)
-      .split('|')
-      .map((cell) => cell.trim()),
-  );
-const [header, , ...body] = rows;
+function parseScopeTable(markdown: string): { header: string[]; body: string[][] } {
+  const rows = markdown
+    .split('\n')
+    .filter((line) => line.startsWith('|'))
+    .map((line) =>
+      line
+        .slice(1, -1)
+        .split('|')
+        .map((cell) => cell.trim()),
+    );
+  const [header = [], , ...body] = rows;
+  return { header, body };
+}
+
+function checkScopePages(body: string[][], enDocsDir: string, esDocsDir: string): string[] {
+  const errors: string[] = [];
+  for (const row of body) {
+    const item = row[0] ?? '<unnamed row>';
+    const pagesCell = row[4];
+    if (pagesCell === undefined || pagesCell.length === 0) {
+      errors.push(`${item}: missing Pages cell`);
+      continue;
+    }
+    if (/^none\b/i.test(pagesCell)) {
+      const reason = pagesCell.match(/^none:\s*(.+)$/i)?.[1]?.trim() ?? '';
+      if (reason.length === 0) {
+        errors.push(`${item}: "none:" requires a reason`);
+      }
+      continue;
+    }
+    const pages = pagesCell.split(',').map((entry) => entry.trim());
+    for (const page of pages) {
+      if (page.length === 0) {
+        errors.push(`${item}: empty page entry in "${pagesCell}"`);
+        continue;
+      }
+      const enPath = resolve(enDocsDir, page);
+      const esPath = resolve(esDocsDir, page);
+      if (!existsSync(enPath)) {
+        errors.push(`${item}: missing English page docs/docs/${page}`);
+      }
+      if (!existsSync(esPath)) {
+        errors.push(`${item}: missing Spanish page docs/i18n/es/docusaurus-plugin-content-docs/current/${page}`);
+      }
+    }
+  }
+  return errors;
+}
+
+const { header, body } = parseScopeTable(readFileSync(resolve(ROOT, 'specs/014-zplc-2-1-release-quality/scope.md'), 'utf8'));
 
 function indexIds(spec: string): Set<string> {
   const path = resolve(ROOT, `tools/ci/requirement-index-${spec}.json`);
@@ -25,10 +69,10 @@ function indexIds(spec: string): Set<string> {
 }
 
 describe('FRZ-001 the scope list of 2.1.0', () => {
-  it('has the four columns and at least one row', () => {
+  it('has the five columns and at least one row', () => {
     expect(header).toEqual(COLUMNS);
     expect(body.length).toBeGreaterThan(0);
-    for (const row of body) expect(row).toHaveLength(4);
+    for (const row of body) expect(row).toHaveLength(5);
   });
 
   it('gives every row a known state', () => {
@@ -62,6 +106,59 @@ describe('FRZ-001 the scope list of 2.1.0', () => {
           for (const id of wanted) expect(ids.has(id), `${row[0]}: ${id} in ${match[1]}`).toBe(true);
         }
       }
+    }
+  });
+});
+
+describe('PUB-001 every scope item names its English and Spanish pages', () => {
+  it('verifies every row of scope.md has valid Pages entries in English and Spanish', () => {
+    const errors = checkScopePages(body, EN_DOCS, ES_DOCS);
+    expect(errors).toEqual([]);
+  });
+
+  it('reports every failure mode on a fixture table', () => {
+    const root = mkdtempSync(join(tmpdir(), 'scope-pages-fixture-'));
+    try {
+      const enDir = join(root, 'en');
+      const esDir = join(root, 'es');
+      mkdirSync(join(enDir, 'plant'), { recursive: true });
+      mkdirSync(join(esDir, 'plant'), { recursive: true });
+      writeFileSync(join(enDir, 'plant/ok.md'), '# ok\n');
+      writeFileSync(join(esDir, 'plant/ok.md'), '# ok\n');
+      writeFileSync(join(enDir, 'plant/only-en.md'), '# only en\n');
+      writeFileSync(join(esDir, 'plant/only-es.md'), '# only es\n');
+
+      const fixture = [
+        '| Item | Spec | State | Blocked by | Pages |',
+        '|---|---|---|---|---|',
+        '| Valid page | none | done | none | plant/ok.md |',
+        '| Valid internal | none | done | none | none: internal CI check |',
+        '| Missing cell | none | done | none |',
+        '| Empty cell | none | done | none | |',
+        '| Bare none | none | done | none | none |',
+        '| Reasonless none | none | done | none | none:   |',
+        '| Missing Spanish | none | done | none | plant/only-en.md |',
+        '| Missing English | none | done | none | plant/only-es.md |',
+        '| Missing both | none | done | none | plant/missing.md |',
+        '| Trailing comma | none | done | none | plant/ok.md, |',
+      ].join('\n');
+
+      const parsed = parseScopeTable(fixture);
+      const errors = checkScopePages(parsed.body, enDir, esDir);
+
+      expect(errors).toEqual([
+        'Missing cell: missing Pages cell',
+        'Empty cell: missing Pages cell',
+        'Bare none: "none:" requires a reason',
+        'Reasonless none: "none:" requires a reason',
+        'Missing Spanish: missing Spanish page docs/i18n/es/docusaurus-plugin-content-docs/current/plant/only-en.md',
+        'Missing English: missing English page docs/docs/plant/only-es.md',
+        'Missing both: missing English page docs/docs/plant/missing.md',
+        'Missing both: missing Spanish page docs/i18n/es/docusaurus-plugin-content-docs/current/plant/missing.md',
+        'Trailing comma: empty page entry in "plant/ok.md,"',
+      ]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
     }
   });
 });
