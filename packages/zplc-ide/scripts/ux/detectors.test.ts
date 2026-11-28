@@ -154,6 +154,20 @@ describe('the measured defects of a capture (UXV-004)', () => {
     expect(detectors.messageKey!(clean, catalogs)).toEqual([]);
   });
 
+  test('UXV-004 a key the catalogue does not have is still a key on screen: translate() returns the bare key', () => {
+    const bare = page([
+      element({ name: 'h2', text: 'plant.part.bogusKind' }),
+      element({ name: 'p', text: 'See learn.state.xyz, then go' }),
+    ]);
+    expect(detectors.messageKey!(bare, catalogs).map((d) => d.detail)).toEqual(['plant.part.bogusKind', 'learn.state.xyz']);
+    const names = page(
+      ['src/Main.st', 'Motor.Start', 'main.st', 'scene.json', 'plant.json', 'Version 2.0.1', 'docs.zplc.dev', 'e.g.', 'Blinky.ld'].map(
+        (text) => element({ name: 'td', text }),
+      ),
+    );
+    expect(detectors.messageKey!(names, catalogs)).toEqual([]);
+  });
+
   test('UXV-004 a string of the other language on screen is a defect', () => {
     const spanishInEnglish = page([element({ name: 'h2', text: es['welcome.open.title'] })]);
     const englishInSpanish = page([element({ name: 'h2', text: en['welcome.open.title'] })], { locale: 'es' });

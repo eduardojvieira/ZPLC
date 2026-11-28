@@ -183,14 +183,33 @@ const offscreen: Detector = ({ elements, viewport }) =>
       detail: `at ${rect.x},${rect.y} size ${rect.width} by ${rect.height} in a ${viewport.width} by ${viewport.height} window`,
     }));
 
-const messageKey: Detector = ({ elements }, catalogs) =>
-  elements.flatMap((element) =>
+/** A file name or a domain ends in one of these, which a message key never does. */
+const FILE_END = /^(st|il|ld|fbd|sfc|json|md|txt|png|svg|ts|tsx|js|csv|exe|dmg|zip|com|org|net|io|dev|html|css|yml|yaml|zplc)$/i;
+const namespaces = new WeakMap<object, Set<string>>();
+
+/**
+ * A message key on screen: a word of the catalogue, or, because translate() returns the bare key when no catalogue has it, any word
+ * shaped like one (a dotted lowercase identifier whose first part is a namespace of the catalogue, such as `plant.part.bogusKind`).
+ * Code and editors are not measured (measurement.ts skips them), and a file name or a domain ends in an extension.
+ */
+const messageKey: Detector = ({ elements }, catalogs) => {
+  let prefixes = namespaces.get(catalogs);
+  if (!prefixes) {
+    prefixes = new Set(Object.keys(catalogs.en).flatMap((key) => (key.includes('.') ? [key.slice(0, key.indexOf('.'))] : [])));
+    namespaces.set(catalogs, prefixes);
+  }
+  const shaped = (word: string) =>
+    /^[a-z][A-Za-z0-9]*(\.[A-Za-z][A-Za-z0-9]*)+$/.test(word) &&
+    prefixes.has(word.slice(0, word.indexOf('.'))) &&
+    !FILE_END.test(word.slice(word.lastIndexOf('.') + 1));
+  return elements.flatMap((element) =>
     element.text
       .split(/\s+/)
       .map((word) => word.replace(/^[^\w]+|[^\w]+$/g, ''))
-      .filter((word) => word.includes('.') && word in catalogs.en)
+      .filter((word) => word.includes('.') && (word in catalogs.en || shaped(word)))
       .map((word) => ({ kind: 'message-key' as const, where: element.name, detail: word })),
   );
+};
 
 /** The strings of the other language that this one never shows; in a template a `{marker}` stands for any text. */
 interface Foreign {
