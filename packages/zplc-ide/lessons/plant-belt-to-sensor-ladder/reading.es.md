@@ -32,9 +32,9 @@ Por eso el programa necesita una **memoria**: una variable BOOL local — `Runni
 span: 6000
 signals:
   - { name: Start, edges: [200, 400] }
-  - { name: Running, edges: [200, 4800] }
-  - { name: EyeFar, edges: [4800, 6000] }
-  - { name: Run, edges: [200, 4800] }
+  - { name: Running, edges: [200, 3260] }
+  - { name: EyeFar, edges: [3260, 6000] }
+  - { name: Run, edges: [200, 3260] }
 caption: Una pulsación corta activa la memoria, el sensor la borra y la cinta sigue a la memoria
 ```
 
