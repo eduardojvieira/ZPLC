@@ -17,8 +17,9 @@ afterEach(() => {
   useShellLayout.setState({ ...DEFAULT_SHELL_STATE, maximised: false, restoreTo: null });
 });
 
-describe('WorkbenchShell initial sidebar state (UX-023)', () => {
-  it('keeps the secondary sidebar collapsed on mount until it is asked for', async () => {
+/** Gives the group and panels real pixel sizes (the group `groupWidth` wide, changeable) and a ResizeObserver the test flushes by hand. */
+function installLayoutMocks() {
+  let groupWidth = 1366;
     const originalRect = HTMLElement.prototype.getBoundingClientRect;
     const originalOffsetWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth');
     const originalOffsetHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight');
@@ -27,7 +28,7 @@ describe('WorkbenchShell initial sidebar state (UX-023)', () => {
     // Give the group and panels real pixel dimensions so react-resizable-panels computes pixel sizes on mount.
     HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
       if (this.getAttribute('data-group') !== null) {
-        return { x: 0, y: 0, top: 0, left: 0, bottom: 768, right: 1366, width: 1366, height: 768, toJSON: () => ({}) } as DOMRect;
+        return { x: 0, y: 0, top: 0, left: 0, bottom: 768, right: groupWidth, width: groupWidth, height: 768, toJSON: () => ({}) } as DOMRect;
       }
       if (this.getAttribute('data-panel') !== null) {
         const raw = this.style.flexGrow;
@@ -37,8 +38,8 @@ describe('WorkbenchShell initial sidebar state (UX-023)', () => {
             ? 0
             : raw !== ''
               ? raw === '1'
-                ? Math.round(1366 / 3)
-                : Math.round((Number.parseFloat(raw) / 100) * 1366)
+                ? Math.round(groupWidth / 3)
+                : Math.round((Number.parseFloat(raw) / 100) * groupWidth)
               : basis.endsWith('px')
                 ? Math.round(Number.parseFloat(basis))
                 : 0;
@@ -101,6 +102,25 @@ describe('WorkbenchShell initial sidebar state (UX-023)', () => {
       return null;
     }
 
+  return {
+    flushResizeObservers,
+    BrowserLayoutFlush,
+    setGroupWidth: (width: number) => {
+      groupWidth = width;
+    },
+    restore: () => {
+      HTMLElement.prototype.getBoundingClientRect = originalRect;
+      if (originalOffsetWidth) Object.defineProperty(HTMLElement.prototype, 'offsetWidth', originalOffsetWidth);
+      if (originalOffsetHeight) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', originalOffsetHeight);
+      globalThis.ResizeObserver = originalRO;
+      window.ResizeObserver = originalWindowRO;
+    },
+  };
+}
+
+describe('WorkbenchShell initial sidebar state (UX-023)', () => {
+  it('keeps the secondary sidebar collapsed on mount until it is asked for', async () => {
+    const { BrowserLayoutFlush, restore } = installLayoutMocks();
     const seenVisible: boolean[] = [];
     const unsubscribe = useShellLayout.subscribe((state) => {
       seenVisible.push(state.secondaryVisible);
@@ -131,11 +151,69 @@ describe('WorkbenchShell initial sidebar state (UX-023)', () => {
       expect(dom.screen.getByRole('complementary', { name: dom.t('shell.secondary.label') })).toBeTruthy();
     } finally {
       unsubscribe();
-      HTMLElement.prototype.getBoundingClientRect = originalRect;
-      if (originalOffsetWidth) Object.defineProperty(HTMLElement.prototype, 'offsetWidth', originalOffsetWidth);
-      if (originalOffsetHeight) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', originalOffsetHeight);
-      globalThis.ResizeObserver = originalRO;
-      window.ResizeObserver = originalWindowRO;
+      restore();
+    }
+  });
+});
+
+describe('WorkbenchShell secondary sidebar against a transient zero-size layout', () => {
+  const mount = async (mocks: ReturnType<typeof installLayoutMocks>) => {
+    useShellLayout.setState({ ...DEFAULT_SHELL_STATE, secondaryVisible: false, maximised: false, restoreTo: null });
+    dom.render(
+      <>
+        <mocks.BrowserLayoutFlush />
+        <WorkbenchShell EditorArea={StubEditor} Console={StubConsole} debugController={{} as never} />
+      </>,
+    );
+    await dom.settle();
+  };
+
+  it('keeps the sidebar the person asked for when the group reports no width while it opens', async () => {
+    const mocks = installLayoutMocks();
+    try {
+      await mount(mocks);
+      mocks.setGroupWidth(0); // a window that is hidden, minimised or not laid out yet
+      await dom.act(async () => useShellLayout.getState().setSecondaryVisible(true));
+      await dom.act(async () => mocks.flushResizeObservers());
+      await dom.settle();
+      expect(useShellLayout.getState().secondaryVisible).toBe(true);
+    } finally {
+      mocks.restore();
+    }
+  });
+
+  it('keeps the sidebar when the whole shell was mounted without a width and is laid out afterwards', async () => {
+    const mocks = installLayoutMocks();
+    try {
+      mocks.setGroupWidth(0);
+      await mount(mocks);
+      await dom.act(async () => useShellLayout.getState().setSecondaryVisible(true));
+      await dom.act(async () => mocks.flushResizeObservers());
+      mocks.setGroupWidth(1366);
+      await dom.act(async () => mocks.flushResizeObservers());
+      await dom.settle();
+      expect(useShellLayout.getState().secondaryVisible).toBe(true);
+    } finally {
+      mocks.restore();
+    }
+  });
+
+  it('still follows a drag of the separator to zero', async () => {
+    const mocks = installLayoutMocks();
+    try {
+      await mount(mocks);
+      await dom.act(async () => useShellLayout.getState().setSecondaryVisible(true));
+      await dom.settle();
+      expect(useShellLayout.getState().secondaryVisible).toBe(true);
+      mocks.setGroupWidth(1366);
+      // the person drags the sidebar closed: the panel collapses with the group laid out
+      const panel = document.getElementById('secondary') as HTMLElement;
+      panel.style.flexGrow = '0';
+      await dom.act(async () => mocks.flushResizeObservers());
+      await dom.settle();
+      expect(useShellLayout.getState().secondaryVisible).toBe(false);
+    } finally {
+      mocks.restore();
     }
   });
 });
