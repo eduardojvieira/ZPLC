@@ -2923,3 +2923,20 @@ describe('useIDEStore recent projects and session restore (IDE-008)', () => {
     expect(await savedSession()).toMatchObject({ activePath: 'src/b.st' } satisfies Partial<SessionState>);
   });
 });
+
+describe('useIDEStore unsaved work counts a plant scene (FLW-005)', () => {
+  it('FLW-005 hasUnsavedChanges counts a scene edited and not saved, and not once it is discarded', async () => {
+    await import('../plant/core/plantCore'); // registers the shipped parts, as the application does
+    const { usePlantEdit, discardEditedScenes } = await import('../plant/editSession');
+    useIDEStore.setState({ loadedFiles: new Map(), projectConfigDirty: false });
+    expect(useIDEStore.getState().hasUnsavedChanges()).toBe(false);
+    usePlantEdit.getState().begin({ scene: { schemaVersion: 1, name: 'Floor', parts: [], cameras: [] }, map: null }, 'empty');
+    expect(useIDEStore.getState().hasUnsavedChanges()).toBe(false); // opened, not changed
+    usePlantEdit.getState().editor!.place('belt-x', 'belt', [4, 0, 4]);
+    expect(useIDEStore.getState().hasUnsavedChanges()).toBe(true); // being edited
+    usePlantEdit.getState().end();
+    expect(useIDEStore.getState().hasUnsavedChanges()).toBe(true); // closed with Done
+    discardEditedScenes();
+    expect(useIDEStore.getState().hasUnsavedChanges()).toBe(false);
+  });
+});

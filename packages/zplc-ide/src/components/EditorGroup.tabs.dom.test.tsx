@@ -10,6 +10,8 @@ const { PLANT_VIEW_ID, SETTINGS_VIEW_ID } = await import('../layout/documentKind
 const { PREFERENCES_VIEW_ID } = await import('../store/usePreferencesDocument');
 const { REVIEW_VIEW_ID } = await import('../store/useReviewDocument');
 const { configEditorViewId } = await import('../navigator/configEditors');
+await import('../plant/core/plantCore'); // registers the shipped parts, as the application does
+const { usePlantEdit, discardEditedScenes } = await import('../plant/editSession');
 
 const FILE = {
   id: 'file:src/Main.st',
@@ -111,5 +113,23 @@ describe('UXF-4 editor tab strip consistency', () => {
 
     await user.click(configTab.closeButton);
     expect(onClose).toHaveBeenCalledWith(CONFIG_ID);
+  });
+});
+
+describe('the modified mark of the plant tab (FLW-005)', () => {
+  it('FLW-005 the plant tab shows the modified mark while a scene is edited and not saved, and not once it is discarded', () => {
+    renderGroup(FILE.id);
+    const mark = () => tabParts(PLANT_VIEW_ID).tabButton.textContent?.includes('*');
+    expect(mark()).toBe(false);
+    dom.act(() =>
+      usePlantEdit.getState().begin({ scene: { schemaVersion: 1, name: 'Floor', parts: [], cameras: [] }, map: null }, 'empty'),
+    );
+    expect(mark()).toBe(false); // opened, not changed
+    dom.act(() => void usePlantEdit.getState().editor!.place('belt-x', 'belt', [4, 0, 4]));
+    expect(mark()).toBe(true); // being edited
+    dom.act(() => void usePlantEdit.getState().end());
+    expect(mark()).toBe(true); // closed with Done, not saved
+    dom.act(() => discardEditedScenes());
+    expect(mark()).toBe(false);
   });
 });
