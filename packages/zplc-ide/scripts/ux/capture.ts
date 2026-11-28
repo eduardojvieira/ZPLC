@@ -176,7 +176,8 @@ export const DRAWN =
 /** A page expression: true when each 3D canvas of the page shows more than a few colours in this picture (a PNG, base64). */
 const canvasShows = (png: string): string =>
   `(async () => { const canvases = [...document.querySelectorAll('[data-plant-canvas]')]; if (canvases.length === 0) return true; ` +
-  `const bitmap = await createImageBitmap(await (await fetch('data:image/png;base64,${png}')).blob()); ` +
+  `const bytes = Uint8Array.from(atob('${png}'), (c) => c.charCodeAt(0)); ` +
+  `const bitmap = await createImageBitmap(new Blob([bytes], { type: 'image/png' })); ` +
   `const copy = document.createElement('canvas'); copy.width = bitmap.width; copy.height = bitmap.height; ` +
   `const context = copy.getContext('2d'); context.drawImage(bitmap, 0, 0); const scale = bitmap.width / innerWidth; ` +
   `return canvases.every((canvas) => { const box = canvas.getBoundingClientRect(); if (box.width < 2 || box.height < 2) return true; ` +
