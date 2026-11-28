@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Open the plant with {{ui:command.view.plant}}, keep {{ui:plant.panel.projectScene}} selected and press {{ui:plant.panel.editScene}}: the scene of this lesson is the empty floor. Each part you add is named and placed in {{ui:plantEditor.formHeading}}; the reading lists the steps of the editor."
+      "text": "Run {{ui:command.view.plant}} from the {{ui:studio.surface.palette}}, keep {{ui:plant.panel.projectScene}} selected and press {{ui:plant.panel.editScene}}: the scene of this lesson is the empty floor. Each part you add is named and placed in {{ui:plantEditor.formHeading}}; the reading lists the steps of the editor."
     },
     {
       "level": 2,
