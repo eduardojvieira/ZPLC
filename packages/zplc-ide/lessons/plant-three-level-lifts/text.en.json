@@ -1,41 +1,41 @@
 {
   "schemaVersion": 1,
   "title": "Move boxes between three levels",
-  "summary": "Sequence two lifts as two chains that run side by side and meet only at the shared transfer belt.",
+  "summary": "Make two lifts work at the same time, each in its own cycle, meeting only at the belt between them.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
-    "Describe each lift as its own chain of steps that loops back to its first step.",
-    "Start both chains with one transition and let them meet only at the belt between the lifts."
+    "Describe each lift as a cycle of steps of its own that returns to where it began.",
+    "Make both lifts work at the same time, meeting only at the belt between them."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/ThreeLevelLifts.sfc.json, add the chain of lift B: B_LOAD, B_SETTLE, B_RISE, B_UNLOAD and B_LOWER, the same five steps as lift A one level higher.",
-      "checkpoint": "Each step sets every output of its lift, so reading the active steps tells you what each lift does."
+      "body": "In src/ThreeLevelLifts.sfc.json, lift A already carries each box from the infeed to the transfer belt at level 2. Lift B must carry each box from the transfer belt up to the outfeed at level 3, as lift A does one level lower, and both lifts must be able to work at the same time.",
+      "checkpoint": "Reading the active steps tells you what each lift is doing at any moment."
     },
     {
       "key": "predict",
       "title": "Predict",
       "body": "Before running, follow one box: it rides the infeed onto lift A, A rises with its surface stopped, runs the box onto the transfer belt at level 2 and lowers; B does the same one level higher and hands the box to the outfeed.",
-      "checkpoint": "A lift moves only while its surface is stopped, a belt runs towards a lift only while that lift waits at its loading level, and Green lights once five boxes have passed EyeTop."
+      "checkpoint": "Each lift's belt is stopped while the lift moves, the transfer belt stops when EyeMid sees a box, and Green lights when the fifth box, released 50 s into the run, reaches EyeTop."
     },
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter runs only lift A, so boxes pile up on the transfer belt; add the chain of lift B and start it from the same transition as lift A.",
+      "body": "Make lift B carry the boxes on from the transfer belt to level 3 while lift A keeps working, save it, then press {{ui:learn.check}}. The starting program runs only lift A, so the boxes pile up on the transfer belt and none reaches the bin.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press {{ui:toolbar.run.label}} (F5) and open the {{ui:plant.panel.view3d}}.",
       "checkpoint": "The required scenario is named three-level-lifts and contains {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Watch both lifts in the 3D view: they can move at the same time, and the transfer belt at level 2 is the only place where their chains meet.",
+      "body": "Watch both lifts in the {{ui:plant.panel.view3d}}: at times they move at the same time, and the transfer belt at level 2 is the only part that both of them use.",
       "checkpoint": "Neither lift moves while its surface runs, and no box is dropped."
     },
     {
@@ -48,14 +48,12 @@
   "hints": [
     {
       "level": 1,
-      "text": "Copy the five steps of lift A and rename them B_LOAD to B_LOWER; lift B reads BAtLow, BAtHigh and BoxOnB, and sets BLoading instead of RunInfeed."
+      "text": "Lift B does the same job as lift A, one level higher. Look at how the cycle of lift A is built, then ask which signals and outputs of lift B play the same part, and what has to be true for both lifts to be working at the same time."
     },
     {
       "level": 2,
-      "text": "Start both chains with one transition: give the start transition a second target in toSteps, and keep the two chains apart from then on."
+      "text": "Copy the five steps of lift A and rename them B_LOAD to B_LOWER; lift B reads BAtLow, BAtHigh and BoxOnB, and sets BLoading instead of RunInfeed. Then start both chains with one transition: give the start transition a second target in toSteps, and keep the two chains apart from then on."
     }
   ],
-  "faultCases": [
-    "The starter runs only lift A, so boxes pile up on the transfer belt; add the chain of lift B and start it from the same transition as lift A."
-  ]
+  "faultCases": ["The starting program runs only lift A, so the boxes pile up on the transfer belt and none reaches the bin."]
 }
