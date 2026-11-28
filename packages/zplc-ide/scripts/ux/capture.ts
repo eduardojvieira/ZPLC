@@ -682,8 +682,12 @@ async function captureCondition(
     );
     if (welcome) await takeIfShowing(welcome);
 
+    // A click leaves the pointer over whatever opens under it, and Chromium's hover then changes a control between two runs:
+    // park it in an empty corner after every click.
+    const parkPointer = () => app.cdp.command('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 1, y: condition.height - 1 });
     app.answer(project);
     await app.click(button(ui('welcome.open.title'), 'contains'), 'the Open project button');
+    await parkPointer();
     if (!(await showing(`document.querySelector('[role="toolbar"]')`, 'the opening of the project', 60_000)))
       throw new Error('Timed out waiting for the project workbench');
     await still();
@@ -746,6 +750,7 @@ async function captureCondition(
             continue;
           }
           await app.click(css(plan.click), plan.click);
+          await parkPointer();
         }
         await still();
         await takeIfShowing(plan);
