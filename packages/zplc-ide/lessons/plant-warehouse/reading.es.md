@@ -128,7 +128,7 @@ question: El programa pide al transelevador otro Bay mientras la horquilla está
 options:
   - { text: 'El transelevador se queda donde está y la petición se cuenta en blocked', correct: true, feedback: 'Sí. El transelevador no se desplaza con la horquilla fuera, y cada petición rechazada se cuenta una vez.' }
   - { text: 'El transelevador se desplaza con la horquilla fuera', feedback: 'No puede: su desplazamiento se mantiene detenido mientras la horquilla está fuera.' }
-  - { text: 'El transelevador recoge la horquilla por sí solo y luego se desplaza', feedback: 'La horquilla se mueve solo cuando el programa lo ordena.' }
+  - { text: 'El transelevador recoge la horquilla por sí solo y luego se desplaza', feedback: 'La horquilla se queda fuera mientras el programa mantiene ForkLeft o ForkRight; el transelevador nunca la recoge para desplazarse.' }
 ```
 
 ## Qué hará en la práctica

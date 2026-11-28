@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Write the missing behaviour, save it, then press {{ui:learn.check}}. The starting project stores boxes, but a request is never served: when a request waits for a cell that holds a box, the crane must fetch that box and put it on the outfeed belt.",
+      "body": "Write the missing behaviour, save it, then press {{ui:learn.check}}. The starting project stores boxes, but a request is never served: the box stays in its cell, no box reaches the outfeed bin and Green never lights. When a request waits for a cell that holds a box, the crane must fetch that box and put it on the outfeed belt.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "Add the retrieve chain and start it from IDLE with a transition of priority 2, after the store transition, when (Want1 AND Held1) OR (Want2 AND Held2) OR (Want3 AND Held3). Choose the cell in a P1 action, which runs once when the step is entered: the first cell with its Want and Held both TRUE; Bay and Level can be set in the same action and they keep their value. Wait for the step time of 0.3 s and for InPos before extending the fork, and change Bay or Level only in a step where the fork is retracted. Give every step its own action that writes every crane output, and the common action. The chain is: R_PICK goes to the cell (0.3 s and InPos); R_FORK_OUT extends the fork to the right until AtRight; R_RAISE raises it until Raised; R_LIFTED waits 0.3 s; R_RETRACT retracts the fork until Centre; R_TO_DOCK goes to Bay 0 and Level 0 (0.3 s and InPos); R_DOCK_OUT extends the fork to the right until AtRight; R_UNLOAD runs BeltRight until NOT Loaded; R_CLEAR waits 0.8 s; R_BACK retracts the fork until Centre; R_FINISH waits 0.5 s and, in a P1 action, clears Held and Want of the cell and adds 1 to Served."
+      "text": "Choose the cell in a P1 action, which runs once when the step is entered: the first cell with its Want and Held both TRUE; Bay and Level can be set in the same action and they keep their value. Add the retrieve chain and start it from IDLE with a transition of priority 2, after the store transition, when (Want1 AND Held1) OR (Want2 AND Held2) OR (Want3 AND Held3). Wait for the step time of 0.3 s and for InPos before extending the fork, and change Bay or Level only in a step where the fork is retracted. Give every step its own action that writes every crane output, and A_COMMON: ForkLeft and RunIn are FALSE in every step of the chain; Raise is TRUE from R_RAISE to R_BACK; ForkRight is TRUE in R_FORK_OUT, R_RAISE, R_LIFTED, R_DOCK_OUT, R_UNLOAD and R_CLEAR; BeltRight is TRUE in R_UNLOAD and R_CLEAR; every other crane output is FALSE. The chain is: R_PICK goes to the cell (0.3 s and InPos); R_FORK_OUT extends the fork to the right until AtRight; R_RAISE raises it until Raised; R_LIFTED waits 0.3 s; R_RETRACT retracts the fork until Centre; R_TO_DOCK goes to Bay 0 and Level 0 (0.3 s and InPos); R_DOCK_OUT extends the fork to the right until AtRight; R_UNLOAD runs BeltRight until NOT Loaded; R_CLEAR waits 0.8 s; R_BACK retracts the fork until Centre; R_FINISH waits 0.5 s and, in a P1 action, clears Held and Want of the cell and adds 1 to Served."
     }
   ],
   "faultCases": [

@@ -128,7 +128,7 @@ question: The program asks the crane for another Bay while the fork is out. What
 options:
   - { text: 'The crane stays where it is, and the request is counted in blocked', correct: true, feedback: 'Yes. The crane does not travel with the fork out, and every refused request is counted once.' }
   - { text: 'The crane travels with the fork out', feedback: 'It cannot: its travel is held while the fork is out.' }
-  - { text: 'The crane pulls the fork in by itself and then travels', feedback: 'The fork moves only when the program commands it.' }
+  - { text: 'The crane pulls the fork in by itself and then travels', feedback: 'The fork stays out while the program holds ForkLeft or ForkRight; the crane never pulls it in to travel.' }
 ```
 
 ## What you will do in the practice
