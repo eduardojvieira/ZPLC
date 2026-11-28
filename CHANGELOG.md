@@ -50,6 +50,8 @@ and version when the release is cut (see `RELEASING.md`).
 
 ### Breaking changes
 
+- A 64-bit typed literal (`LWORD#`, `ULINT#`, `LINT#`) builds as the input of `SHL`, `SHR`, `ROL`, `ROR`, `ABS`, `NEG` and the
+  64-bit conversions; 2.0 refused it at build time.
 - `trace_get` without `mode` now answers in mode `changes`; the 2.0 answer is `mode: "full"`. Before, a call with only
   `scenarioId` answered the whole recorded trace; now it answers the first sample, every change of a program signal, the
   failed expectations and the last sample. To get the whole trace as 2.0 answered it, byte for byte, pass
@@ -68,8 +70,6 @@ and version when the release is cut (see `RELEASING.md`).
 
 - `SEL` and `MUX` do not select strings in any language. In FBD and Ladder the build refuses them with `STRING` and says
   to use an `IF` in Structured Text.
-- A 64-bit literal (`LWORD#`, `ULINT#`, `LINT#`) as the input of `SHL`, `SHR`, `ROL` or `ROR` is refused at build time.
-  Assign the literal to a variable first. Assignment and arithmetic with those literals work.
 - An untyped integer literal is 32 bits wide, so `ROL(16#8000, 1)` into a `WORD` gives 0, not 1: the bit rotates out of the
   low 16 bits. Write the literal with its type, `ROL(WORD#16#8000, 1)`, to rotate within 16 bits. The same holds for `ROR`,
   `SHL` and `SHR`.
