@@ -1,61 +1,61 @@
 {
   "schemaVersion": 1,
-  "title": "Change a scene: add the second emitter",
-  "summary": "Open the finished merge scene, add the emitter of line B that it lacks and bind its signal in the plant map, without touching the program that already arbitrates the two lines.",
+  "title": "Change a scene: feed the second line",
+  "summary": "Open the finished merge scene and change it, without touching the program that arbitrates the two lines, until both lines deliver their boxes.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
-    "Add a part to an existing scene and place it where the rest of the scene expects it.",
-    "Bind the new part's signal in the plant map to the program variable that already drives it, leaving the program unchanged."
+    "Read a finished scene against the program and the scenario that run on it, and find what the scene needs.",
+    "Change a scene in the scene editor and its plant map, leaving the program unchanged."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objective",
-      "body": "Open scene.json in the Scene editor: the merge scene has no emitter for line B. Add an emitter named EmitterB at the start of feeder B, with a limit of three boxes, and in plant-map.json bind EmitterB.emit to MergeLines.EmitB. The program in src/MergeLines.st already drives EmitB; leave it as it is.",
-      "checkpoint": "The scene has EmitterB, the plant map binds EmitterB.emit, and the program is the one you were given."
+      "body": "In your project, scene.json is the merge scene and src/MergeLines.st is a finished program: it already drives every output of the station and lets the two lines through one at a time. The scenario starts the station with the start button and expects six boxes, three from each feeder, to leave the outfeed, with Done on at the end. As the project stands, line B gets no boxes. Change the scene and its plant map, not the program, until the Check passes.",
+      "checkpoint": "Boxes come from both feeders, the only files you changed are the scene and its plant map, and the program is the one you were given."
     },
     {
       "key": "predict",
       "title": "Predict",
-      "body": "Before running, think about what changes when line B gets its emitter: three boxes now arrive on each feeder, and the arbitration has to let them through one at a time, as before.",
-      "checkpoint": "Both blades hold the lines at first; then one blade opens at a time, line A first; all six boxes leave and Done turns on."
+      "body": "Before running, follow the boxes: the program already asks line B for its boxes, but as the project stands none arrive. Predict what the stop blades do once both lines are fed, and what Done does.",
+      "checkpoint": "Both blades hold their lines at first; later the blades open one at a time, never both together, and the boxes of both lines leave; Done turns on at the end."
     },
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save the scene and the plant map, then press {{ui:learn.check}}: The starter scene has no emitter for line B, so no box ever comes from feeder B; add EmitterB at the start of feeder B with a limit of three boxes, and bind EmitterB.emit to MergeLines.EmitB in the plant map.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "body": "Change the scene and its plant map, save them, then press {{ui:learn.check}}. The starter scene gives line B no boxes, so only the three boxes of line A ever reach the outfeed and Done never turns on. Your change must make both lines deliver; the program stays as it is.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press {{ui:toolbar.run.label}} (F5) and open the {{ui:plant.panel.view3d}}.",
       "checkpoint": "The required scenario is named change-scene and contains {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Watch feeder B fill with boxes and wait at its blade; if the part or its binding is missing, read the message of the Check: it names what it cannot find.",
+      "body": "Watch feeder B fill with boxes and wait at its blade. If boxes still do not come, read what the Check reports: it names what it cannot find, or lists the assertions that failed with what it observed.",
       "checkpoint": "All six boxes are delivered in turn, no box collides or drops, and Done is on at the end."
     },
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "The program did not change, so the scene alone decided the result; a part that is added but not bound is as absent as a part that was never added.",
-      "checkpoint": "What the assertions check is tested; nothing else is."
+      "body": "The program did not change, so the scene and its plant map alone decided the result. Which facts of the plant and which outputs of the program did the scenario read?",
+      "checkpoint": "What the assertions check is tested; nothing else is. You can name the facts of the plant and the outputs the scenario reads."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Copy the settings of EmitterA: an emitter with a limit of three boxes; EmitterB sits on the line of feeder B, at position 0, 0.65, 1.95 and rotated 90 degrees."
+      "text": "Compare the two feeders in the scene: what stands on feeder A that feeder B lacks, and how is it placed, turned and set? Then check the plant map for every output the program drives."
     },
     {
       "level": 2,
-      "text": "In the plant map the signal is EmitterB.emit, a command, and its point is MergeLines.EmitB; check the name letter by letter, because the Check reads it exactly."
+      "text": "In the Scene editor, press the Duplicate button of EmitterA in the list of parts: the copy keeps its height and its limit of three boxes, and {{ui:plantEditor.add}} would put a new part on the floor, where the form cannot raise it. Rename the copy EmitterB, set Position X to 0, Position Z to 2 and Rotation to 90, so that it stands at the start of feeder B. In the Signals table bind EmitterB.emit, a command, to MergeLines.EmitB, letter by letter, because the Check reads the name exactly. Then press {{ui:plantEditor.done}}, {{ui:plant.panel.saveToProject}} and {{ui:learn.check}}."
     }
   ],
   "faultCases": [
-    "The starter scene has no emitter for line B, so no box ever comes from feeder B; add EmitterB at the start of feeder B with a limit of three boxes, and bind EmitterB.emit to MergeLines.EmitB in the plant map."
+    "The starter scene gives line B no boxes, so only the three boxes of line A ever reach the outfeed and Done never turns on."
   ]
 }
