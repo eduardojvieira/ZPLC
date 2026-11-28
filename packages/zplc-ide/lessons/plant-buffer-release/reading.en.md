@@ -42,7 +42,7 @@ The station has twelve parts. The tables say what each one is in a real plant an
 
 A simple sequence runs straight from its first step to its last and returns to the top. A real station often has to repeat a pair of steps a fixed number of times before moving on to the next phase. In a sequential function chart, two tools handle that cleanly: a **pulse action** (`P1`) and **alternative transitions**.
 
-An action with qualifier `N` runs on every scan while its step is active. That is right for driving outputs such as belts, blades and lamps, because each step states the full output pattern of its phase. It is wrong for counting: writing `Hits := Hits + 1;` inside an `N` action would add one on every scan, reaching hundreds in a single second.
+An action with qualifier `N` runs on every scan while its step is active. That is right for driving outputs such as belts, blades and lamps, because each step states the full output pattern of its phase. It is wrong for counting: writing `Hits := Hits + 1;` inside an `N` action would add one on every scan, reaching a hundred in a single second on a {{t:10}} ms task.
 
 An action with qualifier `P1` runs only once, on the first scan the step becomes active. Put the increment in a `P1` action, and each entry into the step adds exactly one to the local counter.
 
@@ -88,10 +88,9 @@ This press has only one counting loop and releases the whole batch at once. In t
 
 ## Common mistakes
 
-- Incrementing a counter in an `N` action instead of a `P1` action. The counter climbs on every scan while the step is active, so the batch condition fires on the first item.
+- Incrementing a counter in an `N` action instead of a `P1` action. The counter climbs on every scan while the step is active, so in a step that waits, like STAMP, the batch condition fires on the first item.
 - Leaving two outgoing transitions from one step with overlapping conditions and no clear priority. Both branches can become TRUE on the same scan and send the chart down the wrong path.
 - Omitting an output from a step's `N` action. In SFC an output keeps its last value when the previous step ends, so a belt or blade stays in its old state until another action writes it.
-- Leaving a counting step on the same scan without allowing time for the pulse or the plant signal to settle. A short step timer or a sensor confirmation keeps the step transition predictable.
 
 > [!NOTE]
 > A `P1` action runs once when its step becomes active. If the chart loops back into the same step later, the step becomes active again and the `P1` action runs one more time.

@@ -42,7 +42,7 @@ La estación tiene doce elementos. Las tablas dicen qué es cada uno en una plan
 
 Una secuencia simple avanza en línea recta desde su primer paso hasta el último y vuelve al inicio. Una estación real suele tener que repetir un par de pasos un número fijo de veces antes de pasar a la fase siguiente. En un diagrama funcional secuencial, dos herramientas resuelven eso con claridad: una **acción de pulso** (`P1`) y las **transiciones alternativas**.
 
-Una acción con calificador `N` se ejecuta en cada ciclo de escaneo mientras su paso está activo. Eso conviene para accionar salidas como cintas, topes y pilotos, porque cada paso indica el estado completo de las salidas en su fase. No conviene para contar: escribir `Hits := Hits + 1;` dentro de una acción `N` sumaría uno en cada ciclo de escaneo, llegando a cientos en un solo segundo.
+Una acción con calificador `N` se ejecuta en cada ciclo de escaneo mientras su paso está activo. Eso conviene para accionar salidas como cintas, topes y pilotos, porque cada paso indica el estado completo de las salidas en su fase. No conviene para contar: escribir `Hits := Hits + 1;` dentro de una acción `N` sumaría uno en cada ciclo de escaneo, llegando a cien en un solo segundo en una tarea de {{t:10}} ms.
 
 Una acción con calificador `P1` se ejecuta una sola vez, en el primer ciclo de escaneo en que el paso se activa. Ponga el incremento en una acción `P1`, y cada entrada al paso sumará exactamente uno al contador local.
 
@@ -88,10 +88,9 @@ Esta prensa tiene un solo lazo de conteo y libera el lote entero de una vez. En 
 
 ## Errores comunes
 
-- Incrementar un contador en una acción `N` en lugar de una acción `P1`. El contador sube en cada ciclo de escaneo mientras el paso está activo, así que la condición del lote se cumple en la primera pieza.
+- Incrementar un contador en una acción `N` en lugar de una acción `P1`. El contador sube en cada ciclo de escaneo mientras el paso está activo, así que en un paso que espera, como STAMP, la condición del lote se cumple en la primera pieza.
 - Dejar dos transiciones salientes de un paso con condiciones superpuestas y sin prioridad clara. Ambas ramas pueden volverse TRUE en el mismo ciclo de escaneo y enviar el diagrama por el camino equivocado.
 - Omitir una salida en la acción `N` de un paso. En SFC una salida conserva su último valor cuando termina el paso anterior, así que una cinta o un tope mantiene su estado previo hasta que otra acción la escriba.
-- Salir de un paso de conteo en el mismo ciclo de escaneo sin dar tiempo a que el pulso o la señal de la planta se asienten. Un tiempo de paso corto o una confirmación de sensor hace predecible el cambio de paso.
 
 > [!NOTE]
 > Una acción `P1` se ejecuta una sola vez cuando su paso se activa. Si el diagrama vuelve a entrar más tarde en el mismo paso, el paso se activa de nuevo y la acción `P1` se ejecuta una vez más.
@@ -116,4 +115,4 @@ options:
 
 ## Qué hará en la práctica
 
-El diagrama inicial en `src/BufferRelease.sfc.json` solo tiene `IDLE` y `LOAD`, así que nunca retiene las cajas en el tope ni las libera de una en una. El escenario acciona el pulsador de inicio a los {{t:200}} ms, espera a que se acumulen cinco cajas detrás del tope, luego da cinco pulsaciones del pulsador de liberación a partir de los {{t:16000}} ms y comprueba `Done` a los {{t:36000}} ms con `Fault` apagada en todo momento. Construya el diagrama completo, guárdelo y pulse {{ui:learn.check}}.
+El proyecto inicial en `src/BufferRelease.sfc.json` solo tiene `IDLE` y `LOAD`, así que nunca retiene las cajas en el tope ni las libera de una en una. El escenario acciona el pulsador de inicio a los {{t:200}} ms, espera a que se acumulen cinco cajas detrás del tope, luego da cinco pulsaciones del pulsador de liberación a partir de los {{t:16000}} ms y comprueba `Done` a los {{t:36000}} ms con `Fault` apagada en todo momento. Construya el diagrama completo, guárdelo y pulse {{ui:learn.check}}.
