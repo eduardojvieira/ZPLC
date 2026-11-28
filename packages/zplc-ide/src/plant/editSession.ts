@@ -69,7 +69,26 @@ function textsOf(editor: SceneEditor, mapEditor: MapEditor, hadMap: boolean): { 
 }
 
 export const usePlantEdit = create<PlantEditSession & PlantEditActions>()((set, get) => {
-  const touch = () => set((state) => ({ version: state.version + 1 }));
+  // The map editor knows the signals it was built with: when parts change them, it is rebuilt with the bindings kept.
+  const signalKey = (editor: SceneEditor) =>
+    editor
+      .signals()
+      .map((signal) => `${signal.name}:${signal.type}:${signal.direction}`)
+      .join('|');
+  let keyed = '';
+  const followSignals = () => {
+    const { editor, mapEditor } = get();
+    if (!editor || !mapEditor || signalKey(editor) === keyed) return;
+    keyed = signalKey(editor);
+    const old = mapEditor.map();
+    const next = createMapEditor(editor.signals(), 'scene' in old.target ? old.target.scene : editor.state().scene.name);
+    next.load(old);
+    set({ mapEditor: next });
+  };
+  const touch = () => {
+    followSignals();
+    set((state) => ({ version: state.version + 1 }));
+  };
   // Each change made through the session's editor is seen by every view of it.
   const after =
     <A extends unknown[], R>(fn: (...args: A) => R) =>
@@ -103,6 +122,7 @@ export const usePlantEdit = create<PlantEditSession & PlantEditActions>()((set, 
       const mapEditor = createMapEditor(editor.signals(), ready.scene.name);
       if (ready.map) mapEditor.load(ready.map);
       const hadMap = ready.map !== null;
+      keyed = signalKey(editor);
       set((state) => {
         // A scene that was edited, closed and not saved goes on from what the disk holds, not from what it was closed with.
         const { [ref]: pending, ...others } = state.unsaved;
@@ -195,6 +215,11 @@ export async function saveEditedScenes(only?: string): Promise<SaveAllResult & {
     }
   }
   return result;
+}
+
+/** The scene of `ref` was written by something else than Save (the panel's own "Save to project"): its closed edits are not pending. */
+export function markSceneSaved(ref: string): void {
+  usePlantEdit.setState((state) => omit(state, ref));
 }
 
 const omit = (state: { unsaved: Readonly<Record<string, UnsavedScene>> }, ref: string) => ({
