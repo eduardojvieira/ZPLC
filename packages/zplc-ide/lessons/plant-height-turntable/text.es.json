@@ -1,58 +1,58 @@
 {
   "schemaVersion": 1,
   "title": "Clasificar por altura, mesa giratoria",
-  "summary": "Mida la altura de cada caja con una cortina de luz, conserve la lectura mayor y gire una mesa para que la caja salga por la cinta de su clase.",
+  "summary": "Mida la altura de las cajas con una cortina de luz y gire una mesa para que cada caja salga por la cinta de su clase.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la exactitud de la cortina ni la velocidad de la mesa.",
   "objectives": [
-    "Reducir un flujo de lecturas a un valor, el máximo, y clasificarlo con dos límites.",
-    "Coordinar una mesa giratoria con la decisión: detener, girar, sacar la caja y volver a girar."
+    "Distinguir cajas de tres alturas con una cortina de luz que informa una altura solo mientras hay una caja en ella.",
+    "Hacer que una mesa giratoria trabaje con la caja que gira, de modo que cada caja salga por la cinta de su clase."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/HeightSort.st, conserve el mayor HeightCm mientras ArrayBusy sea TRUE y clasifique la caja cuando haya pasado: hasta 25 cm baja, hasta 35 cm media, por encima alta. Lleve la caja a la mesa, deténgala, gire la mesa, saque la caja y vuelva al centro.",
+      "body": "En src/HeightSort.st, ponga en marcha las cintas tras Start y clasifique siete cajas por altura: una caja de unos 20 cm debe salir por la cinta central, una de unos 30 cm por la cinta de la derecha y una de unos 40 cm por la cinta de la izquierda, y ninguna debe caer. Done debe encenderse cuando siete cajas estén clasificadas.",
       "checkpoint": "Las cajas bajas salen por la cinta central, las medias a la derecha, las altas a la izquierda, y Done se enciende tras siete cajas."
     },
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, diga qué lee HeightCm mientras una caja cruza la cortina y por qué una sola lectura no basta: es 0 antes y después de la caja. ¿Qué valores dan cajas de 20, 30 y 40 cm y dónde quedan los límites entre ellos?",
-      "checkpoint": "La cortina lee 20, 30 o 40 mientras una caja está en ella, y el programa conserva el máximo y clasifica en el flanco de bajada de ArrayBusy."
+      "body": "Antes de ejecutar, diga qué lee HeightCm antes de una caja, mientras cruza la cortina y después, y qué valores dan cajas de 20, 30 y 40 cm. Si el programa mirara un solo ciclo de escaneo, ¿en cuáles podría saber la altura de una caja?",
+      "checkpoint": "HeightCm lee 0 sin caja en la cortina y 20, 30 o 40 mientras la cruza una caja de esa altura, así que solo los ciclos durante el cruce dicen la altura."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, mida cada caja, gire la mesa hacia la cinta de su clase y vuélvala al centro.",
+      "body": "Escriba el programa, guárdelo y pulse {{ui:learn.check}}. El proyecto inicial no acciona ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja. Tras Start las cintas deben funcionar y cada caja debe salir por la cinta de su clase.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la máquina, pulse {{ui:toolbar.run.label}} (F5) y abra la {{ui:plant.panel.view3d}}.",
       "checkpoint": "El escenario requerido se llama height-sorting-turntable y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe la vista 3D y la traza de HeightCm: sube cuando la caja entra en la cortina y vuelve a 0. La mesa gira solo cuando la caja se ha detenido sobre ella y vuelve al centro antes de la caja siguiente.",
-      "checkpoint": "ToLeft o ToRight es TRUE solo mientras la caja está en la mesa, y RunTable es FALSE mientras la mesa gira."
+      "body": "Observe la {{ui:plant.panel.view3d}} y la traza de HeightCm: muestra la altura de una caja solo mientras la caja está en la cortina, y 0 en los demás momentos. Observe hacia dónde apunta la mesa para cada clase de caja.",
+      "checkpoint": "Una caja baja nunca hace girar la mesa; las medias y las altas la hacen apuntar a la derecha y a la izquierda, y RunTable es FALSE mientras la mesa gira."
     },
     {
       "key": "reflect",
       "title": "Reflexionar",
-      "body": "La calificación no puede comparar números: ve los contenedores, no el máximo que midió ni los límites que eligió. Límites en cualquier punto entre 20 y 30 cm y entre 30 y 40 cm dan la misma calificación.",
+      "body": "La calificación no puede comparar números: ve los contenedores, no los valores que midió su programa. Cualquier forma de distinguir las tres alturas que lleve cada caja a su propia cinta da la misma calificación.",
       "checkpoint": "Una caja en la cinta equivocada incumple la aserción ALWAYS."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Use un R_TRIG sobre ArrayBusy para poner Peak a 0, actualice Peak con HeightCm mientras ArrayBusy sea TRUE y un F_TRIG para clasificar: Peak > 35.0 alta, Peak > 25.0 media."
+      "text": "HeightCm vale 0 siempre que no hay caja en la cortina, y la caja todavía no está en la mesa cuando sale de la cortina: ¿qué debe recordar su programa de una caja, y desde cuándo hasta cuándo?"
     },
     {
       "level": 2,
-      "text": "Lea la clase cuando la caja se libera de la cuchilla, en Route, para que la medición siguiente no la cambie. Gire solo con la caja quieta sobre la mesa y permanezca en el estado de giro hasta que AtCentre vuelva a ser TRUE."
+      "text": "Use un R_TRIG sobre ArrayBusy para poner Peak a 0, actualice Peak con HeightCm mientras ArrayBusy sea TRUE y un F_TRIG para clasificar: Peak > 35.0 alta, Peak > 25.0 media. Lea la clase cuando la caja se libera de la cuchilla, en Route, para que la medición siguiente no la cambie. Gire solo con la caja quieta sobre la mesa y permanezca en el estado de giro hasta que AtCentre vuelva a ser TRUE."
     }
   ],
   "faultCases": [

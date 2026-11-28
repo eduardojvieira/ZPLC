@@ -1,58 +1,58 @@
 {
   "schemaVersion": 1,
   "title": "Sort by height, turntable",
-  "summary": "Measure the height of each box with a light array, keep the largest reading, and turn a turntable so the box leaves on the belt of its class.",
+  "summary": "Tell boxes of three heights apart with a light array, and turn a turntable so that each box leaves on the belt of its class.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the accuracy of the array or turntable speed.",
   "objectives": [
-    "Reduce a stream of readings to one value, the peak, and classify it with two limits.",
-    "Coordinate a turntable with the decision: stop, turn, run out, turn back."
+    "Tell boxes of three heights apart with a light array that reports a height only while a box is in it.",
+    "Make a turntable work with the box it turns, so that each box leaves on the belt of its class."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/HeightSort.st, keep the highest HeightCm while ArrayBusy is TRUE, and classify the box when it has passed: up to 25 cm short, up to 35 cm medium, above that tall. Run the box onto the turntable, stop it, turn the table, run the box out and turn back to the centre.",
+      "body": "In src/HeightSort.st, run the belts after Start and sort seven boxes by height: a box of about 20 cm must leave on the centre belt, a box of about 30 cm on the belt to the right and a box of about 40 cm on the belt to the left, and none may be dropped. Done must light when seven boxes are sorted.",
       "checkpoint": "Short boxes leave on the centre belt, medium to the right, tall to the left, and Done lights after seven boxes."
     },
     {
       "key": "predict",
       "title": "Predict",
-      "body": "Before running, say what HeightCm reads while a box crosses the array and why one reading is not enough: it is 0 before and after the box. Which values do 20, 30 and 40 cm boxes give and where do the limits sit between them?",
-      "checkpoint": "The array reads 20, 30 or 40 while a box is in it, and the program keeps the peak and classifies on the falling edge of ArrayBusy."
+      "body": "Before running, say what HeightCm reads before a box, while it crosses the array and after it, and which values boxes of 20, 30 and 40 cm give. If the program looked at one scan only, in which scans could it tell the height of a box?",
+      "checkpoint": "HeightCm reads 0 with no box in the array and 20, 30 or 40 while a box of that height crosses it, so only the scans during the crossing tell the height."
     },
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter drives no output, so no belt moves and no box is sorted; run the belts after Start, measure each box, turn the table to the belt of its class and turn it back to the centre.",
+      "body": "Write the program, save it, then press {{ui:learn.check}}. The starting program drives no output, so no belt moves and no box is sorted. After Start the belts must run and each box must leave on the belt of its class.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the machine move, press {{ui:toolbar.run.label}} (F5) and open the {{ui:plant.panel.view3d}}.",
       "checkpoint": "The required scenario is named height-sorting-turntable and contains {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Watch the 3D view and the trace of HeightCm: it rises while the box enters the array and returns to 0. The table turns only after the box has stopped on it, and returns to the centre before the next box.",
-      "checkpoint": "ToLeft or ToRight is TRUE only while the box is on the table, and RunTable is FALSE while the table turns."
+      "body": "Watch the {{ui:plant.panel.view3d}} and the trace of HeightCm: it shows the height of a box only while the box is in the array, and 0 otherwise. Watch which way the table faces for each class of box.",
+      "checkpoint": "A short box never makes the table turn; medium and tall boxes make it face right and left, and RunTable is FALSE while the table turns."
     },
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "The grade cannot compare numbers: it sees the bins, not the peak you measured or the limits you chose. Limits anywhere between 20 and 30 cm and between 30 and 40 cm give the same grade.",
+      "body": "The grade cannot compare numbers: it sees the bins, not the values your program measured. Any way of telling the three heights apart that sends every box to its own belt gives the same grade.",
       "checkpoint": "A box on the wrong belt fails the ALWAYS assertion."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Use an R_TRIG on ArrayBusy to reset Peak to 0, update Peak with HeightCm while ArrayBusy is TRUE, and an F_TRIG to classify: Peak > 35.0 tall, Peak > 25.0 medium."
+      "text": "HeightCm is 0 whenever no box is in the array, and the box is not yet at the turntable when it leaves the array: what must your program remember about a box, and from when to when?"
     },
     {
       "level": 2,
-      "text": "Read the class when the box is released from the blade, into Route, so the next measurement cannot change it. Turn only while the box stands still on the table, and stay in the turn state until AtCentre is TRUE again."
+      "text": "Use an R_TRIG on ArrayBusy to reset Peak to 0, update Peak with HeightCm while ArrayBusy is TRUE, and an F_TRIG to classify: Peak > 35.0 tall, Peak > 25.0 medium. Read the class when the box is released from the blade, into Route, so the next measurement cannot change it. Turn only while the box stands still on the table, and stay in the turn state until AtCentre is TRUE again."
     }
   ],
   "faultCases": [
