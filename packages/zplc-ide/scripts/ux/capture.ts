@@ -2,7 +2,7 @@
  * The capture tool of spec 014 (UXV-003, UXV-004): every surface of screens.md that a command opens, in the covering set of
  * conditions of D-36, captured without a person and measured for the defects a machine can find.
  *
- *   bun scripts/ux/capture.ts [--out <folder>] [--surface <id>]... [--condition <name>]...
+ *   bun scripts/ux/capture.ts [--out <folder>] [--surface <id>]... [--condition <name>]... [--lesson <id>]... [--no-lessons]
  *
  * The folder (default `<repository>/.cache/claude-ux-review/uxv`) gets `<surface>--<state>--<condition>.png` for each capture,
  * `manifest.json` (every capture with its measures and defects, and every surface the tool cannot reach yet, with why) and one
@@ -666,6 +666,7 @@ async function main(): Promise<void> {
       surface: { type: 'string', multiple: true },
       condition: { type: 'string', multiple: true },
       lesson: { type: 'string', multiple: true },
+      'no-lessons': { type: 'boolean' },
     },
   });
   const out = resolve(values.out ?? join(REPOSITORY, '.cache', 'claude-ux-review', 'uxv'));
@@ -679,7 +680,11 @@ async function main(): Promise<void> {
   };
   for (const id of values.lesson ?? []) if (!index.lessons.some((lesson) => lesson.id === id)) throw new Error(`${id} is not a lesson`);
   const allLessons = lessonPlan(index.lessons.map((lesson) => ({ ...lesson, reading: Boolean(lesson.reading) })));
-  const lessons = values.lesson ? allLessons.filter((lesson) => values.lesson!.includes(lesson.id)) : values.surface ? [] : allLessons;
+  const lessons = values.lesson
+    ? allLessons.filter((lesson) => values.lesson!.includes(lesson.id))
+    : values.surface || values['no-lessons']
+      ? []
+      : allLessons;
   const chosen = values.surface ? surfaces.filter((surface) => values.surface!.includes(surface.id)) : values.lesson ? [] : surfaces;
   const { reached, unreached } = plan(chosen);
 
