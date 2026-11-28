@@ -1144,7 +1144,7 @@ END_PROGRAM`);
         expect(readWide(memory, false)).toBe(0x00n);
     });
 
-    it('DWORD#1 and an untyped 1 under NOT compile as before', () => {
+    it('DWORD#1 and an untyped 1 under NOT give the same 32-bit complement', () => {
         for (const literal of ['DWORD#1', '1']) {
             const compiled = compileToBinary(`PROGRAM T
 VAR r AT %QD0 : DWORD; END_VAR
@@ -1153,8 +1153,8 @@ END_PROGRAM`);
             expect(compiled.assembly).not.toContain('SWAP');
             const memory = new Uint8Array(0x10000);
             run(compiled.assembly, memory);
-            // an untyped 1 under NOT keeps its pre-existing boolean-style result (masked to 0 or 1)
-            expect(new DataView(memory.buffer, 0x1000, 4).getUint32(0, true)).toBe(literal === '1' ? 0 : 0xfffffffe);
+            // an untyped 1 is a 32-bit operand, like DWORD#1 (C10)
+            expect(new DataView(memory.buffer, 0x1000, 4).getUint32(0, true)).toBe(0xfffffffe);
         }
     });
 });
