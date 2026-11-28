@@ -43,7 +43,7 @@ import { journeysStations } from './journeys/plantStations';
 import { journeysCourse } from './journeys/plantCourse';
 import { journeysOperator } from './journeys/plantOperator';
 import { pause } from './journeyTiming';
-import { pressMod } from './journeyKeys';
+import { pressMod, shortcutName, shortcutText } from './journeyKeys';
 
 export interface JourneyContext {
   root: string;
@@ -1139,7 +1139,7 @@ async function languageChain(app: App, { root, project, runtime }: JourneyContex
     },
     60_000,
   );
-  await app.click(button('Stop (Shift+F5)', 'prefix'), 'Stop'); // the simulator session is implicit: there is no Disconnect to press
+  await app.click(button(shortcutName('Stop', 'Shift+F5'), 'prefix'), 'Stop'); // the simulator session is implicit: there is no Disconnect to press
   // a target chosen while the stop is still under way asks "Change the target?" (a program is running), which nobody answers here
   await app.until('the program to stop', async () => (await app.visible(button('Run (F5)', 'prefix'))) || undefined);
 
@@ -1387,7 +1387,7 @@ export const JOURNEYS: Journey[] = [
         async () =>
           (await app.eval<boolean>(
             `Boolean(document.querySelector('[data-command="debug.run"] kbd')?.textContent === 'F5' && ` +
-              `document.querySelector('[data-command="file.save"] kbd')?.textContent === 'Ctrl+S')`,
+              `document.querySelector('[data-command="file.save"] kbd')?.textContent === ${JSON.stringify(shortcutText('Mod+S'))})`,
           )) || undefined,
       );
     },
@@ -5261,7 +5261,7 @@ export const JOURNEYS: Journey[] = [
         (await textOf('run')).includes(ui('studio.flow.done.run')),
         `The run notification should say the program runs: ${await textOf('run')}`,
       );
-      await app.click(button('Stop (Shift+F5)', 'prefix'), 'Stop');
+      await app.click(button(shortcutName('Stop', 'Shift+F5'), 'prefix'), 'Stop');
 
       // A long operation shows progress and a Cancel action, and its end is a result.
       for (const name of ['LongA', 'LongB', 'LongC']) {
@@ -6296,7 +6296,7 @@ export const JOURNEYS: Journey[] = [
         await connectAndRun(app);
         await app.click(tab('Watch', 'prefix'), 'the Watch tab');
         await running();
-        await app.click(button('Stop (Shift+F5)', 'prefix'), 'Stop');
+        await app.click(button(shortcutName('Stop', 'Shift+F5'), 'prefix'), 'Stop');
         await app.until('the program to stop', async () => (await app.visible(button('Run (F5)', 'prefix'))) || undefined);
         writeFileSync(
           join(root, 'profile', 'learn-workspaces', id, entry.starter.program),
@@ -7865,7 +7865,7 @@ export const JOURNEYS: Journey[] = [
       await outputIs('Total', '100000');
 
       // Where the runtime cannot apply a change the controls are disabled and the panel says why in words.
-      await app.click(button('Stop (Shift+F5)', 'prefix'), 'Stop');
+      await app.click(button(shortcutName('Stop', 'Shift+F5'), 'prefix'), 'Stop');
       const reason = () => app.eval<string>(`document.querySelector('[data-faceplate-reason]')?.textContent ?? ''`);
       await patiently(
         'the faceplate to say that the simulation is not running',

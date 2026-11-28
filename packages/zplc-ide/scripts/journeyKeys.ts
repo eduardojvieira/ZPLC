@@ -1,4 +1,5 @@
 import type { App } from './journeyApp';
+import { formatShortcut, type Platform } from '../src/commands/shortcuts';
 
 const EDIT_COMMANDS: Record<string, string> = { A: 'selectAll', C: 'copy', V: 'paste', X: 'cut', Z: 'undo' };
 
@@ -36,8 +37,8 @@ export async function pressMod(app: App, chord: string, platform: NodeJS.Platfor
 }
 
 /** A shortcut as the app names it on this platform (`Shift+F5`, or `⇧F5` on macOS). */
-export function shortcutText(shortcut: string, _platform: NodeJS.Platform = process.platform): string {
-  return shortcut.replace('Mod', 'Ctrl');
+export function shortcutText(shortcut: string, platform: NodeJS.Platform = process.platform): string {
+  return formatShortcut(shortcut, platform as Platform);
 }
 
 /** The accessible name of a control that carries its shortcut: `Stop (Shift+F5)`. */
