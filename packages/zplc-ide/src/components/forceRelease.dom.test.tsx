@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 
+import { useEffect } from 'react';
+
 import type { IDebugAdapter } from '../runtime/debugAdapter';
 import { setupDom, stubProjectLoader } from '../test/dom';
 
@@ -17,19 +19,25 @@ const adapter = {
   clearForcedValue: async (address: number) => void held.delete(address),
 } as unknown as IDebugAdapter;
 
-let api: ReturnType<typeof useDebugControllerForces>;
-function Harness() {
-  api = useDebugControllerForces({ adapter, adapterRef: { current: adapter }, forcesUnconfirmed: false, watchVariables: [], debugMap: null });
+type Api = ReturnType<typeof useDebugControllerForces>;
+const mine: { api?: Api } = {};
+const adapterRef = { current: adapter };
+function Harness({ onApi }: { onApi: (api: Api) => void }) {
+  const forces = useDebugControllerForces({ adapter, adapterRef, forcesUnconfirmed: false, watchVariables: [], debugMap: null });
+  useEffect(() => onApi(forces), [forces, onApi]);
   return null;
 }
+const api = () => mine.api!;
 const forces = () => Array.from(useIDEStore.getState().debug.forcedValues.keys());
-const force = (path: string, value: boolean) => dom.act(() => api.toggleForceValue(path, 0x10, value, 'BOOL', true));
-const release = (path: string) => dom.act(() => api.toggleForceValue(path, 0x10, null, 'BOOL', false));
+const force = (path: string, value: boolean) => dom.act(() => api().toggleForceValue(path, 0x10, value, 'BOOL', true));
+const release = (path: string) => dom.act(() => api().toggleForceValue(path, 0x10, null, 'BOOL', false));
 
 function start() {
   held.clear();
   dom.patchStore(useIDEStore, { debug: { ...useIDEStore.getState().debug, forcedValues: new Map(), forcesUnconfirmed: false } } as never);
-  dom.render(<Harness />);
+  dom.render(<Harness onApi={(api) => {
+        mine.api = api;
+      }} />);
 }
 
 describe('A released variable keeps no force, under any spelling of its path (spec 014, found by V-P7)', () => {
