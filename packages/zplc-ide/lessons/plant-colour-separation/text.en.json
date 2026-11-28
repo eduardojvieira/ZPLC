@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/ColourSeparation.st, run the three belts after Start and hold each workpiece at the blade. Wait for it to lie still (T#300ms), then read IsRed: push a red one onto the side belt, release a blue one.",
+      "body": "In src/ColourSeparation.st, run the three belts after Start and hold each workpiece at the blade. Wait for it to lie still, then read IsRed: push a red one onto the side belt, release a blue one.",
       "checkpoint": "Red workpieces end in RedBin, blue ones in BlueBin, and Done lights after the eighth."
     },
     {
@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Keep the step in a state number: 0 wait for a still workpiece, 1 push, 2 retract, 3 let a blue one go. A TON of T#300ms on Waiting gives the settle time."
+      "text": "Think about what the program has to remember from one scan to the next, and which input tells you that each movement of the plate has finished."
     },
     {
       "level": 2,
-      "text": "Latch the route when you leave state 0. A pushed workpiece is handled when Retracted is TRUE; a released one is handled when it has left the blade (a TON of T#1500ms on NOT Waiting). Hold := Active AND State <> 3."
+      "text": "Latch the route when you leave state 0. A pushed workpiece is handled when Retracted is TRUE; a released one is handled when it has left the blade (for example a TON of T#1500ms on NOT Waiting; the time is a choice, not a requirement). Hold := Active AND State <> 3."
     }
   ],
   "faultCases": [

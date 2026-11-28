@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/ColourSeparation.ld.json, ponga en marcha las tres cintas tras Start y retenga cada pieza en la cuchilla. Espere a que esté quieta (T#300ms) y lea IsRed: empuje la roja a la cinta lateral y suelte la azul.",
+      "body": "En src/ColourSeparation.ld.json, ponga en marcha las tres cintas tras Start y retenga cada pieza en la cuchilla. Espere a que esté quieta y lea IsRed: empuje la roja a la cinta lateral y suelte la azul.",
       "checkpoint": "Las piezas rojas terminan en RedBin, las azules en BlueBin, y Done se enciende tras la octava."
     },
     {
@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Guarde el paso en un número de estado: 0 esperar una pieza quieta, 1 empujar, 2 retraer, 3 dejar pasar una azul. Un TON de T#300ms sobre Waiting da el tiempo de reposo."
+      "text": "Piense qué debe recordar el programa de un ciclo de escaneo al siguiente, y qué entrada le dice que cada movimiento de la placa ha terminado."
     },
     {
       "level": 2,
-      "text": "Salga del estado 0 con dos peldaños: un contacto normalmente abierto de IsRed va al estado 1, uno normalmente cerrado al estado 3. Una pieza empujada queda atendida cuando Retracted es TRUE; una soltada, cuando ha salido de la cuchilla (un TON de T#1500ms sobre NOT Waiting). Gobierne Hold con Active en serie con un bloque NE sobre State y 3, y cuente con un CTU de 8."
+      "text": "Salga del estado 0 con dos peldaños: un contacto normalmente abierto de IsRed va al estado 1, uno normalmente cerrado al estado 3. Una pieza empujada queda atendida cuando Retracted es TRUE; una soltada, cuando ha salido de la cuchilla (por ejemplo un TON de T#1500ms sobre NOT Waiting; el tiempo es una elección, no un requisito). Gobierne Hold con Active en serie con un bloque NE sobre State y 3, y cuente con un CTU de 8."
     }
   ],
   "faultCases": [
