@@ -561,10 +561,13 @@ async function captureCondition(
     const scroll = SCROLL_TO[plan.surface.id];
     if (scroll && (await showing(`document.querySelector(${JSON.stringify(scroll)})`, plan.surface.id)))
       await app.eval(`document.querySelector(${JSON.stringify(scroll)}).scrollIntoView({ block: 'center' })`);
-    // a dialog left open over a surface is not that surface's picture; only the dialogs themselves are taken with one open
+    // a dialog left open over a surface is not that surface's picture; only the dialogs themselves are taken with one open (the
+    // full-screen reading of a lesson is a modal region too, and it is the surface of learn.reading)
     if (
       plan.surface.area !== 'Dialogs' &&
-      (await app.eval<boolean>(`Boolean(document.querySelector('[aria-modal="true"], [role="dialog"], [role="alertdialog"]'))`))
+      (await app.eval<boolean>(
+        `Boolean(document.querySelector('[aria-modal="true"]:not([data-learn-reading]), [role="dialog"]:not([data-learn-reading]), [role="alertdialog"]'))`,
+      ))
     ) {
       failed.push({ surface: plan.surface.id, reason: 'not reached: a dialog is open over it' });
       return;
