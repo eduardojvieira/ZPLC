@@ -24,18 +24,18 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter only latches Start and runs the infeed belt, so no workpiece is read or sorted. The program must sort the eight workpieces, red ones into RedBin and blue ones into BlueBin, then light Done.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press {{ui:toolbar.run.label}} (F5) and open the {{ui:plant.panel.view3d}}.",
       "checkpoint": "The required scenario is named colour-separation and contains {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Watch the 3D view and the trace: State is not an output, so follow Hold and Push. A red workpiece keeps Push TRUE until Extended; a blue one never sets Push, and Hold is FALSE while it is let go.",
+      "body": "Watch the {{ui:plant.panel.view3d}} and the trace: State is not an output, so follow Hold and Push. A red workpiece keeps Push TRUE until Extended; a blue one never sets Push, and Hold is FALSE while it is let go.",
       "checkpoint": "The outputs are the same as with the Structured Text solution, scan for scan, because both express the same four states."
     },
     {

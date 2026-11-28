@@ -24,18 +24,18 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial no ordena ninguna posición, así que el brazo se queda donde está; envíelo a la tapa, agarre, lleve la tapa a la base y suéltela, tres veces, y encienda Green tras la tercera.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse {{ui:toolbar.run.label}} (F5) y abra la {{ui:plant.panel.view3d}}.",
       "checkpoint": "El escenario requerido se llama two-axis-assembly-numeric y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe en la traza cómo XPos y YPos llegan a cada consigna, y el brazo en la vista 3D cruzar las cintas solo a la altura segura.",
+      "body": "Observe en la traza cómo XPos y YPos llegan a cada consigna, y el brazo en la {{ui:plant.panel.view3d}} cruzar las cintas solo a la altura segura.",
       "checkpoint": "Se coloca una tapa sobre cada base, nada se cae y Green está encendido al final."
     },
     {

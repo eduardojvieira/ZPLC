@@ -24,18 +24,18 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter has no rungs, so nothing moves; write the transfer: feed one box at a time, grip, carry and release each one over the outfeed, and light Done after the fourth.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press {{ui:toolbar.run.label}} (F5) and open the {{ui:plant.panel.view3d}}.",
       "checkpoint": "The required scenario is named belt-to-belt-transfer and contains {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Watch the clamp in the 3D view: it stays closed and still until the box is held, and the box lies still where it is put down.",
+      "body": "Watch the clamp in the {{ui:plant.panel.view3d}}: it stays closed and still until the box is held, and the box lies still where it is put down.",
       "checkpoint": "No box falls, and the clamp opens only over the outfeed belt."
     },
     {

@@ -24,18 +24,18 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del proyecto inicial, guárdelo y pulse {{ui:learn.check}}: El proyecto inicial solo memoriza Start y hace girar la cinta de entrada, así que no se lee ni se clasifica ninguna pieza. El programa debe clasificar las ocho piezas, las rojas a RedBin y las azules a BlueBin, y después encender Done.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse {{ui:toolbar.run.label}} (F5) y abra la {{ui:plant.panel.view3d}}.",
       "checkpoint": "El escenario requerido se llama colour-separation y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe la vista 3D y la traza: State no es una salida, así que siga Hold y Push. Una pieza roja mantiene Push en TRUE hasta Extended; una azul nunca activa Push, y Hold está en FALSE mientras se la deja pasar.",
+      "body": "Observe la {{ui:plant.panel.view3d}} y la traza: State no es una salida, así que siga Hold y Push. Una pieza roja mantiene Push en TRUE hasta Extended; una azul nunca activa Push, y Hold está en FALSE mientras se la deja pasar.",
       "checkpoint": "Las salidas son las de la solución en Texto estructurado, ciclo a ciclo, porque ambas expresan los mismos cuatro estados."
     },
     {

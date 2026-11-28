@@ -24,18 +24,18 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter only homes the pad: add the steps and transitions that feed a lid and a base, take the lid, set it on the base, let the assembly leave, repeat three times and finish with Green.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press {{ui:toolbar.run.label}} (F5) and open the {{ui:plant.panel.view3d}}.",
       "checkpoint": "The required scenario is named two-axis-assembly and contains {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Watch the active step change in the chart view while the pad moves, and the 3D view for the lid resting on the base.",
+      "body": "Watch the active step change in the chart view while the pad moves, and the {{ui:plant.panel.view3d}} for the lid resting on the base.",
       "checkpoint": "One lid lands on one base each cycle, nothing is dropped, and Green stays off until the third."
     },
     {

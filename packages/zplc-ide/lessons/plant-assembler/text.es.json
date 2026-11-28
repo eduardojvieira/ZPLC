@@ -24,18 +24,18 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial solo lleva el brazo a su posición de partida: agregue los pasos y transiciones que alimentan una tapa y una base, toman la tapa, la colocan sobre la base, dejan salir el ensamble, repiten tres veces y terminan con Green.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse {{ui:toolbar.run.label}} (F5) y abra la {{ui:plant.panel.view3d}}.",
       "checkpoint": "El escenario requerido se llama two-axis-assembly y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe el paso activo cambiar en la vista del diagrama mientras el brazo se mueve, y la vista 3D para ver la tapa apoyada sobre la base.",
+      "body": "Observe el paso activo cambiar en la vista del diagrama mientras el brazo se mueve, y la {{ui:plant.panel.view3d}} para ver la tapa apoyada sobre la base.",
       "checkpoint": "Cada ciclo una tapa cae sobre una base, nada se cae y Green sigue apagado hasta la tercera."
     },
     {
