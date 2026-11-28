@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Load and unload three boxes in Ladder",
-  "summary": "Count boxes with two CTU blocks to run a fixed batch: load three, unload three, then light Done.",
+  "summary": "Count boxes to run a fixed batch: load three, unload three, then light Done.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Count items with a counter that has a preset value.",
@@ -11,48 +11,48 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/CountedQueue.ld.json, count the boxes at EyeIn with a CTU block of preset 3 and the boxes at EyeOut with a second CTU block of preset 3.",
-      "checkpoint": "Load one box at a time, stop loading at the third, and light Done when the second counter reaches 3."
+      "body": "In src/CountedQueue.ld.json the inputs Start, EyeIn and EyeOut, the outputs Run, Emit and Done, and local variables including two counters are declared, and there are no rungs yet. A press of Start must start a batch of three boxes: load them onto the belt one after another without collisions, unload all three at the far end, then light Done and stop the belt.",
+      "checkpoint": "You can say why the station needs one count at the entrance and another at the exit, and when the belt must stop."
     },
     {
       "key": "predict",
       "title": "Predict",
-      "body": "Before running, count the boxes: three are loaded, one after the other, and then the belt unloads them.",
-      "checkpoint": "The belt runs and boxes appear until three have passed EyeIn; Done stays off until the third box has passed EyeOut, and then the belt stops."
+      "body": "The scenario presses Start at {{t:200}} ms and releases it at {{t:400}} ms. Before running, follow the batch: three boxes are loaded one after another, and then the belt carries all three past EyeOut.",
+      "checkpoint": "{{v:CountedQueue.Run=false@100|Run OFF}} and {{v:CountedQueue.Done=false@100|Done OFF}} at {{t:100}} ms; boxes enter until three have passed EyeIn; at the end, at {{t:20000}} ms, {{v:CountedQueue.Done=true@20000|Done is ON}} and {{v:CountedQueue.Run=false@20000|Run is OFF}}."
     },
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter has no rungs and no counters; load three boxes with a counter at EyeIn, count the unloaded boxes with a counter at EyeOut, light Done when all three are out, and stop the belt then.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "body": "Draw the rungs, save the program, then press {{ui:learn.check}}. The starting program has no rungs, so no box is loaded and the belt never moves. A press of Start must start the batch, release three boxes one by one as each clears EyeIn, carry them to the remover at the far end, and light Done and stop the belt once all three have passed EyeOut.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the machine move, press {{ui:toolbar.run.label}} (F5) and open the {{ui:plant.panel.view3d}}.",
       "checkpoint": "The required scenario is named counted-queue and contains {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Watch the boxes enter one by one and leave at the other end; the counters change once per box, not once per scan.",
+      "body": "Watch the boxes enter one by one and leave at the far end in the {{ui:plant.panel.view3d}}; compare EyeIn, EyeOut, Run and Done in the trace.",
       "checkpoint": "All three boxes are delivered, none is dropped or collides, and Done is on when the belt stops."
     },
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "A counter counts rising edges, so a box that stays under a sensor counts once; the final AT assertion pins Done and the stopped belt.",
-      "checkpoint": "What the assertions check is tested; nothing else is."
+      "body": "The scenario checks that all three boxes are delivered without collisions and that Done is on and Run is off at {{t:20000}} ms. Why does the station need a second counter at EyeOut instead of stopping the belt when the EyeIn count reaches 3?",
+      "checkpoint": "When the third box passes EyeIn it is still near the start of the belt; only the EyeOut count tells you that all three boxes have reached the far end."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Place two CTU blocks, each in a rung that starts with the contact of its sensor; set R to FALSE and PV to 3, and bind Q to a variable: it turns on when the count reaches the preset."
+      "text": "Split the batch into four jobs: remembering that Start was pressed, counting boxes entering at EyeIn and leaving at EyeOut up to 3, releasing each next box only after the previous one has cleared EyeIn and before three are loaded, and running the belt until the exit count reaches 3."
     },
     {
       "level": 2,
-      "text": "Emit a new box on Start and each time the previous box has left EyeIn (a falling-edge contact on EyeIn), until the first counter is done; then Done follows the second counter and Run is Active AND NOT that counter."
+      "text": "Set Active with Start. Place two CTU blocks with R set to FALSE and PV set to 3: Loaded fed by EyeIn with Q bound to LoadedQ, and Unloaded fed by EyeOut with Q bound to UnloadedQ. Drive Emit from Start in parallel with a falling-edge contact on EyeIn, in series with Active and a normally closed LoadedQ. Drive Done from UnloadedQ, and Run from Active in series with a normally closed UnloadedQ."
     }
   ],
   "faultCases": [
