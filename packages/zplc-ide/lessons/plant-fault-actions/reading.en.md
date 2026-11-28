@@ -50,7 +50,7 @@ The station has fifteen parts. The tables say what each one is in a real plant a
 
 Two of the three sensors measure the box. `BeamLow` looks across the infeed at 0.25 m above the belt and `BeamHigh` at 0.35 m, so a short box breaks neither, a medium box breaks `BeamLow` only, and a tall box breaks both. The third sensor, `EyeChain`, sees a box standing at the blade.
 
-`Source1` releases a box every 5 s, up to nine boxes. In the run of the scenario of this lesson with no fault, all nine reach a bin: two short, six medium and one tall. A medium or a tall box breaks a beam for 0.8 s as it passes.
+`Source1` releases a box every 5 s, up to nine boxes. In the 40 s of the scenario it releases eight; in a run without the fault, the first five reach a bin before the end, four medium and one tall. A medium or a tall box breaks a beam for 0.8 s as it passes.
 
 ## A sensor that tells the wrong story
 

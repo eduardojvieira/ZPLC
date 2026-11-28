@@ -5,7 +5,7 @@
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show sensor behaviour on real hardware.",
   "objectives": [
     "Diagnose a stuck sensor from a fact the program can read, not from the sensor itself.",
-    "Choose a safe reaction: stop what brings new boxes and let the boxes already moving arrive."
+    "Choose a reaction that fits the machine: stop what brings new boxes and let the boxes already moving arrive."
   ],
   "stages": [
     {
@@ -18,18 +18,18 @@
       "key": "predict",
       "title": "Predict",
       "body": "The scenario triggers the fault action stuckOn on BeamHigh at {{t:21000}} ms, while boxes keep arriving every five seconds. Before running, say which boxes the stuck beam makes look different, and which bin a program without a diagnosis sends them to.",
-      "checkpoint": "Every box that is not tall breaks BeamLow and the stuck BeamHigh, so it looks tall and goes left to BinTall; the diagnosis must stop the line before that."
+      "checkpoint": "Every box that is not tall seems to break the stuck BeamHigh, so it looks tall and goes left to BinTall; the diagnosis must stop the line before that."
     },
     {
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter sorts correctly but trusts BeamHigh for ever; when the beam sticks on, boxes that are not tall are sent to BinTall, so the line must stop, and stay stopped, before the stuck beam misroutes a box.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press {{ui:toolbar.run.label}} (F5) and open the {{ui:plant.panel.view3d}}.",
       "checkpoint": "The required scenario is named fault-actions and contains {{assertions}} assertions."
     },
     {

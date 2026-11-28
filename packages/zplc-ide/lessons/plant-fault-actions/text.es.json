@@ -5,31 +5,31 @@
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el comportamiento del sensor en hardware real.",
   "objectives": [
     "Diagnosticar un sensor atascado a partir de un hecho que el programa puede leer, no del propio sensor.",
-    "Elegir una reacción segura: detener lo que trae cajas nuevas y dejar llegar las que ya se mueven."
+    "Elegir una reacción que se ajuste a la máquina: detener lo que trae cajas nuevas y dejar llegar las que ya se mueven."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
       "body": "En src/HeightSortChain.st el clasificador de la lección 16.4 funciona mientras los sensores dicen la verdad. A los {{t:21000}} ms la barrera superior, BeamHigh, se atasca en encendido y lee TRUE para siempre. La línea debe notarlo antes de enviar una caja al contenedor equivocado: desde entonces la cinta de entrada y el módulo de cadenas están apagados, el tope retráctil sigue reteniendo, Busy está apagado, y las cajas que ya van de camino llegan igual.",
-      "checkpoint": "Tras la falla la cinta de entrada está apagada, Busy y Done están apagados, la cuchilla sigue reteniendo y ninguna caja ha ido al contenedor equivocado."
+      "checkpoint": "Tras la falla la cinta de entrada está apagada, Busy y Done están apagados, el tope retráctil sigue reteniendo y ninguna caja ha ido al contenedor equivocado."
     },
     {
       "key": "predict",
       "title": "Predecir",
       "body": "El escenario provoca la acción de falla stuckOn en BeamHigh a los {{t:21000}} ms, mientras siguen llegando cajas cada cinco segundos. Antes de ejecutar, diga qué cajas distingue mal la barrera atascada y a qué contenedor las envía un programa sin diagnóstico.",
-      "checkpoint": "Toda caja que no es alta rompe BeamLow y el BeamHigh atascado, así que parece alta y va a la izquierda, a BinTall; el diagnóstico debe detener la línea antes."
+      "checkpoint": "Toda caja que no es alta parece interrumpir el BeamHigh atascado, así que parece alta y va a la izquierda, a BinTall; el diagnóstico debe detener la línea antes."
     },
     {
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial clasifica bien pero se fía de BeamHigh para siempre; cuando la barrera se atasca en encendido, las cajas que no son altas van a BinTall, así que la línea debe detenerse, y seguir detenida, antes de que la barrera atascada desvíe una caja.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse {{ui:toolbar.run.label}} (F5) y abra la {{ui:plant.panel.view3d}}.",
       "checkpoint": "El escenario requerido se llama fault-actions y contiene {{assertions}} aserciones."
     },
     {
@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflexionar",
-      "body": "La calificación ve lo que hizo la planta: ninguna caja desviada en ningún contenedor, la cinta de entrada apagada y el tope retráctil reteniendo al final. No ve cómo decidió su programa que la barrera estaba atascada, solo el resultado: una decisión demasiado temprana detiene la línea en la primera caja alta y suspende, y una demasiado tardía deja que una caja vaya al contenedor equivocado.",
+      "body": "La calificación ve lo que hizo la planta: ninguna caja desviada en ningún contenedor, la cinta de entrada apagada y el tope retráctil reteniendo al final. No ve cómo decidió su programa que la barrera estaba atascada, solo el resultado: una decisión demasiado temprana detiene la línea en la primera caja alta y el escenario falla, y una demasiado tardía deja que una caja vaya al contenedor equivocado.",
       "checkpoint": "Esta regla detecta una barrera atascada en encendido. Una barrera atascada en apagado, o un atasco del módulo de cadenas, necesita otra regla."
     }
   ],
