@@ -87,10 +87,11 @@ export interface PictureDiff {
 export function diffPictures(a: Png, b: Png, canvases: Rect[]): PictureDiff {
   const diff: PictureDiff = { sameSize: a.width === b.width && a.height === b.height, outside: 0, inside: 0, insideMax: 0, canvasArea: 0 };
   const box = canvases.map((c) => ({
-    x0: Math.round(c.x),
-    y0: Math.round(c.y),
-    x1: Math.round(c.x + c.width),
-    y1: Math.round(c.y + c.height),
+    // a canvas edge falls between pixels: the pixels it touches count as inside
+    x0: Math.floor(c.x),
+    y0: Math.floor(c.y),
+    x1: Math.ceil(c.x + c.width),
+    y1: Math.ceil(c.y + c.height),
   }));
   diff.canvasArea = box.reduce((sum, c) => sum + Math.max(0, c.x1 - c.x0) * Math.max(0, c.y1 - c.y0), 0);
   if (!diff.sameSize) return diff;

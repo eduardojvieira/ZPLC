@@ -444,7 +444,7 @@ async function captureCondition(
   const { launchApp, button, css } = await import('../journeyApp');
   const ui = (key: Parameters<typeof translate>[1]) => translate(condition.locale, key);
   const { harness, scratch } = shared;
-  const launched = await launchApp(harness, mkdtempSync(join(scratch, 'uxv-')), {}, gl ? { gl } : {});
+  const launched = await launchApp(harness, mkdtempSync(join(scratch, 'uxv-')), {}, { stable: true, ...(gl ? { gl } : {}) });
   const app = launched.app;
   const captures: CaptureRecord[] = [];
   const failed: Array<{ surface: string; reason: string }> = [];
@@ -518,7 +518,7 @@ async function captureCondition(
     for (let attempt = 0; attempt < 40 && !(await app.eval<boolean>(DRAWN)); attempt++) await Bun.sleep(500);
     // the camera's framing follows the load timing; the command that fits the scene (it only moves the camera) puts it in one place
     if (await app.eval<boolean>(`Boolean(document.querySelector('[data-plant-canvas]'))`)) {
-      await run('view.fitPlantScene');
+      await fit();
       await Bun.sleep(500);
     }
     await Bun.sleep(400);
@@ -527,13 +527,27 @@ async function captureCondition(
     // be settling, and a canvas can be blank in the picture after it has drawn
     // a 3D scene loads its textures and lights one after the other, so its picture has to hold still for longer
     const hasCanvas = await app.eval<boolean>(`Boolean(document.querySelector('[data-plant-canvas]'))`);
+    // the renderer can be made at the default 300 by 150 and never told the size of its box (a second picture of one build is then
+    // a blurred one): the size is nudged until the drawing buffer has the size of the box
+    if (hasCanvas) {
+      const sized =
+        `[...document.querySelectorAll('[data-plant-canvas]')].every((c) => ` +
+        `Math.abs(c.width - Math.round(c.clientWidth * devicePixelRatio)) <= 1 && ` +
+        `Math.abs(c.height - Math.round(c.clientHeight * devicePixelRatio)) <= 1)`;
+      for (let attempt = 0; attempt < 20 && !(await app.eval<boolean>(sized)); attempt++) {
+        await app.eval(`document.querySelectorAll('[data-plant-canvas]').forEach((c) => { c.style.width = 'calc(100% - 1px)'; })`);
+        await Bun.sleep(300);
+        await app.eval(`document.querySelectorAll('[data-plant-canvas]').forEach((c) => { c.style.width = ''; })`);
+        await Bun.sleep(300);
+      }
+    }
     const holds = hasCanvas ? 4 : 1;
     let previous = '';
     let data = '';
     let same = 0;
     for (let attempt = 0; attempt < 60; attempt++) {
       // fitted again before each picture: a resize or a late load can have moved the camera after the first fit
-      if (hasCanvas) await run('view.fitPlantScene');
+      if (hasCanvas) await fit();
       data = ((await app.cdp.command('Page.captureScreenshot', { format: 'png' })) as { data: string }).data;
       same = data === previous ? same + 1 : 0;
       if (same >= holds && (await app.eval<boolean>(canvasShows(data)))) break;
@@ -607,6 +621,12 @@ async function captureCondition(
         `const { useShellLayout } = await import('/src/store/useShellLayout.ts'); ` +
         `useSecondaryView.getState().show('lesson'); useSecondaryView.getState().setInPrimary(true); ` +
         `useShellLayout.getState().setPrimaryVisible(true); return true; })()`,
+    );
+  /** The Fit scene button of the plant view, pressed as a person does; the command is refused when the view does not hold focus. */
+  const fit = () =>
+    app.eval<boolean>(
+      `(() => { const b = document.querySelector('[data-command="view.fitPlantScene"]'); ` +
+        `if (b && !b.disabled) b.click(); return true; })()`,
     );
   const run = async (command: string): Promise<string> =>
     isNever(command)
