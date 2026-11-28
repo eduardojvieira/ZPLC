@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Fusionar dos líneas en diagrama de escalera",
-  "summary": "Arbitre con peldaños de enclavamiento dos alimentadores que comparten una salida: dé prioridad a la línea A, deje pasar una caja a la vez y bloquee entre sí las dos cuchillas.",
+  "summary": "Arbitre con peldaños de enclavamiento dos alimentadores que comparten una salida: dé prioridad a la línea A, deje pasar una caja a la vez y bloquee entre sí los dos topes retráctiles.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Arbitrar dos peticiones con una prioridad: la línea A gana cuando ambas esperan.",
@@ -12,18 +12,18 @@
       "key": "objective",
       "title": "Objetivo",
       "body": "En src/MergeLines.ld.json, guarde dos memorias de concesión, GrantA y GrantB, como bobinas de activación y de borrado: conceda primero a la línea A cuando ambas esperan, conceda a una línea solo cuando no haya una concesión activa y la zona de fusión esté vacía, y termine la concesión cuando su caja haya salido de la zona.",
-      "checkpoint": "HoldA y HoldB son verdaderas salvo que esa línea tenga la concesión, así que las dos cuchillas nunca están abiertas a la vez."
+      "checkpoint": "HoldA y HoldB son verdaderas salvo que esa línea tenga la concesión, así que los dos topes retráctiles nunca están abiertas a la vez."
     },
     {
       "key": "predict",
       "title": "Predecir",
       "body": "Antes de ejecutar, piense en el punto de fusión: ambos alimentadores llevan cajas, pero la salida admite una caja a la vez.",
-      "checkpoint": "Al principio ambas cuchillas retienen las líneas; luego se abre una cuchilla a la vez, primero la línea A, y la siguiente solo después de que la caja salió de la zona; las seis cajas salen y Done se enciende."
+      "checkpoint": "Al principio ambos topes retráctiles retienen las líneas; luego se abre un tope retráctil a la vez — gana la línea A cuando ambas cajas esperan juntas — y el siguiente solo se abre después de que la caja salió de la zona; las seis cajas salen y Done se enciende."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial no tiene peldaños, así que no se carga nada y ninguna cuchilla se mueve; cargue tres cajas en cada alimentador, abra una cuchilla a la vez, con la línea A primero y nunca ambas juntas, y abra la siguiente solo cuando la caja anterior haya salido de la zona de fusión.",
+      "body": "Corrija esta omisión del proyecto inicial, guárdelo y pulse {{ui:learn.check}}: El proyecto inicial no tiene peldaños, así que no se carga nada y ningún tope retráctil se mueve; cargue tres cajas en cada alimentador, abra un tope retráctil a la vez, con la línea A primero cuando ambas esperan y nunca ambas juntas, y abra la siguiente solo cuando la caja anterior haya salido de la zona de fusión.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -35,13 +35,13 @@
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe qué cuchilla se abre primero y cómo espera la segunda línea; ninguna pareja de cajas se encuentra en la fusión.",
+      "body": "Observe qué tope retráctil se abre primero y cómo espera la segunda línea; ninguna pareja de cajas se encuentra en la fusión.",
       "checkpoint": "Las seis cajas se entregan por turnos, ninguna choca ni cae, y Done está encendida al final."
     },
     {
       "key": "reflect",
       "title": "Reflexionar",
-      "body": "La aserción ALWAYS sobre colisiones es la comprobación del enclavamiento: un diseño que abriera ambas cuchillas podría pasar la entrega y aun así fallar esa aserción.",
+      "body": "La aserción ALWAYS sobre colisiones es la comprobación del enclavamiento: falla la ejecución si dos cajas llegan a encontrarse en la fusión.",
       "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial no tiene peldaños, así que no se carga nada y ninguna cuchilla se mueve; cargue tres cajas en cada alimentador, abra una cuchilla a la vez, con la línea A primero y nunca ambas juntas, y abra la siguiente solo cuando la caja anterior haya salido de la zona de fusión."
+    "El proyecto inicial no tiene peldaños, así que no se carga nada y ningún tope retráctil se mueve; cargue tres cajas en cada alimentador, abra un tope retráctil a la vez, con la línea A primero cuando ambas esperan y nunca ambas juntas, y abra la siguiente solo cuando la caja anterior haya salido de la zona de fusión."
   ]
 }

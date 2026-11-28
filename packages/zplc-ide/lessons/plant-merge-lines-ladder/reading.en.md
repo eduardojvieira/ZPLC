@@ -71,15 +71,15 @@ timing: [NorthReq, SouthReq, GreenNorth, GreenSouth]
 caption: Switch both NorthReq and SouthReq on, then press WeighDone to hand the bridge to South
 ```
 
-Press Run and switch on both `NorthReq` and `SouthReq`: `GreenNorth` lights while `GreenSouth` stays off. Switch `NorthReq` off and see that `GreenNorth` holds its latch. Press `WeighDone` once: `AllowNorth` resets and on the next scan `GreenSouth` lights.
+Press Run and switch on both `NorthReq` and `SouthReq`: `GreenNorth` lights while `GreenSouth` stays off. Switch `NorthReq` off and see that `GreenNorth` holds its latch. Press `WeighDone` once: `AllowNorth` resets at once, and `GreenSouth` lights when you release it, because rung 4 clears `AllowSouth` on every scan while `WeighDone` is held.
 
 Here the scale operator gives `WeighDone` to end a grant, and the outputs are active-high green lights. In the practice station there is no `WeighDone` input — `Zone` is FALSE both before the box arrives and after it leaves — the stop blades hold when `HoldA` or `HoldB` is TRUE, and your diagram must also load three boxes on each feeder and count all six boxes out.
 
 ## Common mistakes
 
 - Omitting the normally closed contact of the higher-priority grant on the second grant rung. Both set coils fire on the same scan when both lines wait, opening both blades together.
-- Using normal coils instead of set and reset coils for the grants. The grant drops as soon as the waiting sensor turns FALSE, long before the box clears the junction.
-- Placing the reset rungs before the set rungs without guarding against a re-set on the same scan, or clearing the grant whenever `Zone` is FALSE instead of waiting for the box to arrive and leave.
+- Using a normal coil for a grant. Next to the reset coils it does not compile; without them, the grant's own normally closed contact switches it off on the next scan, the blade flickers and no box gets through.
+- Clearing a grant as soon as `Zone` is FALSE. `Zone` is already FALSE when the grant is given, so the grant ends on the same scan, the blade never opens and the boxes wait behind it.
 
 > [!NOTE]
 > A Ladder interlock keeps the simulated sequence from opening both blades together; it is not a safety function for a real machine.
@@ -97,9 +97,9 @@ options:
 ```quiz
 question: What happens if you replace the set coils on AllowNorth and AllowSouth with normal coils?
 options:
-  - { text: 'The grant turns off as soon as the entry sensor goes FALSE or the next scan checks the normally closed self-contact', correct: true, feedback: 'Right. A grant must stay latched after the request sensor clears until the shared zone is done.' }
+  - { text: 'The grant turns off as soon as the entry sensor goes FALSE or the next scan checks the normally closed self-contact', correct: false, feedback: 'Only without rungs 3 and 4: then the coil''s own normally closed contact switches it off on the next scan, so GreenNorth flickers on every scan.' }
   - { text: 'Both green lights stay on permanently', feedback: 'Normal coils drop whenever their rung stops conducting, so the grant cannot stay latched.' }
-  - { text: 'The program refuses to compile', feedback: 'Normal coils compile, but they do not hold memory across scans the way set and reset coils do.' }
+  - { text: 'The program refuses to compile', correct: true, feedback: 'Right. Rungs 3 and 4 still reset AllowNorth and AllowSouth, and ZPLC refuses a normal coil and a reset coil on one variable.' }
 ```
 
 ## What you will do in the practice

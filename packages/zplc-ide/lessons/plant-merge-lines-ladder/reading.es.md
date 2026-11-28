@@ -71,15 +71,15 @@ timing: [NorthReq, SouthReq, GreenNorth, GreenSouth]
 caption: Active NorthReq y SouthReq a la vez, y luego pulse WeighDone para ceder la báscula a Sur
 ```
 
-Pulse Ejecutar y active a la vez `NorthReq` y `SouthReq`: se enciende `GreenNorth` mientras `GreenSouth` sigue apagada. Desactive `NorthReq` y compruebe que `GreenNorth` mantiene su enclavamiento. Pulse `WeighDone` una vez: `AllowNorth` se borra y en el siguiente ciclo de escaneo se enciende `GreenSouth`.
+Pulse Ejecutar y active a la vez `NorthReq` y `SouthReq`: se enciende `GreenNorth` mientras `GreenSouth` sigue apagada. Desactive `NorthReq` y compruebe que `GreenNorth` mantiene su enclavamiento. Pulse `WeighDone` una vez: `AllowNorth` se borra de inmediato, y `GreenSouth` se enciende cuando usted lo suelta, porque el peldaño 4 borra `AllowSouth` en cada ciclo de escaneo mientras `WeighDone` está pulsado.
 
 Aquí el operador de la báscula da `WeighDone` para terminar una concesión, y las salidas son luces verdes activas en alto. En la estación de la práctica no existe una entrada `WeighDone` — `Zone` está en FALSE tanto antes de que llegue la caja como después de que sale —, los topes retráctiles retienen cuando `HoldA` o `HoldB` está en TRUE, y su diagrama también debe cargar tres cajas en cada alimentador y contar las seis salidas.
 
 ## Errores comunes
 
 - Omitir el contacto normalmente cerrado de la concesión de mayor prioridad en el segundo peldaño de concesión. Ambas bobinas de activación se disparan en el mismo ciclo de escaneo cuando ambas líneas esperan, abriendo ambos topes a la vez.
-- Usar bobinas normales en lugar de bobinas de activación y de borrado para las concesiones. La concesión cae en cuanto el sensor de espera pasa a FALSE, mucho antes de que la caja despeje la unión.
-- Colocar los peldaños de borrado antes que los de activación sin evitar una reactivación en el mismo ciclo de escaneo, o borrar la concesión siempre que `Zone` sea FALSE en lugar de esperar a que la caja llegue y salga.
+- Usar una bobina normal para una concesión. Junto a las bobinas de borrado no compila; sin ellas, el propio contacto normalmente cerrado de la concesión la apaga en el siguiente ciclo de escaneo, el tope retráctil parpadea y ninguna caja pasa.
+- Borrar una concesión en cuanto `Zone` está en FALSE. `Zone` ya es FALSE cuando se da la concesión, así que la concesión termina en el mismo ciclo de escaneo, el tope retráctil nunca se abre y las cajas esperan detrás de él.
 
 > [!NOTE]
 > Un enclavamiento en diagrama de escalera evita que la secuencia simulada abra ambos topes juntos; no es una función de seguridad para una máquina real.
@@ -97,11 +97,11 @@ options:
 ```quiz
 question: ¿Qué ocurre si sustituye las bobinas de activación de AllowNorth y AllowSouth por bobinas normales?
 options:
-  - { text: 'La concesión se apaga en cuanto el sensor de entrada pasa a FALSE o el siguiente ciclo de escaneo comprueba el contacto normalmente cerrado propio', correct: true, feedback: 'Correcto. Una concesión debe permanecer enclavada después de que se despeje el sensor de petición hasta que la zona compartida quede libre.' }
+  - { text: 'La concesión se apaga en cuanto el sensor de entrada pasa a FALSE o el siguiente ciclo de escaneo comprueba el contacto normalmente cerrado propio', correct: false, feedback: 'Solo sin los peldaños 3 y 4: entonces el propio contacto normalmente cerrado de la bobina la apaga en el siguiente ciclo de escaneo, así que GreenNorth parpadea en cada ciclo de escaneo.' }
   - { text: 'Ambas luces verdes quedan encendidas de forma permanente', feedback: 'Las bobinas normales caen cuando su peldaño deja de conducir, así que la concesión no puede mantenerse enclavada.' }
-  - { text: 'El programa no compila', feedback: 'Las bobinas normales compilan, pero no mantienen memoria entre ciclos de escaneo como las bobinas de activación y de borrado.' }
+  - { text: 'El programa no compila', correct: true, feedback: 'Correcto. Los peldaños 3 y 4 siguen borrando AllowNorth y AllowSouth, y ZPLC rechaza una bobina normal y una bobina de borrado sobre la misma variable.' }
 ```
 
 ## Qué hará en la práctica
 
-El diagrama inicial en `src/MergeLines.ld.json` declara todas las variables locales, contadores, entradas y salidas sin peldaños. El escenario acciona el pulsador de inicio a los {{t:200}} ms y comprueba que las seis cajas — tres de cada alimentador — salgan por la cinta de salida sin colisiones y con `Done` encendida a los {{t:25000}} ms. Dibuje los peldaños de carga de los alimentadores, los enclavamientos de concesión por prioridad y los enclavamientos de los topes, guarde el archivo y pulse {{ui:learn.check}}.
+El proyecto inicial en `src/MergeLines.ld.json` declara todas las variables locales, contadores, entradas y salidas sin peldaños. El escenario acciona el pulsador de inicio a los {{t:200}} ms y comprueba que las seis cajas — tres de cada alimentador — salgan por la cinta de salida sin colisiones y con `Done` encendida a los {{t:25000}} ms. Dibuje los peldaños de carga de los alimentadores, los enclavamientos de concesión por prioridad y los enclavamientos de los topes, guarde el archivo y pulse {{ui:learn.check}}.
