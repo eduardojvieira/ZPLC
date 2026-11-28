@@ -64,8 +64,11 @@ const slug = (text: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 
-export const conditionName = (condition: Condition): string =>
-  `${condition.width}x${condition.height}-${condition.theme}-${condition.locale}${condition.density === 'compact' ? '-compact' : ''}${condition.scale && condition.scale !== 1 ? `-x${Math.round(condition.scale * 100)}` : ''}`;
+export const conditionName = (condition: Condition): string => {
+  const scale = condition.scale && condition.scale !== 1 ? `-x${Math.round(condition.scale * 100)}` : '';
+  const compact = condition.density === 'compact' ? '-compact' : '';
+  return `${condition.width}x${condition.height}-${condition.theme}-${condition.locale}${compact}${scale}`;
+};
 
 export function captureName(surfaces: Surface[], surface: string, state: string, condition: Condition): string {
   const found = surfaces.find((candidate) => candidate.id === surface);

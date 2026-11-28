@@ -217,7 +217,7 @@ describe('what a capture must never run (AGENTS.md rule 8)', () => {
 });
 
 describe('the surfaces that only lacked a way in', () => {
-  test('UXV-003 the reading, its try-it, the Guide and the exercise are reached through a lesson, the operate panel through the plant', () => {
+  test('UXV-003 Learn is reached through a lesson and the operate panel through the plant', () => {
     const { reached, unreached } = plan(surfaces);
     const by = new Map(reached.map((entry) => [entry.surface.id, entry]));
     expect(by.get('learn.reading')?.lesson).toEqual({ id: 'ld-no-nc-contacts', stage: 'reading' });
@@ -236,7 +236,7 @@ describe('the surfaces that only lacked a way in', () => {
 describe('the conditions of the golden-journey surfaces (D-36)', () => {
   const names = (id: string) => conditionsFor(surfaces.find((surface) => surface.id === id)!).map(conditionName);
 
-  test('UXV-002 a surface a golden journey shows also gets 1366 by 768, 1920 by 1080, a 150 % scale and a screen under the minimum window', () => {
+  test('UXV-002 a golden-journey surface also gets the other sizes, the 150 % scale and a screen under the minimum window', () => {
     const golden = names('editor.learn');
     for (const extra of ['1366x768-light-en', '1920x1080-light-en', '1440x900-light-en-x150', '1024x600-light-en'])
       expect(golden).toContain(extra);

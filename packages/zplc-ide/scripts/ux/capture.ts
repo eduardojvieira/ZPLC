@@ -397,7 +397,8 @@ async function captureCondition(
   /** From the reading to the exercise, with the control a person presses (Go to the practice), or by closing the reading. */
   const toExercise = () =>
     app.eval<boolean>(
-      `(() => { const practice = document.querySelector('[data-learn-reading-practice]'); if (practice) { practice.click(); return true; } ` +
+      `(() => { const practice = document.querySelector('[data-learn-reading-practice]'); ` +
+        `if (practice) { practice.click(); return true; } ` +
         `return import('/src/learn/learnUi.ts').then(({ useLearnUi }) => { useLearnUi.getState().closeReading(); return true; }); })()`,
     );
   const run = async (command: string): Promise<string> =>
