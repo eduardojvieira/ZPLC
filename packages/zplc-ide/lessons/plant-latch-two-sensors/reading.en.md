@@ -2,7 +2,7 @@
 
 This station moves one crate from the start of a belt to its far end using only two optical sensors. Unlike the first station, there is no push button and no emitter: the crate is already on the belt in front of `EyeA`, and the belt must carry it across the empty stretch until `EyeB` sees it and stops it.
 
-![The latch-between-two-sensors scene seen from the front. A belt conveyor on legs runs from left to right. A cardboard crate sits at the left end of the belt in front of a diffuse optical sensor labeled EyeA on a post behind the belt. Further to the right, a second diffuse optical sensor labeled EyeB stands behind the belt looking across it. Each wired part has a label with its name, its kind and its signal; the crate is labeled as not wired.](images/machine.en.png)
+![The latch-between-two-sensors scene seen from the front. A belt conveyor on legs runs from left to right. A cardboard crate sits at the left end of the belt in front of a diffuse optical sensor labeled EyeA on a post behind the belt. Further to the right, a second diffuse optical sensor labeled EyeB stands behind the belt looking across it. Each wired part has a label with its name, its kind and its signal; the crate has no signal.](images/machine.en.png)
 
 The station has four parts. The tables say what each one is in a real plant and what its signal means to your program. The PLC variable is the name the program uses: the plant map of the lesson binds each signal of the scene to it.
 
@@ -31,9 +31,9 @@ To cross the gap, the program needs a **latch** (set and reset): one condition t
 ```timing
 span: 8000
 signals:
-  - { name: EyeA, edges: [0, 600] }
-  - { name: Run, edges: [0, 4800] }
-  - { name: EyeB, edges: [4800, 8000] }
+  - { name: EyeA, edges: [0, 660] }
+  - { name: Run, edges: [0, 3460] }
+  - { name: EyeB, edges: [3460, 8000] }
 caption: EyeA goes dark as soon as the crate leaves it; Run stays latched until EyeB sees the crate
 ```
 
@@ -60,13 +60,12 @@ END_PROGRAM
 
 Read it from the top. When the water rises to the top mark, `HighFloat` becomes TRUE and sets `PumpLatch`. As the pump drains the pit, the water drops below the top mark so `HighFloat` turns FALSE, but `PumpLatch.Q1` stays TRUE because `LowFloat` is still TRUE (`R` is FALSE). Once the pit empties, `LowFloat` turns FALSE, `R` becomes TRUE, and `PumpLatch` resets, stopping the pump. Because `SR` is set-dominant (`S1` has priority), if `HighFloat` is TRUE at the same time `R` is TRUE, `Pump` stays TRUE.
 
-Two things differ in the belt station of the practice: the polarity of the stop sensor (whether it is TRUE or FALSE when the crate arrives) and which condition must win if both sensors are TRUE at once. Those decisions are yours to make for the belt.
+On the belt of the practice, which condition wins if both sensors see a crate at once is yours to decide, from what must happen to the crate.
 
 ## Common mistakes
 
 - Copying sensor A straight to the belt output. The crate moves only until it leaves `EyeA`'s beam, then stops halfway down the belt.
 - Setting the output on `EyeA` and never resetting it on `EyeB`. The crate travels past `EyeB` and falls off the end of the belt.
-- Choosing set priority when stop must win. If both sensors are ever TRUE together, the belt keeps running instead of stopping at `EyeB`.
 - Inverting the stop sensor by habit. `EyeB` turns TRUE when the crate enters its beam, unlike a low-level switch that opens when a tank empties.
 
 > [!NOTE]
@@ -92,4 +91,4 @@ options:
 
 ## What you will do in the practice
 
-The starting program declares the inputs `EyeA` and `EyeB` and the output `Run`, with an empty body. You will latch the belt ON when `EyeA` sees the crate and reset it when `EyeB` sees the crate, with reset taking priority, so the crate reaches `EyeB` within {{t:8000}} ms and the belt is stopped at {{t:8000}} ms. Then press {{ui:learn.check}}.
+The starting program declares the inputs `EyeA` and `EyeB` and the output `Run`, with an empty body. You will latch the belt ON when `EyeA` sees the crate and reset it when `EyeB` sees the crate, so the crate reaches `EyeB` within {{t:8000}} ms and the belt is stopped at {{t:8000}} ms. Then press {{ui:learn.check}}.

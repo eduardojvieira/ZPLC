@@ -2,7 +2,7 @@
 
 Esta estación lleva una caja desde el comienzo de una cinta hasta su extremo usando solo dos sensores ópticos. A diferencia de la primera estación, no hay pulsador ni emisor: la caja ya está sobre la cinta delante de `EyeA`, y la cinta debe llevarla a través del tramo vacío hasta que `EyeB` la vea y la detenga.
 
-![La escena de retención entre dos sensores vista de frente. Una cinta transportadora sobre patas va de izquierda a derecha. Una caja de cartón está en el extremo izquierdo de la cinta delante de un sensor óptico difuso llamado EyeA sobre un poste detrás de la cinta. Más a la derecha, un segundo sensor óptico difuso llamado EyeB está detrás de la cinta mirando a través de ella. Cada elemento cableado tiene una etiqueta con su nombre, su tipo y su señal; la caja aparece etiquetada como no cableada.](images/machine.es.png)
+![La escena de retención entre dos sensores vista de frente. Una cinta transportadora sobre patas va de izquierda a derecha. Una caja de cartón está en el extremo izquierdo de la cinta delante de un sensor óptico difuso llamado EyeA sobre un poste detrás de la cinta. Más a la derecha, un segundo sensor óptico difuso llamado EyeB está detrás de la cinta mirando a través de ella. Cada elemento cableado tiene una etiqueta con su nombre, su tipo y su señal; la caja no tiene señal.](images/machine.es.png)
 
 La estación tiene cuatro elementos. Las tablas dicen qué es cada uno en una planta real y qué significa su señal para su programa. La variable del PLC es el nombre que usa el programa: el mapa de planta de la lección une cada señal de la escena con ella.
 
@@ -31,9 +31,9 @@ Para cruzar el tramo intermedio, el programa necesita una **retención** (set y 
 ```timing
 span: 8000
 signals:
-  - { name: EyeA, edges: [0, 600] }
-  - { name: Run, edges: [0, 4800] }
-  - { name: EyeB, edges: [4800, 8000] }
+  - { name: EyeA, edges: [0, 660] }
+  - { name: Run, edges: [0, 3460] }
+  - { name: EyeB, edges: [3460, 8000] }
 caption: EyeA se apaga en cuanto la caja sale de su haz; Run permanece retenida hasta que EyeB ve la caja
 ```
 
@@ -60,13 +60,12 @@ END_PROGRAM
 
 Léalo desde arriba. Cuando el agua sube a la marca alta, `HighFloat` pasa a TRUE y activa `PumpLatch`. Al vaciarse el pozo, el agua baja de la marca alta y `HighFloat` pasa a FALSE, pero `PumpLatch.Q1` sigue en TRUE porque `LowFloat` continúa en TRUE (`R` está en FALSE). Cuando el pozo queda vacío, `LowFloat` pasa a FALSE, `R` pasa a TRUE y `PumpLatch` se reinicia, deteniendo la bomba. Como `SR` tiene prioridad al set (`S1` gana), si `HighFloat` está en TRUE al mismo tiempo que `R` está en TRUE, `Pump` permanece en TRUE.
 
-Dos cosas cambian en la estación de cinta de la práctica: la polaridad del sensor de parada (si está en TRUE o en FALSE cuando llega la caja) y qué condición debe ganar si ambos sensores están en TRUE a la vez. Esas decisiones quedan para que usted las tome para la cinta.
+En la cinta de la práctica, qué condición gana si ambos sensores ven una caja a la vez lo decide usted, a partir de lo que debe pasarle a la caja.
 
 ## Errores comunes
 
 - Copiar el sensor A directamente en la salida de la cinta. La caja solo avanza hasta salir del haz de `EyeA` y se detiene a mitad de la cinta.
 - Activar la salida con `EyeA` y no borrarla nunca con `EyeB`. La caja pasa de largo por `EyeB` y cae por el extremo de la cinta.
-- Dar prioridad al arranque cuando debe ganar la parada. Si ambos sensores llegan a estar en TRUE a la vez, la cinta sigue en marcha en lugar de detenerse en `EyeB`.
 - Invertir el sensor de parada por costumbre. `EyeB` pasa a TRUE cuando la caja entra en su haz, a diferencia de un interruptor de nivel bajo que se abre cuando un tanque se vacía.
 
 > [!NOTE]
@@ -92,4 +91,4 @@ options:
 
 ## Qué hará en la práctica
 
-El proyecto inicial declara las entradas `EyeA` y `EyeB` y la salida `Run`, con el cuerpo vacío. Usted retendrá la cinta en marcha cuando `EyeA` vea la caja y la detendrá cuando `EyeB` vea la caja, con prioridad al reset, para que la caja llegue a `EyeB` dentro de los {{t:8000}} ms y la cinta esté detenida a los {{t:8000}} ms. Después pulse {{ui:learn.check}}.
+El proyecto inicial declara las entradas `EyeA` y `EyeB` y la salida `Run`, con el cuerpo vacío. Usted retendrá la cinta en marcha cuando `EyeA` vea la caja y la detendrá cuando `EyeB` vea la caja, para que la caja llegue a `EyeB` dentro de los {{t:8000}} ms y la cinta esté detenida a los {{t:8000}} ms. Después pulse {{ui:learn.check}}.

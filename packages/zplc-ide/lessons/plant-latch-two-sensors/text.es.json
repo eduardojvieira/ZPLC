@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objetivo",
       "body": "En src/LatchTwoSensors.st, haga de Run una retención: actívela cuando EyeA vea la caja y bórrela cuando EyeB vea la caja.",
-      "checkpoint": "Run se mantiene entre los dos sensores, y el reset gana sobre el set."
+      "checkpoint": "Run se mantiene entre los dos sensores."
     },
     {
       "key": "predict",
