@@ -443,7 +443,7 @@ Objetivos de las lecciones disponibles:
 - **Clasificar por peso en diagrama de escalera**: Clasificar una pieza comparando un valor analógico con un límite. Leer el valor solo cuando la báscula indica que es estable.
 - **Clasificar por altura, transferencia de cadenas**: Decidir una ruta a partir de una combinación de dos sensores. Recordar una decisión mientras la caja siguiente ya pasa por los sensores de altura.
 - **Clasificar por altura, transferencia de cadenas en diagrama de escalera**: Decidir una ruta a partir de una combinación de dos sensores. Recordar una decisión mientras la caja siguiente ya pasa por los sensores de altura.
-- **Clasificar por altura, mesa giratoria**: Reducir un flujo de lecturas a un valor, el máximo, y clasificarlo con dos límites. Coordinar una mesa giratoria con la decisión: detener, girar, sacar la caja y volver a girar.
+- **Clasificar por altura, mesa giratoria**: Distinguir cajas de tres alturas con una cortina de luz que informa una altura solo mientras hay una caja en ella. Hacer que una mesa giratoria trabaje con la caja que gira, de modo que cada caja salga por la cinta de su clase.
 - **Clasificar por código de identidad**: Encaminar piezas por un código entero y no por un interruptor. Sincronizar un actuador con el recorrido de una pieza ya leída.
 
 ## Módulo 17: Estaciones: varias máquinas que trabajan como una
@@ -461,10 +461,10 @@ Una estación agrupa clasificación, transferencia y secuencia en una sola unida
 
 Objetivos de las lecciones disponibles:
 
-- **Mover cajas entre tres niveles**: Describir cada elevador como su propia cadena de pasos que vuelve a su primer paso. Arrancar ambas cadenas con una sola transición y dejar que se encuentren solo en la cinta entre los elevadores.
+- **Mover cajas entre tres niveles**: Describir cada elevador como un ciclo de pasos propio que vuelve al punto de partida. Hacer que ambos elevadores trabajen a la vez y se encuentren solo en la cinta que hay entre ellos.
 - **Reunir piezas en un cajón**: Combinar un conteo, un elevador y un cajón en una sola secuencia de pasos. Mover el elevador solo con su superficie detenida y alimentar la pieza siguiente solo después de que la anterior haya aterrizado.
 - **Almacenar y recuperar**: Escribir las secuencias de almacenar y de recuperar de un transelevador como cadenas de pasos. Llevar una tabla de celdas ocupadas y las peticiones que esperan, y elegir el trabajo siguiente a partir de ellas.
-- **Equilibrar una línea de producción**: Mover el control de una máquina a un bloque de función y usar una instancia para cada máquina. Equilibrar dos máquinas de distinta velocidad alternando las piezas entre ellas.
+- **Equilibrar una línea de producción**: Mover el control de una máquina a un bloque de función y usar una instancia para cada máquina. Dar a dos máquinas de distinta velocidad el mismo control, para que cada una termine cuatro ciclos.
 
 ## Módulo 18: Máquinas seguras y diagnosticables: enclavamientos, manual y automático, y fallas
 
@@ -484,9 +484,9 @@ Objetivos de las lecciones disponibles:
 
 - **Paro de emergencia y enclavamientos**: Detener todas las salidas mientras el paro de emergencia está pulsado. Recordar el paro, de modo que soltar el pulsador no reinicie la línea.
 - **Paro de emergencia y enclavamientos en diagrama de escalera**: Detener todas las salidas mientras el paro de emergencia está pulsado. Recordar el paro, de modo que soltar el pulsador no reinicie la línea.
-- **Modos manual y automático**: Guardar el modo en una memoria que cambie con una pulsación de ModeBtn, y dejar que la máquina arranque en manual. Mover el brazo con los pulsadores de avance solo en manual, sin pasar de un final de carrera, y arrancar el ciclo con Start solo en automático.
-- **Modos manual y automático**: Guardar el modo en una memoria que cambie con una pulsación de ModeBtn, y dejar que la máquina arranque en manual. Mover el brazo con los pulsadores de avance solo en manual, sin pasar de un final de carrera, y arrancar el ciclo con Start solo en automático.
-- **Encontrar la falla**: Diagnosticar un sensor atascado a partir de un hecho que el programa puede leer, no del propio sensor. Elegir una reacción segura: detener lo que trae cajas nuevas y dejar llegar las que ya se mueven.
+- **Modos manual y automático**: Cambiar entre manual y automático con cada pulsación del pulsador de modo, y arrancar en manual. Mover el brazo con los pulsadores de avance solo en manual, sin pasar de un final de carrera, y arrancar el ciclo con Start solo en automático.
+- **Modos manual y automático**: Cambiar entre manual y automático con cada pulsación del pulsador de modo, y arrancar en manual. Mover el brazo con los pulsadores de avance solo en manual, sin pasar de un final de carrera, y arrancar el ciclo con Start solo en automático.
+- **Encontrar la falla**: Diagnosticar un sensor atascado a partir de un hecho que el programa puede leer, no del propio sensor. Elegir una reacción que se ajuste a la máquina: detener lo que trae cajas nuevas y dejar llegar las que ya se mueven.
 
 ## Módulo 19: Construya sus propias escenas: colocar piezas, enlazar señales y ejecutar
 
@@ -498,15 +498,15 @@ El curso termina construyendo la propia planta: piezas, señales y un programa q
 | ---------------------------------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | ---------------------------------------------------- |
 | `plant-build-belt-scene` Construir una escena de cinta desde el suelo vacío        | Disponible | ST        | Simulación | -      | 25      | `plant-belt-to-sensor`, `plant-fault-actions`        |
 | `plant-build-belt-scene-ladder` Construir una escena de cinta desde el suelo vacío | Disponible | LD        | Simulación | -      | 25      | `plant-belt-to-sensor`, `plant-fault-actions`        |
-| `plant-change-scene` Modificar una escena: agregar el segundo emisor               | Disponible | ST        | Simulación | -      | 20      | `plant-build-belt-scene`, `plant-merge-lines`        |
-| `plant-change-scene-ladder` Modificar una escena: agregar el segundo emisor        | Disponible | LD        | Simulación | -      | 20      | `plant-build-belt-scene-ladder`, `plant-merge-lines` |
+| `plant-change-scene` Modificar una escena: alimentar la segunda línea              | Disponible | ST        | Simulación | -      | 20      | `plant-build-belt-scene`, `plant-merge-lines`        |
+| `plant-change-scene-ladder` Modificar una escena: alimentar la segunda línea       | Disponible | LD        | Simulación | -      | 20      | `plant-build-belt-scene-ladder`, `plant-merge-lines` |
 
 Objetivos de las lecciones disponibles:
 
-- **Construir una escena de cinta desde el suelo vacío**: Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa. Ejecutar un programa sobre la escena que usted construyó y ver que la Comprobación califica esa escena, no una copia.
-- **Construir una escena de cinta desde el suelo vacío**: Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa. Ejecutar un programa sobre la escena que usted construyó y ver que la Comprobación califica esa escena, no una copia.
-- **Modificar una escena: agregar el segundo emisor**: Agregar una pieza a una escena existente y colocarla donde el resto de la escena la espera. Enlazar la señal de la pieza nueva en el mapa de la planta con la variable del programa que ya la gobierna, sin cambiar el programa.
-- **Modificar una escena: agregar el segundo emisor**: Agregar una pieza a una escena existente y colocarla donde el resto de la escena la espera. Enlazar la señal de la pieza nueva en el mapa de la planta con la variable del programa que ya la gobierna, sin cambiar el programa.
+- **Construir una escena de cinta desde el suelo vacío**: Colocar los elementos de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa. Ejecutar un programa sobre la escena que usted construyó y ver que Comprobar califica esa escena, no una copia.
+- **Construir una escena de cinta desde el suelo vacío**: Colocar los elementos de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa. Ejecutar un programa sobre la escena que usted construyó y ver que Comprobar califica esa escena, no una copia.
+- **Modificar una escena: alimentar la segunda línea**: Leer una escena terminada frente al programa y al escenario que se ejecutan sobre ella, y encontrar lo que la escena necesita. Cambiar una escena en el editor de escenas y su mapa de planta, dejando el programa sin cambios.
+- **Modificar una escena: alimentar la segunda línea**: Leer una escena terminada frente al programa y al escenario que se ejecutan sobre ella, y encontrar lo que la escena necesita. Cambiar una escena en el editor de escenas y su mapa de planta, dejando el programa sin cambios.
 
 ## Páginas de cableado por placa
 

@@ -19,6 +19,7 @@ import { ConfigEditorTab } from '../navigator/ConfigEditorTab';
 import { configEditorViewId, isConfigEditorKind, type ConfigEditorKind } from '../navigator/configEditors';
 import { REVIEW_VIEW_ID } from '../store/useReviewDocument';
 import { PREFERENCES_VIEW_ID } from '../store/usePreferencesDocument';
+import { useSceneUnsaved } from '../plant/editSession';
 import { PLANT_VIEW_ID, SETTINGS_VIEW_ID, isVisualWorkflow, type ViewId } from '../layout/documentKinds';
 import type { DebugController } from '../hooks/useDebugController';
 import { Button, IconButton } from '../ui';
@@ -124,6 +125,7 @@ export function EditorGroup({
   const activeFile = activeViewId ? (files.get(activeViewId) ?? null) : null;
   const configActive = activeViewId ? configKindOf(activeViewId) : null;
   const showSettings = activeViewId === SETTINGS_VIEW_ID;
+  const sceneUnsaved = useSceneUnsaved();
   const plantOpen = views.includes(PLANT_VIEW_ID);
   const plantActive = activeViewId === PLANT_VIEW_ID;
   const preferencesOpen = views.includes(PREFERENCES_VIEW_ID);
@@ -330,6 +332,7 @@ export function EditorGroup({
               >
                 <Boxes size={14} className="text-[var(--color-accent-green)]" />
                 <span className="text-sm whitespace-nowrap">{t('studio.surface.plant')}</span>
+                {sceneUnsaved && <span className="text-[var(--color-accent-orange)] text-lg leading-none">*</span>}
               </Button>
               <Button
                 variant="bare"

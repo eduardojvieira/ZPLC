@@ -1,42 +1,42 @@
 {
   "schemaVersion": 1,
   "title": "Mover cajas entre tres niveles",
-  "summary": "Secuencie dos elevadores como dos cadenas que corren en paralelo y se encuentran solo en la cinta de transferencia compartida.",
+  "summary": "Haga que dos elevadores trabajen a la vez, cada uno en su propio ciclo, y se encuentren solo en la cinta que hay entre ellos.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
-    "Describir cada elevador como su propia cadena de pasos que vuelve a su primer paso.",
-    "Arrancar ambas cadenas con una sola transición y dejar que se encuentren solo en la cinta entre los elevadores."
+    "Describir cada elevador como un ciclo de pasos propio que vuelve al punto de partida.",
+    "Hacer que ambos elevadores trabajen a la vez y se encuentren solo en la cinta que hay entre ellos."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/ThreeLevelLifts.sfc.json, añada la cadena del elevador B: B_LOAD, B_SETTLE, B_RISE, B_UNLOAD y B_LOWER, los mismos cinco pasos del elevador A un nivel más arriba.",
-      "checkpoint": "Cada paso fija todas las salidas de su elevador, así que leer los pasos activos indica qué hace cada elevador."
+      "body": "En src/ThreeLevelLifts.sfc.json, el elevador A ya lleva cada caja desde la cinta de entrada hasta la cinta de transferencia del nivel 2. El elevador B debe llevar cada caja desde la cinta de transferencia hasta la cinta de salida del nivel 3, como hace el elevador A un nivel más abajo, y ambos elevadores deben poder trabajar a la vez.",
+      "checkpoint": "Leer los pasos activos indica qué está haciendo cada elevador en cada momento."
     },
     {
       "key": "predict",
       "title": "Predecir",
       "body": "Antes de ejecutar, siga una caja: recorre la cinta de entrada hasta el elevador A, A sube con su superficie detenida, pasa la caja a la cinta de transferencia del nivel 2 y baja; B hace lo mismo un nivel más arriba y entrega la caja a la cinta de salida.",
-      "checkpoint": "Un elevador se mueve solo mientras su superficie está detenida, una cinta corre hacia un elevador solo mientras ese elevador espera en su nivel de carga, y Green se enciende cuando cinco cajas han pasado por EyeTop."
+      "checkpoint": "La cinta de cada elevador está detenida mientras el elevador se mueve, la cinta de transferencia se detiene cuando EyeMid ve una caja, y Green se enciende cuando la quinta caja, soltada a los 50 s de la ejecución, llega a EyeTop."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la cinta de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A.",
+      "body": "Haga que el elevador B lleve las cajas desde la cinta de transferencia hasta el nivel 3 mientras el elevador A sigue trabajando, guárdelo y pulse {{ui:learn.check}}. El proyecto inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la cinta de transferencia y ninguna llega al depósito.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse {{ui:toolbar.run.label}} (F5) y abra la {{ui:plant.panel.view3d}}.",
       "checkpoint": "El escenario requerido se llama three-level-lifts y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe ambos elevadores en la vista 3D: pueden moverse a la vez, y la cinta de transferencia del nivel 2 es el único lugar donde sus cadenas se encuentran.",
-      "checkpoint": "Ningún elevador se mueve mientras su superficie corre, y no cae ninguna caja."
+      "body": "Observe ambos elevadores en la {{ui:plant.panel.view3d}}: a ratos se mueven a la vez, y la cinta de transferencia del nivel 2 es el único elemento que usan los dos.",
+      "checkpoint": "Se ve a ambos elevadores moverse a la vez durante un rato, las cajas llegan a la cinta de salida una tras otra, y no cae ninguna caja."
     },
     {
       "key": "reflect",
@@ -48,14 +48,14 @@
   "hints": [
     {
       "level": 1,
-      "text": "Copie los cinco pasos del elevador A y renómbrelos de B_LOAD a B_LOWER; el elevador B lee BAtLow, BAtHigh y BoxOnB, y fija BLoading en lugar de RunInfeed."
+      "text": "El elevador B hace el mismo trabajo que el elevador A, un nivel más arriba. Mire cómo está construido el ciclo del elevador A y pregunte qué señales y salidas del elevador B cumplen la misma función, y qué debe cumplirse para que ambos elevadores trabajen a la vez."
     },
     {
       "level": 2,
-      "text": "Arranque ambas cadenas con una transición: dé a la transición de arranque un segundo destino en toSteps, y mantenga las dos cadenas separadas desde ahí."
+      "text": "Copie los cinco pasos del elevador A y renómbrelos de B_LOAD a B_LOWER; el elevador B lee BAtLow, BAtHigh y BoxOnB, y fija BLoading en lugar de RunInfeed. Copie sus acciones y transiciones; B escribe BRun, BUp y BDown donde A escribe ARun, AUp y ADown; B_LOWER vuelve a B_LOAD, y las acciones de B dejan fuera las asignaciones de AUnloading de A. Después arranque ambas cadenas con una transición: dé a la transición de arranque un segundo destino en toSteps, que es B_LOAD, y mantenga las dos cadenas separadas desde ahí."
     }
   ],
   "faultCases": [
-    "El programa inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la cinta de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A."
+    "El proyecto inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la cinta de transferencia y ninguna llega al depósito."
   ]
 }

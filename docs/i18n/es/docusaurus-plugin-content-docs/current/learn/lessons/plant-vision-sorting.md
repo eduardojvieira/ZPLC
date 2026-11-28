@@ -19,7 +19,7 @@ Lea el código de cada pieza que ve el sensor de visión y accione un brazo desv
 - Tiempo estimado: 50 minutos
 - Lenguajes: ST
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Clasificación con visión](../../plant/scenes/vision-sorting.md)
 - Requisitos previos: [plant-colour-separation](./plant-colour-separation.md)
 

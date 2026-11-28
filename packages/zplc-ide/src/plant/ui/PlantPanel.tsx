@@ -5,9 +5,9 @@
  * view or of the scene is said here, with the schematic offered, while the program, the plant core and grading keep running
  * (VIS-006, PLS-009); the facts are always there as text (VIS-008).
  *
- * Interim (plan-u3 P1, removed by P4): the scene being edited is the one edit session (`usePlantEdit`), and its editor still renders
- * here, with Undo, Redo and Done; the scene chooser and the save sit beside it, off the toolbar, until the Plant activity, the
- * navigator and Save all hold them (P2, P5, P6).
+ * The scene being edited is the one edit session (`usePlantEdit`): its parts are in the Plant activity, the form of the selected part
+ * in the Inspector and the bindings in the plant map editor; undo and redo are the Edit menu's and the save is Save and Save all (P5).
+ * Here are Done and the 3D view of the session. The scene chooser and the save sit off the toolbar until the navigator holds them (P6).
  */
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { DebugController } from '../../hooks/debugControllerTypes';
@@ -15,14 +15,14 @@ import { useT } from '../../i18n';
 import { SCENE_INDEX } from '../../generated/sceneIndex';
 import { saveProjectScene, saveScene } from '../persistence/sceneFiles';
 import { offerSceneFit } from '../../commands/bind/plant';
+import { offerPlantEditing } from '../../commands/bind/plantEdit';
 import { useAppSettings } from '../../store/useAppSettings';
 import { useIDEStore } from '../../store/useIDEStore';
 import { announce } from '../../utils/announce';
 import { Button, Select, ToggleGroup } from '../../ui';
 import { SaveSceneButton, SceneChooser } from './SceneChooser';
 import { catalogue } from '../core/catalogue';
-import { EditorPanel } from '../editor/EditorPanel';
-import { usePlantEdit } from '../editSession';
+import { markSceneSaved, usePlantEdit } from '../editSession';
 import { usePlantChoice } from './usePlantChoice';
 import { schematicFor } from '../schematic/schematic';
 import { describePlant } from '../text/describe';
@@ -129,6 +129,9 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
     session.editor && session.mapEditor && session.sceneRef === refKey
       ? { editor: session.editor, mapEditor: session.mapEditor }
       : undefined;
+  // A scene edited, closed with Done and not saved is shown as it was edited, also when the document is closed and opened again.
+  const pending = usePlantEdit((state) => state.unsaved[refKey]);
+  if (pending && edited?.key !== refKey) setEdited({ key: refKey, texts: { scene: JSON.stringify(pending.file), map: pending.map } });
   const binding = usePlantSession(controller, ref, deps, edited?.key === refKey ? edited.texts : undefined);
   const { load, snapshot, state } = binding;
   const ready = load.phase === 'ready' ? load : undefined;
@@ -210,14 +213,26 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
     [refKey],
   );
   const startEditing = () => {
-    if (!ready) return;
+    if (!ready || session.editor) return;
+    if (!stopped) return announce(t('plantEditor.running')); // SCN-008: the command says why it did nothing
     setRunning(!stopped, refKey);
     session.begin({ scene: ready.scene, map: ready.map ?? null }, refKey);
   };
   const finishEditing = () => {
+    if (usePlantEdit.getState().sceneRef !== refKey) return;
+    if (!stopped) return announce(t('plantEditor.running')); // SCN-008: ending the edit rebuilds the plant, which cannot run
     const texts = session.end();
     if (texts) setEdited({ key: refKey, texts });
   };
+  // The commands `plant.edit` and `plant.endEdit` (the Edit menu and the palette) do what the button and Done do, on the plant on screen.
+  const latest = useRef({ start: startEditing, finish: finishEditing });
+  useEffect(() => {
+    latest.current = { start: startEditing, finish: finishEditing };
+  });
+  useEffect(
+    () => (visible ? offerPlantEditing({ edit: () => latest.current.start(), done: () => latest.current.finish() }) : undefined),
+    [visible],
+  );
   const message =
     failure?.kind === 'unavailable'
       ? t('plant.panel.unavailable', { reason: failure.reason })
@@ -229,11 +244,13 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
   const saveProject = async () => {
     if (!handle || !ready) return;
     await saveProjectScene(handle, ready.scene, ready.map ? JSON.stringify(ready.map) : undefined);
+    markSceneSaved(refKey);
     announce(t('plant.panel.saved', { name: 'scene.json' }));
   };
   const saveToProject = async (name: string) => {
     if (!handle || !ready) return;
     await saveScene(handle, name, ready.scene, ready.map ? JSON.stringify(ready.map) : undefined);
+    markSceneSaved(refKey);
     saved.refresh();
     setRef({ kind: 'file', name });
     announce(t('plant.panel.saved', { name }));
@@ -311,24 +328,11 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
       {editing && (
         <div data-plant-editor className="flex flex-col gap-3 p-2">
           <div className="flex flex-wrap gap-3">
-            <Button data-plant-undo disabled={!stopped} onClick={session.undo}>
-              {t('plantEditor.undo')}
-            </Button>
-            <Button data-plant-redo disabled={!stopped} onClick={session.redo}>
-              {t('plantEditor.redo')}
-            </Button>
             <Button data-plant-edit-done disabled={!stopped} onClick={finishEditing}>
               {t('plantEditor.done')}
             </Button>
           </div>
-          <EditorPanel
-            editor={editing.editor}
-            mapEditor={editing.mapEditor}
-            stopped={stopped}
-            catalogue={catalogue}
-            projectScene={ref.kind === 'project'}
-            onMapEditor={session.setMapEditor}
-          />
+          {!stopped && <p role="status">{t('plantEditor.running')}</p>}
         </div>
       )}
       {message && (

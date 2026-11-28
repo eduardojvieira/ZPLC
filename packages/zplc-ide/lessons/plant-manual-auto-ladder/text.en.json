@@ -4,15 +4,15 @@
   "summary": "Add a mode to the two-axis assembly: jog the pad by hand in manual, run the assembly cycle in automatic, and never let one leak into the other.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
-    "Keep the mode in a memory that one press of ModeBtn switches, and let the machine power up in manual.",
+    "Switch between manual and automatic with each press of the mode button, and power up in manual.",
     "Move the pad with the jog buttons only in manual, never past a limit switch, and start the cycle with Start only in automatic."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/ManualAuto.ld.json, the automatic cycle is already written. In the Ladder editor, add the mode as rungs: an Auto memory switched by ModeBtn, jog outputs that follow JogXPlus, JogXMinus, JogYPlus and JogYMinus in manual, and a Start that counts only in automatic.",
-      "checkpoint": "Auto starts FALSE (manual); every pad output is the cycle in automatic and the jog in manual, never both."
+      "body": "In src/ManualAuto.ld.json the automatic cycle is already written, but the machine has no mode. In the Ladder editor, add one: it powers up in manual, and each press of the mode button, ModeBtn, switches between manual and automatic. In manual the jog buttons JogXPlus, JogXMinus, JogYPlus and JogYMinus move the pad and Start does nothing. In automatic the cycle runs and the jog buttons do nothing.",
+      "checkpoint": "The machine powers up in manual; every pad output follows the cycle in automatic and the jog buttons in manual, never both."
     },
     {
       "key": "predict",
@@ -24,35 +24,35 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter has no mode: a press of Start in manual starts the cycle and the jog buttons do nothing; switch with ModeBtn, allow Start only in automatic, and move the pad with the jog buttons only in manual.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press {{ui:toolbar.run.label}} (F5) and open the {{ui:plant.panel.view3d}}.",
       "checkpoint": "The required scenario is named plant-manual-auto and contains {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Observe",
       "body": "Watch the pad follow the jog buttons in the first seconds, ignore Start, then assemble three lids on three bases in automatic while a jog button is held.",
-      "checkpoint": "The amber light is off in manual and on in automatic; the green light shows when three assemblies are done, and the return to manual leaves every output off."
+      "checkpoint": "The amber light is off in manual and on while the automatic cycle runs; the green light shows when three assemblies are done, and the return to manual leaves every output off."
     },
     {
       "key": "reflect",
       "title": "Reflect",
       "body": "The AT assertions pin the idle machine, the pad at each limit, the quiet Start in manual and the running cycle; the facts prove that the assembly finished without a dropped part.",
-      "checkpoint": "A real manual mode also needs a guarded jog speed and a safety function; passing here does not make the machine safe for an operator."
+      "checkpoint": "Passing shows that the modes switch and that the jogs stop at their limits. A real manual mode also needs a guarded jog speed and a protective function, which this scenario does not model."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Switch Auto with an edge of ModeBtn, not with its level, so that holding the button flips the mode once. Clear the cycle (Active, Step and the counters) whenever Auto is FALSE."
+      "text": "The mode button is held for many scans. What makes the mode change once per press and not once per scan? And what should the cycle do when the machine goes back to manual halfway through it? The end of the scenario shows what the outputs must be."
     },
     {
       "level": 2,
-      "text": "Make a jog output TRUE only when Auto is FALSE, its button is held, the opposite button is not and its limit switch is not reached; make Begin the Start press AND Auto, and use Begin where the cycle used Start."
+      "text": "Add the local variables Auto, ToAuto, ToManual and Begin, all BOOL. Draw four rungs for the mode: a positive-edge contact (P) on ModeBtn in series with a normally closed contact on Auto drives the coil ToAuto; the same edge contact in series with a normally open contact on Auto drives the coil ToManual; a contact on ToAuto drives a SET coil on Auto; a contact on ToManual drives a RESET coil on Auto. The machine then powers up in manual. Draw a rung that starts with a normally closed contact on Auto and, whenever it conducts, resets Active and moves 0 into Step, Cycles, LidsFed and BasesFed, and, in the rung where BaseLeftQ resets FreeBase, add a normally closed contact on Auto in parallel with the BaseLeftQ contact (a second RESET coil on FreeBase does not compile). Draw a rung where a contact on Start in series with a contact on Auto drives the coil Begin, and use a contact on Begin wherever the starter uses a contact on Start (the rung that sets Active, the rung of the Go edge and the rung that begins step 0). In each of the four pad-output rungs, add a parallel branch below the cycle's contacts: a normally closed contact on Auto, a contact on the jog button and a normally closed contact on the opposite jog button, joined before the limit-switch contact of that output."
     }
   ],
   "faultCases": [

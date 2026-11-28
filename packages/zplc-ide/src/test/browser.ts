@@ -208,11 +208,25 @@ export class BrowserApp {
   /** Waits until the tree holds a node of `role` whose name matches `name`, and returns it. */
   async axNode(role: string, name: string | RegExp, timeoutMs = DEFAULT_WAIT_MS): Promise<AxNode> {
     const matches = (candidate: string) => (typeof name === 'string' ? candidate === name : name.test(candidate));
-    return await waitFor(
-      `${role} named ${String(name)} in the accessibility tree`,
-      async () => (await this.ax()).find((node) => node.role === role && matches(node.name)),
-      timeoutMs,
-    );
+    let seen: string[] = [];
+    try {
+      return await waitFor(
+        `${role} named ${String(name)} in the accessibility tree`,
+        async () => {
+          const nodes = await this.ax();
+          seen = nodes.filter((node) => node.role === role).map((node) => node.name);
+          return nodes.find((node) => node.role === role && matches(node.name));
+        },
+        timeoutMs,
+      );
+    } catch (error) {
+      // diagnostic only: what the tree did hold of that role at the last look (at most 20 names)
+      const names = seen.slice(0, 20).map((n) => JSON.stringify(n));
+      const more = seen.length > 20 ? `, and ${seen.length - 20} more` : '';
+      throw new Error(
+        `${error instanceof Error ? error.message : String(error)} (${role} names seen: ${names.join(', ') || 'none'}${more})`,
+      );
+    }
   }
 
   async axAbsent(role: string, name: string | RegExp): Promise<boolean> {

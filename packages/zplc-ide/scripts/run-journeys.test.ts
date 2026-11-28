@@ -3,6 +3,7 @@ import {
   allJourneys,
   capJourney,
   failureLine,
+  layoutLine,
   journeyCapSeconds,
   judge,
   parseShard,
@@ -181,5 +182,11 @@ describe('the cap of one journey', () => {
     );
     expect(failureLine('7 Name', { status: 'not-possible', detail: 'no way', notes: [] })).toBe('  NOT POSSIBLE 7 Name: no way');
     expect(failureLine('7 Name', { status: 'pass', detail: '', notes: [] })).toBeUndefined();
+  });
+
+  test('the layout of a failed journey is one line with the size, the sidebars and the measured widths', () => {
+    expect(
+      layoutLine({ inner: [1440, 900], dpr: 1, primaryVisible: true, secondaryVisible: false, primary: 280, secondary: 0, group: 1100 }),
+    ).toBe('  layout 1440x900@1 primary(visible)=280 secondary(hidden)=0 group=1100');
   });
 });

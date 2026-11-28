@@ -11,51 +11,49 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/LiftStacking.st, mantenga una variable Step para la secuencia y un conteo Parts: lleve el cajón al elevador, súbalo, alimente cinco piezas, bájelo y envíe el cajón.",
-      "checkpoint": "Cada paso enciende solo las salidas que necesita, así que Step indica qué hace la estación."
+      "body": "En src/LiftStacking.st están declaradas las entradas y las salidas de la estación, y el programa todavía no acciona nada. Tras la pulsación de Start, debe entrar un cajón y subir en el elevador hasta el alimentador, deben echarse cinco piezas dentro de él una por una, y el cajón lleno debe bajar y salir por la cinta de salida, con Green encendida cuando OutEye lo ha visto salir.",
+      "checkpoint": "Usted puede decir qué está haciendo la estación en cada momento y qué debe cumplirse antes de pasar al trabajo siguiente."
     },
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, siga el cajón y las piezas: el cajón se detiene en el elevador cuando CrateEye lo ve; en el nivel 2 el alimentador deja una pieza a la vez, y cada una necesita unos dos segundos para aterrizar antes de la siguiente.",
-      "checkpoint": "Up y RunLift nunca son TRUE a la vez, Parts llega a cinco y Green se enciende cuando OutEye ve salir el cajón."
+      "body": "Antes de ejecutar, siga el cajón y las piezas: el cajón se detiene en el elevador cuando CrateEye lo ve; en el nivel 2 el alimentador deja una pieza a la vez, y cada una necesita un momento para asentarse en el cajón antes de que llegue la siguiente.",
+      "checkpoint": "La cinta de la plataforma nunca está en marcha mientras la plataforma se mueve, cinco piezas entran en el cajón y Green se enciende cuando OutEye ve salir el cajón."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial no gobierna ninguna salida, así que nada se mueve; secuencie la estación: emita un cajón, suba el elevador, alimente y cuente cinco piezas una por una, baje el elevador y envíe el cajón, encendiendo Green cuando OutEye lo vea.",
+      "body": "Escriba el programa de la estación, guárdelo y pulse {{ui:learn.check}}. El proyecto inicial no acciona ninguna salida, así que nada se mueve. Tras Start, debe emitirse un cajón y llevarse al elevador, el elevador debe subirlo, deben echarse cinco piezas dentro de él una por una, el elevador debe bajarlo y el cajón debe salir por la cinta de salida, con Green encendida cuando OutEye lo ha visto.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse {{ui:toolbar.run.label}} (F5) y abra la {{ui:plant.panel.view3d}}.",
       "checkpoint": "El escenario requerido se llama lift-stacking y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe cómo aterrizan las piezas en el cajón en la vista 3D y lea loaded:crate:0 en el texto de hechos.",
-      "checkpoint": "El cajón lleva sus piezas mientras el elevador se desplaza, y ninguna aterriza fuera."
+      "body": "Observe cómo aterrizan las piezas en el cajón en la {{ui:plant.panel.view3d}} y lea la línea \"El cajón 1 contiene … elementos\" en el texto de hechos.",
+      "checkpoint": "El número de esa línea sube hasta cinco antes de que el cajón salga del elevador."
     },
     {
       "key": "reflect",
       "title": "Reflexionar",
-      "body": "El hecho loaded:crate:0 es TRUE cuando al menos una pieza reposa dentro del cajón, y el hecho delivered prueba que el cajón llegó a su depósito.",
+      "body": "La aserción sobre loaded:crate:0, que es el número de piezas que reposan en el cajón, se cumple en cuanto al menos una reposa dentro, y la aserción delivered prueba que el cajón llegó a su depósito.",
       "checkpoint": "La calificación no puede contar las piezas: no distingue cuatro de cinco, porque una expectativa no tiene comparación numérica; lea el conteo en los hechos."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Cuente una pieza cuando CountEye termina (un F_TRIG), no cuando empieza, y espere a que aterrice antes de alimentar la siguiente."
+      "text": "Una pieza está frente a CountEye un instante y sigue moviéndose después de pasar. ¿Cuándo es seguro decir que esta ya está y alimentar la siguiente? ¿Y qué evita que las piezas se amontonen en un punto de la plataforma?"
     },
     {
       "level": 2,
-      "text": "Use un TON para la espera del aterrizaje; entre piezas haga correr la superficie de la plataforma un instante para que las piezas no se amontonen en un punto."
+      "text": "Mantenga un Step INT y un conteo Parts, retenga Start en Active y dé a EmitCrate la pulsación. Paso 1: haga funcionar RunIn y RunLift hasta que CrateEye vea el cajón en AtLevel1. Paso 2: Up, con RunLift en FALSE, hasta AtLevel2. Paso 3: dé a EmitPart un flanco ascendente y haga funcionar el alimentador; en el flanco descendente de CountEye (un F_TRIG) sume uno a Parts. Paso 4: mantenga el alimentador en marcha y espere unos dos segundos con un TON a que la pieza aterrice (se asienta en cerca de un segundo). Paso 5: haga funcionar RunLift durante 0,3 s para que las piezas no se amontonen en un punto, y vuelva al paso 3, o al paso 6 tras la quinta. Paso 6: Down hasta AtLevel1. Paso 7: haga funcionar RunLift y RunOut, y encienda Green en el flanco descendente de OutEye."
     }
   ],
-  "faultCases": [
-    "El programa inicial no gobierna ninguna salida, así que nada se mueve; secuencie la estación: emita un cajón, suba el elevador, alimente y cuente cinco piezas una por una, baje el elevador y envíe el cajón, encendiendo Green cuando OutEye lo vea."
-  ]
+  "faultCases": ["El proyecto inicial no acciona ninguna salida, así que nada se mueve."]
 }

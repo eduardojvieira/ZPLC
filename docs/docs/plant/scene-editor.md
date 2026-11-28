@@ -15,7 +15,7 @@ The scene editor is how you build a scene of your own, or change one that ships 
 2. In **Scene**, choose **Empty floor** to start from nothing, a shipped scene, or a scene saved in your project.
 3. Press **Edit scene** in the **Plant tools** toolbar.
 
-The editor needs the plant to be stopped. While the plant runs, **Edit scene** is off and the editor says so. While you edit, the toolbar offers **Undo**, **Redo** and **Done editing**.
+The editor needs the plant to be stopped. While the plant runs, **Edit scene** is off and the editor says so. While you edit, **Done editing** ends the edit. **Edit the plant** and **Finish editing the plant** in the Edit menu and the command palette do the same as **Edit scene** and **Done editing**.
 
 ## Add a part
 
@@ -58,9 +58,10 @@ The editor has a module that writes the variable declarations of a scene in ST, 
 
 ## Undo, redo, save and run
 
-- **Undo** and **Redo** step through your edits, one step for each edit or drag. They are off while the plant runs.
+- **Undo** and **Redo** of the **Edit** menu step through your edits, one step for each edit or drag, and every view of the scene (the part list, the form of the part, the signals) shows the result. They act on the scene while the plant document is the active document and a scene is being edited; in a code editor they are the code editor's own. While the plant runs they change nothing and say so.
+- The problems of the scene are in the **Problems** tab under **Plant**, each at its part: activate one to select the part in the Plant activity and in the Inspector. The unbound and mismatched signals of the plant map are listed there too and open their row.
 - **Done editing** closes the editor and rebuilds the plant from the edited scene.
-- **Save to project** (in the toolbar after **Done editing**, when a project folder is open and the scene is not already a saved scene) asks for a name and saves the scene and its plant map as `scenes/<name>.scene.json` in your project, where it is listed in **Scene**. The project's own scene (the `scene.json` at the root of the project, as a scene lesson ships it) is saved in place: **Save to project** asks for no name and writes `scene.json` and `plant-map.json` at the root, the files a lesson Check grades, and creates no `scenes/` folder. A scene that has been edited also takes part in **Save all**.
+- **Save to project** (in the toolbar after **Done editing**, when a project folder is open and the scene is not already a saved scene) asks for a name and saves the scene and its plant map as `scenes/<name>.scene.json` in your project, where it is listed in **Scene**. The project's own scene (the `scene.json` at the root of the project, as a scene lesson ships it) is saved in place: **Save to project** asks for no name and writes `scene.json` and `plant-map.json` at the root, the files a lesson Check grades, and creates no `scenes/` folder. A scene that has been edited, with its plant map, takes part in **Save all**, also while the editor is not on screen.
 - To run, use **Run** in the command bar. It starts the program and the plant together. If the signals are not bound, the plant is shown but no program drives it.
 
 ## Use the keyboard

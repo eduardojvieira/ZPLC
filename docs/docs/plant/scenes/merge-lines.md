@@ -64,9 +64,9 @@ Sharing one resource between two requesters, so that two boxes never meet in the
 ## Lessons that use this scene
 
 - [Merge two lines](../../learn/lessons/plant-merge-lines.md)
-- [Change a scene: add the second emitter](../../learn/lessons/plant-change-scene.md)
+- [Change a scene: feed the second line](../../learn/lessons/plant-change-scene.md)
 - [Merge two lines in Ladder](../../learn/lessons/plant-merge-lines-ladder.md)
-- [Change a scene: add the second emitter](../../learn/lessons/plant-change-scene-ladder.md)
+- [Change a scene: feed the second line](../../learn/lessons/plant-change-scene-ladder.md)
 
 ## What is not claimed
 

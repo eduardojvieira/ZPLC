@@ -215,6 +215,37 @@ export const journeysU3P: Journey[] = [
       }
     },
   },
+  {
+    // PLS-005, SCN-010: the Edit menu commands of the plant (from the palette: the same commands the menu runs).
+    name: 'U3-P5 Edit the plant, Undo and Redo of the Edit menu act on the scene being edited, and Finish editing ends it',
+    example: 'none',
+    proves: [],
+    partly: ['PLS-005', 'SCN-010', 'SCN-015'],
+    run: async (app, { root }) => {
+      const project = shippedSceneProject(SHIPPED.smallest);
+      app.answer(writeSceneProject(join(root, 'plant-edit-menu'), project));
+      await app.click(button('Open project', 'contains'), 'the Open project button');
+      await app.until('the project workbench', async () => (await app.visible(toolbar)) || undefined);
+      await openPlantDocument(app, project);
+      await app.click(css('[data-activity="plant"]'), 'the Plant activity of the rail');
+      await runFromPalette(app, 'plant.edit', 'edit the plant');
+      const parts = () => app.eval<number>(`(${ACTIVITY}).querySelectorAll('li[data-part]').length`);
+      await app.until(
+        'the parts catalogue',
+        async () => (await app.eval<boolean>(`Boolean((${ACTIVITY}).querySelector('li[data-part]'))`)) || undefined,
+      );
+      const before = await parts();
+      await app.eval(`[...(${ACTIVITY}).querySelectorAll('button')].find((b) => b.textContent === 'Add part').click()`);
+      await app.until('one more part', async () => ((await parts()) === before + 1 ? true : undefined));
+      assert(!(await app.visible(css('[data-plant-undo]'))), 'The plant document still has an Undo button.');
+      await runFromPalette(app, 'edit.undo', 'undo');
+      await app.until('Undo to take the part back', async () => ((await parts()) === before ? true : undefined));
+      await runFromPalette(app, 'edit.redo', 'redo');
+      await app.until('Redo to bring the part back', async () => ((await parts()) === before + 1 ? true : undefined));
+      await runFromPalette(app, 'plant.endEdit', 'finish editing');
+      await app.until('the editor to close', async () => !(await app.visible(css('[data-plant-editor]'))) || undefined);
+    },
+  },
   // U3-P4: the plant map is a configuration editor.
   {
     name: 'U3-P4 the plant map opens as a configuration editor, a problem opens its row, and Create the declarations reports',

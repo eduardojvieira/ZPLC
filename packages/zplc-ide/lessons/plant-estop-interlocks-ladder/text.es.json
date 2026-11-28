@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/ThreeLevelLifts.ld.json, añada una memoria Stopped: un peldaño con un contacto normalmente cerrado de EStopOk la activa, un peldaño con Start y EStopOk la desactiva, el mismo contacto de paro desactiva Active, y Red se enciende desde Stopped. Ponga los peldaños de paro después del de Start, para que el paro gane.",
-      "checkpoint": "Todas las salidas ya dependen de Active, así que borrar Active detiene las cintas y los elevadores a la vez."
+      "body": "El proyecto inicial en src/ThreeLevelLifts.ld.json dibuja la línea y no tiene paro. Mientras el paro de emergencia está pulsado, todas las cintas y elevadores deben estar apagados y la lámpara roja encendida; la línea debe seguir detenida cuando se suelta el pulsador y volver a funcionar solo tras una nueva pulsación de Start.",
+      "checkpoint": "Puede decir qué salidas deben estar apagadas durante el paro, qué debe mostrar Red y qué debe seguir cumpliéndose después de soltar el pulsador."
     },
     {
       "key": "predict",
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial ignora el paro de emergencia, así que la línea sigue funcionando; detenga todas las salidas mientras EStopOk sea FALSE, encienda Red, mantenga recordado el paro después de soltarlo y haga funcionar la línea de nuevo solo con una nueva pulsación de Start.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial ignora el paro de emergencia: a los 16 s, con el paro pulsado, la línea sigue funcionando y Red sigue apagada. Mientras EStopOk sea FALSE, todas las salidas deben estar apagadas y Red encendida; tras soltar el pulsador la línea debe seguir detenida y volver a funcionar solo con una nueva pulsación de Start.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -41,21 +41,21 @@
     {
       "key": "reflect",
       "title": "Reflexionar",
-      "body": "Las aserciones AT fijan el paro a los 16 s, el paro mantenido a los 17,3 s y el reinicio a los 18 s; los enclavamientos que ya estaban en el programa son la misma idea de la lección 2.0 interlock-guard-permissive.",
-      "checkpoint": "Es un paro escrito en el programa del PLC, no un circuito de seguridad, así que no es una función de seguridad y no da tiempo de parada. La calificación no puede ver un elevador que se desplaza después del paro."
+      "body": "Las aserciones AT fijan el paro a los 16 s, el paro mantenido a los 17,3 s y Red apagada a los 18 s; los enclavamientos que ya estaban en el programa son la misma idea de la lección 2.0 interlock-guard-permissive.",
+      "checkpoint": "Este paro es solo lo que el programa hace con la señal EStopOk: no es un circuito de paro de emergencia y no da tiempo de parada. La calificación no puede ver un elevador que sigue subiendo un poco después del paro."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Ponga primero los peldaños de Start y después los de paro: estos, con un contacto normalmente cerrado de EStopOk, activan Stopped y desactivan Active, así que el paro gana en el mismo ciclo; los de Start activan Active y desactivan Stopped solo en serie con EStopOk."
+      "text": "Mire los 17,3 s, después de soltar el pulsador: EStopOk vuelve a estar en TRUE, y aun así Red sigue encendida y las salidas siguen apagadas. ¿Qué variable de su programa puede decir eso, y qué la hace cambiar?"
     },
     {
       "level": 2,
-      "text": "Encienda Red desde Stopped; las salidas ya dependen de Active, así que ninguna salida necesita su propia lógica de paro."
+      "text": "Añada una variable local BOOL Stopped. Sustituya el primer peldaño, donde Start activa Active, por dos peldaños de Start: un contacto normalmente abierto de Start en serie con un contacto normalmente abierto de EStopOk, un peldaño que activa Active y otro que desactiva Stopped. Después dibuje los peldaños de paro: con un contacto normalmente cerrado de EStopOk, un peldaño activa Stopped y otro desactiva Active. En un último peldaño, un contacto normalmente abierto de Stopped acciona una bobina Red. Todas las salidas ya dependen de Active, así que ninguna salida necesita su propia lógica de paro."
     }
   ],
   "faultCases": [
-    "El programa inicial ignora el paro de emergencia, así que la línea sigue funcionando; detenga todas las salidas mientras EStopOk sea FALSE, encienda Red, mantenga recordado el paro después de soltarlo y haga funcionar la línea de nuevo solo con una nueva pulsación de Start."
+    "El programa inicial ignora el paro de emergencia: a los 16 s, con el paro pulsado, la línea sigue funcionando y Red sigue apagada."
   ]
 }

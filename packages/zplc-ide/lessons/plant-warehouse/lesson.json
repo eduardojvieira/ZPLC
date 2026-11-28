@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "plant-warehouse",
-  "version": 4,
+  "version": 5,
   "order": 173,
   "module": 17,
   "level": "advanced",

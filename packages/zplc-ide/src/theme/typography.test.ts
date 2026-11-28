@@ -112,3 +112,14 @@ describe('density applies to the whole application (UX-008)', () => {
     }
   });
 });
+
+describe('kit select height (UX-008)', () => {
+  // The real RED is the nightly's measurement on macOS and Windows (journey 55); the GREEN proof is the next nightly.
+  const kit = readFileSync(new URL('../ui/kit.css', import.meta.url), 'utf8');
+  it('gives a select exactly the control height and leaves the text input rule on min-height', () => {
+    expect(kit.match(/select\.ui-input\s*\{([^}]*)\}/)?.[1]).toMatch(/(?<![-\w])height:\s*var\(--control-height\)/);
+    const input = kit.match(/\.ui-input\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(input).toMatch(/min-height:\s*var\(--control-height\)/);
+    expect(input).not.toMatch(/(?<![-\w])height:/);
+  });
+});

@@ -5,25 +5,25 @@
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Move the control of one machine into a function block and use one instance for each machine.",
-    "Balance two machines of different speeds by alternating the blanks between them."
+    "Give two machines of different speeds the same control, so that each finishes four cycles."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/ProductionLine.st, turn the inline control of machine A into a function block Cell, call one instance for machine A and another for machine B, and light Green when both have finished four cycles.",
-      "checkpoint": "Both machines run the same function block, so a change to the block changes both."
+      "body": "In src/ProductionLine.st machine A is controlled by statements written in the program itself, and machine B has no control at all. Make both machines work the same way, with the control written only once, and light Green when both have finished four cycles.",
+      "checkpoint": "You can say what is written once for both machines, and what each machine keeps for itself."
     },
     {
       "key": "predict",
       "title": "Predict",
-      "body": "Before running, count the blanks: eight arrive, one every six seconds, and the arm sends every second one to machine B; machine A needs 3 s per cycle and machine B 6 s, so each makes four with the same block.",
-      "checkpoint": "Each machine feeds until a blank has entered, waits for Ready before it pulses Start, and feeds again after Done; no Start is a misfire."
+      "body": "Before running, count the blanks: eight arrive, one every six seconds, and the arm sends every second one to machine B; machine A needs 3 s per cycle and machine B 6 s, so each makes four.",
+      "checkpoint": "A machine starts a cycle only when it reports one blank at rest, and a Start at any other moment is a misfire: misfires stays at zero."
     },
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter controls only machine A, written inline; move that control into a function block, call it for machine A and for machine B, and light Green when both have finished four cycles.",
+      "body": "Write the program, save it, then press {{ui:learn.check}}. The starting project controls only machine A, so machine B never gets a blank into its chamber, no base is made and Green never lights. Give machine B the same control without writing it a second time, and light Green when both machines have finished four cycles.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -48,14 +48,14 @@
   "hints": [
     {
       "level": 1,
-      "text": "A function block keeps its own variables in each instance: Step, the timers and the count belong inside Cell, so two instances never share them."
+      "text": "Look at the variables that only machine A's control uses, and ask which of them machine B would need its own copy of. A function block keeps a separate copy of its variables in every instance."
     },
     {
       "level": 2,
-      "text": "Pass Active, Seen, Ready and Done in and take Feed, Start and Cycles out; set Start to FALSE at the top so that it lasts one scan, and call each instance once per scan."
+      "text": "Write a function block, for example Cell, that keeps its own Step, its Travel and Eject timers and its Cycles count, so that two instances never share them. Move into it the statements of machine A, from StartA := FALSE; to the FeedA line, renaming StepA, TravelA, EjectA and CyclesA to Step, Travel, Eject and Cycles, and EyeA, ReadyA, DoneA, FeedA and StartA to Seen, Ready, Done, Feed and Start, and delete them and those variables from the program. Pass Active, Seen, Ready and Done in and take Feed, Start and Cycles out. Set Start to FALSE at the top so that it lasts one scan, and call each instance once per scan. In the program, declare MachA : Cell and MachB : Cell, call them with Active := Active, Seen := EyeA and EyeB, Ready := ReadyA and ReadyB, Done := DoneA and DoneB, copy Feed and Start to FeedA, StartA, FeedB and StartB, and light Green when both Cycles are at least 4."
     }
   ],
   "faultCases": [
-    "The starter controls only machine A, written inline; move that control into a function block, call it for machine A and for machine B, and light Green when both have finished four cycles."
+    "The starting project controls only machine A, so machine B never gets a blank into its chamber, no base is made and Green never lights."
   ]
 }

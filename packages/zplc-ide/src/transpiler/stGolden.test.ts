@@ -183,9 +183,12 @@ describe('LNG-029 the ST of every existing diagram, and of every rung for the La
   // 183 adds the eight Ladder figures of the 2.1 plant readings (course T6, under the same 2026-11-26 decision): reading/ of
   // plant-belt-to-sensor-ladder, -belt-transfer-, -colour-separation-, -counted-queue-, -height-chain-, -latch-two-sensors-,
   // -merge-lines- and -weight-sorting-ladder; every earlier entry unchanged.
-  it('covers the 183 files and the 23 synthetic fixtures', () => {
+  // 184 adds plant-estop-interlocks-ladder/reading/compressor (2.1 plant readings, same 2026-11-26 decision); every earlier entry
+  // unchanged.
+  // 185 adds plant-manual-auto-ladder/reading/ticket-machine (2.1 plant readings, same 2026-11-26 decision); every earlier entry unchanged.
+  it('covers the 185 files and the 23 synthetic fixtures', () => {
     const keys = Object.keys(golden);
-    expect(keys.filter((key) => !key.startsWith('fixture/')).length).toBe(183);
+    expect(keys.filter((key) => !key.startsWith('fixture/')).length).toBe(185);
     expect(keys.filter((key) => key.startsWith('fixture/')).length).toBe(23);
     expect(Object.keys(now).sort()).toEqual(keys.sort());
   });

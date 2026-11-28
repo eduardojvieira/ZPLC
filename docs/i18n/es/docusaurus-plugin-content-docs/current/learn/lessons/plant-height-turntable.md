@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-height-turntable. Do not edit. >>> */}
 
-Mida la altura de cada caja con una cortina de luz, conserve la lectura mayor y gire una mesa para que la caja salga por la cinta de su clase.
+Mida la altura de las cajas con una cortina de luz y gire una mesa para que cada caja salga por la cinta de su clase.
 
 ## Datos
 
@@ -19,14 +19,14 @@ Mida la altura de cada caja con una cortina de luz, conserve la lectura mayor y 
 - Tiempo estimado: 60 minutos
 - Lenguajes: ST
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Clasificación por altura con mesa giratoria](../../plant/scenes/height-sorting-turntable.md)
 - Requisitos previos: [plant-height-chain](./plant-height-chain.md)
 
 ## Objetivos
 
-- Reducir un flujo de lecturas a un valor, el máximo, y clasificarlo con dos límites.
-- Coordinar una mesa giratoria con la decisión: detener, girar, sacar la caja y volver a girar.
+- Distinguir cajas de tres alturas con una cortina de luz que informa una altura solo mientras hay una caja en ella.
+- Hacer que una mesa giratoria trabaje con la caja que gira, de modo que cada caja salga por la cinta de su clase.
 
 ## Etapas
 

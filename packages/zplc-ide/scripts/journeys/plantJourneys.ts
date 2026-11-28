@@ -117,7 +117,7 @@ export const journeysPlant: Journey[] = [
   },
   {
     // SCN-014 asks for a path with no pointer from an empty floor to a running scene. This asserts its first step: the project's scene
-    // opens from the plant document and "Edit scene" opens the editor panel from the keyboard.
+    // opens from the plant document and "Edit scene" opens the editor from the keyboard, with the parts in the Plant activity.
     name: 'Q2 A scene is built, bound and run from the keyboard alone',
     example: 'none',
     proves: [],
@@ -127,10 +127,11 @@ export const journeysPlant: Journey[] = [
       assert(await app.clickable(css('[data-plant-edit-scene]')), '"Edit scene" cannot be pressed.');
       await app.eval(`document.querySelector('[data-plant-edit-scene]').focus()`);
       await app.press('Enter');
-      await app.until(
-        'the plant editor',
-        async () => (await app.visible(css('[role="group"][aria-label]:has([data-part], table)'))) || undefined,
-      );
+      await app.until('the plant editor', async () => (await app.visible(css('[data-plant-editor]'))) || undefined);
+      // the parts of the scene are in the Plant activity, reached from the rail by the keyboard
+      await app.eval(`document.querySelector('[data-activity="plant"]').focus()`);
+      await app.press('Enter');
+      await app.until('the parts of the scene', async () => (await app.visible(css('[data-part]'))) || undefined);
     },
   },
 ];

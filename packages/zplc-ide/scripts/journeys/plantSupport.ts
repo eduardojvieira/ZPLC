@@ -183,6 +183,8 @@ export async function holdPushButton(app: DriveApp, name: string, how: 'pointer'
     });
     return;
   }
+  // the button may be below the fold of a document with the Inspector open: a pointer press lands only on what is on screen
+  await app.eval(`${target}.scrollIntoView({ block: 'center' })`);
   const point = await app.eval<{ x: number; y: number }>(
     `(() => { const r = ${target}.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`,
   );

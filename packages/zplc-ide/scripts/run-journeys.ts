@@ -131,6 +131,33 @@ export function failureLine(name: string, outcome: Outcome): string | undefined 
   return `  ${outcome.status === 'fail' ? 'FAILED' : 'NOT POSSIBLE'} ${name}: ${outcome.detail.split('\n')[0]}`;
 }
 
+/**
+ * Read-only probe of the shell layout, run in the page of a journey that failed: the size the page was laid out at, and what the
+ * panels and the sidebars (rendered only while their visibility flag is up) look like, so a hosted macOS or Windows run shows them.
+ */
+export const LAYOUT_PROBE =
+  `(() => { const w = (el) => (el ? Math.round(el.getBoundingClientRect().width) : null); const q = (s) => document.querySelector(s); ` +
+  `return { inner: [window.innerWidth, window.innerHeight], dpr: window.devicePixelRatio, ` +
+  `primaryVisible: q('[data-sidebar-kind="primary"]') !== null, secondaryVisible: q('[data-sidebar-kind="secondary"]') !== null, ` +
+  `primary: w(document.getElementById('primary')), secondary: w(document.getElementById('secondary')), group: w(q('[data-group]')) }; })()`;
+
+/** The one line the probe leaves in the log, e.g. `layout 1440x900@1 primary(visible)=280 secondary(hidden)=0 group=1100`. */
+export function layoutLine(state: {
+  inner: number[];
+  dpr: number;
+  primaryVisible: boolean;
+  secondaryVisible: boolean;
+  primary: number | null;
+  secondary: number | null;
+  group: number | null;
+}): string {
+  const visible = (on: boolean) => (on ? 'visible' : 'hidden');
+  return (
+    `  layout ${state.inner[0]}x${state.inner[1]}@${state.dpr} primary(${visible(state.primaryVisible)})=${state.primary} ` +
+    `secondary(${visible(state.secondaryVisible)})=${state.secondary} group=${state.group}`
+  );
+}
+
 async function runJourney(harness: Harness, journey: Journey, scratch: string): Promise<Outcome> {
   const root = mkdtempSync(join(scratch, 'journey-'));
   const project = join(root, 'project');
@@ -164,6 +191,13 @@ async function runJourney(harness: Harness, journey: Journey, scratch: string): 
   } catch (error) {
     const notes = launched?.notes ?? [];
     if (error instanceof NotPossible) return { status: 'not-possible', detail: error.message, notes };
+    const layout = launched
+      ? // The probe gets 5 s: a CDP call waits 30 s on a busy or dead renderer, and the backstop past the cap
+        // would then replace the journey's own failure message.
+        ((await Promise.race([launched.app.cdp.evaluate(LAYOUT_PROBE).catch(() => undefined), Bun.sleep(5_000).then(() => undefined)])) as
+          Parameters<typeof layoutLine>[0] | undefined)
+      : undefined;
+    if (layout) console.log(layoutLine(layout));
     const shots = process.env.ZPLC_JOURNEY_SHOTS;
     if (shots && launched) {
       const shot = (await launched.app.cdp.command('Page.captureScreenshot', { format: 'png' }).catch(() => undefined)) as

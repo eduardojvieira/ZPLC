@@ -4,55 +4,55 @@
   "summary": "Abra el Editor de escenas sobre un suelo vacío, coloque una cinta, un emisor, un sensor y un pulsador de inicio con los nombres que da la lección, enlace sus señales en el mapa de la planta y escriba el programa que corre sobre ellos.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
-    "Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa.",
-    "Ejecutar un programa sobre la escena que usted construyó y ver que la Comprobación califica esa escena, no una copia."
+    "Colocar los elementos de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa.",
+    "Ejecutar un programa sobre la escena que usted construyó y ver que {{ui:learn.check}} califica esa escena, no una copia."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "Abra scene.json en el Editor de escenas y coloque cuatro piezas con exactamente estos nombres: Belt1 (una cinta), Emitter1 (un emisor en el extremo cercano de la cinta), EyeFar (un sensor difuso junto al extremo lejano de la cinta, mirándola) y StartButton (un pulsador). En plant-map.json enlace StartButton.pressed con BeltToSensor.Start, EyeFar.detect con BeltToSensor.EyeFar, Belt1.run con BeltToSensor.Run y Emitter1.emit con BeltToSensor.Emit; luego, en src/BeltToSensor.st, mantenga una memoria Running: actívela con Start, bórrela con EyeFar y conecte Run y Emit.",
-      "checkpoint": "La escena tiene cuatro piezas con esos nombres, el mapa de la planta tiene cuatro señales, y Run sigue a la memoria mientras Emit pone una caja en la cinta cuando se pulsa Start."
+      "body": "Abra scene.json en el Editor de escenas y coloque cuatro elementos con exactamente estos nombres: Belt1 (una cinta), Emitter1 (un emisor que pone la caja en la cinta en su extremo cercano), EyeFar (un sensor difuso que debe ver la caja cuando llega al extremo lejano de la cinta) y StartButton (un pulsador). En plant-map.json enlace StartButton.pressed con BeltToSensor.Start, EyeFar.detect con BeltToSensor.EyeFar, Belt1.run con BeltToSensor.Run y Emitter1.emit con BeltToSensor.Emit. Luego, en src/BeltToSensor.st, escriba el programa: una pulsación de Start pone una caja en la cinta y la hace avanzar, y la cinta se detiene en cuanto EyeFar ve la caja.",
+      "checkpoint": "La escena tiene cuatro elementos con esos nombres, el mapa de la planta tiene cuatro señales, y una pulsación de Start pone una caja en la cinta y la hace avanzar hasta que EyeFar la ve."
     },
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, siga la caja: el emisor la pone en el extremo cercano, la cinta la lleva al extremo lejano y el sensor avisa al programa para detener la cinta. Una pieza que falta o tiene otro nombre no puede hacer nada de eso, y la Comprobación dice cuál no encuentra.",
+      "body": "Antes de ejecutar, siga la caja: el emisor la pone en el extremo cercano, la cinta la lleva al extremo lejano y el sensor avisa al programa para detener la cinta. Una escena a la que le falta un elemento que lee el escenario no puede hacer nada de eso, y {{ui:learn.check}} dice qué elemento no encuentra.",
       "checkpoint": "Cinta apagada antes de la pulsación; encendida después, con una caja encima; apagada otra vez en cuanto EyeFar ve la caja, y así se queda."
     },
     {
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del programa inicial, guarde la escena, el mapa de la planta y el programa, y pulse {{ui:learn.check}}: La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la cinta y la detiene cuando EyeFar ve la caja.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse {{ui:toolbar.run.label}} (F5) y abra la {{ui:plant.panel.view3d}}.",
       "checkpoint": "El escenario requerido se llama build-belt-scene y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe la caja avanzar por la cinta que usted colocó y detenerse bajo el sensor que usted colocó; si falta una pieza, lea el mensaje de la Comprobación: nombra la pieza y el archivo donde se corrige.",
+      "body": "Observe la caja avanzar por la cinta que usted colocó y detenerse cuando la ve el sensor que usted colocó; si falta EyeFar, lea el mensaje de {{ui:learn.check}}: nombra el elemento y el archivo donde se corrige.",
       "checkpoint": "Run baja cuando el sensor se activa, no antes, y la caja nunca cae."
     },
     {
       "key": "reflect",
       "title": "Reflexionar",
-      "body": "El escenario lee hechos de la planta de las piezas que usted nombró, así que una escena con otros nombres no tiene nada que calificar; los nombres forman parte del contrato entre la escena, el mapa de la planta y el programa.",
+      "body": "El escenario pulsa StartButton y lee lo que contó EyeFar, así que una escena sin esos dos nombres no tiene nada que calificar; los nombres forman parte del contrato entre la escena, el mapa de la planta y el programa.",
       "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "En el Editor de escenas elija la plantilla Suelo vacío, agregue las cuatro piezas y renombre cada una; la cinta tiene longitud 2.4 y velocidad 0.5, y el sensor tiene alcance 1."
+      "text": "Ejecute {{ui:command.view.plant}} desde la {{ui:studio.surface.palette}}, deje seleccionada {{ui:plant.panel.projectScene}} y pulse {{ui:plant.panel.editScene}}: la escena de esta lección es el suelo vacío. Cada elemento que añada se nombra y se coloca en {{ui:plantEditor.formHeading}}; la lectura enumera los pasos del editor."
     },
     {
       "level": 2,
-      "text": "Escriba el borrado después de la activación para que EyeFar gane cuando ambos sean TRUE, y luego Run := Running y Emit := Start."
+      "text": "Añada una cinta, un emisor, un sensor óptico difuso y un pulsador, y llámelos Belt1, Emitter1, EyeFar y StartButton. Ponga Belt1 en X 0, Z 0, Emitter1 en X -1, Z 0, EyeFar en X 0,75, Z -0,5 con rotación 270 y StartButton junto a la cinta, en X -1, Z -0,75 (en los campos del editor, escriba los valores con punto: 0.75, -0.5). Los ajustes de los elementos pueden quedar en sus valores predeterminados (la escena terminada de la lección usa una cinta de 2,4 m de longitud, una velocidad de cinta de 0,5 m/s y un alcance de sensor de 1 m). Enlace StartButton.pressed con BeltToSensor.Start, EyeFar.detect con BeltToSensor.EyeFar, Belt1.run con BeltToSensor.Run y Emitter1.emit con BeltToSensor.Emit, y luego pulse {{ui:plantEditor.done}} y {{ui:plant.panel.saveToProject}}. En el programa, declare Running : BOOL en VAR, actívela con Start, bórrela con EyeFar escrito después de la activación para que EyeFar gane cuando ambos sean TRUE, y luego escriba Run := Running y Emit := Start."
     }
   ],
   "faultCases": [

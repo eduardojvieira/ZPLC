@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "plant-manual-auto",
-  "version": 5,
+  "version": 6,
   "order": 182,
   "module": 18,
   "level": "advanced",
