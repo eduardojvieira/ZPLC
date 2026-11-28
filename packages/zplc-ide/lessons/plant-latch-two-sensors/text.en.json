@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objective",
       "body": "In src/LatchTwoSensors.st, make Run a latch: set it when EyeA sees the box and reset it when EyeB sees the box.",
-      "checkpoint": "Run stays on between the two sensors, and the reset wins over the set."
+      "checkpoint": "Run stays on between the two sensors."
     },
     {
       "key": "predict",
