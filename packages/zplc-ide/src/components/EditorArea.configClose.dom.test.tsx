@@ -46,8 +46,9 @@ function prepare(open: string[]) {
   dom.patchStore(useConfigEditors, { open, active: open[0] ?? null } as never);
 }
 
-const close = (kind: 'io' | 'tasks' | 'plantMap') =>
-  dom.screen.getByRole('button', { name: dom.t('configEditor.close', { title: dom.t(`configEditor.${kind}.title` as never) }) });
+const TITLES = { io: 'configEditor.io.title', tasks: 'configEditor.tasks.title', plantMap: 'configEditor.plantMap.title' } as const;
+const close = (kind: keyof typeof TITLES) =>
+  dom.screen.getByRole('button', { name: dom.t('configEditor.close', { title: dom.t(TITLES[kind]) }) });
 const asked = () => dom.screen.queryByText(dom.t('configEditor.closeDialogTitle')) !== null;
 
 describe('closing a configuration tab with unsaved zplc.json edits (UX-013)', () => {
