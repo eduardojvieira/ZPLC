@@ -378,16 +378,12 @@ describe('isolated candidate change sets (IDE-030)', () => {
           await mkdir(join(root, 'src'));
           await mkdir(join(root, 'tests'));
           await mkdir(join(root, 'scenes'));
-          for (const path of ['zplc.json', 'src/BeltToSensor.st'])
+          for (const path of ['zplc.json', 'scene.json', 'plant-map.json', 'src/BeltToSensor.st', 'tests/belt-to-sensor.scenario.json'])
             await writeFile(join(root, path), await readFile(join(plantBeltStarter, path)));
           const sceneText = await readFile(join(plantBeltStarter, 'scene.json'), 'utf8');
           const editedSceneText = `${sceneText.trimEnd()}\n\n`;
           await writeFile(join(root, 'scenes/line.scene.json'), sceneText);
           await writeFile(join(root, 'scenes/line.plant-map.json'), await readFile(join(plantBeltStarter, 'plant-map.json')));
-          const scenarioText = (await readFile(join(plantBeltStarter, 'tests/belt-to-sensor.scenario.json'), 'utf8'))
-            .replace('"file": "scene.json"', '"file": "scenes/line.scene.json"')
-            .replace('"map": "plant-map.json"', '"map": "scenes/line.plant-map.json"');
-          await writeFile(join(root, 'tests/belt-to-sensor.scenario.json'), scenarioText);
 
           const result = await createCandidateChangeSet(root, [
             { path: 'src/BeltToSensor.st', content: solutionSource },
@@ -399,6 +395,8 @@ describe('isolated candidate change sets (IDE-030)', () => {
             evidence: { operation: 'test', outcome: 'passed' },
           });
           expect(copiedFiles).toEqual([
+            'plant-map.json',
+            'scene.json',
             'scenes/line.plant-map.json',
             'scenes/line.scene.json',
             'src/BeltToSensor.st',
@@ -456,12 +454,14 @@ describe('isolated candidate change sets (IDE-030)', () => {
         await mkdir(join(scenesLinked, 'scenes'));
         await symlink(outsideTarget, join(scenesLinked, 'scenes/outside.scene.json'), 'file');
 
-        await expect(
-          createCandidateChangeSet(srcLinked, [{ path: 'src/Motor.st', content: `${original}\n` }]),
-        ).resolves.toMatchObject({ accepted: false, diagnostics: [{ code: 'CHANGESET_BASE_INVALID' }] });
-        await expect(
-          createCandidateChangeSet(scenesLinked, [{ path: 'src/Motor.st', content: `${original}\n` }]),
-        ).resolves.toMatchObject({ accepted: false, diagnostics: [{ code: 'CHANGESET_BASE_INVALID' }] });
+        await expect(createCandidateChangeSet(srcLinked, [{ path: 'src/Motor.st', content: `${original}\n` }])).resolves.toMatchObject({
+          accepted: false,
+          diagnostics: [{ code: 'CHANGESET_BASE_INVALID' }],
+        });
+        await expect(createCandidateChangeSet(scenesLinked, [{ path: 'src/Motor.st', content: `${original}\n` }])).resolves.toMatchObject({
+          accepted: false,
+          diagnostics: [{ code: 'CHANGESET_BASE_INVALID' }],
+        });
       } finally {
         await rm(outside, { recursive: true, force: true });
         await rm(srcLinked, { recursive: true, force: true });

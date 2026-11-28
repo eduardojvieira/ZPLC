@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
-import { lstat, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import type { Dirent } from 'node:fs';
+import { lstat, mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join, win32 } from 'node:path';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
@@ -50,7 +51,14 @@ import { createNativeScenarioSession } from './nativeScenarioRuntime';
 export * from './toolEvidence';
 export * from './toolApiToolchain';
 import { evidence, failed, artifactEvidence, type ToolArtifact, type ToolEvidence, type ToolResult } from './toolEvidence';
-import { readWorkspace, readWorkspaceScenarios, type ToolDiagnostic, type WorkspaceProject, type WorkspaceScenario } from './workspace';
+import {
+  readWorkspace,
+  readWorkspaceProjectFile,
+  readWorkspaceScenarios,
+  type ToolDiagnostic,
+  type WorkspaceProject,
+  type WorkspaceScenario,
+} from './workspace';
 
 export type CompilerSummary = { name: string; version: string; taskCount: number; codeSize: number; draftCounter: number };
 export type CompilerCheckResult = ToolResult<CompilerSummary>;
@@ -860,9 +868,14 @@ export interface CandidateChangeSetResult {
   preview?: TestRunPreview;
   savedTestInputIdentity?: SavedTestInputIdentity;
 }
+interface CandidatePlantFile {
+  path: string;
+  bytes: Uint8Array;
+}
 interface CandidateSnapshot {
   workspace: WorkspaceProject;
   scenarios: WorkspaceScenario[];
+  plantFiles: CandidatePlantFile[];
   identity: { sha256: string; fileCount: number };
 }
 /** @internal Test-only seams. Neither root nor source text is returned to callers. */
@@ -873,7 +886,12 @@ export const __changeSetTestHooks: {
 } = {};
 const CHANGESET_MANIFEST_MAX_BYTES = 128 * 1024;
 const CHANGESET_SOURCE_MAX_BYTES = 256 * 1024;
+const CHANGESET_PLANT_MAX_BYTES = 512 * 1024;
+const CHANGESET_PLANT_MAX_COUNT = 64;
+const CHANGESET_PLANT_TOTAL_MAX_BYTES = 2 * 1024 * 1024;
 const CHANGESET_PATH_MAX_LENGTH = 512;
+const ROOT_PLANT_FILES = ['scene.json', 'plant-map.json'] as const;
+const SCENES_DIR_PLANT_FILE = /^(?:plant-map\.json|.+\.(?:scene|plant-map)\.json)$/i;
 /** The programs one change set may create, which is also the cap on the files an assistant's set holds (IDE-030). */
 const CHANGESET_MAX_CREATED = CANDIDATE_CHANGE_CAP;
 /** The name the build reads a program under: case does not tell two programs apart, and main.ld is main.ld.json. */
@@ -1294,21 +1312,62 @@ function decodeChangeSetEdits(value: unknown, limit: number): CandidateChangeSet
     return undefined;
   }
 }
+async function readCandidatePlantFiles(root: string): Promise<CandidatePlantFile[] | undefined> {
+  const files: CandidatePlantFile[] = [];
+  let totalBytes = 0;
+  const addFile = async (logicalPath: string, optional: boolean): Promise<boolean> => {
+    const read = await readWorkspaceProjectFile(root, logicalPath, CHANGESET_PLANT_MAX_BYTES);
+    if (!read.ok) return optional && read.diagnostics[0]?.code === 'WORKSPACE_MISSING';
+    totalBytes += read.bytes.byteLength;
+    if (files.length >= CHANGESET_PLANT_MAX_COUNT || totalBytes > CHANGESET_PLANT_TOTAL_MAX_BYTES) return false;
+    files.push({ path: logicalPath, bytes: read.bytes });
+    return true;
+  };
+  for (const path of ROOT_PLANT_FILES) if (!(await addFile(path, true))) return undefined;
+  const scenesDir = join(root, 'scenes');
+  let scenesStatus: Awaited<ReturnType<typeof lstat>>;
+  try {
+    scenesStatus = await lstat(scenesDir);
+  } catch (error) {
+    return typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT' ? files : undefined;
+  }
+  if (scenesStatus.isSymbolicLink() || !scenesStatus.isDirectory()) return undefined;
+  let entries: Dirent[];
+  try {
+    entries = await readdir(scenesDir, { withFileTypes: true });
+  } catch {
+    return undefined;
+  }
+  const seenNames = new Set<string>();
+  for (const entry of entries.sort((left, right) => (left.name < right.name ? -1 : left.name > right.name ? 1 : 0))) {
+    if (entry.isSymbolicLink()) return undefined;
+    if (!entry.isFile() || !SCENES_DIR_PLANT_FILE.test(entry.name)) continue;
+    const key = entry.name.toLowerCase();
+    if (seenNames.has(key)) return undefined;
+    seenNames.add(key);
+    if (!(await addFile(`scenes/${entry.name}`, false))) return undefined;
+  }
+  return files;
+}
 async function readCandidateSnapshot(root: string): Promise<CandidateSnapshot | undefined> {
   const loaded = await readWorkspace(root);
   if (!loaded.ok) return undefined;
   const scenarios = await readWorkspaceScenarios(loaded.workspace.root);
   if (!scenarios.ok) return undefined;
+  const plantFiles = await readCandidatePlantFiles(loaded.workspace.root);
+  if (!plantFiles) return undefined;
   const inputs = [
     { path: 'zplc.json', bytes: loaded.workspace.manifestBytes },
     ...loaded.workspace.sources.map((source) => ({ path: source.path, bytes: source.bytes })),
     ...scenarios.scenarios.map((scenario) => ({ path: scenario.path, bytes: scenario.bytes })),
+    ...plantFiles,
   ]
     .map(({ path, bytes }) => ({ path, ...changeSetDigest(bytes) }))
     .sort((left, right) => (left.path < right.path ? -1 : left.path > right.path ? 1 : 0));
   return {
     workspace: loaded.workspace,
     scenarios: scenarios.scenarios,
+    plantFiles,
     identity: {
       sha256: createHash('sha256')
         .update(JSON.stringify({ schemaVersion: 1, inputs }))
@@ -1364,9 +1423,11 @@ export async function createCandidateChangeSet(
     const stable = await readCandidateSnapshot(initial.workspace.root);
     if (!stable || stable.identity.sha256 !== initial.identity.sha256 || stable.identity.fileCount !== initial.identity.fileCount)
       return changeSetRejected('CHANGESET_BASE_INVALID');
+    const plantPaths = new Set(stable.plantFiles.map((plant) => plant.path));
     const files = new Map<string, Uint8Array>([
       ['zplc.json', stable.workspace.manifestBytes] as const,
       ...stable.workspace.sources.map((source): readonly [string, Uint8Array] => [source.path, source.bytes]),
+      ...stable.plantFiles.map((plant): readonly [string, Uint8Array] => [plant.path, plant.bytes]),
     ]);
     const edits = decodeChangeSetEdits(input, files.size + CHANGESET_MAX_CREATED);
     if (!edits) return changeSetRejected('CHANGESET_INVALID');
@@ -1387,7 +1448,12 @@ export async function createCandidateChangeSet(
         return changeSetRejected('CHANGESET_INVALID');
       if (isNew && [...creations.keys()].some((created) => sourceNameKey(created) === sourceNameKey(edit.path)))
         return changeSetRejected('CHANGESET_INVALID');
-      const limit = edit.path === 'zplc.json' ? CHANGESET_MANIFEST_MAX_BYTES : CHANGESET_SOURCE_MAX_BYTES;
+      const limit =
+        edit.path === 'zplc.json'
+          ? CHANGESET_MANIFEST_MAX_BYTES
+          : plantPaths.has(edit.path)
+            ? CHANGESET_PLANT_MAX_BYTES
+            : CHANGESET_SOURCE_MAX_BYTES;
       if (edit.content.length > limit) return changeSetRejected('CHANGESET_INVALID');
       const bytes = new TextEncoder().encode(edit.content);
       if (bytes.byteLength > limit || (!isNew && sameBytes(files.get(edit.path)!, bytes))) return changeSetRejected('CHANGESET_INVALID');
@@ -1412,9 +1478,8 @@ export async function createCandidateChangeSet(
     candidateRoot = await mkdtemp(join(tmpdir(), 'zplc-change-set-'));
     await mkdir(join(candidateRoot, 'src'), { mode: 0o700 });
     await mkdir(join(candidateRoot, 'tests'), { mode: 0o700 });
-    await writeFile(join(candidateRoot, 'zplc.json'), replacements.get('zplc.json') ?? files.get('zplc.json')!, { mode: 0o600 });
-    for (const source of stable.workspace.sources)
-      await writeFile(join(candidateRoot, source.path), replacements.get(source.path) ?? source.bytes, { mode: 0o600 });
+    if (stable.plantFiles.some((plant) => plant.path.startsWith('scenes/'))) await mkdir(join(candidateRoot, 'scenes'), { mode: 0o700 });
+    for (const [path, bytes] of files) await writeFile(join(candidateRoot, path), replacements.get(path) ?? bytes, { mode: 0o600 });
     for (const [path, bytes] of creations) await writeFile(join(candidateRoot, path), bytes, { mode: 0o600 });
     for (const scenario of stable.scenarios) await writeFile(join(candidateRoot, scenario.path), scenario.bytes, { mode: 0o600 });
     await __changeSetTestHooks.afterMaterialize?.(candidateRoot);
