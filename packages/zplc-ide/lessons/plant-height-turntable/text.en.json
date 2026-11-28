@@ -36,7 +36,7 @@
       "key": "observe",
       "title": "Observe",
       "body": "Watch the {{ui:plant.panel.view3d}} and the trace of HeightCm: it shows the height of a box only while the box is in the array, and 0 otherwise. Watch which way the table faces for each class of box.",
-      "checkpoint": "A short box never makes the table turn; medium and tall boxes make it face right and left, and RunTable is FALSE while the table turns."
+      "checkpoint": "A short box never makes the table turn; a medium box makes it face right and a tall box makes it face left."
     },
     {
       "key": "reflect",
@@ -52,10 +52,8 @@
     },
     {
       "level": 2,
-      "text": "Use an R_TRIG on ArrayBusy to reset Peak to 0, update Peak with HeightCm while ArrayBusy is TRUE, and an F_TRIG to classify: Peak > 35.0 tall, Peak > 25.0 medium. Read the class when the box is released from the blade, into Route, so the next measurement cannot change it. Turn only while the box stands still on the table, and stay in the turn state until AtCentre is TRUE again."
+      "text": "Latch Start into Active and run RunIn, RunCentre, RunRight and RunLeft while Active. Use an R_TRIG on ArrayBusy to reset Peak to 0, update Peak with HeightCm while ArrayBusy is TRUE, and an F_TRIG to classify into Cls: Peak > 35.0 tall (2), Peak > 25.0 medium (1), otherwise short (0). Then handle one box at a time with an INT State: 1, when AtBlade and AtCentre have been TRUE for 0.3 s, copy Cls into Route so the next measurement cannot change it; 2, lower the blade (Hold FALSE) and run RunTable until OnTable; 3, stop RunTable and wait 0.8 s; 4, set ToRight for Route 1 or ToLeft for Route 2 and wait until AtCentre, AtLeft or AtRight has been TRUE for 0.2 s; 5, run RunTable until OnTable falls; 6, wait 0.7 s; 7, clear ToLeft and ToRight, wait for AtCentre, add one to Sorted and go back to 1. Hold := Active AND State <> 2; Done := Sorted >= 7; Busy := Active AND NOT Done."
     }
   ],
-  "faultCases": [
-    "The starter drives no output, so no belt moves and no box is sorted; run the belts after Start, measure each box, turn the table to the belt of its class and turn it back to the centre."
-  ]
+  "faultCases": ["The starting program drives no output, so no belt moves and no box is sorted."]
 }

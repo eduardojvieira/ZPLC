@@ -36,7 +36,7 @@
       "key": "observe",
       "title": "Observar",
       "body": "Observe la {{ui:plant.panel.view3d}} y la traza de HeightCm: muestra la altura de una caja solo mientras la caja está en la cortina, y 0 en los demás momentos. Observe hacia dónde apunta la mesa para cada clase de caja.",
-      "checkpoint": "Una caja baja nunca hace girar la mesa; las medias y las altas la hacen apuntar a la derecha y a la izquierda, y RunTable es FALSE mientras la mesa gira."
+      "checkpoint": "Una caja baja nunca hace girar la mesa; una caja media la hace apuntar a la derecha y una alta a la izquierda."
     },
     {
       "key": "reflect",
@@ -52,10 +52,8 @@
     },
     {
       "level": 2,
-      "text": "Use un R_TRIG sobre ArrayBusy para poner Peak a 0, actualice Peak con HeightCm mientras ArrayBusy sea TRUE y un F_TRIG para clasificar: Peak > 35.0 alta, Peak > 25.0 media. Lea la clase cuando la caja se libera de la cuchilla, en Route, para que la medición siguiente no la cambie. Gire solo con la caja quieta sobre la mesa y permanezca en el estado de giro hasta que AtCentre vuelva a ser TRUE."
+      "text": "Memorice Start en Active y accione RunIn, RunCentre, RunRight y RunLeft mientras Active esté en TRUE. Use un R_TRIG sobre ArrayBusy para poner Peak a 0, actualice Peak con HeightCm mientras ArrayBusy sea TRUE y un F_TRIG para clasificar en Cls: Peak > 35.0 alta (2), Peak > 25.0 media (1), en otro caso baja (0). Luego atienda una caja a la vez con un INT State: 1, cuando AtBlade y AtCentre hayan estado en TRUE durante 0,3 s, copie Cls en Route para que la medición siguiente no la cambie; 2, baje el tope (Hold en FALSE) y accione RunTable hasta OnTable; 3, detenga RunTable y espere 0,8 s; 4, active ToRight para Route 1 o ToLeft para Route 2 y espere hasta que AtCentre, AtLeft o AtRight hayan estado en TRUE durante 0,2 s; 5, accione RunTable hasta que OnTable baje; 6, espere 0,7 s; 7, desactive ToLeft y ToRight, espere AtCentre, sume uno a Sorted y vuelva a 1. Hold := Active AND State <> 2; Done := Sorted >= 7; Busy := Active AND NOT Done."
     }
   ],
-  "faultCases": [
-    "El programa inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, mida cada caja, gire la mesa hacia la cinta de su clase y vuélvala al centro."
-  ]
+  "faultCases": ["El proyecto inicial no acciona ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja."]
 }

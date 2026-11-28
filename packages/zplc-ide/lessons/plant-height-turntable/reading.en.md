@@ -6,48 +6,48 @@ This station sorts boxes by height, and it is the first machine of its scene in 
 
 The tables say what each part is in a real plant and what its signal means to your program. The PLC variable is the name the program uses: the plant map of the lesson binds each signal of the scene to it.
 
-| Part | Kind | What it is in a real plant |
-| --- | --- | --- |
-| `Infeed` | Belt conveyor | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines. |
-| `Source1` | Item emitter | Stands for whatever feeds the line: the machine before it, an operator, or a magazine that releases one item. |
-| `LightArray1` | Light array | A light curtain: a column of beams across the line that measures how tall an object is. |
-| `Stop1` | Stop blade | A plate that rises across the belt to hold items back until they are let through. |
-| `EyeStop` | Diffuse optical sensor | A photoelectric sensor that sends out light and sees it bounce back off an object in front of it. |
-| `Table1` | Turntable | A rotating platform that turns an item towards one of several lines. |
-| `EyeTable` | Diffuse optical sensor | A photoelectric sensor that sends out light and sees it bounce back off an object in front of it. |
-| `OutCentre` | Belt conveyor | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines. |
-| `OutRight` | Belt conveyor | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines. |
-| `OutLeft` | Belt conveyor | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines. |
-| `BinShort` | Item remover | Stands for whatever takes items away at the end of the line: the next machine, a bin, or an operator. |
-| `BinMedium` | Item remover | Stands for whatever takes items away at the end of the line: the next machine, a bin, or an operator. |
-| `BinTall` | Item remover | Stands for whatever takes items away at the end of the line: the next machine, a bin, or an operator. |
-| `StartButton` | Push button | A button on the operator panel that is pressed only while a finger holds it. |
-| `Beacon` | Stack light | A tower of coloured lamps that shows from afar what the machine is doing. |
+| Part          | Kind                   | What it is in a real plant                                                                                    |
+| ------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `Infeed`      | Belt conveyor          | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines.              |
+| `Source1`     | Item emitter           | Stands for whatever feeds the line: the machine before it, an operator, or a magazine that releases one item. |
+| `LightArray1` | Light array            | A light curtain: a column of beams across the line that measures how tall an object is.                       |
+| `Stop1`       | Stop blade             | A plate that rises across the belt to hold items back until they are let through.                             |
+| `EyeStop`     | Diffuse optical sensor | A photoelectric sensor that sends out light and sees it bounce back off an object in front of it.             |
+| `Table1`      | Turntable              | A rotating platform that turns an item towards one of several lines.                                          |
+| `EyeTable`    | Diffuse optical sensor | A photoelectric sensor that sends out light and sees it bounce back off an object in front of it.             |
+| `OutCentre`   | Belt conveyor          | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines.              |
+| `OutRight`    | Belt conveyor          | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines.              |
+| `OutLeft`     | Belt conveyor          | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines.              |
+| `BinShort`    | Item remover           | Stands for whatever takes items away at the end of the line: the next machine, a bin, or an operator.         |
+| `BinMedium`   | Item remover           | Stands for whatever takes items away at the end of the line: the next machine, a bin, or an operator.         |
+| `BinTall`     | Item remover           | Stands for whatever takes items away at the end of the line: the next machine, a bin, or an operator.         |
+| `StartButton` | Push button            | A button on the operator panel that is pressed only while a finger holds it.                                  |
+| `Beacon`      | Stack light            | A tower of coloured lamps that shows from afar what the machine is doing.                                     |
 
-| Variable | Signal | Direction & type | Meaning |
-| --- | --- | --- | --- |
-| `RunIn` | `Infeed.run` | PLC output · BOOL | TRUE runs the belt forward. |
-| — | `Source1` | — | Not wired to the PLC. |
-| `ArrayBusy` | `LightArray1.detect` | PLC input · BOOL | TRUE while any beam is broken. |
-| `HeightCm` | `LightArray1.height` | PLC input · REAL, 0 to 60 = 0 to 0.6 m | The height of the top of the item in the curtain; 0 when no beam is broken. |
-| `Hold` | `Stop1.extend` | PLC output · BOOL | TRUE raises the blade across the belt; FALSE lowers it. |
-| `AtBlade` | `EyeStop.detect` | PLC input · BOOL | TRUE while an object is in the beam. |
-| `AtCentre` | `Table1.atCentre` | PLC input · BOOL | TRUE when the platform faces the centre line. |
-| `AtLeft` | `Table1.atLeft` | PLC input · BOOL | TRUE when the platform faces the left line. |
-| `AtRight` | `Table1.atRight` | PLC input · BOOL | TRUE when the platform faces the right line. |
-| `RunTable` | `Table1.run` | PLC output · BOOL | TRUE runs the platform's surface forward. |
-| `ToLeft` | `Table1.toLeft` | PLC output · BOOL | TRUE turns the platform to the left line; with neither command it returns to the centre. |
-| `ToRight` | `Table1.toRight` | PLC output · BOOL | TRUE turns the platform to the right line; with neither command it returns to the centre. |
-| `OnTable` | `EyeTable.detect` | PLC input · BOOL | TRUE while an object is in the beam. |
-| `RunCentre` | `OutCentre.run` | PLC output · BOOL | TRUE runs the belt forward. |
-| `RunRight` | `OutRight.run` | PLC output · BOOL | TRUE runs the belt forward. |
-| `RunLeft` | `OutLeft.run` | PLC output · BOOL | TRUE runs the belt forward. |
-| — | `BinShort` | — | Not wired to the PLC. |
-| — | `BinMedium` | — | Not wired to the PLC. |
-| — | `BinTall` | — | Not wired to the PLC. |
-| `Start` | `StartButton.pressed` | PLC input · BOOL | TRUE while the button is held down. |
-| `Busy` | `Beacon.amber` | PLC output · BOOL | TRUE lights the amber lamp. |
-| `Done` | `Beacon.green` | PLC output · BOOL | TRUE lights the green lamp. |
+| Variable    | Signal                | Direction & type                       | Meaning                                                                                   |
+| ----------- | --------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `RunIn`     | `Infeed.run`          | PLC output · BOOL                      | TRUE runs the belt forward.                                                               |
+| —           | `Source1`             | —                                      | Not wired to the PLC.                                                                     |
+| `ArrayBusy` | `LightArray1.detect`  | PLC input · BOOL                       | TRUE while any beam is broken.                                                            |
+| `HeightCm`  | `LightArray1.height`  | PLC input · REAL, 0 to 60 = 0 to 0.6 m | The height of the top of the item in the curtain; 0 when no beam is broken.               |
+| `Hold`      | `Stop1.extend`        | PLC output · BOOL                      | TRUE raises the blade across the belt; FALSE lowers it.                                   |
+| `AtBlade`   | `EyeStop.detect`      | PLC input · BOOL                       | TRUE while an object is in the beam.                                                      |
+| `AtCentre`  | `Table1.atCentre`     | PLC input · BOOL                       | TRUE when the platform faces the centre line.                                             |
+| `AtLeft`    | `Table1.atLeft`       | PLC input · BOOL                       | TRUE when the platform faces the left line.                                               |
+| `AtRight`   | `Table1.atRight`      | PLC input · BOOL                       | TRUE when the platform faces the right line.                                              |
+| `RunTable`  | `Table1.run`          | PLC output · BOOL                      | TRUE runs the platform's surface forward.                                                 |
+| `ToLeft`    | `Table1.toLeft`       | PLC output · BOOL                      | TRUE turns the platform to the left line; with neither command it returns to the centre.  |
+| `ToRight`   | `Table1.toRight`      | PLC output · BOOL                      | TRUE turns the platform to the right line; with neither command it returns to the centre. |
+| `OnTable`   | `EyeTable.detect`     | PLC input · BOOL                       | TRUE while an object is in the beam.                                                      |
+| `RunCentre` | `OutCentre.run`       | PLC output · BOOL                      | TRUE runs the belt forward.                                                               |
+| `RunRight`  | `OutRight.run`        | PLC output · BOOL                      | TRUE runs the belt forward.                                                               |
+| `RunLeft`   | `OutLeft.run`         | PLC output · BOOL                      | TRUE runs the belt forward.                                                               |
+| —           | `BinShort`            | —                                      | Not wired to the PLC.                                                                     |
+| —           | `BinMedium`           | —                                      | Not wired to the PLC.                                                                     |
+| —           | `BinTall`             | —                                      | Not wired to the PLC.                                                                     |
+| `Start`     | `StartButton.pressed` | PLC input · BOOL                       | TRUE while the button is held down.                                                       |
+| `Busy`      | `Beacon.amber`        | PLC output · BOOL                      | TRUE lights the amber lamp.                                                               |
+| `Done`      | `Beacon.green`        | PLC output · BOOL                      | TRUE lights the green lamp.                                                               |
 
 A PLC output drives a part of the machine; a PLC input is what a part reports. The emitter and the three bins are not wired: your program never sees a box except through the sensors, and only the scenario counts the boxes that reach each bin. The scenario releases seven boxes, one every 8.5 seconds: one of 20 cm, five of 30 cm and one of 40 cm.
 
@@ -60,33 +60,33 @@ The peak is also the only thing the program can use later. The box leaves the ar
 ```timing
 span: 8000
 signals:
-  - { name: Busy, edges: [1000, 3000] }
+  - { name: InCurtain, edges: [1000, 3000] }
   - { name: TooHigh, edges: [3000, 8000] }
 caption: A pallet crosses the curtain, and the answer exists from the moment it has left
 ```
 
 ## Worked example
 
-A goods-in dock moves pallets on a roller track through a light curtain. `Busy` is TRUE while a pallet is in the curtain and `Height` is the height of the top of the pallet in centimetres. The high-bay lane takes pallets up to 180 cm, so a pallet that is taller must be sent to the manual lane. `TooHigh` must say so as soon as the pallet has left the curtain, and keep saying it until the next pallet has left:
+A goods-in dock moves pallets on a roller track through a light curtain. `InCurtain` is TRUE while a pallet is in the curtain and `Height` is the height of the top of the pallet in centimetres. The high-bay lane takes pallets up to 180 cm, so a pallet that is taller must be sent to the manual lane. `TooHigh` must say so as soon as the pallet has left the curtain, and keep saying it until the next pallet has left:
 
 ```st
 PROGRAM DockGate
-VAR_INPUT Busy : BOOL; Height : REAL; END_VAR
+VAR_INPUT InCurtain : BOOL; Height : REAL; END_VAR
 VAR_OUTPUT TooHigh : BOOL; END_VAR
 VAR
     Top   : REAL;
     Enter : R_TRIG;
     Leave : F_TRIG;
 END_VAR
-Enter(CLK := Busy);
-Leave(CLK := Busy);
+Enter(CLK := InCurtain);
+Leave(CLK := InCurtain);
 IF Enter.Q THEN Top := 0.0; END_IF;
-IF Busy AND Height > Top THEN Top := Height; END_IF;
+IF InCurtain AND Height > Top THEN Top := Height; END_IF;
 IF Leave.Q THEN TooHigh := Top > 180.0; END_IF;
 END_PROGRAM
 ```
 
-Read it from the top. `Enter.Q` is TRUE for one scan when a pallet comes into the curtain, and it clears `Top` so that the last pallet does not count for this one. The second IF keeps the highest `Height` while `Busy` is TRUE. `Leave.Q` is TRUE for one scan when the pallet has gone, and that is the moment when `Top` is final, so the program compares it with the limit there and not earlier. After that `TooHigh` holds the answer, although `Height` is 0 again.
+Read it from the top. `Enter.Q` is TRUE for one scan when a pallet comes into the curtain, and it clears `Top` so that the last pallet does not count for this one. The second IF keeps the highest `Height` while `InCurtain` is TRUE. `Leave.Q` is TRUE for one scan when the pallet has gone, and that is the moment when `Top` is final, so the program compares it with the limit there and not earlier. After that `TooHigh` holds the answer, although `Height` is 0 again.
 
 This machine has one pallet at a time and one yes or no. The station of the practice has three classes of box, and a turntable that must be turned for the box; how many classes the program tells apart and what the turntable does for each is for you to decide from what must happen to the box.
 
@@ -95,7 +95,7 @@ This machine has one pallet at a time and one yes or no. The station of the prac
 - Reading `HeightCm` when the box waits at the blade. The array is empty by then and reads 0. In a run of the lesson's solution with this change, all seven boxes went to the short bin and six of them were misrouted.
 - Never clearing the peak. A 40 cm box leaves the peak at 40, so the boxes after it look as tall. In a run with this change, the four boxes after the tall one went to the tall bin and were misrouted.
 - Taking a reading of 0 for a short box. 0 means that there is no box in the array.
-- Deciding while the box is still in the array. The peak is final only when the array has become empty again.
+- Deciding while the box is still in the array. On a real array the reading moves while the box passes, so the peak is final only when the array has become empty again. This scene reports a constant height, so Check does not catch this mistake.
 
 ## Check yourself
 
