@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { assert, packageRoot } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
+import { pause } from '../journeyTiming';
 import type { Journey } from '../journeys';
 import { LESSON_INDEX } from '../../src/generated/lessonIndex';
 import { courseOrder } from '../../src/learn/course';
@@ -36,7 +37,7 @@ async function reach(app: App, how: How, target: string, what: string): Promise<
         await app.eval(`(${target}).focus()`);
         if (!(await held())) return undefined;
         // the focus the palette gives back arrives late and takes it: the control must still hold it after that moment
-        await new Promise((resolve) => setTimeout(resolve, 400));
+        await pause(400);
         return (await held()) || undefined;
       },
       10_000,
