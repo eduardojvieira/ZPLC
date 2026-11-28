@@ -54,7 +54,7 @@ Three parts have no variable. `Source1` releases the boxes on its own and the th
 
 `Source1` releases nine boxes: the first about 5 s into the run and then one every 5 s. Their heights are 0.20 m, 0.30 m and 0.40 m. In the scenario run, two boxes are 0.20 m, six are 0.30 m and one is 0.40 m. `BeamLow` sits at 0.25 m and `BeamHigh` at 0.35 m, so a box breaks a beam only if it is taller than the beam.
 
-The beams are well before the blade. In the run of the reference solution, the first box enters `BeamLow` at 7.6 s and stays in it for 0.8 s. At 9.9 s, 2.3 s after it entered the beam, `EyeChain` sees it standing against the blade. Every box takes about 4.9 s to get from `Source1` to the blade, and passes the beams about 2.3 s before it reaches it.
+The beams are well before the blade. In the run of the reference solution, the first box enters `BeamLow` at 7.6 s and stays in it for 0.8 s. At 9.9 s, 2.3 s after it entered the beam, `EyeChain` sees it; it comes to rest against the blade about 0.4 s later. Every box takes about 4.9 s to get from `Source1` to the blade's eye, and passes the beams about 2.3 s before it reaches it.
 
 ```timing
 span: 12000
@@ -63,7 +63,7 @@ signals:
   - { name: AtBlade, edges: [9910, 12000] }
 marks:
   - { from: 7640, to: 9910, label: '2.3 s' }
-caption: The first box of a run is in the low beam for 0.8 s, and stands against the blade 2.3 s after it entered the beam
+caption: The first box of a run is in the low beam for 0.8 s, and reaches the blade's eye 2.3 s after it entered the beam
 ```
 
 The blade needs about 0.4 s to rise after `Hold` turns on. The chains need about 0.4 s to rise after `Lift` turns on, and about 0.4 s to go down after it turns off. With the chains down, `RunChain` carries a box forward. With the chains up, `MoveRight` and `MoveLeft` move it sideways.

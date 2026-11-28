@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "One state per step: 1 wait for the box, 2 straight on, 3 lift and wait until Raised has held for T#300ms, 4 slide, 5 lower and wait for Lowered. Never run the module while Lift is TRUE."
+      "text": "Set SawLow and SawHigh with set coils whenever Low and High are TRUE, and decide the direction from them once AtBlade has been TRUE for a second (a TON on AtBlade). Reset both latches right after with reset coils, in rungs that come later in the same scan. One state per step: 1 wait for the box, 2 straight on, 3 lift and wait until Raised has held for T#300ms, 4 slide, 5 lower and wait for Lowered. Never run the module while Lift is TRUE."
     }
   ],
   "faultCases": ["The starting project has no rungs, so no belt moves and no box is sorted."]

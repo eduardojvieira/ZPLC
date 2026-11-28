@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "One state per step: 1 wait for the box, 2 straight on, 3 lift and wait until Raised has held for T#300ms, 4 slide, 5 lower and wait for Lowered. Never run the module while Lift is TRUE."
+      "text": "Latch SawLow and SawHigh whenever Low and High are TRUE, and decide the direction from them once AtBlade has been TRUE for a second (a TON on AtBlade). Clear both latches right after. One state per step: 1 wait for the box, 2 straight on, 3 lift and wait until Raised has held for T#300ms, 4 slide, 5 lower and wait for Lowered. Never run the module while Lift is TRUE."
     }
   ],
   "faultCases": ["The starting program drives no output, so no belt moves and no box is sorted."]

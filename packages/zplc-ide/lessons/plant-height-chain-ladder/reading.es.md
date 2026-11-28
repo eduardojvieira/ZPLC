@@ -54,7 +54,7 @@ Tres elementos no tienen variable. `Source1` suelta las cajas por su cuenta y lo
 
 `Source1` suelta nueve cajas: la primera a los 5 s de la ejecución, más o menos, y luego una cada 5 s. Sus alturas son 0,20 m, 0,30 m y 0,40 m. En la ejecución del escenario, dos cajas miden 0,20 m, seis miden 0,30 m y una mide 0,40 m. `BeamLow` está a 0,25 m y `BeamHigh` a 0,35 m, así que una caja corta un haz solo si es más alta que el haz.
 
-Los haces están mucho antes del tope. En la ejecución de la solución de referencia, la primera caja entra en `BeamLow` a los 7,6 s y permanece en él 0,8 s. A los 9,9 s, 2,3 s después de entrar en el haz, `EyeChain` la ve detenida contra el tope. Cada caja tarda unos 4,9 s en llegar de `Source1` al tope, y pasa por los haces unos 2,3 s antes de llegar a él.
+Los haces están mucho antes del tope. En la ejecución de la solución de referencia, la primera caja entra en `BeamLow` a los 7,6 s y permanece en él 0,8 s. A los 9,9 s, 2,3 s después de entrar en el haz, `EyeChain` la ve; queda detenida contra el tope unos 0,4 s después. Cada caja tarda unos 4,9 s en llegar de `Source1` al ojo del tope, y pasa por los haces unos 2,3 s antes de llegar a él.
 
 ```timing
 span: 12000
@@ -63,7 +63,7 @@ signals:
   - { name: AtBlade, edges: [9910, 12000] }
 marks:
   - { from: 7640, to: 9910, label: '2.3 s' }
-caption: La primera caja de una ejecución está 0,8 s en el haz bajo y queda detenida contra el tope 2,3 s después de entrar en el haz
+caption: La primera caja de una ejecución está 0,8 s en el haz bajo y llega al ojo del tope 2,3 s después de entrar en el haz
 ```
 
 El tope necesita unos 0,4 s para subir después de que `Hold` pasa a TRUE. Las cadenas necesitan unos 0,4 s para subir después de que `Lift` pasa a TRUE, y unos 0,4 s para bajar después de que pasa a FALSE. Con las cadenas abajo, `RunChain` lleva la caja hacia adelante. Con las cadenas arriba, `MoveRight` y `MoveLeft` la mueven de lado.

@@ -11,14 +11,14 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/HeightSortChain.st están declaradas las entradas y salidas de la línea. Una pulsación del pulsador de inicio debe poner en marcha la línea. Llegan cajas de tres alturas por la cinta de entrada, nueve en total, y los dos haces distinguen la altura: 0.20 m no corta ninguno, 0.30 m solo BeamLow, 0.40 m los dos. Cada caja debe terminar en el contenedor de su altura, ninguna mal encaminada ni caída, y Done debe encenderse cuando las nueve cajas estén atendidas.",
+      "body": "En src/HeightSortChain.st están declaradas las entradas y salidas de la línea. Una pulsación del pulsador de inicio debe poner en marcha la línea. Llegan cajas de tres alturas por la cinta de entrada, nueve en total, y los dos sensores distinguen la altura: 0,20 m no corta ninguno, 0,30 m solo BeamLow, 0,40 m los dos. Cada caja debe terminar en el contenedor de su altura, ninguna mal encaminada ni caída, y Done debe encenderse cuando las nueve cajas estén atendidas.",
       "checkpoint": "Las cajas bajas terminan en BinShort, las medias en BinMedium, las altas en BinTall, y Done se enciende tras nueve cajas."
     },
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, complete una tabla de los dos haces para las tres alturas. Luego siga la primera caja de la ejecución: cuando la caja está detenida contra el tope, ¿sigue en algún haz?",
-      "checkpoint": "Una caja de 0.20 m no corta ningún haz, una de 0.30 m solo BeamLow y una de 0.40 m los dos. La primera caja ya salió de los haces cuando EyeChain la ve, unos 2.3 s después de entrar en BeamLow, así que en el tope los haces no dicen nada sobre ella."
+      "body": "Antes de ejecutar, complete una tabla de los dos sensores para las tres alturas. Luego siga la primera caja de la ejecución: cuando la caja está detenida contra el tope, ¿la ve todavía algún sensor?",
+      "checkpoint": "Una caja de 0,20 m no activa ningún sensor, una de 0,30 m solo BeamLow y una de 0,40 m los dos. La primera caja ya salió del alcance de los sensores cuando EyeChain la ve, unos 2,3 s después de entrar en BeamLow, así que en el tope los sensores no dicen nada sobre ella."
     },
     {
       "key": "edit",
@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Piense cuándo necesita el programa la altura y cuándo se la pueden dar los haces: la caja sale de los haces antes de llegar al tope. ¿Qué puede conservar en su programa lo que vio un haz hasta entonces?"
+      "text": "Piense cuándo necesita el programa la altura y cuándo se la pueden dar los sensores: la caja sale del alcance de los sensores antes de llegar al tope. ¿Qué puede conservar en su programa lo que vio un sensor hasta entonces?"
     },
     {
       "level": 2,
-      "text": "Un estado por paso: 1 esperar la caja, 2 de frente, 3 elevar y esperar a que Raised se mantenga T#300ms, 4 deslizar, 5 bajar y esperar a Lowered. No haga girar el módulo mientras Lift es TRUE."
+      "text": "Memorice SawLow y SawHigh siempre que Low y High sean TRUE, y decida la dirección con ellos cuando AtBlade lleve un segundo en TRUE (un TON sobre AtBlade). Borre ambas memorias justo después. Un estado por paso: 1 esperar la caja, 2 de frente, 3 elevar y esperar a que Raised se mantenga T#300ms, 4 deslizar, 5 bajar y esperar a Lowered. No haga avanzar el módulo mientras Lift es TRUE."
     }
   ],
   "faultCases": ["El proyecto inicial no acciona ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja."]
