@@ -16,15 +16,15 @@ takes, and how to send the result.
 
 ## What you need
 
-| Tool                                    | Version                                              | Needed for                                                                                                                     |
-| --------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| [Bun](https://bun.sh)                   | 1.3.14 (the version CI uses)                         | Everything TypeScript, and the task runner                                                                                     |
-| CMake and a C99 compiler (gcc or clang) | CMake 3.20 or newer                                  | The C core and the native runtime                                                                                              |
-| clang-format                            | 23.1.3 exactly (`pipx install clang-format==23.1.3`) | `bun run format` and `format:check`, for the C files only                                                                      |
-| Python                                  | 3.10 or newer                                        | The generators, validators and the firmware method                                                                             |
-| Node.js                                 | 20                                                   | The documentation site build and `bun run release:rehearsal`                                                                   |
-| Zephyr SDK                              | 1.0.1                                                | The firmware layer only; `tools/firmware-test/setup.sh` creates the workspace and `west` and tells you when the SDK is missing |
-| A display                               | X11 or Wayland                                       | The Studio journeys only                                                                                                       |
+| Tool                                    | Version                                                                                   | Needed for                                                                                                                     |
+| --------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| [Bun](https://bun.sh)                   | 1.3.14 (the version CI uses)                                                              | Everything TypeScript, and the task runner                                                                                     |
+| CMake and a C99 compiler (gcc or clang) | CMake 3.20 or newer                                                                       | The C core and the native runtime                                                                                              |
+| clang-format                            | 23.1.3 exactly (`pipx install clang-format==23.1.3`; set `CLANG_FORMAT` if not on `PATH`) | `bun run format` and `format:check`, for the C files only                                                                      |
+| Python                                  | 3.10 or newer                                                                             | The generators, validators and the firmware method                                                                             |
+| Node.js                                 | 20                                                                                        | The documentation site build and `bun run release:rehearsal`                                                                   |
+| Zephyr SDK                              | 1.0.1                                                                                     | The firmware layer only; `tools/firmware-test/setup.sh` creates the workspace and `west` and tells you when the SDK is missing |
+| A display                               | X11 or Wayland                                                                            | The Studio journeys only                                                                                                       |
 
 The commands below are written for Linux and macOS shells. Windows contributors
 should use WSL 2 for the firmware layer.
@@ -108,12 +108,18 @@ other jobs were running, so read them as an order of magnitude.
 
 Notes that save time:
 
-- **Expected failures.** Some conformance cases fail today on purpose: they are
-  the open work for the language, and each is listed in
-  `tools/ci/expected-failures.json` with the requirement that will fix it.
-  `bun run test:ide` therefore exits 1. `bun run test:ide:ci` is the check that
-  matters: it passes when every failure is listed, and fails on any other failure
-  and on a listed case that now passes (remove its entry then).
+- **Expected failures.** Any intentionally failing conformance case is tracked in
+  `tools/ci/expected-failures.json` with the requirement that will fix it (the
+  list is currently empty, so every test is expected to pass). `bun run
+test:compiler:ci` and `bun run test:ide:ci` compare the JUnit output against
+  that list: they pass only when every failure is listed, and fail on any
+  unlisted failure or any listed case that now passes (remove its entry then).
+- **Hardware, display and real-model steps.** Checks that drive a physical board
+  (`tools/hil/`), open the real Electron window (`bun run test:journeys`, `bun
+run docs:screenshots`) or call a live AI model (`tools/ai-eval/` outside dry
+  mode) require a bench, a display or model credentials respectively, and are not
+  run during a headless clean-clone check. A person always starts physical board
+  operations (`AGENTS.md` rule 8).
 - **One file or one case.** `bun test <path>` inside `packages/zplc-ide` or
   `packages/zplc-compiler` runs one file. `ZPLC_JOURNEY_ONLY=<text> bun run
 test:journeys` runs the journeys whose name contains the text.
@@ -228,6 +234,40 @@ counter, see
 [Changing the binary contract](docs/docs/contributing/index.md#changing-the-binary-contract)),
 and anything that changes an output's safe or off default.
 
+## How a change is reviewed
+
+Every pull request goes through automated checks in `.github/workflows/ci.yml`
+and a human review against the [engineering principles](docs/docs/contributing/principles.md):
+
+1. **Automated CI checks.** GitHub Actions runs:
+   - `typescript`: CI, documentation, AI-eval (dry mode) and history tooling tests,
+     requirement index and coverage checks, version and release-helper checks,
+     compiler build and tests, `lint`, `typecheck`, `build:ide` and Studio
+     journeys.
+   - `ide-tests`: the Studio, CLI, MCP and conformance suites across eight shards.
+   - `format`: `bun run format:check` (Prettier, `clang-format` 23.1.3 and the
+     140-column line-length guard).
+   - `host-core` and `host-core-sanitized`: C99 core, loader and host runtime
+     tests, including AddressSanitizer and UndefinedBehaviorSanitizer.
+   - `freertos-port`: the FreeRTOS POSIX simulator port.
+   - `zephyr-twister` and `zephyr-cross-build`: Zephyr `native_sim` suites and
+     cross-builds with size budgets for all seven boards.
+   - `docs-and-truth`: `bun run check:docs`, binary contract checks, board
+     manifest validation and release evidence checks.
+2. **Pull request template and evidence.** Fill in `.github/PULL_REQUEST_TEMPLATE.md`
+   with the exact commands you ran, what they printed, and the evidence level
+   (host, QEMU, target build, bench or manual) behind each claim.
+3. **Human review.** A reviewer checks that:
+   - the change stays to one purpose with Conventional Commits and keeps tests
+     and docs with code;
+   - behaviour changes have a test that fails without the change and asserts
+     behaviour rather than product source text (`bun run check:test-sources`);
+   - layer, safety and trust boundaries hold (C99/HAL separation, safe/off
+     defaults, narrow validated Electron IPC, and human-only physical operations);
+   - user-visible changes update `docs/docs/` and `docs/i18n/es/` together;
+   - any new dependency, binary contract change or safe-default change has an
+     explicit justification in the pull request description.
+
 ## Rules that do not bend
 
 - Outputs default to a documented safe state, and a reboot, timeout, fault or
@@ -238,7 +278,9 @@ and anything that changes an output's safe or off default.
   without explicit authorization.
 - The renderer is unprivileged and every IPC request is validated.
 - AI and MCP never flash, deploy, force I/O, change RUN or STOP, open raw serial
-  or run a shell.
+  or run a shell on hardware or on a session a person is running (`AGENTS.md`
+  rule 8). Over MCP, an agent may set inputs and step a simulator that is private
+  to it.
 
 ## Reporting a problem
 
@@ -254,21 +296,23 @@ device identifiers in anything public.
 
 ## Roadmap
 
-No dates: a phase closes when its checks pass. The full page, with what each
-phase delivers, is [Roadmap](docs/docs/contributing/roadmap.md).
+No dates: a gate closes when its checks pass. The full page is
+[Roadmap](docs/docs/contributing/roadmap.md).
 
-- **Done:** CI on the 2.0 line with one list of expected failures; the
-  conformance suite; Studio stopgaps for lost work and compiler messages; the
-  release pipeline; truthful public text in two languages; the firmware test
-  method on Linux; one generated source for the binary contract with a draft
-  counter; numeric and visual-language corrections in the compiler.
-- **Next:** the rest of the verification foundation (sandbox closure, a loader
-  fuzzer, opcode coverage, render tests for Studio), then Structured Text that is
-  correct across a whole project.
-- **Later:** a new shell and five working languages; Learn in simulation; runtime
-  trust and the first board, the Raspberry Pi Pico; communications and the second
-  board, the ESP32-S3; the complete language and course; distribution,
-  documentation and accessibility; general availability.
+- **Done:** five IEC 61131-3 languages with all standard compiler functions
+  available in FBD and Ladder; bundled native simulator with 3D plant simulation
+  and scripted scenarios; the built-in course (97 lessons in 20 modules, 14 of
+  them in two languages, English and Spanish); built-in AI assistant and bundled
+  `zplc-mcp` server for simulation-only write, test and debug; seven Zephyr board
+  profiles at `cross-build` level; Linux firmware test method (`native_sim` and
+  QEMU); generated binary contract with draft counter; release pipeline with
+  rehearsal mode; bilingual documentation checks.
+- **Before 2.1.0 ships:** human bench records on the Raspberry Pi Pico and
+  ESP32-S3-DevKitC-1, final visual verification, and candidate sign-off on the
+  packaged installers.
+- **Not planned for 2.1:** safety certification, production qualification of a
+  board, board timing guarantees, and Windows host simulator communication
+  blocks (Modbus, MQTT, loopback and device link).
 
 ## Where things are
 

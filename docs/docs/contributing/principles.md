@@ -47,7 +47,7 @@ Public documentation exists in both languages and changes in both at once. A new
 
 ### 9. AI and MCP help inside the workspace and never act on hardware
 
-An AI assistant or an MCP client may inspect, plan, compile, test and simulate inside the approved workspace. It must not flash, deploy to hardware, force I/O, change RUN or STOP, open a raw serial port or run a shell. ZPLC works fully without AI.
+An AI assistant or an MCP client may inspect, plan, edit, compile, test and debug inside the approved workspace using a simulator that is private to it. It must not flash, deploy to hardware, force I/O, change RUN or STOP, open a raw serial port or run a shell on hardware or on a session a person is running. ZPLC works fully without AI.
 
 ## Spanish pages
 

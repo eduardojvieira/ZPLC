@@ -19,6 +19,19 @@ Esta página es para quienes modifican ZPLC. Indica qué verificación ejecutar 
 4. Cuando cambie una afirmación, un flujo o una limitación que los usuarios ven, actualice juntas la documentación en inglés y en español.
 5. Complete la plantilla del pull request: las verificaciones que ejecutó y el nivel de evidencia que respalda cada afirmación.
 
+## Compilar
+
+Desde un clon limpio, `bun run setup` instala las dependencias bloqueadas, compila el paquete del compilador y compila el runtime nativo (`firmware/lib/zplc_core/build/zplc_runtime`):
+
+```bash
+bun run setup
+bun run build:runtime      # runtime nativo (CMake + compilador C99)
+bun run build:compiler     # paquete del compilador
+bun run build:ide          # comprobación de tipos y empaquetado de Studio
+```
+
+Studio busca el simulador en `firmware/lib/zplc_core/build/zplc_runtime`, o en la ruta indicada en `ZPLC_NATIVE_SIM_BIN`. Las comprobaciones de formato (`bun run format:check`) requieren `clang-format` 23.1.3 (defina `CLANG_FORMAT` si el binario no está en `PATH`).
+
 ## Verificaciones por capa
 
 Ejecute cada comando desde la raíz del repositorio. Los tiempos se midieron el 2026-10-10 en una computadora de escritorio Linux x86-64 con cachés calientes y otros trabajos en marcha, así que tómelos como un orden de magnitud.
@@ -60,6 +73,16 @@ Que pase un nivel nunca demuestra uno superior: una prueba en el host no dice na
 | Pruebas de hardware    | Una persona inicia todo comando que maneje una placa, en una terminal interactiva, y un registro dice qué imagen probó. Vea [Hardware en el lazo](../development/hardware-in-the-loop.md). |
 
 Nunca publique, grabe hardware, cargue un programa de PLC ni accione equipos sin autorización explícita.
+
+## Cómo se revisa un cambio
+
+Cada pull request pasa por verificaciones automatizadas en CI (`.github/workflows/ci.yml`) y por una revisión humana frente a los [principios de ingeniería](./principles.md):
+
+1. **Verificaciones automatizadas.** CI ejecuta las herramientas de TypeScript, el compilador, lint, comprobación de tipos, compilación de Studio y recorridos (`typescript`), los ocho fragmentos de la suite de la aplicación y conformidad (`ide-tests`), formato y longitud de línea (`format`), el núcleo C99 de host con y sin sanitizadores (`host-core`, `host-core-sanitized`), el puerto POSIX de FreeRTOS (`freertos-port`), las pruebas Zephyr `native_sim` y las compilaciones cruzadas para las siete placas (`zephyr-twister`, `zephyr-cross-build`), y las comprobaciones de documentación, contrato binario y manifiestos (`docs-and-truth`).
+2. **Plantilla del pull request y evidencia.** Complete `.github/PULL_REQUEST_TEMPLATE.md` con los comandos que ejecutó, lo que imprimieron y el nivel de evidencia (host, QEMU, compilación para destino, banco o manual) que respalda cada afirmación.
+3. **Revisión humana.** Quien revisa verifica que el cambio tenga un propósito claro y use Conventional Commits, agregue una prueba de comportamiento que falle sin el cambio (sin leer el texto del código fuente del producto), conserve los límites de C99/HAL, salidas seguras, IPC de Electron y operaciones físicas, actualice juntas la documentación en inglés y en español cuando cambia el comportamiento visible para el usuario, y justifique cualquier dependencia nueva, cambio al contrato binario o cambio a un valor seguro por defecto.
+
+Las verificaciones que manejan una placa física (`tools/hil/`), abren la ventana real de Electron (`bun run test:journeys`, `bun run docs:screenshots`) o llaman a un modelo de IA real (`tools/ai-eval/` fuera del modo seco) requieren un banco, una pantalla o credenciales de modelo respectivamente y no se ejecutan en una verificación sin pantalla sobre un clon limpio. Una persona inicia siempre las operaciones físicas sobre placas.
 
 ## Agregar una lección
 

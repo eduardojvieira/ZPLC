@@ -47,7 +47,7 @@ La documentación pública existe en ambos idiomas y cambia en ambos a la vez. U
 
 ### 9. La IA y MCP ayudan dentro del espacio de trabajo y nunca actúan sobre el hardware
 
-Un asistente de IA o un cliente MCP puede inspeccionar, planificar, compilar, probar y simular dentro del espacio de trabajo aprobado. No debe grabar, cargar en hardware, forzar E/S, cambiar RUN o STOP, abrir un puerto serie directo ni ejecutar una shell. ZPLC funciona por completo sin IA.
+Un asistente de IA o un cliente MCP puede inspeccionar, planificar, editar, compilar, probar y depurar dentro del espacio de trabajo aprobado mediante un simulador privado para él. No debe grabar, cargar en hardware, forzar E/S, cambiar RUN o STOP, abrir un puerto serie directo ni ejecutar una shell sobre hardware ni sobre una sesión que una persona está ejecutando. ZPLC funciona por completo sin IA.
 
 ## Páginas en español
 

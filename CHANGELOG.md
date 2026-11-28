@@ -81,6 +81,9 @@ and version when the release is cut (see `RELEASING.md`).
 
 - AIX-015: `trace_get` answers in mode `changes` by default ("never whole by default"); mode `full` is the 2.0 answer,
   proved byte for byte on recorded traces, and takes no options.
+- OSS-001, OSS-003: rewrote the first screen of `README.md` in the terms of spec 014 section 2 with direct OS install
+  and first-lesson links; updated `CONTRIBUTING.md` and the English/Spanish `contributing/` docs with build, check and
+  review workflows verified on a clean clone.
 
 ## 2.0.1 - 2026-11-12
 

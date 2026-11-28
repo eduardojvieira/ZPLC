@@ -19,6 +19,19 @@ This page is for people who change ZPLC. It tells you which check to run for the
 4. When a claim, a workflow or a limitation that users see changes, update the English and the Spanish documentation together.
 5. Fill in the pull request template: the checks you ran, and the evidence level that backs each claim.
 
+## Build
+
+From a fresh clone, `bun run setup` installs the locked dependencies, builds the compiler package and builds the native runtime (`firmware/lib/zplc_core/build/zplc_runtime`):
+
+```bash
+bun run setup
+bun run build:runtime      # native runtime (CMake + C99 compiler)
+bun run build:compiler     # compiler package
+bun run build:ide          # typecheck and bundle Studio
+```
+
+Studio finds the simulator at `firmware/lib/zplc_core/build/zplc_runtime`, or at the path in `ZPLC_NATIVE_SIM_BIN`. Formatting checks (`bun run format:check`) require `clang-format` 23.1.3 (set `CLANG_FORMAT` if the binary is not on `PATH`).
+
 ## Checks by layer
 
 Run every command from the repository root. The times were measured on 2026-10-10 on a Linux x86-64 desktop with warm caches while other jobs were running, so read them as an order of magnitude.
@@ -60,6 +73,16 @@ A pass at one level never proves a higher one: a host test says nothing about a 
 | Hardware tests       | A person starts every command that drives a board, at an interactive terminal, and a record says which image it tested. See [Hardware in the Loop](../development/hardware-in-the-loop.md). |
 
 Never publish, flash hardware, deploy a PLC program or actuate equipment without explicit authorization.
+
+## How a change is reviewed
+
+Every pull request goes through automated CI checks (`.github/workflows/ci.yml`) and a human review against the [engineering principles](./principles.md):
+
+1. **Automated checks.** CI runs the TypeScript tooling, compiler, lint, typecheck, IDE build and journeys (`typescript`), the eight shards of the application and conformance suite (`ide-tests`), formatting and line length (`format`), the C99 host core with and without sanitizers (`host-core`, `host-core-sanitized`), the FreeRTOS POSIX port (`freertos-port`), Zephyr `native_sim` tests and cross-builds for all seven boards (`zephyr-twister`, `zephyr-cross-build`), and documentation, binary contract and manifest checks (`docs-and-truth`).
+2. **Pull request template and evidence.** Complete `.github/PULL_REQUEST_TEMPLATE.md` with the commands you ran, what they printed, and the evidence level (host, QEMU, target build, bench or manual) backing each claim.
+3. **Human review.** A reviewer verifies that the change has one clear purpose and Conventional Commits, adds a behavioural test that fails without the change (without reading product source text), preserves C99/HAL, safe-output, Electron IPC and physical-operation boundaries, updates English and Spanish docs together when user-visible behaviour changes, and justifies any new dependency, binary contract change or safe-default change.
+
+Checks that drive a physical board (`tools/hil/`), open the real Electron window (`bun run test:journeys`, `bun run docs:screenshots`), or call a live AI model (`tools/ai-eval/` outside dry mode) require a bench, a display, or model credentials respectively and are not run in a headless clean-clone check. A person always initiates physical board operations.
 
 ## Adding a lesson
 
