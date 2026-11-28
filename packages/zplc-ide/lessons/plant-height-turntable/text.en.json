@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Write the program, save it, then press {{ui:learn.check}}. The starting program drives no output, so no belt moves and no box is sorted. After Start the belts must run and each box must leave on the belt of its class.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

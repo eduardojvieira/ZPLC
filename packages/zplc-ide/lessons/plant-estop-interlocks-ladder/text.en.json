@@ -24,12 +24,12 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter ignores the emergency stop: at 16 s, with it pressed, the line keeps running and Red stays off. While EStopOk is FALSE, every output must be off and Red lit; after the release the line must stay stopped and run again only with a new press of Start.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press {{ui:toolbar.run.label}} (F5) and open the {{ui:plant.panel.view3d}}.",
       "checkpoint": "The required scenario is named estop-interlocks and contains {{assertions}} assertions."
     },
     {

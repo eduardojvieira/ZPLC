@@ -24,12 +24,12 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial ignora el paro de emergencia: a los 16 s, con el paro pulsado, la línea sigue funcionando y Red sigue apagada. Mientras EStopOk sea FALSE, todas las salidas deben estar apagadas y Red encendida; tras soltar el pulsador la línea debe seguir detenida y volver a funcionar solo con una nueva pulsación de Start.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse {{ui:toolbar.run.label}} (F5) y abra la {{ui:plant.panel.view3d}}.",
       "checkpoint": "El escenario requerido se llama estop-interlocks y contiene {{assertions}} aserciones."
     },
     {

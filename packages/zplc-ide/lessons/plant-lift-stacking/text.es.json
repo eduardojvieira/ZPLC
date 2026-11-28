@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Editar",
       "body": "Escriba el programa de la estación, guárdelo y pulse {{ui:learn.check}}. El proyecto inicial no acciona ninguna salida, así que nada se mueve. Tras Start, debe emitirse un cajón y llevarse al elevador, el elevador debe subirlo, deben echarse cinco piezas dentro de él una por una, el elevador debe bajarlo y el cajón debe salir por la cinta de salida, con Green encendida cuando OutEye lo ha visto.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

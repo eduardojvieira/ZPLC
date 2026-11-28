@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Write the program of the station, save it, then press {{ui:learn.check}}. The starting program drives no output, so nothing moves. After Start, one crate must be emitted and brought onto the lift, the lift must raise it, five workpieces must be fed into it one at a time, the lift must lower it and the crate must leave on the out belt, with Green lit when OutEye has seen it.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

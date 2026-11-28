@@ -24,18 +24,18 @@
       "key": "edit",
       "title": "Editar",
       "body": "Escriba el programa, guárdelo y pulse {{ui:learn.check}}. El proyecto inicial no tiene peldaños, así que ninguna cinta se mueve y no se clasifica ninguna caja. Ponga en marcha las cintas después de Start y envíe cada caja según su altura: derecho, a la derecha o a la izquierda. Declare lo que su programa necesite además.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse {{ui:toolbar.run.label}} (F5) y abra la {{ui:plant.panel.view3d}}.",
       "checkpoint": "El escenario requerido se llama height-sorting-chain y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe la vista 3D: el módulo permanece abajo para una caja baja; para las demás se detiene, sube, desliza la caja de lado y baja otra vez. Lift y run nunca son TRUE a la vez.",
+      "body": "Observe la {{ui:plant.panel.view3d}}: el módulo permanece abajo para una caja baja; para las demás se detiene, sube, desliza la caja de lado y baja otra vez. Lift y run nunca son TRUE a la vez.",
       "checkpoint": "MoveRight es TRUE solo para cajas medias y MoveLeft solo para altas, y ambos solo mientras Lift es TRUE."
     },
     {

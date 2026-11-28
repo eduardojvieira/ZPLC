@@ -35,7 +35,7 @@
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Trigger the fault yourself in the 3D view (BeamHigh, stuckOn) and watch High in the trace: it stays TRUE while boxes come and go. A little later the line stops and Busy goes out.",
+      "body": "Trigger the fault yourself in the {{ui:plant.panel.view3d}} (BeamHigh, stuckOn) and watch High in the trace: it stays TRUE while boxes come and go. A little later the line stops and Busy goes out.",
       "checkpoint": "High stays TRUE for far longer than any box needs to pass, and the stop follows the fault, not a box."
     },
     {

@@ -24,18 +24,18 @@
       "key": "edit",
       "title": "Edit",
       "body": "Write the program, save it, then press {{ui:learn.check}}. The starting project has no rungs, so no belt moves and no box is sorted. Run the belts after Start, then send each box by its height: straight on, to the right or to the left. Declare whatever else your program needs.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press {{ui:toolbar.run.label}} (F5) and open the {{ui:plant.panel.view3d}}.",
       "checkpoint": "The required scenario is named height-sorting-chain and contains {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Watch the 3D view: the module stays down for a short box; for the others it stops, rises, slides the box sideways and goes down again. Lift and run are never TRUE together.",
+      "body": "Watch the {{ui:plant.panel.view3d}}: the module stays down for a short box; for the others it stops, rises, slides the box sideways and goes down again. Lift and run are never TRUE together.",
       "checkpoint": "MoveRight is TRUE only for medium boxes and MoveLeft only for tall ones, and both only while Lift is TRUE."
     },
     {
