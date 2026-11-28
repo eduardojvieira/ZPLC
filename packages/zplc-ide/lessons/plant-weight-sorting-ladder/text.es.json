@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Clasificar por peso en diagrama de escalera",
-  "summary": "Compare la lectura de una báscula con un límite y envíe las cajas pesadas a la cinta lateral y las ligeras de frente.",
+  "summary": "Compare la lectura de una báscula con un límite y envíe las cajas pesadas a la cinta lateral y las livianas de frente.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra la exactitud de la báscula.",
   "objectives": [
     "Clasificar una pieza comparando un valor analógico con un límite.",
@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objetivo",
       "body": "En src/WeightSorter.ld.json, haga que la línea clasifique lo que pesa la báscula: tras Start, las doce cajas deben terminar en el contenedor de su peso, las pesadas en HeavyBin y las livianas en LightBin, y ninguna debe caerse ni terminar en el contenedor equivocado. Green se enciende cuando las doce están clasificadas.",
-      "checkpoint": "Las cajas pesadas terminan en HeavyBin, las ligeras en LightBin, y Green se enciende tras doce cajas."
+      "checkpoint": "Las cajas pesadas terminan en HeavyBin, las livianas en LightBin, y Green se enciende tras doce cajas."
     },
     {
       "key": "predict",
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial no tiene peldaños, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso.",
+      "body": "Corrija esta omisión del proyecto inicial, guárdelo y pulse {{ui:learn.check}}: El proyecto inicial no tiene peldaños, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -52,10 +52,10 @@
     },
     {
       "level": 2,
-      "text": "La cuchilla queda abajo en el paso 3 durante 2.5 s (un TON); gobierne Hold con Active en serie con un bloque NE sobre Step y 3. Cuente las cajas con un CTU de 12 y gobierne Green con su Q."
+      "text": "Use un número de paso: 0 esperar una caja estable, 1 empujar, 2 retraer, 3 soltar. Salga del paso 0 con dos peldaños en serie con Stable: un bloque GT de Weight y 3.5 va al paso 1, uno LE al paso 3. El tope queda abajo en el paso 3 durante 2.5 s (un TON); gobierne Hold con Active en serie con un bloque NE sobre Step y 3. Cuente las cajas con un CTU de 12 y gobierne Green con su Q."
     }
   ],
   "faultCases": [
-    "El programa inicial no tiene peldaños, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso."
+    "El proyecto inicial no tiene peldaños, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso."
   ]
 }

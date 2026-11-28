@@ -49,7 +49,7 @@
     },
     {
       "level": 2,
-      "text": "The blade stays down in step 3 for 2.5 s (a TON); drive Hold from Active in series with an NE block on Step and 3. Count the boxes with a CTU of 12 and drive Green from its Q."
+      "text": "Use a step number: 0 wait for a stable box, 1 push, 2 retract, 3 release. Leave step 0 with two rungs in series with Stable: a GT block of Weight and 3.5 goes to step 1, an LE block to step 3. The blade stays down in step 3 for 2.5 s (a TON); drive Hold from Active in series with an NE block on Step and 3. Count the boxes with a CTU of 12 and drive Green from its Q."
     }
   ],
   "faultCases": [
