@@ -148,6 +148,9 @@ jobs:
 
       # The IDE unit tests run in the ide-tests shards below; this job builds the IDE for its lint and its smokes.
       - name: Build and lint IDE
+        env:
+          # eslint over the whole IDE ran out of Node's default heap on the hosted runner (run 46148296492: V8 OOM, exit 134)
+          NODE_OPTIONS: --max-old-space-size=6144
         run: |
           bun run build:ide
           bun run lint:ide
