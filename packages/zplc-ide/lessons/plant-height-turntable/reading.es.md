@@ -95,7 +95,7 @@ Esta máquina tiene un palé a la vez y un solo sí o no. La estación de la pr�
 - Leer `HeightCm` cuando la caja espera en el tope. La cortina ya está vacía y lee 0. En una ejecución de la solución de la lección con este cambio, las siete cajas fueron al contenedor bajo y seis de ellas quedaron mal encaminadas.
 - No borrar nunca el máximo. Una caja de 40 cm deja el máximo en 40, así que las cajas siguientes parecen igual de altas. En una ejecución con este cambio, las cuatro cajas posteriores a la alta fueron al contenedor alto y quedaron mal encaminadas.
 - Tomar una lectura de 0 por una caja baja. 0 significa que no hay caja en la cortina.
-- Decidir mientras la caja todavía está en la cortina. En una cortina real la lectura cambia mientras pasa la caja, así que el máximo es definitivo solo cuando la cortina vuelve a quedar vacía. Esta escena informa una altura constante, así que Comprobar no detecta este error.
+- Decidir mientras la caja todavía está en la cortina. En una cortina real la lectura cambia mientras pasa la caja, así que el máximo es definitivo solo cuando la cortina vuelve a quedar vacía. Esta escena informa una altura constante, así que {{ui:learn.check}} no detecta este error.
 
 ## Compruébelo usted
 

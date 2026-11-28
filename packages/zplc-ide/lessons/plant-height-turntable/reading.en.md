@@ -95,7 +95,7 @@ This machine has one pallet at a time and one yes or no. The station of the prac
 - Reading `HeightCm` when the box waits at the blade. The array is empty by then and reads 0. In a run of the lesson's solution with this change, all seven boxes went to the short bin and six of them were misrouted.
 - Never clearing the peak. A 40 cm box leaves the peak at 40, so the boxes after it look as tall. In a run with this change, the four boxes after the tall one went to the tall bin and were misrouted.
 - Taking a reading of 0 for a short box. 0 means that there is no box in the array.
-- Deciding while the box is still in the array. On a real array the reading moves while the box passes, so the peak is final only when the array has become empty again. This scene reports a constant height, so Check does not catch this mistake.
+- Deciding while the box is still in the array. On a real array the reading moves while the box passes, so the peak is final only when the array has become empty again. This scene reports a constant height, so {{ui:learn.check}} does not catch this mistake.
 
 ## Check yourself
 

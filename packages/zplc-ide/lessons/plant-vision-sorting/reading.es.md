@@ -84,11 +84,11 @@ Esta línea atiende un paquete a la vez: un segundo paquete leído mientras el p
 ## Compruébelo usted
 
 ```quiz
-question: Un lector está 1.5 m antes de un empujador y la cinta avanza a 0.25 m/s. ¿Cuánto tarda un paquete en llegar al empujador después de ser leído?
+question: Un lector está 1,5 m antes de un empujador y la cinta avanza a 0,25 m/s. ¿Cuánto tarda un paquete en llegar al empujador después de ser leído?
 options:
-  - { text: '6 segundos', correct: true, feedback: 'Sí. El tiempo es la distancia dividida por la velocidad: 1.5 ÷ 0.25 = 6.' }
-  - { text: '0.375 segundos', feedback: 'Eso es la distancia multiplicada por la velocidad. La cinta avanza 0.25 m cada segundo, así que 1.5 m tardan más de un segundo.' }
-  - { text: '1.75 segundos', feedback: 'Eso suma los dos números, y una distancia y una velocidad no se pueden sumar. Divida la distancia por la velocidad.' }
+  - { text: '6 segundos', correct: true, feedback: 'Sí. El tiempo es la distancia dividida por la velocidad: 1,5 ÷ 0,25 = 6.' }
+  - { text: '0,375 segundos', feedback: 'Eso es la distancia multiplicada por la velocidad. La cinta avanza 0,25 m cada segundo, así que 1,5 m tardan más de un segundo.' }
+  - { text: '1,75 segundos', feedback: 'Eso suma los dos números, y una distancia y una velocidad no se pueden sumar. Divida la distancia por la velocidad.' }
 ```
 
 ```quiz
