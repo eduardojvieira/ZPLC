@@ -28,6 +28,10 @@ import {
   defectSummary,
   conditionName,
   conditionsFor,
+  lessonCaptureName,
+  lessonConditions,
+  lessonPlan,
+  type LessonKind,
   manifestText,
   parseScreens,
   type CaptureRecord,
@@ -64,8 +68,20 @@ const EDITORS: Record<string, { file: string; tab: string; body: string }> = {
   'editor.fbd': { file: 'src/main.fbd.json', tab: 'main.fbd', body: '.react-flow__node' },
   'editor.sfc': { file: 'src/main.sfc.json', tab: 'main.sfc', body: '.react-flow__node' },
 };
+/** The lesson the surfaces of Learn are captured from: it has a reading with a try-it and an exercise with a Guide. */
+const LESSON_SAMPLE = 'ld-no-nc-contacts';
 /** Surfaces reached another way than their command of screens.md, or that cannot be reached yet, and why. */
-const SPECIAL: Record<string, { command: string; click: string; state: string } | { unreached: string }> = {
+const SPECIAL: Record<
+  string,
+  { command: string; click?: string; state: string } | { lesson: { id: string; stage: LessonKind }; state: string } | { unreached: string }
+> = {
+  // the plant document shows the operate panel beside the 3D view as soon as the fixture scene is open (no run, no board)
+  'plant.operate': { command: 'view.plant', state: 'idle' },
+  // a lesson with a reading, opened as a person opens it from the Learn home: its reading, the try-it in it, then the exercise
+  'learn.reading': { lesson: { id: LESSON_SAMPLE, stage: 'reading' }, state: 'normal' },
+  'learn.tryIt': { lesson: { id: LESSON_SAMPLE, stage: 'reading' }, state: 'idle' },
+  'secondary.guide': { lesson: { id: LESSON_SAMPLE, stage: 'exercise' }, state: 'a stage' },
+  'learn.exercise': { lesson: { id: LESSON_SAMPLE, stage: 'exercise' }, state: 'a stage' },
   // plant.edit is pending in the command registry: the Edit scene button of the 3D view is the way in
   'plant.editor': { command: 'view.plant', click: '[data-plant-edit-scene]', state: 'parts' },
   'dialog.importArchive': {
@@ -73,11 +89,24 @@ const SPECIAL: Record<string, { command: string; click: string; state: string } 
       'opened by the Import a project archive button of the Welcome screen, which asks for an archive file through a native ' +
       'dialog the capture cannot answer yet; screens.md maps it to file.export and file.exportProjectJson, which export instead',
   },
-  'secondary.guide': {
-    unreached:
-      'view.guide is pending in the command registry (no handler yet), and the Guide shows only while a lesson workspace is ' +
-      'open, which only a learn command starts',
-  },
+};
+/** Why a surface has no way in yet; what a fixture cannot show without a real failure or a hook in the product code. */
+const REASONS: Record<string, string> = {
+  'shell.notifications': 'shown only after the app raises one; no command or fixture raises one without a real event (needs a test hook)',
+  'shell.toast': 'shown only after an action reports; no safe command reports one and the surface has no marker the tool can wait for',
+  'shell.regionError': 'an error boundary that shows only on a render failure; a capture must not cause one (needs a test hook)',
+  'shell.updateNotice': 'shown only when the update service reports a newer release; offline captures never get one (needs a test hook)',
+  'shell.recovery': 'offered only after a crash left modified files; the fixture profile is fresh (needs a test hook)',
+  'shell.boundaryBadge': 'shown with a running hardware or replay session, which a capture must not start',
+  'editor.fbInstance': 'no command opens it: it opens from a function block instance in a diagram, which the fixture project has none of',
+  'editor.controller': 'no command opens it and the fixture project has no controller to open',
+  'learn.lab': 'opens beside a lesson with a plant, which needs a plant lesson with a recorded replay; the panel has no marker to wait for',
+  'learn.boardTrack': 'opens from the hardware track, which asks for a board; a capture touches no board',
+  'plant.chooser': 'the chooser has no marker the tool can wait for (SceneChooser.tsx has only the save controls); needs a data- marker',
+  'plant.live': 'opens beside a plant lesson with no scene; needs a plant lesson fixture and PlantLivePanel is not marked by lesson',
+  'plant.faceplate': 'shown only while a program runs, which a capture never starts',
+  'learn.result': 'shown only after learn.check grades a lesson, which runs the program',
+  'dialog.modal': 'a generic modal with no command of its own: each dialog above is one of them',
 };
 const STILL = '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }';
 
@@ -89,6 +118,8 @@ interface Plan {
   open?: string;
   /** A control to click once the command ran. */
   click?: string;
+  /** A lesson to start, as the Learn home does, and the stage of it to show. */
+  lesson?: { id: string; stage: LessonKind };
 }
 
 /** The page expression that is true when the surface shows; null for a surface the tool has no marker for. */
@@ -128,6 +159,10 @@ export function markerOf(surface: string, locale: 'en' | 'es'): string | null {
     'editor.settings': tab('settings'),
     'editor.preferences': `${tab('preferences')} && ${sel('[data-preferences-document]')}`,
     'editor.learn': sel('[data-learn-home]'),
+    'learn.reading': sel('[data-reading-page]'),
+    'learn.tryIt': sel('[data-reading-block="ld-try"]'),
+    'learn.exercise': `${secondary('shell.secondary.lesson')} && ${sel('[data-guide-stage]')}`,
+    'plant.operate': sel('[data-plant-operate]'),
     'editor.changes': tab('review:changes'),
     'editor.plant': `${tab('plant')} && ${sel('[data-plant-document]')}`,
     'plant.editor': sel('[data-plant-editor]'),
@@ -150,8 +185,12 @@ export function plan(surfaces: Surface[]): { reached: Plan[]; unreached: Array<{
       unreached.push({ surface: surface.id, reason: special.unreached });
       continue;
     }
+    if (special && 'lesson' in special) {
+      reached.push({ surface, state: special.state, command: null, lesson: special.lesson });
+      continue;
+    }
     if (special) {
-      reached.push({ surface, state: special.state, command: special.command, click: special.click });
+      reached.push({ surface, state: special.state, command: special.command, ...(special.click ? { click: special.click } : {}) });
       continue;
     }
     if (surface.id === 'shell.welcome') {
@@ -170,6 +209,10 @@ export function plan(surfaces: Surface[]): { reached: Plan[]; unreached: Array<{
     }
     if (surface.area === 'Outside Studio') {
       unreached.push({ surface: surface.id, reason: 'outside Studio: an installer window or the documentation site' });
+      continue;
+    }
+    if (REASONS[surface.id] && surface.reachedBy.filter((command) => !isNever(command)).length === 0) {
+      unreached.push({ surface: surface.id, reason: REASONS[surface.id]! });
       continue;
     }
     const commands = surface.reachedBy.filter((command) => !isNever(command));
@@ -258,6 +301,7 @@ async function captureCondition(
   project: string,
   out: string,
   shared: { harness: Harness; scratch: string },
+  lessons: Array<{ id: string; kinds: LessonKind[] }> = [],
 ): Promise<ConditionRun> {
   const { launchApp, button, css } = await import('../journeyApp');
   const ui = (key: Parameters<typeof translate>[1]) => translate(condition.locale, key);
@@ -311,8 +355,8 @@ async function captureCondition(
     }
     return false;
   };
-  const take = async (plan: Plan) => {
-    const name = captureName(surfaces, plan.surface.id, plan.state, condition);
+  const take = async (plan: Plan) => takeAs(captureName(surfaces, plan.surface.id, plan.state, condition), plan.surface.id, plan.state);
+  const takeAs = async (name: string, surface: string, state: string) => {
     await app.eval('document.fonts.ready.then(() => true)');
     await Bun.sleep(400);
     if (await app.eval<boolean>('document.activeElement instanceof HTMLElement')) await app.eval('document.activeElement.blur()');
@@ -335,13 +379,22 @@ async function captureCondition(
     const focused = await collect(true);
     const rings = new Map(focused.elements.map((element) => [`${element.name}@${element.rect.x},${element.rect.y}`, element.focusRing]));
     for (const element of page.elements) element.focusRing = rings.get(`${element.name}@${element.rect.x},${element.rect.y}`) ?? null;
-    captures.push(captureRecord(name, plan.surface.id, plan.state, condition, { ...page, textOutOfBox }));
+    captures.push(captureRecord(name, surface, state, condition, { ...page, textOutOfBox }));
   };
   /** Measures the surface only once its marker shows; otherwise records that the wrong surface was on screen. */
   const takeIfShowing = async (plan: Plan) => {
     if (await showing(markerOf(plan.surface.id, condition.locale)!, plan.surface.id)) await take(plan);
     else failed.push({ surface: plan.surface.id, reason: 'not reached: wrong surface (its marker never showed)' });
   };
+  /** Starts a lesson with the function the Learn home's lesson button calls: its workspace opens, and its reading when it has one. */
+  const startLesson = (id: string): Promise<boolean> =>
+    app.eval<boolean>(`import('/src/learn/learnUi.ts').then(({ useLearnUi }) => useLearnUi.getState().startLesson(${JSON.stringify(id)}))`);
+  /** From the reading to the exercise, with the control a person presses (Go to the practice), or by closing the reading. */
+  const toExercise = () =>
+    app.eval<boolean>(
+      `(() => { const practice = document.querySelector('[data-learn-reading-practice]'); if (practice) { practice.click(); return true; } ` +
+        `return import('/src/learn/learnUi.ts').then(({ useLearnUi }) => { useLearnUi.getState().closeReading(); return true; }); })()`,
+    );
   const run = async (command: string): Promise<string> =>
     app.eval<string>(
       `import('/src/commands/bus.ts').then(({ runCommand }) => runCommand(${JSON.stringify(command)}, { respectEnabled: true }))`,
@@ -391,8 +444,21 @@ async function captureCondition(
       await app.eval(RESET(baseline));
     };
 
-    for (const plan of plans.filter((candidate) => candidate.surface.id !== 'shell.welcome')) {
+    // the plans that start a lesson replace the project, so they come after every other surface
+    const ordered = plans.filter((candidate) => candidate.surface.id !== 'shell.welcome');
+    ordered.sort((a, b) => Number(Boolean(a.lesson)) - Number(Boolean(b.lesson)));
+    for (const plan of ordered) {
       try {
+        if (plan.lesson) {
+          if (!(await startLesson(plan.lesson.id))) {
+            failed.push({ surface: plan.surface.id, reason: `lesson ${plan.lesson.id} did not open` });
+            continue;
+          }
+          if (plan.lesson.stage === 'exercise') await toExercise();
+          await still();
+          await takeIfShowing(plan);
+          continue;
+        }
         await reset();
         const how = plan.command ?? (plan.open ? `open ${plan.open}` : null);
         const outcome = plan.command ? await run(plan.command) : plan.open ? await openFile(plan.open) : 'ran';
@@ -416,6 +482,39 @@ async function captureCondition(
       } catch (error) {
         const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
         failed.push({ surface: plan.surface.id, reason: `${plan.command ?? plan.open ?? 'the open workbench'}: ${message}` });
+      }
+    }
+    for (const lesson of lessons) {
+      const kinds = lesson.kinds.filter((kind) => lessonConditions(kind).some((c) => conditionName(c) === conditionName(condition)));
+      if (kinds.length === 0) continue;
+      try {
+        for (let i = 0; i < 2; i++) await app.press('Escape');
+        if (!(await startLesson(lesson.id))) {
+          failed.push({ surface: `lesson.${lesson.id}`, reason: 'the lesson did not open' });
+          continue;
+        }
+        await still();
+        if (lesson.kinds.includes('reading')) {
+          if (kinds.includes('reading')) {
+            if (await showing(`document.querySelector('[data-reading-page=${JSON.stringify(lesson.id)}]')`, `reading of ${lesson.id}`))
+              await takeAs(lessonCaptureName(lesson.id, 'reading', condition), `lesson.${lesson.id}`, 'reading');
+            else failed.push({ surface: `lesson.${lesson.id}.reading`, reason: 'its reading never showed' });
+          }
+          if (kinds.includes('exercise')) await toExercise();
+        }
+        if (kinds.includes('exercise')) {
+          if (
+            await showing(
+              `${markerOf('secondary.guide', condition.locale)!} && !document.querySelector('[data-reading-page]')`,
+              `exercise of ${lesson.id}`,
+            )
+          )
+            await takeAs(lessonCaptureName(lesson.id, 'exercise', condition), `lesson.${lesson.id}`, 'exercise');
+          else failed.push({ surface: `lesson.${lesson.id}.exercise`, reason: 'its Guide never showed' });
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
+        failed.push({ surface: `lesson.${lesson.id}`, reason: message });
       }
     }
   } catch (error) {
@@ -485,13 +584,25 @@ export async function runConditions(
 async function main(): Promise<void> {
   const { values } = parseArgs({
     args: Bun.argv.slice(2),
-    options: { out: { type: 'string' }, surface: { type: 'string', multiple: true }, condition: { type: 'string', multiple: true } },
+    options: {
+      out: { type: 'string' },
+      surface: { type: 'string', multiple: true },
+      condition: { type: 'string', multiple: true },
+      lesson: { type: 'string', multiple: true },
+    },
   });
   const out = resolve(values.out ?? join(REPOSITORY, '.cache', 'claude-ux-review', 'uxv'));
   const surfaces = parseScreens(readFileSync(SCREENS, 'utf8'));
   for (const id of values.surface ?? [])
     if (!surfaces.some((surface) => surface.id === id)) throw new Error(`${id} is not a surface of screens.md`);
-  const chosen = values.surface ? surfaces.filter((surface) => values.surface!.includes(surface.id)) : surfaces;
+  // no filter: every surface and every lesson; only --surface: no lesson; only --lesson: those lessons and no surface
+  const index = JSON.parse(readFileSync(join(import.meta.dir, '..', '..', 'src', 'generated', 'lessonIndex.json'), 'utf8')) as {
+    lessons: Array<{ id: string; module: number; order: number; reading?: unknown }>;
+  };
+  for (const id of values.lesson ?? []) if (!index.lessons.some((lesson) => lesson.id === id)) throw new Error(`${id} is not a lesson`);
+  const allLessons = lessonPlan(index.lessons.map((lesson) => ({ ...lesson, reading: Boolean(lesson.reading) })));
+  const lessons = values.lesson ? allLessons.filter((lesson) => values.lesson!.includes(lesson.id)) : values.surface ? [] : allLessons;
+  const chosen = values.surface ? surfaces.filter((surface) => values.surface!.includes(surface.id)) : values.lesson ? [] : surfaces;
   const { reached, unreached } = plan(chosen);
 
   // the data: one fixed copy of Blinky at one path, with the I/O point and the scene interfaceBudget.ts gives it
@@ -517,6 +628,11 @@ async function main(): Promise<void> {
   mkdirSync(out, { recursive: true });
   // every Studio surface has the same covering set; one launch per condition holds every surface in it
   let conditions = conditionsFor({ id: '', area: '', states: [], reachedBy: [] });
+  // only lessons: just the conditions a lesson is captured in
+  if (reached.length === 0) {
+    const wanted = new Set((['reading', 'exercise'] as const).flatMap((kind) => lessonConditions(kind).map(conditionName)));
+    conditions = conditions.filter((condition) => wanted.has(conditionName(condition)));
+  }
   if (values.condition) conditions = conditions.filter((condition) => values.condition!.includes(conditionName(condition)));
   // one Vite server for the whole run, as run-journeys.ts has; every condition launches its own Electron against it
   const { startHarness } = await import('../journeyApp');
@@ -524,7 +640,7 @@ async function main(): Promise<void> {
   let run: RunResult;
   try {
     run = await runConditions(conditions, (condition) =>
-      captureCondition(condition, reached, surfaces, project, out, { harness, scratch }),
+      captureCondition(condition, reached, surfaces, project, out, { harness, scratch }, lessons),
     );
   } finally {
     await stop();
@@ -543,6 +659,8 @@ async function main(): Promise<void> {
       ),
     );
   }
+  const lessonCaptures = captures.filter((capture) => capture.surface.startsWith('lesson.'));
+  if (lessonCaptures.length > 0) writeFileSync(join(out, 'sheet-lessons.html'), sheet('Lessons', lessonCaptures));
   const defects = captures.reduce((total, capture) => total + capture.defects.length, 0);
   const summary = defectSummary(captures);
   console.log(`uxv: ${captures.length} captures, ${defects} measured defects, ${notReached.length} surfaces not reached; ${out}`);
