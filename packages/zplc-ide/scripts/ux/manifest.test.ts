@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'bun:test';
-import { readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
-import { assertSafeOut, isNever, markerOf, plan } from './capture';
+import { assertSafeOut, OUT_MARKER, isNever, markerOf, plan } from './capture';
 import {
   captureName,
   captureRecord,
@@ -12,6 +14,7 @@ import {
   lessonPlan,
   manifestText,
   parseScreens,
+  statesNotProduced,
   type Condition,
 } from './manifest';
 import type { Measurement } from './measurement';
@@ -287,5 +290,48 @@ describe('the state a capture is named by (B4)', () => {
     expect(by.get('results.output')).toBe('normal');
     for (const [id, state] of by)
       expect({ id, listed: surfaces.find((surface) => surface.id === id)!.states.includes(state) }).toEqual({ id, listed: true });
+  });
+});
+
+describe('what --out may empty, on the real path (S2)', () => {
+  const scratch = mkdtempSync(join(tmpdir(), 'uxv-out-'));
+  const cache = join(scratch, '.cache');
+  mkdirSync(join(cache, 'shared'), { recursive: true });
+  writeFileSync(join(cache, 'shared', 'work.txt'), 'real work');
+  // a folder that is not under any .cache (the temporary folder may be: the test run keeps it in one)
+  const elsewhere = existsSync('/dev/shm') ? mkdtempSync('/dev/shm/uxv-out-') : null;
+  if (elsewhere) symlinkSync(elsewhere, join(cache, 'link'));
+
+  test('UXV-003 a symlink inside .cache that leads out of it is refused, with the real path checked', () => {
+    if (!elsewhere) return;
+    expect(() => assertSafeOut(join(cache, 'link', 'sub'))).toThrow('--out');
+    expect(() => assertSafeOut(join(cache, 'link'))).toThrow('--out');
+  });
+
+  test('UXV-003 an existing folder with files in it is refused unless the tool made it; an empty one or a marked one is fine', () => {
+    expect(() => assertSafeOut(join(cache, 'shared'))).toThrow('not made by this tool');
+    mkdirSync(join(cache, 'empty'));
+    expect(() => assertSafeOut(join(cache, 'empty'))).not.toThrow();
+    writeFileSync(join(cache, 'shared', OUT_MARKER), '');
+    expect(() => assertSafeOut(join(cache, 'shared'))).not.toThrow();
+    expect(() => assertSafeOut(join(cache, 'new', 'run'))).not.toThrow();
+    rmSync(scratch, { recursive: true, force: true });
+    if (elsewhere) rmSync(elsewhere, { recursive: true, force: true });
+  });
+});
+
+describe('the states a run did not produce (B4)', () => {
+  test('UXV-003 the manifest lists, per surface, the states of screens.md that no capture shows', () => {
+    const palette = surfaces.find((surface) => surface.id === 'dialog.palette')!;
+    const captured = captureRecord('dialog.palette--empty-query--1440x900-light-en', 'dialog.palette', 'empty query', base, fixture());
+    const missing = statesNotProduced([palette], [captured]);
+    expect(missing).toEqual({ 'dialog.palette': ['results', 'no result', 'disabled commands'] });
+    const manifest = JSON.parse(manifestText([captured], [], [], [], missing)) as { statesNotProduced: unknown };
+    expect(manifest.statesNotProduced).toEqual(missing);
+    expect(statesNotProduced([palette], [])).toEqual({});
+  });
+
+  test('UXV-003 activity.plant is named by what the fixture shows: no scene is open', () => {
+    expect(plan(surfaces).reached.find((entry) => entry.surface.id === 'activity.plant')?.state).toBe('no scene');
   });
 });

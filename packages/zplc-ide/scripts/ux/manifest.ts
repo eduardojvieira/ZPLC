@@ -198,11 +198,26 @@ export function defectSummary(captures: CaptureRecord[]): { defects: number; byK
   return { defects: seen.size, byKind: sortedKinds };
 }
 
+/** Per surface that has a capture, its states in screens.md that no capture shows. */
+export function statesNotProduced(surfaces: Surface[], captures: CaptureRecord[]): Record<string, string[]> {
+  const shown = new Map<string, Set<string>>();
+  for (const capture of captures) shown.set(capture.surface, (shown.get(capture.surface) ?? new Set()).add(capture.state));
+  const missing: Record<string, string[]> = {};
+  for (const surface of surfaces) {
+    const have = shown.get(surface.id);
+    if (!have) continue;
+    const rest = surface.states.filter((state) => !have.has(state));
+    if (rest.length > 0) missing[surface.id] = rest;
+  }
+  return missing;
+}
+
 export function manifestText(
   captures: CaptureRecord[],
   unreached: Array<{ surface: string; reason: string }>,
   failedConditions: Array<{ condition: string; error: string }> = [],
   notes: string[] = [],
+  notProduced: Record<string, string[]> = {},
 ): string {
   const sorted = [...captures].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   const manifest = {
@@ -214,6 +229,8 @@ export function manifestText(
     /** Conditions that stopped before their last capture: what they captured is above, the error is here. */
     /** What the run had to do that a person would not, such as clicking Retry on a failure screen. */
     notes: [...notes].sort(),
+    /** Per surface, the states screens.md lists that no capture of this run shows (a fixture would be needed to produce them). */
+    statesNotProduced: notProduced,
     failedConditions: [...failedConditions].sort((a, b) => (a.condition < b.condition ? -1 : a.condition > b.condition ? 1 : 0)),
   };
   return `${JSON.stringify(manifest, null, 2)}\n`;

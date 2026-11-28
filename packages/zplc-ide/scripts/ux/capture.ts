@@ -16,8 +16,8 @@
  * The same journey harness as run-journeys.ts and interfaceBudget.ts: a Vite dev server and a headless Electron development
  * host with the native POSIX runtime, one fresh profile per condition. Nothing here touches a board, deploys, forces or runs.
  */
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join, resolve, sep } from 'node:path';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { basename, dirname, join, resolve, sep } from 'node:path';
 import { parseArgs } from 'node:util';
 
 import { translate } from '../../src/i18n/translate';
@@ -34,6 +34,7 @@ import {
   type LessonKind,
   manifestText,
   parseScreens,
+  statesNotProduced,
   type CaptureRecord,
   type Condition,
   type Surface,
@@ -54,12 +55,28 @@ const ALLOWED = new RegExp(
 );
 export const isNever = (command: string): boolean => !ALLOWED.test(command);
 
-/** `--out` is emptied before a run: it must be a folder inside a `.cache` folder, never a place that holds real work. */
+/** The file the tool writes in a folder it made, so that a later run knows the folder is its own. */
+export const OUT_MARKER = '.uxv-out';
+
+/**
+ * `--out` is emptied before a run. On its real path (symlinks followed, taken from the deepest folder that exists) it must be inside
+ * a `.cache` folder, and an existing folder with files in it must carry the marker of a past run: shared folders are never emptied.
+ */
 export function assertSafeOut(out: string): void {
-  const parts = resolve(out).split(sep);
+  const wanted = resolve(out);
+  let probe = wanted;
+  const rest: string[] = [];
+  while (!existsSync(probe)) {
+    rest.unshift(basename(probe));
+    probe = dirname(probe);
+  }
+  const real = join(realpathSync(probe), ...rest);
+  const parts = real.split(sep);
   const cache = parts.lastIndexOf('.cache');
   if (cache < 0 || cache >= parts.length - 1)
     throw new Error(`--out ${out} must be a folder inside a .cache folder (the run empties it); try ${join(REPOSITORY, '.cache', 'uxv')}`);
+  if (existsSync(real) && readdirSync(real).length > 0 && !existsSync(join(real, OUT_MARKER)))
+    throw new Error(`--out ${out} has files in it and was not made by this tool (no ${OUT_MARKER}); choose a new folder`);
 }
 /** The surfaces the open workbench shows with no command, and the state they are in there. */
 const ON_OPEN: Array<[string, string]> = [
@@ -137,7 +154,6 @@ const SHOWN: Record<string, string> = {
   'editor.config.io': 'normal',
   'secondary.inspector': 'no element',
   'results.watch': 'offline',
-  'activity.plant': 'normal',
   'results.output': 'normal',
   'editor.plant': 'waiting for Run',
 };
@@ -794,8 +810,10 @@ async function main(): Promise<void> {
 
   // the data: one fixed copy of Blinky at one path, with the I/O point and the scene interfaceBudget.ts gives it
   const { packageRoot } = await import('../run-desktop-smoke');
-  const project = join(resolve(out, '..'), 'uxv-fixture', 'blinky');
-  rmSync(project, { recursive: true, force: true });
+  rmSync(out, { recursive: true, force: true });
+  mkdirSync(out, { recursive: true });
+  writeFileSync(join(out, OUT_MARKER), 'made by scripts/ux/capture.ts: a run may empty this folder\n');
+  const project = join(out, 'fixture', 'blinky');
   cpSync(join(packageRoot, 'projects', 'blinky'), project, { recursive: true });
   const config = JSON.parse(readFileSync(join(project, 'zplc.json'), 'utf8')) as Record<string, unknown>;
   config.io = { inputs: [], outputs: [{ name: 'LED_Output', address: '%Q0.0', type: 'BOOL' }] };
@@ -811,8 +829,6 @@ async function main(): Promise<void> {
   ])
     cpSync(join(packageRoot, 'projects', example, 'src', file), join(project, 'src', file));
 
-  rmSync(out, { recursive: true, force: true });
-  mkdirSync(out, { recursive: true });
   // every Studio surface has the same covering set; one launch per condition holds every surface in it
   const seen = new Set<string>();
   let conditions = chosen
@@ -839,7 +855,10 @@ async function main(): Promise<void> {
   }
   const { captures, failed, failedConditions, notes } = run;
   const notReached = [...unreached, ...failed];
-  writeFileSync(join(out, 'manifest.json'), manifestText(captures, notReached, failedConditions, notes));
+  writeFileSync(
+    join(out, 'manifest.json'),
+    manifestText(captures, notReached, failedConditions, notes, statesNotProduced(chosen, captures)),
+  );
   const areas = [...new Set(reached.map((entry) => entry.surface.area))];
   for (const area of areas) {
     const ids = new Set(reached.filter((entry) => entry.surface.area === area).map((entry) => entry.surface.id));
