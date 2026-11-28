@@ -7,6 +7,9 @@ import { validateScene } from '../scene';
 import { createWorld, type PhysicsWorld, type WorldBodySpec } from '../world';
 import { completionParts } from './completion';
 import { itemParts, type PartRuntime } from './items';
+import { scaleDefaultTimeout } from '../../../test/platformTime';
+
+scaleDefaultTimeout(); // a test with no timeout of its own gets bun's 5 s scaled for the system (src/test/platformTime.ts)
 
 const defs = [...itemParts, ...completionParts];
 const catalogue = createCatalogue(defs);

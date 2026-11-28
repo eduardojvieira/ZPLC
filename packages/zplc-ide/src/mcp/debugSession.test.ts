@@ -14,6 +14,9 @@ import { LESSON_INDEX } from '../generated/lessonIndex';
 import { McpDebugSessionManager } from './debugSession';
 import * as toolApi from '../cli/toolApi';
 import { buildMcpServer, createMcpDispatcher, MCP_TOOL_NAMES, openMcpUserData, openMcpWorkspace, type McpWorkspace } from './server';
+import { scaleDefaultTimeout } from '../test/platformTime';
+
+scaleDefaultTimeout(); // a test with no timeout of its own gets bun's 5 s scaled for the system (src/test/platformTime.ts)
 
 const projects = fileURLToPath(new URL('../../projects/', import.meta.url));
 const temporary: string[] = [];

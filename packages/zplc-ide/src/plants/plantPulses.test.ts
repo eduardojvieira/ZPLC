@@ -9,6 +9,9 @@ import { LESSON_INDEX } from '../generated/lessonIndex';
 import { compileScenario, runScenario } from '../test-engine';
 import type { PlantKind } from './plantEngine';
 import { PLANT_PULSES, shortestPulseMs } from './plantPulses';
+import { scaleDefaultTimeout } from '../test/platformTime';
+
+scaleDefaultTimeout(); // a test with no timeout of its own gets bun's 5 s scaled for the system (src/test/platformTime.ts)
 
 const KINDS: readonly PlantKind[] = ['motor-v1', 'conveyor-v1', 'tank-v1', 'pedestrian-v1'];
 const projects = fileURLToPath(new URL('../../projects', import.meta.url));
