@@ -11,19 +11,19 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/HeightSortChain.st, memorice lo que ven las dos barreras mientras pasa una caja: 0.20 m no rompe ninguno, 0.30 m solo BeamLow, 0.40 m ambos. Cuando la caja haya estado quieta un segundo en la cuchilla, envíela de frente, o eleve el módulo y deslícela a la derecha o a la izquierda.",
+      "body": "En src/HeightSortChain.st están declaradas las entradas y salidas de la línea. Una pulsación del pulsador de inicio debe poner en marcha la línea. Llegan cajas de tres alturas por la cinta de entrada, nueve en total, y los dos haces distinguen la altura: 0.20 m no corta ninguno, 0.30 m solo BeamLow, 0.40 m los dos. Cada caja debe terminar en el contenedor de su altura, ninguna mal encaminada ni caída, y Done debe encenderse cuando las nueve cajas estén atendidas.",
       "checkpoint": "Las cajas bajas terminan en BinShort, las medias en BinMedium, las altas en BinTall, y Done se enciende tras nueve cajas."
     },
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, complete una tabla de las dos barreras para las tres alturas y diga cuándo debe borrarse la memoria: la caja siguiente pasa por las barreras mientras esta sigue en el módulo.",
-      "checkpoint": "Una caja se clasifica cuando ha estado quieta en la cuchilla, y la memoria se borra en ese momento, no cuando la caja se va."
+      "body": "Antes de ejecutar, complete una tabla de los dos haces para las tres alturas. Luego siga la primera caja de la ejecución: cuando la caja está detenida contra el tope, ¿sigue en algún haz?",
+      "checkpoint": "Una caja de 0.20 m no corta ningún haz, una de 0.30 m solo BeamLow y una de 0.40 m los dos. La primera caja ya salió de los haces cuando EyeChain la ve, unos 2.3 s después de entrar en BeamLow, así que en el tope los haces no dicen nada sobre ella."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, clasifique cada caja con las dos barreras y envíela de frente, a la derecha o a la izquierda.",
+      "body": "Escriba el programa, guárdelo y pulse {{ui:learn.check}}. El proyecto inicial no acciona ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja. Ponga en marcha las cintas después de Start y envíe cada caja según su altura: derecho, a la derecha o a la izquierda. Declare lo que su programa necesite además.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -48,14 +48,12 @@
   "hints": [
     {
       "level": 1,
-      "text": "Memorice SawLow y SawHigh siempre que Low y High sean TRUE, y decida la dirección con ellos cuando la caja lleve un segundo quieta (un TON sobre AtBlade). Borre ambas memorias justo después."
+      "text": "Piense cuándo necesita el programa la altura y cuándo se la pueden dar los haces: la caja sale de los haces antes de llegar al tope. ¿Qué puede conservar en su programa lo que vio un haz hasta entonces?"
     },
     {
       "level": 2,
       "text": "Un estado por paso: 1 esperar la caja, 2 de frente, 3 elevar y esperar a que Raised se mantenga T#300ms, 4 deslizar, 5 bajar y esperar a Lowered. No haga girar el módulo mientras Lift es TRUE."
     }
   ],
-  "faultCases": [
-    "El programa inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja; ponga en marcha las cintas tras Start, clasifique cada caja con las dos barreras y envíela de frente, a la derecha o a la izquierda."
-  ]
+  "faultCases": ["El proyecto inicial no acciona ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna caja."]
 }
