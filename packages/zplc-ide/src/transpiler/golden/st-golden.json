@@ -1033,5 +1033,10 @@
     "sha256": "7cac7b2e74aa936ad129beb72cf813bf553c8f0c123474ac8c32c4d4d3c450a1",
     "success": true,
     "text": "PROGRAM Compressor\n\nVAR_INPUT\n    Demand : BOOL; (* Pressure switch: TRUE while the tank asks for air *)\n    TooHot : BOOL; (* High-temperature switch: TRUE while the motor is too hot *)\n    CoolEnough : BOOL; (* Low-temperature switch: TRUE once the motor has cooled enough *)\nEND_VAR\n\nVAR\n    Cooling : BOOL; (* Memory: the motor is held off while the compressor is too hot *)\n    _rung1_result : BOOL;\n    _rung2_result : BOOL;\n    _rung3_result : BOOL;\nEND_VAR\n\nVAR_OUTPUT\n    Motor : BOOL; (* Compressor motor *)\nEND_VAR\n\n(* LD Execution - Auto-generated *)\n\n(* Rung 1: The high-temperature switch sets the memory. *)\n_rung1_result := TooHot;\nIF _rung1_result THEN Cooling := TRUE; END_IF;\n\n(* Rung 2: The cool-enough switch resets the memory. *)\n_rung2_result := CoolEnough;\nIF _rung2_result THEN Cooling := FALSE; END_IF;\n\n(* Rung 3: The motor runs on demand, unless the memory holds it off. *)\n_rung3_result := Demand AND NOT Cooling;\nMotor := _rung3_result;\n\nEND_PROGRAM"
+  },
+  "packages/zplc-ide/lessons/plant-manual-auto-ladder/reading/ticket-machine.ld.json": {
+    "sha256": "fb93dd42a099dffdfa1fc9c4c47338d1ff1b144efca5d1544b99dbeaca3f19b1",
+    "success": true,
+    "text": "PROGRAM TicketMachine\n\nVAR_INPUT\n    Take : BOOL; (* Push button: the driver asks for a ticket *)\n    Empty : BOOL; (* Sensor: TRUE when the ticket roll has run out *)\nEND_VAR\n\nVAR\n    Given : INT := 0; (* Tickets released so far *)\n    _rung1_result : BOOL;\n    _edge_r1_r1_0_0 : R_TRIG;\n    _rung2_result : BOOL;\nEND_VAR\n\nVAR_OUTPUT\n    Release : BOOL; (* Releases one ticket *)\nEND_VAR\n\n(* LD Execution - Auto-generated *)\n\n(* Rung 1: A press of Take releases one ticket unless the roll is empty: the edge contact conducts for one scan. *)\n_edge_r1_r1_0_0(CLK := Take);\n_rung1_result := _edge_r1_r1_0_0.Q AND NOT Empty;\nRelease := _rung1_result;\n\n(* Rung 2: Count each ticket released. *)\n_rung2_result := Release;\nIF _rung2_result THEN Given := Given + 1; END_IF;\n\nEND_PROGRAM"
   }
 }

@@ -482,9 +482,9 @@ Objetivos de las lecciones disponibles:
 
 - **Paro de emergencia y enclavamientos**: Detener todas las salidas mientras el paro de emergencia está pulsado. Recordar el paro, de modo que soltar el pulsador no reinicie la línea.
 - **Paro de emergencia y enclavamientos en diagrama de escalera**: Detener todas las salidas mientras el paro de emergencia está pulsado. Recordar el paro, de modo que soltar el pulsador no reinicie la línea.
-- **Modos manual y automático**: Guardar el modo en una memoria que cambie con una pulsación de ModeBtn, y dejar que la máquina arranque en manual. Mover el brazo con los pulsadores de avance solo en manual, sin pasar de un final de carrera, y arrancar el ciclo con Start solo en automático.
-- **Modos manual y automático**: Guardar el modo en una memoria que cambie con una pulsación de ModeBtn, y dejar que la máquina arranque en manual. Mover el brazo con los pulsadores de avance solo en manual, sin pasar de un final de carrera, y arrancar el ciclo con Start solo en automático.
-- **Encontrar la falla**: Diagnosticar un sensor atascado a partir de un hecho que el programa puede leer, no del propio sensor. Elegir una reacción segura: detener lo que trae cajas nuevas y dejar llegar las que ya se mueven.
+- **Modos manual y automático**: Cambiar entre manual y automático con cada pulsación del pulsador de modo, y arrancar en manual. Mover el brazo con los pulsadores de avance solo en manual, sin pasar de un final de carrera, y arrancar el ciclo con Start solo en automático.
+- **Modos manual y automático**: Cambiar entre manual y automático con cada pulsación del pulsador de modo, y arrancar en manual. Mover el brazo con los pulsadores de avance solo en manual, sin pasar de un final de carrera, y arrancar el ciclo con Start solo en automático.
+- **Encontrar la falla**: Diagnosticar un sensor atascado a partir de un hecho que el programa puede leer, no del propio sensor. Elegir una reacción que se ajuste a la máquina: detener lo que trae cajas nuevas y dejar llegar las que ya se mueven.
 
 ## Módulo 19: Construya sus propias escenas: colocar piezas, enlazar señales y ejecutar
 
@@ -496,15 +496,15 @@ El curso termina construyendo la propia planta: piezas, señales y un programa q
 | ---------------------------------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | ---------------------------------------------------- |
 | `plant-build-belt-scene` Construir una escena de cinta desde el suelo vacío        | Disponible | ST        | Simulación | -      | 25      | `plant-belt-to-sensor`, `plant-fault-actions`        |
 | `plant-build-belt-scene-ladder` Construir una escena de cinta desde el suelo vacío | Disponible | LD        | Simulación | -      | 25      | `plant-belt-to-sensor`, `plant-fault-actions`        |
-| `plant-change-scene` Modificar una escena: agregar el segundo emisor               | Disponible | ST        | Simulación | -      | 20      | `plant-build-belt-scene`, `plant-merge-lines`        |
-| `plant-change-scene-ladder` Modificar una escena: agregar el segundo emisor        | Disponible | LD        | Simulación | -      | 20      | `plant-build-belt-scene-ladder`, `plant-merge-lines` |
+| `plant-change-scene` Modificar una escena: alimentar la segunda línea              | Disponible | ST        | Simulación | -      | 20      | `plant-build-belt-scene`, `plant-merge-lines`        |
+| `plant-change-scene-ladder` Modificar una escena: alimentar la segunda línea       | Disponible | LD        | Simulación | -      | 20      | `plant-build-belt-scene-ladder`, `plant-merge-lines` |
 
 Objetivos de las lecciones disponibles:
 
-- **Construir una escena de cinta desde el suelo vacío**: Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa. Ejecutar un programa sobre la escena que usted construyó y ver que la Comprobación califica esa escena, no una copia.
-- **Construir una escena de cinta desde el suelo vacío**: Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa. Ejecutar un programa sobre la escena que usted construyó y ver que la Comprobación califica esa escena, no una copia.
-- **Modificar una escena: agregar el segundo emisor**: Agregar una pieza a una escena existente y colocarla donde el resto de la escena la espera. Enlazar la señal de la pieza nueva en el mapa de la planta con la variable del programa que ya la gobierna, sin cambiar el programa.
-- **Modificar una escena: agregar el segundo emisor**: Agregar una pieza a una escena existente y colocarla donde el resto de la escena la espera. Enlazar la señal de la pieza nueva en el mapa de la planta con la variable del programa que ya la gobierna, sin cambiar el programa.
+- **Construir una escena de cinta desde el suelo vacío**: Colocar los elementos de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa. Ejecutar un programa sobre la escena que usted construyó y ver que Comprobar califica esa escena, no una copia.
+- **Construir una escena de cinta desde el suelo vacío**: Colocar los elementos de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa. Ejecutar un programa sobre la escena que usted construyó y ver que Comprobar califica esa escena, no una copia.
+- **Modificar una escena: alimentar la segunda línea**: Leer una escena terminada frente al programa y al escenario que se ejecutan sobre ella, y encontrar lo que la escena necesita. Cambiar una escena en el editor de escenas y su mapa de planta, dejando el programa sin cambios.
+- **Modificar una escena: alimentar la segunda línea**: Leer una escena terminada frente al programa y al escenario que se ejecutan sobre ella, y encontrar lo que la escena necesita. Cambiar una escena en el editor de escenas y su mapa de planta, dejando el programa sin cambios.
 
 ## Páginas de cableado por placa
 

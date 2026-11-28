@@ -22,8 +22,8 @@ El curso termina construyendo la propia planta: piezas, señales y un programa q
 | --- | --- | --- | --- |
 | [Construir una escena de cinta desde el suelo vacío](../lessons/plant-build-belt-scene.md) | `plant-build-belt-scene` | ST | 25 |
 | [Construir una escena de cinta desde el suelo vacío](../lessons/plant-build-belt-scene-ladder.md) | `plant-build-belt-scene-ladder` | LD | 25 |
-| [Modificar una escena: agregar el segundo emisor](../lessons/plant-change-scene.md) | `plant-change-scene` | ST | 20 |
-| [Modificar una escena: agregar el segundo emisor](../lessons/plant-change-scene-ladder.md) | `plant-change-scene-ladder` | LD | 20 |
+| [Modificar una escena: alimentar la segunda línea](../lessons/plant-change-scene.md) | `plant-change-scene` | ST | 20 |
+| [Modificar una escena: alimentar la segunda línea](../lessons/plant-change-scene-ladder.md) | `plant-change-scene-ladder` | LD | 20 |
 
 {/* <<< END GENERATED: learn/modules/module-19 <<< */}
 

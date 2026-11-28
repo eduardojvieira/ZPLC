@@ -1,16 +1,16 @@
 ---
-title: "Change a scene: add the second emitter"
+title: "Change a scene: feed the second line"
 sidebar_label: "plant-change-scene"
 description: "The lesson plant-change-scene: level, time, languages and objectives, generated from its package."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Change a scene: add the second emitter
+# Change a scene: feed the second line
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-change-scene. Do not edit. >>> */}
 
-Open the finished merge scene, add the emitter of line B that it lacks and bind its signal in the plant map, without touching the program that already arbitrates the two lines.
+Open the finished merge scene and change it, without touching the program that arbitrates the two lines, until both lines deliver their boxes.
 
 ## Facts
 
@@ -19,14 +19,14 @@ Open the finished merge scene, add the emitter of line B that it lacks and bind 
 - Estimated time: 20 minutes
 - Languages: ST
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Merge two lines](../../plant/scenes/merge-lines.md)
 - Prerequisites: [plant-build-belt-scene](./plant-build-belt-scene.md), [plant-merge-lines](./plant-merge-lines.md)
 
 ## Objectives
 
-- Add a part to an existing scene and place it where the rest of the scene expects it.
-- Bind the new part's signal in the plant map to the program variable that already drives it, leaving the program unchanged.
+- Read a finished scene against the program and the scenario that run on it, and find what the scene needs.
+- Change a scene in the scene editor and its plant map, leaving the program unchanged.
 
 ## Stages
 

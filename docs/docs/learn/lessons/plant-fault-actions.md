@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-fault-actions. Do not edit. >>> */}
 
-Diagnose a beam that sticks on while the line is sorting: compare its signal with how long a box can really break it, and stop the line before it misroutes a box.
+Spot a beam that sticks on while the line is sorting, and stop the line before it misroutes a box.
 
 ## Facts
 
@@ -19,14 +19,14 @@ Diagnose a beam that sticks on while the line is sorting: compare its signal wit
 - Estimated time: 45 minutes
 - Languages: ST
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Height sorting with a chain transfer](../../plant/scenes/height-sorting-chain.md)
 - Prerequisites: [plant-height-chain](./plant-height-chain.md)
 
 ## Objectives
 
 - Diagnose a stuck sensor from a fact the program can read, not from the sensor itself.
-- Choose a safe reaction: stop what brings new boxes and let the boxes already moving arrive.
+- Choose a reaction that fits the machine: stop what brings new boxes and let the boxes already moving arrive.
 
 ## Stages
 
