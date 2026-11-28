@@ -89,6 +89,15 @@ const SPECIAL: Record<
   // the plant document shows the operate panel beside the 3D view as soon as the fixture scene is open (no run, no board)
   'plant.operate': { command: 'view.plant', state: 'idle' },
   'plant.chooser': { command: 'view.plant', state: 'normal' },
+  // the navigator hosts the dialog; where the primary sidebar is hidden (the compact shell) it is shown first, as a click on its rail would
+  'dialog.explorer': {
+    state: 'normal',
+    script:
+      `(async () => { const { useShellLayout } = await import('/src/store/useShellLayout.ts'); ` +
+      `useShellLayout.getState().showActivity('project'); useShellLayout.getState().setPrimaryVisible(true); ` +
+      `const { runCommand } = await import('/src/commands/bus.ts'); ` +
+      `return runCommand('project.newProgram', { respectEnabled: true }); })()`,
+  },
   'activity.plant.group': { command: 'view.showProject', state: 'scenes' },
   // the Assistant exists only while a provider is configured: the store the view reads says one is (no request is made)
   'secondary.assistant': {
@@ -123,7 +132,11 @@ const SPECIAL: Record<
  * where it is not the first state screens.md lists. A capture is named by the state on screen; the others are not produced.
  */
 const SHOWN: Record<string, string> = {
-  'activity.tests': 'empty',
+  'activity.tests': 'normal',
+  'editor.config.tasks': 'normal',
+  'editor.config.io': 'normal',
+  'secondary.inspector': 'no element',
+  'results.watch': 'offline',
   'activity.plant': 'normal',
   'results.output': 'normal',
   'editor.plant': 'waiting for Run',

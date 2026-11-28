@@ -273,3 +273,19 @@ describe('where a capture may write (S2)', () => {
       expect(() => assertSafeOut(good)).not.toThrow();
   });
 });
+
+describe('the state a capture is named by (B4)', () => {
+  test('UXV-003 a capture is named by the state the fixture shows, and every such state is one screens.md lists', () => {
+    const { reached } = plan(surfaces);
+    const by = new Map(reached.map((entry) => [entry.surface.id, entry.state]));
+    // Blinky has a task, an output and a test, no provider, nothing selected, nothing run
+    expect(by.get('activity.tests')).toBe('normal');
+    expect(by.get('editor.config.tasks')).toBe('normal');
+    expect(by.get('editor.config.io')).toBe('normal');
+    expect(by.get('secondary.inspector')).toBe('no element');
+    expect(by.get('editor.plant')).toBe('waiting for Run');
+    expect(by.get('results.output')).toBe('normal');
+    for (const [id, state] of by)
+      expect({ id, listed: surfaces.find((surface) => surface.id === id)!.states.includes(state) }).toEqual({ id, listed: true });
+  });
+});
