@@ -1,21 +1,7 @@
 import { assert } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
+import { selectOption } from '../journeyKeys';
 import type { Journey } from '../journeys';
-
-/** Walks a native select to the option with this text with the arrow keys, as a keyboard user would. */
-async function choose(app: App, selector: string, label: string): Promise<void> {
-  const state = () =>
-    app.eval<{ labels: string[]; index: number }>(
-      `(() => { const select = document.querySelector(${JSON.stringify(selector)}); return { labels: ` +
-        `[...select.options].map((option) => option.textContent), index: select.selectedIndex }; })()`,
-    );
-  const { labels, index } = await state();
-  const wanted = labels.indexOf(label);
-  assert(wanted >= 0, `${selector} offers ${JSON.stringify(labels)}, not ${label}`);
-  await app.eval(`document.querySelector(${JSON.stringify(selector)}).focus()`);
-  for (let step = 0; step < Math.abs(wanted - index); step++) await app.press(wanted > index ? 'ArrowDown' : 'ArrowUp');
-  await app.until(`${selector} to show ${label}`, async () => (await state()).index === wanted || undefined);
-}
 
 const theme = (app: App) => app.eval<string | null>(`document.documentElement.getAttribute('data-theme')`);
 
@@ -37,7 +23,7 @@ export const journeysU2H2: Journey[] = [
         'Preferences must hold exactly one theme control.',
       );
       assert(!(await app.visible(css('[data-open-config-editor]'))), 'Preferences shows a project field with no project open.');
-      await choose(app, 'select[data-theme-control]', 'Dark');
+      await selectOption(app, 'select[data-theme-control]', 'Dark');
       await app.until('the dark theme', async () => (await theme(app)) === 'dark' || undefined);
 
       // A project opens with that choice kept; Project settings is another document, without the preferences.

@@ -43,7 +43,7 @@ import { journeysStations } from './journeys/plantStations';
 import { journeysCourse } from './journeys/plantCourse';
 import { journeysOperator } from './journeys/plantOperator';
 import { pause } from './journeyTiming';
-import { pressMod, shortcutName, shortcutText } from './journeyKeys';
+import { pressMod, selectOption, setSelectIndex, shortcutName, shortcutText } from './journeyKeys';
 
 export interface JourneyContext {
   root: string;
@@ -2373,7 +2373,8 @@ export const JOURNEYS: Journey[] = [
         ).join('|') === 'Light|Dark|High contrast',
         'The theme control does not offer Light, Dark and High contrast.',
       );
-      // A keyboard user reaches the select with Tab (the key table of the journeys has none), then picks with End, ArrowUp and Home.
+      // The select takes focus as a keyboard user leaves it (the key table of the journeys has none); the choices are set through the
+      // element, because the arrow keys, End and Home only open the popup of a closed select on macOS.
       await app.eval(`document.querySelector('select[data-theme-control]').focus()`);
       assert(
         await app.eval<boolean>(
@@ -2383,11 +2384,11 @@ export const JOURNEYS: Journey[] = [
         'The theme control shows no focus ring.',
       );
       const theme = () => app.eval<string>(`document.documentElement.getAttribute('data-theme')`);
-      await app.press('End');
+      await setSelectIndex(app, `document.querySelector('select[data-theme-control]')`, 2);
       await app.until('High contrast to apply', async () => (await theme()) === 'high-contrast' || undefined);
-      await app.press('ArrowUp');
+      await setSelectIndex(app, `document.querySelector('select[data-theme-control]')`, 1);
       await app.until('Dark to apply', async () => (await theme()) === 'dark' || undefined);
-      await app.press('Home');
+      await setSelectIndex(app, `document.querySelector('select[data-theme-control]')`, 0);
       await app.until('Light to apply', async () => (await theme()) === 'light' || undefined);
       assert(
         (await app.eval<string>(`document.querySelector('select[data-theme-control]').value`)) === 'light',
@@ -2931,20 +2932,7 @@ export const JOURNEYS: Journey[] = [
     partly: ['IDE-010'],
     run: async (app, { project, relaunch }) => {
       const file = join(project, 'src', 'Motor.st');
-      /** Walks a native select to the option with this text with the arrow keys, as a keyboard user would. */
-      const choose = async (target: App, selector: string, label: string) => {
-        const state = () =>
-          target.eval<{ labels: string[]; index: number }>(
-            `(() => { const select = document.querySelector(${JSON.stringify(selector)}); return { labels: ` +
-              `[...select.options].map((option) => option.textContent), index: select.selectedIndex }; })()`,
-          );
-        const { labels, index } = await state();
-        const wanted = labels.indexOf(label);
-        assert(wanted >= 0, `${selector} offers ${JSON.stringify(labels)}, not ${label}`);
-        await target.eval(`document.querySelector(${JSON.stringify(selector)}).focus()`);
-        for (let step = 0; step < Math.abs(wanted - index); step++) await target.press(wanted > index ? 'ArrowDown' : 'ArrowUp');
-        await target.until(`${selector} to show ${label}`, async () => (await state()).index === wanted || undefined);
-      };
+      const choose = selectOption;
       const chosen = (target: App, selector: string) =>
         target.eval<string>(
           `(() => { const select = document.querySelector(${JSON.stringify(selector)}); return ` +
@@ -3228,8 +3216,7 @@ export const JOURNEYS: Journey[] = [
       await app.eval(`document.getElementById('entry-folder').focus()`);
       const folders = await app.eval<string[]>(`[...document.getElementById('entry-folder').options].map((option) => option.value)`);
       assert(folders.includes('src/drivers'), `The move dialog does not offer the new folder: ${JSON.stringify(folders)}`);
-      const current = await app.eval<number>(`document.getElementById('entry-folder').selectedIndex`);
-      for (let step = 0; step < folders.indexOf('src/drivers') - current; step++) await app.press('ArrowDown');
+      await setSelectIndex(app, `document.getElementById('entry-folder')`, folders.indexOf('src/drivers'));
       await app.click(button('Move'));
       await app.until('the copy in the folder', async () => (await app.visible(node('src/drivers/Drive_copy.st', 'file'))) || undefined);
       assert(
@@ -4901,8 +4888,7 @@ export const JOURNEYS: Journey[] = [
       const folders = await app.eval<string[]>(`[...document.getElementById('library-folder').options].map((option) => option.value)`);
       const at = folders.indexOf('lib');
       assert(at >= 0, `The dialog does not offer the folder: ${JSON.stringify(folders)}`);
-      const current = await app.eval<number>(`document.getElementById('library-folder').selectedIndex`);
-      for (let step = 0; step < Math.abs(at - current); step++) await app.press(at > current ? 'ArrowDown' : 'ArrowUp');
+      await setSelectIndex(app, `document.getElementById('library-folder')`, at);
       await app.click(button('Add library'), 'the Add library button');
       await app.until(
         'zplc.json to name the library',
@@ -8122,11 +8108,10 @@ export const JOURNEYS: Journey[] = [
       const themes = await app.eval<string[]>(
         `[...document.querySelector('select[data-theme-control]').options].map((option) => option.value)`,
       );
-      const current = await app.eval<number>(`document.querySelector('select[data-theme-control]').selectedIndex`);
       const wanted = themes.indexOf(theme);
       assert(wanted >= 0, `The theme control offers ${JSON.stringify(themes)}, not ${theme}`);
       await app.eval(`document.querySelector('select[data-theme-control]').focus()`);
-      for (let step = 0; step < Math.abs(wanted - current); step++) await app.press(wanted > current ? 'ArrowDown' : 'ArrowUp');
+      await setSelectIndex(app, `document.querySelector('select[data-theme-control]')`, wanted);
       const themed = () =>
         app.until(
           `the ${theme} theme`,
@@ -8518,26 +8503,3 @@ export const JOURNEYS: Journey[] = [
   ...journeysStations,
   ...journeysCourse,
 ];
-
-/** Walks a native select to the option with this text with the arrow keys, as a keyboard user would. */
-async function selectOption(app: App, selector: string, label: string): Promise<void> {
-  const state = () =>
-    app.eval<{ labels: string[]; index: number }>(
-      `(() => { const select = document.querySelector(${JSON.stringify(selector)}); return { labels: [...select.options].map((option) => ` +
-        `option.textContent), index: select.selectedIndex }; })()`,
-    );
-  const { labels, index } = await state();
-  const wanted = labels.indexOf(label);
-  assert(wanted >= 0, `${selector} offers ${JSON.stringify(labels)}, not ${label}`);
-  await app.eval(`document.querySelector(${JSON.stringify(selector)}).focus()`);
-  for (let step = 0; step < Math.abs(wanted - index); step++) await app.press(wanted > index ? 'ArrowDown' : 'ArrowUp');
-  // macOS does not move a native select with the arrow keys while its popup is closed: set the option through the element and tell
-  // React the way a change from the popup would
-  if ((await state()).index !== wanted) {
-    await app.eval(
-      `(() => { const select = document.querySelector(${JSON.stringify(selector)}); select.selectedIndex = ${wanted}; ` +
-        `select.dispatchEvent(new Event('input', { bubbles: true })); select.dispatchEvent(new Event('change', { bubbles: true })); })()`,
-    );
-  }
-  await app.until(`${selector} to show ${label}`, async () => (await state()).index === wanted || undefined);
-}

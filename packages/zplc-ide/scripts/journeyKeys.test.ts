@@ -21,7 +21,10 @@ test('pressMod on darwin sends one Meta key down and up through the page, and on
   const sent: unknown[] = [];
   const app = {
     press: async (chord: string) => void sent.push(['press', chord]),
-    cdp: { command: async (method: string, params: { type: string; modifiers: number }) => void sent.push([method, params.type, params.modifiers]) },
+    cdp: {
+      command: async (method: string, params: { type: string; modifiers: number }) =>
+        void sent.push([method, params.type, params.modifiers]),
+    },
   } as never;
   const { pressMod } = await import('./journeyKeys');
   await pressMod(app, 'Ctrl+A', 'darwin');
@@ -57,7 +60,12 @@ function macSelect(labels: string[]) {
   const pressed: string[] = [];
   const app = {
     eval: async (expression: string) =>
-      new Function('document', 'Event', `return ${expression}`)({ querySelector: () => select }, class { constructor(public type: string) {} }),
+      new Function('document', 'Event', `return ${expression}`)(
+        { querySelector: () => select },
+        class {
+          constructor(public type: string) {}
+        },
+      ),
     until: async (_what: string, check: () => Promise<unknown>) => check(),
     press: async (chord: string) => void pressed.push(chord),
   };

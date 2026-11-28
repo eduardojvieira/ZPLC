@@ -7,6 +7,7 @@
 import { join } from 'node:path';
 import { assert } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
+import { setSelectIndex } from '../journeyKeys';
 import type { Journey } from '../journeys';
 import { holdPushButton, openPlantDocument, plantFacts, runInSimulation, shippedSceneProject, writeSceneProject } from './plantSupport';
 
@@ -101,11 +102,11 @@ export const journeysManipulator: Journey[] = [
       // a second cycle: when the pick and place holds a box, choose dropLoad in its fault select and trigger it with the keyboard
       await holdPushButton(app, 'StartButton', 'keyboard');
       await untilFacts(app, 'the pick and place to hold a box', async () => (await readout(app)).endsWith('holding'), 90_000);
-      // the arrow keys only choose: dropLoad is the fourth action after stuckX, stuckY and gripFail, and nothing fires until the button
+      // choosing only sets the select: dropLoad is the fourth action after stuckX, stuckY and gripFail, and nothing fires until the button
       await app.eval(`document.querySelector('[data-plant-fault="Pick1"]').focus()`);
-      for (let step = 0; step < 4; step++) await app.press('ArrowDown');
+      await setSelectIndex(app, `document.querySelector('[data-plant-fault="Pick1"]')`, 4);
       const chosen = await app.eval<string>(`document.querySelector('[data-plant-fault="Pick1"]').value`);
-      assert(chosen === 'dropLoad', `The arrow keys chose "${chosen}", not dropLoad.`);
+      assert(chosen === 'dropLoad', `The select did not take "${chosen}", not dropLoad.`);
       assert(count(await plantFacts(app), 'Pick1 drops') === 0, 'A fault fired while the action was only being chosen.');
       await app.press('Tab');
       await app.press('Enter');

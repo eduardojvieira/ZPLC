@@ -1,6 +1,6 @@
 /**
  * The sorting journeys of Task Q5 (spec 012: VIS-010, VIS-011, VIS-008, PLT-008, SCN-004). The first runs scene 20 (weight sorting),
- * waits for a sorted item and then triggers `readingOffset` on the scale with the keyboard alone (the arrow keys only choose, Tab
+ * waits for a sorted item and then triggers `readingOffset` on the scale with the keyboard alone (choosing only sets the select, Tab
  * reaches the trigger button, Enter acts); the second opens scene 21 (vision sorting) and checks that the vision readout shows a code while
  * the live region stays
  * quiet. Like the
@@ -9,6 +9,7 @@
 import { join } from 'node:path';
 import { assert } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
+import { setSelectIndex } from '../journeyKeys';
 import type { Journey } from '../journeys';
 import { holdPushButton, openPlantDocument, plantFacts, runInSimulation, shippedSceneProject, writeSceneProject } from './plantSupport';
 
@@ -93,11 +94,11 @@ export const journeysSorting: Journey[] = [
       await holdPushButton(app, 'StartButton', 'keyboard');
       await untilFacts(app, 'an item to be sorted', async () => total(await plantFacts(app), 'sorted') >= 1, 90_000);
       assert(total(await plantFacts(app), 'received') === 0, 'An item was misrouted before any fault.');
-      // the arrow keys only choose: readingOffset is the second action of the scale, and nothing fires until the button
+      // choosing only sets the select: readingOffset is the second action of the scale, and nothing fires until the button
       await app.eval(`document.querySelector('[data-plant-fault="Scale1"]').focus()`);
-      for (let step = 0; step < 2; step++) await app.press('ArrowDown');
+      await setSelectIndex(app, `document.querySelector('[data-plant-fault="Scale1"]')`, 2);
       const chosen = await app.eval<string>(`document.querySelector('[data-plant-fault="Scale1"]').value`);
-      assert(chosen === 'readingOffset', `The arrow keys chose "${chosen}", not readingOffset.`);
+      assert(chosen === 'readingOffset', `The select did not take "${chosen}", not readingOffset.`);
       assert(total(await plantFacts(app), 'received') === 0, 'A fault fired while the action was only being chosen.');
       await app.press('Tab');
       const focused = await app.eval<string>(`document.activeElement.getAttribute('data-plant-fault-trigger') ?? ''`);
