@@ -98,7 +98,7 @@ options:
 question: What happens if you replace the set coils on AllowNorth and AllowSouth with normal coils?
 options:
   - { text: 'The grant turns off as soon as the entry sensor goes FALSE or the next scan checks the normally closed self-contact', correct: false, feedback: 'Only without rungs 3 and 4: then the coil''s own normally closed contact switches it off on the next scan, so GreenNorth flickers on every scan.' }
-  - { text: 'Both green lights stay on permanently', feedback: 'Normal coils drop whenever their rung stops conducting, so the grant cannot stay latched.' }
+  - { text: 'Both green lights stay on permanently', feedback: 'It does not compile at all; even without rungs 3 and 4 a normal coil cannot hold the grant.' }
   - { text: 'The program refuses to compile', correct: true, feedback: 'Right. Rungs 3 and 4 still reset AllowNorth and AllowSouth, and ZPLC refuses a normal coil and a reset coil on one variable.' }
 ```
 

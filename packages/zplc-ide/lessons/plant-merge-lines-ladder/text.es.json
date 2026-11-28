@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objetivo",
       "body": "En src/MergeLines.ld.json, guarde dos memorias de concesión, GrantA y GrantB, como bobinas de activación y de borrado: conceda primero a la línea A cuando ambas esperan, conceda a una línea solo cuando no haya una concesión activa y la zona de fusión esté vacía, y termine la concesión cuando su caja haya salido de la zona.",
-      "checkpoint": "HoldA y HoldB son verdaderas salvo que esa línea tenga la concesión, así que los dos topes retráctiles nunca están abiertas a la vez."
+      "checkpoint": "HoldA y HoldB son verdaderas salvo que esa línea tenga la concesión, así que los dos topes retráctiles nunca están abiertos a la vez."
     },
     {
       "key": "predict",
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del proyecto inicial, guárdelo y pulse {{ui:learn.check}}: El proyecto inicial no tiene peldaños, así que no se carga nada y ningún tope retráctil se mueve; cargue tres cajas en cada alimentador, abra un tope retráctil a la vez, con la línea A primero cuando ambas esperan y nunca ambas juntas, y abra la siguiente solo cuando la caja anterior haya salido de la zona de fusión.",
+      "body": "Corrija esta omisión del proyecto inicial, guárdelo y pulse {{ui:learn.check}}: El proyecto inicial no tiene peldaños, así que no se carga nada y ningún tope retráctil se mueve; cargue tres cajas en cada alimentador, abra un tope retráctil a la vez, con la línea A primero cuando ambas esperan y nunca ambos juntos, y abra el siguiente solo cuando la caja anterior haya salido de la zona de fusión.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El proyecto inicial no tiene peldaños, así que no se carga nada y ningún tope retráctil se mueve; cargue tres cajas en cada alimentador, abra un tope retráctil a la vez, con la línea A primero cuando ambas esperan y nunca ambas juntas, y abra la siguiente solo cuando la caja anterior haya salido de la zona de fusión."
+    "El proyecto inicial no tiene peldaños, así que no se carga nada y ningún tope retráctil se mueve; cargue tres cajas en cada alimentador, abra un tope retráctil a la vez, con la línea A primero cuando ambas esperan y nunca ambos juntos, y abra el siguiente solo cuando la caja anterior haya salido de la zona de fusión."
   ]
 }

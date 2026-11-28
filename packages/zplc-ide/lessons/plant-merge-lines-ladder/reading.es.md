@@ -98,7 +98,7 @@ options:
 question: ¿Qué ocurre si sustituye las bobinas de activación de AllowNorth y AllowSouth por bobinas normales?
 options:
   - { text: 'La concesión se apaga en cuanto el sensor de entrada pasa a FALSE o el siguiente ciclo de escaneo comprueba el contacto normalmente cerrado propio', correct: false, feedback: 'Solo sin los peldaños 3 y 4: entonces el propio contacto normalmente cerrado de la bobina la apaga en el siguiente ciclo de escaneo, así que GreenNorth parpadea en cada ciclo de escaneo.' }
-  - { text: 'Ambas luces verdes quedan encendidas de forma permanente', feedback: 'Las bobinas normales caen cuando su peldaño deja de conducir, así que la concesión no puede mantenerse enclavada.' }
+  - { text: 'Ambas luces verdes quedan encendidas de forma permanente', feedback: 'No compila en absoluto; aun sin los peldaños 3 y 4, una bobina normal no puede retener la concesión.' }
   - { text: 'El programa no compila', correct: true, feedback: 'Correcto. Los peldaños 3 y 4 siguen borrando AllowNorth y AllowSouth, y ZPLC rechaza una bobina normal y una bobina de borrado sobre la misma variable.' }
 ```
 
