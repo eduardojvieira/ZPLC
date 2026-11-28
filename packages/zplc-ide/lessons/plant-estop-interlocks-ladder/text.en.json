@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/ThreeLevelLifts.ld.json, add a Stopped memory: a rung with a normally closed contact of EStopOk sets it, a rung with Start and EStopOk resets it, the same stop contact resets Active, and Red lights from Stopped. Put the stop rungs after the Start rung, so the stop wins.",
-      "checkpoint": "Every output already depends on Active, so clearing Active stops the belts and the lifts together."
+      "body": "The starting program in src/ThreeLevelLifts.ld.json draws the line and has no stop. While the emergency stop is pressed, every belt and lift must be off and the red lamp lit; the line must stay stopped when the button is released and run again only after a new press of Start.",
+      "checkpoint": "You can say which outputs must be off during the stop, what Red must show, and what must still be true after the button is released."
     },
     {
       "key": "predict",
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter ignores the emergency stop, so the line keeps running; stop every output while EStopOk is FALSE, light Red, keep the stop remembered after the release and run the line again only with a new press of Start.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter ignores the emergency stop, so the line keeps running; stop every output while EStopOk is FALSE, light Red, keep the line stopped after the release and run it again only with a new press of Start.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -42,20 +42,20 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "The AT assertions pin the stop at 16 s, the held stop at 17.3 s and the restart at 18 s; the interlocks that were already in the program are the same idea as in the 2.0 lesson interlock-guard-permissive.",
-      "checkpoint": "This is a stop written in the PLC program, not a safety-rated circuit, so it is not a safety function and it gives no stopping time. The grade cannot see a lift that drifts after the stop."
+      "checkpoint": "This stop is only what the program does with the EStopOk signal: it is not an emergency-stop circuit and it gives no stopping time. The grade cannot see a lift that keeps rising a little after the stop."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Put the Start rungs first and the stop rungs after them: the stop rungs, on a normally closed contact of EStopOk, set Stopped and reset Active, so the stop wins in the same scan; the Start rungs set Active and reset Stopped only in series with EStopOk."
+      "text": "Look at 17.3 s, after the button is released: EStopOk is TRUE again, yet Red is still lit and the outputs are still off. Which variable of your program can say that, and what makes it change?"
     },
     {
       "level": 2,
-      "text": "Light Red from Stopped; the outputs already depend on Active, so no output needs its own stop logic."
+      "text": "Add a local BOOL variable Stopped. Draw the Start rungs first: with a normally open contact of Start in series with one of EStopOk, one rung sets Active and another resets Stopped. Then draw the stop rungs after them: with a normally closed contact of EStopOk, one rung sets Stopped and another resets Active, so the stop wins in the same scan. Light Red from Stopped with a contact and a coil. Every output already depends on Active, so no output needs its own stop logic."
     }
   ],
   "faultCases": [
-    "The starter ignores the emergency stop, so the line keeps running; stop every output while EStopOk is FALSE, light Red, keep the stop remembered after the release and run the line again only with a new press of Start."
+    "The starter ignores the emergency stop, so the line keeps running; stop every output while EStopOk is FALSE, light Red, keep the line stopped after the release and run it again only with a new press of Start."
   ]
 }
