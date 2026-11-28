@@ -1,8 +1,8 @@
 ## The machine
 
-This station runs a fixed batch of three boxes across a belt conveyor. Pressing `StartButton` starts the batch: `Emitter1` places boxes onto the left end of `Belt1` one at a time, `EyeIn` sees each box as it enters the belt, `EyeOut` sees each box near the discharge end, `Remover1` takes each box off the far end, and `DoneLight` lights up once the whole batch has been unloaded.
+This station runs a fixed batch of three boxes across a belt conveyor. Pressing `StartButton` starts the batch: `Emitter1` places boxes onto the left end of `Belt1` one at a time, `EyeIn` sees each box 0.7 m after the emitter, `EyeOut` sees each box near the discharge end, `Remover1` takes away every box that reaches the far end, and `DoneLight` lights once the third box has reached `EyeOut`.
 
-![The counted-queue scene seen from the front. A belt conveyor on legs runs from left to right. On the left end, four cyan corner marks show where Emitter1 places a box, with StartButton on a pedestal behind the belt. Two diffuse optical sensors, EyeIn near the entry and EyeOut near the exit, stand behind the belt looking across it. Behind the right end stands DoneLight on a pedestal, and at the far right end a metal bin labeled Remover1 collects the boxes. Each wired part has a label with its name, its kind and its signal; Remover1 is labeled as not wired.](images/machine.en.png)
+![The counted-queue scene seen from the front. A belt conveyor on legs runs from left to right. On the left end, four cyan corner marks show where Emitter1 places a box, with StartButton on a pedestal behind the belt. Two diffuse optical sensors, EyeIn near the entry and EyeOut near the exit, stand behind the belt looking across it. Behind the right end stands DoneLight on a pedestal, and at the far right end a metal bin labeled Remover1 collects the boxes. Each wired part has a label with its name, its kind and its signal; Remover1 has no signal.](images/machine.en.png)
 
 The station has seven parts. The tables say what each one is in a real plant and what its signal means to your program. The PLC variable is the name the program uses: the plant map of the lesson binds each signal of the scene to it.
 
@@ -35,17 +35,17 @@ A sensor stays TRUE for dozens of scans while a single box moves through its bea
 On a belt that both loads and unloads a batch, one count is not enough:
 
 - **Loading count**: when the third box enters the belt, the emitter must stop releasing new boxes — otherwise a fourth box would enter the line.
-- **Unloading count**: at that moment the third box has just entered the belt and is still travelling toward the far end. If the belt stopped when the loading count reached 3, boxes would be left stranded on the belt. The belt must keep running until all three boxes have passed `EyeOut`.
+- **Unloading count**: at that moment the third box has just entered the belt and is still travelling toward the far end. If the belt stopped when the loading count reached 3, boxes would be left stranded on the belt. The belt must keep running until the third box reaches `EyeOut`.
 
 ```timing
 span: 20000
 signals:
   - { name: Start, edges: [200, 400] }
-  - { name: EyeIn, edges: [600, 1400, 2200, 3000, 3800, 4600] }
-  - { name: EyeOut, edges: [6400, 7200, 8000, 8800, 9600, 10400] }
-  - { name: Run, edges: [200, 9600] }
-  - { name: Done, edges: [9600, 20000] }
-caption: Three boxes pass EyeIn while loading, then pass EyeOut; Run stays ON until the third box reaches EyeOut, when Done turns ON
+  - { name: EyeIn, edges: [1450, 2250, 3300, 4100, 5150, 5950] }
+  - { name: EyeOut, edges: [4050, 4850, 5900, 6700, 7750, 20000] }
+  - { name: Run, edges: [200, 7750] }
+  - { name: Done, edges: [7750, 20000] }
+caption: The loading and unloading counts overlap, and the belt stops with the third box still in EyeOut's beam, when Done turns ON
 ```
 
 Because `Emit` releases one item on each rising edge, releasing three boxes means creating three separate rising edges, spaced far enough apart that each box has moved clear before the next one is placed on the belt.
@@ -67,11 +67,11 @@ END_PROGRAM
 
 Read it from the top. `PackCount` is declared as a `CTU` instance in `VAR` and called on every scan. Each bottle produces one rising edge on `BottleEye`, so `PackCount.CV` steps from 0 to 6 once per bottle regardless of how many scans the bottle spends in the beam. While `PackCount.Q` is FALSE, `FeedGate` is TRUE and `CartonFull` is FALSE. On the sixth rising edge, `PackCount.Q` turns TRUE, which lights `CartonFull` and closes `FeedGate` in the same scan. Pressing `NewCarton` sets `R` to TRUE, which clears `CV` to 0 and `Q` to FALSE.
 
-This chute has only one point to count and a gate that stays open on its own. The belt station of the practice has to remember that a short start press began the batch, pace the emitter so boxes do not collide, and keep the belt running after the third box is loaded until all three boxes have been unloaded. Those decisions are yours to make.
+This chute has only one point to count and a gate that stays open on its own. The belt station of the practice has to remember that a short start press began the batch, pace the emitter so boxes do not collide, and keep the belt running after the third box is loaded until the third box reaches `EyeOut`. Those decisions are yours to make.
 
 ## Common mistakes
 
-- Stopping the belt as soon as the loading counter reaches 3. The third box has only just entered the belt and never reaches `EyeOut` or `Remover1`.
+- Stopping the belt as soon as the loading counter reaches 3. The third box has only just entered the belt and never reaches `EyeOut`.
 - Holding `Emit` TRUE continuously. `Emitter1` only releases one box per rising edge; a signal that never returns to FALSE never triggers a second box.
 - Triggering the next box before the previous one clears the loading zone. Two boxes overlap at the emitter and collide.
 - Calling a `CTU` inside an `IF` that stops running. A counter must be called on every scan so it sees both the FALSE and TRUE levels that form each rising edge.
@@ -99,4 +99,4 @@ options:
 
 ## What you will do in the practice
 
-The starting program declares the inputs `Start`, `EyeIn` and `EyeOut` and the outputs `Run`, `Emit` and `Done`, with an empty body. The scenario presses `Start` at {{t:200}} ms and releases it at {{t:400}} ms. You will load three boxes one at a time without collisions, unload all three into `Remover1` within {{t:20000}} ms, and stop the belt with `Done` lit at {{t:20000}} ms. Then press {{ui:learn.check}}.
+The starting program declares the inputs `Start`, `EyeIn` and `EyeOut` and the outputs `Run`, `Emit` and `Done`, with an empty body. The scenario presses `Start` at {{t:200}} ms and releases it at {{t:400}} ms. You will load three boxes one at a time without collisions, deliver boxes into `Remover1` with none dropped or colliding, and stop the belt with `Done` lit by {{t:20000}} ms, once the third box has reached `EyeOut`. Then press {{ui:learn.check}}.

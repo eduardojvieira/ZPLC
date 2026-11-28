@@ -1,8 +1,8 @@
 ## La máquina
 
-Esta estación ejecuta un lote fijo de tres cajas a lo largo de una cinta transportadora. Al accionar `StartButton` comienza el lote: `Emitter1` coloca cajas en el extremo izquierdo de `Belt1` una a la vez, `EyeIn` ve cada caja al entrar en la cinta, `EyeOut` ve cada caja cerca del extremo de salida, `Remover1` retira cada caja al final y `DoneLight` se enciende cuando todo el lote ha sido descargado.
+Esta estación ejecuta un lote fijo de tres cajas a lo largo de una cinta transportadora. Al accionar `StartButton` comienza el lote: `Emitter1` coloca cajas en el extremo izquierdo de `Belt1` una a la vez, `EyeIn` ve cada caja a 0,7 m del emisor, `EyeOut` ve cada caja cerca del extremo de salida, `Remover1` retira toda caja que llega al extremo final y `DoneLight` se enciende cuando la tercera caja ha llegado a `EyeOut`.
 
-![La escena de cola contada vista de frente. Una cinta transportadora sobre patas va de izquierda a derecha. En el extremo izquierdo, cuatro marcas cian en las esquinas muestran dónde Emitter1 coloca una caja, con StartButton sobre un pedestal detrás de la cinta. Dos sensores ópticos difusos, EyeIn cerca de la entrada y EyeOut cerca de la salida, están detrás de la cinta mirando a través de ella. Detrás del extremo derecho está DoneLight sobre un pedestal, y en el extremo derecho un contenedor metálico llamado Remover1 recoge las cajas. Cada elemento cableado tiene una etiqueta con su nombre, su tipo y su señal; Remover1 aparece etiquetado como no cableado.](images/machine.es.png)
+![La escena de cola contada vista de frente. Una cinta transportadora sobre patas va de izquierda a derecha. En el extremo izquierdo, cuatro marcas cian en las esquinas muestran dónde Emitter1 coloca una caja, con StartButton sobre un pedestal detrás de la cinta. Dos sensores ópticos difusos, EyeIn cerca de la entrada y EyeOut cerca de la salida, están detrás de la cinta mirando a través de ella. Detrás del extremo derecho está DoneLight sobre un pedestal, y en el extremo derecho un contenedor metálico llamado Remover1 recoge las cajas. Cada elemento cableado tiene una etiqueta con su nombre, su tipo y su señal; Remover1 no tiene señal.](images/machine.es.png)
 
 La estación tiene siete elementos. Las tablas dicen qué es cada uno en una planta real y qué significa su señal para su programa. La variable del PLC es el nombre que usa el programa: el mapa de planta de la lección une cada señal de la escena con ella.
 
@@ -35,17 +35,17 @@ Un sensor permanece en TRUE durante decenas de ciclos de escaneo mientras una so
 En una cinta que carga y descarga un lote, una sola cuenta no basta:
 
 - **Cuenta de carga**: cuando la tercera caja entra en la cinta, el emisor debe dejar de soltar cajas nuevas; de lo contrario entraría una cuarta caja en la línea.
-- **Cuenta de descarga**: en ese instante la tercera caja acaba de entrar en la cinta y todavía viaja hacia el extremo. Si la cinta se detuviera al llegar la cuenta de carga a 3, quedarían cajas detenidas sobre la cinta. La cinta debe seguir en marcha hasta que las tres cajas hayan pasado por `EyeOut`.
+- **Cuenta de descarga**: en ese instante la tercera caja acaba de entrar en la cinta y todavía viaja hacia el extremo. Si la cinta se detuviera al llegar la cuenta de carga a 3, quedarían cajas detenidas sobre la cinta. La cinta debe seguir en marcha hasta que la tercera caja llegue a `EyeOut`.
 
 ```timing
 span: 20000
 signals:
   - { name: Start, edges: [200, 400] }
-  - { name: EyeIn, edges: [600, 1400, 2200, 3000, 3800, 4600] }
-  - { name: EyeOut, edges: [6400, 7200, 8000, 8800, 9600, 10400] }
-  - { name: Run, edges: [200, 9600] }
-  - { name: Done, edges: [9600, 20000] }
-caption: Tres cajas pasan por EyeIn durante la carga y luego por EyeOut; Run sigue en ON hasta que la tercera caja llega a EyeOut, cuando Done se enciende
+  - { name: EyeIn, edges: [1450, 2250, 3300, 4100, 5150, 5950] }
+  - { name: EyeOut, edges: [4050, 4850, 5900, 6700, 7750, 20000] }
+  - { name: Run, edges: [200, 7750] }
+  - { name: Done, edges: [7750, 20000] }
+caption: Las cuentas de carga y descarga se solapan, y la cinta se detiene con la tercera caja todavía en el haz de EyeOut, cuando Done se enciende
 ```
 
 Como `Emit` suelta una pieza en cada flanco ascendente, soltar tres cajas significa generar tres flancos ascendentes separados, con espacio suficiente para que cada caja se haya alejado antes de colocar la siguiente sobre la cinta.
@@ -67,11 +67,11 @@ END_PROGRAM
 
 Léalo desde arriba. `PackCount` se declara como una instancia `CTU` en `VAR` y se llama en cada ciclo de escaneo. Cada botella produce un flanco ascendente en `BottleEye`, de modo que `PackCount.CV` avanza de 0 a 6 una vez por botella sin importar cuántos ciclos pase la botella en el haz. Mientras `PackCount.Q` es FALSE, `FeedGate` es TRUE y `CartonFull` es FALSE. En el sexto flanco ascendente, `PackCount.Q` pasa a TRUE, lo que enciende `CartonFull` y cierra `FeedGate` en el mismo ciclo. Accionar `NewCarton` pone `R` en TRUE, lo que borra `CV` a 0 y `Q` a FALSE.
 
-Esta tolva solo tiene un punto donde contar y una compuerta que permanece abierta por sí sola. La estación de cinta de la práctica tiene que recordar que una pulsación corta de inicio comenzó el lote, espaciar el emisor para que las cajas no choquen y mantener la cinta en marcha después de cargar la tercera caja hasta que las tres se hayan descargado. Esas decisiones quedan para usted.
+Esta tolva solo tiene un punto donde contar y una compuerta que permanece abierta por sí sola. La estación de cinta de la práctica tiene que recordar que una pulsación corta de inicio comenzó el lote, espaciar el emisor para que las cajas no choquen y mantener la cinta en marcha después de cargar la tercera caja hasta que la tercera caja llegue a `EyeOut`. Esas decisiones quedan para usted.
 
 ## Errores comunes
 
-- Detener la cinta en cuanto el contador de carga llega a 3. La tercera caja acaba de entrar en la cinta y nunca llega a `EyeOut` ni a `Remover1`.
+- Detener la cinta en cuanto el contador de carga llega a 3. La tercera caja acaba de entrar en la cinta y nunca llega a `EyeOut`.
 - Mantener `Emit` en TRUE de forma continua. `Emitter1` solo suelta una caja por cada flanco ascendente; una señal que nunca vuelve a FALSE nunca dispara una segunda caja.
 - Disparar la caja siguiente antes de que la anterior salga de la zona de carga. Dos cajas se superponen en el emisor y chocan.
 - Llamar un `CTU` dentro de un `IF` que deja de ejecutarse. Un contador debe llamarse en cada ciclo de escaneo para ver tanto el nivel FALSE como el nivel TRUE que forman cada flanco ascendente.
@@ -99,4 +99,4 @@ options:
 
 ## Qué hará en la práctica
 
-El proyecto inicial declara las entradas `Start`, `EyeIn` y `EyeOut` y las salidas `Run`, `Emit` y `Done`, con el cuerpo vacío. El escenario acciona `Start` a los {{t:200}} ms y lo suelta a los {{t:400}} ms. Usted cargará tres cajas una a la vez sin colisiones, descargará las tres en `Remover1` dentro de los {{t:20000}} ms y detendrá la cinta con `Done` encendido a los {{t:20000}} ms. Después pulse {{ui:learn.check}}.
+El proyecto inicial declara las entradas `Start`, `EyeIn` y `EyeOut` y las salidas `Run`, `Emit` y `Done`, con el cuerpo vacío. El escenario acciona `Start` a los {{t:200}} ms y lo suelta a los {{t:400}} ms. Usted cargará tres cajas una a la vez sin colisiones, entregará cajas en `Remover1` sin que ninguna caiga ni choque y detendrá la cinta con `Done` encendido antes de los {{t:20000}} ms, una vez que la tercera caja haya llegado a `EyeOut`. Después pulse {{ui:learn.check}}.
