@@ -143,9 +143,9 @@ for (const lesson of packages) {
   const { manifest, scenario, checks } = lesson;
   const limit = platformLimit(NO_COMMUNICATION_ON_WINDOWS, lesson.id);
   /** A case that needs the communication peers: a skip named with its reason where the platform has none. */
-  const itPeers = (limit
-    ? (name: string, ...rest: unknown[]) => (it.skip as (...args: unknown[]) => unknown)(`${name} (${limit})`, ...rest)
-    : itNative) as typeof itNative;
+  const itPeers = (
+    limit ? (name: string, ...rest: unknown[]) => (it.skip as (...args: unknown[]) => unknown)(`${name} (${limit})`, ...rest) : itNative
+  ) as typeof itNative;
   const starterRoot = join(PROJECTS_DIRECTORY, manifest.starter.project);
 
   describe(`lesson ${manifest.id} (LRN-025)`, () => {
