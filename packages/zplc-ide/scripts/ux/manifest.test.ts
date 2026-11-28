@@ -2,7 +2,18 @@ import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 
 import { markerOf, plan } from './capture';
-import { captureName, captureRecord, conditionName, conditionsFor, manifestText, parseScreens, type Condition } from './manifest';
+import {
+  captureName,
+  captureRecord,
+  conditionName,
+  conditionsFor,
+  lessonCaptureName,
+  lessonConditions,
+  lessonPlan,
+  manifestText,
+  parseScreens,
+  type Condition,
+} from './manifest';
 import type { Measurement } from './measurement';
 
 const screens = readFileSync(new URL('../../../../specs/014-zplc-2-1-release-quality/screens.md', import.meta.url), 'utf8');
@@ -157,5 +168,27 @@ describe('the names and the manifest of a capture run (UXV-003)', () => {
     for (const id of ['editor.ld', 'editor.st', 'editor.il', 'editor.fbd', 'editor.sfc'])
       expect(reached.find((entry) => entry.surface.id === id)?.open).toBeTruthy();
     expect(unreached.find((entry) => entry.surface === 'dialog.importArchive')?.reason).toContain('Welcome');
+  });
+});
+
+describe('the lessons of UXV-007', () => {
+  const lessons = [
+    { id: 'b', module: 1, order: 2, reading: true },
+    { id: 'a', module: 1, order: 1, reading: false },
+    { id: 'c', module: 0, order: 5, reading: true },
+  ];
+
+  test('UXV-007 every lesson is planned in course order, with a reading only when it has one, and an exercise always', () => {
+    expect(lessonPlan(lessons).map((entry) => [entry.id, entry.kinds])).toEqual([
+      ['c', ['reading', 'exercise']],
+      ['a', ['exercise']],
+      ['b', ['reading', 'exercise']],
+    ]);
+  });
+
+  test('UXV-007 a capture is named lesson.<id>.<kind>--<condition>; readings also get the smallest window in Spanish', () => {
+    expect(lessonCaptureName('ld-edges', 'reading', base)).toBe('lesson.ld-edges.reading--1440x900-light-en');
+    expect(lessonConditions('reading').map(conditionName)).toEqual(['1440x900-light-en', '1440x900-light-es', '1024x768-light-es']);
+    expect(lessonConditions('exercise').map(conditionName)).toEqual(['1440x900-light-en', '1440x900-light-es']);
   });
 });

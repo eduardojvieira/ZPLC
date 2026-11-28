@@ -100,6 +100,32 @@ export function conditionsFor(surface: Surface): Condition[] {
   return set;
 }
 
+export type LessonKind = 'reading' | 'exercise';
+
+/** The lessons in course order (module, then order in the module), each with the surfaces it has: a reading only when it has one. */
+export function lessonPlan(
+  lessons: Array<{ id: string; module: number; order: number; reading: boolean }>,
+): Array<{ id: string; kinds: LessonKind[] }> {
+  return [...lessons]
+    .sort((a, b) => a.module - b.module || a.order - b.order || (a.id < b.id ? -1 : 1))
+    .map((lesson) => ({ id: lesson.id, kinds: lesson.reading ? ['reading', 'exercise'] : ['exercise'] }));
+}
+
+export const lessonCaptureName = (id: string, kind: LessonKind, condition: Condition): string =>
+  `lesson.${id}.${kind}--${conditionName(condition)}`;
+
+/** UXV-007: both languages at 1440 by 900, and a reading also in the longest language at the smallest window (D-36). */
+export function lessonConditions(kind: LessonKind): Condition[] {
+  const at = (width: number, height: number, locale: Condition['locale']): Condition => ({
+    width,
+    height,
+    theme: 'light',
+    locale,
+    density: 'comfortable',
+  });
+  return [at(1440, 900, 'en'), at(1440, 900, 'es'), ...(kind === 'reading' ? [at(1024, 768, 'es')] : [])];
+}
+
 export interface CaptureRecord {
   name: string;
   surface: string;
