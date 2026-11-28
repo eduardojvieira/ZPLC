@@ -1,29 +1,29 @@
 {
   "schemaVersion": 1,
-  "title": "Flancos en escalera: contactos P y N y pulsos de un escaneo",
+  "title": "Flancos en escalera: contactos P y N y pulsos de un ciclo",
   "summary": "Use un contacto de flanco ascendente y un contacto de flanco descendente para que una caja en un transportador dé un pulso al llegar y otro al salir, sin importar cuánto tiempo siga activo el sensor.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un sensor real, con qué rapidez responde ni cómo se cablea.",
   "objectives": [
-    "Use un contacto de flanco ascendente (P) y un contacto de flanco descendente (N) para convertir un nivel en un pulso de un escaneo.",
-    "Explique por qué una entrada retenida debe contarse una sola vez y qué escaneo ve el pulso."
+    "Convierta un nivel en un pulso de un ciclo al empezar y en un pulso de un ciclo al terminar.",
+    "Explique por qué una entrada retenida debe contarse una sola vez y qué ciclo ve el pulso."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/BoxEdges.ld.json dos peldaños copian BoxSensor a BoxArrived y a BoxLeft. Haga que BoxArrived pulse durante un escaneo cuando llega una caja, y que BoxLeft pulse durante un escaneo cuando sale, sin importar cuánto tiempo siga activo el sensor.",
-      "checkpoint": "Usted puede decir qué contacto conduce solo en el escaneo en que su variable se activa, y cuál solo en el escaneo en que se desactiva."
+      "body": "En src/BoxEdges.ld.json dos peldaños copian BoxSensor a BoxArrived y a BoxLeft. Haga que BoxArrived pulse durante un ciclo cuando llega una caja, y que BoxLeft pulse durante un ciclo cuando sale, sin importar cuánto tiempo siga activo el sensor.",
+      "checkpoint": "Usted puede decir qué contacto conduce solo en el ciclo en que su variable se activa, y cuál solo en el ciclo en que se desactiva."
     },
     {
       "key": "predict",
       "title": "Prediga",
       "body": "Una caja bloquea el sensor desde los {{t:10}} hasta los {{t:70}} ms. Una segunda caja lo bloquea desde los {{t:100}} hasta los {{t:110}} ms. Prediga BoxArrived a los {{t:10}}, {{t:20}} y {{t:60}} ms, y BoxLeft a los {{t:70}} ms.",
-      "checkpoint": "{{v:BoxEdges.BoxArrived=true@10|En ON}} a los {{t:10}} ms, el escaneo de la llegada; {{v:BoxEdges.BoxArrived=false@20|en OFF}} a los {{t:20}} ms y {{v:BoxEdges.BoxArrived=false@60|en OFF}} a los {{t:60}} ms, aunque la caja sigue allí; {{v:BoxEdges.BoxLeft=true@70|en ON}} para BoxLeft a los {{t:70}} ms."
+      "checkpoint": "{{v:BoxEdges.BoxArrived=true@10|En ON}} a los {{t:10}} ms, el ciclo de la llegada; {{v:BoxEdges.BoxArrived=false@20|en OFF}} a los {{t:20}} ms y {{v:BoxEdges.BoxArrived=false@60|en OFF}} a los {{t:60}} ms, aunque la caja sigue allí; {{v:BoxEdges.BoxLeft=true@70|en ON}} para BoxLeft a los {{t:70}} ms."
     },
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial copia el sensor a las dos bobinas, así que BoxArrived sigue en ON a los {{t:20}} ms, mientras la caja está ahí, y BoxLeft nunca pasa a ON. Cámbielo para que BoxArrived esté en ON solo en el escaneo en que llega una caja, y BoxLeft solo en el escaneo en que sale. Conserve los dos peldaños y las dos bobinas.",
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial copia el sensor a las dos bobinas, así que BoxArrived sigue en ON a los {{t:20}} ms, mientras la caja está ahí, y BoxLeft nunca pasa a ON. Cámbielo para que BoxArrived esté en ON solo en el ciclo en que llega una caja, y BoxLeft solo en el ciclo en que sale. Conserve los dos peldaños y las dos bobinas.",
       "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
@@ -35,7 +35,7 @@
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Compare los {{t:10}}, {{t:20}} y {{t:70}} ms: cada salida está en ON durante exactamente un escaneo, el escaneo en que el sensor cambia, y luego vuelve a OFF aunque el sensor no cambie.",
+      "body": "Compare los {{t:10}}, {{t:20}} y {{t:70}} ms: cada salida está en ON durante exactamente un ciclo, el ciclo en que el sensor cambia, y luego vuelve a OFF aunque el sensor no cambie.",
       "checkpoint": "BoxArrived sube a los {{t:10}} ms y baja a los {{t:20}} ms; BoxLeft sube a los {{t:70}} ms y baja a los {{t:80}} ms."
     },
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Un contacto simple es verdadero mientras su variable sea verdadera. ¿Qué tipo de contacto es verdadero solo en el escaneo en que su variable cambia?"
+      "text": "Mire qué muestra cada bobina mientras la caja sigue frente al sensor, y en qué único ciclo corresponde cada pulso."
     },
     {
       "level": 2,

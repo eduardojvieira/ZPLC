@@ -5,7 +5,7 @@
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Read a Function Block Diagram: blocks are joined by wires from an output port to an input port, and each output shows the result of the blocks wired to it.",
-    "Wire AND, NOT and XOR blocks so that an output is ON only when several inputs are ON together, when one input is OFF, or when exactly one of two inputs is ON."
+    "Choose and wire logic blocks so that each output is ON exactly in the situations its sentence names."
   ],
   "stages": [
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "AND is ON only when every input is ON, and an AND block has two inputs, so a second AND block adds the guard."
+      "text": "Look at the block that drives PressEnable in the starting diagram, and at what the two lamps are wired to now."
     },
     {
       "level": 2,

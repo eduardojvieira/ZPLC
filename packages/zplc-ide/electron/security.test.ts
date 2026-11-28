@@ -719,7 +719,8 @@ describe('Electron security boundary', () => {
       { workspaceId, mode: 'edit', prompt: 'x', activeFile: { fileId: 'x', path: 'src/Main.st' }, source: 'secret' },
       { workspaceId, mode: 'edit', prompt: 'x', activeFile: { fileId: 'file:src/Other.st', path: 'src/Main.st' } },
       { workspaceId, mode: 'ask', prompt: 'x'.repeat(4097) },
-      { workspaceId, mode: 'plan', prompt: 'x', diagnostics: [] },
+      // a trace goes with a debug request only; the diagnostics of the project go with every mode (AIX-001)
+      { workspaceId, mode: 'plan', prompt: 'x', trace: [] },
       { workspaceId, mode: 'debug', prompt: 'x', terminal: 'serial' },
       { workspaceId, mode: 'debug', prompt: 'x', diagnostics: Array(33).fill({ code: 'E' }) },
     ])
@@ -1098,5 +1099,24 @@ describe('the packaged renderer document is named by its canonical folder', () =
     expect(canonicalRendererFile(`${short}\\app.asar\\dist\\index.html`, short, unreadable, win32)).toBe(
       `${short}\\app.asar\\dist\\index.html`,
     );
+  });
+});
+
+describe('the follow-up history of an assistant request (AI-18)', () => {
+  const workspaceId = '0f2ce877-e0d6-43ca-89a7-df17a4927f51';
+  const turn = (role: string, text = 'hello') => ({ role, text });
+  const ask = (history: unknown) => isAllowedAiProviderRequest({ workspaceId, mode: 'ask', prompt: 'And then?', history });
+
+  it('AI-18 admits at most three exchanges of plain user and assistant text', () => {
+    expect(ask([turn('user'), turn('assistant')])).toBe(true);
+    expect(ask(Array.from({ length: 6 }, (_, n) => turn(n % 2 === 0 ? 'user' : 'assistant')))).toBe(true);
+    expect(ask(Array.from({ length: 7 }, (_, n) => turn(n % 2 === 0 ? 'user' : 'assistant')))).toBe(false);
+  });
+
+  it('AI-18 refuses a system role, an extra field, an empty or an oversized text', () => {
+    expect(ask([turn('system')])).toBe(false);
+    expect(ask([{ role: 'user', text: 'x', extra: 1 }])).toBe(false);
+    expect(ask([turn('user', '')])).toBe(false);
+    expect(ask([turn('user', 'x'.repeat(2049))])).toBe(false);
   });
 });

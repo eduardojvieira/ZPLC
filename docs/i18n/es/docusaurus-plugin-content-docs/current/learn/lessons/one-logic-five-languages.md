@@ -26,7 +26,7 @@ Corrija un programa en texto estructurado para que un portón se mantenga abiert
 ## Objetivos
 
 - Mantenga una salida encendida después de soltar su solicitud, y deje que la orden de cierre tenga prioridad, en texto estructurado.
-- Reconozca la misma condición, (Request OR Open) AND NOT Close, en lista de instrucciones, diagrama de escalera, diagrama de bloques de función y diagrama funcional secuencial.
+- Reconozca la misma condición de retención y cierre en lista de instrucciones, diagrama de escalera, diagrama de bloques de función y diagrama funcional secuencial.
 
 ## Etapas
 

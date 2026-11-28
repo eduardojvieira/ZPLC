@@ -298,3 +298,36 @@ describe('the site footer names the latest release', () => {
     expect(await footer(undefined)).toContain(`ZPLC v${version}.`);
   });
 });
+
+describe('the version label of the site comes from the same release tag as the footer (PUB-005)', () => {
+  const label = async (tag: string | undefined) => {
+    const previous = process.env.ZPLC_RELEASE_TAG;
+    if (tag === undefined) delete process.env.ZPLC_RELEASE_TAG;
+    else process.env.ZPLC_RELEASE_TAG = tag;
+    try {
+      const config = (await import(`../../docs/docusaurus.config.js?label=${tag ?? 'none'}`)).default as {
+        presets: Array<[string, { docs: { versions: { current: { label: string } } } }]>;
+      };
+      return config.presets[0]![1].docs.versions.current.label;
+    } finally {
+      if (previous === undefined) delete process.env.ZPLC_RELEASE_TAG;
+      else process.env.ZPLC_RELEASE_TAG = previous;
+    }
+  };
+
+  it('names major.minor of the tag, whatever its patch or prerelease part', async () => {
+    expect(await label('v2.1.0')).toBe('2.1');
+    expect(await label('v2.1.3')).toBe('2.1');
+    expect(await label('v3.0.0-rc.2')).toBe('3.0');
+  });
+
+  it('names major.minor of the version of the tree when no tag is passed', async () => {
+    const { version } = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as { version: string };
+    expect(await label(undefined)).toBe(version.split('.').slice(0, 2).join('.'));
+  });
+
+  it('has no version label written by hand', () => {
+    const config = readFileSync(new URL('../../docs/docusaurus.config.js', import.meta.url), 'utf8');
+    expect(config).not.toMatch(/label:\s*'\d+\.\d+'/);
+  });
+});

@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/DoorAlarm.il each line is an instruction: LD loads an operand into the current result, AND combines it, and ST stores the result in Siren. Add two lines before ST so that Siren holds itself on and Silence turns it off: OR Siren, then ANDN Silence.",
+      "body": "In src/DoorAlarm.il each line is an instruction: LD loads an operand into the current result, AND combines it, and ST stores the result in Siren. Siren must hold itself on once it has started, and Silence must turn it off.",
       "checkpoint": "The siren starts when the alarm is armed and the door opens, stays on after the door closes, and goes off when Silence is pressed."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter loads Armed, ANDs it with DoorOpen and stores the result, so Siren follows the door and drops at {{t:30}} ms when the door closes; add OR Siren so the siren holds itself on, then ANDN Silence so that Silence turns it off, in that order.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter makes Siren follow the door, so Siren drops at {{t:30}} ms when the door closes. Siren must stay on after the door closes, until Silence is pressed.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -41,21 +41,19 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "What happens if ANDN Silence comes before OR Siren? Swap the two lines and see which assertion fails.",
-      "checkpoint": "Each instruction works on the result of the lines above it, so OR Siren after ANDN Silence puts the held value back. The scenario shows the logic only; it is not an alarm system."
+      "body": "What happens if the line for Silence comes before the line that holds Siren on? Swap the two lines and see which assertion fails.",
+      "checkpoint": "Each instruction works on the result of the lines above it, so a hold applied after Silence puts the held value back. The scenario shows the logic only; it is not an alarm system."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Siren holds itself on when its own previous value is part of the condition. Which instruction combines the current result with another operand using OR?"
+      "text": "Look at what the current result holds just before ST Siren: only Armed and DoorOpen."
     },
     {
       "level": 2,
-      "text": "LD Armed, AND DoorOpen, OR Siren, ANDN Silence, ST Siren: five lines, one operand each."
+      "text": "LD Armed, AND DoorOpen, OR Siren, ANDN Silence, ST Siren: five lines, one operand each. Siren holds itself on because its own previous value is part of the condition."
     }
   ],
-  "faultCases": [
-    "The starter loads Armed, ANDs it with DoorOpen and stores the result, so Siren follows the door and drops at {{t:30}} ms when the door closes; add OR Siren so the siren holds itself on, then ANDN Silence so that Silence turns it off, in that order."
-  ]
+  "faultCases": ["The starter makes Siren follow the door, so Siren drops at {{t:30}} ms when the door closes."]
 }

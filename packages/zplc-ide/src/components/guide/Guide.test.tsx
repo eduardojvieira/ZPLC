@@ -14,6 +14,9 @@ const { learnLessonCatalog } = await import('../learnLesson');
 const { LearnPanel } = await import('../LearnPanel');
 const { buildCourseView } = await import('../../learn/course');
 const { Guide } = await import('./Guide');
+const { GuideStages } = await import('./GuideStages');
+const { useAssistantEntry } = await import('../../store/useAssistantEntry');
+const { useAssistantProvider } = await import('../../shell/useSelection');
 
 const lessonEntry = LESSON_INDEX.lessons.find((entry) => entry.reading) ?? LESSON_INDEX.lessons[0]!;
 const lesson = learnLessonCatalog.en.find((candidate) => candidate.id === lessonEntry.id)!;
@@ -186,5 +189,346 @@ describe('The Guide (GDE-003)', () => {
     open();
     dom.render(<Guide />);
     if (!lessonEntry.hardware) expect(document.querySelector('[data-guide-board]')).toBeNull();
+  });
+});
+
+describe('With solutions hidden the last hint is hidden too (CRS-017)', () => {
+  const hintTexts = () =>
+    [...dom.screen.getByRole('region', { name: dom.t('learn.hints') }).querySelectorAll('details p')].map((p) => p.textContent);
+  const hide = (hideSolutions: boolean) =>
+    dom.patchStore(useAppSettings, { settings: { ...useAppSettings.getState().settings, hideSolutions } } as never);
+
+  it('CRS-017 hidden: every hint but the last, and the solutions-hidden notice', () => {
+    open();
+    hide(true);
+    dom.render(<Guide />);
+    expect(hintTexts()).toEqual(lesson.hints.slice(0, -1));
+    expect(document.querySelector('[data-learn-solutions-hidden]')).not.toBeNull();
+  });
+
+  it('CRS-017 shown: every hint, as before', () => {
+    open();
+    hide(false);
+    dom.render(<Guide />);
+    expect(hintTexts()).toEqual([...lesson.hints]);
+    expect(document.querySelector('[data-learn-solutions-hidden]')).toBeNull();
+  });
+
+  it('CRS-017 the assistant context gives the same hints as the Guide, in both states', async () => {
+    const { buildProjectContext } = await import('../../ai/projectContext');
+    const context = (solutionsHidden: boolean) =>
+      buildProjectContext({ lesson: { manifest: lessonEntry, text: lessonEntry.text.en } }, { solutionsHidden }).lesson!.hints.map(
+        (hint) => hint.text,
+      );
+    for (const hidden of [true, false]) {
+      open();
+      hide(hidden);
+      const { unmount } = dom.render(<Guide />);
+      expect(hintTexts()).toEqual(context(hidden));
+      unmount();
+    }
+  });
+});
+
+describe('The Guide asks the Assistant for a hint (AIX-003)', () => {
+  it('AIX-003 the hint button opens the Assistant in ask mode with the lesson, and is not offered without a provider', async () => {
+    open();
+    dom.patchStore(useAssistantProvider, { available: false });
+    const first = dom.render(<Guide />);
+    expect(first.queryByRole('button', { name: dom.t('assistant.askHint') })).toBeNull();
+    first.unmount();
+    dom.patchStore(useAssistantProvider, { available: true });
+    const view = dom.render(<Guide />);
+    await view.user.click(view.getByRole('button', { name: dom.t('assistant.askHint') }));
+    const pending = useAssistantEntry.getState().pending;
+    expect(pending?.mode).toBe('ask');
+    expect(pending?.context.fields.lessonContext).toEqual({ lessonId: lesson.id });
+    useAssistantEntry.getState().take();
+  });
+});
+
+describe('Check is one action from the Guide (GDE-004)', () => {
+  const HASH = 'a'.repeat(64);
+  const record = (failed: boolean, target = lesson) => ({
+    schemaVersion: 1,
+    lessonId: target.id,
+    lessonVersion: 1,
+    track: 'simulation',
+    scenarioId: target.requiredScenario,
+    scenarioSha256: HASH,
+    programSha256: HASH,
+    runtimeVersion: '2.1.0',
+    time: '2026-11-20T12:00:00.000Z',
+    result: failed ? 'failed' : 'passed',
+    assertions: { total: 2, passed: failed ? 1 : 2 },
+    failedAssertions: failed ? [{ index: 0, kind: 'AT', atMs: 1200, expected: { Q: true }, observed: { Q: false }, trace: null }] : [],
+  });
+  const modified = { id: 'f1', path: 'src/main.st', name: 'main.st', language: 'ST', content: 'x', isModified: true, diskContent: 'y' };
+  let calls: string[];
+  let requests: unknown[];
+  let tabSpy: string[];
+
+  /** A project with one unsaved document, a host whose lesson check answers `answer`, and a spy on the Tests surface. */
+  function openProject(answer: unknown, target = lesson) {
+    calls = [];
+    requests = [];
+    tabSpy = [];
+    host.electronAPI = {
+      ...before,
+      workspaceTests: {
+        cancel: async () => undefined,
+        lessonCheck: async (request: unknown) => {
+          calls.push('check');
+          requests.push(request);
+          return answer;
+        },
+      },
+    };
+    dom.patchStore(useAppSettings, {
+      settings: { ...useAppSettings.getState().settings, unlockAllLessons: true, hideSolutions: false, saveBeforeRun: 'always' },
+    } as never);
+    dom.patchStore(useLearnProgress, { document: null, loaded: true, failed: false, recordGrade: async () => true } as never);
+    dom.patchStore(useLearnUi, {
+      selected: target.id,
+      starting: false,
+      workspace: { lessonId: target.id, session: useIDEStore.getState().projectSession },
+    } as never);
+    dom.patchStore(useIDEStore, {
+      isProjectOpen: true,
+      workspaceScenarioLink: { workspaceId: 'w', projectSession: useIDEStore.getState().projectSession },
+      loadedFiles: new Map([['f1', { ...modified } as never]]),
+      activeConsoleTab: 'output',
+      saveAllFiles: async () => {
+        calls.push('save');
+        useIDEStore.setState({ loadedFiles: new Map([['f1', { ...modified, isModified: false } as never]]) });
+      },
+      setActiveConsoleTab: (tab: string) => tabSpy.push(tab),
+    } as never);
+  }
+
+  it('GDE-004 Check saves, builds, runs the reference scenario and shows the verdict, results panel closed', async () => {
+    openProject({ ok: true, record: record(false) });
+    const view = dom.render(<Guide />);
+    const check = document.querySelector<HTMLButtonElement>('[data-learn-check]')!;
+    expect(check.disabled).toBe(false);
+    await view.user.click(check);
+    await dom.waitFor(() => expect(document.querySelector('[data-learn-grade]')!.getAttribute('data-learn-grade')).toBe('passed'));
+    expect(calls).toEqual(['save', 'check']);
+    expect(document.querySelector('[data-test-verdict-sentence]')).not.toBeNull();
+    expect(useIDEStore.getState().activeConsoleTab).toBe('output');
+  });
+
+  it('GDE-004 a failed expectation is named with its time', async () => {
+    openProject({ ok: true, record: record(true) });
+    const view = dom.render(<Guide />);
+    await view.user.click(document.querySelector('[data-learn-check]')!);
+    await dom.waitFor(() => expect(document.querySelector('[data-learn-failures]')).not.toBeNull());
+    expect(document.querySelector('[data-learn-failures]')!.textContent).toContain('1200 ms');
+    expect(document.querySelector('[data-learn-failures]')!.textContent).toContain('expected');
+  });
+
+  it('GDE-004 Check never opens the Tests surface', async () => {
+    openProject({ ok: true, record: record(true) });
+    const view = dom.render(<Guide />);
+    await view.user.click(document.querySelector('[data-learn-check]')!);
+    await dom.waitFor(() => expect(document.querySelector('[data-learn-grade]')!.getAttribute('data-learn-grade')).toBe('failed'));
+    expect(tabSpy).toEqual([]);
+  });
+
+  it('GDE-004 a refusal is a message in the Guide that says where the Check stopped, and nothing is run', async () => {
+    openProject({ ok: true, record: record(false) });
+    dom.patchStore(useAppSettings, { settings: { ...useAppSettings.getState().settings, saveBeforeRun: 'ask' } } as never);
+    const { mountConfirmHost, answerConfirmation, currentConfirmation } = await import('../../store/actionConfirm');
+    const unmount = mountConfirmHost();
+    const view = dom.render(<Guide />);
+    const click = view.user.click(document.querySelector('[data-learn-check]')!);
+    await dom.waitFor(() => expect(currentConfirmation()).not.toBeNull());
+    dom.act(() => answerConfirmation(false));
+    await click;
+    unmount();
+    await dom.waitFor(() =>
+      expect(document.querySelector('[data-learn-check-status]')!.textContent).toBe(dom.t('u3Guide.check.cancelled')),
+    );
+    expect(calls).toEqual([]);
+    expect(tabSpy).toEqual([]);
+  });
+
+  it('LRN-022 only the reference scenario of the lesson grades: the request names the lesson and nothing of the workspace', async () => {
+    openProject({ ok: true, record: record(false) });
+    const view = dom.render(<Guide />);
+    await view.user.click(document.querySelector('[data-learn-check]')!);
+    await dom.waitFor(() => expect(requests).toHaveLength(1));
+    // the shown-project bridge adds the folder id; the learner's side names no scenario
+    expect(Object.keys(requests[0] as object).sort()).toEqual(['lessonId', 'rootId', 'workspaceId']);
+    expect(requests[0]).toMatchObject({ workspaceId: 'w', lessonId: lesson.id });
+  });
+
+  it('GDE-004 the learn.check command runs the same function as the button', async () => {
+    openProject({ ok: true, record: record(false) });
+    const { runCommand } = await import('../../commands/bus');
+    dom.render(<Guide />);
+    expect(runCommand('learn.check')).toBe('ran');
+    await dom.waitFor(() => expect(calls).toEqual(['save', 'check']));
+  });
+
+  it('GDE-004 a scene lesson is graded on a plant fact: the failure names the fact and its time', async () => {
+    const entry = LESSON_INDEX.lessons.find((candidate) => candidate.scene)!;
+    const sceneLesson = learnLessonCatalog.en.find((candidate) => candidate.id === entry.id)!;
+    const expectations = JSON.parse(entry.scenario.canonical).expectations as Array<{
+      condition: Record<string, unknown>;
+      withinMs?: number;
+    }>;
+    const index = expectations.findIndex((expectation) => Object.keys(expectation.condition).some((key) => key.startsWith('fact:')));
+    const fact = Object.keys(expectations[index]!.condition).find((key) => key.startsWith('fact:'))!;
+    const failed = record(true, sceneLesson);
+    failed.failedAssertions = [
+      {
+        index,
+        kind: 'EVENTUALLY',
+        atMs: expectations[index]!.withinMs ?? 8000,
+        expected: { [fact]: true },
+        observed: { [fact]: false },
+        trace: null,
+      },
+    ] as never;
+    openProject({ ok: true, record: failed }, sceneLesson);
+    const view = dom.render(<Guide />);
+    await view.user.click(document.querySelector('[data-learn-check]')!);
+    await dom.waitFor(() => expect(document.querySelector('[data-learn-failures]')).not.toBeNull());
+    expect(requests[0]).toMatchObject({ lessonId: entry.id });
+    const text = document.querySelector('[data-learn-failures]')!.textContent!;
+    expect(text).toContain(fact);
+    expect(text).toContain(`${failed.failedAssertions[0]!.atMs} ms`);
+  });
+
+  describe('the Windows limit of the simulator communication (known limit of 2.1.0)', () => {
+    const COMM = 'modbus-coil-fbd';
+    const NO_COMM = lesson.id;
+    function openOn(platform: string, id: string) {
+      open();
+      host.electronAPI = { ...host.electronAPI, platform };
+      dom.patchStore(useLearnUi, { selected: id, workspace: { lessonId: id, session: useIDEStore.getState().projectSession } } as never);
+      dom.render(<Guide />);
+    }
+    it('shows the notice on win32 for a lesson that needs Modbus, MQTT, the loopback or the device link', () => {
+      openOn('win32', COMM);
+      const notice = document.querySelector('[data-guide-comm-limit]');
+      expect(notice).not.toBeNull();
+      expect(notice!.textContent).toContain('Windows');
+    });
+    it.each(['linux', 'darwin'])('does not show the notice on %s for that lesson', (platform) => {
+      openOn(platform, COMM);
+      expect(document.querySelector('[data-guide-comm-limit]')).toBeNull();
+    });
+    it('does not show the notice on win32 for a lesson that needs no communication', () => {
+      openOn('win32', NO_COMM);
+      expect(document.querySelector('[data-guide-comm-limit]')).toBeNull();
+    });
+  });
+});
+
+describe('Reflect is listed but locked until a pass or the solution (CRS-017)', () => {
+  const last = lesson.stages.length;
+  const reflect = () => dom.screen.getByRole('button', { name: new RegExp(`^${dom.t('u3Guide.jump', { n: last })}`) }) as HTMLButtonElement;
+  const text = () => dom.t('u3Guide.reflectLocked');
+  const title = () => document.querySelector('[data-guide-stage] h3')!.textContent;
+  const reflectTitle = lesson.stages[last - 1]!.title;
+
+  it('CRS-017 locked with no pass and no solution: the list says what opens it; jump and Next refuse it', async () => {
+    open();
+    const { user } = dom.render(<Guide />);
+    expect(reflect().getAttribute('aria-disabled')).toBe('true');
+    expect(reflect().textContent).toContain(dom.t('u3Guide.locked'));
+    expect(document.getElementById(reflect().getAttribute('aria-describedby')!)!.textContent).toBe(text());
+    reflect().focus();
+    expect(document.activeElement).toBe(reflect());
+    await user.click(reflect());
+    expect(title()).toBe(lesson.stages[0]!.title);
+    const next = dom.screen.getByRole('button', { name: dom.t('u3Guide.next') }) as HTMLButtonElement;
+    for (let i = 0; i < last + 2; i++) if (!next.disabled) await user.click(next);
+    expect(title()).toBe(lesson.stages[last - 2]!.title);
+    expect(next.disabled).toBe(true);
+    expect(dom.screen.queryByText(reflectTitle, { selector: 'h3' })).toBeNull();
+  });
+
+  it('CRS-017 opens after a pass, in the same session and after a remount', async () => {
+    open();
+    const first = dom.render(<Guide />);
+    expect(reflect().getAttribute('aria-disabled')).toBe('true');
+    passed(lesson.id);
+    await dom.waitFor(() => expect(reflect().getAttribute('aria-disabled')).toBeNull());
+    await first.user.click(reflect());
+    expect(title()).toBe(reflectTitle);
+    first.unmount();
+    dom.render(<Guide />);
+    expect(reflect().getAttribute('aria-disabled')).toBeNull();
+  });
+
+  it('CRS-017 opens after choosing to see the solution, and stays open after a remount', async () => {
+    open();
+    const first = dom.render(<Guide />);
+    expect(reflect().getAttribute('aria-disabled')).toBe('true');
+    await first.user.click(dom.screen.getByRole('button', { name: dom.t('u3Guide.solution') }));
+    await first.user.click(dom.screen.getByRole('button', { name: dom.t('learn.solution.action') }));
+    await dom.waitFor(() => expect(reflect().getAttribute('aria-disabled')).toBeNull());
+    await first.user.click(reflect());
+    expect(title()).toBe(reflectTitle);
+    dom.patchStore(useLearnProgress, {
+      document: {
+        schemaVersion: 2,
+        last: null,
+        lessons: {
+          [lesson.id]: {
+            state: 'started',
+            grade: null,
+            passedAt: null,
+            startedAt: null,
+            hintsShown: [],
+            solutionShown: true,
+            hardware: null,
+          },
+        },
+      },
+    } as never);
+    first.unmount();
+    dom.render(<Guide />);
+    expect(reflect().getAttribute('aria-disabled')).toBeNull();
+  });
+});
+
+describe('Reflect is found by its stage key (CRS-017)', () => {
+  const stage = (key: string) => ({ key, title: `T-${key}`, body: `B-${key}`, checkpoint: `C-${key}` });
+  const jump = (n: number) => dom.screen.getByRole('button', { name: new RegExp(`^${dom.t('u3Guide.jump', { n })}`) }) as HTMLButtonElement;
+  const title = () => document.querySelector('[data-guide-stage] h3')!.textContent;
+
+  it('CRS-017 a stage after Reflect: only Reflect is locked; Next stops before it and the later stage is jumpable', async () => {
+    const stages = ['objective', 'reflect', 'extra'].map(stage);
+    const { user } = dom.render(<GuideStages stages={stages} reflectOpen={false} />);
+    expect(jump(1).getAttribute('aria-disabled')).toBeNull();
+    expect(jump(2).getAttribute('aria-disabled')).toBe('true');
+    expect(jump(3).getAttribute('aria-disabled')).toBeNull();
+    const next = dom.screen.getByRole('button', { name: dom.t('u3Guide.next') }) as HTMLButtonElement;
+    expect(next.disabled).toBe(true);
+    await user.click(jump(3));
+    expect(title()).toBe('T-extra');
+    const back = dom.screen.getByRole('button', { name: dom.t('u3Guide.back') }) as HTMLButtonElement;
+    await user.click(back);
+    expect(title()).toBe('T-objective');
+  });
+
+  it('CRS-017 with Reflect open, Next walks through Reflect to the later stage', async () => {
+    const stages = ['objective', 'reflect', 'extra'].map(stage);
+    const { user } = dom.render(<GuideStages stages={stages} reflectOpen />);
+    const next = dom.screen.getByRole('button', { name: dom.t('u3Guide.next') });
+    await user.click(next);
+    expect(title()).toBe('T-reflect');
+    await user.click(next);
+    expect(title()).toBe('T-extra');
+  });
+
+  it('CRS-017 a lesson without Reflect locks nothing', () => {
+    dom.render(<GuideStages stages={['objective', 'run'].map(stage)} reflectOpen={false} />);
+    expect(document.querySelector('[data-guide-stage-locked]')).toBeNull();
+    expect(jump(2).getAttribute('aria-disabled')).toBeNull();
   });
 });

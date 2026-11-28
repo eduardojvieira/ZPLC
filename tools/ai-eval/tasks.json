@@ -1,0 +1,228 @@
+{
+  "schemaVersion": 1,
+  "tasks": [
+    {
+      "id": "st-write",
+      "language": "ST",
+      "type": "write",
+      "level": "must",
+      "title": "ST write: plant_belt_to_sensor_starter + plant_belt_to_sensor",
+      "prompt": "Complete the Structured Text program src/BeltToSensor.st in this ZPLC project so that the scenario \"belt-to-sensor\" in tests/ passes. Goal: a press of the start button puts a box on the belt and runs it; the belt stops when the box reaches the far sensor. Take the signal names from the plant map and the comments of the program. Do not edit tests/, scene.json or plant-map.json.",
+      "program": "src/BeltToSensor.st",
+      "scenarioId": "belt-to-sensor",
+      "failure": "scenario",
+      "source": "plant_belt_to_sensor_starter + plant_belt_to_sensor",
+      "grading": "compilerCheck and scenarioRun pass"
+    },
+    {
+      "id": "il-write",
+      "language": "IL",
+      "type": "write",
+      "level": "must",
+      "title": "IL write: plant_colour_separation_il_starter + plant_colour_separation_il",
+      "prompt": "Complete the Instruction List program src/ColourSeparation.il in this ZPLC project so that the scenario \"colour-separation\" in tests/ passes. Goal: a press of the start button runs the three belts; eight red or blue workpieces arrive one at a time, the blade stops each in front of the colour sensor, a red one is pushed onto the side belt and a blue one rides on; light Busy while the line runs and Done after the eighth. Take the signal names from the plant map and the comments of the program. Do not edit tests/, scene.json or plant-map.json.",
+      "program": "src/ColourSeparation.il",
+      "scenarioId": "colour-separation",
+      "failure": "scenario",
+      "source": "plant_colour_separation_il_starter + plant_colour_separation_il",
+      "grading": "compilerCheck and scenarioRun pass"
+    },
+    {
+      "id": "ld-write",
+      "language": "LD",
+      "type": "write",
+      "level": "must",
+      "title": "LD write: plant_belt_to_sensor_ladder_starter + plant_belt_to_sensor_ladder",
+      "prompt": "Complete the Ladder Diagram program src/BeltToSensor.ld.json in this ZPLC project so that the scenario \"belt-to-sensor\" in tests/ passes. Goal: start a belt with a button press and stop it when a box reaches the sensor. Take the signal names from the plant map and the comments of the program. Do not edit tests/, scene.json or plant-map.json.",
+      "program": "src/BeltToSensor.ld.json",
+      "scenarioId": "belt-to-sensor",
+      "failure": "scenario",
+      "source": "plant_belt_to_sensor_ladder_starter + plant_belt_to_sensor_ladder",
+      "grading": "compilerCheck and scenarioRun pass"
+    },
+    {
+      "id": "fbd-write",
+      "language": "FBD",
+      "type": "write",
+      "level": "must",
+      "title": "FBD write: plant_tank_pid_fbd_starter + plant_tank_pid_fbd",
+      "prompt": "Complete the Function Block Diagram program src/TankLevel.fbd.json in this ZPLC project so that the scenario \"tank-pid-fbd\" in tests/ passes. Goal: hold the level of the tank at the set point with PID_Compact; convert and scale the raw level and set point to metres, send the drain potentiometer to the discharge valve, and light Green within 5 percent of the set point. Take the signal names from the plant map and the comments of the program. Do not edit tests/, scene.json or plant-map.json.",
+      "program": "src/TankLevel.fbd.json",
+      "scenarioId": "tank-pid-fbd",
+      "failure": "scenario",
+      "source": "plant_tank_pid_fbd_starter + plant_tank_pid_fbd",
+      "grading": "compilerCheck and scenarioRun pass"
+    },
+    {
+      "id": "sfc-write",
+      "language": "SFC",
+      "type": "write",
+      "level": "must",
+      "title": "SFC write: plant_buffer_release_starter + plant_buffer_release",
+      "prompt": "Complete the Sequential Function Chart program src/BufferRelease.sfc.json in this ZPLC project so that the scenario \"buffer-release\" in tests/ passes. Goal: a buffer station: load five boxes, hold them at a blade, release one per button press. Take the signal names from the plant map and the comments of the program. Do not edit tests/, scene.json or plant-map.json.",
+      "program": "src/BufferRelease.sfc.json",
+      "scenarioId": "buffer-release",
+      "failure": "scenario",
+      "source": "plant_buffer_release_starter + plant_buffer_release",
+      "grading": "compilerCheck and scenarioRun pass"
+    },
+    {
+      "id": "st-repair",
+      "language": "ST",
+      "type": "repair",
+      "level": "must",
+      "title": "ST repair: plant_latch_two_sensors (seeded)",
+      "prompt": "The scenario \"latch-two-sensors\" in tests/ fails against the Structured Text program src/LatchTwoSensors.st. Find the fault and repair the program so that the scenario passes. Do not edit tests/, scene.json or plant-map.json.",
+      "program": "src/LatchTwoSensors.st",
+      "scenarioId": "latch-two-sensors",
+      "failure": "scenario",
+      "source": "plant_latch_two_sensors (seeded)",
+      "grading": "scenarioRun passes"
+    },
+    {
+      "id": "il-repair",
+      "language": "IL",
+      "type": "repair",
+      "level": "must",
+      "title": "IL repair: door_alarm_il (seeded)",
+      "prompt": "The scenario \"DoorAlarm\" in tests/ fails against the Instruction List program src/DoorAlarm.il. Find the fault and repair the program so that the scenario passes. Do not edit tests/, scene.json or plant-map.json.",
+      "program": "src/DoorAlarm.il",
+      "scenarioId": "DoorAlarm",
+      "failure": "scenario",
+      "source": "door_alarm_il (seeded)",
+      "grading": "scenarioRun passes"
+    },
+    {
+      "id": "ld-repair",
+      "language": "LD",
+      "type": "repair",
+      "level": "must",
+      "title": "LD repair: plant_tank_level_scaling_ladder (seeded)",
+      "prompt": "The scenario \"tank-level-scaling\" in tests/ fails against the Ladder Diagram program src/TankLevel.ld.json. Find the fault and repair the program so that the scenario passes. Do not edit tests/, scene.json or plant-map.json.",
+      "program": "src/TankLevel.ld.json",
+      "scenarioId": "tank-level-scaling",
+      "failure": "scenario",
+      "source": "plant_tank_level_scaling_ladder (seeded)",
+      "grading": "scenarioRun passes"
+    },
+    {
+      "id": "fbd-repair",
+      "language": "FBD",
+      "type": "repair",
+      "level": "must",
+      "title": "FBD repair: fbd_interlock_guard (seeded)",
+      "prompt": "The scenario \"MotorInterlock\" in tests/ fails against the Function Block Diagram program src/MotorPlant.fbd.json. Find the fault and repair the program so that the scenario passes. Do not edit tests/, scene.json or plant-map.json.",
+      "program": "src/MotorPlant.fbd.json",
+      "scenarioId": "MotorInterlock",
+      "failure": "scenario",
+      "source": "fbd_interlock_guard (seeded)",
+      "grading": "scenarioRun passes"
+    },
+    {
+      "id": "sfc-repair",
+      "language": "SFC",
+      "type": "repair",
+      "level": "must",
+      "title": "SFC repair: plant_assembler (seeded)",
+      "prompt": "The scenario \"two-axis-assembly\" in tests/ fails against the Sequential Function Chart program src/Assembler.sfc.json. Find the fault and repair the program so that the scenario passes. Do not edit tests/, scene.json or plant-map.json.",
+      "program": "src/Assembler.sfc.json",
+      "scenarioId": "two-axis-assembly",
+      "failure": "scenario",
+      "source": "plant_assembler (seeded)",
+      "grading": "scenarioRun passes"
+    },
+    {
+      "id": "st-explain",
+      "language": "ST",
+      "type": "explain",
+      "level": "must",
+      "title": "ST explain: plant_timed_tank (seeded)",
+      "prompt": "The scenario \"timed-tank\" in tests/ fails against the Structured Text program src/TimedTank.st. Explain the failure: name the failing signal or fact, the expected value against the observed one, and where in src/TimedTank.st the cause is. Do not change any file.",
+      "program": "src/TimedTank.st",
+      "scenarioId": "timed-tank",
+      "failure": "scenario",
+      "source": "plant_timed_tank (seeded)",
+      "grading": "rubric: failing signal or fact, expected versus observed, source place",
+      "rubric": {
+        "signal": ["Green", "Drain"],
+        "expectedVsObserved": ["expected", "should", "but", "instead", "never", "not lit", "false"],
+        "sourcePlace": ["TimedTank.st", "Step = 2", "Drain :="]
+      },
+      "referenceExplanation": "The scenario timed-tank fails at 25000 ms: TimedTank.Green was expected to be true but was observed false. In src/TimedTank.st the line \"Drain := Step = 2\" opens the drain valve during the hold step instead of step 3, so the cycle never finishes by emptying the tank and Done and Green are never set."
+    },
+    {
+      "id": "il-explain",
+      "language": "IL",
+      "type": "explain",
+      "level": "must",
+      "title": "IL explain: il_alarm_latch (seeded)",
+      "prompt": "The scenario \"AlarmLatch\" in tests/ fails against the Instruction List program src/AlarmLatch.il. Explain the failure: name the failing signal or fact, the expected value against the observed one, and where in src/AlarmLatch.il the cause is. Do not change any file.",
+      "program": "src/AlarmLatch.il",
+      "scenarioId": "AlarmLatch",
+      "failure": "scenario",
+      "source": "il_alarm_latch (seeded)",
+      "grading": "rubric: failing signal or fact, expected versus observed, source place",
+      "rubric": {
+        "signal": ["SetFirst"],
+        "expectedVsObserved": ["expected", "should", "but", "instead", "false", "true"],
+        "sourcePlace": ["AlarmLatch.il", "R SetFirst", "R     SetFirst", "LD Fault"]
+      },
+      "referenceExplanation": "The scenario AlarmLatch fails at 10 ms: AlarmLatch.SetFirst was expected to be true when Fault rises but was observed false. In src/AlarmLatch.il the instruction \"R SetFirst\" after \"LD Fault\" resets the latch instead of setting it with S SetFirst."
+    },
+    {
+      "id": "ld-explain",
+      "language": "LD",
+      "type": "explain",
+      "level": "must",
+      "title": "LD explain: ld_alarm_latch (seeded)",
+      "prompt": "The build of this ZPLC project fails. Explain the failure: name the failing signal or variable, what the build expected against what it found, and where in src/AlarmLatchLd.ld.json the fault is. Do not change any file.",
+      "program": "src/AlarmLatchLd.ld.json",
+      "failure": "build",
+      "source": "ld_alarm_latch (seeded)",
+      "grading": "rubric: failing signal or fact, expected versus observed, source place",
+      "rubric": {
+        "signal": ["Falt"],
+        "expectedVsObserved": ["declared", "must reference", "unknown", "not declared", "undeclared", "expected"],
+        "sourcePlace": ["AlarmLatchLd.ld.json", "rung_2", "no_Fault_00"]
+      },
+      "referenceExplanation": "The build fails: the contact no_Fault_00 in rung_2 of src/AlarmLatchLd.ld.json references Falt, but a contact must reference a declared BOOL variable and only Fault is declared. Correct the variable name to Fault."
+    },
+    {
+      "id": "fbd-explain",
+      "language": "FBD",
+      "type": "explain",
+      "level": "must",
+      "title": "FBD explain: batch_count_fbd (seeded)",
+      "prompt": "The build of this ZPLC project fails. Explain the failure: name the failing signal or variable, what the build expected against what it found, and where in src/BatchCount.fbd.json the fault is. Do not change any file.",
+      "program": "src/BatchCount.fbd.json",
+      "failure": "build",
+      "source": "batch_count_fbd (seeded)",
+      "grading": "rubric: failing signal or fact, expected versus observed, source place",
+      "rubric": {
+        "signal": ["Strt"],
+        "expectedVsObserved": ["unknown identifier", "not declared", "undeclared", "declared", "expected"],
+        "sourcePlace": ["BatchCount.fbd.json", "block:ctu", "ctu"]
+      },
+      "referenceExplanation": "The build fails with UNKNOWN_IDENTIFIER: the FBD block ctu in src/BatchCount.fbd.json reads Strt, which is not a declared variable, so the generated code cannot resolve it. Use the declared input name PartSensor."
+    },
+    {
+      "id": "sfc-explain",
+      "language": "SFC",
+      "type": "explain",
+      "level": "must",
+      "title": "SFC explain: plant_three_level_lifts (seeded)",
+      "prompt": "The scenario \"three-level-lifts\" in tests/ fails against the Sequential Function Chart program src/ThreeLevelLifts.sfc.json. Explain the failure: name the failing signal or fact, the expected value against the observed one, and where in src/ThreeLevelLifts.sfc.json the cause is. Do not change any file.",
+      "program": "src/ThreeLevelLifts.sfc.json",
+      "scenarioId": "three-level-lifts",
+      "failure": "scenario",
+      "source": "plant_three_level_lifts (seeded)",
+      "grading": "rubric: failing signal or fact, expected versus observed, source place",
+      "rubric": {
+        "signal": ["TopBin", "Green"],
+        "expectedVsObserved": ["expected", "should", "but", "never", "false"],
+        "sourcePlace": ["ThreeLevelLifts.sfc.json", "t_4", "BAtHigh", "AAtHigh"]
+      },
+      "referenceExplanation": "The scenario three-level-lifts fails at 80000 ms: fact:delivered:TopBin was expected to be true and ThreeLevelLifts.Green was expected to be true, but both were observed false. In src/ThreeLevelLifts.sfc.json transition t_4 waits for BAtHigh instead of AAtHigh, so lift A never completes and the sequence stalls."
+    }
+  ]
+}

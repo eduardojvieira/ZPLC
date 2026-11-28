@@ -26,7 +26,7 @@ Follow how one input produces the current output and a copy delayed by one scan.
 ## Objectives
 
 - See that a variable keeps its value from one scan to the next.
-- Build a one-scan delay and a one-scan pulse from a single memory.
+- Make one output follow an input one scan late and another output pulse for one scan when the input turns on.
 
 ## Stages
 

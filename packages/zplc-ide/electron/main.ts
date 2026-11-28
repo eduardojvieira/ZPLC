@@ -29,6 +29,8 @@ import { createWorkspaceTestGateway } from './workspaceTestGateway.js';
 import { createToolExecutionAudit } from './toolExecutionAudit.js';
 import { createSerialPortBroker } from './serialPortBroker.js';
 import { createAiProvider } from './aiProvider.js';
+import { readSolutionsHidden } from '../shared/learnPolicyModel.js';
+import { createLessonLoader, lessonIndexPath } from './lessonIndexLoader.js';
 import { createLearnProgressStore } from './learnProgressStore.js';
 import { createRecentProjects } from './recentProjects.js';
 import { registerAppLifecycle } from './appLifecycle.js';
@@ -44,7 +46,8 @@ import { createCloseGuard } from './closeGuard.js';
 import { completeGuardedAction, createReloadRequest, guardReloadChord, guardWindowClose } from './windowGuards.js';
 import { createProjectFiles } from './projectFiles.js';
 import { createIpcHandlers, type RendererOwner, type ToolApiModule } from './ipcHandlers.js';
-import { spawnVector } from '../shared/spawnAllowList.js';
+import { resolveMcpCommand } from '../shared/mcpCommand.js';
+import { spawnAllowed, spawnVector } from '../shared/spawnAllowList.js';
 import { createToolWorkerHost, type ToolWorkerProcess } from './toolWorkerHost.js';
 import { registerIpcHandlers } from './ipcRegistry.js';
 import { CLOSE_GUARD_CHANNEL, MENU_CHANNEL, PORT_CHOICE_CHANNEL, NATIVE_SIMULATION_CHANNEL, PROJECT_FILES_EVENT } from './ipcContract.js';
@@ -503,6 +506,19 @@ function setupIPC(): void {
     serialPorts,
     learnProgress: () => learnProgress,
     learnWorkspaceRoot: () => path.join(app.getPath('userData'), 'learn-workspaces'),
+    userDataFolder: () => app.getPath('userData'),
+    mcpCommand: () => resolveMcpCommand(process.env),
+    mcpSelfCheck: (request) =>
+      new Promise((resolve) => {
+        const child = spawnAllowed(
+          { kind: 'mcp-self-check', ...request },
+          { stdio: ['ignore', 'pipe', 'ignore'], timeout: 20_000, windowsHide: true },
+        );
+        let stdout = '';
+        child.stdout?.on('data', (chunk: Buffer) => void (stdout = (stdout + chunk).slice(0, 64 * 1024)));
+        child.once('error', () => resolve({ code: null, stdout: '' }));
+        child.once('close', (code) => resolve({ code, stdout }));
+      }),
     aiProvider: () => aiProvider,
     toolExecutionAudit,
     workspaceGateway: workspaceTestGateway,
@@ -600,7 +616,16 @@ app
   .then(async () => {
     const toolApi = (await import(toolApiUrl)) as Pick<ToolApiModule, 'isToolExecutionEnvelope'>;
     await toolExecutionAudit.open(app.getPath('userData'), toolApi.isToolExecutionEnvelope);
-    aiProvider = createAiProvider({ userDataPath: app.getPath('userData'), vault: safeStorage });
+    // the classroom setting is read from <userData> on every request, fail closed;
+    // the lesson text is read from the generated index, and a failure to read it means no lesson block
+    aiProvider = createAiProvider({
+      userDataPath: app.getPath('userData'),
+      vault: safeStorage,
+      solutionsHidden: () => readSolutionsHidden(app.getPath('userData')),
+      lessonOf: createLessonLoader(
+        lessonIndexPath({ isPackaged: app.isPackaged, resourcesPath: process.resourcesPath, mainDirectory: __dirname }),
+      ),
+    });
     learnProgress = createLearnProgressStore(app.getPath('userData'));
     recentProjects = createRecentProjects(app.getPath('userData'));
     sessionStore = createSessionStore(app.getPath('userData'));

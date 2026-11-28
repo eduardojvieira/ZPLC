@@ -3,6 +3,8 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { getAllFnNames } from '@zplc/compiler';
+
 import productManifest from '../../../../package.json';
 import { NativeSimulationSupervisor } from '../../shared/nativeSimulationSupervisor';
 import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
@@ -10,6 +12,8 @@ import { compileSingleFileWithTask, type PLCLanguage } from '../compiler';
 import { getDefaultPorts, isFunctionBlock, type FBDBlock, type FBDConnection, type FBDModel, type FBDPort } from '../models/fbd';
 import { getToolboxItems } from '../models/ld';
 import { LD_COIL_TYPES, LD_CONTACT_TYPES } from '../models/ldSupport';
+import { DIFFERENTIAL_FUNCTIONS } from '../transpiler/stdFunctionDifferential';
+import { functionItems } from './ld/ldFunctions';
 import { SFC_PALETTE } from '../models/sfcSupport';
 import { NativeAdapter } from '../runtime/nativeAdapter';
 import { getBlockCategories, getFunctionBlockNamesForVisualEditors } from '../catalog/blockCatalog';
@@ -96,11 +100,18 @@ interface LdCellSpec {
   fbType?: string;
   instance?: string;
   parameters?: Record<string, string>;
+  functionName?: string;
+  operands?: string[];
+  output?: string;
 }
 const wire = { element: null, hasWire: true };
 const placed = (spec: LdCellSpec, col: number, row = 0) => ({ element: { ...spec, row, col }, hasWire: true });
 
-function ldProgram(rungs: Array<{ cells: LdCellSpec[]; branch?: LdCellSpec }>, local: Array<{ name: string; type: string }> = []): string {
+function ldProgram(
+  rungs: Array<{ cells: LdCellSpec[]; branch?: LdCellSpec }>,
+  local: Array<{ name: string; type: string }> = [],
+  outputs: Array<{ name: string; type: string; address: string }> = [],
+): string {
   return JSON.stringify({
     name: 'Palette',
     variables: {
@@ -109,7 +120,7 @@ function ldProgram(rungs: Array<{ cells: LdCellSpec[]; branch?: LdCellSpec }>, l
         { name: 'Sw', type: 'BOOL', address: '%IX0.0' },
         { name: 'Sw2', type: 'BOOL', address: '%IX0.1' },
       ],
-      outputs: [{ name: 'Lamp', type: 'BOOL', address: '%QX0.0' }],
+      outputs: [{ name: 'Lamp', type: 'BOOL', address: '%QX0.0' }, ...outputs],
     },
     rungs: rungs.map((rung, index) => {
       const cols = Math.max(rung.cells.length, 2);
@@ -234,6 +245,63 @@ describe('LNG-007 every function block of the Ladder palette is placed, built an
         const program = ldProgram([{ cells: [contact('contact_no', 'Sw', 'c'), element, coil('coil', 'Lamp', 'k')] }], local);
         // the program runs scans with the rung powered and not, and the VM does not fault
         expect(await run('LD', program, toggled([false, true, true, false, true]))).toEqual([]);
+      },
+      20_000,
+    );
+  }
+});
+
+/**
+ * The function boxes of the Ladder palette that are no registered function (the operators of LNG-028), with their operands and what
+ * the rung shows while Sw is on: the comparison passes the power to Lamp, any other box stores its result in Count. The registered
+ * functions are run by the native differential of LNG-030 (`stdFunctionDifferential.test.ts`).
+ */
+const LD_OPERATOR_BOXES: Record<string, { operands: string[]; count?: number }> = {
+  GT: { operands: ['5', '3'] },
+  GE: { operands: ['5', '5'] },
+  EQ: { operands: ['5', '5'] },
+  NE: { operands: ['5', '3'] },
+  LE: { operands: ['3', '5'] },
+  LT: { operands: ['3', '5'] },
+  ADD: { operands: ['5', '3'], count: 8 },
+  SUB: { operands: ['5', '3'], count: 2 },
+  MUL: { operands: ['5', '3'], count: 15 },
+  DIV: { operands: ['15', '3'], count: 5 },
+  MOVE: { operands: ['7'], count: 7 },
+};
+
+describe('LNG-007 LNG-030 every function box of the Ladder palette is run, here or in the differential', () => {
+  const differential = new Set(DIFFERENTIAL_FUNCTIONS);
+  const boxes = functionItems().map((item) => item.functionName!);
+
+  it('runs the operator boxes here and every other box in the native differential', () => {
+    for (const name of boxes) expect([name, differential.has(name) !== Object.hasOwn(LD_OPERATOR_BOXES, name)]).toEqual([name, true]);
+    expect(boxes.length).toBe(Object.keys(LD_OPERATOR_BOXES).length + DIFFERENTIAL_FUNCTIONS.length);
+  });
+
+  for (const [name, { operands, count }] of Object.entries(LD_OPERATOR_BOXES)) {
+    itNative(
+      name,
+      async () => {
+        const box: LdCellSpec = {
+          id: 'f',
+          type: 'function',
+          functionName: name,
+          operands,
+          ...(count === undefined ? {} : { output: 'Count' }),
+        };
+        const program = ldProgram(
+          [{ cells: [contact('contact_no', 'Sw', 'c'), box, coil('coil', 'Lamp', 'k')] }],
+          [],
+          [{ name: 'Count', type: 'INT', address: '%QW1' }],
+        );
+        const on: Expected = count === undefined ? { Lamp: true } : { Lamp: true, Count: count };
+        expect(
+          await run('LD', program, [
+            { in: { Sw: false }, out: { Lamp: false } },
+            { in: { Sw: true }, out: on },
+          ]),
+        ).toEqual([]);
       },
       20_000,
     );
@@ -418,11 +486,23 @@ function fbdProgram(type: string): { content: string; output: 'Lamp' | 'Count' |
   return { content: JSON.stringify({ name: 'Palette', variables, blocks, connections }), output };
 }
 
+/** The functions FBD placed before D-37; the other registered functions are run by the native differential of LNG-029. */
+const FBD_FUNCTIONS_BEFORE_D37 = ['MAX', 'MIN', 'LIMIT', 'SEL', 'NAND', 'NOR', 'ABS', 'MOD'];
+
 describe('LNG-007 every block of the FBD palette is placed, built and run', () => {
-  const types = fbdPaletteBlocks().filter((type) => !['constant', 'variable', 'input', 'output'].includes(type));
+  const offered = fbdPaletteBlocks().filter((type) => !['constant', 'variable', 'input', 'output'].includes(type));
+  const functions = new Set(getAllFnNames());
+  const types = offered.filter((type) => !functions.has(type) || FBD_FUNCTIONS_BEFORE_D37.includes(type));
 
   it('offers blocks, of every family', () => {
-    for (const family of ['AND', 'EQ', 'ADD', 'TON', 'CTU', 'MAX', 'BLINK']) expect(types).toContain(family);
+    for (const family of ['AND', 'EQ', 'ADD', 'TON', 'CTU', 'MAX', 'BLINK', 'SQRT', 'INT_TO_REAL', 'MUX'])
+      expect(offered).toContain(family);
+  });
+
+  it('runs the 64 blocks of before D-37 here; every other block it offers runs in the native differential', () => {
+    expect(types.length + 4).toBe(64);
+    const differential = new Set(DIFFERENTIAL_FUNCTIONS);
+    for (const type of offered) if (!types.includes(type)) expect([type, differential.has(type)]).toEqual([type, true]);
   });
 
   for (const type of types) {
@@ -453,15 +533,14 @@ describe('LNG-007 every block of the FBD palette is placed, built and run', () =
     );
   }
 
-  // The catalogue also names functions of the library and blocks of the runtime that no diagram can place. They are not
-  // offered; and a catalogue block that is not offered is one a diagram cannot build, so the palette hides nothing that works.
+  // The catalogue also names blocks of the runtime that no diagram can place. They are not offered; and a catalogue block
+  // that is not offered is one a diagram cannot build, so the palette hides nothing that works.
   const withheld = getBlockCategories()
     .flatMap((category) => category.blocks)
     .filter((block) => !fbdPaletteBlocks().includes(block));
 
-  it('withholds the functions of the library and the communication blocks that a diagram cannot build', () => {
-    expect(withheld.length).toBeGreaterThan(30);
-    for (const name of ['SQRT', 'SIN', 'LEN', 'CONCAT', 'INT_TO_REAL', 'COMM_PUBLISH', 'SHL']) expect(withheld).toContain(name);
+  it('withholds only the communication blocks that a diagram cannot build: every function of the library is placed (D-37)', () => {
+    expect(withheld.sort()).toEqual(['COMM_CONNECT', 'COMM_MODBUS', 'COMM_PUBLISH', 'COMM_SUBSCRIBE']);
   });
 
   for (const type of withheld) {

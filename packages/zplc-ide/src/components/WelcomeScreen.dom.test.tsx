@@ -6,7 +6,8 @@ await stubProjectLoader();
 const { useIDEStore } = await import('../store/useIDEStore');
 const { useNewProjectDialog } = await import('../store/newProjectDialog');
 const { useLearnUi } = await import('../learn/learnUi');
-const { EXAMPLE_CATALOG } = await import('../utils/exampleCatalog');
+const { EXAMPLE_CATALOG, EXAMPLE_GROUPS } = await import('../utils/exampleCatalog');
+const { useAppSettings } = await import('../store/useAppSettings');
 const { WelcomeScreen } = await import('./WelcomeScreen');
 
 const exampleId = Object.entries(EXAMPLE_CATALOG).find(([, entry]) => entry.showOnWelcome)![0];
@@ -111,5 +112,30 @@ describe('Welcome screen (UX-022, IDE-008) in a DOM', () => {
     prepare();
     dom.render(<WelcomeScreen />, { locale: 'es' });
     expect(dom.screen.getByRole('heading', { level: 1 }).textContent).toBe(dom.tFor('es')('welcome.title'));
+  });
+  it('shows every example title and summary and every group heading and intro in Spanish (UXV-004)', () => {
+    const es = dom.tFor('es');
+    const en = dom.t;
+    const shown = Object.entries(EXAMPLE_CATALOG).filter(([, entry]) => entry.showOnWelcome);
+    prepare({ getExampleProjects: () => shown.map(([id]) => ({ id, name: id, description: '' })) as never });
+    // Rendered in English first: the language changes while the Welcome screen is open, as when the setting is read.
+    dom.render(<WelcomeScreen />);
+    dom.act(() => useAppSettings.getState().update({ language: 'es' }));
+    const text = document.body.textContent ?? '';
+    for (const [id] of shown) {
+      for (const field of ['title', 'summary'] as const) {
+        const key = `examples.${id}.${field}` as Parameters<typeof es>[0];
+        expect(es(key).length).toBeGreaterThan(0);
+        expect(text).toContain(es(key));
+        if (es(key) !== en(key)) expect(text).not.toContain(en(key));
+      }
+    }
+    for (const group of EXAMPLE_GROUPS.filter((g) => shown.some(([, entry]) => entry.group === g.id))) {
+      expect(dom.screen.getByText(es(group.titleKey))).toBeTruthy();
+      if (group.blurbKey) {
+        expect(text).toContain(es(group.blurbKey));
+        expect(text).not.toContain(en(group.blurbKey));
+      }
+    }
   });
 });

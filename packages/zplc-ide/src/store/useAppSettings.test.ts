@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 
 import { SETTINGS_STORAGE_KEY, DEFAULT_SETTINGS } from '../utils/appSettings';
-import { applyDisplaySettings, createAppSettingsStore, mirrorLearnPolicy } from './useAppSettings';
+import { applyDisplaySettings, createAppSettingsStore, initializeSettings, mirrorLearnPolicy, useAppSettings } from './useAppSettings';
 
 const memory = (initial: Record<string, string> = {}) => {
   const data = { ...initial };
@@ -48,5 +48,20 @@ describe('application settings store (IDE-010)', () => {
     stop();
     store.getState().update({ hideSolutions: true });
     expect(reports).toEqual([{ hideSolutions: true }, { hideSolutions: false }]);
+  });
+
+  it('keeps applying display settings only while a document exists: a change after the document is gone throws nothing', () => {
+    const scope = globalThis as { document?: unknown };
+    const saved = scope.document;
+    scope.document = { documentElement: { dataset: {}, lang: '' } };
+    try {
+      initializeSettings();
+      delete scope.document;
+      const { density } = useAppSettings.getState().settings;
+      expect(() => useAppSettings.getState().update({ density: density === 'compact' ? 'comfortable' : 'compact' })).not.toThrow();
+    } finally {
+      if (saved === undefined) delete scope.document;
+      else scope.document = saved;
+    }
   });
 });

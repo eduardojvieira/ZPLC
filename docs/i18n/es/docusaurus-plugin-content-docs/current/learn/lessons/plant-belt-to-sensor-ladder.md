@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-belt-to-sensor-ladder. Do not edit. >>> */}
 
-Arranque una cinta con un botón mediante una bobina de activación y deténgala con una bobina de borrado cuando una caja llegue al sensor del extremo.
+Arranque una cinta con un pulsador mediante una bobina de activación y deténgala con una bobina de borrado cuando una caja llegue al sensor del extremo.
 
 ## Datos
 
@@ -25,7 +25,7 @@ Arranque una cinta con un botón mediante una bobina de activación y deténgala
 
 ## Objetivos
 
-- Arrancar un actuador con la pulsación de un botón mediante una bobina de activación y recordar que está en marcha.
+- Arrancar un actuador con la pulsación de un pulsador mediante una bobina de activación y recordar que está en marcha.
 - Detener el actuador con una bobina de borrado cuando un sensor ve la caja.
 
 ## Etapas

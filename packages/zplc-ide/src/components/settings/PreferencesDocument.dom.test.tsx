@@ -211,4 +211,44 @@ describe('Preferences (SHL-011, SHL-012) in a DOM', () => {
     await user.click(dom.screen.getByRole('button', { name: dom.t('preferences.assistant.open') }));
     expect(usePreferencesDocument.getState()).toMatchObject({ open: true, active: true, anchor: 'assistant' });
   });
+
+  it('UXF-4 uses a container-safe grid instead of viewport lg:grid-cols-3 and stacks ThemeControl', () => {
+    dom.render(<PreferencesDocument />);
+    const themeSelect = document.querySelector('[data-theme-control]') as HTMLSelectElement;
+    expect(themeSelect).not.toBeNull();
+    const grid = themeSelect.closest('.grid') as HTMLElement;
+    expect(grid).not.toBeNull();
+    expect(grid.classList.contains('lg:grid-cols-3')).toBe(false);
+    expect(grid.className).toMatch(/grid-cols-\[repeat\(auto-fit,minmax\([^)]+,1fr\)\)\]/);
+    const themeField = themeSelect.closest('.ui-field') as HTMLElement;
+    expect(themeField).not.toBeNull();
+    expect(themeField.getAttribute('data-layout')).toBe('stacked');
+  });
+
+  it('UXF-4 keeps all eight preference selects inside the preferences grid and wired to state', async () => {
+    const { user } = dom.render(<PreferencesDocument />);
+    const themeSelect = document.querySelector('[data-theme-control]') as HTMLSelectElement;
+    const grid = themeSelect.closest('.grid') as HTMLElement;
+    expect(grid.querySelectorAll('select')).toHaveLength(8);
+    await user.selectOptions(themeSelect, 'light');
+    expect(useIDEStore.getState().theme).toBe('light');
+  });
+});
+
+describe('the MCP connection panel as an anchor (AIX-007)', () => {
+  it('AIX-007 the palette action brings the panel into view and the focus into it', async () => {
+    dom.render(
+      <>
+        <Binder />
+        <PreferencesDocument />
+      </>,
+    );
+    await dom.act(async () => {
+      runCommand('ai.connectMcp');
+    });
+    await dom.waitFor(() => {
+      const section = document.querySelector('[data-mcp-connection]')!;
+      expect(section.contains(document.activeElement)).toBe(true);
+    });
+  });
 });

@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program declares Total and writes the three bands but never changes Total, so Low stays ON for ever. Change it so that each press of Step adds 5 to Total once, however long the press lasts, and Total goes back to 0 while Reset is TRUE. Write the statements yourself: the declarations and the three comparisons are already there.",
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starter declares Total and writes the three bands but never changes Total, so Low stays ON for ever. Change it so that each press of Step adds 5 to Total once, however long the press lasts, and Total goes back to 0 while Reset is TRUE. Write the statements yourself: the declarations and the three comparisons are already there.",
       "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
@@ -48,14 +48,12 @@
   "hints": [
     {
       "level": 1,
-      "text": "Total is an INT, so adding an INT constant to it gives an INT. A rising edge is Step TRUE now and StepWas FALSE on the previous scan."
+      "text": "Look for the statement that changes Total: there is none. Then look at the declarations: one of them is not used by any statement yet."
     },
     {
       "level": 2,
-      "text": "IF Reset THEN Total := 0; ELSIF Step AND NOT StepWas THEN Total := Total + 5; END_IF; StepWas := Step; Put it before the three comparison lines."
+      "text": "IF Reset THEN Total := 0; ELSIF Step AND NOT StepWas THEN Total := Total + 5; END_IF; StepWas := Step; Put it before the three comparison lines. StepWas keeps the value of Step from the previous scan, so Step AND NOT StepWas is TRUE only on the scan of a new press."
     }
   ],
-  "faultCases": [
-    "The starter declares Total and the three comparisons but never changes Total, so Low stays ON for ever; add 5 to Total on each rising edge of Step and clear it while Reset is TRUE."
-  ]
+  "faultCases": ["The starter declares Total and writes the three bands but never changes Total, so Low stays ON for ever."]
 }

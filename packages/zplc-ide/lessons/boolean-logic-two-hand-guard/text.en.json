@@ -5,7 +5,7 @@
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Write a condition that is true only when several inputs are true together.",
-    "Use NOT for a warning lamp and XOR for exactly one of two inputs."
+    "Turn sentences such as \"while it is open\" and \"only one of the two\" into Boolean conditions."
   ],
   "stages": [
     {
@@ -41,14 +41,14 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Try the same condition with OR instead of AND and say which input combination wrongly enables the press. Then write GuardLamp as NOT GuardClosed AND LeftHand: when does the lamp stay dark although the guard is open?",
-      "checkpoint": "OR enables the press with a single hand, which is exactly what a two-hand control exists to prevent. NOT applies only to GuardClosed, so that lamp lights only while the guard is open and the left hand is on its button."
+      "body": "Try the same condition with OR instead of AND and say which input combination wrongly enables the press. Then say in words the inputs on which GuardLamp must depend, and check that your line uses those and no others.",
+      "checkpoint": "OR enables the press with a single hand, which is exactly what a two-hand control exists to prevent. You can say which inputs each of your three lines reads, and why GuardLamp does not read the hands."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "AND is true only when every part is true, so PressEnable needs the three inputs joined with AND."
+      "text": "Read the three sentences of the Edit stage one at a time: each one is the whole condition of one output. Then look at the operator the starting program uses for PressEnable."
     },
     {
       "level": 2,

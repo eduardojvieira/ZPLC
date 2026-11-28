@@ -12,6 +12,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { formatById, type FormatId } from '../../packages/zplc-ide/src/formats';
 import { flattenConcatenations } from '../ci/source-text';
 import { code, fence, outputsOf, prose, ROOT, runGenerator, table, type L10n, type Lang, type ReferencePage } from './reference-lib';
 import { parseCli, parseKconfig, parseMcp, parseProtocol, parseScenarioFormat, parseShellCommands } from './source-parsers';
@@ -411,6 +412,9 @@ export function scenarioBody(lang: Lang): string {
     ),
     `## ${heading.example![lang]}`,
     fence('json', read(SOURCES.scenarioExample)),
+    `## ${lang === 'en' ? 'The file as a schema' : 'El archivo como esquema'}`,
+    FORMAT_INTRO.scenario[lang],
+    formatSections('scenario', lang, false),
   ].join('\n\n');
 }
 
@@ -568,22 +572,26 @@ export function mcpBody(lang: Lang): string {
   const mcp = parseMcp(read(SOURCES.mcp));
   const usage = /Usage: (zplc-mcp [^\\']+?)\\n/.exec(read(SOURCES.mcpEntry))?.[1];
   if (!usage) throw new Error(`${SOURCES.mcpEntry}: the usage line of zplc-mcp was not found`);
-  const writers = mcp.tools
-    .filter((tool) => !tool.readOnly)
-    .map((tool) => code(tool.name))
-    .join(', ');
+  const writerNames = mcp.tools.filter((tool) => !tool.readOnly).map((tool) => code(tool.name));
+  const writers = `${writerNames.slice(0, -1).join(', ')}${lang === 'en' ? ' and ' : ' y '}${writerNames.at(-1)}`;
   const intro: L10n = {
     en:
       `${code('zplc-mcp')} is a local server of the Model Context Protocol over standard input and output. It ` +
       `exposes ${mcp.tools.length} tools and ${mcp.resources.length} resources for one workspace. Every tool is read-only ` +
-      `except ${writers}, which runs a local ephemeral cross-build: no tool flashes, deploys, forces, starts, stops or opens a serial ` +
-      `port or a shell. The results are evidence of a recorded host run, not of hardware.`,
+      `except ${writers}: ${code('firmware_build')} runs a local ephemeral cross-build, ${code('workspace_write')} writes ` +
+      `project files inside the workspace after the check of ${code('workspace_check_write')}, and never deletes or renames one, ` +
+      `and the ${code('debug_')} tools start, step and stop a host simulation that the server runs for the agent alone. ` +
+      `No tool flashes, deploys, forces, opens a serial port or a shell, or starts or stops a program on a device or in a ` +
+      `session a person runs. The results are evidence of a host run, not of hardware.`,
     es:
       `${code('zplc-mcp')} es un servidor local del Model Context Protocol sobre entrada y salida estándar. ` +
       `Expone ${mcp.tools.length} herramientas y ${mcp.resources.length} recursos para un espacio de trabajo. Todas las herramientas son ` +
-      `de solo lectura salvo ${writers}, que ejecuta una compilación cruzada local y efímera: ninguna herramienta graba, despliega, ` +
-      `fuerza, arranca, detiene ni abre un puerto serie o una consola. Los resultados son evidencia de una ejecución registrada en ` +
-      `el host, no del hardware.`,
+      `de solo lectura salvo ${writers}: ${code('firmware_build')} ejecuta una compilación cruzada local y efímera, ` +
+      `${code('workspace_write')} escribe archivos del proyecto dentro del espacio de trabajo tras la verificación de ` +
+      `${code('workspace_check_write')}, y nunca borra ni renombra uno, y las herramientas ${code('debug_')} arrancan, avanzan ` +
+      `y detienen una simulación en el host que el servidor ejecuta solo para ese agente. Ninguna herramienta graba, despliega, ` +
+      `fuerza, abre un puerto serie o una consola, ni arranca o detiene un programa en un equipo o en una sesión que maneja una ` +
+      `persona. Los resultados son evidencia de una ejecución en el host, no del hardware.`,
   };
   // The entry point asks the SDK to answer a 2025-era opening with an error (`legacy: 'reject'`) or to serve it; the page says which.
   const legacy = /legacy:\s*'(reject|serve)'/.exec(read(SOURCES.mcpEntry))?.[1];
@@ -626,6 +634,63 @@ export function mcpBody(lang: Lang): string {
     revision: { en: 'Protocol revision', es: 'Revisión del protocolo' },
     tools: { en: 'Tools', es: 'Herramientas' },
     resources: { en: 'Resources', es: 'Recursos' },
+    reply: { en: 'Fields of a reply', es: 'Campos de una respuesta' },
+  };
+  const replyHead = lang === 'en' ? ['Field', 'Meaning'] : ['Campo', 'Significado'];
+  const executionFields = ['schemaVersion', 'jobId', 'actor', 'permission', 'operation', 'outcome', 'startedAt', 'finishedAt']
+    .map((name) => code(name))
+    .join(', ');
+  const replyRows: Record<Lang, string[][]> = {
+    en: [
+      [
+        code('evidenceLevel'),
+        'Stated once at the top of a reply: what kind of run the result is evidence of. ' +
+          'The repeated note and scope texts of 2.0 are gone.',
+      ],
+      [
+        code('execution'),
+        `The record of the job, as in 2.0: ${executionFields}. It is unchanged in 2.1 and it is deprecated: ` +
+          'a later release may remove it.',
+      ],
+      [
+        code('audit'),
+        `Beside ${code('execution')} in every reply that carries it: ${code('jobId')} and ${code('permission')}, ` +
+          `the same as in ${code('execution')}, and ${code('durationMs')}, the milliseconds the job took. ` +
+          `${code('workspace_write')} and ${code('workspace_check_write')} answer ${code('audit')} with the permission ` +
+          `${code('project:write')} or ${code('project:read')}, and the ${code('debug_')} tools with ${code('tests:run')}.`,
+      ],
+      [
+        code('validValues'),
+        'In a refusal of a wrong name (a scenario, a signal, a mode, a file, a session): the valid names sorted ' +
+          `alphabetically, at most 32, with ${code('more')} counting the rest. The refusal also carries ${code('error')}, ` +
+          `${code('message')} and ${code('nextStep')}.`,
+      ],
+    ],
+    es: [
+      [
+        code('evidenceLevel'),
+        'Se dice una vez al inicio de una respuesta: de qué clase de ejecución es evidencia el resultado. ' +
+          'Los textos repetidos de nota y alcance de 2.0 ya no están.',
+      ],
+      [
+        code('execution'),
+        `El registro del trabajo, como en 2.0: ${executionFields}. No cambia en 2.1 y está obsoleto: ` +
+          'una versión posterior puede quitarlo.',
+      ],
+      [
+        code('audit'),
+        `Junto a ${code('execution')} en cada respuesta que lo lleva: ${code('jobId')} y ${code('permission')}, ` +
+          `iguales a los de ${code('execution')}, y ${code('durationMs')}, los milisegundos que tardó el trabajo. ` +
+          `${code('workspace_write')} y ${code('workspace_check_write')} responden ${code('audit')} con el permiso ` +
+          `${code('project:write')} o ${code('project:read')}, y las herramientas ${code('debug_')} con ${code('tests:run')}.`,
+      ],
+      [
+        code('validValues'),
+        'En el rechazo de un nombre erróneo (un escenario, una señal, un modo, un archivo, una sesión): los nombres ' +
+          `válidos en orden alfabético, como máximo 32, con ${code('more')} que cuenta el resto. El rechazo también lleva ` +
+          `${code('error')}, ${code('message')} y ${code('nextStep')}.`,
+      ],
+    ],
   };
   const toolHead =
     lang === 'en'
@@ -645,6 +710,8 @@ export function mcpBody(lang: Lang): string {
     fence('text', usage),
     `## ${headings.revision![lang]}`,
     revision[legacy as 'reject' | 'serve'][lang],
+    `## ${headings.reply![lang]}`,
+    table(replyHead, replyRows[lang]),
     `## ${headings.tools![lang]}`,
     table(
       toolHead,
@@ -962,7 +1029,8 @@ export function deviceProtocolBody(lang: Lang): string {
       `definition the C codec of the firmware and the TypeScript codec of the ZPLC application are generated from. The native ` +
       `runtime speaks the same protocol on standard input and output when it is started ` +
       `with ${code('--device-link')}; ${code('--device-link-network')} applies the rules of a network link to it, so that ` +
-      `they can be exercised without a socket.`,
+      `they can be exercised without a socket. The native runtime for Windows does not have this mode: started ` +
+      `with ${code('--device-link')}, it says the device link is not available on this platform and exits with status 1.`,
     es:
       `El protocolo de enlace con el dispositivo es como hablan la aplicación ZPLC y un dispositivo: un protocolo binario con tramas y ` +
       `versión, con longitud, número de secuencia y suma de verificación en cada trama, negociación de capacidades y códigos de error ` +
@@ -973,7 +1041,9 @@ export function deviceProtocolBody(lang: Lang): string {
       `de ${code(SOURCES.deviceProtocol)}, la definición única de la que se generan el códec C del firmware y el códec ` +
       `TypeScript de la aplicación ZPLC. El runtime nativo habla el mismo protocolo por la entrada y la salida estándar ` +
       `cuando se inicia con ${code('--device-link')}; ${code('--device-link-network')} le aplica las reglas de un enlace de red, para ` +
-      `poder ejercitarlas sin un socket.`,
+      `poder ejercitarlas sin un socket. El runtime nativo para Windows no tiene este modo: iniciado ` +
+      `con ${code('--device-link')}, dice que el enlace con el dispositivo no está disponible en esta plataforma y termina ` +
+      `con el estado 1.`,
   };
   const h = (en: string, es: string) => `## ${lang === 'en' ? en : es}`;
   const h3 = (text: string) => `### ${text}`;
@@ -1099,6 +1169,215 @@ export function deviceProtocolBody(lang: Lang): string {
 }
 
 // ---------------------------------------------------------------------------
+// The six file formats of AIX-013 (packages/zplc-ide/src/formats), one source for these pages, the MCP resources
+// zplc://formats/{id} and the checks of the loaders
+// ---------------------------------------------------------------------------
+
+const FORMAT_INTRO: Record<FormatId, L10n> = {
+  ld: {
+    en:
+      `A Ladder Diagram program is a JSON file ${code('src/*.ld.json')}: its variables and its rungs. Each rung is a grid of cells; ` +
+      `contacts read from the left, and the last column holds a coil or a function block. A function box (${code('MOVE')}, ` +
+      `${code('ADD')}, ${code('GT')}...) computes into a variable.`,
+    es:
+      `Un programa de diagrama de escalera es un archivo JSON ${code('src/*.ld.json')}: sus variables y sus escalones. Cada ` +
+      `escalón es una rejilla de celdas; los contactos leen desde la izquierda, y la última columna lleva una bobina o un bloque de ` +
+      `función. Una caja de función (${code('MOVE')}, ${code('ADD')}, ${code('GT')}...) calcula hacia una variable.`,
+  },
+  fbd: {
+    en:
+      `A Function Block Diagram program is a JSON file ${code('src/*.fbd.json')}: its variables, its blocks and the connections ` +
+      `between their ports. A connection goes from an output port to an input port; variable blocks read a variable, output ` +
+      `blocks write one, constant blocks hold a literal.`,
+    es:
+      `Un programa de diagrama de bloques de función es un archivo JSON ${code('src/*.fbd.json')}: sus variables, sus bloques y ` +
+      `las conexiones entre sus puertos. Una conexión va de un puerto de salida a un puerto de entrada; los bloques de variable ` +
+      `leen una variable, los bloques de salida escriben una y los bloques de constante guardan un literal.`,
+  },
+  sfc: {
+    en:
+      `A Sequential Function Chart program is a JSON file ${code('src/*.sfc.json')}: steps, the transitions between them with an ` +
+      `ST condition each, and the actions a step runs under a qualifier. At least one step is initial. An ${code('N')} action runs ` +
+      `while its step is active.`,
+    es:
+      `Un programa de diagrama funcional de secuencias es un archivo JSON ${code('src/*.sfc.json')}: etapas, las transiciones ` +
+      `entre ellas con una condición en ST cada una, y las acciones que una etapa ejecuta bajo un calificador. Al menos una etapa ` +
+      `es inicial. Una acción ${code('N')} se ejecuta mientras su etapa está activa.`,
+  },
+  scene: {
+    en:
+      `A plant scene is the JSON file ${code('scene.json')}: the parts of a 3D plant, each a catalogue part with a unique id and ` +
+      `name, a position, a rotation and its settings, and the cameras. The parts give the plant signals ` +
+      `(${code('<name>.<signal>')}) that a plant map binds to the program. The [scene file format](../plant/scene-format.md) ` +
+      `page explains the fields in prose.`,
+    es:
+      `Una escena de planta es el archivo JSON ${code('scene.json')}: las partes de una planta 3D, cada una una parte del ` +
+      `catálogo con un id y un nombre únicos, una posición, una rotación y sus ajustes, y las cámaras. Las partes dan las señales ` +
+      `de la planta (${code('<nombre>.<señal>')}) que un mapa de planta enlaza con el programa. La página [formato del archivo de ` +
+      `escena](../plant/scene-format.md) explica los campos con palabras.`,
+  },
+  'plant-map': {
+    en:
+      `A plant map is the JSON file ${code('plant-map.json')}: the explicit binding of each plant signal to a program variable, ` +
+      `${code('Program.Name')}, with its direction and type. A command is a program output, a sensor a program input; an ` +
+      `${code('INT')} or ${code('REAL')} signal carries its scaling. No signal is bound by its name.`,
+    es:
+      `Un mapa de planta es el archivo JSON ${code('plant-map.json')}: el enlace explícito de cada señal de la planta con una ` +
+      `variable del programa, ${code('Programa.Nombre')}, con su dirección y su tipo. Un comando es una salida del programa, un ` +
+      `sensor una entrada del programa; una señal ${code('INT')} o ${code('REAL')} lleva su escala. Ninguna señal se enlaza por ` +
+      `su nombre.`,
+  },
+  scenario: {
+    en:
+      `The schema, the accepted values and worked examples of ${code('tests/*.scenario.json')}. A scenario with a ` +
+      `${code('scene')} block runs on the project scene: its script presses the panel, and its expectations can read plant facts ` +
+      `(${code('fact:<name>')}).`,
+    es:
+      `El esquema, los valores aceptados y ejemplos resueltos de ${code('tests/*.scenario.json')}. Un escenario con un bloque ` +
+      `${code('scene')} se ejecuta sobre la escena del proyecto: su guion opera el panel, y sus expectativas pueden leer hechos de ` +
+      `la planta (${code('fact:<nombre>')}).`,
+  },
+};
+
+const FORMAT_EXAMPLE_TITLES: Record<string, L10n> = {
+  'Start/stop latch, a TON timer rung and a MOVE to a display': {
+    en: 'Start/stop latch, a TON timer rung and a MOVE to a display',
+    es: 'Enclavamiento de marcha y paro, un escalón con temporizador TON y un MOVE a un visualizador',
+  },
+  'AND of two inputs into a TON, written to an output': {
+    en: 'AND of two inputs into a TON, written to an output',
+    es: 'AND de dos entradas hacia un TON, escrito en una salida',
+  },
+  'Two steps, Idle -> Run -> Idle, with an action in each and two transitions': {
+    en: 'Two steps, Idle -> Run -> Idle, with an action in each and two transitions',
+    es: 'Dos etapas, Idle -> Run -> Idle, con una acción en cada una y dos transiciones',
+  },
+  'A belt, an emitter, a diffuse sensor, a push button and a numeric display, with one camera': {
+    en: 'A belt, an emitter, a diffuse sensor, a push button and a numeric display, with one camera',
+    es: 'Una cinta, un emisor, un sensor difuso, un pulsador y un visualizador numérico, con una cámara',
+  },
+  'Four BOOL signals and one REAL signal with its range, bound to the Ladder example': {
+    en: 'Four BOOL signals and one REAL signal with its range, bound to the Ladder example',
+    es: 'Cuatro señales BOOL y una señal REAL con su rango, enlazadas con el ejemplo de escalera',
+  },
+  'Plain I/O: events drive the inputs, five kinds of expectation': {
+    en: 'Plain I/O: events drive the inputs, five kinds of expectation',
+    es: 'E/S simple: los eventos mueven las entradas, cinco clases de expectativa',
+  },
+  'On the scene, with a fact count and a real fact range': {
+    en: 'On the scene, with a fact count and a real fact range',
+    es: 'Sobre la escena, con una cuenta de hechos y el rango de un hecho real',
+  },
+};
+
+const FORMAT_HEADINGS: Record<string, L10n> = {
+  where: { en: 'Where the file lives', es: 'Dónde está el archivo' },
+  schema: { en: 'JSON Schema', es: 'Esquema JSON' },
+  values: { en: 'Accepted values', es: 'Valores aceptados' },
+  ports: { en: 'Ports of the standard blocks', es: 'Puertos de los bloques estándar' },
+  settings: { en: 'Settings of each part', es: 'Ajustes de cada parte' },
+  examples: { en: 'Worked examples', es: 'Ejemplos resueltos' },
+};
+
+const FORMAT_KEY_TITLES: Record<string, L10n> = {
+  elementTypes: { en: 'Element types', es: 'Tipos de elemento' },
+  contactTypes: { en: 'Contact types', es: 'Tipos de contacto' },
+  coilTypes: { en: 'Coil types', es: 'Tipos de bobina' },
+  functions: { en: 'Functions of a function box', es: 'Funciones de una caja de función' },
+  functionBlocks: { en: 'Function blocks of a rung', es: 'Bloques de función de un escalón' },
+  specialBlocks: { en: 'Special blocks', es: 'Bloques especiales' },
+  standardBlocks: { en: 'Standard blocks', es: 'Bloques estándar' },
+  qualifiers: { en: 'Action qualifiers', es: 'Calificadores de acción' },
+  actionTypes: { en: 'Action languages', es: 'Lenguajes de acción' },
+  parts: { en: 'Parts of the catalogue', es: 'Partes del catálogo' },
+  directions: { en: 'Directions', es: 'Direcciones' },
+  types: { en: 'Types', es: 'Tipos' },
+  plants: { en: 'Plant models', es: 'Modelos de planta' },
+  rangeKeys: { en: 'Keys of a range', es: 'Claves de un rango' },
+  kinds: { en: 'Kinds of expectation', es: 'Clases de expectativa' },
+  scriptEvents: { en: 'Events of a scene script', es: 'Eventos de un guion de escena' },
+  integerFacts: { en: 'Integer facts (compared as a count)', es: 'Hechos enteros (se comparan como una cuenta)' },
+  realFacts: { en: 'Real facts (compared with min and max)', es: 'Hechos reales (se comparan con min y max)' },
+  booleanFacts: { en: 'Boolean facts', es: 'Hechos booleanos' },
+};
+
+/** The sections of one format; `level` is the depth of their headings (2 for a page of its own, 2 below another page's body). */
+function formatSections(id: FormatId, lang: Lang, standalone: boolean): string {
+  const format = formatById(id);
+  const values = Object.entries(format.acceptedValues);
+  const plain = values.filter(([key]) => !/^(inputs|outputs|config)\./.test(key));
+  const settings = values.filter(([key]) => key.startsWith('config.'));
+  const ports = new Map<string, { inputs?: readonly string[]; outputs?: readonly string[] }>();
+  for (const [key, list] of values) {
+    const match = /^(inputs|outputs)\.(.+)$/.exec(key);
+    if (match) ports.set(match[2]!, { ...ports.get(match[2]!), [match[1] as 'inputs' | 'outputs']: list });
+  }
+  const parts: string[] = [];
+  if (standalone) {
+    parts.push(FORMAT_INTRO[id][lang]);
+    parts.push(
+      lang === 'en'
+        ? `The schema, the lists and the examples below are read off ${code('packages/zplc-ide/src/formats')}, the module that the ` +
+            `MCP resource ${code(`zplc://formats/${id}`)} serves too, so the page, the resource and the loader say the same. The ` +
+            `descriptions inside the schema are in English in both languages.`
+        : `El esquema, las listas y los ejemplos de abajo se leen de ${code('packages/zplc-ide/src/formats')}, el módulo que ` +
+            `también sirve el recurso MCP ${code(`zplc://formats/${id}`)}, así que la página, el recurso y el cargador dicen lo ` +
+            `mismo. Las descripciones dentro del esquema están en inglés en los dos idiomas.`,
+    );
+    parts.push(`## ${FORMAT_HEADINGS.where![lang]}`, code(format.filePattern));
+  }
+  const top = standalone ? '##' : '###';
+  const sub = standalone ? '###' : '####';
+  parts.push(`${top} ${FORMAT_HEADINGS.schema![lang]}`, fence('json', JSON.stringify(format.schema, null, 2)));
+  parts.push(`${top} ${FORMAT_HEADINGS.values![lang]}`);
+  for (const [key, list] of plain)
+    parts.push(`${sub} ${FORMAT_KEY_TITLES[key]?.[lang] ?? key}`, list.map((value) => code(value)).join(', '));
+  if (ports.size > 0) {
+    const conversions = [...ports.keys()].filter((name) => name.includes('_TO_'));
+    const others = [...ports.keys()].filter((name) => !name.includes('_TO_'));
+    parts.push(
+      `${sub} ${FORMAT_HEADINGS.ports![lang]}`,
+      lang === 'en'
+        ? `Each port is written ${code('NAME:TYPE')}. The ${conversions.length} type conversions ${code('<A>_TO_<B>')} have the input ` +
+            `${code('IN:<A>')} and the output ${code('OUT:<B>')}, and are not repeated here.`
+        : `Cada puerto se escribe ${code('NOMBRE:TIPO')}. Las ${conversions.length} conversiones de tipo ${code('<A>_TO_<B>')} ` +
+            `tienen la entrada ${code('IN:<A>')} y la salida ${code('OUT:<B>')}, y no se repiten aquí.`,
+      table(
+        lang === 'en' ? ['Block', 'Inputs', 'Outputs'] : ['Bloque', 'Entradas', 'Salidas'],
+        others.map((name) => [
+          code(name),
+          (ports.get(name)!.inputs ?? []).map((port) => code(port)).join(', '),
+          (ports.get(name)!.outputs ?? []).map((port) => code(port)).join(', '),
+        ]),
+      ),
+    );
+  }
+  if (settings.length > 0)
+    parts.push(
+      `${sub} ${FORMAT_HEADINGS.settings![lang]}`,
+      table(
+        lang === 'en' ? ['Part', 'Settings'] : ['Parte', 'Ajustes'],
+        settings.map(([key, list]) => [code(key.slice('config.'.length)), list.map((value) => code(value)).join(', ')]),
+      ),
+    );
+  parts.push(`${top} ${FORMAT_HEADINGS.examples![lang]}`);
+  for (const example of format.examples)
+    parts.push(
+      `${sub} ${FORMAT_EXAMPLE_TITLES[example.title]?.[lang] ?? example.title}`,
+      fence('json', JSON.stringify(example.content, null, 2)),
+    );
+  return parts.join('\n\n');
+}
+
+const formatPage = (id: FormatId, path: string, title: L10n, label: L10n, description: L10n): ReferencePage => ({
+  path,
+  title,
+  label,
+  description,
+  body: (lang) => formatSections(id, lang, true),
+});
+
+// ---------------------------------------------------------------------------
 // Pages
 // ---------------------------------------------------------------------------
 
@@ -1153,6 +1432,58 @@ export const PAGES: ReferencePage[] = [
     },
     body: cliBody,
   },
+  formatPage(
+    'ld',
+    'reference/format-ld.md',
+    { en: 'Ladder Diagram file format', es: 'Formato del archivo de diagrama de escalera' },
+    { en: 'Ladder file format', es: 'Formato de archivo de escalera' },
+    {
+      en: 'The JSON Schema, the accepted values and a worked example of a Ladder Diagram file (.ld.json).',
+      es: 'El esquema JSON, los valores aceptados y un ejemplo resuelto de un archivo de diagrama de escalera (.ld.json).',
+    },
+  ),
+  formatPage(
+    'fbd',
+    'reference/format-fbd.md',
+    { en: 'Function Block Diagram file format', es: 'Formato del archivo de diagrama de bloques de función' },
+    { en: 'FBD file format', es: 'Formato de archivo FBD' },
+    {
+      en: 'The JSON Schema, the accepted values, the ports of the standard blocks and a worked example of an FBD file (.fbd.json).',
+      es:
+        'El esquema JSON, los valores aceptados, los puertos de los bloques estándar y un ejemplo resuelto de un archivo FBD ' +
+        '(.fbd.json).',
+    },
+  ),
+  formatPage(
+    'sfc',
+    'reference/format-sfc.md',
+    { en: 'Sequential Function Chart file format', es: 'Formato del archivo de diagrama funcional de secuencias' },
+    { en: 'SFC file format', es: 'Formato de archivo SFC' },
+    {
+      en: 'The JSON Schema, the accepted values and a worked example of an SFC file (.sfc.json).',
+      es: 'El esquema JSON, los valores aceptados y un ejemplo resuelto de un archivo SFC (.sfc.json).',
+    },
+  ),
+  formatPage(
+    'scene',
+    'reference/format-scene.md',
+    { en: 'Plant scene schema', es: 'Esquema de la escena de planta' },
+    { en: 'Scene schema', es: 'Esquema de escena' },
+    {
+      en: 'The JSON Schema, the catalogue parts with their settings and a worked example of scene.json.',
+      es: 'El esquema JSON, las partes del catálogo con sus ajustes y un ejemplo resuelto de scene.json.',
+    },
+  ),
+  formatPage(
+    'plant-map',
+    'reference/plant-map-file.md',
+    { en: 'Plant map file format', es: 'Formato del archivo de mapa de planta' },
+    { en: 'Plant map file', es: 'Archivo de mapa de planta' },
+    {
+      en: 'The JSON Schema, the accepted values and a worked example of plant-map.json.',
+      es: 'El esquema JSON, los valores aceptados y un ejemplo resuelto de plant-map.json.',
+    },
+  ),
   {
     path: 'reference/mcp.md',
     title: { en: 'MCP tools and resources', es: 'Herramientas y recursos MCP' },

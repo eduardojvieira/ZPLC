@@ -24,6 +24,8 @@ type NativeScenarioLifecycle = {
 const IPI_END = 0x1000;
 const OPI_START = 0x1000;
 const OPI_END = 0x2000;
+// the end of the retentive region: a watch reads any of the images, work or retentive memory (AI-08)
+const MEMORY_END = 0x5000;
 
 export interface NativeScenarioSession {
   runtime: ScenarioRuntimePort;
@@ -135,6 +137,13 @@ export function createNativeScenarioRuntime(adapter: NativeScenarioAdapter): Sce
       validateBit(address, bitOffset, OPI_START, OPI_END, 'OPI');
       return ((await getOutput(address)) & (1 << bitOffset)) !== 0;
     },
+    readMemory: async (address, size) => {
+      if (!Number.isInteger(size) || size < 1) throw new Error('Scenario memory read size must be a positive integer');
+      validateNumber(address, size, 0, MEMORY_END, 'memory');
+      const bytes = new Uint8Array(size);
+      for (let i = 0; i < size; i++) bytes[i] = await getOutput(address + i);
+      return bytes;
+    },
   };
 }
 
@@ -178,6 +187,23 @@ function cancelled(): Error {
   return error;
 }
 
+/** The supervisor of a private host runtime on the virtual clock, its persistent state in `persistRoot`, and its adapter. */
+export function nativeScenarioLifecycle(
+  environment: NodeJS.ProcessEnv,
+  persistRoot: string,
+): { supervisor: NativeSimulationSupervisor; adapter: NativeAdapter } {
+  const supervisor = new NativeSimulationSupervisor({
+    clientName: 'zplc-cli',
+    clientVersion: productManifest.version,
+    environment: {
+      ...withNativeCommunicationEnvironment(environment),
+      ZPLC_PERSIST_ROOT: persistRoot,
+      ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK: '1',
+    },
+  });
+  return { supervisor, adapter: new NativeAdapter(supervisor) };
+}
+
 export async function createNativeScenarioSession(
   environment: NodeJS.ProcessEnv = process.env,
   options: NativeScenarioSessionOptions = {},
@@ -188,20 +214,7 @@ export async function createNativeScenarioSession(
     await rm(persistRoot, { recursive: true, force: true });
     throw cancelled();
   }
-  const lifecycle =
-    options.createLifecycle?.(persistRoot) ??
-    (() => {
-      const supervisor = new NativeSimulationSupervisor({
-        clientName: 'zplc-cli',
-        clientVersion: productManifest.version,
-        environment: {
-          ...withNativeCommunicationEnvironment(environment),
-          ZPLC_PERSIST_ROOT: persistRoot,
-          ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK: '1',
-        },
-      });
-      return { supervisor, adapter: new NativeAdapter(supervisor) };
-    })();
+  const lifecycle = options.createLifecycle?.(persistRoot) ?? nativeScenarioLifecycle(environment, persistRoot);
   const { supervisor, adapter } = lifecycle;
   let closePromise: Promise<void> | undefined;
   const closeOnAbort = () => {

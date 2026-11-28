@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objective",
       "body": "In src/EdgeCounter.il the counter Count (CTU) is declared but never called, and the program stores FALSE in CountReached. Make CountReached turn ON at the third rising edge of PulseInput and stay ON until Reset clears the count.",
-      "checkpoint": "You can say which instruction runs a function block in IL, and why the line that reads its output comes after it."
+      "checkpoint": "You can say which instruction runs a function block in IL, and what CountReached must do at each pulse and at Reset."
     },
     {
       "key": "predict",
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "A CTU already counts only the rising edges of CU, so a long pulse counts once. CAL runs the counter with its inputs; after it, load the output Q of Count and store it."
+      "text": "Look at the line that stores FALSE in CountReached: nothing in it comes from Count, which never runs. A CTU already counts only the rising edges of CU, so a long pulse counts once."
     },
     {
       "level": 2,

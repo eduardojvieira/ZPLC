@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/TypedSteps.il están escritas las tres comparaciones del final: LD Total carga el INT, LT 10 lo compara y deja un BOOL, y ST Low lo guarda. Escriba la aritmética encima: en cada flanco ascendente de Step (Step en ON ahora y StepWas en OFF en el ciclo anterior) sume 5 a Total, y mientras Reset sea TRUE ponga Total en 0.",
-      "checkpoint": "Total pasa por 0, 5, 10, 15, y las tres salidas muestran en qué cinta está."
+      "body": "En src/TypedSteps.il están escritas las tres comparaciones del final: LD Total carga el INT, LT 10 lo compara y deja un BOOL, y ST Low lo guarda. Escriba la aritmética encima: en cada flanco ascendente de Step sume 5 a Total, y mientras Reset sea TRUE ponga Total en 0.",
+      "checkpoint": "Total pasa por 0, 5, 10, 15, y las tres salidas muestran en qué rango está."
     },
     {
       "key": "predict",
@@ -48,14 +48,14 @@
   "hints": [
     {
       "level": 1,
-      "text": "Total es un INT, y ADD sobre un INT en el resultado actual lo mantiene como INT. Calcule primero el flanco ascendente, Step ahora y no StepWas, y salte por encima de la suma con JMPCN cuando sea FALSE. Guarde Step en StepWas solo después de esa condición, y borre Total con un segundo salto según Reset."
+      "text": "Mire las primeras líneas: StepWas toma el valor de Step antes de que ninguna condición pueda leer el valor del ciclo anterior, y ninguna línea carga Total ni le suma."
     },
     {
       "level": 2,
-      "text": "LD Step, ANDN StepWas, JMPCN skip, LD Total, ADD 5, ST Total, skip:, luego las líneas que copian Step en StepWas, luego LD Reset, JMPCN keep, LD 0, ST Total, keep:, antes de las tres comparaciones."
+      "text": "LD Step, ANDN StepWas, JMPCN skip, LD Total, ADD 5, ST Total, skip:, luego las líneas que copian Step en StepWas, luego LD Reset, JMPCN keep, LD 0, ST Total, keep:, antes de las tres comparaciones. JMPCN salta a su etiqueta cuando el resultado actual es FALSE, así que las líneas intermedias no se ejecutan."
     }
   ],
   "faultCases": [
-    "El programa inicial recuerda Step en StepWas y escribe las tres comparaciones, pero nunca cambia Total, así que Low queda en ON para siempre; sume 5 a Total en cada flanco ascendente de Step y bórrelo mientras Reset sea TRUE."
+    "El programa inicial recuerda Step en StepWas y escribe las tres comparaciones, pero nunca cambia Total, así que Low queda en ON para siempre."
   ]
 }

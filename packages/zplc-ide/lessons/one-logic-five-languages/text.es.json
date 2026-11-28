@@ -5,13 +5,13 @@
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra requisitos de un portón, tiempos de actuadores ni el comportamiento de una máquina real.",
   "objectives": [
     "Mantenga una salida encendida después de soltar su solicitud, y deje que la orden de cierre tenga prioridad, en texto estructurado.",
-    "Reconozca la misma condición, (Request OR Open) AND NOT Close, en lista de instrucciones, diagrama de escalera, diagrama de bloques de función y diagrama funcional secuencial."
+    "Reconozca la misma condición de retención y cierre en lista de instrucciones, diagrama de escalera, diagrama de bloques de función y diagrama funcional secuencial."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/Gate.st la salida Open sigue a Request solo mientras el pulsador está pulsado. Haga que se mantenga: Open está encendida cuando se pulsa Request o cuando Open ya está encendida, y nunca mientras se pulsa Close. La misma condición se escribe así en los otros cuatro lenguajes: en lista de instrucciones, LD Request, OR Open, ANDN Close, ST Open; en diagrama de escalera, Request en paralelo con un contacto de Open, luego un contacto normalmente cerrado de Close y después la bobina Open; en diagrama de bloques de función, un bloque OR que alimenta un bloque AND cuya segunda entrada viene de un bloque NOT de Close; en diagrama funcional secuencial, un paso IS_CLOSED y un paso IS_OPEN, con una transición a IS_OPEN con Request AND NOT Close y una transición de regreso con Close.",
+      "body": "En src/Gate.st la salida Open sigue a Request solo mientras se mantiene Request. Haga que se mantenga: Request la abre, sigue abierta después de soltar Request, y Close siempre tiene prioridad. Una vez que pase, la misma condición puede escribirse en cada uno de los otros cuatro lenguajes; la última pista muestra los cuatro.",
       "checkpoint": "El portón se abre cuando se pulsa Request, sigue abierto después de soltar Request y se cierra cuando se pulsa Close."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial asigna a Open el valor Request AND NOT Close, de modo que Open cae en cuanto se suelta Request a los {{t:40}} ms; agregue la retención escribiendo (Request OR Open) AND NOT Close, para que la salida se mantenga encendida y Close siga teniendo prioridad.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial hace que Open siga a Request, de modo que Open cae en cuanto se suelta Request a los {{t:40}} ms. Open debe seguir encendida después de soltar Request, y Close todavía debe poder apagarla.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -41,8 +41,8 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "Elija uno de los otros lenguajes, elimine src/Gate.st, cree en la misma carpeta el archivo de ese lenguaje, agréguelo a la tarea de zplc.json, escriba la misma condición y pulse Comprobar. Después cambie el orden para que la retención quede después de Close y vea qué aserción falla.",
-      "checkpoint": "El orden de las operaciones decide el resultado en todos los lenguajes: una retención aplicada después de Close vuelve a encender la salida. Un gráfico o un diagrama de escalera muestran el mismo orden en forma de imagen. El escenario muestra solo la lógica; no es un controlador de portón."
+      "body": "Elija uno de los otros lenguajes, elimine src/Gate.st, cree en la misma carpeta el archivo de ese lenguaje, agréguelo a la tarea de zplc.json, escriba la misma condición y pulse Comprobar. Después diga qué línea suya decide quién gana cuando Request y Close llegan juntas, y qué aserción fallaría si Close no ganara.",
+      "checkpoint": "El orden de las operaciones decide el resultado en todos los lenguajes. Un gráfico o un diagrama de escalera muestran el mismo orden en forma de imagen. El escenario muestra solo la lógica; no es un controlador de portón."
     }
   ],
   "hints": [
@@ -52,10 +52,8 @@
     },
     {
       "level": 2,
-      "text": "Open := (Request OR Open) AND NOT Close; el OR mantiene la salida encendida y el AND NOT Close va al final para que Close tenga prioridad."
+      "text": "Open := (Request OR Open) AND NOT Close; el OR mantiene la salida encendida y el AND NOT Close va al final para que Close tenga prioridad. En los otros cuatro lenguajes: en lista de instrucciones, LD Request, OR Open, ANDN Close, ST Open; en diagrama de escalera, Request en paralelo con un contacto de Open, luego un contacto normalmente cerrado de Close y después la bobina Open; en diagrama de bloques de función, un bloque OR que alimenta un bloque AND cuya segunda entrada viene de un bloque NOT de Close; en diagrama funcional secuencial, un paso IS_CLOSED y un paso IS_OPEN, con una transición a IS_OPEN con Request AND NOT Close y una transición de regreso con Close."
     }
   ],
-  "faultCases": [
-    "El programa inicial asigna a Open el valor Request AND NOT Close, de modo que Open cae en cuanto se suelta Request a los {{t:40}} ms; agregue la retención escribiendo (Request OR Open) AND NOT Close, para que la salida se mantenga encendida y Close siga teniendo prioridad."
-  ]
+  "faultCases": ["El programa inicial hace que Open siga a Request, de modo que Open cae en cuanto se suelta Request a los {{t:40}} ms."]
 }

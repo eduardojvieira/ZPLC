@@ -29,7 +29,7 @@ Cada acción también se puede hacer con el teclado; la [referencia de teclado](
 | Bobinas            | normal, negada, de activación, de desactivación, flanco ascendente, flanco descendente                                                                            |
 | Estructura         | la rama paralela                                                                                                                                                  |
 | Bloques de función | los temporizadores, contadores, disparadores y biestables de la biblioteca, y los bloques de función que declaran los archivos de texto estructurado del proyecto |
-| Funciones          | las quince funciones IEC que se ejecutan como cajas con EN y ENO, descritas más abajo                                                                             |
+| Funciones          | toda función del compilador (297, las conversiones de tipo incluidas) como caja con EN y ENO, descrita más abajo                                                  |
 
 Los bloques de comunicación `COMM_CONNECT`, `COMM_PUBLISH`, `COMM_SUBSCRIBE` y `COMM_MODBUS` no se ofrecen: un archivo de escalera no puede declarar una instancia de ellos. Una función del proyecto no se coloca en un peldaño; llámela desde un diagrama de bloques de función o desde texto estructurado. Los saltos y las etiquetas no se admiten, y la compilación los rechaza con un mensaje.
 
@@ -66,7 +66,12 @@ Una caja de función se coloca en el peldaño como un contacto. Su cable izquier
 - La caja no detecta ningún error, por eso ENO nunca informa de uno. Un resultado entero que no cabe en su tipo se desborda y da la vuelta.
 - `DIV` y `MOD` con divisor cero ponen la VM en falla: el ciclo termina en falla, la salida no se escribe y la imagen de salidas `%Q` se borra, así que una salida asignada lee 0. Lo mismo vale para `REAL` con `0.0` o `-0.0`. Proteja el divisor con una caja de comparación en serie.
 
-Los pines de operandos son `IN1` e `IN2` para las comparaciones, las operaciones matemáticas, `MIN` y `MAX`; `IN` para `MOVE`; y `MN`, `IN` y `MX` para `LIMIT`.
+- Para convertir un `REAL`, coloque un bloque de conversión como `REAL_TO_INT`; las conversiones son bloques como cualquier otra función.
+- `MUX` admite como máximo ocho entradas, y **Agregar entrada** se desactiva en el límite. `SEL` y `MUX` no seleccionan cadenas: con `STRING` la compilación las rechaza e indica usar un `IF` en texto estructurado.
+- En un operando literal `STRING`, una comilla dentro de la cadena se escribe `''`, y no admite saltos de línea.
+- Un literal de 64 bits (`LWORD#`, `ULINT#`, `LINT#`) como `IN` de `SHL`, `SHR`, `ROL` o `ROR` se rechaza al compilar; asigne primero el literal a una variable.
+
+Los pines de operandos de los primeros quince bloques son `IN1` e `IN2` para las comparaciones, las operaciones matemáticas, `MIN` y `MAX`; `IN` para `MOVE`; y `MN`, `IN` y `MX` para `LIMIT`.
 
 ## Quién puede escribir una variable
 

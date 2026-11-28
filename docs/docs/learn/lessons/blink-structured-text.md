@@ -26,7 +26,7 @@ Build a blinker from a TON timer and a memory variable, and make it run only whi
 ## Objectives
 
 - Write the timer-and-memory pattern that makes an output change state at a fixed interval.
-- Gate an output with an input so that it stops at once when the input drops.
+- Make a blinking output go dark on the same scan its enable input drops.
 
 ## Stages
 

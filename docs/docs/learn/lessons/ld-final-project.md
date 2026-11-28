@@ -25,7 +25,7 @@ Turn the written description of a small packing station into a Ladder program wi
 
 ## Objectives
 
-- Turn five written requirements into one Ladder program that combines a seal-in, normally closed stops, a counter, a timer and a latched fault.
+- Turn five written requirements into one Ladder program, planning the inputs, the outputs, the steps and the tests before you draw.
 - Read a scenario that checks both what must happen and what must not happen, and use its failed assertions to find the requirement you missed.
 
 ## Stages

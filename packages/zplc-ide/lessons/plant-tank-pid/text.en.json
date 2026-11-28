@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objective",
       "body": "The tank has no passive outlet: its level only falls when the discharge valve opens. In src/TankLevel.st the level and the set point are already scaled to metres. Add the call to PID_Compact so that the inlet (FillCmd, 0 to 100 percent) keeps the level at the set point, pass the drain potentiometer to the discharge valve, show the level on the display, and light green while the level is within 5 percent of the set point. Choose KP, KI and KD yourself.",
-      "checkpoint": "Pid is called once per scan with SP, PV, the three gains, DT := 0.01, OUT_MIN := 0.0 and OUT_MAX := 100.0, and FillCmd is Pid.OUT."
+      "checkpoint": "FillCmd comes from a PID loop that holds the level inside the band around the set point, also after the drain opens."
     },
     {
       "key": "predict",
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "The starter never calls the loop: FillCmd stays at 0 percent and the tank stays empty. Start with KP := 100.0, KI := 0.0 and KD := 0.0 and look at the level after the drain opens: the inlet only grows with the error, so the level settles below the band. Raise KP until it holds. Then try a small KI to remove the last offset: the tank integrates the flow, so an integral term makes the level overshoot unless a derivative term damps it.",
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starter never calls the loop: FillCmd stays at 0 percent and the tank stays empty. Start with KP := 100.0, KI := 0.0 and KD := 0.0 and look at the level after the drain opens: the inlet only grows with the error, so the level settles below the band. Raise KP until it holds. Then try a small KI to remove the last offset: the tank integrates the flow, so an integral term makes the level overshoot unless a derivative term damps it.",
       "checkpoint": "A tuning is saved in src/TankLevel.st and you can say what each gain did when you changed it."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs src/TankLevel.st against the tank of scene tank-level-control, raises the set point, opens the drain and lowers the set point, and tests {{assertions}} assertions: the level in the band in two windows, out of it at the end, and no spill.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs src/TankLevel.st against the tank of scene tank-level-control, raises the set point, opens the drain and lowers the set point, and tests {{assertions}} assertions: the level in the band in two windows, out of it at the end, and no spill.",
       "checkpoint": "The scenario is named tank-pid and contains {{assertions}} assertions and passes them all."
     },
     {
@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Pid(SP := SetM, PV := LevelM, KP := 400.0, KI := 0.0, KD := 0.0, DT := 0.01, OUT_MIN := 0.0, OUT_MAX := 100.0); FillCmd := Pid.OUT; With KP at 100.0 the drain leaves the level under the band; 400.0 holds it."
+      "text": "Look at the gains you give PID_Compact, and at what the level does after the drain opens: does it settle inside the band, below it, or swing past the set point?"
     },
     {
       "level": 2,
-      "text": "The reference tuning is KP := 800.0, KI := 10.0, KD := 150.0: a large KP holds the level under the drain, KI slowly removes the offset and KD stops the integral term from making the level overshoot. Then DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
+      "text": "Pid(SP := SetM, PV := LevelM, KP := 800.0, KI := 10.0, KD := 150.0, DT := 0.01, OUT_MIN := 0.0, OUT_MAX := 100.0); FillCmd := Pid.OUT; is the reference tuning. With KP at 100.0 the drain leaves the level under the band, and 400.0 already holds it: a large KP holds the level under the drain, KI slowly removes the offset and KD stops the integral term from making the level overshoot. Then DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
     }
   ],
   "faultCases": ["The starter never calls the loop: FillCmd stays at 0 percent and the tank stays empty."]

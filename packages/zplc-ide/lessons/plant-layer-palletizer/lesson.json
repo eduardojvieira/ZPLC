@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "plant-layer-palletizer",
-  "version": 3,
+  "version": 5,
   "order": 154,
   "module": 15,
   "level": "advanced",

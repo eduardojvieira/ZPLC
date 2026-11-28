@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/TypedSteps.il the three comparisons at the end are written: LD Total loads the INT, LT 10 compares it and leaves a BOOL, and ST Low stores it. Write the arithmetic above them: on each rising edge of Step (Step ON now and StepWas OFF on the previous scan) add 5 to Total, and while Reset is TRUE set Total to 0.",
+      "body": "In src/TypedSteps.il the three comparisons at the end are written: LD Total loads the INT, LT 10 compares it and leaves a BOOL, and ST Low stores it. Write the arithmetic above them: on each rising edge of Step add 5 to Total, and while Reset is TRUE set Total to 0.",
       "checkpoint": "Total goes 0, 5, 10, 15, and the three outputs show which band it is in."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program remembers Step in StepWas and writes the three comparisons, but never changes Total, so Low stays ON for ever. Change it so that each press of Step adds 5 to Total once, however long the press lasts, and Total goes back to 0 while Reset is TRUE. Write the instructions yourself: the declarations and the three comparisons are already there.",
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starter remembers Step in StepWas and writes the three comparisons, but never changes Total, so Low stays ON for ever. Change it so that each press of Step adds 5 to Total once, however long the press lasts, and Total goes back to 0 while Reset is TRUE. Write the instructions yourself: the declarations and the three comparisons are already there.",
       "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
@@ -48,14 +48,14 @@
   "hints": [
     {
       "level": 1,
-      "text": "Total is an INT, and ADD on an INT in the current result keeps it an INT. Compute the rising edge first, Step now and not StepWas, and jump over the addition with JMPCN when it is FALSE. Store Step in StepWas only after that condition, and clear Total with a second jump on Reset."
+      "text": "Look at the first lines: StepWas takes the value of Step before any condition could read the value of the previous scan, and no line loads Total or adds to it."
     },
     {
       "level": 2,
-      "text": "LD Step, ANDN StepWas, JMPCN skip, LD Total, ADD 5, ST Total, skip:, then the lines that copy Step to StepWas, then LD Reset, JMPCN keep, LD 0, ST Total, keep:, before the three comparisons."
+      "text": "LD Step, ANDN StepWas, JMPCN skip, LD Total, ADD 5, ST Total, skip:, then the lines that copy Step to StepWas, then LD Reset, JMPCN keep, LD 0, ST Total, keep:, before the three comparisons. JMPCN jumps to its label when the current result is FALSE, so the lines between are skipped."
     }
   ],
   "faultCases": [
-    "The starting program remembers Step in StepWas and writes the three comparisons, but never changes Total, so Low stays ON for ever; add 5 to Total on each rising edge of Step and clear it while Reset is TRUE."
+    "The starter remembers Step in StepWas and writes the three comparisons, but never changes Total, so Low stays ON for ever."
   ]
 }

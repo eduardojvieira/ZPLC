@@ -104,7 +104,7 @@ Division or `MOD` by zero ends the scan with the VM fault `ZPLC_VM_DIV_BY_ZERO` 
 
 ### Shifts, rotations and bit logic
 
-- `SHL(IN, N)`, `SHR(IN, N)`, `ROL(IN, N)` and `ROR(IN, N)` are functions. A shift by 32 or more, or by a negative count, gives 0 (`cmp-016-shift-by-the-width-or-more`). `SHR` is logical: zeros enter on the left.
+- `SHL(IN, N)`, `SHR(IN, N)`, `ROL(IN, N)` and `ROR(IN, N)` are functions. A shift by 32 or more, or by a negative count, gives 0 (`cmp-016-shift-by-the-width-or-more`). `SHR` is logical: zeros enter on the left. An untyped integer literal is 32 bits wide, so `ROL(16#8000, 1)` assigned to a `WORD` gives 0: the bit leaves the low 16 bits. Write the literal with its type to rotate or shift within its width: `ROL(WORD#16#8000, 1)` gives 1.
 - A `BYTE`, a `WORD` and the 8-bit and 16-bit integers shift and rotate inside their own width (`cmp-014-shl-byte-keeps-8-bits`, `cmp-014-rol-byte-rotates-within-8-bits`). On `LWORD`, `LINT` and `ULINT` the width is 64: a shift by 64 or more gives 0, and a rotation takes its count modulo 64 and keeps every bit (`cmp-015-lword-shifts-and-rotates-use-64-bits`).
 - `AND`, `OR`, `XOR` and `NOT` work on the full declared width (`cmp-014-not-byte`, `cmp-014-and-or-xor-word`).
 - `w.0` reads and writes one bit of a `BYTE`, `WORD`, `INT`, `DWORD` or `LWORD`, of a structure member and of an array element; a write leaves the other bits alone. A bit number beyond the width and a bit of a `BOOL` are build errors (`cmp-032-bit-access`, `cmp-032-bit-number-out-of-range`).
@@ -256,3 +256,5 @@ No conformance case of this area is on the expected-failures list: no limit is r
 {/* <<< END GENERATED: known-limits-language <<< */}
 
 Not supported in this release and rejected with a message, by decision D-04: arrays of arrays, enumerations with a base type, subranges, `POINTER TO` and `ADR` (use `REF_TO` and `REF()`), `VAR_ACCESS`, a textual `CONFIGURATION`, `NAMESPACE`, `PROPERTY`, `ACTION` blocks in a program, positional function-block calls and the function forms of operators such as `ADD(a, b)`. The cases `cmp-006-*-is-rejected` pin the rejection, so a program that uses one fails to build.
+
+`SEL` and `MUX` do not select `STRING` values, in any language. The compiler refuses `Text := SEL(G, A, B);` with "it is not a string" when `A` and `B` are strings, and the FBD and Ladder editors refuse a string on those inputs with an error that names the block and the input. To choose between strings, write an `IF` in Structured Text: `IF G THEN Text := B; ELSE Text := A; END_IF;`. Checked on the host by the compiler and transpiler tests; the code generator of 2.1 is unchanged.

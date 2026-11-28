@@ -11,48 +11,49 @@ The trick is to let the output **keep its own rung alive**. You add a second con
 1. Pressing Start makes power reach the coil. The output turns ON.
 2. Now the contact of the output is TRUE as well. It gives power a second way to reach the coil.
 3. Releasing Start removes the first path, but the second path is still there. The output stays ON.
-4. Pressing Stop breaks the rung **before** the branch. Neither path can reach the coil any more, so the output turns OFF, and because the output is OFF, the second path stops too. The rung stays off after Stop is released.
+4. Pressing Stop must break every path that still reaches the coil. Then the output turns OFF, and because the output is OFF, the second path stops too. The rung stays off after Stop is released.
 
 The scan cycle you studied earlier is what makes this work. In one scan the output is calculated from the state that it had at the end of the previous scan.
 
-## Why the stop contacts go before the branch
+## Who wins when both are pressed
 
-The stop contacts are in series with the **whole branch**. This is what gives the stop priority. If a stop contact were inside the held path, pressing Start together with Stop would turn the machine on, because the Start path would bypass the Stop contact. A stop that can be bypassed is not a stop. Put every condition that must always be able to stop the machine **in series, before the branch**.
+A seal-in must also answer one question: when Start and Stop are pressed in the same scan, which one wins? The answer depends only on where the stop contact sits in the rung, compared with the branch. Some machines want the start to win, and the worked example below is one of them; a motor that must always be able to stop wants the opposite. Before you draw a seal-in, decide which one your machine needs, and test the moment when both buttons are pressed together.
 
 ## Worked example
 
-Go back to the workshop fan, now with two reasons to stop: an Off button and an overload relay that trips when the motor is too hot. The Off button and the overload are both read with normally closed contacts, in series before the branch.
+A paint booth has a smoke extractor. When anybody asks for extraction with StartFan, the fan must run, even if somebody else is pressing StopFan at that very moment: fumes in a booth are the bigger danger, so here the start wins. StopFan is a push button that is TRUE while pressed, so it is read with a normally closed contact.
 
 ```ld-figure
-src: reading/fan-seal-in.ld.json
-caption: The Fan contact under OnButton holds the coil on once it has started
+src: reading/booth-extractor.ld.json
+caption: The Fan contact holds the coil on, and the StopFan contact sits only on the held path
 ```
 
-Read it from left to right. Power passes OffButton and Overload only when both are FALSE, that is, when nobody pressed Off and the overload has not tripped. Then it reaches the branch: either OnButton is pressed, or the contact of Fan is TRUE. Then it reaches the coil Fan.
+Read it from left to right. Power has two paths to the coil Fan. The upper path is StartFan alone. The lower path is the held path: the contact of Fan, in series with StopFan. Once the fan runs, the lower path keeps it running after StartFan is released, until StopFan opens that path. But nothing on the upper path reads StopFan, so while StartFan is pressed, the fan runs whatever StopFan does.
 
 ```ld-try
-src: reading/fan-seal-in.ld.json
+src: reading/booth-extractor.ld.json
 inputs:
-  - { name: OnButton, kind: push }
-  - { name: OffButton, kind: push }
-  - { name: Overload, kind: switch }
+  - { name: StartFan, kind: push }
+  - { name: StopFan, kind: push }
 outputs: [Fan]
-timing: [OnButton, OffButton, Fan]
-caption: Press On and let go, then press Off. Then try the overload switch
+timing: [StartFan, StopFan, Fan]
+caption: Press StartFan and let go, then press StopFan. Then hold both together
 ```
 
-Press Run, press and release OnButton: the fan keeps running. Press OffButton: it stops. Start it again, and then switch the overload on: the fan stops, and pressing OnButton does nothing until you switch the overload off.
+Press Run, press and release StartFan: the fan keeps running. Press StopFan: it stops. Now hold StopFan and press StartFan at the same time: the fan runs, and it keeps running when you release both.
 
 ```timing
 span: 6000
 signals:
-  - { name: OnButton, edges: [500, 1000] }
-  - { name: OffButton, edges: [3500, 4000] }
-  - { name: Fan, edges: [500, 3500] }
+  - { name: StartFan, edges: [500, 1000, 4000, 4500] }
+  - { name: StopFan, edges: [2500, 3000, 4000, 4500] }
+  - { name: Fan, edges: [500, 2500, 4000] }
 marks:
-  - { from: 1000, to: 3500, label: ON }
-caption: Fan starts with the press of OnButton, stays on after the release, and stops with OffButton
+  - { from: 1000, to: 2500, label: ON }
+caption: The fan holds itself on, stops with StopFan, and starts when both are pressed together
 ```
+
+The motor of the practice must not behave like this extractor when both buttons are pressed together.
 
 ## Common mistakes
 
@@ -76,11 +77,11 @@ options:
 ```
 
 ```quiz
-question: Where must the Stop contact go for Stop to win over Start?
+question: In the booth extractor, the fan is off and StartFan and StopFan are pressed in the same scan. What does the fan do?
 options:
-  - { text: 'In series, before the branch of Start and the holding contact', correct: true, feedback: 'Yes. Nothing can bypass it.' }
-  - { text: 'In parallel with the holding contact', feedback: 'Then the Start button could still power the coil while Stop is pressed.' }
-  - { text: 'After the coil, at the end of the rung', feedback: 'A rung ends in its coil. A condition must come before the coil to decide whether power reaches it.' }
+  - { text: 'It starts, because the StartFan path does not read StopFan', correct: true, feedback: 'Yes. StopFan sits only on the held path, so the start path reaches the coil.' }
+  - { text: 'It stays off, because StopFan is pressed', feedback: 'StopFan opens only the held path. The StartFan path still reaches the coil.' }
+  - { text: 'It starts for one scan and then stops', feedback: 'While StartFan is held, its path keeps power on the coil in every scan.' }
 ```
 
 ## What you will do in the practice

@@ -494,17 +494,8 @@ function fbdWord(checks: WordCheck[]): string {
       [`zero${i}`]: constant(check.type, 0),
       [`value${i}`]: constant(check.type, check.value),
       [`pick${i}`]: { type: 'SEL' },
-      // The editor gives a shift block one input port (IN) only; the probe declares IN and N, so that the transpiler is what answers
-      [`op${i}`]: ['SHL', 'SHR', 'ROL', 'ROR'].includes(check.op)
-        ? {
-            type: check.op,
-            inputs: [
-              { name: 'IN', type: 'ANY' },
-              { name: 'N', type: 'INT' },
-            ],
-            outputs: [{ name: 'OUT', type: 'ANY' }],
-          }
-        : { type: check.op },
+      // a shift block has the pins of the compiler's table, IN and N, since D-37 (LNG-029)
+      [`op${i}`]: { type: check.op },
       [`result${i}`]: constant(check.type, check.result),
       [`same${i}`]: { type: 'EQ' },
       [`out${i}`]: output(check.out),
@@ -523,6 +514,28 @@ function fbdWord(checks: WordCheck[]): string {
   });
   return diagram(wordIo(checks), blocks, wires);
 }
+/** A Ladder operand takes a typed literal in decimal (`BYTE#129`), not in base 16. */
+const typed = (type: WordCheck['type'], value: number) => `${type}#${value}`;
+/**
+ * LD: one rung per check, Sel, the operation's box on a typed literal (Ladder refuses an initial value on a bit-string variable)
+ * into a local, an EQ box against the result, and the output coil. Ladder places every compiler function since LNG-030; AND, OR,
+ * XOR and NOT are operators, not functions, so their box stays unknown.
+ */
+const ladderWord = (checks: WordCheck[]): string =>
+  ladder(
+    { ...wordIo(checks), local: checks.map((check) => ({ name: operand(check), type: check.type })) },
+    checks.map((check) => [
+      { type: 'contact_no', variable: 'Sel' },
+      {
+        type: 'function',
+        functionName: check.op,
+        operands: [typed(check.type, check.value), ...(check.arg === undefined ? [] : [String(check.arg)])],
+        output: operand(check),
+      },
+      { type: 'function', functionName: 'EQ', operands: [operand(check), typed(check.type, check.result)] },
+      { type: 'coil', variable: check.out },
+    ]),
+  );
 const wordProbes = (construct: string, checks: WordCheck[], gaps: Partial<Record<Language, Probe['gap']>>): Probe[] =>
   (['ST', 'LD', 'FBD', 'IL', 'SFC'] as Language[]).map((language) => ({
     construct,
@@ -546,38 +559,14 @@ const wordProbes = (construct: string, checks: WordCheck[], gaps: Partial<Record
                   },
                   wordBody(checks),
                 )
-              : // A Ladder function box holds only comparison, arithmetic, MOVE, LIMIT, MIN and MAX.
-                ladder(
-                  {
-                    ...wordIo(checks.slice(0, 1)),
-                    local: [
-                      { name: operand(checks[0]!), type: checks[0]!.type },
-                      { name: 'Scratch', type: checks[0]!.type },
-                    ],
-                  },
-                  [
-                    [
-                      { type: 'contact_no', variable: 'Sel' },
-                      {
-                        type: 'function',
-                        functionName: checks[0]!.op,
-                        operands: [operand(checks[0]!), String(checks[0]!.arg)],
-                        output: 'Scratch',
-                      },
-                    ],
-                  ],
-                ),
-    ...(language === 'LD' ? wordScenario(checks.slice(0, 1)) : wordScenario(checks)),
+              : ladderWord(checks),
+    ...wordScenario(checks),
     ...(gaps[language] ? { gap: gaps[language] } : {}),
   }));
 
 const WORD_PROBES: Probe[] = [
   ...wordProbes('AND, OR, XOR, NOT on BYTE, WORD, DWORD', LOGIC, { LD: { build: "names the unknown function 'AND'" } }),
-  ...wordProbes('SHL, SHR, ROL, ROR', SHIFTS, {
-    LD: { build: "names the unknown function 'SHL'" },
-    FBD: { build: '(SHL): this block type is not supported by the FBD transpiler' },
-    IL: { build: "Unknown mnemonic 'SHL'" },
-  }),
+  ...wordProbes('SHL, SHR, ROL, ROR', SHIFTS, { IL: { build: "Unknown mnemonic 'SHL'" } }),
 ];
 
 // ---------------------------------------------------------------------------------------------------------------

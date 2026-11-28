@@ -67,7 +67,12 @@ function WelcomeStart() {
     forgetRecentProject,
   } = useWelcomeState();
   const fsApiSupported = isFileSystemAccessSupported();
-  const exampleSections = React.useMemo(() => buildExampleSections(getExampleProjects()), [getExampleProjects]);
+  // The sections hold translated text, so they are built again when the language changes (UXV-004).
+  const exampleSections = React.useMemo(
+    () => buildExampleSections(getExampleProjects()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the locale is read by buildExampleSections through t()
+    [getExampleProjects, translator.locale],
+  );
   const [appVersion, setAppVersion] = React.useState(ZPLC_REPO_VERSION);
   const [isCopyingExample, setIsCopyingExample] = React.useState(false);
   const copyingExampleRef = React.useRef(false);

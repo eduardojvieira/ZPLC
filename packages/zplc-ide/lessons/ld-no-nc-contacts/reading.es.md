@@ -34,30 +34,33 @@ Este es el punto que sorprende a los principiantes. El programa no lee "pulsado"
 | Se pulsa el pulsador de parada    | FALSE               |
 | El cable está roto                | FALSE               |
 
-Entonces el programa quiere que el motor funcione cuando la entrada de parada es TRUE. Eso significa que el peldaño del motor necesita un contacto **normalmente abierto** sobre la entrada de parada, que deja pasar la energía cuando la entrada es TRUE. Un principiante que piensa "parada, entonces necesito un contacto normalmente cerrado" obtiene lo contrario de lo que quería: el motor solo funcionaría mientras el pulsador está pulsado o el cable está cortado.
+Entonces el nombre del pulsador no elige el contacto. Un principiante que piensa "parada, entonces necesito un contacto normalmente cerrado" elige por la palabra, no por el valor. Antes de elegir un contacto, busque en la tabla el valor que tiene la entrada en la situación en que el peldaño debe dejar pasar la energía, y tome el contacto que deja pasar la energía con ese valor.
 
-Para encender una lámpara cuando el circuito de parada está abierto, usted hace la pregunta contraria, "¿la entrada de parada es FALSE?", y usa un contacto normalmente cerrado.
+Un peldaño que debe reaccionar a la situación contraria hace la pregunta contraria sobre la misma entrada.
 
 ## Ejemplo resuelto
 
-Una puerta de protección de una máquina lleva un interruptor: la señal DoorClosed es TRUE cuando la puerta está cerrada. Queremos la máquina lista solo con la puerta cerrada, y una lámpara de aviso cuando la puerta está abierta.
+Un tanque de agua se llena por una válvula. El operador pide agua con un selector, FillRequest, y un interruptor de flotador cerca del borde, TankFull, es TRUE mientras el agua lo alcanza. El interruptor de flotador es un sensor común: TRUE significa "el tanque está lleno". La válvula debe abrirse mientras se pide agua y el tanque no está lleno, y una lámpara debe mostrar el tanque lleno.
 
 ```ld-figure
-src: reading/door-ready.ld.json
-caption: Una misma señal leída con un contacto normalmente abierto y con uno normalmente cerrado
+src: reading/tank-fill.ld.json
+caption: Un mismo sensor leído con un contacto normalmente cerrado en un peldaño y con uno normalmente abierto en el otro
 ```
 
-El primer peldaño usa un contacto normalmente abierto: con DoorClosed en TRUE, la energía llega a MachineReady. El segundo peldaño usa un contacto normalmente cerrado: con DoorClosed en FALSE, la energía llega a DoorOpenLamp. Una variable, dos preguntas opuestas.
+En el primer peldaño, la energía necesita FillRequest en TRUE y TankFull en FALSE, así que FillRequest lleva un contacto normalmente abierto y TankFull uno normalmente cerrado, en serie. En el segundo peldaño la lámpara hace la pregunta contraria sobre el mismo sensor, "¿TankFull es TRUE?", así que lleva un contacto normalmente abierto. Cada contacto se eligió por el valor que tiene la entrada cuando el peldaño debe conducir.
 
 ```ld-try
-src: reading/door-ready.ld.json
+src: reading/tank-fill.ld.json
 inputs:
-  - { name: DoorClosed, kind: switch }
-outputs: [MachineReady, DoorOpenLamp]
-caption: Cierre la puerta y vuelva a abrirla con el interruptor
+  - { name: FillRequest, kind: switch }
+  - { name: TankFull, kind: switch }
+outputs: [FillValve, FullLamp]
+caption: Pida agua y luego deje que el flotador indique el tanque lleno
 ```
 
-Pulse Ejecutar. Al principio DoorClosed es FALSE, así que la lámpara de aviso está encendida. Active el interruptor: la máquina queda lista y la lámpara se apaga. En cada momento hay encendida exactamente una de las dos lámparas.
+Pulse Ejecutar. Active FillRequest: la válvula se abre. Ahora active TankFull, como si el agua hubiera llegado al flotador: la válvula se cierra y la lámpara se enciende, aunque FillRequest sigue activo. Desactive TankFull y la válvula vuelve a abrirse.
+
+Un pulsador de parada cableado normalmente cerrado se comporta distinto de este flotador: su entrada es TRUE cuando no pasa nada. La práctica le pide elegir sus contactos.
 
 ## Errores comunes
 
@@ -79,11 +82,11 @@ options:
 ```
 
 ```quiz
-question: El motor debe funcionar solo mientras la entrada de parada es TRUE. ¿Qué contacto pone sobre la entrada de parada en el peldaño del motor?
+question: Un interruptor de nivel LowLevel es TRUE mientras el agua está por debajo de él. Una bomba debe funcionar solo mientras LowLevel es FALSE. ¿Qué contacto pone sobre LowLevel en el peldaño de la bomba?
 options:
-  - { text: 'Un contacto normalmente abierto', correct: true, feedback: 'Correcto. Deja pasar la energía cuando la entrada es TRUE.' }
-  - { text: 'Un contacto normalmente cerrado', feedback: 'Ese contacto deja pasar la energía cuando la entrada es FALSE, así que el motor funcionaría solo con el circuito de parada abierto.' }
-  - { text: 'No hace falta ningún contacto', feedback: 'Sin el contacto, el programa ignora por completo el pulsador de parada.' }
+  - { text: 'Un contacto normalmente cerrado', correct: true, feedback: 'Correcto. Deja pasar la energía cuando su variable es FALSE.' }
+  - { text: 'Un contacto normalmente abierto', feedback: 'Ese contacto deja pasar la energía cuando LowLevel es TRUE, así que la bomba funcionaría solo con el agua baja.' }
+  - { text: 'No hace falta ningún contacto', feedback: 'Sin el contacto, el programa ignora por completo el interruptor de nivel.' }
 ```
 
 ## Qué hará en la práctica

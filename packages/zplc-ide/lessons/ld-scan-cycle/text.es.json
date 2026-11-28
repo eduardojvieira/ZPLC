@@ -5,13 +5,13 @@
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no mide cuánto dura un ciclo en un controlador real.",
   "objectives": [
     "Describa el ciclo de escaneo: leer las entradas, resolver los peldaños de arriba hacia abajo, escribir las salidas y repetir.",
-    "Reordene dos peldaños para que un valor se calcule antes del peldaño que lo usa, y vea en la traza registrada la diferencia de un ciclo."
+    "Encuentre por qué una salida va un ciclo detrás de su entrada, corríjalo sin cambiar ningún contacto ni bobina, y vea en la traza registrada la diferencia de un ciclo."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/ScanOrder.ld.json hay dos peldaños dibujados. Uno copia el pulsador StartButton en un bit de memoria ButtonSeen, y el otro muestra ButtonSeen en la lámpara Lamp. Están en el orden equivocado, así que la lámpara sigue al pulsador un ciclo tarde. Haga que la lámpara siga al pulsador en el mismo ciclo.",
+      "body": "En src/ScanOrder.ld.json hay dos peldaños dibujados. Uno copia el pulsador StartButton en un bit de memoria ButtonSeen, y el otro muestra ButtonSeen en la lámpara Lamp. La lámpara sigue al pulsador un ciclo tarde. Haga que la lámpara siga al pulsador en el mismo ciclo.",
       "checkpoint": "Puede decir cuál de los dos peldaños calcula un valor y cuál lo usa."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial resuelve el peldaño de la lámpara antes de actualizar ButtonSeen, así que la lámpara se enciende un ciclo tarde, a los {{t:20}} ms en vez de a los {{t:10}} ms. Cámbielo para que Lamp pase a ON a los {{t:10}} ms y a OFF a los {{t:30}} ms, en los mismos ciclos que StartButton. Deje cada contacto y cada bobina como están.",
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial enciende la lámpara un ciclo tarde, a los {{t:20}} ms en vez de a los {{t:10}} ms. Cámbielo para que Lamp pase a ON a los {{t:10}} ms y a OFF a los {{t:30}} ms, en los mismos ciclos que StartButton. Deje cada contacto y cada bobina como están.",
       "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
@@ -42,20 +42,18 @@
       "key": "reflect",
       "title": "Reflexione",
       "body": "Un ciclo dura lo mismo, unos pocos milisegundos, cada vez. ¿Por qué un retraso de un ciclo puede ser inofensivo en una máquina y un problema en otra? ¿Qué pasaría si la lámpara fuera la entrada de un contador rápido?",
-      "checkpoint": "Un retraso de un ciclo solo importa cuando algo necesita el valor antes: una cadena de peldaños suma un ciclo por eslabón, y un pulso más corto que un ciclo puede aparecer y desaparecer sin que se vea. Calcular primero y usar después elimina el retraso."
+      "checkpoint": "Un retraso de un ciclo solo importa cuando algo necesita el valor antes: una cadena de peldaños suma un ciclo por eslabón, y un pulso más corto que un ciclo puede aparecer y desaparecer sin que se vea."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Dentro de un ciclo, un peldaño solo ve lo que ya calcularon los peldaños que están arriba. ¿Qué peldaño debe calcular primero ButtonSeen?"
+      "text": "Mire qué peldaño escribe ButtonSeen y qué peldaño lo lee, y en qué lugar del programa está cada uno."
     },
     {
       "level": 2,
       "text": "Seleccione el peldaño que copia StartButton en ButtonSeen y pulse {{ui:ld.moveRungUp}} una vez, para que quede como peldaño 1. No cambie ningún contacto ni bobina."
     }
   ],
-  "faultCases": [
-    "El programa inicial resuelve el peldaño de la lámpara antes de actualizar ButtonSeen, así que la lámpara se enciende un ciclo tarde, a los {{t:20}} ms en vez de a los {{t:10}} ms."
-  ]
+  "faultCases": ["El programa inicial enciende la lámpara un ciclo tarde, a los {{t:20}} ms en vez de a los {{t:10}} ms."]
 }

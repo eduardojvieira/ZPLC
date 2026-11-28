@@ -5,7 +5,7 @@
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real stop button or motor starter is wired.",
   "objectives": [
     "Read a Ladder rung as a path of contacts that must all pass power to reach a coil.",
-    "Hold a coil on with a contact of its own output in parallel with Start, and keep Stop in series so that Stop wins."
+    "Make a coil hold itself on after Start is released, in a rung where Stop always wins over Start."
   ],
   "stages": [
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program drives Motor only while StartPB is pressed, so it drops out as soon as Start is released at {{t:20}} ms. Change it so that Motor stays ON after Start is released, turns OFF when Stop is pressed at {{t:40}} ms, stays OFF when Stop is released, and stays OFF at {{t:70}} ms when Start and Stop are pressed together. Leave the StopPB contact where it is.",
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program drives Motor only while StartPB is pressed, so it drops out as soon as Start is released at {{t:20}} ms. Change it so that Motor stays ON after Start is released, turns OFF when Stop is pressed at {{t:40}} ms, stays OFF when Stop is released, and stays OFF at {{t:70}} ms when Start and Stop are pressed together.",
       "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
@@ -41,14 +41,14 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Why must the Stop contact sit in series before the branch? Move it into the held path and see which assertion fails.",
-      "checkpoint": "With Stop inside the held path, Start bypasses it: at {{t:70}} ms the motor runs although Stop is pressed, so that assertion fails. In series before the branch, nothing can bypass Stop."
+      "body": "At {{t:70}} ms Start and Stop are pressed together. Which assertion covers that moment, and which contact of your rung keeps the motor OFF then?",
+      "checkpoint": "You can follow the power through your rung at {{t:70}} ms and say which contact stops it, and which assertion would fail if that contact did not stop it."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Power must reach the coil through StopPB and then through either StartPB or something that is true while the motor runs. What is true while the motor runs?"
+      "text": "Look at what is still TRUE in the scan after Start is released while the motor runs, and at which contact every path to the coil must pass."
     },
     {
       "level": 2,

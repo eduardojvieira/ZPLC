@@ -46,9 +46,11 @@ import { u2FindEn } from './catalog/u2Find';
 import { u2SearchEn } from './catalog/u2Search';
 import { u2ReviewEn } from './catalog/u2Review';
 import { u2AssistantEn } from './catalog/u2Assistant';
+import { assistantPolishEn } from './catalog/assistantPolish';
 import { u2NavigatorEn } from './catalog/u2Navigator';
 import { u2LayoutEn } from './catalog/u2Layout';
 import { u2PreferencesEn } from './catalog/u2Preferences';
+import { mcpConnectionEn } from './catalog/mcpConnection';
 import { u2PanelEn } from './catalog/u2Panel';
 import { u3GuideEn } from './catalog/u3Guide';
 import { u3LearnEn } from './catalog/u3Learn';
@@ -399,7 +401,8 @@ export const baseEn = {
   'recovery.restoreAll': 'Restore all',
   // A file changed outside ZPLC
   'externalChange.title': `Changed outside ${PRODUCT_NAME}`,
-  'externalChange.intro': 'These files have changes that are not saved, and they also changed on disk. Choose which version to keep.',
+  'externalChange.intro':
+    'These files changed on disk and have unsaved changes. If you keep yours, your next save replaces the version on disk.',
   'externalChange.deleted': 'Deleted on disk',
   'externalChange.changed': 'Changed on disk',
   'externalChange.keep': 'Keep my version',
@@ -509,6 +512,7 @@ export const baseEn = {
   'panel.problems.empty.title': 'No problems found',
   'panel.problems.empty.checked': 'The latest build reported no diagnostics.',
   'panel.problems.empty.unchecked': 'Compile the project to check it for problems.',
+  'panel.problems.earlierBuild': 'The files changed outside ZPLC after the last build. Build again to see its problems.',
   'panel.trace.empty.title': 'No trace samples yet',
   'panel.trace.empty.description': 'Step the native POSIX simulation to collect trace samples.',
   'panel.watch.empty.title': 'No variables watched',
@@ -685,9 +689,11 @@ export const en = {
   ...u2SearchEn,
   ...u2ReviewEn,
   ...u2AssistantEn,
+  ...assistantPolishEn,
   ...u2NavigatorEn,
   ...u2LayoutEn,
   ...u2PreferencesEn,
+  ...mcpConnectionEn,
   ...u2PanelEn,
   ...u3GuideEn,
   ...u3LearnEn,

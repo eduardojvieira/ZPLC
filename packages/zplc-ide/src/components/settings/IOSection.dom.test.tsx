@@ -2,6 +2,8 @@ import { describe, expect, it } from 'bun:test';
 import { setupDom, stubProjectLoader } from '../../test/dom';
 import { SectionHost } from '../../test/SectionHost';
 import type { ZPLCProjectConfig } from '../../types';
+import { contrastRatio } from '../../theme/color';
+import { resolveTokens } from '../../theme/tokens';
 
 const dom = await setupDom();
 await stubProjectLoader();
@@ -69,5 +71,32 @@ describe('I/O mapping (UX-013, IO-003) in a DOM', () => {
     await user.click(digital[1]!);
     expect(last?.io?.outputs).toHaveLength(1);
     expect(last?.io?.inputs ?? []).toHaveLength(0);
+  });
+
+  it('UXV-004 keeps the add buttons, the table header and every row control readable in the high-contrast theme', async () => {
+    const hc = resolveTokens('high-contrast');
+    // The resting fill and ink of an element, read from its token classes (a hover: or placeholder: variant is not the rest state).
+    const tokenOf = (element: Element, utility: 'bg' | 'text'): string | undefined =>
+      new RegExp(`(?:^|\\s)${utility}-\\[var\\((--[\\w-]+)\\)\\]`).exec(element.getAttribute('class') ?? '')?.[1];
+    const { user } = dom.render(<SectionHost Section={IOSection} initial={withBoard} />);
+    const digital = dom.screen.getAllByRole('button', { name: dom.t('io.digital') });
+    await user.click(digital[0]!);
+    await user.click(digital[1]!);
+    const header = dom.screen.getAllByText(dom.t('io.address'))[0]!.parentElement!;
+    const elements = [
+      ...dom.screen.getAllByRole('button', { name: dom.t('io.digital') }),
+      ...dom.screen.getAllByRole('button', { name: dom.t('io.analog') }),
+      header,
+      ...dom.screen.getAllByRole('textbox', { name: dom.t('a11y.io.name', { row: 1 }) }),
+      ...dom.screen.getAllByRole('combobox', { name: dom.t('a11y.io.type', { row: 1 }) }),
+    ];
+    const failures = elements.flatMap((element) => {
+      const fg = tokenOf(element, 'text');
+      const bg = tokenOf(element, 'bg');
+      if (fg === undefined || bg === undefined) return [`${element.textContent}: no token pair`];
+      const ratio = contrastRatio(hc[fg]!, hc[bg]!);
+      return ratio >= 4.5 ? [] : [`${element.tagName} ${element.textContent?.trim()}: ${fg} on ${bg} is ${ratio.toFixed(2)}:1`];
+    });
+    expect(failures).toEqual([]);
   });
 });

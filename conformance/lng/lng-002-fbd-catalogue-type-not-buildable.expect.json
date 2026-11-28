@@ -1,0 +1,8 @@
+{
+  "requirement": "LNG-002",
+  "title": "an FBD block of a catalogue type that no diagram can build is rejected by name",
+  "matrix": ["ld-fbd.fbd-blocks"],
+  "build": "fails",
+  "codes": ["UNKNOWN_TYPE"],
+  "messageIncludes": ["'pub'", "COMM_PUBLISH"]
+}

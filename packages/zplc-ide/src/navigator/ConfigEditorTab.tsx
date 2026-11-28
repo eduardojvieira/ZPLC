@@ -4,7 +4,7 @@
 import { X } from 'lucide-react';
 import { useT } from '../i18n';
 import { UnsavedChangesDialog } from '../components/UnsavedChangesDialog';
-import { Button, IconButton } from '../ui';
+import { Button } from '../ui';
 import { CONFIG_EDITOR_ICONS } from './configEditorSections';
 import { CONFIG_EDITOR_TITLE_KEYS, configEditorViewId, type ConfigEditorKind } from './configEditors';
 
@@ -27,30 +27,40 @@ export function ConfigEditorTab({ kind, selected, panelId, onSelect, onClose, on
       role="presentation"
       data-config-tab={kind}
       className={
-        `group flex h-full select-none items-center gap-1 border-r border-[var(--color-surface-600)] pl-2 pr-1 ` +
-        `transition-colors ${
-          selected
-            ? 'bg-[var(--color-surface-700)] text-[var(--color-surface-100)]'
-            : 'bg-[var(--color-surface-800)] ' + 'text-[var(--color-surface-300)] hover:bg-[var(--color-surface-700)]'
-        }`
+        'group flex items-center gap-2 px-3 h-full border-r border-[var(--color-surface-600)] cursor-pointer select-none ' +
+        'transition-colors ' +
+        (selected
+          ? 'bg-[var(--color-surface-700)] text-[var(--color-surface-100)]'
+          : 'bg-[var(--color-surface-800)] text-[var(--color-surface-300)] hover:bg-[var(--color-surface-700)]')
       }
     >
       <Button
+        variant="bare"
         id={`editor-tab-${viewId}`}
-        variant="ghost"
-        size="sm"
         role="tab"
         aria-selected={selected}
         aria-controls={panelId}
         tabIndex={selected ? 0 : -1}
         onClick={() => onSelect(kind)}
         onKeyDown={(event) => onKeyDown(event, viewId)}
-        className="gap-2 px-1"
+        className="flex min-w-0 items-center gap-2 rounded text-left focus-visible:outline"
       >
         <Icon size={14} className="text-[var(--color-accent-blue)]" aria-hidden />
-        <span className="whitespace-nowrap">{title}</span>
+        <span className="text-sm whitespace-nowrap">{title}</span>
       </Button>
-      <IconButton label={t('configEditor.close', { title })} size="sm" icon={<X size={14} />} onClick={() => onClose(kind)} />
+      <Button
+        variant="bare"
+        type="button"
+        onClick={() => onClose(kind)}
+        className={
+          `p-0.5 rounded ${selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'} ` +
+          'hover:bg-[var(--color-surface-500)] focus-visible:opacity-100 focus-visible:outline transition-opacity'
+        }
+        aria-label={t('configEditor.close', { title })}
+        tooltip={t('configEditor.close', { title })}
+      >
+        <X size={14} />
+      </Button>
     </div>
   );
 }

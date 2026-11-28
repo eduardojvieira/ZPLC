@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/ld-analog-scaling. Do not edit. >>> */}
 
-Escale las cuentas crudas de una entrada analógica a un nivel en porcentaje con un bloque MUL y luego un bloque DIV, mantenga el resultado en rango con LIMIT y gobierne dos lámparas de nivel con cajas de comparación.
+Escale las cuentas en bruto de una entrada analógica a un nivel en porcentaje con un bloque MUL y luego un bloque DIV, mantenga el resultado en rango con LIMIT y gobierne dos lámparas de nivel con cajas de comparación.
 
 ## Datos
 
@@ -25,8 +25,8 @@ Escale las cuentas crudas de una entrada analógica a un nivel en porcentaje con
 
 ## Objetivos
 
-- Escale cuentas analógicas crudas a unidades de ingeniería multiplicando por el rango de las unidades y luego dividiendo entre el rango de las cuentas, en un tipo donde quepa el producto.
-- Mantenga un valor dentro de su rango con un bloque LIMIT y compare el valor escalado, no las cuentas crudas, con los umbrales de las alarmas.
+- Escale cuentas analógicas en bruto a unidades de ingeniería con números enteros, sin perder la parte pequeña del valor, en un tipo donde quepa el producto.
+- Mantenga un valor dentro de su rango con un bloque LIMIT y compare el valor escalado, no las cuentas en bruto, con los umbrales de las alarmas.
 
 ## Etapas
 

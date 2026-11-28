@@ -27,30 +27,30 @@ With the value of the previous scan, a program can see a change. A signal that i
 
 ## Worked example
 
-A sensor at the end of a conveyor, `Eye`, is TRUE while a box is in front of it. The line needs a pulse, `Left`, on the scan in which a box has just gone away, to count the boxes that leave. That is the change from TRUE to FALSE, the falling edge, so the test is the mirror of the one above: it was TRUE before and it is not TRUE now.
+A water tank has a float switch, `Float`, that is TRUE while the water is above it. The operator panel keeps a log, and it needs a pulse, `Changed`, on every scan in which the float switch has just moved, up or down. Neither edge alone is enough: the log wants both. A change is a scan in which the value now differs from the value before, and that is what XOR tells: TRUE when its two operands differ.
 
 ```st
-PROGRAM BoxLeaves
-VAR_INPUT Eye : BOOL; END_VAR
-VAR_OUTPUT Left : BOOL; END_VAR
-VAR EyeBefore : BOOL := FALSE; END_VAR
-Left := EyeBefore AND NOT Eye;
-EyeBefore := Eye;
+PROGRAM FloatLog
+VAR_INPUT Float : BOOL; END_VAR
+VAR_OUTPUT Changed : BOOL; END_VAR
+VAR FloatBefore : BOOL := FALSE; END_VAR
+Changed := Float XOR FloatBefore;
+FloatBefore := Float;
 END_PROGRAM
 ```
 
-The diagram shows a scan every ten milliseconds. EyeBefore is drawn as the first statement reads it, before the last statement updates it, so it follows Eye one scan later. Left is TRUE only on the scan where EyeBefore is still TRUE and Eye is already FALSE.
+The diagram shows a scan every ten milliseconds. FloatBefore is drawn as the first statement reads it, before the last statement updates it, so it follows Float one scan later. Changed is TRUE on the two scans in which Float and FloatBefore differ: when the water rises over the switch and when it falls below it again.
 
 ```timing
 span: 60
 signals:
-  - { name: Eye, edges: [10, 40] }
-  - { name: EyeBefore, edges: [20, 50] }
-  - { name: Left, edges: [40, 50] }
-caption: EyeBefore is Eye one scan late, and Left lasts one scan
+  - { name: Float, edges: [10, 40] }
+  - { name: FloatBefore, edges: [20, 50] }
+  - { name: Changed, edges: [10, 20, 40, 50] }
+caption: FloatBefore is Float one scan late, and Changed lasts one scan at each change
 ```
 
-Swap the two statements and the program breaks: EyeBefore would take the value of Eye first, the test would compare Eye with itself, and Left would never turn on.
+This program has one memory and one statement that reads it. The practice asks for more from its memory: two outputs that each need the value of the previous scan, and an edge in one direction only. Where each statement goes is for you to work out.
 
 ## Common mistakes
 

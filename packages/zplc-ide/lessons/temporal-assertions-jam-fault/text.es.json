@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial no retiene la falla por atasco; retenga la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela solo con Reset después de que se despeje el atasco y exija un nuevo Start para volver a mover la cinta.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial no retiene la falla por atasco; retenga la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela solo con Reset después de que se despeje el atasco y exija un nuevo Start para volver a mover la cinta.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {

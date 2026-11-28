@@ -13,7 +13,6 @@ export function ThemeControl() {
   return (
     <Select
       label={t('theme.label')}
-      layout="inline"
       value={effectiveTheme}
       onChange={(event) => chooseTheme(event.target.value, setTheme)}
       data-theme-control

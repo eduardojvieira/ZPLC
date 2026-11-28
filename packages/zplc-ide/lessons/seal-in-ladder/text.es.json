@@ -5,7 +5,7 @@
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo se cablea un pulsador de parada o un arrancador de motor reales.",
   "objectives": [
     "Lea un peldaño en diagrama de escalera como un camino de contactos por el que debe pasar la energía para llegar a la bobina.",
-    "Mantenga una bobina activada con un contacto de su propia salida en paralelo con Start, y deje Stop en serie para que Stop tenga prioridad."
+    "Haga que una bobina se mantenga activada después de soltar Start, en un peldaño donde Stop siempre gane sobre Start."
   ],
   "stages": [
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial acciona Motor solo mientras StartPB está pulsado, así que se apaga en cuanto se suelta Start a los {{t:20}} ms. Cámbielo para que Motor siga en ON al soltar Start, pase a OFF al pulsar Stop a los {{t:40}} ms, siga en OFF al soltar Stop y quede en OFF a los {{t:70}} ms cuando se pulsan Start y Stop a la vez. Deje el contacto de StopPB donde está.",
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial acciona Motor solo mientras StartPB está pulsado, así que se apaga en cuanto se suelta Start a los {{t:20}} ms. Cámbielo para que Motor siga en ON al soltar Start, pase a OFF al pulsar Stop a los {{t:40}} ms, siga en OFF al soltar Stop y quede en OFF a los {{t:70}} ms cuando se pulsan Start y Stop a la vez.",
       "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
@@ -41,14 +41,14 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "¿Por qué el contacto de Stop debe estar en serie antes de la rama? Muévalo a la rama de autorretención y vea qué aserción falla.",
-      "checkpoint": "Con Stop dentro del camino de retención, Start lo salta: a los {{t:70}} ms el motor funciona aunque Stop está pulsado, y esa aserción falla. En serie antes de la rama, nada puede saltar a Stop."
+      "body": "A los {{t:70}} ms se pulsan Start y Stop a la vez. ¿Qué aserción cubre ese momento y qué contacto de su peldaño mantiene el motor en OFF?",
+      "checkpoint": "Puede seguir la energía por su peldaño a los {{t:70}} ms y decir qué contacto la detiene, y qué aserción fallaría si ese contacto no la detuviera."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "La energía debe llegar a la bobina por StopPB y luego por StartPB o por algo que sea verdadero mientras el motor funciona. ¿Qué es verdadero mientras el motor funciona?"
+      "text": "Mire qué sigue siendo TRUE en el ciclo después de soltar Start mientras el motor funciona, y por qué contacto debe pasar todo camino hacia la bobina."
     },
     {
       "level": 2,

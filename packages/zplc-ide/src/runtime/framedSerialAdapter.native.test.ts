@@ -3,7 +3,7 @@
 // runtime reads, and what it writes comes back as `ZF:<hex>` lines), so the engine and the program store are the
 // real ones and the adapter, the transport and the router are Studio's.
 import { afterEach, describe, expect } from 'bun:test';
-import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import { spawn, spawnSync, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -11,10 +11,25 @@ import { join } from 'node:path';
 import { ZPLC_CONSTANTS, compileToBinary } from '@zplc/compiler';
 
 import type { SerialConnection } from '../uploader/webserial';
-import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
+import { itNative as itNativeRuntime, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
 import { FramedSerialAdapter } from './framedSerialAdapter';
 import { MemoryAccessError } from './memoryAccess';
 import { bytesToLowerHex, hexToBytes } from './link/shellTransport';
+
+// The device link (--device-link) is served only on POSIX hosts (native_device_link.c, #ifndef _WIN32): on Windows the
+// runtime says so and exits 1. There this file asserts that rule and registers no link test: a skip would read as a missing
+// binary to the VF-023 guard. itNative keeps its name so that tools/ci/requirement-coverage.ts still reads the titles.
+const LINK_UNAVAILABLE = 'the device link is not available on this platform';
+const itNative = (process.platform === 'win32' ? () => undefined : itNativeRuntime) as typeof itNativeRuntime;
+
+// Registered only on Windows, not skipped elsewhere: a skip on Linux would read as a missing binary to the VF-023 guard.
+if (process.platform === 'win32') {
+  itNativeRuntime(`on Windows the runtime says "${LINK_UNAVAILABLE}" and exits 1`, () => {
+    const result = spawnSync(nativeRuntimeBinary, ['--device-link'], { encoding: 'utf8', input: '', timeout: 10_000 });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(LINK_UNAVAILABLE);
+  });
+}
 
 const SYS_INFO = {
   board: 'native_sim',
@@ -191,7 +206,7 @@ describe('the serial adapter on firmware that speaks the link (COM-019, COM-023,
 });
 
 describe('the serial adapter on firmware that speaks only the text shell (COM-029)', () => {
-  itNative('says so, says what to install, and keeps writing as the text shell does', async () => {
+  itNativeRuntime('says so, says what to install, and keeps writing as the text shell does', async () => {
     const made = await bridge(false);
     const adapter = await connected(made);
     expect(adapter.framed).toBe(false);

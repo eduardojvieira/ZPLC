@@ -26,7 +26,7 @@ Lea un programa en lista de instrucciones como un resultado actual que cada lín
 ## Objetivos
 
 - Lea un programa en lista de instrucciones (IL) como un resultado actual que cada instrucción combina con un operando, de arriba hacia abajo.
-- Use LD, LDN, AND, XOR y ST para convertir tres entradas en tres salidas.
+- Convierta tres entradas en tres salidas con instrucciones de carga, combinación y almacenamiento.
 
 ## Etapas
 

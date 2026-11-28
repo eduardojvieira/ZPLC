@@ -4,7 +4,7 @@
   "summary": "Scale a raw count from 0 to 1000 into a percentage with integer arithmetic, and raise a warning at 50 percent and an alarm at 80 percent.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show the accuracy, noise or calibration of a real analog input.",
   "objectives": [
-    "Scale a raw count to engineering units with a multiplication followed by a division, in that order.",
+    "Scale a raw count to engineering units with whole numbers, without losing the part of the value below the divisor.",
     "See that integer division drops the remainder, and choose an integer type wide enough for the intermediate product."
   ],
   "stages": [
@@ -12,7 +12,7 @@
       "key": "objective",
       "title": "Objective",
       "body": "The scenario inputs are BOOL, so this lesson does not read a real analog input: src/Scaling.st counts Raw up by 100 on each scan while Enable is TRUE, as a stand-in for a signal that rises from 0 to 1000. Write the scaling: Percent is Raw scaled from 0..1000 to 0..100.",
-      "checkpoint": "Percent follows Raw divided by 10, Warn turns ON at 50 percent and Alarm at 80 percent."
+      "checkpoint": "Percent is the right percentage of Raw at every step, Warn turns ON at 50 percent and Alarm at 80 percent."
     },
     {
       "key": "predict",
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program divides before it multiplies, so the integer division Raw / 1000 gives 0 until Raw reaches 1000 and the percentage stays at 0. Change the scaling so that Percent is the right percentage of Raw at every step, not only at full scale. Leave the stand-in for Raw and the two comparisons as they are.",
+      "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starter keeps Percent at 0 until Raw reaches 1000, so Warn and Alarm stay OFF while Raw rises and turn ON together at full scale. Change the scaling so that Percent is the right percentage of Raw at every step, not only at full scale. Leave the stand-in for Raw and the two comparisons as they are.",
       "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
@@ -41,14 +41,14 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Why is DINT used here? Raw times 100 reaches 100000, more than a 16-bit INT holds, so the intermediate product needs a wider type. What would adding half the divisor before the division change, and for which values of Raw?",
-      "checkpoint": "The product is formed before the division, so its range decides the type, not the range of Raw. The scenario checks the two thresholds only; it does not check the rounding of other values."
+      "body": "Why is DINT used here? Which values does the program form on its way to Percent, and would each of them fit in a 16-bit INT? What would adding half the divisor before the division change, and for which values of Raw?",
+      "checkpoint": "You can list the values the program forms on its way to Percent and say which of them needs more than 16 bits. The scenario checks the two thresholds only; it does not check the rounding of other values."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Integer division gives a whole number: 500 / 1000 is 0. Which operation should come first so that the remainder is not lost?"
+      "text": "Look at the line that writes Percent and work it out by hand for Raw = 500, with whole numbers only: an integer division drops the remainder, so 500 / 1000 is 0."
     },
     {
       "level": 2,
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "The starter divides before it multiplies, so the integer division Raw / 1000 gives 0 until Raw reaches 1000 and the percentage stays at 0; multiply by 100 first, then divide by 1000."
+    "The starter keeps Percent at 0 until Raw reaches 1000, so Warn and Alarm stay OFF while Raw rises and turn ON together at full scale."
   ]
 }

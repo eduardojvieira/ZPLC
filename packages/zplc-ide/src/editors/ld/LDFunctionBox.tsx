@@ -7,7 +7,7 @@
  * The box fits the 80x60 cell of the grid; a name too long for it is cut and shown whole in its tooltip.
  */
 
-import { ldFunctionLabel, ldFunctionSpec } from '../../models/ldSupport';
+import { ldFunctionLabel, ldFunctionPins, ldFunctionSpec } from '../../models/ldSupport';
 import type { LDElement as LDElementModel } from '../../models/ld';
 import type { Reading } from '../../monitoring/elementStates';
 import { SIGNAL_PAINT } from '../../theme/signalTone';
@@ -62,8 +62,10 @@ export default function LDFunctionBox({
   onDragStart,
   draggable = false,
 }: LDFunctionBoxProps) {
-  const pins = ldFunctionSpec(element.functionName)?.pins ?? [];
   const operands = element.operands ?? [];
+  // a box that takes more inputs (MUX) has a row for each operand it holds: K, IN0, IN1, IN2...
+  const spec = ldFunctionSpec(element.functionName);
+  const pins = spec ? ldFunctionPins(spec, operands.length) : [];
   const pin = (index: number) => pins[index] ?? `IN${index + 1}`;
   const stroke = selected ? COLORS.selected : COLORS.fb;
   const left = wireOf(energized);

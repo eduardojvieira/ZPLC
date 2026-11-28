@@ -4,7 +4,7 @@
   "summary": "Use a CTU counter to count three discrete pulses and reset the count.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real sensor bounces or what a real input does with a pulse shorter than a scan.",
   "objectives": [
-    "Count the rising edges of an input with a CTU instance called on every scan, so that a long pulse counts once.",
+    "Count the rising edges of an input with a counter instance called on every scan, so that a long pulse counts once.",
     "Turn an output on when the count reaches its preset, and clear the count with a reset input."
   ],
   "stages": [
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "A CTU already counts only rising edges of CU, so a long pulse still counts once; you do not need to detect the edge yourself."
+      "text": "Look at what the program must remember from one pulse to the next, in which direction that number goes, and what makes it start again."
     },
     {
       "level": 2,

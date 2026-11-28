@@ -104,7 +104,7 @@ La división o `MOD` por cero termina el ciclo con la falla de la VM `ZPLC_VM_DI
 
 ### Desplazamientos, rotaciones y lógica de bits
 
-- `SHL(IN, N)`, `SHR(IN, N)`, `ROL(IN, N)` y `ROR(IN, N)` son funciones. Un desplazamiento de 32 o más, o con un contador negativo, da 0 (`cmp-016-shift-by-the-width-or-more`). `SHR` es lógico: entran ceros por la izquierda.
+- `SHL(IN, N)`, `SHR(IN, N)`, `ROL(IN, N)` y `ROR(IN, N)` son funciones. Un desplazamiento de 32 o más, o con un contador negativo, da 0 (`cmp-016-shift-by-the-width-or-more`). `SHR` es lógico: entran ceros por la izquierda. Un literal entero sin tipo mide 32 bits, así que `ROL(16#8000, 1)` asignado a una `WORD` da 0: el bit sale de los 16 bits bajos. Escriba el literal con su tipo para rotar o desplazar dentro de su ancho: `ROL(WORD#16#8000, 1)` da 1.
 - Un `BYTE`, un `WORD` y los enteros de 8 y 16 bits se desplazan y rotan dentro de su propio ancho (`cmp-014-shl-byte-keeps-8-bits`, `cmp-014-rol-byte-rotates-within-8-bits`). En `LWORD`, `LINT` y `ULINT` el ancho es 64: un desplazamiento de 64 o más da 0, y una rotación toma su contador módulo 64 y conserva todos los bits (`cmp-015-lword-shifts-and-rotates-use-64-bits`).
 - `AND`, `OR`, `XOR` y `NOT` actúan sobre todo el ancho declarado (`cmp-014-not-byte`, `cmp-014-and-or-xor-word`).
 - `w.0` lee y escribe un bit de un `BYTE`, `WORD`, `INT`, `DWORD` o `LWORD`, de un miembro de estructura y de un elemento de arreglo; una escritura deja intactos los demás bits. Un número de bit fuera del ancho y un bit de un `BOOL` son errores de compilación (`cmp-032-bit-access`, `cmp-032-bit-number-out-of-range`).
@@ -256,3 +256,5 @@ Ningún caso de conformidad de esta área figura en la lista de fallas esperadas
 {/* <<< END GENERATED: known-limits-language <<< */}
 
 No se admiten en esta versión y se rechazan con un mensaje, por la decisión D-04: arreglos de arreglos, enumeraciones con tipo base, subrangos, `POINTER TO` y `ADR` (use `REF_TO` y `REF()`), `VAR_ACCESS`, una `CONFIGURATION` textual, `NAMESPACE`, `PROPERTY`, bloques `ACTION` en un programa, llamadas posicionales a bloques de función y las formas de función de los operadores, como `ADD(a, b)`. Los casos `cmp-006-*-is-rejected` fijan el rechazo, de modo que un programa que usa alguno no se compila.
+
+`SEL` y `MUX` no seleccionan valores `STRING`, en ningún lenguaje. El compilador rechaza `Text := SEL(G, A, B);` con "it is not a string" cuando `A` y `B` son cadenas, y los editores FBD y Ladder rechazan una cadena en esas entradas con un error que nombra el bloque y la entrada. Para elegir entre cadenas, escriba un `IF` en texto estructurado: `IF G THEN Text := B; ELSE Text := A; END_IF;`. Comprobado en el host por las pruebas del compilador y de los transpiladores; el generador de código de 2.1 no cambia.

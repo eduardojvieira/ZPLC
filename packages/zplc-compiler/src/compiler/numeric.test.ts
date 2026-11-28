@@ -12,7 +12,7 @@ import { describe, it, expect } from 'bun:test';
 
 import { assemble } from '../assembler/index.ts';
 import { generate } from './codegen.ts';
-import { compileST } from './index.ts';
+import { compileST, compileToBinary } from './index.ts';
 import {
     ADD64_HELPER,
     ADD64_LABEL,
@@ -67,6 +67,47 @@ function run(source: string, memory: Uint8Array = new Uint8Array(0x10000)): numb
         switch (op) {
             case 0x01:
                 return stack.map((v) => v >>> 0); // HALT
+            case 0x09: {
+                // NEG64
+                const hi = pop();
+                const lo = pop();
+                const r = BigInt.asUintN(64, -((BigInt(hi) << 32n) | BigInt(lo)));
+                stack.push(Number(r & 0xffffffffn), Number((r >> 32n) & 0xffffffffn));
+                pc += 1;
+                break;
+            }
+            case 0x0a: {
+                // ABS64
+                const hi = pop();
+                const lo = pop();
+                const v = BigInt.asIntN(64, (BigInt(hi) << 32n) | BigInt(lo));
+                const r = BigInt.asUintN(64, v < 0n ? -v : v);
+                stack.push(Number(r & 0xffffffffn), Number((r >> 32n) & 0xffffffffn));
+                pc += 1;
+                break;
+            }
+            case 0x0b: {
+                // SHL64
+                const n = pop();
+                const hi = pop();
+                const lo = pop();
+                const v = (BigInt(hi) << 32n) | BigInt(lo);
+                const r = n >= 64 ? 0n : BigInt.asUintN(64, v << BigInt(n));
+                stack.push(Number(r & 0xffffffffn), Number((r >> 32n) & 0xffffffffn));
+                pc += 1;
+                break;
+            }
+            case 0x0c: {
+                // SHR64
+                const n = pop();
+                const hi = pop();
+                const lo = pop();
+                const v = (BigInt(hi) << 32n) | BigInt(lo);
+                const r = n >= 64 ? 0n : v >> BigInt(n);
+                stack.push(Number(r & 0xffffffffn), Number((r >> 32n) & 0xffffffffn));
+                pc += 1;
+                break;
+            }
             case 0x10: {
                 const a = pop();
                 stack.push(a, a);
@@ -885,5 +926,299 @@ END_VAR
 END_PROGRAM`);
             expect(new DataView(memory.buffer, 0x1000, 4).getFloat32(0, true)).toBe(Math.fround(n * 0.5));
         }
+    });
+});
+
+describe('executed programs: 64-bit typed literals in shift, rotate and wide stdlib functions', () => {
+    const executeChecked = (program: string): Uint8Array => {
+        const compiled = compileToBinary(program);
+        const memory = new Uint8Array(0x10000);
+        run(compiled.assembly, memory);
+        return memory;
+    };
+
+    const readWide = (memory: Uint8Array, signed: boolean): bigint => {
+        const view = new DataView(memory.buffer, 0x1000, 8);
+        return signed ? view.getBigInt64(0, true) : view.getBigUint64(0, true);
+    };
+
+    const wideTypes: Array<{ name: 'LWORD' | 'ULINT' | 'LINT'; signed: boolean }> = [
+        { name: 'LWORD', signed: false },
+        { name: 'ULINT', signed: false },
+        { name: 'LINT', signed: true },
+    ];
+
+    const asExpected = (bits: bigint, signed: boolean): bigint => (signed ? BigInt.asIntN(64, bits) : BigInt.asUintN(64, bits));
+
+    it('SHL accepts LWORD#1, ULINT#1 and LINT#1 as IN and produces the 64-bit result', () => {
+        for (const { name, signed } of wideTypes) {
+            const memory = executeChecked(`PROGRAM T
+VAR
+  r AT %QD0 : ${name};
+END_VAR
+  r := SHL(${name}#1, 3);
+END_PROGRAM`);
+            expect(readWide(memory, signed)).toBe(asExpected(8n, signed));
+
+            const highMemory = executeChecked(`PROGRAM T
+VAR
+  r AT %QD0 : ${name};
+END_VAR
+  r := SHL(${name}#1, 40);
+END_PROGRAM`);
+            expect(readWide(highMemory, signed)).toBe(asExpected(1n << 40n, signed));
+        }
+    });
+
+    it('SHR accepts LWORD#1, ULINT#1 and LINT#1 as IN and produces the 64-bit result', () => {
+        for (const { name, signed } of wideTypes) {
+            const zeroShift = executeChecked(`PROGRAM T
+VAR
+  r AT %QD0 : ${name};
+END_VAR
+  r := SHR(${name}#1, 0);
+END_PROGRAM`);
+            expect(readWide(zeroShift, signed)).toBe(asExpected(1n, signed));
+
+            const oneShift = executeChecked(`PROGRAM T
+VAR
+  r AT %QD0 : ${name};
+END_VAR
+  r := SHR(${name}#1, 1);
+END_PROGRAM`);
+            expect(readWide(oneShift, signed)).toBe(0n);
+        }
+    });
+
+    it('ROL accepts LWORD#1, ULINT#1 and LINT#1 as IN and produces the 64-bit result', () => {
+        for (const { name, signed } of wideTypes) {
+            const memory = executeChecked(`PROGRAM T
+VAR
+  r AT %QD0 : ${name};
+END_VAR
+  r := ROL(${name}#1, 3);
+END_PROGRAM`);
+            expect(readWide(memory, signed)).toBe(asExpected(8n, signed));
+
+            const topBit = executeChecked(`PROGRAM T
+VAR
+  r AT %QD0 : ${name};
+END_VAR
+  r := ROL(${name}#1, 63);
+END_PROGRAM`);
+            expect(readWide(topBit, signed)).toBe(asExpected(1n << 63n, signed));
+        }
+    });
+
+    it('ROR accepts LWORD#1, ULINT#1 and LINT#1 as IN and produces the 64-bit result', () => {
+        for (const { name, signed } of wideTypes) {
+            const memory = executeChecked(`PROGRAM T
+VAR
+  r AT %QD0 : ${name};
+END_VAR
+  r := ROR(${name}#1, 1);
+END_PROGRAM`);
+            expect(readWide(memory, signed)).toBe(asExpected(1n << 63n, signed));
+        }
+    });
+
+    it('untyped 1 and DWORD#1 in SHL, SHR, ROL and ROR stay 32-bit as before', () => {
+        for (const literal of ['1', 'DWORD#1']) {
+            for (const [fn, count, expected] of [
+                ['SHL', 3, 8],
+                ['SHR', 0, 1],
+                ['ROL', 3, 8],
+                ['ROR', 1, 0x80000000],
+            ] as const) {
+                const st = `PROGRAM T
+VAR
+  r AT %QD0 : DWORD;
+END_VAR
+  r := ${fn}(${literal}, ${count});
+END_PROGRAM`;
+                const compiled = compileToBinary(st);
+                expect(compiled.assembly).not.toContain('SHL64');
+                expect(compiled.assembly).not.toContain('SHR64');
+                const memory = new Uint8Array(0x10000);
+                run(compiled.assembly, memory);
+                expect(new DataView(memory.buffer, 0x1000, 4).getUint32(0, true)).toBe(expected);
+            }
+        }
+    });
+
+    it('ABS, NEG and narrowing conversions accept 64-bit typed literals', () => {
+        for (const { name, signed } of wideTypes) {
+            const absMemory = executeChecked(`PROGRAM T
+VAR
+  r AT %QD0 : ${name};
+END_VAR
+  r := ABS(${name}#5);
+END_PROGRAM`);
+            expect(readWide(absMemory, signed)).toBe(asExpected(5n, signed));
+
+            const negMemory = executeChecked(`PROGRAM T
+VAR
+  r AT %QD0 : ${name};
+END_VAR
+  r := NEG(${name}#5);
+END_PROGRAM`);
+            expect(readWide(negMemory, signed)).toBe(asExpected(-5n, signed));
+        }
+
+        const absNegLint = executeChecked(`PROGRAM T
+VAR
+  r AT %QD0 : LINT;
+END_VAR
+  r := ABS(LINT#-5);
+END_PROGRAM`);
+        expect(readWide(absNegLint, true)).toBe(5n);
+
+        for (const [fn, literal] of [
+            ['LINT_TO_DINT', 'LINT#5'],
+            ['ULINT_TO_UDINT', 'ULINT#5'],
+            ['LWORD_TO_DWORD', 'LWORD#5'],
+        ] as const) {
+            const memory = executeChecked(`PROGRAM T
+VAR
+  r AT %QD0 : DWORD;
+END_VAR
+  r := ${fn}(${literal});
+END_PROGRAM`);
+            expect(new DataView(memory.buffer, 0x1000, 4).getUint32(0, true)).toBe(5);
+        }
+    });
+});
+
+describe('executed programs: 64-bit typed literals as operand of NOT', () => {
+    const execute = (program: string): Uint8Array => {
+        const memory = new Uint8Array(0x10000);
+        run(compileToBinary(program).assembly, memory);
+        return memory;
+    };
+    const readWide = (memory: Uint8Array, signed: boolean): bigint => {
+        const view = new DataView(memory.buffer, 0x1000, 8);
+        return signed ? view.getBigInt64(0, true) : view.getBigUint64(0, true);
+    };
+    const wideTypes = [
+        { name: 'LWORD', literal: (v: string) => `LWORD#16#${v}`, signed: false },
+        { name: 'ULINT', literal: (v: string) => `ULINT#${BigInt(`0x${v}`)}`, signed: false },
+        { name: 'LINT', literal: (v: string) => `LINT#${BigInt(`0x${v}`)}`, signed: true },
+    ];
+
+    it('NOT(<64-bit literal>) complements the full 64-bit pattern', () => {
+        for (const { name, literal, signed } of wideTypes) {
+            const zero = execute(`PROGRAM T
+VAR r AT %QD0 : ${name}; END_VAR
+  r := NOT(${literal('0')});
+END_PROGRAM`);
+            expect(readWide(zero, signed)).toBe(signed ? -1n : 0xffffffffffffffffn);
+
+            const high = execute(`PROGRAM T
+VAR r AT %QD0 : ${name}; END_VAR
+  r := NOT(${literal('1')});
+END_PROGRAM`);
+            expect(readWide(high, signed)).toBe(signed ? -2n : 0xfffffffffffffffen);
+        }
+        const mixed = execute(`PROGRAM T
+VAR r AT %QD0 : LWORD; END_VAR
+  r := NOT(LWORD#16#FFFFFFFF00000000);
+END_PROGRAM`);
+        expect(readWide(mixed, false)).toBe(0x00000000ffffffffn);
+    });
+
+    it('NOT <64-bit literal> (the operator form) complements the full 64-bit pattern', () => {
+        for (const { name, literal, signed } of wideTypes) {
+            const memory = execute(`PROGRAM T
+VAR r AT %QD0 : ${name}; END_VAR
+  r := NOT ${literal('0')};
+END_PROGRAM`);
+            expect(readWide(memory, signed)).toBe(signed ? -1n : 0xffffffffffffffffn);
+        }
+    });
+
+    it('a 64-bit literal on either side of AND, OR and XOR still gives the full-width value', () => {
+        const memory = execute(`PROGRAM T
+VAR r AT %QD0 : LWORD; END_VAR
+  r := LWORD#16#F0 AND LWORD#16#FF00000000000F0F;
+END_PROGRAM`);
+        expect(readWide(memory, false)).toBe(0x00n);
+    });
+
+    it('DWORD#1 and an untyped 1 under NOT give the same 32-bit complement', () => {
+        for (const literal of ['DWORD#1', '1']) {
+            const compiled = compileToBinary(`PROGRAM T
+VAR r AT %QD0 : DWORD; END_VAR
+  r := NOT(${literal});
+END_PROGRAM`);
+            expect(compiled.assembly).not.toContain('SWAP');
+            const memory = new Uint8Array(0x10000);
+            run(compiled.assembly, memory);
+            // an untyped 1 is a 32-bit operand, like DWORD#1 (C10)
+            expect(new DataView(memory.buffer, 0x1000, 4).getUint32(0, true)).toBe(0xfffffffe);
+        }
+    });
+});
+
+describe('NOT of an untyped integer literal (C10)', () => {
+    const targets: Array<[string, number]> = [
+        ['BYTE', 8],
+        ['WORD', 16],
+        ['DWORD', 32],
+        ['LWORD', 64],
+    ];
+    const read = (memory: Uint8Array, bits: number): bigint => {
+        const view = new DataView(memory.buffer, 0x1000, 8);
+        if (bits === 64) return view.getBigUint64(0, true);
+        return BigInt(bits === 32 ? view.getUint32(0, true) : bits === 16 ? view.getUint16(0, true) : view.getUint8(0));
+    };
+    const result = (type: string, bits: number, expression: string): bigint =>
+        read(execute(`PROGRAM T\nVAR r AT %QD0 : ${type}; END_VAR\n  r := ${expression};\nEND_PROGRAM`), bits);
+
+    it('X : DWORD := NOT(1) is 16#FFFFFFFE', () => {
+        expect(result('DWORD', 32, 'NOT(1)')).toBe(0xfffffffen);
+    });
+
+    for (const [type, bits] of targets) {
+        it(`NOT(k) into ${type} equals NOT(${type}#k)`, () => {
+            for (const k of ['0', '1', '16#0F']) {
+                expect(result(type, bits, `NOT(${k})`)).toBe(result(type, bits, `NOT(${type}#${k})`));
+            }
+        });
+    }
+
+    it('NOT(1) into a LWORD complements the full 64-bit pattern', () => {
+        expect(result('LWORD', 64, 'NOT(1)')).toBe(0xfffffffffffffffen);
+    });
+
+    it('a BOOL destination is still a compile error', () => {
+        expect(() => compileST(`PROGRAM T\nVAR b : BOOL; END_VAR\n  b := NOT(1);\nEND_PROGRAM`)).toThrow();
+    });
+
+    it('NOT of a typed variable is unchanged', () => {
+        for (const [type, bits] of targets) {
+            const memory = execute(`PROGRAM T\nVAR a : ${type} := 1; r AT %QD0 : ${type}; END_VAR\n  r := NOT a;\nEND_PROGRAM`);
+            expect(read(memory, bits)).toBe(BigInt.asUintN(bits, ~1n));
+        }
+        const bool = execute(`PROGRAM T\nVAR a : BOOL := TRUE; r AT %QX0.0 : BOOL; END_VAR\n  r := NOT a;\nEND_PROGRAM`);
+        expect(bool[0x1000]! & 1).toBe(0);
+    });
+});
+
+describe('ROL and ROR of an untyped literal into a narrow destination (T20-K5, pinned for 2.2)', () => {
+    it('ROL(16#8000, 1) into a WORD is 0: the untyped literal is 32 bits wide', () => {
+        const memory = execute(`PROGRAM T\nVAR r AT %QW0 : WORD; END_VAR\n  r := ROL(16#8000, 1);\nEND_PROGRAM`);
+        expect(new DataView(memory.buffer, 0x1000, 2).getUint16(0, true)).toBe(0);
+    });
+
+    it('ROL(WORD#16#8000, 1) into a WORD is 1', () => {
+        const memory = execute(`PROGRAM T\nVAR r AT %QW0 : WORD; END_VAR\n  r := ROL(WORD#16#8000, 1);\nEND_PROGRAM`);
+        expect(new DataView(memory.buffer, 0x1000, 2).getUint16(0, true)).toBe(1);
+    });
+
+    it('ROR(16#0001, 1) into a WORD is 0, and ROR(WORD#16#0001, 1) is 16#8000', () => {
+        const untyped = execute(`PROGRAM T\nVAR r AT %QW0 : WORD; END_VAR\n  r := ROR(16#0001, 1);\nEND_PROGRAM`);
+        expect(new DataView(untyped.buffer, 0x1000, 2).getUint16(0, true)).toBe(0);
+        const typed = execute(`PROGRAM T\nVAR r AT %QW0 : WORD; END_VAR\n  r := ROR(WORD#16#0001, 1);\nEND_PROGRAM`);
+        expect(new DataView(typed.buffer, 0x1000, 2).getUint16(0, true)).toBe(0x8000);
     });
 });

@@ -26,7 +26,7 @@ Aprenda que un PLC lee sus entradas, resuelve los peldaños de arriba hacia abaj
 ## Objetivos
 
 - Describa el ciclo de escaneo: leer las entradas, resolver los peldaños de arriba hacia abajo, escribir las salidas y repetir.
-- Reordene dos peldaños para que un valor se calcule antes del peldaño que lo usa, y vea en la traza registrada la diferencia de un ciclo.
+- Encuentre por qué una salida va un ciclo detrás de su entrada, corríjalo sin cambiar ningún contacto ni bobina, y vea en la traza registrada la diferencia de un ciclo.
 
 ## Etapas
 

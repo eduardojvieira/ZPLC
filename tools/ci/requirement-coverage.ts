@@ -338,6 +338,13 @@ function load(indexFile = INDEX_011) {
   const records = REPORT_ONLY_RECORDS[indexFile];
   const hand = handWritten(records ? (JSON.parse(read(records)) as Evidence) : recorded);
   const evidence = mergeEvidence(scanFiles(files, read, inventory, prefixes, pythonFilesRunInCi(files, workflows)), hand);
+  // a later spec may continue the numbering of a workstream of spec 011 (LNG-029 and LNG-030 of spec 014 follow LNG-028): its ids
+  // match the prefixes of spec 011, but they are that spec's requirements, which its own report counts
+  if (indexFile === INDEX_011) {
+    const own = new Set(index.map((entry) => entry.id));
+    for (const other of Object.values(REPORT_ONLY_INDEX))
+      for (const { id } of JSON.parse(read(other)) as Requirement[]) if (!own.has(id)) delete evidence[id];
+  }
   return { index, evidence, recorded, listed: [...entries.map((entry) => entry.test), ...knownGaps] };
 }
 

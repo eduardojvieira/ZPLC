@@ -4,7 +4,7 @@
   "summary": "Scale the raw level of a tank, a whole number from 0 to 27648, to metres, and use it to hold the level near a set point with a proportional inlet.",
   "scope": "The grade runs the simulated tank in the simulator on this computer, with an analog level that follows the scaling rules of the plant map. It says nothing about the accuracy, noise or calibration of a real level transmitter, a real machine, its timing or its safety.",
   "objectives": [
-    "Scale an analog value to engineering units: convert to REAL first, then divide by the raw span.",
+    "Scale an analog value to engineering units so that fractions of a unit are kept.",
     "Read the plant map to find the raw range of each signal, and see what a wrong scale does to the process."
   ],
   "stages": [
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "The starter has no logic: the inlet never opens, so the tank stays empty and never reaches its band. It declares the inputs and outputs. Declare two REAL variables for the level and the set point in metres. Divide the level by 27648.0 and the set point by 1000.0 after INT_TO_REAL: an integer division would give 0 for every level below 1 m. Then write FillCmd from the error and limit it with two IF statements.",
-      "checkpoint": "The program has two REAL variables, the limited FillCmd and one assignment for each of the other three outputs."
+      "body": "Write the program, save it, then press {{ui:learn.check}}. The starter has no logic: the inlet never opens, so the tank stays empty and never reaches its band. It declares the inputs and outputs. Scale the level and the set point to metres once, before any other line uses them. Every comparison must hold for fractions of a metre: a raw level of 13824 is 0.5 m, not 0 m. Then write FillCmd from the error, limited to 0 to 100 percent.",
+      "checkpoint": "FillCmd stays within 0 to 100 percent, and the other three outputs follow the level and the drain potentiometer."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs src/TankLevel.st against the tank of scene tank-level-control, raises the set point and opens the drain, and tests {{assertions}} assertions on the tank: it stays in its band in two windows and it never spills.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs src/TankLevel.st against the tank of scene tank-level-control, raises the set point and opens the drain, and tests {{assertions}} assertions on the tank: it stays in its band in two windows and it never spills.",
       "checkpoint": "The scenario is named tank-level-scaling and contains {{assertions}} assertions and passes them all."
     },
     {
@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "LevelM := INT_TO_REAL(LevelRaw) / 27648.0; SetM := INT_TO_REAL(SetPointRaw) / 1000.0; the error is SetM - LevelM, in metres."
+      "text": "Look at the types: LevelRaw and SetPointRaw are INT, and an INT divided by an INT drops the fraction. The plant map gives the raw span of each signal, and the error is the set point minus the level, in metres."
     },
     {
       "level": 2,
-      "text": "FillCmd := 800.0 * (SetM - LevelM); IF FillCmd > 100.0 THEN FillCmd := 100.0; END_IF; IF FillCmd < 0.0 THEN FillCmd := 0.0; END_IF; DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
+      "text": "Declare LevelM : REAL and SetM : REAL in VAR, then write LevelM := INT_TO_REAL(LevelRaw) / 27648.0; SetM := INT_TO_REAL(SetPointRaw) / 1000.0; FillCmd := 800.0 * (SetM - LevelM); IF FillCmd > 100.0 THEN FillCmd := 100.0; END_IF; IF FillCmd < 0.0 THEN FillCmd := 0.0; END_IF; DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
     }
   ],
   "faultCases": ["The starter has no logic: the inlet never opens, so the tank stays empty and never reaches its band."]

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { chmod, mkdir, mkdtemp, readFile, readdir, rename, rm, symlink, writeFile } from 'node:fs/promises';
+import { chmod, cp, mkdir, mkdtemp, readFile, readdir, rename, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -31,9 +31,14 @@ import {
   withToolExecution,
 } from './toolApi';
 import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';
+import { fbdPaletteBlocks } from '../editors/fbd/palette';
+import { formatById, type FormatId } from '../formats';
+import { LD_ELEMENT_TYPES } from '../models/visualFileLoad';
+import { SCENARIO_KINDS } from '../test-engine';
 
 const demo = fileURLToPath(new URL('../../projects/multitask_demo', import.meta.url));
 const blinky = fileURLToPath(new URL('../../projects/blinky', import.meta.url));
+const blinkyFbd = fileURLToPath(new URL('../../projects/blinky_fbd', import.meta.url));
 const blinkySfc = fileURLToPath(new URL('../../projects/blinky_sfc', import.meta.url));
 const motorStartStop = fileURLToPath(new URL('../../projects/motor_start_stop', import.meta.url));
 const pedestrianCrossing = fileURLToPath(new URL('../../projects/pedestrian_crossing', import.meta.url));
@@ -661,158 +666,175 @@ END_PROGRAM`,
       await rm(root, { recursive: true, force: true });
     }
   });
-  it.skipIf(process.platform === 'win32')('does not run west for invalid firmware build admission', async () => {
-    const root = await toolchainRepository();
-    const bin = await mkdtemp(join(tmpdir(), 'zplc-build-marker-'));
-    const marker = join(bin, 'west-ran');
-    const oldPath = process.env.PATH;
-    try {
-      await writeFile(join(bin, 'west'), `#!/bin/sh\nprintf ran > '${marker}'\nexit 99\n`);
-      await chmod(join(bin, 'west'), 0o755);
-      process.env.PATH = `${bin}:/usr/bin:/bin`;
-      await expect(firmwareBuild(root, 'Alpha')).resolves.toMatchObject({
-        ok: false,
-        evidence: { diagnostics: [{ code: 'FIRMWARE_BUILD_UNAVAILABLE' }] },
-      });
-      await expect(firmwareBuild(join(root, 'missing'), 'alpha')).resolves.toMatchObject({
-        ok: false,
-        evidence: { diagnostics: [{ code: 'FIRMWARE_BUILD_UNAVAILABLE' }] },
-      });
-      expect(existsSync(marker)).toBe(false);
-    } finally {
-      if (oldPath === undefined) delete process.env.PATH;
-      else process.env.PATH = oldPath;
-      await rm(bin, { recursive: true, force: true });
-      await rm(root, { recursive: true, force: true });
-    }
-  });
-  it.skipIf(process.platform === 'win32')('fails closed when the canonical toolchain baseline is not ready before west build', async () => {
-    const root = await toolchainRepository();
-    const marker = join(root, 'west-build-ran');
-    let restore: (() => Promise<void>) | undefined;
-    try {
-      restore = await toolchainHost(root, 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', undefined, `printf build > '${marker}'`);
-      const result = await firmwareBuild(root, 'alpha');
-      expect(result).toEqual({
-        ok: false,
-        evidence: {
-          schemaVersion: 1,
-          operation: 'firmware-build',
-          outcome: 'failed',
-          diagnostics: [{ code: 'FIRMWARE_BUILD_TOOLCHAIN_UNAVAILABLE', message: 'Firmware build is unavailable' }],
-          artifacts: [],
-        },
-      });
-      expect(existsSync(marker)).toBe(false);
-    } finally {
-      await restore?.();
-      await rm(root, { recursive: true, force: true });
-    }
-  });
-  it.skipIf(process.platform === 'win32')('cancels before toolchain inspection or west build', async () => {
-    const root = await toolchainRepository();
-    const bin = await mkdtemp(join(tmpdir(), 'zplc-build-aborted-'));
-    const marker = join(bin, 'ran');
-    const oldPath = process.env.PATH;
-    const controller = new AbortController();
-    controller.abort();
-    try {
-      await writeFile(join(bin, 'west'), `#!/bin/sh\nprintf ran > '${marker}'\n`);
-      await chmod(join(bin, 'west'), 0o755);
-      process.env.PATH = bin;
-      await expect(firmwareBuild(root, 'alpha', { signal: controller.signal })).resolves.toEqual({
-        ok: false,
-        evidence: {
-          schemaVersion: 1,
-          operation: 'firmware-build',
-          outcome: 'failed',
-          diagnostics: [{ code: 'FIRMWARE_BUILD_CANCELLED', message: 'Firmware build is unavailable' }],
-          artifacts: [],
-        },
-      });
-      expect(existsSync(marker)).toBe(false);
-    } finally {
-      if (oldPath === undefined) delete process.env.PATH;
-      else process.env.PATH = oldPath;
-      await rm(bin, { recursive: true, force: true });
-      await rm(root, { recursive: true, force: true });
-    }
-  });
-  it.skipIf(process.platform === 'win32')('maps a ready canonical toolchain build to sanitized ELF evidence', async () => {
-    const root = await toolchainRepository();
-    const markerRoot = await mkdtemp(join(tmpdir(), 'zplc-build-marker-'));
-    const marker = join(markerRoot, 'west-build-ran');
-    let restore: (() => Promise<void>) | undefined;
-    try {
-      restore = await toolchainHost(
-        root,
-        undefined,
-        undefined,
-        `while [ "$#" -gt 0 ]; do [ "$1" = -d ] && { shift; out=$1; }; shift; done\n/bin/mkdir -p "$out/zephyr"\n/bin/dd if=/dev/zero ` +
-          `of="$out/zephyr/zephyr.elf" bs=52 count=1 2>/dev/null\nprintf '\\177ELF\\001\\001\\001' | /bin/dd of="$out/zephyr/zephyr.elf" ` +
-          `bs=1 seek=0 conv=notrunc 2>/dev/null\nprintf '\\002\\000\\003\\000\\001\\000\\000\\000' | /bin/dd ` +
-          `of="$out/zephyr/zephyr.elf" bs=1 seek=16 conv=notrunc 2>/dev/null\nprintf '\\064\\000' | /bin/dd ` +
-          `of="$out/zephyr/zephyr.elf" bs=1 seek=40 conv=notrunc 2>/dev/null\nprintf build > '${marker}'\nprintf built`,
-      );
-      const result = await firmwareBuild(root, 'alpha');
-      expect(result).toMatchObject({
-        ok: true,
-        summary: {
-          schemaVersion: 1,
-          scope: 'local-ephemeral-cross-build',
-          sourceIdentity: 'unverified',
-          board: { ideId: 'alpha', zephyrBoard: 'alpha/board' },
-          artifact: { kind: 'firmware-elf', byteLength: 52, sha256: expect.stringMatching(/^[a-f0-9]{64}$/) },
-          output: { stdoutBytes: 5, stderrBytes: 0, truncated: false },
-        },
-        evidence: { operation: 'firmware-build', outcome: 'passed' },
-      });
-      if (result.ok) expect(result.evidence.artifacts).toEqual([result.summary.artifact]);
-      expect(existsSync(marker)).toBe(true);
-      const serialized = JSON.stringify(result);
-      for (const value of [root, 'argv', 'cwd', 'PATH', 'built']) expect(serialized).not.toContain(value);
-    } finally {
-      await restore?.();
-      await rm(markerRoot, { recursive: true, force: true });
-      await rm(root, { recursive: true, force: true });
-    }
-  });
-  it.skipIf(process.platform === 'win32')('fails closed when the admitted board plan changes during west execution', async () => {
-    const root = await toolchainRepository();
-    let restore: (() => Promise<void>) | undefined;
-    try {
-      const manifest = join(root, 'firmware', 'app', 'boards', 'boards.json');
-      const changed = JSON.stringify(
-        (JSON.parse(await readFile(manifest, 'utf8')) as Array<Record<string, unknown>>).map((board) =>
-          board.ide_id === 'alpha' ? { ...board, zephyr_board: 'changed/board' } : board,
-        ),
-      );
-      restore = await toolchainHost(
-        root,
-        undefined,
-        undefined,
-        `while [ "$#" -gt 0 ]; do [ "$1" = -d ] && { shift; out=$1; }; shift; done\n/bin/mkdir -p "$out/zephyr"\n/bin/dd if=/dev/zero ` +
-          `of="$out/zephyr/zephyr.elf" bs=52 count=1 2>/dev/null\nprintf '\\177ELF\\001\\001\\001' | /bin/dd of="$out/zephyr/zephyr.elf" ` +
-          `bs=1 seek=0 conv=notrunc 2>/dev/null\nprintf '\\002\\000\\003\\000\\001\\000\\000\\000' | /bin/dd ` +
-          `of="$out/zephyr/zephyr.elf" bs=1 seek=16 conv=notrunc 2>/dev/null\nprintf '\\064\\000' | /bin/dd ` +
-          `of="$out/zephyr/zephyr.elf" bs=1 seek=40 conv=notrunc 2>/dev/null\nprintf '%s' ` +
-          `'${changed.replace(/'/g, "'\\''")}' > '${manifest}'`,
-      );
-      await expect(firmwareBuild(root, 'alpha')).resolves.toEqual({
-        ok: false,
-        evidence: {
-          schemaVersion: 1,
-          operation: 'firmware-build',
-          outcome: 'failed',
-          diagnostics: [{ code: 'FIRMWARE_BUILD_PLAN_STALE', message: 'Firmware build is unavailable' }],
-          artifacts: [],
-        },
-      });
-    } finally {
-      await restore?.();
-      await rm(root, { recursive: true, force: true });
-    }
-  });
+  // Off Windows only (its west and host-tool fixtures are /bin/sh scripts): a skip on Windows reads as a missing binary to VF-023.
+  if (process.platform !== 'win32') {
+    it('does not run west for invalid firmware build admission', async () => {
+      const root = await toolchainRepository();
+      const bin = await mkdtemp(join(tmpdir(), 'zplc-build-marker-'));
+      const marker = join(bin, 'west-ran');
+      const oldPath = process.env.PATH;
+      try {
+        await writeFile(join(bin, 'west'), `#!/bin/sh\nprintf ran > '${marker}'\nexit 99\n`);
+        await chmod(join(bin, 'west'), 0o755);
+        process.env.PATH = `${bin}:/usr/bin:/bin`;
+        await expect(firmwareBuild(root, 'Alpha')).resolves.toMatchObject({
+          ok: false,
+          evidence: { diagnostics: [{ code: 'FIRMWARE_BUILD_UNAVAILABLE' }] },
+        });
+        await expect(firmwareBuild(join(root, 'missing'), 'alpha')).resolves.toMatchObject({
+          ok: false,
+          evidence: { diagnostics: [{ code: 'FIRMWARE_BUILD_UNAVAILABLE' }] },
+        });
+        expect(existsSync(marker)).toBe(false);
+      } finally {
+        if (oldPath === undefined) delete process.env.PATH;
+        else process.env.PATH = oldPath;
+        await rm(bin, { recursive: true, force: true });
+        await rm(root, { recursive: true, force: true });
+      }
+    });
+  }
+  // Off Windows only (its west and host-tool fixtures are /bin/sh scripts): a skip on Windows reads as a missing binary to VF-023.
+  if (process.platform !== 'win32') {
+    it('fails closed when the canonical toolchain baseline is not ready before west build', async () => {
+      const root = await toolchainRepository();
+      const marker = join(root, 'west-build-ran');
+      let restore: (() => Promise<void>) | undefined;
+      try {
+        restore = await toolchainHost(root, 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', undefined, `printf build > '${marker}'`);
+        const result = await firmwareBuild(root, 'alpha');
+        expect(result).toEqual({
+          ok: false,
+          evidence: {
+            schemaVersion: 1,
+            operation: 'firmware-build',
+            outcome: 'failed',
+            diagnostics: [{ code: 'FIRMWARE_BUILD_TOOLCHAIN_UNAVAILABLE', message: 'Firmware build is unavailable' }],
+            artifacts: [],
+          },
+        });
+        expect(existsSync(marker)).toBe(false);
+      } finally {
+        await restore?.();
+        await rm(root, { recursive: true, force: true });
+      }
+    });
+  }
+  // Off Windows only (its west and host-tool fixtures are /bin/sh scripts): a skip on Windows reads as a missing binary to VF-023.
+  if (process.platform !== 'win32') {
+    it('cancels before toolchain inspection or west build', async () => {
+      const root = await toolchainRepository();
+      const bin = await mkdtemp(join(tmpdir(), 'zplc-build-aborted-'));
+      const marker = join(bin, 'ran');
+      const oldPath = process.env.PATH;
+      const controller = new AbortController();
+      controller.abort();
+      try {
+        await writeFile(join(bin, 'west'), `#!/bin/sh\nprintf ran > '${marker}'\n`);
+        await chmod(join(bin, 'west'), 0o755);
+        process.env.PATH = bin;
+        await expect(firmwareBuild(root, 'alpha', { signal: controller.signal })).resolves.toEqual({
+          ok: false,
+          evidence: {
+            schemaVersion: 1,
+            operation: 'firmware-build',
+            outcome: 'failed',
+            diagnostics: [{ code: 'FIRMWARE_BUILD_CANCELLED', message: 'Firmware build is unavailable' }],
+            artifacts: [],
+          },
+        });
+        expect(existsSync(marker)).toBe(false);
+      } finally {
+        if (oldPath === undefined) delete process.env.PATH;
+        else process.env.PATH = oldPath;
+        await rm(bin, { recursive: true, force: true });
+        await rm(root, { recursive: true, force: true });
+      }
+    });
+  }
+  // Off Windows only (its west and host-tool fixtures are /bin/sh scripts): a skip on Windows reads as a missing binary to VF-023.
+  if (process.platform !== 'win32') {
+    it('maps a ready canonical toolchain build to sanitized ELF evidence', async () => {
+      const root = await toolchainRepository();
+      const markerRoot = await mkdtemp(join(tmpdir(), 'zplc-build-marker-'));
+      const marker = join(markerRoot, 'west-build-ran');
+      let restore: (() => Promise<void>) | undefined;
+      try {
+        restore = await toolchainHost(
+          root,
+          undefined,
+          undefined,
+          `while [ "$#" -gt 0 ]; do [ "$1" = -d ] && { shift; out=$1; }; shift; done\n/bin/mkdir -p "$out/zephyr"\n/bin/dd if=/dev/zero ` +
+            `of="$out/zephyr/zephyr.elf" bs=52 count=1 2>/dev/null\nprintf '\\177ELF\\001\\001\\001' | ` +
+            `/bin/dd of="$out/zephyr/zephyr.elf" ` +
+            `bs=1 seek=0 conv=notrunc 2>/dev/null\nprintf '\\002\\000\\003\\000\\001\\000\\000\\000' | /bin/dd ` +
+            `of="$out/zephyr/zephyr.elf" bs=1 seek=16 conv=notrunc 2>/dev/null\nprintf '\\064\\000' | /bin/dd ` +
+            `of="$out/zephyr/zephyr.elf" bs=1 seek=40 conv=notrunc 2>/dev/null\nprintf build > '${marker}'\nprintf built`,
+        );
+        const result = await firmwareBuild(root, 'alpha');
+        expect(result).toMatchObject({
+          ok: true,
+          summary: {
+            schemaVersion: 1,
+            scope: 'local-ephemeral-cross-build',
+            sourceIdentity: 'unverified',
+            board: { ideId: 'alpha', zephyrBoard: 'alpha/board' },
+            artifact: { kind: 'firmware-elf', byteLength: 52, sha256: expect.stringMatching(/^[a-f0-9]{64}$/) },
+            output: { stdoutBytes: 5, stderrBytes: 0, truncated: false },
+          },
+          evidence: { operation: 'firmware-build', outcome: 'passed' },
+        });
+        if (result.ok) expect(result.evidence.artifacts).toEqual([result.summary.artifact]);
+        expect(existsSync(marker)).toBe(true);
+        const serialized = JSON.stringify(result);
+        for (const value of [root, 'argv', 'cwd', 'PATH', 'built']) expect(serialized).not.toContain(value);
+      } finally {
+        await restore?.();
+        await rm(markerRoot, { recursive: true, force: true });
+        await rm(root, { recursive: true, force: true });
+      }
+    });
+  }
+  // Off Windows only (its west and host-tool fixtures are /bin/sh scripts): a skip on Windows reads as a missing binary to VF-023.
+  if (process.platform !== 'win32') {
+    it('fails closed when the admitted board plan changes during west execution', async () => {
+      const root = await toolchainRepository();
+      let restore: (() => Promise<void>) | undefined;
+      try {
+        const manifest = join(root, 'firmware', 'app', 'boards', 'boards.json');
+        const changed = JSON.stringify(
+          (JSON.parse(await readFile(manifest, 'utf8')) as Array<Record<string, unknown>>).map((board) =>
+            board.ide_id === 'alpha' ? { ...board, zephyr_board: 'changed/board' } : board,
+          ),
+        );
+        restore = await toolchainHost(
+          root,
+          undefined,
+          undefined,
+          `while [ "$#" -gt 0 ]; do [ "$1" = -d ] && { shift; out=$1; }; shift; done\n/bin/mkdir -p "$out/zephyr"\n/bin/dd if=/dev/zero ` +
+            `of="$out/zephyr/zephyr.elf" bs=52 count=1 2>/dev/null\nprintf '\\177ELF\\001\\001\\001' | ` +
+            `/bin/dd of="$out/zephyr/zephyr.elf" ` +
+            `bs=1 seek=0 conv=notrunc 2>/dev/null\nprintf '\\002\\000\\003\\000\\001\\000\\000\\000' | /bin/dd ` +
+            `of="$out/zephyr/zephyr.elf" bs=1 seek=16 conv=notrunc 2>/dev/null\nprintf '\\064\\000' | /bin/dd ` +
+            `of="$out/zephyr/zephyr.elf" bs=1 seek=40 conv=notrunc 2>/dev/null\nprintf '%s' ` +
+            `'${changed.replace(/'/g, "'\\''")}' > '${manifest}'`,
+        );
+        await expect(firmwareBuild(root, 'alpha')).resolves.toEqual({
+          ok: false,
+          evidence: {
+            schemaVersion: 1,
+            operation: 'firmware-build',
+            outcome: 'failed',
+            diagnostics: [{ code: 'FIRMWARE_BUILD_PLAN_STALE', message: 'Firmware build is unavailable' }],
+            artifacts: [],
+          },
+        });
+      } finally {
+        await restore?.();
+        await rm(root, { recursive: true, force: true });
+      }
+    });
+  }
   it('reports only structured prerequisite states and board facts without leaking paths or environment', async () => {
     const root = await toolchainRepository();
     const oldBase = process.env.ZEPHYR_BASE;
@@ -977,9 +999,9 @@ END_PROGRAM`,
       }
     }
   });
-  it.skipIf(process.platform === 'win32')(
-    'accepts a coherent local host without invoking host tools outside its fixed allowlist',
-    async () => {
+  // Off Windows only (its west and host-tool fixtures are /bin/sh scripts): a skip on Windows reads as a missing binary to VF-023.
+  if (process.platform !== 'win32') {
+    it('accepts a coherent local host without invoking host tools outside its fixed allowlist', async () => {
       const root = await toolchainRepository();
       const restore = await toolchainHost(root);
       try {
@@ -1015,29 +1037,32 @@ END_PROGRAM`,
       } finally {
         await restore();
       }
-    },
-  );
-  it.skipIf(process.platform === 'win32')('associates a Zephyr HEAD mismatch with zephyr-base, not west', async () => {
-    const root = await toolchainRepository();
-    const restore = await toolchainHost(root, 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
-    try {
-      const result = await toolchainInspect(root);
-      expect(result.ok).toBe(false);
-      expect(result.summary.checks).toEqual(
-        expect.arrayContaining([
-          { id: 'west', status: 'ready', version: '1.5.0' },
-          {
-            id: 'zephyr-base',
-            status: 'invalid',
-            requiredRevision: 'dccb09599635bdff17633fa7e9dab014b91dce90',
-            observedRevision: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-          },
-        ]),
-      );
-    } finally {
-      await restore();
-    }
-  });
+    });
+  }
+  // Off Windows only (its west and host-tool fixtures are /bin/sh scripts): a skip on Windows reads as a missing binary to VF-023.
+  if (process.platform !== 'win32') {
+    it('associates a Zephyr HEAD mismatch with zephyr-base, not west', async () => {
+      const root = await toolchainRepository();
+      const restore = await toolchainHost(root, 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+      try {
+        const result = await toolchainInspect(root);
+        expect(result.ok).toBe(false);
+        expect(result.summary.checks).toEqual(
+          expect.arrayContaining([
+            { id: 'west', status: 'ready', version: '1.5.0' },
+            {
+              id: 'zephyr-base',
+              status: 'invalid',
+              requiredRevision: 'dccb09599635bdff17633fa7e9dab014b91dce90',
+              observedRevision: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            },
+          ]),
+        );
+      } finally {
+        await restore();
+      }
+    });
+  }
   it('does not accept a Zephyr SHA attached to another west project', async () => {
     const root = await toolchainRepository();
     try {
@@ -1058,9 +1083,9 @@ END_PROGRAM`,
       await rm(root, { recursive: true, force: true });
     }
   });
-  it.skipIf(process.platform === 'win32')(
-    'classifies fixed west probes as missing, malformed, timed out, or output-limited',
-    async () => {
+  // Off Windows only (its west and host-tool fixtures are /bin/sh scripts): a skip on Windows reads as a missing binary to VF-023.
+  if (process.platform !== 'win32') {
+    it('classifies fixed west probes as missing, malformed, timed out, or output-limited', async () => {
       const cases: Array<[string | null, string]> = [
         [null, 'missing'],
         ["printf '%s\\n' 'not-a-version'", 'malformed'],
@@ -1076,9 +1101,8 @@ END_PROGRAM`,
           await restore();
         }
       }
-    },
-    15_000,
-  );
+    }, 15_000);
+  }
   it('inspects canonical bundled projects without migration', async () => {
     await expect(projectInspect(demo)).resolves.toMatchObject({
       ok: true,
@@ -3429,6 +3453,195 @@ describe('program inputs in the debug map (IDE-024)', () => {
       expect(marked).toEqual(['Enable', 'Gain']);
       expect(vars.SensorWest!.region).toBe('IPI');
       expect(vars.SensorWest!.tags?.['zplc:input']).toBeUndefined();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('AIX-013 diagnostics name the place and the accepted values, and project validation reads visual files', () => {
+  const example = (id: FormatId, index = 0) => structuredClone(formatById(id).examples[index]!.content);
+  /** Writes `value` at a `rungs.0.grid.0.0.element.type`-style path of a document. */
+  function set(document: Record<string, unknown>, path: string, value: unknown) {
+    const keys = path.split('.');
+    const parent = keys.slice(0, -1).reduce<Record<string, unknown>>((inner, key) => inner[key] as Record<string, unknown>, document);
+    parent[keys.at(-1)!] = value;
+  }
+  async function beltWorkspace(files: Record<string, unknown>): Promise<string> {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-aix013-'));
+    const all: Record<string, unknown> = {
+      'zplc.json': {
+        schemaVersion: 2,
+        name: 'Belt',
+        version: '1.0.0',
+        tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Belt.ld'] }],
+      },
+      'src/Belt.ld.json': example('ld'),
+      ...files,
+    };
+    for (const [path, content] of Object.entries(all)) {
+      await mkdir(join(root, path, '..'), { recursive: true });
+      await writeFile(join(root, path), JSON.stringify(content, null, 2));
+    }
+    return root;
+  }
+
+  it('projectValidate refuses a Ladder file that does not load, naming the file, the place and the accepted values', async () => {
+    const broken = example('ld');
+    set(broken, 'rungs.0.grid.0.0.element.type', 'contact');
+    const root = await beltWorkspace({ 'src/Belt.ld.json': broken });
+    try {
+      const result = await projectValidate(root);
+      expect(result.ok).toBe(false);
+      expect(result.evidence.diagnostics as unknown[]).toEqual([
+        {
+          code: 'VISUAL_FILE_INVALID',
+          message: expect.stringMatching(
+            /^rungs\[0\]\.grid\[0\]\[0\]\.element\.type: invalid value 'contact'; accepted values: left_rail, /,
+          ),
+          path: 'src/Belt.ld.json',
+          jsonPath: 'rungs[0].grid[0][0].element.type',
+          found: 'contact',
+          acceptedValues: [...LD_ELEMENT_TYPES],
+        },
+      ]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('AIX-013 compilerCheck names the accepted LD element types, as projectValidate does, from the same list', async () => {
+    const broken = example('ld');
+    set(broken, 'rungs.0.grid.0.0.element.type', 'contact');
+    const root = await beltWorkspace({ 'src/Belt.ld.json': broken });
+    try {
+      const result = await compilerCheck(root);
+      expect(result.ok).toBe(false);
+      const messages = result.evidence.diagnostics.map((diagnostic) => diagnostic.message);
+      expect(
+        messages.some((message) => message.includes("'contact'") && message.includes(`accepted values: ${LD_ELEMENT_TYPES.join(', ')}`)),
+      ).toBe(true);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('projectValidate refuses an FBD block of a type nobody declares, at validation and not only at the build', async () => {
+    const fbd = example('fbd');
+    set(fbd, 'blocks.2.type', 'ANDD');
+    const root = await beltWorkspace({ 'src/Guard.fbd.json': fbd });
+    try {
+      const result = await projectValidate(root);
+      expect(result.evidence.diagnostics as unknown[]).toEqual([
+        expect.objectContaining({ code: 'VISUAL_FILE_INVALID', path: 'src/Guard.fbd.json', jsonPath: 'blocks[2].type', found: 'ANDD' }),
+      ]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('projectValidate refuses an FBD block no diagram can place, such as COMM_PUBLISH in blinky_fbd, naming the block (K2)', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-aix013-comm-publish-'));
+    try {
+      await cp(blinkyFbd, root, { recursive: true });
+      const text = await readFile(join(root, 'src/main.fbd.json'), 'utf8');
+      await writeFile(join(root, 'src/main.fbd.json'), text.replace('"type": "NOT"', '"type": "COMM_PUBLISH"'));
+      const result = await projectValidate(root);
+      expect(result.ok).toBe(false);
+      expect(result.evidence.diagnostics as unknown[]).toEqual([
+        {
+          code: 'VISUAL_FILE_INVALID',
+          message: expect.stringMatching(
+            /^blocks\[\d+\]\.type: block '[^']+' has the type 'COMM_PUBLISH', which an FBD diagram cannot place; accepted values: /,
+          ),
+          path: 'src/main.fbd.json',
+          jsonPath: expect.stringMatching(/^blocks\[\d+\]\.type$/),
+          found: 'COMM_PUBLISH',
+          acceptedValues: fbdPaletteBlocks(),
+        },
+      ]);
+      expect(result.evidence.diagnostics[0]!.message.length).toBeLessThanOrEqual(512);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('a found value longer than the bound is cut to 256 characters', async () => {
+    const scenario = example('scenario');
+    set(scenario, 'expectations.0.kind', 'K'.repeat(300));
+    const root = await beltWorkspace({ 'tests/belt.scenario.json': scenario });
+    try {
+      const [diagnostic] = (await testsRun(root)).evidence.diagnostics as Array<{ found?: string }>;
+      expect(diagnostic!.found).toBe('K'.repeat(256));
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('projectValidate still accepts the worked example and every bundled project', async () => {
+    const root = await beltWorkspace({});
+    try {
+      await expect(projectValidate(root)).resolves.toMatchObject({ ok: true });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+    const projects = fileURLToPath(new URL('../../projects', import.meta.url));
+    const refused: string[] = [];
+    for (const name of (await readdir(projects)).sort()) {
+      if (!existsSync(join(projects, name, 'zplc.json'))) continue;
+      const result = await projectValidate(join(projects, name));
+      const visual = result.ok ? [] : result.evidence.diagnostics.filter((diagnostic) => diagnostic.code === 'VISUAL_FILE_INVALID');
+      if (visual.length > 0) refused.push(`${name}: ${JSON.stringify(visual)}`);
+    }
+    expect(refused).toEqual([]);
+  });
+
+  it('a scenario of an unknown expectation kind names the scenario, the place and the accepted kinds', async () => {
+    const scenario = example('scenario');
+    set(scenario, 'expectations.0.kind', 'SOMETIMES');
+    const root = await beltWorkspace({ 'tests/belt.scenario.json': scenario });
+    try {
+      const result = await testsRun(root);
+      expect(result.ok).toBe(false);
+      expect(result.evidence.diagnostics as unknown[]).toEqual([
+        {
+          code: 'TEST_SCENARIO_INVALID',
+          message: 'Test execution failed',
+          path: 'tests/belt.scenario.json',
+          jsonPath: 'expectations[0].kind',
+          found: 'SOMETIMES',
+          acceptedValues: [...SCENARIO_KINDS],
+          detail: expect.stringContaining('expectations[0].kind'),
+        },
+      ]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('a scene part outside the catalogue names the scene file, the place and the accepted parts', async () => {
+    const scene = example('scene');
+    set(scene, 'parts.0.part', 'conveyor');
+    const root = await beltWorkspace({
+      'scene.json': scene,
+      'plant-map.json': example('plant-map'),
+      'tests/belt.scenario.json': example('scenario', 1),
+    });
+    try {
+      const result = await testsRun(root);
+      expect(result.ok).toBe(false);
+      expect(result.evidence.diagnostics as unknown[]).toEqual([
+        {
+          code: 'TEST_SCENARIO_INVALID',
+          message: 'Test execution failed',
+          path: 'tests/belt.scenario.json',
+          file: 'scene.json',
+          jsonPath: 'parts[0].part',
+          found: 'conveyor',
+          acceptedValues: formatById('scene').acceptedValues.parts,
+          detail: expect.stringContaining('conveyor'),
+        },
+      ]);
     } finally {
       await rm(root, { recursive: true, force: true });
     }

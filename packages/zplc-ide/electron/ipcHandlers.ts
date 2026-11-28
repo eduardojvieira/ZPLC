@@ -44,6 +44,7 @@ import { IPC_DENIED, type IpcHandler, type IpcHandlerTable } from './ipcRegistry
 import { isLessonCheckRequest, lessonCheckAnswer } from './lessonCheckProtocol.js';
 import { createLearnProgressHandlers } from './learnProgressIpc.js';
 import { createLearnWorkspaceHandlers } from './learnWorkspaceIpc.js';
+import { createMcpConfigHandlers, type McpSelfCheckRequest } from './mcpConfigIpc.js';
 import type { NativeSimulationRequest } from '../shared/nativeSimulationIpc.js';
 import { NativeSimulationRuntimeError } from '../shared/nativeSimulationSupervisor.js';
 import {
@@ -101,6 +102,12 @@ export interface IpcDeps {
   learnProgress(): ReturnType<typeof createLearnProgressStore> | null;
   /** `<userData>/learn-workspaces`, where the workspaces of the lessons live (LRN-003); null when the user-data folder is unknown. */
   learnWorkspaceRoot(): string | null;
+  /** The user-data folder of this installation, for the MCP connection panel (AIX-007); null when unknown. */
+  userDataFolder(): string | null;
+  /** The command that a client config names for the local MCP server: `zplc-mcp`, or the path of the binary. */
+  mcpCommand(): Promise<string | null>;
+  /** Runs `zplc-mcp --self-check` through the spawn allow-list and answers its exit code and standard output. */
+  mcpSelfCheck(request: McpSelfCheckRequest): Promise<{ code: number | null; stdout: string }>;
   aiProvider(): ReturnType<typeof createAiProvider> | null;
   toolExecutionAudit: Pick<ReturnType<typeof createToolExecutionAudit>, 'list' | 'add'>;
   workspaceGateway: Pick<ReturnType<typeof createWorkspaceTestGateway>, 'registerProjectManifest' | 'run' | 'cancel'>;
@@ -302,6 +309,13 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
     ...createLearnWorkspaceHandlers<RendererOwner>({
       root: deps.learnWorkspaceRoot,
       adopt: (ownerId, directory) => deps.projectFiles.adoptFolder(ownerId, directory),
+    }),
+
+    ...createMcpConfigHandlers<RendererOwner>({
+      folder: (ownerId) => deps.projectFiles.currentRoot(ownerId),
+      userData: deps.userDataFolder,
+      command: deps.mcpCommand,
+      selfCheck: deps.mcpSelfCheck,
     }),
 
     // Per-project session (IDE-008): the renderer names the window's folder by its opaque id; the main process finds the
@@ -543,6 +557,7 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
     ),
     [AI_PROVIDER_CHANNEL.STORE_KEY]: handler(oneArgument(isAllowedAiProviderKey), (_owner, [key]: [string]) => provider().storeKey(key)),
     [AI_PROVIDER_CHANNEL.CLEAR_KEY]: handler(noArguments, () => provider().clearKey()),
+    [AI_PROVIDER_CHANNEL.TEST_CONNECTION]: handler(noArguments, () => provider().testConnection()),
     [AI_PROVIDER_CHANNEL.REQUEST]: handler(oneArgument(isAllowedAiProviderRequest), (owner, [request]: [AiRequest]) => {
       const active = provider();
       return deps.workspaceGateway.run(

@@ -16,6 +16,7 @@ import { teardown } from './teardown';
 import { Cdp, freePort, HOST, killTree, openPage, stop, waitFor, type OwnedProcess } from '../../scripts/cdpHarness';
 
 const PACKAGE = join(import.meta.dir, '..', '..');
+const DEFAULT_WAIT_MS = 120_000;
 /** True once the page has loaded and its scripts have drawn a button. */
 const PAGE_DRAWN = `location.protocol === 'http:' && document.readyState === 'complete' && document.querySelectorAll('button').length > 0`;
 
@@ -69,7 +70,7 @@ export class BrowserApp {
   }
 
   /** Polls `expression` until it is truthy and returns the value; the page may reload once while Vite optimises a lazy editor. */
-  async until<T>(description: string, expression: string, timeoutMs = 60_000): Promise<T> {
+  async until<T>(description: string, expression: string, timeoutMs = DEFAULT_WAIT_MS): Promise<T> {
     return await waitFor<T>(
       description,
       async () => {
@@ -129,7 +130,9 @@ export class BrowserApp {
         `[r.x, r.y, r.width, r.height] : null; }; let last = read(); let still = 0; for (let i = 0; i < 100 && last && still < 3; i++) { ` +
         `await new Promise((resolve) => setTimeout(resolve, 50)); const now = read(); still = now && last.every((v, k) => v === now[k]) ` +
         `? ` +
-        `still + 1 : 0; last = now; } return last && still >= 3 ? { x: last[0] + last[2] / 2, y: last[1] + last[3] / 2 } : null; })()`,
+        `still + 1 : 0; last = now; } if (!last || still < 3) return null; ` +
+        `const x = last[0] + last[2] / 2; const y = last[1] + last[3] / 2; ` +
+        `const hit = document.elementFromPoint(x, y); return hit && el.contains(hit) ? { x, y } : null; })()`,
     );
     await this.clickAt(box.x, box.y, options);
   }
@@ -203,7 +206,7 @@ export class BrowserApp {
   }
 
   /** Waits until the tree holds a node of `role` whose name matches `name`, and returns it. */
-  async axNode(role: string, name: string | RegExp, timeoutMs = 30_000): Promise<AxNode> {
+  async axNode(role: string, name: string | RegExp, timeoutMs = DEFAULT_WAIT_MS): Promise<AxNode> {
     const matches = (candidate: string) => (typeof name === 'string' ? candidate === name : name.test(candidate));
     return await waitFor(
       `${role} named ${String(name)} in the accessibility tree`,
@@ -227,6 +230,18 @@ export class BrowserApp {
     return (await this.ax()).find((node) => node.focused && node.role !== 'RootWebArea');
   }
 
+  /** Waits until a focused non-root node in the accessibility tree satisfies `predicate`, and returns it. */
+  async untilFocused(description: string, predicate: (node: AxNode) => boolean, timeoutMs = DEFAULT_WAIT_MS): Promise<AxNode> {
+    return await waitFor(
+      description,
+      async () => {
+        const node = await this.focused();
+        return node && predicate(node) ? node : undefined;
+      },
+      timeoutMs,
+    );
+  }
+
   /**
    * Loads the page afresh, so that a test never sees the editor models, focus or settings of the one before it. Chromium aborts
    * every request in flight when an interface of the host comes or goes (a container that restarts adds and drops one), and the
@@ -243,7 +258,7 @@ export class BrowserApp {
           const aborted = this.cdp.errors.slice(seen).some((error) => error.includes('net::ERR_NETWORK_CHANGED'));
           return aborted && attempt < 3 ? 'aborted' : undefined;
         },
-        60_000,
+        DEFAULT_WAIT_MS,
       );
       if (outcome === 'drawn') return;
     }

@@ -6,38 +6,38 @@ Esta última lección es un epílogo. Muestra que la lógica que aprendió no de
 
 ## Una lógica, dibujada de dos maneras
 
-Esta es una baliza que sigue encendida tras una pulsación breve y se apaga cuando se pulsa un botón Off. En escalera es una autorretención: `TurnOn` en paralelo con el contacto de la propia baliza, y luego un contacto normalmente cerrado de `Off`.
+Esta es una baliza de aviso para un muelle de carga. Sigue encendida tras una pulsación breve de `TurnOn` y se apaga cuando se pulsa `Off`, pero un aviso nunca debe perderse: mientras se pulsa `TurnOn` la baliza está encendida, aunque alguien esté pulsando `Off` al mismo tiempo. En escalera es una autorretención en la que gana el encendido: `TurnOn` solo en un camino, y en el otro camino el contacto de la propia baliza en serie con un contacto normalmente cerrado de `Off`.
 
 ```ld-figure
-src: reading/beacon.ld.json
-caption: "La baliza se mantiene encendida sola y Off interrumpe el peldaño"
+src: reading/warning-beacon.ld.json
+caption: "La baliza se mantiene encendida sola, y Off interrumpe solo el camino de retención"
 ```
 
 ```ld-try
-src: reading/beacon.ld.json
+src: reading/warning-beacon.ld.json
 inputs:
   - { name: TurnOn, kind: push }
   - { name: Off, kind: push }
 outputs: [Beacon]
-caption: "Pulse TurnOn y suéltelo, luego pulse Off"
+caption: "Pulse TurnOn y suéltelo, pulse Off, y luego mantenga los dos a la vez"
 ```
 
 La misma lógica en **texto estructurado** (ST) es una línea que se lee como una fórmula:
 
 ```st
-Beacon := (TurnOn OR Beacon) AND NOT Off;
+Beacon := TurnOn OR (Beacon AND NOT Off);
 ```
 
 Y en **lista de instrucciones** (IL) es una lista corta de pasos, cada uno actuando sobre un "resultado actual":
 
 ```il
-LD TurnOn
-OR Beacon
+LD Beacon
 ANDN Off
+OR TurnOn
 ST Beacon
 ```
 
-Léalas y compárelas con el peldaño. La condición es siempre la misma: la baliza está encendida cuando se pulsa el encendido o la baliza ya está encendida, y nunca mientras se pulsa Off.
+Léalas y compárelas con el peldaño. La condición es siempre la misma: la baliza está encendida mientras se pulsa TurnOn, o cuando ya está encendida y no se pulsa Off. El portón de la práctica necesita la otra prioridad, y dónde va `NOT Close` para darla queda para usted.
 
 ## Los cinco lenguajes
 
@@ -94,4 +94,4 @@ El curso completo está debajo de la ruta de escalera en el inicio de Aprender. 
 
 ## Qué hará en la práctica
 
-En la práctica, la lógica de la compuerta ya está escrita como una condición en texto estructurado con un error. Usted lo corrige para que la compuerta se mantenga abierta sola y se cierre a orden, y luego compara la misma lógica en los otros cuatro lenguajes. Un solo escenario califica los cinco.
+En la práctica, la lógica del portón ya está escrita como una condición en texto estructurado con un error. Usted lo corrige para que el portón se mantenga abierto sola y se cierre a orden, y luego compara la misma lógica en los otros cuatro lenguajes. Un solo escenario califica los cinco.

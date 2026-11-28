@@ -73,7 +73,7 @@ In a real panel the stop button is a switch that is closed at rest. Its PLC inpu
 > [!WARNING]
 > An interlock in the program is not a safety device. An emergency stop is wired in hardware and never depends on the PLC program, and ZPLC makes no safety claim. A real reversing starter also has a mechanical or electrical lock on the contactors themselves.
 
-- Putting the lock only on one of two outputs. Each output must see the other one.
+- Testing the lock in one direction only. Try it from both directions.
 - Using a normally open contact where a normally closed one is needed, or the other way round. Check which state allows the output.
 - Forgetting that a seal-in keeps an output on. A permissive must be in series with the whole rung, including the seal-in, or the output will stay on after the permissive is gone.
 
@@ -82,17 +82,17 @@ In a real panel the stop button is a switch that is closed at rest. Its PLC inpu
 ```quiz
 question: A permissive contact is placed in the seal-in branch only, not in series with the whole rung. The motor is running and the permissive is lost. What happens?
 options:
-  - { text: 'The motor keeps running.', correct: true, feedback: Right. The rest of the rung still conducts, so the lost permissive blocks nothing. }
-  - { text: 'The motor stops at once.', feedback: Only if the permissive is in series with the whole path to the coil. }
+  - { text: 'The motor keeps running.', correct: true, feedback: 'Right. The rest of the rung still conducts, so the lost permissive blocks nothing.' }
+  - { text: 'The motor stops at once.', feedback: 'Only if the permissive is in series with the whole path to the coil.' }
 ```
 
 ```quiz
 question: Why must the program stop both contactors from closing together?
 options:
-  - { text: 'Together they would short-circuit two phases of the motor supply.', correct: true, feedback: Right. Each contactor connects the wires in a different order. }
-  - { text: 'Together they would drain the PLC battery.', feedback: Contactors are driven by the outputs, not by a battery. }
+  - { text: 'Together they would short-circuit two phases of the motor supply.', correct: true, feedback: 'Right. Each contactor connects the wires in a different order.' }
+  - { text: 'Together they would drain the PLC battery.', feedback: 'Contactors are driven by the outputs, not by a battery.' }
 ```
 
 ## What you will do in the practice
 
-In the practice you get a reversing motor with a forward rung and a reverse rung, each with a seal-in, a stop button and a lubrication permissive. The two directions do not yet know about each other. You will add the mutual lock to each rung and check that the two contactors are never on together, and that losing the lubrication permissive drops either direction.
+In the practice you get a reversing motor with a forward rung and a reverse rung, each with a seal-in, a stop button and a lubrication permissive. The two directions do not yet know about each other. You will make each direction stay off while the other one runs, and check that the two contactors are never on together, and that losing the lubrication permissive drops either direction.

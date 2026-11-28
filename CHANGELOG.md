@@ -22,6 +22,63 @@ and version when the release is cut (see `RELEASING.md`).
 
 ## Unreleased
 
+### What changed for you
+
+- The installer now carries `zplc-mcp`, the same executable the release publishes as a separate download (which remains), and the MCP panel writes its full path into the client configuration.
+- In the Guide, the Reflect stage is listed but locked, with the text of what opens it, until the lesson passes or you choose to see the solution; it then opens at once and stays open.
+- With the classroom setting that hides solutions on, the last hint of a lesson, which is the full answer, is hidden in the Guide too, as it already was for the assistant and `zplc://lesson/current`; the earlier hints and the notice stay.
+- **Feed the board from the plant** (the Online menu and a button of the plant document) now works with a connected board whose firmware offers plant I/O: it asks for confirmation first, the status bar shows the mode with its mirroring mark and response time, and the mode ends, leaving the board as it was, on Stop, disconnection, a project or plant change and closing ZPLC. It is tested with a fake board, the native simulator and the board builds; the proof on a physical board is pending the owner's bench record, and on Windows and macOS it is not measured.
+- A Function Block Diagram and a Ladder rung place every function of the compiler, the 240 type conversions included, so a
+  `REAL` is converted with a block such as `REAL_TO_INT` and no second file in Structured Text is needed. `MUX` takes up
+  to eight inputs.
+- An AI agent reads a long simulation trace in pieces: `trace_get` answers the changes, a window of samples or a
+  summary per signal, and a whole trace over 512 KiB is refused with the modes to use instead. A trace file over
+  16 MiB is refused before it is read.
+- Every MCP reply that carries `execution` also carries `audit` with its job id, permission and duration, and a wrong
+  scenario, signal or mode is answered with the valid values. The 2.0 fields keep their shape and values.
+- An AI agent writes project files through MCP: `workspace_write` creates or replaces programs in the five languages,
+  `zplc.json`, scenarios, `scene.json` and `plant-map.json` only after they pass the check `workspace_check_write` runs
+  without writing; a refused file is left as it was, and no tool deletes or renames a file.
+- An AI agent debugs in a simulation private to it: six `debug_*` MCP tools start a session, stop it at a breakpoint in
+  any of the five languages, step it, set its inputs or plant actions and read variables, function block members, SFC
+  steps and plant facts by name; two sessions at most, each stopped after 300 s idle and when the client disconnects.
+- `NOT` of an untyped integer literal, or of an expression made only of such literals such as `NOT(1 + 2)`, now takes the width of its context, as `AND`, `OR` and `XOR` do: 32 bits, and 64 bits
+  when the destination is 64 bits wide. Before, `X : DWORD := NOT(1)` gave 0, and `NOT(0)` gave 1 into any bit string;
+  now it gives `16#FFFFFFFE`, and `NOT(k)` into `BYTE`, `WORD`, `DWORD` and `LWORD` equals `NOT(BYTE#k)`, `NOT(WORD#k)`,
+  `NOT(DWORD#k)` and `NOT(LWORD#k)`. A `BOOL` destination is still refused. No published project or lesson uses this form,
+  and the bytecode of every project, file and documentation example is unchanged.
+
+### Breaking changes
+
+- `trace_get` without `mode` now answers in mode `changes`; the 2.0 answer is `mode: "full"`. Before, a call with only
+  `scenarioId` answered the whole recorded trace; now it answers the first sample, every change of a program signal, the
+  failed expectations and the last sample. To get the whole trace as 2.0 answered it, byte for byte, pass
+  `mode: "full"`; a trace over 512 KiB is then refused with `MCP_OUTPUT_LIMIT` and a next step that names the modes
+  `changes`, `window` and `summary`. `mode: "full"` takes no other option: a call that adds `signals`, `watchSignals`,
+  `limit`, `fromSample`, `fromMs`, `toMs` or `includeInputs` is refused with `MCP_INVALID_ARGUMENTS`.
+- The resource `zplc://runtime/trace/{scenarioId}` answers the same as `trace_get` without `mode`: the changes of the
+  run, no longer the whole trace.
+
+### Migration
+
+1. If an MCP client calls `trace_get` with only `scenarioId`, or reads `zplc://runtime/trace/{scenarioId}`, and needs
+   the whole trace, call `trace_get` with `mode: "full"`.
+
+### Known limits
+
+- `SEL` and `MUX` do not select strings in any language. In FBD and Ladder the build refuses them with `STRING` and says
+  to use an `IF` in Structured Text.
+- A 64-bit literal (`LWORD#`, `ULINT#`, `LINT#`) as the input of `SHL`, `SHR`, `ROL` or `ROR` is refused at build time.
+  Assign the literal to a variable first. Assignment and arithmetic with those literals work.
+- An untyped integer literal is 32 bits wide, so `ROL(16#8000, 1)` into a `WORD` gives 0, not 1: the bit rotates out of the
+  low 16 bits. Write the literal with its type, `ROL(WORD#16#8000, 1)`, to rotate within 16 bits. The same holds for `ROR`,
+  `SHL` and `SHR`.
+
+### Details for contributors
+
+- AIX-015: `trace_get` answers in mode `changes` by default ("never whole by default"); mode `full` is the 2.0 answer,
+  proved byte for byte on recorded traces, and takes no options.
+
 ## 2.0.1 - 2026-11-12
 
 ZPLC 2.0.1 fixes the simulation for anyone who used an earlier ZPLC on the same computer.

@@ -8,7 +8,9 @@ import { ConnectionIndicator } from './ConnectionIndicator';
 import { presentConnection, type ConnectionIndicatorView } from './connectionPresentation';
 import { runCommand } from '../commands/bus';
 import type { CommandId } from '../commands/registry';
-import { Button } from '../ui';
+import { Badge, Button } from '../ui';
+import { Workflow } from 'lucide-react';
+import { useIoModeStatus, type IoModeStatus } from '../store/ioModeStatus';
 import { StatusDetails, type StatusDetailRow } from './StatusDetails';
 import { programStateOf, programStateText, type ProgramState, type ProgramStateInput } from './programState';
 import { useRegisteredPlantTransport } from '../store/useTransport';
@@ -70,6 +72,7 @@ export function OperationalStatusBar({ mode, adapterType, connected, status, con
 
   // A bound plant session speaks through the same line (PLS-013): the rail follows its changes.
   const plant = useRegisteredPlantTransport();
+  const ioMode = useIoModeStatus();
 
   if (!isProjectOpen) return null;
   const place = isPaused
@@ -126,9 +129,43 @@ export function OperationalStatusBar({ mode, adapterType, connected, status, con
     },
     { label: t('studio.status.detail.firmware'), value: linkInfo.firmware?.firmwareVersion ?? none },
     { label: t('studio.status.detail.protocol'), value: protocol ?? none },
+    ...(ioModeShown(ioMode)
+      ? [
+          {
+            label: t('status.ioMode.latency'),
+            value: ioMode.latencyMs
+              ? t('status.ioMode.latencyValue', { last: String(ioMode.latencyMs.last), worst: String(ioMode.latencyMs.worst) })
+              : t('status.ioMode.latencyNone'),
+          },
+        ]
+      : []),
   ];
   const action = state?.action ? actionOf(state, t) : undefined;
-  return <OperationalStatusView presentation={presentation} indicator={indicator} rows={rows} {...(action ? { action } : {})} />;
+  return (
+    <OperationalStatusView
+      presentation={presentation}
+      indicator={indicator}
+      rows={rows}
+      {...(ioModeShown(ioMode) ? { ioMode } : {})}
+      {...(action ? { action } : {})}
+    />
+  );
+}
+
+/** The third state of the rail shows while the mode starts or runs; a failed start leaves the rail at Board (PLS-008). */
+const ioModeShown = (status: IoModeStatus) => status.state === 'starting' || status.state === 'running';
+
+function IoModeIndicator({ ioMode }: { ioMode: IoModeStatus }) {
+  const { t } = useT();
+  return (
+    <span role="status" aria-live="polite" aria-atomic="true" data-io-mode={ioMode.state} className="flex items-center gap-2">
+      <Badge tone="success" className="gap-1.5 font-semibold">
+        <Workflow size={14} aria-hidden="true" />
+        <span>{t(ioMode.state === 'starting' ? 'status.ioMode.starting' : 'status.ioMode.label')}</span>
+      </Badge>
+      {ioMode.mirroring && <Badge tone="warning">{t('status.ioMode.mirroring')}</Badge>}
+    </span>
+  );
 }
 
 function actionOf(
@@ -157,6 +194,7 @@ export function OperationalStatusView({
   debug,
   rows = [],
   action,
+  ioMode,
 }: {
   presentation: OperationalStatusPresentation;
   indicator: ConnectionIndicatorView;
@@ -164,6 +202,8 @@ export function OperationalStatusView({
   debug?: string;
   rows?: StatusDetailRow[];
   action?: { label: string; run: () => void; command: CommandId };
+  /** Plant I/O mode, when it starts or runs: its indicator replaces the connection indicator (PLS-008). */
+  ioMode?: IoModeStatus;
 }) {
   const { t } = useT();
   return (
@@ -173,9 +213,7 @@ export function OperationalStatusView({
     >
       <div className="overflow-x-auto [scrollbar-width:thin]">
         <div className="flex flex-nowrap items-center gap-x-3 whitespace-nowrap" data-status-line>
-          <span data-status-item>
-            <ConnectionIndicator indicator={indicator} />
-          </span>
+          <span data-status-item>{ioMode ? <IoModeIndicator ioMode={ioMode} /> : <ConnectionIndicator indicator={indicator} />}</span>
           <span className="h-3.5 w-px bg-[var(--color-surface-700)]" aria-hidden="true" />
           <span className="flex items-center gap-2" data-status-item>
             <span

@@ -4,8 +4,8 @@
   "summary": "Use a TOF timer to keep a light on after a button is released, and a TON timer to ignore a sensor blip that is too short.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show how a real button bounces or how fast a real sensor answers.",
   "objectives": [
-    "Keep an output on for a fixed time after its input drops, with a TOF instance called on every scan.",
-    "Ignore an input that is on for less than a fixed time, with a TON instance."
+    "Keep an output on for a fixed time after its input drops, with a timer instance called on every scan.",
+    "Ignore an input that is on for less than a fixed time, and say which of the two delays belongs to the start of a signal and which to its end."
   ],
   "stages": [
     {
@@ -41,14 +41,14 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Swap the two timers in your head: what would a TON on Button and a TOF on Sensor do with this scenario? Then imagine the two calls inside IF Button THEN ... END_IF: what would Confirmed do?",
+      "body": "Once it passes, swap the roles in your head: what would each output do if its delay sat at the other end of its input? Then imagine your timer calls running only while Button is TRUE: what would Confirmed do?",
       "checkpoint": "TON delays the start and TOF delays the end; each answers a different question about a signal. A timer that is not called keeps its clock and its Q as they were, so Light would never fall and Confirmed would never rise."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Light must stay on after its input falls, so it needs the TOF; Confirmed must wait before it turns on, so it needs the TON. Call each instance on every scan with its input and its preset, then read its Q."
+      "text": "Look at the two copy statements: nothing stands between each input and its output. For each output, ask whether its delay belongs to the start of its input or to the end of it."
     },
     {
       "level": 2,

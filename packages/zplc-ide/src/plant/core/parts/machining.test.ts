@@ -87,6 +87,9 @@ async function loaded(config: ScenePart['config'] = {}): Promise<Rig> {
   return r;
 }
 
+// The real-core runs take ~0.3 s idle and over 5 s on a loaded runner (macOS CI): bun's default 5 s timeout cut them short.
+const REAL_CORE_TIMEOUT_MS = 120_000;
+
 describe('machining centre', () => {
   it('PRT-003 a workpiece fed into the chamber stops at rest and ready reads TRUE', async () => {
     const r = await plant([machine(), blank('w1', -0.3)]);
@@ -213,6 +216,7 @@ describe('machining centre', () => {
       expect(r.facts()['misfires:mc']).toBe(1);
       expect(r.sense()['mc.busy']).toBe(true);
     },
+    REAL_CORE_TIMEOUT_MS,
   );
 
   it(
@@ -323,37 +327,41 @@ describe('machining centre', () => {
     return { hash: h.digest('hex'), rig: r };
   };
 
-  it('PLT-006 the machining centre calls no libm function while stepping and the facts and poses are identical on three runs', async () => {
-    const a = (await script()).hash;
-    expect(Object.keys((await script()).rig.facts())).toEqual(['produced:mc', 'misfires:mc']);
-    expect((await script()).hash).toBe(a);
-    const real = { sin: Math.sin, cos: Math.cos, atan2: Math.atan2, random: Math.random };
-    // The product spawns through `world.addBody`, which turns its yaw into a quaternion with sin and cos (as every emitter spawn
-    // does, world.ts addBody): that call is the world's, so it is let through; any call from the part itself throws.
-    const boom =
-      (name: keyof typeof real) =>
-      (...args: number[]) => {
-        if (new Error().stack?.includes('addBody')) return (real[name] as (...a: number[]) => number)(...args);
-        throw new Error('libm call in a step');
-      };
-    const r = await plant([machine(), infeed(), blank('w1', -0.3), blank('w2', -0.9)]);
-    const h = createHash('sha256');
-    const sample = () => h.update(JSON.stringify(r.world.bodies())).update(JSON.stringify(r.facts())).update(JSON.stringify(r.sense()));
-    Object.assign(Math, { sin: boom('sin'), cos: boom('cos'), atan2: boom('atan2'), random: boom('random') });
-    try {
-      r.set({ feed: true });
-      r.run(600, sample);
-      r.set({});
-      r.run(600, sample);
-      r.set({ start: true, 'inb.run': true });
-      r.run(1500, sample);
-      r.set({ feed: true, 'inb.run': true });
-      r.run(1500, sample);
-    } finally {
-      Object.assign(Math, real);
-    }
-    expect(h.digest('hex')).toBe(a);
-  });
+  it(
+    'PLT-006 the machining centre calls no libm function while stepping and the facts and poses are identical on three runs',
+    async () => {
+      const a = (await script()).hash;
+      expect(Object.keys((await script()).rig.facts())).toEqual(['produced:mc', 'misfires:mc']);
+      expect((await script()).hash).toBe(a);
+      const real = { sin: Math.sin, cos: Math.cos, atan2: Math.atan2, random: Math.random };
+      // The product spawns through `world.addBody`, which turns its yaw into a quaternion with sin and cos (as every emitter spawn
+      // does, world.ts addBody): that call is the world's, so it is let through; any call from the part itself throws.
+      const boom =
+        (name: keyof typeof real) =>
+        (...args: number[]) => {
+          if (new Error().stack?.includes('addBody')) return (real[name] as (...a: number[]) => number)(...args);
+          throw new Error('libm call in a step');
+        };
+      const r = await plant([machine(), infeed(), blank('w1', -0.3), blank('w2', -0.9)]);
+      const h = createHash('sha256');
+      const sample = () => h.update(JSON.stringify(r.world.bodies())).update(JSON.stringify(r.facts())).update(JSON.stringify(r.sense()));
+      Object.assign(Math, { sin: boom('sin'), cos: boom('cos'), atan2: boom('atan2'), random: boom('random') });
+      try {
+        r.set({ feed: true });
+        r.run(600, sample);
+        r.set({});
+        r.run(600, sample);
+        r.set({ start: true, 'inb.run': true });
+        r.run(1500, sample);
+        r.set({ feed: true, 'inb.run': true });
+        r.run(1500, sample);
+      } finally {
+        Object.assign(Math, real);
+      }
+      expect(h.digest('hex')).toBe(a);
+    },
+    REAL_CORE_TIMEOUT_MS,
+  );
 
   it('PLT-012 a capture mid-cycle restores and finishes with the same hash', async () => {
     // The core restores by replaying the history on a fresh world: the same history must give the same bytes mid-cycle and at the end.

@@ -201,6 +201,9 @@ const INERT_HOSTS: Record<string, string> = {
   'code.visualstudio.com': 'strings inside Monaco',
   'microsoft.com': 'strings inside Monaco',
   'reactflow.dev': 'the attribution link of React Flow',
+  'api.openai.com':
+    'the hosted example under the Assistant endpoint field of Preferences (AIX-005): text only; the renderer never requests it, the ' +
+    'main process calls only the endpoint a person saves',
   'cdn.jsdelivr.net':
     'the default path of @monaco-editor/loader, unused: Studio gives the loader its bundled Monaco (src/components/monacoRuntime.ts), ' +
     'and the policy refuses the CDN',

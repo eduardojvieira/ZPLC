@@ -2,7 +2,7 @@
 
 **Implementation branch**: none of its own. Work lands on the 2.1 integration branch `feat/plant-simulation` through the threads of sections 6 and 9 (design default)  
 **Created**: 2026-11-24  
-**Status**: Adopted in its decisions. The owner's statements of section 5.1 are recorded. The decisions of section 5.2 were taken on 2026-11-24 by the reviewer, as statement S-19 delegates, D-31 was changed on 2026-11-25 by statement S-20, and D-36 was added the same day under S-21; the owner overturns any of them with a new statement  
+**Status**: Adopted in its decisions. The owner's statements of section 5.1 are recorded. The decisions of section 5.2 were taken on 2026-11-24 by the reviewer, as statement S-19 delegates, D-31 was changed on 2026-11-25 by statement S-20, and D-36 was added the same day under S-21; D-37 was taken by the owner on 2026-11-26 with statement S-23, the one addition after the freeze; the owner overturns any of them with a new statement  
 **Baseline**: commit `ed3a95bb`, version `2.0.1`  
 **Builds on**: [spec 011](../011-zplc-2-0-remediation/spec.md) (principles P1 to P13), [spec 012](../012-zplc-2-1-plant-simulation/spec.md) (P14 to P17) and [spec 013](../013-zplc-2-1-studio-experience/spec.md) (P18 to P22). Their requirements stay in force  
 **Paths**: `IDE/` stands for `packages/zplc-ide/`
@@ -96,6 +96,7 @@ Measured on `ed3a95bb` unless a date is given.
 | S-20 | ZPLC is to have the best AI integration. An agent such as Claude Code, through MCP, writes a program in any supported language, debugs it, and does everything else. | "Hagamos la.mejor integración con IA. Un agente de Claude code con el mcp debería poder escribir un programa en cualquiera de los lenguajes soportados, hacer depuración, todo. Hoy en día la integración con IA es muy importante" (2026-11-25) |
 | S-21 | A final visual verification with correction is added: how Studio, the 3D view, the lessons and everything else look, in different conditions, so that the experience is excellent. It is the last addition to the scope. | "Agrega también una verificación final visual con corrección de ux. Verificar como se ve el ide, el visor 3d, las lecciones, todo en distintos escenarios para garantizar una excelente ux. Ya esto es lo último" (2026-11-25) |
 | S-22 | The release includes the update of the documentation and of the published site with everything that is new. | "Me imagino que también se incluye una actualización de la documentación y del Github pages para este reléase con todo lo nuevo" (2026-11-25) |
+| S-23 | A hole to fix: an FBD diagram and a Ladder rung are to place every standard function the compiler registers, and the build is to translate them. It enters 2.1.0 after the freeze of S-21 because the owner decides so (D-37). | "parece que hay un agujero que hay que arreglar, deberiamos hacer que el compilador los traduzca" (2026-11-26) |
 
 ### 5.2 Decisions
 Taken on 2026-11-24 by the reviewer, as S-19 delegates. Each is the option that gives the most complete release that can still converge. The owner overturns any of them with a new statement.
@@ -111,6 +112,7 @@ Taken on 2026-11-24 by the reviewer, as S-19 delegates. Each is the option that 
 | D-34 | Who signs the candidate | (A) Green automated checks. (B) The owner walks the five journeys on the packaged application on Linux and on one of Windows or macOS, after green hosted checks and board evidence. | **B, on Linux and on Windows, one walk in each interface language.** The first-run check on a real Mac and a real Windows machine that REL-016 of spec 011 asks before a release is published stays as it is: this decision adds the five journeys, it removes nothing. Only a statement of the owner waives a real machine, and then the release notes say so. | Most people who program PLCs work on Windows. English and Spanish are both shipped, so both are walked. REL-016 already binds the release to real machines, and P27 covers what is waived. | RCN |
 | D-35 | Which protocol revisions the MCP server serves | (A) Revision 2026-07-28 only, as today (`legacy: 'reject'`). (B) Both eras, as the SDK serves by default. | **B.** | The repository records no reason for A (`docs/docs/guides/ai-and-mcp.md:66`). Reports of October 2026 say several common clients still open with the 2025 handshake, which the server answers with error `-32022` (`reviews/ai.md`, AI-04). An agent that cannot connect cannot do anything else. | AIX-007 |
 | D-36 | The conditions of the visual verification | (A) Every surface in every combination of size, theme, language, density, system and state. (B) A covering set. | **B.** Every surface: at 1440 by 900 in light and in dark, in English and in Spanish; at 1024 by 768 in Spanish, the longest language at the smallest window; in high contrast in English. Every surface that has them: its empty, full, waiting and failed states, and the compact density. Sizes 1366 by 768 and 1920 by 1080, a display scale of 150 %, and a screen whose usable area is smaller than the minimum window, on the surfaces of the golden journeys. The 3D view: the 21 scenes at three window shapes; a reduced set of scenes at each quality, each display mode, reduced motion and software rendering. Linux in full; Windows and macOS on the installers, on the surfaces of the golden journeys. | A does not end: the product of the conditions is in the thousands per surface. B puts each condition where it breaks things: the longest text in the smallest window, each theme once everywhere, each system where fonts and frames differ. | UXV |
+| D-37 | Whether FBD and Ladder place every function the compiler registers | (A) Keep the limit of 2.0: FBD places 8 of the 297 registered functions and Ladder 15 boxes, and the pages send the rest to Structured Text (`docs/docs/languages/fbd.md:31` and `:49`, `docs/docs/languages/ld.md:32`). (B) Both place all 297 through one mechanism driven by the compiler's own table, in 2.1.0, after the freeze. | **B, taken by the owner on 2026-11-26 (S-23)**, as LNG-029 and LNG-030 state it: one mechanism, not 289 cases; the ST of every existing diagram and rung and the lesson trace hashes stay identical; no change to the compiler's code generation or to the C runtime, and if one is needed the run stops and asks the owner. The plan is `plan-lng.md`. | The external review of 2026-11-26 (`.cache/claude-ux-review/fbd-functions-check/README.md`, F-04) measured the gap against "Complete": a diagram cannot convert an `INT` to a `REAL`, take a square root or shift a word without a second file in another language, and an agent writing FBD or Ladder over MCP meets the refusal at once. In IEC 61131-3 the standard functions are common to every language. It is no new language feature: the compiler already registers the 297 and Structured Text and Instruction List call them. | LNG-029, LNG-030 |
 
 ### 5.3 Design defaults
 
@@ -126,7 +128,7 @@ Taken on 2026-11-24 by the reviewer, as S-19 delegates. Each is the option that 
 | Time targets of journeys are measured on the reference laptop with a clean profile | JRN-003 |
 
 ### 5.4 Relationship to specs 011, 012 and 013
-This spec adds requirements; it removes none. It extends IDE-030 (the assistant and the review), LNK-009 (AI may run a scene scenario headless), CRS and LRN (the course), VIS (the plant view), GDE (first use) and REL (the release). Section 10.2 lists the pairs.
+This spec adds requirements; it removes none. It extends IDE-030 (the assistant and the review), LNG-007, LNG-022, LNG-023 and LNG-028 (the standard functions in FBD and Ladder, LNG-029 and LNG-030 continue the numbering of spec 011), LNK-009 (AI may run a scene scenario headless), CRS and LRN (the course), VIS (the plant view), GDE (first use) and REL (the release). Section 10.2 lists the pairs.
 
 ### 5.5 Out of scope
 - New language features, new plant parts, new board families.
@@ -150,10 +152,11 @@ This spec adds requirements; it removes none. It extends IDE-030 (the assistant 
 | OSS | Free-project readiness | 5 |
 | PUB | Documentation and site | 5 |
 | RCN | Candidates and release | 6 |
+| LNG | Standard functions in FBD and Ladder | 2 |
 
 ### FRZ: Scope freeze
 - **FRZ-001** The scope of 2.1.0 MUST be written as one list in the repository: each item, its spec, its state and who or what blocks it. The list replaces every other ledger as the answer to "what is left".
-- **FRZ-002** The scope MUST freeze at the point decision D-28 names. The freeze is a commit that says so. An item of the list of FRZ-001 MUST NOT move to 2.1.x without a statement of the owner (D-28). By statement S-21 the scope takes no addition after 2026-11-25. Statement S-22 adds nothing: it makes explicit what rule 5 of `AGENTS.md` and RCN-006 already asked.
+- **FRZ-002** The scope MUST freeze at the point decision D-28 names. The freeze is a commit that says so. An item of the list of FRZ-001 MUST NOT move to 2.1.x without a statement of the owner (D-28). By statement S-21 the scope takes no addition after 2026-11-25. Statement S-22 adds nothing: it makes explicit what rule 5 of `AGENTS.md` and RCN-006 already asked. Statement S-23 adds LNG-029 and LNG-030 after the freeze, by the owner's decision (D-37); it is the one exception.
 - **FRZ-003** After the freeze a change MUST name the finding (REV-004) or the journey step (JRN) it closes. A change that names neither waits for 2.1.x.
 - **FRZ-004** The list of FRZ-001 MUST be updated by the same change that closes or adds an item, and a check MUST fail when a requirement of specs 012 to 014 is neither covered, nor listed as open, nor listed as a known limit.
 
@@ -251,6 +254,12 @@ The documentation and the published site describe 2.1 whole, in both languages, 
 - **RCN-005** A second candidate is built only for a blocker.
 - **RCN-006** The release is cut with the version, the compiler version, the changelog and the documentation captures in one change, after the scope list of FRZ-001 shows nothing open.
 
+### LNG: Standard functions in FBD and Ladder
+The ids continue the numbering of spec 011, whose LNG-028 is the last (D-37). The requirements live here because they are 2.1.0 scope: this spec's index counts them, and the gate of spec 011 stays as 2.0 left it. Today FBD places 8 of the 297 functions the compiler registers (`getAllFnNames()`) and Ladder has 15 boxes; the 289 missing are 240 conversions `<FROM>_TO_<TO>` and 49 named functions (bits, strings, trigonometry, arithmetic, logarithms, rounding, scaling, system and `MUX`). The plan is `plan-lng.md`.
+
+- **LNG-029** An FBD diagram MUST be able to place every function the compiler registers (`getAllFnNames()`, 297), and the build MUST translate each one. It MUST be one mechanism, not one case per function: the pins and their types come from the compiler's table, `FUNCTION_DOCS` (parameters and return type) and `CONVERSION_TYPES`, and when `@zplc/compiler` does not export those data it MUST export them and nothing more. A function is a block without an instance and is emitted as `OUT := NAME(args)`; the type of the output is the table's, and with `ANY`, `ANY_NUM` and `ANY_BIT` it MUST follow the inputs, as `MAX` and `MIN` do today; a `VOID` function is a statement with no output. `MUX` is variadic, and a person MUST be able to add inputs to it. The 240 conversions MUST NOT be a flat list in "Other": the palette MUST show a group of conversions ordered by source type, which the search finds by name, with the group names in English and in Spanish and the descriptions of `FUNCTION_DOCS` in both languages; a capture of the palette in each language is left for the reviewer. The Structured Text generated for every existing diagram MUST stay identical byte for byte, and the trace hashes of the lessons too. The compiler's code generation and the C runtime MUST NOT change; if a function needs either, the run stops and asks the owner. LNG-002 and LNG-003 MUST keep holding: nothing is dropped and every error names the block. Tests MUST be generated from the table (LNG-007 asks one executed test per palette element): for each of the 297, a diagram that calls it compiles without errors, and on the native runtime it gives the same value as the same call in Structured Text, with the operands of the reference example. The same change MUST update, in English and in Spanish, `docs/docs/languages/fbd.md` (lines 31 and 49, which send the reader to Structured Text today), the generated references, the formats resource of MCP and the changelog.
+- **LNG-030** A Ladder rung MUST be able to place every function the compiler registers (`getAllFnNames()`, 297) as a box with EN and ENO as LNG-028 says, and the build MUST translate each one. The same table as LNG-029 MUST feed `LD_FUNCTIONS`: pins and types from `FUNCTION_DOCS` and `CONVERSION_TYPES`, the output following the operands for `ANY`, `ANY_NUM` and `ANY_BIT`, a `VOID` function a statement with no output, and `MUX` a box to which a person can add inputs. The palette, the guards and the generated tests of LNG-029 MUST hold for the rung: the conversions grouped by source type with search and the group names in both languages; the Structured Text of every existing rung identical byte for byte and the lesson trace hashes unchanged; no change to the compiler's code generation or to the C runtime; nothing dropped and every error naming the rung and cell (LNG-002, LNG-003); for each of the 297 a rung that calls it compiles without errors and gives on the native runtime the same value as the same call in Structured Text. The same change MUST update `docs/docs/languages/ld.md` (line 32, "the fifteen IEC functions") in English and in Spanish, with the generated references, the formats resource of MCP and the changelog.
+
 ## 7. The review map
 
 | Area | The question | Looks at | Runs when |
@@ -321,6 +330,7 @@ The documentation and the published site describe 2.1 whole, in both languages, 
 | S-20 | D-31, D-35, AIX-007 to AIX-015, JRN-001 (journey 5) |
 | S-21 | D-36, UXV-001 to UXV-009, FRZ-002 |
 | S-22 | PUB-001 to PUB-005, OSS-001, OSS-004, RCN-006 |
+| S-23 | D-37, LNG-029, LNG-030, FRZ-002 |
 
 ### 10.2 Requirements of earlier specs that this spec extends
 
@@ -336,6 +346,7 @@ The documentation and the published site describe 2.1 whole, in both languages, 
 | GDE (spec 013) | JRN-001 (1), section 7 "First use" | First use is walked on the installer |
 | CRS, LRN | Section 7 "Course" | The standard of S-13 is reviewed per batch |
 | VIS-014 to VIS-019 | Section 7 "Plant view" | The catalogue is reviewed from outside |
+| LNG-007, LNG-022, LNG-023, LNG-028 (spec 011) | LNG-029, LNG-030 | Every registered function is placed in FBD and Ladder from the compiler's table, and each palette element keeps its executed test |
 | REL | RCN-001 to RCN-006, OSS-004 | The release waits for hosted checks, journeys and a signature |
 
 ## 11. Glossary

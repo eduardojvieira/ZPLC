@@ -26,7 +26,7 @@ Llame a un temporizador TOF con CAL para mantener una luz encendida después de 
 ## Objetivos
 
 - Llame a una instancia de temporizador con CAL en cada ciclo, pasándole su entrada y su valor preestablecido, y lea su salida después de la llamada.
-- Mantenga una salida en ON durante un tiempo fijo después de que su entrada cae, con un TOF, e ignore una entrada que está en ON menos de un tiempo fijo, con un TON.
+- Mantenga una salida en ON durante un tiempo fijo después de que su entrada cae, e ignore una entrada que está en ON menos de un tiempo fijo.
 
 ## Etapas
 

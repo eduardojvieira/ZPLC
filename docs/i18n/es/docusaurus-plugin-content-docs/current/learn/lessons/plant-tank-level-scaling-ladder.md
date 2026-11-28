@@ -25,7 +25,7 @@ Escale con cuadros de función el nivel crudo de un tanque, un número entero de
 
 ## Objetivos
 
-- Escalar con cuadros un valor analógico a unidades de ingeniería: convertir primero a REAL y luego dividir entre el rango crudo.
+- Escalar con cuadros un valor analógico a unidades de ingeniería de modo que se conserven las fracciones de una unidad.
 - Leer el mapa de planta para hallar el rango crudo de cada señal, y ver qué hace al proceso una escala equivocada.
 
 ## Etapas

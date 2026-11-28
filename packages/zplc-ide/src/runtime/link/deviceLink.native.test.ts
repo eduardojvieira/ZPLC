@@ -2,18 +2,33 @@
 // `zplc_runtime --device-link`, the same engine and the same frames as firmware. The tests that need the binary
 // fail in CI when it is missing (VF-023) and are skipped, with a message, on a machine that has none.
 import { afterEach, describe, expect } from 'bun:test';
-import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import { spawn, spawnSync, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { ZPLC_CONSTANTS, compileToBinary } from '@zplc/compiler';
 
-import { itNative, nativeRuntimeBinary } from '../../cli/nativeRuntimeGuard';
+import { itNative as itNativeRuntime, nativeRuntimeBinary } from '../../cli/nativeRuntimeGuard';
 import { DeviceLink, LinkError, type LinkEvent, type LinkTransport } from './deviceLink';
 import { beginFrame, crc32, encodeFrame, finishFrame } from './frame';
 import { programSignerOf, publicKeyOf, signProgram } from './signing';
 import { CAPABILITY, ENUMS, ERROR, EVENT_MASK, KIND, MESSAGES } from './protocol.generated';
+
+// The device link (--device-link) is served only on POSIX hosts (native_device_link.c, #ifndef _WIN32): on Windows the
+// runtime says so and exits 1. There this file asserts that rule and registers no link test: a skip would read as a missing
+// binary to the VF-023 guard. itNative keeps its name so that tools/ci/requirement-coverage.ts still reads the titles.
+const LINK_UNAVAILABLE = 'the device link is not available on this platform';
+const itNative = (process.platform === 'win32' ? () => undefined : itNativeRuntime) as typeof itNativeRuntime;
+
+// Registered only on Windows, not skipped elsewhere: a skip on Linux would read as a missing binary to the VF-023 guard.
+if (process.platform === 'win32') {
+  itNativeRuntime(`on Windows the runtime says "${LINK_UNAVAILABLE}" and exits 1`, () => {
+    const result = spawnSync(nativeRuntimeBinary, ['--device-link'], { encoding: 'utf8', input: '', timeout: 10_000 });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(LINK_UNAVAILABLE);
+  });
+}
 
 const KEY = Uint8Array.from({ length: 32 }, (_, index) => (index * 7 + 3) & 0xff);
 const KEY_HEX = Buffer.from(KEY).toString('hex');

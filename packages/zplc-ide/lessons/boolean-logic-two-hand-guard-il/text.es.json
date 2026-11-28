@@ -5,13 +5,13 @@
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el tiempo de respuesta, la redundancia ni el comportamiento ante fallas que necesita un dispositivo real de mando a dos manos.",
   "objectives": [
     "Lea un programa en lista de instrucciones (IL) como un resultado actual que cada instrucción combina con un operando, de arriba hacia abajo.",
-    "Use LD, LDN, AND, XOR y ST para convertir tres entradas en tres salidas."
+    "Convierta tres entradas en tres salidas con instrucciones de carga, combinación y almacenamiento."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/TwoHand.il cada línea es una instrucción. LD carga un operando en el resultado actual, AND le combina el operando siguiente y ST guarda el resultado en una salida; el resultado se conserva después de ST, así que el siguiente LD inicia una nueva línea de lógica. PressEnable debe estar en ON solo con LeftHand, RightHand y GuardClosed en ON. GuardLamp debe estar en ON cuando la protección está abierta (LDN carga lo contrario de un operando). OneHandWarning debe estar en ON cuando exactamente una mano está en su pulsador (XOR).",
+      "body": "En src/TwoHand.il cada línea es una instrucción. LD carga un operando en el resultado actual, LDN carga lo contrario de un operando, AND le combina el operando siguiente, XOR es TRUE cuando exactamente uno de sus dos operandos es TRUE y ST guarda el resultado en una salida; el resultado se conserva después de ST, así que el siguiente LD inicia una nueva línea de lógica. PressEnable debe estar en ON solo con LeftHand, RightHand y GuardClosed en ON. GuardLamp debe estar en ON cuando la protección está abierta. OneHandWarning debe estar en ON cuando exactamente una mano está en su pulsador.",
       "checkpoint": "Usted puede decir, para cada salida, las instrucciones que construyen su condición."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial carga LeftHand, le combina OR RightHand y lo guarda en PressEnable, así que PressEnable ya está en ON a los {{t:10}} ms con una sola mano, y las dos lámparas quedan fijas en OFF; reescriba los tres grupos de líneas, uno para cada salida, y guarde el archivo. PressEnable debe estar en ON solo con las dos manos en sus pulsadores y la protección cerrada, GuardLamp en ON mientras la protección está abierta y OneHandWarning en ON mientras exactamente una mano está en su pulsador. Escriba usted las instrucciones: las declaraciones ya están.",
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial pone PressEnable en ON a los {{t:10}} ms con una sola mano en su pulsador, y GuardLamp y OneHandWarning siguen en OFF hagan lo que hagan las entradas. PressEnable debe estar en ON solo con las dos manos en sus pulsadores y la protección cerrada, GuardLamp en ON mientras la protección está abierta y OneHandWarning en ON mientras exactamente una mano está en su pulsador. Escriba usted las instrucciones: las declaraciones ya están.",
       "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
@@ -41,14 +41,14 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "Cambie AND RightHand por OR RightHand y diga qué combinación de entradas habilita la prensa por error.",
-      "checkpoint": "OR habilita la prensa con una sola mano, justo lo que un mando a dos manos existe para impedir. Cada línea trabaja sobre el resultado de las líneas anteriores, por eso el orden de las líneas importa en IL."
+      "body": "Una vez que pase, ¿qué combinaciones de entradas acepta su PressEnable, y cuál dejaría pasar un error que acepte una sola mano?",
+      "checkpoint": "Un mando a dos manos existe para mantener las dos manos lejos de la prensa, así que una condición que acepta una sola mano lo anula. Cada línea trabaja sobre el resultado de las líneas anteriores, por eso el orden de las líneas importa en IL."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "AND es verdadera solo cuando todos los operandos son verdaderos, así que PressEnable necesita LD LeftHand seguido de dos líneas AND. LDN carga lo contrario de un operando."
+      "text": "Mire la línea que combina la segunda mano en PressEnable, y lo que reciben ahora las dos salidas de lámpara. Cada línea trabaja sobre el resultado de las líneas anteriores."
     },
     {
       "level": 2,
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial carga LeftHand, le combina OR RightHand y lo guarda en PressEnable, así que PressEnable ya está en ON a los {{t:10}} ms con una sola mano, y las dos lámparas quedan fijas en OFF; reescriba los tres grupos de líneas, uno para cada salida, y guarde el archivo."
+    "El programa inicial pone PressEnable en ON a los {{t:10}} ms con una sola mano en su pulsador, y GuardLamp y OneHandWarning siguen en OFF hagan lo que hagan las entradas."
   ]
 }

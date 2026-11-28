@@ -13,10 +13,12 @@
  *    nothing is replaced by a comment or by a constant
  */
 
-import { getFB, parseIOAddress } from '@zplc/compiler';
+import { getFB, parseIOAddress, parseTimeLiteral } from '@zplc/compiler';
 import type { FBDModel, FBDBlock, FBDConnection } from '../models/fbd';
 import { isFunctionBlock, isLogicGate, isComparison, isMathOperator, validateFBDModel } from '../models/fbd';
 import { findProjectBlock, type ProjectBlock } from '../models/projectBlocks';
+import { FBD_FUNCTION_BLOCKS, GENERIC_CLASSES, INTEGER_LITERAL, outsideClass, pinTypeProblem, selectsNoString } from '../models/pinTypes';
+import { stdFunction } from '../catalog/stdFunctions';
 import {
   ElementError,
   Listing,
@@ -80,7 +82,8 @@ type Kind =
   | 'modbus'
   | 'registry'
   | 'userblock'
-  | 'userfunction';
+  | 'userfunction'
+  | 'stdfunction';
 
 function endpointKey(block: string, port: string): string {
   return JSON.stringify([block, port]);
@@ -123,8 +126,6 @@ const FB_INPUT_ORDER: Record<string, string[]> = {
   CTUD: ['CU', 'CD', 'R', 'LD', 'PV'],
 };
 
-/** Functions of several inputs of one numeric type (ABS is a math operator of one input). */
-const FUNCTION_BLOCKS = new Set(['MAX', 'MIN', 'LIMIT', 'SEL']);
 const SIGNED = ['SINT', 'INT', 'DINT', 'LINT'];
 const UNSIGNED = ['USINT', 'UINT', 'UDINT', 'ULINT'];
 const BIT_STRING = ['BYTE', 'WORD', 'DWORD', 'LWORD'];
@@ -393,6 +394,11 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
           const operands = sources as Source[];
           const data = block.type === 'SEL' ? operands.slice(1) : operands;
           const type = unify(block, data);
+          if (block.type === 'SEL' && type === 'STRING') {
+            data.forEach(
+              (source, index) => source.type === 'STRING' && fail(block, `input 'IN${index}' is STRING: ${selectsNoString('SEL')}`),
+            );
+          }
           if (block.type === 'SEL' && operands[0].type && operands[0].type !== 'BOOL') {
             fail(block, `its selector 'G' is ${operands[0].type}, not BOOL`);
           }
@@ -432,6 +438,61 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
           typed('OUT', outputType(block, 'OUT') ?? consumerType(block, 'OUT'));
           // a result nobody uses is still a call: the function may do something
           return out ? `${out} := ${block.type}(${args.join(', ')});` : `${block.type}(${args.join(', ')});`;
+        }
+
+        case 'stdfunction': {
+          // A standard function of the compiler (LNG-029): a block with no instance, called with its arguments in the table's order
+          const record = stdFunction(block.type)!;
+          const [first] = record.inputs;
+          // MUX takes the inputs the document gives it, after its selector K; any other function has the pins of the table
+          const pins = record.variadic ? [first![0], ...ports.filter((port) => port !== first![0])] : record.inputs.map(([name]) => name);
+          const pinTypeOf = (pin: string): string =>
+            record.inputs.find(([name]) => name === pin)?.[1] ?? record.inputs[record.inputs.length - 1]![1];
+          for (const input of inputMap.get(block.id) ?? []) {
+            if (!pins.includes(input.port)) fail(block, `input '${input.port}' is not a parameter of ${block.type}`);
+          }
+          if (record.variadic && (pins.length < record.inputs.length || pins.slice(1).some((pin, index) => pin !== `IN${index}`))) {
+            fail(block, `its inputs are ${pins.join(', ')}; ${block.type} takes ${first![0]}, then IN0, IN1 and more inputs in order`);
+            return '';
+          }
+          if (record.maxInputs !== undefined && pins.length - 1 > record.maxInputs) {
+            fail(block, `it has ${pins.length - 1} inputs after ${first![0]}; ${block.type} takes at most ${record.maxInputs}`);
+            return '';
+          }
+          const sources = pins.map((pin) => required(block, pin));
+          if (sources.some((s) => !s)) return '';
+          const operands = sources as Source[];
+          // a pin the call writes has to be a variable: a temporary or a constant there would be written and lost
+          for (const pin of record.written) {
+            const input = (inputMap.get(block.id) ?? []).find((i) => i.port === pin)!;
+            const kind = kinds.get(input.sourceBlock);
+            if (kind !== 'read' && kind !== 'variable') {
+              const from = operands[pins.indexOf(pin)]!.origin;
+              fail(block, `input '${pin}' is written by ${block.type}, so it has to be wired from a variable block, not from ${from}`);
+            }
+          }
+          // the generic pins of one call share one type, which a generic result takes (as MAX and MIN do)
+          const generic = pins.filter((pin) => pinTypeOf(pin) in GENERIC_CLASSES);
+          const operandOf = (pin: string): Source => operands[pins.indexOf(pin)]!;
+          const genericType = generic.length > 0 ? unify(block, generic.map(operandOf)) : undefined;
+          if (generic.length > 0 && genericType === undefined) return '';
+          for (const pin of generic) {
+            const odd = outsideClass(pinTypeOf(pin), operandOf(pin).type);
+            const wanted = GENERIC_CLASSES[pinTypeOf(pin)]!;
+            if (odd && !wanted.types) fail(block, `input '${pin}' is STRING: ${selectsNoString(block.type)}`);
+            else if (odd) fail(block, `input '${pin}' is ${odd}, and ${block.type} takes ${wanted.takes} there`);
+          }
+          const typeOf = (pin: string): string => (pinTypeOf(pin) in GENERIC_CLASSES ? genericType! : pinTypeOf(pin).toUpperCase());
+          pins.forEach((pin, index) => {
+            const source = operands[index]!;
+            if (pinTypeOf(pin) in GENERIC_CLASSES || !source.type) return;
+            const problem = pinTypeProblem(source.adaptable ? INTEGER_LITERAL : source.type, typeOf(pin));
+            if (problem) fail(block, `input '${pin}': ${problem}`);
+          });
+          if (record.returns !== 'VOID') typed('OUT', record.returns in GENERIC_CLASSES ? genericType : record.returns.toUpperCase());
+          const call = `${block.type}(${operands.map((source, index) => render(source, typeOf(pins[index]!))).join(', ')})`;
+          // a result nobody uses is still a call, and a function that returns nothing is always one
+          return out ? `${out} := ${call};` : `${call};`;
         }
 
         case 'comm':
@@ -640,11 +701,12 @@ function classify(block: FBDBlock, blocks?: readonly ProjectBlock[]): Kind | und
   if (isLogicGate(type)) return 'gate';
   if (isComparison(type)) return 'compare';
   if (isMathOperator(type)) return 'math';
-  if (FUNCTION_BLOCKS.has(type)) return 'function';
+  if (FBD_FUNCTION_BLOCKS.has(type)) return 'function';
   if (type in MODBUS_HELPERS) return 'modbus';
   if (VM_COMM_BLOCKS.has(type)) return 'comm';
   if (isFunctionBlock(type)) return 'standard';
   if (getFB(type)) return 'registry';
+  if (stdFunction(type)) return 'stdfunction';
   return undefined;
 }
 
@@ -786,13 +848,13 @@ function widest(types: string[]): string | undefined {
 /** The declared type of an input port of a block, when the port has a definite type. */
 function portType(block: FBDBlock, portName: string): string | undefined {
   const port = block.inputs?.find((p) => p.name === portName);
-  return port && port.type !== 'ANY' && port.type !== 'ANY_NUM' ? port.type.toUpperCase() : undefined;
+  return port && !(port.type in GENERIC_CLASSES) ? port.type.toUpperCase() : undefined;
 }
 
 /** The type of an output of a function block, or undefined when nothing but its consumers can say. */
 function outputType(block: FBDBlock, portName: string): string | undefined {
   const port = block.outputs?.find((p) => p.name === portName);
-  if (port && port.type !== 'ANY' && port.type !== 'ANY_NUM') return port.type.toUpperCase();
+  if (port && !(port.type in GENERIC_CLASSES)) return port.type.toUpperCase();
 
   // Communication blocks: their outputs are named by what they report
   if (VM_COMM_BLOCKS.has(block.type) || ['COMM_PUBLISH', 'COMM_SUBSCRIBE', 'COMM_MODBUS', 'COMM_CONNECT'].includes(block.type)) {
@@ -833,6 +895,8 @@ function validateText(model: FBDModel, problems: Problems): void {
         problems.push(`${label}: the type '${String(v.type)}' is not a type name`);
       if (v.comment !== undefined && (typeof v.comment !== 'string' || COMMENT_DELIMITER.test(v.comment)))
         problems.push(`${label}: the comment must not contain ST comment delimiters`);
+      if (!passedAsTime(v.initialValue))
+        problems.push(`${label}: its initial value '${String(v.initialValue)}' starts as a TIME literal and is not one`);
       if (v.address !== undefined) {
         try {
           parseIOAddress(String(v.address));
@@ -853,12 +917,27 @@ function validateText(model: FBDModel, problems: Problems): void {
       problems.push(`${label}: the variable name '${String(block.variableName)}' is not a variable`, at);
     if (block.type === 'constant' && (block.value === undefined || block.value === null || typeof block.value === 'object'))
       problems.push(`${label}: it has no value`, at);
+    if (block.type === 'constant' && !passedAsTime(block.value))
+      problems.push(`${label}: its value '${String(block.value)}' starts as a TIME literal and is not one`, at);
+  }
+}
+
+/** Whether a value that `formatValue` writes as it is (a text that starts with T#) is a TIME literal: anything else would be ST text. */
+function passedAsTime(value: unknown): boolean {
+  if (typeof value !== 'string' || !value.startsWith('T#')) return true;
+  try {
+    parseTimeLiteral(value);
+    return /^T#-?[0-9A-Za-z_.]+$/.test(value);
+  } catch {
+    return false;
   }
 }
 
 // =============================================================================
 // Helpers
 // =============================================================================
+
+const UNSIGNED_OR_BITS = new Set([...UNSIGNED, ...BIT_STRING]);
 
 function formatValue(value: unknown, dataType: string): string {
   if (value === undefined || value === null) return '0';
@@ -878,6 +957,9 @@ function formatValue(value: unknown, dataType: string): string {
     if (dataType === 'REAL' || dataType === 'LREAL') {
       return value.toString().includes('.') ? value.toString() : `${value}.0`;
     }
+    // a plain integer literal is a DINT: an unsigned value above its range is written with its type, which the compiler reads as such
+    if (UNSIGNED_OR_BITS.has(dataType.toUpperCase()) && Number.isInteger(value) && value > 2147483647)
+      return `${dataType.toUpperCase()}#${value}`;
     return value.toString();
   }
 

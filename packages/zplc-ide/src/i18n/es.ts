@@ -47,9 +47,11 @@ import { u2FindEs } from './catalog/u2Find';
 import { u2SearchEs } from './catalog/u2Search';
 import { u2ReviewEs } from './catalog/u2Review';
 import { u2AssistantEs } from './catalog/u2Assistant';
+import { assistantPolishEs } from './catalog/assistantPolish';
 import { u2NavigatorEs } from './catalog/u2Navigator';
 import { u2LayoutEs } from './catalog/u2Layout';
 import { u2PreferencesEs } from './catalog/u2Preferences';
+import { mcpConnectionEs } from './catalog/mcpConnection';
 import { u2PanelEs } from './catalog/u2Panel';
 import { u3GuideEs } from './catalog/u3Guide';
 import { u3LearnEs } from './catalog/u3Learn';
@@ -403,7 +405,8 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'recovery.restoreAll': 'Restaurar todo',
   // A file changed outside ZPLC
   'externalChange.title': `Modificado fuera de ${PRODUCT_NAME}`,
-  'externalChange.intro': 'Estos archivos tienen cambios sin guardar y también cambiaron en el disco. Elija qué versión conservar.',
+  'externalChange.intro':
+    'Estos archivos cambiaron en el disco y tienen cambios sin guardar. Si conserva los suyos, al guardar reemplaza la versión del disco.',
   'externalChange.deleted': 'Eliminado en el disco',
   'externalChange.changed': 'Modificado en el disco',
   'externalChange.keep': 'Conservar mi versión',
@@ -513,6 +516,8 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'panel.problems.empty.title': 'No se encontraron problemas',
   'panel.problems.empty.checked': 'La última compilación no informó diagnósticos.',
   'panel.problems.empty.unchecked': 'Compile el proyecto para comprobar si tiene problemas.',
+  'panel.problems.earlierBuild':
+    'Los archivos cambiaron fuera de ZPLC después de la última compilación. Compile de nuevo para ver sus problemas.',
   'panel.trace.empty.title': 'Aún no hay muestras de traza',
   'panel.trace.empty.description': 'Avance un ciclo de la simulación nativa POSIX para recoger muestras de traza.',
   'panel.watch.empty.title': 'No hay variables vigiladas',
@@ -689,9 +694,11 @@ export const es: Record<MessageKey, string> = {
   ...u2SearchEs,
   ...u2ReviewEs,
   ...u2AssistantEs,
+  ...assistantPolishEs,
   ...u2NavigatorEs,
   ...u2LayoutEs,
   ...u2PreferencesEs,
+  ...mcpConnectionEs,
   ...u2PanelEs,
   ...u3GuideEs,
   ...u3LearnEs,

@@ -148,7 +148,7 @@ export function LearnHomeView(props: LearnHomeViewProps) {
       ref={root}
       aria-labelledby="learn-home-title"
       data-learn-home
-      className="h-full min-h-0 overflow-y-auto bg-[var(--color-surface-900)] px-4 py-6 font-sans text-sm text-[var(--color-surface-200)]"
+      className="bg-[var(--color-surface-900)] px-4 py-6 font-sans text-sm text-[var(--color-surface-200)]"
     >
       <div className="relative mx-auto max-w-4xl space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-3 border-b pr-24 border-[var(--color-surface-600)] pb-4">

@@ -17,7 +17,7 @@
 import type { LDModel, LDRung, LDElement } from '../models/ld';
 import { isGridBasedRung, convertToGridRung } from '../models/ld';
 import { getDefaultPorts } from '../models/fbd';
-import { ldFunctionSpec } from '../models/ldSupport';
+import { ldFunctionHasOutput, ldFunctionPins, ldFunctionSpec } from '../models/ldSupport';
 import type { ProjectBlock } from '../models/projectBlocks';
 import {
   POWER_OUTPUT,
@@ -248,7 +248,9 @@ function generateRungCode(rung: LDRung, rungKey: string): RungCode {
     const expression = spec.expression(box.operands.map((operand) => (operand.startsWith('-') ? `(${operand})` : operand)));
     if (spec.kind === 'compare') return and(power, atom(stage(atom(expression))));
     const flow = stage(power);
-    lines.push(`IF ${flow} THEN ${box.output} := ${expression}; END_IF;`, current);
+    // a function that returns nothing is a statement under EN (LNG-030)
+    const statement = ldFunctionHasOutput(spec) ? `${box.output} := ${expression}` : expression;
+    lines.push(`IF ${flow} THEN ${statement}; END_IF;`, current);
     return atom(flow);
   };
 
@@ -328,9 +330,10 @@ function generateRungCode(rung: LDRung, rungKey: string): RungCode {
       } else if (element.type === 'function') {
         // the operands that name a variable, and the output, show their value on the box (LNG-006)
         const spec = ldFunctionSpec(element.functionName);
+        const pins = spec ? ldFunctionPins(spec, element.operands?.length) : [];
         element.operands?.forEach((operand, index) => {
           if (/^[A-Za-z_][A-Za-z0-9_.]*$/.test(operand) && operand !== 'TRUE' && operand !== 'FALSE')
-            monitor.push({ element: at, role: 'output', port: spec?.pins[index] ?? `IN${index + 1}`, variable: operand });
+            monitor.push({ element: at, role: 'output', port: pins[index] ?? `IN${index + 1}`, variable: operand });
         });
         if (element.output) monitor.push({ element: at, role: 'output', port: 'OUT', variable: element.output });
       } else if (element.variable) {
@@ -381,6 +384,8 @@ function defaultPowerInput(fbType: string): string | undefined {
 // Helpers
 // =============================================================================
 
+const BIT_STRING_TYPES = new Set(['BYTE', 'WORD', 'DWORD', 'LWORD']);
+
 function formatValue(value: unknown, dataType: string): string {
   if (value === undefined || value === null) return '0';
 
@@ -389,7 +394,8 @@ function formatValue(value: unknown, dataType: string): string {
   }
 
   if (typeof value === 'string') {
-    if (dataType.toUpperCase() === 'TIME') return value;
+    const upper = dataType.toUpperCase();
+    if (upper === 'TIME' || BIT_STRING_TYPES.has(upper)) return value;
     return `'${value.replace(/'/g, "''")}'`;
   }
 

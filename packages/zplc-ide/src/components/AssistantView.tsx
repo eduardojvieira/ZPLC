@@ -4,14 +4,16 @@
  * returns a proposal, a person reviews it, and the person's click is the only thing that writes (IDE-030). A reviewed proposal opens
  * as the review document of the editor area, with one notice (SHL-004, SHL-010): the review is held once, by its store.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { isCandidateSourcePath } from '../ai/candidatePaths';
 import { shownProjectBridge } from '../ipc/shownProjectBridge';
 import { useT } from '../i18n';
 import { useAssistantProvider } from '../shell/useSelection';
 import { useIDEStore } from '../store/useIDEStore';
 import { useReviewDocument } from '../store/useReviewDocument';
+import { useAssistantEntry, type AttachedContext } from '../store/useAssistantEntry';
 import { presentAgentResponse } from './agent/agentResponse';
+import { addTurn, historyOf, type Turn } from './agent/conversation';
 import { presentAiProviderStatus, type AiProviderMode, type AiProviderStatusPresentation } from './aiProviderPresentation';
 import { sha256Text } from './candidateSources';
 import { AgentTab } from './console/AgentTab';
@@ -24,7 +26,7 @@ const staleReview = (): void => {
 };
 
 export function AssistantView() {
-  const { t } = useT();
+  const { t, locale } = useT();
   const aiProvider = window.electronAPI?.aiProvider;
   const candidateChangeSet = window.electronAPI?.candidateChangeSet;
   const workspaceTests = shownProjectBridge(window.electronAPI?.workspaceTests);
@@ -42,6 +44,32 @@ export function AssistantView() {
   const [status, setStatus] = useState<AiProviderStatusPresentation>({ kind: 'invalid' });
   const review = useReviewDocument((state) => state.review) as CandidateReviewState;
   const reviewBusy = useReviewDocument((state) => state.busy);
+  const [chip, setChip] = useState<AttachedContext | null>(null);
+  const [turns, setTurns] = useState<Turn[]>([]);
+  const [session, setSession] = useState(projectSession);
+  const promptRef = useRef<HTMLTextAreaElement>(null);
+  const pending = useAssistantEntry((state) => state.pending);
+  const [applied, setApplied] = useState(0);
+
+  // A place that asked for the Assistant (AIX-003) sets its mode, prefills the request and attaches its context once.
+  if (pending && pending.id !== applied) {
+    setApplied(pending.id);
+    setMode(pending.mode);
+    setPrompt(pending.prompt ?? '');
+    setChip(pending.context);
+    setAgentState('idle');
+  }
+  // Another project is another conversation (AI-18).
+  if (session !== projectSession) {
+    setSession(projectSession);
+    setTurns([]);
+    setChip(null);
+  }
+  useEffect(() => {
+    if (!pending) return;
+    useAssistantEntry.getState().take();
+    promptRef.current?.focus();
+  }, [pending]);
 
   const refresh = useCallback(async () => {
     await Promise.resolve();
@@ -132,8 +160,12 @@ export function AssistantView() {
         workspaceId: currentLink.workspaceId,
         mode,
         prompt: prompt.trim(),
+        locale,
         ...(sentFile ? { activeFile: { fileId: sentFile.id, path: sentFile.path } } : {}),
         ...(mode === 'debug' ? { diagnostics, trace } : {}),
+        // what the place that opened the Assistant attached (AIX-003): the fields of this same request, never a second context
+        ...(chip ? chip.fields : {}),
+        ...(turns.length > 0 ? { history: historyOf(turns) } : {}),
       });
       const latest = useIDEStore.getState();
       const latestFile = latest.activeFileId ? latest.loadedFiles.get(latest.activeFileId) : undefined;
@@ -168,7 +200,9 @@ export function AssistantView() {
             ...(baselineSha256 ? { baselineSha256 } : {}),
           }
         : undefined;
-      setAgentState({ kind: 'response', presentation: presentAgentResponse(response, sent), ...(expectedEdit ? { expectedEdit } : {}) });
+      const presentation = presentAgentResponse(response, sent);
+      if (presentation.kind === 'answer') setTurns((previous) => addTurn(previous, prompt.trim(), presentation.answer));
+      setAgentState({ kind: 'response', presentation, ...(expectedEdit ? { expectedEdit } : {}) });
     } catch {
       setAgentState('error');
     }
@@ -226,6 +260,14 @@ export function AssistantView() {
         agentTraceCount={trace.length}
         hasCurrentWorkspaceLink={hasLink}
         workspaceTestBusy={reviewBusy}
+        chip={chip}
+        removeChip={() => setChip(null)}
+        turnCount={turns.length / 2}
+        newConversation={() => {
+          setTurns([]);
+          setAgentState('idle');
+        }}
+        promptRef={promptRef}
         refreshAiProvider={refresh}
         sendAgentRequest={send}
         cancelAgentRequest={cancel}

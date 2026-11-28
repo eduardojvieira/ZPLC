@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter drives no output, so no belt moves and no item is sorted; run both belts after Start and swing the arm for each code 2 item.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter drives no output, so no belt moves and no item is sorted; run both belts after Start and swing the arm for each code 2 item.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

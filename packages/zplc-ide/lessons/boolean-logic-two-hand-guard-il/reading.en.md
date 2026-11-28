@@ -22,51 +22,47 @@ There is no order of operators in IL: the order of the lines is the order of the
 
 ## Worked example
 
-A drying oven may heat only while the operator switch `HeatOn` is on, both door switches `DoorSwitchA` and `DoorSwitchB` say the door is shut, and the thermostat `OverTemp` has not tripped. A door lamp shows that both switches say open. The two switches should always agree, and a fault lamp lights when they do not.
+A sorting conveyor carries boxes past a flap that pushes tall boxes into a side lane. The flap swings out while the height eye `TallBox` sees a tall box and the lane switch `LaneFull` says the lane is not full. The flap's position switch `FlapIsOut` should agree with the command while the belt runs (`BeltRunning`), and a fault lamp lights when it does not.
 
 ```il
-PROGRAM DryingOven
+PROGRAM Diverter
 VAR_INPUT
-    HeatOn : BOOL;
-    DoorSwitchA : BOOL;
-    DoorSwitchB : BOOL;
-    OverTemp : BOOL;
+    TallBox : BOOL;
+    LaneFull : BOOL;
+    FlapIsOut : BOOL;
+    BeltRunning : BOOL;
 END_VAR
 VAR_OUTPUT
-    Heater : BOOL;
-    DoorLamp : BOOL;
-    SwitchFault : BOOL;
+    Flap : BOOL;
+    FlapFault : BOOL;
 END_VAR
 
-        LD    HeatOn
-        AND   DoorSwitchA
-        AND   DoorSwitchB
-        ANDN  OverTemp
-        ST    Heater
-        LDN   DoorSwitchA
-        ANDN  DoorSwitchB
-        ST    DoorLamp
-        LD    DoorSwitchA
-        XOR   DoorSwitchB
-        ST    SwitchFault
+        LD    TallBox
+        ANDN  LaneFull
+        ST    Flap
+        LD    Flap
+        XOR   FlapIsOut
+        AND   BeltRunning
+        ST    FlapFault
 END_PROGRAM
 ```
 
-Read it as three groups, one for each output, each opened by a load. The first group needs every condition, so it is a chain of AND lines, and ANDN brings in the thermostat turned around. The second starts with LDN, because the lamp wants both switches open. The third is one XOR.
+Read it as two groups, one for each output, each opened by a load. The first group needs two conditions, and ANDN brings in the lane switch turned around. The second group loads the command it has just stored, compares it with the position switch by XOR, and only then joins the belt with AND: the order of the lines is the order of the work, so the XOR is done before the AND.
 
-Follow it with the heat switched on and the oven cool. The door closes: switch A closes a moment before switch B, so for that moment SwitchFault is TRUE and the heater waits. Once both are closed the heater runs. Later switch B breaks and reads FALSE although the door is still shut: the AND chain loses one of its conditions, so the heater stops, and the XOR lights the fault lamp.
+Follow it with the belt running. A tall box arrives and the flap is commanded out; the position switch confirms a moment later, so for that moment FlapFault is TRUE. The box passes and the flap goes back in, with the same short fault. Later the lane is full: the next tall box passes and the flap stays in.
 
 ```timing
 span: 5000
 signals:
-  - { name: DoorSwitchA, edges: [1000] }
-  - { name: DoorSwitchB, edges: [1300, 3000] }
-  - { name: Heater, edges: [1300, 3000] }
-  - { name: SwitchFault, edges: [1000, 1300, 3000] }
-caption: The door closes, then switch B breaks; HeatOn is TRUE and OverTemp FALSE all along
+  - { name: TallBox, edges: [1000, 2000, 3500, 4500] }
+  - { name: LaneFull, edges: [3000] }
+  - { name: Flap, edges: [1000, 2000] }
+  - { name: FlapIsOut, edges: [1200, 2200] }
+  - { name: FlapFault, edges: [1000, 1200, 2000, 2200] }
+caption: Two tall boxes, the second with the side lane full; BeltRunning is TRUE all along
 ```
 
-A real oven gives the two switches a short time to agree before it lights the fault lamp; that needs a timer, which this page leaves out.
+A real diverter gives the flap a short time to move before it lights the fault lamp; that needs a timer, which this page leaves out.
 
 ## Common mistakes
 
@@ -90,13 +86,13 @@ options:
 ```
 
 ```quiz
-question: A program has ST Heater and, on the next line, AND DoorSwitchA with no load before it. What does that AND combine DoorSwitchA with?
+question: A program has ST Flap and, on the next line, AND BeltRunning with no load before it. What does that AND combine BeltRunning with?
 options:
-  - { text: 'The current result that was just stored in Heater', correct: true, feedback: 'Right. ST leaves the current result as it is, so the AND goes on with it. Start each new condition with LD or LDN.' }
+  - { text: 'The current result that was just stored in Flap', correct: true, feedback: 'Right. ST leaves the current result as it is, so the AND goes on with it. Start each new condition with LD or LDN.' }
   - { text: 'FALSE, because ST clears the current result', feedback: 'ST only copies the current result into the output; it does not change it.' }
   - { text: 'TRUE, because a new condition starts after ST', feedback: 'Only a load starts a new condition. Without it the AND works on the result above.' }
 ```
 
 ## What you will do in the practice
 
-The machine of the practice is a press with a two-hand control: it may close only while the operator holds two push buttons, one for each hand, and only while its guard is closed. The starting program combines the two hands with OR and stores FALSE in the two lamps. You will rewrite it as three groups of lines, one for each output: PressEnable only with both hands and the guard closed, GuardLamp while the guard is open, and OneHandWarning while exactly one hand is on its button. The scenario changes the inputs every {{t:10}} ms. Then press {{ui:learn.check}}.
+The machine of the practice is a press with a two-hand control: it may close only while the operator holds two push buttons, one for each hand, and only while its guard is closed. The starting program combines the two hands with OR and stores FALSE in the two lamps. You will make PressEnable ON only with both hands and the guard closed, GuardLamp while the guard is open, and OneHandWarning while exactly one hand is on its button. The scenario changes the inputs every {{t:10}} ms. Then press {{ui:learn.check}}.

@@ -1,0 +1,46 @@
+{
+  "name": "Publish",
+  "variables": {
+    "local": [
+      {
+        "name": "Go",
+        "type": "BOOL"
+      }
+    ],
+    "inputs": [],
+    "outputs": []
+  },
+  "blocks": [
+    {
+      "id": "go",
+      "type": "input",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "Go"
+    },
+    {
+      "id": "pub",
+      "type": "COMM_PUBLISH",
+      "instanceName": "Pub",
+      "position": {
+        "x": 200,
+        "y": 0
+      }
+    }
+  ],
+  "connections": [
+    {
+      "id": "w1",
+      "from": {
+        "block": "go",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "pub",
+        "port": "EN"
+      }
+    }
+  ]
+}

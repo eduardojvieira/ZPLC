@@ -36,17 +36,18 @@ caption: AND1 une A y B; AND2 une AND1.OUT y C, así que es TRUE solo mientras l
 
 ## Ejemplo resuelto
 
-Un horno de secado puede calentar solo mientras el selector del operador `HeatOn` está encendido, los dos interruptores de la puerta `DoorSwitchA` y `DoorSwitchB` dicen que la puerta está cerrada y el termostato `OverTemp` no se disparó. Los dos interruptores de la puerta siempre deberían coincidir, y una lámpara de falla `SwitchFault` se enciende cuando no coinciden.
+Una cinta clasificadora lleva cajas frente a una compuerta que empuja las cajas altas hacia un carril lateral. La compuerta `Flap` se abre mientras la barrera de altura `TallBox` ve una caja alta y el interruptor del carril `LaneFull` indica que el carril no está lleno. El interruptor de posición de la compuerta, `FlapIsOut`, debería coincidir con la orden mientras la cinta funciona (`BeltRunning`), y una lámpara de falla `FlapFault` se enciende cuando no coincide.
 
-El calefactor necesita cuatro condiciones, así que lleva tres bloques AND en cadena, y el termostato entra por un bloque NOT:
+La compuerta necesita dos condiciones, una de ellas invertida, y la lámpara de falla necesita una diferencia que solo cuenta mientras la cinta funciona:
 
-1. Un bloque NOT recibe `OverTemp`.
-2. El primer bloque AND recibe `DoorSwitchA` y `DoorSwitchB`.
-3. El segundo bloque AND recibe el primer bloque AND y `HeatOn`.
-4. El tercer bloque AND recibe el segundo bloque AND y el bloque NOT, y su `OUT` va al bloque de salida `Heater`.
-5. Un bloque XOR recibe `DoorSwitchA` y `DoorSwitchB`, y su `OUT` va al bloque de salida `SwitchFault`.
+1. Un bloque NOT recibe `LaneFull`.
+2. Un bloque AND recibe `TallBox` y el bloque NOT, y su `OUT` va al bloque de salida `Flap`.
+3. Un bloque XOR recibe la misma `OUT` del bloque AND y `FlapIsOut`.
+4. Un segundo bloque AND recibe el bloque XOR y `BeltRunning`, y su `OUT` va al bloque de salida `FlapFault`.
 
-Cada interruptor de la puerta alimenta dos bloques, el primer AND y el XOR: un puerto de salida, dos conexiones. Siga un interruptor roto por el diagrama: la puerta está cerrada y `DoorSwitchB` da FALSE. El primer bloque AND da FALSE, así que toda la cadena también y el calefactor se detiene, mientras el bloque XOR ve un TRUE y un FALSE y enciende la lámpara de falla.
+La `OUT` del primer bloque AND alimenta dos lugares, el bloque de salida `Flap` y el XOR: un puerto de salida, dos conexiones. Así el XOR compara la orden que el diagrama calcula en este ciclo con el interruptor que indica dónde está realmente la compuerta. Siga una compuerta trabada: llega una caja alta, el bloque AND da TRUE y se ordena abrir la compuerta, pero `FlapIsOut` sigue en FALSE. El bloque XOR ve un TRUE y un FALSE, y con la cinta en marcha el segundo bloque AND enciende la lámpara de falla.
+
+Un desviador real le da a la compuerta un tiempo breve para moverse antes de encender la lámpara de falla; eso necesita un temporizador, que esta página deja de lado.
 
 ## Errores comunes
 

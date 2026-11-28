@@ -26,7 +26,7 @@ Control a tank pump with a seal-in, latch a fault with SET and RESET coils, and 
 ## Objectives
 
 - Keep the pump on from LevelLow until LevelHigh with a seal-in, with every stop condition in series.
-- Latch the alarm on PumpFault or EStop with a SET coil, and release it with a RESET coil that only a fresh Reset press can reach.
+- Keep the alarm on after either fault, and release it only with a fresh Reset press after the fault has gone.
 
 ## Stages
 

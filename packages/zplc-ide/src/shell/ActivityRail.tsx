@@ -58,6 +58,7 @@ export function ActivityRail({ active, density, onSelect }: ActivityRailProps) {
               tooltip={withShortcut(title, activity.command)}
               icon={activity.icon}
               aria-current={activity.view === active ? 'true' : undefined}
+              className={activity.view === active ? 'bg-[var(--button-bg-active)] text-[var(--button-fg)]' : undefined}
               data-activity={activity.view}
               data-command={activity.command}
               onClick={() => onSelect(activity.view)}

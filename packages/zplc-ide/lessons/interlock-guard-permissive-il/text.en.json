@@ -4,14 +4,14 @@
   "summary": "Add a permissive to a motor start and stop in Instruction List so that the motor runs only while a guard is closed, and check it against the motor plant and its speed feedback.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show a safety function, guard wiring or stopping time.",
   "objectives": [
-    "Tell a permissive, a condition that must be true for the output to be on, from a command, and write it as one more AND line.",
-    "Place the permissive after the lines that hold the motor, so that it drops the motor and also stops Start from restarting it."
+    "Tell a permissive, a condition that must be true for the output to be on, from a command, and write it in Instruction List.",
+    "Place the permissive so that it drops the motor and also stops Start from restarting it."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/MotorPlant.il the first lines hold Command with a seal-in: LD Start, OR Command and ANDN Stop, then ST Command. After that ST the current result is still Command, so AND AtSpeed and ST Running set Running when the plant reports AtSpeed. Add AND GuardClosed before ST Command, so that an open guard drops Command and blocks Start.",
+      "body": "In src/MotorPlant.il the first lines hold Command with a seal-in: LD Start, OR Command and ANDN Stop, then ST Command. After that ST the current result is still Command, so AND AtSpeed and ST Running set Running when the plant reports AtSpeed. An open guard must drop Command and block Start.",
       "checkpoint": "Command is on only while the guard is closed, and Running still needs the plant AtSpeed."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starting program has no line for the guard, so when the guard opens at {{t:50}} ms the motor keeps running and Start can restart it; add AND GuardClosed after ANDN Stop and before ST Command, so that it applies to the whole condition.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starting program ignores the guard, so when the guard opens at {{t:50}} ms the motor keeps running and Start can restart it. Command must be ON only while the guard is closed, whatever Start and Stop do.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -41,14 +41,14 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Why is a permissive on the whole condition safer than a permissive only on Start? Move AND GuardClosed next to LD Start and see which assertion fails.",
+      "body": "Once it passes, ask what an open guard must do to a motor that is already running, and to a press of Start. Where in the list of lines must the guard sit to do both?",
       "checkpoint": "A permissive that gates only Start lets a running motor ignore an open guard. In IL the position of the line is its scope: everything above it is in the condition. The scenario shows the logic only; it is not a safety function and does not replace a safety-rated guard interlock."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Command may be TRUE only if the guard is closed, Stop is not pressed, and either Start is pressed or Command was already TRUE. Each line combines with everything above it."
+      "text": "Look at the line just before ST Command: that is where the condition of Command ends. Each line combines with everything above it."
     },
     {
       "level": 2,
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "The starting program has no line for the guard, so when the guard opens at {{t:50}} ms the motor keeps running and Start can restart it; add AND GuardClosed after ANDN Stop and before ST Command, so that it applies to the whole condition."
+    "The starting program ignores the guard, so when the guard opens at {{t:50}} ms the motor keeps running and Start can restart it."
   ]
 }

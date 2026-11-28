@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter fault, save it, then press Check: StopOK is drawn in series with StartPB inside the branch, so the seal-in contact on Motor goes around it: a Stop press at {{t:60}} ms leaves Motor ON at {{t:80}} ms. Move StopOK to the series part after the branch. Before you edit, diagnose it. Run the starter in Simulation and open the Watch table. Add Motor, StartPB and StopOK. Press the start button, then the stop button, and see that Motor stays ON. Select rung 1 and press F9 to set a breakpoint, run again, and read the values at the stop. Force StopOK to FALSE from the Watch table and see that nothing changes. Open the Trace and find where Motor should have fallen. Then move StopOK out of the branch, after it, in series with the whole branch.",
+      "body": "Correct this starter fault, save it, then press {{ui:learn.check}}: A Stop press at {{t:60}} ms leaves Motor ON at {{t:80}} ms: the motor does not stop. Before you edit, diagnose it. Run the starter in Simulation and open the Watch table. Add Motor, StartPB and StopOK. Press the start button, then the stop button, and see that Motor stays ON. Select rung 1 and press F9 to set a breakpoint, run again, and read the values at the stop. Force StopOK to FALSE from the Watch table and see that nothing changes. Open the Trace and find where Motor should have fallen. Then correct the rung so that Stop and the overload both drop the motor.",
       "checkpoint": "Check reports the scenario of this lesson as passed, and the Watch table shows no active force."
     },
     {
@@ -48,14 +48,12 @@
   "hints": [
     {
       "level": 1,
-      "text": "Follow the power in the rung. When StopOK goes FALSE, which paths from the left rail to the Motor coil are still closed? Check whether the contact on Motor passes through StopOK."
+      "text": "Follow the power in the rung. When StopOK goes FALSE, which paths from the left rail to the Motor coil are still closed?"
     },
     {
       "level": 2,
       "text": "Rung 1 must read: StartPB in parallel with a contact of Motor, then StopOK, then OverloadOK, then the coil Motor. Move StopOK to the right of the branch so that it is in series with both paths."
     }
   ],
-  "faultCases": [
-    "StopOK is drawn in series with StartPB inside the branch, so the seal-in contact on Motor goes around it: a Stop press at {{t:60}} ms leaves Motor ON at {{t:80}} ms. Move StopOK to the series part after the branch."
-  ]
+  "faultCases": ["A Stop press at {{t:60}} ms leaves Motor ON at {{t:80}} ms: the motor does not stop."]
 }

@@ -26,6 +26,13 @@ function isWideOperand(ctx: CodeGenContext, arg: Expression): boolean {
     return isWideInteger(ctx.typeOf?.(arg));
 }
 
+/** Emit a 64-bit integer or bit string as two stack cells, including typed literals (LWORD#1, ULINT#1, LINT#1). */
+function emitWideOperand(ctx: CodeGenContext, arg: Expression): void {
+    const type = ctx.typeOf?.(arg);
+    if (type && ctx.emitOperand) ctx.emitOperand(arg, type);
+    else ctx.emitExpression(arg);
+}
+
 /** The shift count of a 64-bit shift or rotate: one 32-bit word, whatever the width of the argument. */
 function emitCount(ctx: CodeGenContext, count: Expression): void {
     if (ctx.emitOperand) ctx.emitOperand(count, 'UDINT');
@@ -113,7 +120,7 @@ export const ROL_FN: FunctionDef = {
 
         if (isWideOperand(ctx, args[0])) {
             ctx.emit(`    ; ROL(IN, N) on 64 bits`);
-            ctx.emitExpression(args[0]);
+            emitWideOperand(ctx, args[0]);
             emitCount(ctx, args[1]);
             emitRotate64(ctx, true);
             return;
@@ -186,7 +193,7 @@ export const ROR_FN: FunctionDef = {
 
         if (isWideOperand(ctx, args[0])) {
             ctx.emit(`    ; ROR(IN, N) on 64 bits`);
-            ctx.emitExpression(args[0]);
+            emitWideOperand(ctx, args[0]);
             emitCount(ctx, args[1]);
             emitRotate64(ctx, false);
             return;
@@ -257,7 +264,7 @@ export const SHL_FN: FunctionDef = {
 
         if (isWideOperand(ctx, args[0])) {
             ctx.emit(`    ; SHL(IN, N) on 64 bits`);
-            ctx.emitExpression(args[0]);
+            emitWideOperand(ctx, args[0]);
             emitCount(ctx, args[1]);
             ctx.emit(`    SHL64               ; a count of 64 or more gives 0`);
             return;
@@ -296,7 +303,7 @@ export const SHR_FN: FunctionDef = {
 
         if (isWideOperand(ctx, args[0])) {
             ctx.emit(`    ; SHR(IN, N) on 64 bits`);
-            ctx.emitExpression(args[0]);
+            emitWideOperand(ctx, args[0]);
             emitCount(ctx, args[1]);
             ctx.emit(`    SHR64               ; logical: zeros enter on the left; a count of 64 or more gives 0`);
             return;

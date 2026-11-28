@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'bun:test';
 import { EventEmitter } from 'node:events';
-import { lstat, mkdir, mkdtemp, rename, rm, symlink, truncate, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, mkdtemp, realpath, rename, rm, symlink, truncate, writeFile } from 'node:fs/promises';
 import { PassThrough } from 'node:stream';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { runFirmwareBuild, sameDirectoryIdentity } from './firmwareBuildRunner';
+import { readArtifact, runFirmwareBuild, sameDirectoryIdentity } from './firmwareBuildRunner';
+
+/** The firmware build is offered on Linux and macOS only; on Windows the runner answers unavailable before it does anything. */
+const buildOffered = process.platform !== 'win32';
 
 class FakeChild extends EventEmitter {
   stdout = new PassThrough();
@@ -74,7 +77,7 @@ describe('runFirmwareBuild', () => {
     }
   });
 
-  it('uses only fixed west argv, hashes the ELF, and never runs catalog text', async () => {
+  it.skipIf(!buildOffered)('uses only fixed west argv, hashes the ELF, and never runs catalog text', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-runner-root-'));
     let observed: unknown;
     try {
@@ -100,10 +103,69 @@ describe('runFirmwareBuild', () => {
       });
       expect(observed).toMatchObject({
         args: ['build', '-b', 'safe/board', 'firmware/app', '-d', expect.any(String), '--pristine'],
-        options: { cwd: root, shell: false, detached: true, windowsHide: true },
+        options: { cwd: await realpath(root), shell: false, detached: true, windowsHide: true },
       });
       expect(JSON.stringify(observed)).not.toContain('build_command');
     } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it.skipIf(!buildOffered)('refuses a build directory swapped for a link to an outside tree that holds a valid ELF', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-runner-root-'));
+    const outside = await mkdtemp(join(tmpdir(), 'zplc-runner-outside-'));
+    const owned = await mkdtemp(join(tmpdir(), 'zplc-runner-owned-'));
+    try {
+      await mkdir(join(outside, 'zephyr'));
+      await writeFile(join(outside, 'zephyr', 'zephyr.elf'), validElf32());
+      await symlink(outside, join(owned, 'build'), 'dir');
+      // The artifact check itself refuses it; the runner maps that refusal to artifact-invalid.
+      expect(await readArtifact(join(owned, 'build'))).toBeUndefined();
+      const result = await runFirmwareBuild(root, 'safe/board', {
+        spawnProcess: (_command, args) => {
+          const child = new FakeChild();
+          const out = args[args.indexOf('-d') + 1] as string;
+          void (async () => {
+            await rm(out, { recursive: true, force: true });
+            await symlink(outside, out, 'dir');
+            child.stdout.end();
+            child.stderr.end();
+            child.emit('close', 0);
+          })();
+          return child as never;
+        },
+      });
+      expect(result.ok).toBe(false);
+    } finally {
+      await Promise.all([root, outside, owned].map((path) => rm(path, { recursive: true, force: true })));
+    }
+  });
+
+  it.skipIf(!buildOffered)('reads the ELF when the temporary root is reached through a link, as /var is on macOS', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-runner-root-'));
+    const real = await mkdtemp(join(tmpdir(), 'zplc-runner-real-temp-'));
+    const linked = `${real}-link`;
+    await symlink(real, linked, 'dir');
+    try {
+      const result = await runFirmwareBuild(root, 'safe/board', {
+        tempRoot: linked,
+        spawnProcess: (_command, args) => {
+          const child = new FakeChild();
+          const out = args[args.indexOf('-d') + 1] as string;
+          void (async () => {
+            await mkdir(join(out, 'zephyr'), { recursive: true });
+            await writeFile(join(out, 'zephyr', 'zephyr.elf'), validElf32());
+            child.stdout.end();
+            child.stderr.end();
+            child.emit('close', 0);
+          })();
+          return child as never;
+        },
+      });
+      expect(result).toMatchObject({ ok: true, artifact: { byteLength: 52 } });
+    } finally {
+      await rm(linked, { force: true });
+      await rm(real, { recursive: true, force: true });
       await rm(root, { recursive: true, force: true });
     }
   });
@@ -129,9 +191,14 @@ describe('runFirmwareBuild', () => {
         ok: false,
         failure: 'unavailable',
       });
-      await expect(runFirmwareBuild(root, 'board', { ...options, signal: controller.signal })).resolves.toMatchObject({
+      await expect(runFirmwareBuild(root, 'board', { ...options, platform: 'linux', signal: controller.signal })).resolves.toMatchObject({
         ok: false,
         failure: 'cancelled',
+      });
+      // On the real host the platform rule comes first: Windows answers unavailable even to a cancelled admission.
+      await expect(runFirmwareBuild(root, 'board', { ...options, signal: controller.signal })).resolves.toMatchObject({
+        ok: false,
+        failure: buildOffered ? 'cancelled' : 'unavailable',
       });
       expect(calls).toBe(0);
       expect(temporaryDirectories).toBe(0);
@@ -140,7 +207,7 @@ describe('runFirmwareBuild', () => {
     }
   });
 
-  it('accepts a complete big-endian ELF64 header', async () => {
+  it.skipIf(!buildOffered)('accepts a complete big-endian ELF64 header', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-runner-root-'));
     try {
       const result = await runFirmwareBuild(root, 'board', {
@@ -161,7 +228,7 @@ describe('runFirmwareBuild', () => {
     }
   });
 
-  it('observes abort after creating its owned directory and before spawn', async () => {
+  it.skipIf(!buildOffered)('observes abort after creating its owned directory and before spawn', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-runner-root-'));
     const owned = await mkdtemp(join(tmpdir(), 'zplc-runner-owned-'));
     const controller = new AbortController();
@@ -187,7 +254,7 @@ describe('runFirmwareBuild', () => {
     }
   });
 
-  it('waits for close before cleanup and rejects linked artifacts', async () => {
+  it.skipIf(!buildOffered)('waits for close before cleanup and rejects linked artifacts', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-runner-root-'));
     let directory = '';
     let removeBeforeClose = false;
@@ -220,7 +287,7 @@ describe('runFirmwareBuild', () => {
     }
   });
 
-  it('keeps ownership through abort, leader close, group termination, and cleanup', async () => {
+  it.skipIf(!buildOffered)('keeps ownership through abort, leader close, group termination, and cleanup', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-runner-root-'));
     const controller = new AbortController();
     const signals: string[] = [];
@@ -261,7 +328,7 @@ describe('runFirmwareBuild', () => {
     }
   });
 
-  it('makes output limit first-wins while still draining until close', async () => {
+  it.skipIf(!buildOffered)('makes output limit first-wins while still draining until close', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-runner-root-'));
     const signals: string[] = [];
     try {
@@ -291,7 +358,7 @@ describe('runFirmwareBuild', () => {
     }
   });
 
-  it('keeps timed-out groups and owned output until the group is gone', async () => {
+  it.skipIf(!buildOffered)('keeps timed-out groups and owned output until the group is gone', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-runner-root-'));
     const signals: string[] = [];
     let alive = true;
@@ -331,7 +398,7 @@ describe('runFirmwareBuild', () => {
     }
   });
 
-  it('turns a successful leader close with remaining group members into a failed build', async () => {
+  it.skipIf(!buildOffered)('turns a successful leader close with remaining group members into a failed build', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-runner-root-'));
     const signals: string[] = [];
     let alive = true;
@@ -366,7 +433,7 @@ describe('runFirmwareBuild', () => {
     }
   });
 
-  it('maps spawn, error, and nonzero process failures without early cleanup', async () => {
+  it.skipIf(!buildOffered)('maps spawn, error, and nonzero process failures without early cleanup', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-runner-root-'));
     try {
       await expect(
@@ -411,7 +478,7 @@ describe('runFirmwareBuild', () => {
     }
   });
 
-  it('does not remove replaced output directories and reports cleanup failures', async () => {
+  it.skipIf(!buildOffered)('does not remove replaced output directories and reports cleanup failures', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-runner-root-'));
     const orphan = await mkdtemp(join(tmpdir(), 'zplc-runner-orphan-'));
     let removed = 0;
@@ -444,7 +511,7 @@ describe('runFirmwareBuild', () => {
     }
   });
 
-  it('reports an owned-directory removal failure after the process settles', async () => {
+  it.skipIf(!buildOffered)('reports an owned-directory removal failure after the process settles', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-runner-root-'));
     try {
       await expect(
@@ -465,7 +532,7 @@ describe('runFirmwareBuild', () => {
     }
   });
 
-  it('keeps stream errors owned until the leader and process group exit', async () => {
+  it.skipIf(!buildOffered)('keeps stream errors owned until the leader and process group exit', async () => {
     for (const stream of ['stdout', 'stderr'] as const) {
       const root = await mkdtemp(join(tmpdir(), 'zplc-runner-root-'));
       const signals: string[] = [];
@@ -505,7 +572,7 @@ describe('runFirmwareBuild', () => {
     }
   });
 
-  it('rejects malformed, linked, absent, empty, and oversized output artifacts', async () => {
+  it.skipIf(!buildOffered)('rejects malformed, linked, absent, empty, and oversized output artifacts', async () => {
     const cases = [
       'missing',
       'empty',

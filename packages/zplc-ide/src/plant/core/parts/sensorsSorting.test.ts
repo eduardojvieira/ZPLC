@@ -53,6 +53,9 @@ const detects = async (sensor: string, items: ScenePart[], box?: 'box' | 'pallet
   return core;
 };
 
+// The real-core runs take ~0.3 s idle and over 5 s on a loaded runner (macOS CI): bun's default 5 s timeout cut them short.
+const REAL_CORE_TIMEOUT_MS = 120_000;
+
 describe('inductive, capacitive and colour sensors', () => {
   it('PRT-006 an inductive sensor detects a metal workpiece and not a plastic one, a box or a pallet', async () => {
     expect((await detects('sensor-inductive', [piece({ material: 'metal' })])).sense()['eye.detect']).toBe(true);
@@ -69,21 +72,25 @@ describe('inductive, capacitive and colour sensors', () => {
     expect((await detects('sensor-capacitive', [])).sense()['eye.detect']).toBe(false);
   });
 
-  it('PRT-006 a colour sensor sets detect for any item and match only for its target colour', async () => {
-    for (const [colour, target, match] of [
-      ['red', 'red', true],
-      ['blue', 'red', false],
-      ['blue', 'blue', true],
-      ['red', 'blue', false],
-    ] as [ItemColour, ItemColour, boolean][]) {
-      const s = (await detects('sensor-colour', [piece({ colour })], undefined, { target })).sense();
-      expect([s['eye.detect'], s['eye.match']]).toEqual([true, match]);
-    }
-    const box = (await detects('sensor-colour', [], 'box')).sense(); // a box has no colour
-    expect([box['eye.detect'], box['eye.match']]).toEqual([true, false]);
-    const none = (await detects('sensor-colour', [])).sense();
-    expect([none['eye.detect'], none['eye.match']]).toEqual([false, false]);
-  });
+  it(
+    'PRT-006 a colour sensor sets detect for any item and match only for its target colour',
+    async () => {
+      for (const [colour, target, match] of [
+        ['red', 'red', true],
+        ['blue', 'red', false],
+        ['blue', 'blue', true],
+        ['red', 'blue', false],
+      ] as [ItemColour, ItemColour, boolean][]) {
+        const s = (await detects('sensor-colour', [piece({ colour })], undefined, { target })).sense();
+        expect([s['eye.detect'], s['eye.match']]).toEqual([true, match]);
+      }
+      const box = (await detects('sensor-colour', [], 'box')).sense(); // a box has no colour
+      expect([box['eye.detect'], box['eye.match']]).toEqual([true, false]);
+      const none = (await detects('sensor-colour', [])).sense();
+      expect([none['eye.detect'], none['eye.match']]).toEqual([false, false]);
+    },
+    REAL_CORE_TIMEOUT_MS,
+  );
 
   it('PRT-008 stuckOn and stuckOff force detect, wrongColour inverts match, an unknown action throws a located message', async () => {
     const core = await detects('sensor-colour', [piece({ colour: 'red' })], undefined, { target: 'red' });
@@ -170,10 +177,14 @@ describe('inductive, capacitive and colour sensors', () => {
     expect(SCENE_SCHEMA_VERSION).toBe(1);
   });
 
-  it('PRT-006 the diffuse and retro sensors detect exactly as before', async () => {
-    for (const sensor of ['sensor-diffuse', 'sensor-retro']) {
-      expect((await detects(sensor, [], 'box')).sense()['eye.detect']).toBe(true);
-      expect((await detects(sensor, [])).sense()['eye.detect']).toBe(false);
-    }
-  });
+  it(
+    'PRT-006 the diffuse and retro sensors detect exactly as before',
+    async () => {
+      for (const sensor of ['sensor-diffuse', 'sensor-retro']) {
+        expect((await detects(sensor, [], 'box')).sense()['eye.detect']).toBe(true);
+        expect((await detects(sensor, [])).sense()['eye.detect']).toBe(false);
+      }
+    },
+    REAL_CORE_TIMEOUT_MS,
+  );
 });

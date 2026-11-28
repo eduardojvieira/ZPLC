@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Each input variable block has one output port named OUT, and each input port of Count has a name: CU counts, R clears."
+      "text": "Look at the input ports of Count that have no connection, and at the two input blocks whose OUT reaches nothing."
     },
     {
       "level": 2,

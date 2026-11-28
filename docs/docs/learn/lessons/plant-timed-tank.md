@@ -25,7 +25,7 @@ Run one fill, hold and drain cycle of a tank with on-delay timers, a panel start
 
 ## Objectives
 
-- Time one step of a process with an on-delay timer (TON), using one timer for each step.
+- Time the steps of a process so that each timed step lasts its own time.
 - Use a timer as a safety limit on a step that normally ends on a sensor, and let an emergency stop abort the cycle.
 
 ## Stages

@@ -61,37 +61,40 @@ test('release builds use native runners and pass the selected architecture to sm
   expect(windows).toContain('-A ${{ matrix.cmake_arch }}');
 });
 
-test('requires each packaged runtime binary to match its platform and architecture', () => {
-  const root = mkdtempSync(join(tmpdir(), 'zplc-desktop-smoke-'));
-  try {
-    for (const platform of ['linux', 'windows', 'macos'] as const) {
-      for (const arch of ['x64', 'arm64'] as const) {
-        const resources = join(root, `${platform}-${arch}`);
-        writeRuntime(resources, platform, arch);
-        expect(assertPackagedRuntime(resources, platform, arch)).toEndWith(platform === 'windows' ? 'zplc_runtime.exe' : 'zplc_runtime');
-        expect(() => assertPackagedRuntime(resources, platform, arch === 'x64' ? 'arm64' : 'x64')).toThrow('architecture');
+// The mode bits of a packaged binary do not exist on Windows, where the linux and macos fixtures cannot be made executable.
+if (process.platform !== 'win32') {
+  test('requires each packaged runtime binary to match its platform and architecture', () => {
+    const root = mkdtempSync(join(tmpdir(), 'zplc-desktop-smoke-'));
+    try {
+      for (const platform of ['linux', 'windows', 'macos'] as const) {
+        for (const arch of ['x64', 'arm64'] as const) {
+          const resources = join(root, `${platform}-${arch}`);
+          writeRuntime(resources, platform, arch);
+          expect(assertPackagedRuntime(resources, platform, arch)).toEndWith(platform === 'windows' ? 'zplc_runtime.exe' : 'zplc_runtime');
+          expect(() => assertPackagedRuntime(resources, platform, arch === 'x64' ? 'arm64' : 'x64')).toThrow('architecture');
+        }
       }
-    }
-    const platformMismatch = join(root, 'platform-mismatch');
-    mkdirSync(join(platformMismatch, 'native-runtime'), { recursive: true });
-    writeFileSync(join(platformMismatch, 'native-runtime', 'zplc_runtime'), binaryHeader('windows', 'x64'));
-    chmodSync(join(platformMismatch, 'native-runtime', 'zplc_runtime'), 0o755);
-    expect(() => assertPackagedRuntime(platformMismatch, 'linux', 'x64')).toThrow('architecture');
-    const truncated = join(root, 'truncated');
-    mkdirSync(join(truncated, 'native-runtime'), { recursive: true });
-    writeFileSync(join(truncated, 'native-runtime', 'zplc_runtime'), new Uint8Array([0x7f, 0x45, 0x4c, 0x46]));
-    chmodSync(join(truncated, 'native-runtime', 'zplc_runtime'), 0o755);
-    expect(() => assertPackagedRuntime(truncated, 'linux', 'x64')).toThrow('truncated');
+      const platformMismatch = join(root, 'platform-mismatch');
+      mkdirSync(join(platformMismatch, 'native-runtime'), { recursive: true });
+      writeFileSync(join(platformMismatch, 'native-runtime', 'zplc_runtime'), binaryHeader('windows', 'x64'));
+      chmodSync(join(platformMismatch, 'native-runtime', 'zplc_runtime'), 0o755);
+      expect(() => assertPackagedRuntime(platformMismatch, 'linux', 'x64')).toThrow('architecture');
+      const truncated = join(root, 'truncated');
+      mkdirSync(join(truncated, 'native-runtime'), { recursive: true });
+      writeFileSync(join(truncated, 'native-runtime', 'zplc_runtime'), new Uint8Array([0x7f, 0x45, 0x4c, 0x46]));
+      chmodSync(join(truncated, 'native-runtime', 'zplc_runtime'), 0o755);
+      expect(() => assertPackagedRuntime(truncated, 'linux', 'x64')).toThrow('truncated');
 
-    const unknown = join(root, 'unknown');
-    mkdirSync(join(unknown, 'native-runtime'), { recursive: true });
-    writeFileSync(join(unknown, 'native-runtime', 'zplc_runtime'), '#!/bin/sh\n');
-    chmodSync(join(unknown, 'native-runtime', 'zplc_runtime'), 0o755);
-    expect(() => assertPackagedRuntime(unknown, 'linux', 'x64')).toThrow('unknown binary format');
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-  }
-});
+      const unknown = join(root, 'unknown');
+      mkdirSync(join(unknown, 'native-runtime'), { recursive: true });
+      writeFileSync(join(unknown, 'native-runtime', 'zplc_runtime'), '#!/bin/sh\n');
+      chmodSync(join(unknown, 'native-runtime', 'zplc_runtime'), 0o755);
+      expect(() => assertPackagedRuntime(unknown, 'linux', 'x64')).toThrow('unknown binary format');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+}
 
 function withFixture(build: (root: string) => void): ReturnType<typeof Bun.spawnSync> {
   const root = mkdtempSync(join(tmpdir(), 'zplc-desktop-smoke-'));
@@ -110,14 +113,17 @@ function withFixture(build: (root: string) => void): ReturnType<typeof Bun.spawn
   }
 }
 
-test('fails when the packaged Tool API is missing', () => {
-  const result = withFixture((root) => {
-    writeFileSync(join(root, 'dist-electron', 'zplc-ide-linux-x64-unpacked', 'resources', 'app.asar'), 'not an asar');
-  });
+// It starts `bun` on a Linux fixture, which takes longer than the 5 s of a test on a Windows runner.
+if (process.platform !== 'win32') {
+  test('fails when the packaged Tool API is missing', () => {
+    const result = withFixture((root) => {
+      writeFileSync(join(root, 'dist-electron', 'zplc-ide-linux-x64-unpacked', 'resources', 'app.asar'), 'not an asar');
+    });
 
-  expect(result.exitCode).not.toBe(0);
-  expect(result.stderr?.toString()).toContain('electron-dist/toolApi.js');
-});
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr?.toString()).toContain('electron-dist/toolApi.js');
+  });
+}
 
 test('discovers macOS and unpacked resources without assuming a product directory name', () => {
   const root = mkdtempSync(join(tmpdir(), 'zplc-desktop-smoke-'));

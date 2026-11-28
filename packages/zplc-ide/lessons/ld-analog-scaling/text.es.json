@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "title": "Escalado analógico en escalera: de cuentas a porcentaje con MUL, DIV y LIMIT",
-  "summary": "Escale las cuentas crudas de una entrada analógica a un nivel en porcentaje con un bloque MUL y luego un bloque DIV, mantenga el resultado en rango con LIMIT y gobierne dos lámparas de nivel con cajas de comparación.",
+  "summary": "Escale las cuentas en bruto de una entrada analógica a un nivel en porcentaje con un bloque MUL y luego un bloque DIV, mantenga el resultado en rango con LIMIT y gobierne dos lámparas de nivel con cajas de comparación.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad. El escenario solo fija entradas BOOL, así que la lección no lee una entrada analógica real, y no muestra cuán preciso, ruidoso o bien calibrado es un sensor real, ni cómo se cablea.",
   "objectives": [
-    "Escale cuentas analógicas crudas a unidades de ingeniería multiplicando por el rango de las unidades y luego dividiendo entre el rango de las cuentas, en un tipo donde quepa el producto.",
-    "Mantenga un valor dentro de su rango con un bloque LIMIT y compare el valor escalado, no las cuentas crudas, con los umbrales de las alarmas."
+    "Escale cuentas analógicas en bruto a unidades de ingeniería con números enteros, sin perder la parte pequeña del valor, en un tipo donde quepa el producto.",
+    "Mantenga un valor dentro de su rango con un bloque LIMIT y compare el valor escalado, no las cuentas en bruto, con los umbrales de las alarmas."
   ],
   "stages": [
     {
@@ -41,14 +41,14 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "¿Por qué el peldaño debe multiplicar antes de dividir, y por qué Scaled es un DINT? Calcule, con números enteros, qué daría dividir primero para Raw = 3280. ¿De qué protegería el bloque LIMIT si el sensor informara un valor fuera de 0..4095?",
-      "checkpoint": "Dividir Raw entre 4095 primero da 0 para todo Raw menor que 4095, así que el nivel se quedaría en 0 hasta la plena escala. A plena escala el producto supera con mucho los 32767 que guarda un INT, y un INT daría la vuelta sin ningún error. LIMIT mantiene Raw dentro de 0..4095 haga lo que haga la entrada, así que Level queda dentro de 0..100."
+      "body": "¿Importa el orden de la multiplicación y la división? Calcule, con números enteros, qué da cada orden para Raw = 3280. ¿Por qué Scaled es un DINT? ¿De qué protegería el bloque LIMIT si el sensor informara un valor fuera de 0..4095?",
+      "checkpoint": "Puede decir qué da cada orden para Raw = 3280 y qué hace una división con la parte del valor menor que su divisor. A plena escala el producto supera con mucho los 32767 que guarda un INT, y un INT daría la vuelta sin ningún error. LIMIT mantiene Raw dentro de 0..4095 haga lo que haga la entrada, así que Level queda dentro de 0..100."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Multiplique antes de dividir, para que la división descarte lo menos posible, y guarde el producto en un DINT, donde cabe a plena escala. ¿Cuál es el rango de las cuentas y cuál el rango del resultado?"
+      "text": "Mire qué hay entre Raw y Quot: todavía nada. ¿Cuál es el rango de las cuentas, cuál el rango del resultado y cuánto puede crecer un valor intermedio a plena escala?"
     },
     {
       "level": 2,

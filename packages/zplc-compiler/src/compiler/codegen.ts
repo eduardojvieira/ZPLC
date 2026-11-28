@@ -3420,9 +3420,11 @@ function emitUnaryExpr(state: CodeGenState, expr: UnaryExpr): void {
         fail('TYPE_MISMATCH', expr.operand, `Type mismatch: the negation takes a number and this is a BOOL`);
     }
 
-    emitExpression(state, expr.operand);
     const type = staticType(state, expr.operand);
     const info = numericInfo(type);
+    // a 64-bit typed literal is two cells, like every other 64-bit operand
+    if (isWide(type) && !isFloatType(type)) emitConverted(state, expr.operand, type);
+    else emitExpression(state, expr.operand);
 
     if (isWide(type) && !isFloatType(type)) {
         // Two cells [lo hi]
@@ -3449,7 +3451,9 @@ function emitUnaryExpr(state: CodeGenState, expr: UnaryExpr): void {
     switch (expr.operator) {
         case 'NOT':
             emit(state, `    NOT`);
-            if (info && !info.float && type !== 'BOOL') {
+            if (type === LITERAL_INT) {
+                // an untyped integer literal is 32 bits: the complement keeps them (C10)
+            } else if (info && !info.float && type !== 'BOOL') {
                 // A bit string or an integer keeps its declared width (CMP-014): the complement of a
                 // signed or a 32-bit value is already canonical, a narrow unsigned one is cut back
                 if (info.bits === 8 && !info.signed) emit(state, `    ZEXT8`);
@@ -4045,6 +4049,15 @@ function emitConverted(state: CodeGenState, expr: Expression, target: string): v
         if (expr.kind === 'BinaryExpr' && type === LITERAL_INT) {
             // literals only: the operation takes the width of its context
             emitBinaryExpr(state, expr, target);
+            return;
+        }
+        if (expr.kind === 'UnaryExpr' && expr.operator === 'NOT' && type === LITERAL_INT) {
+            // NOT of an untyped literal takes the width of its context, like AND, OR and XOR (C10)
+            emitConverted(state, expr.operand, target);
+            emit(state, `    NOT`);
+            emit(state, `    SWAP`);
+            emit(state, `    NOT`);
+            emit(state, `    SWAP`);
             return;
         }
         if (isIntegerLike(type) && sourceBits <= 32) {

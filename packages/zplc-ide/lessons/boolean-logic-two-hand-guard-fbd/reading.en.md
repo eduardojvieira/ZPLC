@@ -36,17 +36,18 @@ caption: AND1 joins A and B; AND2 joins AND1.OUT and C, so it is TRUE only while
 
 ## Worked example
 
-A drying oven may heat only while the operator switch `HeatOn` is on, both door switches `DoorSwitchA` and `DoorSwitchB` say the door is shut, and the thermostat `OverTemp` has not tripped. The two door switches should always agree, and a fault lamp `SwitchFault` lights when they do not.
+A sorting conveyor carries boxes past a flap that pushes tall boxes into a side lane. The flap `Flap` swings out while the height eye `TallBox` sees a tall box and the lane switch `LaneFull` says the lane is not full. The flap's position switch `FlapIsOut` should agree with the command while the belt runs (`BeltRunning`), and a fault lamp `FlapFault` lights when it does not.
 
-The heater needs four conditions, so it takes three AND blocks in a chain, and the thermostat enters through a NOT block:
+The flap needs two conditions, one of them turned around, and the fault lamp needs a difference that only counts while the belt runs:
 
-1. A NOT block takes `OverTemp`.
-2. The first AND block takes `DoorSwitchA` and `DoorSwitchB`.
-3. The second AND block takes the first AND block and `HeatOn`.
-4. The third AND block takes the second AND block and the NOT block, and its `OUT` goes to the output block `Heater`.
-5. An XOR block takes `DoorSwitchA` and `DoorSwitchB`, and its `OUT` goes to the output block `SwitchFault`.
+1. A NOT block takes `LaneFull`.
+2. An AND block takes `TallBox` and the NOT block, and its `OUT` goes to the output block `Flap`.
+3. An XOR block takes the same `OUT` of the AND block and `FlapIsOut`.
+4. A second AND block takes the XOR block and `BeltRunning`, and its `OUT` goes to the output block `FlapFault`.
 
-Each door switch feeds two blocks, the first AND and the XOR: one output port, two wires. Follow a broken switch through it: the door is shut, and `DoorSwitchB` reads FALSE. The first AND block gives FALSE, so the whole chain does and the heater stops, while the XOR block sees one TRUE and one FALSE and lights the fault lamp.
+The `OUT` of the first AND block feeds two places, the output block `Flap` and the XOR: one output port, two wires. So the XOR compares the command the diagram works out in this scan with the switch that reports where the flap really is. Follow a stuck flap through it: a tall box arrives, the AND block gives TRUE and the flap is commanded out, but `FlapIsOut` stays FALSE. The XOR block sees one TRUE and one FALSE, and with the belt running the second AND block lights the fault lamp.
+
+A real diverter gives the flap a short time to move before it lights the fault lamp; that needs a timer, which this page leaves out.
 
 ## Common mistakes
 

@@ -15,7 +15,7 @@
       "id": "setpoint",
       "part": "potentiometer",
       "name": "SetPoint",
-      "position": [-1, 0.5, 0.5],
+      "position": [-0.6, 0.5, 0.5],
       "rotationYDeg": 0,
       "config": { "min": 0, "max": 1, "initial": 0, "unit": "m" }
     },
@@ -23,7 +23,7 @@
       "id": "drainpot",
       "part": "potentiometer",
       "name": "DrainPot",
-      "position": [-1, 0.5, -0.2],
+      "position": [-0.6, 0.5, -0.2],
       "rotationYDeg": 0,
       "config": { "min": 0, "max": 100, "initial": 0, "unit": "%" }
     },
@@ -31,7 +31,7 @@
       "id": "display",
       "part": "numeric-display",
       "name": "LevelDisplay",
-      "position": [1, 0.8, 0.4],
+      "position": [0.6, 0.8, 0.4],
       "rotationYDeg": 0,
       "config": { "type": "REAL", "min": 0, "max": 1, "unit": "m", "decimals": 2 }
     },
@@ -39,7 +39,7 @@
       "id": "light",
       "part": "stack-light",
       "name": "StackLight1",
-      "position": [1, 0.3, -0.2],
+      "position": [0.6, 0.3, -0.2],
       "rotationYDeg": 0,
       "config": {}
     }

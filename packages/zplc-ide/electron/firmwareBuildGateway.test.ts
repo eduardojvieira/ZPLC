@@ -5,6 +5,9 @@ import { join } from 'node:path';
 
 import { createFirmwareBuildGateway } from './firmwareBuildGateway';
 
+/** The firmware build is offered on Linux and macOS only; on Windows the gateway refuses every call as unavailable. */
+const buildOffered = process.platform !== 'win32';
+
 const roots: string[] = [];
 const ready = (boards = [{ ideId: 'nucleo_h743zi', zephyrBoard: 'nucleo_h743zi', validationLevel: 'cross-build' }]) => ({
   ok: true,
@@ -29,7 +32,7 @@ afterEach(async () => {
 });
 
 describe('firmware build gateway', () => {
-  it('keeps the admitted root opaque and passes its canonical value only to trusted callbacks', async () => {
+  it.skipIf(!buildOffered)('keeps the admitted root opaque and passes its canonical value only to trusted callbacks', async () => {
     const candidate = await root();
     const gateway = createFirmwareBuildGateway();
     const inspected = await gateway.inspect(7, candidate, async (value) => {
@@ -56,7 +59,7 @@ describe('firmware build gateway', () => {
     expect(result).toEqual({ ok: true });
   });
 
-  it('clears the prior selection on invalid, attention, symlink, or replaced roots before any build', async () => {
+  it.skipIf(!buildOffered)('clears the prior selection on invalid, attention, symlink, or replaced roots before any build', async () => {
     const candidate = await root();
     const gateway = createFirmwareBuildGateway();
     await gateway.inspect(7, candidate, async () => ready());
@@ -103,7 +106,7 @@ describe('firmware build gateway', () => {
     expect(built).toBe(false);
   });
 
-  it('requires a repeated ready preflight, exact ideId, approval, and a single operation', async () => {
+  it.skipIf(!buildOffered)('requires a repeated ready preflight, exact ideId, approval, and a single operation', async () => {
     const candidate = await root();
     const gateway = createFirmwareBuildGateway();
     let inspections = 0;
@@ -164,7 +167,7 @@ describe('firmware build gateway', () => {
     expect(inspections).toBe(2);
   });
 
-  it('does not build after approval cancellation and aborts only the active owner on cancel or revoke', async () => {
+  it.skipIf(!buildOffered)('does not build after approval cancellation and aborts only the active owner on cancel or revoke', async () => {
     const candidate = await root();
     const gateway = createFirmwareBuildGateway();
     await gateway.inspect(7, candidate, async () => ready());
@@ -242,8 +245,20 @@ describe('firmware build gateway', () => {
 
   it('fails closed outside POSIX and never leaks callback errors', async () => {
     const candidate = await root();
-    const gateway = createFirmwareBuildGateway({ platform: 'win32' });
-    await expect(gateway.inspect(7, candidate, async () => ready())).rejects.toThrow('Firmware build unavailable');
+    let calls = 0;
+    const counted = async () => {
+      calls += 1;
+      return ready();
+    };
+    // Windows by design: unavailable, and neither the toolchain check, the approval nor the build runner is ever called.
+    for (const gateway of [createFirmwareBuildGateway({ platform: 'win32' }), ...(buildOffered ? [] : [createFirmwareBuildGateway()])]) {
+      await expect(gateway.inspect(7, candidate, counted)).rejects.toThrow('Firmware build unavailable');
+      await expect(gateway.start(7, { ideId: 'nucleo_h743zi' }, counted, async () => (calls += 1) > 0, counted)).rejects.toThrow(
+        'Firmware build unavailable',
+      );
+    }
+    expect(calls).toBe(0);
+    if (!buildOffered) return;
     const posix = createFirmwareBuildGateway();
     await expect(
       posix.inspect(7, candidate, async () => {
@@ -252,7 +267,33 @@ describe('firmware build gateway', () => {
     ).rejects.toThrow('Firmware build unavailable');
   });
 
-  it('leases inspection exclusively and cannot revive a selection after its owner is revoked', async () => {
+  it.skipIf(!buildOffered)('refuses start on Windows by its own platform check, even with a selection made', async () => {
+    const candidate = await root();
+    const host: { platform: NodeJS.Platform } = { platform: 'linux' };
+    const gateway = createFirmwareBuildGateway(host);
+    await gateway.inspect(7, candidate, async () => ready());
+    host.platform = 'win32';
+    let calls = 0;
+    const counted = async () => {
+      calls += 1;
+      return ready();
+    };
+    const approve = async () => (calls += 1) > 0;
+    await expect(gateway.start(7, { ideId: 'nucleo_h743zi' }, counted, approve, counted)).rejects.toThrow('Firmware build unavailable');
+    expect(calls).toBe(0);
+    // The selection survived the refusal, so it was the platform rule that refused, not a missing selection.
+    host.platform = 'linux';
+    const built = gateway.start(
+      7,
+      { ideId: 'nucleo_h743zi' },
+      async () => ready(),
+      async () => true,
+      async () => ({ ok: true }),
+    );
+    await expect(built).resolves.toEqual({ ok: true });
+  });
+
+  it.skipIf(!buildOffered)('leases inspection exclusively and cannot revive a selection after its owner is revoked', async () => {
     const candidate = await root();
     const gateway = createFirmwareBuildGateway();
     const inspection = deferred<unknown>();
@@ -287,7 +328,8 @@ describe('firmware build gateway', () => {
     ).resolves.toEqual({ ok: true });
   });
 
-  it('cancels before build during preflight or approval and releases only after the owned operation settles', async () => {
+  const cancelsBefore = 'cancels before build during preflight or approval and releases only after the owned operation settles';
+  it.skipIf(!buildOffered)(cancelsBefore, async () => {
     const candidate = await root();
     const gateway = createFirmwareBuildGateway();
     await gateway.inspect(7, candidate, async () => ready());

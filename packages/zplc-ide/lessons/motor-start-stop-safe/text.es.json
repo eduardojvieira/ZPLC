@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "La salida tiene que recordar que se pulsó Start: use una variable de memoria que Start active y que se mantenga hasta que una condición de parada la borre."
+      "text": "Mire dos momentos de la traza: el ciclo después de soltar Start, y el ciclo después de que termina una parada mientras Start sigue pulsado. En cada uno, ¿qué debe saber todavía el programa que las entradas solas no le dicen?"
     },
     {
       "level": 2,

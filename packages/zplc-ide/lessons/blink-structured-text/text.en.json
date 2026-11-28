@@ -5,7 +5,7 @@
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Write the timer-and-memory pattern that makes an output change state at a fixed interval.",
-    "Gate an output with an input so that it stops at once when the input drops."
+    "Make a blinking output go dark on the same scan its enable input drops."
   ],
   "stages": [
     {
@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct the starting program, save it, then press {{ui:learn.check}}. The starting program keeps Lamp OFF all the time, so it never turns ON at {{t:550}} ms. Change it so that Lamp changes state every {{t:300}} ms while Enable is ON, with the first change {{t:300}} ms after Enable turns ON, and Lamp is OFF on the scan Enable drops. Write the statements yourself: the declarations are already there.",
-      "checkpoint": "Lamp follows LampOn only while Enable is ON."
+      "checkpoint": "The program builds without errors, and you can say what Lamp does in the scan Enable drops."
     },
     {
       "key": "run",
@@ -42,13 +42,13 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "A blinker that ignores Enable would already be ON at {{t:350}} ms. Which of your lines makes the difference?",
-      "checkpoint": "Starting the timer from Enable moves the first change, and the AND with Enable stops the lamp at once."
+      "checkpoint": "You can point to the line of yours that sets the moment of the first change, and to the line that sets what Lamp shows when Enable drops."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "The timer must only run while Enable is ON, so Enable is the IN of Clock."
+      "text": "Look at two moments: what Clock does while Enable is OFF, and what Lamp shows on the scan Enable drops while LampOn is still TRUE."
     },
     {
       "level": 2,

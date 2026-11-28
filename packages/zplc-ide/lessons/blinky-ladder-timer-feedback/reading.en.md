@@ -27,7 +27,7 @@ Both coils are used on the same variable. The valve is solved from top to bottom
 
 ## Feedback: an output that chooses its own timer
 
-A blinker combines the two ideas. A lamp that is OFF starts one timer; when that timer finishes, a SET coil switches the lamp ON. A lamp that is ON starts a second timer; when that finishes, a RESET coil switches the lamp OFF. The lamp itself is the memory that decides which timer runs. This idea is called **feedback**: the output is fed back as an input of the same program.
+A blinker combines the two ideas. A lamp that is OFF counts one half period and a lamp that is ON counts the other, so the lamp itself is the memory that decides which timer runs. This idea is called **feedback**: the output is fed back as an input of the same program.
 
 Why two timers and not one? With a single timer fed by the lamp, the lamp turning on would immediately reset the timer and the lamp would flicker for a single scan, not blink. Two timers give each half of the blink its own count.
 

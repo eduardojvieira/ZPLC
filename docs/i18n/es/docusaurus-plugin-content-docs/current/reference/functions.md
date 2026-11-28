@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_function_reference.ts): reference/functions. Do not edit. >>> */}
 
-Todas las funciones del registro del compilador, con su firma, lo que hacen y un ejemplo. El registro tiene 297 funciones: las 57 funciones con nombre de abajo y las 240 conversiones de tipo. `ANY`, `ANY_NUM`, `ANY_INT` y `ANY_BIT` representan la familia de tipos que la función acepta. Los elementos del lenguaje que las llaman están en la [vista general de lenguajes](../languages/index.md); los bloques con estado están en la [referencia de bloques de función](./function-blocks.md).
+Todas las funciones del registro del compilador, con su firma, lo que hacen y un ejemplo. El registro tiene 297 funciones: las 57 funciones con nombre de abajo y las 240 conversiones de tipo. `ANY`, `ANY_NUM`, `ANY_INT` y `ANY_BIT` representan la familia de tipos que la función acepta. Los elementos del lenguaje que las llaman están en la [vista general de lenguajes](../languages/index.md); los bloques con estado están en la [referencia de bloques de función](./function-blocks.md). Toda función se llama desde Structured Text, Diagrama de Bloques de Función y Ladder.
 
 Cada ejemplo es un programa completo. CI lo compila y lo ejecuta en el runtime POSIX nativo, y el resultado indicado debajo es el valor que la ejecución comprueba.
 
@@ -73,7 +73,7 @@ Resultado tras un ciclo: `Result` = `10`.
 
 `SEL(G : BOOL, IN0 : ANY, IN1 : ANY) : ANY`
 
-Devuelve IN0 cuando G es FALSE e IN1 cuando G es TRUE.
+Devuelve IN0 cuando G es FALSE e IN1 cuando G es TRUE. IN0 e IN1 admiten cualquier tipo elemental salvo STRING: SEL no selecciona cadenas, en ningún lenguaje; para elegir entre cadenas, use un IF en texto estructurado.
 
 ```pascal runnable expect="Result=20"
 PROGRAM Example
@@ -92,7 +92,7 @@ Resultado tras un ciclo: `Result` = `20`.
 
 `MUX(K : INT, IN0 : ANY, IN1 : ANY, ...) : ANY`
 
-Devuelve la entrada que selecciona K: IN0 para 0, IN1 para 1, y así hasta ocho entradas.
+Devuelve la entrada que selecciona K: IN0 para 0, IN1 para 1, y así hasta ocho entradas. Las entradas admiten cualquier tipo elemental salvo STRING: MUX no selecciona cadenas, en ningún lenguaje; para elegir entre cadenas, use un IF en texto estructurado.
 
 ```pascal runnable expect="Result=30"
 PROGRAM Example
@@ -150,7 +150,7 @@ Resultado tras un ciclo: `Result` = `TRUE`.
 
 `ROL(IN : DWORD, N : INT) : DWORD`
 
-Rota a la izquierda N posiciones los 32 bits de IN; los bits que salen por la izquierda entran por la derecha.
+Rota a la izquierda N posiciones los 32 bits de IN; los bits que salen por la izquierda entran por la derecha. Un literal entero sin tipo mide 32 bits: ROL(16#8000, 1) asignado a una WORD da 0, y ROL(WORD#16#8000, 1) da 1.
 
 ```pascal runnable expect="Result=3"
 PROGRAM Example
@@ -169,7 +169,7 @@ Resultado tras un ciclo: `Result` = `3`.
 
 `ROR(IN : DWORD, N : INT) : DWORD`
 
-Rota a la derecha N posiciones los 32 bits de IN; los bits que salen por la derecha entran por la izquierda.
+Rota a la derecha N posiciones los 32 bits de IN; los bits que salen por la derecha entran por la izquierda. Un literal entero sin tipo mide 32 bits: ROR(16#0001, 1) asignado a una WORD da 0, y ROR(WORD#16#0001, 1) da 16#8000.
 
 ```pascal runnable expect="Result=2147483649"
 PROGRAM Example
@@ -187,7 +187,7 @@ Resultado tras un ciclo: `Result` = `2147483649`.
 
 `SHL(IN : ANY_BIT, N : INT) : ANY_BIT`
 
-Desplaza IN a la izquierda N posiciones; entran ceros por la derecha.
+Desplaza IN a la izquierda N posiciones; entran ceros por la derecha. Un literal entero sin tipo mide 32 bits: SHL(16#8000, 1) se calcula en 32 bits. Escriba WORD#16#8000 para trabajar dentro de 16 bits.
 
 ```pascal runnable expect="Result=16"
 PROGRAM Example
@@ -205,7 +205,7 @@ Resultado tras un ciclo: `Result` = `16`.
 
 `SHR(IN : ANY_BIT, N : INT) : ANY_BIT`
 
-Desplaza IN a la derecha N posiciones; entran ceros por la izquierda.
+Desplaza IN a la derecha N posiciones; entran ceros por la izquierda. Un literal entero sin tipo mide 32 bits: SHR(16#8000, 1) se calcula en 32 bits. Escriba WORD#16#8000 para trabajar dentro de 16 bits.
 
 ```pascal runnable expect="Result=1"
 PROGRAM Example

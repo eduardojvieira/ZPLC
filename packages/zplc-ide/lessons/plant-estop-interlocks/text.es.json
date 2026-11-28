@@ -5,7 +5,7 @@
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Detener todas las salidas mientras el paro de emergencia está pulsado.",
-    "Recordar el paro, de modo que soltar el botón no reinicie la línea."
+    "Recordar el paro, de modo que soltar el pulsador no reinicie la línea."
   ],
   "stages": [
     {
@@ -17,13 +17,13 @@
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, siga el paro: a los 15,5 s se pulsa el paro de emergencia mientras un elevador puede estar en movimiento; la línea debe detenerse, seguir detenida cuando se suelta el botón a los 17 s, y volver a funcionar solo tras la pulsación de Start a los 17,5 s.",
+      "body": "Antes de ejecutar, siga el paro: a los 15,5 s se pulsa el paro de emergencia mientras un elevador puede estar en movimiento; la línea debe detenerse, seguir detenida cuando se suelta el pulsador a los 17 s, y volver a funcionar solo tras la pulsación de Start a los 17,5 s.",
       "checkpoint": "Red encendida y todas las salidas apagadas a los 16 s; todavía detenida a los 17,3 s; Red apagada y la línea en marcha otra vez tras Start."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial ignora el paro de emergencia, así que la línea sigue funcionando; detenga todas las salidas mientras EStopOk sea FALSE, encienda Red, mantenga recordado el paro después de soltarlo y haga funcionar la línea de nuevo solo con una nueva pulsación de Start.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial ignora el paro de emergencia, así que la línea sigue funcionando; detenga todas las salidas mientras EStopOk sea FALSE, encienda Red, mantenga recordado el paro después de soltarlo y haga funcionar la línea de nuevo solo con una nueva pulsación de Start.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El inicial ignora el paro de emergencia, así que la línea sigue funcionando; detenga todas las salidas mientras EStopOk sea FALSE, encienda Red, mantenga recordado el paro después de soltarlo y haga funcionar la línea de nuevo solo con una nueva pulsación de Start."
+    "El programa inicial ignora el paro de emergencia, así que la línea sigue funcionando; detenga todas las salidas mientras EStopOk sea FALSE, encienda Red, mantenga recordado el paro después de soltarlo y haga funcionar la línea de nuevo solo con una nueva pulsación de Start."
   ]
 }

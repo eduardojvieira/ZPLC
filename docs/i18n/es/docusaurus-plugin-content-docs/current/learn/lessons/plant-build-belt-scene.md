@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-build-belt-scene. Do not edit. >>> */}
 
-Abra el Editor de escenas sobre un suelo vacío, coloque una cinta, un emisor, un sensor y un botón de inicio con los nombres que da la lección, enlace sus señales en el mapa de la planta y escriba el programa que corre sobre ellos.
+Abra el Editor de escenas sobre un suelo vacío, coloque una cinta, un emisor, un sensor y un pulsador de inicio con los nombres que da la lección, enlace sus señales en el mapa de la planta y escriba el programa que corre sobre ellos.
 
 ## Datos
 

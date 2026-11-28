@@ -1,0 +1,883 @@
+{
+  "name": "TankLevel",
+  "description": "Hold the level of the tank at the set point with PID_Compact. The raw level and set point are converted and scaled to metres, the drain potentiometer goes to the discharge valve, and Green lights within 5 percent of the set point.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "LevelRawR",
+        "type": "REAL",
+        "comment": "Raw level as a REAL"
+      },
+      {
+        "name": "SetPointRawR",
+        "type": "REAL",
+        "comment": "Raw set point as a REAL"
+      },
+      {
+        "name": "DrainRawR",
+        "type": "REAL",
+        "comment": "Raw drain opening as a REAL"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "LevelRaw",
+        "type": "INT",
+        "address": "%IW0",
+        "comment": "Tank1.level: 0 to 27648 is 0 to 1 m"
+      },
+      {
+        "name": "SetPointRaw",
+        "type": "INT",
+        "address": "%IW1",
+        "comment": "SetPoint.value: 0 to 1000 is 0 to 1 m"
+      },
+      {
+        "name": "DrainRaw",
+        "type": "INT",
+        "address": "%IW2",
+        "comment": "DrainPot.value: 0 to 1000 is 0 to 100 percent"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "FillCmd",
+        "type": "REAL",
+        "address": "%QD0",
+        "comment": "Tank1.fill: 0 to 100 percent of the inlet valve"
+      },
+      {
+        "name": "DrainCmd",
+        "type": "REAL",
+        "address": "%QD1",
+        "comment": "Tank1.drain: 0 to 100 percent of the discharge valve"
+      },
+      {
+        "name": "LevelShown",
+        "type": "REAL",
+        "address": "%QD2",
+        "comment": "LevelDisplay.value: the level in m"
+      },
+      {
+        "name": "Green",
+        "type": "BOOL",
+        "address": "%QX12.0",
+        "comment": "StackLight1.green: the level is within 5 percent of the set point"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "lvl_in",
+      "type": "variable",
+      "variableName": "LevelRaw",
+      "position": {
+        "x": 40,
+        "y": 40
+      },
+      "direction": "read",
+      "comment": "Level, 0 to 27648 is 0 to 1 m",
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "INT"
+        }
+      ]
+    },
+    {
+      "id": "lvl_real",
+      "type": "variable",
+      "variableName": "LevelRawR",
+      "position": {
+        "x": 200,
+        "y": 40
+      },
+      "comment": "The same number as a REAL: scale after converting",
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "REAL"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "REAL"
+        }
+      ]
+    },
+    {
+      "id": "lvl_span",
+      "type": "constant",
+      "dataType": "REAL",
+      "value": 27648.0,
+      "position": {
+        "x": 200,
+        "y": 120
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "REAL"
+        }
+      ],
+      "comment": "Raw span"
+    },
+    {
+      "id": "lvl_div",
+      "type": "DIV",
+      "position": {
+        "x": 380,
+        "y": 40
+      },
+      "inputs": [
+        {
+          "name": "IN1",
+          "type": "ANY_NUM"
+        },
+        {
+          "name": "IN2",
+          "type": "ANY_NUM"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "ANY_NUM"
+        }
+      ],
+      "comment": "Metres"
+    },
+    {
+      "id": "sp_in",
+      "type": "variable",
+      "variableName": "SetPointRaw",
+      "position": {
+        "x": 40,
+        "y": 200
+      },
+      "direction": "read",
+      "comment": "Set point, 0 to 1000 is 0 to 1 m",
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "INT"
+        }
+      ]
+    },
+    {
+      "id": "sp_real",
+      "type": "variable",
+      "variableName": "SetPointRawR",
+      "position": {
+        "x": 200,
+        "y": 200
+      },
+      "comment": "The same number as a REAL: scale after converting",
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "REAL"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "REAL"
+        }
+      ]
+    },
+    {
+      "id": "sp_span",
+      "type": "constant",
+      "dataType": "REAL",
+      "value": 1000.0,
+      "position": {
+        "x": 200,
+        "y": 280
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "REAL"
+        }
+      ],
+      "comment": "Raw span"
+    },
+    {
+      "id": "sp_div",
+      "type": "DIV",
+      "position": {
+        "x": 380,
+        "y": 200
+      },
+      "inputs": [
+        {
+          "name": "IN1",
+          "type": "ANY_NUM"
+        },
+        {
+          "name": "IN2",
+          "type": "ANY_NUM"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "ANY_NUM"
+        }
+      ],
+      "comment": "Metres"
+    },
+    {
+      "id": "dr_in",
+      "type": "variable",
+      "variableName": "DrainRaw",
+      "position": {
+        "x": 40,
+        "y": 360
+      },
+      "direction": "read",
+      "comment": "Drain potentiometer, 0 to 1000 is 0 to 100 percent",
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "INT"
+        }
+      ]
+    },
+    {
+      "id": "dr_real",
+      "type": "variable",
+      "variableName": "DrainRawR",
+      "position": {
+        "x": 200,
+        "y": 360
+      },
+      "comment": "The same number as a REAL",
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "REAL"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "REAL"
+        }
+      ]
+    },
+    {
+      "id": "dr_span",
+      "type": "constant",
+      "dataType": "REAL",
+      "value": 10.0,
+      "position": {
+        "x": 200,
+        "y": 440
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "REAL"
+        }
+      ],
+      "comment": "Raw units per percent"
+    },
+    {
+      "id": "dr_div",
+      "type": "DIV",
+      "position": {
+        "x": 380,
+        "y": 360
+      },
+      "inputs": [
+        {
+          "name": "IN1",
+          "type": "ANY_NUM"
+        },
+        {
+          "name": "IN2",
+          "type": "ANY_NUM"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "ANY_NUM"
+        }
+      ],
+      "comment": "Percent"
+    },
+    {
+      "id": "out_drain",
+      "type": "output",
+      "variableName": "DrainCmd",
+      "position": {
+        "x": 560,
+        "y": 360
+      },
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "REAL"
+        }
+      ],
+      "comment": "Discharge valve, percent"
+    },
+    {
+      "id": "out_shown",
+      "type": "output",
+      "variableName": "LevelShown",
+      "position": {
+        "x": 560,
+        "y": 40
+      },
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "REAL"
+        }
+      ],
+      "comment": "Level on the display, in m"
+    },
+    {
+      "id": "pid",
+      "type": "PID_Compact",
+      "position": {
+        "x": 740,
+        "y": 120
+      },
+      "inputs": [
+        {
+          "name": "SP",
+          "type": "ANY"
+        },
+        {
+          "name": "PV",
+          "type": "ANY"
+        },
+        {
+          "name": "KP",
+          "type": "ANY"
+        },
+        {
+          "name": "KI",
+          "type": "ANY"
+        },
+        {
+          "name": "KD",
+          "type": "ANY"
+        },
+        {
+          "name": "DT",
+          "type": "ANY"
+        },
+        {
+          "name": "OUT_MIN",
+          "type": "ANY"
+        },
+        {
+          "name": "OUT_MAX",
+          "type": "ANY"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "ANY"
+        }
+      ],
+      "comment": "Level loop: set point to the inlet valve",
+      "instanceName": "Pid"
+    },
+    {
+      "id": "c_kp",
+      "type": "constant",
+      "dataType": "REAL",
+      "value": 800.0,
+      "position": {
+        "x": 560,
+        "y": 120
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "REAL"
+        }
+      ],
+      "comment": "Proportional gain"
+    },
+    {
+      "id": "c_ki",
+      "type": "constant",
+      "dataType": "REAL",
+      "value": 10.0,
+      "position": {
+        "x": 560,
+        "y": 190
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "REAL"
+        }
+      ],
+      "comment": "Integral gain"
+    },
+    {
+      "id": "c_kd",
+      "type": "constant",
+      "dataType": "REAL",
+      "value": 150.0,
+      "position": {
+        "x": 560,
+        "y": 260
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "REAL"
+        }
+      ],
+      "comment": "Derivative gain"
+    },
+    {
+      "id": "c_dt",
+      "type": "constant",
+      "dataType": "REAL",
+      "value": 0.01,
+      "position": {
+        "x": 560,
+        "y": 330
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "REAL"
+        }
+      ],
+      "comment": "Scan time in seconds"
+    },
+    {
+      "id": "c_omin",
+      "type": "constant",
+      "dataType": "REAL",
+      "value": 0.0,
+      "position": {
+        "x": 560,
+        "y": 400
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "REAL"
+        }
+      ],
+      "comment": "Lowest inlet opening"
+    },
+    {
+      "id": "c_omax",
+      "type": "constant",
+      "dataType": "REAL",
+      "value": 100.0,
+      "position": {
+        "x": 560,
+        "y": 470
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "REAL"
+        }
+      ],
+      "comment": "Highest inlet opening"
+    },
+    {
+      "id": "c_zero",
+      "type": "constant",
+      "dataType": "REAL",
+      "value": 0.0,
+      "position": {
+        "x": 740,
+        "y": 320
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "REAL"
+        }
+      ],
+      "comment": "Inlet closed until the loop is wired"
+    },
+    {
+      "id": "out_fill",
+      "type": "output",
+      "variableName": "FillCmd",
+      "position": {
+        "x": 920,
+        "y": 120
+      },
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "REAL"
+        }
+      ],
+      "comment": "Inlet valve, percent"
+    },
+    {
+      "id": "g_sub",
+      "type": "SUB",
+      "position": {
+        "x": 380,
+        "y": 520
+      },
+      "inputs": [
+        {
+          "name": "IN1",
+          "type": "ANY_NUM"
+        },
+        {
+          "name": "IN2",
+          "type": "ANY_NUM"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "ANY_NUM"
+        }
+      ],
+      "comment": "Error in m"
+    },
+    {
+      "id": "g_abs",
+      "type": "ABS",
+      "position": {
+        "x": 540,
+        "y": 520
+      },
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "ANY_NUM"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "ANY_NUM"
+        }
+      ],
+      "comment": "Size of the error"
+    },
+    {
+      "id": "g_band",
+      "type": "constant",
+      "dataType": "REAL",
+      "value": 0.05,
+      "position": {
+        "x": 380,
+        "y": 600
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "REAL"
+        }
+      ],
+      "comment": "Five percent"
+    },
+    {
+      "id": "g_mul",
+      "type": "MUL",
+      "position": {
+        "x": 540,
+        "y": 600
+      },
+      "inputs": [
+        {
+          "name": "IN1",
+          "type": "ANY_NUM"
+        },
+        {
+          "name": "IN2",
+          "type": "ANY_NUM"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "ANY_NUM"
+        }
+      ],
+      "comment": "Band in m"
+    },
+    {
+      "id": "g_le",
+      "type": "LE",
+      "position": {
+        "x": 720,
+        "y": 540
+      },
+      "inputs": [
+        {
+          "name": "IN1",
+          "type": "ANY"
+        },
+        {
+          "name": "IN2",
+          "type": "ANY"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "comment": "Within the band"
+    },
+    {
+      "id": "out_green",
+      "type": "output",
+      "variableName": "Green",
+      "position": {
+        "x": 880,
+        "y": 540
+      },
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ],
+      "comment": "Level within 5 percent of the set point"
+    }
+  ],
+  "connections": [
+    {
+      "id": "conn_lvl_in_out_lvl_real_in",
+      "from": {
+        "block": "lvl_in",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "lvl_real",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_lvl_real_out_lvl_div_in1",
+      "from": {
+        "block": "lvl_real",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "lvl_div",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "conn_lvl_span_out_lvl_div_in2",
+      "from": {
+        "block": "lvl_span",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "lvl_div",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "conn_sp_in_out_sp_real_in",
+      "from": {
+        "block": "sp_in",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "sp_real",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_sp_real_out_sp_div_in1",
+      "from": {
+        "block": "sp_real",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "sp_div",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "conn_sp_span_out_sp_div_in2",
+      "from": {
+        "block": "sp_span",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "sp_div",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "conn_dr_in_out_dr_real_in",
+      "from": {
+        "block": "dr_in",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "dr_real",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_dr_real_out_dr_div_in1",
+      "from": {
+        "block": "dr_real",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "dr_div",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "conn_dr_span_out_dr_div_in2",
+      "from": {
+        "block": "dr_span",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "dr_div",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "conn_dr_div_out_out_drain_in",
+      "from": {
+        "block": "dr_div",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out_drain",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_lvl_div_out_out_shown_in",
+      "from": {
+        "block": "lvl_div",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out_shown",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_c_zero_out_out_fill_in",
+      "from": {
+        "block": "c_zero",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out_fill",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_sp_div_out_g_sub_in1",
+      "from": {
+        "block": "sp_div",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "g_sub",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "conn_lvl_div_out_g_sub_in2",
+      "from": {
+        "block": "lvl_div",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "g_sub",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "conn_g_sub_out_g_abs_in",
+      "from": {
+        "block": "g_sub",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "g_abs",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_g_abs_out_g_le_in1",
+      "from": {
+        "block": "g_abs",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "g_le",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "conn_g_band_out_g_mul_in1",
+      "from": {
+        "block": "g_band",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "g_mul",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "conn_sp_div_out_g_mul_in2",
+      "from": {
+        "block": "sp_div",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "g_mul",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "conn_g_mul_out_g_le_in2",
+      "from": {
+        "block": "g_mul",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "g_le",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "conn_g_le_out_out_green_in",
+      "from": {
+        "block": "g_le",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out_green",
+        "port": "IN"
+      }
+    }
+  ]
+}

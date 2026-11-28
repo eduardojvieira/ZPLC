@@ -14,12 +14,12 @@ The owner said on 2026-11-25: "documenta todo, el agente va a seguir trabajando 
 
 | File | What it is | Who writes it |
 |---|---|---|
-| `spec.md` | The specification: 69 requirements, statements S-14 to S-22, decisions D-28 to D-36 | The reviewer and the owner |
+| `spec.md` | The specification: 71 requirements, statements S-14 to S-23, decisions D-28 to D-37 | The reviewer and the owner |
 | `reviews/ai.md` | The AI baseline of 2026-11-24: findings AI-01 to AI-22 | The reviewer |
 | `handoff.md` | This brief | The reviewer |
-| `bar.md` | The commercial bar (BAR-001). Not written yet | The reviewer |
+| `bar.md` | The commercial bar (BAR-001), written by the reviewer and committed as is on 2026-11-26 | The reviewer |
 | `journeys.md` | The five golden journeys, step by step (JRN-001). Not written yet | The run |
-| `screens.md` | Every surface a person sees, with its states (UXV-001). Not written yet | The run |
+| `screens.md` | Every surface a person sees, with its states (UXV-001); written 2026-11-26 | The run |
 | `reviews/<area>.md` | One record per review of section 7 | The reviewer |
 
 Outside the repository, in `.cache/claude-ux-review/ai-check/`: the scripts and raw results behind `reviews/ai.md`. When the task set of AIX-009 is built, the scripts worth keeping move into the repository with it.

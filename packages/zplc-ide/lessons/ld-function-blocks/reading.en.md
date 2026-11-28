@@ -106,18 +106,18 @@ caption: DelayA and DelayB count at the same time, each from its own button.
 ```quiz
 question: A project declares the block `Hysteresis` and two instances, `Tank1Level` and `Tank2Level`. Tank 1 goes above its high limit. What happens to the output of the second instance?
 options:
-  - { text: 'Nothing. Each instance has its own memory.', correct: true, feedback: Right. An instance is separate from every other instance of the same block. }
-  - { text: 'It also turns on, because they share the declaration.', feedback: They share the plan, not the memory. The declaration is only a description. }
+  - { text: 'Nothing. Each instance has its own memory.', correct: true, feedback: 'Right. An instance is separate from every other instance of the same block.' }
+  - { text: 'It also turns on, because they share the declaration.', feedback: 'They share the plan, not the memory. The declaration is only a description.' }
 ```
 
 ```quiz
 question: Which one of these is the memory of a timer block?
 options:
-  - { text: 'The time that its input has been on.', correct: true, feedback: Right. It is stored inside the instance and survives from scan to scan. }
-  - { text: 'The name of the rung that calls it.', feedback: The timer does not know where it is called from. }
-  - { text: 'The value of the preset.', feedback: The preset is an input. You provide it each scan. }
+  - { text: 'The time that its input has been on.', correct: true, feedback: 'Right. It is stored inside the instance and survives from scan to scan.' }
+  - { text: 'The name of the rung that calls it.', feedback: 'The timer does not know where it is called from.' }
+  - { text: 'The value of the preset.', feedback: 'The preset is an input. You provide it each scan.' }
 ```
 
 ## What you will do in the practice
 
-In the practice you get a pump station. The project declares a block, `PumpCtl`, in Structured Text. Pump 1 is already a rung that calls its own instance. You will add a second rung for pump 2, with the contact and the second instance, and wire the same stop button and permissive. Then you check that the two pumps keep their own state.
+In the practice you get a pump station. The project declares a block, `PumpCtl`, in Structured Text. Pump 1 is already a rung that calls its own instance. You will make pump 2 work like pump 1, from its own start button and with the same stop button and permissive. Then you check that the two pumps keep their own state.

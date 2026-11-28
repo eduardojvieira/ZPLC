@@ -98,18 +98,18 @@ Notice that `Go` is released long before the soap step ends. The step bit rememb
 ```quiz
 question: The soap step is active and its timer has just finished. A transition has a set rung for the rinse step but no reset rung for the soap step. What happens?
 options:
-  - { text: 'Both steps stay on together.', correct: true, feedback: Right. Nothing turns the soap bit off, so the token is on two squares. }
-  - { text: 'The rinse step never starts.', feedback: It does start, because its set rung works. The problem is that the soap step does not end. }
-  - { text: 'The program refuses to run.', feedback: The program is valid. This is a logic error, so it runs and misbehaves. }
+  - { text: 'Both steps stay on together.', correct: true, feedback: 'Right. Nothing turns the soap bit off, so the token is on two squares.' }
+  - { text: 'The rinse step never starts.', feedback: 'It does start, because its set rung works. The problem is that the soap step does not end.' }
+  - { text: 'The program refuses to run.', feedback: 'The program is valid. This is a logic error, so it runs and misbehaves.' }
 ```
 
 ```quiz
 question: Why is Go released early without stopping the sequence?
 options:
-  - { text: 'The step bit remembers that the sequence is running.', correct: true, feedback: Right. A set coil keeps its bit on after the power that set it is gone. }
-  - { text: 'The timer holds the button down.', feedback: A timer does not act on inputs. It only times its own input. }
+  - { text: 'The step bit remembers that the sequence is running.', correct: true, feedback: 'Right. A set coil keeps its bit on after the power that set it is gone.' }
+  - { text: 'The timer holds the button down.', feedback: 'A timer does not act on inputs. It only times its own input.' }
 ```
 
 ## What you will do in the practice
 
-In the practice you get a tank with three steps: fill, mix and drain, each with its own step bit and timer. The transition from fill to mix is written, and the transition from mix to drain is missing. You will add the two rungs of that transition, one that sets `StepDrain` and one that resets `StepMix`, and then check that the three outputs never overlap.
+In the practice you get a tank with three steps: fill, mix and drain, each with its own step bit and timer. The transition from fill to mix is written, and the transition from mix to drain is missing. You will make the sequence move from mix to drain, and then check that the three outputs never overlap.

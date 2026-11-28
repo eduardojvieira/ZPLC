@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/timers-on-delay-off-delay. Do not edit. >>> */}
 
-Use un temporizador TOF para mantener una luz encendida después de soltar un botón, y un TON para ignorar un pulso de sensor demasiado corto.
+Use un temporizador TOF para mantener una luz encendida después de soltar un pulsador, y un TON para ignorar un pulso de sensor demasiado corto.
 
 ## Datos
 
@@ -25,8 +25,8 @@ Use un temporizador TOF para mantener una luz encendida después de soltar un bo
 
 ## Objetivos
 
-- Mantenga una salida encendida durante un tiempo fijo después de que su entrada caiga, con una instancia de TOF que se llama en cada ciclo.
-- Ignore una entrada que permanezca en ON menos de un tiempo fijo, con una instancia de TON.
+- Mantenga una salida encendida durante un tiempo fijo después de que su entrada caiga, con una instancia de temporizador que se llama en cada ciclo.
+- Ignore una entrada que permanezca en ON menos de un tiempo fijo, y diga cuál de los dos retardos corresponde al inicio de una señal y cuál a su final.
 
 ## Etapas
 
@@ -39,7 +39,7 @@ Use un temporizador TOF para mantener una luz encendida después de soltar un bo
 
 ## Qué cubre la evidencia
 
-Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un botón real ni con qué rapidez responde un sensor real.
+Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un pulsador real ni con qué rapidez responde un sensor real.
 
 ## Cableado
 

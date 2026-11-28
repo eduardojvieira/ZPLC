@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterAll, describe, expect, setDefaultTimeout, test } from 'bun:test';
 import { translatorFor } from '../../i18n';
-import { browserApp, closeBrowserApp, nodeCentre, openDocument, type BrowserApp } from '../../test/browser';
+import { browserApp, closeBrowserApp, openDocument, type BrowserApp } from '../../test/browser';
 
 // VF-007: the sequential function chart editor (React Flow) in headless Chromium, with real key and pointer events.
 setDefaultTimeout(180_000);
@@ -18,8 +18,7 @@ interface Chart {
 const openBlinky = (app: BrowserApp, locale: 'en' | 'es' = 'en') =>
   app.open({ name: 'main.sfc.json', language: 'SFC', content: BLINKY }, locale);
 const select = async (app: BrowserApp, id: string) => {
-  const at = await nodeCentre(app, id);
-  await app.clickAt(at.x, at.y);
+  await app.click(`.react-flow__node[data-id="${id}"]`);
   await app.until(`${id} selected`, `document.querySelector('.react-flow__node[data-id="${id}"]')?.classList.contains('selected')`);
 };
 const selected = (app: BrowserApp): Promise<string[]> =>
@@ -44,7 +43,9 @@ describe('Sequential function chart editor in a browser (VF-007, LNG-012)', () =
     expect(await app.eval<number>('document.querySelectorAll(".react-flow__node").length')).toBe(4);
     await select(app, 'step_led_off');
     expect(await selected(app)).toEqual(['step_led_off']);
-    expect((await app.focused())?.name).toBe(t('a11y.sfc.step', { name: 'LED_OFF' }));
+    const stepName = t('a11y.sfc.step', { name: 'LED_OFF' });
+    const focusedStep = await app.untilFocused('the step to hold the focus', (node) => node.name === stepName);
+    expect(focusedStep.name).toBe(stepName);
   });
 
   test('Alt+ArrowDown moves the selection from a step to the transition below it, says which, and moves nothing', async () => {
@@ -125,7 +126,8 @@ describe('Sequential function chart editor in a browser (VF-007, LNG-012)', () =
     await select(app, 'step_led_on');
     await app.press('Shift+C');
     await app.until('the wire list focused', `document.activeElement?.getAttribute('role') === 'combobox'`);
-    expect((await app.focused())?.role).toBe('combobox');
+    const focusedCombo = await app.untilFocused('a combobox to hold the focus', (node) => node.role === 'combobox');
+    expect(focusedCombo.role).toBe('combobox');
     await app.press('Escape');
     await app.until('the list closed', `!document.querySelector('[data-keyboard-picker]')`);
   });

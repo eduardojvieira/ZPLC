@@ -152,8 +152,8 @@ export function IOSection({ config, updateConfig }: SectionProps) {
               onClick={addInput}
               disabled={!hasFree('inputs', 'digital')}
               className={
-                'flex items-center gap-1 px-2 py-1 text-xs rounded bg-[var(--color-surface-600)] ' +
-                'hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)] disabled:opacity-40'
+                'flex items-center gap-1 px-2 py-1 text-xs rounded border border-[var(--button-border)] bg-[var(--button-bg)] ' +
+                'hover:bg-[var(--button-bg-hover)] text-[var(--button-fg)] disabled:opacity-40'
               }
               tooltip={hasFree('inputs', 'digital') ? t('io.addDigitalInputBool') : t('io.hasNoMoreDigital', { boardLabel })}
             >
@@ -165,8 +165,8 @@ export function IOSection({ config, updateConfig }: SectionProps) {
               onClick={addAnalogInput}
               disabled={!hasFree('inputs', 'analog')}
               className={
-                'flex items-center gap-1 px-2 py-1 text-xs rounded bg-[var(--color-surface-600)] ' +
-                'hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)] disabled:opacity-40'
+                'flex items-center gap-1 px-2 py-1 text-xs rounded border border-[var(--button-border)] bg-[var(--button-bg)] ' +
+                'hover:bg-[var(--button-bg-hover)] text-[var(--button-fg)] disabled:opacity-40'
               }
               tooltip={hasFree('inputs', 'analog') ? t('io.addAnalogInputInt') : t('io.hasNoMoreAnalog', { boardLabel })}
             >
@@ -203,8 +203,8 @@ export function IOSection({ config, updateConfig }: SectionProps) {
               onClick={addOutput}
               disabled={!hasFree('outputs', 'digital')}
               className={
-                'flex items-center gap-1 px-2 py-1 text-xs rounded bg-[var(--color-surface-600)] ' +
-                'hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)] disabled:opacity-40'
+                'flex items-center gap-1 px-2 py-1 text-xs rounded border border-[var(--button-border)] bg-[var(--button-bg)] ' +
+                'hover:bg-[var(--button-bg-hover)] text-[var(--button-fg)] disabled:opacity-40'
               }
               tooltip={hasFree('outputs', 'digital') ? t('io.addDigitalOutputBool') : t('io.hasNoMoreDigital2', { boardLabel })}
             >
@@ -216,8 +216,8 @@ export function IOSection({ config, updateConfig }: SectionProps) {
               onClick={addAnalogOutput}
               disabled={!hasFree('outputs', 'analog')}
               className={
-                'flex items-center gap-1 px-2 py-1 text-xs rounded bg-[var(--color-surface-600)] ' +
-                'hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)] disabled:opacity-40'
+                'flex items-center gap-1 px-2 py-1 text-xs rounded border border-[var(--button-border)] bg-[var(--button-bg)] ' +
+                'hover:bg-[var(--button-bg-hover)] text-[var(--button-fg)] disabled:opacity-40'
               }
               tooltip={hasFree('outputs', 'analog') ? t('io.addAnalogOutputInt') : t('io.hasNoAnalogOutputs', { boardLabel })}
             >
@@ -329,7 +329,7 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
   return (
     <div className="bg-[var(--color-surface-700)] rounded border border-[var(--color-surface-600)] overflow-hidden">
       {/* Header */}
-      <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-[var(--color-surface-600)] text-xs text-[var(--color-surface-300)] font-medium">
+      <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-[var(--color-surface-800)] text-xs text-[var(--text-secondary)] font-medium">
         <div className="col-span-3">{t('dialog.name')}</div>
         <div className="col-span-2">{t('io.address')}</div>
         <div className="col-span-1">{t('io.chan')}</div>
@@ -350,8 +350,7 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
                 value={item.name}
                 onChange={(e) => onUpdate(index, { name: e.target.value })}
                 className={
-                  'w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded ' +
-                  'text-[var(--color-surface-100)]'
+                  'w-full px-2 py-1 text-xs bg-[var(--input-bg)] border border-[var(--input-border)] rounded ' + 'text-[var(--input-fg)]'
                 }
               />
             </div>
@@ -371,7 +370,7 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
                     );
                   }}
                   className={
-                    'w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded ' +
+                    'w-full px-2 py-1 text-xs bg-[var(--input-bg)] border border-[var(--input-border)] rounded ' +
                     'text-[var(--color-accent-blue)] font-mono'
                   }
                 >
@@ -393,7 +392,7 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
                   onChange={(e) => onUpdate(index, { address: e.target.value })}
                   placeholder={t('io.i00')}
                   className={
-                    'w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded ' +
+                    'w-full px-2 py-1 text-xs bg-[var(--input-bg)] border border-[var(--input-border)] rounded ' +
                     'text-[var(--color-accent-blue)] font-mono'
                   }
                 />
@@ -409,8 +408,8 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
                 min={0}
                 max={16}
                 className={
-                  'w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded ' +
-                  'text-[var(--color-surface-100)] placeholder:text-[var(--color-surface-500)]'
+                  'w-full px-2 py-1 text-xs bg-[var(--input-bg)] border border-[var(--input-border)] rounded ' +
+                  'text-[var(--input-fg)] placeholder:text-[var(--input-placeholder)]'
                 }
               />
             </div>
@@ -431,8 +430,8 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
                   min={0}
                   max={100}
                   className={
-                    'w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded ' +
-                    'text-[var(--color-surface-100)] placeholder:text-[var(--color-surface-500)]'
+                    'w-full px-2 py-1 text-xs bg-[var(--input-bg)] border border-[var(--input-border)] rounded ' +
+                    'text-[var(--input-fg)] placeholder:text-[var(--input-placeholder)]'
                   }
                 />
               )}
@@ -444,8 +443,7 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
                 value={item.type || 'BOOL'}
                 onChange={(e) => onUpdate(index, { type: e.target.value as 'BOOL' | 'INT' | 'REAL' })}
                 className={
-                  'w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded ' +
-                  'text-[var(--color-surface-100)]'
+                  'w-full px-2 py-1 text-xs bg-[var(--input-bg)] border border-[var(--input-border)] rounded ' + 'text-[var(--input-fg)]'
                 }
               >
                 <option value="BOOL">{t('io.bool')}</option>
@@ -462,8 +460,8 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
                 onChange={(e) => onUpdate(index, { description: e.target.value || undefined })}
                 placeholder="..."
                 className={
-                  'w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded ' +
-                  'text-[var(--color-surface-100)] placeholder:text-[var(--color-surface-500)]'
+                  'w-full px-2 py-1 text-xs bg-[var(--input-bg)] border border-[var(--input-border)] rounded ' +
+                  'text-[var(--input-fg)] placeholder:text-[var(--input-placeholder)]'
                 }
               />
             </div>
@@ -501,8 +499,8 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
                 variant="bare"
                 onClick={() => onMakeVirtual(index)}
                 className={
-                  'px-2 py-0.5 rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] ' +
-                  'text-[var(--color-surface-200)]'
+                  'px-2 py-0.5 rounded border border-[var(--button-border)] bg-[var(--button-bg)] hover:bg-[var(--button-bg-hover)] ' +
+                  'text-[var(--button-fg)]'
                 }
                 tooltip={t('io.keepThisAddressAs')}
               >

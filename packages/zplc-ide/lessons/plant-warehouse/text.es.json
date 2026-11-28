@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Almacenar y recuperar",
-  "summary": "Maneje un transelevador desde un diagrama: almacene cada caja en la primera celda libre y traiga una caja de vuelta cuando se pulse su botón de petición.",
+  "summary": "Maneje un transelevador desde un diagrama: almacene cada caja en la primera celda libre y traiga una caja de vuelta cuando se pulse su pulsador de petición.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Escribir las secuencias de almacenar y de recuperar de un transelevador como cadenas de pasos.",
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial almacena cajas pero no tiene pasos de recuperar, así que una petición nunca se atiende; añada la cadena que saca la caja de su celda, la lleva al muelle y la pone en la cinta de salida, y deje que IDLE la inicie cuando una petición espere por una celda con caja.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial almacena cajas pero no tiene pasos de recuperar, así que una petición nunca se atiende; añada la cadena que saca la caja de su celda, la lleva al muelle y la pone en la cinta de salida, y deje que IDLE la inicie cuando una petición espere por una celda con caja.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El inicial almacena cajas pero no tiene pasos de recuperar, así que una petición nunca se atiende; añada la cadena que saca la caja de su celda, la lleva al muelle y la pone en la cinta de salida, y deje que IDLE la inicie cuando una petición espere por una celda con caja."
+    "El programa inicial almacena cajas pero no tiene pasos de recuperar, así que una petición nunca se atiende; añada la cadena que saca la caja de su celda, la lleva al muelle y la pone en la cinta de salida, y deje que IDLE la inicie cuando una petición espere por una celda con caja."
   ]
 }

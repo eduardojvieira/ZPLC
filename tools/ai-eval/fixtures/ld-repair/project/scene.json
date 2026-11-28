@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "name": "Tank level control",
+  "shortestPulseMs": 200,
+  "parts": [
+    {
+      "id": "tank",
+      "part": "tank",
+      "name": "Tank1",
+      "position": [0, 0, 0],
+      "rotationYDeg": 0,
+      "config": { "variant": "numeric", "bandLow": 0.45, "bandHigh": 0.55, "valveTauS": 0.5, "inletMaxLps": 20, "outletCoef": 12 }
+    },
+    {
+      "id": "setpoint",
+      "part": "potentiometer",
+      "name": "SetPoint",
+      "position": [-1, 0.5, 0.5],
+      "rotationYDeg": 0,
+      "config": { "min": 0, "max": 1, "initial": 0, "unit": "m" }
+    },
+    {
+      "id": "drainpot",
+      "part": "potentiometer",
+      "name": "DrainPot",
+      "position": [-1, 0.5, -0.2],
+      "rotationYDeg": 0,
+      "config": { "min": 0, "max": 100, "initial": 0, "unit": "%" }
+    },
+    {
+      "id": "display",
+      "part": "numeric-display",
+      "name": "LevelDisplay",
+      "position": [1, 0.8, 0.4],
+      "rotationYDeg": 0,
+      "config": { "type": "REAL", "min": 0, "max": 1, "unit": "m", "decimals": 2 }
+    },
+    {
+      "id": "light",
+      "part": "stack-light",
+      "name": "StackLight1",
+      "position": [1, 0.3, -0.2],
+      "rotationYDeg": 0,
+      "config": {}
+    }
+  ],
+  "cameras": [
+    {
+      "name": "Overview",
+      "position": [0, 1.6, 2.8],
+      "target": [0, 0.5, 0]
+    }
+  ]
+}

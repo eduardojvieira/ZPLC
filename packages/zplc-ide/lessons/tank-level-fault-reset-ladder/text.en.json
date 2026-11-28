@@ -5,14 +5,14 @@
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Keep the pump on from LevelLow until LevelHigh with a seal-in, with every stop condition in series.",
-    "Latch the alarm on PumpFault or EStop with a SET coil, and release it with a RESET coil that only a fresh Reset press can reach."
+    "Keep the alarm on after either fault, and release it only with a fresh Reset press after the fault has gone."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/TankLevel.ld.json the pump rung and the alarm rung are drawn; the plant owns LevelLow, LevelHigh and PumpFault. Add the rungs that set FaultLatched, arm Reset, and clear FaultLatched, so that the alarm stays on after the fault input goes away until a Reset pressed after it.",
-      "checkpoint": "Fault, armed Reset and cleared latch have explicit states."
+      "body": "In src/TankLevel.ld.json the pump rung and the alarm rung are drawn; the plant owns LevelLow, LevelHigh and PumpFault. The alarm must stay on after the fault input goes away, until a Reset pressed after it.",
+      "checkpoint": "You can say what must keep the alarm on once the fault input is gone, and which press of Reset may clear it."
     },
     {
       "key": "predict",
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter never sets FaultLatched, so Alarm drops as soon as PumpFault goes away at {{t:90}} ms instead of staying ON until a Reset; add the rungs that set FaultLatched on EStop or PumpFault, arm Reset when it is released, and clear the latch with a fresh Reset press. The rungs run from top to bottom: put the latch rungs before the pump rung, so that the pump rung already sees the FaultLatched of this scan.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter forgets the fault: Alarm drops as soon as PumpFault goes away at {{t:90}} ms instead of staying ON until a Reset. The alarm must stay ON after EStop or PumpFault until Reset is pressed after the fault has gone; a Reset held down through the fault must not clear it.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "LevelLow goes FALSE as soon as the level rises, so the pump needs a contact of its own output in parallel with LevelLow, and every stop condition must be in series. What keeps a fault after its input is gone?"
+      "text": "Look at what drives Alarm: it reads FaultLatched, which no rung sets. The rungs run from top to bottom, so a rung sees what the rungs above it wrote in this scan."
     },
     {
       "level": 2,
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "The starter never sets FaultLatched, so Alarm drops as soon as PumpFault goes away at {{t:90}} ms instead of staying ON until a Reset; add the rungs that set FaultLatched on EStop or PumpFault, arm Reset when it is released, and clear the latch with a fresh Reset press."
+    "The starter forgets the fault: Alarm drops as soon as PumpFault goes away at {{t:90}} ms instead of staying ON until a Reset."
   ]
 }

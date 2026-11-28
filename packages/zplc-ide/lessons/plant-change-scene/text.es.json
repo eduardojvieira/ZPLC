@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde la escena y el mapa de la planta, y ejecute: La escena inicial no tiene emisor para la línea B, así que nunca llega una caja desde el alimentador B; agregue EmitterB al inicio del alimentador B con un límite de tres cajas, y enlace EmitterB.emit con MergeLines.EmitB en el mapa de la planta.",
+      "body": "Corrija esta omisión del programa inicial, guarde la escena y el mapa de la planta, y pulse {{ui:learn.check}}: La escena inicial no tiene emisor para la línea B, así que nunca llega una caja desde el alimentador B; agregue EmitterB al inicio del alimentador B con un límite de tres cajas, y enlace EmitterB.emit con MergeLines.EmitB en el mapa de la planta.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {

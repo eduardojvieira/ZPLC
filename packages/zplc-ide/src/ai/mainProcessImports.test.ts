@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 // The main process loads these modules as ES modules compiled by tsc (tsconfig.electron.json), where a relative import needs its
 // extension: a missing one only fails when the application starts. This compiles the main process as the build does and loads each.
@@ -15,12 +16,12 @@ describe('the modules of src/ai that the main process loads', () => {
       expect(build.exitCode, build.stdout.toString()).toBe(0);
       const node = Bun.which('node');
       expect(node).toBeTruthy();
-      for (const file of ['candidatePaths', 'manifestPrivacy', 'proposals']) {
+      for (const file of ['candidatePaths', 'manifestPrivacy', 'projectContext', 'providerEndpoint', 'proposals']) {
         const load = Bun.spawnSync([
           node!,
           '--input-type=module',
           '-e',
-          `await import(${JSON.stringify(join(out, 'src/ai', `${file}.js`))})`,
+          `await import(${JSON.stringify(pathToFileURL(join(out, 'src/ai', `${file}.js`)).href)})`,
         ]);
         expect(load.exitCode, `${file}: ${load.stderr.toString()}`).toBe(0);
       }

@@ -33,6 +33,7 @@ export function OutputTab({ entries }: { entries: readonly ConsoleEntry[] }) {
           title={t('panel.output.empty.title')}
           description={t('panel.output.empty.description')}
           actions={['build.compile']}
+          region="output"
         />
       ) : (
         shown.map((entry) => (

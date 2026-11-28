@@ -4,7 +4,7 @@
   "summary": "Escale el nivel bruto de un tanque, un número entero de 0 a 27648, a metros, y úselo para mantener el nivel cerca de una consigna con una entrada proporcional.",
   "scope": "La calificación ejecuta el tanque simulado en el simulador de esta computadora, con un nivel analógico que sigue las reglas de escala del mapa de la planta. No dice nada sobre la exactitud, el ruido ni la calibración de un transmisor de nivel real, una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
-    "Escalar un valor analógico a unidades de ingeniería: convertir primero a REAL y luego dividir por el rango bruto.",
+    "Escalar un valor analógico a unidades de ingeniería de modo que se conserven las fracciones de una unidad.",
     "Leer el mapa de la planta para hallar el rango bruto de cada señal, y ver qué hace una escala errónea en el proceso."
   ],
   "stages": [
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "El código inicial no tiene lógica: la entrada nunca se abre, así que el tanque permanece vacío y nunca llega a su banda. Declara las entradas y las salidas. Declare dos variables REAL para el nivel y la consigna en metros. Divida el nivel por 27648.0 y la consigna por 1000.0 después de INT_TO_REAL: una división entera daría 0 para cualquier nivel inferior a 1 m. Luego escriba FillCmd a partir del error y limítela con dos sentencias IF.",
-      "checkpoint": "El programa tiene dos variables REAL, FillCmd limitada y una asignación para cada una de las otras tres salidas."
+      "body": "Escriba el programa, guárdelo y pulse {{ui:learn.check}}. El código inicial no tiene lógica: la entrada nunca se abre, así que el tanque permanece vacío y nunca llega a su banda. Declara las entradas y las salidas. Escale el nivel y la consigna a metros una sola vez, antes de que otra línea los use. Cada comparación debe valer para fracciones de metro: un nivel bruto de 13824 es 0,5 m, no 0 m. Luego escriba FillCmd a partir del error, limitada de 0 a 100 por ciento.",
+      "checkpoint": "FillCmd se mantiene entre 0 y 100 por ciento, y las otras tres salidas siguen al nivel y al potenciómetro de vaciado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta src/TankLevel.st con el tanque de la escena tank-level-control, sube la consigna y abre el vaciado, y comprueba {{assertions}} aserciones sobre el tanque: se mantiene en su banda en dos ventanas y nunca se derrama.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta src/TankLevel.st con el tanque de la escena tank-level-control, sube la consigna y abre el vaciado, y comprueba {{assertions}} aserciones sobre el tanque: se mantiene en su banda en dos ventanas y nunca se derrama.",
       "checkpoint": "El escenario se llama tank-level-scaling y contiene {{assertions}} aserciones y las pasa todas."
     },
     {
@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "LevelM := INT_TO_REAL(LevelRaw) / 27648.0; SetM := INT_TO_REAL(SetPointRaw) / 1000.0; el error es SetM - LevelM, en metros."
+      "text": "Mire los tipos: LevelRaw y SetPointRaw son INT, y un INT dividido por un INT descarta la fracción. El mapa de la planta da el rango bruto de cada señal, y el error es la consigna menos el nivel, en metros."
     },
     {
       "level": 2,
-      "text": "FillCmd := 800.0 * (SetM - LevelM); IF FillCmd > 100.0 THEN FillCmd := 100.0; END_IF; IF FillCmd < 0.0 THEN FillCmd := 0.0; END_IF; DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
+      "text": "Declare LevelM : REAL y SetM : REAL en VAR, y luego escriba LevelM := INT_TO_REAL(LevelRaw) / 27648.0; SetM := INT_TO_REAL(SetPointRaw) / 1000.0; FillCmd := 800.0 * (SetM - LevelM); IF FillCmd > 100.0 THEN FillCmd := 100.0; END_IF; IF FillCmd < 0.0 THEN FillCmd := 0.0; END_IF; DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
     }
   ],
   "faultCases": ["El código inicial no tiene lógica: la entrada nunca se abre, así que el tanque permanece vacío y nunca llega a su banda."]

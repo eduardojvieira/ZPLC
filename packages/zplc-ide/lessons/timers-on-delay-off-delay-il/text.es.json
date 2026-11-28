@@ -5,7 +5,7 @@
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un pulsador real ni con qué rapidez responde un sensor real.",
   "objectives": [
     "Llame a una instancia de temporizador con CAL en cada ciclo, pasándole su entrada y su valor preestablecido, y lea su salida después de la llamada.",
-    "Mantenga una salida en ON durante un tiempo fijo después de que su entrada cae, con un TOF, e ignore una entrada que está en ON menos de un tiempo fijo, con un TON."
+    "Mantenga una salida en ON durante un tiempo fijo después de que su entrada cae, e ignore una entrada que está en ON menos de un tiempo fijo."
   ],
   "stages": [
     {
@@ -41,14 +41,14 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "Intercambie mentalmente los dos temporizadores: ¿qué haría un TON sobre Button y un TOF sobre Sensor con este escenario? Después imagine la línea que carga la Q de HoldTimer movida arriba de su CAL: ¿cuándo caería Light?",
-      "checkpoint": "TON retrasa el inicio y TOF retrasa el final; cada uno responde una pregunta distinta sobre una señal. En IL los dos se llaman de la misma manera, así que la declaración decide cuál se obtiene. Leída arriba de su CAL, Light mostraría la Q del ciclo anterior y caería un ciclo tarde."
+      "body": "Piense qué responde cada temporizador: ¿cuál le dice cuánto tiempo lleva activa una señal y cuál cuánto hace que se desactivó? Después mire dónde está, respecto de su CAL, la línea que lee la Q de un temporizador, y pregúntese qué cambia ese orden.",
+      "checkpoint": "Un temporizador retrasa el inicio de una señal y el otro retrasa su final; cada uno responde una pregunta distinta. En IL los dos se llaman de la misma manera, así que la declaración decide cuál se obtiene. La posición de la línea que lee la Q decide si Light muestra el resultado de este ciclo o el del anterior."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "TOF mantiene su Q en ON durante el tiempo preestablecido después de que IN cae, y TON pone Q en ON solo después de que IN estuvo en ON ese tiempo. CAL ejecuta un temporizador con sus entradas; después, cargue la Q del temporizador y guárdela."
+      "text": "Mire los dos pares LD y ST: pasan cada entrada directamente a su salida, y ningún temporizador llega a ejecutarse. Para cada salida, pregúntese si su retardo corresponde al inicio de su entrada o al final."
     },
     {
       "level": 2,

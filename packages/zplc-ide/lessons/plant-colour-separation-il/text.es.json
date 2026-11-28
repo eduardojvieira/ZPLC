@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/ColourSeparation.il, escriba cada estado como un bloque: LD State, EQ n, AND la condición que lo abandona, JMPCN al bloque siguiente y las instrucciones que cambian State. Guarde una condición en Gate antes de CAL, porque CAL recibe variables.",
+      "body": "En src/ColourSeparation.il, cada pieza espera en la cuchilla hasta quedar quieta; después una roja se empuja a la cinta lateral y se retira la placa, mientras que una azul se suelta y debe haber dejado la cuchilla antes de que la cuchilla vuelva a retener.",
       "checkpoint": "El programa clasifica las mismas ocho piezas que en Texto estructurado: las rojas a RedBin, las azules a BlueBin y después Done."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial solo memoriza Start y hace girar la cinta de entrada, así que no se lee ni se clasifica ninguna pieza; añada los cuatro bloques de estado y gobierne las demás salidas.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial solo memoriza Start y hace girar la cinta de entrada, así que no se lee ni se clasifica ninguna pieza. El programa debe clasificar las ocho piezas, las rojas a RedBin y las azules a BlueBin, y después encender Done.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -48,14 +48,14 @@
   "hints": [
     {
       "level": 1,
-      "text": "Un bloque tiene esta forma: LD State, EQ 1, AND Extended, JMPCN next, LD 2, ST State y la etiqueta next:. Ponga las etiquetas al inicio de la línea."
+      "text": "Tome los estados del clasificador en texto estructurado de uno en uno: cada uno se convierte en un bloque que termina en una etiqueta propia. Ponga las etiquetas al inicio de la línea."
     },
     {
       "level": 2,
-      "text": "Condicione los temporizadores: LD State, EQ 0, AND Waiting, ST Gate, CAL Settle(IN := Gate, PT := T#300ms). Lea el resultado con AND Settle.Q."
+      "text": "Un bloque tiene esta forma: LD State, EQ 1, AND Extended, JMPCN next, LD 2, ST State y la etiqueta next:. Condicione los temporizadores: LD State, EQ 0, AND Waiting, ST Gate, CAL Settle(IN := Gate, PT := T#300ms). Lea el resultado con AND Settle.Q. Escriba cada estado como un bloque: LD State, EQ n, AND la condición que lo abandona, JMPCN al bloque siguiente y las instrucciones que cambian State; CAL recibe variables, así que guarde una condición en Gate antes. Los estados, cada uno con su condición de salida y su estado siguiente: 0 espera, con Active y tras Settle.Q (Settle corre mientras State es 0 y Waiting, PT := T#300ms), a 1 si IsRed, si no a 3; 1 empuje, a 2 con Extended; 2 retroceso, con Retracted sume 1 a Handled y vuelva a 0; 3 liberación, tras Clear.Q (Clear corre mientras State es 3 y NOT Waiting, PT := T#1500ms), sume 1 a Handled y vuelva a 0. Salidas: RunIn, RunOut y RunSide siguen a Active; Hold es State NE 3 AND Active; Push es State EQ 1; Done es Handled GE 8; Busy es Active ANDN Done."
     }
   ],
   "faultCases": [
-    "El inicial solo memoriza Start y hace girar la cinta de entrada, así que no se lee ni se clasifica ninguna pieza; añada los cuatro bloques de estado y gobierne las demás salidas."
+    "El programa inicial solo memoriza Start y hace girar la cinta de entrada, así que no se lee ni se clasifica ninguna pieza."
   ]
 }

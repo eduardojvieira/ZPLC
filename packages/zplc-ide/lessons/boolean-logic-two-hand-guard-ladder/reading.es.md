@@ -33,27 +33,27 @@ Cualquier regla booleana se puede escribir solo con AND, OR y NOT. El XOR es ape
 
 ## Ejemplo resuelto
 
-Un programa pequeño reúne las tres reglas. Una licuadora funciona solo con la tapa cerrada y el pulsador pulsado: un AND. Una lámpara de aviso se enciende mientras la tapa no está cerrada: un NOT. La luz de una escalera está encendida mientras sus dos interruptores no coinciden: un XOR.
+Una cinta clasificadora lleva cajas frente a una compuerta que empuja las cajas altas hacia un carril lateral. La compuerta se abre para una caja alta (TallBox) mientras el carril lateral no está lleno (LaneFull): un AND en el que una condición es un NOT. Un interruptor de posición, FlapIsOut, indica dónde está realmente la compuerta, y mientras la cinta funciona (BeltRunning) una lámpara de falla se enciende cuando la orden y la posición no coinciden: un XOR, en serie con un contacto más.
 
 ```ld-figure
-src: reading/lid-and-stairs.ld.json
-caption: AND para la licuadora, NOT para el aviso de la tapa, XOR para la luz de la escalera
+src: reading/diverter-flap.ld.json
+caption: AND con un NOT para la compuerta, un XOR en serie con la cinta para la lámpara de falla
 ```
 
-El peldaño 1 es el AND. El peldaño 2 es el NOT. El peldaño 3 es el XOR, con sus dos caminos paralelos dibujados uno sobre otro.
+El peldaño 1 es el AND: TallBox con un contacto normalmente abierto, y LaneFull con uno normalmente cerrado, porque la compuerta puede moverse mientras LaneFull es FALSE. El peldaño 2 empieza con el XOR, con sus dos caminos en paralelo dibujados uno encima del otro, y los caminos se unen antes del contacto de BeltRunning, así que la diferencia solo cuenta mientras la cinta funciona. Los contactos sobre Flap leen la bobina del peldaño 1.
 
 ```ld-try
-src: reading/lid-and-stairs.ld.json
+src: reading/diverter-flap.ld.json
 inputs:
-  - { name: LidClosed, kind: switch }
-  - { name: BlendButton, kind: push }
-  - { name: SwitchA, kind: switch }
-  - { name: SwitchB, kind: switch }
-outputs: [Blender, LidWarning, StairLight]
-caption: Cierre la tapa y pulse el pulsador, luego cambie cada interruptor de la escalera por turno
+  - { name: TallBox, kind: switch }
+  - { name: LaneFull, kind: switch }
+  - { name: FlapIsOut, kind: switch }
+  - { name: BeltRunning, kind: switch }
+outputs: [Flap, FlapFault]
+caption: Ponga en marcha la cinta, envíe una caja alta y luego mueva usted el interruptor de posición
 ```
 
-Pulse Ejecutar. Empiece con la tapa abierta: la lámpara de aviso está encendida, y la licuadora no funciona aunque pulse el pulsador. Cierre la tapa y pulse el pulsador: la licuadora funciona y la lámpara de aviso se apaga. Ahora cambie SwitchA, luego SwitchB y luego SwitchA otra vez, y observe cómo la luz de la escalera sigue la regla XOR.
+Pulse Ejecutar y active BeltRunning. Active TallBox: se ordena abrir la compuerta, y la lámpara de falla se enciende porque FlapIsOut todavía indica la compuerta adentro. Active FlapIsOut, como haría la compuerta real: la lámpara de falla se apaga. Ahora active LaneFull: la orden de la compuerta cae, y la lámpara de falla vuelve a encenderse hasta que desactive FlapIsOut. Desactive BeltRunning, y la lámpara de falla queda apagada haga lo que haga la compuerta.
 
 ## Errores comunes
 

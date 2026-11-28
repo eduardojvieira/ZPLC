@@ -25,8 +25,8 @@ Add a permissive to a motor start and stop in Instruction List so that the motor
 
 ## Objectives
 
-- Tell a permissive, a condition that must be true for the output to be on, from a command, and write it as one more AND line.
-- Place the permissive after the lines that hold the motor, so that it drops the motor and also stops Start from restarting it.
+- Tell a permissive, a condition that must be true for the output to be on, from a command, and write it in Instruction List.
+- Place the permissive so that it drops the motor and also stops Start from restarting it.
 
 ## Stages
 

@@ -49,7 +49,8 @@ async function harness(
     native?: (request: NativeSimulationRequest) => Promise<unknown>;
   } = {},
 ): Promise<Harness> {
-  const folder = realpathSync(mkdtempSync(path.join(tmpdir(), 'zplc-ipc-registry-')));
+  // main.ts canonicalises with realpathSync.native, which expands the 8.3 RUNNER~1 name that the JS realpath keeps.
+  const folder = realpathSync.native(mkdtempSync(path.join(tmpdir(), 'zplc-ipc-registry-')));
   scratches.push(folder);
   mkdirSync(path.join(folder, 'project'));
   const projectRoot = path.join(folder, 'project');
@@ -71,7 +72,8 @@ async function harness(
     rootOf: files.rootOf,
     currentRoot: files.currentRoot,
     adoptFolder: (ownerId: number, directory: string) => {
-      note(`projectFiles.adoptFolder:${path.relative(folder, directory)}`);
+      // the logged folder is compared as a POSIX path: path.relative uses the separator of the platform
+      note(`projectFiles.adoptFolder:${path.relative(folder, directory).split(path.sep).join('/')}`);
       return files.adoptFolder(ownerId, directory);
     },
   };
@@ -140,6 +142,9 @@ async function harness(
     sessionStore: () => store('session') as never,
     serialPorts: { choose: () => undefined, list: () => null },
     learnWorkspaceRoot: () => path.join(folder, 'learn-workspaces'),
+    userDataFolder: () => path.join(folder, 'user-data'),
+    mcpCommand: async () => '/opt/zplc-mcp',
+    mcpSelfCheck: async () => ({ code: 0, stdout: '{"ready":true}' }),
     learnProgress: () => store('learn', { read: async () => new Set(['a']), merge: async (ids: string[]) => new Set(ids) }) as never,
     aiProvider: () => store('ai', { cancel: () => ({ requested: false }), request: async () => ({ ok: true }) }) as never,
     toolExecutionAudit: {
@@ -461,7 +466,7 @@ describe('workspace tests, candidate review and the AI provider (IDE-001, IDE-01
   it('register the folder of the window by its id alone, as <folder>/zplc.json, and refuse any other id (IDE-001)', async () => {
     const h = await harness();
     expect(await h.invoke('workspace-tests:register-project-root', TRUSTED, { rootId: h.rootId })).toEqual({ workspaceId: WORKSPACE_ID });
-    expect(h.touched).toEqual([`gateway.register:${h.folder.replace(path.dirname(h.folder), '<scratch>')}/zplc.json@window-folder`]);
+    expect(h.touched).toEqual([`gateway.register:${path.join('<scratch>', 'project', 'zplc.json')}@window-folder`]);
     expect(await settle(h.invoke('workspace-tests:register-project-root', TRUSTED, { rootId: 'other' }))).toEqual({
       ok: false,
       message: 'Workspace operation failed',
@@ -514,6 +519,16 @@ describe('workspace tests, candidate review and the AI provider (IDE-001, IDE-01
       operation: 'change-set-review',
     });
     expect(await settle(h.invoke('candidate-change-set:review', TRUSTED, { ...request, edit: { path: '../x.st', content: '' } }))).toEqual({
+      ok: false,
+      message: IPC_DENIED,
+    });
+  });
+
+  it('runs the connection test of the assistant with no argument, and refuses one that names an endpoint', async () => {
+    const h = await harness();
+    await h.invoke('ai-provider:test-connection', TRUSTED);
+    expect(h.touched).toContain('ai.testConnection:[]');
+    expect(await settle(h.invoke('ai-provider:test-connection', TRUSTED, 'http://evil.invalid'))).toEqual({
       ok: false,
       message: IPC_DENIED,
     });

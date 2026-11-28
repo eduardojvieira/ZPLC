@@ -14,6 +14,9 @@ import { themes as prismThemes } from 'prism-react-renderer';
 const releaseTag =
   process.env.ZPLC_RELEASE_TAG || `v${JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version}`;
 
+// PUB-005: the version label of the pages is the major.minor of the same tag, so nothing about the version is written by hand.
+const versionLabel = releaseTag.replace(/^v/, '').split('.').slice(0, 2).join('.');
+
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'ZPLC',
@@ -103,7 +106,7 @@ const config = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: '2.0',
+              label: versionLabel,
             },
           },
         },

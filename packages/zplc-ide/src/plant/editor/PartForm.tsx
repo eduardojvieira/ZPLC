@@ -12,6 +12,8 @@ export interface PartFormProps {
   def: PartDefinition | undefined;
   problems: readonly ProblemAt[];
   disabled: boolean;
+  /** Prefixes the ids of the form, so two forms of the scene can be mounted at once; the default keeps today's ids. */
+  idPrefix?: string;
   onMove(x: number, z: number): void;
   onRotate(deg: number): void;
   onConfigure(patch: { name?: string; config?: Record<string, number | string | boolean> }): void;
@@ -88,13 +90,13 @@ function ConfigControl(props: {
   );
 }
 
-export function PartForm({ part, def, problems, disabled, onMove, onRotate, onConfigure }: PartFormProps) {
+export function PartForm({ part, def, problems, disabled, idPrefix = '', onMove, onRotate, onConfigure }: PartFormProps) {
   const { t } = useT();
   if (!part) return <p>{t('plantEditor.noSelection')}</p>;
   const at = (suffix: string) => problems.find((p) => p.partId === part.id && p.path.endsWith(suffix))?.message;
   return (
-    <section aria-labelledby="plant-editor-form" className="flex flex-col gap-2">
-      <h3 id="plant-editor-form">{t('plantEditor.formHeading')}</h3>
+    <section aria-labelledby={`${idPrefix}plant-editor-form`} className="flex flex-col gap-2">
+      <h3 id={`${idPrefix}plant-editor-form`}>{t('plantEditor.formHeading')}</h3>
       <Draft
         label={t('plantEditor.name')}
         value={part.name}

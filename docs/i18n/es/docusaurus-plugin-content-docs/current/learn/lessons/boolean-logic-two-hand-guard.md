@@ -26,7 +26,7 @@ Combine AND, NOT y XOR para que una prensa solo se habilite con las dos manos en
 ## Objetivos
 
 - Escriba una condición que sea verdadera solo cuando varias entradas sean verdaderas a la vez.
-- Use NOT para una lámpara de aviso y XOR para exactamente una de dos entradas.
+- Convierta frases como "mientras está abierta" y "solo una de las dos" en condiciones booleanas.
 
 ## Etapas
 

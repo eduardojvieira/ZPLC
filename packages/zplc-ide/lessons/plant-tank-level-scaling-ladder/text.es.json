@@ -4,7 +4,7 @@
   "summary": "Escale con cuadros de función el nivel crudo de un tanque, un número entero de 0 a 27648, a metros, y úselo para mantener el nivel cerca de un valor de consigna con una entrada proporcional.",
   "scope": "La calificación ejecuta el tanque simulado en el simulador de esta computadora, con un nivel analógico que sigue las reglas de escala del mapa de la planta. No dice nada sobre la exactitud, el ruido ni la calibración de un transmisor de nivel real, una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
-    "Escalar con cuadros un valor analógico a unidades de ingeniería: convertir primero a REAL y luego dividir entre el rango crudo.",
+    "Escalar con cuadros un valor analógico a unidades de ingeniería de modo que se conserven las fracciones de una unidad.",
     "Leer el mapa de planta para hallar el rango crudo de cada señal, y ver qué hace al proceso una escala equivocada."
   ],
   "stages": [
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "El inicial no tiene peldaños: la entrada nunca se abre, así que el tanque queda vacío y nunca llega a su banda. Declara las entradas y las salidas. Declare variables REAL locales para los valores convertidos y los metros. Copie cada valor crudo a una variable REAL con un cuadro MOVE y luego divida con un cuadro DIV entre 27648.0 o 1000.0: una división entera daría 0 para todo nivel menor de 1 m. Después escriba FillCmd a partir del error con un cuadro MUL y límitela con un cuadro LIMIT.",
+      "body": "El programa inicial no tiene peldaños: la entrada nunca se abre, así que el tanque queda vacío y nunca llega a su banda. Declara las entradas y las salidas. Declare variables REAL locales para los valores convertidos y los metros. Copie cada valor crudo a una variable REAL con un cuadro MOVE y luego divida con un cuadro DIV entre 27648.0 o 1000.0: una división entera daría 0 para todo nivel menor de 1 m. Después escriba FillCmd a partir del error con un cuadro MUL y límitela con un cuadro LIMIT.",
       "checkpoint": "El programa tiene las variables REAL convertidas, FillCmd limitada y un peldaño por cada una de las otras tres salidas."
     },
     {
@@ -55,5 +55,5 @@
       "text": "Un cuadro MUL de 800.0 y el error hacia FillCmd, luego un cuadro LIMIT de 0.0, FillCmd y 100.0 de vuelta a FillCmd; DrainCmd es el valor crudo de vaciado convertido a REAL y dividido entre 10.0; LevelShown es un MOVE de LevelM; para Green, un cuadro GE de LevelM y un borde inferior y un cuadro LE de LevelM y un borde superior, el 5 por ciento de la consigna por debajo y por encima de ella."
     }
   ],
-  "faultCases": ["El inicial no tiene peldaños: la entrada nunca se abre, así que el tanque queda vacío y nunca llega a su banda."]
+  "faultCases": ["El programa inicial no tiene peldaños: la entrada nunca se abre, así que el tanque queda vacío y nunca llega a su banda."]
 }

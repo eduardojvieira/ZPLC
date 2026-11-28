@@ -121,7 +121,7 @@ describe('signal table', () => {
       expect(cli('--check').exitCode).toBe(0);
       expect(staleTables(files, out)).toEqual([]);
       writeFileSync(join(out, 'belt-to-sensor', 'signals.es.md'), files[1]!.text.replace('Entrada del PLC', 'Entrada'));
-      expect(staleTables(files, out)).toEqual(['belt-to-sensor/signals.es.md']);
+      expect(staleTables(files, out)).toEqual([join('belt-to-sensor', 'signals.es.md')]);
       const stale = cli('--check');
       expect(stale.exitCode).toBe(1);
       expect(stale.stderr.toString()).toContain('stale or missing: ');

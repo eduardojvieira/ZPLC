@@ -114,7 +114,8 @@
   "VF-023": [
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/nativeRuntimeGuard.test.ts","test":"VF-023 are never skipped in CI when the binary is missing, in any test file that reaches the runtime"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/nativeRuntimeGuard.test.ts","test":"VF-023 are skipped outside CI when the binary is missing, and say how to run them"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/cli/nativeRuntimeGuard.test.ts","test":"VF-023 fail in CI when the binary is missing"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/nativeRuntimeGuard.test.ts","test":"VF-023 fail in CI when the binary is missing"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/nativeRuntimeGuard.test.ts","test":"the loopback tests on each platform (VF-023)"}
   ],
   "VF-024": [
     {"kind":"manual","ref":".github/workflows/nightly-quality.yml","partial":true,"note":"the compiler and IDE unit tests run on macOS and Windows in the desktop-platforms job, nightly; configuration only, no hosted run is recorded and the IDE suite has never been run on those systems"}
@@ -995,14 +996,17 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"64e Sequential Function Chart from a new project to a deployed program that is watched"}
   ],
   "LNG-002": [
+    {"kind":"conformance","ref":"conformance/lng/lng-002-fbd-catalogue-type-not-buildable.expect.json","test":"LNG-002 an FBD block of a catalogue type that no diagram can build is rejected by name"},
     {"kind":"conformance","ref":"conformance/lng/lng-002-fbd-en-input-is-rejected.expect.json","test":"LNG-002 an FBD connection to an EN input is rejected naming the block"},
-    {"kind":"conformance","ref":"conformance/lng/lng-002-fbd-function-not-translated.expect.json","test":"LNG-002 an FBD block of a type the transpiler does not translate is rejected by name"},
     {"kind":"conformance","ref":"conformance/lng/lng-002-fbd-unknown-block.expect.json","test":"LNG-002 an FBD block the transpiler does not know is rejected"},
     {"kind":"conformance","ref":"conformance/lng/lng-002-ld-jump-is-rejected.expect.json","test":"LNG-002 an LD jump is rejected by name"},
     {"kind":"conformance","ref":"conformance/lng/lng-002-ld-unknown-element.expect.json","test":"LNG-002 an LD element the transpiler does not know is rejected by name"},
     {"kind":"conformance","ref":"conformance/lng/lng-002-sfc-unsupported-qualifier.expect.json","test":"LNG-002 an SFC action qualifier the transpiler does not translate is rejected naming the step"},
     {"kind":"unit","ref":"packages/zplc-ide/src/compiler/il/il.test.ts","test":"IL transpiler errors (LNG-002, LNG-017, LNG-018)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/fbdStdFunctionErrors.test.ts","test":"LNG-002, LNG-003 the errors of a standard function name the block and the pin"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 LNG-002 LNG-003 the function box: every fault names its rung and cell"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldStdFunctions.test.ts","test":"LNG-030 LNG-002 LNG-003 the box of a standard function: every fault names its rung and cell"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldStringLiteral.test.ts","test":"LNG-030 LNG-002 a STRING operand cannot close its literal"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"FBD wiring and types (LNG-023, LNG-002)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"LD power flow (LNG-021, LNG-022, LNG-002)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"SFC scan semantics (LNG-024, LNG-025, LNG-002)"}
@@ -1023,8 +1027,10 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/diagnosticElement.test.ts","test":"LNG-003 a request to select an element waits for the editor of its file"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/diagnosticElement.test.ts","test":"LNG-003 the element that came with the diagnostic wins over the one the open file gives"},
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"LNG-003 carries the element a diagnostic is about, and only an element"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/fbdStdFunctionErrors.test.ts","test":"LNG-002, LNG-003 the errors of a standard function name the block and the pin"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 LNG-002 LNG-003 the function box: every fault names its rung and cell"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 a set/reset pair plus a box is refused at the box, which the message names (LNG-003)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldStdFunctions.test.ts","test":"LNG-030 LNG-002 LNG-003 the box of a standard function: every fault names its rung and cell"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"25 Problems select the block of a diagram","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"26 Problems select the cell of a rung","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"27 Problems select the step of an action","partial":true}
@@ -1083,6 +1089,7 @@
   ],
   "LNG-007": [
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-007 gives a Modbus, an MQTT or a library block an instance name as it gives a timer one, so a placed block builds"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 LNG-030 every function box of the Ladder palette is run, here or in the differential"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every block of the FBD palette is placed, built and run"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every coil of the Ladder palette is run"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every contact of the Ladder palette is run"},
@@ -1332,6 +1339,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 the function box: what stays as it was"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 the source map gives the statements of a box to its rung and cell"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 two plain coils on one variable stay refused"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldStdFunctions.test.ts","test":"stores the result of the call while the power reaches it, and passes that power on (ENO = EN, LNG-028)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"67 A Ladder function box in the editor, for the pictures of the site","partial":true}
   ],
   "RT-001": [
@@ -2287,6 +2295,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/components/workspaceTestPresentation.test.ts","test":"presentCandidateChangeSetReview (IDE-030)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/deviceLink.test.ts","test":"IDE-030: the tools an assistant can call are a closed list that names no physical operation (AGENTS.md rule 8)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"read-only program source resources (IDE-030)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/workspaceWrite.test.ts","test":"refuses a credential in zplc.json with the field named and never its value (IDE-030)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"43 A change is reviewed as a difference and saved by a person, and Studio works without the assistant","partial":true},
     {"kind":"manual","ref":"packages/zplc-ide/scripts/journeys.ts","test":"43 A change is reviewed as a difference and saved by a person, and Studio works without the assistant","partial":true,"note":"The assistant's own proposal is not driven end to end by a journey: the provider keeps its key in the secret store of the system, which a headless Linux host does not have. A proposal takes the road that this journey drives (the review of the Changes tab, then the person's own save); the boundary of the provider (an inert answer, no tools, no field that names a device) is held by electron/aiProvider.test.ts and electron/aiDeviceLink.test.ts, and the closed list of MCP tools by src/mcp/deviceLink.test.ts."}
   ],
@@ -2405,6 +2414,7 @@
   ],
   "UX-009": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/DebugWatchPanel.dom.test.tsx","test":"Watch and force (CMP-054, IDE-019, UX-009) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/DebugWatchPanel.test.tsx","test":"One owner per input in the Watch tab (PLS-007, LNK-006, UX-009)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 does not call a transition forced because a word of its condition is a keyword or a literal"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 draws a diagram nobody forces and the poll read completely with no forced or fault cue"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 draws the faulted pin of a timer red with a triangle and the word FAULT, and its Q as it was"},
@@ -2691,7 +2701,10 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"14 A recent project that is gone","partial":true}
   ],
   "UX-023": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/App.dom.test.tsx","test":"App root sizing (UX-023)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"the lesson layout and the flag (UX-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/shell/ActivityRail.test.tsx","test":"UX-023 shows the labels in the regular shell and only the icons in the compact one"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/shell/WorkbenchShell.dom.test.tsx","test":"WorkbenchShell initial sidebar state (UX-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/shell/shellRouting.test.ts","test":"UX-023 is compact at the 1024 pixel minimum and up to the limit, and regular at 1366"},
     {"kind":"unit","ref":"packages/zplc-ide/src/shell/shellRouting.test.ts","test":"the shell density (UX-023)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"13 Welcome helps a newcomer choose","partial":true},
@@ -2794,6 +2807,7 @@
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 stays quiet on a component that writes its text through t()"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 stays quiet on a correct pair of catalogs"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 stays quiet on text that goes through t(), identifiers, state words, upper-case tokens and other properties"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 the canonical format modules are a tool surface, not interface text"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"49 The migrated screens read in Spanish, with no raw catalog key, no English left over and no clipped control at 1366 by 768","partial":true}
   ],
   "UX-030": [
@@ -3005,6 +3019,7 @@
     {"kind":"unit","ref":"tools/docs/generate_hardware_pages.test.ts","test":"LRN-016 every wiring page states the voltage limit, in English and in Spanish"}
   ],
   "LRN-017": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/Faceplate.test.tsx","test":"LRN-017 an input not read yet cannot be switched or held: a click would set TRUE whatever it holds"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/Faceplate.test.tsx","test":"the live I/O faceplate (LRN-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"has no tool that sets a simulation input or writes memory: the faceplate is the person's control, not the agent's (LRN-017, "},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/faceplateState.test.ts","test":"a push button on the faceplate (LRN-017)"},
@@ -3046,8 +3061,10 @@
   "LRN-022": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the lesson check over the IPC boundary (LRN-022, LRN-026, IDE-002, IDE-012)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/lessonCheckProtocol.test.ts","test":"the lesson check request and answer (LRN-022, LRN-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/guide/Guide.test.tsx","test":"LRN-022 only the reference scenario of the lesson grades: the request names the lesson and nothing of the workspace"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/learnLesson.test.ts","test":"Learn grading against the lesson package (LRN-022, LRN-026)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCheck.test.ts","test":"lesson check (LRN-022, LRN-023, LRN-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/useLessonCheck.test.ts","test":"LRN-022 without the option the old gate stays: an unsaved document is refused and nothing is saved or run"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"39 Learn reports the failed assertion of a lesson","partial":true}
   ],
   "LRN-023": [
@@ -3255,6 +3272,7 @@
   ],
   "LRN-039": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 Back to course closes the view and opens the Learn home, never both at once"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 Escape closes the page and gives the focus back to the Guide"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 Escape does what Practice does"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 Practice closes the view and moves the focus to the lesson panel"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 a lesson without a reading page opens as before: the workspace, the lesson panel and no reading view"},
@@ -3264,7 +3282,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 starting a lesson with a reading page shows it full screen: module, title as h1, time and the page"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 the lesson panel offers Read again, which reopens the page"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"the reading view (LRN-039)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnContent.v1.test.ts","test":"the reading page in the Learn content (LRN-039)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnContent.v1.test.ts","test":"the reading page in the Learn content (LRN-039)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/shell/WorkbenchShell.dom.test.tsx","test":"LRN-039 the focus goes back to the Guide once the workbench has left inert, not while it is still inert"}
   ],
   "LRN-040": [
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/reading/ReadingPage.dom.test.tsx","test":"reading page rendering (LRN-040)"},
@@ -3604,7 +3623,7 @@
     {"kind":"manual","ref":".github/workflows/release.yml","test":"verify-linux-x64-payload-reproducibility","note":"Recorded hosted runs 40229883140 on commit 35cb34b4 (2026-10-25) and 40371553429 on commit 3284708c (2026-10-26) of release.yml, workflow_dispatch with rehearsal=true, version 2.0.0-rc.3: both completed with success, 35 jobs passed and the 6 publish jobs were skipped as a rehearsal does; the job verify-linux-x64-payload-reproducibility ran and passed in each run; it is continue-on-error and no other job needs it, so it does not block a release run"}
   ],
   "REL-033": [
-    {"kind":"unit","ref":"tools/ci/workflow-triggers.test.ts","test":"the documentation site is deployed from the branch that holds 2.0","partial":true,"note":"parses deploy-docs.yml triggers and the step that names the latest release; authored, not executed in CI"},
+    {"kind":"unit","ref":"tools/ci/workflow-triggers.test.ts","test":"PUB-005: the documentation site is published with the release, never by a push","partial":true,"note":"parses deploy-docs.yml triggers, guard, permissions, concurrency and the step that names the release; authored, not executed in CI"},
     {"kind":"unit","ref":"tools/docs/check-docs-config.test.ts","test":"the site footer names the latest release","partial":true,"note":"the footer shows the tag the deploy workflow passes, or the version of the tree; docs deploy-docs.yml now builds from zplc-2.0-candidate as well as master and main. A hosted deploy has not run: the Pages environment must allow the branch (owner), and D-12 decides when 2.0 moves to master"}
   ],
   "REL-034": [

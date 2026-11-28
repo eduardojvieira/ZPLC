@@ -49,7 +49,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "The LED must be lit in two cases: while Blink is TRUE, or while Button is TRUE. Which Boolean operator says \"or\"?"
+      "text": "Look at the line that sets Led in the starter: it uses Blink and ignores Button. Say in words when the LED must be lit, then compare your words with that line."
     },
     {
       "level": 2,

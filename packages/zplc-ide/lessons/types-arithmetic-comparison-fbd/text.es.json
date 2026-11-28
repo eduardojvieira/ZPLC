@@ -4,8 +4,8 @@
   "summary": "Mantenga un total acumulado en una variable INT con bloques ADD, SEL y R_TRIG, y conviértalo en tres resultados BOOL con bloques de comparación.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador en particular.",
   "objectives": [
-    "Use una variable INT para un número: un bloque ADD calcula el valor siguiente, los bloques SEL eligen entre el total anterior, el nuevo y cero, y los bloques LT, EQ y GT convierten el número en resultados BOOL.",
-    "Sume a un número solo en el flanco ascendente de una entrada, con un bloque R_TRIG, de modo que un pulsador mantenido durante varios ciclos cuente una sola vez."
+    "Use una variable INT para un número, construya su valor siguiente con bloques aritméticos y de selección, y convierta el número en resultados BOOL con bloques LT, EQ y GT.",
+    "Sume a un número solo una vez por pulsación, de modo que un pulsador mantenido durante varios ciclos cuente una sola vez."
   ],
   "stages": [
     {
@@ -41,21 +41,19 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "¿Qué pasa si Step va directo a G del bloque SEL, sin el bloque R_TRIG? ¿Y si Exact usa un bloque GE en lugar de EQ? Pruebe cada caso y vea qué aserción falla.",
+      "body": "¿Qué le pasa a Total si Step queda presionado durante muchos ciclos, y qué bloque de su diagrama lo decide? ¿Y si Exact usa un bloque GE en lugar de EQ? Pruebe cada caso y vea qué aserción falla.",
       "checkpoint": "Una comparación da un BOOL, y EQ no es lo mismo que GE. El escenario solo observa las tres salidas BOOL; no muestra el valor de Total ni qué pasa cuando un INT se desborda."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Total es un INT, así que Total + 5 es un INT. SEL da IN0 mientras G es FALSE e IN1 mientras G es TRUE, y R_TRIG.Q es TRUE durante un ciclo en cada flanco ascendente."
+      "text": "Mire qué llega a IN0 del bloque SEL que borra Total: el propio Total, así que nada le suma nunca. Después pregúntese cuántas veces debe contar una pulsación mantenida durante varios ciclos."
     },
     {
       "level": 2,
-      "text": "Conecte Step a StepEdge.CLK, StepEdge.Q a G de un SEL nuevo, Total a su IN0 y a un bloque ADD con la constante 5, ADD.OUT a su IN1, y el SEL nuevo a IN0 del SEL que borra Total."
+      "text": "Coloque un bloque R_TRIG llamado StepEdge, cuya Q es TRUE durante un ciclo en cada flanco ascendente. Conecte Step a StepEdge.CLK, StepEdge.Q a G de un SEL nuevo, Total a su IN0 y a un bloque ADD con la constante 5, ADD.OUT a su IN1, y el SEL nuevo a IN0 del SEL que borra Total."
     }
   ],
-  "faultCases": [
-    "El diagrama inicial borra Total con Reset pero nunca le suma, así que Low se queda en ON para siempre; sume 5 a Total en cada flanco ascendente de Step."
-  ]
+  "faultCases": ["El diagrama inicial borra Total con Reset pero nunca le suma, así que Low se queda en ON para siempre."]
 }

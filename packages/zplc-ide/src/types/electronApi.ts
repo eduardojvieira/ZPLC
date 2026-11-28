@@ -84,6 +84,12 @@ declare global {
       learnWorkspace?: {
         open: (lessonId: string) => Promise<unknown>;
       };
+      /** The MCP connection panel (AIX-007); every answer is validated by the caller. */
+      mcpConnection?: {
+        preview: (client: string) => Promise<unknown>;
+        write: (request: { client: string; expected: string }) => Promise<unknown>;
+        selfCheck: () => Promise<unknown>;
+      };
       candidateChangeSet?: {
         review: (
           request:
@@ -97,13 +103,28 @@ declare global {
         saveConfig: (config: { enabled: boolean; endpoint: string; model: string }) => Promise<unknown>;
         storeKey: (key: string) => Promise<unknown>;
         clearKey: () => Promise<unknown>;
+        testConnection: () => Promise<unknown>;
         request: (request: {
           workspaceId: string;
           mode: 'ask' | 'plan' | 'edit' | 'debug';
           prompt: string;
           activeFile?: { fileId: string; path: string };
-          diagnostics?: Array<{ code: string; path?: string; line?: number; column?: number }>;
+          diagnostics?: Array<{ code: string; message?: string; path?: string; line?: number; column?: number; element?: string }>;
           trace?: Array<{ atMs: number; signal: string; value: boolean | number }>;
+          failedScenarios?: Array<{
+            id: string;
+            assertions: Array<{
+              index: number;
+              kind: string;
+              atMs: number;
+              checks: Array<{ signal: string; expected: unknown; observed: unknown }>;
+            }>;
+          }>;
+          facts?: Record<string, boolean | number>;
+          selection?: { startLine: number; endLine: number; text: string } | { element: string };
+          lessonContext?: { lessonId: string; stage?: string };
+          locale?: 'en' | 'es';
+          history?: Array<{ role: 'user' | 'assistant'; text: string }>;
         }) => Promise<unknown>;
         cancel: () => Promise<{ requested: boolean }>;
       };

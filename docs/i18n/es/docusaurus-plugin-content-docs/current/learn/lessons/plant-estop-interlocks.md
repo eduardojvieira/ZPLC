@@ -26,7 +26,7 @@ Haga que una línea en marcha se detenga al pulsar el paro de emergencia, muést
 ## Objetivos
 
 - Detener todas las salidas mientras el paro de emergencia está pulsado.
-- Recordar el paro, de modo que soltar el botón no reinicie la línea.
+- Recordar el paro, de modo que soltar el pulsador no reinicie la línea.
 
 ## Etapas
 

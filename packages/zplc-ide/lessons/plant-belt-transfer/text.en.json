@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter drives no output, so nothing moves; write the transfer: feed one box at a time, grip, carry and release each one over the outfeed, and light Done after the fourth.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter drives no output, so nothing moves; write the transfer: feed one box at a time, grip, carry and release each one over the outfeed, and light Done after the fourth.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

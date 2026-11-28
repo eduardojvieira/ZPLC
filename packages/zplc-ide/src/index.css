@@ -408,6 +408,10 @@ body,
   margin-top: 8px !important;
   color: var(--text-tertiary) !important;
 }
+.ledger-inspector > .ledger-inspector-note {
+  padding-inline: 10px;
+  padding-bottom: 10px;
+}
 
 /* Stopgap: buttons and badges put text-white on a solid accent fill, which fails contrast on the light accents of the dark
    and high-contrast themes. They take the on-accent token until the component kit (WP-39) uses it directly. */
@@ -468,7 +472,7 @@ button,
    ============================================================================= */
 
 /* =============================================================================
-   Activity rail (UX-011). The selected activity is marked by a bar at the edge and a filled button, and
+   Activity rail (UX-011). The selected activity is marked by a bar at the edge and a filled button (ActivityRail.tsx), and
    `aria-current` says it to assistive technology: the colour is not the only sign.
    ============================================================================= */
 .activity-rail {
@@ -490,9 +494,4 @@ button,
   inset-inline-start: 0;
   width: 3px;
   background-color: var(--color-accent-blue);
-}
-
-.activity-rail-item[data-active] .ui-icon-button {
-  background-color: var(--color-surface-600);
-  color: var(--text-primary);
 }

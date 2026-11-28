@@ -3,36 +3,13 @@
  * and its proposed value. Each is checked against the project and offered only when it can run; nothing runs until the person clicks it.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { getCommandState, runCommand } from '../../commands/bus';
-import { requestElementSelection } from '../../editors/elementSelectionRequests';
 import { useT } from '../../i18n';
 import type { AiProposal } from '../../ai/proposals';
 import { useAppSettings } from '../../store/useAppSettings';
 import { useIDEStore } from '../../store/useIDEStore';
 import { Button } from '../../ui';
-import { checkProposals, runProposal, type ProposalCheck, type ProposalDeps } from './editorProposals';
-
-type SettingName = 'theme' | 'language' | 'density' | 'editorFontSize' | 'editorTabSize';
-
-function liveDeps(): ProposalDeps {
-  const store = useIDEStore.getState();
-  return {
-    isProjectOpen: store.isProjectOpen,
-    deviceConnected: getCommandState().connected,
-    fileTree: store.fileTree,
-    loadedFiles: store.loadedFiles,
-    openFile: store.openFile,
-    navigate: store.navigateToCompilerDiagnostic,
-    selectElement: (path, element) => requestElementSelection(path, element),
-    runCommand: (id) => runCommand(id, { respectEnabled: true }),
-    currentSetting: (name: SettingName) => (name === 'theme' ? store.theme : useAppSettings.getState().settings[name]),
-    applySetting: (name: SettingName, value) => {
-      // the theme and the other settings are applied by the setters the settings screen uses; a value outside its choices is ignored there
-      if (name === 'theme') store.setTheme(value as never);
-      else useAppSettings.getState().update({ [name]: value });
-    },
-  };
-}
+import { checkProposals, runProposal, type ProposalCheck } from './editorProposals';
+import { liveDeps } from './liveDeps';
 
 export function AgentProposals({ proposals }: { proposals: readonly AiProposal[] }) {
   const { t } = useT();

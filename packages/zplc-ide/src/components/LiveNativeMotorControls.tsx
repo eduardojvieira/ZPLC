@@ -1,28 +1,18 @@
 /**
- * The live native motor controls of the Lab tab (IDE-014: split out of Console.tsx).
+ * The live native motor outputs of the Trace tab (IDE-014: split out of Console.tsx). It only shows them: the faceplate in the
+ * Watch tab is the one owner of the motor inputs (PLS-007).
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { DebugController } from '../hooks/useDebugController';
+import { useEffect, useState } from 'react';
 import { LIVE_NATIVE_OUTPUT_MAX_AGE_MS, presentLiveNativeMotorControls, presentLiveNativeMotorOutput } from '../runtime/nativeTrace';
-import { claimMotorInputCommand, shouldClearMotorInputFailure } from './liveNativeMotorPanel';
-import { Button } from '../ui';
 import { useT } from '../i18n';
 
-export function LiveNativeMotorPanel(
-  props: Omit<Parameters<typeof presentLiveNativeMotorControls>[0], 'nowMs'> & {
-    setSimulationInput: DebugController['setSimulationInput'] | undefined;
-  },
-) {
+export function LiveNativeMotorPanel(props: Omit<Parameters<typeof presentLiveNativeMotorControls>[0], 'nowMs'>) {
   const { t } = useT();
-  const { setSimulationInput, sample } = props;
+  const { sample } = props;
   // eslint-disable-next-line react-hooks/purity -- this panel must compare each parent snapshot to the current wall clock.
   const nowMs = Date.now();
   const [, setFreshnessTick] = useState(0);
-  const [pending, setPending] = useState(false);
-  const [failedAtMs, setFailedAtMs] = useState<number | null>(null);
-  const inFlightRef = useRef(false);
-  const failureAtRef = useRef<number | null>(null);
   useEffect(() => {
     const receivedAtMs = sample?.receivedAtMs;
     const currentNowMs = Date.now();
@@ -43,16 +33,6 @@ export function LiveNativeMotorPanel(
     return () => window.clearTimeout(timeout);
   }, [sample?.receivedAtMs]);
 
-  useEffect(() => {
-    if (!shouldClearMotorInputFailure(failureAtRef.current, sample?.receivedAtMs)) return;
-    const clearFailure = window.setTimeout(() => {
-      if (!shouldClearMotorInputFailure(failureAtRef.current, sample?.receivedAtMs)) return;
-      failureAtRef.current = null;
-      setFailedAtMs(null);
-    }, 0);
-    return () => window.clearTimeout(clearFailure);
-  }, [failedAtMs, sample?.receivedAtMs]);
-
   const output = presentLiveNativeMotorOutput({
     adapterType: props.adapterType,
     connected: props.connected,
@@ -64,32 +44,11 @@ export function LiveNativeMotorPanel(
   });
   const controls = output ? presentLiveNativeMotorControls({ ...props, nowMs }) : null;
 
-  const command = useCallback(
-    async (inputId: 'motor.start' | 'motor.stop' | 'motor.estop', active: boolean) => {
-      if (!setSimulationInput || pending || !claimMotorInputCommand(inFlightRef, failureAtRef)) return;
-      setPending(true);
-      try {
-        await setSimulationInput(inputId, active);
-      } catch {
-        const failureAtMs = Date.now();
-        failureAtRef.current = failureAtMs;
-        setFailedAtMs(failureAtMs);
-      } finally {
-        inFlightRef.current = false;
-        setPending(false);
-      }
-    },
-    [pending, setSimulationInput, setFailedAtMs, setPending],
-  );
-
   if (!output) return null;
-  const unavailable = failedAtMs !== null;
-  const disabled = pending || unavailable;
 
   return (
     <section
       aria-label={t('console.liveNativePosixMotor')}
-      aria-busy={pending}
       className="mb-3 border border-[var(--color-surface-700)] bg-[var(--color-surface-900)] p-2"
     >
       <p className="text-xs font-medium text-[var(--color-surface-100)]">{t('console.liveNativePosixHost')}</p>
@@ -106,36 +65,10 @@ export function LiveNativeMotorPanel(
           {t('console.msCycles', { uptimeMs: output.uptimeMs, cycles: output.cycles, state: output.state })}
         </div>
       </dl>
-      {controls && setSimulationInput && (
-        <div className="mt-2 flex flex-wrap gap-2">
-          <Button variant="ghost" size="sm" disabled={disabled || controls.eStopAsserted} onClick={() => void command('motor.start', true)}>
-            {t('console.start')}
-          </Button>
-          <Button variant="ghost" size="sm" disabled={disabled || controls.eStopAsserted} onClick={() => void command('motor.stop', true)}>
-            {t('toolbar.stop.label')}
-          </Button>
-          <Button variant="ghost" size="sm" disabled={disabled || controls.eStopAsserted} onClick={() => void command('motor.estop', true)}>
-            {t('console.assertEStop')}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={disabled || !controls.eStopAsserted}
-            onClick={() => void command('motor.estop', false)}
-          >
-            {t('console.releaseEStop')}
-          </Button>
-        </div>
-      )}
       <p role="status" aria-live="polite" className="mt-2 text-xs text-[var(--color-surface-200)]">
-        {unavailable
-          ? t('console.inputCommandWasNot')
-          : pending
-            ? t('console.stagingHostInputWaiting')
-            : controls
-              ? t('console.eStop', { value: controls.eStopAsserted ? 'asserted' : 'released' })
-              : t('console.inputControlsUnavailable')}
+        {controls ? t('console.eStop', { value: controls.eStopAsserted ? 'asserted' : 'released' }) : t('console.inputControlsUnavailable')}
       </p>
+      <p className="mt-1 text-xs text-[var(--color-surface-400)]">{t('console.setInputsInWatch')}</p>
     </section>
   );
 }

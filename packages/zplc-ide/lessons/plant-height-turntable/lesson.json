@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "plant-height-turntable",
-  "version": 2,
+  "version": 3,
   "order": 165,
   "module": 16,
   "level": "advanced",

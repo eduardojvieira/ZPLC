@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "ld-analog-scaling",
-  "version": 3,
+  "version": 8,
   "order": 30,
   "module": 4,
   "level": "intermediate",

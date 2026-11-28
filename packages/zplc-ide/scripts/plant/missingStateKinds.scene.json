@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "name": "Missing stateful kinds (capture fixture)",
+  "shortestPulseMs": 800,
+  "parts": [
+    {
+      "id": "roller",
+      "part": "roller",
+      "name": "Roller1",
+      "position": [-1.2, 0.5, -0.6],
+      "rotationYDeg": 0,
+      "config": { "length": 1.6, "width": 0.6, "speedMps": 0.5 }
+    },
+    {
+      "id": "curved",
+      "part": "curved",
+      "name": "Curved1",
+      "position": [0.5, 0.5, -1.0],
+      "rotationYDeg": 0,
+      "config": { "radius": 0.8, "hand": "right", "width": 0.6, "speedMps": 0.5 }
+    },
+    {
+      "id": "aligner",
+      "part": "aligner",
+      "name": "Aligner1",
+      "position": [-0.3, 0.5, 0.15],
+      "rotationYDeg": 0,
+      "config": { "lengthM": 0.6, "widthM": 0.6, "gapM": 0.25 }
+    },
+    {
+      "id": "eye-retro",
+      "part": "sensor-retro",
+      "name": "EyeRetro",
+      "position": [-1.1, 0.55, 0.9],
+      "rotationYDeg": 0,
+      "config": { "rangeM": 0.4 }
+    },
+    {
+      "id": "eye-inductive",
+      "part": "sensor-inductive",
+      "name": "EyeInductive",
+      "position": [-0.5, 0.55, 0.9],
+      "rotationYDeg": 0,
+      "config": { "rangeM": 0.15 }
+    },
+    {
+      "id": "eye-capacitive",
+      "part": "sensor-capacitive",
+      "name": "EyeCapacitive",
+      "position": [0.1, 0.55, 0.9],
+      "rotationYDeg": 0,
+      "config": { "rangeM": 0.2 }
+    },
+    {
+      "id": "limit-switch",
+      "part": "limit-switch",
+      "name": "Limit1",
+      "position": [0.7, 0.55, 0.9],
+      "rotationYDeg": 0,
+      "config": { "reachM": 0.15, "heightM": 0.15 }
+    },
+    {
+      "id": "selector-switch",
+      "part": "selector-switch",
+      "name": "Selector1",
+      "position": [1.3, 0.55, 0.9],
+      "rotationYDeg": 0,
+      "config": { "positions": 3, "output": "contacts" }
+    }
+  ],
+  "cameras": [{ "name": "Overview", "position": [0, 1.8, 2.8], "target": [0, 0.5, 0.1] }]
+}

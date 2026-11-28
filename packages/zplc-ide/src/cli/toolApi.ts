@@ -26,11 +26,21 @@ import { buildOptionsOf } from '../project/buildOptions';
 import type { ProjectMigrationChange } from '../project/projectModel';
 import { resolveProgramSource } from '../utils/programSourceResolution';
 import { elementAtLine } from '../models/sourceElements';
+import { collectProjectBlocks } from '../models/projectBlocks';
+import { loadFBDFile, loadLDFile, loadSFCFile, type VisualFileViolation } from '../models/visualFileLoad';
+import { catalogue } from '../plant/core/catalogue';
+import { validateScene, type SceneProblem } from '../plant/core/scene';
+import type { PlantSceneFile } from '../plant/contracts';
+import { PLANT_KINDS } from '../plants/plantEngine';
 import {
+  SCENARIO_KINDS,
   compileScenario,
   findSignalVariable,
+  resolveWatch,
   runScenario,
+  watchableSignals,
   type CompiledScenario,
+  type ResolvedWatch,
   type ScenarioKind,
   type ScenarioAssertionResult,
   type ScenarioRunResult,
@@ -82,6 +92,7 @@ export type CompilerCompileResult = CompilerCheckResult & {
   debugMap?: DebugMap;
   /** `build.generateDebugInfo`: the CLI writes the debug map beside the artifact (CMP-059). */
   writeDebugMap?: boolean;
+  sourceFingerprints?: Readonly<Record<string, string>>;
 };
 export interface TestSummary {
   backend: 'native-posix';
@@ -151,6 +162,130 @@ function unresolvedPrograms(workspace: WorkspaceProject): ToolDiagnostic[] {
     }),
   );
   return diagnostics;
+}
+
+/**
+ * A diagnostic about a JSON file names its place in it, `jsonPath`, and, for a value outside a closed set, what was found and
+ * the accepted values (AIX-013). `file` is the file it is about when `path` names another one; `detail` is the located reason.
+ */
+type LocatedDiagnostic = ToolDiagnostic & { file?: string; jsonPath?: string; found?: string; acceptedValues?: string[]; detail?: string };
+
+/** The value at a `parts[0].config.length`-style path of a document, as text. */
+function valueAt(document: unknown, path: string): string | undefined {
+  const value = (path.match(/[^.[\]]+/g) ?? []).reduce<unknown>(
+    (inner, key) => (inner as Record<string, unknown> | undefined)?.[key],
+    document,
+  );
+  return value === undefined ? undefined : typeof value === 'string' ? value : JSON.stringify(value);
+}
+/** The bounds of the located fields, the ones the MCP result schema holds them to. */
+const LOCATED_BOUNDS = { jsonPath: 256, found: 256, file: 256, detail: 512, values: 400, value: 64, message: 512 } as const;
+/** Without the fields that are not set, and each one cut to its bound. */
+function located(diagnostic: LocatedDiagnostic): LocatedDiagnostic {
+  const { jsonPath, found, file, detail, acceptedValues } = diagnostic;
+  const cut = (text: string | undefined, max: number) => text?.slice(0, max);
+  const bounded: LocatedDiagnostic = {
+    ...diagnostic,
+    message: diagnostic.message.slice(0, LOCATED_BOUNDS.message),
+    jsonPath: cut(jsonPath, LOCATED_BOUNDS.jsonPath),
+    found: cut(found, LOCATED_BOUNDS.found),
+    file: cut(file, LOCATED_BOUNDS.file),
+    detail: cut(detail, LOCATED_BOUNDS.detail),
+    acceptedValues: acceptedValues?.slice(0, LOCATED_BOUNDS.values).map((value) => value.slice(0, LOCATED_BOUNDS.value)),
+  };
+  return Object.fromEntries(Object.entries(bounded).filter(([, value]) => value !== undefined)) as LocatedDiagnostic;
+}
+
+/** `head` followed by as many accepted values as fit in one message, and how many there are when not all fit. */
+function withAccepted(head: string, values: readonly string[]): string {
+  const all = `${head}; accepted values: ${values.join(', ')}`;
+  if (all.length <= LOCATED_BOUNDS.message) return all;
+  const tail = `, ... (${values.length} in all)`;
+  let text = `${head}; accepted values: `;
+  for (const [index, value] of values.entries()) {
+    const next = `${index === 0 ? '' : ', '}${value}`;
+    if (text.length + next.length + tail.length > LOCATED_BOUNDS.message) break;
+    text += next;
+  }
+  return `${text}${tail}`;
+}
+
+/** The English sentence of a violation of a visual file, for the CLI and the MCP; the editor says it through the catalogue. */
+function visualViolationSentence(detail: VisualFileViolation, legacy: string): string {
+  const at = detail.path || 'the file';
+  if (detail.code === 'invalid-value') return withAccepted(`${at}: invalid value '${detail.found}'`, detail.acceptedValues ?? []);
+  if (detail.code === 'unknown-block')
+    return withAccepted(
+      `${at}: block '${detail.block}' has the type '${detail.found}', which an FBD diagram cannot place`,
+      detail.acceptedValues ?? [],
+    );
+  return legacy;
+}
+
+/** Every Ladder, FBD and SFC file of the project, loaded as Studio opens it, the FBD types checked against the project's blocks. */
+export function visualFileDiagnostics(workspace: WorkspaceProject): LocatedDiagnostic[] {
+  let blocks: ReturnType<typeof collectProjectBlocks> | undefined;
+  return workspace.sources.flatMap((source) => {
+    const loaded =
+      source.language === 'LD'
+        ? loadLDFile(source.path, source.content)
+        : source.language === 'FBD'
+          ? loadFBDFile(source.path, source.content, (blocks ??= collectProjectBlocks(workspace.sources)))
+          : source.language === 'SFC'
+            ? loadSFCFile(source.path, source.content)
+            : undefined;
+    if (!loaded || loaded.ok) return [];
+    return loaded.error.details.map((detail, index) =>
+      located({
+        code: 'VISUAL_FILE_INVALID',
+        message: visualViolationSentence(detail, loaded.error.violations[index]!),
+        path: source.path,
+        jsonPath: detail.path || undefined,
+        found: detail.found,
+        acceptedValues: detail.acceptedValues && [...detail.acceptedValues],
+      }),
+    );
+  });
+}
+
+/** The closed sets of a scenario, by the place `compileScenario` names. */
+const SCENARIO_CLOSED_SETS: Array<[RegExp, readonly string[]]> = [
+  [/^expectations\[\d+\]\.kind$/, SCENARIO_KINDS],
+  [/^plant$/, PLANT_KINDS],
+];
+const SCENARIO_KEYS = /^(?:schemaVersion|id|tickMs|durationMs|plant|scene|events|expectations)(?:\[\d+\]|\.[A-Za-z_][\w]*)*(?=\s|$)/;
+
+/** A scenario `compileScenario` refused: the code and message as before, with the place and the accepted values it names. */
+function scenarioDiagnostic(source: WorkspaceScenario, error: unknown): LocatedDiagnostic {
+  const detail = error instanceof Error ? error.message.replace(/^Invalid test scenario: /, '') : undefined;
+  const jsonPath = detail === undefined ? undefined : SCENARIO_KEYS.exec(detail)?.[0];
+  const accepted = jsonPath === undefined ? undefined : SCENARIO_CLOSED_SETS.find(([pattern]) => pattern.test(jsonPath))?.[1];
+  return located({
+    ...testDiagnostic('TEST_SCENARIO_INVALID', source.path),
+    jsonPath,
+    found: accepted && valueAt(source.input, jsonPath!),
+    acceptedValues: accepted && [...accepted],
+    detail,
+  });
+}
+
+/** A scene part the catalogue does not have, or a setting the part does not have, with what it has. */
+function sceneDiagnostic(scenarioPath: string, file: string, scene: PlantSceneFile, problem: SceneProblem): LocatedDiagnostic {
+  const place = /^parts\[(\d+)\]\.(?:(part)|config\.(.+))$/.exec(problem.path);
+  const definition = place?.[3] === undefined ? undefined : catalogue.get(scene.parts[Number(place[1])]!.part);
+  const unknownSetting = definition && !(place![3]! in definition.config) ? place![3] : undefined;
+  return located({
+    ...testDiagnostic('TEST_SCENARIO_INVALID', scenarioPath),
+    file,
+    jsonPath: problem.path,
+    found: place?.[2] ? valueAt(scene, problem.path) : unknownSetting,
+    acceptedValues: place?.[2]
+      ? catalogue.list().map((part) => part.id)
+      : unknownSetting !== undefined
+        ? Object.keys(definition!.config)
+        : undefined,
+    detail: `${problem.path}: ${problem.message}`,
+  });
 }
 function compilationSources(workspace: WorkspaceProject) {
   const sourceByProgram = new Map<string, ReturnType<typeof resolveProgramSource>>();
@@ -394,6 +529,8 @@ export async function projectValidate(root: string): Promise<ToolResult<{ name: 
   }
   const diagnostics = unresolvedPrograms(loaded.workspace);
   if (diagnostics.length) return failed('validate', diagnostics);
+  const visual = visualFileDiagnostics(loaded.workspace);
+  if (visual.length) return failed('validate', visual);
   return {
     ok: true,
     summary: { name: loaded.workspace.project.name, taskCount: loaded.workspace.project.tasks.length },
@@ -437,7 +574,8 @@ async function compile<Operation extends CompileOperation>(root: string, operati
   const diagnostics = unresolvedPrograms(loaded.workspace);
   if (diagnostics.length) return failed(operation, diagnostics) as CompileResult<Operation>;
   try {
-    const result = compileMultiTaskProject(loaded.workspace.project, compilationSources(loaded.workspace));
+    const sources = compilationSources(loaded.workspace);
+    const result = compileMultiTaskProject(loaded.workspace.project, sources);
     if (operation === 'symbols-list')
       return {
         ok: true,
@@ -472,7 +610,10 @@ async function compile<Operation extends CompileOperation>(root: string, operati
       evidence: evidence(operation, 'passed', warnings, operation === 'symbols-list' ? [] : [artifact]),
     };
     if (operation === 'compile') {
-      markProgramInputs(result.debugMap, compilationSources(loaded.workspace));
+      markProgramInputs(result.debugMap, sources);
+      const sourceFingerprints = Object.fromEntries(
+        sources.map((source) => [source.sourceRef, createHash('sha256').update(source.bytes).digest('hex')]),
+      );
       Object.defineProperties(response, {
         bytes: { value: bytes, enumerable: false },
         zplcFile: { value: result.zplcFile, enumerable: false },
@@ -483,12 +624,30 @@ async function compile<Operation extends CompileOperation>(root: string, operati
         },
         debugMap: { value: result.debugMap, enumerable: false },
         writeDebugMap: { value: options.generateDebugInfo, enumerable: false },
+        sourceFingerprints: { value: sourceFingerprints, enumerable: false },
       });
     }
     return response as CompileResult<Operation>;
   } catch (error) {
-    return failed(operation, safeCompilerDiagnostics(error)) as CompileResult<Operation>;
+    return failed(operation, withAcceptedValues(safeCompilerDiagnostics(error), loaded.workspace)) as CompileResult<Operation>;
   }
+}
+
+/**
+ * A build that refused a visual file names what it found; the loader of project_validate knows the values it accepts there.
+ * Each refusal of the build gets the same `found` and `acceptedValues`, from that one source (AIX-013).
+ */
+function withAcceptedValues(diagnostics: ToolDiagnostic[], workspace: WorkspaceProject): ToolDiagnostic[] {
+  const visual = diagnostics.some((diagnostic) => diagnostic.code === 'TRANSLATION_FAILED') ? visualFileDiagnostics(workspace) : [];
+  return diagnostics.map((diagnostic) => {
+    const known = visual.find(
+      (item) =>
+        item.path === diagnostic.path && item.found !== undefined && item.acceptedValues && diagnostic.message.includes(`'${item.found}'`),
+    );
+    if (diagnostic.code !== 'TRANSLATION_FAILED' || !known) return diagnostic;
+    const message = `${diagnostic.message}; accepted values: ${known.acceptedValues!.join(', ')}`.slice(0, 512);
+    return { ...diagnostic, message, found: known.found, acceptedValues: known.acceptedValues } as ToolDiagnostic;
+  });
 }
 export async function compilerCheck(root: string): Promise<CompilerCheckResult> {
   return compile(root, 'check');
@@ -665,6 +824,14 @@ export interface TestsRunOptions {
   /** Test seam for a monotonic host clock; Electron never supplies it. */
   now?: () => number;
 }
+/**
+ * `observe` asks a scenario run for its sidecar (AI-08): the inputs by name and the variables `watch` names, read after each
+ * step. It lands on the result as a non-enumerable `observed`, so the result, the trace and `traceSha256` stay the 2.0 ones; a
+ * name no variable has fails the run with a non-enumerable `watchUnknown` that lists the names a watch accepts.
+ */
+export interface ScenarioRunOptions extends TestsRunOptions {
+  observe?: { inputs?: boolean; watch?: readonly string[] };
+}
 
 export interface CandidateChangeSetEdit {
   path: string;
@@ -816,7 +983,7 @@ async function runWorkspaceScenarios(
   root: string,
   operation: TestOperation,
   scenarioId: string | undefined,
-  options: TestsRunOptions,
+  options: ScenarioRunOptions,
 ): Promise<TestRunResult> {
   const deadline = createTestDeadline(options);
   const sceneCores: Array<Awaited<ReturnType<typeof createPlantCore>>> = [];
@@ -870,6 +1037,12 @@ async function runWorkspaceScenarios(
           // A scene scenario runs headless on the project's scene and map, the same loader the Learn Check uses (LNK-009).
           const context = await loadSceneContext(workspace.root, { scene: sceneBlock });
           if (!context.ok) return testFailed(operation, context.diagnostics);
+          const sceneProblems = validateScene(context.scene, catalogue);
+          if (sceneProblems.length > 0)
+            return testFailed(
+              operation,
+              sceneProblems.map((problem) => sceneDiagnostic(source.path, sceneBlock.file, context.scene, problem)),
+            );
           const core = await createPlantCore(context.scene);
           sceneCores.push(core);
           const sceneContext: SceneScenarioContext = { port: { core, map: context.map }, scene: context.scene };
@@ -883,8 +1056,8 @@ async function runWorkspaceScenarios(
         }
         const scenario = compileScenario(source.input, compiled.debugMap);
         scenarios.push({ id: scenario.id, path: source.path, compiled: scenario, source });
-      } catch {
-        return testFailed(operation, [testDiagnostic('TEST_SCENARIO_INVALID', source.path)]);
+      } catch (error) {
+        return testFailed(operation, [scenarioDiagnostic(source, error)]);
       }
     }
     const ids = new Set<string>();
@@ -897,7 +1070,11 @@ async function runWorkspaceScenarios(
     }
     const selected =
       scenarioId === undefined ? scenarios : scenarios.filter((scenario) => scenario.id.toLowerCase() === scenarioId.toLowerCase());
-    if (selected.length === 0) return testFailed(operation, [testDiagnostic('TEST_SCENARIO_NOT_FOUND', 'tests')]);
+    // the ids a wrong scenarioId is answered with (AIX-015), non-enumerable so the result keeps its 2.0 shape
+    if (selected.length === 0)
+      return Object.defineProperty(testFailed(operation, [testDiagnostic('TEST_SCENARIO_NOT_FOUND', 'tests')]), 'scenarioIds', {
+        value: scenarios.map((scenario) => scenario.id),
+      });
     // A scene scenario is bounded by the run deadline, as in the Learn Check, not by the operation budget of the fixed plants.
     if (
       selected.reduce((total, scenario) => total + (scenario.compiled.scene ? 0 : runtimeOperationCost(scenario.compiled)), 0) >
@@ -906,12 +1083,21 @@ async function runWorkspaceScenarios(
       return testFailed(operation, [testDiagnostic('TEST_BUDGET_EXCEEDED', 'tests')]);
     }
 
+    const watchNames = [...new Set(options.observe?.watch ?? [])];
+    const watch = watchNames.map((name) => resolveWatch(compiled.debugMap, name));
+    if (watch.some((item) => item === undefined)) {
+      const refused = testFailed(operation, [testDiagnostic('TRACE_WATCH_UNKNOWN', 'tests')], [zplcArtifact]);
+      const unknown = watchNames.filter((_, index) => watch[index] === undefined);
+      return Object.defineProperty(refused, 'watchUnknown', { value: { unknown, validValues: watchableSignals(compiled.debugMap) } });
+    }
+    const observe = options.observe && { inputs: options.observe.inputs === true, watch: watch as ResolvedWatch[] };
     const completed: Array<{
       id: string;
       path: string;
       passed: boolean;
       trace: ScenarioRunResult['trace'];
       assertions: ScenarioRunResult['assertions'];
+      observed?: ScenarioRunResult['observed'];
       traceArtifact: ToolArtifact;
     }> = [];
     const assertionFailures: ToolDiagnostic[] = [];
@@ -931,7 +1117,7 @@ async function runWorkspaceScenarios(
       };
       deadline.signal.addEventListener('abort', closeOnAbort, { once: true });
       try {
-        result = await runScenario(scenario.compiled, compiled.zplcFile, session.runtime);
+        result = await runScenario(scenario.compiled, compiled.zplcFile, session.runtime, observe);
       } catch {
         runtimeFailed = true;
       } finally {
@@ -951,6 +1137,7 @@ async function runWorkspaceScenarios(
         passed: result.passed,
         trace: result.trace,
         assertions: result.assertions,
+        observed: result.observed,
         traceArtifact: artifactEvidence('trace', bytes),
       });
       if (!result.passed) assertionFailures.push(testDiagnostic('SCENARIO_ASSERTION_FAILED', scenario.path));
@@ -1005,6 +1192,7 @@ async function runWorkspaceScenarios(
           savedTestInputIdentity,
         };
     Object.defineProperty(response, 'traceFile', { value: aggregateTrace });
+    if (observe && completed.length === 1) Object.defineProperty(response, 'observed', { value: completed[0]!.observed });
     return response;
   } finally {
     for (const core of sceneCores) core.dispose();
@@ -1247,8 +1435,77 @@ export async function createCandidateChangeSet(
   return response!;
 }
 
-export function scenarioRun(root: string, scenarioId: string, options: TestsRunOptions = {}): Promise<TestRunResult> {
+export function scenarioRun(root: string, scenarioId: string, options: ScenarioRunOptions = {}): Promise<TestRunResult> {
   if (typeof scenarioId !== 'string' || scenarioId.length === 0 || scenarioId.length > 128 || scenarioId.includes('\0'))
     return Promise.resolve(testFailed('scenario-run', [testDiagnostic('TEST_SCENARIO_INVALID', 'tests')]));
   return runWorkspaceScenarios(root, 'scenario-run', scenarioId, options);
+}
+
+/**
+ * The scenarios at `paths` compiled against the program of the workspace as a run compiles them, without running them
+ * (AIX-011): the diagnostics of each one that does not bind, with its place and the accepted values; empty when they all
+ * bind. The program must compile; when it does not, the answer is the compiler's diagnostics.
+ */
+export async function scenariosCheck(root: string, paths: readonly string[]): Promise<LocatedDiagnostic[]> {
+  const loaded = await readWorkspace(root);
+  if (!loaded.ok) return loaded.diagnostics;
+  const scenariosRead = await readWorkspaceScenarios(loaded.workspace.root);
+  if (!scenariosRead.ok) return scenariosRead.diagnostics;
+  let compiled: ReturnType<typeof compileMultiTaskProject>;
+  try {
+    compiled = compileMultiTaskProject(loaded.workspace.project, compilationSources(loaded.workspace));
+  } catch (error) {
+    return safeCompilerDiagnostics(error);
+  }
+  const intervalMs = cyclicTaskStepMs(loaded.workspace);
+  const ids = new Map(scenariosRead.scenarios.map((source) => [(source.input as { id?: unknown })?.id, source.path] as const));
+  const cores: Array<Awaited<ReturnType<typeof createPlantCore>>> = [];
+  const out: LocatedDiagnostic[] = [];
+  try {
+    for (const source of scenariosRead.scenarios.filter((scenario) => paths.includes(scenario.path))) {
+      let scenario: CompiledScenario;
+      try {
+        const sceneBlock = sceneBlockOf(source.input);
+        if (!sceneBlock) scenario = compileScenario(source.input, compiled.debugMap);
+        else {
+          const context = await loadSceneContext(loaded.workspace.root, { scene: sceneBlock });
+          if (!context.ok) {
+            out.push(...context.diagnostics);
+            continue;
+          }
+          const problems = validateScene(context.scene, catalogue);
+          if (problems.length > 0) {
+            out.push(...problems.map((problem) => sceneDiagnostic(source.path, sceneBlock.file, context.scene, problem)));
+            continue;
+          }
+          const core = await createPlantCore(context.scene);
+          cores.push(core);
+          try {
+            scenario = compileScenario(source.input, compiled.debugMap, { port: { core, map: context.map }, scene: context.scene });
+          } catch (error) {
+            out.push(sceneBindingProblem(context.mapFile, error));
+            continue;
+          }
+        }
+      } catch (error) {
+        out.push(scenarioDiagnostic(source, error));
+        continue;
+      }
+      // the ids are told apart without case, as a run tells them; the tick is the task's
+      const sameId = [...ids].find(
+        ([id, path]) => path !== source.path && typeof id === 'string' && id.toLowerCase() === scenario.id.toLowerCase(),
+      );
+      if (sameId)
+        out.push({ code: 'TEST_DUPLICATE_SCENARIO', path: source.path, message: `The id ${scenario.id} is also the id of ${sameId[1]}` });
+      else if (scenario.tickMs !== intervalMs)
+        out.push({
+          code: 'SCENARIO_TICK_MISMATCH',
+          path: source.path,
+          message: `tickMs is ${scenario.tickMs}; it must be the task interval, ${String(intervalMs)} ms`,
+        });
+    }
+  } finally {
+    for (const core of cores) core.dispose();
+  }
+  return out;
 }

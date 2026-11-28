@@ -18,6 +18,8 @@ const { sensorParts } = await import('../core/parts/sensors');
 const { flowParts } = await import('../core/parts/flow');
 const { panelParts } = await import('../core/parts/panel');
 const { PlantPanel } = await import('./PlantPanel');
+const { PlantActivityView } = await import('./PlantActivityView');
+const { usePlantChoice } = await import('./usePlantChoice');
 const { PlantDocument } = await import('../../shell/PlantDocument');
 import { SCENE_INDEX } from '../../generated/sceneIndex';
 import type { PlantCore, PlantSession, PlantSessionEvent, PlantSnapshot } from '../contracts';
@@ -722,5 +724,290 @@ describe('the scene of the project itself (CRS-012)', () => {
     dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
     await dom.waitFor(() => expect((dom.screen.getByLabelText(dom.t('plant.panel.scene')) as HTMLSelectElement).value).toBe('project'));
     await dom.waitFor(() => expect((r.scenes.at(-1) as { name?: string }).name).toBe('Belt to sensor'));
+  });
+});
+
+describe('one plant edit session and the plant toolbar (PLS-004, PLS-005, PLS-009, PLS-010, PLT-013)', () => {
+  const toolbar = () => document.querySelector<HTMLElement>('[role="toolbar"]')!;
+  const projectScene = (content: string, map?: string) =>
+    dom.patchStore(useIDEStore, {
+      loadedFiles: new Map([
+        ['scene', { id: 'scene', name: 'scene.json', path: 'scene.json', content }],
+        ...(map ? [['map', { id: 'map', name: 'plant-map.json', path: 'plant-map.json', content: map }] as const] : []),
+      ]) as never,
+    });
+
+  it('PLS-004 the toolbar holds only the view switch, cameras, Reset plant, faults, items and Edit scene', async () => {
+    // a project folder, so the save of a template would be offered: it is not a plant thing, and not on the toolbar
+    dom.patchStore(useIDEStore, { directoryHandle: fakeProject().root, loadedFiles: new Map() as never });
+    const r = rig();
+    dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+    await ready();
+    await dom.waitFor(() => expect((dom.screen.getByLabelText(dom.t('plant.panel.camera')) as HTMLSelectElement).disabled).toBe(false));
+    const allowed = [
+      dom.t('plant.panel.view3d'),
+      dom.t('plant.panel.viewSchematic'),
+      dom.t('plant.panel.resetPlant'),
+      dom.t('plant.panel.editScene'),
+      dom.t('command.view.fitPlantScene'),
+    ];
+    const controls = () => [...toolbar().querySelectorAll<HTMLElement>('button, select, input, textarea')];
+    const check = () => {
+      for (const control of controls()) {
+        if (control.tagName === 'SELECT') expect(control).toBe(dom.screen.getByLabelText(dom.t('plant.panel.camera')));
+        else expect(allowed).toContain(control.textContent ?? '');
+      }
+      expect(toolbar().contains(dom.screen.getByLabelText(dom.t('plant.panel.scene')))).toBe(false);
+      for (const gone of ['[data-plant-save-scene]', '[data-plant-undo]', '[data-plant-redo]', '[data-plant-edit-done]'])
+        expect(toolbar().querySelector(gone)).toBeNull();
+    };
+    check();
+    // the scene chooser and the save are still in the document, outside the toolbar, until their homes exist (P2, P5, P6)
+    expect(dom.screen.getByLabelText(dom.t('plant.panel.scene'))).toBeTruthy();
+    expect(document.querySelector('[data-plant-save-scene]')).toBeTruthy();
+    // the faults and the items of the plant are offered in the document
+    expect(document.querySelector('[data-plant-fault-trigger]')).toBeTruthy();
+    expect(document.querySelector('[data-plant-add-item]')).toBeTruthy();
+    // while editing, Undo, Redo and Done are in the editor of the session, not on the toolbar
+    await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-edit-scene]')!));
+    expect(document.querySelector('[data-plant-editor] [data-plant-undo]')).toBeTruthy();
+    expect(document.querySelector('[data-plant-editor] [data-plant-redo]')).toBeTruthy();
+    expect(document.querySelector('[data-plant-editor] [data-plant-edit-done]')).toBeTruthy();
+    check();
+  });
+
+  it('PLS-004 Edit scene is offered only while the plant is stopped', async () => {
+    const r = rig();
+    dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+    await ready();
+    const edit = () => toolbar().querySelector<HTMLButtonElement>('[data-plant-edit-scene]')!;
+    expect(edit().disabled).toBe(false);
+    await dom.act(async () => activeTransport(r.controller).run());
+    await dom.waitFor(() => expect(edit().disabled).toBe(true));
+    await dom.act(async () => dom.fireEvent.click(edit()));
+    expect(document.querySelector('[data-plant-editor]')).toBeNull();
+    await dom.act(async () => activeTransport(r.controller).stop());
+    await dom.waitFor(() => expect(edit().disabled).toBe(false));
+    await dom.act(async () => dom.fireEvent.click(edit()));
+    expect(document.querySelector('[data-plant-editor]')).toBeTruthy();
+    // while the scene is edited, the toolbar says so and Done editing ends it
+    expect(edit().getAttribute('aria-pressed')).toBe('true');
+    await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-edit-done]')!));
+    expect(document.querySelector('[data-plant-editor]')).toBeNull();
+    await dom.waitFor(() => expect(edit().getAttribute('aria-pressed')).toBe('false'));
+  });
+
+  it('PLS-005 two views of the session show the same selection after a select in one of them', async () => {
+    const { usePlantEdit } = await import('../editSession');
+    const { EditorPanel } = await import('../editor/EditorPanel');
+    function SecondView() {
+      const editor = usePlantEdit((state) => state.editor);
+      const mapEditor = usePlantEdit((state) => state.mapEditor);
+      usePlantEdit((state) => state.version);
+      return editor && mapEditor ? <EditorPanel editor={editor} mapEditor={mapEditor} stopped catalogue={catalogue} /> : null;
+    }
+    const r = rig();
+    dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+    await ready();
+    await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-edit-scene]')!));
+    const second = dom.render(<SecondView />).container;
+    const first = document.querySelector<HTMLElement>('[data-plant-editor]')!;
+    const id = (r.scenes[0]!.parts[1] as { id: string }).id;
+    const pressed = (root: HTMLElement) => root.querySelector(`[data-part="${id}"] [aria-pressed="true"]`);
+    expect(pressed(first)).toBeNull();
+    expect(pressed(second)).toBeNull();
+    await dom.act(async () => dom.fireEvent.click(first.querySelector(`[data-part="${id}"] [aria-pressed]`)!));
+    expect(pressed(first)).toBeTruthy();
+    expect(pressed(second)).toBeTruthy();
+    // and back: a select in the second view is seen by the first
+    const other = (r.scenes[0]!.parts[0] as { id: string }).id;
+    await dom.act(async () => dom.fireEvent.click(second.querySelector(`[data-part="${other}"] [aria-pressed]`)!));
+    expect(first.querySelector(`[data-part="${other}"] [aria-pressed="true"]`)).toBeTruthy();
+    expect(pressed(first)).toBeNull();
+  });
+
+  it('PLS-009 an unreadable scene is a message in the plant document that says where the text breaks, with no schematic', async () => {
+    projectScene('{\n  "schemaVersion": 1,\n  "parts": [');
+    const r = rig();
+    dom.render(<PlantDocument controller={r.controller} visible deps={r.deps} />);
+    await dom.waitFor(() => expect(document.querySelector('[data-plant-document] [data-plant-load-failed]')).toBeTruthy());
+    const message = document.querySelector<HTMLElement>('[data-plant-load-failed]')!;
+    expect(message.getAttribute('role')).toBe('alert');
+    // the text ends inside the list of parts: line 3, column 13, just after "["
+    expect(message.textContent).toContain(dom.t('plant.panel.breaksAt', { line: 3, column: 13 }));
+    expect(message.textContent).not.toContain(': :');
+    expect(message.querySelector('[data-plant-show-schematic]')).toBeNull();
+  });
+
+  it('PLS-009 an invalid scene that can be read is a message in the plant document with the schematic offered and drawn', async () => {
+    projectScene(sceneFiles('belt-to-sensor').scene);
+    const r = rig();
+    const engine = await r.deps.loadEngine();
+    const refused = 'plant: invalid scene: parts[0].config.length: 99 is above the limit of 20 m';
+    const deps = {
+      ...r.deps,
+      loadEngine: async () => ({
+        ...engine,
+        createPlantCore: async () => {
+          throw new Error(refused);
+        },
+      }),
+    };
+    dom.render(<PlantDocument controller={r.controller} visible deps={deps} />);
+    await dom.waitFor(() => expect(document.querySelector('[data-plant-document] [data-plant-load-failed]')).toBeTruthy());
+    const message = document.querySelector<HTMLElement>('[data-plant-load-failed]')!;
+    expect(message.textContent).toContain(refused);
+    expect(message.textContent).not.toContain(': :');
+    const show = message.querySelector<HTMLButtonElement>('[data-plant-show-schematic]')!;
+    expect(show.textContent).toBe(dom.t('plant.panel.showSchematic'));
+    await dom.act(async () => show.click());
+    expect(document.querySelector('[data-plant-schematic]')?.getAttribute('aria-label')).toBe(
+      dom.t('plant.panel.schematic', { scene: 'Belt to sensor' }),
+    );
+    expect(document.querySelectorAll('[data-plant-schematic] rect').length).toBeGreaterThan(0);
+  });
+
+  it("A4 one panel's session is never ended or marked running by another panel on another scene", async () => {
+    const { usePlantEdit } = await import('../editSession');
+    dom.patchStore(useIDEStore, { loadedFiles: new Map() as never });
+    const a = rig();
+    const b = rig();
+    const viewA = dom.render(<PlantPanel controller={a.controller} visible deps={a.deps} />);
+    await dom.waitFor(() => expect(a.scenes.length).toBe(1));
+    const viewB = dom.render(<PlantPanel controller={b.controller} visible deps={b.deps} />);
+    await dom.waitFor(() => expect(b.scenes.length).toBe(1));
+    await dom.act(async () => {
+      dom.fireEvent.change(dom.within(viewB.container).getByLabelText(dom.t('plant.panel.scene')), {
+        target: { value: 'counted-queue' },
+      });
+    });
+    await dom.waitFor(() => expect(b.scenes.length).toBe(2));
+    const inA = (selector: string) => viewA.container.querySelector<HTMLElement>(selector);
+    await dom.act(async () => dom.fireEvent.click(inA('[data-plant-edit-scene]')!));
+    const before = a.scenes[0]!.parts.length;
+    await dom.act(async () => dom.fireEvent.click(dom.within(viewA.container).getByRole('button', { name: dom.t('plantEditor.add') })));
+    // B runs: A is still stopped, and its editor still edits
+    await dom.act(async () => b.sessions.at(-1)!.start());
+    await dom.settle();
+    expect(usePlantEdit.getState().running).toBe(false);
+    expect(usePlantEdit.getState().editor!.state().running).toBe(false);
+    expect((inA('[data-plant-undo]') as HTMLButtonElement).disabled).toBe(false);
+    // B closes: A's edits survive, and Done rebuilds A's plant with them
+    viewB.unmount();
+    expect(inA('[data-plant-editor]')).toBeTruthy();
+    expect(usePlantEdit.getState().sceneRef).not.toBeNull();
+    await dom.act(async () => dom.fireEvent.click(inA('[data-plant-edit-done]')!));
+    await dom.waitFor(() => expect(a.scenes.length).toBe(2));
+    expect(a.scenes[1]!.parts.length).toBe(before + 1);
+  });
+
+  it('PLS-010 a hidden plant document receives no snapshot and draws no frame', async () => {
+    projectScene(sceneFiles('belt-to-sensor').scene, sceneFiles('belt-to-sensor').map); // with its map, so a session binds
+    const r = rig('ok', 'running');
+    const view = dom.render(<PlantDocument controller={r.controller} visible={false} deps={r.deps} />);
+    await dom.waitFor(() => expect(r.renderer.options.length).toBe(1));
+    await ready();
+    const drawn = r.renderer.snapshots;
+    await dom.act(async () => r.sessions[0]!.emit({ kind: 'scan', scans: 1, snapshot: snapshot(3, 1) }));
+    await dom.act(async () => r.sessions[0]!.emit({ kind: 'scan', scans: 2, snapshot: snapshot(4, 2) }));
+    await dom.waitFor(() => expect(text()).toContain('4 items')); // the plant core keeps running (P14)
+    expect(r.renderer.snapshots).toBe(drawn);
+    view.rerender(<PlantDocument controller={r.controller} visible deps={r.deps} />);
+    await dom.waitFor(() => expect(r.renderer.last?.items.length).toBe(4));
+  });
+
+  it('PLT-013 a plant that is not edited renders as before', async () => {
+    const { usePlantEdit } = await import('../editSession');
+    dom.patchStore(useIDEStore, { loadedFiles: new Map() as never });
+    const r = rig();
+    dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+    await ready();
+    expect(usePlantEdit.getState().editor).toBeNull();
+    expect(document.querySelector('[data-plant-editor]')).toBeNull();
+    expect(document.querySelector('[data-plant-canvas]')).toBeTruthy();
+    expect(document.querySelector('[data-plant-add-item]')).toBeTruthy();
+    expect(document.querySelector('[data-plant-fault-trigger]')).toBeTruthy();
+    expect(text()).not.toBe('');
+    expect(r.scenes.length).toBe(1); // one core, built once from the scene as shipped
+    expect(r.scenes[0]!.parts.length).toBe(JSON.parse(sceneFiles(SCENE_INDEX[0]!.id).scene).parts.length);
+  });
+});
+
+describe('a scene picked in the Plant activity (plan-u3 P2)', () => {
+  let activity: HTMLElement;
+  const pick = (value: string) =>
+    dom.act(async () => void dom.fireEvent.change(dom.within(activity).getByLabelText(dom.t('plant.panel.scene')), { target: { value } }));
+  const defaultName = () => (JSON.parse(sceneFiles(SCENE_INDEX[0]!.id).scene) as { name: string }).name;
+
+  it('PLS-005 an activity pick is taken by one panel only and never ends the edit session of another', async () => {
+    const { usePlantEdit } = await import('../editSession');
+    dom.patchStore(useIDEStore, { loadedFiles: new Map() as never });
+    const a = rig();
+    const b = rig();
+    const viewA = dom.render(<PlantPanel controller={a.controller} visible deps={a.deps} />);
+    await dom.waitFor(() => expect(a.scenes.length).toBe(1));
+    const viewB = dom.render(<PlantPanel controller={b.controller} visible deps={b.deps} />);
+    activity = dom.render(<PlantActivityView />).container;
+    await dom.waitFor(() => expect(b.scenes.length).toBe(1));
+    // B is on another scene than A, which is the one being edited
+    await dom.act(async () => {
+      dom.fireEvent.change(dom.within(viewB.container).getByLabelText(dom.t('plant.panel.scene')), { target: { value: 'counted-queue' } });
+    });
+    await dom.waitFor(() => expect(b.scenes.length).toBe(2));
+    await dom.waitFor(() => expect(viewA.container.querySelector('[data-plant-text]')).toBeTruthy());
+    await dom.act(async () => dom.fireEvent.click(viewA.container.querySelector('[data-plant-edit-scene]')!));
+    expect(usePlantEdit.getState().editor).not.toBeNull();
+    await dom.waitFor(() => expect(usePlantChoice.getState().shown?.key).toBe('counted-queue'));
+    await pick('merge-lines');
+    await dom.waitFor(() => expect(b.scenes.length).toBe(3));
+    expect(usePlantEdit.getState().editor).not.toBeNull();
+    expect(a.scenes.length).toBe(1);
+  });
+
+  it('PLS-005 a panel that is editing keeps its scene and the activity says to finish editing first', async () => {
+    const { usePlantEdit } = await import('../editSession');
+    dom.patchStore(useIDEStore, { loadedFiles: new Map() as never });
+    const a = rig();
+    const view = dom.render(<PlantPanel controller={a.controller} visible deps={a.deps} />);
+    activity = dom.render(<PlantActivityView />).container;
+    await dom.waitFor(() => expect(a.scenes.length).toBe(1));
+    await dom.waitFor(() => expect(usePlantChoice.getState().shown).toBeDefined());
+    await dom.waitFor(() => expect(view.container.querySelector('[data-plant-text]')).toBeTruthy());
+    await dom.act(async () => dom.fireEvent.click(view.container.querySelector('[data-plant-edit-scene]')!));
+    await pick('counted-queue');
+    expect(dom.screen.getByText(dom.t('plant.activity.finishEditing'))).toBeTruthy();
+    expect(usePlantEdit.getState().editor).not.toBeNull();
+    expect(a.scenes.length).toBe(1);
+  });
+
+  it('PLS-005 a panel opened later starts on the default scene, not on an earlier pick', async () => {
+    dom.patchStore(useIDEStore, { loadedFiles: new Map() as never });
+    const a = rig();
+    const first = dom.render(<PlantPanel controller={a.controller} visible deps={a.deps} />);
+    activity = dom.render(<PlantActivityView />).container;
+    await dom.waitFor(() => expect(usePlantChoice.getState().shown).toBeDefined());
+    await pick('counted-queue');
+    await dom.waitFor(() => expect(a.scenes.length).toBe(2));
+    await pick('merge-lines');
+    await dom.waitFor(() => expect(a.scenes.length).toBe(3));
+    first.unmount();
+    const b = rig();
+    dom.render(<PlantPanel controller={b.controller} visible deps={b.deps} />);
+    await dom.waitFor(() => expect(b.scenes.length).toBe(1));
+    expect((b.scenes[0] as { name?: string }).name).toBe(defaultName());
+  });
+
+  it('PLS-005 a project switch clears a pending scene request', () => {
+    usePlantChoice
+      .getState()
+      .show({ panel: 'x', key: 'belt-to-sensor', scene: JSON.parse(sceneFiles('belt-to-sensor').scene), map: undefined });
+    usePlantChoice.getState().ask({ kind: 'file', name: 'line' });
+    expect(usePlantChoice.getState().request).toBeDefined();
+    dom.patchStore(useIDEStore, { directoryHandle: {} as FileSystemDirectoryHandle });
+    try {
+      expect(usePlantChoice.getState().request).toBeUndefined();
+    } finally {
+      dom.patchStore(useIDEStore, { directoryHandle: null });
+    }
   });
 });

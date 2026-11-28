@@ -215,6 +215,39 @@ describe('shortcuts (UX-015)', () => {
     expect(parseChord('Enter').key).toBe('Enter');
   });
 
+  it('SHL-011 Mod+Comma opens Preferences from the renderer, as the key the browser reports', () => {
+    const matcher = createShortcutMatcher(
+      COMMAND_LIST.flatMap((command) => (command.shortcut ? [{ id: command.id, chords: parseShortcut(command.shortcut) }] : [])),
+    );
+    expect(matcher.handle(key(',', { ctrlKey: true })).id).toBe('file.preferences');
+    expect(matcher.handle(key(',', { metaKey: true })).id).toBe('file.preferences');
+    expect(matcher.handle(key('s', { ctrlKey: true })).id).toBe('file.save');
+    expect(formatShortcut('Mod+Comma', 'linux')).toBe('Ctrl+,');
+    expect(formatShortcut('Mod+Comma', 'darwin')).toBe('⌘,');
+    expect(toAccelerator('Mod+Comma')).toBe('CmdOrCtrl+,');
+  });
+
+  it('SHL-011 a key the registry names by word matches the character of the keydown', () => {
+    const words: Record<string, string> = {
+      Comma: ',',
+      Period: '.',
+      Slash: '/',
+      Backslash: '\\',
+      Semicolon: ';',
+      Quote: "'",
+      Backquote: '`',
+      Minus: '-',
+      Equal: '=',
+      Plus: '+',
+      BracketLeft: '[',
+      BracketRight: ']',
+    };
+    for (const [word, character] of Object.entries(words))
+      expect(chordMatches(parseChord(`Mod+${word}`), key(character, { ctrlKey: true }))).toBe(true);
+    // `+` separates the parts of an accelerator, so Electron names it by word.
+    expect(toAccelerator('Mod+Plus')).toBe('CmdOrCtrl+Plus');
+  });
+
   it('UX-015 matches Ctrl or Cmd as the command key and refuses a modifier that was not asked for', () => {
     const save = parseChord('Mod+S');
     expect(chordMatches(save, key('s', { ctrlKey: true }))).toBe(true);
@@ -414,7 +447,12 @@ describe('lane W command contract (FND-002)', () => {
   it('FND-002 keeps the 38 commands of 2.0 and the plant I/O one, in their order, ahead of the new ones', () => {
     const ids = COMMAND_LIST.map((command) => command.id);
     const old = ids.filter(
-      (id) => !(id in LANE_W_COMMANDS) && !(id in U2_COMMANDS) && !(id in PLANT_VIEW_COMMANDS) && !(id in U3_COMMANDS),
+      (id) =>
+        !(id in LANE_W_COMMANDS) &&
+        !(id in U2_COMMANDS) &&
+        !(id in PLANT_VIEW_COMMANDS) &&
+        !(id in U3_COMMANDS) &&
+        !(id in ASSISTANT_COMMANDS),
     );
     expect(old.length).toBe(39);
     expect(old.slice(0, 5)).toEqual(['file.save', 'file.open', 'file.new', 'file.export', 'view.commandPalette']);
@@ -497,7 +535,7 @@ describe('milestone U3 command contract (FND-002)', () => {
     const pending = COMMAND_LIST.filter((command) => command.pending).map((command) => command.id);
     expect(pending.sort()).toEqual(
       Object.keys(U3_COMMANDS)
-        .filter((id) => id !== 'view.showPlant' && id !== 'view.focusCommandBar')
+        .filter((id) => id !== 'view.showPlant' && id !== 'view.focusCommandBar' && id !== 'learn.check' && id !== 'view.lessonLayout')
         .sort(),
     );
     const listed = menuCommands.map((command) => command.id);
@@ -523,6 +561,35 @@ describe('milestone U3 command contract (FND-002)', () => {
       [u3IoModeEn, u3IoModeEs],
     ] as const;
     for (const [english, spanish] of pairs) expect(Object.keys(spanish).sort()).toEqual(Object.keys(english).sort());
+  });
+});
+
+/** The commands of the Assistant polish (AIX-003, AIX-007, plan-aix.md 9.2 and 9.4), registered after those of milestone U3. */
+const ASSISTANT_COMMANDS = {
+  'ai.askAboutSelection': ['view', 'Ask the Assistant about the selection', 'Preguntar al Asistente sobre la selección'],
+  'ai.connectMcp': ['help', 'Connect an AI agent (MCP)', 'Conectar un agente de IA (MCP)'],
+} as const;
+
+describe('Assistant command contract (AIX-003, AIX-007)', () => {
+  it('AIX-007 the Assistant commands are registered with their titles in both languages, no shortcut and nothing physical', () => {
+    for (const [id, [category, english, spanish]] of Object.entries(ASSISTANT_COMMANDS)) {
+      expect([id, isCommandId(id)]).toEqual([id, true]);
+      const command = commandById(id as never);
+      expect([id, command.category, command.physical, command.shortcut]).toEqual([id, category, undefined, undefined]);
+      expect([(en as Record<string, string>)[command.titleKey], (es as Record<string, string>)[command.titleKey]]).toEqual([
+        english,
+        spanish,
+      ]);
+    }
+    expect(Object.keys(AI_COMMAND_PROPOSALS)).not.toContain('ai.connectMcp');
+  });
+
+  it('AIX-007 the MCP connection is offered with no project open (its panel says to open one), the selection question needs a file', () => {
+    expect(isCommandEnabled(commandById('ai.connectMcp' as never), INITIAL_COMMAND_STATE)).toBe(true);
+    expect(isCommandEnabled(commandById('ai.askAboutSelection' as never), INITIAL_COMMAND_STATE)).toBe(false);
+    expect(
+      isCommandEnabled(commandById('ai.askAboutSelection' as never), { ...INITIAL_COMMAND_STATE, projectOpen: true, hasActiveFile: true }),
+    ).toBe(true);
   });
 });
 
@@ -559,7 +626,12 @@ describe('milestone U2 command contract (FND-002)', () => {
     const ids = COMMAND_LIST.map((command) => command.id as string);
     const firstU2 = ids.findIndex((id) => id in U2_COMMANDS);
     expect(ids.slice(0, firstU2).length).toBe(39 + Object.keys(LANE_W_COMMANDS).length);
-    expect(ids.slice(firstU2)).toEqual([...Object.keys(U2_COMMANDS), ...Object.keys(PLANT_VIEW_COMMANDS), ...Object.keys(U3_COMMANDS)]);
+    expect(ids.slice(firstU2)).toEqual([
+      ...Object.keys(U2_COMMANDS),
+      ...Object.keys(PLANT_VIEW_COMMANDS),
+      ...Object.keys(U3_COMMANDS),
+      ...Object.keys(ASSISTANT_COMMANDS),
+    ]);
     expect(ids[firstU2 - 1]).toBe('help.learn');
     expect(ids.slice(0, 5)).toEqual(['file.save', 'file.open', 'file.new', 'file.export', 'view.commandPalette']);
   });

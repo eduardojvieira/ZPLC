@@ -48,14 +48,14 @@
   "hints": [
     {
       "level": 1,
-      "text": "Total es un INT, así que sumarle una constante INT da un INT. Un flanco ascendente es Step en TRUE ahora y StepWas en FALSE en el ciclo anterior."
+      "text": "Busque la instrucción que cambia Total: no hay ninguna. Después mire las declaraciones: una de ellas todavía no la usa ninguna instrucción."
     },
     {
       "level": 2,
-      "text": "IF Reset THEN Total := 0; ELSIF Step AND NOT StepWas THEN Total := Total + 5; END_IF; StepWas := Step; Póngalo antes de las tres líneas de comparación."
+      "text": "IF Reset THEN Total := 0; ELSIF Step AND NOT StepWas THEN Total := Total + 5; END_IF; StepWas := Step; Póngalo antes de las tres líneas de comparación. StepWas conserva el valor de Step del ciclo anterior, así que Step AND NOT StepWas es TRUE solo en el ciclo de una pulsación nueva."
     }
   ],
   "faultCases": [
-    "El programa inicial declara Total y las tres comparaciones pero nunca cambia Total, así que Low queda en ON para siempre; sume 5 a Total en cada flanco ascendente de Step y bórrelo mientras Reset sea TRUE."
+    "El programa inicial declara Total y escribe los tres rangos pero nunca cambia Total, así que Low queda en ON para siempre."
   ]
 }

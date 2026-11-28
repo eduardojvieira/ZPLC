@@ -9,6 +9,8 @@ export const u3GuideEn = {
   'u3Guide.stage': 'Stage {n} of {total}',
   'u3Guide.stages': 'Stages of the lesson',
   'u3Guide.jump': 'Go to stage {n}',
+  'u3Guide.locked': 'Locked',
+  'u3Guide.reflectLocked': 'Reflect opens when the lesson passes, or when you choose to see the solution.',
   'u3Guide.back': 'Back',
   'u3Guide.next': 'Next',
   'u3Guide.solution': 'Solution',
@@ -16,7 +18,15 @@ export const u3GuideEn = {
   'u3Guide.files.scenario': 'Scenario: {scenario}',
   'u3Guide.files.record': 'Last check: {result} on {time}',
   'u3Guide.files.noRecord': 'No check recorded yet.',
+  'u3Guide.commLimit.title': 'Not available on Windows',
+  'u3Guide.commLimit.body':
+    'On Windows the simulator has no Modbus or MQTT blocks, no loopback and no device link, so this lesson cannot run its Check here. You can still read the lesson and write the program. To run it, open the same lesson on Linux or macOS. The Raspberry Pi Pico and the ESP32-S3 of the course cannot run it either.',
   'u3Guide.nextLesson': 'Next lesson',
+  'u3Guide.check.cancelled': 'The check did not start: your changes are not saved. Press Check again and agree to save them.',
+  'u3Guide.check.saveFailed': 'The check did not start: some documents could not be saved. Save them and press Check again.',
+  'u3Guide.check.noProject': 'The check did not start: open the exercise folder first.',
+  'u3Guide.check.noLink': 'The check did not start: the project could not be reached. Open the folder again and press Check.',
+  'u3Guide.check.desktop': 'The check did not start: this window cannot run it.',
 } as const;
 export const u3GuideEs: Record<keyof typeof u3GuideEn, string> = {
   'command.view.guide': 'Mostrar la guía',
@@ -28,6 +38,8 @@ export const u3GuideEs: Record<keyof typeof u3GuideEn, string> = {
   'u3Guide.stage': 'Etapa {n} de {total}',
   'u3Guide.stages': 'Etapas de la lección',
   'u3Guide.jump': 'Ir a la etapa {n}',
+  'u3Guide.locked': 'Bloqueada',
+  'u3Guide.reflectLocked': 'Reflexione se abre cuando la lección se supera, o cuando usted elige ver la solución.',
   'u3Guide.back': 'Atrás',
   'u3Guide.next': 'Siguiente',
   'u3Guide.solution': 'Solución',
@@ -35,5 +47,13 @@ export const u3GuideEs: Record<keyof typeof u3GuideEn, string> = {
   'u3Guide.files.scenario': 'Escenario: {scenario}',
   'u3Guide.files.record': 'Última comprobación: {result} el {time}',
   'u3Guide.files.noRecord': 'Aún no hay ninguna comprobación registrada.',
+  'u3Guide.commLimit.title': 'No disponible en Windows',
+  'u3Guide.commLimit.body':
+    'En Windows el simulador no tiene los bloques Modbus ni MQTT, ni el bucle local (loopback), ni el enlace con el dispositivo, así que esta lección no puede ejecutar aquí su comprobación. Puede leer la lección y escribir el programa. Para ejecutarla, abra la misma lección en Linux o macOS. La Raspberry Pi Pico y la ESP32-S3 del curso tampoco pueden ejecutarla.',
   'u3Guide.nextLesson': 'Siguiente lección',
+  'u3Guide.check.cancelled': 'La comprobación no empezó: sus cambios no están guardados. Pulse Comprobar de nuevo y acepte guardarlos.',
+  'u3Guide.check.saveFailed': 'La comprobación no empezó: algunos documentos no se pudieron guardar. Guárdelos y pulse Comprobar de nuevo.',
+  'u3Guide.check.noProject': 'La comprobación no empezó: abra primero la carpeta del ejercicio.',
+  'u3Guide.check.noLink': 'La comprobación no empezó: no se pudo llegar al proyecto. Abra la carpeta de nuevo y pulse Comprobar.',
+  'u3Guide.check.desktop': 'La comprobación no empezó: esta ventana no puede ejecutarla.',
 };

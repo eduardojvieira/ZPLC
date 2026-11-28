@@ -9,7 +9,9 @@
  */
 
 import type { Edge, Node } from '@xyflow/react';
-import { getDefaultPorts, type FBDModel } from '../../models/fbd';
+import type { MenuItem } from '../../ui';
+import { getDefaultPorts, type FBDModel, type FBDPort } from '../../models/fbd';
+import { stdFunction } from '../../catalog/stdFunctions';
 import { judgeConnection } from '../../models/pinTypes';
 import { fbdNeedsInstance } from '../../transpiler/fbdToST';
 import { findProjectBlock, projectPalette, type ProjectBlock } from '../../models/projectBlocks';
@@ -84,6 +86,15 @@ export const FBD_MODEL_COMMANDS: readonly string[] = [
   ...ARRANGE_COMMANDS,
   ...EXTEND_COMMANDS,
 ];
+
+/**
+ * The commands of a block that takes more inputs (MUX, LNG-029): its context menu runs them, and the menu opens from the keyboard
+ * as every context menu does. They are not keys of the table.
+ */
+export const FBD_INPUT_COMMANDS: readonly string[] = ['addInput', 'removeInput'];
+
+/** Whether a block of this type takes more inputs, so that `addInput` and `removeInput` apply to it. */
+export const fbdTakesMoreInputs = (type: string): boolean => stdFunction(type)?.variadic === true;
 
 /** The commands of the table that the editor runs because they need the screen: the clipboard, the breakpoint, the list. */
 export const FBD_EDITOR_COMMANDS: readonly string[] = ['copySelection', 'pasteSelection', 'toggleBreakpoint', 'showCommands', 'fitView'];
@@ -519,9 +530,62 @@ export function runFBDCommand(
         say: t('keyboard.deleted', { things: tn('keyboard.blocks', doomed.size), wires: tn('keyboard.wires', wires.length) }),
       };
     }
+    case 'addInput':
+    case 'removeInput':
+      return changeInputs(state, here, command === 'addInput', projectBlocks);
     default:
       return refuse(state, `${command} is not a command of the function block editor.`);
   }
+}
+
+/**
+ * The items `Add input` and `Remove input` of the context menu of a block that takes more inputs, when it is the one selected block;
+ * none for any other block. An item that cannot run is disabled and says why.
+ */
+export function fbdInputMenuItems(nodes: readonly Node[], readOnly: boolean, run: (command: string) => void): MenuItem[] {
+  const here = cursorNode(nodes);
+  if (!here || !fbdTakesMoreInputs(blockType(here))) return [];
+  const extra = ((data(here).inputs as FBDPort[] | undefined) ?? []).filter((port) => /^IN\d+$/.test(port.name));
+  const editing = readOnly ? t('editor.menu.readOnly') : undefined;
+  const keep = editing ?? (extra.length <= 2 ? t('fbd.input.atLeastTwo', { name: blockTitle(here) }) : undefined);
+  const max = stdFunction(blockType(here))?.maxInputs;
+  const full =
+    editing ?? (max !== undefined && extra.length >= max ? t('fbd.input.atMost', { name: blockTitle(here), count: max }) : undefined);
+  return [
+    {
+      id: 'addInput',
+      label: t('fbd.input.add'),
+      separatorBefore: true,
+      onSelect: () => run('addInput'),
+      ...(full ? { disabled: true, disabledReason: full } : {}),
+    },
+    {
+      id: 'removeInput',
+      label: t('fbd.input.remove'),
+      onSelect: () => run('removeInput'),
+      ...(keep ? { disabled: true, disabledReason: keep } : {}),
+    },
+  ];
+}
+
+/** One more input `IN<n>` on a block that takes more, or one less, never below IN0 and IN1; the wire of a removed input goes with it. */
+function changeInputs(state: FBDState, here: Node | undefined, add: boolean, projectBlocks?: readonly ProjectBlock[]): FBDOutcome {
+  if (!here) return refuse(state, t('fbd.input.selectBlock'));
+  const name = blockTitle(here);
+  if (!fbdTakesMoreInputs(blockType(here))) return refuse(state, t('fbd.input.notVariadic', { name }));
+  const inputs = (data(here).inputs as FBDPort[] | undefined) ?? getDefaultPorts(blockType(here), projectBlocks).inputs;
+  const extra = inputs.filter((port) => /^IN\d+$/.test(port.name));
+  if (!add && extra.length <= 2) return refuse(state, t('fbd.input.atLeastTwo', { name }));
+  const max = stdFunction(blockType(here))?.maxInputs;
+  if (add && max !== undefined && extra.length >= max) return refuse(state, t('fbd.input.atMost', { name, count: max }));
+  const pin = add ? `IN${extra.length}` : extra[extra.length - 1]!.name;
+  const next = add ? [...inputs, { name: pin, type: extra[0]?.type ?? 'ANY' }] : inputs.filter((port) => port.name !== pin);
+  return {
+    nodes: state.nodes.map((node) => (node.id === here.id ? { ...node, data: { ...node.data, inputs: next } } : node)),
+    edges: add ? state.edges : state.edges.filter((edge) => !(edge.target === here.id && edge.targetHandle === pin)),
+    changed: true,
+    say: t(add ? 'fbd.input.added' : 'fbd.input.removed', { name, pin }),
+  };
 }
 
 function select(state: FBDState, node: Node): FBDOutcome {

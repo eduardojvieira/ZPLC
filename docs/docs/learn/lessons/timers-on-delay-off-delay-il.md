@@ -26,7 +26,7 @@ Call a TOF timer with CAL to keep a light on after a push button is released, an
 ## Objectives
 
 - Call a timer instance with CAL on every scan, passing its input and its preset, and read its output after the call.
-- Keep an output on for a fixed time after its input drops, with a TOF, and ignore an input that is on for less than a fixed time, with a TON.
+- Keep an output on for a fixed time after its input drops, and ignore an input that is on for less than a fixed time.
 
 ## Stages
 

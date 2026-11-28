@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/HeightSortChain.st the sorter of lesson 16.4 works while the sensors tell the truth. Add a diagnosis: a box breaks BeamHigh for about a second, so a TON of three seconds on High marks the beam as stuck. Latch a Fault, then stop the infeed and the chain module, keep the blade holding and put Busy out.",
+      "body": "In src/HeightSortChain.st the sorter of lesson 16.4 works while the sensors tell the truth. Add a diagnosis: a box breaks BeamHigh for about a second, so a beam that stays on for three seconds is stuck. From then on the program must remember the fault, stop the infeed and the chain module, keep the blade holding and put Busy out.",
       "checkpoint": "After the fault the infeed is off, Busy and Done are off, the blade still holds, and no box has gone to the wrong bin."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter sorts correctly but trusts BeamHigh for ever; when the beam sticks on, boxes that are not tall are sent to BinTall, so latch a fault when High stays on for three seconds and stop the line.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter sorts correctly but trusts BeamHigh for ever; when the beam sticks on, boxes that are not tall are sent to BinTall, so the line must stop, and stay stopped, once High has stayed on for three seconds.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -48,14 +48,14 @@
   "hints": [
     {
       "level": 1,
-      "text": "A normal box breaks BeamHigh for about a second. Use Stuck(IN := High, PT := T#3000ms), latch Fault := TRUE when Stuck.Q is TRUE and never clear it."
+      "text": "A normal box breaks BeamHigh for about a second, so a beam that stays on much longer is a fact the program can read. Once the fault is found, nothing in the program may clear it."
     },
     {
       "level": 2,
-      "text": "Stop what brings new boxes: RunIn and RunChain get AND NOT Fault, Stand gets AND NOT Fault so that no box is routed on a reading you do not trust, and Busy goes out. Leave the three outfeed belts running so that a box already on its way arrives."
+      "text": "Use Stuck(IN := High, PT := T#3000ms), latch Fault := TRUE when Stuck.Q is TRUE and never clear it. Stop what brings new boxes: RunIn and RunChain get AND NOT Fault, Stand gets AND NOT Fault so that no box is routed on a reading you do not trust, and Busy goes out. Leave the three outfeed belts running so that a box already on its way arrives."
     }
   ],
   "faultCases": [
-    "The starter sorts correctly but trusts BeamHigh for ever; when the beam sticks on, boxes that are not tall are sent to BinTall, so latch a fault when High stays on for three seconds and stop the line."
+    "The starter sorts correctly but trusts BeamHigh for ever; when the beam sticks on, boxes that are not tall are sent to BinTall, so the line must stop, and stay stopped, once High has stayed on for three seconds."
   ]
 }

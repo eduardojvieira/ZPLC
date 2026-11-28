@@ -4,8 +4,8 @@
   "summary": "Coloque un CTU en un peldaño para que CountReached se active en el tercer flanco ascendente de una entrada de pulsos y Reset borre la cuenta.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un sensor real, cuántos pulsos pierde una entrada real ni cómo se cablea.",
   "objectives": [
-    "Coloque un bloque contador en un peldaño y fije su preset y su reset.",
-    "Explique que un contador suma uno en el flanco ascendente de su entrada, no en cada escaneo en que la entrada está en alto."
+    "Coloque un bloque contador en un peldaño y fije su valor preestablecido y su reset.",
+    "Explique que un contador suma uno en el flanco ascendente de su entrada, no en cada ciclo en que la entrada está en alto."
   ],
   "stages": [
     {
@@ -17,7 +17,7 @@
     {
       "key": "predict",
       "title": "Prediga",
-      "body": "PulseInput sube a los {{t:10}}, {{t:30}} y {{t:50}} ms, un escaneo cada vez. Reset se pulsa a los {{t:70}} ms. Prediga CountReached a los {{t:30}}, {{t:50}} y {{t:70}} ms.",
+      "body": "PulseInput sube a los {{t:10}}, {{t:30}} y {{t:50}} ms, un ciclo cada vez. Reset se pulsa a los {{t:70}} ms. Prediga CountReached a los {{t:30}}, {{t:50}} y {{t:70}} ms.",
       "checkpoint": "{{v:EdgeCounterLd.CountReached=false@30|En OFF}} a los {{t:30}} ms, solo dos pulsos hasta ahora; {{v:EdgeCounterLd.CountReached=true@50|en ON}} a los {{t:50}} ms, con el tercero; {{v:EdgeCounterLd.CountReached=false@70|en OFF}} a los {{t:70}} ms, tras Reset."
     },
     {
@@ -41,8 +41,8 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "Reemplace el contacto simple delante del CTU por un contacto de transición positiva y ejecute de nuevo. ¿Por qué el resultado no cambia?",
-      "checkpoint": "El CTU ya cuenta solo el cambio de FALSE a TRUE de su entrada, así que un pulso cuenta una vez sin importar cuántos escaneos se mantenga en alto; el contacto de flanco solo repite lo que hace el bloque. Un pulso que sube mientras Reset está activo se pierde."
+      "body": "Reemplace el contacto simple delante del CTU por un contacto de flanco ascendente y ejecute de nuevo. ¿Por qué el resultado no cambia?",
+      "checkpoint": "El CTU ya cuenta solo el cambio de FALSE a TRUE de su entrada, así que un pulso cuenta una vez sin importar cuántos ciclos se mantenga en alto; el contacto de flanco solo repite lo que hace el bloque. Un pulso que sube mientras Reset está activo se pierde."
     }
   ],
   "hints": [

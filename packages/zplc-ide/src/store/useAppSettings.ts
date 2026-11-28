@@ -57,7 +57,10 @@ export function applyDisplaySettings(settings: AppSettings, root: { dataset: Rec
 /** Applies the saved display settings before the first paint and keeps them applied. Call once, at start-up. */
 export function initializeSettings(): void {
   if (typeof document === 'undefined') return;
-  const apply = (settings: AppSettings) => applyDisplaySettings(settings, document.documentElement);
+  // looked up at each change: a test that set the settings up can outlive its document
+  const apply = (settings: AppSettings) => {
+    if (typeof document !== 'undefined') applyDisplaySettings(settings, document.documentElement);
+  };
   apply(useAppSettings.getState().settings);
   useAppSettings.subscribe((state, previous) => {
     if (state.settings.density !== previous.settings.density || state.settings.language !== previous.settings.language)

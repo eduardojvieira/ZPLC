@@ -119,7 +119,8 @@ const parseMap = (text: string): PlantMapV2 | undefined => {
 
 type Load =
   | { phase: 'loading' }
-  | { phase: 'failed'; detail: string }
+  /** `scene` when the text was read (its schematic can be drawn); `at` where the text stops being JSON when it was not (PLS-009). */
+  | { phase: 'failed'; detail: string; scene?: PlantSceneFile | undefined; at?: { line: number; column: number } | undefined }
   | { phase: 'ready'; engine: PlantEngine; scene: PlantSceneFile; core: PlantCore; map: PlantMapV2 | undefined };
 
 /** The snapshots, pushed to whoever draws them. Not React state: a scan arrives far more often than the interface needs to repaint. */
@@ -159,6 +160,32 @@ export interface PlantBinding {
 
 export const UI_TICK_MS = 100;
 
+let boundMap: PlantMapV2 | undefined;
+const mapListeners = new Set<() => void>();
+
+/** Records the plant map the session now bound runs by (PLS-007); the returned function clears it. */
+export function bindPlantMap(map: PlantMapV2): () => void {
+  boundMap = map;
+  mapListeners.forEach((listener) => listener());
+  return () => {
+    if (boundMap === map) {
+      boundMap = undefined;
+      mapListeners.forEach((listener) => listener());
+    }
+  };
+}
+
+/** The map of the plant session that is bound now, whatever scene it came from; none while no plant session is bound. */
+export function useBoundPlantMap(): PlantMapV2 | undefined {
+  return useSyncExternalStore(
+    (listener) => {
+      mapListeners.add(listener);
+      return () => void mapListeners.delete(listener);
+    },
+    () => boundMap,
+  );
+}
+
 const fileText = (files: ReadonlyMap<string, { path: string; content: string }>, path: string): string | undefined =>
   [...files.values()].find((file) => file.path === path)?.content;
 const NEVER = () => () => undefined;
@@ -167,6 +194,66 @@ const NEVER = () => () => undefined;
 export interface SceneOverride {
   scene: string;
   map: string;
+}
+
+/**
+ * Where a text stops being JSON, as a 1-based line and column, or undefined when it is JSON. Bun's parse error names no position, so
+ * this walks the grammar once: the first character no JSON value accepts, or the end when the text stops early.
+ */
+export function jsonBreakAt(text: string): { line: number; column: number } | undefined {
+  let i = 0;
+  const fail = (): never => {
+    throw i;
+  };
+  const space = () => {
+    while (i < text.length && ' \t\n\r'.includes(text[i]!)) i += 1;
+  };
+  const string = () => {
+    i += 1;
+    while (i < text.length && text[i] !== '"') i += text[i] === '\\' ? 2 : 1;
+    if (i >= text.length) fail();
+    i += 1;
+  };
+  const list = (close: string, item: () => void) => {
+    i += 1;
+    space();
+    if (text[i] === close) return void (i += 1);
+    for (;;) {
+      item();
+      space();
+      if (text[i] === close) return void (i += 1);
+      if (text[i] !== ',') fail();
+      i += 1;
+    }
+  };
+  const value = (): void => {
+    space();
+    const c = text[i];
+    if (c === '{')
+      return list('}', () => {
+        space();
+        if (text[i] !== '"') fail();
+        string();
+        space();
+        if (text[i] !== ':') fail();
+        i += 1;
+        value();
+      });
+    if (c === '[') return list(']', value);
+    if (c === '"') return string();
+    const word = /^(true|false|null|-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?)/.exec(text.slice(i))?.[0];
+    if (!word) fail();
+    i += word!.length;
+  };
+  try {
+    value();
+    space();
+    if (i >= text.length) return undefined;
+  } catch {
+    // `i` is where the value broke
+  }
+  const before = text.slice(0, i);
+  return { line: before.split('\n').length, column: i - before.lastIndexOf('\n') };
 }
 
 export function usePlantSession(
@@ -229,12 +316,20 @@ export function usePlantSession(
       }
       return projectScene === undefined ? undefined : { scene: projectScene, map: projectMap ?? '' };
     };
+    let read: PlantSceneFile | undefined;
+    let at: { line: number; column: number } | undefined;
     void (async () => {
       const engine = await loadEngine();
       const texts = override ?? (await sceneTexts(engine));
       if (!texts) throw new Error(ref.kind === 'shipped' ? ref.id : ref.kind === 'file' ? ref.name : 'scene.json');
       const parsed = parseScene(texts.scene);
-      if ('problems' in parsed) throw new Error(parsed.problems.map((problem) => `${problem.path}: ${problem.message}`).join('; '));
+      if ('problems' in parsed) {
+        at = jsonBreakAt(texts.scene);
+        throw new Error(
+          parsed.problems.map((problem) => (problem.path ? `${problem.path}: ${problem.message}` : problem.message)).join('; '),
+        );
+      }
+      read = parsed.scene;
       const core = await engine.createPlantCore(parsed.scene);
       if (cancelled) return core.dispose();
       created = core;
@@ -242,7 +337,8 @@ export function usePlantSession(
       push(core.snapshot());
       setLoaded({ key, load: { phase: 'ready', engine, scene: parsed.scene, core, map: parseMap(texts.map) } });
     })().catch((error: unknown) => {
-      if (!cancelled) setLoaded({ key, load: { phase: 'failed', detail: error instanceof Error ? error.message : String(error) } });
+      if (!cancelled)
+        setLoaded({ key, load: { phase: 'failed', detail: error instanceof Error ? error.message : String(error), scene: read, at } });
     });
     return () => {
       cancelled = true;
@@ -265,6 +361,7 @@ export function usePlantSession(
   useEffect(() => {
     if (!session || !transport) return;
     const unregister = registerPlantTransport(transport);
+    const unbind = bindPlantMap(map!);
     const off = session.onChange((event) => {
       if (event.kind === 'scan') push(event.snapshot);
       if (event.kind === 'slowdown') {
@@ -274,10 +371,11 @@ export function usePlantSession(
     });
     return () => {
       off();
+      unbind();
       unregister();
       if (session.state !== 'idle' && session.state !== 'stopped') void session.stop().catch(() => undefined);
     };
-  }, [session, transport, push]);
+  }, [session, transport, push, map]);
   const state = useSyncExternalStore(
     useCallback((notify: () => void) => (transport ? transport.onChange(notify) : NEVER()), [transport]),
     () => transport?.state ?? 'stopped',

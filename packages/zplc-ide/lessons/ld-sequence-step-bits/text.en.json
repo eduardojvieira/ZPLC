@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/TankSequence.ld.json the sequence has three step bits, StepFill, StepMix and StepDrain, and a timer for each one. The transition from fill to mix is already written, with one rung that sets StepMix and one that resets StepFill. The transition from mix to drain is missing. Add two rungs after the fill-to-mix transition: one that sets StepDrain and one that resets StepMix, both when StepMix is on and MixTimer.Q is on.",
-      "checkpoint": "Two new rungs follow the fill-to-mix transition, one with a set coil on StepDrain and one with a reset coil on StepMix."
+      "body": "In src/TankSequence.ld.json the sequence has three step bits, StepFill, StepMix and StepDrain, and a timer for each one. The transition from fill to mix is already written, with one rung that sets StepMix and one that resets StepFill. The transition from mix to drain is missing. The sequence must leave the mix step for the drain step once the mix time is over, with only one step bit on at a time.",
+      "checkpoint": "You can say which step must follow the mix step, and what must have happened before it does."
     },
     {
       "key": "predict",
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter has no transition out of the mix step: Mixer stays ON at {{t:100}} ms and DrainValve stays OFF; add one rung that sets StepDrain and one that resets StepMix when StepMix and MixTimer.Q are both on. In the Ladder editor, copy the two rungs of the fill-to-mix transition, then change their contacts to StepMix and MixTimer.Q and their coils to a set coil on StepDrain and a reset coil on StepMix.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter never leaves the mix step: Mixer stays ON at {{t:100}} ms and DrainValve stays OFF. The sequence must go from mixing to draining when the mix time is over, and Mixer and DrainValve must never be ON together. Draw the change in the Ladder editor.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson.",
       "checkpoint": "The scenario is named TankSequence and contains {{assertions}} assertions."
     },
     {
@@ -41,21 +41,19 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Delete only the rung that resets StepMix and run again. Which assertions fail, and why?",
-      "checkpoint": "StepMix stays on after the transition, so the mixer keeps running next to the drain valve: the assertions that forbid two outputs together fail, and so does the one that expects Mixer OFF at {{t:100}} ms. A transition is two actions, setting the next step and resetting the current one, and both must happen in the same scan."
+      "body": "Once it passes, imagine two step bits ON in the same scan. Which assertions would fail, and why?",
+      "checkpoint": "The mixer would keep running next to the drain valve: the assertions that forbid two outputs together would fail, and so would the one that expects Mixer OFF at {{t:100}} ms. A sequence keeps exactly one step bit ON at a time."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "A transition has two parts: something must turn the next step on, and something must turn the current step off. Which of the two is missing in the starter?"
+      "text": "Look at the two rungs of the fill-to-mix transition: a transition turns the next step on and the current step off in the same scan. Which step comes after mix, and what tells you the mix is over?"
     },
     {
       "level": 2,
       "text": "Copy the two transition rungs above. Use StepMix and MixTimer.Q as the contacts, with a set coil on StepDrain in one rung and a reset coil on StepMix in the other."
     }
   ],
-  "faultCases": [
-    "The starter has no transition out of the mix step: Mixer stays ON at {{t:100}} ms and DrainValve stays OFF; add one rung that sets StepDrain and one that resets StepMix when StepMix and MixTimer.Q are both on."
-  ]
+  "faultCases": ["The starter never leaves the mix step: Mixer stays ON at {{t:100}} ms and DrainValve stays OFF."]
 }

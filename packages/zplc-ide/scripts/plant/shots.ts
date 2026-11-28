@@ -2,13 +2,14 @@
  * Page side of scripts/plant/capture.ts: draws one scene in one state, display mode, quality level and size and returns the frame as
  * a PNG data URL, composes labelled contact sheets, and measures the frame rate of a scene left running. See stage.ts for the method.
  */
-import type { CameraPreset } from '../../src/plant/contracts';
+import type { CameraPreset, PlantSceneFile } from '../../src/plant/contracts';
 import type { DisplayMode } from '../../src/plant/view/displayModes';
 import type { QualityLevel } from '../../src/plant/view/quality';
 import { draw, frames, openStage, partRect, pngOf, type Rect, type Stage } from './stage';
 
 export interface ShotSpec {
-  scene: string;
+  /** A shipped scene by id, or a scene file of the capture's own (a fixture such as sensorKinds.scene.json). */
+  scene: string | PlantSceneFile;
   quality: QualityLevel;
   mode: DisplayMode;
   width: number;
@@ -43,6 +44,17 @@ export const STATES: Readonly<Record<string, (stage: Stage) => Promise<void>>> =
     for (const e of emitters(s)) await pulse(s, e);
     runBelts(s, true);
     await s.run(1200, 20);
+  },
+  /**
+   * Every axis and rod of the scene away from rest, at positions that only the scene decides: each analogue setpoint at its own
+   * mid-stroke value, each boolean command on (a pusher out, a fork raised) except the `Right` ones and the emitters. For the pictures
+   * that show the geometry of a piece whose size follows an axis is the same before and after a change of how it is kept.
+   */
+  axes: async (s) => {
+    const commands = s.core.signals.filter((c) => c.direction === 'command');
+    const value = (c: { name: string; type: string }, i: number) => (c.type === 'BOOL' ? !/Right$|\.emit$/.test(c.name) : 0.45 + 0.07 * i);
+    s.core.apply(Object.fromEntries(commands.map((c, i) => [c.name, value(c, i)])));
+    await s.run(1500, 20);
   },
   /** The belt has run and stopped, its box still on the way (pair with `running`, same instant). */
   stopped: async (s) => {

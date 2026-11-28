@@ -37,12 +37,13 @@ Después del CAL, `LD FanRunOn.Q` carga Q en el resultado actual y un ST la guar
 
 Un compresor de aire arranca cuando su presostato, `PressureLow`, informa presión baja. El presostato parpadea cuando se toma aire en ráfagas cortas, así que el motor debe arrancar solo cuando `PressureLow` se mantuvo en ON durante `T#1s`. Su ventilador de refrigeración debe seguir funcionando `T#4s` después de que el motor se detiene.
 
-"Esperar antes de encender" es un TON sobre el presostato; "seguir encendido después" es un TOF sobre el motor. Cada temporizador tiene su propio CAL, su propio LD y su propio ST.
+"Esperar antes de encender" es un TON sobre el presostato; "seguir encendido después" es un TOF sobre el motor. Cada temporizador tiene su propio CAL y su propio LD, y el motor además necesita que su relé de sobrecarga, `Overload`, no se haya disparado, así que un ANDN se ubica entre el LD del temporizador y el ST.
 
 ```il
 PROGRAM Compressor
 VAR_INPUT
     PressureLow : BOOL;
+    Overload : BOOL;
 END_VAR
 VAR_OUTPUT
     Motor : BOOL;
@@ -55,6 +56,7 @@ END_VAR
 
         CAL   StartDelay(IN := PressureLow, PT := T#1s)
         LD    StartDelay.Q
+        ANDN  Overload
         ST    Motor
         CAL   FanRunOn(IN := Motor, PT := T#4s)
         LD    FanRunOn.Q
@@ -73,7 +75,7 @@ signals:
 marks:
   - { from: 2000, to: 3000, label: 'T#1s' }
   - { from: 6000, to: 10000, label: 'T#4s' }
-caption: El parpadeo nunca arranca el motor; el ventilador sigue después de que el motor se detiene
+caption: El parpadeo nunca arranca el motor; el ventilador sigue después de que el motor se detiene; Overload es FALSE todo el tiempo
 ```
 
 ## Errores comunes

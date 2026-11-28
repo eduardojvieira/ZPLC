@@ -31,6 +31,17 @@ function executable(path: string | undefined): string | undefined {
   }
   return undefined;
 }
+/**
+ * The Electron executable the way the electron package names it (its index.js): dist/ plus the relative path in path.txt,
+ * which install.js writes for the platform (electron on Linux, electron.exe on Windows, Electron.app/Contents/MacOS/Electron
+ * on macOS). Read here, not through require('electron'), which downloads the binary when it is missing.
+ */
+function electronExecutable(root = packageRoot): string {
+  const electron = join(root, 'node_modules', 'electron');
+  const pathFile = join(electron, 'path.txt');
+  assert(existsSync(pathFile), 'Installed Electron executable is missing. Run bun install first.');
+  return join(electron, 'dist', readFileSync(pathFile, 'utf8').trim());
+}
 function required(path: string): void {
   assert(existsSync(path), `Required Electron artifact is missing: ${path}. Run bun run electron:compile first.`);
 }
@@ -40,10 +51,7 @@ function preflight(): string {
   required(join(packageRoot, 'electron-dist', 'electron', 'main.js'));
   required(join(packageRoot, 'electron-dist', 'preload.cjs'));
   required(join(packageRoot, 'electron-dist', 'toolApi.js'));
-  assert(
-    executable(join(packageRoot, 'node_modules', 'electron', 'dist', process.platform === 'win32' ? 'electron.exe' : 'electron')),
-    'Installed Electron executable is missing. Run bun install first.',
-  );
+  assert(executable(electronExecutable()), 'Installed Electron executable is missing. Run bun install first.');
   return runtime;
 }
 function smokeVitePort(): number {
@@ -319,9 +327,7 @@ async function promptGone(cdp: Cdp): Promise<void> {
 }
 const card =
   `(() => { const panel = document.querySelector('[aria-label="Live native POSIX motor"]'); if (!panel) return null; const ` +
-  `text = panel.textContent ?? ''; const get = (name) => Array.from(panel.querySelectorAll('button')).find((button) => ` +
-  `button.textContent === name)?.disabled; return { text, cycles: Number((text.match(/·\\s*(\\d+) cycles/) ?? [])[1]), startDisabled: ` +
-  `get('Start'), stopDisabled: get('Stop'), assertDisabled: get('Assert E-stop'), releaseDisabled: get('Release E-stop') }; })()`;
+  `text = panel.textContent ?? ''; return { text, cycles: Number((text.match(/·\\s*(\\d+) cycles/) ?? [])[1]) }; })()`;
 
 async function main(): Promise<void> {
   const runtime = preflight();
@@ -350,7 +356,7 @@ async function main(): Promise<void> {
       (await fetch(`http://${HOST}:${vitePort}/`).catch(() => null))?.ok ? true : undefined,
     );
     assert(vite.exitCode === null, `Vite exited before Electron could use ${rendererUrl} (the port may be occupied).`);
-    const electronPath = join(packageRoot, 'node_modules', 'electron', 'dist', process.platform === 'win32' ? 'electron.exe' : 'electron');
+    const electronPath = electronExecutable();
     electron = Bun.spawn(
       [
         electronPath,
@@ -831,31 +837,97 @@ async function main(): Promise<void> {
         ? true
         : undefined,
     );
+    // GDE-002: the Learn activity shows the course outline, and the lesson follows the app language (LRN-029, GDE-005); the per-lesson
+    // language toggle is gone. The language a person learns in is still changed with the keyboard alone: Mod+Comma opens Preferences,
+    // and its language control is focusable and changes the outline text.
+    const outline = async (): Promise<{ label: string | null; text: string } | undefined> =>
+      (await cdp!.evaluate(
+        `(() => { const tree = document.querySelector('[role="tree"]'); return tree ? { label: tree.getAttribute('aria-label'), ` +
+          `text: tree.innerText } : undefined; })()`,
+      )) as { label: string | null; text: string } | undefined;
+    const englishOutline = await waitFor('English course outline', async () => {
+      const shown = await outline();
+      return shown?.label === 'Course outline' ? shown : undefined;
+    });
+    // Mod+Comma is a native menu accelerator, which a CDP key event does not reach; the palette (Mod+Shift+P) is the renderer's keyboard
+    // route to the same command.
+    const modifiers = (process.platform === 'darwin' ? 4 : 2) | 8;
+    await cdp.command('Input.dispatchKeyEvent', { type: 'keyDown', key: 'P', code: 'KeyP', modifiers, windowsVirtualKeyCode: 80 });
+    await cdp.command('Input.dispatchKeyEvent', { type: 'keyUp', key: 'P', code: 'KeyP', modifiers, windowsVirtualKeyCode: 80 });
+    await waitFor('command palette from the keyboard', async () =>
+      (await cdp!.evaluate(`document.activeElement?.getAttribute('aria-controls') !== null && document.activeElement?.tagName === 'INPUT'`))
+        ? true
+        : undefined,
+    );
+    await cdp.command('Input.insertText', { text: 'Open preferences' });
+    await press(cdp, 'Enter');
+    await waitFor('Preferences from the keyboard', async () =>
+      (await cdp!.evaluate(`document.querySelector('select[data-setting="language"]') !== null`)) ? true : undefined,
+    );
     assert(
       await cdp.evaluate(
-        `(() => { const english = [...document.querySelectorAll('button')].find((item) => item.textContent === 'English'); ` +
-          `english?.focus(); return document.activeElement === english && english.matches(':focus-visible'); })()`,
+        `(() => { const control = document.querySelector('select[data-setting="language"]'); control?.focus(); return ` +
+          `document.activeElement === control && control.matches(':focus-visible'); })()`,
       ),
-      'Learn language selection is not keyboard focusable.',
+      'The language control in Preferences is not keyboard focusable.',
     );
-    await press(cdp, 'Enter');
-    const learnSelection = await waitFor(
-      'Learn keyboard selection',
-      async () =>
-        (await cdp!.evaluate(
-          `(() => { const status = document.querySelector('[data-learn-grade]'); const text = ` +
-            `document.querySelector('[aria-label="Primary sidebar"]')?.innerText ?? document.body.innerText; const selected = ` +
-            `[...document.querySelectorAll('button[aria-pressed="true"]')].map((item) => item.textContent); return status ? { grade: ` +
-            `status.getAttribute('data-learn-grade'), text: text.slice(-1_000), selected } : undefined; })()`,
-        )) as { grade: string | null; text: string; selected: string[] },
-    );
+    const languageValue = async () => String(await cdp!.evaluate(`document.querySelector('select[data-setting="language"]')?.value`));
+    // The choices are auto, en, es: the arrow keys walk them, so the run presses until the control holds the language it wants.
+    for (let step = 0; step < 2 && (await languageValue()) !== 'es'; step += 1) await press(cdp, 'ArrowDown');
+    const spanishOutline = await waitFor('Spanish course outline', async () => {
+      const shown = await outline();
+      return shown?.label === 'Índice del curso' ? shown : undefined;
+    });
     assert(
-      learnSelection.grade === 'not-run' &&
-        learnSelection.text.includes('Open the workspace of this lesson.') &&
-        !/\b(\d+) of \1 tests passed/.test(learnSelection.text) &&
-        learnSelection.selected.includes('English'),
-      `Learn keyboard selection did not remain read-only: ${JSON.stringify(learnSelection)}`,
+      // The outline opens with its paths collapsed, so the lesson text it shows is the path titles.
+      englishOutline.text.includes('Ladder diagram from zero') &&
+        spanishOutline.text.includes('Diagrama de escalera desde cero') &&
+        !spanishOutline.text.includes('Ladder diagram from zero'),
+      `The language control did not change the lesson text: ${JSON.stringify({ englishOutline, spanishOutline })}`,
     );
+    for (let step = 0; step < 2 && (await languageValue()) !== 'en'; step += 1) await press(cdp, 'ArrowUp');
+    const restoredOutline = await waitFor('English course outline again', async () => {
+      const shown = await outline();
+      return shown?.label === 'Course outline' ? shown : undefined;
+    });
+    // The language change is read-only for the project: no test ran from it.
+    assert(
+      restoredOutline.text.includes('Ladder diagram from zero') && !/\b(\d+) of \1 tests passed/.test(restoredOutline.text),
+      `The language change must not run the tests: ${JSON.stringify(restoredOutline)}`,
+    );
+    await cdp.evaluate(
+      `import('/src/store/usePreferencesDocument.ts').then(({ usePreferencesDocument }) => usePreferencesDocument.getState().close())`,
+    );
+    // The lesson text itself follows the app language too: a reading page, opened as the outline opens it, is read in English, then in
+    // Spanish, then in English again. The reading page is modal, so the language changes through the settings store, as the Preferences
+    // control does (the Studio vertical smoke does the same for the Guide).
+    const reading = (await cdp.evaluate(
+      `import('/src/generated/lessonIndex.ts').then(({ LESSON_INDEX }) => import('/src/learn/learnUi.ts').then(({ useLearnUi }) => { ` +
+        `const entry = LESSON_INDEX.lessons.find((lesson) => { const module = LESSON_INDEX.course.modules.find((item) => item.id === ` +
+        `lesson.module); return lesson.reading && module && module.title.en !== module.title.es; }); if (!entry) return null; const ` +
+        `module = LESSON_INDEX.course.modules.find((item) => item.id === entry.module); useLearnUi.getState().openReading(entry.id); ` +
+        `return { id: entry.id, en: module.title.en, es: module.title.es }; }))`,
+    )) as { id: string; en: string; es: string } | null;
+    assert(reading !== null, 'No lesson has a reading page whose module title differs between English and Spanish.');
+    const readingText = async (): Promise<string> =>
+      String(await cdp!.evaluate(`document.querySelector('[data-learn-reading]')?.innerText ?? ''`));
+    const setLanguage = (language: 'en' | 'es') =>
+      cdp!.evaluate(
+        `import('/src/store/useAppSettings.ts').then(({ useAppSettings }) => ` +
+          `useAppSettings.getState().update({ language: '${language}' }))`,
+      );
+    await waitFor('English reading page', async () => ((await readingText()).includes(reading.en) ? true : undefined));
+    await setLanguage('es');
+    await waitFor('Spanish reading page', async () => {
+      const shown = await readingText();
+      return shown.includes(reading.es) && !shown.includes(reading.en) ? true : undefined;
+    });
+    await setLanguage('en');
+    await waitFor('English reading page again', async () => {
+      const shown = await readingText();
+      return shown.includes(reading.en) && !shown.includes(reading.es) ? true : undefined;
+    });
+    await cdp.evaluate(`import('/src/learn/learnUi.ts').then(({ useLearnUi }) => useLearnUi.getState().closeReading())`);
     await waitFor('Test results tab after Learn', async () =>
       (await cdp!.evaluate(
         `(() => { const tab = [...document.querySelectorAll('button')].find((item) => ` +
@@ -901,62 +973,60 @@ async function main(): Promise<void> {
         ? state
         : undefined;
     });
-    await waitFor('Start input', async () =>
-      (await cdp!.evaluate(
-        `(() => { const button = [...document.querySelectorAll('[aria-label="Live native POSIX motor"] button')].find((item) => ` +
-          `item.textContent === 'Start'); if (!button || button.disabled) return undefined; button.click(); return true; })()`,
-      )) === true
-        ? true
-        : undefined,
-    );
+    // The motor inputs belong to the faceplate in the Watch tab (PLS-007); the Trace panel only shows what they do to the outputs.
+    const openTab = (name: string) =>
+      waitFor(`${name} tab`, async () =>
+        (await cdp!.evaluate(
+          `(() => { const tab = [...document.querySelectorAll('[role="tab"]')].find((item) => ` +
+            `(item.getAttribute('aria-label') ?? item.textContent ?? '').trim().startsWith(${JSON.stringify(name)})); ` +
+            `if (!tab) return false; tab.click(); return true; })()`,
+        )) === true
+          ? true
+          : undefined,
+      );
+    // A switch is clicked only once the faceplate reads the input in the opposite state, and the click is confirmed by the read-back.
+    const switchChecked = (input: string) =>
+      `document.querySelector('[data-input="Motor.${input}"] button[role="switch"]')?.getAttribute('aria-checked')`;
+    const setInput = async (input: string, on: boolean) => {
+      await openTab('Watch');
+      await waitFor(`${input} on the faceplate`, async () =>
+        (await cdp!.evaluate(
+          `(() => { const button = document.querySelector('[data-input="Motor.${input}"] button[role="switch"]'); ` +
+            `if (!button || button.disabled || button.getAttribute('aria-checked') !== '${!on}') return undefined; ` +
+            `button.click(); return true; })()`,
+        )) === true
+          ? true
+          : undefined,
+      );
+      await waitFor(`${input} read back as ${on}`, async () =>
+        (await cdp!.evaluate(switchChecked(input))) === String(on) ? true : undefined,
+      );
+      await openTab('Trace');
+    };
+    await setInput('Start', true);
     const started = await waitFor('post-Start native scan', async () => {
       const state = (await cdp!.evaluate(card)) as { text: string; cycles: number } | null;
       return state && state.cycles > armed.cycles && state.text.includes('Motor.ForwardON') && state.text.includes('Motor.ReverseOFF')
         ? state
         : undefined;
     });
-    await waitFor('E-stop assertion', async () =>
-      (await cdp!.evaluate(
-        `(() => { const button = [...document.querySelectorAll('[aria-label="Live native POSIX motor"] button')].find((item) => ` +
-          `item.textContent === 'Assert E-stop'); if (!button || button.disabled) return undefined; button.click(); return true; })()`,
-      )) === true
-        ? true
-        : undefined,
-    );
+    await setInput('EStop', true);
     const stopped = await waitFor('post-E-stop safe scan', async () => {
-      const state = (await cdp!.evaluate(card)) as {
-        text: string;
-        cycles: number;
-        startDisabled: boolean;
-        stopDisabled: boolean;
-        assertDisabled: boolean;
-        releaseDisabled: boolean;
-      } | null;
+      const state = (await cdp!.evaluate(card)) as { text: string; cycles: number } | null;
       return state &&
         state.cycles > started.cycles &&
         state.text.includes('Motor.ForwardOFF') &&
         state.text.includes('Motor.ReverseOFF') &&
-        state.text.includes('E-stop: asserted') &&
-        state.startDisabled &&
-        state.stopDisabled &&
-        state.assertDisabled &&
-        !state.releaseDisabled
+        state.text.includes('E-stop: asserted')
         ? state
         : undefined;
     });
-    await waitFor('E-stop release', async () =>
-      (await cdp!.evaluate(
-        `(() => { const button = [...document.querySelectorAll('[aria-label="Live native POSIX motor"] button')].find((item) => ` +
-          `item.textContent === 'Release E-stop'); if (!button || button.disabled) return undefined; button.click(); return true; })()`,
-      )) === true
-        ? true
-        : undefined,
-    );
+    await setInput('EStop', false);
     await waitFor('post-release native scan', async () => {
       const state = (await cdp!.evaluate(card)) as { text: string; cycles: number } | null;
       return state && state.cycles > stopped.cycles && state.text.includes('E-stop: released') ? state : undefined;
     });
-    // The bar's Stop (Shift+F5) ends the simulator session that Run began: the Disconnect of the old bar. The motor panel has a Stop too.
+    // The bar's Stop (Shift+F5) ends the simulator session that Run began: the Disconnect of the old bar.
     await waitFor('Stop', async () =>
       (await cdp!.evaluate(
         `(() => { const stop = document.querySelector('[role="toolbar"] button[aria-label^="Stop"]'); if (!stop || stop.disabled) ` +
@@ -1187,6 +1257,19 @@ async function main(): Promise<void> {
   }
 }
 // The journey runner (run-journeys.ts) reuses these start-up and CDP helpers; importing this file starts nothing.
-export { assert, assertSmokePortAvailable, Cdp, drain, freePort, HOST, packageRoot, preflight, smokeVitePort, stop, waitFor };
+export {
+  assert,
+  assertSmokePortAvailable,
+  Cdp,
+  drain,
+  electronExecutable,
+  freePort,
+  HOST,
+  packageRoot,
+  preflight,
+  smokeVitePort,
+  stop,
+  waitFor,
+};
 export type { OwnedProcess };
 if (import.meta.main) await main();

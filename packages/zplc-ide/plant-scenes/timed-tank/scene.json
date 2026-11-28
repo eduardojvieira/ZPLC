@@ -15,7 +15,7 @@
       "id": "start",
       "part": "push-button",
       "name": "StartButton",
-      "position": [-0.9, 0.5, 0.5],
+      "position": [-0.6, 0.5, 0.5],
       "rotationYDeg": 0,
       "config": {}
     },
@@ -23,7 +23,7 @@
       "id": "estop",
       "part": "emergency-stop",
       "name": "EStop1",
-      "position": [-0.9, 0.5, -0.1],
+      "position": [-0.6, 0.5, -0.1],
       "rotationYDeg": 0,
       "config": {}
     },
@@ -31,7 +31,7 @@
       "id": "light",
       "part": "stack-light",
       "name": "StackLight1",
-      "position": [0.9, 0.5, 0.5],
+      "position": [0.6, 0.5, 0.5],
       "rotationYDeg": 0,
       "config": {}
     }

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "plant-belt-to-sensor-ladder",
-  "version": 2,
+  "version": 4,
   "order": 1121,
   "module": 12,
   "level": "advanced",

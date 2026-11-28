@@ -24,7 +24,14 @@ const REFRESH_MS = 200;
 /** How long "applied" stays beside an input before the row goes quiet again. */
 const APPLIED_MS = 1500;
 
-export function FaceplatePanel({ controller }: { controller: DebugController | undefined }) {
+/** `plantFed`: the qualified paths of the inputs the running plant sets (PLS-007); a person sets one only after forcing it. */
+export function FaceplatePanel({
+  controller,
+  plantFed,
+}: {
+  controller: DebugController | undefined;
+  plantFed?: ReadonlySet<string> | undefined;
+}) {
   const { t } = useT();
   const debugMap = useIDEStore((state) => state.debug.debugMap);
   const forcedValues = useIDEStore((state) => state.debug.forcedValues);
@@ -99,6 +106,7 @@ export function FaceplatePanel({ controller }: { controller: DebugController | u
     phase: phases.get(input.path) ?? 'idle',
     forced: forcedValues.get(input.path)?.state === 'forced',
     forceable: FORCE_TYPES.has(input.type),
+    plantFed: plantFed?.has(input.path) === true,
   }));
   const outputRows: FaceplateOutputRow[] = ioMap.outputs.map((output) => ({
     output,
@@ -143,6 +151,7 @@ export function FaceplatePanel({ controller }: { controller: DebugController | u
         await forceAt(input, value);
         return;
       }
+      if (plantFed?.has(input.path)) return;
       pending.current.set(input.path, value);
       setPhase(input.path, 'pending');
       try {

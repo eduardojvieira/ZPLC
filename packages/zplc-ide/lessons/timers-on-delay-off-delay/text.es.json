@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "title": "Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión",
-  "summary": "Use un temporizador TOF para mantener una luz encendida después de soltar un botón, y un TON para ignorar un pulso de sensor demasiado corto.",
-  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un botón real ni con qué rapidez responde un sensor real.",
+  "summary": "Use un temporizador TOF para mantener una luz encendida después de soltar un pulsador, y un TON para ignorar un pulso de sensor demasiado corto.",
+  "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra cómo rebota un pulsador real ni con qué rapidez responde un sensor real.",
   "objectives": [
-    "Mantenga una salida encendida durante un tiempo fijo después de que su entrada caiga, con una instancia de TOF que se llama en cada ciclo.",
-    "Ignore una entrada que permanezca en ON menos de un tiempo fijo, con una instancia de TON."
+    "Mantenga una salida encendida durante un tiempo fijo después de que su entrada caiga, con una instancia de temporizador que se llama en cada ciclo.",
+    "Ignore una entrada que permanezca en ON menos de un tiempo fijo, y diga cuál de los dos retardos corresponde al inicio de una señal y cuál a su final."
   ],
   "stages": [
     {
@@ -41,14 +41,14 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "Intercambie los dos temporizadores mentalmente: ¿qué haría un TON sobre Button y un TOF sobre Sensor con este escenario? Después imagine las dos llamadas dentro de IF Button THEN ... END_IF: ¿qué haría Confirmed?",
+      "body": "Una vez que pase, intercambie mentalmente los papeles: ¿qué haría cada salida si su retardo estuviera en el otro extremo de su entrada? Después imagine que sus llamadas a los temporizadores solo se ejecutan mientras Button es TRUE: ¿qué haría Confirmed?",
       "checkpoint": "TON retrasa el inicio y TOF retrasa el final; cada uno responde una pregunta distinta sobre una señal. Un temporizador que no se llama conserva su reloj y su Q como estaban, así que Light nunca bajaría y Confirmed nunca subiría."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Light debe seguir encendida después de que su entrada cae, así que necesita el TOF; Confirmed debe esperar antes de encenderse, así que necesita el TON. Llame a cada instancia en cada ciclo con su entrada y su valor preestablecido, y después lea su Q."
+      "text": "Mire las dos instrucciones que copian: nada se interpone entre cada entrada y su salida. Para cada salida, pregúntese si su retardo corresponde al inicio de su entrada o al final."
     },
     {
       "level": 2,

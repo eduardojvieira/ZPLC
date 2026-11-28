@@ -35,29 +35,30 @@ Cuando pulsa solo SetButton, la lámpara se enciende y queda encendida, porque u
 
 ## Ejemplo resuelto
 
-Un sensor de pieza debe hacer sonar una bocina. El programa pasa PartSensor por un **bit de memoria**, PartSeen: una variable que no está conectada a una entrada ni a una salida real, y que el programa usa para recordar un resultado. Estos son sus dos peldaños, escritos en el orden equivocado.
+Una estación de tapado debe bajar su cabezal, Capper, cuando hay una botella debajo. El programa pasa el sensor de botella BottleHere por dos **bits de memoria**, BottleSeen y CapReady: variables que no están conectadas a una entrada ni a una salida real, y que el programa usa para recordar un resultado. En un programa real cada paso de una cadena así agregaría una condición; aquí solo copian, para que los tiempos se sigan con facilidad. Los tres peldaños están dibujados en el peor orden: cada peldaño lee una variable que escribe un peldaño de más abajo.
 
 ```ld-figure
-src: reading/lagging-order.ld.json
-caption: El peldaño de la bocina se resuelve antes que el peldaño que actualiza PartSeen
+src: reading/capper-chain.ld.json
+caption: Cada peldaño lee un bit de memoria que escribe un peldaño de más abajo
 ```
 
-Cuando llega una pieza, el segundo peldaño activa PartSeen. Pero el primer peldaño ya se ejecutó en este ciclo, así que la bocina no lo ve. En el ciclo siguiente el primer peldaño lee el nuevo valor de PartSeen, y solo entonces suena la bocina. La bocina va un ciclo tarde.
+Siga un ciclo en el que llega una botella. El peldaño 1 lee CapReady, que todavía es FALSE desde el ciclo anterior, así que el cabezal sigue arriba. El peldaño 2 lee BottleSeen, también todavía en FALSE. Solo el peldaño 3 ve la botella y activa BottleSeen. En el ciclo siguiente el peldaño 2 lee el nuevo BottleSeen y activa CapReady, y solo en el ciclo posterior el peldaño 1 baja el cabezal. Cada peldaño que lee un valor escrito más abajo agrega un ciclo.
 
 ```timing
-span: 60
+span: 80
 signals:
-  - { name: PartSensor, edges: [10, 30] }
-  - { name: PartSeen, edges: [10, 30] }
-  - { name: Horn, edges: [20, 40] }
+  - { name: BottleHere, edges: [10, 40] }
+  - { name: BottleSeen, edges: [10, 40] }
+  - { name: CapReady, edges: [20, 50] }
+  - { name: Capper, edges: [30, 60] }
 marks:
-  - { from: 10, to: 20, label: 'T#10ms' }
-caption: Con los peldaños en el orden equivocado, Horn sigue a PartSeen un ciclo tarde
+  - { from: 10, to: 30, label: 'T#20ms' }
+caption: Dos peldaños leen hacia arriba, así que Capper sigue a BottleHere dos ciclos tarde
 ```
 
-El diagrama es un **diagrama de tiempos**. El tiempo corre hacia la derecha, y cada línea sube cuando la señal pasa a ON y baja cuando pasa a OFF. Compare PartSeen y Horn: la bocina sube exactamente un ciclo después del bit de memoria.
+El diagrama es un **diagrama de tiempos**. El tiempo corre hacia la derecha, y cada línea sube cuando la señal pasa a ON y baja cuando pasa a OFF. Compare BottleHere y Capper: el cabezal baja dos ciclos después de que llega la botella, y vuelve a subir dos ciclos después de que se va.
 
-Un ciclo es corto, y un retraso de un ciclo suele ser inofensivo. Se vuelve un problema real cuando muchos peldaños dependen unos de otros en cadena, o cuando un evento rápido, como un pulso, se pierde porque apareció y desapareció entre dos lecturas. Poner los peldaños en un orden lógico, "primero se calcula, después se usa", evita el problema sin costo: con el peldaño de PartSeen primero, Horn sube en el mismo ciclo que PartSensor.
+Un ciclo es corto, y un retraso de un ciclo suele ser inofensivo. Se vuelve un problema real cuando muchos peldaños dependen unos de otros en cadena, como en este caso, o cuando un evento rápido, como un pulso, se pierde porque apareció y desapareció entre dos lecturas. La práctica tiene su propia cadena, más corta que esta; qué peldaño debe moverse, y adónde, queda para usted.
 
 ## Errores comunes
 

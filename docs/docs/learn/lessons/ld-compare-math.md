@@ -26,7 +26,7 @@ Use comparison boxes as conditions and math boxes as calculations in Ladder, and
 ## Objectives
 
 - Use a comparison box as a condition in series, and choose between GT and GE for a limit.
-- Calculate with math boxes that run only while their rung has power, and guard a division with an NE comparison so that the divisor is never zero.
+- Calculate with math boxes that run only while their rung has power, and make sure a division never runs with a zero divisor.
 
 ## Stages
 

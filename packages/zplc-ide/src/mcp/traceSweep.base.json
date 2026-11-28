@@ -1,0 +1,221 @@
+{
+  "commit": "a4831267",
+  "note": "scenario_run traceSha256 of every scene lesson solution at a4831267, before AIX-U5",
+  "lessons": [
+    {
+      "lesson": "plant-belt-to-sensor",
+      "scenarioId": "belt-to-sensor",
+      "traceSha256": "b5c6b74d16c9b02c44662d6b1ee90cfbc02ed6178f82bdb4d4fc64a2f35145cf"
+    },
+    {
+      "lesson": "plant-latch-two-sensors",
+      "scenarioId": "latch-two-sensors",
+      "traceSha256": "5f0752f98969b501316b6ed3ae8e2d60ac8861ce978525bc14c5d1225014b518"
+    },
+    {
+      "lesson": "plant-counted-queue",
+      "scenarioId": "counted-queue",
+      "traceSha256": "2778cc5066538a11504e6ce43ce6862e4aa859469bfd07ceab3f6ec44f94065c"
+    },
+    {
+      "lesson": "plant-timed-tank",
+      "scenarioId": "timed-tank",
+      "traceSha256": "d765f4d0392a746cd66ef12dc0f252cbb41bf3a73936abb85817863f32af0f09"
+    },
+    {
+      "lesson": "plant-tank-level-scaling",
+      "scenarioId": "tank-level-scaling",
+      "traceSha256": "0ab95d9c91e2b7d289022ff8d09ff611d152b7cf460542177f8b400ec203e12c"
+    },
+    {
+      "lesson": "plant-tank-pid",
+      "scenarioId": "tank-pid",
+      "traceSha256": "0ec6196c6d9e8828a94669bd7df32a841f10b046191a51f87a2c0bc223ea42c3"
+    },
+    {
+      "lesson": "plant-tank-pid-fbd",
+      "scenarioId": "tank-pid-fbd",
+      "traceSha256": "76f278a90b88c4ce610176b8b41677a097dfac8da90d5d303e969b0bde6048a8"
+    },
+    {
+      "lesson": "plant-buffer-release",
+      "scenarioId": "buffer-release",
+      "traceSha256": "d7adb52d5cd3320766ce6991b0e47e80b3b4158d7889f4191ae5c98028ab5a10"
+    },
+    {
+      "lesson": "plant-merge-lines",
+      "scenarioId": "merge-lines",
+      "traceSha256": "abb6b5419b8f7ee35fd5084ec0d0aca8d4e0beddc33c9ade424fc6d0e258f680"
+    },
+    {
+      "lesson": "plant-belt-transfer",
+      "scenarioId": "belt-to-belt-transfer",
+      "traceSha256": "d5b7014b30eeaa2913b6c7264f6a3d8f57075c4d37e47ebf43cabe5e9e26991d"
+    },
+    {
+      "lesson": "plant-assembler",
+      "scenarioId": "two-axis-assembly",
+      "traceSha256": "3a2e50004abb93f5099e3986b568a1152d54fe57e88233fd21a2d2d1c212ed7f"
+    },
+    {
+      "lesson": "plant-assembler-numeric",
+      "scenarioId": "two-axis-assembly-numeric",
+      "traceSha256": "2559e99f80585b90489f9d8db7b7cd008ccadd6935d96375d22d92da35f3ba3e"
+    },
+    {
+      "lesson": "plant-layer-palletizer",
+      "scenarioId": "layer-palletizer",
+      "traceSha256": "71952a388f0ed338752b086818b8453d2a91fac137345f073e8e820f71583185"
+    },
+    {
+      "lesson": "plant-xyz-palletizing",
+      "scenarioId": "three-axis-palletizing",
+      "traceSha256": "551596e841ec79307bc494ee9a6d8a038e03d6c48a45d4d3289fb47396979c18"
+    },
+    {
+      "lesson": "plant-colour-separation",
+      "scenarioId": "colour-separation",
+      "traceSha256": "54a49d1c854738131bc98ce69615583ecdfdb20a89bac221ee2271ce4804f2d1"
+    },
+    {
+      "lesson": "plant-colour-separation-il",
+      "scenarioId": "colour-separation",
+      "traceSha256": "54a49d1c854738131bc98ce69615583ecdfdb20a89bac221ee2271ce4804f2d1"
+    },
+    {
+      "lesson": "plant-weight-sorting",
+      "scenarioId": "weight-sorting",
+      "traceSha256": "19607ad8038e1b01813e59dec0ea517abe7e86c60d87e86b55e959e14ed5546a"
+    },
+    {
+      "lesson": "plant-height-chain",
+      "scenarioId": "height-sorting-chain",
+      "traceSha256": "a3be5e7348fe253b9c29a4019de3d0981573f58f30649c24077f45ee91554d97"
+    },
+    {
+      "lesson": "plant-height-turntable",
+      "scenarioId": "height-sorting-turntable",
+      "traceSha256": "64ffc9875cadf54a806cc4dd9b39f90126d07c8dee3a5b9844e7f5b1977c7f77"
+    },
+    {
+      "lesson": "plant-vision-sorting",
+      "scenarioId": "vision-sorting",
+      "traceSha256": "e9ab25dbf68ad21d3584eaec2ba8f07252e57ed17a15af59164aceace3a53c9f"
+    },
+    {
+      "lesson": "plant-three-level-lifts",
+      "scenarioId": "three-level-lifts",
+      "traceSha256": "1f571c1e2e0205fa15b9204f9d85877f409bd15fd21f9d685dd076029b03ed5f"
+    },
+    {
+      "lesson": "plant-lift-stacking",
+      "scenarioId": "lift-stacking",
+      "traceSha256": "15cc4c84737de73523308d7c93070d44977551a9dd5341b3b7a622a65c88dd78"
+    },
+    {
+      "lesson": "plant-warehouse",
+      "scenarioId": "stacker-crane-warehouse",
+      "traceSha256": "66df63643d7d6b86df2fd88d63f8f4eb4d6cf00a0780f19b83d9ac91291faff8"
+    },
+    {
+      "lesson": "plant-production-line",
+      "scenarioId": "balanced-production-line",
+      "traceSha256": "22f51220e0c1efcf14b7ecab35f0ab0061e623039f19dd91be8e877cf63dd1c3"
+    },
+    {
+      "lesson": "plant-estop-interlocks",
+      "scenarioId": "estop-interlocks",
+      "traceSha256": "54299f05db62de84f2903137a0608ca441dd10afbb9dbc6406f238906ff05235"
+    },
+    {
+      "lesson": "plant-manual-auto",
+      "scenarioId": "plant-manual-auto",
+      "traceSha256": "be0e6e593b5322111ab0e427d79eaa8e688819e15ce2554ef689510c33d019c1"
+    },
+    {
+      "lesson": "plant-fault-actions",
+      "scenarioId": "fault-actions",
+      "traceSha256": "a3c7da25959bf2ea62320429657db76eb595553cbe6b9cc3fd723b8e3cbfcb0e"
+    },
+    {
+      "lesson": "plant-build-belt-scene",
+      "scenarioId": "build-belt-scene",
+      "traceSha256": "4fe8fd1835442289d845bd891a4c5c1b0320d03c5df2e0ad18e79a5eb893252d"
+    },
+    {
+      "lesson": "plant-change-scene",
+      "scenarioId": "change-scene",
+      "traceSha256": "9167cce8450b872943d49181d2acf7e06c04f4ecc73ab0833c14d7266aa14591"
+    },
+    {
+      "lesson": "plant-belt-to-sensor-ladder",
+      "scenarioId": "belt-to-sensor",
+      "traceSha256": "b5c6b74d16c9b02c44662d6b1ee90cfbc02ed6178f82bdb4d4fc64a2f35145cf"
+    },
+    {
+      "lesson": "plant-latch-two-sensors-ladder",
+      "scenarioId": "latch-two-sensors",
+      "traceSha256": "5f0752f98969b501316b6ed3ae8e2d60ac8861ce978525bc14c5d1225014b518"
+    },
+    {
+      "lesson": "plant-counted-queue-ladder",
+      "scenarioId": "counted-queue",
+      "traceSha256": "2778cc5066538a11504e6ce43ce6862e4aa859469bfd07ceab3f6ec44f94065c"
+    },
+    {
+      "lesson": "plant-timed-tank-ladder",
+      "scenarioId": "timed-tank",
+      "traceSha256": "d765f4d0392a746cd66ef12dc0f252cbb41bf3a73936abb85817863f32af0f09"
+    },
+    {
+      "lesson": "plant-tank-level-scaling-ladder",
+      "scenarioId": "tank-level-scaling",
+      "traceSha256": "0ab95d9c91e2b7d289022ff8d09ff611d152b7cf460542177f8b400ec203e12c"
+    },
+    {
+      "lesson": "plant-merge-lines-ladder",
+      "scenarioId": "merge-lines",
+      "traceSha256": "abb6b5419b8f7ee35fd5084ec0d0aca8d4e0beddc33c9ade424fc6d0e258f680"
+    },
+    {
+      "lesson": "plant-belt-transfer-ladder",
+      "scenarioId": "belt-to-belt-transfer",
+      "traceSha256": "d5b7014b30eeaa2913b6c7264f6a3d8f57075c4d37e47ebf43cabe5e9e26991d"
+    },
+    {
+      "lesson": "plant-colour-separation-ladder",
+      "scenarioId": "colour-separation",
+      "traceSha256": "54a49d1c854738131bc98ce69615583ecdfdb20a89bac221ee2271ce4804f2d1"
+    },
+    {
+      "lesson": "plant-weight-sorting-ladder",
+      "scenarioId": "weight-sorting",
+      "traceSha256": "19607ad8038e1b01813e59dec0ea517abe7e86c60d87e86b55e959e14ed5546a"
+    },
+    {
+      "lesson": "plant-height-chain-ladder",
+      "scenarioId": "height-sorting-chain",
+      "traceSha256": "a3be5e7348fe253b9c29a4019de3d0981573f58f30649c24077f45ee91554d97"
+    },
+    {
+      "lesson": "plant-estop-interlocks-ladder",
+      "scenarioId": "estop-interlocks",
+      "traceSha256": "54299f05db62de84f2903137a0608ca441dd10afbb9dbc6406f238906ff05235"
+    },
+    {
+      "lesson": "plant-manual-auto-ladder",
+      "scenarioId": "plant-manual-auto",
+      "traceSha256": "e0e362f5cbd2ccd4ad8d4c5182112fe5eb056687378a5405f771a44f1e89f258"
+    },
+    {
+      "lesson": "plant-build-belt-scene-ladder",
+      "scenarioId": "build-belt-scene",
+      "traceSha256": "4fe8fd1835442289d845bd891a4c5c1b0320d03c5df2e0ad18e79a5eb893252d"
+    },
+    {
+      "lesson": "plant-change-scene-ladder",
+      "scenarioId": "change-scene",
+      "traceSha256": "9167cce8450b872943d49181d2acf7e06c04f4ecc73ab0833c14d7266aa14591"
+    }
+  ]
+}

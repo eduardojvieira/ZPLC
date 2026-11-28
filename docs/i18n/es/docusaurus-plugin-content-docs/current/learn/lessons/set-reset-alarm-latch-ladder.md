@@ -26,7 +26,7 @@ Mantenga una falla en memoria con bobinas SET y RESET, y compruebe que en escale
 ## Objetivos
 
 - Mantenga una alarma después de que la falla desaparezca con una bobina SET y bórrela solo con una bobina RESET.
-- Decida la prioridad entre set y reset por el orden de los peldaños: gana el último que se escanea.
+- Dé a dos salidas prioridades opuestas entre set y reset, y compruebe el ciclo en que los dos llegan juntos.
 
 ## Etapas
 

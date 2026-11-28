@@ -2,6 +2,7 @@
  * Colours and surfaces of the parts (VIS-015, VIS-018). Pure: the renderer turns a role into a three material. A part keeps its own
  * colour in every display mode (high contrast lightens it so it stands out on black); a surface names one of the bundled texture sets.
  */
+import { TOKENS } from '../../theme/tokens';
 import type { Palette } from './displayModes';
 
 /** The colour of each part kind, kept in every display mode. */
@@ -103,7 +104,13 @@ export type Role =
   | 'collar'
   | 'zone'
   | 'glass'
-  | 'liquid';
+  | 'liquid'
+  | 'fork';
+
+/** A ramp step of the design tokens (src/theme/tokens.ts) as a colour number; ramps are the same in every theme. */
+const rampColour = (name: string): number => parseInt(TOKENS.find((t) => t.name === name)!.light.slice(1), 16);
+/** The fork of a stacker crane (C10): its own colour, the teal ramp of the design tokens, apart from the blue carriage and the steel. */
+export const FORK_COLOUR = rampColour('--ramp-teal-300');
 
 export interface RoleLook {
   skin: Skin | null;
@@ -178,6 +185,8 @@ export function roleLook(role: Role, part: string, palette: Palette): RoleLook {
       return { ...surface(null, tone(0xa5b4c8), 0.2), opacity: 0.45, castShadow: false };
     case 'liquid':
       return { ...surface(null, tone(0x2563eb), 0.3), opacity: 0.85, castShadow: false };
+    case 'fork':
+      return surface('painted-steel', tone(FORK_COLOUR), 0.5, 0.2);
     case 'zone':
       return light(flat ? 0x00ffff : 0x22d3ee, flat ? 1 : 0.9);
   }

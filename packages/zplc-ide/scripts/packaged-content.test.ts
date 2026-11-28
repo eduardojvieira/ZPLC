@@ -42,7 +42,7 @@ afterAll(() => {
 });
 
 /** A repository folder and an unpacked package that match each other, which a test then breaks in one place. */
-function fixture(options: { bundle?: string; notices?: string; omitExample?: boolean } = {}) {
+function fixture(options: { bundle?: string; notices?: string; omitExample?: boolean; omitMcp?: boolean } = {}) {
   const root = mkdtempSync(join(tmpdir(), 'zplc-content-'));
   roots.push(root);
   const repo = join(root, 'repo');
@@ -71,6 +71,7 @@ function fixture(options: { bundle?: string; notices?: string; omitExample?: boo
   const resources = join(root, 'out/linux-unpacked/resources');
   mkdirSync(join(resources, 'examples'), { recursive: true });
   mkdirSync(join(resources, 'native-runtime'), { recursive: true });
+  mkdirSync(join(resources, 'zplc-mcp'), { recursive: true });
   writeFileSync(
     join(resources, 'app.asar'),
     buildAsar({
@@ -83,6 +84,7 @@ function fixture(options: { bundle?: string; notices?: string; omitExample?: boo
   );
   if (!options.omitExample) writeFileSync(join(resources, 'examples/01_hello.zplc'), 'ZPLCBYTES');
   writeFileSync(join(resources, 'native-runtime/zplc_runtime'), 'binary');
+  if (!options.omitMcp) writeFileSync(join(resources, 'zplc-mcp/zplc-mcp'), 'binary');
   writeFileSync(
     join(resources, 'THIRD-PARTY-NOTICES.txt'),
     options.notices ??
@@ -194,6 +196,18 @@ describe('packaged content (REL-034)', () => {
   test('names an example bytecode file that is missing from the resources', () => {
     const { repo, resources } = fixture({ omitExample: true });
     expect(checkPackagedContent({ resources, repoRoot: repo })).toContain('examples/01_hello.zplc is not in the resources');
+  });
+
+  // REL-026: the installer carries the same zplc-mcp the release publishes as a separate download
+  test('names a zplc-mcp executable that is missing from the resources', () => {
+    const { repo, resources } = fixture({ omitMcp: true });
+    expect(checkPackagedContent({ resources, repoRoot: repo })).toContain('zplc-mcp/zplc-mcp is not in the resources');
+  });
+
+  test('takes the Windows zplc-mcp.exe as the executable', () => {
+    const { repo, resources } = fixture({ omitMcp: true });
+    writeFileSync(join(resources, 'zplc-mcp/zplc-mcp.exe'), 'binary');
+    expect(checkPackagedContent({ resources, repoRoot: repo }).filter((problem) => problem.includes('zplc-mcp'))).toEqual([]);
   });
 
   test('names a package of the application with no licence notice, and a font with none', () => {

@@ -84,6 +84,7 @@ export const PACKAGED_PRELOAD_SURFACE = [
   'isElectron',
   'learnProgress',
   'learnWorkspace',
+  'mcpConnection',
   'menu',
   'nativeSimulation',
   'platform',

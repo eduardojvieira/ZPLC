@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter has no rungs, so no belt moves and no box is sorted; run the belts after Start, classify each box from the two beams and send it straight, right or left.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter has no rungs, so no belt moves and no box is sorted; run the belts after Start, classify each box from the two beams and send it straight, right or left.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

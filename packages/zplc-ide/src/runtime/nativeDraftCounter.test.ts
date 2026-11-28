@@ -35,6 +35,19 @@ function builtForDraft(draft: number): Uint8Array {
   return file;
 }
 
+/**
+ * The error a request to the runtime is refused with. Bun on Windows never settles `expect(pending).rejects` while
+ * the answer still has to come through the pipe of a runtime the test started, so the request is awaited first.
+ */
+async function refusalOf(request: Promise<unknown>): Promise<Error> {
+  try {
+    await request;
+  } catch (error) {
+    return error as Error;
+  }
+  throw new Error('the runtime accepted the request');
+}
+
 async function withSession<T>(
   run: (session: { adapter: NativeAdapter; supervisor: NativeSimulationSupervisor; hello: unknown }) => Promise<T>,
 ): Promise<T> {
@@ -107,14 +120,15 @@ describe('native simulation and the draft contract counter', () => {
           ['other', other, String(other)],
           ['none', 0, 'none'],
         ] as const) {
-          await expect(
+          const refusal = await refusalOf(
             supervisor.request({
               id: `direct-${id}`,
               type: 'request',
               method: 'program.load',
               params: { bytecode_hex: bytesToHex(builtForDraft(draft)) },
             }),
-          ).rejects.toThrow(message(built));
+          );
+          expect(refusal.message).toContain(message(built));
         }
 
         // The refusals left the session as it was: the program of its own draft is still loaded and runs.

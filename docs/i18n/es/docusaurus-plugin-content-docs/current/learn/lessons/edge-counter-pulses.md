@@ -25,7 +25,7 @@ Use un contador CTU para contar tres pulsos discretos y poner la cuenta a cero.
 
 ## Objetivos
 
-- Cuente los flancos ascendentes de una entrada con una instancia de CTU llamada en cada ciclo, para que un pulso largo cuente una vez.
+- Cuente los flancos ascendentes de una entrada con una instancia de contador llamada en cada ciclo, para que un pulso largo cuente una vez.
 - Pase una salida a ON cuando la cuenta llega a su valor preestablecido, y ponga la cuenta a cero con una entrada de puesta a cero.
 
 ## Etapas

@@ -8,7 +8,16 @@ import { DataType, getFB, parseIOAddress, parseTimeLiteral, TokenType } from '@z
 import { getFunctionBlockNamesForVisualEditors } from '../catalog/blockCatalog';
 import { getDefaultPorts } from '../models/fbd';
 import { findProjectBlock, type ProjectBlock } from '../models/projectBlocks';
-import { LD_COIL_TYPES, LD_CONTACT_TYPES, LD_MODBUS_HELPERS, ldFunctionSpec } from '../models/ldSupport';
+import {
+  LD_COIL_TYPES,
+  LD_CONTACT_TYPES,
+  LD_MODBUS_HELPERS,
+  ldFunctionHasOutput,
+  ldFunctionPins,
+  ldFunctionSpec,
+} from '../models/ldSupport';
+import { GENERIC_CLASSES, oneGenericType, outsideClass, selectsNoString } from '../models/pinTypes';
+import type { StdFunction } from '../catalog/stdFunctions';
 import { walkRung } from './ldPower';
 import { Problems, cellElement, rungElement, rungItemElement, type SourceElementId } from '../models/sourceElements';
 
@@ -139,9 +148,65 @@ function validateVariable(value: unknown, section: SymbolInfo['section'], symbol
   }
 }
 
+const BIT_STRING_MAX: Record<string, bigint> = {
+  BYTE: 255n,
+  WORD: 65535n,
+  DWORD: 4294967295n,
+  LWORD: 18446744073709551615n,
+};
+const BIT_STRING_TYPED = /^([A-Za-z_]+)#(.+)$/;
+const BIT_STRING_DECIMAL = /^-?\d+(?:_\d+)*$/;
+const BIT_STRING_BASED = /^(2|8|16)#([0-9A-Fa-f]+(?:_[0-9A-Fa-f]+)*)$/;
+const BASED_DIGIT_PATTERNS: Record<string, { valid: RegExp; prefix: string }> = {
+  '2': { valid: /^[01]+$/, prefix: '0b' },
+  '8': { valid: /^[0-7]+$/, prefix: '0o' },
+  '16': { valid: /^[0-9A-Fa-f]+$/, prefix: '0x' },
+};
+
+function validateBitStringInitialValue(value: unknown, type: string, subject: string, errors: Problems): void {
+  const max = BIT_STRING_MAX[type]!;
+  let exact: bigint;
+  if (typeof value === 'number') {
+    if (!Number.isSafeInteger(value)) {
+      errors.push(`${subject} initialValue must be a ${type} literal`);
+      return;
+    }
+    exact = BigInt(value);
+  } else if (typeof value === 'string') {
+    let body = value;
+    const typed = BIT_STRING_TYPED.exec(value);
+    if (typed) {
+      if (typed[1]!.toUpperCase() !== type) {
+        errors.push(`${subject} initialValue '${value}' must be a ${type} literal`);
+        return;
+      }
+      body = typed[2]!;
+    }
+    if (BIT_STRING_DECIMAL.test(body)) {
+      exact = BigInt(body.replace(/_/g, ''));
+    } else {
+      const based = BIT_STRING_BASED.exec(body);
+      const spec = based ? BASED_DIGIT_PATTERNS[based[1]!] : undefined;
+      const digits = based ? based[2]!.replace(/_/g, '') : '';
+      if (!spec || !spec.valid.test(digits)) {
+        errors.push(`${subject} initialValue '${value}' must be a ${type} literal`);
+        return;
+      }
+      exact = BigInt(`${spec.prefix}${digits}`);
+    }
+  } else {
+    errors.push(`${subject} initialValue must be a ${type} literal`);
+    return;
+  }
+  if (exact < 0n || exact > max) {
+    errors.push(`${subject} initialValue '${String(value)}' is out of range for ${type} (0 to ${max})`);
+  }
+}
+
 function validateInitialValue(value: unknown, type: string, subject: string, errors: Problems): void {
   const normalized = type.toUpperCase();
   if (normalized === 'BOOL' && typeof value !== 'boolean') errors.push(`${subject} initialValue must be BOOL`);
+  else if (normalized in BIT_STRING_MAX) validateBitStringInitialValue(value, normalized, subject, errors);
   else if (
     ['SINT', 'USINT', 'INT', 'UINT', 'DINT', 'UDINT', 'LINT', 'ULINT'].includes(normalized) &&
     (!isInteger(value) || !integerFits(value, normalized))
@@ -324,8 +389,26 @@ function validateModbusHelper(
   }
 }
 
-/** A literal an operand of a function box may be (LNG-028): a number, a based or typed number, TRUE or FALSE. TIME is read apart. */
-const OPERAND_LITERAL = /^(?:-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|\d{1,2}#[0-9A-Fa-f_]+|[A-Za-z_]+#-?\d+(?:\.\d+)?|TRUE|FALSE)$/;
+/**
+ * A literal an operand of a function box may be (LNG-028, LNG-030): a number, a based or typed number, TRUE or FALSE, or a STRING
+ * exactly as the compiler's lexer reads one (`readStringLiteral`): it ends at a quote, a quote inside it is written `''`, and it holds
+ * no line break. The operand is passed to the ST as it is, so anything wider could close the literal and add statements. TIME is
+ * read apart.
+ */
+const OPERAND_LITERAL = new RegExp(
+  `^(?:${[
+    String.raw`-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?`,
+    String.raw`\d{1,2}#[0-9A-Fa-f_]+`,
+    String.raw`[A-Za-z_]+#\d{1,2}#[0-9A-Fa-f_]+`,
+    String.raw`[A-Za-z_]+#-?\d+(?:\.\d+)?`,
+    'TRUE',
+    'FALSE',
+    String.raw`'(?:[^'\n\r]|'')*'`,
+  ].join('|')})$`,
+);
+const STRING_LITERAL = /^'(?:[^'\n\r]|'')*'$/;
+const REAL_LITERAL = /^-?\d+(?:\.\d+(?:[eE][+-]?\d+)?|[eE][+-]?\d+)$/;
+const TYPED_LITERAL = /^([A-Za-z_]+)#/;
 
 /** A function block type: its variable holds state, not a value that an operand or the output of a function can be. */
 const isBlockType = (type: unknown): boolean => typeof type === 'string' && (Boolean(getFB(type)) || Boolean(projectBlock(type)));
@@ -353,7 +436,68 @@ function validateOperand(operand: unknown, pin: string, subject: string, symbols
   const member = operand.match(MEMBER_REFERENCE);
   if (member && symbols.has(key(member[1]))) return;
   if (OPERAND_LITERAL.test(operand) || isTimeLiteral(operand)) return;
-  errors.push(`${subject} operand ${pin} '${operand}' is neither a declared variable nor a literal`);
+  // an operand that starts as a string and is not one says how a string is written
+  const hint = operand.startsWith("'")
+    ? ": a STRING literal ends at its quote and holds no line break; write a quote inside a string as ''"
+    : '';
+  errors.push(`${subject} operand ${pin} '${operand}' is neither a declared variable nor a literal${hint}`);
+}
+
+/** The elementary type of an operand when the transpiler can know it: a declared variable, or a literal that says its type. */
+function operandType(operand: unknown, symbols: Map<string, SymbolInfo>): string | undefined {
+  if (typeof operand !== 'string') return undefined;
+  const symbol = symbols.get(key(operand));
+  if (symbol) return key(String(symbol.variable.type));
+  if (STRING_LITERAL.test(operand)) return 'STRING';
+  if (operand === 'TRUE' || operand === 'FALSE') return 'BOOL';
+  if (isTimeLiteral(operand)) return 'TIME';
+  const typed = operand.match(TYPED_LITERAL)?.[1];
+  if (typed && SUPPORTED_DATA_TYPES.has(key(typed))) return key(typed);
+  return REAL_LITERAL.test(operand) ? 'REAL' : undefined;
+}
+
+/**
+ * What the compiler does not check in the call of a standard function (LNG-030), as FBD checks it (LNG-029): an operand the call
+ * writes is a declared variable, and the generic operands are of their class and of one type.
+ */
+function validateCall(
+  record: StdFunction,
+  operands: readonly unknown[],
+  pins: readonly string[],
+  named: string,
+  symbols: Map<string, SymbolInfo>,
+  errors: Problems,
+): void {
+  const pinType = (pin: string): string => record.inputs.find(([name]) => name === pin)?.[1] ?? record.inputs[record.inputs.length - 1]![1];
+  operands.forEach((operand, index) => {
+    const pin = pins[index]!;
+    if (!record.written.includes(pin) || typeof operand !== 'string' || symbols.has(key(operand))) return;
+    if (OPERAND_LITERAL.test(operand) || isTimeLiteral(operand))
+      errors.push(`${named} operand ${pin} '${operand}' is written by ${record.name}, so it has to be a declared variable, not a literal`);
+  });
+  const generic: string[] = [];
+  let odd = false;
+  operands.forEach((operand, index) => {
+    const pin = pins[index]!;
+    const wanted = GENERIC_CLASSES[pinType(pin)];
+    const type = operandType(operand, symbols);
+    if (!wanted || !type) return;
+    generic.push(type);
+    const outside = outsideClass(pinType(pin), type);
+    if (outside) {
+      odd = true;
+      errors.push(
+        wanted.types
+          ? `${named} operand ${pin} is ${outside}, and ${record.name} takes ${wanted.takes} there`
+          : `${named} operand ${pin} is STRING: ${selectsNoString(record.name)}`,
+      );
+    }
+  });
+  if (!odd && !oneGenericType(generic))
+    errors.push(
+      `${named}: its operands have different types (${[...new Set(generic)].join(', ')}); the box keeps the type of its operands, ` +
+        'so convert one of them',
+    );
 }
 
 /** The `function` element (LNG-028): a known function, one operand per pin, and an output for all but a comparison. */
@@ -375,14 +519,22 @@ function validateFunction(
     errors.push(`${subject} operands must be a list`);
     return;
   }
-  if (value.operands.length !== spec.pins.length) {
-    errors.push(`${named} takes ${spec.pins.length} operands, found ${value.operands.length}`);
+  // a function that takes more inputs (MUX) has its fixed pins and at least the extra inputs of the table; any other, its pins
+  const variadic = spec.record?.variadic === true;
+  // the most operands: the selector and the most inputs the table gives (MUX: K and eight inputs)
+  const most = variadic && spec.record?.maxInputs !== undefined ? spec.record.maxInputs + 1 : Infinity;
+  if (variadic ? value.operands.length < spec.pins.length : value.operands.length !== spec.pins.length) {
+    errors.push(`${named} takes ${variadic ? 'at least ' : ''}${spec.pins.length} operands, found ${value.operands.length}`);
+  } else if (value.operands.length > most) {
+    errors.push(`${named} takes at most ${most} operands (${spec.pins[0]} and ${most - 1} inputs), found ${value.operands.length}`);
   } else {
-    value.operands.forEach((operand, index) => validateOperand(operand, spec.pins[index], named, symbols, errors));
+    const pins = ldFunctionPins(spec, value.operands.length);
+    value.operands.forEach((operand, index) => validateOperand(operand, pins[index]!, named, symbols, errors));
+    if (spec.record) validateCall(spec.record, value.operands, pins, named, symbols, errors);
   }
   const hasOutput = value.output !== undefined && value.output !== '';
-  if (spec.kind === 'compare') {
-    if (hasOutput) errors.push(`${named} is a comparison and has no output`);
+  if (!ldFunctionHasOutput(spec)) {
+    if (hasOutput) errors.push(`${named} ${spec.kind === 'compare' ? 'is a comparison' : 'returns nothing'} and has no output`);
     return;
   }
   if (!hasOutput) {

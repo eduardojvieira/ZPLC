@@ -30,32 +30,42 @@ files:
   - dist/**/*
   - electron-dist/**/*
   # Source maps stay in the build folders for debugging and never reach an installer (IDE-015).
-  - "!**/*.map"
+  - '!**/*.map'
   # The folder dialog test hook exists only in builds made for the suite (VF-008). Keep these two last: a later pattern that matches them would bring them back.
-  - "!electron-dist/electron/devFolderDialogHook.js"
-  - "!electron-dist/electron/devFolderDialogHook.js.map"
+  - '!electron-dist/electron/devFolderDialogHook.js'
+  - '!electron-dist/electron/devFolderDialogHook.js.map'
 
 # Extra files to copy (icons, etc.)
 extraResources:
   - from: ../../examples
     to: examples
     filter:
-      - "**/*.zplc"
-      - "**/*.st"
+      - '**/*.zplc'
+      - '**/*.st'
   - from: dist-native
     to: native-runtime
     filter:
-      - "**/*"
+      - '**/*'
+      - '!mcp/**'
+  # The same standalone zplc-mcp the release publishes as a separate download. scripts/stage-mcp.ts puts it in dist-native/mcp;
+  # electron/../shared/mcpCommand.ts finds it at resources/zplc-mcp/ and the MCP panel writes that absolute path.
+  - from: dist-native/mcp
+    to: zplc-mcp
+    filter:
+      - '**/*'
   # The licence notices of every third-party package and font in the application (REL-019).
   - from: build/THIRD-PARTY-NOTICES.txt
     to: THIRD-PARTY-NOTICES.txt
+  # The lesson index the assistant reads in the main process (AIX-002); electron/lessonIndexLoader.ts reads it at run time.
+  - from: src/generated/lessonIndex.json
+    to: lessons/lessonIndex.json
   # The manifest of the release firmware and the images of the two learner boards, so that ZPLC shows them with no
   # network (REL-025). scripts/release/firmware-images.ts `stage` writes the folder in the release workflow; a local
   # build has none and the application then says that it holds no firmware image.
   - from: dist-firmware
     to: firmware
     filter:
-      - "**/*"
+      - '**/*'
 
 # Asset Index - for faster builds
 asar: true
@@ -75,13 +85,14 @@ mac:
   icon: ../../tools/brand/icon.icns
   darkModeSupport: true
   # REL-020: the ZIP follows the same scheme as the DMG (its default name would put the architecture before `mac`).
-  artifactName: "zplc-${version}-${os}-${arch}.${ext}"
+  artifactName: 'zplc-${version}-${os}-${arch}.${ext}'
   # No paid certificate exists, so the bundle is signed ad hoc and sealed, never notarized (REL-001, REL-003).
   # The identity is explicit: electron-builder does not fall back to ad hoc by itself.
-  identity: "-"
-  # The native runtime is copied by extraResources; listing it signs it with the bundle.
+  identity: '-'
+  # The native runtime and the MCP server are copied by extraResources; listing them signs them with the bundle.
   binaries:
     - Contents/Resources/native-runtime/zplc_runtime
+    - Contents/Resources/zplc-mcp/zplc-mcp
   hardenedRuntime: true
   gatekeeperAssess: false
   notarize: false
@@ -93,7 +104,7 @@ mac:
 
 dmg:
   sign: false
-  artifactName: "zplc-${version}-${os}-${arch}.${ext}"
+  artifactName: 'zplc-${version}-${os}-${arch}.${ext}'
   contents:
     - x: 130
       y: 220
@@ -116,13 +127,13 @@ nsis:
   perMachine: false
   allowToChangeInstallationDirectory: true
   # `unsigned` stays in the variant until a signed Windows channel is live (REL-038).
-  artifactName: "zplc-${version}-${os}-${arch}-setup-unsigned.${ext}"
+  artifactName: 'zplc-${version}-${os}-${arch}-setup-unsigned.${ext}'
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: ZPLC
 
 portable:
-  artifactName: "zplc-${version}-${os}-${arch}-portable-unsigned.${ext}"
+  artifactName: 'zplc-${version}-${os}-${arch}-portable-unsigned.${ext}'
 
 # ============================================================================
 # Linux Configuration
@@ -138,13 +149,13 @@ linux:
     - rpm
 
 appImage:
-  artifactName: "zplc-${version}-${os}-${arch}.${ext}"
+  artifactName: 'zplc-${version}-${os}-${arch}.${ext}'
 
 # The legacy AppImage toolset starts with a runtime linked against libz.so on arm64, which only zlib1g-dev provides (release
 # rehearsal 40188578977). 1.0.3 carries a static runtime (AppImage type2-runtime 20251108): neither zlib nor libfuse2 is
 # needed, and its AppRun passes --no-sandbox only where user namespaces are unavailable.
 toolsets:
-  appimage: "1.0.3"
+  appimage: '1.0.3'
 
 # `depends` (REL-011): electron-builder's defaults (app-builder-lib getDefaultDepends) and ALSA, which Electron links and
 # the defaults leave out; a clean Debian 13 or Ubuntu 24.04 lacks libasound.so.2 without it. Since t64 the Debian package
@@ -154,7 +165,7 @@ toolsets:
 deb:
   # The package name of decision D-03 (scripts/release/identity.json): electron-builder would take the product name.
   packageName: zplc
-  artifactName: "zplc-${version}-${os}-${arch}.${ext}"
+  artifactName: 'zplc-${version}-${os}-${arch}.${ext}'
   depends:
     - libgtk-3-0
     - libnotify4
@@ -165,22 +176,22 @@ deb:
     - libatspi2.0-0
     - libuuid1
     - libsecret-1-0
-    - "libasound2t64 | libasound2"
+    - 'libasound2t64 | libasound2'
   fpm:
-    - "build/linux/70-zplc-boards.rules=/usr/lib/udev/rules.d/70-zplc-boards.rules"
+    - 'build/linux/70-zplc-boards.rules=/usr/lib/udev/rules.d/70-zplc-boards.rules'
 
 rpm:
   packageName: zplc
-  artifactName: "zplc-${version}-${os}-${arch}.${ext}"
+  artifactName: 'zplc-${version}-${os}-${arch}.${ext}'
   depends:
     - gtk3
     - libnotify
     - nss
     - libXScrnSaver
-    - "(libXtst or libXtst6)"
+    - '(libXtst or libXtst6)'
     - xdg-utils
     - at-spi2-core
-    - "(libuuid or libuuid1)"
+    - '(libuuid or libuuid1)'
     - alsa-lib
   fpm:
-    - "build/linux/70-zplc-boards.rules=/usr/lib/udev/rules.d/70-zplc-boards.rules"
+    - 'build/linux/70-zplc-boards.rules=/usr/lib/udev/rules.d/70-zplc-boards.rules'

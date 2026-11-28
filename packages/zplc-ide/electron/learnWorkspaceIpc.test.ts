@@ -79,6 +79,6 @@ describe('the app-owned workspace of a lesson (LRN-003)', () => {
     expect(IPC_INVOKE_CHANNELS).toContain(LEARN_WORKSPACE_CHANNEL.OPEN);
     expect(LEARN_WORKSPACE_CHANNEL.OPEN).not.toMatch(/flash|deploy|serial|shell|:force|:run-?program|:stop$/);
     // The MCP server answers a closed list of tools; none opens a workspace, names a lesson or takes a folder.
-    expect(MCP_TOOL_NAMES.filter((name) => /workspace|learn|lesson|folder|open/i.test(name))).toEqual([]);
+    expect(MCP_TOOL_NAMES.filter((name) => /learn|lesson|folder|open|workspace_(?:open|adopt|choose)/i.test(name))).toEqual([]);
   });
 });

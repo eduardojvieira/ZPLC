@@ -50,6 +50,7 @@ export function Console({ debugController }: ConsoleProps) {
     activeConsoleTab: storedConsoleTab,
     compilerMessages,
     compilerMessagesChecked,
+    compilerResultsFromEarlierBuild,
     stBufferDiagnostics,
     activeFileId,
     loadedFiles,
@@ -267,6 +268,7 @@ export function Console({ debugController }: ConsoleProps) {
               live={liveSTDiagnostics}
               buildMessages={compilerMessages}
               checked={compilerMessagesChecked}
+              earlierBuild={compilerResultsFromEarlierBuild}
               fileTree={fileTree}
               activeFilePath={activeFile?.path}
               onActivate={(msg) => {
@@ -298,13 +300,13 @@ export function Console({ debugController }: ConsoleProps) {
                 debugMap={debugMap}
                 sample={latestNativeTrace}
                 currentCompilerRunId={compilerRunId}
-                setSimulationInput={debugController?.setSimulationInput}
               />
               {nativeTrace.length === 0 ? (
                 <CommandEmptyState
                   title={t('panel.trace.empty.title')}
                   description={t('panel.trace.empty.description')}
                   actions={['debug.step', 'online.connect']}
+                  region="trace"
                 />
               ) : (
                 <div className="overflow-x-auto">

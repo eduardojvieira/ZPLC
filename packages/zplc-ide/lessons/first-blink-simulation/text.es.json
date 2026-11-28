@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "Abra src/FirstBlink.st. El programa ya hace parpadear Lamp, pero demasiado despacio: cambia el estado de la lámpara cada vez que transcurre HalfPeriod, y HalfPeriod vale dos segundos. Su tarea es cambiar ese único valor.",
-      "checkpoint": "Usted sabe qué línea fija el semiperíodo y cuánto vale ahora."
+      "body": "Abra src/FirstBlink.st. El programa ya hace parpadear Lamp, pero demasiado despacio: Lamp debe estar apagada medio segundo y luego encendida medio segundo. Su tarea es encontrar qué fija esa velocidad y corregirlo.",
+      "checkpoint": "Usted puede decir cuánto tiempo debe pasar Lamp en cada estado."
     },
     {
       "key": "predict",
@@ -23,8 +23,8 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial usa un semiperíodo de dos segundos, así que Lamp sigue en OFF cuando el escenario la comprueba a los {{t:750}} ms. Cambie el valor de HalfPeriod para que Lamp esté apagada medio segundo y luego encendida medio segundo, y guarde el archivo.",
-      "checkpoint": "HalfPeriod vale medio segundo y el archivo está guardado."
+      "body": "Corrija el programa inicial, guárdelo y pulse {{ui:learn.check}}. El programa inicial usa un semiperíodo de dos segundos, así que Lamp sigue en OFF cuando el escenario la comprueba a los {{t:750}} ms. Lamp debe estar apagada medio segundo y luego encendida medio segundo; guarde el archivo cuando lo esté.",
+      "checkpoint": "Lamp pasa medio segundo en cada estado y el archivo está guardado."
     },
     {
       "key": "run",

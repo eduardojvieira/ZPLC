@@ -2,7 +2,7 @@
 
 Piense en el pulsador de llamada junto a una cama de hospital. El paciente lo pulsa medio segundo, y una luz sobre la puerta queda encendida hasta que llega una enfermera y la cancela. La luz debe recordar la llamada aunque el pulsador se soltó hace rato. La misma necesidad aparece en las máquinas: una alarma que debe seguir visible después de que la falla desaparece, un portón que sigue abierto tras el pulso de la orden, un indicador de lote que queda activo hasta que el operador lo borra.
 
-Una bobina simple no puede hacerlo. Una bobina simple muestra la energía que le llega en este momento, escaneo tras escaneo, y la olvida de inmediato. Esta página presenta las dos bobinas que recuerdan: **SET** y **RESET**.
+Una bobina simple no puede hacerlo. Una bobina simple muestra la energía que le llega en este momento, ciclo tras ciclo, y la olvida de inmediato. Esta página presenta las dos bobinas que recuerdan: **SET** y **RESET**.
 
 ## La idea
 
@@ -14,50 +14,53 @@ Una **bobina SET**, también llamada bobina de retención, activa su variable cu
 
 Así, una variable que guarda un estado se construye con dos peldaños: uno que la activa y otro que la desactiva. Piense en un interruptor de luz con dos pulsadores separados, uno de "encender" y otro de "apagar", y una lámpara que recuerda el último pulsador pulsado.
 
-Recuerde que el programa corre en escaneos: leer entradas, resolver los peldaños de arriba abajo, escribir salidas y repetir. Una variable que una bobina SET ha activado simplemente permanece activa en la memoria del PLC de un escaneo al siguiente.
+Recuerde que el programa corre en ciclos: leer entradas, resolver los peldaños de arriba abajo, escribir salidas y repetir. Una variable que una bobina SET ha activado simplemente permanece activa en la memoria del PLC de un ciclo al siguiente.
 
 En la industria, el mismo par de bobinas mantiene el estado de marcha de un motor en un transportador, recuerda que ocurrió un atasco de botellas o mantiene en curso un ciclo de llenado de un tanque. El patrón es siempre el mismo: un evento inicia la memoria y un evento distinto la termina. Como la memoria es una variable común, otros peldaños pueden leerla con un contacto ordinario, igual que leerían un pulsador.
 
 ## Cuando ambas llegan juntas
 
-¿Qué pasa si la llamada y la cancelación se pulsan en el mismo ciclo? Los dos peldaños tienen energía. Los peldaños corren de arriba abajo, así que la bobina SET escribe `TRUE` primero y la bobina RESET escribe `FALSE` después. Decide el peldaño que va **último**. Si se pone el peldaño RESET primero, gana el peldaño SET.
+¿Qué pasa si la llamada y la cancelación se pulsan en el mismo ciclo? Los dos peldaños tienen energía. Los peldaños corren de arriba abajo, así que la bobina SET escribe `TRUE` primero y la bobina RESET escribe `FALSE` después. Decide el peldaño que va **último**.
 
-Esa es la **prioridad** del biestable, y se elige con el orden de los peldaños. Una alarma que no debe perderse suele dar prioridad a SET, para que una falla nueva nunca se borre por un reconocimiento viejo. Una función de parada suele dar prioridad a RESET. Así funciona el orden de escaneo de este runtime. Otros PLC pueden ordenar de otra manera, así que consulte el manual del PLC que use.
+Esa es la **prioridad** del biestable, y se elige con el orden de los peldaños. Una alarma que no debe perderse suele dar prioridad a SET, para que una falla nueva nunca se borre por un reconocimiento viejo. Una función de parada suele dar prioridad a RESET. Así funciona el orden del ciclo de este runtime. Otros PLC pueden ordenar de otra manera, así que consulte el manual del PLC que use.
 
 ## Ejemplo resuelto
 
-Vuelva a la luz de llamada de la cama del hospital. Una pulsación corta de CallButton debe encender CallLamp, y solo CancelButton puede apagarla. Un peldaño activa la lámpara y otro la desactiva. En ZPLC, una bobina SET se dibuja con una S entre paréntesis y una bobina RESET con una R. La figura muestra la luz de llamada: el primer peldaño activa la lámpara cuando se pulsa el pulsador de llamada, y el segundo la desactiva cuando se pulsa el pulsador de cancelar.
+Un tanque se llena por ciclos. Una pulsación breve de FillButton inicia un ciclo de llenado, y la válvula de llenado sigue abierta después de soltar el pulsador, hasta que el interruptor de flotador TankFull indica que el tanque está lleno o alguien pulsa StopButton. Una pulsación de FillButton con el tanque ya lleno no debe hacer nada, y una parada siempre debe terminar el ciclo, aunque alguien pulse FillButton en el mismo momento. En ZPLC, una bobina SET se dibuja con una S dentro de los paréntesis y una bobina RESET con una R.
 
 ```ld-figure
-src: reading/call-light.ld.json
-caption: Un peldaño activa CallLamp con SET y otro peldaño la desactiva con RESET
+src: reading/tank-filling.ld.json
+caption: Un peldaño activa FillValve, un peldaño de más abajo lo desactiva
 ```
 
-ZPLC acepta exactamente un SET y un RESET para una variable, cada uno en su propio peldaño. Dos peldaños que escriben la variable con bobinas de otras maneras se rechazan como escritores múltiples.
+El peldaño SET tiene dos contactos en serie: el pulsador, y un contacto normalmente cerrado sobre TankFull, para que un tanque lleno no pueda iniciar un ciclo. El peldaño RESET tiene dos contactos en paralelo, porque un tanque lleno o el pulsador de parada terminan el ciclo. El peldaño RESET está escrito debajo del peldaño SET, así que cuando los dos tienen energía en el mismo ciclo, el reset tiene la última palabra.
 
-Pulse Ejecutar, luego pulse el pulsador de llamada y suéltelo. La lámpara sigue encendida. Luego pulse el pulsador de cancelar.
+ZPLC acepta exactamente un SET y un RESET para una variable, cada uno en su propio peldaño. Dos peldaños que escriben la variable con bobinas de otras formas se rechazan como escritores múltiples.
+
+Pulse Ejecutar, luego pulse FillButton y suéltelo. La válvula sigue abierta. Active TankFull: la válvula se cierra. Desactívelo, inicie otro ciclo y esta vez mantenga StopButton y pulse FillButton a la vez.
 
 ```ld-try
-src: reading/call-light.ld.json
+src: reading/tank-filling.ld.json
 inputs:
-  - { name: CallButton, kind: push }
-  - { name: CancelButton, kind: push }
-outputs: [CallLamp]
-timing: [CallButton, CancelButton, CallLamp]
-caption: Basta una pulsación corta de CallButton; solo CancelButton apaga la lámpara
+  - { name: FillButton, kind: push }
+  - { name: StopButton, kind: push }
+  - { name: TankFull, kind: switch }
+outputs: [FillValve]
+timing: [FillButton, StopButton, FillValve]
+caption: Una pulsación breve de FillButton abre la válvula; un tanque lleno o StopButton la cierran
 ```
 
-El diagrama muestra la luz de llamada durante unos segundos. El pulsador de llamada se pulsa brevemente, pero la lámpara sube con él y baja solo cuando se pulsa el pulsador de cancelar.
+El diagrama muestra dos ciclos. El primero se inicia con una pulsación breve y termina con StopButton. Luego FillButton y StopButton se pulsan en el mismo ciclo, y la válvula queda cerrada: el peldaño RESET va último y gana.
 
 ```timing
 span: 1500
 signals:
-  - { name: CallButton, edges: [100, 300] }
-  - { name: CancelButton, edges: [1000, 1200] }
-  - { name: CallLamp, edges: [100, 1000] }
+  - { name: FillButton, edges: [100, 300, 1100, 1300] }
+  - { name: StopButton, edges: [800, 1000, 1100, 1300] }
+  - { name: FillValve, edges: [100, 800] }
 marks:
-  - { from: 100, to: 1000, label: 'SET – RESET' }
-caption: La lámpara queda recordada desde la llamada hasta la cancelación
+  - { from: 100, to: 800, label: 'SET – RESET' }
+caption: La válvula se recuerda desde la pulsación hasta la parada; una pulsación junto con la parada no la abre
 ```
 
 ## Errores comunes
@@ -73,9 +76,9 @@ caption: La lámpara queda recordada desde la llamada hasta la cancelación
 ## Compruébelo usted
 
 ```quiz
-question: El peldaño 1 tiene una bobina SET sobre Alarm gobernada por Fault. El peldaño 2 tiene una bobina RESET sobre Alarm gobernada por Ack. Fault y Ack son verdaderas en el mismo ciclo. ¿Cuánto vale Alarm después del escaneo?
+question: El peldaño 1 tiene una bobina SET sobre Alarm gobernada por Fault. El peldaño 2 tiene una bobina RESET sobre Alarm gobernada por Ack. Fault y Ack son verdaderas en el mismo ciclo. ¿Cuánto vale Alarm después del ciclo?
 options:
-  - { text: 'FALSE, porque el peldaño RESET va último', correct: true, feedback: 'Correcto. Las dos bobinas actúan, y la que se escanea al final deja su valor.' }
+  - { text: 'FALSE, porque el peldaño RESET va último', correct: true, feedback: 'Correcto. Las dos bobinas actúan, y la que se resuelve al final deja su valor.' }
   - { text: 'TRUE, porque una falla es más importante', feedback: 'La importancia no decide. Decide el orden de los peldaños.' }
   - { text: 'Conserva su valor anterior', feedback: 'Las dos bobinas tienen energía, así que la variable se escribe dos veces, y queda la última escritura.' }
 ```

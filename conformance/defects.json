@@ -798,7 +798,7 @@
       "severity": "Major",
       "defect": "In FBD an unknown block becomes a comment.",
       "fixedBy": ["LNG-002"],
-      "cases": ["lng/lng-002-fbd-unknown-block", "lng/lng-002-fbd-function-not-translated", "lng/lng-002-ld-unknown-element"]
+      "cases": ["lng/lng-002-fbd-unknown-block", "lng/lng-002-fbd-catalogue-type-not-buildable", "lng/lng-002-ld-unknown-element"]
     },
     {
       "id": "LNG-D03h",

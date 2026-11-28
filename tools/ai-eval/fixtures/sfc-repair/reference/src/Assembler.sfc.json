@@ -1,0 +1,783 @@
+{
+  "name": "Assembler",
+  "description": "A two-axis assembler: take a lid from one belt, set it on a base on another, three times.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Cycles",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "Assemblies finished"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "StartButton.pressed: start the assembly"
+      },
+      {
+        "name": "LidReady",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "LidEye.detect: a lid waits at the lid blade"
+      },
+      {
+        "name": "BaseReady",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "BaseEye.detect: a base waits at the base blade"
+      },
+      {
+        "name": "XAtMin",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "Pick1.xAtMin: the pad is over the lid belt"
+      },
+      {
+        "name": "XAtMax",
+        "type": "BOOL",
+        "address": "%I0.4",
+        "comment": "Pick1.xAtMax: the pad is over the base belt"
+      },
+      {
+        "name": "YAtMin",
+        "type": "BOOL",
+        "address": "%I0.5",
+        "comment": "Pick1.yAtMin: the pad is down"
+      },
+      {
+        "name": "YAtMax",
+        "type": "BOOL",
+        "address": "%I0.6",
+        "comment": "Pick1.yAtMax: the pad is up"
+      },
+      {
+        "name": "Gripped",
+        "type": "BOOL",
+        "address": "%I0.7",
+        "comment": "Pick1.gripped: the pad holds a part"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "XPlus",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Pick1.xPlus: move the pad toward the base belt while true"
+      },
+      {
+        "name": "XMinus",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Pick1.xMinus: move the pad toward the lid belt while true"
+      },
+      {
+        "name": "YPlus",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "Pick1.yPlus: raise the pad while true"
+      },
+      {
+        "name": "YMinus",
+        "type": "BOOL",
+        "address": "%Q0.3",
+        "comment": "Pick1.yMinus: lower the pad while true"
+      },
+      {
+        "name": "Grip",
+        "type": "BOOL",
+        "address": "%Q0.4",
+        "comment": "Pick1.grip: vacuum on"
+      },
+      {
+        "name": "RunLid",
+        "type": "BOOL",
+        "address": "%Q0.5",
+        "comment": "LidBelt.run: run the lid belt"
+      },
+      {
+        "name": "RunBase",
+        "type": "BOOL",
+        "address": "%Q0.6",
+        "comment": "BaseBelt.run: run the base belt"
+      },
+      {
+        "name": "RunExit",
+        "type": "BOOL",
+        "address": "%Q0.7",
+        "comment": "ExitBelt.run: run the exit belt"
+      },
+      {
+        "name": "HoldLid",
+        "type": "BOOL",
+        "address": "%Q1.0",
+        "comment": "LidBlade.extend: the blade holds the lid while true"
+      },
+      {
+        "name": "HoldBase",
+        "type": "BOOL",
+        "address": "%Q1.1",
+        "comment": "BaseBlade.extend: the blade holds the base while true"
+      },
+      {
+        "name": "EmitLid",
+        "type": "BOOL",
+        "address": "%Q1.2",
+        "comment": "LidEmitter.emit: put one lid on the lid belt"
+      },
+      {
+        "name": "EmitBase",
+        "type": "BOOL",
+        "address": "%Q1.3",
+        "comment": "BaseEmitter.emit: put one base on the base belt"
+      },
+      {
+        "name": "Green",
+        "type": "BOOL",
+        "address": "%Q1.4",
+        "comment": "StackLight1.green: three assemblies are done"
+      },
+      {
+        "name": "Amber",
+        "type": "BOOL",
+        "address": "%Q1.5",
+        "comment": "StackLight1.amber: the assembly is running"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "step_idle",
+      "name": "IDLE",
+      "isInitial": true,
+      "position": {
+        "x": 200,
+        "y": 50
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_IDLE",
+          "comment": "Everything off"
+        }
+      ]
+    },
+    {
+      "id": "step_feedpair",
+      "name": "FEEDPAIR",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 250
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_FEEDPAIR",
+          "comment": "Put the first lid and the first base on their belts"
+        }
+      ]
+    },
+    {
+      "id": "step_homing",
+      "name": "HOMING",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 450
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_HOMING",
+          "comment": "Raise the pad and bring it over the lid belt"
+        }
+      ]
+    },
+    {
+      "id": "step_waiting",
+      "name": "WAITING",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 650
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_WAITING",
+          "comment": "Wait for a lid and a base at their blades"
+        }
+      ]
+    },
+    {
+      "id": "step_settling",
+      "name": "SETTLING",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 850
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_SETTLING",
+          "comment": "Let the lid and the base come to rest"
+        }
+      ]
+    },
+    {
+      "id": "step_lowering",
+      "name": "LOWERING",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 1050
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_LOWERING",
+          "comment": "Lower the pad onto the lid"
+        }
+      ]
+    },
+    {
+      "id": "step_grabbing",
+      "name": "GRABBING",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 1250
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_GRABBING",
+          "comment": "Vacuum on, wait for Gripped"
+        }
+      ]
+    },
+    {
+      "id": "step_lifting",
+      "name": "LIFTING",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 1450
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_LIFTING",
+          "comment": "Lift the lid"
+        }
+      ]
+    },
+    {
+      "id": "step_feedlid",
+      "name": "FEEDLID",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 1650
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_FEEDLID",
+          "comment": "Put the next lid on its belt"
+        }
+      ]
+    },
+    {
+      "id": "step_carrying",
+      "name": "CARRYING",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 1850
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_CARRYING",
+          "comment": "Carry the lid over the base belt"
+        }
+      ]
+    },
+    {
+      "id": "step_placing",
+      "name": "PLACING",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 2050
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_PLACING",
+          "comment": "Lower the lid onto the base"
+        }
+      ]
+    },
+    {
+      "id": "step_releasing",
+      "name": "RELEASING",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 2250
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_RELEASING",
+          "comment": "Vacuum off, wait for the lid to let go"
+        }
+      ]
+    },
+    {
+      "id": "step_raising",
+      "name": "RAISING",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 2450
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_RAISING",
+          "comment": "Raise the pad; the base blade opens and the assembly leaves"
+        },
+        {
+          "qualifier": "P1",
+          "actionName": "A_COUNT",
+          "comment": "Count the assembly once"
+        }
+      ]
+    },
+    {
+      "id": "step_returning",
+      "name": "RETURNING",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 2650
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_RETURNING",
+          "comment": "Bring the pad back over the lid belt"
+        }
+      ]
+    },
+    {
+      "id": "step_clearing",
+      "name": "CLEARING",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 2850
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_CLEARING",
+          "comment": "Wait until the assembly has left the base blade"
+        }
+      ]
+    },
+    {
+      "id": "step_cleared",
+      "name": "CLEARED",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 3050
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_CLEARED",
+          "comment": "Keep the blade open while the assembly runs out"
+        }
+      ]
+    },
+    {
+      "id": "step_feedbase",
+      "name": "FEEDBASE",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 3250
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_FEEDBASE",
+          "comment": "Close the blade and put the next base on its belt"
+        }
+      ]
+    },
+    {
+      "id": "step_finished",
+      "name": "FINISHED",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 3450
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_FINISHED",
+          "comment": "Three assemblies are done"
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t_1_idle_feedpair",
+      "fromStep": "step_idle",
+      "toStep": "step_feedpair",
+      "condition": "Start",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 150
+      }
+    },
+    {
+      "id": "t_2_feedpair_homing",
+      "fromStep": "step_feedpair",
+      "toStep": "step_homing",
+      "condition": "FEEDPAIR.T >= T#10ms",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 350
+      }
+    },
+    {
+      "id": "t_3_homing_waiting",
+      "fromStep": "step_homing",
+      "toStep": "step_waiting",
+      "condition": "YAtMax AND XAtMin",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 550
+      }
+    },
+    {
+      "id": "t_4_waiting_settling",
+      "fromStep": "step_waiting",
+      "toStep": "step_settling",
+      "condition": "LidReady AND BaseReady",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 750
+      }
+    },
+    {
+      "id": "t_5_settling_lowering",
+      "fromStep": "step_settling",
+      "toStep": "step_lowering",
+      "condition": "SETTLING.T >= T#800ms",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 950
+      }
+    },
+    {
+      "id": "t_6_lowering_grabbing",
+      "fromStep": "step_lowering",
+      "toStep": "step_grabbing",
+      "condition": "YAtMin",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 1150
+      }
+    },
+    {
+      "id": "t_7_grabbing_lifting",
+      "fromStep": "step_grabbing",
+      "toStep": "step_lifting",
+      "condition": "GRABBING.T >= T#400ms AND Gripped",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 1350
+      }
+    },
+    {
+      "id": "t_8_lifting_feedlid",
+      "fromStep": "step_lifting",
+      "toStep": "step_feedlid",
+      "condition": "YAtMax AND Cycles < 2",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 1550
+      },
+      "priority": 1
+    },
+    {
+      "id": "t_9_lifting_carrying",
+      "fromStep": "step_lifting",
+      "toStep": "step_carrying",
+      "condition": "YAtMax",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 1550
+      },
+      "priority": 2
+    },
+    {
+      "id": "t_10_feedlid_carrying",
+      "fromStep": "step_feedlid",
+      "toStep": "step_carrying",
+      "condition": "FEEDLID.T >= T#10ms",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 1750
+      }
+    },
+    {
+      "id": "t_11_carrying_placing",
+      "fromStep": "step_carrying",
+      "toStep": "step_placing",
+      "condition": "XAtMax",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 1950
+      }
+    },
+    {
+      "id": "t_12_placing_releasing",
+      "fromStep": "step_placing",
+      "toStep": "step_releasing",
+      "condition": "YAtMin",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 2150
+      }
+    },
+    {
+      "id": "t_13_releasing_raising",
+      "fromStep": "step_releasing",
+      "toStep": "step_raising",
+      "condition": "RELEASING.T >= T#400ms",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 2350
+      }
+    },
+    {
+      "id": "t_14_raising_returning",
+      "fromStep": "step_raising",
+      "toStep": "step_returning",
+      "condition": "YAtMax",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 2550
+      }
+    },
+    {
+      "id": "t_15_returning_finished",
+      "fromStep": "step_returning",
+      "toStep": "step_finished",
+      "condition": "XAtMin AND Cycles >= 3",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 2750
+      },
+      "priority": 1
+    },
+    {
+      "id": "t_16_returning_clearing",
+      "fromStep": "step_returning",
+      "toStep": "step_clearing",
+      "condition": "XAtMin",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 2750
+      },
+      "priority": 2
+    },
+    {
+      "id": "t_17_clearing_cleared",
+      "fromStep": "step_clearing",
+      "toStep": "step_cleared",
+      "condition": "NOT BaseReady",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 2950
+      }
+    },
+    {
+      "id": "t_18_cleared_feedbase",
+      "fromStep": "step_cleared",
+      "toStep": "step_feedbase",
+      "condition": "CLEARED.T >= T#600ms",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 3150
+      }
+    },
+    {
+      "id": "t_19_feedbase_waiting",
+      "fromStep": "step_feedbase",
+      "toStep": "step_waiting",
+      "condition": "FEEDBASE.T >= T#10ms",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 3350
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "A_IDLE",
+      "name": "A_IDLE",
+      "type": "ST",
+      "body": "XPlus := FALSE; XMinus := FALSE; YPlus := FALSE; YMinus := FALSE; Grip := FALSE; RunLid := FALSE; RunBase := FALSE; RunExit := FALSE; HoldLid := FALSE; HoldBase := FALSE; EmitLid := FALSE; EmitBase := FALSE; Green := FALSE; Amber := FALSE;"
+    },
+    {
+      "id": "A_FEEDPAIR",
+      "name": "A_FEEDPAIR",
+      "type": "ST",
+      "body": "XPlus := FALSE; XMinus := FALSE; YPlus := FALSE; YMinus := FALSE; Grip := FALSE; RunLid := TRUE; RunBase := TRUE; RunExit := TRUE; HoldLid := TRUE; HoldBase := TRUE; EmitLid := TRUE; EmitBase := TRUE; Green := FALSE; Amber := TRUE;"
+    },
+    {
+      "id": "A_HOMING",
+      "name": "A_HOMING",
+      "type": "ST",
+      "body": "XPlus := FALSE; XMinus := NOT XAtMin; YPlus := NOT YAtMax; YMinus := FALSE; Grip := FALSE; RunLid := TRUE; RunBase := TRUE; RunExit := TRUE; HoldLid := TRUE; HoldBase := TRUE; EmitLid := FALSE; EmitBase := FALSE; Green := FALSE; Amber := TRUE;"
+    },
+    {
+      "id": "A_WAITING",
+      "name": "A_WAITING",
+      "type": "ST",
+      "body": "XPlus := FALSE; XMinus := FALSE; YPlus := FALSE; YMinus := FALSE; Grip := FALSE; RunLid := TRUE; RunBase := TRUE; RunExit := TRUE; HoldLid := TRUE; HoldBase := TRUE; EmitLid := FALSE; EmitBase := FALSE; Green := FALSE; Amber := TRUE;"
+    },
+    {
+      "id": "A_SETTLING",
+      "name": "A_SETTLING",
+      "type": "ST",
+      "body": "XPlus := FALSE; XMinus := FALSE; YPlus := FALSE; YMinus := FALSE; Grip := FALSE; RunLid := TRUE; RunBase := TRUE; RunExit := TRUE; HoldLid := TRUE; HoldBase := TRUE; EmitLid := FALSE; EmitBase := FALSE; Green := FALSE; Amber := TRUE;"
+    },
+    {
+      "id": "A_LOWERING",
+      "name": "A_LOWERING",
+      "type": "ST",
+      "body": "XPlus := FALSE; XMinus := FALSE; YPlus := FALSE; YMinus := NOT YAtMin; Grip := FALSE; RunLid := TRUE; RunBase := TRUE; RunExit := TRUE; HoldLid := TRUE; HoldBase := TRUE; EmitLid := FALSE; EmitBase := FALSE; Green := FALSE; Amber := TRUE;"
+    },
+    {
+      "id": "A_GRABBING",
+      "name": "A_GRABBING",
+      "type": "ST",
+      "body": "XPlus := FALSE; XMinus := FALSE; YPlus := FALSE; YMinus := FALSE; Grip := TRUE; RunLid := TRUE; RunBase := TRUE; RunExit := TRUE; HoldLid := TRUE; HoldBase := TRUE; EmitLid := FALSE; EmitBase := FALSE; Green := FALSE; Amber := TRUE;"
+    },
+    {
+      "id": "A_LIFTING",
+      "name": "A_LIFTING",
+      "type": "ST",
+      "body": "XPlus := FALSE; XMinus := FALSE; YPlus := NOT YAtMax; YMinus := FALSE; Grip := TRUE; RunLid := TRUE; RunBase := TRUE; RunExit := TRUE; HoldLid := TRUE; HoldBase := TRUE; EmitLid := FALSE; EmitBase := FALSE; Green := FALSE; Amber := TRUE;"
+    },
+    {
+      "id": "A_FEEDLID",
+      "name": "A_FEEDLID",
+      "type": "ST",
+      "body": "XPlus := FALSE; XMinus := FALSE; YPlus := FALSE; YMinus := FALSE; Grip := TRUE; RunLid := TRUE; RunBase := TRUE; RunExit := TRUE; HoldLid := TRUE; HoldBase := TRUE; EmitLid := TRUE; EmitBase := FALSE; Green := FALSE; Amber := TRUE;"
+    },
+    {
+      "id": "A_CARRYING",
+      "name": "A_CARRYING",
+      "type": "ST",
+      "body": "XPlus := NOT XAtMax; XMinus := FALSE; YPlus := FALSE; YMinus := FALSE; Grip := TRUE; RunLid := TRUE; RunBase := TRUE; RunExit := TRUE; HoldLid := TRUE; HoldBase := TRUE; EmitLid := FALSE; EmitBase := FALSE; Green := FALSE; Amber := TRUE;"
+    },
+    {
+      "id": "A_PLACING",
+      "name": "A_PLACING",
+      "type": "ST",
+      "body": "XPlus := FALSE; XMinus := FALSE; YPlus := FALSE; YMinus := NOT YAtMin; Grip := TRUE; RunLid := TRUE; RunBase := TRUE; RunExit := TRUE; HoldLid := TRUE; HoldBase := TRUE; EmitLid := FALSE; EmitBase := FALSE; Green := FALSE; Amber := TRUE;"
+    },
+    {
+      "id": "A_RELEASING",
+      "name": "A_RELEASING",
+      "type": "ST",
+      "body": "XPlus := FALSE; XMinus := FALSE; YPlus := FALSE; YMinus := FALSE; Grip := FALSE; RunLid := TRUE; RunBase := TRUE; RunExit := TRUE; HoldLid := TRUE; HoldBase := TRUE; EmitLid := FALSE; EmitBase := FALSE; Green := FALSE; Amber := TRUE;"
+    },
+    {
+      "id": "A_RAISING",
+      "name": "A_RAISING",
+      "type": "ST",
+      "body": "XPlus := FALSE; XMinus := FALSE; YPlus := NOT YAtMax; YMinus := FALSE; Grip := FALSE; RunLid := TRUE; RunBase := TRUE; RunExit := TRUE; HoldLid := TRUE; HoldBase := FALSE; EmitLid := FALSE; EmitBase := FALSE; Green := FALSE; Amber := TRUE;"
+    },
+    {
+      "id": "A_COUNT",
+      "name": "A_COUNT",
+      "type": "ST",
+      "body": "Cycles := Cycles + 1;"
+    },
+    {
+      "id": "A_RETURNING",
+      "name": "A_RETURNING",
+      "type": "ST",
+      "body": "XPlus := FALSE; XMinus := NOT XAtMin; YPlus := FALSE; YMinus := FALSE; Grip := FALSE; RunLid := TRUE; RunBase := TRUE; RunExit := TRUE; HoldLid := TRUE; HoldBase := FALSE; EmitLid := FALSE; EmitBase := FALSE; Green := FALSE; Amber := TRUE;"
+    },
+    {
+      "id": "A_CLEARING",
+      "name": "A_CLEARING",
+      "type": "ST",
+      "body": "XPlus := FALSE; XMinus := FALSE; YPlus := FALSE; YMinus := FALSE; Grip := FALSE; RunLid := TRUE; RunBase := TRUE; RunExit := TRUE; HoldLid := TRUE; HoldBase := FALSE; EmitLid := FALSE; EmitBase := FALSE; Green := FALSE; Amber := TRUE;"
+    },
+    {
+      "id": "A_CLEARED",
+      "name": "A_CLEARED",
+      "type": "ST",
+      "body": "XPlus := FALSE; XMinus := FALSE; YPlus := FALSE; YMinus := FALSE; Grip := FALSE; RunLid := TRUE; RunBase := TRUE; RunExit := TRUE; HoldLid := TRUE; HoldBase := FALSE; EmitLid := FALSE; EmitBase := FALSE; Green := FALSE; Amber := TRUE;"
+    },
+    {
+      "id": "A_FEEDBASE",
+      "name": "A_FEEDBASE",
+      "type": "ST",
+      "body": "XPlus := FALSE; XMinus := FALSE; YPlus := FALSE; YMinus := FALSE; Grip := FALSE; RunLid := TRUE; RunBase := TRUE; RunExit := TRUE; HoldLid := TRUE; HoldBase := TRUE; EmitLid := FALSE; EmitBase := TRUE; Green := FALSE; Amber := TRUE;"
+    },
+    {
+      "id": "A_FINISHED",
+      "name": "A_FINISHED",
+      "type": "ST",
+      "body": "XPlus := FALSE; XMinus := FALSE; YPlus := FALSE; YMinus := FALSE; Grip := FALSE; RunLid := TRUE; RunBase := TRUE; RunExit := TRUE; HoldLid := TRUE; HoldBase := FALSE; EmitLid := FALSE; EmitBase := FALSE; Green := TRUE; Amber := FALSE;"
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

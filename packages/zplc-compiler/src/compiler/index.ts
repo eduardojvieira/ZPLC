@@ -76,6 +76,9 @@ export type { Symbol } from './symbol-table.ts';
 // =============================================================================
 export { getFB, getFn, isFB, isFn, getAllFBNames, getAllFnNames } from './stdlib/index.ts';
 export type { FunctionBlockDef, FunctionDef, CodeGenContext, MemberDef } from './stdlib/types.ts';
+export { FUNCTION_DOCS, FUNCTION_CATEGORIES } from './stdlib/reference.ts';
+export type { FunctionDoc } from './stdlib/reference.ts';
+export { CONVERSION_TYPES } from './stdlib/conversions.ts';
 
 // =============================================================================
 // Code generator exports
@@ -130,6 +133,8 @@ export {
     findSourceLine,
     findPC,
     getBreakpointLocations,
+    elementPcMap,
+    resolveElementPc,
     buildDebugMap,
 } from './debug-map.ts';
 export { debugMapMatchesArtifact } from './build-id.ts';
@@ -147,6 +152,8 @@ export type {
     DebugMap,
     BuildDebugMapOptions,
     TypeResolver,
+    ElementPc,
+    ElementPcLookup,
 } from './debug-map.ts';
 
 // =============================================================================

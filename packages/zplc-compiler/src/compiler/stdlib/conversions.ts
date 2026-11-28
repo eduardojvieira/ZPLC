@@ -254,7 +254,8 @@ function conversion(from: string, to: string): FunctionDef {
                 emitConversion(ctx, from, to);
                 return;
             }
-            ctx.emitExpression(args[0]!);
+            if (isWideInteger(held) && ctx.emitOperand) ctx.emitOperand(args[0]!, held);
+            else ctx.emitExpression(args[0]!);
             emitConversion(ctx, held, to);
         },
     };

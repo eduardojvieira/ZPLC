@@ -5,7 +5,7 @@
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Escriba una condición que sea verdadera solo cuando varias entradas sean verdaderas a la vez.",
-    "Use NOT para una lámpara de aviso y XOR para exactamente una de dos entradas."
+    "Convierta frases como \"mientras está abierta\" y \"solo una de las dos\" en condiciones booleanas."
   ],
   "stages": [
     {
@@ -41,14 +41,14 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "Pruebe la misma condición con OR en lugar de AND y diga qué combinación de entradas habilita la prensa por error. Después escriba GuardLamp como NOT GuardClosed AND LeftHand: ¿cuándo queda apagada la lámpara aunque la protección esté abierta?",
-      "checkpoint": "OR habilita la prensa con una sola mano, que es justo lo que un mando a dos manos existe para impedir. NOT se aplica solo a GuardClosed, así que esa lámpara se enciende solo mientras la protección está abierta y la mano izquierda está en su pulsador."
+      "body": "Pruebe la misma condición con OR en lugar de AND y diga qué combinación de entradas habilita la prensa por error. Después diga con palabras de qué entradas debe depender GuardLamp y compruebe que su línea usa esas y ninguna otra.",
+      "checkpoint": "OR habilita la prensa con una sola mano, que es justo lo que un mando a dos manos existe para impedir. Puede decir qué entradas lee cada una de sus tres líneas y por qué GuardLamp no lee las manos."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "AND es verdadero solo cuando todas las partes lo son, así que PressEnable necesita las tres entradas unidas con AND."
+      "text": "Lea las tres frases de la etapa Edit una por vez: cada una es la condición completa de una salida. Luego mire el operador que usa el programa inicial para PressEnable."
     },
     {
       "level": 2,

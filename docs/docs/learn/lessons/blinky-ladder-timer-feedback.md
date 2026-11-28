@@ -26,7 +26,7 @@ Complete a 500 ms Ladder blinker made of two TON timers and SET and RESET coils,
 ## Objectives
 
 - Read a two-timer Ladder oscillator: each timer runs in one half period and starts the next.
-- Complete it with a SET coil and a RESET coil driven by the timers' Q outputs.
+- Make the output change state by itself, from the time that each timer measures.
 
 ## Stages
 

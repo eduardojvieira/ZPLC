@@ -27,7 +27,7 @@ Las dos bobinas se usan sobre la misma variable. El programa se resuelve de arri
 
 ## Realimentación: una salida que elige su propio temporizador
 
-Un parpadeador combina las dos ideas. Una lámpara que está en OFF inicia un temporizador; cuando ese temporizador termina, una bobina SET pone la lámpara en ON. Una lámpara que está en ON inicia un segundo temporizador; cuando termina, una bobina RESET la pone en OFF. La propia lámpara es la memoria que decide qué temporizador corre. Esta idea se llama **realimentación**: la salida vuelve como entrada del mismo programa.
+Un parpadeador combina las dos ideas. Una lámpara que está en OFF cuenta un semiperíodo y una lámpara que está en ON cuenta el otro, así que la propia lámpara es la memoria que decide qué temporizador corre. Esta idea se llama **realimentación**: la salida vuelve como entrada del mismo programa.
 
 ¿Por qué dos temporizadores y no uno? Con un solo temporizador alimentado por la lámpara, al encenderse la lámpara el temporizador se pondría a cero de inmediato y la lámpara destellaría durante un solo ciclo, no parpadearía. Dos temporizadores dan a cada mitad del parpadeo su propia cuenta.
 

@@ -13,15 +13,16 @@ import {
   assertSmokePortAvailable,
   Cdp,
   drain,
+  electronExecutable,
   freePort,
   HOST,
   packageRoot,
   preflight,
   smokeVitePort,
   stop,
-  waitFor,
   type OwnedProcess,
 } from './run-desktop-smoke';
+import { pause, scaleWait, waiting, waitFor } from './journeyTiming';
 
 export class NotPossible extends Error {}
 /** A journey that cannot be performed because the product has no way to do it. */
@@ -190,7 +191,8 @@ async function connectApp(
   // machine at a load average of 40 to 100 needs several times the seconds it needs alone. Journeys that measure time do so
   // with Date.now() around their own work, never through this bound.
   const until: App['until'] = async (description, check, bound = 20_000) => {
-    const timeoutMs = bound * LOAD_PATIENCE;
+    waiting.what = description;
+    const timeoutMs = scaleWait(bound * LOAD_PATIENCE);
     const started = Date.now();
     let last: unknown;
     while (Date.now() - started < timeoutMs) {
@@ -295,8 +297,9 @@ async function connectApp(
     clickable: async (target) => (await evaluate<unknown>(centre(target))) !== null,
     visible: async (target) =>
       await evaluate<boolean>(
-        `(() => { const el = ${target}; if (!el) return false; const box = el.getBoundingClientRect(); return box.width > 0 && ` +
-          `box.height > 0; })()`,
+        `(() => { const el = ${target}; if (!el) return false; const box = el.getBoundingClientRect(); ` +
+          `const style = getComputedStyle(el); return box.width > 0 && box.height > 0 && ` +
+          `style.visibility !== 'hidden' && Number(style.opacity) > 0; })()`,
       ),
     text: () => evaluate<string>('document.body.innerText'),
     errors: page.errors,
@@ -320,13 +323,16 @@ export async function launchApp(
   const answerFile = join(root, 'folder-answer.txt');
   writeFileSync(answerFile, '');
   const cdpPort = await freePort();
-  const electronPath = join(packageRoot, 'node_modules', 'electron', 'dist', process.platform === 'win32' ? 'electron.exe' : 'electron');
+  const electronPath = electronExecutable();
   const output: string[] = [];
   const electron: OwnedProcess = Bun.spawn(
     [
       electronPath,
       '--headless',
       '--disable-gpu',
+      // the window is not shown on a CI runner (macOS, Windows): do not let Chromium treat it as occluded or in the background
+      '--disable-backgrounding-occluded-windows',
+      '--disable-renderer-backgrounding',
       '--lang=en-US',
       // the X display the run was given (xvfb-run), where journey 53 finds the window with xdotool: in a Wayland session
       // Electron would otherwise open its window on the person's own desktop
@@ -355,7 +361,7 @@ export async function launchApp(
   // Browser.close is not awaited: with unsaved changes the app answers it with a prompt, not a reply.
   const dispose = async () => {
     if (cdp) void cdp.command('Browser.close').catch(() => undefined);
-    await Promise.race([electron.exited, Bun.sleep(3_000)]);
+    await Promise.race([electron.exited, pause(3_000)]);
     cdp?.close();
     await stop(electron);
   };
@@ -436,7 +442,7 @@ export async function launchPackagedApp(
   let cdp: Cdp | undefined;
   const stopApp = async () => {
     if (cdp) void cdp.command('Browser.close').catch(() => undefined);
-    await Promise.race([electron.exited, Bun.sleep(3_000)]);
+    await Promise.race([electron.exited, pause(3_000)]);
     cdp?.close();
     await stop(electron);
   };

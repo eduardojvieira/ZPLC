@@ -21,6 +21,36 @@ export function sceneFilePath(name: string): string {
   return `${SCENES_FOLDER}/${checkedName(name)}.scene.json`;
 }
 
+/**
+ * What Studio last wrote itself to a project path, until the watcher reports it (AIX-012): a change whose text is the one
+ * recorded here is Studio's own write, and raises no external-change notice. Every scene save records its root files here,
+ * and the restore of a file replaced from outside records its own write (`store/externalChangeWatch.ts`).
+ */
+const ownWrites = new Map<string, string>();
+
+export function recordOwnWrite(path: string, text: string): void {
+  ownWrites.set(path, text);
+}
+
+export function forgetOwnWrite(path: string): void {
+  ownWrites.delete(path);
+}
+
+/** Whether `text` on disk at `path` is what Studio wrote there itself; a match is used once. */
+export function takeOwnWrite(path: string, text: string): boolean {
+  const own = ownWrites.get(path);
+  ownWrites.delete(path);
+  return own !== undefined && own === text;
+}
+
+export function hasOwnWrite(path: string): boolean {
+  return ownWrites.has(path);
+}
+
+export function clearOwnWrites(): void {
+  ownWrites.clear();
+}
+
 const tooLarge = (name: string) => new Error(`The scene "${name}" is larger than ${MAX_SCENE_BYTES} bytes.`);
 
 async function write(folder: FileSystemDirectoryHandle, file: string, text: string): Promise<void> {
@@ -46,8 +76,16 @@ export async function saveScene(root: FileSystemDirectoryHandle, name: string, s
 export async function saveProjectScene(root: FileSystemDirectoryHandle, scene: PlantSceneFile, map?: string): Promise<void> {
   const text = `${JSON.stringify(scene, null, 2)}\n`;
   if (new TextEncoder().encode(text).length > MAX_SCENE_BYTES) throw tooLarge(scene.name);
-  await write(root, 'scene.json', text);
-  if (map) await write(root, 'plant-map.json', map);
+  recordOwnWrite('scene.json', text);
+  if (map) recordOwnWrite('plant-map.json', map);
+  try {
+    await write(root, 'scene.json', text);
+    if (map) await write(root, 'plant-map.json', map);
+  } catch (error) {
+    forgetOwnWrite('scene.json');
+    forgetOwnWrite('plant-map.json');
+    throw error;
+  }
 }
 
 /**

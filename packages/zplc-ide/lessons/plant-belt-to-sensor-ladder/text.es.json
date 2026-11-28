@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "title": "Mover una caja hasta un sensor en diagrama de escalera",
-  "summary": "Arranque una cinta con un botón mediante una bobina de activación y deténgala con una bobina de borrado cuando una caja llegue al sensor del extremo.",
+  "summary": "Arranque una cinta con un pulsador mediante una bobina de activación y deténgala con una bobina de borrado cuando una caja llegue al sensor del extremo.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
-    "Arrancar un actuador con la pulsación de un botón mediante una bobina de activación y recordar que está en marcha.",
+    "Arrancar un actuador con la pulsación de un pulsador mediante una bobina de activación y recordar que está en marcha.",
     "Detener el actuador con una bobina de borrado cuando un sensor ve la caja."
   ],
   "stages": [
@@ -17,13 +17,13 @@
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, siga la caja: el botón de inicio es solo una pulsación corta, pero la cinta debe seguir en marcha hasta que llegue la caja.",
+      "body": "Antes de ejecutar, siga la caja: el pulsador de inicio es solo una pulsación corta, pero la cinta debe seguir en marcha hasta que llegue la caja.",
       "checkpoint": "Cinta apagada antes de la pulsación; encendida después, con una caja encima; apagada otra vez en cuanto EyeFar ve la caja, y así se queda."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que la cinta nunca se mueve; arranque la cinta y ponga una caja con Start, y detenga la cinta cuando EyeFar vea la caja.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial no tiene peldaños, así que la cinta nunca se mueve; arranque la cinta y ponga una caja con Start, y detenga la cinta cuando EyeFar vea la caja.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El inicial no tiene peldaños, así que la cinta nunca se mueve; arranque la cinta y ponga una caja con Start, y detenga la cinta cuando EyeFar vea la caja."
+    "El programa inicial no tiene peldaños, así que la cinta nunca se mueve; arranque la cinta y ponga una caja con Start, y detenga la cinta cuando EyeFar vea la caja."
   ]
 }

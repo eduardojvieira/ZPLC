@@ -29,7 +29,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter never latches metal for the diverter; hold the belt request after Start, latch metal at the classifier, and clear it only when the part reaches the diverter.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter never latches metal for the diverter; hold the belt request after Start, latch metal at the classifier, and clear it only when the part reaches the diverter.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {

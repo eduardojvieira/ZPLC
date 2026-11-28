@@ -5,14 +5,14 @@
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Mantenga la bomba encendida desde LevelLow hasta LevelHigh con una autorretención, con todas las condiciones de parada en serie.",
-    "Enclave la alarma con PumpFault o EStop mediante una bobina SET y libérela con una bobina RESET a la que solo llegue una nueva pulsación de Reset."
+    "Mantenga la alarma encendida después de cualquiera de las dos fallas, y libérela solo con una nueva pulsación de Reset una vez que la falla haya desaparecido."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/TankLevel.ld.json están dibujados el peldaño de la bomba y el de la alarma; la planta controla LevelLow, LevelHigh y PumpFault. Agregue los peldaños que activan FaultLatched, arman Reset y borran FaultLatched, para que la alarma siga encendida cuando la entrada de falla desaparezca hasta que se pulse Reset después.",
-      "checkpoint": "Falla, Reset armado y enclavamiento borrado tienen estados explícitos."
+      "body": "En src/TankLevel.ld.json están dibujados el peldaño de la bomba y el de la alarma; la planta controla LevelLow, LevelHigh y PumpFault. La alarma debe seguir encendida cuando la entrada de falla desaparezca, hasta que se pulse Reset después.",
+      "checkpoint": "Usted puede decir qué debe mantener la alarma encendida cuando la entrada de falla ya desapareció, y qué pulsación de Reset puede borrarla."
     },
     {
       "key": "predict",
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial nunca activa FaultLatched, así que Alarm cae en cuanto PumpFault desaparece a los {{t:90}} ms en lugar de seguir en ON hasta un Reset; agregue los peldaños que activan FaultLatched con EStop o PumpFault, arman Reset cuando se suelta y borran el enclavamiento con una nueva pulsación de Reset. Los peldaños se ejecutan de arriba abajo: ponga los peldaños del enclavamiento antes del peldaño de la bomba, para que este ya vea el FaultLatched de este escaneo.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial olvida la falla: Alarm cae en cuanto PumpFault desaparece a los {{t:90}} ms en lugar de seguir en ON hasta un Reset. La alarma debe seguir en ON después de EStop o PumpFault hasta que se pulse Reset una vez desaparecida la falla; un Reset mantenido durante la falla no debe borrarla.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "LevelLow pasa a FALSE en cuanto sube el nivel, así que la bomba necesita un contacto de su propia salida en paralelo con LevelLow, y toda condición de parada debe ir en serie. ¿Qué conserva una falla cuando su entrada ya desapareció?"
+      "text": "Mire qué gobierna Alarm: lee FaultLatched, que ningún peldaño activa. Los peldaños se ejecutan de arriba abajo, así que un peldaño ve lo que escribieron en este ciclo los peldaños de arriba."
     },
     {
       "level": 2,
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial nunca activa FaultLatched, así que Alarm cae en cuanto PumpFault desaparece a los {{t:90}} ms en lugar de seguir en ON hasta un Reset; agregue los peldaños que activan FaultLatched con EStop o PumpFault, arman Reset cuando se suelta y borran el enclavamiento con una nueva pulsación de Reset."
+    "El programa inicial olvida la falla: Alarm cae en cuanto PumpFault desaparece a los {{t:90}} ms en lugar de seguir en ON hasta un Reset."
   ]
 }

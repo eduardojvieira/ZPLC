@@ -3,12 +3,17 @@
  * scenes (and a selector switch, which no scene uses yet) as the real plant core publishes them.
  */
 import { afterEach, describe, expect, it } from 'bun:test';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { PartView, PlantCore, PlantSceneFile } from '../../contracts';
 import { controlStation } from '../controlStations';
 import { createPlantCore } from '../../core/plantCore';
-import { modelBounds, partModel, pieceExtent } from './index';
+import { cameraPosition, firstViewCamera, fitCamera } from '../camera';
+import { snapshotBounds } from '../geometry';
+import { modelBounds, partModel, pieceExtent, rotate } from './index';
+import { rasterize, worldBoxes } from './raster.fixtures';
 import { beltToSensor, bottom, slot, top } from './models.fixtures';
-import { EMERGENCY_STOP, isStand, OPERATOR, POTENTIOMETER, PUSH_BUTTON } from './operator';
+import { EMERGENCY_STOP, isStand, NUMERIC_DISPLAY, OPERATOR, POTENTIOMETER, PUSH_BUTTON } from './operator';
 
 const plant = beltToSensor();
 
@@ -329,5 +334,127 @@ describe('numeric display model (VIS-014, F5)', () => {
     expect(body.at[0] + pieceExtent(body)[0]).toBeGreaterThan(0.4);
     expect(bottom(slot(a, 'station-plate'))).toBeCloseTo(-0.5, 9);
     expect(top(body)).toBeCloseTo(bottom(slot(a, 'enclosure')), 9);
+  });
+});
+
+describe('numeric display decimals (plan-vis E1 finding, VIS-003)', () => {
+  /** Lit segments of a cell, sorted, to the character they spell. */
+  const CHAR: Readonly<Record<string, string>> = {
+    abcdef: '0',
+    bc: '1',
+    abdeg: '2',
+    abcdg: '3',
+    bcfg: '4',
+    acdfg: '5',
+    acdefg: '6',
+    abc: '7',
+    abcdefg: '8',
+    abcdfg: '9',
+    g: '-',
+  };
+  /** The display drawn in its scene (the renderer hands the model its scene part), with the value set by hand. */
+  const drawn = async (config: Record<string, number | string>, value: number) => {
+    const scene = lone('numeric-display', config);
+    const view = viewOf(await coreOf(scene), 'it');
+    return partModel({ ...view, state: { ...view.state, value } }, { travel: 0, scenePart: scene.parts[0] })!;
+  };
+  /** The text the segments spell, cell by cell; a lit decimal point follows its cell; blank cells are left out. */
+  const text = async (config: Record<string, number | string>, value: number): Promise<string> => {
+    const cells = new Map<number, string[]>();
+    for (const p of await drawn(config, value)) {
+      const m = /^d(\d+)-(\w+)$/.exec(p.slot);
+      if (m) cells.set(Number(m[1]), [...(cells.get(Number(m[1])) ?? []), m[2]!]);
+    }
+    return [...cells.keys()]
+      .sort((a, b) => a - b)
+      .map((i) => {
+        const lit = cells.get(i)!;
+        return (
+          (CHAR[
+            lit
+              .filter((x) => x !== 'dp')
+              .sort()
+              .join('')
+          ] ?? '?') + (lit.includes('dp') ? '.' : '')
+        );
+      })
+      .join('');
+  };
+
+  it('draws a REAL value with the decimals its scene configures', async () => {
+    expect(await text({ type: 'REAL', min: 0, max: 1, unit: 'm', decimals: 2 }, 0.42)).toBe('0.42');
+  });
+
+  it('keeps rounding to a whole number when the display has no decimals', async () => {
+    expect(await text({ type: 'REAL', min: 0, max: 100, unit: '%', decimals: 0 }, 41.6)).toBe('42');
+  });
+
+  it('draws a negative value with its minus and decimals', async () => {
+    expect(await text({ type: 'REAL', min: -10, max: 10, unit: 'V', decimals: 1 }, -2.5)).toBe('-2.5');
+  });
+
+  it('keeps a dash in every cell outside the range, as before, one cell per digit including the decimals', async () => {
+    expect(await text({ type: 'REAL', min: 0, max: 1, unit: 'm', decimals: 2 }, 5)).toBe('---');
+  });
+
+  it('keeps the longest text of the range and decimals inside the window', async () => {
+    for (const [config, value] of [
+      [{ type: 'REAL', min: 0, max: 1, unit: 'm', decimals: 3 }, 0.999],
+      [{ type: 'REAL', min: -1000, max: 1000, unit: 'V', decimals: 3 }, -999.999],
+      [{ type: 'REAL', min: -10, max: 10, unit: 'V', decimals: 2 }, -9.99],
+    ] as const) {
+      const digits = (await drawn(config, value)).filter((p) => /^d\d+-/.test(p.slot));
+      expect(digits.length).toBeGreaterThan(0);
+      for (const p of digits) expect(Math.abs(p.at[0]) + pieceExtent(p)[0]).toBeLessThanOrEqual(NUMERIC_DISPLAY.window[0] / 2);
+    }
+  });
+});
+
+describe('operator devices in their scenes (C10)', () => {
+  it('C10 in tank-level-control, timed-tank and stacker-crane-warehouse every operator device stands beside the plant', async () => {
+    // The planar box of a part in the world, from its model's bounds turned by its pose.
+    const planar = (v: PartView, parts: readonly PartView[]) => {
+      const b = modelBounds(v, parts)!;
+      const corners = [b.min, b.max].flatMap((x) => [b.min, b.max].map((z) => rotate(v.pose.q, [x[0], 0, z[2]])));
+      const xs = corners.map((c) => c[0] + v.pose.p[0]);
+      const zs = corners.map((c) => c[2] + v.pose.p[2]);
+      return { x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };
+    };
+    const gap = (a: ReturnType<typeof planar>, b: ReturnType<typeof planar>) =>
+      Math.hypot(Math.max(0, a.x0 - b.x1, b.x0 - a.x1), Math.max(0, a.z0 - b.z1, b.z0 - a.z1));
+    const far: string[] = [];
+    for (const id of ['tank-level-control', 'timed-tank', 'stacker-crane-warehouse']) {
+      const scene = JSON.parse(readFileSync(join(import.meta.dir, '../../../../plant-scenes', id, 'scene.json'), 'utf8')) as PlantSceneFile;
+      const parts = (await coreOf(scene)).snapshot().parts;
+      const plantParts = parts.filter((p) => !Object.hasOwn(OPERATOR, p.part)).map((p) => planar(p, parts));
+      for (const control of parts.filter((p) => Object.hasOwn(OPERATOR, p.part))) {
+        const nearest = Math.min(...plantParts.map((b) => gap(planar(control, parts), b)));
+        // Beside: within 0.4 m of the plant, and not on it.
+        if (!(nearest > 0 && nearest <= 0.4)) far.push(`${id} ${control.id} ${nearest.toFixed(2)} m`);
+      }
+    }
+    expect(far).toEqual([]);
+  });
+
+  it('C10 stacker-crane-warehouse opening view: no operator device stands in front of a belt', async () => {
+    const scene = JSON.parse(
+      readFileSync(join(import.meta.dir, '../../../../plant-scenes/stacker-crane-warehouse/scene.json'), 'utf8'),
+    ) as PlantSceneFile;
+    const snapshot = (await coreOf(scene)).snapshot();
+    const fit = fitCamera(firstViewCamera(scene.cameras[0]!), snapshotBounds(snapshot)!, 16 / 9);
+    const camera = { position: cameraPosition(fit), target: fit.target };
+    const parts = snapshot.parts;
+    const context = (v: PartView) => ({ travel: 0, station: controlStation(v, parts) });
+    const cell = { w: 640, h: 360 };
+    const frame = (views: PartView[]) => {
+      const depth = new Float64Array(cell.w * cell.h);
+      return { pixels: rasterize(worldBoxes(views, context), camera, depth, cell), depth };
+    };
+    const belts = frame(parts.filter((p) => p.part === 'belt'));
+    const devices = frame(parts.filter((p) => Object.hasOwn(OPERATOR, p.part)));
+    let inFront = 0;
+    for (let i = 0; i < belts.pixels.length; i++)
+      if (belts.pixels[i]! >= 0 && devices.pixels[i]! >= 0 && devices.depth[i]! < belts.depth[i]!) inFront++;
+    expect(inFront).toBe(0);
   });
 });

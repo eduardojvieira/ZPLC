@@ -5,7 +5,7 @@
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no muestra a qué velocidad hace sus ciclos un controlador real ni cómo rebota un pulsador real.",
   "objectives": [
     "Compruebe que una variable conserva su valor de un ciclo al siguiente.",
-    "Construya un retardo de un ciclo y un pulso de un ciclo con una única memoria."
+    "Haga que una salida siga a una entrada un ciclo tarde y que otra salida dé un pulso de un ciclo cuando la entrada se activa."
   ],
   "stages": [
     {
@@ -54,7 +54,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Delayed tiene que ser el Button del ciclo anterior, así que necesita una variable que todavía conserve el valor anterior al empezar el ciclo: Previous."
+      "text": "Mire qué necesitan Delayed y RisingPulse que Button solo no les puede decir: el valor que tenía Button en el ciclo anterior. Luego mire en qué lugar del programa ese valor todavía es el anterior."
     },
     {
       "level": 2,

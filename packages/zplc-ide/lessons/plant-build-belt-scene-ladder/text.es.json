@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Construir una escena de cinta desde el suelo vacío",
-  "summary": "Abra el Editor de escenas sobre un suelo vacío, coloque una cinta, un emisor, un sensor y un botón de inicio con los nombres que da la lección, enlace sus señales en el mapa de la planta y escriba el programa que corre sobre ellos.",
+  "summary": "Abra el Editor de escenas sobre un suelo vacío, coloque una cinta, un emisor, un sensor y un pulsador de inicio con los nombres que da la lección, enlace sus señales en el mapa de la planta y escriba el programa que corre sobre ellos.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa.",
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde la escena, el mapa de la planta y el programa, y ejecute: La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la cinta y la detiene cuando EyeFar ve la caja.",
+      "body": "Corrija esta omisión del programa inicial, guarde la escena, el mapa de la planta y el programa, y pulse {{ui:learn.check}}: La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la cinta y la detiene cuando EyeFar ve la caja.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {

@@ -11,7 +11,7 @@ Most of what a machine decides is a yes or a no. May the motor run? Is the door 
 | `AND`    | both sides are TRUE         | `Run := Ready AND Start;`          |
 | `OR`     | at least one side is TRUE   | `Alarm := HighLevel OR LowLevel;`  |
 | `XOR`    | exactly one side is TRUE    | `Mismatch := SwitchA XOR SwitchB;` |
-| `NOT`    | the value after it is FALSE | `DoorLamp := NOT DoorClosed;`      |
+| `NOT`    | the value after it is FALSE | `FillValve := NOT TankFull;`       |
 
 The timing diagram feeds the same two inputs, A and B, to each operator. Time runs to the right; a line is up while its signal is TRUE.
 
@@ -37,50 +37,50 @@ Structured Text works out NOT first, then AND, then XOR, then OR, the way arithm
 
 NOT applies only to the one value right after it. `NOT DoorClosed AND Ready` is `(NOT DoorClosed) AND Ready`. To turn a whole condition around, put it in parentheses: `NOT (DoorClosed AND Ready)`.
 
-An assignment such as `DoorLamp := NOT DoorClosed;` writes its output on every scan, so the output follows its condition: when an input changes, the output changes in the same scan. Give each output one statement that holds its whole condition.
+An assignment such as `Flap := TallBox AND NOT LaneFull;` writes its output on every scan, so the output follows its condition: when an input changes, the output changes in the same scan. Give each output one statement that holds its whole condition.
 
 ## Worked example
 
-A drying oven has a heater, a thermostat switch `OverTemp` that turns TRUE when the oven is too hot, and an operator switch `HeatOn`. The door is watched by two switches, `DoorSwitchA` and `DoorSwitchB`, that are both TRUE while the door is shut. They should always agree; when they do not, one of them is broken, and the oven lights a fault lamp. A second lamp shows that the door is open.
+A sorting conveyor carries boxes past a flap that can swing out and push a box into a side lane. A height eye, `TallBox`, is TRUE while a tall box passes; tall boxes go to the side lane, unless the lane is full, which the switch `LaneFull` reports. The flap has a position switch, `FlapIsOut`, that is TRUE while the flap is really out. While the belt runs (`BeltRunning`), the command and the position switch should always agree; when they do not, the flap is stuck or slow, and a fault lamp lights.
 
 Each output answers one question, so each gets one statement:
 
-- The heater may heat when the operator wants heat, both door switches say shut, and the oven is not too hot. Every condition is needed, so they are joined with AND, and the thermostat enters as `NOT OverTemp`.
-- The door lamp lights when both switches say open: `NOT DoorSwitchA AND NOT DoorSwitchB`.
-- The fault lamp lights when exactly one switch says shut: that is XOR.
+- The flap swings out for a tall box when the lane is not full: two conditions joined with AND, and the lane switch enters as `NOT LaneFull`.
+- The fault lamp lights when the command and the position differ, but only while the belt runs: the difference is an XOR, and the XOR in turn is joined with AND to the belt.
 
 ```st
-PROGRAM DryingOven
+PROGRAM Diverter
 VAR_INPUT
-  HeatOn : BOOL;
-  DoorSwitchA : BOOL;
-  DoorSwitchB : BOOL;
-  OverTemp : BOOL;
+  TallBox : BOOL;
+  LaneFull : BOOL;
+  FlapIsOut : BOOL;
+  BeltRunning : BOOL;
 END_VAR
 VAR_OUTPUT
-  Heater : BOOL;
-  DoorLamp : BOOL;
-  SwitchFault : BOOL;
+  Flap : BOOL;
+  FlapFault : BOOL;
 END_VAR
-Heater := HeatOn AND DoorSwitchA AND DoorSwitchB AND NOT OverTemp;
-DoorLamp := NOT DoorSwitchA AND NOT DoorSwitchB;
-SwitchFault := DoorSwitchA XOR DoorSwitchB;
+Flap := TallBox AND NOT LaneFull;
+FlapFault := (Flap XOR FlapIsOut) AND BeltRunning;
 END_PROGRAM
 ```
 
-Follow it with the heat switched on and the oven cool. The door closes: switch A closes a moment before switch B, so for that moment SwitchFault is TRUE and the heater waits. Once both are closed the heater runs. Later switch B breaks and reads FALSE although the door is still shut: the AND loses one of its conditions, so the heater stops, and the XOR lights the fault lamp.
+The second statement reads `Flap`, which the first statement has just written in the same scan. The parentheses matter: without them, `Flap XOR FlapIsOut AND BeltRunning` would mean `Flap XOR (FlapIsOut AND BeltRunning)`, because AND comes before XOR.
+
+Follow it with the belt running. A tall box arrives and the flap is commanded out; the position switch confirms a moment later, so for that moment FlapFault is TRUE. The box passes and the flap goes back in, with the same short fault. Later the lane is full: the next tall box passes and the flap stays in.
 
 ```timing
 span: 5000
 signals:
-  - { name: DoorSwitchA, edges: [1000] }
-  - { name: DoorSwitchB, edges: [1300, 3000] }
-  - { name: Heater, edges: [1300, 3000] }
-  - { name: SwitchFault, edges: [1000, 1300, 3000] }
-caption: The door closes, then switch B breaks; HeatOn is TRUE and OverTemp FALSE all along
+  - { name: TallBox, edges: [1000, 2000, 3500, 4500] }
+  - { name: LaneFull, edges: [3000] }
+  - { name: Flap, edges: [1000, 2000] }
+  - { name: FlapIsOut, edges: [1200, 2200] }
+  - { name: FlapFault, edges: [1000, 1200, 2000, 2200] }
+caption: Two tall boxes, the second with the side lane full; BeltRunning is TRUE all along
 ```
 
-Putting both switches in the AND is what makes a broken switch stop the heater instead of letting it run. A real oven gives the two switches a short time to agree before it lights the fault lamp; that needs a timer, which this page leaves out.
+A real diverter gives the flap a short time to move before it lights the fault lamp; that needs a timer, which this page leaves out.
 
 ## Common mistakes
 

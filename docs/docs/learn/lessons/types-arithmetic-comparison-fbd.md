@@ -25,8 +25,8 @@ Keep a running total in an INT variable with ADD, SEL and R_TRIG blocks, and tur
 
 ## Objectives
 
-- Use an INT variable for a number: an ADD block builds the next value, SEL blocks choose between the old total, the new one and zero, and LT, EQ and GT blocks turn the number into BOOL results.
-- Add to a number only on the rising edge of an input, with an R_TRIG block, so that a button held for several scans counts once.
+- Use an INT variable for a number, build its next value with arithmetic and selection blocks, and turn the number into BOOL results with LT, EQ and GT blocks.
+- Add to a number only once per press, so that a button held for several scans counts once.
 
 ## Stages
 

@@ -25,8 +25,8 @@ Use a TOF timer to keep a light on after a button is released, and a TON timer t
 
 ## Objectives
 
-- Keep an output on for a fixed time after its input drops, with a TOF instance called on every scan.
-- Ignore an input that is on for less than a fixed time, with a TON instance.
+- Keep an output on for a fixed time after its input drops, with a timer instance called on every scan.
+- Ignore an input that is on for less than a fixed time, and say which of the two delays belongs to the start of a signal and which to its end.
 
 ## Stages
 

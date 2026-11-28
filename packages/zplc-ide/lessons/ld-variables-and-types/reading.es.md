@@ -76,7 +76,7 @@ caption: Un bit de memoria gobierna dos salidas
 - Escribir un tiempo como número suelto. Un TIME necesita el prefijo y la unidad: `T#50ms`, no `50`.
 - Dar la misma dirección de memoria a dos variables. La segunda se superpone con la primera y la compilación lo informa.
 - Poner un número en un BOOL o un BOOL donde se espera un INT. Elija el tipo según lo que significa el valor.
-- Olvidar el escaneo: una entrada cambia solo entre escaneos, así que el programa ve un valor estable durante una pasada.
+- Olvidar el ciclo: una entrada cambia solo entre ciclos, así que el programa ve un valor estable durante una pasada.
 
 > [!WARNING]
 > Una salida del mapa de E/S es solo una variable del programa. El cable hasta un contactor real, y la parada que corta la energía de una máquina peligrosa, pertenecen al hardware: una parada de emergencia nunca depende del programa del PLC.
@@ -101,4 +101,4 @@ options:
 
 ## Qué hará en la práctica
 
-En la práctica tendrá una máquina que avisa antes de arrancar. El bit de memoria `Requested` ya está allí, junto con la autorretención y el temporizador. Usted hará que el período de aviso dure `T#50ms` y que `Motor` se encienda cuando termine, de modo que la lámpara se encienda a los {{t:10}} ms y el motor más tarde, y mirará el mapa de E/S para ver qué tiene dirección y qué no. Después pulse {{ui:learn.check}}.
+En la práctica tendrá una máquina que avisa antes de arrancar. El bit de memoria `Requested` ya está allí, junto con la autorretención y el temporizador. Usted hará que el período de aviso dure 50 milisegundos y que `Motor` se encienda cuando termine, de modo que la lámpara se encienda a los {{t:10}} ms y el motor más tarde, y mirará el mapa de E/S para ver qué tiene dirección y qué no. Después pulse {{ui:learn.check}}.

@@ -47,6 +47,23 @@ export function cursorOfFile(path: string): { line: number; column: number } | u
   return position ? { line: position.lineNumber, column: position.column } : undefined;
 }
 
+/**
+ * The text the person selected in the open editor of `path` (a few lines at most), for the question to the Assistant; none when nothing is
+ * selected.
+ */
+export function selectionOfFile(path: string): { startLine: number; endLine: number; text: string } | undefined {
+  const editors = monacoInUse?.editor.getEditors() ?? [];
+  const shown = editors.filter((editor) => {
+    const model = editor.getModel();
+    return model !== null && pathOf(model) === path;
+  });
+  const editor = shown.find((candidate) => candidate.hasTextFocus()) ?? shown[0];
+  const range = editor?.getSelection();
+  const model = editor?.getModel();
+  if (!range || !model || range.isEmpty()) return undefined;
+  return { startLine: range.startLineNumber, endLine: range.endLineNumber, text: model.getValueInRange(range).slice(0, 1_000) };
+}
+
 const pathOf = (model: Model): string => {
   const uri = model.uri as { path?: string } | string | undefined;
   return (
@@ -147,6 +164,14 @@ export function registerSTProviders(monaco: Monaco, bridge: ProjectBridge): void
         label: t('refs.action.references'),
         keybindings: [keys.references],
         run: () => void runCommand('edit.findAllReferences'),
+      });
+      // the question to the Assistant about what is selected (AIX-003): the context menu of the two text languages
+      editor.addAction({
+        id: 'zplc.askAssistant',
+        label: t('command.ai.askAboutSelection'),
+        contextMenuGroupId: 'navigation',
+        contextMenuOrder: 3,
+        run: () => void runCommand('ai.askAboutSelection'),
       });
     };
     monaco.editor.getEditors().forEach(attach);

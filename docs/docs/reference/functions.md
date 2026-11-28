@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_function_reference.ts): reference/functions. Do not edit. >>> */}
 
-Every function of the compiler registry, with its signature, what it does and an example. The registry has 297 functions: the 57 named functions below and the 240 type conversions. `ANY`, `ANY_NUM`, `ANY_INT` and `ANY_BIT` stand for the family of types that the function accepts. The language elements that call them are in the [languages overview](../languages/index.md); the blocks with state are in the [function-block reference](./function-blocks.md).
+Every function of the compiler registry, with its signature, what it does and an example. The registry has 297 functions: the 57 named functions below and the 240 type conversions. `ANY`, `ANY_NUM`, `ANY_INT` and `ANY_BIT` stand for the family of types that the function accepts. The language elements that call them are in the [languages overview](../languages/index.md); the blocks with state are in the [function-block reference](./function-blocks.md). Every function is callable from Structured Text, Function Block Diagram and Ladder.
 
 Every example is a complete program. CI compiles it and runs it on the native POSIX runtime, and the result stated under it is the value that the run checks.
 
@@ -73,7 +73,7 @@ Result after one scan: `Result` = `10`.
 
 `SEL(G : BOOL, IN0 : ANY, IN1 : ANY) : ANY`
 
-Returns IN0 when G is FALSE and IN1 when G is TRUE.
+Returns IN0 when G is FALSE and IN1 when G is TRUE. IN0 and IN1 take any elementary type but STRING: SEL does not select strings, in any language; to choose between strings, use an IF in Structured Text.
 
 ```pascal runnable expect="Result=20"
 PROGRAM Example
@@ -92,7 +92,7 @@ Result after one scan: `Result` = `20`.
 
 `MUX(K : INT, IN0 : ANY, IN1 : ANY, ...) : ANY`
 
-Returns the input that K selects: IN0 for 0, IN1 for 1, and so on, up to eight inputs.
+Returns the input that K selects: IN0 for 0, IN1 for 1, and so on, up to eight inputs. The inputs take any elementary type but STRING: MUX does not select strings, in any language; to choose between strings, use an IF in Structured Text.
 
 ```pascal runnable expect="Result=30"
 PROGRAM Example
@@ -150,7 +150,7 @@ Result after one scan: `Result` = `TRUE`.
 
 `ROL(IN : DWORD, N : INT) : DWORD`
 
-Rotates the 32 bits of IN left by N places; the bits that leave on the left enter on the right.
+Rotates the 32 bits of IN left by N places; the bits that leave on the left enter on the right. An untyped integer literal is 32 bits wide: ROL(16#8000, 1) assigned to a WORD gives 0, and ROL(WORD#16#8000, 1) gives 1.
 
 ```pascal runnable expect="Result=3"
 PROGRAM Example
@@ -169,7 +169,7 @@ Result after one scan: `Result` = `3`.
 
 `ROR(IN : DWORD, N : INT) : DWORD`
 
-Rotates the 32 bits of IN right by N places; the bits that leave on the right enter on the left.
+Rotates the 32 bits of IN right by N places; the bits that leave on the right enter on the left. An untyped integer literal is 32 bits wide: ROR(16#0001, 1) assigned to a WORD gives 0, and ROR(WORD#16#0001, 1) gives 16#8000.
 
 ```pascal runnable expect="Result=2147483649"
 PROGRAM Example
@@ -187,7 +187,7 @@ Result after one scan: `Result` = `2147483649`.
 
 `SHL(IN : ANY_BIT, N : INT) : ANY_BIT`
 
-Shifts IN left by N places; zeros enter on the right.
+Shifts IN left by N places; zeros enter on the right. An untyped integer literal is 32 bits wide: SHL(16#8000, 1) is computed in 32 bits. Write WORD#16#8000 to work within 16 bits.
 
 ```pascal runnable expect="Result=16"
 PROGRAM Example
@@ -205,7 +205,7 @@ Result after one scan: `Result` = `16`.
 
 `SHR(IN : ANY_BIT, N : INT) : ANY_BIT`
 
-Shifts IN right by N places; zeros enter on the left.
+Shifts IN right by N places; zeros enter on the left. An untyped integer literal is 32 bits wide: SHR(16#8000, 1) is computed in 32 bits. Write WORD#16#8000 to work within 16 bits.
 
 ```pascal runnable expect="Result=1"
 PROGRAM Example

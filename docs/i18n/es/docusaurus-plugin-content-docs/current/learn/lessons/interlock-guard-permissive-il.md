@@ -25,8 +25,8 @@ Agregue un permisivo al arranque y la parada de un motor en lista de instruccion
 
 ## Objetivos
 
-- Distinga un permisivo, una condición que debe ser verdadera para que la salida esté en ON, de una orden, y escríbalo como una línea AND más.
-- Coloque el permisivo después de las líneas que retienen el motor, para que lo apague y también impida que Start lo reinicie.
+- Distinga un permisivo, una condición que debe ser verdadera para que la salida esté en ON, de una orden, y escríbalo en lista de instrucciones.
+- Coloque el permisivo de modo que apague el motor y también impida que Start lo reinicie.
 
 ## Etapas
 

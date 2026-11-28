@@ -25,7 +25,7 @@ Scale the raw counts of an analog input to a level in percent with a MUL box and
 
 ## Objectives
 
-- Scale raw analog counts to engineering units by multiplying by the span of the units and then dividing by the span of the counts, in a type that the product fits.
+- Scale raw analog counts to engineering units with whole numbers, without losing the small part of the value, in a type that the product fits.
 - Keep a value inside its range with a LIMIT box, and compare the scaled value, not the raw counts, with the thresholds of the alarms.
 
 ## Stages

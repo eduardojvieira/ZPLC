@@ -5,7 +5,7 @@
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show alarm handling requirements of a real machine.",
   "objectives": [
     "Hold an alarm after the fault has gone, until it is acknowledged, with the IL instructions S and R.",
-    "Use the order of two lines to decide whether set or reset wins, and tell it from the SR and RS blocks."
+    "Give two outputs opposite priorities between set and reset with S and R, and tell it from the SR and RS blocks."
   ],
   "stages": [
     {
@@ -42,13 +42,13 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "Which order would you choose for a stop command, and which for a start request? Think about what should win when both are pressed.",
-      "checkpoint": "A stop or reset should usually win, so its R line goes last; the choice is a design decision, not a default. The SR and RS blocks fix that priority in the block, while S and R leave it to the order of your lines."
+      "checkpoint": "Which command should win when both arrive together is a design decision, not a default. The SR and RS blocks fix that priority in the block, while S and R leave it to the order of your lines."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "LD Fault followed by S SetFirst sets the output when Fault is TRUE; LD Ack followed by R SetFirst clears it when Ack is TRUE. If both run in one scan, the last one runs last and wins."
+      "text": "Look at the two ST lines: ST writes its output on every scan, so it cannot keep a value after Fault drops. Then decide, for each output, which of its two conditions must win when both are TRUE in one scan."
     },
     {
       "level": 2,

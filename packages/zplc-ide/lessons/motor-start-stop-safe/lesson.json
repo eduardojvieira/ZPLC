@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "motor-start-stop-safe",
-  "version": 5,
+  "version": 6,
   "order": 41,
   "module": 2,
   "level": "foundation",

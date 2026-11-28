@@ -26,7 +26,7 @@ Read a Function Block Diagram and wire AND, NOT and XOR blocks so a press can on
 ## Objectives
 
 - Read a Function Block Diagram: blocks are joined by wires from an output port to an input port, and each output shows the result of the blocks wired to it.
-- Wire AND, NOT and XOR blocks so that an output is ON only when several inputs are ON together, when one input is OFF, or when exactly one of two inputs is ON.
+- Choose and wire logic blocks so that each output is ON exactly in the situations its sentence names.
 
 ## Stages
 

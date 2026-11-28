@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "La escena es un tanque con una válvula de llenado, una válvula de vaciado y un interruptor de nivel bajo, un botón Start, una parada de emergencia y una torre de luces. En src/TimedTank.ld.json, ejecute un ciclo por cada pulsación de Start mientras la parada de emergencia está liberada y el tanque está en reposo: ámbar encendido, Fill abierta durante un tiempo fijado por un temporizador (el tanque no tiene sensor a este nivel, así que el temporizador es la medición), una retención de dos segundos, luego Drain abierta hasta LevelLow o veinte segundos, y después verde encendido. La parada de emergencia cierra ambas válvulas y enciende el rojo.",
+      "body": "La escena es un tanque con una válvula de llenado, una válvula de vaciado y un interruptor de nivel bajo, un pulsador Start, una parada de emergencia y una torre de luces. En src/TimedTank.ld.json, ejecute un ciclo por cada pulsación de Start mientras la parada de emergencia está liberada y el tanque está en reposo: ámbar encendido, Fill abierta durante un tiempo fijado por un temporizador (el tanque no tiene sensor a este nivel, así que el temporizador es la medición), una retención de dos segundos, luego Drain abierta hasta LevelLow o veinte segundos, y después verde encendido. La parada de emergencia cierra ambas válvulas y enciende el rojo.",
       "checkpoint": "El ciclo es una cadena de pasos y cada paso temporizado tiene su propio temporizador."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "El inicial no tiene peldaños: ninguna válvula se abre, así que el ciclo nunca se ejecuta. Declara las entradas y las salidas. Guarde un número de paso (0 reposo, 1 llenado, 2 retención, 3 vaciado) en una variable INT, un bloque TON por cada paso temporizado, y gobierne las salidas desde el paso con un peldaño por cada salida. El llenado dura 3,5 segundos: un bloque TON con PT de T#3500ms.",
+      "body": "El programa inicial no tiene peldaños: ninguna válvula se abre, así que el ciclo nunca se ejecuta. Declara las entradas y las salidas. Guarde un número de paso (0 reposo, 1 llenado, 2 retención, 3 vaciado) en una variable INT, un bloque TON por cada paso temporizado, y gobierne las salidas desde el paso con un peldaño por cada salida. El llenado dura 3,5 segundos: un bloque TON con PT de T#3500ms.",
       "checkpoint": "El programa tiene una variable de paso, tres temporizadores y un peldaño por cada salida."
     },
     {
@@ -55,5 +55,5 @@
       "text": "Un peldaño por cada transición: un contacto EStopOk en forma normalmente cerrada alimenta un MOVE de 0 a Step, y EStopOk, un EQ de Step y 0, y Start alimentan un MOVE de 1. Luego HoldT para dos segundos y DrainT para veinte segundos, cuyo peldaño de salida necesita LevelLow O la salida de DrainT. Por último un peldaño por cada salida: Fill cuando Step es 1, Drain cuando Step es 3, Amber cuando Step difiere de 0, Red cuando EStopOk está apagado, y Green es TRUE tras un ciclo terminado."
     }
   ],
-  "faultCases": ["El inicial no tiene peldaños: ninguna válvula se abre, así que el ciclo nunca se ejecuta."]
+  "faultCases": ["El programa inicial no tiene peldaños: ninguna válvula se abre, así que el ciclo nunca se ejecuta."]
 }

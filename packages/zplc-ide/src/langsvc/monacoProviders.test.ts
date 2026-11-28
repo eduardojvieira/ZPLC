@@ -337,14 +337,16 @@ describe('the project-wide navigation keys (FND-004)', () => {
     monaco.editor!.onDidCreateEditor = (listener: typeof created) => void (created = listener);
     registerSTProviders(fake.monaco, setup().bridge);
     created!(editor); // an editor made later gets them too
-    expect(added.map((action) => [action.id, action.keybindings])).toEqual([
+    // the keyed actions: the context-menu question to the Assistant (AIX-003) takes no key
+    const keyed = added.filter((action) => action.keybindings !== undefined);
+    expect(keyed.map((action) => [action.id, action.keybindings])).toEqual([
       ['zplc.goToDefinition', [70]],
       ['zplc.findAllReferences', [1024 | 70]],
       ['zplc.goToDefinition', [70]],
       ['zplc.findAllReferences', [1024 | 70]],
     ]);
-    added[0]!.run();
-    added[1]!.run();
+    keyed[0]!.run();
+    keyed[1]!.run();
     expect(ran).toEqual(['definition', 'references']);
   });
 });

@@ -100,9 +100,9 @@ describe('Structured Text editor in a browser (VF-007, LNG-015)', () => {
     expect(await app.fileContent()).toMatch(/END_VAR\n +\nEND_PROGRAM/);
     await app.press('Ctrl+M');
     await app.press('Tab');
-    const focused = await app.focused();
+    const focused = await app.untilFocused('focus to leave the code editor', (node) => node.name !== editorName('src/main.st', en));
     expect(focused).toBeDefined();
-    expect(focused!.name).not.toBe(editorName('src/main.st', en));
+    expect(focused.name).not.toBe(editorName('src/main.st', en));
   });
 });
 

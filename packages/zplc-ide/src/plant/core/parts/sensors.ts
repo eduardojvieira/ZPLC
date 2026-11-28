@@ -48,7 +48,7 @@ const colour: Detector = (w, hit, part) => {
 };
 
 /** One beam along local +x at `heightM` above the part position, cast through the physics world (PRT-006). */
-function sensorRuntime(fields: Record<string, ConfigField>, detector: Detector, hasMatch: boolean) {
+function sensorRuntime(kind: SensorKind, fields: Record<string, ConfigField>, detector: Detector, hasMatch: boolean) {
   return (part: ScenePart): PartRuntime => {
     const range = cfgNumber(part, fields, 'rangeM');
     const height = cfgNumber(part, fields, 'heightM');
@@ -87,7 +87,7 @@ function sensorRuntime(fields: Record<string, ConfigField>, detector: Detector, 
           part: 'sensor',
           name: part.name,
           pose: marker(part, 'sensor', [0.05, 0.05, 0.05], from),
-          state: { detect, count, beamLength: range, ...(hasMatch ? { match } : {}) },
+          state: { kind, detect, count, beamLength: range, ...(hasMatch ? { match } : {}) },
           signals: { detect, ...(hasMatch ? { match } : {}) },
         },
       ],
@@ -95,8 +95,12 @@ function sensorRuntime(fields: Record<string, ConfigField>, detector: Detector, 
   };
 }
 
+/** The beam sensor kinds of the catalogue (owner decision 4, 2026-11-25): each is drawn its own way. */
+export type SensorKind = 'diffuse' | 'retro-reflective' | 'inductive' | 'capacitive' | 'colour';
+
 const define = (
   id: string,
+  kind: SensorKind,
   names: { en: string; es: string },
   fields: Record<string, ConfigField>,
   doc: { en: string; es: string },
@@ -105,6 +109,7 @@ const define = (
 ): RuntimePartDefinition => ({
   id,
   family: 'sensors',
+  kind,
   names,
   config: fields,
   signals: (part) => [
@@ -114,12 +119,12 @@ const define = (
   actions: hasMatch ? ['stuckOn', 'stuckOff', 'wrongColour'] : ['stuckOn', 'stuckOff'],
   snapPoints: () => [],
   doc,
-  runtime: sensorRuntime(fields, detector, hasMatch),
+  runtime: sensorRuntime(kind, fields, detector, hasMatch),
 });
 
 /** Beam sensors (PRT-006): two optical, and the inductive, capacitive and colour sensors that read item properties (R4-D1). */
 export const sensorParts: readonly RuntimePartDefinition[] = [
-  define('sensor-diffuse', { en: 'Diffuse optical sensor', es: 'Sensor óptico difuso' }, diffuseConfig, {
+  define('sensor-diffuse', 'diffuse', { en: 'Diffuse optical sensor', es: 'Sensor óptico difuso' }, diffuseConfig, {
     en:
       'Detects any item that enters its beam. The beam starts at the part position, runs along +x for rangeM and sits heightM above ' +
       'it. Signal: detect. Faults: stuckOn, stuckOff.',
@@ -127,12 +132,13 @@ export const sensorParts: readonly RuntimePartDefinition[] = [
       'Detecta cualquier pieza que entre en su haz. El haz parte de la posición de la pieza, corre a lo largo de +x durante rangeM y ' +
       'está heightM por encima. Señal: detect. Fallas: stuckOn, stuckOff.',
   }),
-  define('sensor-retro', { en: 'Retro-reflective optical sensor', es: 'Sensor óptico retrorreflectivo' }, retroConfig, {
+  define('sensor-retro', 'retro-reflective', { en: 'Retro-reflective optical sensor', es: 'Sensor óptico retrorreflectivo' }, retroConfig, {
     en: 'A beam to a reflector rangeM away; detects an item that breaks the beam. Signal: detect. Faults: stuckOn, stuckOff.',
     es: 'Un haz hasta un reflector a rangeM de distancia; detecta una pieza que corte el haz. Señal: detect. Fallas: stuckOn, stuckOff.',
   }),
   define(
     'sensor-inductive',
+    'inductive',
     { en: 'Inductive sensor', es: 'Sensor inductivo' },
     inductiveConfig,
     {
@@ -149,6 +155,7 @@ export const sensorParts: readonly RuntimePartDefinition[] = [
   ),
   define(
     'sensor-capacitive',
+    'capacitive',
     { en: 'Capacitive sensor', es: 'Sensor capacitivo' },
     capacitiveConfig,
     {
@@ -165,6 +172,7 @@ export const sensorParts: readonly RuntimePartDefinition[] = [
   ),
   define(
     'sensor-colour',
+    'colour',
     { en: 'Colour sensor', es: 'Sensor de color' },
     colourConfig,
     {

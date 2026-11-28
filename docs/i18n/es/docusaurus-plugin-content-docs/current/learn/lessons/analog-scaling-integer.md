@@ -25,7 +25,7 @@ Escale una cuenta en bruto de 0 a 1000 a un porcentaje con aritmética entera, y
 
 ## Objetivos
 
-- Escale una cuenta en bruto a unidades de ingeniería con una multiplicación seguida de una división, en ese orden.
+- Escale una cuenta en bruto a unidades de ingeniería con números enteros, sin perder la parte del valor que queda por debajo del divisor.
 - Vea que la división entera descarta el resto, y elija un tipo entero con rango suficiente para el producto intermedio.
 
 ## Etapas

@@ -230,6 +230,7 @@ async function openExistingProject(
       projectConfigDirty: false,
       compilerMessages: [],
       compilerMessagesChecked: false,
+      compilerResultsFromEarlierBuild: false,
       compilerNavigationTarget: null,
       compilerRunId: get().compilerRunId + 1,
     });
@@ -293,6 +294,7 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
   activeConsoleTab: 'output',
   compilerMessages: [],
   compilerMessagesChecked: false,
+  compilerResultsFromEarlierBuild: false,
   compilerRunId: 0,
   compilerNavigationTarget: null,
   stBufferDiagnostics: null,
@@ -412,6 +414,7 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
         projectConfigDirty: false,
         compilerMessages: [],
         compilerMessagesChecked: false,
+        compilerResultsFromEarlierBuild: false,
         compilerNavigationTarget: null,
         compilerRunId: get().compilerRunId + 1,
       });
@@ -500,6 +503,7 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
         projectConfigDirty: false,
         compilerMessages: [],
         compilerMessagesChecked: false,
+        compilerResultsFromEarlierBuild: false,
         compilerNavigationTarget: null,
         compilerRunId: get().compilerRunId + 1,
       });
@@ -560,6 +564,7 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
       projectConfigDirty: false,
       compilerMessages: [],
       compilerMessagesChecked: false,
+      compilerResultsFromEarlierBuild: false,
       compilerNavigationTarget: null,
       compilerRunId: get().compilerRunId + 1,
       // Reset debug state when closing project
@@ -597,6 +602,7 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
       projectConfigDirty: Boolean(state.projectConfig),
       compilerMessages: [],
       compilerMessagesChecked: false,
+      compilerResultsFromEarlierBuild: false,
       compilerNavigationTarget: null,
       compilerRunId: state.compilerRunId + 1,
     })),
@@ -748,14 +754,16 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
     set((state) => ({
       compilerMessages: [...state.compilerMessages, { ...message, timestamp: new Date() }],
       compilerMessagesChecked: true,
+      compilerResultsFromEarlierBuild: false,
     })),
 
-  markCompilerMessagesChecked: () => set({ compilerMessagesChecked: true }),
+  markCompilerMessagesChecked: () => set({ compilerMessagesChecked: true, compilerResultsFromEarlierBuild: false }),
 
   clearCompilerMessages: () =>
     set((state) => ({
       compilerMessages: [],
       compilerMessagesChecked: false,
+      compilerResultsFromEarlierBuild: false,
       compilerNavigationTarget: null,
       compilerRunId: state.compilerRunId + 1,
     })),

@@ -26,7 +26,7 @@ Fix a Structured Text program so that a gate holds itself open and closes on com
 ## Objectives
 
 - Hold an output on after its request is released, and let a close command win, in Structured Text.
-- Recognise the same condition, (Request OR Open) AND NOT Close, in Instruction List, Ladder, Function Block Diagram and Sequential Function Chart.
+- Recognise the same hold-and-close condition in Instruction List, Ladder, Function Block Diagram and Sequential Function Chart.
 
 ## Stages
 

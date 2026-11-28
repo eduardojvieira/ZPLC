@@ -42,27 +42,26 @@ La serie y el paralelo se pueden combinar en el mismo peldaño. Entonces la ener
 
 ## Ejemplo resuelto
 
-Tome las dos reglas del comienzo. El soldador funciona solo si la llave está girada y la protección está cerrada: las dos condiciones, así que KeyTurned y GuardClosed van en serie. El cruce se solicita si un peatón pulsó el pulsador norte o el pulsador sur: basta con cualquiera, así que NorthButton y SouthButton van en paralelo.
+Un compresor de aire llena un tanque. Funciona mientras su RunSwitch está activo y el presostato HighPressure no se disparó: las dos condiciones, así que los dos contactos van en serie, y HighPressure lleva un contacto normalmente cerrado porque el compresor debe funcionar mientras es FALSE. Una lámpara de alarma se enciende cuando la presión es demasiado alta o cuando el interruptor de nivel de aceite OilOK indica aceite bajo: basta con cualquiera, así que los dos contactos van en paralelo. OilOK es TRUE mientras hay aceite suficiente, así que el camino de la alarma hace la pregunta contraria con un contacto normalmente cerrado.
 
 ```ld-figure
-src: reading/welder-and-crossing.ld.json
-caption: El peldaño 1 es una serie (AND), el peldaño 2 es un paralelo (OR)
+src: reading/compressor.ld.json
+caption: El peldaño 1 es una serie (AND), el peldaño 2 es un paralelo (OR), cada uno con un contacto normalmente cerrado
 ```
 
-El peldaño 1 pone KeyTurned y GuardClosed en serie antes de la bobina Welder. El peldaño 2 pone NorthButton y SouthButton en dos caminos que se unen antes de la bobina WalkRequest.
+El peldaño 1 pone RunSwitch y HighPressure en serie antes de la bobina Compressor. El peldaño 2 pone HighPressure y OilOK en dos caminos que se unen antes de la bobina AlarmLamp. La misma variable, HighPressure, aparece en los dos peldaños con contactos opuestos.
 
 ```ld-try
-src: reading/welder-and-crossing.ld.json
+src: reading/compressor.ld.json
 inputs:
-  - { name: KeyTurned, kind: switch }
-  - { name: GuardClosed, kind: switch }
-  - { name: NorthButton, kind: push }
-  - { name: SouthButton, kind: push }
-outputs: [Welder, WalkRequest]
-caption: Pruebe todas las combinaciones de los interruptores y de los dos pulsadores
+  - { name: RunSwitch, kind: switch }
+  - { name: HighPressure, kind: switch }
+  - { name: OilOK, kind: switch }
+outputs: [Compressor, AlarmLamp]
+caption: Pruebe todas las combinaciones de los tres interruptores
 ```
 
-Pulse Ejecutar y recorra las tablas de verdad. Active solo KeyTurned: el soldador sigue apagado. Active también GuardClosed: se enciende. Luego pulse solo NorthButton, solo SouthButton y los dos: la solicitud de cruce está en ON cada vez que al menos un pulsador está pulsado.
+Pulse Ejecutar y recorra las tablas de verdad. Al principio OilOK es FALSE, así que la lámpara de alarma está encendida: active OilOK y se apaga. Active RunSwitch: el compresor funciona. Active HighPressure: el compresor se detiene y la lámpara de alarma se enciende. Luego desactive HighPressure y OilOK: el compresor vuelve a funcionar, y la lámpara se enciende por el aceite.
 
 ## Errores comunes
 

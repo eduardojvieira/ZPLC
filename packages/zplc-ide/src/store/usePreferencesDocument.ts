@@ -8,6 +8,9 @@ import { create } from 'zustand';
 /** The id of the Preferences document among the views of the editor area. */
 export const PREFERENCES_VIEW_ID = 'preferences';
 
+/** The section of the document that holds the MCP connection panel (`ai.connectMcp`). */
+export const MCP_SECTION_ID = 'mcp-connection';
+
 /** A setting key of the palette's preference entries, or the section that holds the assistant provider form. */
 export type PreferenceAnchor = string;
 

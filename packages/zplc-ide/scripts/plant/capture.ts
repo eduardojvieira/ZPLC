@@ -2,10 +2,12 @@
  * Captures of the 3D plant from the product's own renderer (spec 012 VIS-014, VIS-015, VIS-016), for a person to judge the look:
  *
  *   bun scripts/plant/capture.ts [--out <dir>] [--scenes a,b] [--sizes 480x640,1280x720] [--modes light,dark] [--levels low,high]
- *                                [--no-states] [--no-looks]
+ *                                [--no-states] [--no-looks] [--state working]
  *   bun scripts/plant/capture.ts --catalogue [--out <dir>] [--modes light,dark] [--levels low,high]
  *   bun scripts/plant/capture.ts --fps [--uncapped] [--scenes a,b] [--seconds 30]
  *   bun scripts/plant/capture.ts --concepts <dir of the concept images> [--out <dir>]
+ *   bun scripts/plant/capture.ts --check states [--kinds belt,sensor diffuse] [--out <dir>]
+ *   bun scripts/plant/capture.ts --check colours [--out <dir>]
  *
  * For each scene: one frame per size, display mode and quality level of the scene at work (belts running, an item on the way), a
  * contact sheet that labels each frame (`<scene>-looks.png`), and for belt-to-sensor the state pairs of VIS-016 in each display mode
@@ -15,20 +17,44 @@
  *
  * `--catalogue` instead draws every part kind that has a model in each of its states, and each item look, one small frame each at a
  * camera that frames the part's bounds (scripts/plant/catalogueStates.ts), and sets them on one contact sheet per display mode and
- * quality level (`catalogue-<mode>-<level>.png`), each cell labelled with the kind and the state.
+ * quality level (`catalogue-<mode>-<level>.png`), each cell labelled with the kind and the state. Beside each sheet it draws the first
+ * view, at scene size (1280 x 720), of the capture fixture scripts/plant/sensorKinds.scene.json, a belt with a diffuse and a
+ * capacitive sensor side by side (`sensor-kinds-scene-<mode>-<level>.png`), so two sensor kinds can be judged where a scene shows them.
+ *
+ * `--check` instead runs a check of plan-vis E1 (scripts/plant/e1Checks.ts) and exits non-zero on any finding: `states`, one state
+ * pair of each stateful part kind at a shipped scene that holds it, in each display mode and with reduced motion for the conveyors,
+ * changes more than 1 % of the part's box by more than 24 of 255 in a channel (VIS-016; `states.json`, `states-<mode>.png`);
+ * `colours`, every colour word the lessons and scenes name for items is drawn within 25 degrees of its hue in light and dark, an
+ * item with no named colour differs from each, a lid and a base differ from the conveyor under them, and in high contrast each
+ * coloured item keeps its outline (VIS-018, VIS-009; `colours.json`, `colours-<scene>-<mode>-<level>.png`).
  *
  * `--fps` instead opens a real window with the GPU on (it needs a display and port 3000 free, which the application's development
  * window uses) and measures the frame rate of each scene per quality level on a 1920 x 1080 canvas, with the 1-minute load average
  * before each run. Evidence level: the renderer and the plant core in a page of the development build, not the packaged application.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { Glob } from 'bun';
 import { loadavg } from 'node:os';
 import { join, resolve } from 'node:path';
 import { trustedDevelopmentRendererUrl } from '../../electron/security';
 import type { BodyPose, PlantSnapshot } from '../../src/plant/contracts';
 import { snapshotBounds } from '../../src/plant/view/geometry';
 import { CATALOGUE, catalogueCamera, catalogueKindCells, ITEMS } from './catalogueStates';
-import { assert, Cdp, drain, freePort, HOST, packageRoot, stop, waitFor, type OwnedProcess } from '../run-desktop-smoke';
+import type { ColourRecord, StateRecord } from './e1Checks';
+import { colourProblems, stateProblems } from './e1Checks';
+import sensorKindsScene from './sensorKinds.scene.json';
+import {
+  assert,
+  Cdp,
+  drain,
+  electronExecutable,
+  freePort,
+  HOST,
+  packageRoot,
+  stop,
+  waitFor,
+  type OwnedProcess,
+} from '../run-desktop-smoke';
 
 const flag = (name: string): string | undefined => {
   const at = process.argv.indexOf(`--${name}`);
@@ -91,7 +117,7 @@ async function withWindow<T>(gpu: boolean, body: (page: Cdp) => Promise<T>): Pro
       : ['--headless', '--use-angle=swiftshader-webgl', '--use-gl=angle', '--enable-unsafe-swiftshader', `--zplc-smoke-port=${port}`];
     electron = Bun.spawn(
       [
-        join(packageRoot, 'node_modules', 'electron', 'dist', 'electron'),
+        electronExecutable(),
         ...flags,
         '--lang=en-US',
         `--remote-debugging-port=${cdpPort}`,
@@ -152,7 +178,7 @@ async function captures(page: Cdp): Promise<void> {
     for (const [w, h] of sizes)
       for (const mode of MODES)
         for (const quality of LEVELS) {
-          const spec = { scene, quality, mode, width: w, height: h, state: 'working' };
+          const spec = { scene, quality, mode, width: w, height: h, state: flag('state') ?? 'working' };
           const { png } = (await call(page, `m.shot(${JSON.stringify(spec)})`)) as { png: string };
           const name = `${scene}-${w}x${h}-${mode}-${quality}.png`;
           save(name, png);
@@ -304,6 +330,9 @@ async function catalogue(page: Cdp): Promise<void> {
           `${JSON.stringify(frames)}, 8, { w: 300, h: 225 })`,
       )) as string;
       console.log(`  sheet ${save(`catalogue-${mode}-${quality}.png`, sheet)} (${frames.length} cells)`);
+      const spec = { scene: sensorKindsScene, quality, mode, width: 1280, height: 720, state: 'rest' };
+      const { png } = (await call(page, `m.shot(${JSON.stringify(spec)})`)) as { png: string };
+      console.log(`  ${save(`sensor-kinds-scene-${mode}-${quality}.png`, png)}`);
     }
   await page.evaluate(`(window.__cat?.stage.dispose(), true)`);
 }
@@ -340,8 +369,120 @@ async function frameRates(page: Cdp): Promise<void> {
   console.log(`  ${file}`);
 }
 
+/** Runs a long page task polled from here: a check is longer than one protocol command may take. */
+async function task<T>(page: Cdp, expression: string, minutes = 60): Promise<T> {
+  await page.evaluate(
+    `(() => { window.__task = undefined; Promise.resolve().then(() => ${expression}).then((ok) => { window.__task = { ok }; }, (e) => ` +
+      `{ window.__task = { err: String((e && e.stack) || e) }; }); return true; })()`,
+  );
+  for (const deadline = Date.now() + minutes * 60_000; Date.now() < deadline; await Bun.sleep(500)) {
+    const r = (await page.evaluate('window.__task')) as { ok?: T; err?: string } | undefined;
+    if (r?.err) throw new Error(r.err);
+    if (r && 'ok' in r) return r.ok as T;
+  }
+  throw new Error(`The page task did not finish in ${minutes} minutes.`);
+}
+const e1 = (expression: string) => `import('/scripts/plant/e1Checks.ts').then((m) => ${expression})`;
+
+async function checkStates(page: Cdp): Promise<void> {
+  const kinds = flag('kinds')?.split(',');
+  const result = await task<{ records: StateRecord[]; missing: string[] }>(page, e1(`m.stateRecords(${JSON.stringify(kinds)})`));
+  writeFileSync(
+    join(out, 'states.json'),
+    JSON.stringify({ ...result, records: result.records.map((r) => ({ ...r, crops: undefined })) }, null, 2),
+  );
+  const problems = stateProblems(result);
+  for (const mode of MODES) {
+    const cells = result.records
+      .filter((r) => r.mode === mode && r.crops)
+      .flatMap((r) => {
+        const tag = `${r.key}${r.reducedMotion ? ' (reduced motion)' : ''}: ${(r.fraction * 100).toFixed(1)} %`;
+        return [
+          { png: r.crops![0], label: `${tag} · ${r.a}` },
+          { png: r.crops![1], label: `${r.b}` },
+        ];
+      });
+    const sheet = await call(
+      page,
+      `m.sheet(${JSON.stringify(`VIS-016 state pairs (${mode}, medium, 1280x720 at a shipped scene; magenta: the part's box)`)}, ` +
+        `${JSON.stringify(cells)}, 6, { w: 300, h: 225 })`,
+    );
+    console.log(`  sheet ${save(`states-${mode}.png`, sheet as string)}`);
+  }
+  for (const r of result.records)
+    console.log(
+      `  ${r.key.padEnd(24)} ${r.mode.padEnd(13)}${r.reducedMotion ? ' reduced motion' : ''} ${r.a} / ${r.b} at ${r.scene}: ` +
+        `${(r.fraction * 100).toFixed(2)} % of ${r.rect ? `${r.rect.w}x${r.rect.h}` : 'no box'}` +
+        `${r.motion === undefined ? '' : `, moves ${(r.motion * 100).toFixed(2)} % in 250 ms more`}`,
+    );
+  if (result.missing.length) console.log(`  in no shipped scene: ${result.missing.join(', ')}`);
+  console.log(`  ${problems.length} problems (records: ${join(out, 'states.json')})`);
+  assert(problems.length === 0, problems.join('\n'));
+}
+
+/** The colour words the lessons and scenes name for items ("red workpiece", "pieza azul", `"accepts": "blue"`), in English. */
+function colourWords(texts: readonly string[]): string[] {
+  const en = 'red|blue|green|yellow|orange|white|black|grey|gray|purple|brown|pink|violet|cyan|amber';
+  const es: Record<string, string> = {
+    roj: 'red',
+    azul: 'blue',
+    verde: 'green',
+    amarill: 'yellow',
+    blanc: 'white',
+    negr: 'black',
+    gris: 'grey',
+    naranj: 'orange',
+  };
+  const words = new Set<string>();
+  const noun = 'workpieces?|box(?:es)?|items?|parts?|lids?|bases?|crates?|cartons?|ones|pieces?';
+  for (const text of texts) {
+    for (const m of text.matchAll(new RegExp(`\\b(${en})(?: and (${en}))? (?:${noun})\\b`, 'gi')))
+      for (const w of [m[1], m[2]]) if (w) words.add(w.toLowerCase());
+    for (const m of text.matchAll(new RegExp(`"(?:colour|accepts|target)"\\s*:\\s*"(${en})"`, 'gi'))) words.add(m[1]!.toLowerCase());
+    for (const m of text.matchAll(/\b(?:piezas?|cajas?|tapas?|bases?) (roj|azul|verde|amarill|blanc|negr|gris|naranj)\w*/gi))
+      words.add(es[m[1]!.toLowerCase()]!);
+  }
+  return [...words].sort();
+}
+
+async function checkColours(page: Cdp): Promise<void> {
+  const files = ['lessons', 'plant-scenes'].flatMap((dir) =>
+    [...new Glob('**/*.{json,md}').scanSync(join(packageRoot, dir))].map((f) => join(packageRoot, dir, f)),
+  );
+  const words = colourWords(files.map((f) => readFileSync(f, 'utf8')));
+  console.log(`  ${files.length} lesson and scene files name these item colours: ${words.join(', ')}`);
+  const records: ColourRecord[] = [];
+  const frames = [
+    ...(['light', 'dark'] as const).flatMap((m) => (['low', 'medium'] as const).map((q) => [m, q] as const)),
+    ['high-contrast', 'medium'] as const,
+  ];
+  for (const [mode, quality] of frames) {
+    const r = await task<{ records: ColourRecord[]; frames: Array<{ scene: string; png: string }> }>(
+      page,
+      e1(`m.colourRecords(${JSON.stringify(mode)}, ${JSON.stringify(quality)})`),
+    );
+    records.push(...r.records);
+    for (const f of r.frames) console.log(`  ${save(`colours-${f.scene}-${mode}-${quality}.png`, f.png)}`);
+  }
+  writeFileSync(join(out, 'colours.json'), JSON.stringify({ words, records }, null, 2));
+  const hex = (c: readonly number[] | null) => (c ? `#${c.map((v) => v.toString(16).padStart(2, '0')).join('')}` : 'none');
+  for (const r of records)
+    console.log(
+      `  ${r.mode}/${r.quality} ${r.scene} ${r.item} ${r.named ?? 'uncoloured'}: ${hex(r.rgb)} hue ${r.hsl?.h.toFixed(0)} ` +
+        `S ${r.hsl?.s.toFixed(2)} L ${r.hsl?.l.toFixed(2)}, white ${(r.white * 100).toFixed(1)} %` +
+        `${r.ground ? `, conveyor ${r.ground.part} ${hex(r.ground.rgb)}` : ''}`,
+    );
+  const problems = colourProblems(words, records);
+  console.log(`  ${problems.length} problems (records: ${join(out, 'colours.json')})`);
+  assert(problems.length === 0, problems.join('\n'));
+}
+
 mkdirSync(out, { recursive: true });
-if (fps) {
+const check = flag('check');
+if (check) {
+  assert(check === 'states' || check === 'colours', `--check states or --check colours, not ${check}`);
+  await withWindow(false, check === 'states' ? checkStates : checkColours);
+} else if (fps) {
   const free = await fetch(`http://${HOST}:3000/`).then(
     () => false,
     () => true,

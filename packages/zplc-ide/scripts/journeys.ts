@@ -35,11 +35,13 @@ import { domAuditExpression, type DomAuditResult } from './domAudit';
 import { attachEmulatedDevice } from './emulatedDevice';
 import { findTextOutOfBox } from './textFit';
 import { JOURNEYS_013 } from './journeys013';
+import { practiceFromReading } from './journeys/learnReading';
 import { journeysManipulator } from './journeys/plantManipulator';
 import { journeysSorting } from './journeys/plantSorting';
 import { journeysStations } from './journeys/plantStations';
 import { journeysCourse } from './journeys/plantCourse';
 import { journeysOperator } from './journeys/plantOperator';
+import { pause } from './journeyTiming';
 
 export interface JourneyContext {
   root: string;
@@ -124,10 +126,18 @@ async function unlockAllLessons(app: App): Promise<void> {
   await app.cdp.command('Page.bringToFront');
 }
 
-/** Chooses a lesson in the Learn view of the sidebar by the start of its title, as a learner clicks it. */
-const lessonButton = (title: string) =>
-  `[...document.querySelectorAll('[aria-label="Lesson"] button, [aria-label="Lección"] button')].find((item) => ` +
-  `item.textContent.trim().startsWith(${JSON.stringify(title)}))`;
+/**
+ * Chooses a lesson in the course outline of the Learn activity (GDE-002), as a learner does: types its title in the filter, then
+ * clicks its row. It opens the lesson's reading page, or starts its workspace when it has none.
+ */
+async function chooseOutlineLesson(app: App, id: string, title: string): Promise<void> {
+  await app.click(css('[data-learn-outline] input'), 'the filter of the course outline');
+  await app.type(title);
+  await app.click(css(`[data-learn-outline] [data-row$=${JSON.stringify(`:lesson:${id}`)}]`), `the ${title} lesson`);
+  // LRN-039: a lesson with a reading page opens that page first; its Practice button starts the lesson.
+  if (LESSON_INDEX.lessons.find((lesson) => lesson.id === id)?.reading)
+    await app.click(css(`[data-learn-reading="${id}"] [data-learn-reading-practice]`), `Practice of the ${title} reading`);
+}
 
 /**
  * The page's own Monaco instance (the editor core Studio bundles, as the dev server pre-bundles it) and its active editor, for reading what
@@ -456,16 +466,16 @@ async function pauseStepResume(app: App): Promise<void> {
   // a scan in flight when Pause was pressed may still be counted, and a loaded machine counts it late: wait for a steady counter
   let held = await cycles(app);
   for (let settled = 0; settled < 2;) {
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await pause(500);
     const now = await cycles(app);
     settled = now === held ? settled + 1 : 0;
     held = now;
   }
-  await new Promise((resolve) => setTimeout(resolve, 800));
+  await pause(800);
   assert((await cycles(app)) === held, `The cycle counter moved while the program was paused (${held} then ${await cycles(app)}).`);
   await app.click(button('Step one cycle', 'prefix'), 'the Step button');
   await app.until('one more cycle to be counted', async () => (await cycles(app)) > held || undefined, 60_000);
-  await new Promise((resolve) => setTimeout(resolve, 800));
+  await pause(800);
   assert((await cycles(app)) === held + 1, `Step one cycle should run exactly one scan (${held} before, ${await cycles(app)} after).`);
   await app.click(button('Resume', 'prefix'), 'the Resume button');
   await app.until('the program to run again', async () => (await app.visible(button('Pause (F6)', 'prefix'))) || undefined, 60_000);
@@ -684,7 +694,7 @@ async function writeProjectOfSize(folder: string, bytes: number): Promise<void> 
 
 /** The project of the path probes: a folder with a file, a file outside it, and two links that leave it. */
 export function writeSecurityFixture(base: string): { project: string; outside: string; secret: string } {
-  const outside = realpathSync(mkdtempSync(join(base, 'security-')));
+  const outside = realpathSync.native(mkdtempSync(join(base, 'security-')));
   // A real example, so that the project that the probes work in can also be built and tested afterwards.
   const project = join(outside, 'project');
   cpSync(join(packageRoot, 'projects', 'motor_start_stop'), project, { recursive: true });
@@ -719,6 +729,7 @@ export async function probeSecurity(
         `document.head.appendChild(script);
       const image = document.createElement('img'); image.setAttribute('onerror', 'window.__zplcHandler = true'); image.src = ` +
         `'zplc-probe-missing.png'; document.body.appendChild(image);
+      // journey-time: runs inside the page
       await new Promise((resolve) => setTimeout(resolve, 400));
       return { ran: window.__zplcInline === true, handlerRan: window.__zplcHandler === true, violations };`,
     );
@@ -735,6 +746,7 @@ export async function probeSecurity(
     const violated = [];
     document.addEventListener('securitypolicyviolation', (event) => violated.push(event.violatedDirective));
     const blocked = await fetch('https://example.invalid/zplc-probe').then(() => false, () => true);
+    // journey-time: runs inside the page
     await new Promise((resolve) => setTimeout(resolve, 100));
     return { blocked, violated };`);
   assert(
@@ -785,6 +797,7 @@ export async function probeSecurity(
     const link = document.createElement('a'); link.href = 'https://example.invalid/zplc-link'; link.target = '_blank'; ` +
       `document.body.appendChild(link); link.click(); link.remove();
     location.assign('https://example.invalid/zplc-navigation');
+    // journey-time: runs inside the page
     await new Promise((resolve) => setTimeout(resolve, 500));
     return { sameDocument: location.href === href, opened: opened !== null, openedSame: openedSame !== null };`,
   );
@@ -950,7 +963,7 @@ const ladderEdit: ChainSpec['edit'] = async (app, project) => {
   writeFileSync(path, JSON.stringify(document, null, 2));
   // the project is open: the window learns of this write from its watcher a moment later, and an edit made before that is offered as a
   // conflict ("Changed outside ZPLC") instead of being kept; give the watcher time to report it
-  await new Promise((resolve) => setTimeout(resolve, 4000));
+  await pause(4000);
   await openDiagram(app, 'src/main.ld.json', '[data-ld-rung-id]');
   const rungs = () => app.eval<number>(`document.querySelectorAll('[data-ld-rung-id]').length`);
   const before = await rungs();
@@ -1687,7 +1700,7 @@ export const JOURNEYS: Journey[] = [
         'Start to show a prepared value',
         async () => (await app.eval(`${watchRow('Start')}?.querySelector('[data-prepared]') !== null`)) === true || undefined,
       );
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      await pause(600);
       assert((await watchValue(app, 'Forward')) === 'FALSE', 'A prepared value was written without the explicit action.');
       await app.click(button('Write prepared values'), 'Write prepared values');
       await app.until(
@@ -1906,6 +1919,7 @@ export const JOURNEYS: Journey[] = [
 
       // 3. Start the course: the workspace is made from the starter and opened, with no folder dialog (none is answered here).
       await app.click(css('[data-learn-continue]'), 'the Start the course button');
+      await practiceFromReading(app, Boolean(LESSON_INDEX.lessons.find(({ id }) => id === FIRST)?.reading));
       await app.until('the project workbench to appear', async () => (await app.visible(toolbar)) || undefined);
       const starter = JSON.parse(disk(join(packageRoot, 'projects', entry.starter.project, 'zplc.json'))) as { name: string };
       assert(
@@ -2165,9 +2179,10 @@ export const JOURNEYS: Journey[] = [
       assert(long.scrollTop > 500, `Long.st did not scroll: ${JSON.stringify(long)}`);
       await app.click(editorTab('file:src/Motor.st'));
       await app.until('Motor.st in the editor', async () => hasProgram(await editorText(app), 'Motor') || undefined);
+      const separatorValue = (target: App) =>
+        target.eval<number>(`Number(document.getElementById('workspace-separator')?.getAttribute('aria-valuenow'))`);
       await app.click(css('#workspace-separator'), 'the separator above the lower panel');
       for (let step = 0; step < 3; step++) await app.press('ArrowUp');
-      const heightBefore = await editorHeight(app);
       await app.until('a session with both tabs, the active tab and the panel split on disk', () => {
         const [session] = savedSessions(root);
         return (
@@ -2178,6 +2193,8 @@ export const JOURNEYS: Journey[] = [
           undefined
         );
       });
+      const splitBefore = await separatorValue(app);
+      const heightBefore = await editorHeight(app);
       // The user moves the cursor once more and closes the app at once, before any delay could have saved it.
       await clickEditorLine(app, 12);
       await app.until('the cursor on line 12 of Motor.st', async () => (await editorView(app)).line === 12 || undefined);
@@ -2246,6 +2263,10 @@ export const JOURNEYS: Journey[] = [
       assert(
         Math.abs(restoredLong.scrollTop - long.scrollTop) <= 30,
         `Long.st is scrolled to ${restoredLong.scrollTop}, it was left at ${long.scrollTop}.`,
+      );
+      await again.until(
+        'the restored panel split to settle',
+        async () => Math.abs((await separatorValue(again)) - splitBefore) <= 1 || undefined,
       );
       const heightAfter = await editorHeight(again);
       assert(
@@ -2440,7 +2461,7 @@ export const JOURNEYS: Journey[] = [
       );
       const third = await relaunch();
       await third.until('the Welcome screen', async () => (await third.visible(button('Open project', 'contains'))) || undefined);
-      await Bun.sleep(500); // the list is read when the screen opens; give it time to appear if it were still stored
+      await pause(500); // the list is read when the screen opens; give it time to appear if it were still stored
       assert(!(await third.visible(recentRow)), 'A forgotten project came back after a restart.');
     },
   },
@@ -2851,7 +2872,7 @@ export const JOURNEYS: Journey[] = [
       const last = await relaunch();
       await openFolder(last, project);
       await last.until('the editor', async () => (await editorText(last)).length > 0 || undefined).catch(() => undefined);
-      await Bun.sleep(1_500);
+      await pause(1_500);
       assert(!(await last.visible(recoveryOffer)), 'A clean exit left something to recover.');
     },
   },
@@ -3345,15 +3366,8 @@ export const JOURNEYS: Journey[] = [
           );
         });
 
-      // The element comes with the diagnostic, as the build named it: the wire is put back on disk and the open diagram
-      // follows it, so the open file no longer has the finding to place the problem from, and the problem is still the
-      // block's that the build named.
-      const wires = model.connections.length;
-      writeFileSync(file, intact);
-      await app.until(
-        'the open diagram to follow the file on disk',
-        async () => (await app.eval<number>(`document.querySelectorAll('.react-flow__edge').length`)) === wires + 1 || undefined,
-      );
+      // The element comes with the diagnostic, as the build named it. (A file reloaded from outside drops its markers,
+      // AIX-012, so the wire is not put back on disk here: the problem would be gone, as intended.)
       await app.click(css('.react-flow__node[data-id="ton_on"]'), 'another block');
       await app.until('the other block selected', async () => (await selectedBlock()) === 'ton_on' || undefined);
       await activateFirstProblem(app);
@@ -3501,13 +3515,14 @@ export const JOURNEYS: Journey[] = [
       let worst = 1;
       const started = Date.now();
       while (Date.now() - started < 30_000) {
+        // journey-time: the soak window that measures, not a bound
         const factor = slowdown();
         worst = Math.max(worst, factor);
         const before = Date.now();
         await app.eval<number>('1 + 1');
         raw.push(Date.now() - before);
         latencies.push(Math.round((Date.now() - before) / factor));
-        await new Promise((resolve) => setTimeout(resolve, 1_000));
+        await new Promise((resolve) => setTimeout(resolve, 1_000)); // journey-time: the soak sampling interval
       }
       const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / Math.max(values.length, 1);
       const third = Math.floor(latencies.length / 3);
@@ -5404,7 +5419,7 @@ export const JOURNEYS: Journey[] = [
   },
   {
     // The starter of lesson 1 fails its scenario. Learn must say which assertion failed, when, what was expected against what
-    // was observed, and where in the trace (LRN-026), after the learner pressed Check: the program of the shown project is
+    // was observed, and where in the trace (LRN-026), after the learner pressed Check: the program of the lesson workspace is
     // graded against the scenario of the lesson package, in the tool worker (LRN-022).
     name: '39 Learn reports the failed assertion of a lesson',
     example: 'motor_start_stop_starter',
@@ -5414,7 +5429,7 @@ export const JOURNEYS: Journey[] = [
       await unlockAllLessons(app);
       await openFolder(app, project);
       await app.click(css('[data-activity="learn"]'), 'the Learn activity');
-      await app.click(lessonButton('Safe motor start-stop'), 'the Safe motor start-stop lesson');
+      await chooseOutlineLesson(app, 'motor-start-stop-safe', 'Safe motor start-stop');
       await app.until(
         'the Check button to be enabled',
         async () => (await app.eval<boolean>(`document.querySelector('[data-learn-check]')?.disabled === false`)) || undefined,
@@ -5460,7 +5475,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    // The reference solution is put in the starter folder before Studio opens it: the check passes, and the grade record says
+    // The reference solution is put in the lesson workspace before Studio opens it: the check passes, and the grade record says
     // which lesson version, scenario hash and program it was for (LRN-023, LRN-031).
     name: '39b Learn records the grade of a passed lesson',
     example: 'motor_start_stop_starter',
@@ -5472,10 +5487,13 @@ export const JOURNEYS: Journey[] = [
         join(project, 'src', 'Motor.st'),
         disk(join(packageRoot, 'projects', lesson.referenceExampleId, lesson.solutionProgram)),
       );
+      // GDE-001, GDE-002: the lesson is checked in its app-owned workspace (LRN-003), which a start reopens as it is when it holds a
+      // project; the starter with the solution is put there.
+      cpSync(project, join(root, 'profile', 'learn-workspaces', lesson.id), { recursive: true });
       await unlockAllLessons(app);
       await openFolder(app, project);
       await app.click(css('[data-activity="learn"]'), 'the Learn activity');
-      await app.click(lessonButton('Safe motor start-stop'), 'the Safe motor start-stop lesson');
+      await chooseOutlineLesson(app, 'motor-start-stop-safe', 'Safe motor start-stop');
       await app.until(
         'the Check button to be enabled',
         async () => (await app.eval<boolean>(`document.querySelector('[data-learn-check]')?.disabled === false`)) || undefined,
@@ -5971,6 +5989,7 @@ export const JOURNEYS: Journey[] = [
       );
       await focus('[data-learn-continue]');
       await app.press('Enter');
+      await practiceFromReading(app, Boolean(onBoard.reading));
       // GDE-009: the Guide keeps the board section closed until the learner opens it; open it by keyboard before reading or switching.
       await app.until('the Guide board section summary', async () => (await app.visible(css('[data-guide-board] > summary'))) || undefined);
       await focus('[data-guide-board] > summary');
@@ -6164,6 +6183,7 @@ export const JOURNEYS: Journey[] = [
         `Continue does not offer to start the course with "${first.text.en.title}": ${startText}`,
       );
       await press(css('[data-learn-continue]'), 'Start the course on the Learn home');
+      await practiceFromReading(app, Boolean(first.reading));
       await app.until(
         'the lesson beside its workspace',
         async () =>
@@ -6260,6 +6280,7 @@ export const JOURNEYS: Journey[] = [
       const doLesson = async (id: string, start: Target, running: () => Promise<void>) => {
         const entry = LESSON_INDEX.lessons.find((lesson) => lesson.id === id)!;
         await app.click(start, `Start for ${id}`);
+        await practiceFromReading(app, Boolean(entry.reading));
         await app.until(
           `the lesson ${id} beside its workspace`,
           async () =>
@@ -6499,7 +6520,7 @@ export const JOURNEYS: Journey[] = [
       await app.press('Escape');
       await app.until('the dialog to close', async () => !(await app.visible(alert)) || undefined);
       assert((await answer()) === false, `Escape must answer no, it answered ${JSON.stringify(await answer())}`);
-      assert(await app.visible(button('Stop (Shift+F5)', 'prefix')), 'A cancelled deploy question must leave the program running.');
+      assert(await app.visible(css('[data-command="debug.stop"]')), 'A cancelled deploy question must leave the program running.');
 
       // The action button answers yes, and Cancel answers no.
       await ask(false, matching);
@@ -6548,14 +6569,14 @@ export const JOURNEYS: Journey[] = [
 
       // the assistant is optional: until a provider is configured it is not offered, and its command (the Agent tab of 2.0 went to
       // the Assistant view, SHL-004) opens Preferences where one is configured, which says so (SHL-008, SHL-011)
-      await fromPalette(app, 'view.agent', 'Show the agent');
+      await fromPalette(app, 'view.agent', 'Show the Assistant');
       const settings = await app.until('the Assistant section of Preferences', async () => {
         const text = await app.eval<string>(`document.getElementById('assistant')?.innerText ?? ''`);
-        return text.includes('Without one, the assistant is not offered.') ? text : undefined;
+        return text.includes('Without one, the Assistant is not offered.') ? text : undefined;
       });
       assert(settings !== '', 'Preferences do not say that the assistant is offered only with a provider.');
       assert(
-        !(await app.visible(css('[aria-label="Optional agent"]'))) && !(await app.clickable(button('Send request'))),
+        !(await app.visible(css('[aria-label="Assistant request"]'))) && !(await app.clickable(button('Send request'))),
         'The assistant can be asked although no provider is configured.',
       );
       // Preferences took the editor area: back to the program
@@ -6789,16 +6810,11 @@ export const JOURNEYS: Journey[] = [
       await watch(app, 'LED_Output');
       await assertFits('1366 by 768 while the simulation runs and the Watch table shows');
 
-      // one lesson of Learn opens from the rail (UX-011)
+      // the lessons of Learn open from the rail (UX-011), as the course outline (GDE-002)
       await app.click(css('[data-activity="learn"]'), 'the Learn activity');
       await app.until(
         'the lessons in the primary sidebar',
-        async () =>
-          (await app.visible(
-            css(
-              '[aria-label="Primary sidebar"] [aria-label="Lesson"] button, [aria-label="Primary sidebar"] [aria-label="Lección"] button',
-            ),
-          )) || undefined,
+        async () => (await app.visible(css('[aria-label="Primary sidebar"] [data-learn-outline] [role="treeitem"]'))) || undefined,
       );
       await assertFits('1366 by 768 with the lessons shown');
 
@@ -7295,7 +7311,9 @@ export const JOURNEYS: Journey[] = [
       await reach('the diagram', `el.closest('.zplc-visual-editor') !== null`, 'Tab', 80);
       await reach('the end of the diagram', `el.closest('.zplc-visual-editor') === null`, 'Tab', 60);
 
-      // 9. One Learn lesson: the lesson list by command, Check reached with Tab and pressed with Enter, graded as passed
+      // 9. One Learn lesson: the course outline by command, the lesson chosen from its filter and its tree, its workspace given the
+      // solution, Check reached with Tab and pressed with Enter, graded as passed. GDE-002 (U3-G3): the Learn activity is the outline;
+      // the lesson is the Guide of its own workspace (GDE-001), so the solution goes into that workspace, not the example project.
       await palette('Show the lessons');
       await app.until(
         'the Learn tab',
@@ -7303,36 +7321,65 @@ export const JOURNEYS: Journey[] = [
           (await app.eval<boolean>(`document.querySelector('[data-activity="learn"]')?.getAttribute('aria-current') === 'true'`)) ||
           undefined,
       );
-      // The lesson of this example is chosen with the arrow keys of the lesson list, as a keyboard user would.
-      await reach(
-        'the lesson list',
-        `el.closest('[aria-label="Lesson"]') !== null && el.getAttribute('aria-pressed') === 'true'`,
-        'Tab',
-        80,
-      );
-      // The lesson list follows the course order, so the number of presses is bounded by the lessons that come before this one.
+      await reach('the filter of the course outline', `el.matches('[data-learn-outline] input')`, 'Tab', 80);
+      await app.type('Safe motor start-stop');
+      await reach('the course outline', `el.getAttribute('role') === 'treeitem'`, 'Tab', 4);
+      // The filter leaves the lessons whose title holds the text, so the number of presses is bounded by the lessons shown.
       await reach(
         'the Safe motor start-stop lesson',
-        `el.textContent.trim().startsWith('Safe motor start-stop')`,
-        'ArrowRight',
-        courseOrder(LESSON_INDEX).findIndex(({ id }) => id === 'motor-start-stop-safe'),
+        `(el.getAttribute('data-row') ?? '').endsWith(':lesson:motor-start-stop-safe')`,
+        'ArrowDown',
+        await app.eval<number>(`document.querySelectorAll('[data-learn-outline] [role="treeitem"]').length`),
       );
+      await app.press('Enter');
+      // LRN-039: the lesson has a reading page, which opens first with the focus on its title; Tab reaches Practice inside the page,
+      // and Enter starts the lesson.
+      await app.until(
+        'the reading page of the lesson',
+        async () =>
+          (await app.eval<boolean>(`document.querySelector('[data-learn-reading="motor-start-stop-safe"]') !== null`)) || undefined,
+      );
+      await reach('Practice on the reading page', `el.matches('[data-learn-reading-practice]')`, 'Tab', 80);
       await app.press('Enter');
       await app.until(
         'the Safe motor start-stop lesson to be chosen',
         async () =>
           (await app.eval<boolean>(`document.getElementById('learn-title')?.textContent?.trim() === 'Safe motor start-stop'`)) || undefined,
       );
-      await app.until('the Check button to be enabled', async () => (await isEnabled('[data-learn-check]')) || undefined);
-      await reach('the Check button', `el.matches('[data-learn-check]')`, 'Tab', 60);
-      // each stage's checkpoint disclosure has its own name, and the Check button keeps the focus while it works (UX-028)
-      const checkpointNames = await app.eval<string[]>(
-        `[...document.querySelectorAll('[aria-label="Primary sidebar"] ol summary')].map((el) => el.getAttribute('aria-label') ?? ` +
-          `el.textContent)`,
+      await app.press('Ctrl+Shift+E');
+      await reach('the Motor.st row of the lesson workspace', `el.textContent.includes('src/Motor.st')`, 'Tab', 60);
+      await app.press('Enter');
+      await app.until(
+        'the starter Motor.st in the code editor',
+        async () => (await editorText(app)).includes('PROGRAM Motor') || undefined,
       );
+      await app.eval(
+        `(() => { const area = document.createElement('textarea'); area.value = ${JSON.stringify(solution)}; document.body.append(area); ` +
+          `area.select(); document.execCommand('copy'); area.remove(); })()`,
+      );
+      await reach('the code editor of the lesson workspace', `el.closest('.monaco-editor') !== null`, 'Tab', 80);
+      await app.press('Ctrl+A');
+      await app.press('Ctrl+V');
+      await app.until('the solution in the lesson workspace', async () => (await editorText(app)).includes('Forward') || undefined);
+      await app.until(
+        'the tab of Motor.st to show the paste as unsaved',
+        async () => (await app.eval<string>(`${editorTab('file:src/Motor.st')}?.textContent ?? ''`)).includes('*') || undefined,
+      );
+      await app.press('Ctrl+S');
+      await app.until('the save to be announced', async () => /Saved/.test(await live('polite')) || undefined);
+      // Ctrl+M lets Tab leave the code editor (step 2).
+      await app.press('Ctrl+M');
+      await app.until('the Check button to be enabled', async () => (await isEnabled('[data-learn-check]')) || undefined);
+      await reach('the Check button', `el.matches('[data-learn-check]')`, 'Tab', 80);
+      // each stage's checkpoint disclosure has its own name (the Guide shows one stage at a time, so the names are read from the
+      // stage shown and the stages of the lesson), and the Check button keeps the focus while it works (UX-028)
+      const shownCheckpoint = await app.eval<string>(
+        `document.querySelector('[aria-label="Secondary sidebar"] [data-guide-stage] summary')?.getAttribute('aria-label') ?? ''`,
+      );
+      const stageTitles = lesson.stages.map(({ title }) => title);
       assert(
-        checkpointNames.length > 1 && new Set(checkpointNames).size === checkpointNames.length,
-        `The checkpoint disclosures share a name: ${JSON.stringify(checkpointNames)}`,
+        stageTitles.length > 1 && new Set(stageTitles).size === stageTitles.length && shownCheckpoint.includes(stageTitles[0]!),
+        `The checkpoint disclosures share a name: ${JSON.stringify({ shownCheckpoint, stageTitles })}`,
       );
       await app.press('Enter');
       assert(
@@ -7391,6 +7438,7 @@ export const JOURNEYS: Journey[] = [
         await app.eval(
           'Promise.race([Promise.allSettled(document.getAnimations().filter((animation) => ' +
             'animation.effect?.getComputedTiming().iterations !== Infinity).map((animation) => animation.finished)), new ' +
+            // journey-time: this 1500 ms runs inside the page
             'Promise((resolve) => setTimeout(resolve, 1500))]).then(() => new Promise((resolve) => requestAnimationFrame(() => ' +
             'requestAnimationFrame(resolve))))',
         );
@@ -7856,7 +7904,6 @@ export const JOURNEYS: Journey[] = [
       const outputText = (name: string) =>
         app.eval<string>(`document.querySelector('[data-output="MotorPlant.${name}"] [data-output-value]')?.textContent?.trim() ?? ''`);
       const focus = (selector: string) => app.eval(`document.querySelector(${JSON.stringify(selector)}).focus()`);
-      const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
       await unlockAllLessons(app);
       await app.click(button('Learn', 'prefix'), 'the Learn button on the Welcome screen');
@@ -8388,7 +8435,7 @@ export const JOURNEYS: Journey[] = [
             `the window to be ${width} wide`,
             async () => (await app.eval<number>('window.innerWidth')) === width || undefined,
           );
-          await new Promise((resolve) => setTimeout(resolve, 400)); // the layout that follows a resize (a strip that turns compact)
+          await pause(400); // the layout that follows a resize (a strip that turns compact)
           const problems = await app.eval<string[]>(`(${findTextOutOfBox.toString()})(${JSON.stringify(strips)})`);
           for (const problem of problems) found.set(problem, [...(found.get(problem) ?? []), `${journeyLocale} ${width} ${state}`]);
         }
@@ -8412,6 +8459,13 @@ export const JOURNEYS: Journey[] = [
           await check('the shell with the Files of the project');
           await openDiagram(app, 'extra/blink.ld.json', '[data-ld-rung-id]');
           await check('the Ladder editor');
+          // LNG-030: the function groups of the Ladder palette are closed at first; opened, their long names (SINT_TO_USINT) must fit too.
+          await app.eval(`document.querySelectorAll('[data-ld-group] > button[aria-expanded="false"]').forEach((group) => group.click())`);
+          await app.until(
+            'the Ladder function groups to open',
+            async () => (await app.eval<boolean>(`document.querySelector('[data-ld-group] [data-ld-toolbox-item]') !== null`)) || undefined,
+          );
+          await check('the Ladder editor with its function groups open');
           await openFile(app, 'src/main.st');
           await compile(app);
           await app.click(css('#console-tab-output'), 'the Output tab');
@@ -8427,7 +8481,7 @@ export const JOURNEYS: Journey[] = [
           await check('the communication settings');
           for (const activity of ['search', 'tests', 'learn']) {
             await app.click(css(`[data-activity="${activity}"]`), `the ${activity} activity`);
-            await new Promise((resolve) => setTimeout(resolve, 600));
+            await pause(600);
             await check(`the ${activity} sidebar`);
           }
           await showExplorer(app);
@@ -8472,5 +8526,13 @@ async function selectOption(app: App, selector: string, label: string): Promise<
   assert(wanted >= 0, `${selector} offers ${JSON.stringify(labels)}, not ${label}`);
   await app.eval(`document.querySelector(${JSON.stringify(selector)}).focus()`);
   for (let step = 0; step < Math.abs(wanted - index); step++) await app.press(wanted > index ? 'ArrowDown' : 'ArrowUp');
+  // macOS does not move a native select with the arrow keys while its popup is closed: set the option through the element and tell
+  // React the way a change from the popup would
+  if ((await state()).index !== wanted) {
+    await app.eval(
+      `(() => { const select = document.querySelector(${JSON.stringify(selector)}); select.selectedIndex = ${wanted}; ` +
+        `select.dispatchEvent(new Event('input', { bubbles: true })); select.dispatchEvent(new Event('change', { bubbles: true })); })()`,
+    );
+  }
   await app.until(`${selector} to show ${label}`, async () => (await state()).index === wanted || undefined);
 }

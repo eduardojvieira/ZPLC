@@ -5,9 +5,10 @@
  */
 import { useEffect, useRef } from 'react';
 import { useT } from '../../i18n';
-import { usePreferencesDocument } from '../../store/usePreferencesDocument';
+import { usePreferencesDocument, MCP_SECTION_ID } from '../../store/usePreferencesDocument';
 import { AppPreferences } from './AppPreferences';
 import { AssistantSettings, ASSISTANT_SECTION_ID } from './AssistantSettings';
+import { McpConnectionSettings } from './McpConnectionSettings';
 
 export function PreferencesDocument() {
   const { t } = useT();
@@ -18,8 +19,8 @@ export function PreferencesDocument() {
   useEffect(() => {
     const anchor = usePreferencesDocument.getState().anchor;
     const target =
-      anchor === ASSISTANT_SECTION_ID
-        ? page.current?.querySelector<HTMLElement>(`#${ASSISTANT_SECTION_ID} input, #${ASSISTANT_SECTION_ID} button`)
+      anchor === ASSISTANT_SECTION_ID || anchor === MCP_SECTION_ID
+        ? page.current?.querySelector<HTMLElement>(`#${anchor} input, #${anchor} button, #${anchor} h2`)
         : anchor
           ? page.current?.querySelector<HTMLElement>(`[data-setting="${anchor}"]`)
           : null;
@@ -36,6 +37,7 @@ export function PreferencesDocument() {
         </h1>
         <AppPreferences />
         <AssistantSettings />
+        <McpConnectionSettings />
       </div>
     </div>
   );
