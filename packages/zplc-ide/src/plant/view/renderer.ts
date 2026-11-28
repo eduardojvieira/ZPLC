@@ -521,6 +521,27 @@ export function createRenderer(
     }
     return g;
   };
+  /**
+   * A piece whose size follows an axis (a gantry slide, a fork, a rod) has a new shape at every position, so a cache that only
+   * adds would grow with the steps. After each snapshot the entries no mesh holds any more are disposed; the cache then holds at
+   * most one geometry per mesh, and the picture is the same, as every shape is still built as before.
+   */
+  const evictUnused = <T extends { dispose(): void }>(cache: Map<string, T>, inUse: ReadonlySet<string>): void => {
+    for (const [key, g] of cache)
+      if (!inUse.has(key)) {
+        g.dispose();
+        cache.delete(key);
+      }
+  };
+  const evictGeometries = (): void => {
+    const shapes = new Set<string>();
+    const pieces = new Set<string>();
+    for (const entry of partEntries.values())
+      if (entry.key === 'model') for (const mesh of entry.pieces.values()) pieces.add((mesh.userData as { key: string }).key);
+      else shapes.add(entry.key);
+    evictUnused(geometries, shapes);
+    evictUnused(pieceGeometries, pieces);
+  };
   const glass = (part: string) => part === 'tank' || part === 'machining-centre';
   const paintPart = (part: string, m: THREE_NS.MeshStandardMaterial): void => {
     const set = look.textures && !glass(part) ? textureSet('painted-steel') : null;
@@ -809,6 +830,7 @@ export function createRenderer(
       target.mesh.add(line);
       outlined.set(target.mesh, { line, key: target.key });
     }
+    evictUnused(edges, new Set([...outlined.values()].map((o) => o.key)));
     for (const layer of layers) {
       if (!layer.outline && layer.mesh.count > 0) {
         layer.outline = new THREE.InstancedMesh(unitBox, wireMaterial, layer.capacity);
@@ -1029,6 +1051,7 @@ export function createRenderer(
         else drawShape(view);
       }
       for (const id of [...partEntries.keys()]) if (!seen.has(id)) removeEntry(id);
+      evictGeometries();
       applyOutlines();
       if (highlightId) placeHighlight();
       dirty = true;

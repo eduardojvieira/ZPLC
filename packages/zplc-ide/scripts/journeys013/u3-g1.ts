@@ -20,6 +20,13 @@ const NEXT = siblings[siblings.findIndex(({ id }) => id === LESSON) + 1]!;
 const inGuide = (app: App, expression: string) =>
   app.eval<boolean>(`(() => { const guide = document.querySelector('${GUIDE}'); return ${expression}; })()`);
 
+/** The reading page of the lesson covers the Guide (GDE-006): Practice opens the lesson layout, with the Guide beside the program. */
+async function practiceFromReadingPage(app: App): Promise<void> {
+  if (!LESSON_INDEX.lessons.find(({ id }) => id === LESSON)?.reading) return;
+  await app.until('the reading page', async () => (await app.visible(css(`[data-learn-reading="${LESSON}"]`))) || undefined, 30_000);
+  await app.click(css('[data-learn-reading-practice]'), 'Practice on the reading page');
+}
+
 /** Journeys of task U3-G1 (plan-u3.md): the Guide, one stage at a time, checks and offers the next lesson (GDE-003, GDE-008). */
 export const journeysU3G1: Journey[] = [
   {
@@ -44,6 +51,7 @@ export const journeysU3G1: Journey[] = [
       await app.until('the Learn home', async () => (await app.visible(css(`[data-learn-start="${LESSON}"]`))) || undefined);
       app.answer(folder);
       await app.click(css(`[data-learn-start="${LESSON}"]`), 'the start of the lesson');
+      await practiceFromReadingPage(app);
       await app.until(
         'the Guide of the lesson',
         async () => (await app.visible(css(`${GUIDE} [data-guide-actions]`))) || undefined,
@@ -133,6 +141,7 @@ export const journeysU3G1: Journey[] = [
       await app.until('the Learn home', async () => (await app.visible(css(`[data-learn-start="${LESSON}"]`))) || undefined);
       app.answer(folder);
       await app.click(css(`[data-learn-start="${LESSON}"]`), 'the start of the lesson');
+      await practiceFromReadingPage(app);
       await app.until(
         'the Guide of the lesson',
         async () => (await app.visible(css(`${GUIDE} [data-guide-actions]`))) || undefined,

@@ -9,7 +9,7 @@ import { useProjectSources } from '../store/projectSources';
 import { projectGlobalVariables } from '../project/globalVariables';
 import type { CreateContext, ObjectKind } from '../project/newObject';
 import type { FileTreeNode, PLCLanguage } from '../types';
-import { fileTreeFileId, findFileInTree, listTaskPrograms } from '../utils/fileSystem';
+import { findFileInTree, listTaskPrograms } from '../utils/fileSystem';
 import type { ItemSubject, NavigatorGroupId } from './navigatorGroups';
 import { openConfigEditorFromNavigator } from './openConfigEditor';
 
@@ -74,14 +74,9 @@ export function liveCreateContext(): CreateContext {
     takenNames: names,
     programFiles: listTaskPrograms(store.fileTree),
     tasks: () => useIDEStore.getState().projectConfig?.tasks ?? [],
-    createFile: async (fileName, language) => {
-      const id = await useIDEStore.getState().createFile(fileName, language);
+    createFile: async (fileName, language, content) => {
+      const id = await useIDEStore.getState().createFile(fileName, language, 'src', content);
       return useIDEStore.getState().loadedFiles.get(id)?.path ?? id.replace(/^file:/, '');
-    },
-    writeFile: async (path, content) => {
-      const id = fileTreeFileId(path);
-      useIDEStore.getState().updateFileContent(id, content);
-      await useIDEStore.getState().saveFile(id, { quiet: true });
     },
     setTasks: async (tasks) => {
       useIDEStore.getState().updateProjectConfig({ tasks });

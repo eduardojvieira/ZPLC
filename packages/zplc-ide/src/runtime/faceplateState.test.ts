@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'bun:test';
 
-import { createHold, faceplateUnavailable, latestWins, sameInputValue, settleInputs } from './faceplateState';
+import type { DebugMap } from '../compiler';
+import {
+  createHold,
+  faceplateUnavailable,
+  latestWins,
+  plantFedPaths,
+  sameInputValue,
+  settleInputs,
+  watchOwnerPath,
+} from './faceplateState';
 
 describe('an input change that waits for the next scan (LRN-017)', () => {
   it('compares a value as the runtime holds it: a REAL as a 32-bit float, an integer exactly', () => {
@@ -118,5 +127,24 @@ describe('when the faceplate cannot apply a change (LRN-017)', () => {
     expect(faceplateUnavailable({ ...ready, vmState: 'paused' })).toBe('paused');
     expect(faceplateUnavailable({ ...ready, vmState: 'idle' })).toBe('notRunning');
     expect(faceplateUnavailable({ ...ready, supported: false })).toBe('noCapability');
+  });
+});
+
+describe('the inputs the plant feeds (PLS-007)', () => {
+  it('PLS-007 lists the program inputs the plant map drives, by their qualified path', () => {
+    const resolved = { drives: { start: { path: 'Motor.Start', name: 'Start' }, level: { path: 'Tank.Level', name: 'Level' } } };
+    expect([...plantFedPaths(resolved)].sort()).toEqual(['Motor.Start', 'Tank.Level']);
+  });
+
+  it('PLS-007 an input with no plant is not listed', () => {
+    expect(plantFedPaths({ drives: {} }).size).toBe(0);
+  });
+
+  it('PLS-007 a Watch row is owned by the program the table resolves it to: the first that declares the name', () => {
+    const map = { pou: { Motor: { vars: { Start: {} } }, Pump: { vars: { Start: {}, Flow: {} } } } } as unknown as DebugMap;
+    expect(watchOwnerPath(map, 'Start')).toBe('Motor.Start');
+    expect(watchOwnerPath(map, 'Flow')).toBe('Pump.Flow');
+    expect(watchOwnerPath(map, 'Missing')).toBe('Missing');
+    expect(watchOwnerPath(null, 'Start')).toBe('Start');
   });
 });

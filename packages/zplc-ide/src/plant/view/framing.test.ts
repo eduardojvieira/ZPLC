@@ -126,8 +126,15 @@ function fakeThree() {
     emissive = new Color();
     dispose() {}
   }
+  /** The geometries built and not yet disposed: what the renderer still holds on to. */
+  const alive = new Set<unknown>();
   class Geometry {
-    dispose() {}
+    constructor() {
+      alive.add(this);
+    }
+    dispose() {
+      alive.delete(this);
+    }
     rotateX() {}
     rotateY() {}
     rotateZ() {}
@@ -137,12 +144,14 @@ function fakeThree() {
     }
   }
   const worlds: Obj[] = [];
+  const made = { meshes: 0 };
   class Mesh extends Obj {
     constructor(
       public geometry: unknown,
       public material: Material,
     ) {
       super();
+      made.meshes += 1;
     }
   }
   const THREE_ = {
@@ -201,7 +210,7 @@ function fakeThree() {
       render() {}
     },
   };
-  return { THREE: THREE_ as unknown as typeof THREE, worlds: worlds as unknown as Array<{ children: DrawnNode[] }> };
+  return { THREE: THREE_ as unknown as typeof THREE, alive, made, worlds: worlds as unknown as Array<{ children: DrawnNode[] }> };
 }
 
 const frames: Array<(t: number) => void> = [];
@@ -371,4 +380,38 @@ describe('a part is drawn once (VIS-003)', () => {
       r.dispose();
     });
   }
+});
+
+describe('the geometry the renderer holds does not grow with the steps (memory growth, three-axis-palletizing)', () => {
+  /** Steps the real core with the gantry axes sweeping, drawing each step; returns the live geometries at each mark. */
+  async function liveGeometries(marks: number[]): Promise<{ alive: number[]; limit: number }> {
+    const { createPlantCore } = await import('../core/plantCore');
+    const scene = loadScene('three-axis-palletizing');
+    const core = await createPlantCore(scene);
+    const { r, alive, made } = build(scene);
+    const out: number[] = [];
+    for (let step = 1; step <= marks[marks.length - 1]!; step++) {
+      // The three axes sweep their strokes at three different rates, so the gantry is never twice at the same place.
+      core.apply({
+        'Gantry1.xSet': 0.8 + 0.8 * Math.sin(step / 97),
+        'Gantry1.ySet': 0.6 + 0.6 * Math.sin(step / 61),
+        'Gantry1.zSet': 0.6 + 0.6 * Math.sin(step / 43),
+        'Belt1.run': true,
+        'Emitter1.emit': step % 300 < 5,
+      });
+      core.advance(10);
+      r.setSnapshot(core.snapshot());
+      if (marks.includes(step)) out.push(alive.size);
+    }
+    r.dispose();
+    core.dispose();
+    // Every cache entry is held by a mesh, so no more geometries than meshes (and a few shared ones: unit box, floor) can be alive.
+    return { alive: out, limit: made.meshes + 8 };
+  }
+
+  it('after 2,000 and after 20,000 steps the renderer holds no more geometries than it has meshes', async () => {
+    const { alive, limit } = await liveGeometries([2000, 20000]);
+    console.log(`geometry cache entries: ${alive[0]} at 2000 steps, ${alive[1]} at 20000 steps (limit ${limit})`);
+    expect(Math.max(...alive)).toBeLessThanOrEqual(limit);
+  }, 600_000);
 });

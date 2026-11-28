@@ -6,6 +6,7 @@ const dom = await setupDom();
 await stubProjectLoader();
 await stubMonaco();
 const { DEFAULT_SHELL_STATE, useShellLayout } = await import('../store/useShellLayout');
+const { useLearnLayout } = await import('../store/useLearnLayout');
 const { WorkbenchShell } = await import('./WorkbenchShell');
 const { useCollapsible } = await import('./useCollapsible');
 
@@ -189,5 +190,51 @@ describe('WorkbenchShell sidebar widths', () => {
     view.rerender(<Collapsible panel={panel} visible />);
     await dom.settle();
     expect(panel.size).toBe(340);
+  });
+});
+
+describe('WorkbenchShell under a reading page (GDE-006)', () => {
+  afterEach(() => useLearnLayout.setState({ reading: false }));
+  const shell = () => dom.render(<WorkbenchShell EditorArea={StubEditor} Console={StubConsole} debugController={{} as never} />);
+
+  it('GDE-006 a reading page covers the whole workbench: the activity rail, sidebars and results panel are not in the tab order', () => {
+    useLearnLayout.setState({ reading: true });
+    shell();
+    const inert = (el: Element | null) => Boolean(el?.closest('[inert]'));
+    expect(inert(dom.screen.getByTestId('stub-console'))).toBe(true);
+    expect(inert(document.querySelector('[data-command="view.showLearn"]'))).toBe(true);
+    expect(inert(document.querySelector('#primary'))).toBe(true);
+  });
+
+  it('GDE-006 the wrapper that goes inert does not widen the workbench: it may shrink below its content (min-w-0)', () => {
+    // happy-dom does not lay out, so the bound is asserted on the class: without it the workbench grows to its min-content width
+    // (16155 px in a 1024 px window).
+    useLearnLayout.setState({ reading: true });
+    shell();
+    expect(document.querySelector('.ledger-workspace > div')?.classList.contains('min-w-0')).toBe(true);
+  });
+
+  it('LRN-039 the focus goes back to the Guide once the workbench has left inert, not while it is still inert', async () => {
+    const realFocus = HTMLElement.prototype.focus;
+    // Chromium refuses to focus inside an inert subtree.
+    HTMLElement.prototype.focus = function focus(this: HTMLElement, ...args: []) {
+      if (this.closest('[inert]')) return;
+      realFocus.apply(this, args);
+    };
+    try {
+      const Editor = () => <h2 id="learn-title" tabIndex={-1} />;
+      dom.render(<WorkbenchShell EditorArea={Editor} Console={StubConsole} debugController={{} as never} />);
+      await dom.act(async () => useLearnLayout.setState({ reading: true }));
+      await dom.act(async () => useLearnLayout.getState().setReading(false, true));
+      expect(document.activeElement?.id).toBe('learn-title');
+    } finally {
+      HTMLElement.prototype.focus = realFocus;
+    }
+  });
+
+  it('GDE-006 with the flag down nothing is inert', () => {
+    useLearnLayout.setState({ reading: false });
+    shell();
+    expect(document.querySelector('[inert]')).toBeNull();
   });
 });

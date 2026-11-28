@@ -29,7 +29,10 @@ import { describePlant } from '../text/describe';
 import type { DisplayPrefs } from '../view/displayModes';
 import { qualityLevels, type QualityLevel } from '../view/quality';
 import type { PlantRenderer } from '../view/renderer';
+import { listIoMap } from '../../runtime/ioMap';
 import { OperatePanel } from './OperatePanel';
+import { PlantIoMode } from './PlantIoMode';
+import { useBoardPlantIo } from './plantIoAdapter';
 import { PlantCanvas } from './PlantCanvas';
 import {
   refValue,
@@ -129,6 +132,17 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
   const binding = usePlantSession(controller, ref, deps, edited?.key === refKey ? edited.texts : undefined);
   const { load, snapshot, state } = binding;
   const ready = load.phase === 'ready' ? load : undefined;
+  // Plant I/O mode (PLS-008): offered only with a connected board that can be fed and no simulation driving this core.
+  const debugMap = useIDEStore((store) => store.debug.debugMap);
+  const ioMap = useMemo(() => listIoMap(debugMap), [debugMap]);
+  const feed = useBoardPlantIo({
+    core: ready?.core,
+    map: ready?.map,
+    ioMap,
+    idle: state === 'stopped',
+    visible,
+    shortestPulseMs: ready?.scene.shortestPulseMs,
+  });
 
   const display = useMemo<DisplayPrefs>(() => {
     const dark =
@@ -273,6 +287,7 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
             {t('command.view.fitPlantScene')}
           </Button>
         )}
+        <PlantIoMode boardConnected={feed.available} {...(feed.blocked ? { blocked: feed.blocked } : {})} />
       </div>
       <div role="group" aria-label={t('plant.panel.sceneFile')} data-plant-scene-file className="flex flex-wrap items-end gap-3 px-2">
         <SceneChooser

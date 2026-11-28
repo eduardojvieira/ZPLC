@@ -36,10 +36,8 @@ export interface CreateContext {
   /** The program files a task can run, under the name a task gives them. */
   programFiles: readonly string[];
   tasks: () => readonly TaskDefinition[];
-  /** Creates an empty file in the project and returns its path. */
-  createFile: (fileName: string, language: PLCLanguage) => Promise<string>;
-  /** Replaces the content of a file the project holds and saves it. */
-  writeFile: (path: string, content: string) => Promise<void>;
+  /** Creates the file with this content, saved, and returns its path. The file opens as it is born, so it never holds less. */
+  createFile: (fileName: string, language: PLCLanguage, content: string) => Promise<string>;
   setTasks: (tasks: TaskDefinition[]) => void | Promise<void>;
   /** Shows the object at its declaration. */
   open: (path: string, line: number) => Promise<void>;
@@ -95,8 +93,7 @@ export async function createObject(
   const lang: PLCLanguage = kind === 'program' ? language : 'ST';
   const fileName = fileNameForNewFile(typed, lang);
   const { content, line } = kind === 'program' ? { content: programSkeleton(lang, typed), line: 1 } : textSkeleton(kind, typed);
-  const path = await ctx.createFile(fileName, lang);
-  await ctx.writeFile(path, content);
+  const path = await ctx.createFile(fileName, lang, content);
   await ctx.open(path, line);
   return { path, line };
 }

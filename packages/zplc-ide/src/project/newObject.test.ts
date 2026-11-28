@@ -18,13 +18,11 @@ function fixture(taken: string[] = [], tasks: TaskDefinition[] = []): { ctx: Cre
     takenNames: new Set(taken.map((name) => name.toLowerCase())),
     programFiles: ['main.st'],
     tasks: () => made.tasks,
-    createFile: async (fileName, language) => {
+    // the file opens as soon as it exists (the store opens its tab): it is born with its skeleton, never written after
+    createFile: async (fileName, language, content) => {
       const path = `src/${fileName}`;
-      made.files.set(path, { language, content: '' });
+      made.files.set(path, { language, content });
       return path;
-    },
-    writeFile: async (path, content) => {
-      made.files.get(path)!.content = content;
     },
     setTasks: (next) => {
       made.tasks = next;

@@ -14,7 +14,7 @@ import { inputAddressLabel, inputRange, type DeclaredInput } from '../runtime/de
 import { createHold } from '../runtime/faceplateState';
 import { outputAddressLabel, type DeclaredOutput } from '../runtime/ioMap';
 import { signalTone, type SignalTone } from '../theme/signalTone';
-import { Button, Checkbox, NumberField, RangeField, SignalValue } from '../ui';
+import { Button, Checkbox, NumberField, RangeField, SignalValue, Tooltip } from '../ui';
 
 export type InputPhase = 'idle' | 'pending' | 'applied';
 
@@ -27,6 +27,8 @@ export interface FaceplateInputRow {
   forced: boolean;
   /** Types that a force carries (up to 32 bits); the others can be set but not forced. */
   forceable: boolean;
+  /** The running plant sets this input (PLS-007): it is set by hand only once forced. */
+  plantFed?: boolean;
 }
 
 export interface FaceplateOutputRow {
@@ -185,6 +187,10 @@ function InputRow({
 }) {
   const { t } = useT();
   const { input } = row;
+  // The plant owns a plant-fed input until it is forced; a BOOL that has not been read has no state to invert.
+  const owned = row.plantFed === true && !row.forced;
+  const locked = disabled || owned;
+  const unread = row.value === null;
   return (
     <tr data-input={input.path} className="border-b border-[var(--color-surface-700)] text-[var(--color-surface-200)]">
       <th scope="row" className="px-2 py-1 font-medium">
@@ -203,19 +209,31 @@ function InputRow({
               size="sm"
               role="switch"
               aria-checked={row.value === true}
-              disabled={disabled}
+              disabled={locked || unread}
               aria-label={t('faceplate.switchLabel', { name: input.name, state: literal(row.value === true) })}
               onClick={() => onSet(input, row.value !== true)}
             >
               {row.value === true ? t('faceplate.setFalse') : t('faceplate.setTrue')}
             </Button>
-            <HoldControl row={row} disabled={disabled} onHold={(down) => onHold(input, down)} />
+            <HoldControl row={row} disabled={locked || unread} onHold={(down) => onHold(input, down)} />
           </span>
         ) : (
-          <NumberControl row={row} disabled={disabled} onSet={(value) => onSet(input, value)} />
+          <NumberControl row={row} disabled={locked} onSet={(value) => onSet(input, value)} />
         )}
       </td>
       <td className="px-2 py-1">
+        {row.plantFed && (
+          <Tooltip content={t('u3Faceplate.fromPlantHint')}>
+            <span tabIndex={0} data-from-plant="true" className="mr-2 text-[var(--color-accent-yellow)]">
+              {t('u3Faceplate.fromPlant')}
+            </span>
+          </Tooltip>
+        )}
+        {owned && (
+          <span className="sr-only" data-from-plant-reason>
+            {t('u3Faceplate.fromPlantHint')}
+          </span>
+        )}
         <StateCell phase={row.phase} />
       </td>
       <td className="px-2 py-1">

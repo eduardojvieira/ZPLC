@@ -38,6 +38,10 @@ flowchart TD
 | Zephyr firmware                    | One image per board profile, with the HAL adapters of that board                 | Depends on the profile; see [hardware support](../reference/capabilities-evidence.md) |
 | FreeRTOS port                      | A second embedded port, built against the FreeRTOS POSIX simulator               | Host (simulator); no FreeRTOS board is qualified                                      |
 
+### Known limit on Windows
+
+In 2.1.0 the simulator on Windows has no Modbus or MQTT blocks, no loopback and no device link, so a block of those services answers "no handler" there. Run them on Linux or macOS. See [the install page](../getting-started/install.md#known-limit-on-windows-simulator-communication). This is a statement of a limit, not a measurement.
+
 ## From a build to a running machine
 
 1. **Compile** the project into a `.zplc` artifact.

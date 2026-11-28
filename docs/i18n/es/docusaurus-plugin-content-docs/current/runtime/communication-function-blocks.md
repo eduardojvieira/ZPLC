@@ -127,6 +127,10 @@ La aplicación de ZPLC y `zplc-cli test` inician los pares por usted. Una sesió
 
 Si un extremo no puede arrancar, los doce bloques responden `STATUS` 10 ("no disponible en simulación"), la capacidad `communication-endpoints` de la sesión dice `unavailable` y ningún bloque informa éxito sin actuar. Una solicitud Modbus por RTU (no hay dispositivo serie) y todo bloque de nube (no hay servicio) responden `STATUS` 10 en simulación. `zplc_loopback`, que se compila con el runtime, es el mismo par de extremos como programa aparte para pruebas: imprime sus puertos en una línea de JSON y termina cuando se cierra su entrada estándar.
 
+## Límite conocido en Windows
+
+En 2.1.0 el simulador en Windows no tiene los bloques Modbus ni MQTT, ni el bucle local (loopback), ni el enlace con el dispositivo, así que un bloque de esos servicios responde «no handler». Ejecútelos en Linux o macOS. Vea [la página de instalación](../getting-started/install.md#límite-conocido-en-windows-comunicación-del-simulador). Es el enunciado de un límite, no una medición.
+
 ## Contra qué se verificó cada bloque
 
 Ningún bloque se ejecutó contra un servicio real, y verificar uno no exige una suscripción de pago. La evidencia de cada bloque es de uno o dos tipos. La evidencia del **manejador** cubre los pines, el handshake, los códigos de estado y la entrega a un trabajador, con el cliente reemplazado por un sustituto que responde lo que la prueba indica. La evidencia del **doble de protocolo** ejecuta el bloque contra un servidor escrito para la prueba que habla el protocolo en un socket de loopback. Un doble local muestra cómo se comportan el bloque y el protocolo. No muestra que un dispositivo, broker o servicio de nube reales acepten el intercambio.

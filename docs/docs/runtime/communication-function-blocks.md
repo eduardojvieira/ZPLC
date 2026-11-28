@@ -127,6 +127,10 @@ The ZPLC application and `zplc-cli test` start the peers for you. A session they
 
 If an endpoint cannot start, all twelve blocks answer `STATUS` 10 ("not available in simulation"), the capability `communication-endpoints` of the session reads `unavailable`, and no block reports success without acting. A Modbus request on RTU (there is no serial device) and every cloud block (there is no service) answer `STATUS` 10 in simulation. `zplc_loopback`, built with the runtime, is the same pair of endpoints as a separate program for tests: it prints its ports as one line of JSON and ends when its standard input closes.
 
+## Known limit on Windows
+
+In 2.1.0 the simulator on Windows has no Modbus or MQTT blocks, no loopback and no device link, so a block of those services answers "no handler" there. Run them on Linux or macOS. See [the install page](../getting-started/install.md#known-limit-on-windows-simulator-communication). This is a statement of a limit, not a measurement.
+
 ## What each block was verified against
 
 No block was run against a live service, and verifying one needs no paid subscription. The evidence for each block is of one or two kinds. The **handler** evidence covers the pins, the handshake, the status codes and the hand-over to a worker, with the client replaced by a stand-in that answers what the test says. The **protocol double** evidence runs the block against a server written for the test that speaks the protocol on a loopback socket. A local double shows how the block and the protocol behave. It does not show that a real device, broker or cloud service accepts the exchange.

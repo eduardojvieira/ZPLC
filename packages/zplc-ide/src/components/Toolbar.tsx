@@ -34,6 +34,7 @@ import {
 } from './debugSessionState';
 import { EXECUTION_MODE, selectRuntimeArtifact, type ExecutionMode } from './runtimeArtifactSelection';
 import { OperationalStatusBar } from './OperationalStatusBar';
+import { useLearnLayout } from '../store/useLearnLayout';
 import { getStatusDisplay } from './programState';
 import { CommandBarCenter } from '../shell/CommandBarCenter';
 import { generateStructuredText } from './visualToStructuredText';
@@ -105,6 +106,8 @@ interface ToolbarProps {
 
 export function Toolbar({ debugController }: ToolbarProps) {
   const { t, tn } = useT();
+  // A reading page owns the run controls (GDE-006, LRN-041): the bar shows none of its own and no status rail.
+  const reading = useLearnLayout((state) => state.reading);
   const {
     addConsoleEntry,
     addCompilerMessage,
@@ -1278,27 +1281,29 @@ export function Toolbar({ debugController }: ToolbarProps) {
         {/* Separator */}
         <div className="w-px h-6 bg-[var(--color-surface-600)]" />
 
-        <RunControls
-          executionMode={executionMode}
-          isConnected={isConnected}
-          isConnecting={isConnecting}
-          isUploading={isUploading}
-          controlsBusy={controlsBusy}
-          hasCurrentCompileResult={hasCurrentCompileResult}
-          isRunning={isRunning}
-          isPaused={isPaused}
-          isStopped={isStopped}
-          connectionButtonRef={connectionButtonRef}
-          executionButtonRef={executionButtonRef}
-          onConnect={handleConnect}
-          onUpload={handleUpload}
-          onStart={handleStart}
-          onPause={handlePause}
-          onResume={handleResume}
-          onStep={handleStep}
-          onStop={handleStop}
-          onReset={handleReset}
-        />
+        {!reading && (
+          <RunControls
+            executionMode={executionMode}
+            isConnected={isConnected}
+            isConnecting={isConnecting}
+            isUploading={isUploading}
+            controlsBusy={controlsBusy}
+            hasCurrentCompileResult={hasCurrentCompileResult}
+            isRunning={isRunning}
+            isPaused={isPaused}
+            isStopped={isStopped}
+            connectionButtonRef={connectionButtonRef}
+            executionButtonRef={executionButtonRef}
+            onConnect={handleConnect}
+            onUpload={handleUpload}
+            onStart={handleStart}
+            onPause={handlePause}
+            onResume={handleResume}
+            onStep={handleStep}
+            onStop={handleStop}
+            onReset={handleReset}
+          />
+        )}
 
         <CommandBarCenter />
 
@@ -1328,14 +1333,16 @@ export function Toolbar({ debugController }: ToolbarProps) {
         />
       </div>
       <Notifications />
-      <OperationalStatusBar
-        mode={executionMode}
-        adapterType={adapter?.type ?? null}
-        connected={isConnected}
-        status={status}
-        connecting={isConnecting}
-        faulted={vmState === 'error'}
-      />
+      {!reading && (
+        <OperationalStatusBar
+          mode={executionMode}
+          adapterType={adapter?.type ?? null}
+          connected={isConnected}
+          status={status}
+          connecting={isConnecting}
+          faulted={vmState === 'error'}
+        />
+      )}
     </>
   );
 }

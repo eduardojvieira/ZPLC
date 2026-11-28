@@ -2,14 +2,16 @@
  * The project navigator organised by PLC objects (UX-012): groups that open, each object opens its file at its line or its configuration
  * editor.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useT, type MessageKey } from '../i18n';
 import { useProjectSources } from '../store/projectSources';
 import { useIDEStore } from '../store/useIDEStore';
 import { useNavigatorReveal } from '../store/useNavigationHistory';
 import { projectGlobalVariables } from '../project/globalVariables';
-import { Button, MenuButton, type MenuItem } from '../ui';
+import { Button, Dialog, MenuButton, Select, TextField, type MenuItem } from '../ui';
+import { loadPlantEngine } from '../plant/ui/loadPlantEngine';
+import { useProjectSceneTexts, useProjectScenes } from '../plant/ui/usePlantSession';
 import { runCommand } from '../commands/bus';
 import type { CommandId } from '../commands/registry';
 import {
@@ -23,12 +25,15 @@ import { navigatorWords } from './navigatorWords';
 import { NewObjectButton } from './NewObjectMenu';
 import { GROUP_NEW_KIND, selectItem } from './navigatorRequests';
 import { openConfigEditorFromNavigator } from './openConfigEditor';
+import { addPlant, defaultPlantName, openPlant, plantItems, plantTemplates, type PlantGroupModel } from './plantGroup';
 
 interface ObjectNavigatorViewProps {
   groups: readonly NavigatorGroup[];
   collapsed: ReadonlySet<NavigatorGroupId>;
   onToggle: (id: NavigatorGroupId) => void;
   onOpen: (target: NavigatorTarget) => void;
+  /** The Plant group (PLS-011); absent while the project is not read. */
+  plant?: PlantGroupModel;
 }
 
 const ITEM_COMMANDS: ReadonlyArray<{ id: string; command: CommandId; key: MessageKey; destructive?: boolean }> = [
@@ -59,7 +64,116 @@ function ItemMenu({ item }: { item: NavigatorItem }) {
   );
 }
 
-export function ObjectNavigatorView({ groups, collapsed, onToggle, onOpen }: ObjectNavigatorViewProps) {
+/** "Add a plant": the templates and a name, then the plant is saved into the project and opened (SCN-016). */
+function AddPlant({ plant }: { plant: PlantGroupModel }) {
+  const { t } = useT();
+  const [open, setOpen] = useState(false);
+  const [template, setTemplate] = useState(plant.templates[0]?.value ?? '');
+  const [name, setName] = useState('');
+  const [error, setError] = useState<string | undefined>();
+  const field = useRef<HTMLInputElement>(null);
+  const close = () => setOpen(false);
+  const submit = async () => {
+    if (plant.existing.includes(name)) return setError(t('plant.panel.saveExists', { name }));
+    try {
+      await plant.onAdd(template, name);
+      close();
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : String(failure));
+    }
+  };
+  const choose = (value: string) => {
+    setTemplate(value);
+    setName(defaultPlantName(value, plant.existing));
+    setError(undefined);
+  };
+  return (
+    <>
+      <Button
+        size="sm"
+        onClick={() => {
+          choose(template);
+          setOpen(true);
+        }}
+      >
+        {t('plant.activity.add')}
+      </Button>
+      <Dialog
+        open={open}
+        onClose={close}
+        title={t('plant.activity.add')}
+        description={t('navigator.plant.hint')}
+        initialFocus={field}
+        footer={
+          <>
+            <Button variant="secondary" onClick={close}>
+              {t('plant.panel.saveCancel')}
+            </Button>
+            <Button onClick={() => void submit()}>{t('navigator.plant.create')}</Button>
+          </>
+        }
+      >
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            void submit();
+          }}
+        >
+          <Select label={t('navigator.plant.template')} value={template} onChange={(event) => choose(event.target.value)}>
+            {plant.templates.map((entry) => (
+              <option key={entry.value} value={entry.value}>
+                {entry.label}
+              </option>
+            ))}
+          </Select>
+          <TextField
+            ref={field}
+            label={t('plant.panel.saveName')}
+            value={name}
+            error={error}
+            onChange={(event) => {
+              setName(event.target.value);
+              setError(undefined);
+            }}
+          />
+        </form>
+      </Dialog>
+    </>
+  );
+}
+
+/** The Plant group: the scene and the plant map when the project has a plant, else the action that adds one. */
+function PlantSection({ plant }: { plant: PlantGroupModel }) {
+  const { t } = useT();
+  return (
+    <section data-navigator-group="plant">
+      <div className="px-2 py-1 font-medium">{t('navigator.group.plant')}</div>
+      {plant.items.length === 0 ? (
+        <div className="py-1 pl-8">
+          <AddPlant plant={plant} />
+        </div>
+      ) : (
+        <ul>
+          {plant.items.map((item) => (
+            <li key={item.key} className="flex items-center pr-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                data-navigator-item={item.key}
+                onClick={() => plant.onOpen(item.ref)}
+                className="h-auto min-w-0 flex-1 justify-start py-1 pl-8 pr-2 text-left"
+              >
+                <span className="truncate">{item.label ?? t('navigator.plant.map')}</span>
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+export function ObjectNavigatorView({ groups, collapsed, onToggle, onOpen, plant }: ObjectNavigatorViewProps) {
   const { t } = useT();
   return (
     <nav aria-label={t('navigator.region.label')} data-object-navigator className="h-full overflow-y-auto py-1 font-sans text-sm">
@@ -120,6 +234,7 @@ export function ObjectNavigatorView({ groups, collapsed, onToggle, onOpen }: Obj
           </section>
         );
       })}
+      {plant && <PlantSection plant={plant} />}
     </nav>
   );
 }
@@ -171,5 +286,27 @@ export function ObjectNavigator() {
     if (target.kind === 'source') void open(target.path, target.line, target.column);
     else openConfigEditorFromNavigator(target.editor);
   };
-  return <ObjectNavigatorView groups={groups} collapsed={collapsed} onToggle={toggle} onOpen={onOpen} />;
+  const handle = useIDEStore((state) => state.directoryHandle);
+  const rootScene = useProjectSceneTexts().scene !== undefined;
+  const scenes = useProjectScenes();
+  const plant = useMemo<PlantGroupModel | undefined>(
+    () =>
+      handle
+        ? {
+            items: plantItems(rootScene, scenes.names),
+            templates: plantTemplates(translator.t('plant.panel.emptyFloor'), translator.locale),
+            existing: scenes.names,
+            onOpen: openPlant,
+            onAdd: async (template, name) => {
+              await addPlant(handle, template, name, {
+                shippedScene: async (id) => (await loadPlantEngine()).shippedScene(id),
+                open: openPlant,
+              });
+              scenes.refresh();
+            },
+          }
+        : undefined,
+    [handle, rootScene, scenes, translator],
+  );
+  return <ObjectNavigatorView groups={groups} collapsed={collapsed} onToggle={toggle} onOpen={onOpen} plant={plant} />;
 }

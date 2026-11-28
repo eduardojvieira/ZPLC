@@ -8,6 +8,7 @@ export const u3PlantEn = {
   'command.plant.feedBoard': 'Feed the board from the plant',
   'shell.activity.plant': 'Plant',
   'command.view.showPlant': 'Show the plant',
+  'inspector.plantPart': 'Plant part',
   'plant.panel.sceneFile': 'Scene file',
   'plant.activity.empty': 'No plant is open',
   'plant.activity.emptyHint': 'Add a plant to see its parts and signals here.',
@@ -22,6 +23,11 @@ export const u3PlantEn = {
   'plant.activity.colDirection': 'Direction',
   'plant.activity.colBinding': 'Binding',
   'plant.activity.mismatch': 'Type mismatch: {point} is {found}, the signal is {type}',
+  'navigator.group.plant': 'Plant',
+  'navigator.plant.map': 'Plant map',
+  'navigator.plant.template': 'Starting template',
+  'navigator.plant.create': 'Add',
+  'navigator.plant.hint': 'Choose where the plant starts and give it a name. It is saved in this project and opens in the plant document.',
   'plant.panel.breaksAt': 'the text breaks at line {line}, column {column}',
 } as const;
 export const u3PlantEs: Record<keyof typeof u3PlantEn, string> = {
@@ -33,6 +39,7 @@ export const u3PlantEs: Record<keyof typeof u3PlantEn, string> = {
   'command.plant.feedBoard': 'Alimentar la placa desde la planta',
   'shell.activity.plant': 'Planta',
   'command.view.showPlant': 'Mostrar la planta',
+  'inspector.plantPart': 'Pieza de la planta',
   'plant.panel.sceneFile': 'Archivo de escena',
   'plant.activity.empty': 'No hay ninguna planta abierta',
   'plant.activity.emptyHint': 'Añada una planta para ver aquí sus piezas y señales.',
@@ -47,5 +54,11 @@ export const u3PlantEs: Record<keyof typeof u3PlantEn, string> = {
   'plant.activity.colDirection': 'Dirección',
   'plant.activity.colBinding': 'Vínculo',
   'plant.activity.mismatch': 'Tipo distinto: {point} es {found}, la señal es {type}',
+  'navigator.group.plant': 'Planta',
+  'navigator.plant.map': 'Mapa de la planta',
+  'navigator.plant.template': 'Plantilla de partida',
+  'navigator.plant.create': 'Añadir',
+  'navigator.plant.hint':
+    'Elija desde dónde parte la planta y póngale un nombre. Se guarda en este proyecto y se abre en el documento de la planta.',
   'plant.panel.breaksAt': 'el texto se interrumpe en la línea {line}, columna {column}',
 };

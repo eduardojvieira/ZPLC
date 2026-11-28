@@ -14,6 +14,7 @@ const { learnLessonCatalog } = await import('../learnLesson');
 const { LearnPanel } = await import('../LearnPanel');
 const { buildCourseView } = await import('../../learn/course');
 const { Guide } = await import('./Guide');
+const { GuideStages } = await import('./GuideStages');
 const { useAssistantEntry } = await import('../../store/useAssistantEntry');
 const { useAssistantProvider } = await import('../../shell/useSelection');
 
@@ -191,6 +192,44 @@ describe('The Guide (GDE-003)', () => {
   });
 });
 
+describe('With solutions hidden the last hint is hidden too (CRS-017)', () => {
+  const hintTexts = () =>
+    [...dom.screen.getByRole('region', { name: dom.t('learn.hints') }).querySelectorAll('details p')].map((p) => p.textContent);
+  const hide = (hideSolutions: boolean) =>
+    dom.patchStore(useAppSettings, { settings: { ...useAppSettings.getState().settings, hideSolutions } } as never);
+
+  it('CRS-017 hidden: every hint but the last, and the solutions-hidden notice', () => {
+    open();
+    hide(true);
+    dom.render(<Guide />);
+    expect(hintTexts()).toEqual(lesson.hints.slice(0, -1));
+    expect(document.querySelector('[data-learn-solutions-hidden]')).not.toBeNull();
+  });
+
+  it('CRS-017 shown: every hint, as before', () => {
+    open();
+    hide(false);
+    dom.render(<Guide />);
+    expect(hintTexts()).toEqual([...lesson.hints]);
+    expect(document.querySelector('[data-learn-solutions-hidden]')).toBeNull();
+  });
+
+  it('CRS-017 the assistant context gives the same hints as the Guide, in both states', async () => {
+    const { buildProjectContext } = await import('../../ai/projectContext');
+    const context = (solutionsHidden: boolean) =>
+      buildProjectContext({ lesson: { manifest: lessonEntry, text: lessonEntry.text.en } }, { solutionsHidden }).lesson!.hints.map(
+        (hint) => hint.text,
+      );
+    for (const hidden of [true, false]) {
+      open();
+      hide(hidden);
+      const { unmount } = dom.render(<Guide />);
+      expect(hintTexts()).toEqual(context(hidden));
+      unmount();
+    }
+  });
+});
+
 describe('The Guide asks the Assistant for a hint (AIX-003)', () => {
   it('AIX-003 the hint button opens the Assistant in ask mode with the lesson, and is not offered without a provider', async () => {
     open();
@@ -360,5 +399,136 @@ describe('Check is one action from the Guide (GDE-004)', () => {
     const text = document.querySelector('[data-learn-failures]')!.textContent!;
     expect(text).toContain(fact);
     expect(text).toContain(`${failed.failedAssertions[0]!.atMs} ms`);
+  });
+
+  describe('the Windows limit of the simulator communication (known limit of 2.1.0)', () => {
+    const COMM = 'modbus-coil-fbd';
+    const NO_COMM = lesson.id;
+    function openOn(platform: string, id: string) {
+      open();
+      host.electronAPI = { ...host.electronAPI, platform };
+      dom.patchStore(useLearnUi, { selected: id, workspace: { lessonId: id, session: useIDEStore.getState().projectSession } } as never);
+      dom.render(<Guide />);
+    }
+    it('shows the notice on win32 for a lesson that needs Modbus, MQTT, the loopback or the device link', () => {
+      openOn('win32', COMM);
+      const notice = document.querySelector('[data-guide-comm-limit]');
+      expect(notice).not.toBeNull();
+      expect(notice!.textContent).toContain('Windows');
+    });
+    it.each(['linux', 'darwin'])('does not show the notice on %s for that lesson', (platform) => {
+      openOn(platform, COMM);
+      expect(document.querySelector('[data-guide-comm-limit]')).toBeNull();
+    });
+    it('does not show the notice on win32 for a lesson that needs no communication', () => {
+      openOn('win32', NO_COMM);
+      expect(document.querySelector('[data-guide-comm-limit]')).toBeNull();
+    });
+  });
+});
+
+describe('Reflect is listed but locked until a pass or the solution (CRS-017)', () => {
+  const last = lesson.stages.length;
+  const reflect = () => dom.screen.getByRole('button', { name: new RegExp(`^${dom.t('u3Guide.jump', { n: last })}`) }) as HTMLButtonElement;
+  const text = () => dom.t('u3Guide.reflectLocked');
+  const title = () => document.querySelector('[data-guide-stage] h3')!.textContent;
+  const reflectTitle = lesson.stages[last - 1]!.title;
+
+  it('CRS-017 locked with no pass and no solution: the list says what opens it; jump and Next refuse it', async () => {
+    open();
+    const { user } = dom.render(<Guide />);
+    expect(reflect().getAttribute('aria-disabled')).toBe('true');
+    expect(reflect().textContent).toContain(dom.t('u3Guide.locked'));
+    expect(document.getElementById(reflect().getAttribute('aria-describedby')!)!.textContent).toBe(text());
+    reflect().focus();
+    expect(document.activeElement).toBe(reflect());
+    await user.click(reflect());
+    expect(title()).toBe(lesson.stages[0]!.title);
+    const next = dom.screen.getByRole('button', { name: dom.t('u3Guide.next') }) as HTMLButtonElement;
+    for (let i = 0; i < last + 2; i++) if (!next.disabled) await user.click(next);
+    expect(title()).toBe(lesson.stages[last - 2]!.title);
+    expect(next.disabled).toBe(true);
+    expect(dom.screen.queryByText(reflectTitle, { selector: 'h3' })).toBeNull();
+  });
+
+  it('CRS-017 opens after a pass, in the same session and after a remount', async () => {
+    open();
+    const first = dom.render(<Guide />);
+    expect(reflect().getAttribute('aria-disabled')).toBe('true');
+    passed(lesson.id);
+    await dom.waitFor(() => expect(reflect().getAttribute('aria-disabled')).toBeNull());
+    await first.user.click(reflect());
+    expect(title()).toBe(reflectTitle);
+    first.unmount();
+    dom.render(<Guide />);
+    expect(reflect().getAttribute('aria-disabled')).toBeNull();
+  });
+
+  it('CRS-017 opens after choosing to see the solution, and stays open after a remount', async () => {
+    open();
+    const first = dom.render(<Guide />);
+    expect(reflect().getAttribute('aria-disabled')).toBe('true');
+    await first.user.click(dom.screen.getByRole('button', { name: dom.t('u3Guide.solution') }));
+    await first.user.click(dom.screen.getByRole('button', { name: dom.t('learn.solution.action') }));
+    await dom.waitFor(() => expect(reflect().getAttribute('aria-disabled')).toBeNull());
+    await first.user.click(reflect());
+    expect(title()).toBe(reflectTitle);
+    dom.patchStore(useLearnProgress, {
+      document: {
+        schemaVersion: 2,
+        last: null,
+        lessons: {
+          [lesson.id]: {
+            state: 'started',
+            grade: null,
+            passedAt: null,
+            startedAt: null,
+            hintsShown: [],
+            solutionShown: true,
+            hardware: null,
+          },
+        },
+      },
+    } as never);
+    first.unmount();
+    dom.render(<Guide />);
+    expect(reflect().getAttribute('aria-disabled')).toBeNull();
+  });
+});
+
+describe('Reflect is found by its stage key (CRS-017)', () => {
+  const stage = (key: string) => ({ key, title: `T-${key}`, body: `B-${key}`, checkpoint: `C-${key}` });
+  const jump = (n: number) => dom.screen.getByRole('button', { name: new RegExp(`^${dom.t('u3Guide.jump', { n })}`) }) as HTMLButtonElement;
+  const title = () => document.querySelector('[data-guide-stage] h3')!.textContent;
+
+  it('CRS-017 a stage after Reflect: only Reflect is locked; Next stops before it and the later stage is jumpable', async () => {
+    const stages = ['objective', 'reflect', 'extra'].map(stage);
+    const { user } = dom.render(<GuideStages stages={stages} reflectOpen={false} />);
+    expect(jump(1).getAttribute('aria-disabled')).toBeNull();
+    expect(jump(2).getAttribute('aria-disabled')).toBe('true');
+    expect(jump(3).getAttribute('aria-disabled')).toBeNull();
+    const next = dom.screen.getByRole('button', { name: dom.t('u3Guide.next') }) as HTMLButtonElement;
+    expect(next.disabled).toBe(true);
+    await user.click(jump(3));
+    expect(title()).toBe('T-extra');
+    const back = dom.screen.getByRole('button', { name: dom.t('u3Guide.back') }) as HTMLButtonElement;
+    await user.click(back);
+    expect(title()).toBe('T-objective');
+  });
+
+  it('CRS-017 with Reflect open, Next walks through Reflect to the later stage', async () => {
+    const stages = ['objective', 'reflect', 'extra'].map(stage);
+    const { user } = dom.render(<GuideStages stages={stages} reflectOpen />);
+    const next = dom.screen.getByRole('button', { name: dom.t('u3Guide.next') });
+    await user.click(next);
+    expect(title()).toBe('T-reflect');
+    await user.click(next);
+    expect(title()).toBe('T-extra');
+  });
+
+  it('CRS-017 a lesson without Reflect locks nothing', () => {
+    dom.render(<GuideStages stages={['objective', 'run'].map(stage)} reflectOpen={false} />);
+    expect(document.querySelector('[data-guide-stage-locked]')).toBeNull();
+    expect(jump(2).getAttribute('aria-disabled')).toBeNull();
   });
 });

@@ -2414,6 +2414,7 @@
   ],
   "UX-009": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/DebugWatchPanel.dom.test.tsx","test":"Watch and force (CMP-054, IDE-019, UX-009) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/DebugWatchPanel.test.tsx","test":"One owner per input in the Watch tab (PLS-007, LNK-006, UX-009)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 does not call a transition forced because a word of its condition is a keyword or a literal"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 draws a diagram nobody forces and the poll read completely with no forced or fault cue"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 draws the faulted pin of a timer red with a triangle and the word FAULT, and its Q as it was"},
@@ -2701,6 +2702,7 @@
   ],
   "UX-023": [
     {"kind":"unit","ref":"packages/zplc-ide/src/App.dom.test.tsx","test":"App root sizing (UX-023)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"the lesson layout and the flag (UX-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/shell/ActivityRail.test.tsx","test":"UX-023 shows the labels in the regular shell and only the icons in the compact one"},
     {"kind":"unit","ref":"packages/zplc-ide/src/shell/WorkbenchShell.dom.test.tsx","test":"WorkbenchShell initial sidebar state (UX-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/shell/shellRouting.test.ts","test":"UX-023 is compact at the 1024 pixel minimum and up to the limit, and regular at 1366"},
@@ -3017,6 +3019,7 @@
     {"kind":"unit","ref":"tools/docs/generate_hardware_pages.test.ts","test":"LRN-016 every wiring page states the voltage limit, in English and in Spanish"}
   ],
   "LRN-017": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/Faceplate.test.tsx","test":"LRN-017 an input not read yet cannot be switched or held: a click would set TRUE whatever it holds"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/Faceplate.test.tsx","test":"the live I/O faceplate (LRN-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"has no tool that sets a simulation input or writes memory: the faceplate is the person's control, not the agent's (LRN-017, "},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/faceplateState.test.ts","test":"a push button on the faceplate (LRN-017)"},
@@ -3269,6 +3272,7 @@
   ],
   "LRN-039": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 Back to course closes the view and opens the Learn home, never both at once"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 Escape closes the page and gives the focus back to the Guide"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 Escape does what Practice does"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 Practice closes the view and moves the focus to the lesson panel"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 a lesson without a reading page opens as before: the workspace, the lesson panel and no reading view"},
@@ -3278,7 +3282,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 starting a lesson with a reading page shows it full screen: module, title as h1, time and the page"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 the lesson panel offers Read again, which reopens the page"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"the reading view (LRN-039)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnContent.v1.test.ts","test":"the reading page in the Learn content (LRN-039)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnContent.v1.test.ts","test":"the reading page in the Learn content (LRN-039)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/shell/WorkbenchShell.dom.test.tsx","test":"LRN-039 the focus goes back to the Guide once the workbench has left inert, not while it is still inert"}
   ],
   "LRN-040": [
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/reading/ReadingPage.dom.test.tsx","test":"reading page rendering (LRN-040)"},
