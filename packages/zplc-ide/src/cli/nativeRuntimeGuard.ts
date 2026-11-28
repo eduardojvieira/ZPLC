@@ -58,3 +58,10 @@ export const itNativeLoopback = (
             })
         : it.skip
 ) as ReturnType<typeof it.skipIf>;
+
+/**
+ * A case that a platform cannot run, with the reason, by id. The test is registered as a skip whose name carries the reason
+ * (visible in the report, like the loopback skip above), never silently; every other platform runs it (VF-023).
+ */
+export const platformLimit = (limits: Record<string, string>, id: string, platform: string = process.platform): string | undefined =>
+  platform === 'win32' ? limits[id] : undefined;

@@ -5,7 +5,7 @@ import { join } from 'node:path';
 
 import { VOSEO_MARKERS } from '../../../../tools/ci/i18n-guard';
 import { starterMayBeUngraded } from '../../../../tools/ci/scene-lessons';
-import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
+import { itNative, nativeRuntimeBinary, platformLimit } from '../cli/nativeRuntimeGuard';
 import { lessonCheck } from './lessonCheck';
 import { citedFiles, canonicalJson, expandText, textShape, type LessonProgramCheck } from './lessonPackage';
 import { PROJECTS_DIRECTORY, loadLessonPackages, validateCourse, type LessonPackage } from './lessonPackageFiles';
@@ -22,6 +22,17 @@ import { PROJECTS_DIRECTORY, loadLessonPackages, validateCourse, type LessonPack
  */
 
 const loaded = loadLessonPackages();
+/**
+ * The lessons that a Windows simulator cannot grade: it has no Modbus, MQTT, loopback or device link (firmware/lib/zplc_core/
+ * CMakeLists.txt, if(NOT WIN32)), so their passing programs get 2 of 6 assertions there. The Guide of each lesson says so. On
+ * those lessons the "PASSES" cases are registered as skips that carry this reason; Linux and macOS run them.
+ */
+const NO_COMMUNICATION_ON_WINDOWS = Object.fromEntries(
+  ['modbus-coil-fbd', 'modbus-register-round-trip', 'mqtt-publish-subscribe'].map((id) => [
+    id,
+    'known limit on win32: the Windows simulator has no Modbus, MQTT, loopback or device link',
+  ]),
+);
 /**
  * CI runs this file in parts (tools/ci/test-shards.ts): ZPLC_LESSON_PART=i/n keeps every n-th lesson package from the i-th,
  * and part 1 also keeps the two describes that belong to no lesson. Without the variable (or with it empty) every case runs.
@@ -115,6 +126,11 @@ if (part === 1) {
   });
 
   describe('lesson packages (LRN-009, LRN-010, LRN-027)', () => {
+    it('registers a Windows known limit only for lessons that exist', () => {
+      const ids = new Set(loaded.packages.map(({ id }) => id));
+      expect(Object.keys(NO_COMMUNICATION_ON_WINDOWS).filter((id) => !ids.has(id))).toEqual([]);
+    });
+
     it('are all valid, and form one course', () => {
       expect(loaded.problems).toEqual([]);
       expect(validateCourse(loaded.packages)).toEqual([]);
@@ -125,6 +141,11 @@ if (part === 1) {
 
 for (const lesson of packages) {
   const { manifest, scenario, checks } = lesson;
+  const limit = platformLimit(NO_COMMUNICATION_ON_WINDOWS, lesson.id);
+  /** A case that needs the communication peers: a skip named with its reason where the platform has none. */
+  const itPeers = (limit
+    ? (name: string, ...rest: unknown[]) => (it.skip as (...args: unknown[]) => unknown)(`${name} (${limit})`, ...rest)
+    : itNative) as typeof itNative;
   const starterRoot = join(PROJECTS_DIRECTORY, manifest.starter.project);
 
   describe(`lesson ${manifest.id} (LRN-025)`, () => {
@@ -224,7 +245,7 @@ for (const lesson of packages) {
       LOADED_NATIVE_MS,
     );
 
-    itNative(
+    itPeers(
       `reference solution (${manifest.solution.project}/${manifest.solution.program}) PASSES the reference scenario`,
       async () => {
         const root = scratchStarter(lesson);
@@ -246,7 +267,7 @@ for (const lesson of packages) {
     );
 
     for (const { intent, ...check } of checks?.alsoGreen ?? []) {
-      itNative(
+      itPeers(
         `another correct solution (${intent}) also PASSES`,
         async () => {
           const root = scratchStarter(lesson);
