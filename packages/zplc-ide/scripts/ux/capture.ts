@@ -472,6 +472,14 @@ async function captureCondition(
       previous = data;
       await Bun.sleep(attempt < 10 ? 250 : 500);
     }
+    if (!(await app.eval<boolean>(canvasShows(data)))) {
+      const facts = await app.eval<string>(
+        `JSON.stringify([...document.querySelectorAll('[data-plant-canvas]')].map((c) => [c.tagName, c.width, c.height, ` +
+          `JSON.stringify(c.getBoundingClientRect())]))`,
+      );
+      const logged = app.errors.slice(-3).join(' | ').slice(0, 600);
+      throw new Error(`the 3D canvas never showed the scene in the picture of ${name}: ${facts} ${logged}`);
+    }
     writeFileSync(join(out, `${name}.png`), Buffer.from(data, 'base64'));
     const page = await collect(false);
     const textOutOfBox = await app.eval<string[]>(`(${findTextOutOfBox.toString()})(${JSON.stringify(strips)})`);
@@ -556,7 +564,9 @@ async function captureCondition(
     // the plans that start a lesson replace the project, so they come after every other surface
     const ordered = plans.filter((candidate) => candidate.surface.id !== 'shell.welcome');
     ordered.sort((a, b) => Number(Boolean(a.lesson)) - Number(Boolean(b.lesson)));
-    for (const plan of ordered) {
+    const triedAgain = new Set<Plan>();
+    for (let index = 0; index < ordered.length; index++) {
+      const plan = ordered[index]!;
       if (!conditionsFor(plan.surface).some((c) => conditionName(c) === conditionName(condition))) continue;
       try {
         if (plan.lesson) {
@@ -601,6 +611,15 @@ async function captureCondition(
         await takeIfShowing(plan);
       } catch (error) {
         const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
+        // the 3D renderer sometimes never starts on the first mount; a person would reopen the view, so the surface is tried once more
+        if (message.startsWith('the 3D canvas') && !triedAgain.has(plan)) {
+          triedAgain.add(plan);
+          const note = `${conditionName(condition)}: the 3D view of ${plan.surface.id} did not start; it was opened again once`;
+          notes.push(note);
+          console.log(note);
+          index--;
+          continue;
+        }
         failed.push({ surface: plan.surface.id, reason: `${plan.command ?? plan.open ?? 'the open workbench'}: ${message}` });
       }
     }
