@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { chordEvent, shortcutName, shortcutText, selectOption } from './journeyKeys';
+import { chordEvent, shortcutName, shortcutText, selectOption, chooseByKeys } from './journeyKeys';
 
 for (const platform of ['linux', 'win32'] as const) {
   test(`on ${platform} Ctrl is the Control modifier (2)`, () => {
@@ -48,8 +48,8 @@ test('the shortcut reference shows Mod+S as Ctrl+S, or ⌘S on macOS', () => {
   expect(shortcutText('Mod+S', 'darwin')).toBe('⌘S');
 });
 
-/** A native select as it behaves on macOS: the arrow keys open its popup and choose nothing. */
-function macSelect(labels: string[]) {
+/** A native select; `arrows` says whether the arrow keys move it (linux, win32) or only open its popup (macOS). */
+function fakeSelect(labels: string[], arrows: boolean) {
   const events: string[] = [];
   const select = {
     options: labels.map((textContent) => ({ textContent })),
@@ -58,29 +58,73 @@ function macSelect(labels: string[]) {
     dispatchEvent: (event: { type: string }) => void events.push(event.type),
   };
   const pressed: string[] = [];
+  const notes: string[] = [];
   const app = {
     eval: async (expression: string) =>
       new Function('document', 'Event', `return ${expression}`)(
-        { querySelector: () => select },
+        { querySelector: () => select, activeElement: select },
         class {
           constructor(public type: string) {}
         },
       ),
     until: async (_what: string, check: () => Promise<unknown>) => check(),
-    press: async (chord: string) => void pressed.push(chord),
+    press: async (chord: string) => {
+      pressed.push(chord);
+      if (arrows) select.selectedIndex += chord === 'ArrowDown' ? 1 : -1;
+    },
+    note: (text: string) => void notes.push(text),
   };
-  return { app, select, events, pressed };
+  return { app, select, events, pressed, notes };
 }
 
-test('selectOption sets the option through the element on every platform, without the arrow keys', async () => {
-  const { app, select, events, pressed } = macSelect(['', 'High contrast', 'Dark']);
-  await selectOption(app as never, '#theme', 'Dark');
+for (const platform of ['linux', 'win32'] as const) {
+  test(`on ${platform} selectOption walks the select with the arrow keys and sets nothing through the element`, async () => {
+    const { app, select, events, pressed } = fakeSelect(['', 'High contrast', 'Dark'], true);
+    await selectOption(app as never, '#theme', 'Dark', platform);
+    expect(pressed).toEqual(['ArrowDown', 'ArrowDown']);
+    expect(select.selectedIndex).toBe(2);
+    expect(events).toEqual([]);
+  });
+
+  test(`on ${platform} chooseByKeys sends the journey's own keys and says nothing`, async () => {
+    const { app, select, events, pressed, notes } = fakeSelect(['', 'a', 'b'], true);
+    await chooseByKeys(
+      app as never,
+      'document.activeElement',
+      2,
+      async () => {
+        await app.press('ArrowDown');
+        await app.press('ArrowDown');
+      },
+      platform,
+    );
+    expect(pressed).toEqual(['ArrowDown', 'ArrowDown']);
+    expect(select.selectedIndex).toBe(2);
+    expect(events).toEqual([]);
+    expect(notes).toEqual([]);
+  });
+}
+
+test('on darwin selectOption sets the option through the element without the arrow keys', async () => {
+  const { app, select, events, pressed } = fakeSelect(['', 'High contrast', 'Dark'], false);
+  await selectOption(app as never, '#theme', 'Dark', 'darwin');
   expect(select.selectedIndex).toBe(2);
   expect(events).toEqual(['input', 'change']);
   expect(pressed).toEqual([]);
 });
 
+test('on darwin chooseByKeys sets the option through the element, sends no key and says once that the keyboard was not measured', async () => {
+  const { app, select, events, pressed, notes } = fakeSelect(['', 'a', 'b'], false);
+  const keys = async () => void (await app.press('ArrowDown'));
+  await chooseByKeys(app as never, 'document.activeElement', 2, keys, 'darwin');
+  await chooseByKeys(app as never, 'document.activeElement', 1, keys, 'darwin');
+  expect(select.selectedIndex).toBe(1);
+  expect(events).toEqual(['input', 'change', 'input', 'change']);
+  expect(pressed).toEqual([]);
+  expect(notes).toEqual(['keyboard choosing of a native select is not measured on macOS']);
+});
+
 test('selectOption names the offered options when the label is not among them', async () => {
-  const { app } = macSelect(['', 'Dark']);
-  await expect(selectOption(app as never, '#theme', 'Light')).rejects.toThrow('#theme offers ["","Dark"], not Light');
+  const { app } = fakeSelect(['', 'Dark'], false);
+  await expect(selectOption(app as never, '#theme', 'Light', 'linux')).rejects.toThrow('#theme offers ["","Dark"], not Light');
 });
