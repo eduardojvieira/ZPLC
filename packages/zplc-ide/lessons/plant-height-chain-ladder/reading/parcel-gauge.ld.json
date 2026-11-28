@@ -1,0 +1,506 @@
+{
+  "name": "ParcelGauge",
+  "description": "A parcel gauge: two beams measure the height, an exit eye picks the lane, and the memories are cleared when the parcel has left.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "GaugeLow",
+        "type": "BOOL",
+        "comment": "Low beam: TRUE while a parcel is in it"
+      },
+      {
+        "name": "GaugeHigh",
+        "type": "BOOL",
+        "comment": "High beam: TRUE while a parcel is in it"
+      },
+      {
+        "name": "ExitEye",
+        "type": "BOOL",
+        "comment": "Exit eye: TRUE while a parcel stands at the exit"
+      },
+      {
+        "name": "SawLow",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "Memory: the parcel broke the low beam"
+      },
+      {
+        "name": "SawHigh",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "Memory: the parcel broke the high beam"
+      }
+    ],
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "ToFlat",
+        "type": "BOOL",
+        "comment": "Flat lane"
+      },
+      {
+        "name": "ToStandard",
+        "type": "BOOL",
+        "comment": "Standard lane"
+      },
+      {
+        "name": "ToBulky",
+        "type": "BOOL",
+        "comment": "Bulky lane"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "The low gauge beam sets its memory and the memory stays set.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "contact_no_GaugeLow_10",
+              "type": "contact_no",
+              "variable": "GaugeLow",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_set_SawLow_17",
+              "type": "coil_set",
+              "variable": "SawLow",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "The high gauge beam sets its memory and the memory stays set.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "contact_no_GaugeHigh_20",
+              "type": "contact_no",
+              "variable": "GaugeHigh",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_set_SawHigh_27",
+              "type": "coil_set",
+              "variable": "SawHigh",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "At the exit, a parcel that broke the high beam goes to the bulky lane.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "contact_no_ExitEye_30",
+              "type": "contact_no",
+              "variable": "ExitEye",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "contact_no_SawHigh_31",
+              "type": "contact_no",
+              "variable": "SawHigh",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_ToBulky_37",
+              "type": "coil",
+              "variable": "ToBulky",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_4",
+      "number": 4,
+      "comment": "At the exit, a parcel that broke only the low beam goes to the standard lane.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "contact_no_ExitEye_40",
+              "type": "contact_no",
+              "variable": "ExitEye",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "contact_no_SawLow_41",
+              "type": "contact_no",
+              "variable": "SawLow",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "contact_nc_SawHigh_42",
+              "type": "contact_nc",
+              "variable": "SawHigh",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_ToStandard_47",
+              "type": "coil",
+              "variable": "ToStandard",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_5",
+      "number": 5,
+      "comment": "At the exit, a parcel that broke neither beam goes to the flat lane.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "contact_no_ExitEye_50",
+              "type": "contact_no",
+              "variable": "ExitEye",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "contact_nc_SawLow_51",
+              "type": "contact_nc",
+              "variable": "SawLow",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_ToFlat_57",
+              "type": "coil",
+              "variable": "ToFlat",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_6",
+      "number": 6,
+      "comment": "When the parcel has left the exit, the low memory is cleared.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "contact_n_ExitEye_60",
+              "type": "contact_n",
+              "variable": "ExitEye",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_reset_SawLow_67",
+              "type": "coil_reset",
+              "variable": "SawLow",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_7",
+      "number": 7,
+      "comment": "When the parcel has left the exit, the high memory is cleared.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "contact_n_ExitEye_70",
+              "type": "contact_n",
+              "variable": "ExitEye",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_reset_SawHigh_77",
+              "type": "coil_reset",
+              "variable": "SawHigh",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-28",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
