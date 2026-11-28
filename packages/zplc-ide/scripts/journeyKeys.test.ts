@@ -113,7 +113,7 @@ test('on darwin selectOption sets the option through the element without the arr
   expect(pressed).toEqual([]);
 });
 
-test('on darwin chooseByKeys sets the option through the element, sends no key and says once that the keyboard was not measured', async () => {
+test('on darwin chooseByKeys sets the option through the element, sends no key and says so once', async () => {
   const { app, select, events, pressed, notes } = fakeSelect(['', 'a', 'b'], false);
   const keys = async () => void (await app.press('ArrowDown'));
   await chooseByKeys(app as never, 'document.activeElement', 2, keys, 'darwin');
