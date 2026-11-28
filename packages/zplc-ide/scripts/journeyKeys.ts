@@ -47,8 +47,8 @@ export function shortcutName(label: string, shortcut: string, platform: NodeJS.P
 }
 
 /**
- * Chooses the option at `index` of the native select the expression `element` yields. The arrow keys cannot do it: on macOS they open the
- * popup of a closed select and choose nothing. The element is set and told the way a choice from the popup tells React.
+ * Chooses the option at `index` of the native select the expression `element` yields, through the element: it is set and told the way a
+ * choice from the popup tells React.
  */
 export async function setSelectIndex(app: Pick<App, 'eval'>, element: string, index: number): Promise<void> {
   await app.eval(
@@ -57,16 +57,55 @@ export async function setSelectIndex(app: Pick<App, 'eval'>, element: string, in
   );
 }
 
-/** Chooses the option with this text in the native select; fails when the select does not offer it or does not end on it. */
-export async function selectOption(app: Pick<App, 'eval' | 'until'>, selector: string, label: string): Promise<void> {
+export const KEYBOARD_CHOOSING_NOT_MEASURED = 'keyboard choosing of a native select is not measured on macOS';
+const told = new WeakSet<object>();
+
+/**
+ * Chooses an option of a native select by keyboard. `pressKeys` is the key presses the journey has always sent, and they are what
+ * linux and win32 get. On macOS the arrow keys, End and Home only open the popup of a closed select, so the option is set through the
+ * element instead, and the journey says once that the keyboard choosing was not measured there.
+ */
+export async function chooseByKeys(
+  app: Pick<App, 'eval'> & Partial<Pick<App, 'note'>>,
+  element: string,
+  index: number,
+  pressKeys: () => Promise<void>,
+  platform: NodeJS.Platform = process.platform,
+): Promise<void> {
+  if (platform !== 'darwin') return pressKeys();
+  await setSelectIndex(app, element, index);
+  if (!told.has(app)) {
+    told.add(app);
+    app.note?.(KEYBOARD_CHOOSING_NOT_MEASURED);
+    console.log(KEYBOARD_CHOOSING_NOT_MEASURED);
+  }
+}
+
+/**
+ * Chooses the option with this text in the native select; fails when the select does not offer it or does not end on it. On linux and
+ * win32 it walks the select with the arrow keys, as a keyboard user would; on macOS it sets the option through the element.
+ */
+export async function selectOption(
+  app: Pick<App, 'eval' | 'until' | 'press'>,
+  selector: string,
+  label: string,
+  platform: NodeJS.Platform = process.platform,
+): Promise<void> {
   const element = `document.querySelector(${JSON.stringify(selector)})`;
   const state = () =>
     app.eval<{ labels: string[]; index: number }>(
       `(() => { const select = ${element}; return { labels: [...select.options].map((option) => option.textContent), ` +
         `index: select.selectedIndex }; })()`,
     );
-  const wanted = (await state()).labels.indexOf(label);
-  if (wanted < 0) throw new Error(`${selector} offers ${JSON.stringify((await state()).labels)}, not ${label}`);
-  await setSelectIndex(app, element, wanted);
+  const { labels, index } = await state();
+  const wanted = labels.indexOf(label);
+  if (wanted < 0) throw new Error(`${selector} offers ${JSON.stringify(labels)}, not ${label}`);
+  if (platform === 'darwin') await setSelectIndex(app, element, wanted);
+  else {
+    await app.eval(`${element}.focus()`);
+    for (let step = 0; step < Math.abs(wanted - index); step++) await app.press(wanted > index ? 'ArrowDown' : 'ArrowUp');
+    // a select that did not move with the keys is set through the element, as before
+    if ((await state()).index !== wanted) await setSelectIndex(app, element, wanted);
+  }
   await app.until(`${selector} to show ${label}`, async () => (await state()).index === wanted || undefined);
 }

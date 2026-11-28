@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { assert, packageRoot } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
-import { pressMod, setSelectIndex } from '../journeyKeys';
+import { chooseByKeys, pressMod } from '../journeyKeys';
 import type { Journey } from '../journeys';
 import { LESSON_INDEX } from '../../src/generated/lessonIndex';
 import { courseOrder } from '../../src/learn/course';
@@ -60,7 +60,9 @@ async function addPart(app: App, how: How, name: string): Promise<void> {
   const at = await app.eval<number>(
     `[...${control('Part to add')}.options].findIndex((option) => option.textContent === ${JSON.stringify(name)})`,
   );
-  if (at >= 0) await setSelectIndex(app, control('Part to add'), at);
+  await chooseByKeys(app, control('Part to add'), at, async () => {
+    for (let i = 0; i < 12 && (await app.eval<string>(selected)) !== name; i++) await app.press('ArrowDown');
+  });
   assert((await app.eval<string>(selected)) === name, `The catalogue select cannot be set to "${name}".`);
   await activate(app, how, button('Add part'), 'Add part');
   await app.until(`${name} in the parts of the scene`, async () => (await parts(app)).length === before + 1 || undefined);

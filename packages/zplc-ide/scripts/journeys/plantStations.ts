@@ -8,7 +8,7 @@
 import { join } from 'node:path';
 import { assert } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
-import { setSelectIndex } from '../journeyKeys';
+import { chooseByKeys } from '../journeyKeys';
 import type { Journey } from '../journeys';
 import { holdPushButton, openPlantDocument, plantFacts, runInSimulation, shippedSceneProject, writeSceneProject } from './plantSupport';
 import { pause } from '../journeyTiming';
@@ -73,16 +73,18 @@ export const journeysStations: Journey[] = [
       await runInSimulation(app);
       await holdPushButton(app, 'StartButton', 'keyboard');
       await untilFacts(app, 'a box to be delivered', async () => delivered(await plantFacts(app)) >= 1, 120_000);
-      // Tab from the first control of the panel to the fault select of lift A; choosing only sets the select
+      // Tab from the first control of the panel to the fault select of lift A; the arrow keys only choose
       await app.eval(`document.querySelector('${OPERATE}').querySelector('[data-plant-press]').focus()`);
       await leaveEditor(app);
       await tabTo(app, 'data-plant-fault', 'LiftA');
       const options = await app.eval<string[]>(`[...document.activeElement.options].map((o) => o.value)`);
       const target = options.indexOf('levelStuckOff');
       assert(target > 0, `The fault select of lift A offers ${JSON.stringify(options)}, no levelStuckOff.`);
-      await setSelectIndex(app, 'document.activeElement', target);
+      await chooseByKeys(app, 'document.activeElement', target, async () => {
+        for (let step = 0; step < target; step++) await app.press('ArrowDown');
+      });
       const chosen = await app.eval<string>(`document.activeElement.value`);
-      assert(chosen === 'levelStuckOff', `The select did not take "${chosen}", not levelStuckOff.`);
+      assert(chosen === 'levelStuckOff', `The arrow keys chose "${chosen}", not levelStuckOff.`);
       await app.press('Tab');
       assert(await activeIs(app, 'data-plant-fault-trigger', 'LiftA'), 'Tab from the select did not reach the LiftA trigger button.');
       await app.press('Enter');

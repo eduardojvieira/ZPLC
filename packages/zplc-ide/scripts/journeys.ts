@@ -43,7 +43,7 @@ import { journeysStations } from './journeys/plantStations';
 import { journeysCourse } from './journeys/plantCourse';
 import { journeysOperator } from './journeys/plantOperator';
 import { pause } from './journeyTiming';
-import { pressMod, selectOption, setSelectIndex, shortcutName, shortcutText } from './journeyKeys';
+import { chooseByKeys, pressMod, selectOption, shortcutName, shortcutText } from './journeyKeys';
 
 export interface JourneyContext {
   root: string;
@@ -2374,8 +2374,7 @@ export const JOURNEYS: Journey[] = [
         ).join('|') === 'Light|Dark|High contrast',
         'The theme control does not offer Light, Dark and High contrast.',
       );
-      // The select takes focus as a keyboard user leaves it (the key table of the journeys has none); the choices are set through the
-      // element, because the arrow keys, End and Home only open the popup of a closed select on macOS.
+      // A keyboard user reaches the select with Tab (the key table of the journeys has none), then picks with End, ArrowUp and Home.
       await app.eval(`document.querySelector('select[data-theme-control]').focus()`);
       assert(
         await app.eval<boolean>(
@@ -2385,11 +2384,11 @@ export const JOURNEYS: Journey[] = [
         'The theme control shows no focus ring.',
       );
       const theme = () => app.eval<string>(`document.documentElement.getAttribute('data-theme')`);
-      await setSelectIndex(app, `document.querySelector('select[data-theme-control]')`, 2);
+      await chooseByKeys(app, `document.querySelector('select[data-theme-control]')`, 2, () => app.press('End'));
       await app.until('High contrast to apply', async () => (await theme()) === 'high-contrast' || undefined);
-      await setSelectIndex(app, `document.querySelector('select[data-theme-control]')`, 1);
+      await chooseByKeys(app, `document.querySelector('select[data-theme-control]')`, 1, () => app.press('ArrowUp'));
       await app.until('Dark to apply', async () => (await theme()) === 'dark' || undefined);
-      await setSelectIndex(app, `document.querySelector('select[data-theme-control]')`, 0);
+      await chooseByKeys(app, `document.querySelector('select[data-theme-control]')`, 0, () => app.press('Home'));
       await app.until('Light to apply', async () => (await theme()) === 'light' || undefined);
       assert(
         (await app.eval<string>(`document.querySelector('select[data-theme-control]').value`)) === 'light',
@@ -3217,7 +3216,10 @@ export const JOURNEYS: Journey[] = [
       await app.eval(`document.getElementById('entry-folder').focus()`);
       const folders = await app.eval<string[]>(`[...document.getElementById('entry-folder').options].map((option) => option.value)`);
       assert(folders.includes('src/drivers'), `The move dialog does not offer the new folder: ${JSON.stringify(folders)}`);
-      await setSelectIndex(app, `document.getElementById('entry-folder')`, folders.indexOf('src/drivers'));
+      const current = await app.eval<number>(`document.getElementById('entry-folder').selectedIndex`);
+      await chooseByKeys(app, `document.getElementById('entry-folder')`, folders.indexOf('src/drivers'), async () => {
+        for (let step = 0; step < folders.indexOf('src/drivers') - current; step++) await app.press('ArrowDown');
+      });
       await app.click(button('Move'));
       await app.until('the copy in the folder', async () => (await app.visible(node('src/drivers/Drive_copy.st', 'file'))) || undefined);
       assert(
@@ -4889,7 +4891,10 @@ export const JOURNEYS: Journey[] = [
       const folders = await app.eval<string[]>(`[...document.getElementById('library-folder').options].map((option) => option.value)`);
       const at = folders.indexOf('lib');
       assert(at >= 0, `The dialog does not offer the folder: ${JSON.stringify(folders)}`);
-      await setSelectIndex(app, `document.getElementById('library-folder')`, at);
+      const current = await app.eval<number>(`document.getElementById('library-folder').selectedIndex`);
+      await chooseByKeys(app, `document.getElementById('library-folder')`, at, async () => {
+        for (let step = 0; step < Math.abs(at - current); step++) await app.press(at > current ? 'ArrowDown' : 'ArrowUp');
+      });
       await app.click(button('Add library'), 'the Add library button');
       await app.until(
         'zplc.json to name the library',
@@ -8112,7 +8117,10 @@ export const JOURNEYS: Journey[] = [
       const wanted = themes.indexOf(theme);
       assert(wanted >= 0, `The theme control offers ${JSON.stringify(themes)}, not ${theme}`);
       await app.eval(`document.querySelector('select[data-theme-control]').focus()`);
-      await setSelectIndex(app, `document.querySelector('select[data-theme-control]')`, wanted);
+      const current = await app.eval<number>(`document.querySelector('select[data-theme-control]').selectedIndex`);
+      await chooseByKeys(app, `document.querySelector('select[data-theme-control]')`, wanted, async () => {
+        for (let step = 0; step < Math.abs(wanted - current); step++) await app.press(wanted > current ? 'ArrowDown' : 'ArrowUp');
+      });
       const themed = () =>
         app.until(
           `the ${theme} theme`,
