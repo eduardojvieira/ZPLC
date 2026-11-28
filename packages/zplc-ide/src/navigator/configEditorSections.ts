@@ -1,6 +1,6 @@
 /** The form each configuration editor hosts, and its icon (UX-013). The forms are the sections the project settings page held. */
 import type { ComponentType } from 'react';
-import { Cable, Cpu, Radio, Wifi, Zap } from 'lucide-react';
+import { Cable, Cpu, Factory, Radio, Wifi, Zap } from 'lucide-react';
 import { CommunicationSection } from '../components/settings/CommunicationSection';
 import { IOSection } from '../components/settings/IOSection';
 import { NetworkSection } from '../components/settings/NetworkSection';
@@ -9,7 +9,10 @@ import { TargetSection } from '../components/settings/TargetSection';
 import { TasksSection } from '../components/settings/TasksSection';
 import type { ConfigEditorKind } from './configEditors';
 
-export const CONFIG_EDITOR_SECTIONS: Record<ConfigEditorKind, ComponentType<SectionProps>> = {
+/** The editors that are a form over `zplc.json`; the plant map is a document of its own and has its own host path. */
+export type SectionEditorKind = Exclude<ConfigEditorKind, 'plantMap'>;
+
+export const CONFIG_EDITOR_SECTIONS: Record<SectionEditorKind, ComponentType<SectionProps>> = {
   tasks: TasksSection,
   io: IOSection,
   network: NetworkSection,
@@ -20,6 +23,7 @@ export const CONFIG_EDITOR_SECTIONS: Record<ConfigEditorKind, ComponentType<Sect
 export const CONFIG_EDITOR_ICONS: Record<ConfigEditorKind, ComponentType<{ size?: number; className?: string }>> = {
   tasks: Zap,
   io: Cable,
+  plantMap: Factory,
   network: Wifi,
   communication: Radio,
   target: Cpu,

@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { assert } from '../run-desktop-smoke';
 import { button, css, tab, type App } from '../journeyApp';
@@ -213,6 +213,36 @@ export const journeysU3P: Journey[] = [
           30_000,
         );
       }
+    },
+  },
+  // U3-P4: the plant map is a configuration editor.
+  {
+    name: 'U3-P4 the plant map opens as a configuration editor, a problem opens its row, and Create the declarations reports',
+    example: 'none',
+    proves: [],
+    partly: ['PLS-006', 'SCN-012', 'SCN-013'],
+    run: async (app, { root }) => {
+      const project = shippedSceneProject(SHIPPED.smallest);
+      const folder = writeSceneProject(join(root, 'plant-map-editor'), project);
+      // The project's own scene and map, at its root: the plant document has not been opened when the map is.
+      writeFileSync(join(folder, 'scene.json'), project.scene);
+      writeFileSync(join(folder, 'plant-map.json'), project.map);
+      app.answer(folder);
+      await app.click(button('Open project', 'contains'), 'the Open project button');
+      await app.until('the project workbench', async () => (await app.visible(toolbar)) || undefined);
+      await runFromPalette(app, 'project.plantMap', 'open the plant map');
+      await app.until('the plant map editor', async () => (await app.visible(css('[data-plant-map-editor]'))) || undefined, 30_000);
+      // Opened before the plant document, the map already lists the signals of the scene.
+      await app.until('the signal rows', async () => (await app.visible(css('[data-plant-map-editor] tr[data-signal]'))) || undefined);
+      // The shipped map binds every signal: unbinding one through the editor creates the situation to check.
+      await app.click(button('Unbind ', 'prefix'), 'the Unbind button of the first bound signal');
+      const problem = css('[data-plant-map-problems] button[data-problem-kind="unbound"]');
+      await app.until('an unbound signal as a problem', async () => (await app.visible(problem)) || undefined);
+      await app.click(problem, 'the first unbound signal problem');
+      const focused = await app.eval<boolean>(`document.activeElement?.closest('tr[data-signal]') !== null`);
+      assert(focused, 'The problem did not put the focus in the row of its signal.');
+      await app.click(button('Create declarations', 'contains'), 'Create declarations');
+      await app.until('what the action did', async () => (await app.visible(css('[data-plant-map-editor] [role="status"]'))) || undefined);
     },
   },
   {

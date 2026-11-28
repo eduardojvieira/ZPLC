@@ -29,6 +29,20 @@ export const u3PlantEn = {
   'navigator.plant.create': 'Add',
   'navigator.plant.hint': 'Choose where the plant starts and give it a name. It is saved in this project and opens in the plant document.',
   'plant.panel.breaksAt': 'the text breaks at line {line}, column {column}',
+  // U3-P4: the plant map editor.
+  'command.project.plantMap': 'Open the plant map',
+  'configEditor.plantMap.title': 'Plant map',
+  'plantMap.noPlant': 'This project has no plant yet',
+  'plantMap.noPlantHint': 'Add a plant to bind its signals to the variables of your program.',
+  'plantMap.scene': 'Scene: {name}',
+  'plantMap.problems': 'Problems of the plant map',
+  'plantMap.problem.unbound': '{signal} is not bound to a program variable',
+  'plantMap.problem.mismatch': '{signal}: {point} is {found}, the signal is {type}',
+  'plantMap.declared': 'Added {count} variables to {file}.',
+  'plantMap.declNone': 'Every variable is already declared in {file}.',
+  'plantMap.declCopied': 'No open program can take the declaration here, so it was copied.',
+  'plantMap.save': 'Save the plant map',
+  'plantMap.saved': 'Plant map saved.',
 } as const;
 export const u3PlantEs: Record<keyof typeof u3PlantEn, string> = {
   'command.plant.edit': 'Editar la planta',
@@ -61,4 +75,18 @@ export const u3PlantEs: Record<keyof typeof u3PlantEn, string> = {
   'navigator.plant.hint':
     'Elija desde dónde parte la planta y póngale un nombre. Se guarda en este proyecto y se abre en el documento de la planta.',
   'plant.panel.breaksAt': 'el texto se interrumpe en la línea {line}, columna {column}',
+  // U3-P4: the plant map editor.
+  'command.project.plantMap': 'Abrir el mapa de la planta',
+  'configEditor.plantMap.title': 'Mapa de la planta',
+  'plantMap.noPlant': 'Este proyecto aún no tiene planta',
+  'plantMap.noPlantHint': 'Añada una planta para enlazar sus señales con las variables de su programa.',
+  'plantMap.scene': 'Escena: {name}',
+  'plantMap.problems': 'Problemas del mapa de la planta',
+  'plantMap.problem.unbound': '{signal} no está enlazada a una variable del programa',
+  'plantMap.problem.mismatch': '{signal}: {point} es {found}, la señal es {type}',
+  'plantMap.declared': 'Se añadieron {count} variables a {file}.',
+  'plantMap.declNone': 'Todas las variables ya están declaradas en {file}.',
+  'plantMap.declCopied': 'Ningún programa abierto puede recibir la declaración aquí, así que se copió.',
+  'plantMap.save': 'Guardar el mapa de la planta',
+  'plantMap.saved': 'Mapa de la planta guardado.',
 };

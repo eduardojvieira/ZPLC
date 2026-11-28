@@ -37,7 +37,9 @@ interface Binding {
 }
 
 /** Binds the signals a scene declares to program points, only ever by an explicit call (LNK-002). */
-export function createMapEditor(signals: readonly PlantSignalDef[], scene: string): MapEditor {
+export function createMapEditor(signals: readonly PlantSignalDef[], sceneName: string): MapEditor {
+  // A loaded map keeps the scene id it targets: a persisted id never becomes the display name.
+  let scene = sceneName;
   const bindings = new Map<string, Binding>();
   const def = (name: string) => signals.find((s) => s.name === name);
 
@@ -85,6 +87,8 @@ export function createMapEditor(signals: readonly PlantSignalDef[], scene: strin
     },
     load(loaded) {
       bindings.clear();
+      const loadedTarget = normalizePlantMap(loaded).target;
+      if ('scene' in loadedTarget) scene = loadedTarget.scene;
       for (const s of normalizePlantMap(loaded).signals as PlantSignal[])
         bindings.set(s.name, {
           point: s.point,

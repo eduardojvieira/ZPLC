@@ -8,6 +8,7 @@ import { useProjectSettingsState } from '../store/regionSubscriptions';
 import { useIDEStore } from '../store/useIDEStore';
 import type { SectionProps } from '../components/settings/settingsSectionProps';
 import { Badge, Button } from '../ui';
+import { PlantMapEditor } from '../plant/ui/PlantMapEditor';
 import { CONFIG_EDITOR_ICONS, CONFIG_EDITOR_SECTIONS } from './configEditorSections';
 import { CONFIG_EDITOR_TITLE_KEYS, type ConfigEditorKind } from './configEditors';
 
@@ -17,6 +18,7 @@ interface ConfigEditorBodyProps extends SectionProps {
 
 /** The form alone, for the editor and for the test that compares it with the section. */
 export function ConfigEditorBody({ kind, config, updateConfig }: ConfigEditorBodyProps) {
+  if (kind === 'plantMap') return <PlantMapEditor />;
   const Section = CONFIG_EDITOR_SECTIONS[kind];
   return <Section config={config} updateConfig={updateConfig} />;
 }
@@ -27,6 +29,19 @@ export function ConfigEditorHost({ kind }: { kind: ConfigEditorKind }) {
   const dirty = useIDEStore((state) => state.projectConfigDirty);
   const Icon = CONFIG_EDITOR_ICONS[kind];
   const title = t(CONFIG_EDITOR_TITLE_KEYS[kind]);
+  // The plant map is not a form over zplc.json: it has no settings to save and its own saving (plan-u3 P4).
+  if (kind === 'plantMap')
+    return (
+      <div className="h-full overflow-auto bg-[var(--color-surface-900)] p-6" data-config-editor={kind}>
+        <div className="mx-auto max-w-4xl">
+          <h1 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-surface-100)]">
+            <Icon size={18} className="text-[var(--color-accent-blue)]" aria-hidden />
+            {title}
+          </h1>
+          <PlantMapEditor />
+        </div>
+      </div>
+    );
   if (!projectConfig) return <div className="h-full p-6 text-sm text-[var(--color-surface-300)]">{t('configEditor.noProject')}</div>;
   return (
     <div className="h-full overflow-auto bg-[var(--color-surface-900)] p-6" data-config-editor={kind}>

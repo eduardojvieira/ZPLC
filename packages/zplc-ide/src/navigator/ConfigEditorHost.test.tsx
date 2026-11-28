@@ -2,6 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { ZPLCProjectConfig } from '../types';
 import { CONFIG_EDITOR_KINDS, type ConfigEditorKind } from './configEditors';
+
+/** The five editors that are a form over zplc.json: the plant map (P4) has its own host path and its own tests. */
+const OLD_KINDS = CONFIG_EDITOR_KINDS.filter((kind): kind is Exclude<ConfigEditorKind, 'plantMap'> => kind !== 'plantMap');
 import { projectLoaderStub } from '../test/projectLoaderStub';
 
 // The editors reach the store, which imports the bundled-example loader that only exists under Vite (import.meta.glob).
@@ -86,7 +89,7 @@ const OLD_SECTIONS = {
  * form follows the board (the Wi-Fi password is a masked field that does not echo its value): a Wi-Fi board shows the Wi-Fi settings and an
  * Ethernet board the Ethernet ones, both with the host name and the time server.
  */
-const SETTINGS_OF: Record<ConfigEditorKind, { board?: string; values: string[] }[]> = {
+const SETTINGS_OF: Record<Exclude<ConfigEditorKind, 'plantMap'>, { board?: string; values: string[] }[]> = {
   // the programs assigned to a task are offered from the programs of the project's files (the same section code, checked above)
   tasks: [{ values: ['Task77', '77', 'cyclic'] }],
   io: [{ values: ['Start77', '%IX0.0', 'start button 77', 'Lamp77', '%QX0.0', 'lamp 77', 'Image77'] }],
@@ -118,11 +121,19 @@ afterEach(() => {
 
 describe('configuration editors keep every setting of the old page (UX-013)', () => {
   it('UX-013 hosts the same section component the settings page held, for each of the five editors', () => {
-    for (const kind of CONFIG_EDITOR_KINDS) expect(CONFIG_EDITOR_SECTIONS[kind]).toBe(OLD_SECTIONS[kind]);
+    for (const kind of OLD_KINDS) expect(CONFIG_EDITOR_SECTIONS[kind]).toBe(OLD_SECTIONS[kind]);
+  });
+
+  it('PLS-006 an old kind goes through its section and never through the plant map editor', () => {
+    for (const kind of OLD_KINDS) {
+      const markup = renderToStaticMarkup(<ConfigEditorBody kind={kind} config={config} updateConfig={noop} />);
+      expect(markup).not.toContain('data-plant-map-editor');
+    }
+    expect(Object.keys(CONFIG_EDITOR_SECTIONS).sort()).toEqual([...OLD_KINDS].sort());
   });
 
   it('UX-013 renders exactly what the old section rendered: nothing is added to the form and nothing is dropped from it', () => {
-    for (const kind of CONFIG_EDITOR_KINDS) {
+    for (const kind of OLD_KINDS) {
       const Section = OLD_SECTIONS[kind];
       expect(renderToStaticMarkup(<ConfigEditorBody kind={kind} config={config} updateConfig={noop} />)).toBe(
         renderToStaticMarkup(<Section config={config} updateConfig={noop} />),
@@ -131,7 +142,7 @@ describe('configuration editors keep every setting of the old page (UX-013)', ()
   });
 
   it('UX-013 shows, in the editor of each kind, the value of every setting that kind holds', () => {
-    for (const kind of CONFIG_EDITOR_KINDS) {
+    for (const kind of OLD_KINDS) {
       for (const { board, values } of SETTINGS_OF[kind]) {
         const shown = board ? { ...config, target: { ...config.target!, board } } : config;
         const markup = renderToStaticMarkup(<ConfigEditorBody kind={kind} config={shown} updateConfig={noop} />);
