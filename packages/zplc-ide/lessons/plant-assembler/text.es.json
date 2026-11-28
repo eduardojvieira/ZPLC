@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/Assembler.sfc.json, construya el diagrama: FEEDPAIR y HOMING para empezar, WAITING y SETTLING para esperar las piezas, LOWERING, GRABBING, LIFTING, CARRYING, PLACING y RELEASING para mover una tapa, RAISING, RETURNING, CLEARING, CLEARED y FEEDBASE para preparar el siguiente par, y FINISHED.",
+      "body": "En src/Assembler.sfc.json, construya un diagrama en el que el ensamblador lleve una tapa y una base a sus cintas, espere las dos piezas, ponga la tapa sobre la base, deje salir el ensamblado, prepare el siguiente par y, tras el tercer ensamblado, se detenga con Green encendido.",
       "checkpoint": "Cada paso fija todas las salidas, así que leer el paso activo dice qué hace el ensamblador."
     },
     {
