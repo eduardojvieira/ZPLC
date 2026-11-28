@@ -461,6 +461,11 @@ async function captureCondition(
   const take = async (plan: Plan) => takeAs(captureName(surfaces, plan.surface.id, plan.state, condition), plan.surface.id, plan.state);
   const takeAs = async (name: string, surface: string, state: string) => {
     await app.eval('document.fonts.ready.then(() => true)');
+    // the scene's parts reach a new renderer with the first state the plant gives it: Reset plant, as a person would press it, gives
+    // one at once (and puts nothing on a board); without it the first picture can be the empty floor
+    await app.eval(
+      `(() => { const reset = document.querySelector('[data-plant-reset]'); if (reset && !reset.disabled) reset.click(); return true; })()`,
+    );
     // a 3D view is only the picture once its canvas has drawn something other than the background (it loads the scene after it shows)
     for (let attempt = 0; attempt < 40 && !(await app.eval<boolean>(DRAWN)); attempt++) await Bun.sleep(500);
     await Bun.sleep(400);
