@@ -46,7 +46,7 @@ Una salida del PLC acciona un elemento de la máquina; una entrada del PLC es lo
 
 ## Un estado por movimiento, guiado por la realimentación
 
-Un manipulador no puede trabajar a ciegas ni solo con retardos fijos. Un eje tarda tiempo en recorrer su carrera y una pinza tarda tiempo en cerrarse sobre una pieza. Si el programa empieza a elevar antes de que la pinza confirme que sostiene la pieza, la pieza se queda atrás o cae. Si se desplaza en horizontal antes de que el eje vertical llegue a su límite superior, la pieza choca contra el tope o la cinta.
+Un manipulador no puede trabajar a ciegas ni solo con retardos fijos. Un eje tarda tiempo en recorrer su carrera y una pinza tarda tiempo en cerrarse sobre una pieza. Si el programa empieza a elevar antes de que la pinza confirme que sostiene la pieza, la pieza se queda atrás. En una máquina real, desplazarse en horizontal antes de que el eje vertical llegue a su límite superior lleva la pieza contra el tope o la cinta; esta escena no modela ese choque, así que solo su secuencia mantiene la pinza arriba al cruzar.
 
 La forma limpia de coordinar movimientos es una **máquina de estados**: una variable `INT` guarda el número de estado actual y cada movimiento tiene su propio estado. Un bloque `CASE` evalúa solo la transición que sale del estado actual, esperando la señal de realimentación de ese movimiento — un final de carrera, una confirmación de agarre o un temporizador — antes de avanzar al estado siguiente.
 
@@ -127,13 +127,13 @@ END_PROGRAM
 
 Léalo desde arriba. `Soak` se llama en cada ciclo de escaneo, fuera del `CASE`, con `IN := Step = 3`, así que solo temporiza mientras el polipasto está en el estado de inmersión y se reinicia solo en cuanto `Step` deja de valer 3. Dentro del `CASE`, cada estado espera una confirmación: `Locked` antes de bajar, `Bottom` antes de sumergir, `Soak.Q` antes de elevar, `Top` antes de abrir el pestillo y `NOT Locked` antes de volver al reposo. Debajo del `CASE`, `Lock` se mantiene activo desde el estado 1 hasta el 4, cada orden de eje se detiene en cuanto se activa su final de carrera (`AND NOT Bottom`, `AND NOT Top`) y `HeaterOn` permanece apagado en todos los estados activos.
 
-Este polipasto tiene un solo eje vertical y sumerge una pieza por arranque. La estación de la práctica tiene dos ejes, dos cintas, un tope retráctil y un lote de cuatro cajas: elegir la secuencia de estados, cuándo dejar que una caja se asiente, cuándo alimentar la siguiente caja, cuándo puede correr la cinta de salida y cómo contar las cuatro cajas son decisiones que quedan para usted.
+Este polipasto tiene un solo eje vertical y sumerge una pieza por arranque. La estación de la práctica tiene dos ejes, dos cintas, un tope retráctil y un lote de cuatro cajas: cuándo dejar que una caja se asiente, cuándo alimentar la siguiente caja y cómo contar las cuatro cajas son decisiones que quedan para usted.
 
 ## Errores comunes
 
-- Elevar antes de que la señal de agarre esté en TRUE. Activar `Grip` empieza a cerrar la pinza; espere `Gripped` antes de ordenar `YPlus`, o la caja quedará atrás o caerá.
+- Elevar antes de que la señal de agarre esté en TRUE. Activar `Grip` empieza a cerrar la pinza; espere `Gripped` antes de ordenar `YPlus`, o la caja quedará atrás.
 - Mover en horizontal mientras la pinza sigue abajo. Espere siempre `YMax` antes de cruzar entre las dos cintas.
-- Dejar en marcha la cinta receptora mientras se deposita una caja. Una cinta en movimiento arrastra la caja debajo de la pinza o la vuelca antes de que se asiente.
+- Dejar en marcha la cinta receptora mientras se deposita una caja. Una cinta en movimiento se lleva la caja antes de que se asiente; la escena la cuenta como caída.
 - Asignar salidas solo dentro de una rama del `CASE`. Una variable conserva su valor anterior en los ciclos siguientes si ninguna otra instrucción la borra; calcule cada salida a partir del estado debajo del `CASE`.
 - Llamar un temporizador `TON` dentro de una rama del `CASE`. Un temporizador que solo se llama en un estado deja de actualizarse al cambiar de estado y puede no reiniciarse nunca; llame cada temporizador sin condición en cada ciclo de escaneo y controle su entrada `IN` con el estado.
 

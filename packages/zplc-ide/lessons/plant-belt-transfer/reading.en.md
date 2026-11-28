@@ -46,7 +46,7 @@ A PLC output drives a part of the machine; a PLC input is what a part reports. Y
 
 ## One state per move, driven by feedback
 
-A manipulator cannot work by guesswork or fixed delays alone. An axis takes time to travel from one end to the other, and a gripper takes time to close around an item. If the program starts lifting before the gripper reports that the item is held, the item stays behind or falls. If it moves sideways before the vertical axis reaches its upper limit, the item strikes the stop blade or the belt.
+A manipulator cannot work by guesswork or fixed delays alone. An axis takes time to travel from one end to the other, and a gripper takes time to close around an item. If the program starts lifting before the gripper reports that the item is held, the item stays behind. On a real machine, moving sideways before the vertical axis reaches its upper limit drives the item into the stop blade or the belt; this scene does not model that collision, so only your sequence keeps the clamp up while it crosses.
 
 The clean way to coordinate moves is a **state machine**: an `INT` variable holds the current state number, and each move has its own state. A `CASE` block checks only the transition that leaves the current state, waiting for the feedback signal of that move — a limit switch, a grip confirmation, or a timer — before advancing to the next state.
 
@@ -127,13 +127,13 @@ END_PROGRAM
 
 Read it from the top. `Soak` is called on every scan, outside the `CASE`, with `IN := Step = 3`, so it times only while the hoist is in the soak state and resets itself as soon as `Step` leaves 3. Inside the `CASE`, each state waits for one confirmation: `Locked` before lowering, `Bottom` before soaking, `Soak.Q` before lifting, `Top` before opening the latch, and `NOT Locked` before returning to idle. Below the `CASE`, `Lock` stays on from state 1 through state 4, each axis command stops as soon as its limit switch turns on (`AND NOT Bottom`, `AND NOT Top`), and `HeaterOn` is off for every active state.
 
-This hoist has only one vertical axis and dips one part per start. The station of the practice has two axes, two belts, a stop blade, and a batch of four boxes: choosing the sequence of states, when to let a box settle, when to feed the next box, when the outfeed belt may run, and how to count the four boxes are decisions left for you.
+This hoist has only one vertical axis and dips one part per start. The station of the practice has two axes, two belts, a stop blade, and a batch of four boxes: when to let a box settle, when to feed the next box, and how to count the four boxes are decisions left for you.
 
 ## Common mistakes
 
-- Lifting before grip feedback is TRUE. Turning `Grip` on starts closing the clamp; wait for `Gripped` before commanding `YPlus`, or the box is left behind or dropped.
+- Lifting before grip feedback is TRUE. Turning `Grip` on starts closing the clamp; wait for `Gripped` before commanding `YPlus`, or the box is left behind.
 - Moving horizontally while the clamp is still down. Always wait for `YMax` before moving across between the two belts.
-- Leaving the receiving belt running while setting a box down. A moving belt pulls the box out from under the clamp or tips it over before it settles.
+- Leaving the receiving belt running while setting a box down. A moving belt carries the box away before it settles; the scene counts it as dropped.
 - Assigning outputs inside only one `CASE` branch. A variable keeps its previous value on later scans unless another statement clears it; compute every output from the state below the `CASE`.
 - Calling a `TON` timer inside a `CASE` branch. A timer that is only called in one state stops updating when the state changes and may never reset; call every timer unconditionally on every scan and gate its `IN` with the state.
 
