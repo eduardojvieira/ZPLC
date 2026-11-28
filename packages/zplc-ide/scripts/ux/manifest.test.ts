@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 
-import { markerOf, plan } from './capture';
+import { isNever, markerOf, plan } from './capture';
 import {
   captureName,
   captureRecord,
@@ -190,5 +190,28 @@ describe('the lessons of UXV-007', () => {
     expect(lessonCaptureName('ld-edges', 'reading', base)).toBe('lesson.ld-edges.reading--1440x900-light-en');
     expect(lessonConditions('reading').map(conditionName)).toEqual(['1440x900-light-en', '1440x900-light-es', '1024x768-light-es']);
     expect(lessonConditions('exercise').map(conditionName)).toEqual(['1440x900-light-en', '1440x900-light-es']);
+  });
+});
+
+describe('what a capture must never run (AGENTS.md rule 8)', () => {
+  test('UXV-007 opening a lesson is allowed; checking, running, saving, deploying, connecting and feeding a board are not', () => {
+    for (const ok of ['learn.guide.next', 'learn.guide.back', 'view.showLearn', 'view.plant', 'view.guide'])
+      expect({ ok, never: isNever(ok) }).toEqual({ ok, never: false });
+    for (const bad of [
+      'learn.check',
+      'online.connect',
+      'online.deploy',
+      'online.feedBoardFromPlant',
+      'plant.feedBoard',
+      'debug.run',
+      'debug.step',
+      'file.save',
+      'file.saveAll',
+      'file.open',
+      'file.export',
+      'build.downloadProgram',
+      'build.runAllTests',
+    ])
+      expect({ bad, never: isNever(bad) }).toEqual({ bad, never: true });
   });
 });

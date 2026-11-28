@@ -40,11 +40,15 @@ import type { Harness } from '../journeyApp';
 const REPOSITORY = resolve(import.meta.dir, '..', '..', '..', '..');
 const SCREENS = join(REPOSITORY, 'specs', '014-zplc-2-1-release-quality', 'screens.md');
 
-/** Commands a capture must not run: they close the project, act on a board or a program, or start long work. */
+/**
+ * Commands a capture must not run: they close the project, save, act on a board or a program, start long work, or reach
+ * hardware (AGENTS.md rule 8). The Learn commands that only move through a lesson are allowed; learn.check grades one.
+ */
 const NEVER = new RegExp(
-  '^(file\\.(closeProject|open|export)|online\\.|debug\\.|learn\\.|' +
+  '^(file\\.(closeProject|open|export|save)|online\\.|debug\\.|learn\\.check$|plant\\.feedBoard$|build\\.downloadProgram$|' +
     'build\\.(runAllTests|runFailedTests|checkInterlocks)|plant\\.(createDeclarations|endEdit))',
 );
+export const isNever = (command: string): boolean => NEVER.test(command);
 /** The surfaces the open workbench shows with no command, and the state they are in there. */
 const ON_OPEN: Array<[string, string]> = [
   ['shell.commandBar', 'idle'],
@@ -168,7 +172,7 @@ export function plan(surfaces: Surface[]): { reached: Plan[]; unreached: Array<{
       unreached.push({ surface: surface.id, reason: 'outside Studio: an installer window or the documentation site' });
       continue;
     }
-    const commands = surface.reachedBy.filter((command) => !NEVER.test(command));
+    const commands = surface.reachedBy.filter((command) => !isNever(command));
     // a command that shows the surface over one that toggles it, which could hide it
     const command = commands.find((candidate) => !candidate.startsWith('view.toggle')) ?? commands[0];
     if (!command) {
