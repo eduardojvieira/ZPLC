@@ -11,6 +11,7 @@ import {
   holdPushButton,
   openPlantDocument,
   plantFacts,
+  runFromPalette,
   runInSimulation,
   SHIPPED,
   shippedSceneProject,
@@ -149,7 +150,7 @@ export const journeysCourse: Journey[] = [
       // one more part, then one undo step takes exactly that part back (SCN-010)
       await addPart(app, 'pointer', 'Stop blade');
       assert((await parts(app)).length === 4, 'The fourth part was not added.');
-      await app.click(css('[data-plant-undo]'), 'Undo');
+      await runFromPalette(app, 'edit.undo', 'undo');
       await app.until('the last part taken back by one Undo', async () => (await parts(app)).length === 3 || undefined);
       // the canvas drag needs WebGL 2, which the development host has not: say so rather than pretend it was driven
       if (!(await app.visible(css('[data-plant-drag-hint]'))))
