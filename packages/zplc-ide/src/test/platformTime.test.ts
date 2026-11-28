@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { JOURNEY_TIME_FACTOR, journeyFactor, scaleWait } from '../../scripts/journeyTiming';
@@ -23,7 +24,26 @@ describe('the platform time factor of the unit tests', () => {
     expect(scaleWait(1_000, 'win32')).toBe(scaleTime(1_000, 'win32'));
   });
 
-  it('is applied to the default timeout by the preload of bunfig.toml, once for every test file', () => {
-    expect(readFileSync(join(import.meta.dir, '..', '..', 'bunfig.toml'), 'utf8')).toContain('./src/test/applyPlatformTime.ts');
-  });
+  // bun applies a preload's setDefaultTimeout to the first file of a process only; --timeout reaches every file (bun 1.3.14, 1.4.5)
+  it('gives the SECOND test file of one run the scaled default timeout, through the package test script', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'zplc-timeout-'));
+    try {
+      const files = ['a', 'b'].map((name) => {
+        const file = join(dir, `${name}.test.ts`);
+        writeFileSync(file, `import { it } from 'bun:test';\nit('${name} takes 5.5 s', async () => { await Bun.sleep(5_500); });\n`);
+        return file;
+      });
+      const run = Bun.spawnSync(['bun', 'run', 'test', '--', ...files], {
+        cwd: join(import.meta.dir, '..', '..'),
+        env: { ...process.env, ZPLC_TEST_PLATFORM: 'win32' },
+      });
+      const out = run.stdout.toString() + run.stderr.toString();
+      expect(out).toContain('a takes 5.5 s');
+      expect(out).toContain('b takes 5.5 s');
+      expect(out).not.toContain('timed out');
+      expect(run.exitCode).toBe(0);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }, 120_000);
 });
