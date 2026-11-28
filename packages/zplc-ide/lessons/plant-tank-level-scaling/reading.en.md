@@ -74,7 +74,7 @@ CoolWarn  := (TargetC - TempC) > 10.0;
 END_PROGRAM
 ```
 
-Read it from the top. Both raw integers are converted to `REAL` with `INT_TO_REAL` before any multiplication or division, so a raw reading of `1000` becomes `50.0` °C instead of `0`. Once `TempC` and `TargetC` are both in °C, the error `TargetC - TempC` is meaningful even though the sensor and the dial had different raw spans. The `IF` / `ELSIF` block clamps `Power` so the heater never receives less than `0.0 %` or more than `100.0 %`.
+Read it from the top. Both raw integers are converted to `REAL` with `INT_TO_REAL` before any multiplication or division, so a raw reading of `1000` becomes `50.0` °C. Had the division `1000 / 4000` run first on the two `INT` values, it would have given `0` and the temperature would have been lost. Once `TempC` and `TargetC` are both in °C, the error `TargetC - TempC` is meaningful even though the sensor and the dial had different raw spans. The `IF` / `ELSIF` block clamps `Power` so the heater never receives less than `0.0 %` or more than `100.0 %`.
 
 This oven has no second valve to scale from an operator knob, and its lamp only warns when the temperature is more than 10 °C below the target. In the practice, you also pass a second potentiometer to the discharge valve in percent, and the green lamp must stay lit whenever the level is within 5 percent of the set point on either side.
 

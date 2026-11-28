@@ -30,7 +30,7 @@ Observe los rangos brutos: el transmisor del tanque informa de `0` a `27648` (un
 
 Una tarjeta de entrada analógica convierte una tensión o una corriente en un número entero (`INT`). Distintos dispositivos de la misma máquina suelen usar rangos brutos diferentes. Si la lógica de control opera directamente con cuentas brutas, cada fórmula queda atada al cableado de una tarjeta y se rompe en cuanto se cambia un sensor.
 
-En su lugar, escale cada entrada bruta a **unidades de ingeniería** (`REAL` — metros, grados, bar, porcentaje) una sola vez, al principio del ciclo de barrido, y escriba todos los cálculos siguientes en esas unidades físicas.
+En su lugar, escale cada entrada bruta a **unidades de ingeniería** (`REAL` — metros, grados, bar, porcentaje) una sola vez, al principio del ciclo de escaneo, y escriba todos los cálculos siguientes en esas unidades físicas.
 
 Cuide el orden entre la conversión y la división:
 
@@ -74,7 +74,7 @@ CoolWarn  := (TargetC - TempC) > 10.0;
 END_PROGRAM
 ```
 
-Léalo desde arriba. Ambos enteros brutos se convierten a `REAL` con `INT_TO_REAL` antes de multiplicar o dividir, de modo que una lectura bruta de `1000` pasa a ser `50.0` °C en lugar de `0`. Una vez que `TempC` y `TargetC` están ambos en °C, el error `TargetC - TempC` tiene sentido aunque el sensor y el dial tuvieran rangos brutos distintos. El bloque `IF` / `ELSIF` limita `Power` para que el calentador nunca reciba menos de `0.0 %` ni más de `100.0 %`.
+Léalo desde arriba. Ambos enteros brutos se convierten a `REAL` con `INT_TO_REAL` antes de multiplicar o dividir, de modo que una lectura bruta de `1000` pasa a ser `50.0` °C. Si la división `1000 / 4000` se hubiera ejecutado primero con los dos `INT`, habría dado `0` y la temperatura se habría perdido. Una vez que `TempC` y `TargetC` están ambos en °C, el error `TargetC - TempC` tiene sentido aunque el sensor y el dial tuvieran rangos brutos distintos. El bloque `IF` / `ELSIF` limita `Power` para que el calentador nunca reciba menos de `0.0 %` ni más de `100.0 %`.
 
 Este horno no tiene una segunda válvula que escalar desde una perilla del operador, y su lámpara solo avisa cuando la temperatura está más de 10 °C por debajo del objetivo. En la práctica, usted también pasa un segundo potenciómetro a la válvula de descarga en porcentaje, y la lámpara verde debe mantenerse encendida siempre que el nivel esté dentro del 5 por ciento de la consigna hacia cualquiera de los dos lados.
 
@@ -108,4 +108,4 @@ options:
 
 ## Qué hará en la práctica
 
-El programa inicial en `src/TankLevel.st` declara las tres entradas `INT` (`LevelRaw`, `SetPointRaw`, `DrainRaw`) y las cuatro salidas (`FillCmd`, `DrainCmd`, `LevelShown`, `Green`), y todavía no acciona nada. Usted escalará el nivel y la consigna a metros, accionará `FillCmd` de forma proporcional a 800 por ciento por cada metro de error limitada de 0 a 100 por ciento, pasará `DrainRaw` a `DrainCmd` en porcentaje, mostrará el nivel en `LevelShown` y encenderá `Green` mientras el nivel esté dentro del 5 por ciento de la consigna. El escenario sube la consigna a 0,5 m a los {{t:200}} ms y abre el potenciómetro de vaciado al 40 por ciento a los {{t:40000}} ms. Guarde su programa y pulse {{ui:learn.check}}.
+El proyecto inicial en `src/TankLevel.st` declara las tres entradas `INT` (`LevelRaw`, `SetPointRaw`, `DrainRaw`) y las cuatro salidas (`FillCmd`, `DrainCmd`, `LevelShown`, `Green`), y todavía no acciona nada. Usted escalará el nivel y la consigna a metros, accionará `FillCmd` de forma proporcional a 800 por ciento por cada metro de error limitada de 0 a 100 por ciento, pasará `DrainRaw` a `DrainCmd` en porcentaje, mostrará el nivel en `LevelShown` y encenderá `Green` mientras el nivel esté dentro del 5 por ciento de la consigna. El escenario sube la consigna a 0,5 m a los {{t:200}} ms y abre el potenciómetro de vaciado al 40 por ciento a los {{t:40000}} ms. Guarde su programa y pulse {{ui:learn.check}}.
