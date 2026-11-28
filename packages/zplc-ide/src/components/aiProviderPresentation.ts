@@ -96,7 +96,7 @@ export function presentAiProviderStatus(value: unknown): AiProviderStatusPresent
     vaultAvailable: item.vaultAvailable as boolean,
   };
   // Without a vault a key can be neither stored nor read, so a configured, enabled endpoint with no key is offered and the request
-  // goes out with none (AIX-005); an endpoint that needs one answers with its own auth error. A key stored with no vault stays unavailable.
+  // goes out with none (AIX-006); an endpoint that needs one answers with its own auth error. A key stored with no vault stays unavailable.
   const needsNoVault = publicState.configured && publicState.enabled && !publicState.keyStored;
   return publicState.vaultAvailable || needsNoVault
     ? { kind: 'ready', ...publicState }

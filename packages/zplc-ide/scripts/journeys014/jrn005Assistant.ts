@@ -161,7 +161,7 @@ export const journeysJrn005Assistant: Journey[] = [
     name: 'JRN-005 Journey 4 the Assistant, on a scripted local model, explains a failed scenario and saves reviewed ST and LD changes',
     example: 'plant_belt_to_sensor_starter',
     proves: ['JRN-005'],
-    partly: ['AIX-003', 'AIX-005', 'AIX-006', 'AIX-004'],
+    partly: ['AIX-003', 'AIX-004', 'AIX-006'],
     run: async (app, { root, project }) => {
       const model: MockModel = startMockModel();
       try {

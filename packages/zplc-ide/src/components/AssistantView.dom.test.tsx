@@ -174,7 +174,10 @@ describe('a key-free endpoint without an OS vault (AIX-006, AI-17)', () => {
   it('AIX-006 is offered and sends, and the status line says there is no key vault, never that one is available', async () => {
     for (const [locale, line] of [
       ['en', 'Provider enabled · no key stored · no OS key vault, so a key cannot be stored.'],
-      ['es', 'Proveedor habilitado · sin clave almacenada · sin almacén de claves del sistema, por lo que no se puede almacenar una clave.'],
+      [
+        'es',
+        'Proveedor habilitado · sin clave almacenada · sin almacén de claves del sistema, por lo que no se puede almacenar una clave.',
+      ],
     ] as const) {
       for (const reason of ['unavailable', 'insecure-backend']) {
         setStatus(status(reason));

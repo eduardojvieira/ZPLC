@@ -24,7 +24,7 @@ describe('AI provider presenters (IDE-030)', () => {
     expect(presentAiProviderConfig({ enabled: true, endpoint: 'https://example.test', model: 'gpt-test', keyCiphertext: 'no' })).toBeNull();
   });
 
-  it('AIX-005 a configured, enabled endpoint with no key is ready although the OS vault is unavailable', () => {
+  it('AIX-006 a configured, enabled endpoint with no key is ready although the OS vault is unavailable', () => {
     const noVault = { vaultAvailable: false, vaultReason: 'unavailable' as const };
     expect(presentAiProviderStatus({ configured: true, enabled: true, keyStored: false, ...noVault })).toMatchObject({
       kind: 'ready',
