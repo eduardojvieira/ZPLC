@@ -5,15 +5,9 @@
   "order": 69,
   "module": 1,
   "level": "foundation",
-  "prerequisites": [
-    "scan-cycle-one-scan-memory"
-  ],
-  "languages": [
-    "ST"
-  ],
-  "tracks": [
-    "simulation"
-  ],
+  "prerequisites": ["scan-cycle-one-scan-memory"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
   "unsupported": {
     "hardware": {
       "reason": {
