@@ -80,6 +80,9 @@ function client(workspace: McpWorkspace, manager?: McpDebugSessionManager) {
 
 /** The host runtimes this test process started that still run (ps; on Windows the CIM process table, which also knows the parent). */
 function runtimeChildren(): number[] {
+  // ZPLC_TEST_COUNT_DELAY_MS stands in for the slow Windows count (a CIM query) on a system where it is fast
+  const delay = Number(process.env.ZPLC_TEST_COUNT_DELAY_MS ?? 0);
+  if (delay > 0) Bun.spawnSync(['bun', '-e', `await Bun.sleep(${delay})`]);
   if (process.platform === 'win32') {
     const image = basename(nativeRuntimeBinary).toLowerCase();
     const query =
