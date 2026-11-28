@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { chordEvent, shortcutName, shortcutText, selectOption, chooseByKeys } from './journeyKeys';
+import { chordEvent, pressMod, shortcutName, shortcutText, selectOption, chooseByKeys, chooseOption, toggleTabFocus } from './journeyKeys';
 
 for (const platform of ['linux', 'win32'] as const) {
   test(`on ${platform} Ctrl is the Control modifier (2)`, () => {
@@ -67,7 +67,11 @@ function fakeSelect(labels: string[], arrows: boolean) {
           constructor(public type: string) {}
         },
       ),
-    until: async (_what: string, check: () => Promise<unknown>) => check(),
+    until: async (what: string, check: () => Promise<unknown>) => {
+      const value = await check();
+      if (value === undefined || value === false) throw new Error(`Timed out waiting for ${what}`);
+      return value;
+    },
     press: async (chord: string) => {
       pressed.push(chord);
       if (arrows) select.selectedIndex += chord === 'ArrowDown' ? 1 : -1;
@@ -127,4 +131,51 @@ test('on darwin chooseByKeys sets the option through the element, sends no key a
 test('selectOption names the offered options when the label is not among them', async () => {
   const { app } = fakeSelect(['', 'Dark'], false);
   await expect(selectOption(app as never, '#theme', 'Light', 'linux')).rejects.toThrow('#theme offers ["","Dark"], not Light');
+});
+
+for (const platform of ['linux', 'win32'] as const) {
+  test(`on ${platform} chooseOption fails when the arrow keys do not move the select, with no fallback`, async () => {
+    const { app, select, events, pressed } = fakeSelect(['', 'High contrast', 'Dark'], false);
+    await expect(chooseOption(app as never, '#theme', 'Dark', platform)).rejects.toThrow();
+    expect(pressed).toEqual(['ArrowDown', 'ArrowDown']);
+    expect(select.selectedIndex).toBe(0);
+    expect(events).toEqual([]);
+  });
+
+  test(`on ${platform} chooseOption walks the select with the arrow keys`, async () => {
+    const { app, select, pressed, notes } = fakeSelect(['', 'High contrast', 'Dark'], true);
+    await chooseOption(app as never, '#theme', 'Dark', platform);
+    expect(pressed).toEqual(['ArrowDown', 'ArrowDown']);
+    expect(select.selectedIndex).toBe(2);
+    expect(notes).toEqual([]);
+  });
+
+  test(`on ${platform} toggleTabFocus presses Ctrl+M and pressMod sends the chord unchanged`, async () => {
+    const sent: string[] = [];
+    const app = { press: async (chord: string) => void sent.push(chord), cdp: { command: async () => sent.push('cdp') } } as never;
+    await toggleTabFocus(app, platform);
+    await pressMod(app, 'Ctrl+A', platform);
+    expect(sent).toEqual(['Ctrl+M', 'Ctrl+A']);
+  });
+}
+
+test('on darwin chooseOption sets the option, sends no key and notes once that keyboard choosing is not measured', async () => {
+  const { app, select, events, pressed, notes } = fakeSelect(['', 'High contrast', 'Dark'], false);
+  await chooseOption(app as never, '#theme', 'Dark', 'darwin');
+  await chooseOption(app as never, '#theme', 'High contrast', 'darwin');
+  expect(select.selectedIndex).toBe(1);
+  expect(events).toEqual(['input', 'change', 'input', 'change']);
+  expect(pressed).toEqual([]);
+  expect(notes).toEqual(['keyboard choosing of a native select is not measured on macOS']);
+});
+
+test('chooseOption names the offered options when the label is not among them', async () => {
+  const { app } = fakeSelect(['', 'Dark'], true);
+  await expect(chooseOption(app as never, '#theme', 'Light', 'linux')).rejects.toThrow('#theme offers ["","Dark"], not Light');
+});
+
+test('on darwin Monaco toggles Tab focus with Ctrl+Shift+M', async () => {
+  const sent: string[] = [];
+  await toggleTabFocus({ press: async (chord: string) => void sent.push(chord) } as never, 'darwin');
+  expect(sent).toEqual(['Ctrl+Shift+M']);
 });
