@@ -43,11 +43,11 @@ describe('journey verdict', () => {
     expect(judge([{ name: 'only on linux', outcome: pass }], {}, limits)).toEqual([]);
   });
 
-  test('35 and 53 are not possible on Windows and macOS, VIS-016 on macOS, each with its reason, and nothing on Linux', () => {
+  test('35 and 53 are not possible on Windows and macOS, VIS-002 and VIS-016 on macOS, each with its reason, none on Linux', () => {
     const names = new Set(allJourneys().map((journey) => journey.name));
     const short = (platform: NodeJS.Platform) => Object.keys(PLATFORM_NOT_POSSIBLE[platform] ?? {}).map((name) => name.split(' ')[0]);
     expect(short('win32')).toEqual(['35', '53']);
-    expect(short('darwin')).toEqual(['35', '53', 'VIS-016']);
+    expect(short('darwin')).toEqual(['35', '53', 'VIS-002', 'VIS-016']);
     expect(PLATFORM_NOT_POSSIBLE.linux).toBeUndefined();
     for (const limits of Object.values(PLATFORM_NOT_POSSIBLE))
       for (const [name, reason] of Object.entries(limits ?? {})) {

@@ -28,6 +28,7 @@ import { discoverPackagedExecutable } from './run-packaged-desktop-smoke';
 export const KNOWN_GAPS: Record<string, string> = {};
 
 const PROC = 'the process tree of the app is read from /proc, which only Linux has';
+const NO_WEBGL = 'the hosted macOS runner has no WebGL 2; the 3D view on macOS is checked by hand in the Mac rehearsal';
 const XDOTOOL = 'the real key press is made with xdotool on an X display, which only the Linux host has';
 /**
  * Journeys that cannot run on a platform, with the reason (owner, L868). There a not-possible result is a visible skip, printed as not
@@ -41,8 +42,8 @@ export const PLATFORM_NOT_POSSIBLE: Partial<Record<NodeJS.Platform, Record<strin
   darwin: {
     '35 A long test run can be cancelled and leaves no process behind': PROC,
     '53 Ctrl+R in the development host asks before it discards unsaved work, through a real key press': XDOTOOL,
-    'VIS-016 the state of belt-to-sensor parts is drawn, the look follows the quality level and item colours match (real window)':
-      'the hosted macOS runner has no WebGL 2; the 3D view on macOS is checked by hand in the Mac rehearsal',
+    'VIS-002 the first view fits the 21 scenes at four panel sizes and no box is drawn twice (real window, software GL)': NO_WEBGL,
+    'VIS-016 the state of belt-to-sensor parts is drawn, the look follows the quality level and item colours match (real window)': NO_WEBGL,
   },
 };
 

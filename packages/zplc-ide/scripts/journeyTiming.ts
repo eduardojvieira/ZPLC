@@ -32,12 +32,19 @@ export const pause = (ms: number): Promise<void> => Bun.sleep(scaleWait(ms));
 
 /** The `waitFor` of run-desktop-smoke.ts (90 s on Linux by default) with its bound scaled. */
 export async function waitFor<T>(description: string, check: () => Promise<T | undefined> | T | undefined, timeoutMs = 90_000): Promise<T> {
-  const deadline = Date.now() + scaleWait(timeoutMs);
+  const started = Date.now();
+  const deadline = started + scaleWait(timeoutMs);
   let last: unknown;
   while (Date.now() < deadline) {
     try {
       const value = await check();
-      if (value !== undefined) return value;
+      if (value !== undefined) {
+        // as in run-desktop-smoke.ts: a slow step names itself in the log
+        const seconds = (Date.now() - started) / 1000;
+        const at = (performance.now() / 1000).toFixed(1);
+        if (seconds > 1) console.log(`Slow step: ${description} took ${seconds.toFixed(1)} s (at ${at} s)`);
+        return value;
+      }
     } catch (error) {
       last = error;
     }
