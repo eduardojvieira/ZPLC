@@ -47,11 +47,11 @@ and version when the release is cut (see `RELEASING.md`).
   now it gives `16#FFFFFFFE`, and `NOT(k)` into `BYTE`, `WORD`, `DWORD` and `LWORD` equals `NOT(BYTE#k)`, `NOT(WORD#k)`,
   `NOT(DWORD#k)` and `NOT(LWORD#k)`. A `BOOL` destination is still refused. No published project or lesson uses this form,
   and the bytecode of every project, file and documentation example is unchanged.
+- A 64-bit typed literal (`LWORD#`, `ULINT#`, `LINT#`) builds as the input of `SHL`, `SHR`, `ROL`, `ROR`, `ABS`, `NEG` and the
+  64-bit conversions; 2.0 refused it at build time.
 
 ### Breaking changes
 
-- A 64-bit typed literal (`LWORD#`, `ULINT#`, `LINT#`) builds as the input of `SHL`, `SHR`, `ROL`, `ROR`, `ABS`, `NEG` and the
-  64-bit conversions; 2.0 refused it at build time.
 - `trace_get` without `mode` now answers in mode `changes`; the 2.0 answer is `mode: "full"`. Before, a call with only
   `scenarioId` answered the whole recorded trace; now it answers the first sample, every change of a program signal, the
   failed expectations and the last sample. To get the whole trace as 2.0 answered it, byte for byte, pass
