@@ -669,7 +669,9 @@ describe('milestone U2 command contract (FND-002)', () => {
     }
     const edit = (template[1]!.submenu ?? []) as MenuItemConstructorOptions[];
     expect(edit.slice(0, 4).map((item) => item.label)).toEqual(['Go to definition', 'Find all references', 'Go back', 'Go forward']);
-    expect(edit.slice(-7).map((item) => item.role)).toEqual(['undo', 'redo', undefined, 'cut', 'copy', 'paste', 'selectAll']);
+    // Undo and Redo are the commands of the registry, once each: the native roles are not added a second time
+    expect(edit.slice(-4).map((item) => item.role)).toEqual(['cut', 'copy', 'paste', 'selectAll']);
+    expect(edit.filter((item) => item.label === 'Undo' || item.label === 'Redo')).toHaveLength(2);
   });
 
   it('UX-015 gives the new shortcuts no clash', () => {

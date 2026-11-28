@@ -13,6 +13,9 @@ const { useAppSettings } = await import('../store/useAppSettings');
 const { AI_COMMAND_PROPOSALS } = await import('../ai/proposals');
 const { COMMANDS } = await import('../commands/registry');
 const { useLearnLayout } = await import('../store/useLearnLayout');
+await import('../plant/core/plantCore'); // registers the shipped parts, as the application does
+const { usePlantEdit } = await import('../plant/editSession');
+const { usePlantDocument } = await import('../store/usePlantDocument');
 const { plantTransport } = await import('../runtime/transport');
 const { registerPlantTransport } = await import('../store/useTransport');
 type RunProps = Parameters<typeof RunControls>[0];
@@ -699,6 +702,49 @@ describe('Save all (FLW-005) in a DOM', () => {
     dom.render(<Toolbar debugController={simulatorController().controller} />);
     const save = dom.screen.getByRole('button', { name: new RegExp(dom.t('toolbar.save.label')) });
     expect(save.getAttribute('aria-haspopup')).toBeNull();
+  });
+});
+
+describe('Save of the plant document (FLW-005) in a DOM', () => {
+  const written: string[] = [];
+  const edit = () => {
+    written.length = 0;
+    const handle = {
+      getDirectoryHandle: async () => ({
+        getFileHandle: async (name: string) => ({
+          createWritable: async () => ({ write: async () => void written.push(name), close: async () => {} }),
+        }),
+      }),
+    } as unknown as FileSystemDirectoryHandle;
+    const saveFile = mock(async () => true);
+    openProject(BUILD_OK);
+    dom.patchStore(useIDEStore, { directoryHandle: handle, saveFile: saveFile as never });
+    usePlantEdit.getState().begin({ scene: { schemaVersion: 1, name: 'Empty floor', parts: [], cameras: [] }, map: null }, 'empty');
+    usePlantEdit.getState().editor!.place('belt-x', 'belt', [4, 0, 4]);
+    return saveFile;
+  };
+  afterEach(() => {
+    usePlantEdit.getState().end();
+    usePlantDocument.setState({ open: false, active: false });
+  });
+  const save = () => dom.screen.getByRole('button', { name: new RegExp(dom.t('toolbar.save.label')) });
+
+  it('FLW-005 Save saves the edited scene when the plant document is active', async () => {
+    const saveFile = edit();
+    usePlantDocument.setState({ open: true, active: true });
+    const { user } = dom.render(<Toolbar debugController={simulatorController().controller} />);
+    await user.click(save());
+    await dom.waitFor(() => expect(written).toEqual(['Empty floor.scene.json']));
+    expect(saveFile).not.toHaveBeenCalled();
+  });
+
+  it('FLW-005 Save of a program is unchanged: with a program active the scene is left alone', async () => {
+    const saveFile = edit();
+    usePlantDocument.setState({ open: true, active: false });
+    const { user } = dom.render(<Toolbar debugController={simulatorController().controller} />);
+    await user.click(save());
+    await dom.waitFor(() => expect(saveFile).toHaveBeenCalledWith('main'));
+    expect(written).toEqual([]);
   });
 });
 

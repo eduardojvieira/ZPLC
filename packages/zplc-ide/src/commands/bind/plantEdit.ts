@@ -28,6 +28,19 @@ export function offerPlantEditing(offer: PlantEditing): () => void {
   };
 }
 
+let visualHistory: ((direction: 'undo' | 'redo') => boolean) | null = null;
+
+/**
+ * Offered by the editor area while it is mounted: undoes or redoes the history of the active visual editor (LD, FBD, SFC) and says
+ * whether it did anything, so a text file is left to the code editor.
+ */
+export function offerVisualHistory(apply: (direction: 'undo' | 'redo') => boolean): () => void {
+  visualHistory = apply;
+  return () => {
+    if (visualHistory === apply) visualHistory = null;
+  };
+}
+
 /**
  * Undo and Redo of the Edit menu act on the plant edit session only when the plant document is the active document and a scene is
  * being edited (SCN-010); in any other case the code editor that has the focus keeps its own history. The code editor's module is

@@ -8,6 +8,7 @@ await import('../core/plantCore'); // registers the shipped parts, as the applic
 const { useIDEStore } = await import('../../store/useIDEStore');
 const { saveAllDocuments } = await import('../../store/saveAll');
 const { usePlantEdit } = await import('../editSession');
+const { usePlantDocument } = await import('../../store/usePlantDocument');
 const { usePlantSession } = await import('./usePlantSession');
 import type { PlantEngine } from './loadPlantEngine';
 import type { PlantSceneFile } from '../contracts';
@@ -54,5 +55,31 @@ describe('the plant session (SCN-006, FLW-005)', () => {
     expect(useIDEStore.getState().loadedFiles.get('a')).toEqual(program as never);
     expect((await saveAllDocuments()).saved).toBe(0);
     usePlantEdit.getState().end();
+  });
+  it('FLW-005 Save all still saves a scene edited and closed with Done', async () => {
+    const written: string[] = [];
+    const handle = {
+      getDirectoryHandle: async () => ({
+        getFileHandle: async (name: string) => ({
+          createWritable: async () => ({ write: async () => void written.push(name), close: async () => {} }),
+        }),
+      }),
+    } as unknown as FileSystemDirectoryHandle;
+    dom.patchStore(useIDEStore, { directoryHandle: handle, loadedFiles: new Map() as never });
+    const scene: PlantSceneFile = { schemaVersion: 1, name: 'Closed floor', parts: [], cameras: [] };
+    const edit = usePlantEdit.getState;
+    dom.act(() => edit().begin({ scene, map: null }, 'empty'));
+    dom.act(() => void edit().editor!.place('belt-x', 'belt', [4, 0, 4]));
+    dom.act(() => void edit().end()); // Done: the session is over, the scene is edited and not saved
+    expect(edit().editor).toBeNull();
+    expect((await saveAllDocuments()).saved).toBe(1);
+    expect(written).toEqual(['Closed floor.scene.json']);
+    expect((await saveAllDocuments()).saved).toBe(0); // saved: no longer pending
+    // an edit closed and then dropped by loading the scene from disk is not written over it
+    dom.act(() => edit().begin({ scene, map: null }, 'empty'));
+    dom.act(() => void edit().editor!.place('belt-y', 'belt', [4, 0, 4]));
+    dom.act(() => void edit().end());
+    dom.act(() => usePlantDocument.getState().notifyExternalPlantChange());
+    expect((await saveAllDocuments()).saved).toBe(0);
   });
 });

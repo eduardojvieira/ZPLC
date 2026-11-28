@@ -17,7 +17,7 @@ await mock.module('../../components/monacoRuntime', () => ({
 }));
 await import('../../plant/core/plantCore'); // registers the shipped parts, as the application does
 const { bindCommands, resetCommandsForTest, runCommand } = await import('../bus');
-const { plantEditHandlers } = await import('./plantEdit');
+const { plantEditHandlers, offerVisualHistory } = await import('./plantEdit');
 const { usePlantEdit } = await import('../../plant/editSession');
 const { usePlantDocument } = await import('../../store/usePlantDocument');
 const { usePlantChoice } = await import('../../plant/ui/usePlantChoice');
@@ -45,6 +45,7 @@ beforeEach(() => {
   dom.act(() => session().begin({ scene, map: null }, KEY));
 });
 afterEach(() => {
+  offerVisualHistory(() => false)();
   session().setRunning(false);
   session().end();
   usePlantChoice.setState({ request: undefined, shown: undefined });
@@ -92,6 +93,45 @@ describe('the Edit menu commands of the plant (PLS-005, SCN-008, SCN-010)', () =
     expect(parts()).toBe(before);
     expect(session().editor!.state().past).toBeGreaterThan(0);
     expect(announcementsSnapshot().polite.message).toBe(dom.t('plantEditor.running'));
+    expect(triggered).toEqual([]);
+  });
+  it("SCN-010 in a visual editor Undo is the visual editor's", async () => {
+    dom.act(() => void session().editor!.place('belt-2', 'belt', [4, 0, 4]));
+    const before = parts();
+    usePlantDocument.setState({ active: false }); // a Ladder, FBD or SFC diagram is the active document
+    const asked: string[] = [];
+    const withdraw = offerVisualHistory((direction) => (asked.push(direction), true));
+    await dom.act(async () => void runCommand('edit.undo'));
+    await dom.act(async () => void runCommand('edit.redo'));
+    expect(asked).toEqual(['undo', 'redo']);
+    expect(triggered).toEqual([]);
+    expect(parts()).toBe(before);
+    // with a text file active the editor area does nothing, and the code editor has it
+    withdraw();
+    offerVisualHistory(() => false);
+    await dom.act(async () => void runCommand('edit.undo'));
+    expect(triggered).toEqual(['undo']);
+  });
+
+  it("SCN-010 in a plain text field Undo is the field's", async () => {
+    dom.act(() => void session().editor!.place('belt-2', 'belt', [4, 0, 4]));
+    const before = parts();
+    const field = document.createElement('input');
+    document.body.append(field);
+    field.focus();
+    const native: string[] = [];
+    const original = document.execCommand;
+    document.execCommand = ((command: string) => (native.push(command), true)) as typeof document.execCommand;
+    try {
+      // the plant document is active and a scene is being edited: a focused field still keeps its own history
+      await dom.act(async () => void runCommand('edit.undo'));
+      await dom.act(async () => void runCommand('edit.redo'));
+    } finally {
+      document.execCommand = original;
+      field.remove();
+    }
+    expect(native).toEqual(['undo', 'redo']);
+    expect(parts()).toBe(before);
     expect(triggered).toEqual([]);
   });
 });
