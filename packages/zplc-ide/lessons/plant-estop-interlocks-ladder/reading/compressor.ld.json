@@ -1,0 +1,232 @@
+{
+  "name": "Compressor",
+  "description": "An air compressor that stays off after an over-temperature until the cool-enough switch says it may run again.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Cooling",
+        "type": "BOOL",
+        "comment": "Memory: the motor is held off while the compressor is too hot"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Demand",
+        "type": "BOOL",
+        "comment": "Pressure switch: TRUE while the tank asks for air"
+      },
+      {
+        "name": "TooHot",
+        "type": "BOOL",
+        "comment": "High-temperature switch: TRUE while the motor is too hot"
+      },
+      {
+        "name": "CoolEnough",
+        "type": "BOOL",
+        "comment": "Low-temperature switch: TRUE once the motor has cooled enough"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Motor",
+        "type": "BOOL",
+        "comment": "Compressor motor"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "The high-temperature switch sets the memory.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r1_0_0",
+              "type": "contact_no",
+              "variable": "TooHot",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r1_0_7",
+              "type": "coil_set",
+              "variable": "Cooling",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "The cool-enough switch resets the memory.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r2_0_0",
+              "type": "contact_no",
+              "variable": "CoolEnough",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r2_0_7",
+              "type": "coil_reset",
+              "variable": "Cooling",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "The motor runs on demand, unless the memory holds it off.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r3_0_0",
+              "type": "contact_no",
+              "variable": "Demand",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r3_0_1",
+              "type": "contact_nc",
+              "variable": "Cooling",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r3_0_7",
+              "type": "coil",
+              "variable": "Motor",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-28",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
