@@ -19,7 +19,7 @@ Read the code of each item that the vision sensor sees and swing a diverter arm 
 - Estimated time: 50 minutes
 - Languages: ST
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Vision sorting](../../plant/scenes/vision-sorting.md)
 - Prerequisites: [plant-colour-separation](./plant-colour-separation.md)
 

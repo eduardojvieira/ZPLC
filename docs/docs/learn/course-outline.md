@@ -441,7 +441,7 @@ Objectives of the available lessons:
 - **Sort by weight in Ladder**: Classify an item by comparing an analog value with a limit. Read the value only when the scale says it is stable.
 - **Sort by height, chain transfer**: Decide a route from a combination of two sensors. Remember a decision while the next box is already passing the sensors.
 - **Sort by height, chain transfer in Ladder**: Decide a route from a combination of two sensors. Remember a decision while the next box is already passing the sensors.
-- **Sort by height, turntable**: Reduce a stream of readings to one value, the peak, and classify it with two limits. Coordinate a turntable with the decision: stop, turn, run out, turn back.
+- **Sort by height, turntable**: Tell boxes of three heights apart with a light array that reports a height only while a box is in it. Make a turntable work with the box it turns, so that each box leaves on the belt of its class.
 - **Sort by identity code**: Route items by an integer code instead of a switch. Time an actuator against the travel of an item that has already been read.
 
 ## Module 17: Stations: several machines working as one
@@ -459,10 +459,10 @@ A station groups sorting, transfer and sequencing into one unit. It comes after 
 
 Objectives of the available lessons:
 
-- **Move boxes between three levels**: Describe each lift as its own chain of steps that loops back to its first step. Start both chains with one transition and let them meet only at the belt between the lifts.
+- **Move boxes between three levels**: Describe each lift as a cycle of steps of its own that returns to where it began. Make both lifts work at the same time, meeting only at the belt between them.
 - **Gather items into a crate**: Combine a count, a lift and a crate in one sequence of steps. Move the lift only with its surface stopped, and feed the next workpiece only after the last one has landed.
 - **Store and retrieve**: Write the store and the retrieve sequences of a crane as chains of steps. Keep a table of occupied cells and the requests that wait, and choose the next job from them.
-- **Balance a production line**: Move the control of one machine into a function block and use one instance for each machine. Balance two machines of different speeds by alternating the blanks between them.
+- **Balance a production line**: Move the control of one machine into a function block and use one instance for each machine. Give two machines of different speeds the same control, so that each finishes four cycles.
 
 ## Module 18: Safe and diagnosable machines: interlocks, manual and automatic, and faults
 

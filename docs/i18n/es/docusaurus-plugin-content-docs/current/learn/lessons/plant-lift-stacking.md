@@ -19,7 +19,7 @@ Lleve un cajón a un elevador, alimente cinco piezas dentro de él una por una y
 - Tiempo estimado: 45 minutos
 - Lenguajes: ST
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Elevador con apilado](../../plant/scenes/lift-stacking.md)
 - Requisitos previos: [plant-counted-queue](./plant-counted-queue.md)
 

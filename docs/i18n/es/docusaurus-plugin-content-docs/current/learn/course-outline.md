@@ -441,7 +441,7 @@ Objetivos de las lecciones disponibles:
 - **Clasificar por peso en diagrama de escalera**: Clasificar una pieza comparando un valor analógico con un límite. Leer el valor solo cuando la báscula indica que es estable.
 - **Clasificar por altura, transferencia de cadenas**: Decidir una ruta a partir de una combinación de dos sensores. Recordar una decisión mientras la caja siguiente ya pasa por los sensores de altura.
 - **Clasificar por altura, transferencia de cadenas en diagrama de escalera**: Decidir una ruta a partir de una combinación de dos sensores. Recordar una decisión mientras la caja siguiente ya pasa por los sensores de altura.
-- **Clasificar por altura, mesa giratoria**: Reducir un flujo de lecturas a un valor, el máximo, y clasificarlo con dos límites. Coordinar una mesa giratoria con la decisión: detener, girar, sacar la caja y volver a girar.
+- **Clasificar por altura, mesa giratoria**: Distinguir cajas de tres alturas con una cortina de luz que informa una altura solo mientras hay una caja en ella. Hacer que una mesa giratoria trabaje con la caja que gira, de modo que cada caja salga por la cinta de su clase.
 - **Clasificar por código de identidad**: Encaminar piezas por un código entero y no por un interruptor. Sincronizar un actuador con el recorrido de una pieza ya leída.
 
 ## Módulo 17: Estaciones: varias máquinas que trabajan como una
@@ -459,10 +459,10 @@ Una estación agrupa clasificación, transferencia y secuencia en una sola unida
 
 Objetivos de las lecciones disponibles:
 
-- **Mover cajas entre tres niveles**: Describir cada elevador como su propia cadena de pasos que vuelve a su primer paso. Arrancar ambas cadenas con una sola transición y dejar que se encuentren solo en la cinta entre los elevadores.
+- **Mover cajas entre tres niveles**: Describir cada elevador como un ciclo de pasos propio que vuelve al punto de partida. Hacer que ambos elevadores trabajen a la vez y se encuentren solo en la cinta que hay entre ellos.
 - **Reunir piezas en un cajón**: Combinar un conteo, un elevador y un cajón en una sola secuencia de pasos. Mover el elevador solo con su superficie detenida y alimentar la pieza siguiente solo después de que la anterior haya aterrizado.
 - **Almacenar y recuperar**: Escribir las secuencias de almacenar y de recuperar de un transelevador como cadenas de pasos. Llevar una tabla de celdas ocupadas y las peticiones que esperan, y elegir el trabajo siguiente a partir de ellas.
-- **Equilibrar una línea de producción**: Mover el control de una máquina a un bloque de función y usar una instancia para cada máquina. Equilibrar dos máquinas de distinta velocidad alternando las piezas entre ellas.
+- **Equilibrar una línea de producción**: Mover el control de una máquina a un bloque de función y usar una instancia para cada máquina. Dar a dos máquinas de distinta velocidad el mismo control, para que cada una termine cuatro ciclos.
 
 ## Módulo 18: Máquinas seguras y diagnosticables: enclavamientos, manual y automático, y fallas
 

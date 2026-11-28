@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-three-level-lifts. Do not edit. >>> */}
 
-Sequence two lifts as two chains that run side by side and meet only at the shared transfer belt.
+Make two lifts work at the same time, each in its own cycle, meeting only at the belt between them.
 
 ## Facts
 
@@ -19,14 +19,14 @@ Sequence two lifts as two chains that run side by side and meet only at the shar
 - Estimated time: 50 minutes
 - Languages: SFC
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Three-level lifts](../../plant/scenes/three-level-lifts.md)
 - Prerequisites: [plant-buffer-release](./plant-buffer-release.md)
 
 ## Objectives
 
-- Describe each lift as its own chain of steps that loops back to its first step.
-- Start both chains with one transition and let them meet only at the belt between the lifts.
+- Describe each lift as a cycle of steps of its own that returns to where it began.
+- Make both lifts work at the same time, meeting only at the belt between them.
 
 ## Stages
 

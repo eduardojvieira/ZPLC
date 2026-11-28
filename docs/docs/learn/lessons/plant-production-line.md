@@ -19,14 +19,14 @@ Split a line into one function block per machine, and send alternate blanks to e
 - Estimated time: 50 minutes
 - Languages: ST
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Balanced production line](../../plant/scenes/balanced-production-line.md)
 - Prerequisites: [function-block-pump-pair](./function-block-pump-pair.md), [plant-lift-stacking](./plant-lift-stacking.md)
 
 ## Objectives
 
 - Move the control of one machine into a function block and use one instance for each machine.
-- Balance two machines of different speeds by alternating the blanks between them.
+- Give two machines of different speeds the same control, so that each finishes four cycles.
 
 ## Stages
 
