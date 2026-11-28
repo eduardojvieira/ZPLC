@@ -1,58 +1,58 @@
 {
   "schemaVersion": 1,
   "title": "From sensor A to sensor B in Ladder",
-  "summary": "Sequence a move with a set coil and a reset coil: run the belt from sensor A until the box reaches sensor B.",
+  "summary": "Hold a belt on between two sensors: run the belt when sensor A sees a box and stop it when the box reaches sensor B.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
-    "Use a set and a reset to hold an output between two events.",
+    "Hold an output on between two sensor events without a separate memory variable.",
     "Explain why a sensor that goes dark cannot hold the output by itself."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/LatchTwoSensors.ld.json, make Run a latch: one rung with an EyeA contact and a set coil on Run, and a second rung with an EyeB contact and a reset coil on Run.",
-      "checkpoint": "Run stays on between the two sensors, and the reset wins over the set."
+      "body": "In src/LatchTwoSensors.ld.json the inputs EyeA and EyeB and the output Run are declared, and there are no rungs yet. A box starts in front of EyeA; the belt must start when EyeA sees the box, keep running after the box leaves EyeA, and stop when EyeB sees the box.",
+      "checkpoint": "You can say why the belt must keep running after EyeA goes dark, and which sensor wins if both see a box."
     },
     {
       "key": "predict",
       "title": "Predict",
-      "body": "Before running, follow the box: sensor A sees it for a moment, then the box moves on and A goes dark.",
-      "checkpoint": "Run turns on when A sees the box, stays on while the box travels, and turns off when B sees it and stays off."
+      "body": "Before running, follow the box: sensor A sees it at the start, then the box moves on and A goes dark long before B sees it.",
+      "checkpoint": "Run turns on when A sees the box, stays on while the box travels, and turns off when B sees it, {{v:LatchTwoSensors.Run=false@8000|staying OFF}} at {{t:8000}} ms."
     },
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter has no rungs, so the belt never runs; set Run when EyeA sees the box and reset it when EyeB sees the box.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "body": "Draw the rungs, save the program, then press {{ui:learn.check}}. The starting program has no rungs, so the belt never runs. The belt must start when EyeA sees the box, keep running once the box leaves EyeA, and stop as soon as EyeB sees the box, with the stop taking priority if both sensors are active together.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the machine move, press {{ui:toolbar.run.label}} (F5) and open the {{ui:plant.panel.view3d}}.",
       "checkpoint": "The required scenario is named latch-two-sensors and contains {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Compare the moment A goes dark with the moment B turns on: the belt keeps running in between because Run holds its value.",
-      "checkpoint": "Both sensors count the box, Run is off at the end, and no box is dropped."
+      "body": "Watch the box leave EyeA and travel to EyeB in the {{ui:plant.panel.view3d}}; compare the moment EyeA goes dark with the moment EyeB turns on in the trace.",
+      "checkpoint": "Both sensors count the box, Run stays on across the middle of the belt, Run is off at the end, and no box is dropped."
     },
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "The assertions check the count at both sensors and the final state; they say nothing about how long the move takes in real life.",
-      "checkpoint": "What the assertions check is tested; nothing else is."
+      "body": "The scenario checks that both sensors saw the box and that Run is off at {{t:8000}} ms. What would happen if a second box arrived in front of EyeA while the first box was still waiting in front of EyeB?",
+      "checkpoint": "With both EyeA and EyeB TRUE in the same scan, you can say whether the belt stays stopped or moves, and which rung order decides it."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "The output itself can be the memory: a set coil on Run, fed by an EyeA contact, keeps the value on later scans."
+      "text": "The box leaves EyeA long before it reaches EyeB, so a plain coil driven by EyeA would stop the belt at once. The output Run itself can hold the state between the two events: one event turns it on and leaves it on, and the other turns it off."
     },
     {
       "level": 2,
-      "text": "Add a second rung after it with an EyeB contact and a reset coil on Run, so the reset wins when both sensors are TRUE."
+      "text": "Draw a rung with an EyeA contact and a SET coil on Run, and add a second rung below it with an EyeB contact and a RESET coil on Run so the reset wins when both sensors are TRUE."
     }
   ],
   "faultCases": ["The starter has no rungs, so the belt never runs; set Run when EyeA sees the box and reset it when EyeB sees the box."]
