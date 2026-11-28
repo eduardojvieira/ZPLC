@@ -82,4 +82,27 @@ describe('the plant session (SCN-006, FLW-005)', () => {
     dom.act(() => usePlantDocument.getState().notifyExternalPlantChange());
     expect((await saveAllDocuments()).saved).toBe(0);
   });
+  it('FLW-005 a plant map binding edited in the session is saved with its scene', async () => {
+    const written: string[] = [];
+    const handle = {
+      getDirectoryHandle: async () => ({
+        getFileHandle: async (name: string) => ({
+          createWritable: async () => ({ write: async () => void written.push(name), close: async () => {} }),
+        }),
+      }),
+    } as unknown as FileSystemDirectoryHandle;
+    dom.patchStore(useIDEStore, { directoryHandle: handle, loadedFiles: new Map() as never });
+    const scene: PlantSceneFile = { schemaVersion: 1, name: 'Bound floor', parts: [], cameras: [] };
+    const edit = usePlantEdit.getState;
+    dom.act(() => edit().begin({ scene, map: null }, 'empty'));
+    dom.act(() => void edit().editor!.place('pb-1', 'push-button', [4, 0, 4]));
+    expect((await saveAllDocuments()).saved).toBe(1);
+    written.length = 0;
+    // the scene is saved; only a binding changes now, and it is not lost by the next save
+    const signal = edit().editor!.signals()[0]!.name;
+    dom.act(() => void edit().mapEditor!.bind(signal, 'Main.Start'));
+    expect((await saveAllDocuments()).saved).toBe(1);
+    expect(written.sort()).toEqual(['Bound floor.plant-map.json', 'Bound floor.scene.json']);
+    usePlantEdit.getState().end();
+  });
 });

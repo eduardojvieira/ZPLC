@@ -442,6 +442,21 @@ describe('the plant panel (VIS-001, VIS-006, VIS-010, PLS-003, PLS-004, PLS-010)
     },
   );
 
+  it(
+    'PLS-005 the plant document holds Done and no editor panel: the part list, the form and the signals are in the activity, the ' +
+      'Inspector and the map',
+    async () => {
+      const r = rig();
+      dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+      await ready();
+      await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-edit-scene]')!));
+      const bar = document.querySelector<HTMLElement>('[data-plant-editor]')!;
+      expect(bar.querySelector('[data-plant-edit-done]')).toBeTruthy();
+      expect(bar.querySelector('[data-part], ul, form, table, select, input')).toBeNull();
+      expect(dom.screen.queryByRole('button', { name: dom.t('plantEditor.add') })).toBeNull();
+    },
+  );
+
   it('FLW-005 the scene being edited joins Save all', async () => {
     const written: string[] = [];
     const fake = {
