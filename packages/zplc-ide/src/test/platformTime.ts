@@ -1,6 +1,6 @@
 /**
  * The one place where the time bounds of the unit tests scale with the system they run on. A test or a wait is written as it
- * needs to be on Linux (the system of the pull-request job) and goes through `scaleTime`; the preload applyPlatformTime.ts does
+ * needs to be on Linux (the system of the pull-request job) and goes through `scaleTime`; `bun test --timeout` (scripts/testTimeout.ts, package.json) does
  * the same for bun's default timeout of 5 s, and scripts/cdpHarness.ts scales its waits.
  *
  * The table is declared here and only here: scripts/journeyTiming.ts reads it as JOURNEY_TIME_FACTOR (measured on nightly-quality

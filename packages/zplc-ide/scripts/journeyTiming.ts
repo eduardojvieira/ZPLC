@@ -11,7 +11,7 @@
  *   Windows x64 (2025)     3.18          3.96        4.84         2.69
  *
  * A wait is a hang guard that must hold for the slowest step of a journey, not the median one, so each factor is the p90 ratio
- * rounded up to the next 0.5: 2.5 and 4. The ratios of passing journeys understate the slowest steps (the journeys that timed
+ * rounded up to the next 0.5. The ratios of passing journeys understate the slowest steps (the journeys that timed
  * out are not in the pairs), so a wait that still fails at these factors is a failure to list, not a number to raise by hand:
  * measure again on the next nightly and replace the numbers in src/test/platformTime.ts, the one table (the unit tests
  * and cdpHarness.ts read it too), with the run ids above.
