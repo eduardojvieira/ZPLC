@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Enviar cada color a su cinta en diagrama de escalera",
-  "summary": "Lea el color de cada pieza que espera en la cuchilla de parada, empuje las rojas a la cinta lateral y deje pasar las azules.",
+  "summary": "Lea el color de cada pieza que espera en el tope de parada, empuje las rojas a la cinta lateral y deje pasar las azules.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el tiempo de respuesta del sensor ni la velocidad de la cinta.",
   "objectives": [
     "Decidir una ruta a partir del resultado de un sensor cuando la pieza está quieta.",
@@ -11,19 +11,19 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/ColourSeparation.ld.json, ponga en marcha las tres cintas tras Start y retenga cada pieza en la cuchilla. Espere a que esté quieta (T#300ms) y lea IsRed: empuje la roja a la cinta lateral y suelte la azul.",
+      "body": "En src/ColourSeparation.ld.json, ponga en marcha las tres cintas tras Start y retenga cada pieza en el tope. Espere a que esté quieta y lea IsRed: empuje la roja a la cinta lateral y suelte la azul.",
       "checkpoint": "Las piezas rojas terminan en RedBin, las azules en BlueBin, y Done se enciende tras la octava."
     },
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, decida qué hacen la cuchilla y el empujador con cada color. Una pieza roja queda retenida mientras la placa la empuja; una azul se suelta. ¿Cuándo puede volver a retener la cuchilla?",
-      "checkpoint": "Hold baja solo para una pieza azul y vuelve a subir cuando esta ha salido de la cuchilla; Push es TRUE solo mientras se empuja una roja."
+      "body": "Antes de ejecutar, decida qué hacen el tope y el empujador con cada color. Una pieza roja queda retenida mientras la placa la empuja; una azul se suelta. ¿Cuándo puede volver a retener el tope?",
+      "checkpoint": "Una pieza roja queda retenida mientras trabaja la placa; una azul necesita el tope abajo. Cuándo puede volver a subir el tope es la decisión de la práctica."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial no tiene peldaños, así que ninguna cinta se mueve y ninguna pieza se clasifica; ponga en marcha las cintas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules.",
+      "body": "Corrija esta omisión del proyecto inicial, guárdelo y pulse {{ui:learn.check}}: El proyecto inicial no tiene peldaños, así que ninguna cinta se mueve y ninguna pieza se clasifica; ponga en marcha las cintas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -35,8 +35,8 @@
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe la vista 3D: una pieza roja se detiene en la cuchilla, la placa la empuja a la cinta lateral y la siguiente espera; una azul pasa de largo hacia la salida.",
-      "checkpoint": "Push nunca pasa a TRUE con una pieza azul, y la placa está de vuelta (Retracted) antes de que la cuchilla retenga la siguiente."
+      "body": "Observe la vista 3D: una pieza roja se detiene en el tope, la placa la empuja a la cinta lateral y la siguiente espera; una azul pasa de largo hacia la salida.",
+      "checkpoint": "Push nunca pasa a TRUE con una pieza azul."
     },
     {
       "key": "reflect",
@@ -48,14 +48,14 @@
   "hints": [
     {
       "level": 1,
-      "text": "Guarde el paso en un número de estado: 0 esperar una pieza quieta, 1 empujar, 2 retraer, 3 dejar pasar una azul. Un TON de T#300ms sobre Waiting da el tiempo de reposo."
+      "text": "Piense qué debe recordar el programa de un ciclo de escaneo al siguiente, y qué entrada le dice que cada movimiento de la placa ha terminado."
     },
     {
       "level": 2,
-      "text": "Salga del estado 0 con dos peldaños: un contacto normalmente abierto de IsRed va al estado 1, uno normalmente cerrado al estado 3. Una pieza empujada queda atendida cuando Retracted es TRUE; una soltada, cuando ha salido de la cuchilla (un TON de T#1500ms sobre NOT Waiting). Gobierne Hold con Active en serie con un bloque NE sobre State y 3, y cuente con un CTU de 8."
+      "text": "Guarde el paso en un número de estado: 0 esperar una pieza quieta, 1 empujar, 2 retraer, 3 dejar pasar una azul. Un TON de T#300ms sobre Waiting da el tiempo de reposo. Salga del estado 0 con dos peldaños: un contacto normalmente abierto de IsRed va al estado 1, uno normalmente cerrado al estado 3. Una pieza empujada queda atendida cuando Retracted es TRUE; una soltada, cuando ha salido del tope (por ejemplo un TON de T#1500ms sobre NOT Waiting; el tiempo es una elección, no un requisito). Gobierne Hold con Active en serie con un bloque NE sobre State y 3, y cuente con un CTU de 8."
     }
   ],
   "faultCases": [
-    "El programa inicial no tiene peldaños, así que ninguna cinta se mueve y ninguna pieza se clasifica; ponga en marcha las cintas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules."
+    "El proyecto inicial no tiene peldaños, así que ninguna cinta se mueve y ninguna pieza se clasifica; ponga en marcha las cintas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules."
   ]
 }
