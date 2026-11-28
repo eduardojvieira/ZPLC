@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En su proyecto, scene.json es la escena de fusión y src/MergeLines.st es un programa terminado: ya acciona todas las salidas de la estación y deja pasar las dos líneas de una en una. El escenario arranca la estación con el pulsador de inicio y espera que seis cajas, tres de cada alimentador, salgan por la cinta de salida, con Done encendida al final. Tal como está el proyecto, la línea B no recibe cajas. Cambie la escena y su mapa de planta, no el programa, hasta que Comprobar apruebe.",
+      "body": "En su proyecto, scene.json es la escena de fusión y src/MergeLines.st es un programa terminado: ya acciona todas las salidas de la estación y deja pasar las dos líneas de una en una. El escenario arranca la estación con el pulsador de inicio y espera cajas de los dos alimentadores en la cinta de salida y Done encendida al final; el programa enciende Done cuando seis cajas, tres de cada alimentador, han cruzado la zona de fusión. Tal como está el proyecto, la línea B no recibe cajas. Cambie la escena y su mapa de planta, no el programa, hasta que Comprobar apruebe.",
       "checkpoint": "Salen cajas de los dos alimentadores, los únicos archivos que cambió son la escena y su mapa de planta, y el programa es el que se le dio."
     },
     {

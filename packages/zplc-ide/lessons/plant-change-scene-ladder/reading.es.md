@@ -40,8 +40,6 @@ La estación tiene trece elementos. Las tablas dicen qué es cada uno en una pla
 
 `Remover1` no está cableado al PLC: retira por su cuenta cada caja que llega al extremo de `Outfeed`. Su programa lee cuatro entradas y acciona ocho salidas.
 
-`Remover1` no está cableado al PLC: retira por su cuenta cada caja que llega al extremo de `Outfeed`. Su programa lee cuatro entradas y acciona ocho salidas.
-
 ## Una escena y su mapa de planta
 
 La máquina se describe con dos archivos de su proyecto, y el programa no conoce ninguno de los dos.
@@ -56,7 +54,7 @@ El escenario de una lección nombra los dos archivos. Cuando usted pulsa {{ui:le
 El editor cambia el archivo de escena y el mapa de planta sin escribirlos a mano. Necesita que la planta esté detenida.
 
 1. Abra la planta con {{ui:command.view.showPlant}} en la paleta de comandos. En {{ui:plant.panel.scene}}, elija {{ui:plant.panel.projectScene}} y pulse {{ui:plant.panel.editScene}}.
-2. La lista de piezas muestra todos los elementos de la escena. Seleccione uno para ver {{ui:plantEditor.formHeading}}: su nombre, su posición X y Z, su rotación y un campo para cada ajuste de su tipo, con su unidad. Un campo se aplica al pulsar Intro o al salir del campo. Un valor fuera del rango de su ajuste se rechaza, con el mensaje en el campo.
+2. La lista de piezas muestra todos los elementos de la escena. Seleccione uno para ver {{ui:plantEditor.formHeading}}: su nombre, su posición X y Z, su rotación y un campo para cada ajuste de su tipo, con su unidad. Un campo se aplica al pulsar Enter o al salir del campo. Un valor fuera del rango de su ajuste se rechaza, con el mensaje en el campo.
 3. Para colocar un elemento, las posiciones siguen una cuadrícula de 0,25 m y las rotaciones van en pasos de 15 grados. Un elemento soltado a menos de 0,15 m de un punto de enganche de otro elemento se engancha a él.
 4. La tabla {{ui:plantEditor.signalsHeading}} enumera todas las señales que ofrecen los elementos, con su tipo, su dirección y el punto del programa al que están enlazadas. Para enlazar una señal, escriba el punto en el campo de su fila y pulse Enlazar en esa misma fila.
 5. Pulse {{ui:plantEditor.done}} para cerrar el editor. La planta se reconstruye a partir de la escena editada. Después pulse {{ui:plant.panel.saveToProject}}: escribe `scene.json` y `plant-map.json` en la raíz del proyecto, los dos archivos que lee Comprobar.
@@ -67,7 +65,7 @@ Cada edición se puede deshacer con Deshacer y rehacer con Rehacer. Los ajustes 
 
 La estación de cinta a sensor de la primera lección de planta en diagrama de escalera tiene una cinta llamada `Belt1`, un emisor, un sensor en el extremo y un pulsador de inicio. Su programa está terminado: una pulsación del pulsador de inicio pone una caja en la cinta, y la cinta se detiene cuando el sensor ve la caja. El dueño de la planta instala ahora una cinta más lenta, y nadie quiere tocar el programa.
 
-En el editor, el cambio es un solo campo. Seleccione `Belt1`, escriba `0,25` en `speedMps (m/s)` en lugar de `0,5`, pulse Intro, pulse {{ui:plantEditor.done}} y después {{ui:plant.panel.saveToProject}}. Cambió la escena; el mapa de planta no cambió, y el programa tampoco. Esta tabla sale de ejecutar el programa terminado sobre la escena guardada con el escenario de esa lección, que pulsa el pulsador de inicio a los {{t:200}} ms y pide que el sensor vea la caja antes de 8 segundos:
+En el editor, el cambio es un solo campo. Seleccione `Belt1`, escriba `0,25` en `speedMps (m/s)` en lugar de `0,5`, pulse Enter, pulse {{ui:plantEditor.done}} y después {{ui:plant.panel.saveToProject}}. Cambió la escena; el mapa de planta no cambió, y el programa tampoco. Esta tabla sale de ejecutar el programa terminado sobre la escena guardada con el escenario de esa lección, que pulsa el pulsador de inicio a los {{t:200}} ms y pide que el sensor vea la caja antes de 8 segundos:
 
 | Velocidad de la cinta | La cinta se detiene a los               | Comprobar |
 | --------------------- | --------------------------------------- | --------- |
@@ -85,7 +83,7 @@ Esta máquina solo cambia un ajuste y un nombre de elementos que ya existen. La 
 ## Errores comunes
 
 - Editar el programa cuando lo que hay que cambiar es la escena. Un programa que da las salidas correctas no puede hacer que funcione un elemento que falta o que está mal.
-- Escribir un valor y no pulsar Intro ni salir del campo. Un campo se aplica solo entonces, y la escena conserva su último valor.
+- Escribir un valor y no pulsar Enter ni salir del campo. Un campo se aplica solo entonces, y la escena conserva su último valor.
 - Intentar editar con la planta en marcha. {{ui:plant.panel.editScene}} está desactivado mientras la planta funciona: deténgala primero.
 - Cambiar el nombre de un elemento y no actualizar el mapa de planta. El mapa se escribe con nombres de señales, así que el nombre antiguo no se enlaza con nada y Comprobar rechaza la ejecución.
 - Fiarse de un elemento porque está en la lista. Un elemento que existe no siempre es un elemento que funciona: compare su lugar, su rotación y sus ajustes con los de los elementos que lo rodean, y lea lo que informa Comprobar.
@@ -114,4 +112,4 @@ options:
 
 ## Qué hará en la práctica
 
-La escena de su proyecto es la estación de fusión de la imagen, con su mapa de planta, y su programa, un diagrama de escalera en `src/MergeLines.ld.json`, está terminado: ya acciona todas las salidas de la estación y deja pasar las dos líneas de una en una. El escenario pulsa el pulsador de inicio a los {{t:200}} ms y comprueba que salen cajas de los dos alimentadores por la cinta de salida, que Done está encendido a los {{t:25000}} ms y que ninguna caja cae ni choca. Tal como está el proyecto, la línea B no recibe cajas. Cambie la escena y su mapa de planta, no el programa, guárdelos y pulse {{ui:learn.check}}.
+La escena de su proyecto es la estación de fusión de la imagen, con su mapa de planta, y su programa, un diagrama de escalera en `src/MergeLines.ld.json`, está terminado: ya acciona todas las salidas de la estación y deja pasar las dos líneas de una en una. El escenario pulsa el pulsador de inicio a los {{t:200}} ms y comprueba que salen cajas de los dos alimentadores por la cinta de salida, que Done está encendida a los {{t:25000}} ms y que ninguna caja cae ni choca. Tal como está el proyecto, la línea B no recibe cajas. Cambie la escena y su mapa de planta, no el programa, guárdelos y pulse {{ui:learn.check}}.

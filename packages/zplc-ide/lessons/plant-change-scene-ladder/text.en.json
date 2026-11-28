@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In your project, scene.json is the merge scene and src/MergeLines.ld.json is a finished program: it already drives every output of the station and lets the two lines through one at a time. The scenario starts the station with the start button and expects six boxes, three from each feeder, to leave the outfeed, with Done on at the end. As the project stands, line B gets no boxes. Change the scene and its plant map, not the program, until the Check passes.",
+      "body": "In your project, scene.json is the merge scene and src/MergeLines.ld.json is a finished program: it already drives every output of the station and lets the two lines through one at a time. The scenario starts the station with the start button and expects boxes from both feeders on the outfeed and Done on at the end; the program turns Done on once six boxes, three from each feeder, have crossed the merge zone. As the project stands, line B gets no boxes. Change the scene and its plant map, not the program, until the Check passes.",
       "checkpoint": "Boxes come from both feeders, the only files you changed are the scene and its plant map, and the program is the one you were given."
     },
     {

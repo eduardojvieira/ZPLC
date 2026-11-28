@@ -40,8 +40,6 @@ The station has thirteen parts. The tables say what each one is in a real plant 
 
 `Remover1` is not wired to the PLC: it clears every box that reaches the end of `Outfeed` on its own. Your program reads four inputs and drives eight outputs.
 
-`Remover1` is not wired to the PLC: it clears every box that reaches the end of `Outfeed` on its own. Your program reads four inputs and drives eight outputs.
-
 ## A scene and its plant map
 
 The machine is described by two files in your project, and the program knows neither of them.
