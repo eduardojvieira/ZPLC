@@ -88,6 +88,23 @@ export async function saveProjectScene(root: FileSystemDirectoryHandle, scene: P
   }
 }
 
+/** Saves only the plant map of the project's own scene: `scene.json` is not touched. */
+export async function saveProjectPlantMap(root: FileSystemDirectoryHandle, map: string): Promise<void> {
+  recordOwnWrite('plant-map.json', map);
+  try {
+    await write(root, 'plant-map.json', map);
+  } catch (error) {
+    forgetOwnWrite('plant-map.json');
+    throw error;
+  }
+}
+
+/** Saves only the plant map of a scene saved in the project (`scenes/<name>.plant-map.json`). */
+export async function saveScenePlantMap(root: FileSystemDirectoryHandle, name: string, map: string): Promise<void> {
+  sceneFilePath(name);
+  await write(await root.getDirectoryHandle(SCENES_FOLDER, { create: true }), `${name}.plant-map.json`, map);
+}
+
 /**
  * The texts of the project's own scene at its root (`plant-map.json` empty when it has none), or none when the project has no `scene.json`.
  */

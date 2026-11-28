@@ -21,7 +21,7 @@ import { createMapEditor } from '../editor/mapEditor';
 import { createSceneEditor } from '../editor/model';
 import { SignalTable } from '../editor/SignalTable';
 import type { ProblemAt } from '../editor/validate';
-import { saveProjectScene, saveScene } from '../persistence/sceneFiles';
+import { saveProjectPlantMap, saveScenePlantMap } from '../persistence/sceneFiles';
 import { applyDeclarations, plantMapProblems, usePlantMapProblems, type PlantMapProblem } from './plantMapProblems';
 import { usePlantChoice } from './usePlantChoice';
 import { useProjectSceneTexts } from './usePlantSession';
@@ -64,7 +64,9 @@ export function PlantMapEditor(props: PlantMapEditorProps) {
     return parsed && 'scene' in parsed ? parsed.scene : undefined;
   }, [project.scene]);
   const scene = props.scene ?? shown?.scene ?? projectScene;
-  const map = props.map ?? (props.scene ? undefined : shown ? shown.map : parseMap(project.map));
+  // The parsed map is memoized on its text: a new object each render would rebuild the map editor and drop the bindings made in it.
+  const projectMap = useMemo(() => parseMap(project.map), [project.map]);
+  const map = props.map ?? (props.scene ? undefined : shown ? shown.map : projectMap);
   const key = props.scene ? undefined : (shown?.key ?? 'project');
 
   const local = useMemo(() => {
@@ -127,7 +129,10 @@ export function PlantMapEditor(props: PlantMapEditorProps) {
     const open = activeFileId ? loadedFiles.get(activeFileId) : undefined;
     const language = open && open.language !== 'SCENARIO' ? open.language : asked;
     const declarations = declarationsFor(signals, language);
-    const applied = open && open.language !== 'SCENARIO' ? applyDeclarations(open.content, declarations) : null;
+    const applied =
+      open && open.language !== 'SCENARIO'
+        ? applyDeclarations(open.content, declarations, Object.values(mapEditor.map().signals)[0]?.point.split('.')[0])
+        : null;
     if (open && applied) {
       if (applied.added > 0) updateFileContent(open.id, applied.content);
       const text =
@@ -148,8 +153,8 @@ export function PlantMapEditor(props: PlantMapEditorProps) {
   const save = async () => {
     if (!handle || !saveTarget) return;
     const text = JSON.stringify(mapEditor.map());
-    if (saveTarget === 'project') await saveProjectScene(handle, scene, text);
-    else await saveScene(handle, saveTarget.slice('file:'.length), scene, text);
+    if (saveTarget === 'project') await saveProjectPlantMap(handle, text);
+    else await saveScenePlantMap(handle, saveTarget.slice('file:'.length), text);
     setDirty(false);
     const message = t('plantMap.saved');
     setStatus(message);

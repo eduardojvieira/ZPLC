@@ -66,9 +66,18 @@ export function openPlantMapRow(signal: string): void {
  * The text of `content` with the declarations added and every existing character kept, or null when this program cannot take them
  * (`null` also when it already declares them all: `added` is then 0). A diagram language takes rows in its variable table.
  */
-export function applyDeclarations(content: string, declarations: Declarations): { content: string; added: number } | null {
+export function applyDeclarations(
+  content: string,
+  declarations: Declarations,
+  program?: string,
+): { content: string; added: number } | null {
   if (declarations.kind === 'text') {
-    const declared = new Set([...content.matchAll(/^\s*([A-Za-z_]\w*)\s*(?:AT\s+\S+\s*)?:/gim)].map((m) => m[1]!.toLowerCase()));
+    // Only what a VAR block declares counts: an assignment to the same name does not.
+    const declared = new Set(
+      [...content.matchAll(/\bVAR\w*\b[\s\S]*?\bEND_VAR\b/gi)].flatMap((m) =>
+        [...m[0].matchAll(/^\s*([A-Za-z_]\w*)\s*(?:AT\s+\S+\s*)?:(?!=)/gm)].map((n) => n[1]!.toLowerCase()),
+      ),
+    );
     const lines: string[] = [];
     let added = 0;
     let pending: string[] = [];
@@ -84,13 +93,16 @@ export function applyDeclarations(content: string, declarations: Declarations): 
       }
     }
     if (added === 0) return { content, added };
-    const block = lines.join('\n') + '\n';
-    const header = /^[ \t]*(PROGRAM|FUNCTION_BLOCK)\b.*$/im.exec(content);
-    if (!header) return { content: block + content, added };
+    // The declarations go into the program the map's variables belong to, else the first one; a function block never takes them.
+    const headers = [...content.matchAll(/^[ \t]*PROGRAM[ \t]+(\w+).*$/gim)];
+    const header = headers.find((m) => m[1]!.toLowerCase() === program?.toLowerCase()) ?? headers[0];
+    if (!header) return null;
+    const eol = content.includes('\r\n') ? '\r\n' : '\n';
+    const block = lines.join(eol) + eol;
     const end = header.index + header[0].length;
     const newline = content.startsWith('\r\n', end) ? 2 : content.startsWith('\n', end) ? 1 : 0;
     const at = end + newline;
-    return { content: content.slice(0, at) + (newline ? '' : '\n') + block + content.slice(at), added };
+    return { content: content.slice(0, at) + (newline ? '' : eol) + block + content.slice(at), added };
   }
   let model: { variables?: { local?: unknown[]; inputs?: { name: string }[]; outputs?: { name: string }[] } };
   try {
