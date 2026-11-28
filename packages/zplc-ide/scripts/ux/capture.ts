@@ -523,6 +523,12 @@ async function captureCondition(
     }
     await Bun.sleep(400);
     if (await app.eval<boolean>('document.activeElement instanceof HTMLElement')) await app.eval('document.activeElement.blur()');
+    // a full repaint: where a region was painted over itself (after a hover, a value or a scroll), the antialiased corners of a control
+    // are one level darker than where it was painted once, so two runs differ by repaint history unless every picture starts from one
+    await app.eval(
+      `new Promise((resolve) => { document.documentElement.style.visibility = 'hidden'; void document.documentElement.offsetHeight; ` +
+        `requestAnimationFrame(() => { document.documentElement.style.visibility = ''; requestAnimationFrame(() => resolve(true)); }); })`,
+    );
     // the picture once two in a row are the same, and a 3D canvas in it shows the scene: a layout that follows a command can still
     // be settling, and a canvas can be blank in the picture after it has drawn
     // a 3D scene loads its textures and lights one after the other, so its picture has to hold still for longer
