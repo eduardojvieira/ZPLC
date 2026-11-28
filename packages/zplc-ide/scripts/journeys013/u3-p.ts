@@ -161,6 +161,12 @@ export const journeysU3P: Journey[] = [
         async () => ((await rowText(app, 'Start')).includes('From the plant') ? true : undefined),
         30_000,
       );
+      // the plant-fed note shows at once; the value cell only exists once the first poll answers
+      await app.until(
+        'the value of Start',
+        async () => ((await app.eval<boolean>(`!!${watchRow('Start')}?.querySelector('[data-forced]')`)) ? true : undefined),
+        30_000,
+      );
       // no editor: the row takes no keyboard focus, and a double-click on the value, scrolled into view, opens nothing
       assert(
         await app.eval<boolean>(`!${watchRow('Start')}.querySelector('[data-forced]').hasAttribute('tabindex')`),
