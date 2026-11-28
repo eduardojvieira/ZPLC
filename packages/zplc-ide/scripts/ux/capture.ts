@@ -180,9 +180,12 @@ const canvasShows = (png: string): string =>
   `const bitmap = await createImageBitmap(new Blob([bytes], { type: 'image/png' })); ` +
   `const copy = document.createElement('canvas'); copy.width = bitmap.width; copy.height = bitmap.height; ` +
   `const context = copy.getContext('2d'); context.drawImage(bitmap, 0, 0); const scale = bitmap.width / innerWidth; ` +
-  `return canvases.every((canvas) => { const box = canvas.getBoundingClientRect(); if (box.width < 2 || box.height < 2) return true; ` +
-  `const data = context.getImageData(Math.round(box.x * scale), Math.round(box.y * scale), ` +
-  `Math.max(1, Math.round(box.width * scale)), Math.max(1, Math.round(box.height * scale))).data; const seen = new Set(); ` +
+  `return canvases.every((canvas) => { const box = canvas.getBoundingClientRect(); ` +
+  `const left = Math.max(0, box.left), top = Math.max(0, box.top); ` +
+  `const right = Math.min(innerWidth, box.right), bottom = Math.min(innerHeight, box.bottom); ` +
+  `if (right - left < 2 || bottom - top < 2) return true; ` +
+  `const data = context.getImageData(Math.round(left * scale), Math.round(top * scale), ` +
+  `Math.max(1, Math.round((right - left) * scale)), Math.max(1, Math.round((bottom - top) * scale))).data; const seen = new Set(); ` +
   `for (let i = 0; i < data.length; i += 16) seen.add((data[i] << 16) | (data[i + 1] << 8) | data[i + 2]); return seen.size > 8; }); })()`;
 /** Motion, the caret and the scrollbars of Monaco (its scrollbar and overview ruler fade on a timer) stand still. */
 export const STILL =
@@ -519,6 +522,7 @@ async function captureCondition(
         `await state.openFile(node.id); return 'ran'; })()`,
     );
 
+  const settings = { language: condition.locale, density: condition.density, plantQuality: 'medium' };
   try {
     await app.cdp.command('Emulation.setDeviceMetricsOverride', {
       width: condition.width,
@@ -532,7 +536,8 @@ async function captureCondition(
     await app.eval(
       `(async () => { const { useAppSettings } = await import('/src/store/useAppSettings.ts'); ` +
         `const { useIDEStore } = await import('/src/store/useIDEStore.ts'); ` +
-        `useAppSettings.getState().update(${JSON.stringify({ language: condition.locale, density: condition.density })}); ` +
+        // the plant quality is fixed: 'auto' lowers it when the frames are slow, which software rendering always is
+        `useAppSettings.getState().update(${JSON.stringify(settings)}); ` +
         `useIDEStore.getState().setTheme(${JSON.stringify(condition.theme)}); return true; })()`,
     );
     await app.until(
