@@ -36,17 +36,18 @@ Two kinds of timed steps appear in process plants:
 - **A timed step with no sensor.** When there is no sensor at the target level or duration, an on-delay timer (`TON`) measures the step. Its `IN` input is TRUE only while that step is active; when its `.Q` output turns TRUE, the cycle advances.
 - **A sensor step with a safety timeout.** When a step normally ends on a sensor — such as a low-level switch — a `TON` runs alongside it with a generous preset. If the sensor never triggers because a valve is blocked or a switch failed, `.Q` ends the step anyway so the machine does not stay stuck forever.
 
-Call every `TON` on every scan, outside any `IF` block, with `IN` tied to its own step. When the cycle leaves that step — either normally or because a stop condition sends the cycle back to idle — `IN` becomes FALSE on the next scan and the timer resets cleanly for the next run.
+Call every `TON` on every scan, outside any `IF` block, with `IN` tied to its own step. When the cycle leaves that step — either normally or because a stop condition sends the cycle back to idle — `IN` becomes FALSE at its next call and the timer resets cleanly for the next run.
 
 ```timing
-span: 8000
+span: 14000
 signals:
   - { name: CycleBtn, edges: [200, 400, 3000, 3200] }
-  - { name: GuardClosed, edges: [0, 1200, 2400, 8000] }
-  - { name: WashPump, edges: [200, 1200, 3000, 5000] }
-  - { name: AirKnife, edges: [5000, 7000] }
+  - { name: GuardClosed, edges: [0, 1200, 2400, 14000] }
+  - { name: WashPump, edges: [200, 1200, 3000, 7000] }
+  - { name: AirKnife, edges: [7000, 11000] }
+  - { name: AirDry, edges: [11000, 14000] }
   - { name: FaultLamp, edges: [1200, 2400] }
-caption: Opening the guard aborts the first cycle and resets the timers; closing it lets the next press run both steps
+caption: Opening the guard aborts the first cycle and resets the timers; the next press runs the wash for 4 s, then the air knife until AirDry turns on
 ```
 
 ## Worked example
@@ -129,4 +130,4 @@ options:
 
 ## What you will do in the practice
 
-The starting program in `src/TimedTank.st` declares the four inputs and five outputs and drives nothing yet. You will write the cycle for the tank: each press of Start while the emergency stop is released and the tank is idle fills for 3.5 seconds, holds for 2 seconds, drains until `LevelLow` or 20 seconds, and lights `Green` when finished, while an emergency stop aborts the cycle and lights `Red`. The scenario presses Start at {{t:200}} ms, triggers the emergency stop at {{t:1000}} ms, releases it and presses Start again at {{t:4000}} ms. Save your program and press {{ui:learn.check}}.
+The starting program in `src/TimedTank.st` declares the four inputs and five outputs and drives nothing yet. You will write the cycle for the tank: each press of Start while the emergency stop is released and the tank is idle fills for 3.5 seconds, holds for 2 seconds, drains until `LevelLow` or 20 seconds, and lights `Green` when finished, while `Amber` stays lit as long as the cycle runs, and an emergency stop aborts the cycle and lights `Red`. The scenario presses Start at {{t:200}} ms, triggers the emergency stop at {{t:1000}} ms, releases it at {{t:3000}} ms and presses Start again at {{t:4000}} ms. Save your program and press {{ui:learn.check}}.

@@ -36,17 +36,18 @@ En una planta de proceso aparecen dos clases de pasos temporizados:
 - **Un paso temporizado sin sensor.** Cuando no hay un sensor en el nivel o duración deseados, un temporizador de retardo a la conexión (`TON`) mide el paso. Su entrada `IN` es TRUE solo mientras ese paso está activo; cuando su salida `.Q` pasa a TRUE, el ciclo avanza.
 - **Un paso por sensor con límite de tiempo de seguridad.** Cuando un paso normalmente termina con un sensor — como un interruptor de nivel bajo — un `TON` corre en paralelo con un tiempo amplio. Si el sensor nunca se activa porque una válvula está obstruida o el interruptor falló, `.Q` termina el paso igualmente para que la máquina no quede bloqueada para siempre.
 
-Llame a cada `TON` en todos los ciclos de barrido, fuera de cualquier bloque `IF`, con `IN` ligado a su propio paso. Cuando el ciclo abandona ese paso — ya sea normalmente o porque una condición de parada lo devuelve a reposo — `IN` pasa a FALSE en el barrido siguiente y el temporizador se reinicia limpiamente para la próxima ejecución.
+Llame a cada `TON` en todos los ciclos de escaneo, fuera de cualquier bloque `IF`, con `IN` ligado a su propio paso. Cuando el ciclo abandona ese paso — ya sea normalmente o porque una condición de parada lo devuelve a reposo — `IN` pasa a FALSE en su siguiente llamada y el temporizador se reinicia limpiamente para la próxima ejecución.
 
 ```timing
-span: 8000
+span: 14000
 signals:
   - { name: CycleBtn, edges: [200, 400, 3000, 3200] }
-  - { name: GuardClosed, edges: [0, 1200, 2400, 8000] }
-  - { name: WashPump, edges: [200, 1200, 3000, 5000] }
-  - { name: AirKnife, edges: [5000, 7000] }
+  - { name: GuardClosed, edges: [0, 1200, 2400, 14000] }
+  - { name: WashPump, edges: [200, 1200, 3000, 7000] }
+  - { name: AirKnife, edges: [7000, 11000] }
+  - { name: AirDry, edges: [11000, 14000] }
   - { name: FaultLamp, edges: [1200, 2400] }
-caption: Abrir la guarda aborta el primer ciclo y reinicia los temporizadores; cerrarla permite que la siguiente pulsación ejecute ambos pasos
+caption: Abrir la guarda aborta el primer ciclo y reinicia los temporizadores; la pulsación siguiente ejecuta el lavado durante 4 s y luego el soplador hasta que AirDry se activa
 ```
 
 ## Ejemplo resuelto
@@ -95,14 +96,14 @@ FaultLamp := NOT GuardClosed;
 END_PROGRAM
 ```
 
-Léalo de arriba abajo. La comprobación de seguridad va primero: siempre que `GuardClosed` es FALSE, `Phase` vuelve a `0` y la rama `ELSIF` no puede iniciar un ciclo nuevo. Ambos bloques `TON` se llaman en cada barrido, de modo que `WashT` corre solo en la fase 1 y `DryT` solo en la fase 2; en cuanto cambia `Phase`, el temporizador de la fase anterior ve `IN := FALSE` y se reinicia. Al final, cada salida se calcula desde `Phase` o `GuardClosed` en un solo lugar, así que ningún actuador puede quedar retenido por error.
+Léalo de arriba abajo. La comprobación de seguridad va primero: siempre que `GuardClosed` es FALSE, `Phase` vuelve a `0` y la rama `ELSIF` no puede iniciar un ciclo nuevo. Ambos bloques `TON` se llaman en cada ciclo de escaneo, de modo que `WashT` corre solo en la fase 1 y `DryT` solo en la fase 2; en cuanto cambia `Phase`, el temporizador de la fase anterior ve `IN := FALSE` y se reinicia. Al final, cada salida se calcula desde `Phase` o `GuardClosed` en un solo lugar, así que ningún actuador puede quedar retenido por error.
 
 Esta lavadora tiene solo dos pasos activos y ninguna lámpara que permanezca encendida tras un ciclo terminado. En la práctica, el tanque añade un paso de espera entre el llenado y el vaciado, y una lámpara verde que debe quedar encendida tras un ciclo completo hasta que comience uno nuevo o se pulse el paro de emergencia.
 
 ## Errores comunes
 
 - Llamar a un `TON` dentro de un bloque `IF` de su paso. Cuando el ciclo abandona el paso o se aborta por un paro de emergencia, el temporizador deja de llamarse con `IN := FALSE`, conserva su tiempo transcurrido anterior y dispara de inmediato en el siguiente ciclo.
-- Reutilizar un mismo `TON` para dos pasos temporizados seguidos. Como `IN` sigue en TRUE del final de un paso al comienzo del siguiente, el temporizador nunca ve un barrido en FALSE y nunca se reinicia.
+- Reutilizar un mismo `TON` para dos pasos temporizados seguidos. Como `IN` sigue en TRUE del final de un paso al comienzo del siguiente, el temporizador nunca ve un ciclo de escaneo con IN en FALSE y nunca se reinicia.
 - Invertir la lógica del paro de emergencia. `EStopOk` está en TRUE cuando está liberado y en FALSE cuando está pulsado; detenerse con `EStopOk` en lugar de `NOT EStopOk` bloquea la máquina durante el funcionamiento normal.
 - Dejar encendida la lámpara de ciclo terminado después de un paro de emergencia o al iniciar un ciclo nuevo. Un ciclo abortado o recién iniciado no está terminado.
 
@@ -112,21 +113,21 @@ Esta lavadora tiene solo dos pasos activos y ninguna lámpara que permanezca enc
 ## Compruébelo usted
 
 ```quiz
-question: ¿Por qué debe llamarse cada temporizador TON en todos los barridos con IN ligado a su propio paso, en lugar de hacerlo dentro de un bloque IF?
+question: ¿Por qué debe llamarse cada temporizador TON en todos los ciclos de escaneo con IN ligado a su propio paso, en lugar de hacerlo dentro de un bloque IF?
 options:
   - { text: 'Para que al salir del paso o abortar el ciclo IN pase a FALSE y el temporizador se reinicie para la siguiente ejecución', correct: true, feedback: 'Sí. Un TON solo se reinicia cuando se lo llama con IN igual a FALSE.' }
   - { text: 'Porque ZPLC no permite llamar bloques de función dentro de una instrucción IF', feedback: 'El lenguaje lo permite, pero omitir la llamada deja el temporizador congelado en su último tiempo transcurrido.' }
-  - { text: 'Porque dos temporizadores no pueden compartir el mismo ciclo de barrido', feedback: 'Cualquier número de instancias TON puede ejecutarse en el mismo barrido; cada una lleva su propio tiempo transcurrido.' }
+  - { text: 'Porque dos temporizadores no pueden compartir el mismo ciclo de escaneo', feedback: 'Cualquier número de instancias TON puede ejecutarse en el mismo ciclo de escaneo; cada una lleva su propio tiempo transcurrido.' }
 ```
 
 ```quiz
-question: En la lavadora de piezas del ejemplo resuelto, GuardClosed pasa a FALSE mientras Phase vale 2. ¿Qué ocurre en ese barrido?
+question: En la lavadora de piezas del ejemplo resuelto, GuardClosed pasa a FALSE mientras Phase vale 2. ¿Qué ocurre en ese ciclo de escaneo?
 options:
   - { text: 'Phase pasa a 0, DryT ve IN en FALSE y se reinicia, ambos actuadores se apagan y FaultLamp se enciende', correct: true, feedback: 'Correcto. El primer IF reinicia Phase a 0 antes de evaluar los temporizadores y las salidas.' }
-  - { text: 'AirKnife sigue funcionando hasta que DryT alcanza 10 segundos y luego se enciende FaultLamp', feedback: 'La comprobación de la guarda se ejecuta al principio de cada barrido y devuelve Phase a 0 de inmediato.' }
+  - { text: 'AirKnife sigue funcionando hasta que DryT alcanza 10 segundos y luego se enciende FaultLamp', feedback: 'La comprobación de la guarda se ejecuta al principio de cada ciclo de escaneo y devuelve Phase a 0 de inmediato.' }
   - { text: 'Phase se queda en 2 para que el ciclo pueda reanudarse cuando la guarda vuelva a cerrarse', feedback: 'El IF fija Phase en 0, así que cerrar la guarda deja la lavadora en reposo hasta que se pulse CycleBtn otra vez.' }
 ```
 
 ## Qué hará en la práctica
 
-El programa inicial en `src/TimedTank.st` declara las cuatro entradas y las cinco salidas y todavía no acciona nada. Usted escribirá el ciclo del tanque: cada pulsación de Start mientras el paro de emergencia esté liberado y el tanque esté en reposo llena durante 3,5 segundos, espera 2 segundos, vacía hasta `LevelLow` o 20 segundos y enciende `Green` al terminar, mientras que un paro de emergencia aborta el ciclo y enciende `Red`. El escenario pulsa Start a los {{t:200}} ms, acciona el paro de emergencia a los {{t:1000}} ms, lo libera y vuelve a pulsar Start a los {{t:4000}} ms. Guarde su programa y pulse {{ui:learn.check}}.
+El proyecto inicial en `src/TimedTank.st` declara las cuatro entradas y las cinco salidas y todavía no acciona nada. Usted escribirá el ciclo del tanque: cada pulsación de Start mientras el paro de emergencia esté liberado y el tanque esté en reposo llena durante 3,5 segundos, espera 2 segundos, vacía hasta `LevelLow` o 20 segundos y enciende `Green` al terminar, y mantiene `Amber` encendida mientras el ciclo corre, mientras que un paro de emergencia aborta el ciclo y enciende `Red`. El escenario pulsa Start a los {{t:200}} ms, acciona el paro de emergencia a los {{t:1000}} ms, lo libera a los {{t:3000}} ms y vuelve a pulsar Start a los {{t:4000}} ms. Guarde su programa y pulse {{ui:learn.check}}.
