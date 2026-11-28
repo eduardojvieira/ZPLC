@@ -173,6 +173,16 @@ export const DRAWN =
   `context.drawImage(canvas, 0, 0, 32, 32); const data = context.getImageData(0, 0, 32, 32).data; ` +
   `for (let i = 4; i < data.length; i += 4) if (data[i] !== data[0] || data[i + 1] !== data[1] || data[i + 2] !== data[2]) return true; ` +
   `return false; }))))`;
+/** A page expression: true when each 3D canvas of the page shows more than a few colours in this picture (a PNG, base64). */
+const canvasShows = (png: string): string =>
+  `(async () => { const canvases = [...document.querySelectorAll('[data-plant-canvas]')]; if (canvases.length === 0) return true; ` +
+  `const bitmap = await createImageBitmap(await (await fetch('data:image/png;base64,${png}')).blob()); ` +
+  `const copy = document.createElement('canvas'); copy.width = bitmap.width; copy.height = bitmap.height; ` +
+  `const context = copy.getContext('2d'); context.drawImage(bitmap, 0, 0); const scale = bitmap.width / innerWidth; ` +
+  `return canvases.every((canvas) => { const box = canvas.getBoundingClientRect(); if (box.width < 2 || box.height < 2) return true; ` +
+  `const data = context.getImageData(Math.round(box.x * scale), Math.round(box.y * scale), ` +
+  `Math.max(1, Math.round(box.width * scale)), Math.max(1, Math.round(box.height * scale))).data; const seen = new Set(); ` +
+  `for (let i = 0; i < data.length; i += 16) seen.add((data[i] << 16) | (data[i + 1] << 8) | data[i + 2]); return seen.size > 8; }); })()`;
 /** Motion, the caret and the scrollbars of Monaco (its scrollbar and overview ruler fade on a timer) stand still. */
 export const STILL =
   '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; } ' +
@@ -373,6 +383,8 @@ const RESET = (baseline: unknown) => `(async (baseline) => {
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
   document.getElementById(baseline.tabs[0] ?? '')?.click();
+  const { useSecondaryView } = await import('/src/shell/useSelection.ts');
+  useSecondaryView.setState({ choice: null, inPrimary: false });
   useShellLayout.setState(baseline.layout);
   useIDEStore.setState(baseline.console);
   await new Promise((resolve) => requestAnimationFrame(() => resolve(true)));
@@ -449,14 +461,15 @@ async function captureCondition(
     for (let attempt = 0; attempt < 40 && !(await app.eval<boolean>(DRAWN)); attempt++) await Bun.sleep(500);
     await Bun.sleep(400);
     if (await app.eval<boolean>('document.activeElement instanceof HTMLElement')) await app.eval('document.activeElement.blur()');
-    // the picture once two in a row are the same: a layout that follows a command can still be settling
+    // the picture once two in a row are the same, and a 3D canvas in it shows the scene: a layout that follows a command can still
+    // be settling, and a canvas can be blank in the picture after it has drawn
     let previous = '';
     let data = '';
-    for (let attempt = 0; attempt < 10; attempt++) {
+    for (let attempt = 0; attempt < 60; attempt++) {
       data = ((await app.cdp.command('Page.captureScreenshot', { format: 'png' })) as { data: string }).data;
-      if (data === previous) break;
+      if (data === previous && (await app.eval<boolean>(canvasShows(data)))) break;
       previous = data;
-      await Bun.sleep(250);
+      await Bun.sleep(attempt < 10 ? 250 : 500);
     }
     writeFileSync(join(out, `${name}.png`), Buffer.from(data, 'base64'));
     const page = await collect(false);
