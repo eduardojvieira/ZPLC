@@ -56,6 +56,8 @@ import { TargetSelector } from './TargetSelector';
 import { runSequence, type RunActions } from './runSequence';
 import { planRun, type RunOffer, type RunSituation } from '../runtime/runPlan';
 import { saveAllDocuments } from '../store/saveAll';
+import { hasEditedScene, saveEditedScenes, usePlantEdit } from '../plant/editSession';
+import { usePlantChoice } from '../plant/ui/usePlantChoice';
 import { useAppSettings } from '../store/useAppSettings';
 import { confirmAction } from '../store/actionConfirm';
 import { reveal } from '../shell/reveal';
@@ -251,6 +253,25 @@ export function Toolbar({ debugController }: ToolbarProps) {
 
   // The handlers below report their own failure in the console, so buttons and shortcuts start them with `void` and do not wait.
   const handleSaveFile = async () => {
+    // With the plant document active, Save is the save of its scene (FLW-005); with any other document active it is that document's.
+    const plantScene = usePlantEdit.getState().sceneRef ?? usePlantChoice.getState().shown?.key;
+    if (usePlantDocument.getState().active && plantScene && hasEditedScene(plantScene)) {
+      const { names, failed } = await saveEditedScenes(plantScene);
+      const name = names[0] ?? plantScene;
+      useNotifications.getState().report(
+        failed.length === 0
+          ? { kind: 'save', status: 'success', title: t('toolbarMsg.saved', { name }), details: 'output' }
+          : {
+              kind: 'save',
+              status: 'error',
+              title: t('toolbarMsg.couldNotSave', { name }),
+              detail: failed.join('; '),
+              details: 'output',
+              recover: { label: t('toolbarMsg.trySavingAgain'), run: () => void handleSaveFile() },
+            },
+      );
+      return;
+    }
     if (!activeFile || !activeFileId) {
       addConsoleEntry({ type: 'error', message: t('toolbarMsg.noFileSelectedTo'), source: 'system' });
       return;

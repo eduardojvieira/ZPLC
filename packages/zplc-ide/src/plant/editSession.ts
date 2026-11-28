@@ -13,6 +13,10 @@ import type { PlantSceneFile } from './contracts';
 import { catalogue } from './core/catalogue';
 import { createMapEditor, type MapEditor } from './editor/mapEditor';
 import { createSceneEditor, type SceneEditor } from './editor/model';
+import { saveProjectScene, saveScene } from './persistence/sceneFiles';
+import { registerSaveAllParticipant, type SaveAllResult } from '../store/saveAll';
+import { useIDEStore } from '../store/useIDEStore';
+import { usePlantDocument } from '../store/usePlantDocument';
 
 export interface PlantEditSession {
   /** Null while no scene is being edited. */
@@ -26,6 +30,20 @@ export interface PlantEditSession {
   readonly running: boolean;
   /** The scene opened with a plant map: ending keeps a map text although nothing is bound. */
   readonly hadMap: boolean;
+  /** What the scene was when it was last saved, or when it began: the session is modified when it differs (FLW-005). */
+  readonly baseline: string | null;
+  /** Scenes edited and closed with Done and not saved yet, by scene reference: they stay a target of Save and Save all (FLW-005). */
+  readonly unsaved: Readonly<Record<string, UnsavedScene>>;
+}
+
+/** A scene whose edit session ended with changes that were never saved. */
+export interface UnsavedScene {
+  file: PlantSceneFile;
+  /** The plant map text, empty when nothing is bound. */
+  map: string;
+  baseline: string | null;
+  /** The project it belongs to: another project never receives it. */
+  project: unknown;
 }
 
 export interface PlantEditActions {
@@ -40,7 +58,15 @@ export interface PlantEditActions {
   touch(): void;
 }
 
-const CLOSED = { editor: null, mapEditor: null, sceneRef: null, hadMap: false } as const;
+const CLOSED = { editor: null, mapEditor: null, sceneRef: null, hadMap: false, baseline: null } as const;
+
+/** The scene and the plant map of a session as Save writes them, and the text that tells whether they changed. */
+function textsOf(editor: SceneEditor, mapEditor: MapEditor, hadMap: boolean): { file: PlantSceneFile; map: string; text: string } {
+  const file = editor.toFile();
+  const map = mapEditor.map();
+  const bound = Object.keys(map.signals).length > 0 || hadMap;
+  return { file, map: bound ? JSON.stringify(map) : '', text: JSON.stringify([file, bound ? map : null]) };
+}
 
 export const usePlantEdit = create<PlantEditSession & PlantEditActions>()((set, get) => {
   const touch = () => set((state) => ({ version: state.version + 1 }));
@@ -68,6 +94,7 @@ export const usePlantEdit = create<PlantEditSession & PlantEditActions>()((set, 
 
   return {
     ...CLOSED,
+    unsaved: {},
     version: 0,
     running: false,
     begin(ready, ref) {
@@ -75,15 +102,32 @@ export const usePlantEdit = create<PlantEditSession & PlantEditActions>()((set, 
       const editor = createSceneEditor(catalogue, ready.scene);
       const mapEditor = createMapEditor(editor.signals(), ready.scene.name);
       if (ready.map) mapEditor.load(ready.map);
-      set((state) => ({ editor: observed(editor), mapEditor, sceneRef: ref, hadMap: ready.map !== null, version: state.version + 1 }));
+      const hadMap = ready.map !== null;
+      set((state) => {
+        // A scene that was edited, closed and not saved goes on from what the disk holds, not from what it was closed with.
+        const { [ref]: pending, ...others } = state.unsaved;
+        return {
+          editor: observed(editor),
+          mapEditor,
+          sceneRef: ref,
+          hadMap,
+          baseline: pending ? pending.baseline : textsOf(editor, mapEditor, hadMap).text,
+          unsaved: others,
+          version: state.version + 1,
+        };
+      });
     },
     end() {
-      const { editor, mapEditor, hadMap } = get();
-      if (!editor || !mapEditor) return null;
-      const map = mapEditor.map();
-      const bound = Object.keys(map.signals).length > 0 || hadMap;
-      set((state) => ({ ...CLOSED, version: state.version + 1 }));
-      return { scene: JSON.stringify(editor.toFile()), map: bound ? JSON.stringify(map) : '' };
+      const { editor, mapEditor, hadMap, sceneRef, baseline } = get();
+      if (!editor || !mapEditor || sceneRef === null) return null;
+      const { file, map, text } = textsOf(editor, mapEditor, hadMap);
+      const project = useIDEStore.getState().directoryHandle;
+      set((state) => ({
+        ...CLOSED,
+        unsaved: text === baseline ? state.unsaved : { ...state.unsaved, [sceneRef]: { file, map, baseline, project } },
+        version: state.version + 1,
+      }));
+      return { scene: JSON.stringify(file), map };
     },
     undo() {
       if (!get().running) get().editor?.undo();
@@ -100,4 +144,65 @@ export const usePlantEdit = create<PlantEditSession & PlantEditActions>()((set, 
     },
     touch,
   };
+});
+
+// Loading a scene from disk, or a change made outside Studio, drops the edits that were closed and never saved.
+usePlantDocument.subscribe((state, before) => {
+  if (state.sceneRevision !== before.sceneRevision) usePlantEdit.setState({ unsaved: {} });
+});
+
+/** Whether the scene of `ref` has edits that Save would write: a session in progress that changed, or one closed and not saved. */
+export function hasEditedScene(ref: string): boolean {
+  const { editor, mapEditor, sceneRef, hadMap, baseline, unsaved } = usePlantEdit.getState();
+  if (editor && mapEditor && sceneRef === ref) return textsOf(editor, mapEditor, hadMap).text !== baseline;
+  return ref in unsaved;
+}
+
+const sceneFileName = (name: string) => name.replace(/[^A-Za-z0-9._ -]/g, '-').slice(0, 64);
+
+/**
+ * Saves the scenes with unsaved edits, or only the one of `only`: the project's own scene at the project root, a saved scene under its
+ * name, any other under the name it carries, each with its plant map once anything is bound. Nothing else is written.
+ */
+export async function saveEditedScenes(only?: string): Promise<SaveAllResult & { names: string[] }> {
+  const handle = useIDEStore.getState().directoryHandle;
+  const result = { saved: 0, failed: [] as string[], names: [] as string[] };
+  if (!handle) return result;
+  const targets: Array<{ ref: string; file: PlantSceneFile; map: string; done: () => void }> = [];
+  const live = usePlantEdit.getState();
+  if (live.editor && live.mapEditor && live.sceneRef !== null && hasEditedScene(live.sceneRef)) {
+    const { file, map, text } = textsOf(live.editor, live.mapEditor, live.hadMap);
+    targets.push({ ref: live.sceneRef, file, map, done: () => usePlantEdit.setState({ baseline: text }) });
+  }
+  for (const [ref, scene] of Object.entries(live.unsaved)) {
+    if (scene.project !== handle) usePlantEdit.setState((state) => omit(state, ref));
+    else targets.push({ ref, file: scene.file, map: scene.map, done: () => usePlantEdit.setState((state) => omit(state, ref)) });
+  }
+  for (const target of targets.filter((candidate) => only === undefined || candidate.ref === only)) {
+    const name =
+      target.ref === 'project'
+        ? 'scene.json'
+        : `${target.ref.startsWith('file:') ? target.ref.slice(5) : sceneFileName(target.file.name)}.scene.json`;
+    try {
+      const map = target.map || undefined;
+      if (target.ref === 'project') await saveProjectScene(handle, target.file, map);
+      else await saveScene(handle, name.slice(0, -'.scene.json'.length), target.file, map);
+      target.done();
+      result.saved += 1;
+      result.names.push(name);
+    } catch (error) {
+      result.failed.push(error instanceof Error ? error.message : String(error));
+    }
+  }
+  return result;
+}
+
+const omit = (state: { unsaved: Readonly<Record<string, UnsavedScene>> }, ref: string) => ({
+  unsaved: Object.fromEntries(Object.entries(state.unsaved).filter(([key]) => key !== ref)),
+});
+
+// A scene being edited, or closed with Done and not saved, joins "Save all" whether or not the plant document is mounted (FLW-005).
+registerSaveAllParticipant(async () => {
+  const { saved, failed } = await saveEditedScenes();
+  return { saved, failed };
 });

@@ -99,6 +99,7 @@ describe('the Edit menu commands of the plant (PLS-005, SCN-008, SCN-010)', () =
     dom.act(() => void session().editor!.place('belt-2', 'belt', [4, 0, 4]));
     const before = parts();
     usePlantDocument.setState({ active: false }); // a Ladder, FBD or SFC diagram is the active document
+    focused = false; // and no code editor has the keyboard
     const asked: string[] = [];
     const withdraw = offerVisualHistory((direction) => (asked.push(direction), true));
     await dom.act(async () => void runCommand('edit.undo'));

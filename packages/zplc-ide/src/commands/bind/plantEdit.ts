@@ -41,14 +41,23 @@ export function offerVisualHistory(apply: (direction: 'undo' | 'redo') => boolea
   };
 }
 
+/** A field with a history of its own: an input or text area that is not the hidden text area of a code editor. */
+const isPlainField = (element: Element | null): boolean =>
+  (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) && !element.closest('.monaco-editor');
+
 /**
- * Undo and Redo of the Edit menu act on the plant edit session only when the plant document is the active document and a scene is
- * being edited (SCN-010); in any other case the code editor that has the focus keeps its own history. The code editor's module is
- * loaded when it is asked for: a code editor that has the focus has loaded it already.
+ * Undo and Redo of the Edit menu go, in this order, to: a focused plain text field (its own history, which on macOS the menu key is
+ * what reaches); the plant edit session, when the plant document is the active document and a scene is being edited (SCN-010); the
+ * focused code editor; the active visual editor; and the code editor that is shown. The code editor's module is loaded when it is
+ * asked for: a code editor that has the focus has loaded it already.
  */
 const history =
   (direction: 'undo' | 'redo'): CommandHandler =>
   async () => {
+    if (isPlainField(document.activeElement)) {
+      document.execCommand(direction);
+      return;
+    }
     const session = usePlantEdit.getState();
     if (usePlantDocument.getState().active && session.editor) {
       if (session.running)
@@ -58,7 +67,10 @@ const history =
     }
     const { monacoEditor } = await import('../../components/monacoRuntime');
     const editors = monacoEditor.getEditors();
-    (editors.find((editor) => editor.hasTextFocus()) ?? editors[0])?.trigger('edit.menu', direction, null);
+    const focused = editors.find((editor) => editor.hasTextFocus());
+    if (focused) return void focused.trigger('edit.menu', direction, null);
+    if (visualHistory?.(direction)) return;
+    editors[0]?.trigger('edit.menu', direction, null);
   };
 
 /**

@@ -6,6 +6,7 @@
  * editors for graphical ones).
  */
 
+import { offerVisualHistory } from '../commands/bind/plantEdit';
 import { useMemo, useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Group, Panel, useGroupCallbackRef } from 'react-resizable-panels';
 import { useT } from '../i18n';
@@ -277,6 +278,9 @@ export function EditorArea({ debugController }: { debugController?: DebugControl
     },
     [setVisualHistoryState],
   );
+
+  // Edit > Undo and Redo reach the history of the active visual editor through here (SCN-010).
+  useEffect(() => offerVisualHistory(applyVisualHistory), [applyVisualHistory]);
 
   const handleVisualHistoryShortcut = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
