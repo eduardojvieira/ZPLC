@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import type { ProjectFileWithHandle } from '../../types';
 import type { IoMap } from '../../runtime/ioMap';
 import { isFocused, setupDom, stubProjectLoader } from '../../test/dom';
@@ -19,6 +19,7 @@ const { usePlantMapProblems } = await import('./plantMapProblems');
 const { createSceneEditor } = await import('../editor/model');
 const { parseScene } = await import('../core/scene');
 const { useIDEStore } = await import('../../store/useIDEStore');
+const { usePlantChoice } = await import('./usePlantChoice');
 
 registerParts(
   [...itemParts, ...conveyorParts, ...sourceParts, ...sensorParts, ...flowParts, ...panelParts].filter((d) => !catalogue.get(d.id)),
@@ -61,6 +62,8 @@ const fakeRoot = () => {
   return { root: root as unknown as FileSystemDirectoryHandle, written };
 };
 
+// another file of the same process may have left a scene shown by a plant panel: the project's own is what these tests mean
+beforeEach(() => usePlantChoice.getState().show(undefined));
 afterEach(() => {
   useIDEStore.setState({ directoryHandle: null } as never);
   usePlantMapProblems.getState().publish([]);
