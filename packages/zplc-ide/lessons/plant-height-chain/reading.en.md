@@ -6,47 +6,47 @@ This is a sorting line for boxes of three heights. Boxes ride in on an infeed be
 
 The line has fifteen parts. The tables say what each one is in a real plant and what its signal means to your program. The PLC variable is the name the program uses: the plant map of the lesson binds each signal of the scene to it.
 
-| Part | Kind | What it is in a real plant |
-| --- | --- | --- |
-| `Infeed` | Belt conveyor | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines. |
-| `Source1` | Item emitter | Stands for whatever feeds the line: the machine before it, an operator, or a magazine that releases one item. |
-| `Chain1` | Chain transfer | A section of the line whose chains rise between the rollers to move an item sideways onto another line. |
-| `Straight` | Belt conveyor | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines. |
-| `SideRight` | Belt conveyor | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines. |
-| `SideLeft` | Belt conveyor | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines. |
-| `Stop1` | Stop blade | A plate that rises across the belt to hold items back until they are let through. |
-| `BeamLow` | Diffuse optical sensor | A photoelectric sensor that sends out light and sees it bounce back off an object in front of it. |
-| `BeamHigh` | Diffuse optical sensor | A photoelectric sensor that sends out light and sees it bounce back off an object in front of it. |
-| `EyeChain` | Diffuse optical sensor | A photoelectric sensor that sends out light and sees it bounce back off an object in front of it. |
-| `BinShort` | Item remover | Stands for whatever takes items away at the end of the line: the next machine, a bin, or an operator. |
-| `BinMedium` | Item remover | Stands for whatever takes items away at the end of the line: the next machine, a bin, or an operator. |
-| `BinTall` | Item remover | Stands for whatever takes items away at the end of the line: the next machine, a bin, or an operator. |
-| `StartButton` | Push button | A button on the operator panel that is pressed only while a finger holds it. |
-| `Beacon` | Stack light | A tower of coloured lamps that shows from afar what the machine is doing. |
+| Part          | Kind                   | What it is in a real plant                                                                                    |
+| ------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `Infeed`      | Belt conveyor          | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines.              |
+| `Source1`     | Item emitter           | Stands for whatever feeds the line: the machine before it, an operator, or a magazine that releases one item. |
+| `Chain1`      | Chain transfer         | A section of the line whose chains rise between the rollers to move an item sideways onto another line.       |
+| `Straight`    | Belt conveyor          | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines.              |
+| `SideRight`   | Belt conveyor          | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines.              |
+| `SideLeft`    | Belt conveyor          | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines.              |
+| `Stop1`       | Stop blade             | A plate that rises across the belt to hold items back until they are let through.                             |
+| `BeamLow`     | Diffuse optical sensor | A photoelectric sensor that sends out light and sees it bounce back off an object in front of it.             |
+| `BeamHigh`    | Diffuse optical sensor | A photoelectric sensor that sends out light and sees it bounce back off an object in front of it.             |
+| `EyeChain`    | Diffuse optical sensor | A photoelectric sensor that sends out light and sees it bounce back off an object in front of it.             |
+| `BinShort`    | Item remover           | Stands for whatever takes items away at the end of the line: the next machine, a bin, or an operator.         |
+| `BinMedium`   | Item remover           | Stands for whatever takes items away at the end of the line: the next machine, a bin, or an operator.         |
+| `BinTall`     | Item remover           | Stands for whatever takes items away at the end of the line: the next machine, a bin, or an operator.         |
+| `StartButton` | Push button            | A button on the operator panel that is pressed only while a finger holds it.                                  |
+| `Beacon`      | Stack light            | A tower of coloured lamps that shows from afar what the machine is doing.                                     |
 
-| Variable | Signal | Direction & type | Meaning |
-| --- | --- | --- | --- |
-| `RunIn` | `Infeed.run` | PLC output · BOOL | TRUE runs the belt forward. |
-| — | `Source1` | — | Not wired to the PLC. |
-| `Raised` | `Chain1.raised` | PLC input · BOOL | TRUE when the chains are fully up. |
-| `Lowered` | `Chain1.lowered` | PLC input · BOOL | TRUE when the chains are fully down. |
-| `RunChain` | `Chain1.run` | PLC output · BOOL | TRUE moves items forward along the line (chains down). |
-| `Lift` | `Chain1.lift` | PLC output · BOOL | TRUE raises the chains; FALSE lowers them. |
-| `MoveRight` | `Chain1.moveRight` | PLC output · BOOL | TRUE moves items sideways to the right (chains up). |
-| `MoveLeft` | `Chain1.moveLeft` | PLC output · BOOL | TRUE moves items sideways to the left (chains up). |
-| `RunStraight` | `Straight.run` | PLC output · BOOL | TRUE runs the belt forward. |
-| `RunRight` | `SideRight.run` | PLC output · BOOL | TRUE runs the belt forward. |
-| `RunLeft` | `SideLeft.run` | PLC output · BOOL | TRUE runs the belt forward. |
-| `Hold` | `Stop1.extend` | PLC output · BOOL | TRUE raises the blade across the belt; FALSE lowers it. |
-| `Low` | `BeamLow.detect` | PLC input · BOOL | TRUE while an object is in the beam. |
-| `High` | `BeamHigh.detect` | PLC input · BOOL | TRUE while an object is in the beam. |
-| `AtBlade` | `EyeChain.detect` | PLC input · BOOL | TRUE while an object is in the beam. |
-| — | `BinShort` | — | Not wired to the PLC. |
-| — | `BinMedium` | — | Not wired to the PLC. |
-| — | `BinTall` | — | Not wired to the PLC. |
-| `Start` | `StartButton.pressed` | PLC input · BOOL | TRUE while the button is held down. |
-| `Busy` | `Beacon.amber` | PLC output · BOOL | TRUE lights the amber lamp. |
-| `Done` | `Beacon.green` | PLC output · BOOL | TRUE lights the green lamp. |
+| Variable      | Signal                | Direction & type  | Meaning                                                 |
+| ------------- | --------------------- | ----------------- | ------------------------------------------------------- |
+| `RunIn`       | `Infeed.run`          | PLC output · BOOL | TRUE runs the belt forward.                             |
+| —             | `Source1`             | —                 | Not wired to the PLC.                                   |
+| `Raised`      | `Chain1.raised`       | PLC input · BOOL  | TRUE when the chains are fully up.                      |
+| `Lowered`     | `Chain1.lowered`      | PLC input · BOOL  | TRUE when the chains are fully down.                    |
+| `RunChain`    | `Chain1.run`          | PLC output · BOOL | TRUE moves items forward along the line (chains down).  |
+| `Lift`        | `Chain1.lift`         | PLC output · BOOL | TRUE raises the chains; FALSE lowers them.              |
+| `MoveRight`   | `Chain1.moveRight`    | PLC output · BOOL | TRUE moves items sideways to the right (chains up).     |
+| `MoveLeft`    | `Chain1.moveLeft`     | PLC output · BOOL | TRUE moves items sideways to the left (chains up).      |
+| `RunStraight` | `Straight.run`        | PLC output · BOOL | TRUE runs the belt forward.                             |
+| `RunRight`    | `SideRight.run`       | PLC output · BOOL | TRUE runs the belt forward.                             |
+| `RunLeft`     | `SideLeft.run`        | PLC output · BOOL | TRUE runs the belt forward.                             |
+| `Hold`        | `Stop1.extend`        | PLC output · BOOL | TRUE raises the blade across the belt; FALSE lowers it. |
+| `Low`         | `BeamLow.detect`      | PLC input · BOOL  | TRUE while an object is in the beam.                    |
+| `High`        | `BeamHigh.detect`     | PLC input · BOOL  | TRUE while an object is in the beam.                    |
+| `AtBlade`     | `EyeChain.detect`     | PLC input · BOOL  | TRUE while an object is in the beam.                    |
+| —             | `BinShort`            | —                 | Not wired to the PLC.                                   |
+| —             | `BinMedium`           | —                 | Not wired to the PLC.                                   |
+| —             | `BinTall`             | —                 | Not wired to the PLC.                                   |
+| `Start`       | `StartButton.pressed` | PLC input · BOOL  | TRUE while the button is held down.                     |
+| `Busy`        | `Beacon.amber`        | PLC output · BOOL | TRUE lights the amber lamp.                             |
+| `Done`        | `Beacon.green`        | PLC output · BOOL | TRUE lights the green lamp.                             |
 
 Three parts have no variable. `Source1` releases the boxes on its own and the three bins take away what reaches them, so your program never starts or stops them. It never sees a box either, only what the sensors say about it.
 

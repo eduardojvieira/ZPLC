@@ -6,47 +6,47 @@ Esta es una línea de clasificación de cajas de tres alturas. Las cajas llegan 
 
 La línea tiene quince elementos. Las tablas dicen qué es cada uno en una planta real y qué significa su señal para su programa. La variable del PLC es el nombre que usa el programa: el mapa de planta de la lección une cada señal de la escena con ella.
 
-| Elemento | Tipo | Qué es en una planta real |
-| --- | --- | --- |
-| `Infeed` | Cinta transportadora | Una cinta movida por un motor que lleva la mercancía a lo largo de una línea, la base de casi toda línea de embalaje o clasificación. |
-| `Source1` | Emisor de piezas | Representa lo que alimenta la línea: la máquina anterior, un operario o un cargador que suelta una pieza. |
-| `Chain1` | Transferencia de cadenas | Un tramo de la línea cuyas cadenas suben entre los rodillos para mover una pieza de lado hacia otra línea. |
-| `Straight` | Cinta transportadora | Una cinta movida por un motor que lleva la mercancía a lo largo de una línea, la base de casi toda línea de embalaje o clasificación. |
-| `SideRight` | Cinta transportadora | Una cinta movida por un motor que lleva la mercancía a lo largo de una línea, la base de casi toda línea de embalaje o clasificación. |
-| `SideLeft` | Cinta transportadora | Una cinta movida por un motor que lleva la mercancía a lo largo de una línea, la base de casi toda línea de embalaje o clasificación. |
-| `Stop1` | Tope retráctil | Una placa que se eleva sobre la cinta para retener las piezas hasta dejarlas pasar. |
-| `BeamLow` | Sensor óptico difuso | Un sensor fotoeléctrico que emite luz y la ve rebotar en un objeto que tiene delante. |
-| `BeamHigh` | Sensor óptico difuso | Un sensor fotoeléctrico que emite luz y la ve rebotar en un objeto que tiene delante. |
-| `EyeChain` | Sensor óptico difuso | Un sensor fotoeléctrico que emite luz y la ve rebotar en un objeto que tiene delante. |
-| `BinShort` | Retirador de piezas | Representa lo que retira las piezas al final de la línea: la máquina siguiente, un contenedor o un operario. |
-| `BinMedium` | Retirador de piezas | Representa lo que retira las piezas al final de la línea: la máquina siguiente, un contenedor o un operario. |
-| `BinTall` | Retirador de piezas | Representa lo que retira las piezas al final de la línea: la máquina siguiente, un contenedor o un operario. |
-| `StartButton` | Pulsador | Un pulsador del panel del operador, presionado solo mientras un dedo lo mantiene. |
-| `Beacon` | Torre de luces | Una torre de lámparas de colores que muestra a distancia qué hace la máquina. |
+| Elemento      | Tipo                     | Qué es en una planta real                                                                                                             |
+| ------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `Infeed`      | Cinta transportadora     | Una cinta movida por un motor que lleva la mercancía a lo largo de una línea, la base de casi toda línea de embalaje o clasificación. |
+| `Source1`     | Emisor de piezas         | Representa lo que alimenta la línea: la máquina anterior, un operario o un cargador que suelta una pieza.                             |
+| `Chain1`      | Transferencia de cadenas | Un tramo de la línea cuyas cadenas suben entre los rodillos para mover una pieza de lado hacia otra línea.                            |
+| `Straight`    | Cinta transportadora     | Una cinta movida por un motor que lleva la mercancía a lo largo de una línea, la base de casi toda línea de embalaje o clasificación. |
+| `SideRight`   | Cinta transportadora     | Una cinta movida por un motor que lleva la mercancía a lo largo de una línea, la base de casi toda línea de embalaje o clasificación. |
+| `SideLeft`    | Cinta transportadora     | Una cinta movida por un motor que lleva la mercancía a lo largo de una línea, la base de casi toda línea de embalaje o clasificación. |
+| `Stop1`       | Tope retráctil           | Una placa que se eleva sobre la cinta para retener las piezas hasta dejarlas pasar.                                                   |
+| `BeamLow`     | Sensor óptico difuso     | Un sensor fotoeléctrico que emite luz y la ve rebotar en un objeto que tiene delante.                                                 |
+| `BeamHigh`    | Sensor óptico difuso     | Un sensor fotoeléctrico que emite luz y la ve rebotar en un objeto que tiene delante.                                                 |
+| `EyeChain`    | Sensor óptico difuso     | Un sensor fotoeléctrico que emite luz y la ve rebotar en un objeto que tiene delante.                                                 |
+| `BinShort`    | Retirador de piezas      | Representa lo que retira las piezas al final de la línea: la máquina siguiente, un contenedor o un operario.                          |
+| `BinMedium`   | Retirador de piezas      | Representa lo que retira las piezas al final de la línea: la máquina siguiente, un contenedor o un operario.                          |
+| `BinTall`     | Retirador de piezas      | Representa lo que retira las piezas al final de la línea: la máquina siguiente, un contenedor o un operario.                          |
+| `StartButton` | Pulsador                 | Un pulsador del panel del operador, presionado solo mientras un dedo lo mantiene.                                                     |
+| `Beacon`      | Torre de luces           | Una torre de lámparas de colores que muestra a distancia qué hace la máquina.                                                         |
 
-| Variable del PLC | Señal | Dirección y tipo | Significado |
-| --- | --- | --- | --- |
-| `RunIn` | `Infeed.run` | Salida del PLC · BOOL | TRUE hace avanzar la cinta. |
-| — | `Source1` | — | No está cableado al PLC. |
-| `Raised` | `Chain1.raised` | Entrada del PLC · BOOL | TRUE cuando las cadenas están totalmente arriba. |
-| `Lowered` | `Chain1.lowered` | Entrada del PLC · BOOL | TRUE cuando las cadenas están totalmente abajo. |
-| `RunChain` | `Chain1.run` | Salida del PLC · BOOL | TRUE mueve las piezas hacia adelante en la línea (cadenas abajo). |
-| `Lift` | `Chain1.lift` | Salida del PLC · BOOL | TRUE sube las cadenas; FALSE las baja. |
-| `MoveRight` | `Chain1.moveRight` | Salida del PLC · BOOL | TRUE mueve las piezas de lado hacia la derecha (cadenas arriba). |
-| `MoveLeft` | `Chain1.moveLeft` | Salida del PLC · BOOL | TRUE mueve las piezas de lado hacia la izquierda (cadenas arriba). |
-| `RunStraight` | `Straight.run` | Salida del PLC · BOOL | TRUE hace avanzar la cinta. |
-| `RunRight` | `SideRight.run` | Salida del PLC · BOOL | TRUE hace avanzar la cinta. |
-| `RunLeft` | `SideLeft.run` | Salida del PLC · BOOL | TRUE hace avanzar la cinta. |
-| `Hold` | `Stop1.extend` | Salida del PLC · BOOL | TRUE eleva el tope sobre la cinta; FALSE lo baja. |
-| `Low` | `BeamLow.detect` | Entrada del PLC · BOOL | TRUE mientras hay un objeto en el haz. |
-| `High` | `BeamHigh.detect` | Entrada del PLC · BOOL | TRUE mientras hay un objeto en el haz. |
-| `AtBlade` | `EyeChain.detect` | Entrada del PLC · BOOL | TRUE mientras hay un objeto en el haz. |
-| — | `BinShort` | — | No está cableado al PLC. |
-| — | `BinMedium` | — | No está cableado al PLC. |
-| — | `BinTall` | — | No está cableado al PLC. |
-| `Start` | `StartButton.pressed` | Entrada del PLC · BOOL | TRUE mientras el pulsador se mantiene presionado. |
-| `Busy` | `Beacon.amber` | Salida del PLC · BOOL | TRUE enciende la lámpara ámbar. |
-| `Done` | `Beacon.green` | Salida del PLC · BOOL | TRUE enciende la lámpara verde. |
+| Variable del PLC | Señal                 | Dirección y tipo       | Significado                                                        |
+| ---------------- | --------------------- | ---------------------- | ------------------------------------------------------------------ |
+| `RunIn`          | `Infeed.run`          | Salida del PLC · BOOL  | TRUE hace avanzar la cinta.                                        |
+| —                | `Source1`             | —                      | No está cableado al PLC.                                           |
+| `Raised`         | `Chain1.raised`       | Entrada del PLC · BOOL | TRUE cuando las cadenas están totalmente arriba.                   |
+| `Lowered`        | `Chain1.lowered`      | Entrada del PLC · BOOL | TRUE cuando las cadenas están totalmente abajo.                    |
+| `RunChain`       | `Chain1.run`          | Salida del PLC · BOOL  | TRUE mueve las piezas hacia adelante en la línea (cadenas abajo).  |
+| `Lift`           | `Chain1.lift`         | Salida del PLC · BOOL  | TRUE sube las cadenas; FALSE las baja.                             |
+| `MoveRight`      | `Chain1.moveRight`    | Salida del PLC · BOOL  | TRUE mueve las piezas de lado hacia la derecha (cadenas arriba).   |
+| `MoveLeft`       | `Chain1.moveLeft`     | Salida del PLC · BOOL  | TRUE mueve las piezas de lado hacia la izquierda (cadenas arriba). |
+| `RunStraight`    | `Straight.run`        | Salida del PLC · BOOL  | TRUE hace avanzar la cinta.                                        |
+| `RunRight`       | `SideRight.run`       | Salida del PLC · BOOL  | TRUE hace avanzar la cinta.                                        |
+| `RunLeft`        | `SideLeft.run`        | Salida del PLC · BOOL  | TRUE hace avanzar la cinta.                                        |
+| `Hold`           | `Stop1.extend`        | Salida del PLC · BOOL  | TRUE eleva el tope sobre la cinta; FALSE lo baja.                  |
+| `Low`            | `BeamLow.detect`      | Entrada del PLC · BOOL | TRUE mientras hay un objeto en el haz.                             |
+| `High`           | `BeamHigh.detect`     | Entrada del PLC · BOOL | TRUE mientras hay un objeto en el haz.                             |
+| `AtBlade`        | `EyeChain.detect`     | Entrada del PLC · BOOL | TRUE mientras hay un objeto en el haz.                             |
+| —                | `BinShort`            | —                      | No está cableado al PLC.                                           |
+| —                | `BinMedium`           | —                      | No está cableado al PLC.                                           |
+| —                | `BinTall`             | —                      | No está cableado al PLC.                                           |
+| `Start`          | `StartButton.pressed` | Entrada del PLC · BOOL | TRUE mientras el pulsador se mantiene presionado.                  |
+| `Busy`           | `Beacon.amber`        | Salida del PLC · BOOL  | TRUE enciende la lámpara ámbar.                                    |
+| `Done`           | `Beacon.green`        | Salida del PLC · BOOL  | TRUE enciende la lámpara verde.                                    |
 
 Tres elementos no tienen variable. `Source1` suelta las cajas por su cuenta y los tres contenedores retiran lo que les llega, así que su programa nunca los arranca ni los detiene. Tampoco ve nunca una caja, solo lo que dicen los sensores sobre ella.
 
