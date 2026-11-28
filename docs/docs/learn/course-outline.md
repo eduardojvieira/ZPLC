@@ -67,9 +67,9 @@ A PLC repeats one cycle: read the inputs, run the program, write the outputs. Se
 | `ld-what-is-a-plc` What a PLC is: your first rung                    | Available | LD        | Simulation           | -     | 15      | -                            |
 | `ld-scan-cycle` The scan cycle: why the order of the rungs matters   | Available | LD        | Simulation           | -     | 15      | `ld-what-is-a-plc`           |
 | `scan-cycle-one-scan-memory` Scan cycle and one-scan memory          | Available | ST        | Simulation, Hardware | -     | 10      | `first-blink-simulation`     |
+| `st-if-then-else` Choose one of three states with IF, ELSIF and ELSE | Available | ST        | Simulation           | -     | 12      | `scan-cycle-one-scan-memory` |
 | `blinky-ladder-timer-feedback` TON oscillator and output feedback    | Available | LD        | Simulation, Hardware | -     | 20      | `scan-cycle-one-scan-memory` |
 | `blink-structured-text` Write a blinker in Structured Text           | Available | ST        | Simulation, Hardware | -     | 15      | `scan-cycle-one-scan-memory` |
-| `st-if-then-else` Choose one of three states with IF, ELSIF and ELSE | Available | ST        | Simulation           | -     | 12      | `scan-cycle-one-scan-memory` |
 
 Objectives of the available lessons:
 

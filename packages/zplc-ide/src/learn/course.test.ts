@@ -49,9 +49,9 @@ describe('the course view', () => {
       'ld-what-is-a-plc',
       'ld-scan-cycle',
       SECOND,
+      'st-if-then-else',
       THIRD,
       'blink-structured-text',
-      'st-if-then-else',
     ]);
     expect(one.estimatedMinutes).toBe(87);
     expect(one.title).toContain('scan cycle');
@@ -129,7 +129,7 @@ describe('where to continue', () => {
   it('is the next open lesson in course order after the last one was passed', () => {
     // the two reading lessons of module 1 come before SECOND in the full course (S-13), so they are passed too
     const progress = withNote(passed(FIRST, 'ld-what-is-a-plc', 'ld-scan-cycle', SECOND), { lessonId: SECOND, last: true }, at);
-    expect(continueTarget(view(progress), progress)).toBe(THIRD);
+    expect(continueTarget(view(progress), progress)).toBe('st-if-then-else');
   });
 
   it('is nothing when every lesson is passed', () => {

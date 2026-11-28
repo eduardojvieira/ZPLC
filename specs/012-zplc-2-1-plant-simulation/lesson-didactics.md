@@ -23,9 +23,9 @@ The last 10 columns are the rules of the script header: `ok`, or what breaks it.
 | 3 | `ld-what-is-a-plc` | 1 | LD | 15 | yes |  | 1 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 4 | `ld-scan-cycle` | 1 | LD | 15 | yes |  | 2 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 5 | `scan-cycle-one-scan-memory` | 1 | ST | 10 | yes | 15 | 3 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 6 | `blinky-ladder-timer-feedback` | 1 | LD | 20 | yes |  | 2 | yes | yes | ok | ok | ok | ok | ok | ok | ok | 2 starter statements, last of module 1 in ladder | ok | ok |
-| 7 | `blink-structured-text` | 1 | ST | 15 | yes | 3 | 1 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
-| 8 | `st-if-then-else` | 1 | ST | 12 | yes | 6 | 4 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
+| 6 | `st-if-then-else` | 1 | ST | 12 | yes | 6 | 4 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
+| 7 | `blinky-ladder-timer-feedback` | 1 | LD | 20 | yes |  | 2 | yes | yes | ok | ok | ok | ok | ok | ok | ok | 2 starter statements, last of module 1 in ladder | ok | ok |
+| 8 | `blink-structured-text` | 1 | ST | 15 | yes | 3 | 1 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 9 | `ld-no-nc-contacts` | 2 | LD | 20 | yes |  | 2 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 10 | `ld-series-parallel` | 2 | LD | 20 | yes |  | 2 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |
 | 11 | `boolean-logic-two-hand-guard` | 2 | ST | 15 | yes | 1 | 3 | yes | yes | ok | ok | ok | ok | ok | ok | ok | ok | ok | ok |

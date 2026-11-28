@@ -67,9 +67,9 @@ Un PLC repite un ciclo: leer las entradas, ejecutar el programa y escribir las s
 | `ld-what-is-a-plc` Qué es un PLC: su primer peldaño                           | Disponible | LD        | Simulación           | -      | 15      | -                            |
 | `ld-scan-cycle` El ciclo de escaneo: por qué importa el orden de los peldaños | Disponible | LD        | Simulación           | -      | 15      | `ld-what-is-a-plc`           |
 | `scan-cycle-one-scan-memory` Ciclo de escaneo y memoria de un ciclo           | Disponible | ST        | Simulación, Hardware | -      | 10      | `first-blink-simulation`     |
+| `st-if-then-else` Elegir uno de tres estados con IF, ELSIF y ELSE             | Disponible | ST        | Simulación           | -      | 12      | `scan-cycle-one-scan-memory` |
 | `blinky-ladder-timer-feedback` Oscilador TON y realimentación de salida       | Disponible | LD        | Simulación, Hardware | -      | 20      | `scan-cycle-one-scan-memory` |
 | `blink-structured-text` Escriba un parpadeador en texto estructurado          | Disponible | ST        | Simulación, Hardware | -      | 15      | `scan-cycle-one-scan-memory` |
-| `st-if-then-else` Elegir uno de tres estados con IF, ELSIF y ELSE             | Disponible | ST        | Simulación           | -      | 12      | `scan-cycle-one-scan-memory` |
 
 Objetivos de las lecciones disponibles:
 

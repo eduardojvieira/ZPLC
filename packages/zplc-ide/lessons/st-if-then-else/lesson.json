@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "st-if-then-else",
   "version": 1,
-  "order": 83,
+  "order": 69,
   "module": 1,
   "level": "foundation",
   "prerequisites": ["scan-cycle-one-scan-memory"],

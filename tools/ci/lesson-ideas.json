@@ -13,12 +13,13 @@
     "function-blocks": { "explainedBy": "ld-function-blocks" },
     "diagnosis": { "explainedBy": "ld-diagnosis-debugger" },
     "timers": { "explainedBy": "timers-on-delay-off-delay" },
-    "sfc": { "explainedBy": "sfc-fill-mix-sequence" }
+    "sfc": { "explainedBy": "sfc-fill-mix-sequence" },
+    "if-elsif-else": { "explainedBy": "st-if-then-else" }
   },
   "practises": {
     "scan-cycle-one-scan-memory": ["plc-basics", "scan-cycle"],
     "blinky-ladder-timer-feedback": ["plc-basics", "scan-cycle"],
-    "blink-structured-text": ["plc-basics", "scan-cycle"],
+    "blink-structured-text": ["plc-basics", "scan-cycle", "if-elsif-else"],
     "boolean-logic-two-hand-guard": ["series-parallel"],
     "seal-in-ladder": ["series-parallel", "no-nc-contacts"],
     "set-reset-alarm-latch": ["scan-cycle"],
