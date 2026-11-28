@@ -45,13 +45,17 @@ export async function openFileInEditor(app: App, path: string): Promise<void> {
   await app.until('the src folder in the tree', async () => (await app.visible(treeItem('dir:src'))) || undefined);
   if (await app.eval(`${treeItem('dir:src')}.getAttribute('aria-expanded') === 'false'`)) await app.click(treeItem('dir:src'));
   await app.click(treeItem(`file:${path}`), `${path} in the tree`);
+  // a file that is already open shows its tab again when another document (Preferences) took the editor area
+  const openTab = css(`[id="editor-tab-file:${path}"]`);
+  if (await app.visible(openTab)) await app.click(openTab, `the tab of ${path}`);
   // a diagram's tab is named without its extension
   const name = path.split('/').at(-1)!.split('.')[0]!;
   await app.until(
     `${name} to be the open document`,
     async () =>
       (await app.eval<boolean>(
-        `[...document.querySelectorAll('[role="tab"][aria-selected="true"]')].some((item) => item.textContent?.includes(${JSON.stringify(name)}))`,
+        `[...document.querySelectorAll('[role="tab"][aria-selected="true"]')]` +
+          `.some((item) => item.textContent?.includes(${JSON.stringify(name)}))`,
       )) || undefined,
   );
 }

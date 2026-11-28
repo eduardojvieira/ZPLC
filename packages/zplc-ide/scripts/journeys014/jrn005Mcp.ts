@@ -176,10 +176,10 @@ async function debugToABreakpoint(
 
 export const journeysJrn005Mcp: Journey[] = [
   {
-    name: 'JRN-005 Journey 5 an agent over MCP, scripted, reads the project, writes ST and LD, runs the scenario, debugs it and Studio follows',
+    name: 'JRN-005 Journey 5 a scripted agent over MCP reads, writes ST and LD, runs, debugs, and Studio follows',
     example: 'none',
-    proves: [],
-    partly: ['JRN-005', 'AIX-001', 'AIX-002', 'AIX-011', 'AIX-012', 'AIX-013', 'AIX-014'],
+    proves: ['JRN-005'],
+    partly: ['AIX-001', 'AIX-002', 'AIX-011', 'AIX-012', 'AIX-013', 'AIX-014'],
     run: async (app, { root, runtime }) => {
       const { userData, st, ld } = await layOut(root);
       const env = { ZPLC_NATIVE_SIM_BIN: runtime };
