@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Find the fault",
-  "summary": "Diagnose a beam that sticks on while the line is sorting: compare its signal with how long a box can really break it, and stop the line before it misroutes a box.",
+  "summary": "Spot a beam that sticks on while the line is sorting, and stop the line before it misroutes a box.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety, and it does not show sensor behaviour on real hardware.",
   "objectives": [
     "Diagnose a stuck sensor from a fact the program can read, not from the sensor itself.",
@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/HeightSortChain.st the sorter of lesson 16.4 works while the sensors tell the truth. Add a diagnosis: a box breaks BeamHigh for about a second, so a beam that stays on for three seconds is stuck. From then on the program must remember the fault, stop the infeed and the chain module, keep the blade holding and put Busy out.",
+      "body": "In src/HeightSortChain.st the sorter of lesson 16.4 works while the sensors tell the truth. At {{t:21000}} ms the upper beam, BeamHigh, sticks on and reads TRUE for ever. The line must notice it before it sends a box to the wrong bin: from then on the infeed and the chain module are off, the blade keeps holding, Busy is off, and the boxes already on their way still arrive.",
       "checkpoint": "After the fault the infeed is off, Busy and Done are off, the blade still holds, and no box has gone to the wrong bin."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter sorts correctly but trusts BeamHigh for ever; when the beam sticks on, boxes that are not tall are sent to BinTall, so the line must stop, and stay stopped, once High has stayed on for three seconds.",
+      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter sorts correctly but trusts BeamHigh for ever; when the beam sticks on, boxes that are not tall are sent to BinTall, so the line must stop, and stay stopped, before the stuck beam misroutes a box.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -35,27 +35,27 @@
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Trigger the fault yourself in the 3D view (BeamHigh, stuckOn) and watch High in the trace: it stays TRUE while boxes come and go. About three seconds later Fault latches, the infeed stops and Busy goes out.",
+      "body": "Trigger the fault yourself in the 3D view (BeamHigh, stuckOn) and watch High in the trace: it stays TRUE while boxes come and go. A little later the line stops and Busy goes out.",
       "checkpoint": "High stays TRUE for far longer than any box needs to pass, and the stop follows the fault, not a box."
     },
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "The grade sees what the plant did: no misrouted box in any bin, the infeed off and the blade holding at the end. It does not see your Fault variable or the three seconds you chose; a limit that is too short stops the line at the first tall box and fails.",
+      "body": "The grade sees what the plant did: no misrouted box in any bin, the infeed off and the blade holding at the end. It does not see how your program decided that the beam was stuck, only the result: a decision that comes too early stops the line at the first tall box and fails, and one that comes too late lets a box go to the wrong bin.",
       "checkpoint": "This rule catches a beam stuck on. A beam stuck off, or a jam of the chain module, needs another rule."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "A normal box breaks BeamHigh for about a second, so a beam that stays on much longer is a fact the program can read. Once the fault is found, nothing in the program may clear it."
+      "text": "Look at High in the trace after the fault and compare it with what it does while a healthy box passes. What can the program read that the sensor cannot tell it? And once the program knows, which outputs would still send boxes on a reading it no longer trusts?"
     },
     {
       "level": 2,
-      "text": "Use Stuck(IN := High, PT := T#3000ms), latch Fault := TRUE when Stuck.Q is TRUE and never clear it. Stop what brings new boxes: RunIn and RunChain get AND NOT Fault, Stand gets AND NOT Fault so that no box is routed on a reading you do not trust, and Busy goes out. Leave the three outfeed belts running so that a box already on its way arrives."
+      "text": "Declare Stuck : TON and Fault : BOOL in VAR. Before the Stand call, write Stuck(IN := High, PT := T#3000ms) and IF Stuck.Q THEN Fault := TRUE; END_IF; and never clear Fault, since a box breaks BeamHigh for 0.8 s and a beam that stays on for 3 s is stuck. Stop what brings new boxes: RunIn := Active AND NOT Fault, RunChain := Active AND NOT Fault AND (State = 1 OR State = 2), Stand(IN := AtBlade AND State = 1 AND NOT Fault, PT := T#1000ms) so that no box is routed on a reading you do not trust, and Busy := Active AND Handled < 9 AND NOT Fault. Leave RunStraight, RunRight and RunLeft as they are, so that a box already on its way arrives."
     }
   ],
   "faultCases": [
-    "The starter sorts correctly but trusts BeamHigh for ever; when the beam sticks on, boxes that are not tall are sent to BinTall, so the line must stop, and stay stopped, once High has stayed on for three seconds."
+    "The starter sorts correctly but trusts BeamHigh for ever; when the beam sticks on, boxes that are not tall are sent to BinTall, so the line must stop, and stay stopped, before the stuck beam misroutes a box."
   ]
 }

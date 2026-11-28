@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Encontrar la falla",
-  "summary": "Diagnostique una barrera que se atasca en encendido mientras la línea clasifica: compare su señal con el tiempo que una caja puede romperlo de verdad y detenga la línea antes de que desvíe una caja.",
+  "summary": "Detecte una barrera que se atasca en encendido mientras la línea clasifica y detenga la línea antes de que desvíe una caja.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad, y no demuestra el comportamiento del sensor en hardware real.",
   "objectives": [
     "Diagnosticar un sensor atascado a partir de un hecho que el programa puede leer, no del propio sensor.",
@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/HeightSortChain.st el clasificador de la lección 16.4 funciona mientras los sensores dicen la verdad. Añada un diagnóstico: una caja rompe BeamHigh durante cerca de un segundo, así que una barrera que sigue encendida tres segundos está atascada. Desde entonces el programa debe recordar la falla, detener la cinta de entrada y el módulo de cadenas, mantener la cuchilla retenida y apagar Busy.",
+      "body": "En src/HeightSortChain.st el clasificador de la lección 16.4 funciona mientras los sensores dicen la verdad. A los {{t:21000}} ms la barrera superior, BeamHigh, se atasca en encendido y lee TRUE para siempre. La línea debe notarlo antes de enviar una caja al contenedor equivocado: desde entonces la cinta de entrada y el módulo de cadenas están apagados, el tope retráctil sigue reteniendo, Busy está apagado, y las cajas que ya van de camino llegan igual.",
       "checkpoint": "Tras la falla la cinta de entrada está apagada, Busy y Done están apagados, la cuchilla sigue reteniendo y ninguna caja ha ido al contenedor equivocado."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial clasifica bien pero se fía de BeamHigh para siempre; cuando la barrera se atasca en encendido, las cajas que no son altas van a BinTall, así que la línea debe detenerse, y seguir detenida, cuando High haya permanecido en TRUE tres segundos.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial clasifica bien pero se fía de BeamHigh para siempre; cuando la barrera se atasca en encendido, las cajas que no son altas van a BinTall, así que la línea debe detenerse, y seguir detenida, antes de que la barrera atascada desvíe una caja.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -35,27 +35,27 @@
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Provoque usted mismo la falla en la vista 3D (BeamHigh, stuckOn) y observe High en la traza: permanece en TRUE mientras van y vienen cajas. Unos tres segundos después Fault se memoriza, la cinta de entrada se detiene y Busy se apaga.",
+      "body": "Provoque usted mismo la falla en la vista 3D (BeamHigh, stuckOn) y observe High en la traza: permanece en TRUE mientras van y vienen cajas. Un poco después la línea se detiene y Busy se apaga.",
       "checkpoint": "High permanece en TRUE mucho más tiempo del que una caja necesita para pasar, y la parada sigue a la falla, no a una caja."
     },
     {
       "key": "reflect",
       "title": "Reflexionar",
-      "body": "La calificación ve lo que hizo la planta: ninguna caja desviada en ningún contenedor, la cinta de entrada apagada y la cuchilla reteniendo al final. No ve su variable Fault ni los tres segundos que eligió; un límite demasiado corto detiene la línea en la primera caja alta y suspende.",
+      "body": "La calificación ve lo que hizo la planta: ninguna caja desviada en ningún contenedor, la cinta de entrada apagada y el tope retráctil reteniendo al final. No ve cómo decidió su programa que la barrera estaba atascada, solo el resultado: una decisión demasiado temprana detiene la línea en la primera caja alta y suspende, y una demasiado tardía deja que una caja vaya al contenedor equivocado.",
       "checkpoint": "Esta regla detecta una barrera atascada en encendido. Una barrera atascada en apagado, o un atasco del módulo de cadenas, necesita otra regla."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Una caja normal rompe BeamHigh durante cerca de un segundo, así que una barrera que sigue encendida mucho más tiempo es un hecho que el programa puede leer. Una vez detectada la falla, nada en el programa debe borrarla."
+      "text": "Observe High en la traza después de la falla y compárelo con lo que hace mientras pasa una caja sana. ¿Qué puede leer el programa que el sensor no le dice? Y una vez que el programa lo sabe, ¿qué salidas seguirían enviando cajas con una lectura en la que ya no confía?"
     },
     {
       "level": 2,
-      "text": "Use Stuck(IN := High, PT := T#3000ms), memorice Fault := TRUE cuando Stuck.Q sea TRUE y no lo borre nunca. Detenga lo que trae cajas nuevas: RunIn y RunChain llevan AND NOT Fault, Stand lleva AND NOT Fault para no encaminar ninguna caja con una lectura en la que no confía, y Busy se apaga. Deje en marcha las tres cintas de salida para que llegue una caja que ya va de camino."
+      "text": "Declare Stuck : TON y Fault : BOOL en VAR. Antes de la llamada a Stand, escriba Stuck(IN := High, PT := T#3000ms) y IF Stuck.Q THEN Fault := TRUE; END_IF; y no borre nunca Fault, porque una caja interrumpe BeamHigh durante 0,8 s y una barrera que sigue encendida 3 s está atascada. Detenga lo que trae cajas nuevas: RunIn := Active AND NOT Fault, RunChain := Active AND NOT Fault AND (State = 1 OR State = 2), Stand(IN := AtBlade AND State = 1 AND NOT Fault, PT := T#1000ms) para no encaminar ninguna caja con una lectura en la que no confía, y Busy := Active AND Handled < 9 AND NOT Fault. Deje RunStraight, RunRight y RunLeft como están, para que llegue una caja que ya va de camino."
     }
   ],
   "faultCases": [
-    "El programa inicial clasifica bien pero se fía de BeamHigh para siempre; cuando la barrera se atasca en encendido, las cajas que no son altas van a BinTall, así que la línea debe detenerse, y seguir detenida, cuando High haya permanecido en TRUE tres segundos."
+    "El programa inicial clasifica bien pero se fía de BeamHigh para siempre; cuando la barrera se atasca en encendido, las cajas que no son altas van a BinTall, así que la línea debe detenerse, y seguir detenida, antes de que la barrera atascada desvíe una caja."
   ]
 }
