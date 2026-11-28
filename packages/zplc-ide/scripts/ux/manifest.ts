@@ -4,7 +4,7 @@
  * its measures and defects. Nothing in it depends on the clock or the machine, so one page measured twice gives one text.
  */
 import { detectDefects, visibleRect, type Defect } from './detectors';
-import type { Measurement } from './measurement';
+import type { Measurement, Rect } from './measurement';
 
 export interface Surface {
   id: string;
@@ -153,11 +153,20 @@ export interface CaptureRecord {
   file: string;
   measures: { elements: number; controls: number; texts: number; focusChecked: number; focusUnchecked: number; scene: string };
   defects: Defect[];
+  /** The 3D canvases in the picture, in picture pixels: the tolerance of compare.ts applies inside them. */
+  canvases: Rect[];
   /** The texts and controls a person cannot see or reach (under a modal, inert, hidden by a scroller or the window), left out. */
   unchecked: Array<{ where: string; reason: string }>;
 }
 
-export function captureRecord(name: string, surface: string, state: string, condition: Condition, measurement: Measurement): CaptureRecord {
+export function captureRecord(
+  name: string,
+  surface: string,
+  state: string,
+  condition: Condition,
+  measurement: Measurement,
+  canvases: Rect[] = [],
+): CaptureRecord {
   const controls = measurement.elements.filter((element) => element.control && !element.disabled);
   return {
     name,
@@ -174,6 +183,7 @@ export function captureRecord(name: string, surface: string, state: string, cond
       scene: measurement.scene === null ? 'none' : measurement.scene === 'unmeasured' ? 'unmeasured' : 'measured',
     },
     defects: detectDefects(measurement),
+    canvases,
     unchecked: measurement.elements
       .filter((element) => element.control || element.text)
       .flatMap((element) => {

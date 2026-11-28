@@ -332,7 +332,7 @@ export async function launchApp(
       electronPath,
       '--headless',
       ...(options.gl === 'software'
-        ? ['--use-angle=swiftshader-webgl', '--use-gl=angle', '--enable-unsafe-swiftshader']
+        ? ['--use-angle=swiftshader-webgl', '--use-gl=angle', '--enable-unsafe-swiftshader', '--disable-gpu-compositing']
         : ['--disable-gpu']),
       // the window is not shown on a CI runner (macOS, Windows): do not let Chromium treat it as occluded or in the background
       '--disable-backgrounding-occluded-windows',

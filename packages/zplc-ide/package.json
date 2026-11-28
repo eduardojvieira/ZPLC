@@ -44,7 +44,8 @@
     "smoke:desktop-builds": "bun run scripts/smoke-desktop-builds.ts",
     "cli:build": "bun build --compile --minify src/cli/index.ts --outfile dist/zplc-cli",
     "smoke:packaged-content": "bun run scripts/packaged-content.ts",
-    "capture:uxv": "bun run scripts/ux/capture.ts"
+    "capture:uxv": "bun run scripts/ux/capture.ts",
+    "compare:uxv": "bun run scripts/ux/compare.ts"
   },
   "bin": {
     "zplc-cli": "./dist/zplc-cli"

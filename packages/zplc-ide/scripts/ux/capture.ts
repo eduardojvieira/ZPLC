@@ -13,6 +13,10 @@
  * through the stores before anything is shown; motion (reduced motion, no animation, no transition, no caret); and the plant
  * time, because nothing here runs the program or the plant: the virtual clock stays at zero.
  *
+ * Two runs on one build are the same pictures under the rule of compare.ts (`bun run compare:uxv <run A> <run B>`): every pixel outside the
+ * 3D canvases byte-equal, inside them at most 2 of 255 on at most 0.1 % of the canvas area. The folder must be inside a `.cache` folder
+ * (real path), and an existing one needs the `.uxv-out` file a past run wrote.
+ *
  * The same journey harness as run-journeys.ts and interfaceBudget.ts: a Vite dev server and a headless Electron development
  * host with the native POSIX runtime, one fresh profile per condition. Nothing here touches a board, deploys, forces or runs.
  */
@@ -39,7 +43,7 @@ import {
   type Condition,
   type Surface,
 } from './manifest';
-import { collectMeasurement, type Measurement } from './measurement';
+import { collectMeasurement, type Measurement, type Rect } from './measurement';
 import type { Harness } from '../journeyApp';
 
 const REPOSITORY = resolve(import.meta.dir, '..', '..', '..', '..');
@@ -157,6 +161,8 @@ const SHOWN: Record<string, string> = {
   'results.output': 'normal',
   'editor.plant': 'waiting for Run',
 };
+/** Surfaces whose element can lie below the fold of its panel: it is scrolled into view before the marker is read. */
+const SCROLL_TO: Record<string, string> = { 'activity.plant.group': '[data-navigator-group="plant"]' };
 /** Why a surface has no way in yet; what a fixture cannot show without a real failure or a hook in the product code. */
 const REASONS: Record<string, string> = {
   'shell.notifications': 'shown only after the app raises one; no command or fixture raises one without a real event (needs a test hook)',
@@ -230,7 +236,11 @@ interface Plan {
 
 /** The page expression that is true when the surface shows; null for a surface the tool has no marker for. */
 export function markerOf(surface: string, locale: 'en' | 'es'): string | null {
-  const sel = (selector: string) => `Boolean(document.querySelector(${JSON.stringify(selector)}))`;
+  // the element is there and in the window: at least 40 px of each side (or all of a smaller side) shows, not only an edge of it
+  const sel = (selector: string) =>
+    `(() => { const e = document.querySelector(${JSON.stringify(selector)}); if (!e) return false; const b = e.getBoundingClientRect(); ` +
+    `const w = Math.min(b.right, innerWidth) - Math.max(b.left, 0); const h = Math.min(b.bottom, innerHeight) - Math.max(b.top, 0); ` +
+    `return b.width > 0 && b.height > 0 && w >= Math.min(b.width, 40) && h >= Math.min(b.height, 40); })()`;
   const tab = (view: string) => sel(`[id="editor-tab-${view}"][aria-selected="true"]`);
   const activity = (view: string) => sel(`[data-activity="${view}"][aria-current="true"]`);
   const secondary = (key: 'shell.secondary.inspector' | 'shell.secondary.assistant' | 'shell.secondary.lesson') =>
@@ -497,6 +507,11 @@ async function captureCondition(
     );
     // a 3D view is only the picture once its canvas has drawn something other than the background (it loads the scene after it shows)
     for (let attempt = 0; attempt < 40 && !(await app.eval<boolean>(DRAWN)); attempt++) await Bun.sleep(500);
+    // the camera's framing follows the load timing; the command that fits the scene (it only moves the camera) puts it in one place
+    if (await app.eval<boolean>(`Boolean(document.querySelector('[data-plant-canvas]'))`)) {
+      await run('view.fitPlantScene');
+      await Bun.sleep(500);
+    }
     await Bun.sleep(400);
     if (await app.eval<boolean>('document.activeElement instanceof HTMLElement')) await app.eval('document.activeElement.blur()');
     // the picture once two in a row are the same, and a 3D canvas in it shows the scene: a layout that follows a command can still
@@ -532,10 +547,28 @@ async function captureCondition(
     const focused = await collect(true);
     const rings = new Map(focused.elements.map((element) => [`${element.name}@${element.rect.x},${element.rect.y}`, element.focusRing]));
     for (const element of page.elements) element.focusRing = rings.get(`${element.name}@${element.rect.x},${element.rect.y}`) ?? null;
-    captures.push(captureRecord(name, surface, state, condition, { ...page, textOutOfBox }));
+    const scale = condition.scale ?? 1;
+    const canvases = (
+      await app.eval<Rect[]>(
+        `[...document.querySelectorAll('[data-plant-canvas]')].map((c) => { const b = c.getBoundingClientRect(); ` +
+          `return { x: b.x, y: b.y, width: b.width, height: b.height }; })`,
+      )
+    ).map((box) => ({ x: box.x * scale, y: box.y * scale, width: box.width * scale, height: box.height * scale }));
+    captures.push(captureRecord(name, surface, state, condition, { ...page, textOutOfBox }, canvases));
   };
   /** Measures the surface only once its marker shows; otherwise records that the wrong surface was on screen. */
   const takeIfShowing = async (plan: Plan) => {
+    const scroll = SCROLL_TO[plan.surface.id];
+    if (scroll && (await showing(`document.querySelector(${JSON.stringify(scroll)})`, plan.surface.id)))
+      await app.eval(`document.querySelector(${JSON.stringify(scroll)}).scrollIntoView({ block: 'center' })`);
+    // a dialog left open over a surface is not that surface's picture; only the dialogs themselves are taken with one open
+    if (
+      plan.surface.area !== 'Dialogs' &&
+      (await app.eval<boolean>(`Boolean(document.querySelector('[aria-modal="true"], [role="dialog"], [role="alertdialog"]'))`))
+    ) {
+      failed.push({ surface: plan.surface.id, reason: 'not reached: a dialog is open over it' });
+      return;
+    }
     if (await showing(markerOf(plan.surface.id, condition.locale)!, plan.surface.id)) await take(plan);
     else failed.push({ surface: plan.surface.id, reason: 'not reached: wrong surface (its marker never showed)' });
   };
@@ -560,9 +593,11 @@ async function captureCondition(
         `useShellLayout.getState().setPrimaryVisible(true); return true; })()`,
     );
   const run = async (command: string): Promise<string> =>
-    app.eval<string>(
-      `import('/src/commands/bus.ts').then(({ runCommand }) => runCommand(${JSON.stringify(command)}, { respectEnabled: true }))`,
-    );
+    isNever(command)
+      ? 'refused'
+      : app.eval<string>(
+          `import('/src/commands/bus.ts').then(({ runCommand }) => runCommand(${JSON.stringify(command)}, { respectEnabled: true }))`,
+        );
   const openFile = async (path: string): Promise<string> =>
     app.eval<string>(
       `(async () => { const { useIDEStore } = await import('/src/store/useIDEStore.ts'); const state = useIDEStore.getState(); ` +
@@ -579,6 +614,7 @@ async function captureCondition(
       deviceScaleFactor: condition.scale ?? 1,
       mobile: false,
     });
+    await app.cdp.command('Emulation.setTimezoneOverride', { timezoneId: 'UTC' });
     await app.cdp.command('Page.addScriptToEvaluateOnNewDocument', { source: CLOCK });
     await app.eval(CLOCK);
     await app.cdp.command('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
@@ -619,11 +655,16 @@ async function captureCondition(
     const ordered = plans.filter((candidate) => candidate.surface.id !== 'shell.welcome');
     ordered.sort((a, b) => Number(Boolean(a.lesson)) - Number(Boolean(b.lesson)));
     const triedAgain = new Set<Plan>();
+    let lessonOpened = false;
     for (let index = 0; index < ordered.length; index++) {
       const plan = ordered[index]!;
       if (!conditionsFor(plan.surface).some((c) => conditionName(c) === conditionName(condition))) continue;
       try {
         if (plan.lesson) {
+          // nothing left open from the surface before it (a dialog, the layout); once a lesson is open the project is no longer the fixture
+          if (lessonOpened) for (let i = 0; i < 2; i++) await app.press('Escape');
+          else await reset();
+          lessonOpened = true;
           if (!(await startLesson(plan.lesson.id))) {
             failed.push({ surface: plan.surface.id, reason: `lesson ${plan.lesson.id} did not open` });
             continue;
