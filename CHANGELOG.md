@@ -49,6 +49,8 @@ and version when the release is cut (see `RELEASING.md`).
   now it gives `16#FFFFFFFE`, and `NOT(k)` into `BYTE`, `WORD`, `DWORD` and `LWORD` equals `NOT(BYTE#k)`, `NOT(WORD#k)`,
   `NOT(DWORD#k)` and `NOT(LWORD#k)`. A `BOOL` destination is still refused. No published project or lesson uses this form,
   and the bytecode of every project, file and documentation example is unchanged.
+- A 64-bit typed literal (`LWORD#`, `ULINT#`, `LINT#`) builds as the input of `SHL`, `SHR`, `ROL`, `ROR`, `ABS`, `NEG` and the
+  64-bit conversions; 2.0 refused it at build time.
 
 ### Breaking changes
 
@@ -70,8 +72,6 @@ and version when the release is cut (see `RELEASING.md`).
 
 - `SEL` and `MUX` do not select strings in any language. In FBD and Ladder the build refuses them with `STRING` and says
   to use an `IF` in Structured Text.
-- A 64-bit literal (`LWORD#`, `ULINT#`, `LINT#`) as the input of `SHL`, `SHR`, `ROL` or `ROR` is refused at build time.
-  Assign the literal to a variable first. Assignment and arithmetic with those literals work.
 - An untyped integer literal is 32 bits wide, so `ROL(16#8000, 1)` into a `WORD` gives 0, not 1: the bit rotates out of the
   low 16 bits. Write the literal with its type, `ROL(WORD#16#8000, 1)`, to rotate within 16 bits. The same holds for `ROR`,
   `SHL` and `SHR`.
