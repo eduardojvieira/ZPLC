@@ -5,7 +5,7 @@
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
   "objectives": [
     "Place the parts of a scene by name and bind each signal of the plant map to a program variable.",
-    "Run a program on the scene you built and see the Check grade that scene, not a copy of it."
+    "Run a program on the scene you built and see the {{ui:learn.check}} grade that scene, not a copy of it."
   ],
   "stages": [
     {

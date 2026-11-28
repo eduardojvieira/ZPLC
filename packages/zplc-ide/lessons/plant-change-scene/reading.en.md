@@ -1,6 +1,6 @@
 ## The machine
 
-This is the station of the practice: two packing lines, A and B, merge into one outfeed belt that carries one box at a time to the end of the line. The picture and the tables show the station complete, with every part the scenario of the practice uses. The scene file in your project is the one you will change, and the Check says where it differs.
+This is the station of the practice: two packing lines, A and B, merge into one outfeed belt that carries one box at a time to the end of the line. The picture and the tables show the station complete, with every part the scenario of the practice uses. The scene file in your project is the one you will change, and the {{ui:learn.check}} says where it differs.
 
 ![The merge-two-lines scene seen from above at an angle. Three belt conveyors form a T: FeedA runs from the left to the junction, FeedB comes from the near side into the side of the junction, and Outfeed runs on to the right and ends at Remover1, a grey bin. Cyan corner marks show the place of EmitterA at the left end of FeedA and of EmitterB at the near end of FeedB. Each part has a label with its name, its kind, and the program variable and signal it is tied to, with an arrow for the direction.](images/machine.en.png)
 
@@ -57,7 +57,7 @@ The editor changes the scene file and the plant map without writing them by hand
 2. The list of parts shows every part of the scene. Select one to see {{ui:plantEditor.formHeading}}: its name, its position X and Z, its rotation, and one field for each setting of its kind, with its unit. A field is applied when you press Enter or leave the field. A value outside the range of its setting is refused, with the message at the field.
 3. To place a part, positions follow a grid of 0.25 m and rotations go in steps of 15 degrees. A part dropped within 0.15 m of a snap point of another part attaches to it.
 4. The {{ui:plantEditor.signalsHeading}} table lists every signal that the parts offer, with its type, its direction and the program point it is bound to. To bind a signal, type the point in the field of its row and press the Bind button of that row.
-5. Press {{ui:plantEditor.done}} to close the editor. The plant is rebuilt from the edited scene. Then press {{ui:plant.panel.saveToProject}}: it writes `scene.json` and `plant-map.json` at the root of the project, the two files the Check reads.
+5. Press {{ui:plantEditor.done}} to close the editor. The plant is rebuilt from the edited scene. Then press {{ui:plant.panel.saveToProject}}: it writes `scene.json` and `plant-map.json` at the root of the project, the two files the {{ui:learn.check}} reads.
 
 Every edit can be undone with Undo and redone with Redo. The settings of every kind of part, with their ranges, are in the parts reference of the documentation.
 
@@ -67,27 +67,27 @@ The belt-to-sensor station of the first plant lesson has a belt called `Belt1`, 
 
 In the editor the change is one field. Select `Belt1`, type `0.25` in `speedMps (m/s)` instead of `0.5`, press Enter, press {{ui:plantEditor.done}} and then {{ui:plant.panel.saveToProject}}. The scene changed, the plant map did not, and the program did not. This table comes from running the finished program on the saved scene with the scenario of that lesson, which presses the start button at {{t:200}} ms and asks that the sensor sees the box within 8 seconds:
 
-| Belt speed | The belt stops at                   | Check  |
-| ---------- | ----------------------------------- | ------ |
-| 0.5 m/s    | about 3.25 s                        | passes |
-| 0.25 m/s   | about 5.93 s                        | passes |
-| 0.2 m/s    | about 7.3 s                         | passes |
-| 0.125 m/s  | not before the end of the 8 seconds | fails  |
+| Belt speed | The belt stops at                   | {{ui:learn.check}} |
+| ---------- | ----------------------------------- | ------------------ |
+| 0.5 m/s    | about 3.25 s                        | passes             |
+| 0.25 m/s   | about 5.93 s                        | passes             |
+| 0.2 m/s    | about 7.3 s                         | passes             |
+| 0.125 m/s  | not before the end of the 8 seconds | fails              |
 
 At 0.125 m/s the box has not reached the sensor when the 8 seconds end, so two of the assertions fail. The program is the same in all four rows. The scene alone decided the result.
 
-Now the owner also renames the belt `Belt1` to `Conv1` in the editor, and saves the scene. Check no longer grades the run. It reports a problem in `plant-map.json`: `"Belt1.run" is not a command signal of the scene`. The map still names the signal of a part that has changed its name. Binding the signal `Conv1.run` to the same point as before, `BeltToSensor.Run`, and saving again makes the Check pass.
+Now the owner also renames the belt `Belt1` to `Conv1` in the editor, and saves the scene. {{ui:learn.check}} no longer grades the run. It reports a problem in `plant-map.json`: `"Belt1.run" is not a command signal of the scene`. The map still names the signal of a part that has changed its name. Binding the signal `Conv1.run` to the same point as before, `BeltToSensor.Run`, and saving again makes the {{ui:learn.check}} pass.
 
-This machine only changes a setting and a name of parts that already exist. The practice asks for a change that this example does not show: you work out what it is, and where it goes, from the scene, from the program and from what the Check says.
+This machine only changes a setting and a name of parts that already exist. The practice asks for a change that this example does not show: you work out what it is, and where it goes, from the scene, from the program and from what the {{ui:learn.check}} says.
 
 ## Common mistakes
 
 - Editing the program when the scene is what has to change. A program that gives the right outputs cannot make a missing or wrong part work.
 - Typing a value and not pressing Enter or leaving the field. A field is applied only then, so the scene keeps its last value.
 - Trying to edit while the plant runs. {{ui:plant.panel.editScene}} is off while the plant runs: stop it first.
-- Renaming a part and not updating the plant map. The map is written with the names of signals, so the old name binds to nothing and the Check refuses the run.
-- Trusting a part because it is in the list. A part that exists is not always a part that works: compare its place, its rotation and its settings with those of the parts around it, and read what the Check reports.
-- Leaving the editor without saving. {{ui:plantEditor.done}} rebuilds the plant on screen, but the Check reads the files, so press {{ui:plant.panel.saveToProject}} too.
+- Renaming a part and not updating the plant map. The map is written with the names of signals, so the old name binds to nothing and the {{ui:learn.check}} refuses the run.
+- Trusting a part because it is in the list. A part that exists is not always a part that works: compare its place, its rotation and its settings with those of the parts around it, and read what the {{ui:learn.check}} reports.
+- Leaving the editor without saving. {{ui:plantEditor.done}} rebuilds the plant on screen, but the {{ui:learn.check}} reads the files, so press {{ui:plant.panel.saveToProject}} too.
 
 > [!NOTE]
 > A scene that passes its scenario says only that the program behaved correctly on that scene in the simulator. It is not evidence about a real machine, its timing or its safety.
@@ -95,15 +95,15 @@ This machine only changes a setting and a name of parts that already exist. The 
 ## Check yourself
 
 ```quiz
-question: In the worked example the belt is slowed to 0.125 m/s and the program is not changed. What does the Check report?
+question: In the worked example the belt is slowed to 0.125 m/s and the program is not changed. What does the {{ui:learn.check}} report?
 options:
   - { text: 'The scenario fails, because the box has not reached the sensor when the 8 seconds end', correct: true, feedback: 'Yes. Nothing in the program changed: the scene alone changed what the sensor sees and when.' }
-  - { text: 'The scenario passes, because the program is the same', feedback: 'The program is the same, but the Check grades the program on the scene, and on this scene the box arrives too late.' }
-  - { text: 'The Check reports an error in the plant map', feedback: 'The map still names signals that exist: only a setting of Belt1 changed, not a name.' }
+  - { text: 'The scenario passes, because the program is the same', feedback: 'The program is the same, but the {{ui:learn.check}} grades the program on the scene, and on this scene the box arrives too late.' }
+  - { text: 'The {{ui:learn.check}} reports an error in the plant map', feedback: 'The map still names signals that exist: only a setting of Belt1 changed, not a name.' }
 ```
 
 ```quiz
-question: After the belt is renamed `Conv1` and the scene is saved, why does the Check report a problem in `plant-map.json`?
+question: After the belt is renamed `Conv1` and the scene is saved, why does the {{ui:learn.check}} report a problem in `plant-map.json`?
 options:
   - { text: 'Because the map still binds `Belt1.run`, a signal that the scene no longer has', correct: true, feedback: 'Right. The signals of a part start with its name, so a renamed part has new signals that must be bound.' }
   - { text: 'Because the program no longer compiles', feedback: 'The program did not change and still compiles. The problem is in the map.' }

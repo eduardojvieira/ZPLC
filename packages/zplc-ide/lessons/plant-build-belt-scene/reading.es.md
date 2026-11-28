@@ -26,20 +26,20 @@ Una salida del PLC acciona un elemento de la máquina; una entrada del PLC es lo
 
 La escena es una lista de elementos. Cada elemento tiene un nombre, una posición en el suelo, una rotación y ajustes propios, como el largo de una cinta. El nombre es la primera mitad de las señales del elemento: un elemento llamado `Belt1` ofrece `Belt1.run`.
 
-Una señal llega a su programa solo cuando usted la enlaza. En el editor se escribe el punto del programa, con la forma `Programa.Variable`, y se pulsa Enlazar; ZPLC nunca adivina una variable a partir de un nombre. Los enlaces se guardan en el mapa de planta, junto a la escena. Comprobar lee los dos archivos en la raíz del proyecto: `scene.json` y `plant-map.json`.
+Una señal llega a su programa solo cuando usted la enlaza. En el editor se escribe el punto del programa, con la forma `Programa.Variable`, y se pulsa Enlazar; ZPLC nunca adivina una variable a partir de un nombre. Los enlaces se guardan en el mapa de planta, junto a la escena. {{ui:learn.check}} lee los dos archivos en la raíz del proyecto: `scene.json` y `plant-map.json`.
 
-El escenario de la lección busca dos elementos por su nombre: pulsa `StartButton` y lee cuántas cajas ha visto `EyeFar`. Si `EyeFar` falta o está mal escrito, Comprobar dice que el escenario nombra un elemento que la escena no tiene, lo nombra y enumera los elementos que la escena sí tiene. Use los nombres de la sección de la máquina para los cuatro elementos.
+El escenario de la lección busca dos elementos por su nombre: pulsa `StartButton` y lee cuántas cajas ha visto `EyeFar`. Si `EyeFar` falta o está mal escrito, {{ui:learn.check}} dice que el escenario nombra un elemento que la escena no tiene, lo nombra y enumera los elementos que la escena sí tiene. Use los nombres de la sección de la máquina para los cuatro elementos.
 
 ## Construirla en el editor de escenas
 
-1. Abra la planta con {{ui:command.view.plant}} en la paleta de comandos. En {{ui:plant.panel.scene}}, la escena de la lección aparece como {{ui:plant.panel.projectScene}}. Déjela seleccionada: es la escena que lee Comprobar.
+1. Abra la planta con {{ui:command.view.plant}} en la paleta de comandos. En {{ui:plant.panel.scene}}, la escena de la lección aparece como {{ui:plant.panel.projectScene}}. Déjela seleccionada: es la escena que lee {{ui:learn.check}}.
 2. Pulse {{ui:plant.panel.editScene}}. El editor necesita que la planta esté detenida.
 3. En {{ui:plantEditor.filterLabel}} y {{ui:plantEditor.addLabel}}, elija un elemento y pulse {{ui:plantEditor.add}}. El elemento aparece en el origen del suelo y queda seleccionado.
 4. En {{ui:plantEditor.formHeading}}, escriba el nombre, la posición X y Z en metros, la rotación en grados y los ajustes del elemento. Un campo se aplica al pulsar Intro o al salir del campo. Las posiciones siguen una cuadrícula de 0,25 m, las rotaciones van en pasos de 15 grados, y un elemento soltado a menos de 0,15 m de un punto de enganche de otro elemento, como el extremo de una cinta, se engancha a él.
 5. En {{ui:plantEditor.signalsHeading}}, escriba el punto del programa de cada señal que aún no esté enlazada y pulse Enlazar.
 6. Pulse {{ui:plantEditor.done}} y después {{ui:plant.panel.saveToProject}}. Para la escena de la lección no pide un nombre y escribe `scene.json` y `plant-map.json` en la raíz del proyecto.
 
-Si en cambio elige {{ui:plant.panel.emptyFloor}} en {{ui:plant.panel.scene}}, {{ui:plant.panel.saveToProject}} pide un nombre y guarda la escena como `scenes/<nombre>.scene.json`, que Comprobar no lee.
+Si en cambio elige {{ui:plant.panel.emptyFloor}} en {{ui:plant.panel.scene}}, {{ui:plant.panel.saveToProject}} pide un nombre y guarda la escena como `scenes/<nombre>.scene.json`, que {{ui:learn.check}} no lee.
 
 ## Cómo ve una caja un sensor difuso
 
@@ -76,7 +76,7 @@ Los números pertenecen a esta máquina: un sensor a 1,5 m más allá del centro
 - Colocar el sensor y dejar su rotación en 0. El haz va a lo largo de la cinta, el sensor nunca se activa y el programa nunca detiene la cinta.
 - Dejar una señal sin enlazar. Una cinta cuyo `run` está sin enlazar nunca se mueve, un emisor cuyo `emit` está sin enlazar nunca pone una caja en ella, y un sensor cuyo `detect` está sin enlazar es invisible para el programa.
 - Escribir mal `EyeFar` o `StartButton`. El escenario los busca por su nombre y no encuentra nada.
-- Guardar una escena que no es la escena del proyecto. Comprobar lee `scene.json` en la raíz del proyecto, no los archivos de `scenes/`.
+- Guardar una escena que no es la escena del proyecto. {{ui:learn.check}} lee `scene.json` en la raíz del proyecto, no los archivos de `scenes/`.
 - Editar con la planta en marcha. {{ui:plant.panel.editScene}} está desactivado hasta que se detiene la planta.
 
 ## Compruébelo usted
@@ -90,11 +90,11 @@ options:
 ```
 
 ```quiz
-question: 'Usted construye la escena con {{ui:plant.panel.emptyFloor}} elegido en la lista de escenas y pulsa {{ui:plant.panel.saveToProject}}. ¿Por qué Comprobar sigue diciendo que el escenario nombra un elemento que la escena no tiene?'
+question: 'Usted construye la escena con {{ui:plant.panel.emptyFloor}} elegido en la lista de escenas y pulsa {{ui:plant.panel.saveToProject}}. ¿Por qué {{ui:learn.check}} sigue diciendo que el escenario nombra un elemento que la escena no tiene?'
 options:
   - { text: 'Porque el editor guarda solo los elementos que ya están enlazados', feedback: 'El editor guarda todos los elementos que usted colocó. El problema es adónde fue el archivo.' }
-  - { text: 'Porque la planta tiene que ejecutarse una vez antes de que Comprobar pueda leer la escena', feedback: 'Comprobar lee los archivos guardados; la planta no tiene que ejecutarse.' }
-  - { text: 'Porque se guardó en scenes/<nombre>.scene.json, y Comprobar lee scene.json en la raíz', correct: true, feedback: 'Correcto. Solo la escena de la lección se guarda en su lugar, en la raíz.' }
+  - { text: 'Porque la planta tiene que ejecutarse una vez antes de que {{ui:learn.check}} pueda leer la escena', feedback: '{{ui:learn.check}} lee los archivos guardados; la planta no tiene que ejecutarse.' }
+  - { text: 'Porque se guardó en scenes/<nombre>.scene.json, y {{ui:learn.check}} lee scene.json en la raíz', correct: true, feedback: 'Correcto. Solo la escena de la lección se guarda en su lugar, en la raíz.' }
 ```
 
 ```quiz

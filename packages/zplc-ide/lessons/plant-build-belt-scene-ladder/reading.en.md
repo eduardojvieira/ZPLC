@@ -26,20 +26,20 @@ A PLC output drives a part of the machine; a PLC input is what a part reports. Y
 
 The scene is a list of parts. Each part has a name, a position on the floor, a rotation and settings of its own, such as the length of a belt. The name is the first half of the signals of the part: a part named `Belt1` offers `Belt1.run`.
 
-A signal reaches your program only when you bind it. In the editor you type the program point, written `Program.Variable`, and press Bind; ZPLC never guesses a variable from a name. The bindings are saved in the plant map, next to the scene. Check reads both files at the root of the project: `scene.json` and `plant-map.json`.
+A signal reaches your program only when you bind it. In the editor you type the program point, written `Program.Variable`, and press Bind; ZPLC never guesses a variable from a name. The bindings are saved in the plant map, next to the scene. {{ui:learn.check}} reads both files at the root of the project: `scene.json` and `plant-map.json`.
 
-The scenario of the lesson looks up two parts by name: it presses `StartButton`, and it reads how many boxes `EyeFar` has seen. If `EyeFar` is missing or misspelled, Check says that the scenario names a part the scene does not have, names it, and lists the parts the scene does have. Use the names of the machine section for all four parts.
+The scenario of the lesson looks up two parts by name: it presses `StartButton`, and it reads how many boxes `EyeFar` has seen. If `EyeFar` is missing or misspelled, {{ui:learn.check}} says that the scenario names a part the scene does not have, names it, and lists the parts the scene does have. Use the names of the machine section for all four parts.
 
 ## Build it in the scene editor
 
-1. Open the plant with {{ui:command.view.plant}} in the command palette. In {{ui:plant.panel.scene}}, the scene of the lesson is listed as {{ui:plant.panel.projectScene}}. Keep it selected: it is the scene that Check reads.
+1. Open the plant with {{ui:command.view.plant}} in the command palette. In {{ui:plant.panel.scene}}, the scene of the lesson is listed as {{ui:plant.panel.projectScene}}. Keep it selected: it is the scene that {{ui:learn.check}} reads.
 2. Press {{ui:plant.panel.editScene}}. The editor needs the plant to be stopped.
 3. In {{ui:plantEditor.filterLabel}} and {{ui:plantEditor.addLabel}}, choose a part, then press {{ui:plantEditor.add}}. The part appears at the origin of the floor and is selected.
 4. In {{ui:plantEditor.formHeading}}, type the name, the position X and Z in metres, the rotation in degrees and the settings of the part. A field is applied when you press Enter or leave the field. Positions follow a grid of 0.25 m, rotations go in steps of 15 degrees, and a part dropped within 0.15 m of a snap point of another part, such as the end of a belt, attaches to it.
 5. In {{ui:plantEditor.signalsHeading}}, type the program point of each signal that is not bound yet and press Bind.
 6. Press {{ui:plantEditor.done}}, then {{ui:plant.panel.saveToProject}}. For the scene of the lesson it asks for no name and writes `scene.json` and `plant-map.json` at the root of the project.
 
-If you choose {{ui:plant.panel.emptyFloor}} in {{ui:plant.panel.scene}} instead, {{ui:plant.panel.saveToProject}} asks for a name and saves the scene as `scenes/<name>.scene.json`, which Check does not read.
+If you choose {{ui:plant.panel.emptyFloor}} in {{ui:plant.panel.scene}} instead, {{ui:plant.panel.saveToProject}} asks for a name and saves the scene as `scenes/<name>.scene.json`, which {{ui:learn.check}} does not read.
 
 ## How a diffuse sensor sees a box
 
@@ -76,7 +76,7 @@ The numbers belong to this machine: a sensor 1.5 m beyond the middle of a belt m
 - Placing the sensor and leaving its rotation at 0. The beam runs along the belt, the sensor never turns on, and the program never stops the belt.
 - Leaving a signal unbound. A belt whose `run` is unbound never moves, an emitter whose `emit` is unbound never puts a box on it, and a sensor whose `detect` is unbound is invisible to the program.
 - Misspelling `EyeFar` or `StartButton`. The scenario looks them up by name and finds nothing.
-- Saving a scene other than the scene of the project. Check reads `scene.json` at the root of the project, not the files of `scenes/`.
+- Saving a scene other than the scene of the project. {{ui:learn.check}} reads `scene.json` at the root of the project, not the files of `scenes/`.
 - Editing while the plant runs. {{ui:plant.panel.editScene}} is off until the plant is stopped.
 
 ## Check yourself
@@ -90,11 +90,11 @@ options:
 ```
 
 ```quiz
-question: 'You build the scene with {{ui:plant.panel.emptyFloor}} chosen in the list of scenes and press {{ui:plant.panel.saveToProject}}. Why does Check still say that the scenario names a part the scene does not have?'
+question: 'You build the scene with {{ui:plant.panel.emptyFloor}} chosen in the list of scenes and press {{ui:plant.panel.saveToProject}}. Why does {{ui:learn.check}} still say that the scenario names a part the scene does not have?'
 options:
   - { text: 'Because the editor saves only parts that are already bound', feedback: 'The editor saves every part you placed. The problem is where the file went.' }
-  - { text: 'Because the plant has to run once before Check can read the scene', feedback: 'Check reads the saved files; the plant does not have to run.' }
-  - { text: 'Because the save went to scenes/<name>.scene.json, and Check reads scene.json at the root', correct: true, feedback: 'Right. Only the scene of the lesson is saved in place at the root.' }
+  - { text: 'Because the plant has to run once before {{ui:learn.check}} can read the scene', feedback: '{{ui:learn.check}} reads the saved files; the plant does not have to run.' }
+  - { text: 'Because the save went to scenes/<name>.scene.json, and {{ui:learn.check}} reads scene.json at the root', correct: true, feedback: 'Right. Only the scene of the lesson is saved in place at the root.' }
 ```
 
 ```quiz

@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En su proyecto, scene.json es la escena de fusión y src/MergeLines.ld.json es un programa terminado: ya acciona todas las salidas de la estación y deja pasar las dos líneas de una en una. El escenario arranca la estación con el pulsador de inicio y espera cajas de los dos alimentadores en la cinta de salida y Done encendida al final; el programa enciende Done cuando seis cajas, tres de cada alimentador, han cruzado la zona de fusión. Tal como está el proyecto, la línea B no recibe cajas. Cambie la escena y su mapa de planta, no el programa, hasta que Comprobar apruebe.",
+      "body": "En su proyecto, scene.json es la escena de fusión y src/MergeLines.ld.json es un programa terminado: ya acciona todas las salidas de la estación y deja pasar las dos líneas de una en una. El escenario arranca la estación con el pulsador de inicio y espera cajas de los dos alimentadores en la cinta de salida y Done encendida al final; el programa enciende Done cuando seis cajas, tres de cada alimentador, han cruzado la zona de fusión. Tal como está el proyecto, la línea B no recibe cajas. Cambie la escena y su mapa de planta, no el programa, hasta que {{ui:learn.check}} apruebe.",
       "checkpoint": "Salen cajas de los dos alimentadores, los únicos archivos que cambió son la escena y su mapa de planta, y el programa es el que se le dio."
     },
     {
@@ -35,7 +35,7 @@
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe cómo el alimentador B se llena de cajas y espera en su tope. Si siguen sin llegar cajas, lea lo que informa Comprobar: nombra lo que no encuentra, o enumera las aserciones que fallaron con lo que observó.",
+      "body": "Observe cómo el alimentador B se llena de cajas y espera en su tope. Si siguen sin llegar cajas, lea lo que informa {{ui:learn.check}}: nombra lo que no encuentra, o enumera las aserciones que fallaron con lo que observó.",
       "checkpoint": "Las seis cajas se entregan por turnos, ninguna choca ni cae, y Done está encendida al final."
     },
     {
@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "En el Editor de escenas, pulse Duplicar en la fila de EmitterA de la lista de piezas: la copia conserva su altura y su límite de tres cajas, mientras que {{ui:plantEditor.add}} dejaría una pieza nueva en el suelo, donde el formulario no puede subirla. Cambie el nombre de la copia a EmitterB, ponga Posición X en 0, Posición Z en 2 y Rotación en 90, para que quede al inicio del alimentador B. En la tabla de señales enlace EmitterB.emit, un comando, con MergeLines.EmitB, letra por letra, porque Comprobar lee el nombre exactamente. Después pulse {{ui:plantEditor.done}}, {{ui:plant.panel.saveToProject}} y {{ui:learn.check}}."
+      "text": "En el Editor de escenas, pulse Duplicar en la fila de EmitterA de la lista de piezas: la copia conserva su altura y su límite de tres cajas, mientras que {{ui:plantEditor.add}} dejaría una pieza nueva en el suelo, donde el formulario no puede subirla. Cambie el nombre de la copia a EmitterB, ponga Posición X en 0, Posición Z en 2 y Rotación en 90, para que quede al inicio del alimentador B. En la tabla de señales enlace EmitterB.emit, un comando, con MergeLines.EmitB, letra por letra, porque {{ui:learn.check}} lee el nombre exactamente. Después pulse {{ui:plantEditor.done}}, {{ui:plant.panel.saveToProject}} y {{ui:learn.check}}."
     }
   ],
   "faultCases": [
