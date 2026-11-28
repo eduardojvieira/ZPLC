@@ -1,58 +1,58 @@
 {
   "schemaVersion": 1,
   "title": "Mover una caja hasta un sensor en diagrama de escalera",
-  "summary": "Arranque una cinta con un pulsador mediante una bobina de activación y deténgala con una bobina de borrado cuando una caja llegue al sensor del extremo.",
+  "summary": "Arranque una cinta con un pulsador y deténgala cuando una caja llegue al sensor del extremo.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
-    "Arrancar un actuador con la pulsación de un pulsador mediante una bobina de activación y recordar que está en marcha.",
-    "Detener el actuador con una bobina de borrado cuando un sensor ve la caja."
+    "Arrancar un actuador con la pulsación de un pulsador y recordar que está en marcha.",
+    "Detener el actuador cuando un sensor ve la caja."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/BeltToSensor.ld.json, mantenga una memoria Running: un peldaño la activa con Start, un segundo peldaño la borra con EyeFar, y otros dos peldaños gobiernan Run y Emit.",
-      "checkpoint": "Run sigue a la memoria; Emit pone una caja en la cinta cuando se pulsa Start."
+      "body": "En src/BeltToSensor.ld.json están declaradas las entradas Start y EyeFar, las salidas Run y Emit, y una memoria Running, y todavía no hay peldaños. Una pulsación del pulsador de inicio debe poner una caja en la cinta y hacer avanzar la cinta, y la cinta debe detenerse cuando el sensor del extremo ve la caja.",
+      "checkpoint": "Usted puede decir qué señal arranca la cinta, cuál la detiene y por qué una pulsación corta necesita una memoria."
     },
     {
       "key": "predict",
-      "title": "Predecir",
-      "body": "Antes de ejecutar, siga la caja: el pulsador de inicio es solo una pulsación corta, pero la cinta debe seguir en marcha hasta que llegue la caja.",
-      "checkpoint": "Cinta apagada antes de la pulsación; encendida después, con una caja encima; apagada otra vez en cuanto EyeFar ve la caja, y así se queda."
+      "title": "Prediga",
+      "body": "El escenario acciona el pulsador de inicio a los {{t:200}} ms y lo suelta a los {{t:400}} ms. Antes de ejecutar, siga la caja: prediga Run antes de la pulsación, después de soltar el pulsador mientras la caja avanza, y cuando EyeFar ve la caja.",
+      "checkpoint": "{{v:BeltToSensor.Run=false@100|Run en OFF}} a los {{t:100}} ms, antes de la pulsación; en ON después, también una vez suelto el pulsador; en OFF en cuanto EyeFar ve la caja, y {{v:BeltToSensor.Run=false@8000|todavía en OFF}} al final, a los {{t:8000}} ms."
     },
     {
       "key": "edit",
-      "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial no tiene peldaños, así que la cinta nunca se mueve; arranque la cinta y ponga una caja con Start, y detenga la cinta cuando EyeFar vea la caja.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "title": "Edite",
+      "body": "Dibuje los peldaños, guarde el programa y pulse {{ui:learn.check}}. El programa inicial no tiene peldaños, así que la cinta nunca se mueve y no llega ninguna caja. Una pulsación de Start debe poner la caja en la cinta y arrancar la cinta; la cinta debe seguir en marcha después de soltar el pulsador y detenerse en cuanto EyeFar ve la caja, para que la caja nunca caiga por el extremo.",
+      "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
       "key": "run",
-      "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
+      "title": "Ejecute",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la máquina, pulse {{ui:toolbar.run.label}} (F5) y abra la {{ui:plant.panel.view3d}}.",
       "checkpoint": "El escenario requerido se llama belt-to-sensor y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
-      "title": "Observar",
-      "body": "Observe la caja avanzar por la cinta en la vista 3D y detenerse bajo el sensor; compárelo con la salida Run en la traza.",
+      "title": "Observe",
+      "body": "Observe en la {{ui:plant.panel.view3d}} cómo la caja avanza por la cinta y se detiene delante del sensor; compárelo con la salida Run en la traza.",
       "checkpoint": "Run baja cuando el sensor se activa, no antes, y la caja nunca cae."
     },
     {
       "key": "reflect",
-      "title": "Reflexionar",
-      "body": "La aserción EVENTUALLY prueba que el sensor vio la caja en ocho segundos; las aserciones AT fijan el estado al inicio y al final.",
-      "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
+      "title": "Reflexione",
+      "body": "El escenario prueba que el sensor vio la caja antes de los {{t:8000}} ms y que la cinta está detenida al final. ¿Qué haría una segunda pulsación de Start mientras la caja avanza? ¿Y con la caja todavía delante del sensor?",
+      "checkpoint": "Mientras la caja avanza, una segunda pulsación no cambia nada: la cinta ya está en marcha y el emisor de esta estación tiene una sola caja. Con la caja todavía delante del sensor y Start pulsado, usted puede decir qué hace la cinta y qué peldaño suyo lo decide."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Start es un pulso, así que la cinta necesita una memoria: un peldaño con un contacto Start y una bobina de activación sobre Running la mantiene encendida, y un peldaño con un contacto EyeFar y una bobina de borrado la apaga."
+      "text": "Start está en TRUE solo mientras se mantiene el pulsador, pero la cinta debe seguir en marcha después de soltarlo: ¿qué puede recordar en su programa que la cinta arrancó, y qué hace que lo olvide? Un flanco ascendente de Emit suelta una caja."
     },
     {
       "level": 2,
-      "text": "Ponga el peldaño de borrado después del de activación para que EyeFar gane cuando ambos sean TRUE; luego agregue un peldaño del contacto Running a la bobina Run y otro del contacto Start a la bobina Emit."
+      "text": "Dibuje un peldaño de un contacto Start a una bobina SET sobre Running, luego un peldaño debajo de un contacto EyeFar a una bobina RESET sobre Running para que EyeFar gane cuando ambos sean TRUE; luego agregue un peldaño de un contacto Running a la bobina Run y otro de un contacto Start a la bobina Emit."
     }
   ],
   "faultCases": [
