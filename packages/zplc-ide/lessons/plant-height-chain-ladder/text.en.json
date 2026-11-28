@@ -11,19 +11,19 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/HeightSortChain.ld.json, latch what the two beams see while a box passes: 0.20 m breaks neither, 0.30 m only BeamLow, 0.40 m both. When the box has stood still at the blade for a second, send it straight on, or lift the module and move it right or left.",
+      "body": "In src/HeightSortChain.ld.json the inputs and outputs of the line are declared. A press of the start button must run the line. Boxes of three heights arrive on the infeed, nine in all, and the two beams tell the height apart: 0.20 m breaks neither, 0.30 m only BeamLow, 0.40 m both. Every box must end in the bin of its height, none misrouted or dropped, and Done must light when the nine boxes are handled.",
       "checkpoint": "Short boxes end in BinShort, medium in BinMedium, tall in BinTall, and Done lights after nine boxes."
     },
     {
       "key": "predict",
       "title": "Predict",
-      "body": "Before running, fill a table of the two beams for the three heights, and say when the latch must be cleared: the next box passes the beams while this one is still on the module.",
-      "checkpoint": "A box is classified when it has stood still at the blade, and the latch is cleared at that moment, not when the box leaves."
+      "body": "Before running, fill a table of the two beams for the three heights. Then follow the first box of the run: when the box stands against the blade, is it still in a beam?",
+      "checkpoint": "A 0.20 m box breaks neither beam, a 0.30 m box only BeamLow and a 0.40 m box both. The first box has left the beams when EyeChain sees it, about 2.3 s after it entered BeamLow, so at the blade the beams say nothing about it."
     },
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter has no rungs, so no belt moves and no box is sorted; run the belts after Start, classify each box from the two beams and send it straight, right or left.",
+      "body": "Write the program, save it, then press {{ui:learn.check}}. The starting project has no rungs, so no belt moves and no box is sorted. Run the belts after Start, then send each box by its height: straight on, to the right or to the left. Declare whatever else your program needs.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
@@ -48,14 +48,12 @@
   "hints": [
     {
       "level": 1,
-      "text": "Set SawLow and SawHigh with set coils whenever Low and High are TRUE, and decide the direction from them after the box has stood still for a second (a TON on AtBlade). Reset both latches right after with reset coils, in rungs that come later in the same scan."
+      "text": "Think about when the program needs the height and when the beams can give it: the box leaves the beams before it reaches the blade. What in your rungs can keep what a beam saw until then?"
     },
     {
       "level": 2,
-      "text": "One state per step: 1 wait for the box, 2 straight on, 3 lift and wait until Raised has held for T#300ms, 4 slide, 5 lower and wait for Lowered. Never run the module while Lift is TRUE."
+      "text": "Set SawLow and SawHigh with set coils whenever Low and High are TRUE, and decide the direction from them once AtBlade has been TRUE for a second (a TON on AtBlade). Reset both latches right after with reset coils, in rungs that come later in the same scan. One state per step: 1 wait for the box, 2 straight on, 3 lift and wait until Raised has held for T#300ms, 4 slide, 5 lower and wait for Lowered. Never run the module while Lift is TRUE."
     }
   ],
-  "faultCases": [
-    "The starter has no rungs, so no belt moves and no box is sorted; run the belts after Start, classify each box from the two beams and send it straight, right or left."
-  ]
+  "faultCases": ["The starting project has no rungs, so no belt moves and no box is sorted."]
 }

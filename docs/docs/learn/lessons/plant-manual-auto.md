@@ -19,13 +19,13 @@ Add a mode to the two-axis assembly: jog the pad by hand in manual, run the asse
 - Estimated time: 45 minutes
 - Languages: ST
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Two-axis assembly](../../plant/scenes/two-axis-assembly.md)
 - Prerequisites: [plant-assembler](./plant-assembler.md), [plant-estop-interlocks](./plant-estop-interlocks.md)
 
 ## Objectives
 
-- Keep the mode in a memory that one press of ModeBtn switches, and let the machine power up in manual.
+- Switch between manual and automatic with each press of the mode button, and power up in manual.
 - Move the pad with the jog buttons only in manual, never past a limit switch, and start the cycle with Start only in automatic.
 
 ## Stages

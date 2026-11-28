@@ -19,7 +19,7 @@ Haga que una línea en marcha se detenga al pulsar el paro de emergencia, muést
 - Tiempo estimado: 40 minutos
 - Lenguajes: LD
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Elevadores de tres niveles](../../plant/scenes/three-level-lifts.md)
 - Requisitos previos: [plant-three-level-lifts](./plant-three-level-lifts.md), [interlock-guard-permissive](./interlock-guard-permissive.md)
 

@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-colour-separation-ladder. Do not edit. >>> */}
 
-Lea el color de cada pieza que espera en la cuchilla de parada, empuje las rojas a la cinta lateral y deje pasar las azules.
+Lea el color de cada pieza que espera en el tope de parada, empuje las rojas a la cinta lateral y deje pasar las azules.
 
 ## Datos
 
@@ -19,7 +19,7 @@ Lea el color de cada pieza que espera en la cuchilla de parada, empuje las rojas
 - Tiempo estimado: 45 minutos
 - Lenguajes: LD
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Separación por color](../../plant/scenes/colour-separation.md)
 - Requisitos previos: [plant-counted-queue](./plant-counted-queue.md)
 

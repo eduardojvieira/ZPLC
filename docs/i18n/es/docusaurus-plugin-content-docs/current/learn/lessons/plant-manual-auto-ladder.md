@@ -19,13 +19,13 @@ Añada un modo al ensamblaje de dos ejes: avance el brazo a mano en manual, ejec
 - Tiempo estimado: 45 minutos
 - Lenguajes: LD
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Ensamble de dos ejes](../../plant/scenes/two-axis-assembly.md)
 - Requisitos previos: [plant-assembler](./plant-assembler.md), [plant-estop-interlocks](./plant-estop-interlocks.md)
 
 ## Objetivos
 
-- Guardar el modo en una memoria que cambie con una pulsación de ModeBtn, y dejar que la máquina arranque en manual.
+- Cambiar entre manual y automático con cada pulsación del pulsador de modo, y arrancar en manual.
 - Mover el brazo con los pulsadores de avance solo en manual, sin pasar de un final de carrera, y arrancar el ciclo con Start solo en automático.
 
 ## Etapas

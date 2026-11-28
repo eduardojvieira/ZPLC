@@ -19,14 +19,14 @@ Abra el Editor de escenas sobre un suelo vacío, coloque una cinta, un emisor, u
 - Tiempo estimado: 25 minutos
 - Lenguajes: LD
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Cinta hasta un sensor](../../plant/scenes/belt-to-sensor.md)
 - Requisitos previos: [plant-belt-to-sensor](./plant-belt-to-sensor.md), [plant-fault-actions](./plant-fault-actions.md)
 
 ## Objetivos
 
-- Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa.
-- Ejecutar un programa sobre la escena que usted construyó y ver que la Comprobación califica esa escena, no una copia.
+- Colocar los elementos de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa.
+- Ejecutar un programa sobre la escena que usted construyó y ver que Comprobar califica esa escena, no una copia.
 
 ## Etapas
 

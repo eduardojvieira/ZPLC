@@ -19,7 +19,7 @@ Read the colour of each workpiece that waits at the stop blade, push the red one
 - Estimated time: 45 minutes
 - Languages: LD
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Colour separation](../../plant/scenes/colour-separation.md)
 - Prerequisites: [plant-counted-queue](./plant-counted-queue.md)
 

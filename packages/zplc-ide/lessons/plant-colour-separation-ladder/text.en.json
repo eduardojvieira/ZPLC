@@ -11,14 +11,14 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/ColourSeparation.ld.json, run the three belts after Start and hold each workpiece at the blade. Wait for it to lie still (T#300ms), then read IsRed: push a red one onto the side belt, release a blue one.",
+      "body": "In src/ColourSeparation.ld.json, run the three belts after Start and hold each workpiece at the blade. Wait for it to lie still, then read IsRed: push a red one onto the side belt, release a blue one.",
       "checkpoint": "Red workpieces end in RedBin, blue ones in BlueBin, and Done lights after the eighth."
     },
     {
       "key": "predict",
       "title": "Predict",
       "body": "Before running, decide what the blade and the pusher do for each colour. A red workpiece stays held while the plate pushes it out; a blue one is released. When may the blade hold again?",
-      "checkpoint": "Hold drops only for a blue workpiece and rises again once it has left the blade; Push is TRUE only while a red one is pushed out."
+      "checkpoint": "A red workpiece stays held while the plate works; a blue one needs the blade down. When the blade may rise again is the decision of the practice."
     },
     {
       "key": "edit",
@@ -36,7 +36,7 @@
       "key": "observe",
       "title": "Observe",
       "body": "Watch the 3D view: a red workpiece stops at the blade, the plate pushes it onto the side belt and the next one waits; a blue one passes straight on to the outfeed.",
-      "checkpoint": "Push never goes TRUE for a blue workpiece, and the plate is back (Retracted) before the blade holds the next one."
+      "checkpoint": "Push never goes TRUE for a blue workpiece."
     },
     {
       "key": "reflect",
@@ -48,11 +48,11 @@
   "hints": [
     {
       "level": 1,
-      "text": "Keep the step in a state number: 0 wait for a still workpiece, 1 push, 2 retract, 3 let a blue one go. A TON of T#300ms on Waiting gives the settle time."
+      "text": "Think about what the program has to remember from one scan to the next, and which input tells you that each movement of the plate has finished."
     },
     {
       "level": 2,
-      "text": "Leave state 0 with two rungs: a normally open contact of IsRed goes to state 1, a normally closed one to state 3. A pushed workpiece is handled when Retracted is TRUE; a released one is handled when it has left the blade (a TON of T#1500ms on NOT Waiting). Drive Hold from Active in series with an NE block on State and 3, and count with a CTU of 8."
+      "text": "Keep the step in a state number: 0 wait for a still workpiece, 1 push, 2 retract, 3 let a blue one go. A TON of T#300ms on Waiting gives the settle time. Leave state 0 with two rungs: a normally open contact of IsRed goes to state 1, a normally closed one to state 3. A pushed workpiece is handled when Retracted is TRUE; a released one is handled when it has left the blade (for example a TON of T#1500ms on NOT Waiting; the time is a choice, not a requirement). Drive Hold from Active in series with an NE block on State and 3, and count with a CTU of 8."
     }
   ],
   "faultCases": [

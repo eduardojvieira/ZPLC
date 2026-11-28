@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-height-turntable. Do not edit. >>> */}
 
-Measure the height of each box with a light array, keep the largest reading, and turn a turntable so the box leaves on the belt of its class.
+Tell boxes of three heights apart with a light array, and turn a turntable so that each box leaves on the belt of its class.
 
 ## Facts
 
@@ -19,14 +19,14 @@ Measure the height of each box with a light array, keep the largest reading, and
 - Estimated time: 60 minutes
 - Languages: ST
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Height sorting with turntable](../../plant/scenes/height-sorting-turntable.md)
 - Prerequisites: [plant-height-chain](./plant-height-chain.md)
 
 ## Objectives
 
-- Reduce a stream of readings to one value, the peak, and classify it with two limits.
-- Coordinate a turntable with the decision: stop, turn, run out, turn back.
+- Tell boxes of three heights apart with a light array that reports a height only while a box is in it.
+- Make a turntable work with the box it turns, so that each box leaves on the belt of its class.
 
 ## Stages
 

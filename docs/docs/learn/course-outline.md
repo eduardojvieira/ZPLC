@@ -441,7 +441,7 @@ Objectives of the available lessons:
 - **Sort by weight in Ladder**: Classify an item by comparing an analog value with a limit. Read the value only when the scale says it is stable.
 - **Sort by height, chain transfer**: Decide a route from a combination of two sensors. Remember a decision while the next box is already passing the sensors.
 - **Sort by height, chain transfer in Ladder**: Decide a route from a combination of two sensors. Remember a decision while the next box is already passing the sensors.
-- **Sort by height, turntable**: Reduce a stream of readings to one value, the peak, and classify it with two limits. Coordinate a turntable with the decision: stop, turn, run out, turn back.
+- **Sort by height, turntable**: Tell boxes of three heights apart with a light array that reports a height only while a box is in it. Make a turntable work with the box it turns, so that each box leaves on the belt of its class.
 - **Sort by identity code**: Route items by an integer code instead of a switch. Time an actuator against the travel of an item that has already been read.
 
 ## Module 17: Stations: several machines working as one
@@ -459,10 +459,10 @@ A station groups sorting, transfer and sequencing into one unit. It comes after 
 
 Objectives of the available lessons:
 
-- **Move boxes between three levels**: Describe each lift as its own chain of steps that loops back to its first step. Start both chains with one transition and let them meet only at the belt between the lifts.
+- **Move boxes between three levels**: Describe each lift as a cycle of steps of its own that returns to where it began. Make both lifts work at the same time, meeting only at the belt between them.
 - **Gather items into a crate**: Combine a count, a lift and a crate in one sequence of steps. Move the lift only with its surface stopped, and feed the next workpiece only after the last one has landed.
 - **Store and retrieve**: Write the store and the retrieve sequences of a crane as chains of steps. Keep a table of occupied cells and the requests that wait, and choose the next job from them.
-- **Balance a production line**: Move the control of one machine into a function block and use one instance for each machine. Balance two machines of different speeds by alternating the blanks between them.
+- **Balance a production line**: Move the control of one machine into a function block and use one instance for each machine. Give two machines of different speeds the same control, so that each finishes four cycles.
 
 ## Module 18: Safe and diagnosable machines: interlocks, manual and automatic, and faults
 
@@ -482,9 +482,9 @@ Objectives of the available lessons:
 
 - **Emergency stop and interlocks**: Stop every output while the emergency stop is pressed. Remember the stop, so that releasing the button does not restart the line.
 - **Emergency stop and interlocks in Ladder**: Stop every output while the emergency stop is pressed. Remember the stop, so that releasing the button does not restart the line.
-- **Manual and automatic modes**: Keep the mode in a memory that one press of ModeBtn switches, and let the machine power up in manual. Move the pad with the jog buttons only in manual, never past a limit switch, and start the cycle with Start only in automatic.
-- **Manual and automatic modes**: Keep the mode in a memory that one press of ModeBtn switches, and let the machine power up in manual. Move the pad with the jog buttons only in manual, never past a limit switch, and start the cycle with Start only in automatic.
-- **Find the fault**: Diagnose a stuck sensor from a fact the program can read, not from the sensor itself. Choose a safe reaction: stop what brings new boxes and let the boxes already moving arrive.
+- **Manual and automatic modes**: Switch between manual and automatic with each press of the mode button, and power up in manual. Move the pad with the jog buttons only in manual, never past a limit switch, and start the cycle with Start only in automatic.
+- **Manual and automatic modes**: Switch between manual and automatic with each press of the mode button, and power up in manual. Move the pad with the jog buttons only in manual, never past a limit switch, and start the cycle with Start only in automatic.
+- **Find the fault**: Diagnose a stuck sensor from a fact the program can read, not from the sensor itself. Choose a reaction that fits the machine: stop what brings new boxes and let the boxes already moving arrive.
 
 ## Module 19: Build your own scenes: place parts, bind signals and run
 
@@ -496,15 +496,15 @@ The course ends by building the plant itself: parts, signals and a program that 
 | ----------------------------------------------------------------------- | --------- | --------- | ---------- | ----- | ------- | ---------------------------------------------------- |
 | `plant-build-belt-scene` Build a belt scene from the empty floor        | Available | ST        | Simulation | -     | 25      | `plant-belt-to-sensor`, `plant-fault-actions`        |
 | `plant-build-belt-scene-ladder` Build a belt scene from the empty floor | Available | LD        | Simulation | -     | 25      | `plant-belt-to-sensor`, `plant-fault-actions`        |
-| `plant-change-scene` Change a scene: add the second emitter             | Available | ST        | Simulation | -     | 20      | `plant-build-belt-scene`, `plant-merge-lines`        |
-| `plant-change-scene-ladder` Change a scene: add the second emitter      | Available | LD        | Simulation | -     | 20      | `plant-build-belt-scene-ladder`, `plant-merge-lines` |
+| `plant-change-scene` Change a scene: feed the second line               | Available | ST        | Simulation | -     | 20      | `plant-build-belt-scene`, `plant-merge-lines`        |
+| `plant-change-scene-ladder` Change a scene: feed the second line        | Available | LD        | Simulation | -     | 20      | `plant-build-belt-scene-ladder`, `plant-merge-lines` |
 
 Objectives of the available lessons:
 
 - **Build a belt scene from the empty floor**: Place the parts of a scene by name and bind each signal of the plant map to a program variable. Run a program on the scene you built and see the Check grade that scene, not a copy of it.
 - **Build a belt scene from the empty floor**: Place the parts of a scene by name and bind each signal of the plant map to a program variable. Run a program on the scene you built and see the Check grade that scene, not a copy of it.
-- **Change a scene: add the second emitter**: Add a part to an existing scene and place it where the rest of the scene expects it. Bind the new part's signal in the plant map to the program variable that already drives it, leaving the program unchanged.
-- **Change a scene: add the second emitter**: Add a part to an existing scene and place it where the rest of the scene expects it. Bind the new part's signal in the plant map to the program variable that already drives it, leaving the program unchanged.
+- **Change a scene: feed the second line**: Read a finished scene against the program and the scenario that run on it, and find what the scene needs. Change a scene in the scene editor and its plant map, leaving the program unchanged.
+- **Change a scene: feed the second line**: Read a finished scene against the program and the scenario that run on it, and find what the scene needs. Change a scene in the scene editor and its plant map, leaving the program unchanged.
 
 ## Hardware wiring pages
 

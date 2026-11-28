@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-fault-actions. Do not edit. >>> */}
 
-Diagnostique una barrera que se atasca en encendido mientras la línea clasifica: compare su señal con el tiempo que una caja puede romperlo de verdad y detenga la línea antes de que desvíe una caja.
+Detecte una barrera que se atasca en encendido mientras la línea clasifica y detenga la línea antes de que desvíe una caja.
 
 ## Datos
 
@@ -19,14 +19,14 @@ Diagnostique una barrera que se atasca en encendido mientras la línea clasifica
 - Tiempo estimado: 45 minutos
 - Lenguajes: ST
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Clasificación por altura con transferencia de cadenas](../../plant/scenes/height-sorting-chain.md)
 - Requisitos previos: [plant-height-chain](./plant-height-chain.md)
 
 ## Objetivos
 
 - Diagnosticar un sensor atascado a partir de un hecho que el programa puede leer, no del propio sensor.
-- Elegir una reacción segura: detener lo que trae cajas nuevas y dejar llegar las que ya se mueven.
+- Elegir una reacción que se ajuste a la máquina: detener lo que trae cajas nuevas y dejar llegar las que ya se mueven.
 
 ## Etapas
 

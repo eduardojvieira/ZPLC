@@ -19,7 +19,7 @@ Bring a crate onto a lift, feed five workpieces into it one at a time and send i
 - Estimated time: 45 minutes
 - Languages: ST
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Lift with stacking](../../plant/scenes/lift-stacking.md)
 - Prerequisites: [plant-counted-queue](./plant-counted-queue.md)
 

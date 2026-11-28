@@ -64,9 +64,9 @@ Compartir un recurso entre dos solicitantes, de modo que dos cajas nunca coincid
 ## Lecciones que usan esta escena
 
 - [Fusionar dos líneas](../../learn/lessons/plant-merge-lines.md)
-- [Modificar una escena: agregar el segundo emisor](../../learn/lessons/plant-change-scene.md)
+- [Modificar una escena: alimentar la segunda línea](../../learn/lessons/plant-change-scene.md)
 - [Fusionar dos líneas en diagrama de escalera](../../learn/lessons/plant-merge-lines-ladder.md)
-- [Modificar una escena: agregar el segundo emisor](../../learn/lessons/plant-change-scene-ladder.md)
+- [Modificar una escena: alimentar la segunda línea](../../learn/lessons/plant-change-scene-ladder.md)
 
 ## Lo que no se afirma
 

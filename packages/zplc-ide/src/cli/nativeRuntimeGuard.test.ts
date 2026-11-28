@@ -4,7 +4,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { itNative, loopbackMode, nativeRuntimeBinary } from './nativeRuntimeGuard';
+import { itNative, loopbackMode, nativeRuntimeBinary, platformLimit } from './nativeRuntimeGuard';
 
 // Runs the three test files that need the native runtime binary in a child bun, the way CI runs them.
 const guardedFiles = ['nativeScenarioRuntime', 'toolApi', 'blinkyVisualPosix'].map((name) => join(import.meta.dir, `${name}.test.ts`));
@@ -105,5 +105,17 @@ describe('the loopback tests on each platform (VF-023)', () => {
     expect(loopbackMode('linux', true, false, true)).toBe('fail');
     expect(loopbackMode('darwin', true, false, false)).toBe('skip');
     expect(loopbackMode('win32', false, false, false)).toBe('skip');
+  });
+});
+
+describe('a test that a platform cannot run, registered with its reason (VF-023)', () => {
+  const limits = { 'modbus-coil-fbd': 'the simulator has no Modbus on Windows' };
+  it('names the reason on win32 for a listed case and nothing for an unlisted one', () => {
+    expect(platformLimit(limits, 'modbus-coil-fbd', 'win32')).toBe('the simulator has no Modbus on Windows');
+    expect(platformLimit(limits, 'blink', 'win32')).toBeUndefined();
+  });
+  it('never limits Linux or macOS', () => {
+    expect(platformLimit(limits, 'modbus-coil-fbd', 'linux')).toBeUndefined();
+    expect(platformLimit(limits, 'modbus-coil-fbd', 'darwin')).toBeUndefined();
   });
 });

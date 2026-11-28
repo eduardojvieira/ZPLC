@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { translate } from '../../src/i18n/translate';
 import { assert } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
+import { pressMod } from '../journeyKeys';
 import type { Journey } from '../journeys';
 import { closeProject, openFileInEditor, openFolder, runFromPalette, runTests, text } from './support';
 import type { Wire } from './mcpClient';
@@ -27,7 +28,7 @@ async function fill(app: App, label: string, value: string): Promise<void> {
       `if (!control) return false; control.focus(); control.select?.(); return true; })()`,
   );
   assert(found, `Preferences has no field named ${label}.`);
-  await app.press('Ctrl+A');
+  await pressMod(app, 'Ctrl+A');
   await app.type(value);
 }
 
@@ -119,7 +120,7 @@ async function sendRequest(app: App): Promise<void> {
 
 async function setPrompt(app: App, prompt: string): Promise<void> {
   await app.eval(`document.querySelector(${JSON.stringify(`${ASSISTANT} textarea`)}).focus()`);
-  await app.press('Ctrl+A');
+  await pressMod(app, 'Ctrl+A');
   await app.type(prompt);
 }
 

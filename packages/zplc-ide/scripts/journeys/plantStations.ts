@@ -8,6 +8,7 @@
 import { join } from 'node:path';
 import { assert } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
+import { chooseByKeys, toggleTabFocus } from '../journeyKeys';
 import type { Journey } from '../journeys';
 import { holdPushButton, openPlantDocument, plantFacts, runInSimulation, shippedSceneProject, writeSceneProject } from './plantSupport';
 import { pause } from '../journeyTiming';
@@ -27,7 +28,7 @@ const activeIs = (app: App, attribute: string, value: string) =>
 
 /** The code editor keeps Tab as a character; Ctrl+M (Tab focus mode) is the way out when the walk starts there. */
 async function leaveEditor(app: App): Promise<void> {
-  if (await app.eval<boolean>(`Boolean(document.activeElement?.closest('.monaco-editor'))`)) await app.press('Ctrl+M');
+  if (await app.eval<boolean>(`Boolean(document.activeElement?.closest('.monaco-editor'))`)) await toggleTabFocus(app);
 }
 
 /** Presses Tab (or Shift+Tab) until the focused element carries `attribute=value`; names the path walked when it never does. */
@@ -79,7 +80,9 @@ export const journeysStations: Journey[] = [
       const options = await app.eval<string[]>(`[...document.activeElement.options].map((o) => o.value)`);
       const target = options.indexOf('levelStuckOff');
       assert(target > 0, `The fault select of lift A offers ${JSON.stringify(options)}, no levelStuckOff.`);
-      for (let step = 0; step < target; step++) await app.press('ArrowDown');
+      await chooseByKeys(app, 'document.activeElement', target, async () => {
+        for (let step = 0; step < target; step++) await app.press('ArrowDown');
+      });
       const chosen = await app.eval<string>(`document.activeElement.value`);
       assert(chosen === 'levelStuckOff', `The arrow keys chose "${chosen}", not levelStuckOff.`);
       await app.press('Tab');

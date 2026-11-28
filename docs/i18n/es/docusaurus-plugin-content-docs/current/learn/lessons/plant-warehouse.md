@@ -19,7 +19,7 @@ Maneje un transelevador desde un diagrama: almacene cada caja en la primera celd
 - Tiempo estimado: 60 minutos
 - Lenguajes: SFC
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Almacén con transelevador](../../plant/scenes/stacker-crane-warehouse.md)
 - Requisitos previos: [plant-three-level-lifts](./plant-three-level-lifts.md)
 

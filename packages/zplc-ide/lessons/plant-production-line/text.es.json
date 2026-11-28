@@ -5,25 +5,25 @@
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
     "Mover el control de una máquina a un bloque de función y usar una instancia para cada máquina.",
-    "Equilibrar dos máquinas de distinta velocidad alternando las piezas entre ellas."
+    "Dar a dos máquinas de distinta velocidad el mismo control, para que cada una termine cuatro ciclos."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/ProductionLine.st, convierta el control en línea de la máquina A en un bloque de función Cell, llame a una instancia para la máquina A y a otra para la máquina B, y encienda Green cuando ambas hayan terminado cuatro ciclos.",
-      "checkpoint": "Ambas máquinas ejecutan el mismo bloque de función, así que un cambio en el bloque cambia a las dos."
+      "body": "En src/ProductionLine.st la máquina A se controla con instrucciones escritas en el propio programa, y la máquina B no tiene ningún control. Haga que ambas máquinas funcionen igual, con el control escrito una sola vez, y encienda Green cuando ambas hayan terminado cuatro ciclos.",
+      "checkpoint": "Puede decir qué se escribe una vez para las dos máquinas y qué guarda cada máquina para sí."
     },
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, cuente las piezas: llegan ocho, una cada seis segundos, y el brazo envía una de cada dos a la máquina B; la máquina A necesita 3 s por ciclo y la máquina B 6 s, así que cada una hace cuatro con el mismo bloque.",
-      "checkpoint": "Cada máquina alimenta hasta que ha entrado una pieza, espera Ready antes de pulsar Start, y alimenta otra vez después de Done; ningún Start es un disparo en falso."
+      "body": "Antes de ejecutar, cuente las piezas: llegan ocho, una cada seis segundos, y el brazo envía una de cada dos a la máquina B; la máquina A necesita 3 s por ciclo y la máquina B 6 s, así que cada una hace cuatro.",
+      "checkpoint": "Una máquina inicia un ciclo solo cuando informa una pieza en bruto en reposo, y un Start en cualquier otro momento es un disparo en falso: misfires se mantiene en cero."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial controla solo la máquina A, escrita en línea; mueva ese control a un bloque de función, llámelo para la máquina A y para la máquina B, y encienda Green cuando ambas hayan terminado cuatro ciclos.",
+      "body": "Escriba el programa, guárdelo y pulse {{ui:learn.check}}. El proyecto inicial controla solo la máquina A, así que la máquina B nunca recibe una pieza en su cámara, no se hace ninguna base y Green nunca se enciende. Dé a la máquina B el mismo control sin escribirlo una segunda vez, y encienda Green cuando ambas máquinas hayan terminado cuatro ciclos.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -48,14 +48,14 @@
   "hints": [
     {
       "level": 1,
-      "text": "Un bloque de función guarda sus propias variables en cada instancia: Step, los temporizadores y el conteo pertenecen a Cell, así que dos instancias nunca los comparten."
+      "text": "Observe las variables que solo usa el control de la máquina A y pregúntese de cuáles necesitaría la máquina B una copia propia. Un bloque de función guarda una copia separada de sus variables en cada instancia."
     },
     {
       "level": 2,
-      "text": "Pase Active, Seen, Ready y Done como entradas y tome Feed, Start y Cycles como salidas; ponga Start en FALSE al principio para que dure un solo ciclo, y llame a cada instancia una vez por ciclo."
+      "text": "Escriba un bloque de función, por ejemplo Cell, que guarde su propio Step, sus temporizadores Travel y Eject y su cuenta Cycles, para que dos instancias nunca los compartan. Pase a él las instrucciones de la máquina A, desde StartA := FALSE; hasta la línea de FeedA, cambiando StepA, TravelA, EjectA y CyclesA por Step, Travel, Eject y Cycles, y EyeA, ReadyA, DoneA, FeedA y StartA por Seen, Ready, Done, Feed y Start, y bórrelas del programa junto con esas variables. Pase Active, Seen, Ready y Done como entradas y tome Feed, Start y Cycles como salidas. Ponga Start en FALSE al principio para que dure un solo ciclo de escaneo, y llame a cada instancia una vez por ciclo de escaneo. En el programa, declare MachA : Cell y MachB : Cell, llámelas con Active := Active, Seen := EyeA y EyeB, Ready := ReadyA y ReadyB, Done := DoneA y DoneB, copie Feed y Start a FeedA, StartA, FeedB y StartB, y encienda Green cuando ambos Cycles sean al menos 4."
     }
   ],
   "faultCases": [
-    "El programa inicial controla solo la máquina A, escrita en línea; mueva ese control a un bloque de función, llámelo para la máquina A y para la máquina B, y encienda Green cuando ambas hayan terminado cuatro ciclos."
+    "El proyecto inicial controla solo la máquina A, así que la máquina B nunca recibe una pieza en su cámara, no se hace ninguna base y Green nunca se enciende."
   ]
 }

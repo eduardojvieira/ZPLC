@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-three-level-lifts. Do not edit. >>> */}
 
-Secuencie dos elevadores como dos cadenas que corren en paralelo y se encuentran solo en la cinta de transferencia compartida.
+Haga que dos elevadores trabajen a la vez, cada uno en su propio ciclo, y se encuentren solo en la cinta que hay entre ellos.
 
 ## Datos
 
@@ -19,14 +19,14 @@ Secuencie dos elevadores como dos cadenas que corren en paralelo y se encuentran
 - Tiempo estimado: 50 minutos
 - Lenguajes: SFC
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Elevadores de tres niveles](../../plant/scenes/three-level-lifts.md)
 - Requisitos previos: [plant-buffer-release](./plant-buffer-release.md)
 
 ## Objetivos
 
-- Describir cada elevador como su propia cadena de pasos que vuelve a su primer paso.
-- Arrancar ambas cadenas con una sola transición y dejar que se encuentren solo en la cinta entre los elevadores.
+- Describir cada elevador como un ciclo de pasos propio que vuelve al punto de partida.
+- Hacer que ambos elevadores trabajen a la vez y se encuentren solo en la cinta que hay entre ellos.
 
 ## Etapas
 

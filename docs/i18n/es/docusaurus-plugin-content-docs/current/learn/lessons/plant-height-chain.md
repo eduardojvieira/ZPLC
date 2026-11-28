@@ -19,14 +19,14 @@ Distinga tres alturas de caja con dos barreras, recuerde la respuesta hasta que 
 - Tiempo estimado: 60 minutos
 - Lenguajes: ST
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Clasificación por altura con transferencia de cadenas](../../plant/scenes/height-sorting-chain.md)
 - Requisitos previos: [plant-colour-separation](./plant-colour-separation.md)
 
 ## Objetivos
 
 - Decidir una ruta a partir de una combinación de dos sensores.
-- Recordar una decisión mientras la caja siguiente ya pasa por los sensores.
+- Recordar una decisión mientras la caja siguiente ya pasa por los sensores de altura.
 
 ## Etapas
 

@@ -11,51 +11,49 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/VisionSorting.st, run both belts after Start. Read Code while the item is in the field of the vision sensor: code 1 rides straight on; for code 2, swing the arm across before the item reaches it, hold it until the item has passed its free end, then swing it back.",
+      "body": "In src/VisionSorting.st, run both belts after Start. Twelve items arrive one at a time, each with a code: every code 1 item must end in Product1 and every code 2 item in Product2, so the arm must be across the belt when a code 2 item reaches it and at rest when a code 1 item does. Done must light after twelve items.",
       "checkpoint": "Code 1 items end in Product1, code 2 items in Product2, and Done lights after twelve items."
     },
     {
       "key": "predict",
       "title": "Predict",
-      "body": "Before running, work out when the arm must swing: the code is read about two seconds before the item reaches the arm, and the item ahead may still be passing the free end of the arm. What happens if the arm swings too early, or too late?",
-      "checkpoint": "Divert goes TRUE for a code 2 item shortly before it arrives and returns to FALSE after it has passed; the next item is not read until the arm is clear."
+      "body": "Before running, work out when the arm must be across the belt: the code is read about two seconds before the item reaches the arm, and the arm takes a moment to swing. What happens to a code 2 item if the arm is not across when it arrives, and to a code 1 item if it is?",
+      "checkpoint": "The code is on Code for about a second and the item reaches the arm about two seconds after it is read: a code 2 item must find the arm across, and a code 1 item must find it at rest."
     },
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter drives no output, so no belt moves and no item is sorted; run both belts after Start and swing the arm for each code 2 item.",
+      "body": "Write the program, save it, then press {{ui:learn.check}}. The starting program drives no output, so no belt moves and no item is sorted. After Start both belts must run and each item must end in the bin of its code.",
       "checkpoint": "Check reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the machine move, press {{ui:toolbar.run.label}} (F5) and open the {{ui:plant.panel.view3d}}.",
       "checkpoint": "The required scenario is named vision-sorting and contains {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Watch the 3D view and the vision readout: the code shows while the item is in the field, the arm swings in front of a code 2 item and the item slides onto the side belt.",
-      "checkpoint": "A code 1 item never moves the arm, and the arm is back home before the next item arrives."
+      "body": "Watch the {{ui:plant.panel.view3d}} and the vision readout: the code shows while the item is in the field, and a code 2 item slides onto the side belt in front of the arm.",
+      "checkpoint": "The arm is across the belt when each code 2 item reaches it, and at rest when each code 1 item does."
     },
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "The grade sees the two product belts and that nothing was dropped; it cannot see your timing, so a timing that clips an item shows only as a misrouted or dropped item.",
+      "body": "The grade sees the two product belts and that nothing was dropped; it cannot see your timing, so a wrong timing shows only as an item in the wrong bin.",
       "checkpoint": "What the assertions check is tested; nothing else is."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Count scans instead of using a timer: when Code is not 0 and the lock is free, add one to Handled, set a lock for the item to leave the field and, for code 2, a delay before the swing."
+      "text": "The code is on the input for only about a second, and the same item is in the field for many scans, but the arm is further down the belt: what must your program remember about an item it has read, and for how long?"
     },
     {
       "level": 2,
-      "text": "When the delay reaches 0 set Divert and load a hold counter; when the hold counter reaches 0 clear Divert. Done := Handled >= 12."
+      "text": "Latch Start into Active and run RunIn and RunSide while Active. Count scans of 0.01 s with three INT variables, Lock, Wait and ArmHold, each counted down by one per scan while above 0. When Active is TRUE, Lock = 0 and Code <> 0, add one to Handled, set Lock to 450 so the item is counted once, and if Code = 2 set Wait to 70. When Wait comes down to 0, set Divert and load ArmHold with 530, so a code 2 item read while the arm is still across renews the hold; when ArmHold comes down to 0, clear Divert. Done := Handled >= 12; Busy := Active AND NOT Done."
     }
   ],
-  "faultCases": [
-    "The starter drives no output, so no belt moves and no item is sorted; run both belts after Start and swing the arm for each code 2 item."
-  ]
+  "faultCases": ["The starting program drives no output, so no belt moves and no item is sorted."]
 }

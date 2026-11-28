@@ -19,14 +19,14 @@ Divida una línea en un bloque de función por máquina y envíe piezas alternas
 - Tiempo estimado: 50 minutos
 - Lenguajes: ST
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Línea de producción balanceada](../../plant/scenes/balanced-production-line.md)
 - Requisitos previos: [function-block-pump-pair](./function-block-pump-pair.md), [plant-lift-stacking](./plant-lift-stacking.md)
 
 ## Objetivos
 
 - Mover el control de una máquina a un bloque de función y usar una instancia para cada máquina.
-- Equilibrar dos máquinas de distinta velocidad alternando las piezas entre ellas.
+- Dar a dos máquinas de distinta velocidad el mismo control, para que cada una termine cuatro ciclos.
 
 ## Etapas
 

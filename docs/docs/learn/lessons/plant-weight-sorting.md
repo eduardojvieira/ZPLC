@@ -19,7 +19,7 @@ Compare the reading of a scale with a limit and send heavy boxes to the side bel
 - Estimated time: 50 minutes
 - Languages: ST
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Weight sorting](../../plant/scenes/weight-sorting.md)
 - Prerequisites: [plant-colour-separation](./plant-colour-separation.md), [plant-tank-level-scaling](./plant-tank-level-scaling.md)
 

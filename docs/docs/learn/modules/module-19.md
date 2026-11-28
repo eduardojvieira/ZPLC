@@ -22,8 +22,8 @@ The course ends by building the plant itself: parts, signals and a program that 
 | --- | --- | --- | --- |
 | [Build a belt scene from the empty floor](../lessons/plant-build-belt-scene.md) | `plant-build-belt-scene` | ST | 25 |
 | [Build a belt scene from the empty floor](../lessons/plant-build-belt-scene-ladder.md) | `plant-build-belt-scene-ladder` | LD | 25 |
-| [Change a scene: add the second emitter](../lessons/plant-change-scene.md) | `plant-change-scene` | ST | 20 |
-| [Change a scene: add the second emitter](../lessons/plant-change-scene-ladder.md) | `plant-change-scene-ladder` | LD | 20 |
+| [Change a scene: feed the second line](../lessons/plant-change-scene.md) | `plant-change-scene` | ST | 20 |
+| [Change a scene: feed the second line](../lessons/plant-change-scene-ladder.md) | `plant-change-scene-ladder` | LD | 20 |
 
 {/* <<< END GENERATED: learn/modules/module-19 <<< */}
 

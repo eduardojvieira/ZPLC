@@ -7,8 +7,11 @@ import { accessSync, constants, existsSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { join } from 'node:path';
 
+import { scaleTime } from '../src/test/platformTime';
+
 export const HOST = '127.0.0.1';
-const TIMEOUT_MS = 30_000;
+/** 30 s on Linux, scaled for the system by the one table of src/test/platformTime.ts. */
+const TIMEOUT_MS = scaleTime(30_000);
 
 export type OwnedProcess = ReturnType<typeof Bun.spawn>;
 

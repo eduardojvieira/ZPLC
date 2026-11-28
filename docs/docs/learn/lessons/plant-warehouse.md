@@ -19,7 +19,7 @@ Run a stacker crane from a chart: store each box in the first free cell and brin
 - Estimated time: 60 minutes
 - Languages: SFC
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Stacker-crane warehouse](../../plant/scenes/stacker-crane-warehouse.md)
 - Prerequisites: [plant-three-level-lifts](./plant-three-level-lifts.md)
 

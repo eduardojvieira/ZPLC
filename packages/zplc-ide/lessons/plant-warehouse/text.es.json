@@ -11,19 +11,19 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/Warehouse.sfc.json, añada la cadena de recuperar de R_PICK a R_FINISH: saque la caja de la celda pedida, llévela al muelle y póngala en la cinta de salida.",
-      "checkpoint": "El paso IDLE es el único lugar donde se elige el trabajo siguiente: una caja en la entrada se almacena, una petición que espera por una celda con caja se recupera."
+      "body": "En src/Warehouse.sfc.json el transelevador ya almacena cada caja que llega a la cinta de entrada, pero una pulsación de un pulsador de petición no hace nada. Haga que el transelevador atienda una petición: saque la caja de la celda pedida, llévela al muelle y póngala en la cinta de salida.",
+      "checkpoint": "Puede decir qué hace que el transelevador almacene una caja, qué hace que recupere una, y qué hace con una petición pulsada mientras está ocupado."
     },
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, siga el transelevador: toma la caja con la horquilla, la retrae, se mueve a la celda, extiende, baja la horquilla y la retrae otra vez; para recuperar, invierte la secuencia y entrega la caja en el muelle.",
-      "checkpoint": "El transelevador se mueve solo con la horquilla retraída, cada movimiento espera 0,3 s antes de fiarse de InPos, y Green se enciende cuando dos cajas han salido por la cinta de salida."
+      "body": "Antes de ejecutar, siga una caja desde la cinta de entrada hasta su celda, y desde su celda hasta la cinta de salida cuando se pulsa su pulsador de petición. En cada extremo del recorrido, prediga dónde está el transelevador y qué hace su horquilla.",
+      "checkpoint": "El transelevador permanece quieto mientras su horquilla está fuera, y Green se enciende cuando dos cajas han sido puestas en la cinta de salida."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial almacena cajas pero no tiene pasos de recuperar, así que una petición nunca se atiende; añada la cadena que saca la caja de su celda, la lleva al muelle y la pone en la cinta de salida, y deje que IDLE la inicie cuando una petición espere por una celda con caja.",
+      "body": "Escriba el comportamiento que falta, guárdelo y pulse {{ui:learn.check}}. El proyecto inicial almacena cajas, pero una petición nunca se atiende: la caja se queda en su celda, ninguna caja llega al contenedor de salida y Green nunca se enciende. Cuando una petición espera por una celda con caja, el transelevador debe traer esa caja y ponerla en la cinta de salida.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -48,14 +48,14 @@
   "hints": [
     {
       "level": 1,
-      "text": "Elija la celda en una acción P1, que corre una vez al entrar al paso; Bay y Level pueden fijarse en la misma acción y conservan su valor."
+      "text": "Observe cómo la cadena de almacenar elige la celda a la que va, y qué recuerda el transelevador de las celdas y de las peticiones. Recuperar necesita la misma clase de elección, entre las celdas que guardan una caja y las peticiones que esperan."
     },
     {
       "level": 2,
-      "text": "Espere el tiempo de paso de 0,3 s y InPos antes de extender la horquilla, y cambie Bay o Level solo en un paso donde la horquilla esté retraída."
+      "text": "Elija la celda en una acción P1, que corre una vez al entrar al paso: la primera celda con Want y Held en TRUE; Bay y Level pueden fijarse en la misma acción y conservan su valor. Añada la cadena de recuperar e iníciela desde IDLE con una transición de prioridad 2, después de la de almacenar, cuando (Want1 AND Held1) OR (Want2 AND Held2) OR (Want3 AND Held3). Espere el tiempo de paso de 0,3 s y InPos antes de extender la horquilla, y cambie Bay o Level solo en un paso donde la horquilla esté retraída. Dé a cada paso su propia acción que escriba todas las salidas del transelevador, y A_COMMON: ForkLeft y RunIn están en FALSE en todos los pasos de la cadena; Raise está en TRUE de R_RAISE a R_BACK; ForkRight está en TRUE en R_FORK_OUT, R_RAISE, R_LIFTED, R_DOCK_OUT, R_UNLOAD y R_CLEAR; BeltRight está en TRUE en R_UNLOAD y R_CLEAR; todas las demás salidas BOOL del transelevador están en FALSE. La cadena es: R_PICK va a la celda (0,3 s e InPos); R_FORK_OUT extiende la horquilla a la derecha hasta AtRight; R_RAISE la eleva hasta Raised; R_LIFTED espera 0,3 s; R_RETRACT retrae la horquilla hasta Centre; R_TO_DOCK va a Bay 0 y Level 0 (0,3 s e InPos); R_DOCK_OUT extiende la horquilla a la derecha hasta AtRight; R_UNLOAD hace correr BeltRight hasta NOT Loaded; R_CLEAR espera 0,8 s; R_BACK retrae la horquilla hasta Centre; R_FINISH espera 0,5 s y, en una acción P1, borra Held y Want de la celda y suma 1 a Served."
     }
   ],
   "faultCases": [
-    "El programa inicial almacena cajas pero no tiene pasos de recuperar, así que una petición nunca se atiende; añada la cadena que saca la caja de su celda, la lleva al muelle y la pone en la cinta de salida, y deje que IDLE la inicie cuando una petición espere por una celda con caja."
+    "El proyecto inicial almacena cajas, pero una petición nunca se atiende: la caja se queda en su celda, ninguna caja llega al contenedor de salida y Green nunca se enciende."
   ]
 }

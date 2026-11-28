@@ -19,7 +19,7 @@ Escriba la lógica de clasificación por color como una lista de instrucciones: 
 - Tiempo estimado: 50 minutos
 - Lenguajes: IL
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Separación por color](../../plant/scenes/colour-separation.md)
 - Requisitos previos: [plant-colour-separation](./plant-colour-separation.md), [instruction-list-door-alarm](./instruction-list-door-alarm.md)
 
