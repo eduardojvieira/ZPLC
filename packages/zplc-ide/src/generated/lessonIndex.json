@@ -13821,7 +13821,7 @@
     },
     {
       "id": "plant-latch-two-sensors",
-      "version": 3,
+      "version": 4,
       "order": 122,
       "module": 12,
       "level": "advanced",
@@ -14025,7 +14025,7 @@
     },
     {
       "id": "plant-counted-queue",
-      "version": 3,
+      "version": 4,
       "order": 123,
       "module": 12,
       "level": "advanced",
@@ -14245,7 +14245,7 @@
     },
     {
       "id": "plant-timed-tank",
-      "version": 7,
+      "version": 8,
       "order": 131,
       "module": 13,
       "level": "advanced",
@@ -14479,7 +14479,7 @@
     },
     {
       "id": "plant-tank-level-scaling",
-      "version": 5,
+      "version": 6,
       "order": 132,
       "module": 13,
       "level": "advanced",
