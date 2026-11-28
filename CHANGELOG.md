@@ -42,6 +42,11 @@ and version when the release is cut (see `RELEASING.md`).
 - An AI agent debugs in a simulation private to it: six `debug_*` MCP tools start a session, stop it at a breakpoint in
   any of the five languages, step it, set its inputs or plant actions and read variables, function block members, SFC
   steps and plant facts by name; two sessions at most, each stopped after 300 s idle and when the client disconnects.
+- `NOT` of an untyped integer literal, or of an expression made only of such literals such as `NOT(1 + 2)`, now takes the width of its context, as `AND`, `OR` and `XOR` do: 32 bits, and 64 bits
+  when the destination is 64 bits wide. Before, `X : DWORD := NOT(1)` gave 0, and `NOT(0)` gave 1 into any bit string;
+  now it gives `16#FFFFFFFE`, and `NOT(k)` into `BYTE`, `WORD`, `DWORD` and `LWORD` equals `NOT(BYTE#k)`, `NOT(WORD#k)`,
+  `NOT(DWORD#k)` and `NOT(LWORD#k)`. A `BOOL` destination is still refused. No published project or lesson uses this form,
+  and the bytecode of every project, file and documentation example is unchanged.
 
 ### Breaking changes
 
@@ -65,6 +70,9 @@ and version when the release is cut (see `RELEASING.md`).
   to use an `IF` in Structured Text.
 - A 64-bit literal (`LWORD#`, `ULINT#`, `LINT#`) as the input of `SHL`, `SHR`, `ROL` or `ROR` is refused at build time.
   Assign the literal to a variable first. Assignment and arithmetic with those literals work.
+- An untyped integer literal is 32 bits wide, so `ROL(16#8000, 1)` into a `WORD` gives 0, not 1: the bit rotates out of the
+  low 16 bits. Write the literal with its type, `ROL(WORD#16#8000, 1)`, to rotate within 16 bits. The same holds for `ROR`,
+  `SHL` and `SHR`.
 
 ### Details for contributors
 

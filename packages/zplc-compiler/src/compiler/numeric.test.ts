@@ -1144,7 +1144,7 @@ END_PROGRAM`);
         expect(readWide(memory, false)).toBe(0x00n);
     });
 
-    it('DWORD#1 and an untyped 1 under NOT compile as before', () => {
+    it('DWORD#1 and an untyped 1 under NOT give the same 32-bit complement', () => {
         for (const literal of ['DWORD#1', '1']) {
             const compiled = compileToBinary(`PROGRAM T
 VAR r AT %QD0 : DWORD; END_VAR
@@ -1153,8 +1153,72 @@ END_PROGRAM`);
             expect(compiled.assembly).not.toContain('SWAP');
             const memory = new Uint8Array(0x10000);
             run(compiled.assembly, memory);
-            // an untyped 1 under NOT keeps its pre-existing boolean-style result (masked to 0 or 1)
-            expect(new DataView(memory.buffer, 0x1000, 4).getUint32(0, true)).toBe(literal === '1' ? 0 : 0xfffffffe);
+            // an untyped 1 is a 32-bit operand, like DWORD#1 (C10)
+            expect(new DataView(memory.buffer, 0x1000, 4).getUint32(0, true)).toBe(0xfffffffe);
         }
+    });
+});
+
+describe('NOT of an untyped integer literal (C10)', () => {
+    const targets: Array<[string, number]> = [
+        ['BYTE', 8],
+        ['WORD', 16],
+        ['DWORD', 32],
+        ['LWORD', 64],
+    ];
+    const read = (memory: Uint8Array, bits: number): bigint => {
+        const view = new DataView(memory.buffer, 0x1000, 8);
+        if (bits === 64) return view.getBigUint64(0, true);
+        return BigInt(bits === 32 ? view.getUint32(0, true) : bits === 16 ? view.getUint16(0, true) : view.getUint8(0));
+    };
+    const result = (type: string, bits: number, expression: string): bigint =>
+        read(execute(`PROGRAM T\nVAR r AT %QD0 : ${type}; END_VAR\n  r := ${expression};\nEND_PROGRAM`), bits);
+
+    it('X : DWORD := NOT(1) is 16#FFFFFFFE', () => {
+        expect(result('DWORD', 32, 'NOT(1)')).toBe(0xfffffffen);
+    });
+
+    for (const [type, bits] of targets) {
+        it(`NOT(k) into ${type} equals NOT(${type}#k)`, () => {
+            for (const k of ['0', '1', '16#0F']) {
+                expect(result(type, bits, `NOT(${k})`)).toBe(result(type, bits, `NOT(${type}#${k})`));
+            }
+        });
+    }
+
+    it('NOT(1) into a LWORD complements the full 64-bit pattern', () => {
+        expect(result('LWORD', 64, 'NOT(1)')).toBe(0xfffffffffffffffen);
+    });
+
+    it('a BOOL destination is still a compile error', () => {
+        expect(() => compileST(`PROGRAM T\nVAR b : BOOL; END_VAR\n  b := NOT(1);\nEND_PROGRAM`)).toThrow();
+    });
+
+    it('NOT of a typed variable is unchanged', () => {
+        for (const [type, bits] of targets) {
+            const memory = execute(`PROGRAM T\nVAR a : ${type} := 1; r AT %QD0 : ${type}; END_VAR\n  r := NOT a;\nEND_PROGRAM`);
+            expect(read(memory, bits)).toBe(BigInt.asUintN(bits, ~1n));
+        }
+        const bool = execute(`PROGRAM T\nVAR a : BOOL := TRUE; r AT %QX0.0 : BOOL; END_VAR\n  r := NOT a;\nEND_PROGRAM`);
+        expect(bool[0x1000]! & 1).toBe(0);
+    });
+});
+
+describe('ROL and ROR of an untyped literal into a narrow destination (T20-K5, pinned for 2.2)', () => {
+    it('ROL(16#8000, 1) into a WORD is 0: the untyped literal is 32 bits wide', () => {
+        const memory = execute(`PROGRAM T\nVAR r AT %QW0 : WORD; END_VAR\n  r := ROL(16#8000, 1);\nEND_PROGRAM`);
+        expect(new DataView(memory.buffer, 0x1000, 2).getUint16(0, true)).toBe(0);
+    });
+
+    it('ROL(WORD#16#8000, 1) into a WORD is 1', () => {
+        const memory = execute(`PROGRAM T\nVAR r AT %QW0 : WORD; END_VAR\n  r := ROL(WORD#16#8000, 1);\nEND_PROGRAM`);
+        expect(new DataView(memory.buffer, 0x1000, 2).getUint16(0, true)).toBe(1);
+    });
+
+    it('ROR(16#0001, 1) into a WORD is 0, and ROR(WORD#16#0001, 1) is 16#8000', () => {
+        const untyped = execute(`PROGRAM T\nVAR r AT %QW0 : WORD; END_VAR\n  r := ROR(16#0001, 1);\nEND_PROGRAM`);
+        expect(new DataView(untyped.buffer, 0x1000, 2).getUint16(0, true)).toBe(0);
+        const typed = execute(`PROGRAM T\nVAR r AT %QW0 : WORD; END_VAR\n  r := ROR(WORD#16#0001, 1);\nEND_PROGRAM`);
+        expect(new DataView(typed.buffer, 0x1000, 2).getUint16(0, true)).toBe(0x8000);
     });
 });
