@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/ColourSeparation.il, cada pieza espera en la cuchilla hasta quedar quieta; después una roja se empuja a la cinta lateral y se retira la placa, mientras que una azul se suelta y la cuchilla retiene la pieza siguiente como antes.",
+      "body": "En src/ColourSeparation.il, cada pieza espera en el tope hasta quedar quieta; después una roja se empuja a la cinta lateral y se retira la placa, mientras que una azul se suelta y el tope retiene la pieza siguiente como antes.",
       "checkpoint": "El programa clasifica las mismas ocho piezas que en Texto estructurado: las rojas a RedBin, las azules a BlueBin y después Done."
     },
     {
@@ -35,7 +35,7 @@
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe la vista 3D y la traza: State no es una salida, así que siga Hold y Push. Una pieza roja da un pulso de Push; una azul no da ninguno y Hold baja cerca de un segundo y medio.",
+      "body": "Observe la vista 3D y la traza: State no es una salida, así que siga Hold y Push. Una pieza roja mantiene Push en TRUE hasta Extended; una azul nunca activa Push, y Hold está en FALSE mientras se la deja pasar.",
       "checkpoint": "Las salidas son las de la solución en Texto estructurado, ciclo a ciclo, porque ambas expresan los mismos cuatro estados."
     },
     {
@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "Un bloque tiene esta forma: LD State, EQ 1, AND Extended, JMPCN next, LD 2, ST State y la etiqueta next:. Condicione los temporizadores: LD State, EQ 0, AND Waiting, ST Gate, CAL Settle(IN := Gate, PT := T#300ms). Lea el resultado con AND Settle.Q. Escriba cada estado como un bloque: LD State, EQ n, AND la condición que lo abandona, JMPCN al bloque siguiente y las instrucciones que cambian State; CAL recibe variables, así que guarde una condición en Gate antes. Los estados, cada uno con su condición de salida y su estado siguiente: 0 espera, con Active y tras Settle.Q (Settle corre mientras State es 0 y Waiting, PT := T#300ms), a 1 si IsRed, si no a 3; 1 empuje, a 2 con Extended; 2 retroceso, con Retracted sume 1 a Handled y vuelva a 0; 3 liberación, tras Clear.Q (Clear corre mientras State es 3 y NOT Waiting, PT := T#1500ms, una elección y no un requisito), sume 1 a Handled y vuelva a 0. Salidas: RunIn, RunOut y RunSide siguen a Active; Hold es State NE 3 AND Active; Push es State EQ 1; Done es Handled GE 8; Busy es Active ANDN Done."
+      "text": "Tome los estados del clasificador en texto estructurado de uno en uno: cada uno se convierte en un bloque que termina en una etiqueta propia. Ponga las etiquetas al inicio de la línea. Un bloque tiene esta forma: LD State, EQ 1, AND Extended, JMPCN next, LD 2, ST State y la etiqueta next:. Condicione los temporizadores: LD State, EQ 0, AND Waiting, ST Gate, CAL Settle(IN := Gate, PT := T#300ms). Lea el resultado con AND Settle.Q. Escriba cada estado como un bloque: LD State, EQ n, AND la condición que lo abandona, JMPCN al bloque siguiente y las instrucciones que cambian State; CAL recibe variables, así que guarde una condición en Gate antes. Los estados, cada uno con su condición de salida y su estado siguiente: 0 espera, con Active y tras Settle.Q (Settle corre mientras State es 0 y Waiting, PT := T#300ms), a 1 si IsRed, si no a 3; 1 empuje, a 2 con Extended; 2 retroceso, con Retracted sume 1 a Handled y vuelva a 0; 3 liberación, tras Clear.Q (Clear corre mientras State es 3 y NOT Waiting, PT := T#1500ms, una elección y no un requisito), sume 1 a Handled y vuelva a 0. Salidas: RunIn, RunOut y RunSide siguen a Active; Hold es State NE 3 AND Active; Push es State EQ 1; Done es Handled GE 8; Busy es Active ANDN Done."
     }
   ],
   "faultCases": [
