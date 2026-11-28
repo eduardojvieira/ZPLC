@@ -72,9 +72,15 @@ export function applyDeclarations(
   program?: string,
 ): { content: string; added: number } | null {
   if (declarations.kind === 'text') {
-    // Only what a VAR block declares counts: an assignment to the same name does not.
+    // The declarations go into the program the map's variables belong to, else the first one; a function block never takes them.
+    const headers = [...content.matchAll(/^[ \t]*PROGRAM[ \t]+(\w+).*$/gim)];
+    const header = headers.find((m) => m[1]!.toLowerCase() === program?.toLowerCase()) ?? headers[0];
+    if (!header) return null;
+    // Only what a VAR block of that program declares counts: not an assignment, not a variable of a function block.
+    const rest = content.slice(header.index);
+    const body = rest.slice(0, /\bEND_PROGRAM\b/i.exec(rest)?.index ?? rest.length);
     const declared = new Set(
-      [...content.matchAll(/\bVAR\w*\b[\s\S]*?\bEND_VAR\b/gi)].flatMap((m) =>
+      [...body.matchAll(/\bVAR\w*\b[\s\S]*?\bEND_VAR\b/gi)].flatMap((m) =>
         [...m[0].matchAll(/^\s*([A-Za-z_]\w*)\s*(?:AT\s+\S+\s*)?:(?!=)/gm)].map((n) => n[1]!.toLowerCase()),
       ),
     );
@@ -93,10 +99,6 @@ export function applyDeclarations(
       }
     }
     if (added === 0) return { content, added };
-    // The declarations go into the program the map's variables belong to, else the first one; a function block never takes them.
-    const headers = [...content.matchAll(/^[ \t]*PROGRAM[ \t]+(\w+).*$/gim)];
-    const header = headers.find((m) => m[1]!.toLowerCase() === program?.toLowerCase()) ?? headers[0];
-    if (!header) return null;
     const eol = content.includes('\r\n') ? '\r\n' : '\n';
     const block = lines.join(eol) + eol;
     const end = header.index + header[0].length;

@@ -14,6 +14,8 @@ import { Button, EmptyState } from '../../ui';
 import type { PlantMap } from '../../plants/plantMap';
 import type { PlantSceneFile } from '../contracts';
 import { catalogue } from '../core/catalogue';
+// The shipped parts register when plantCore loads: the map must not wait for the plant document to have been opened.
+import '../core/plantCore';
 import { parseScene } from '../core/scene';
 import { usePlantEdit } from '../editSession';
 import { declarationsFor, type DeclarationLanguage } from '../editor/declarations';
