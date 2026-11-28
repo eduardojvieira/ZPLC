@@ -24,7 +24,7 @@ and version when the release is cut (see `RELEASING.md`).
 
 ### What changed for you
 
-- Releasing a forced variable now leaves no force on it. Before, editing the value in the Watch table after forcing it from the faceplate left a second force under the short name that stayed after the release. It applied to the simulator and to a board.
+- Releasing a forced variable no longer leaves a stale force in the Watch table. Editing the value in the Watch table after forcing it from the Live I/O panel used to add a second record under the short name. The simulator had released the force, but that record stayed and showed the variable as forced. On a board, releasing the stale row later made the device answer "Force entry not found" and marked every force unconfirmed. The Live I/O panel is not available on a board, so only the Watch table could do this there. The Live I/O panel now reads a force the way the Watch table does, so both show the same forces. Bits that share a byte are forced and released together, as the runtime always did.
 - With a plant document open and Run pressed, the Live I/O panel no longer says the simulation is paused while the status bar says it is running; its inputs and forces work again.
 - In the Guide, the Reflect stage is listed but locked, with the text of what opens it, until the lesson passes or you choose to see the solution; it then opens at once and stays open.
 - With the classroom setting that hides solutions on, the last hint of a lesson, which is the full answer, is hidden in the Guide too, as it already was for the assistant and `zplc://lesson/current`; the earlier hints and the notice stay.

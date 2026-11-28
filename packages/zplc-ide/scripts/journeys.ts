@@ -6723,8 +6723,8 @@ export const JOURNEYS: Journey[] = [
         assert(await app.visible(css(region)), `The region ${region} is not shown at 1366 by 768.`);
       }
       assert(
-        await app.eval<boolean>(`document.querySelectorAll('[data-object-navigator] [data-navigator-group]').length === 9`),
-        'The navigator does not list the nine groups of PLC objects when the project opens.',
+        await app.eval<boolean>(`document.querySelectorAll('[data-object-navigator] [data-navigator-group]').length === 10`),
+        'The navigator does not list the nine groups of PLC objects and Plant when the project opens.',
       );
       assert(
         await app.eval<boolean>(

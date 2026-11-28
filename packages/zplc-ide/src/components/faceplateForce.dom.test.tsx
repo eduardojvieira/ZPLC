@@ -88,7 +88,6 @@ describe('The faceplate reads a force by its path, then by its address, as the W
     const user = await open();
     await user.click(box('Motor.Start'));
     await dom.waitFor(() => expect(box('Motor.Start').checked).toBe(true));
-    await user.click(box('Motor.Stop'));
     await dom.waitFor(() => expect(box('Motor.Stop').checked).toBe(true));
     expect(keys()).toEqual(['Motor.Start']);
     await user.click(box('Motor.Stop'));
