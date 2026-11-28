@@ -1214,4 +1214,11 @@ describe('ROL and ROR of an untyped literal into a narrow destination (T20-K5, p
         const memory = execute(`PROGRAM T\nVAR r AT %QW0 : WORD; END_VAR\n  r := ROL(WORD#16#8000, 1);\nEND_PROGRAM`);
         expect(new DataView(memory.buffer, 0x1000, 2).getUint16(0, true)).toBe(1);
     });
+
+    it('ROR(16#0001, 1) into a WORD is 0, and ROR(WORD#16#0001, 1) is 16#8000', () => {
+        const untyped = execute(`PROGRAM T\nVAR r AT %QW0 : WORD; END_VAR\n  r := ROR(16#0001, 1);\nEND_PROGRAM`);
+        expect(new DataView(untyped.buffer, 0x1000, 2).getUint16(0, true)).toBe(0);
+        const typed = execute(`PROGRAM T\nVAR r AT %QW0 : WORD; END_VAR\n  r := ROR(WORD#16#0001, 1);\nEND_PROGRAM`);
+        expect(new DataView(typed.buffer, 0x1000, 2).getUint16(0, true)).toBe(0x8000);
+    });
 });
