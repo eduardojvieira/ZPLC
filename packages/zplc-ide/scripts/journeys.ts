@@ -36,6 +36,7 @@ import { attachEmulatedDevice } from './emulatedDevice';
 import { findTextOutOfBox } from './textFit';
 import { JOURNEYS_013 } from './journeys013';
 import { practiceFromReading } from './journeys/learnReading';
+import { JOURNEYS_014 } from './journeys014';
 import { journeysManipulator } from './journeys/plantManipulator';
 import { journeysSorting } from './journeys/plantSorting';
 import { journeysStations } from './journeys/plantStations';
@@ -6728,8 +6729,8 @@ export const JOURNEYS: Journey[] = [
         assert(await app.visible(css(region)), `The region ${region} is not shown at 1366 by 768.`);
       }
       assert(
-        await app.eval<boolean>(`document.querySelectorAll('[data-object-navigator] [data-navigator-group]').length === 9`),
-        'The navigator does not list the nine groups of PLC objects when the project opens.',
+        await app.eval<boolean>(`document.querySelectorAll('[data-object-navigator] [data-navigator-group]').length === 10`),
+        'The navigator does not list the nine groups of PLC objects and Plant when the project opens.',
       );
       assert(
         await app.eval<boolean>(
@@ -8149,6 +8150,8 @@ export const JOURNEYS: Journey[] = [
           undefined,
         45_000,
       );
+      // the reading covers the workbench until Practice (U3-G4)
+      await practiceFromReading(app, Boolean(first.reading));
       writeFileSync(
         join(root, 'profile', 'learn-workspaces', first.id, first.starter.program),
         disk(join(packageRoot, 'projects', first.solution.project, first.solution.program)),
@@ -8507,6 +8510,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   ...JOURNEYS_013,
+  ...JOURNEYS_014,
   ...journeysOperator,
   ...journeysManipulator,
   ...journeysSorting,

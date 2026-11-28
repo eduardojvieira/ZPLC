@@ -341,8 +341,8 @@ Sus primeros programas ahora mueven piezas. Cada uno lee un sensor y gobierna un
 
 Objetivos de las lecciones disponibles:
 
-- **Mover una caja hasta un sensor**: Arrancar un actuador con la pulsación de un botón y recordar que está en marcha. Detener el actuador cuando un sensor ve la caja.
-- **Mover una caja hasta un sensor en diagrama de escalera**: Arrancar un actuador con la pulsación de un botón mediante una bobina de activación y recordar que está en marcha. Detener el actuador con una bobina de borrado cuando un sensor ve la caja.
+- **Mover una caja hasta un sensor**: Arrancar un actuador con la pulsación de un pulsador y recordar que está en marcha. Detener el actuador cuando un sensor ve la caja.
+- **Mover una caja hasta un sensor en diagrama de escalera**: Arrancar un actuador con la pulsación de un pulsador mediante una bobina de activación y recordar que está en marcha. Detener el actuador con una bobina de borrado cuando un sensor ve la caja.
 - **Del sensor A al sensor B**: Usar un set y un reset para mantener una salida entre dos eventos. Explicar por qué un sensor que se apaga no puede mantener la salida por sí solo.
 - **Del sensor A al sensor B en diagrama de escalera**: Usar un set y un reset para mantener una salida entre dos eventos. Explicar por qué un sensor que se apaga no puede mantener la salida por sí solo.
 - **Cargar y descargar tres cajas**: Contar elementos con un contador de valor preestablecido. Usar un contador para dejar de cargar y otro para saber que el lote terminó.
@@ -365,10 +365,10 @@ Las plantas tienen tiempo y valores continuos. Los temporizadores, el escalado a
 
 Objetivos de las lecciones disponibles:
 
-- **Llenar y vaciar con temporizadores**: Medir un paso de un proceso con un temporizador de retardo a la conexión (TON), con un temporizador para cada paso. Usar un temporizador como límite de seguridad en un paso que normalmente termina con un sensor, y dejar que la parada de emergencia aborte el ciclo.
+- **Llenar y vaciar con temporizadores**: Temporizar los pasos de un proceso de modo que cada paso temporizado dure su propio tiempo. Usar un temporizador como límite de seguridad en un paso que normalmente termina con un sensor, y dejar que la parada de emergencia aborte el ciclo.
 - **Llenar y vaciar con temporizadores en diagrama de escalera**: Medir un paso de un proceso con un temporizador de retardo a la conexión (TON), con un temporizador para cada paso. Usar un temporizador como límite de seguridad en un paso que normalmente termina con un sensor, y dejar que la parada de emergencia aborte el ciclo.
-- **Leer el nivel**: Escalar un valor analógico a unidades de ingeniería: convertir primero a REAL y luego dividir por el rango bruto. Leer el mapa de la planta para hallar el rango bruto de cada señal, y ver qué hace una escala errónea en el proceso.
-- **Leer el nivel en diagrama de escalera**: Escalar con cuadros un valor analógico a unidades de ingeniería: convertir primero a REAL y luego dividir entre el rango crudo. Leer el mapa de planta para hallar el rango crudo de cada señal, y ver qué hace al proceso una escala equivocada.
+- **Leer el nivel**: Escalar un valor analógico a unidades de ingeniería de modo que se conserven las fracciones de una unidad. Leer el mapa de la planta para hallar el rango bruto de cada señal, y ver qué hace una escala errónea en el proceso.
+- **Leer el nivel en diagrama de escalera**: Escalar con cuadros un valor analógico a unidades de ingeniería de modo que se conserven las fracciones de una unidad. Leer el mapa de planta para hallar el rango crudo de cada señal, y ver qué hace al proceso una escala equivocada.
 - **Mantener el nivel con PID**: Ejecutar un lazo PID con PID_Compact: consigna, variable de proceso, ganancias, tiempo de ciclo y límites de la salida. Ajustar las ganancias a partir de la respuesta del nivel y distinguir el efecto de los términos proporcional, integral y derivativo.
 - **El mismo lazo con bloques de función**: Cablear un bloque de función PID_Compact en un diagrama: consigna, variable de proceso, ganancias, tiempo de ciclo y límites de salida a la izquierda, la salida a la derecha. Seguir un valor por el diagrama, desde el número entero bruto del nivel hasta metros y de ahí a la válvula de entrada.
 
@@ -480,10 +480,10 @@ Una máquina debe detenerse de forma segura y mostrar qué falló. Los enclavami
 
 Objetivos de las lecciones disponibles:
 
-- **Paro de emergencia y enclavamientos**: Detener todas las salidas mientras el paro de emergencia está pulsado. Recordar el paro, de modo que soltar el botón no reinicie la línea.
-- **Paro de emergencia y enclavamientos en diagrama de escalera**: Detener todas las salidas mientras el paro de emergencia está pulsado. Recordar el paro, de modo que soltar el botón no reinicie la línea.
-- **Modos manual y automático**: Guardar el modo en una memoria que cambie con una pulsación de ModeBtn, y dejar que la máquina arranque en manual. Mover el brazo con los botones de avance solo en manual, sin pasar de un final de carrera, y arrancar el ciclo con Start solo en automático.
-- **Modos manual y automático**: Guardar el modo en una memoria que cambie con una pulsación de ModeBtn, y dejar que la máquina arranque en manual. Mover el brazo con los botones de avance solo en manual, sin pasar de un final de carrera, y arrancar el ciclo con Start solo en automático.
+- **Paro de emergencia y enclavamientos**: Detener todas las salidas mientras el paro de emergencia está pulsado. Recordar el paro, de modo que soltar el pulsador no reinicie la línea.
+- **Paro de emergencia y enclavamientos en diagrama de escalera**: Detener todas las salidas mientras el paro de emergencia está pulsado. Recordar el paro, de modo que soltar el pulsador no reinicie la línea.
+- **Modos manual y automático**: Guardar el modo en una memoria que cambie con una pulsación de ModeBtn, y dejar que la máquina arranque en manual. Mover el brazo con los pulsadores de avance solo en manual, sin pasar de un final de carrera, y arrancar el ciclo con Start solo en automático.
+- **Modos manual y automático**: Guardar el modo en una memoria que cambie con una pulsación de ModeBtn, y dejar que la máquina arranque en manual. Mover el brazo con los pulsadores de avance solo en manual, sin pasar de un final de carrera, y arrancar el ciclo con Start solo en automático.
 - **Encontrar la falla**: Diagnosticar un sensor atascado a partir de un hecho que el programa puede leer, no del propio sensor. Elegir una reacción segura: detener lo que trae cajas nuevas y dejar llegar las que ya se mueven.
 
 ## Módulo 19: Construya sus propias escenas: colocar piezas, enlazar señales y ejecutar

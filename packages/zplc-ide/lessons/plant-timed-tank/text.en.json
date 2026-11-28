@@ -17,7 +17,7 @@
     {
       "key": "predict",
       "title": "Predict",
-      "body": "Before running, predict the outputs at {{t:100}} ms (before the press), at {{t:800}} ms (the cycle has started) and at {{t:1500}} ms (the emergency stop is pressed). Then predict where the cycle stands at {{t:25000}} ms, after a second press at {{t:4000}} ms.",
+      "body": "Before running, predict the outputs at {{t:100}} ms (before the press), at {{t:800}} ms (the cycle has started) and at {{t:1500}} ms (the emergency stop has been pressed). Then predict where the cycle stands at {{t:25000}} ms, after a second press at {{t:4000}} ms.",
       "checkpoint": "{{v:TimedTank.Fill=false,TimedTank.Drain=false,TimedTank.Green=false,TimedTank.Red=false@100|Everything OFF}} at {{t:100}} ms; {{v:TimedTank.Fill=true,TimedTank.Amber=true,TimedTank.Green=false@800|Fill and Amber ON}} at {{t:800}} ms; {{v:TimedTank.Fill=false,TimedTank.Drain=false,TimedTank.Red=true@1500|both valves closed and Red ON}} at {{t:1500}} ms; {{v:TimedTank.Green=true,TimedTank.Drain=false,TimedTank.Red=false@25000|Green ON and the drain closed}} at {{t:25000}} ms."
     },
     {

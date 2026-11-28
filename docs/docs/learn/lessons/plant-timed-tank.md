@@ -19,7 +19,7 @@ Run one fill, hold and drain cycle of a tank with on-delay timers, a panel start
 - Estimated time: 30 minutes
 - Languages: ST
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Timed tank](../../plant/scenes/timed-tank.md)
 - Prerequisites: [timers-on-delay-off-delay](./timers-on-delay-off-delay.md)
 

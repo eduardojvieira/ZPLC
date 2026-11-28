@@ -235,6 +235,7 @@ export const consoleEn = {
   'console.savedInputs.one': 'Saved test inputs · {count} file · SHA-256',
   'console.savedInputs.other': 'Saved test inputs · {count} files · SHA-256',
   'console.providerStatus': 'Provider {provider} · key {key} · vault available.',
+  'console.providerStatusNoVault': 'Provider {provider} · no key stored · no OS key vault, so a key cannot be stored.',
   'console.enabled': 'enabled',
   'console.disabled': 'disabled',
   'console.stored': 'stored',
@@ -485,6 +486,8 @@ export const consoleEs: Record<keyof typeof consoleEn, string> = {
   'console.savedInputs.one': 'Entradas de prueba guardadas · {count} archivo · SHA-256',
   'console.savedInputs.other': 'Entradas de prueba guardadas · {count} archivos · SHA-256',
   'console.providerStatus': 'Proveedor {provider} · clave {key} · almacén de claves disponible.',
+  'console.providerStatusNoVault':
+    'Proveedor {provider} · sin clave almacenada · sin almacén de claves del sistema, por lo que no se puede almacenar una clave.',
   'console.enabled': 'habilitado',
   'console.disabled': 'deshabilitado',
   'console.stored': 'almacenada',

@@ -365,10 +365,10 @@ Plants have time and continuous values. Timers, analog scaling and a PID loop co
 
 Objectives of the available lessons:
 
-- **Fill and drain with timers**: Time one step of a process with an on-delay timer (TON), using one timer for each step. Use a timer as a safety limit on a step that normally ends on a sensor, and let an emergency stop abort the cycle.
+- **Fill and drain with timers**: Time the steps of a process so that each timed step lasts its own time. Use a timer as a safety limit on a step that normally ends on a sensor, and let an emergency stop abort the cycle.
 - **Fill and drain with timers in Ladder**: Time one step of a process with an on-delay timer (TON), using one timer for each step. Use a timer as a safety limit on a step that normally ends on a sensor, and let an emergency stop abort the cycle.
-- **Read the level**: Scale an analog value to engineering units: convert to REAL first, then divide by the raw span. Read the plant map to find the raw range of each signal, and see what a wrong scale does to the process.
-- **Read the level in Ladder**: Scale an analog value to engineering units with boxes: convert to REAL first, then divide by the raw span. Read the plant map to find the raw range of each signal, and see what a wrong scale does to the process.
+- **Read the level**: Scale an analog value to engineering units so that fractions of a unit are kept. Read the plant map to find the raw range of each signal, and see what a wrong scale does to the process.
+- **Read the level in Ladder**: Scale an analog value to engineering units with boxes so that fractions of a unit are kept. Read the plant map to find the raw range of each signal, and see what a wrong scale does to the process.
 - **Hold the level with PID**: Run a PID loop with PID_Compact: set point, process value, gains, scan time and output limits. Tune the gains from the response of the level, and tell the effect of the proportional, integral and derivative terms apart.
 - **The same loop in function blocks**: Wire a PID_Compact function block in a diagram: set point, process value, gains, scan time and output limits on the left, the output on the right. Follow one value across the diagram, from the raw whole number of the level to metres and on to the inlet valve.
 

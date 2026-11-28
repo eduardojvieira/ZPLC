@@ -15,7 +15,9 @@ import type { WatchVariable } from '../runtime/debugAdapter';
 import { faceplateUnavailable, latestWins, settleInputs } from '../runtime/faceplateState';
 import { listIoMap } from '../runtime/ioMap';
 import { useIDEStore } from '../store/useIDEStore';
+import { useRegisteredPlantTransport } from '../store/useTransport';
 import { announce } from '../utils/announce';
+import { faceplateVmState } from './faceplateVmState';
 import { Faceplate, type FaceplateInputRow, type FaceplateOutputRow, type InputPhase } from './Faceplate';
 
 /** The types a force carries: the Watch table's own (up to 32 bits). */
@@ -35,11 +37,15 @@ export function FaceplatePanel({
   const { t } = useT();
   const debugMap = useIDEStore((state) => state.debug.debugMap);
   const forcedValues = useIDEStore((state) => state.debug.forcedValues);
+  /** The force a point holds: by its path, else by its address, as the Watch table reads it. */
+  const forceOf = (point: { path: string; address: number }) =>
+    forcedValues.get(point.path) ?? Array.from(forcedValues.values()).find((entry) => entry.address === point.address);
   const ioMap = useMemo(() => listIoMap(debugMap), [debugMap]);
   const adapter = controller?.adapter ?? null;
   const connected = Boolean(adapter?.connected);
   const simulated = adapter !== null && adapter.type !== 'serial';
-  const vmState = controller?.vmState ?? 'disconnected';
+  const plant = useRegisteredPlantTransport();
+  const vmState = faceplateVmState(controller?.vmState ?? 'disconnected', plant?.state);
   const supported = controller?.debugCapabilities?.features['simulation-inputs']?.status === 'supported';
   const { setDeclaredInput, readDeclaredInputs } = useDeclaredInputs(adapter);
   const [values, setValues] = useState<ReadonlyMap<string, boolean | number>>(new Map());
@@ -104,14 +110,14 @@ export function FaceplatePanel({
     input,
     value: connected && simulated ? (values.get(input.path) ?? null) : null,
     phase: phases.get(input.path) ?? 'idle',
-    forced: forcedValues.get(input.path)?.state === 'forced',
+    forced: forceOf(input)?.state === 'forced',
     forceable: FORCE_TYPES.has(input.type),
     plantFed: plantFed?.has(input.path) === true,
   }));
   const outputRows: FaceplateOutputRow[] = ioMap.outputs.map((output) => ({
     output,
     value: connected && simulated ? (values.get(output.path) ?? null) : null,
-    forced: forcedValues.get(output.path)?.state === 'forced',
+    forced: forceOf(output)?.state === 'forced',
   }));
 
   /** Forces the input at `value`: the whole byte, as it is now with this bit changed, for a bit that shares its byte. */
@@ -147,7 +153,7 @@ export function FaceplatePanel({
   const set = (input: DeclaredInput, value: boolean | number) => {
     void run(async () => {
       if (!controller) return;
-      if (forcedValues.get(input.path)?.state === 'forced') {
+      if (forceOf(input)?.state === 'forced') {
         await forceAt(input, value);
         return;
       }

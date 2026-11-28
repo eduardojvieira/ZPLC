@@ -6,6 +6,7 @@ import { button, css, type App } from '../journeyApp';
 import type { Journey } from '../journeys';
 import { LESSON_INDEX } from '../../src/generated/lessonIndex';
 import { courseOrder } from '../../src/learn/course';
+import { practiceFromReading } from './learnReading';
 import {
   holdPushButton,
   openPlantDocument,
@@ -285,6 +286,8 @@ journeysCourse.push(
       const first = courseOrder(LESSON_INDEX).find((lesson) => lesson.module === 12)!;
       const entry = lessonEntry(first.id);
       await startLesson(app, first.id);
+      // the reading covers the workbench until Practice (U3-G4)
+      await practiceFromReading(app, Boolean(first.reading));
       // the plant is shown beside the program (the document of the plant, with its scene panel)
       await app.press('Ctrl+Shift+P');
       await app.type('show the plant');

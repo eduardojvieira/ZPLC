@@ -18,7 +18,7 @@
       "key": "predict",
       "title": "Predecir",
       "body": "Antes de ejecutar, cuente las cajas: se cargan tres, una tras otra, y luego la cinta las descarga.",
-      "checkpoint": "La cinta corre y aparecen cajas hasta que tres han pasado por EyeIn; Done sigue apagada hasta que la tercera caja pasa por EyeOut, y entonces la cinta se detiene."
+      "checkpoint": "La cinta corre y aparecen cajas hasta que tres han pasado por EyeIn; Done sigue apagada hasta que la tercera caja llega a EyeOut, y entonces la cinta se detiene."
     },
     {
       "key": "edit",
@@ -36,7 +36,7 @@
       "key": "observe",
       "title": "Observar",
       "body": "Observe las cajas entrar una a una y salir por el otro extremo; los contadores cambian una vez por caja, no una vez por ciclo.",
-      "checkpoint": "Las tres cajas se entregan, ninguna cae ni choca, y Done está encendida cuando la cinta se detiene."
+      "checkpoint": "Se entregan cajas, ninguna cae ni choca, y Done está encendida cuando la cinta se detiene."
     },
     {
       "key": "reflect",

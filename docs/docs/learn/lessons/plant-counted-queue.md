@@ -19,7 +19,7 @@ Count boxes with two counters to run a fixed batch: load three, unload three, th
 - Estimated time: 30 minutes
 - Languages: ST
 - Tracks: Simulation
-- Reading page: no
+- Reading page: yes
 - Plant: [Counted queue](../../plant/scenes/counted-queue.md)
 - Prerequisites: [plant-latch-two-sensors](./plant-latch-two-sensors.md), [edge-counter-pulses](./edge-counter-pulses.md)
 

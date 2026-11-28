@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { existsSync } from 'node:fs';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,6 +8,19 @@ import { __changeSetTestHooks, createCandidateChangeSet } from './toolApi';
 import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';
 
 const motorStartStop = fileURLToPath(new URL('../../projects/motor_start_stop', import.meta.url));
+const plantBeltStarter = fileURLToPath(new URL('../../projects/plant_belt_to_sensor_starter', import.meta.url));
+const plantBeltSolution = fileURLToPath(new URL('../../projects/plant_belt_to_sensor/src/BeltToSensor.st', import.meta.url));
+
+async function listRelativeFiles(root: string, prefix = ''): Promise<string[]> {
+  const entries = await readdir(prefix ? join(root, prefix) : root, { withFileTypes: true });
+  const files: string[] = [];
+  for (const entry of entries.sort((left, right) => (left.name < right.name ? -1 : left.name > right.name ? 1 : 0))) {
+    const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) files.push(...(await listRelativeFiles(root, relative)));
+    else files.push(relative);
+  }
+  return files;
+}
 
 async function copiedMotorWorkspace(): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), 'zplc-change-set-fixture-'));
@@ -314,6 +327,145 @@ describe('isolated candidate change sets (IDE-030)', () => {
         }
       } finally {
         await rm(root, { recursive: true, force: true });
+      }
+    });
+  });
+
+  describe('plant project files in the isolated copy', () => {
+    itNative(
+      'accepts the reference solution of plant_belt_to_sensor_starter without WORKSPACE_MISSING',
+      async () => {
+        const starterSource = await readFile(join(plantBeltStarter, 'src/BeltToSensor.st'), 'utf8');
+        const solutionSource = await readFile(plantBeltSolution, 'utf8');
+        const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
+        process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
+        try {
+          const result = await createCandidateChangeSet(plantBeltStarter, [{ path: 'src/BeltToSensor.st', content: solutionSource }]);
+          const codes = [
+            ...(result.diagnostics ?? []).map((diagnostic) => diagnostic.code),
+            ...(result.evidence?.diagnostics ?? []).map((diagnostic) => diagnostic.code),
+          ];
+          expect(codes).not.toContain('WORKSPACE_MISSING');
+          expect(result).toMatchObject({
+            accepted: true,
+            evidenceScope: 'native-posix-host',
+            evidence: { operation: 'test', outcome: 'passed', artifacts: [{ kind: 'zplc' }, { kind: 'trace' }] },
+          });
+          expect(await readFile(join(plantBeltStarter, 'src/BeltToSensor.st'), 'utf8')).toBe(starterSource);
+        } finally {
+          if (oldBinary === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN;
+          else process.env.ZPLC_NATIVE_SIM_BIN = oldBinary;
+        }
+      },
+      30_000,
+    );
+
+    itNative(
+      'copies scenes/*.scene.json and their maps into the isolated copy and applies proposal edits to them',
+      async () => {
+        const root = await mkdtemp(join(tmpdir(), 'zplc-change-set-scenes-'));
+        const solutionSource = await readFile(plantBeltSolution, 'utf8');
+        const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
+        process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
+        let copiedFiles: string[] = [];
+        let copiedSceneText = '';
+        __changeSetTestHooks.afterMaterialize = async (candidateRoot) => {
+          copiedFiles = await listRelativeFiles(candidateRoot);
+          if (existsSync(join(candidateRoot, 'scenes/line.scene.json')))
+            copiedSceneText = await readFile(join(candidateRoot, 'scenes/line.scene.json'), 'utf8');
+        };
+        try {
+          await mkdir(join(root, 'src'));
+          await mkdir(join(root, 'tests'));
+          await mkdir(join(root, 'scenes'));
+          for (const path of ['zplc.json', 'scene.json', 'plant-map.json', 'src/BeltToSensor.st', 'tests/belt-to-sensor.scenario.json'])
+            await writeFile(join(root, path), await readFile(join(plantBeltStarter, path)));
+          const sceneText = await readFile(join(plantBeltStarter, 'scene.json'), 'utf8');
+          const editedSceneText = `${sceneText.trimEnd()}\n\n`;
+          await writeFile(join(root, 'scenes/line.scene.json'), sceneText);
+          await writeFile(join(root, 'scenes/line.plant-map.json'), await readFile(join(plantBeltStarter, 'plant-map.json')));
+
+          const result = await createCandidateChangeSet(root, [
+            { path: 'src/BeltToSensor.st', content: solutionSource },
+            { path: 'scenes/line.scene.json', content: editedSceneText },
+          ]);
+          expect(result).toMatchObject({
+            accepted: true,
+            evidenceScope: 'native-posix-host',
+            evidence: { operation: 'test', outcome: 'passed' },
+          });
+          expect(copiedFiles).toEqual([
+            'plant-map.json',
+            'scene.json',
+            'scenes/line.plant-map.json',
+            'scenes/line.scene.json',
+            'src/BeltToSensor.st',
+            'tests/belt-to-sensor.scenario.json',
+            'zplc.json',
+          ]);
+          expect(copiedSceneText).toBe(editedSceneText);
+          expect(await readFile(join(root, 'scenes/line.scene.json'), 'utf8')).toBe(sceneText);
+        } finally {
+          __changeSetTestHooks.afterMaterialize = undefined;
+          if (oldBinary === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN;
+          else process.env.ZPLC_NATIVE_SIM_BIN = oldBinary;
+          await rm(root, { recursive: true, force: true });
+        }
+      },
+      30_000,
+    );
+
+    itNative(
+      'keeps the motor project result and copied file list unchanged when no plant files exist',
+      async () => {
+        const original = await readFile(join(motorStartStop, 'src/Motor.st'), 'utf8');
+        const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
+        process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
+        let copiedFiles: string[] = [];
+        __changeSetTestHooks.afterMaterialize = async (candidateRoot) => {
+          copiedFiles = await listRelativeFiles(candidateRoot);
+        };
+        try {
+          const result = await createCandidateChangeSet(motorStartStop, [{ path: 'src/Motor.st', content: `${original}\n` }]);
+          expect(result).toMatchObject({
+            accepted: true,
+            evidenceScope: 'native-posix-host',
+            evidence: { operation: 'test', outcome: 'passed', artifacts: [{ kind: 'zplc' }, { kind: 'trace' }] },
+          });
+          expect(copiedFiles).toEqual(['src/Motor.st', 'tests/motor-start-stop.scenario.json', 'zplc.json']);
+        } finally {
+          __changeSetTestHooks.afterMaterialize = undefined;
+          if (oldBinary === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN;
+          else process.env.ZPLC_NATIVE_SIM_BIN = oldBinary;
+        }
+      },
+      30_000,
+    );
+
+    it('refuses a symlink inside scenes/ pointing outside the project just like a symlink in src/', async () => {
+      const outside = await mkdtemp(join(tmpdir(), 'zplc-change-set-outside-'));
+      const srcLinked = await copiedMotorWorkspace();
+      const scenesLinked = await copiedMotorWorkspace();
+      try {
+        const outsideTarget = join(outside, 'secret.json');
+        await writeFile(outsideTarget, '{}\n');
+        const original = await readFile(join(motorStartStop, 'src/Motor.st'), 'utf8');
+        await symlink(outsideTarget, join(srcLinked, 'src/outside.st'), 'file');
+        await mkdir(join(scenesLinked, 'scenes'));
+        await symlink(outsideTarget, join(scenesLinked, 'scenes/outside.scene.json'), 'file');
+
+        await expect(createCandidateChangeSet(srcLinked, [{ path: 'src/Motor.st', content: `${original}\n` }])).resolves.toMatchObject({
+          accepted: false,
+          diagnostics: [{ code: 'CHANGESET_BASE_INVALID' }],
+        });
+        await expect(createCandidateChangeSet(scenesLinked, [{ path: 'src/Motor.st', content: `${original}\n` }])).resolves.toMatchObject({
+          accepted: false,
+          diagnostics: [{ code: 'CHANGESET_BASE_INVALID' }],
+        });
+      } finally {
+        await rm(outside, { recursive: true, force: true });
+        await rm(srcLinked, { recursive: true, force: true });
+        await rm(scenesLinked, { recursive: true, force: true });
       }
     });
   });

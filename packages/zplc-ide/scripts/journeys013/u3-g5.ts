@@ -2,6 +2,7 @@ import { LESSON_INDEX } from '../../src/generated/lessonIndex';
 import { assert } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
 import type { Journey } from '../journeys';
+import { practiceFromReading } from '../journeys/learnReading';
 
 const [LADDER, PLANT] = LESSON_INDEX.course.paths!;
 const LADDER_FIRST = LADDER!.lessons[0]!;
@@ -60,6 +61,8 @@ export const journeysU3G5: Journey[] = [
         async () => (await app.eval<boolean>(`document.querySelector('[data-learn-home]') === null`)) || undefined,
         45_000,
       );
+      // the reading covers the workbench, the rail included, until Practice (U3-G4)
+      await practiceFromReading(app, Boolean(LESSON_INDEX.lessons.find(({ id }) => id === LADDER_FIRST)?.reading));
       await app.click(css('[data-activity="learn"]'), 'the Learn item of the rail');
       await app.until('the Learn home again', async () => (await app.visible(css('[data-learn-home]'))) || undefined);
       assert((await pathOpen(app, LADDER!.id)) === true, 'The path of the lesson started is closed.');

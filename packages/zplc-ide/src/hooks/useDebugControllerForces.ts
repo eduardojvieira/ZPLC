@@ -92,7 +92,11 @@ export function useDebugControllerForces({
         }
 
         await currentAdapter.clearForcedValue(address);
+        // The runtime keeps forces by address, so a release lifts every spelling of the path that holds this address.
         clearForcedValue(path);
+        for (const entry of useIDEStore.getState().debug.forcedValues.values()) {
+          if (entry.address === address) clearForcedValue(entry.path);
+        }
       } catch (error) {
         if (shouldMarkForceCommandFailureUnconfirmed(adapterRef.current, currentAdapter)) {
           markForcedValuesUnconfirmed();
