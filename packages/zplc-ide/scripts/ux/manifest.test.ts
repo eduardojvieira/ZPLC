@@ -222,6 +222,8 @@ describe('the surfaces that only lacked a way in', () => {
     const by = new Map(reached.map((entry) => [entry.surface.id, entry]));
     expect(by.get('learn.reading')?.lesson).toEqual({ id: 'ld-no-nc-contacts', stage: 'reading' });
     expect(by.get('learn.tryIt')?.lesson?.stage).toBe('reading');
+    expect(by.get('learn.readingFrame')?.lesson?.stage).toBe('reading');
+    expect(unreached.find((entry) => entry.surface === 'editor.plantMap')?.reason).toContain('marker');
     expect(by.get('secondary.guide')?.lesson?.stage).toBe('exercise');
     expect(by.get('learn.exercise')?.lesson?.stage).toBe('exercise');
     expect(by.get('plant.operate')?.command).toBe('view.plant');

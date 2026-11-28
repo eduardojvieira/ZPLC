@@ -79,6 +79,7 @@ const SPECIAL: Record<
   'plant.operate': { command: 'view.plant', state: 'idle' },
   // a lesson with a reading, opened as a person opens it from the Learn home: its reading, the try-it in it, then the exercise
   'learn.reading': { lesson: { id: LESSON_SAMPLE, stage: 'reading' }, state: 'normal' },
+  'learn.readingFrame': { lesson: { id: LESSON_SAMPLE, stage: 'reading' }, state: 'normal' },
   'learn.tryIt': { lesson: { id: LESSON_SAMPLE, stage: 'reading' }, state: 'idle' },
   'secondary.guide': { lesson: { id: LESSON_SAMPLE, stage: 'exercise' }, state: 'a stage' },
   'learn.exercise': { lesson: { id: LESSON_SAMPLE, stage: 'exercise' }, state: 'a stage' },
@@ -105,6 +106,9 @@ const REASONS: Record<string, string> = {
   'plant.chooser': 'the chooser has no marker the tool can wait for (SceneChooser.tsx has only the save controls); needs a data- marker',
   'plant.live': 'opens beside a plant lesson with no scene; needs a plant lesson fixture and PlantLivePanel is not marked by lesson',
   'plant.faceplate': 'shown only while a program runs, which a capture never starts',
+  'activity.plant.group':
+    'a part of the Project explorer with no marker of its own the tool can wait for (needs a data- marker on PlantSection)',
+  'editor.plantMap': 'opens from the plant-map item of the navigator, which has no marker to wait for and no command of its own',
   'learn.result': 'shown only after learn.check grades a lesson, which runs the program',
   'dialog.modal': 'a generic modal with no command of its own: each dialog above is one of them',
 };
@@ -160,6 +164,7 @@ export function markerOf(surface: string, locale: 'en' | 'es'): string | null {
     'editor.preferences': `${tab('preferences')} && ${sel('[data-preferences-document]')}`,
     'editor.learn': sel('[data-learn-home]'),
     'learn.reading': sel('[data-reading-page]'),
+    'learn.readingFrame': sel('[data-learn-reading]'),
     'learn.tryIt': sel('[data-reading-block="ld-try"]'),
     'learn.exercise': `${secondary('shell.secondary.lesson')} && ${sel('[data-guide-stage]')}`,
     'plant.operate': sel('[data-plant-operate]'),
