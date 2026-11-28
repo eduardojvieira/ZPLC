@@ -1,58 +1,55 @@
 {
   "schemaVersion": 1,
   "title": "Move a box to a sensor in Ladder",
-  "summary": "Start a belt from a button with a set coil and stop it with a reset coil when a box reaches the sensor at the far end.",
+  "summary": "Start a belt from a button and stop it when a box reaches the sensor at the far end.",
   "scope": "Passing means your program behaved correctly in the simulator on this computer. It says nothing about a real machine, its timing or its safety.",
-  "objectives": [
-    "Start an actuator from a button press with a set coil and remember that it is running.",
-    "Stop the actuator with a reset coil when a sensor sees the box."
-  ],
+  "objectives": ["Start an actuator from a button press and remember that it is running.", "Stop the actuator when a sensor sees the box."],
   "stages": [
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/BeltToSensor.ld.json, keep a Running memory: one rung sets it with Start, a second rung clears it with EyeFar, and two more rungs drive Run and Emit.",
-      "checkpoint": "Run follows the memory; Emit puts one box on the belt when Start is pressed."
+      "body": "In src/BeltToSensor.ld.json the inputs Start and EyeFar, the outputs Run and Emit, and a Running memory are declared, and there are no rungs yet. A press of the start button must put one box on the belt and run the belt, and the belt must stop when the sensor at the far end sees the box.",
+      "checkpoint": "You can say which signal starts the belt, which one stops it, and why a short press needs a memory."
     },
     {
       "key": "predict",
       "title": "Predict",
-      "body": "Before running, follow the box: the start button is only a short press, but the belt has to keep running until the box arrives.",
-      "checkpoint": "Belt off before the press; on after it, with one box on it; off again as soon as EyeFar sees the box, and it stays off."
+      "body": "The scenario presses the start button at {{t:200}} ms and releases it at {{t:400}} ms. Before running, follow the box: predict Run before the press, after the release while the box travels, and once EyeFar sees the box.",
+      "checkpoint": "{{v:BeltToSensor.Run=false@100|Run OFF}} at {{t:100}} ms, before the press; ON after it, also once the button is released; OFF as soon as EyeFar sees the box, and {{v:BeltToSensor.Run=false@8000|still OFF}} at the end, at {{t:8000}} ms."
     },
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter has no rungs, so the belt never moves; start the belt and put a box on it with Start, and stop the belt when EyeFar sees the box.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "body": "Draw the rungs, save the program, then press {{ui:learn.check}}. The starting program has no rungs, so the belt never moves and no box arrives. Each press of Start must put one box on the belt and start the belt; the belt must keep running after the button is released and stop as soon as EyeFar sees the box, so that the box never falls off the end.",
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the machine move, press {{ui:toolbar.run.label}} (F5) and open the {{ui:plant.panel.view3d}}.",
       "checkpoint": "The required scenario is named belt-to-sensor and contains {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Watch the box ride the belt in the 3D view and stop under the sensor; compare it with the Run output in the trace.",
+      "body": "Watch the box ride the belt in the {{ui:plant.panel.view3d}} and stop in front of the sensor; compare it with the Run output in the trace.",
       "checkpoint": "Run falls when the sensor turns on, not before, and the box is never dropped."
     },
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "The EVENTUALLY assertion proves the sensor saw the box within eight seconds; the AT assertions pin the state at the start and at the end.",
-      "checkpoint": "What the assertions check is tested; nothing else is."
+      "body": "The scenario proves that the sensor saw the box within {{t:8000}} ms and that the belt is stopped at the end. What would a second press of Start do while the box travels? And with the box still standing in front of the sensor?",
+      "checkpoint": "While the box travels, a second press keeps the belt running and puts a second box on it. With the box still in front of the sensor and Start pressed, you can say what the belt does and which rung of yours decides it; the press still puts a new box at the start of the belt."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Start is a pulse, so the belt needs a memory: a rung with a Start contact and a set coil on Running holds it on, and a rung with an EyeFar contact and a reset coil clears it."
+      "text": "Start is TRUE only while the button is held, but the belt must keep running after it is released: what in your program can remember that the belt was started, and what makes it forget? A rising edge of Emit releases one box."
     },
     {
       "level": 2,
-      "text": "Put the reset rung after the set rung so EyeFar wins when both are TRUE, then add one rung from the Running contact to the Run coil and one from the Start contact to the Emit coil."
+      "text": "Draw a rung from a Start contact to a SET coil on Running, then a rung below it from an EyeFar contact to a RESET coil on Running so EyeFar wins when both are TRUE; then add one rung from a Running contact to the Run coil and one from a Start contact to the Emit coil."
     }
   ],
   "faultCases": [
