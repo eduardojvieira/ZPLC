@@ -21,7 +21,15 @@ const { ONE_GROUP } = await import('../layout/editorGroups');
 const { resetCommandsForTest } = await import('../commands/bus');
 const { EditorArea } = await import('./EditorArea');
 
-const motor = { id: 'file:src/Motor.st', name: 'Motor.st', path: 'src/Motor.st', parentPath: 'src', language: 'ST' as const, content: '', isModified: false };
+const motor = {
+  id: 'file:src/Motor.st',
+  name: 'Motor.st',
+  path: 'src/Motor.st',
+  parentPath: 'src',
+  language: 'ST' as const,
+  content: '',
+  isModified: false,
+};
 
 function prepare(open: string[]) {
   resetCommandsForTest();

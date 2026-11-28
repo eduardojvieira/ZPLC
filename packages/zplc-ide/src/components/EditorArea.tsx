@@ -359,8 +359,9 @@ export function EditorArea({ debugController }: { debugController?: DebugControl
 
   // The configuration is one document shared by its tabs and the settings tab: the last view to close asks about unsaved edits.
   const handleCloseConfigTab = (kind: ConfigEditorKind) => {
-    const others = configOpen.length - 1 + (showSettings ? 1 : 0);
-    if (configCloseNeedsConfirmation(useIDEStore.getState().projectConfigDirty, others)) setClosingConfig(kind);
+    // The plant map does not show zplc.json: it is neither asked about nor counted as another view of it.
+    const others = configOpen.filter((open) => open !== kind && open !== 'plantMap').length + (showSettings ? 1 : 0);
+    if (kind !== 'plantMap' && configCloseNeedsConfirmation(useIDEStore.getState().projectConfigDirty, others)) setClosingConfig(kind);
     else closeConfigTab(kind);
   };
 
