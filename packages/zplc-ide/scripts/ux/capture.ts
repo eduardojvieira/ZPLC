@@ -90,13 +90,12 @@ const SPECIAL: Record<
   'plant.operate': { command: 'view.plant', state: 'idle' },
   'plant.chooser': { command: 'view.plant', state: 'normal' },
   'activity.plant.group': { command: 'view.showProject', state: 'scenes' },
-  // a lesson with a plant: its live plant shows when no scene is open and the lesson's plant map binds to the program
-  'plant.live': { lesson: { id: 'tank-level-fault-reset', stage: 'exercise' }, command: 'view.plant', state: 'live' },
-  // view.agent opens Preferences while no provider is set; the Assistant view itself is shown as the command does when one is
+  // the Assistant exists only while a provider is configured: the store the view reads says one is (no request is made)
   'secondary.assistant': {
-    state: 'no provider',
+    state: 'normal',
     script:
-      `(async () => { const { useSecondaryView } = await import('/src/shell/useSelection.ts'); ` +
+      `(async () => { const { useSecondaryView, useAssistantProvider } = await import('/src/shell/useSelection.ts'); ` +
+      `useAssistantProvider.setState({ available: true, refresh: async () => undefined }); ` +
       `const { useShellLayout } = await import('/src/store/useShellLayout.ts'); ` +
       `const { shellDensity } = await import('/src/shell/shellDensity.ts'); ` +
       `const compact = shellDensity(window.innerWidth) === 'compact'; useSecondaryView.getState().show('assistant'); ` +
@@ -104,6 +103,7 @@ const SPECIAL: Record<
       `const layout = useShellLayout.getState(); if (compact) layout.setPrimaryVisible(true); else layout.setSecondaryVisible(true); ` +
       `return 'ran'; })()`,
   },
+
   // a lesson with a reading, opened as a person opens it from the Learn home: its reading, the try-it in it, then the exercise
   'learn.reading': { lesson: { id: LESSON_SAMPLE, stage: 'reading' }, state: 'normal' },
   'learn.readingFrame': { lesson: { id: LESSON_SAMPLE, stage: 'reading' }, state: 'normal' },
@@ -140,12 +140,26 @@ const REASONS: Record<string, string> = {
   'editor.controller': 'no command opens it and the fixture project has no controller to open',
   'learn.lab': 'opens beside a lesson with a plant, which needs a plant lesson with a recorded replay; the panel has no marker to wait for',
   'learn.boardTrack': 'opens from the hardware track, which asks for a board; a capture touches no board',
+  'plant.live':
+    'the live plant shows when the lesson plant map binds to the compiled program (the I/O map of a debug map), which needs a build; ' +
+    'a capture runs no build',
   'plant.faceplate': 'shown only while a program runs, which a capture never starts',
   'editor.config.plantMap':
     'on this branch the plant-map item of the navigator opens the plant document (editor.plant); it becomes a config editor with U3-P4',
   'learn.result': 'shown only after learn.check grades a lesson, which runs the program',
   'dialog.modal': 'a generic modal with no command of its own: each dialog above is one of them',
 };
+/**
+ * True when there is no 3D canvas, or when the last frame of each holds more than one colour. It reads the frame inside a frame
+ * callback queued after the renderer's, because a WebGL canvas that keeps no buffer is blank outside one.
+ */
+export const DRAWN =
+  `new Promise((resolve) => requestAnimationFrame(() => resolve([...document.querySelectorAll('[data-plant-canvas]')]` +
+  `.every((canvas) => { ` +
+  `const copy = document.createElement('canvas'); copy.width = 32; copy.height = 32; const context = copy.getContext('2d'); ` +
+  `context.drawImage(canvas, 0, 0, 32, 32); const data = context.getImageData(0, 0, 32, 32).data; ` +
+  `for (let i = 4; i < data.length; i += 4) if (data[i] !== data[0] || data[i + 1] !== data[1] || data[i + 2] !== data[2]) return true; ` +
+  `return false; }))))`;
 /** Motion, the caret and the scrollbars of Monaco (its scrollbar and overview ruler fade on a timer) stand still. */
 export const STILL =
   '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; } ' +
@@ -224,7 +238,7 @@ export function markerOf(surface: string, locale: 'en' | 'es'): string | null {
     'dialog.palette': sel('[role="dialog"] [role="combobox"]'),
     'dialog.shortcuts': sel('[data-shortcut-group]'),
     'dialog.newProject': sel('[data-new-project]'),
-    'dialog.explorer': sel('[data-entry-dialog]'),
+    'dialog.explorer': sel('[data-entry-dialog], [data-new-object-dialog]'),
     'dialog.generatedCode': sel('[role="dialog"]'),
   };
   return markers[surface] ?? null;
@@ -418,6 +432,8 @@ async function captureCondition(
   const take = async (plan: Plan) => takeAs(captureName(surfaces, plan.surface.id, plan.state, condition), plan.surface.id, plan.state);
   const takeAs = async (name: string, surface: string, state: string) => {
     await app.eval('document.fonts.ready.then(() => true)');
+    // a 3D view is only the picture once its canvas has drawn something other than the background (it loads the scene after it shows)
+    for (let attempt = 0; attempt < 40 && !(await app.eval<boolean>(DRAWN)); attempt++) await Bun.sleep(500);
     await Bun.sleep(400);
     if (await app.eval<boolean>('document.activeElement instanceof HTMLElement')) await app.eval('document.activeElement.blur()');
     // the picture once two in a row are the same: a layout that follows a command can still be settling
