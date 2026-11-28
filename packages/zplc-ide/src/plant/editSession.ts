@@ -15,7 +15,7 @@ import { createMapEditor, type MapEditor } from './editor/mapEditor';
 import { createSceneEditor, type SceneEditor } from './editor/model';
 import { saveProjectScene, saveScene } from './persistence/sceneFiles';
 import { registerSaveAllParticipant, type SaveAllResult } from '../store/saveAll';
-import { registerUnsavedSource, useIDEStore } from '../store/useIDEStore';
+import { useIDEStore } from '../store/useIDEStore';
 import { usePlantDocument } from '../store/usePlantDocument';
 
 export interface PlantEditSession {
@@ -251,9 +251,6 @@ export const unsavedSceneNames = (): string[] => unsavedNames(usePlantEdit.getSt
 
 /** Whether a scene has edits that were not saved, for the modified mark of the plant tab; read again after every edit. */
 export const useSceneUnsaved = (): boolean => usePlantEdit((state) => unsavedNames(state).length > 0);
-
-// The window close, the lesson Check and the other guards ask the store: the scene is unsaved work like a modified file.
-registerUnsavedSource(() => unsavedSceneNames().length > 0);
 
 /** Drops every edit that was not saved: the session in progress without recording it, and the scenes closed with Done. */
 export function discardEditedScenes(): void {

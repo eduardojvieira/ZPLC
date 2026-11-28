@@ -251,13 +251,6 @@ async function openExistingProject(
 // Store Implementation
 // =============================================================================
 
-const unsavedSources: Array<() => boolean> = [];
-
-/** A document that lives outside `loadedFiles` (the plant scene being edited) says here that it has unsaved work (FLW-005). */
-export function registerUnsavedSource(source: () => boolean): void {
-  unsavedSources.push(source);
-}
-
 export const useIDEStore = create<IDEState>((set, get, api) => ({
   // Initial State - No project open
   theme: getStoredTheme(),
@@ -857,7 +850,7 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
 
   hasUnsavedChanges: () => {
     const { loadedFiles, projectConfigDirty } = get();
-    if (projectConfigDirty || unsavedSources.some((source) => source())) return true;
+    if (projectConfigDirty) return true;
     for (const file of loadedFiles.values()) {
       if (file.isModified) return true;
     }
