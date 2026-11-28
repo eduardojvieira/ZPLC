@@ -19,7 +19,7 @@ Secuencie un movimiento con un set y un reset: haga correr la cinta desde el sen
 - Tiempo estimado: 20 minutos
 - Lenguajes: ST
 - Rutas: Simulación
-- Página de lectura: no
+- Página de lectura: sí
 - Planta: [Biestable entre dos sensores](../../plant/scenes/latch-two-sensors.md)
 - Requisitos previos: [plant-belt-to-sensor](./plant-belt-to-sensor.md)
 
