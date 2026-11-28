@@ -467,13 +467,18 @@ async function captureCondition(
     if (await app.eval<boolean>('document.activeElement instanceof HTMLElement')) await app.eval('document.activeElement.blur()');
     // the picture once two in a row are the same, and a 3D canvas in it shows the scene: a layout that follows a command can still
     // be settling, and a canvas can be blank in the picture after it has drawn
+    // a 3D scene loads its textures and lights one after the other, so its picture has to hold still for longer
+    const hasCanvas = await app.eval<boolean>(`Boolean(document.querySelector('[data-plant-canvas]'))`);
+    const holds = hasCanvas ? 4 : 1;
     let previous = '';
     let data = '';
+    let same = 0;
     for (let attempt = 0; attempt < 60; attempt++) {
       data = ((await app.cdp.command('Page.captureScreenshot', { format: 'png' })) as { data: string }).data;
-      if (data === previous && (await app.eval<boolean>(canvasShows(data)))) break;
+      same = data === previous ? same + 1 : 0;
+      if (same >= holds && (await app.eval<boolean>(canvasShows(data)))) break;
       previous = data;
-      await Bun.sleep(attempt < 10 ? 250 : 500);
+      await Bun.sleep(hasCanvas ? 700 : attempt < 10 ? 250 : 500);
     }
     if (!(await app.eval<boolean>(canvasShows(data)))) {
       const facts = await app.eval<string>(
