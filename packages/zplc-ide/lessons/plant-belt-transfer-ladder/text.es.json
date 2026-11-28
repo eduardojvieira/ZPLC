@@ -4,21 +4,21 @@
   "summary": "Secuencie un carro con pinza usando finales de carrera y la señal de agarre para pasar cuatro cajas de una cinta de entrada a una cinta de salida.",
   "scope": "Aprobar significa que su programa se comportó correctamente en el simulador de esta computadora. No dice nada sobre una máquina real, sus tiempos ni su seguridad.",
   "objectives": [
-    "Secuenciar un tomar y colocar con un estado por movimiento, cada uno a la espera de su final de carrera.",
-    "Esperar la señal de agarre antes de elevar y mantener detenida la cinta receptora mientras se deja una caja."
+    "Secuenciar un tomar y colocar de modo que cada movimiento empiece solo cuando el anterior haya terminado.",
+    "Elevar una caja solo cuando la pinza informa que la sostiene, y dejar cada caja sin molestarla."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/BeltTransfer.ld.json, escriba una máquina de estados en escalera (State es un INT: un bloque EQ lo comprueba y un bloque MOVE lo cambia): para cada caja baje la pinza, ciérrela y espere Gripped, eleve, lleve la caja sobre la cinta de salida, baje, abra la pinza y deje que la caja se asiente, eleve y regrese. Hágalo con cuatro cajas y encienda Done cuando la cuarta haya pasado EyeOut.",
-      "checkpoint": "Cada movimiento empieza cuando el final de carrera del anterior está activo, y las salidas siguen al estado."
+      "body": "En src/BeltTransfer.ld.json, escriba una máquina de estados en escalera (State es un INT: un bloque EQ lo comprueba y un bloque MOVE lo cambia): para cada caja baje la pinza, ciérrela sobre la caja, eleve, lleve la caja sobre la cinta de salida, baje, abra la pinza, eleve y regrese. Hágalo con cuatro cajas y encienda Done cuando la cuarta haya pasado EyeOut.",
+      "checkpoint": "Cada movimiento empieza solo cuando el anterior ha terminado."
     },
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, siga una caja: la cuchilla la sujeta en EyePick, la pinza baja, cierra, eleva y cruza hasta XMax, y la cinta de salida permanece detenida mientras la caja se deja y se asienta.",
-      "checkpoint": "Grip está activo desde que la pinza cierra hasta que la caja está sobre la cinta de salida; Hold sigue activo durante el trabajo; la cinta de salida vuelve a correr cuando la caja está en reposo."
+      "body": "Antes de ejecutar, siga una caja: la cuchilla la sujeta en EyePick, la pinza baja, cierra, eleva y cruza hasta XMax, y la caja se deja sobre la cinta de salida.",
+      "checkpoint": "Grip está activo desde que la pinza cierra hasta que la caja está sobre la cinta de salida; Hold sigue activo durante el trabajo."
     },
     {
       "key": "edit",
@@ -35,7 +35,7 @@
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe la pinza en la vista 3D: permanece cerrada y quieta hasta que sujeta la caja, y la caja queda quieta sobre la cinta de salida antes de que esa cinta vuelva a correr.",
+      "body": "Observe la pinza en la vista 3D: permanece cerrada y quieta hasta que sujeta la caja, y la caja queda quieta donde se deja.",
       "checkpoint": "Ninguna caja cae, y la pinza se abre solo sobre la cinta de salida."
     },
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Dé a cada movimiento su propio número de estado y deje que la transición espere un final de carrera: YMin tras bajar, Gripped tras cerrar, YMax tras elevar, XMax tras llevar."
+      "text": "Fíjese en qué señal indica que cada movimiento ha terminado: cuál está activa cuando la pinza está abajo, cuando la caja está sujeta, cuando la pinza está arriba y cuando está sobre la cinta de salida."
     },
     {
       "level": 2,

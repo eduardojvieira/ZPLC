@@ -70,7 +70,7 @@ rung: 8
 caption: 'Un rango de estados en escalera: GE y LE en serie accionan una sola bobina Lock entre los pasos 1 y 4'
 ```
 
-Pruebe el polipasto en el laboratorio. Active primero `Top`, pulse `PartReady` una vez, luego active `Locked` para iniciar el descenso (`GoDown`), active `Bottom` para sumergir durante dos segundos y observe cómo `GoUp` se activa hasta que `Top` vuelva a estar activo.
+Pruebe el polipasto en el laboratorio. Active primero `Top`, pulse `PartReady` una vez, luego active `Locked` para iniciar el descenso (`GoDown`), desactive `Top` cuando el polipasto deja la parte superior y active `Bottom` para sumergir durante dos segundos; después desactive `Bottom`, observe cómo `GoUp` se activa y vuelva a activar `Top`: `GoUp` se detiene, `Lock` se abre y, al desactivar `Locked`, `Step` vuelve a 0.
 
 ```ld-try
 src: reading/dip-hoist.ld.json
@@ -84,7 +84,7 @@ timing: [PartReady, Lock, GoDown, GoUp]
 caption: Siga cada paso activando el interruptor de realimentación del movimiento en curso
 ```
 
-Este polipasto tiene un solo eje vertical y sumerge una pieza cada vez. La estación de la práctica tiene dos ejes, dos cintas, un tope retráctil y un lote de cuatro cajas: elegir los estados, cuándo dejar que una caja se asiente, cuándo alimentar cada caja, cuándo puede correr la cinta de salida y cómo contar cuatro cajas son decisiones que quedan para usted.
+Este polipasto tiene un solo eje vertical y sumerge una pieza cada vez. La estación de la práctica tiene dos ejes, dos cintas, un tope retráctil y un lote de cuatro cajas: cuándo dejar que una caja se asiente, cuándo alimentar cada caja y cómo contar cuatro cajas son decisiones que quedan para usted.
 
 ## Errores comunes
 
@@ -92,7 +92,7 @@ Este polipasto tiene un solo eje vertical y sumerge una pieza cada vez. La estac
 - Accionar la misma bobina de salida en dos peldaños. ZPLC rechaza una bobina duplicada; reúna todos los estados que necesitan un actuador en un solo peldaño con ramas en paralelo o un rango `GE`/`LE`.
 - Elevar antes de que `Gripped` esté en TRUE o mover en horizontal antes de que `YMax` esté en TRUE. Ponga siempre el contacto de realimentación del movimiento anterior en serie con `EQ` en el peldaño de transición.
 - Dejar `Outfeed` en marcha mientras se deposita una caja. Mantenga `RunOut` apagado durante los estados de depósito y asentamiento para que la caja repose antes de que la cinta avance.
-- Olvidar un contacto normalmente cerrado de final de carrera en la bobina de un eje. Sin el contacto normalmente cerrado del final de carrera, el eje sigue empujando hasta que el siguiente ciclo de escaneo cambie el estado.
+- Olvidar un contacto normalmente cerrado de final de carrera en la bobina de un eje. Sin el contacto normalmente cerrado del final de carrera, el eje sigue empujando contra su extremo mientras el estado espera otra cosa.
 
 ## Compruébelo usted
 

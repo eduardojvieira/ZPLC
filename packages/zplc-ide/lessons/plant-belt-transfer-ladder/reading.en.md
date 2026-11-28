@@ -70,7 +70,7 @@ rung: 8
 caption: 'A range of states in Ladder: GE and LE in series drive one Lock coil across steps 1 to 4'
 ```
 
-Try the dipping hoist in the lab. Turn `Top` on first, press `PartReady` once, then switch `Locked` on to start lowering (`GoDown`), switch `Bottom` on to soak for two seconds, and watch `GoUp` turn on until `Top` is on again.
+Try the dipping hoist in the lab. Turn `Top` on first, press `PartReady` once, then switch `Locked` on to start lowering (`GoDown`), switch `Top` off as the hoist leaves the top and `Bottom` on to soak for two seconds; then switch `Bottom` off, watch `GoUp` turn on, and switch `Top` on again: `GoUp` stops, `Lock` opens, and switching `Locked` off returns `Step` to 0.
 
 ```ld-try
 src: reading/dip-hoist.ld.json
@@ -84,7 +84,7 @@ timing: [PartReady, Lock, GoDown, GoUp]
 caption: Follow each step by turning on the feedback switch for the move in progress
 ```
 
-This hoist has one vertical axis and dips one part at a time. The station of the practice has two axes, two belts, a stop blade, and a batch of four boxes: choosing the states, when to let a box settle, when to feed each box, when the outfeed belt may run, and how to count four boxes are decisions left for you.
+This hoist has one vertical axis and dips one part at a time. The station of the practice has two axes, two belts, a stop blade, and a batch of four boxes: when to let a box settle, when to feed each box, and how to count four boxes are decisions left for you.
 
 ## Common mistakes
 
@@ -92,7 +92,7 @@ This hoist has one vertical axis and dips one part at a time. The station of the
 - Driving the same output coil on two rungs. ZPLC refuses a duplicate coil; combine all states that need an actuator onto one rung with parallel branches or a `GE`/`LE` range.
 - Lifting before `Gripped` is TRUE or moving sideways before `YMax` is TRUE. Always put the feedback contact of the previous move in series with `EQ` on the transition rung.
 - Leaving `Outfeed` running while setting a box down. Keep `RunOut` off during the placing and settling states so the box rests before the belt moves.
-- Forgetting a normally closed limit contact on an axis coil. Without `NC` of the limit switch, the axis keeps driving until the next scan changes the state.
+- Forgetting a normally closed limit contact on an axis coil. Without `NC` of the limit switch, the axis keeps driving against its end while the state waits for something else.
 
 ## Check yourself
 
