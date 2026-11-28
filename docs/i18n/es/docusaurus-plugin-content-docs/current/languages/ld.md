@@ -21,6 +21,8 @@ Un archivo de escalera es un modelo de peldaños, no texto. La compilación lo v
 
 Cada acción también se puede hacer con el teclado; la [referencia de teclado](../reference/visual-editor-keyboard.md) lista las teclas.
 
+Una variable `BYTE`, `WORD`, `DWORD` o `LWORD` admite un valor inicial comprobado frente a su tipo: un entero decimal no negativo, un literal con base 2, 8 o 16 (con separadores `_` opcionales, como `16#FF`), o un literal con el prefijo del mismo tipo (como `BYTE#16#FF` o `LWORD#16#FFFF_FFFF`), dentro del rango del tipo (0 a 255 para `BYTE`, 65535 para `WORD`, 4294967295 para `DWORD` y 18446744073709551615 para `LWORD`). Se rechazan al compilar los valores negativos, los valores por encima del máximo, los literales con el prefijo de otro tipo, las bases no admitidas y los valores no enteros.
+
 ## Los elementos de la paleta
 
 | Grupo              | Elementos                                                                                                                                                         |
@@ -69,7 +71,7 @@ Una caja de función se coloca en el peldaño como un contacto. Su cable izquier
 - Para convertir un `REAL`, coloque un bloque de conversión como `REAL_TO_INT`; las conversiones son bloques como cualquier otra función.
 - `MUX` admite como máximo ocho entradas, y **Agregar entrada** se desactiva en el límite. `SEL` y `MUX` no seleccionan cadenas: con `STRING` la compilación las rechaza e indica usar un `IF` en texto estructurado.
 - En un operando literal `STRING`, una comilla dentro de la cadena se escribe `''`, y no admite saltos de línea.
-- Un literal de 64 bits (`LWORD#`, `ULINT#`, `LINT#`) como `IN` de `SHL`, `SHR`, `ROL` o `ROR` se rechaza al compilar; asigne primero el literal a una variable.
+- Un literal con tipo de 64 bits como `LWORD#16#FF`, `ULINT#1` o `LINT#1` se acepta como `IN` de `SHL`, `SHR`, `ROL` y `ROR`.
 
 Los pines de operandos de los primeros quince bloques son `IN1` e `IN2` para las comparaciones, las operaciones matemáticas, `MIN` y `MAX`; `IN` para `MOVE`; y `MN`, `IN` y `MX` para `LIMIT`.
 

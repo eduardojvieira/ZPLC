@@ -106,7 +106,7 @@ Division or `MOD` by zero ends the scan with the VM fault `ZPLC_VM_DIV_BY_ZERO` 
 
 - `SHL(IN, N)`, `SHR(IN, N)`, `ROL(IN, N)` and `ROR(IN, N)` are functions. A shift by 32 or more, or by a negative count, gives 0 (`cmp-016-shift-by-the-width-or-more`). `SHR` is logical: zeros enter on the left. An untyped integer literal is 32 bits wide, so `ROL(16#8000, 1)` assigned to a `WORD` gives 0: the bit leaves the low 16 bits. Write the literal with its type to rotate or shift within its width: `ROL(WORD#16#8000, 1)` gives 1.
 - A `BYTE`, a `WORD` and the 8-bit and 16-bit integers shift and rotate inside their own width (`cmp-014-shl-byte-keeps-8-bits`, `cmp-014-rol-byte-rotates-within-8-bits`). On `LWORD`, `LINT` and `ULINT` the width is 64: a shift by 64 or more gives 0, and a rotation takes its count modulo 64 and keeps every bit (`cmp-015-lword-shifts-and-rotates-use-64-bits`).
-- `AND`, `OR`, `XOR` and `NOT` work on the full declared width (`cmp-014-not-byte`, `cmp-014-and-or-xor-word`).
+- `AND`, `OR`, `XOR` and `NOT` work on the full declared width (`cmp-014-not-byte`, `cmp-014-and-or-xor-word`). `NOT` of an untyped integer literal, or of an expression of literals only, takes the width of its context like `AND`, `OR` and `XOR` (32 bits; 64 when the destination is 64 bits): `X : DWORD := NOT(1)` gives `16#FFFFFFFE`.
 - `w.0` reads and writes one bit of a `BYTE`, `WORD`, `INT`, `DWORD` or `LWORD`, of a structure member and of an array element; a write leaves the other bits alone. A bit number beyond the width and a bit of a `BOOL` are build errors (`cmp-032-bit-access`, `cmp-032-bit-number-out-of-range`).
 
 ### Conversions

@@ -21,6 +21,8 @@ A Ladder file is a model of rungs, not text. The build checks it and translates 
 
 Every action also works from the keyboard; the [keyboard reference](../reference/visual-editor-keyboard.md) lists the keys.
 
+A `BYTE`, `WORD`, `DWORD` or `LWORD` variable takes an initial value checked against its type: a non-negative decimal integer, a based literal in base 2, 8 or 16 (with optional `_` separators, such as `16#FF`), or a typed literal prefixed with the same type (such as `BYTE#16#FF` or `LWORD#16#FFFF_FFFF`), within the type's range (0 to 255 for `BYTE`, 65535 for `WORD`, 4294967295 for `DWORD`, and 18446744073709551615 for `LWORD`). Negative values, values above the maximum, literals prefixed with another type, unsupported bases and non-integer values are refused at build time.
+
 ## The elements of the palette
 
 | Group           | Elements                                                                                                                                   |
@@ -69,7 +71,7 @@ A function box sits in the rung like a contact. Its left wire is EN, the power t
 - To convert a `REAL`, place a conversion box such as `REAL_TO_INT`; the conversions are boxes like any other function.
 - `MUX` takes at most eight inputs, and **Add input** is disabled at the limit. `SEL` and `MUX` do not select strings: with `STRING` the build refuses them and says to use an `IF` in Structured Text.
 - A `STRING` literal operand writes a quote inside the string as `''`, and it cannot hold a line break.
-- A 64-bit literal (`LWORD#`, `ULINT#`, `LINT#`) as the `IN` of `SHL`, `SHR`, `ROL` or `ROR` is refused at build time; assign the literal to a variable first.
+- A 64-bit typed literal such as `LWORD#16#FF`, `ULINT#1` or `LINT#1` is accepted as the `IN` of `SHL`, `SHR`, `ROL` and `ROR`.
 
 The operand pins of the first fifteen boxes are `IN1` and `IN2` for the comparisons, math, `MIN` and `MAX`, `IN` for `MOVE`, and `MN`, `IN` and `MX` for `LIMIT`.
 
