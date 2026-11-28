@@ -192,7 +192,10 @@ async function runJourney(harness: Harness, journey: Journey, scratch: string): 
     const notes = launched?.notes ?? [];
     if (error instanceof NotPossible) return { status: 'not-possible', detail: error.message, notes };
     const layout = launched
-      ? ((await launched.app.cdp.evaluate(LAYOUT_PROBE).catch(() => undefined)) as Parameters<typeof layoutLine>[0] | undefined)
+      ? // The probe gets 5 s: a CDP call waits 30 s on a busy or dead renderer, and the backstop past the cap
+        // would then replace the journey's own failure message.
+        ((await Promise.race([launched.app.cdp.evaluate(LAYOUT_PROBE).catch(() => undefined), Bun.sleep(5_000).then(() => undefined)])) as
+          Parameters<typeof layoutLine>[0] | undefined)
       : undefined;
     if (layout) console.log(layoutLine(layout));
     const shots = process.env.ZPLC_JOURNEY_SHOTS;

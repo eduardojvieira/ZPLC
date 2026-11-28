@@ -178,6 +178,11 @@ describe('WorkbenchShell secondary sidebar against a transient zero-size layout'
       await dom.act(async () => mocks.flushResizeObservers());
       await dom.settle();
       expect(useShellLayout.getState().secondaryVisible).toBe(true);
+      mocks.setGroupWidth(1366);
+      await dom.act(async () => mocks.flushResizeObservers());
+      await dom.settle();
+      expect(useShellLayout.getState().secondaryVisible).toBe(true);
+      expect(document.getElementById('secondary')!.getBoundingClientRect().width).toBeGreaterThan(0);
     } finally {
       mocks.restore();
     }
@@ -194,6 +199,7 @@ describe('WorkbenchShell secondary sidebar against a transient zero-size layout'
       await dom.act(async () => mocks.flushResizeObservers());
       await dom.settle();
       expect(useShellLayout.getState().secondaryVisible).toBe(true);
+      expect(document.getElementById('secondary')!.getBoundingClientRect().width).toBeGreaterThan(0);
     } finally {
       mocks.restore();
     }
