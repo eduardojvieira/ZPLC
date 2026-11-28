@@ -64,7 +64,7 @@ signals:
 caption: Un desplazamiento de 0.4 s en Palletizer1 queda en reposo 0.8 s después de empezar, y solo entonces se abre la pinza
 ```
 
-Observe el margen entre el apagado de `JogDown` y el encendido de `OpenClamp`. Soltar la salida solo inicia el frenado; el cabezal sigue moviéndose hasta quedar en reposo. En `Palletizer1` este desplazamiento de 0.4 s es corto, así que el cabezal necesita otros 0.4 s para detenerse: queda en reposo 0.8 s después de que empezó el desplazamiento (`d = 2 * 0.4 * 0.4 = 0.32 m`). El diagrama muestra un desplazamiento ideal de exactamente 0.4 s. En el simulador la salida sigue al programa con un ciclo de escaneo de retraso, así que un desplazamiento fijado en `PT` dura un ciclo de escaneo más que `PT` y el cabezal se detiene un poco más abajo.
+Observe el margen entre el apagado de `JogDown` y el encendido de `OpenClamp`. Soltar la salida solo inicia el frenado; el cabezal sigue moviéndose hasta quedar en reposo. En `Palletizer1` este desplazamiento de 0.4 s es corto, así que el cabezal necesita otros 0.4 s para detenerse: queda en reposo 0.8 s después de que empezó el desplazamiento (`d = 2 * 0.4 * 0.4 = 0.32 m`). El diagrama muestra un desplazamiento ideal de exactamente 0.4 s. Un desplazamiento dura un ciclo de escaneo más que `PT` cuando el temporizador se llama antes de la línea que inicia el paso, porque la salida se enciende un ciclo de escaneo antes que el temporizador; el cabezal se detiene entonces un poco más abajo.
 
 ## Ejemplo resuelto
 
@@ -156,4 +156,4 @@ options:
 
 ## Qué hará en la práctica
 
-El programa inicial en `src/LayerPalletizer.st` declara las entradas, las salidas y el arreglo `JogMs`, y no acciona nada. Al pulsar `Start`, que el escenario acciona a los {{t:200}} ms, usted llenará `JogMs` con un bucle `FOR`, cargará pares de cajas, escuadrará cada capa, la llevará a la tarima y apilará tres capas de cuatro cajas antes de encender `Green`. Después pulse {{ui:learn.check}}.
+El proyecto inicial en `src/LayerPalletizer.st` declara las entradas, las salidas y el arreglo `JogMs`, y no acciona nada. Al pulsar `Start`, que el escenario acciona a los {{t:200}} ms, usted llenará `JogMs` con un bucle `FOR`, cargará pares de cajas, escuadrará cada capa, la llevará a la tarima y apilará tres capas de cuatro cajas antes de encender `Green`. Después pulse {{ui:learn.check}}.

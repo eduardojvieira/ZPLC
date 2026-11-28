@@ -51,7 +51,7 @@ span: 6000
 signals:
   - { name: Grip, edges: [3310, 5420] }
   - { name: Gripped, edges: [3310, 5420] }
-caption: En la primera caja de una ejecución, Grip está encendido de 3.3 s a 5.4 s y Gripped lo sigue en el mismo paso de la planta, porque una ventosa agarra y suelta al instante
+caption: En la primera caja de una ejecución, Grip está encendido de 3.3 s a 5.4 s y Gripped lo sigue en uno o dos ciclos de escaneo, porque una ventosa agarra y suelta casi al instante
 ```
 
 Moverse en vertical antes de desplazarse en horizontal mantiene la pieza libre de la cinta y de las cajas ya apiladas sobre la tarima.

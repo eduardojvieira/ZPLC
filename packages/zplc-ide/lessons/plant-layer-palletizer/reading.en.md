@@ -64,7 +64,7 @@ signals:
 caption: A 0.4 s jog on Palletizer1 comes to rest 0.8 s after it starts, and only then does the clamp open
 ```
 
-Notice the gap between `JogDown` turning off and `OpenClamp` turning on. Releasing the jog output only begins braking; the head is still moving until it comes to rest. On `Palletizer1` this 0.4 s jog is a short jog, so the head needs another 0.4 s to stop: it comes to rest 0.8 s after the jog began (`d = 2 * 0.4 * 0.4 = 0.32 m`). The diagram shows an ideal jog of exactly 0.4 s. In the simulator the output follows the program one scan late, so a jog set to `PT` lasts one scan longer than `PT` and the head stops a little further down.
+Notice the gap between `JogDown` turning off and `OpenClamp` turning on. Releasing the jog output only begins braking; the head is still moving until it comes to rest. On `Palletizer1` this 0.4 s jog is a short jog, so the head needs another 0.4 s to stop: it comes to rest 0.8 s after the jog began (`d = 2 * 0.4 * 0.4 = 0.32 m`). The diagram shows an ideal jog of exactly 0.4 s. A jog lasts one scan longer than `PT` when the timer is called before the line that starts the step, because the output turns on one scan before the timer does; the head then stops a little further down.
 
 ## Worked example
 

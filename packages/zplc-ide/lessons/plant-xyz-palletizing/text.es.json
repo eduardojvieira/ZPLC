@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial no ordena ninguna posición, así que el pórtico se queda en el suelo; envíe cada caja, agárrela, colóquela sobre la tarima en un patrón de 2 por 2 de dos capas y encienda Green tras la octava.",
+      "body": "Corrija esta omisión del proyecto inicial, guárdelo y pulse {{ui:learn.check}}: El proyecto inicial no ordena ninguna posición, así que el pórtico se queda en el suelo; envíe cada caja, agárrela, colóquela sobre la tarima en un patrón de 2 por 2 de dos capas y encienda Green tras la octava.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial no ordena ninguna posición, así que el pórtico se queda en el suelo; envíe cada caja, agárrela, colóquela sobre la tarima en un patrón de 2 por 2 de dos capas y encienda Green tras la octava."
+    "El proyecto inicial no ordena ninguna posición, así que el pórtico se queda en el suelo; envíe cada caja, agárrela, colóquela sobre la tarima en un patrón de 2 por 2 de dos capas y encienda Green tras la octava."
   ]
 }

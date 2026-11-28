@@ -51,7 +51,7 @@ span: 6000
 signals:
   - { name: Grip, edges: [3310, 5420] }
   - { name: Gripped, edges: [3310, 5420] }
-caption: On the first box of a run, Grip is on from 3.3 s to 5.4 s and Gripped follows it in the same plant step, because a vacuum pad attaches and releases at once
+caption: On the first box of a run, Grip is on from 3.3 s to 5.4 s and Gripped follows it within a scan or two, because a vacuum pad attaches and releases almost at once
 ```
 
 Moving vertically before moving horizontally keeps the carried item clear of the belt and of the boxes already stacked on the pallet.
