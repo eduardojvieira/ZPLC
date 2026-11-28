@@ -533,6 +533,16 @@ async function captureCondition(
         `if (practice) { practice.click(); return true; } ` +
         `return import('/src/learn/learnUi.ts').then(({ useLearnUi }) => { useLearnUi.getState().closeReading(); return true; }); })()`,
     );
+  /** Where the secondary sidebar has no room (the compact shell) the Guide takes the place of the primary sidebar, as the commands do. */
+  const showGuide = () =>
+    app.eval<boolean>(
+      `(async () => { const { shellDensity } = await import('/src/shell/shellDensity.ts'); ` +
+        `if (shellDensity(window.innerWidth) !== 'compact') return true; ` +
+        `const { useSecondaryView } = await import('/src/shell/useSelection.ts'); ` +
+        `const { useShellLayout } = await import('/src/store/useShellLayout.ts'); ` +
+        `useSecondaryView.getState().show('lesson'); useSecondaryView.getState().setInPrimary(true); ` +
+        `useShellLayout.getState().setPrimaryVisible(true); return true; })()`,
+    );
   const run = async (command: string): Promise<string> =>
     app.eval<string>(
       `import('/src/commands/bus.ts').then(({ runCommand }) => runCommand(${JSON.stringify(command)}, { respectEnabled: true }))`,
@@ -602,7 +612,10 @@ async function captureCondition(
             failed.push({ surface: plan.surface.id, reason: `lesson ${plan.lesson.id} did not open` });
             continue;
           }
-          if (plan.lesson.stage === 'exercise') await toExercise();
+          if (plan.lesson.stage === 'exercise') {
+            await toExercise();
+            await showGuide();
+          }
           if (plan.command && (await run(plan.command)) !== 'ran') {
             failed.push({ surface: plan.surface.id, reason: `${plan.command} did not run after the lesson` });
             continue;
@@ -670,6 +683,7 @@ async function captureCondition(
           if (kinds.includes('exercise')) await toExercise();
         }
         if (kinds.includes('exercise')) {
+          await showGuide();
           if (
             await showing(
               `${markerOf('secondary.guide', condition.locale)!} && !document.querySelector('[data-reading-page]')`,
