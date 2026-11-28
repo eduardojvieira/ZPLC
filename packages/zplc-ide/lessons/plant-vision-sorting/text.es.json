@@ -11,48 +11,48 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/VisionSorting.st, ponga en marcha ambas cintas tras Start. Lea Code mientras la pieza está en el campo del sensor de visión: la de código 1 sigue de frente; para código 2, cruce el brazo antes de que llegue la pieza, manténgalo hasta que haya pasado su extremo libre y vuelva a llevarlo a su posición.",
+      "body": "En src/VisionSorting.st, ponga en marcha ambas cintas tras Start. Doce piezas llegan de a una, cada una con un código: toda pieza de código 1 debe terminar en Product1 y toda pieza de código 2 en Product2, así que el brazo debe estar cruzado cuando una pieza de código 2 lo alcanza y en reposo cuando lo alcanza una de código 1. Done debe encenderse tras doce piezas.",
       "checkpoint": "Las piezas de código 1 terminan en Product1, las de código 2 en Product2, y Done se enciende tras doce piezas."
     },
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, calcule cuándo debe girar el brazo: el código se lee unos dos segundos antes de que la pieza llegue al brazo, y la pieza anterior puede seguir pasando por el extremo libre. ¿Qué ocurre si el brazo gira demasiado pronto o demasiado tarde?",
-      "checkpoint": "Divert pasa a TRUE para una pieza de código 2 poco antes de que llegue y vuelve a FALSE cuando ha pasado; la pieza siguiente no se lee hasta que el brazo esté libre."
+      "body": "Antes de ejecutar, calcule cuándo debe estar cruzado el brazo: el código se lee unos dos segundos antes de que la pieza llegue al brazo, y el brazo tarda un momento en girar. ¿Qué le pasa a una pieza de código 2 si el brazo no está cruzado cuando llega, y a una de código 1 si lo está?",
+      "checkpoint": "El código está en Code durante un segundo y la pieza llega al brazo unos dos segundos después de leerse: una pieza de código 2 debe encontrar el brazo cruzado, y una de código 1 debe encontrarlo en reposo."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna pieza; ponga en marcha ambas cintas tras Start y accione el brazo para cada pieza de código 2.",
+      "body": "Escriba el programa, guárdelo y pulse {{ui:learn.check}}. El proyecto inicial no acciona ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna pieza. Tras Start las dos cintas deben funcionar y cada pieza debe terminar en el contenedor de su código.",
       "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la máquina, pulse {{ui:toolbar.run.label}} (F5) y abra la {{ui:plant.panel.view3d}}.",
       "checkpoint": "El escenario requerido se llama vision-sorting y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe la vista 3D y la lectura del sensor de visión: el código aparece mientras la pieza está en el campo, el brazo gira delante de una pieza de código 2 y esta se desliza a la cinta lateral.",
-      "checkpoint": "Una pieza de código 1 nunca mueve el brazo, y el brazo está en reposo antes de que llegue la pieza siguiente."
+      "body": "Observe la {{ui:plant.panel.view3d}} y la lectura del sensor de visión: el código aparece mientras la pieza está en el campo, y una pieza de código 2 se desliza a la cinta lateral delante del brazo.",
+      "checkpoint": "El brazo está cruzado cuando cada pieza de código 2 lo alcanza, y en reposo cuando lo alcanza cada pieza de código 1."
     },
     {
       "key": "reflect",
       "title": "Reflexionar",
-      "body": "La calificación ve las dos cintas de producto y que nada cayó; no ve su temporización, así que un tiempo que golpee una pieza solo se nota como una pieza mal encaminada o caída.",
+      "body": "La calificación ve las dos cintas de producto y que nada cayó; no ve su temporización, así que un tiempo equivocado solo se nota como una pieza en el contenedor equivocado.",
       "checkpoint": "Solo se prueba lo que comprueban las aserciones; nada más."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Cuente ciclos en vez de usar un temporizador: cuando Code no sea 0 y el bloqueo esté libre, sume uno a Handled, fije un bloqueo hasta que la pieza salga del campo y, para código 2, un retardo antes del giro."
+      "text": "El código está en la entrada solo alrededor de un segundo, y la misma pieza está en el campo durante muchos ciclos de escaneo, pero el brazo está más adelante en la cinta: ¿qué debe recordar su programa de una pieza que ya leyó, y durante cuánto tiempo?"
     },
     {
       "level": 2,
-      "text": "Cuando el retardo llegue a 0 active Divert y cargue un contador de retención; cuando este llegue a 0 desactive Divert. Done := Handled >= 12."
+      "text": "Cuente ciclos en vez de usar un temporizador: cuando Code no sea 0 y el bloqueo esté libre, sume uno a Handled, fije un bloqueo hasta que la pieza salga del campo y, para código 2, un retardo antes del giro. Cuando el retardo llegue a 0 active Divert y cargue un contador de retención; cuando este llegue a 0 desactive Divert. Done := Handled >= 12."
     }
   ],
   "faultCases": [
