@@ -79,6 +79,12 @@ and version when the release is cut (see `RELEASING.md`).
 
 ### Details for contributors
 
+- OSS-002: added `docs/docs/reference/licences.md` (and its Spanish copy), `NOTICE.md`, `README.md` licence links,
+  `docs/static/img/generated/provenance.json`, and `tools/ci/oss-licences.ts` (with `tools/ci/oss-licences.test.ts`),
+  wired into CI.
+- OSS-005: fixed twelve off-by-one `AGENTS.md` rule/guideline citations across specs 011 to 013 (dependencies rule 6,
+  bilingual docs rule 5, physical operations rule 8) and added `tools/ci/oss-crossrefs.ts` (with
+  `tools/ci/oss-crossrefs.test.ts`), wired into CI.
 - AIX-015: `trace_get` answers in mode `changes` by default ("never whole by default"); mode `full` is the 2.0 answer,
   proved byte for byte on recorded traces, and takes no options.
 

@@ -722,6 +722,8 @@ jobs:
           bun tools/docs/check_doc_claims.ts
           bun tools/ci/test-inventory.ts
           bun tools/ci/test-source-guard.ts
+          bun tools/ci/oss-licences.ts
+          bun tools/ci/oss-crossrefs.ts
 
       # VF-006: the time limits of every workflow and the shard jobs of the IDE suite, checked by a lint and not by a test
       - name: Lint the workflows

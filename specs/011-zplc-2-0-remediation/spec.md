@@ -100,7 +100,7 @@ Every workstream obeys these. A requirement that conflicts with a principle is a
 | P9 | Outputs default safe and off | No reboot, fault, watchdog reset, communication loss or invalid artifact resumes physical control by itself (constitution rule 4). |
 | P10 | One source of truth per fact | Opcodes, lesson IDs, the board table, the version, inter-process communication (IPC) channel names and the product name are each defined once and generated elsewhere. |
 | P11 | Validate at trust boundaries | Bytecode, persistence, IPC, files, device links and network input are validated before any state changes (constitution rule 3). |
-| P12 | No dependency without a written reason | New dependencies carry the justification `AGENTS.md` rule 5 requires; those needed by this spec are in `research.md`. |
+| P12 | No dependency without a written reason | New dependencies carry the justification `AGENTS.md` rule 6 requires; those needed by this spec are in `research.md`. |
 | P13 | Proportionate process | A check tests an outcome a user would notice. No validator exists to validate another validator. |
 
 ## 4. Scope decisions and open decisions

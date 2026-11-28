@@ -237,7 +237,7 @@ Build the owned kit in `IDE/src/ui/` on **React Aria Components**, styled with T
 
 The gaps of the chosen library are covered without another dependency: the menu bar is the native Electron application menu (UX-014), and a context menu is a menu in a popover at the pointer.
 
-### Dependency justification (`AGENTS.md` rule 5, constitution rule 8)
+### Dependency justification (`AGENTS.md` rule 6, constitution rule 8)
 
 Each row is a concrete need; nothing is added for convenience. Licences are as published by each project and must be confirmed when the dependency is added.
 
