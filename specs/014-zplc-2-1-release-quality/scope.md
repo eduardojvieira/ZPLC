@@ -39,7 +39,8 @@ Each change that closes or adds an item updates this list in the same change (FR
 | Spec 014 FRZ-001 scope list and its check | 014 FRZ-001 | done (80624007) | none |
 | Spec 014 JRN-001 journeys.md | 014 JRN-001 | done (07968804) | none |
 | Spec 014 AIX, UXV and PUB threads: AIX defects AI-10, AI-16, D-35 (07647370, 1842e22f, verified) and AI-14 (efcf9502, verified 2026-11-26) done; the AIX plan corrected and merged (plan-aix.md, owner stop; W1-W6 approved (W3-W6 on 2026-11-26, with the AI-4 notice added to AIX-U7; the §2.1a sentences approved)), UXV and PUB not started | 014 AIX-001..015, UXV-001..009, PUB-001..005 | in progress | the AIX plan is an owner stop |
-| Version 2.1.0, T20-K5 compiler known issues | none | not started | the cut |
+| Version 2.1.0, T20-K5 compiler known issues (the ROL/ROR line is in: an untyped literal is 32 bits, `ROL(16#8000, 1)` into a WORD gives 0; owner decision 2026-11-28, pinned by a test, no codegen change in 2.1; for 2.2: make ROL/ROR/SHL/SHR of an untyped literal follow the destination width) | none | not started | the cut |
+| C10: NOT of an untyped integer literal takes the operand width (32 bits, 64 for a 64-bit destination), as AND, OR and XOR; owner decision 2026-11-28; bytecode of 1340 projects, files and docs blocks identical | none | done (fix/c10-not-untyped-literal) | none |
 | CHANGELOG Unreleased, screenshots, rehearsal | none | not started | the cut |
 | PR, tag, publication | none | not started | owner: PR, tag and publication; green seam |
 | Every compiler function placed in FBD and Ladder (S-23, D-37): one mechanism from the compiler's table, the conversions group, the generated tests, the docs; plan-lng.md, units U-LNG-1 to U-LNG-4 | 014 LNG-029, LNG-030 | done (bd5da037, 22e8f765, 82e07c2b, 8d0f0517) | none |

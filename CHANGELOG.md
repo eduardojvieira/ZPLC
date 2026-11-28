@@ -8,7 +8,14 @@ ZPLC and not for one who changes it:
 
 - `### What changed for you`: what a user can now do, or sees differently, in a
   sentence each. No requirement identifiers, no file names unless the user types them.
-- `### Breaking changes`: what stops working or must be done differently. Say
+- `
+- `NOT` of an untyped integer literal now takes the width of its context, as `AND`, `OR` and `XOR` do: 32 bits, and 64 bits
+  when the destination is 64 bits wide. Before, `X : DWORD := NOT(1)` gave 0, and `NOT(0)` gave 1 into any bit string;
+  now it gives `16#FFFFFFFE`, and `NOT(k)` into `BYTE`, `WORD`, `DWORD` and `LWORD` equals `NOT(BYTE#k)`, `NOT(WORD#k)`,
+  `NOT(DWORD#k)` and `NOT(LWORD#k)`. A `BOOL` destination is still refused. No published project or lesson uses this form,
+  and the bytecode of every project, file and documentation example is unchanged.
+
+### Breaking changes`: what stops working or must be done differently. Say
   what, and what to do instead. `None.` when nothing breaks.
 - `### Migration`: the steps to move from the previous release, in order.
 - `### Known limits`: what does not work or has not been verified in this release,
@@ -64,6 +71,9 @@ and version when the release is cut (see `RELEASING.md`).
   to use an `IF` in Structured Text.
 - A 64-bit literal (`LWORD#`, `ULINT#`, `LINT#`) as the input of `SHL`, `SHR`, `ROL` or `ROR` is refused at build time.
   Assign the literal to a variable first. Assignment and arithmetic with those literals work.
+- An untyped integer literal is 32 bits wide, so `ROL(16#8000, 1)` into a `WORD` gives 0, not 1: the bit rotates out of the
+  low 16 bits. Write the literal with its type, `ROL(WORD#16#8000, 1)`, to rotate within 16 bits. The same holds for `ROR`,
+  `SHL` and `SHR`; the compiler does not change in 2.1 (T20-K5).
 
 ### Details for contributors
 
