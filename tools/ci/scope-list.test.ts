@@ -4,7 +4,7 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { describe, expect, it } from 'bun:test';
+import { describe, expect, it, spyOn } from 'bun:test';
 
 const ROOT = resolve(import.meta.dir, '../..');
 const EN_DOCS = resolve(ROOT, 'docs/docs');
@@ -158,6 +158,94 @@ describe('PUB-001 every scope item names its English and Spanish pages', () => {
         'Trailing comma: empty page entry in "plant/ok.md,"',
       ]);
     } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects directories, absolute paths, parent traversals and non-markdown files (H1)', () => {
+    const root = mkdtempSync(join(tmpdir(), 'scope-pages-h1-'));
+    try {
+      const enDir = join(root, 'en');
+      const esDir = join(root, 'es');
+      mkdirSync(join(enDir, 'plant/dir.md'), { recursive: true });
+      mkdirSync(join(esDir, 'plant/dir.md'), { recursive: true });
+      writeFileSync(join(enDir, 'plant/ok.mdx'), '# ok\n');
+      writeFileSync(join(esDir, 'plant/ok.mdx'), '# ok\n');
+      writeFileSync(join(enDir, 'plant/note.txt'), 'not markdown\n');
+      writeFileSync(join(esDir, 'plant/note.txt'), 'no es markdown\n');
+      writeFileSync(join(root, 'outside.md'), '# outside\n');
+      const absMd = join(enDir, 'plant/ok.mdx');
+
+      const fixture = [
+        '| Item | Spec | State | Blocked by | Pages |',
+        '|---|---|---|---|---|',
+        '| Valid mdx | none | done | none | plant/ok.mdx |',
+        '| Directory | none | done | none | plant |',
+        '| Directory ending in md | none | done | none | plant/dir.md |',
+        '| Absolute path | none | done | none | /etc/hostname |',
+        `| Absolute md path | none | done | none | ${absMd} |`,
+        '| Parent traversal | none | done | none | ../outside.md |',
+        '| Non-markdown file | none | done | none | plant/note.txt |',
+      ].join('\n');
+
+      const parsed = parseScopeTable(fixture);
+      const errors = checkScopePages(parsed.body, enDir, esDir);
+
+      expect(errors).toEqual([
+        'Directory: page "plant" must be a relative .md or .mdx file inside the docs root',
+        'Directory ending in md: English page docs/docs/plant/dir.md is not a file',
+        'Directory ending in md: Spanish page docs/i18n/es/docusaurus-plugin-content-docs/current/plant/dir.md is not a file',
+        'Absolute path: page "/etc/hostname" must be a relative .md or .mdx file inside the docs root',
+        `Absolute md path: page "${absMd}" must be a relative .md or .mdx file inside the docs root`,
+        'Parent traversal: page "../outside.md" escapes the docs root',
+        'Non-markdown file: page "plant/note.txt" must be a relative .md or .mdx file inside the docs root',
+      ]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('warns on PUB-001 gaps by default and fails when ZPLC_RELEASE_GATE=1 (B4)', () => {
+    const root = mkdtempSync(join(tmpdir(), 'scope-pages-b4-'));
+    const prevGate = process.env.ZPLC_RELEASE_GATE;
+    const warnSpy = spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const enDir = join(root, 'en');
+      const esDir = join(root, 'es');
+      mkdirSync(join(enDir, 'plant'), { recursive: true });
+      mkdirSync(join(esDir, 'plant'), { recursive: true });
+      writeFileSync(join(enDir, 'plant/ok.md'), '# ok\n');
+      writeFileSync(join(esDir, 'plant/ok.md'), '# ok\n');
+
+      const fixture = [
+        '| Item | Spec | State | Blocked by | Pages |',
+        '|---|---|---|---|---|',
+        '| Open gap | none | done | none | none: page missing (PUB-001 gap) |',
+        '| Partial gap | none | in progress | none | plant/ok.md; none: extra page missing (PUB-001 gap) |',
+        '| Internal | none | done | none | none: internal CI check |',
+      ].join('\n');
+      const parsed = parseScopeTable(fixture);
+
+      delete process.env.ZPLC_RELEASE_GATE;
+      const devErrors = checkScopePages(parsed.body, enDir, esDir);
+      expect(devErrors).toEqual([]);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      const warningText = String(warnSpy.mock.calls[0]?.[0] ?? '');
+      expect(warningText).toContain('Open gap');
+      expect(warningText).toContain('Partial gap');
+
+      warnSpy.mockClear();
+      process.env.ZPLC_RELEASE_GATE = '1';
+      const gateErrors = checkScopePages(parsed.body, enDir, esDir);
+      expect(gateErrors).toEqual([
+        'Open gap: unresolved PUB-001 gap (page missing (PUB-001 gap))',
+        'Partial gap: unresolved PUB-001 gap (extra page missing (PUB-001 gap))',
+      ]);
+      expect(warnSpy).not.toHaveBeenCalled();
+    } finally {
+      warnSpy.mockRestore();
+      if (prevGate === undefined) delete process.env.ZPLC_RELEASE_GATE;
+      else process.env.ZPLC_RELEASE_GATE = prevGate;
       rmSync(root, { recursive: true, force: true });
     }
   });
