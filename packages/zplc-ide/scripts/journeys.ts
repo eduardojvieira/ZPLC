@@ -8150,6 +8150,8 @@ export const JOURNEYS: Journey[] = [
           undefined,
         45_000,
       );
+      // the reading covers the workbench until Practice (U3-G4)
+      await practiceFromReading(app, Boolean(first.reading));
       writeFileSync(
         join(root, 'profile', 'learn-workspaces', first.id, first.starter.program),
         disk(join(packageRoot, 'projects', first.solution.project, first.solution.program)),
