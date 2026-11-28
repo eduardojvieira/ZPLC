@@ -28,8 +28,8 @@ Un invernadero tiene dos interruptores de temperatura: `TooCold` es TRUE mientra
 
 ```st
 PROGRAM Heater
-VAR_INPUT TooCold : BOOL; TooHot : BOOL; END_VAR
-VAR_OUTPUT HeaterOn : BOOL; END_VAR
+VAR_INPUT TooCold AT %I0.0 : BOOL; TooHot AT %I0.1 : BOOL; END_VAR
+VAR_OUTPUT HeaterOn AT %QX0.0 : BOOL; END_VAR
 IF TooCold THEN
     HeaterOn := TRUE;
 ELSIF TooHot THEN
@@ -77,4 +77,4 @@ options:
 
 ## Qué hará en la práctica
 
-Un tanque tiene dos interruptores de nivel, y tres lámparas muestran su estado. El proyecto inicial ya contiene un `IF` con dos ramas `ELSIF` y enciende una lámpara en cada rama. Usted hará que el programa muestre exactamente una lámpara en cada momento del escenario y después pulsará {{ui:learn.check}}. El agua cruza las marcas ocho veces en {{t:900}} ms.
+Un tanque tiene dos interruptores de nivel, y tres lámparas muestran su estado. El proyecto inicial declara los interruptores y las lámparas y contiene solo la primera rama de un `IF`. Usted escribirá el resto de un `IF` con ramas `ELSIF` para que el programa muestre exactamente una lámpara en cada momento del escenario, y después pulsará {{ui:learn.check}}. El agua cambia de estado nueve veces en {{t:1000}} ms.

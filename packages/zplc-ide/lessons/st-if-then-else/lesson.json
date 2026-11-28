@@ -1,13 +1,19 @@
 {
   "schemaVersion": 1,
   "id": "st-if-then-else",
-  "version": 1,
+  "version": 3,
   "order": 69,
   "module": 1,
   "level": "foundation",
-  "prerequisites": ["scan-cycle-one-scan-memory"],
-  "languages": ["ST"],
-  "tracks": ["simulation"],
+  "prerequisites": [
+    "scan-cycle-one-scan-memory"
+  ],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "simulation"
+  ],
   "unsupported": {
     "hardware": {
       "reason": {
@@ -34,7 +40,7 @@
     "file": "scenario.json",
     "id": "TankLamp",
     "path": "tests/tank-lamp.scenario.json",
-    "sha256": "18014fe1425d0861bec3c17ec765a71691667d9652aaca1a63e681925a283b4b"
+    "sha256": "a57955b0bee479aad94b8eb5ee27ecd976b021d19e83193a2328e04754fbacbc"
   },
   "regressionScenarios": []
 }

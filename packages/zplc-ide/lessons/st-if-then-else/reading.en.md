@@ -28,8 +28,8 @@ A greenhouse has two temperature switches: `TooCold` is TRUE while the air is be
 
 ```st
 PROGRAM Heater
-VAR_INPUT TooCold : BOOL; TooHot : BOOL; END_VAR
-VAR_OUTPUT HeaterOn : BOOL; END_VAR
+VAR_INPUT TooCold AT %I0.0 : BOOL; TooHot AT %I0.1 : BOOL; END_VAR
+VAR_OUTPUT HeaterOn AT %QX0.0 : BOOL; END_VAR
 IF TooCold THEN
     HeaterOn := TRUE;
 ELSIF TooHot THEN
@@ -63,7 +63,7 @@ A second run shows the order of the branches. When both switches were TRUE on th
 question: In the heater of the worked example, the air goes from too cold to between the limits. What does HeaterOn do?
 options:
   - { text: 'It stays ON', correct: true, feedback: 'Yes. No branch runs between the limits, so no statement writes HeaterOn and it keeps its value. In the run it stayed ON from {{t:200}} ms until TooHot came ON at {{t:600}} ms.' }
-  - { text: 'It goes OFF, because TooCold is now FALSE', feedback: 'TooCold being FALSE only means that the first branch does not run. Nothing writes HeaterOn on that scan, so it keeps ON.' }
+  - { text: 'It goes OFF, because TooCold is now FALSE', feedback: 'TooCold being FALSE only means that the first branch does not run. Nothing writes HeaterOn on that scan, so it stays ON.' }
   - { text: 'It is undefined until the next limit is crossed', feedback: 'It is not undefined: it holds the value it had on the scan before.' }
 ```
 
@@ -77,4 +77,4 @@ options:
 
 ## What you will do in the practice
 
-A tank has two level switches, and three lamps show its state. The starting program already holds an `IF` with two `ELSIF` branches, and it turns one lamp ON in each branch. You will make the program show exactly one lamp at every moment of the scenario, then press {{ui:learn.check}}. The water moves between the marks and past them eight times in {{t:900}} ms.
+A tank has two level switches, and three lamps show its state. The starting program declares the switches and the lamps and holds only the first branch of an `IF`. You will write the rest of one `IF` with `ELSIF` branches so that the program shows exactly one lamp at every moment of the scenario, then press {{ui:learn.check}}. The water changes state nine times in {{t:1000}} ms.

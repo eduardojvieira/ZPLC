@@ -9,7 +9,7 @@ ELSIF NOT AboveHigh THEN
     LampLow := FALSE;
     LampOk := TRUE;
     LampHigh := FALSE;
-ELSIF AboveHigh THEN
+ELSE
     LampLow := FALSE;
     LampOk := FALSE;
     LampHigh := TRUE;
