@@ -325,6 +325,8 @@ journeysCourse.push(
       const entry = lessonEntry(id);
       const folder = workspaceOf(root, id);
       await startLesson(app, id);
+      // the reading covers the workbench until Practice (U3-G4)
+      await practiceFromReading(app, Boolean(entry.reading));
       // the starter scene is an empty floor: Check says a part is missing, with the code of the diagnostic
       const missing = await check(app);
       assert(
