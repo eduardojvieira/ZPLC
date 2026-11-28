@@ -209,4 +209,23 @@ export const journeysU3P: Journey[] = [
       }
     },
   },
+  {
+    // A project with no plant offers "Add a plant" in the navigator; the empty floor is saved under a name and opens in the plant document.
+    name: 'U3-P6 the navigator offers Add a plant, saves the template under a name and shows the plant group',
+    example: 'none',
+    proves: [],
+    partly: ['PLS-011', 'SCN-016'],
+    run: async (app, { root }) => {
+      app.answer(copyExample(join(root, 'add-plant'), 'blinky_st'));
+      await app.click(button('Open project', 'contains'), 'the Open project button');
+      await app.until('the project workbench', async () => (await app.visible(toolbar)) || undefined);
+      const group = `[data-navigator-group="plant"]`;
+      await app.click(css(`${group} button`), 'Add a plant of the navigator');
+      await app.click(button('Add', 'exact'), 'Add in the dialog');
+      await app.until('the plant document', async () => (await app.visible(css('[data-plant-panel]'))) || undefined, 45_000);
+      await app.until('the saved scene in the Plant group', async () =>
+        (await app.eval<boolean>(`Boolean(document.querySelector('${group} [data-navigator-item="scene:plant"]'))`)) ? true : undefined,
+      );
+    },
+  },
 ];
