@@ -4,7 +4,7 @@ This station joins two parts into one: a lid arrives on the left belt, a base ar
 
 ![The two-axis assembly scene seen from the front. Three belt conveyors stand in a line from left to right: LidBelt with LidEmitter, LidBlade and LidEye on the left; BaseBelt with BaseEmitter, BaseBlade and BaseEye in the middle; and ExitBelt ending at Remover1 on the right. A two-axis pick-and-place frame, Pick1, bridges LidBelt and BaseBelt. StartButton sits behind LidBelt and StackLight1 stands beside ExitBelt. Each part has a label with its name, its kind and its wired signals.](images/machine.en.png)
 
-The station has thirteen parts. The tables say what each one is in a real plant and what its signals mean to your program. The PLC variable is the name the program uses: the plant map of the lesson binds each signal of the scene to it.
+The image and the tables show thirteen of its parts. The tables say what each one is in a real plant and what its signals mean to your program. The PLC variable is the name the program uses: the plant map of the lesson binds each signal of the scene to it.
 
 | Part          | Kind                    | What it is in a real plant                                                                                    |
 | ------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------- |
@@ -103,7 +103,7 @@ This machine has one button and one meaning for it. The station of the practice 
 
 ## Common mistakes
 
-- Driving a job that must happen once from the level of the button. If rung 1 had a plain contact on `Take` instead of the positive-edge contact, `Release` would be TRUE on every scan of the press, and in the run a press of 0.4 s counted at least 39 tickets instead of one.
+- Driving a job that must happen once from the level of the button. If rung 1 had a plain contact on `Take` instead of the positive-edge contact, `Release` would be TRUE on every scan of the press, and in the run a press of 0.4 s counted 40 tickets instead of one.
 - Driving a job that must last while the button is held from its edge. The edge lasts one scan, so the coil would be TRUE for one scan too, not as long as the finger.
 - Letting Start act in every mode. In the starting program, a Start press while the machine is in manual starts the cycle at once: in the scenario, when Start is pressed at 5.2 s, the belts run and a lid and a base are put on their belts.
 

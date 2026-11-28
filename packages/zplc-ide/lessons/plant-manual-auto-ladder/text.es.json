@@ -24,19 +24,19 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del programa inicial, guárdelo y pulse {{ui:learn.check}}: El programa inicial no tiene modo: una pulsación de Start en manual arranca el ciclo y los pulsadores de avance no hacen nada; cambie con ModeBtn, admita Start solo en automático y mueva el brazo con los pulsadores de avance solo en manual.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse {{ui:toolbar.run.label}} (F5) y abra la {{ui:plant.panel.view3d}}.",
       "checkpoint": "El escenario requerido se llama plant-manual-auto y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observar",
       "body": "Observe cómo el brazo sigue los pulsadores de avance en los primeros segundos, ignora Start, y luego ensambla tres tapas sobre tres bases en automático mientras se mantiene un pulsador de avance.",
-      "checkpoint": "La luz ámbar está apagada en manual y encendida en automático; la luz verde aparece al terminar los tres ensamblajes, y la vuelta a manual deja todas las salidas apagadas."
+      "checkpoint": "La luz ámbar está apagada en manual y encendida mientras corre el ciclo automático; la luz verde aparece al terminar los tres ensamblajes, y la vuelta a manual deja todas las salidas apagadas."
     },
     {
       "key": "reflect",
@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "Añada las variables locales Auto, ToAuto, ToManual y Begin, todas BOOL. Dibuje cuatro peldaños para el modo: un contacto de flanco positivo (P) sobre ModeBtn en serie con un contacto normalmente cerrado sobre Auto activa la bobina ToAuto; el mismo contacto de flanco en serie con un contacto normalmente abierto sobre Auto activa la bobina ToManual; un contacto sobre ToAuto activa una bobina SET sobre Auto; un contacto sobre ToManual activa una bobina RESET sobre Auto. Así la máquina arranca en manual. Dibuje un peldaño que empiece con un contacto normalmente cerrado sobre Auto y, cuando conduzca, ponga a cero Active y mueva 0 a Step, Cycles, LidsFed y BasesFed, y otro con un contacto normalmente cerrado sobre Auto que ponga a cero FreeBase. Dibuje un peldaño en el que un contacto sobre Start en serie con un contacto sobre Auto active la bobina Begin, y use un contacto sobre Begin en todos los lugares donde el proyecto inicial usa un contacto sobre Start (el peldaño que activa Active, el peldaño del flanco Go y el peldaño que comienza el paso 0). En cada uno de los cuatro peldaños de salida del brazo, añada una rama en paralelo bajo los contactos del ciclo: un contacto normalmente cerrado sobre Auto, un contacto sobre el pulsador de avance y un contacto normalmente cerrado sobre el pulsador de avance opuesto, unidas antes del contacto del final de carrera de esa salida."
+      "text": "Añada las variables locales Auto, ToAuto, ToManual y Begin, todas BOOL. Dibuje cuatro peldaños para el modo: un contacto de flanco positivo (P) sobre ModeBtn en serie con un contacto normalmente cerrado sobre Auto activa la bobina ToAuto; el mismo contacto de flanco en serie con un contacto normalmente abierto sobre Auto activa la bobina ToManual; un contacto sobre ToAuto activa una bobina SET sobre Auto; un contacto sobre ToManual activa una bobina RESET sobre Auto. Así la máquina arranca en manual. Dibuje un peldaño que empiece con un contacto normalmente cerrado sobre Auto y, cuando conduzca, ponga a cero Active y mueva 0 a Step, Cycles, LidsFed y BasesFed, y, en el peldaño en que BaseLeftQ pone a cero FreeBase, añada un contacto normalmente cerrado sobre Auto en paralelo con el contacto de BaseLeftQ (una segunda bobina RESET sobre FreeBase no compila). Dibuje un peldaño en el que un contacto sobre Start en serie con un contacto sobre Auto active la bobina Begin, y use un contacto sobre Begin en todos los lugares donde el proyecto inicial usa un contacto sobre Start (el peldaño que activa Active, el peldaño del flanco Go y el peldaño que comienza el paso 0). En cada uno de los cuatro peldaños de salida del brazo, añada una rama en paralelo bajo los contactos del ciclo: un contacto normalmente cerrado sobre Auto, un contacto sobre el pulsador de avance y un contacto normalmente cerrado sobre el pulsador de avance opuesto, unidas antes del contacto del final de carrera de esa salida."
     }
   ],
   "faultCases": [
