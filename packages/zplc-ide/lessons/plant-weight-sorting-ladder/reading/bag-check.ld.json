@@ -69,10 +69,7 @@
             "element": {
               "type": "function",
               "functionName": "ADD",
-              "operands": [
-                "Net",
-                "100"
-              ],
+              "operands": ["Net", "100"],
               "output": "Net",
               "id": "r1_1",
               "row": 0,
@@ -126,9 +123,7 @@
             "element": {
               "type": "function",
               "functionName": "MOVE",
-              "operands": [
-                "0"
-              ],
+              "operands": ["0"],
               "output": "Net",
               "id": "r2_1",
               "row": 0,
@@ -182,10 +177,7 @@
             "element": {
               "type": "function",
               "functionName": "LT",
-              "operands": [
-                "Net",
-                "500"
-              ],
+              "operands": ["Net", "500"],
               "id": "r3_1",
               "row": 0,
               "col": 1
@@ -244,10 +236,7 @@
             "element": {
               "type": "function",
               "functionName": "GE",
-              "operands": [
-                "Net",
-                "500"
-              ],
+              "operands": ["Net", "500"],
               "id": "r4_1",
               "row": 0,
               "col": 1

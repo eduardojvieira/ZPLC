@@ -6,36 +6,36 @@ This is a checkweigher, a station that weighs every item on a line and sends it 
 
 The station has eleven parts. The tables say what each one is in a real plant and what its signal means to your program. The PLC variable is the name the program uses: the plant map of the lesson binds each signal of the scene to it. A dash means that the part is not wired to the program.
 
-| Part | Kind | What it is in a real plant |
-| --- | --- | --- |
-| `Infeed` | Belt conveyor | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines. |
-| `Outfeed` | Belt conveyor | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines. |
-| `SideBelt` | Belt conveyor | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines. |
-| `Source1` | Item emitter | Stands for whatever feeds the line: the machine before it, an operator, or a magazine that releases one item. |
-| `Blade1` | Stop blade | A plate that rises across the belt to hold items back until they are let through. |
-| `Scale1` | Scale | A weighing platform in the line, like a checkweigher, that reports the weight of what lies on it. |
-| `Pusher1` | Pusher | A pneumatic cylinder with a plate that pushes an item sideways off the belt. |
-| `HeavyBin` | Item remover | Stands for whatever takes items away at the end of the line: the next machine, a bin, or an operator. |
-| `LightBin` | Item remover | Stands for whatever takes items away at the end of the line: the next machine, a bin, or an operator. |
-| `StartButton` | Push button | A button on the operator panel that is pressed only while a finger holds it. |
-| `StackLight1` | Stack light | A tower of coloured lamps that shows from afar what the machine is doing. |
+| Part          | Kind          | What it is in a real plant                                                                                    |
+| ------------- | ------------- | ------------------------------------------------------------------------------------------------------------- |
+| `Infeed`      | Belt conveyor | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines.              |
+| `Outfeed`     | Belt conveyor | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines.              |
+| `SideBelt`    | Belt conveyor | A motor-driven belt that carries goods along a line, the base of most packing and sorting lines.              |
+| `Source1`     | Item emitter  | Stands for whatever feeds the line: the machine before it, an operator, or a magazine that releases one item. |
+| `Blade1`      | Stop blade    | A plate that rises across the belt to hold items back until they are let through.                             |
+| `Scale1`      | Scale         | A weighing platform in the line, like a checkweigher, that reports the weight of what lies on it.             |
+| `Pusher1`     | Pusher        | A pneumatic cylinder with a plate that pushes an item sideways off the belt.                                  |
+| `HeavyBin`    | Item remover  | Stands for whatever takes items away at the end of the line: the next machine, a bin, or an operator.         |
+| `LightBin`    | Item remover  | Stands for whatever takes items away at the end of the line: the next machine, a bin, or an operator.         |
+| `StartButton` | Push button   | A button on the operator panel that is pressed only while a finger holds it.                                  |
+| `StackLight1` | Stack light   | A tower of coloured lamps that shows from afar what the machine is doing.                                     |
 
-| Variable | Signal | Direction & type | Meaning |
-| --- | --- | --- | --- |
-| `RunInfeed` | `Infeed.run` | PLC output · BOOL | TRUE runs the belt forward. |
-| `RunOutfeed` | `Outfeed.run` | PLC output · BOOL | TRUE runs the belt forward. |
-| `RunSide` | `SideBelt.run` | PLC output · BOOL | TRUE runs the belt forward. |
-| — | `Source1` | — | Not wired to the PLC. |
-| `Hold` | `Blade1.extend` | PLC output · BOOL | TRUE raises the blade across the belt; FALSE lowers it. |
-| `Stable` | `Scale1.stable` | PLC input · BOOL | TRUE once the load has been at rest long enough to be weighed. |
-| `Weight` | `Scale1.weight` | PLC input · REAL, 0 to 20 kg | The weight on the platform; 0 until it is stable. |
-| `Extended` | `Pusher1.extended` | PLC input · BOOL | TRUE when the plate is fully out. |
-| `Retracted` | `Pusher1.retracted` | PLC input · BOOL | TRUE when the plate is fully back. |
-| `Push` | `Pusher1.extend` | PLC output · BOOL | TRUE drives the plate out across the belt; FALSE pulls it back. |
-| — | `HeavyBin` | — | Not wired to the PLC. |
-| — | `LightBin` | — | Not wired to the PLC. |
-| `Start` | `StartButton.pressed` | PLC input · BOOL | TRUE while the button is held down. |
-| `Green` | `StackLight1.green` | PLC output · BOOL | TRUE lights the green lamp. |
+| Variable     | Signal                | Direction & type             | Meaning                                                         |
+| ------------ | --------------------- | ---------------------------- | --------------------------------------------------------------- |
+| `RunInfeed`  | `Infeed.run`          | PLC output · BOOL            | TRUE runs the belt forward.                                     |
+| `RunOutfeed` | `Outfeed.run`         | PLC output · BOOL            | TRUE runs the belt forward.                                     |
+| `RunSide`    | `SideBelt.run`        | PLC output · BOOL            | TRUE runs the belt forward.                                     |
+| —            | `Source1`             | —                            | Not wired to the PLC.                                           |
+| `Hold`       | `Blade1.extend`       | PLC output · BOOL            | TRUE raises the blade across the belt; FALSE lowers it.         |
+| `Stable`     | `Scale1.stable`       | PLC input · BOOL             | TRUE once the load has been at rest long enough to be weighed.  |
+| `Weight`     | `Scale1.weight`       | PLC input · REAL, 0 to 20 kg | The weight on the platform; 0 until it is stable.               |
+| `Extended`   | `Pusher1.extended`    | PLC input · BOOL             | TRUE when the plate is fully out.                               |
+| `Retracted`  | `Pusher1.retracted`   | PLC input · BOOL             | TRUE when the plate is fully back.                              |
+| `Push`       | `Pusher1.extend`      | PLC output · BOOL            | TRUE drives the plate out across the belt; FALSE pulls it back. |
+| —            | `HeavyBin`            | —                            | Not wired to the PLC.                                           |
+| —            | `LightBin`            | —                            | Not wired to the PLC.                                           |
+| `Start`      | `StartButton.pressed` | PLC input · BOOL             | TRUE while the button is held down.                             |
+| `Green`      | `StackLight1.green`   | PLC output · BOOL            | TRUE lights the green lamp.                                     |
 
 Three measures from a run of the lesson solution on this scene help to picture it, each within one scan. The blade needs about 0.4 s to go up or down. The pusher needs about 1.2 s to reach the end of its stroke and about 1.2 s to come back. The source releases twelve boxes, one about every 6 s, and in that run the first box was at rest on the scale 9.5 s after the press of the start button.
 

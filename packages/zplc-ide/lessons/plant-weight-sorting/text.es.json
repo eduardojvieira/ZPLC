@@ -11,14 +11,14 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/WeightSorter.st, ponga en marcha las cintas tras Start y retenga cada caja sobre la báscula con la cuchilla. Cuando Stable sea TRUE, compare Weight con 3.5 kg: empuje la caja más pesada a la cinta lateral y suelte la más ligera bajando la cuchilla 2.5 s.",
+      "body": "En src/WeightSorter.st, haga que la línea clasifique lo que pesa la báscula: tras Start, las doce cajas deben terminar en el contenedor de su peso, las pesadas en HeavyBin y las livianas en LightBin, y ninguna debe caerse ni terminar en el contenedor equivocado. Green se enciende cuando las doce están clasificadas.",
       "checkpoint": "Las cajas pesadas terminan en HeavyBin, las ligeras en LightBin, y Green se enciende tras doce cajas."
     },
     {
       "key": "predict",
       "title": "Predecir",
-      "body": "Antes de ejecutar, piense qué lee Weight mientras la caja aún se mueve y por qué el programa espera a Stable. ¿Cuál de las dos masas, 2 kg y 5 kg, queda a cada lado de 3.5 kg?",
-      "checkpoint": "Weight es 0 hasta que la caja reposa; la decisión se toma una vez, en el primer ciclo con Stable en TRUE, y la cinta de entrada se detiene mientras trabaja el empujador."
+      "body": "Antes de ejecutar, piense qué lee Weight mientras la caja aún se mueve y por qué el programa espera a Stable. Las cajas pesan 2 kg o 5 kg: ¿dónde pondría un límite entre ellas y por qué ahí?",
+      "checkpoint": "Weight es 0 hasta que la caja reposa, y entonces muestra 2 o 5 kg."
     },
     {
       "key": "edit",
@@ -35,20 +35,20 @@
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe la vista 3D y la lectura de Weight: pasa de 0 a 2 o 5 kg cuando la caja se asienta. Una caja de 5 kg se empuja; una de 2 kg sigue su camino cuando baja la cuchilla.",
-      "checkpoint": "El empujador sale y vuelve una vez por caja pesada, y la cinta de entrada permanece quieta durante la carrera."
+      "body": "Observe la vista 3D y la lectura de Weight: pasa de 0 a 2 o 5 kg cuando la caja se asienta. Siga hacia dónde va cada caja a continuación.",
+      "checkpoint": "Cada caja termina en un contenedor y ninguna cae fuera de la línea."
     },
     {
       "key": "reflect",
       "title": "Reflexionar",
-      "body": "La calificación no puede comparar números: ve en qué contenedor terminó cada caja. Cualquier límite entre 2 kg y 5 kg pasa, así que los 3.5 kg del enunciado los justifica usted, no la calificación.",
+      "body": "La calificación no puede comparar números: ve en qué contenedor terminó cada caja. Cualquier límite entre 2 kg y 5 kg pasa, así que el límite que eligió lo justifica usted, no la calificación.",
       "checkpoint": "Una caja que llega al contenedor equivocado incumple la aserción ALWAYS."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Use un número de paso: 0 esperar una caja estable, 1 empujar, 2 retraer, 3 soltar. Tome Heavy := Weight > 3.5 solo al salir del paso 0."
+      "text": "Observe Weight y Stable en las señales mientras una caja llega, reposa y se va, y anote en papel qué debe pasarle a esa caja, en orden, antes de escribir ningún programa."
     },
     {
       "level": 2,

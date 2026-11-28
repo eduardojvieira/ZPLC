@@ -6,36 +6,36 @@ Esta es una controladora de peso, una estación que pesa cada pieza de una líne
 
 La estación tiene once elementos. Las tablas dicen qué es cada uno en una planta real y qué significa su señal para su programa. La variable del PLC es el nombre que usa el programa: el mapa de planta de la lección une cada señal de la escena con ella. Un guion indica que el elemento no está conectado al programa.
 
-| Elemento | Tipo | Qué es en una planta real |
-| --- | --- | --- |
-| `Infeed` | Cinta transportadora | Una cinta movida por un motor que lleva la mercancía a lo largo de una línea, la base de casi toda línea de embalaje o clasificación. |
-| `Outfeed` | Cinta transportadora | Una cinta movida por un motor que lleva la mercancía a lo largo de una línea, la base de casi toda línea de embalaje o clasificación. |
-| `SideBelt` | Cinta transportadora | Una cinta movida por un motor que lleva la mercancía a lo largo de una línea, la base de casi toda línea de embalaje o clasificación. |
-| `Source1` | Emisor de piezas | Representa lo que alimenta la línea: la máquina anterior, un operario o un cargador que suelta una pieza. |
-| `Blade1` | Tope retráctil | Una placa que se eleva sobre la cinta para retener las piezas hasta dejarlas pasar. |
-| `Scale1` | Báscula | Una plataforma de pesaje en la línea, como una controladora de peso, que informa el peso de lo que tiene encima. |
-| `Pusher1` | Empujador | Un cilindro neumático con una placa que empuja una pieza hacia un lado de la cinta. |
-| `HeavyBin` | Retirador de piezas | Representa lo que retira las piezas al final de la línea: la máquina siguiente, un contenedor o un operario. |
-| `LightBin` | Retirador de piezas | Representa lo que retira las piezas al final de la línea: la máquina siguiente, un contenedor o un operario. |
-| `StartButton` | Pulsador | Un pulsador del panel del operador, presionado solo mientras un dedo lo mantiene. |
-| `StackLight1` | Torre de luces | Una torre de lámparas de colores que muestra a distancia qué hace la máquina. |
+| Elemento      | Tipo                 | Qué es en una planta real                                                                                                             |
+| ------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `Infeed`      | Cinta transportadora | Una cinta movida por un motor que lleva la mercancía a lo largo de una línea, la base de casi toda línea de embalaje o clasificación. |
+| `Outfeed`     | Cinta transportadora | Una cinta movida por un motor que lleva la mercancía a lo largo de una línea, la base de casi toda línea de embalaje o clasificación. |
+| `SideBelt`    | Cinta transportadora | Una cinta movida por un motor que lleva la mercancía a lo largo de una línea, la base de casi toda línea de embalaje o clasificación. |
+| `Source1`     | Emisor de piezas     | Representa lo que alimenta la línea: la máquina anterior, un operario o un cargador que suelta una pieza.                             |
+| `Blade1`      | Tope retráctil       | Una placa que se eleva sobre la cinta para retener las piezas hasta dejarlas pasar.                                                   |
+| `Scale1`      | Báscula              | Una plataforma de pesaje en la línea, como una controladora de peso, que informa el peso de lo que tiene encima.                      |
+| `Pusher1`     | Empujador            | Un cilindro neumático con una placa que empuja una pieza hacia un lado de la cinta.                                                   |
+| `HeavyBin`    | Retirador de piezas  | Representa lo que retira las piezas al final de la línea: la máquina siguiente, un contenedor o un operario.                          |
+| `LightBin`    | Retirador de piezas  | Representa lo que retira las piezas al final de la línea: la máquina siguiente, un contenedor o un operario.                          |
+| `StartButton` | Pulsador             | Un pulsador del panel del operador, presionado solo mientras un dedo lo mantiene.                                                     |
+| `StackLight1` | Torre de luces       | Una torre de lámparas de colores que muestra a distancia qué hace la máquina.                                                         |
 
-| Variable del PLC | Señal | Dirección y tipo | Significado |
-| --- | --- | --- | --- |
-| `RunInfeed` | `Infeed.run` | Salida del PLC · BOOL | TRUE hace avanzar la cinta. |
-| `RunOutfeed` | `Outfeed.run` | Salida del PLC · BOOL | TRUE hace avanzar la cinta. |
-| `RunSide` | `SideBelt.run` | Salida del PLC · BOOL | TRUE hace avanzar la cinta. |
-| — | `Source1` | — | No está cableado al PLC. |
-| `Hold` | `Blade1.extend` | Salida del PLC · BOOL | TRUE eleva el tope sobre la cinta; FALSE lo baja. |
-| `Stable` | `Scale1.stable` | Entrada del PLC · BOOL | TRUE cuando la carga estuvo en reposo el tiempo suficiente para pesarla. |
-| `Weight` | `Scale1.weight` | Entrada del PLC · REAL, 0 a 20 kg | El peso sobre la plataforma; 0 hasta que es estable. |
-| `Extended` | `Pusher1.extended` | Entrada del PLC · BOOL | TRUE cuando la placa está totalmente afuera. |
-| `Retracted` | `Pusher1.retracted` | Entrada del PLC · BOOL | TRUE cuando la placa está totalmente retraída. |
-| `Push` | `Pusher1.extend` | Salida del PLC · BOOL | TRUE saca la placa sobre la cinta; FALSE la retrae. |
-| — | `HeavyBin` | — | No está cableado al PLC. |
-| — | `LightBin` | — | No está cableado al PLC. |
-| `Start` | `StartButton.pressed` | Entrada del PLC · BOOL | TRUE mientras el pulsador se mantiene presionado. |
-| `Green` | `StackLight1.green` | Salida del PLC · BOOL | TRUE enciende la lámpara verde. |
+| Variable del PLC | Señal                 | Dirección y tipo                  | Significado                                                              |
+| ---------------- | --------------------- | --------------------------------- | ------------------------------------------------------------------------ |
+| `RunInfeed`      | `Infeed.run`          | Salida del PLC · BOOL             | TRUE hace avanzar la cinta.                                              |
+| `RunOutfeed`     | `Outfeed.run`         | Salida del PLC · BOOL             | TRUE hace avanzar la cinta.                                              |
+| `RunSide`        | `SideBelt.run`        | Salida del PLC · BOOL             | TRUE hace avanzar la cinta.                                              |
+| —                | `Source1`             | —                                 | No está cableado al PLC.                                                 |
+| `Hold`           | `Blade1.extend`       | Salida del PLC · BOOL             | TRUE eleva el tope sobre la cinta; FALSE lo baja.                        |
+| `Stable`         | `Scale1.stable`       | Entrada del PLC · BOOL            | TRUE cuando la carga estuvo en reposo el tiempo suficiente para pesarla. |
+| `Weight`         | `Scale1.weight`       | Entrada del PLC · REAL, 0 a 20 kg | El peso sobre la plataforma; 0 hasta que es estable.                     |
+| `Extended`       | `Pusher1.extended`    | Entrada del PLC · BOOL            | TRUE cuando la placa está totalmente afuera.                             |
+| `Retracted`      | `Pusher1.retracted`   | Entrada del PLC · BOOL            | TRUE cuando la placa está totalmente retraída.                           |
+| `Push`           | `Pusher1.extend`      | Salida del PLC · BOOL             | TRUE saca la placa sobre la cinta; FALSE la retrae.                      |
+| —                | `HeavyBin`            | —                                 | No está cableado al PLC.                                                 |
+| —                | `LightBin`            | —                                 | No está cableado al PLC.                                                 |
+| `Start`          | `StartButton.pressed` | Entrada del PLC · BOOL            | TRUE mientras el pulsador se mantiene presionado.                        |
+| `Green`          | `StackLight1.green`   | Salida del PLC · BOOL             | TRUE enciende la lámpara verde.                                          |
 
 Tres medidas de una ejecución de la solución de la lección en esta escena ayudan a imaginarla, cada una con un margen de un ciclo de escaneo. El tope necesita unos 0,4 s para subir o bajar. El empujador necesita unos 1,2 s para llegar al final de su carrera y unos 1,2 s para volver. La fuente suelta doce cajas, una cada 6 s aproximadamente, y en esa ejecución la primera caja quedó en reposo sobre la báscula 9,5 s después de la pulsación del pulsador de inicio.
 
