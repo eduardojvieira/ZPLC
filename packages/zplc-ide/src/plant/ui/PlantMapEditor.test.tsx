@@ -44,7 +44,25 @@ const file = (id: string, language: ProjectFileWithHandle['language'], content: 
 const open = (f: ProjectFileWithHandle) => useIDEStore.setState({ loadedFiles: new Map([[f.id, f]]), activeFileId: f.id });
 const content = (id: string) => useIDEStore.getState().loadedFiles.get(id)!.content;
 
+const sceneText = readFileSync(join(SCENES, 'belt-to-sensor', 'scene.json'), 'utf8');
+const mapText = JSON.stringify({ schemaVersion: 2, target: { scene: scene.name }, signals: {} });
+
+/** A directory handle that records the files written to it. */
+const fakeRoot = () => {
+  const written: Record<string, string> = {};
+  const root = {
+    getFileHandle: async (name: string) => ({
+      createWritable: async () => ({
+        write: async (text: string) => void (written[name] = text),
+        close: async () => undefined,
+      }),
+    }),
+  };
+  return { root: root as unknown as FileSystemDirectoryHandle, written };
+};
+
 afterEach(() => {
+  useIDEStore.setState({ directoryHandle: null } as never);
   usePlantMapProblems.getState().publish([]);
   useIDEStore.setState({ loadedFiles: new Map(), activeFileId: null });
 });
@@ -119,5 +137,38 @@ describe('the plant map editor (PLS-006, SCN-012, SCN-013, LNK-002)', () => {
     const again = dom.render(<PlantMapEditor scene={scene} ioMap={EMPTY} />);
     await again.user.click(dom.screen.getByRole('button', { name: dom.t('plantEditor.declCreate') }));
     expect(content('Main.fbd.json')).not.toContain('address');
+  });
+
+  it('a binding made with the project plant-map.json open stays bound', async () => {
+    useIDEStore.setState({
+      loadedFiles: new Map([
+        ['scene.json', file('scene.json', 'SCENARIO', sceneText)],
+        ['plant-map.json', file('plant-map.json', 'SCENARIO', mapText)],
+      ]),
+      activeFileId: 'scene.json',
+    });
+    const view = dom.render(<PlantMapEditor ioMap={EMPTY} />);
+    const row = () => view.container.querySelector(`tr[data-signal="${first.name}"]`)!;
+    await view.user.type(dom.screen.getByRole('textbox', { name: dom.t('plantEditor.point', { signal: first.name }) }), 'Main.X');
+    await view.user.click(dom.screen.getByRole('button', { name: dom.t('plantEditor.bind', { signal: first.name }) }));
+    expect(row().textContent).toContain(dom.t('plantEditor.bound', { point: 'Main.X' }));
+  });
+
+  it('saving the map writes the map file and leaves scene.json as it is', async () => {
+    const { root, written } = fakeRoot();
+    useIDEStore.setState({
+      directoryHandle: root,
+      loadedFiles: new Map([
+        ['scene.json', file('scene.json', 'SCENARIO', sceneText)],
+        ['plant-map.json', file('plant-map.json', 'SCENARIO', mapText)],
+      ]),
+      activeFileId: 'scene.json',
+    } as never);
+    const view = dom.render(<PlantMapEditor ioMap={EMPTY} />);
+    await view.user.type(dom.screen.getByRole('textbox', { name: dom.t('plantEditor.point', { signal: first.name }) }), 'Main.X');
+    await view.user.click(dom.screen.getByRole('button', { name: dom.t('plantEditor.bind', { signal: first.name }) }));
+    await view.user.click(dom.screen.getByRole('button', { name: dom.t('plantMap.save') }));
+    await dom.waitFor(() => expect(written['plant-map.json']).toContain('Main.X'));
+    expect(Object.keys(written)).toEqual(['plant-map.json']);
   });
 });
