@@ -90,11 +90,11 @@ options:
 ```
 
 ```quiz
-question: 'You build the scene with {{ui:plant.panel.emptyFloor}} chosen in the list of scenes and press {{ui:plant.panel.saveToProject}}. Why does {{ui:learn.check}} still say that the scenario names a part the scene does not have?'
+question: 'You build the scene with Empty floor chosen in the list of scenes and press Save to project. Why does Check still say that the scenario names a part the scene does not have?'
 options:
   - { text: 'Because the editor saves only parts that are already bound', feedback: 'The editor saves every part you placed. The problem is where the file went.' }
-  - { text: 'Because the plant has to run once before {{ui:learn.check}} can read the scene', feedback: '{{ui:learn.check}} reads the saved files; the plant does not have to run.' }
-  - { text: 'Because the save went to scenes/<name>.scene.json, and {{ui:learn.check}} reads scene.json at the root', correct: true, feedback: 'Right. Only the scene of the lesson is saved in place at the root.' }
+  - { text: 'Because the plant has to run once before Check can read the scene', feedback: 'Check reads the saved files; the plant does not have to run.' }
+  - { text: 'Because the save went to scenes/<name>.scene.json, and Check reads scene.json at the root', correct: true, feedback: 'Right. Only the scene of the lesson is saved in place at the root.' }
 ```
 
 ```quiz

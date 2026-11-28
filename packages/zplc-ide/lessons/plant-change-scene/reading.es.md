@@ -95,15 +95,15 @@ Esta máquina solo cambia un ajuste y un nombre de elementos que ya existen. La 
 ## Compruébelo usted
 
 ```quiz
-question: En el ejemplo resuelto la cinta se frena a 0,125 m/s y el programa no se cambia. ¿Qué informa {{ui:learn.check}}?
+question: En el ejemplo resuelto la cinta se frena a 0,125 m/s y el programa no se cambia. ¿Qué informa Comprobar?
 options:
   - { text: 'El escenario falla, porque la caja no ha llegado al sensor cuando terminan los 8 segundos', correct: true, feedback: 'Sí. Nada cambió en el programa: solo la escena cambió lo que ve el sensor y cuándo lo ve.' }
-  - { text: 'El escenario aprueba, porque el programa es el mismo', feedback: 'El programa es el mismo, pero {{ui:learn.check}} evalúa el programa sobre la escena, y en esta escena la caja llega demasiado tarde.' }
-  - { text: '{{ui:learn.check}} informa de un error en el mapa de planta', feedback: 'El mapa sigue nombrando señales que existen: solo cambió un ajuste de Belt1, no un nombre.' }
+  - { text: 'El escenario aprueba, porque el programa es el mismo', feedback: 'El programa es el mismo, pero Comprobar evalúa el programa sobre la escena, y en esta escena la caja llega demasiado tarde.' }
+  - { text: 'Comprobar informa de un error en el mapa de planta', feedback: 'El mapa sigue nombrando señales que existen: solo cambió un ajuste de Belt1, no un nombre.' }
 ```
 
 ```quiz
-question: Después de cambiar el nombre de la cinta a `Conv1` y guardar la escena, ¿por qué informa {{ui:learn.check}} de un problema en `plant-map.json`?
+question: Después de cambiar el nombre de la cinta a `Conv1` y guardar la escena, ¿por qué informa Comprobar de un problema en `plant-map.json`?
 options:
   - { text: 'Porque el mapa sigue enlazando `Belt1.run`, una señal que la escena ya no tiene', correct: true, feedback: 'Correcto. Las señales de un elemento empiezan por su nombre, así que un elemento renombrado tiene señales nuevas que hay que enlazar.' }
   - { text: 'Porque el programa ya no compila', feedback: 'El programa no cambió y sigue compilando. El problema está en el mapa.' }

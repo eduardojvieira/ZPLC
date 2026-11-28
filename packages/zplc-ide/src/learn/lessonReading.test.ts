@@ -282,3 +282,19 @@ describe('a lesson package with a reading page (LRN-042)', () => {
 function scenarioId(): string {
   return (JSON.parse(readFileSync(join(LESSONS_DIRECTORY, LESSON, 'scenario.json'), 'utf8')) as { id: string }).id;
 }
+
+describe('a placeholder of a reading is expanded (LRN-042)', () => {
+  it('no text of a shipped lesson, a quiz of a reading included, still holds a {{…}} placeholder after the index expands it', () => {
+    const { packages, problems } = loadLessonPackages(LESSONS_DIRECTORY);
+    expect(problems).toEqual([]);
+    const { index } = buildIndex(packages, course);
+    const raw: string[] = [];
+    const visit = (value: unknown, where: string): void => {
+      if (typeof value === 'string') {
+        if (value.includes('{{')) raw.push(`${where}: ${value.slice(0, 120)}`);
+      } else if (value && typeof value === 'object') for (const [key, child] of Object.entries(value)) visit(child, `${where}.${key}`);
+    };
+    for (const lesson of index.lessons) visit([lesson.text, lesson.reading], lesson.id);
+    expect(raw).toEqual([]);
+  });
+});

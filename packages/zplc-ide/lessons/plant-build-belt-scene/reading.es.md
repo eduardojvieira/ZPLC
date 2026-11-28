@@ -90,11 +90,11 @@ options:
 ```
 
 ```quiz
-question: 'Usted construye la escena con {{ui:plant.panel.emptyFloor}} elegido en la lista de escenas y pulsa {{ui:plant.panel.saveToProject}}. ¿Por qué {{ui:learn.check}} sigue diciendo que el escenario nombra un elemento que la escena no tiene?'
+question: 'Usted construye la escena con Suelo vacío elegido en la lista de escenas y pulsa Guardar en el proyecto. ¿Por qué Comprobar sigue diciendo que el escenario nombra un elemento que la escena no tiene?'
 options:
   - { text: 'Porque el editor guarda solo los elementos que ya están enlazados', feedback: 'El editor guarda todos los elementos que usted colocó. El problema es adónde fue el archivo.' }
-  - { text: 'Porque la planta tiene que ejecutarse una vez antes de que {{ui:learn.check}} pueda leer la escena', feedback: '{{ui:learn.check}} lee los archivos guardados; la planta no tiene que ejecutarse.' }
-  - { text: 'Porque se guardó en scenes/<nombre>.scene.json, y {{ui:learn.check}} lee scene.json en la raíz', correct: true, feedback: 'Correcto. Solo la escena de la lección se guarda en su lugar, en la raíz.' }
+  - { text: 'Porque la planta tiene que ejecutarse una vez antes de que Comprobar pueda leer la escena', feedback: 'Comprobar lee los archivos guardados; la planta no tiene que ejecutarse.' }
+  - { text: 'Porque se guardó en scenes/<nombre>.scene.json, y Comprobar lee scene.json en la raíz', correct: true, feedback: 'Correcto. Solo la escena de la lección se guarda en su lugar, en la raíz.' }
 ```
 
 ```quiz

@@ -95,15 +95,15 @@ This machine only changes a setting and a name of parts that already exist. The 
 ## Check yourself
 
 ```quiz
-question: In the worked example the belt is slowed to 0.125 m/s and the program is not changed. What does the {{ui:learn.check}} report?
+question: In the worked example the belt is slowed to 0.125 m/s and the program is not changed. What does the Check report?
 options:
   - { text: 'The scenario fails, because the box has not reached the sensor when the 8 seconds end', correct: true, feedback: 'Yes. Nothing in the program changed: the scene alone changed what the sensor sees and when.' }
-  - { text: 'The scenario passes, because the program is the same', feedback: 'The program is the same, but the {{ui:learn.check}} grades the program on the scene, and on this scene the box arrives too late.' }
-  - { text: 'The {{ui:learn.check}} reports an error in the plant map', feedback: 'The map still names signals that exist: only a setting of Belt1 changed, not a name.' }
+  - { text: 'The scenario passes, because the program is the same', feedback: 'The program is the same, but the Check grades the program on the scene, and on this scene the box arrives too late.' }
+  - { text: 'The Check reports an error in the plant map', feedback: 'The map still names signals that exist: only a setting of Belt1 changed, not a name.' }
 ```
 
 ```quiz
-question: After the belt is renamed `Conv1` and the scene is saved, why does the {{ui:learn.check}} report a problem in `plant-map.json`?
+question: After the belt is renamed `Conv1` and the scene is saved, why does the Check report a problem in `plant-map.json`?
 options:
   - { text: 'Because the map still binds `Belt1.run`, a signal that the scene no longer has', correct: true, feedback: 'Right. The signals of a part start with its name, so a renamed part has new signals that must be bound.' }
   - { text: 'Because the program no longer compiles', feedback: 'The program did not change and still compiles. The problem is in the map.' }
