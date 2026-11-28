@@ -1139,7 +1139,8 @@ async function languageChain(app: App, { root, project, runtime }: JourneyContex
     },
     60_000,
   );
-  await app.click(button(shortcutName('Stop', 'Shift+F5'), 'prefix'), 'Stop'); // the simulator session is implicit: there is no Disconnect to press
+  // the simulator session is implicit: there is no Disconnect to press
+  await app.click(button(shortcutName('Stop', 'Shift+F5'), 'prefix'), 'Stop');
   // a target chosen while the stop is still under way asks "Change the target?" (a program is running), which nobody answers here
   await app.until('the program to stop', async () => (await app.visible(button('Run (F5)', 'prefix'))) || undefined);
 
