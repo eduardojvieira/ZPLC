@@ -48,7 +48,7 @@ const handle = (label: string) =>
   }) as unknown as FileSystemDirectoryHandle;
 const modified = { id: 'f1', path: 'src/main.st', name: 'main.st', language: 'ST', content: 'x', isModified: true, diskContent: 'y' };
 const scene = { schemaVersion: 1 as const, name: 'Probe floor', parts: [], cameras: [] };
-const openProject = (files: Map<string, never> = new Map()) =>
+const openProject = (files = new Map<string, never>()) =>
   useIDEStore.setState({
     isProjectOpen: true,
     directoryHandle: handle('A'),
@@ -81,7 +81,7 @@ describe('an unsaved scene and the project close (FLW-005)', () => {
     await dom.settle();
     await view.user.click(button(dom.t('closeProject.saveAll')));
     await dom.settle();
-    expect(written).toEqual(['A:scene.json']);
+    expect(written).toEqual(['A:Probe floor.scene.json']);
     expect(useIDEStore.getState().isProjectOpen).toBe(false);
   });
 
@@ -111,7 +111,7 @@ describe('an unsaved scene and the project close (FLW-005)', () => {
 
   it('FLW-005 closing a project with only modified files still prompts and saves as before', async () => {
     openProject(new Map([['f1', { ...modified } as never]]));
-    useIDEStore.setState({
+    dom.patchStore(useIDEStore, {
       saveAllFiles: async () => void useIDEStore.setState({ loadedFiles: new Map([['f1', { ...modified, isModified: false } as never]]) }),
     });
     const view = dom.render(createElement(NavigatorDialogs));
@@ -139,14 +139,14 @@ describe('an unsaved scene and the window close (FLW-005)', () => {
     expect(document.querySelector('[data-unsaved-changes-dialog]')?.textContent).toContain('Probe floor');
     await view.user.click(button(dom.t('closeGuard.save.close')));
     await dom.settle();
-    expect(written).toEqual(['A:scene.json']);
+    expect(written).toEqual(['A:Probe floor.scene.json']);
     expect(closedNow).toBe(1);
   });
 
   it('FLW-005 the window close with only modified files is told dirty and saves them as before', async () => {
     const saved: string[] = [];
     openProject(new Map([['f1', { ...modified } as never]]));
-    useIDEStore.setState({
+    dom.patchStore(useIDEStore, {
       saveAllFiles: async () => {
         saved.push('files');
         useIDEStore.setState({ loadedFiles: new Map() });
@@ -185,7 +185,7 @@ describe('an unsaved scene and the lesson Check (FLW-005)', () => {
     dom.act(() => editScene());
     await dom.settle();
     expect([unsaved, canRun]).toEqual([true, false]);
-    dom.act(() => usePlantEdit.getState().end());
+    dom.act(() => void usePlantEdit.getState().end());
     usePlantEdit.setState({ unsaved: {} });
     useIDEStore.setState({ loadedFiles: new Map([['f1', { ...modified } as never]]) });
     await dom.settle();

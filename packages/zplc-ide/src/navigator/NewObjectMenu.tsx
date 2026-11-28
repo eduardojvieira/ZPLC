@@ -11,6 +11,7 @@ import { ICON_SIZES } from '../theme/tokens';
 import { AlertDialog, Button, IconButton, MenuButton, Select, TextField } from '../ui';
 import { Modal } from '../components/Modal';
 import { DeleteFolderDialog, EntryNameDialog, MoveDialog } from '../components/ExplorerDialogs';
+import { saveAllDocuments } from '../store/saveAll';
 import { CloseProjectModal } from '../components/SidebarDialogs';
 import { useIDEStore } from '../store/useIDEStore';
 import { collectFolders, parentPath } from '../project/treeOperations';
@@ -220,8 +221,7 @@ function CloseProjectDialog({ onDone }: { onDone: () => void }) {
   const saveAndClose = async (): Promise<void> => {
     setSaving(true);
     try {
-      await useIDEStore.getState().saveAllFiles();
-      if (useIDEStore.getState().projectConfigDirty) await useIDEStore.getState().saveProjectConfig();
+      await saveAllDocuments();
     } catch {
       // The project stays open with what could not be written still modified.
     } finally {

@@ -25,7 +25,7 @@ export async function exportOpenProjectArchive(): Promise<void> {
   }
   // An archive holds the files as they are on disk; an export that left the typed text out would be a surprise.
   if (state.hasUnsavedChanges()) {
-    report('warning', 'Save the modified files before exporting: an archive holds the project as it is on disk.');
+    report('warning', 'Save your changes before exporting: an archive holds the project as it is on disk.');
     return;
   }
   const outcome = await exportArchive(window.electronAPI?.projectFiles, rootId);

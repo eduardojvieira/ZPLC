@@ -13,6 +13,7 @@ import type { GradeRecord } from '../../shared/learnProgressModel';
 import type { LearnLessonGrade } from '../components/learnLesson';
 import { shownProjectBridge } from '../ipc/shownProjectBridge';
 import { prepareProjectTestRun, type RunRefusal } from '../projectTests/runProjectTests';
+import { useSceneUnsaved } from '../plant/editSession';
 import { useIDEStore } from '../store/useIDEStore';
 import { linkProjectWorkspace } from '../utils/workspaceTestLink';
 
@@ -43,7 +44,8 @@ export function useLessonCheck(onRecord: (record: GradeRecord) => void, options:
   const available = typeof window.electronAPI?.workspaceTests?.lessonCheck === 'function';
   const projectSession = useIDEStore((state) => state.projectSession);
   const isProjectOpen = useIDEStore((state) => state.isProjectOpen);
-  const unsaved = useIDEStore((state) => state.hasUnsavedChanges());
+  const sceneUnsaved = useSceneUnsaved();
+  const unsaved = useIDEStore((state) => state.hasUnsavedChanges()) || sceneUnsaved;
   const [check, setCheck] = useState<Check | null>(null);
   const busy = useRef(false);
 

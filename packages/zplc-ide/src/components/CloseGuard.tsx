@@ -5,7 +5,9 @@
 
 import { useT } from '../i18n';
 import { useCallback, useEffect, useState } from 'react';
-import { useIDEStore } from '../store/useIDEStore';
+import { useIDEStore, unsavedSourceNames } from '../store/useIDEStore';
+import { saveAllDocuments } from '../store/saveAll';
+import { useSceneUnsaved } from '../plant/editSession';
 import { flushSession } from '../store/sessionPersistence';
 import { unsavedItems, unsavedOutcome, type UnsavedChoice } from '../utils/unsavedChanges';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
@@ -18,7 +20,8 @@ export function CloseGuard() {
   const [guard] = useState(() => window.electronAPI?.closeGuard);
   const [action, setAction] = useState<'close' | 'reload' | null>(null);
   const [saving, setSaving] = useState(false);
-  const dirty = useIDEStore((state) => state.hasUnsavedChanges());
+  const sceneUnsaved = useSceneUnsaved(); // the scene store is not the IDE store: its changes re-run this on their own
+  const dirty = useIDEStore((state) => state.hasUnsavedChanges()) || sceneUnsaved;
   const loadedFiles = useIDEStore((state) => state.loadedFiles);
   const projectConfigDirty = useIDEStore((state) => state.projectConfigDirty);
 
@@ -32,8 +35,7 @@ export function CloseGuard() {
     async (choice: UnsavedChoice) => {
       if (choice === 'save') {
         setSaving(true);
-        await useIDEStore.getState().saveAllFiles();
-        if (useIDEStore.getState().projectConfigDirty) await useIDEStore.getState().saveProjectConfig();
+        await saveAllDocuments();
         setSaving(false);
       }
       if (unsavedOutcome(choice, useIDEStore.getState().hasUnsavedChanges()) === 'proceed') {
@@ -51,7 +53,7 @@ export function CloseGuard() {
   return (
     <UnsavedChangesDialog
       title={t(`closeGuard.title.${verb}`)}
-      items={unsavedItems(loadedFiles.values(), projectConfigDirty)}
+      items={[...unsavedItems(loadedFiles.values(), projectConfigDirty), ...unsavedSourceNames()]}
       busy={saving}
       saveLabel={t(`closeGuard.save.${verb}`)}
       discardLabel={t(`closeGuard.discard.${verb}`)}

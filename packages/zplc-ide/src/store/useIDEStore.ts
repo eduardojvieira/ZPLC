@@ -251,6 +251,22 @@ async function openExistingProject(
 // Store Implementation
 // =============================================================================
 
+export interface UnsavedSource {
+  has: () => boolean;
+  names: () => string[];
+  discard: () => void;
+}
+const unsavedSources = new Set<UnsavedSource>();
+
+/** A document that lives outside `loadedFiles` (the plant scene) is unsaved work for every guard, which can name and discard it (FLW-005). */
+export function registerUnsavedSource(source: UnsavedSource): () => void {
+  unsavedSources.add(source);
+  return () => void unsavedSources.delete(source);
+}
+
+/** The names the unsaved-work sources list, for the prompts of the close guards. */
+export const unsavedSourceNames = (): string[] => [...unsavedSources].flatMap((source) => source.names());
+
 export const useIDEStore = create<IDEState>((set, get, api) => ({
   // Initial State - No project open
   theme: getStoredTheme(),
@@ -543,6 +559,7 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
     }
 
     if (get().hasUnsavedChanges() && !options.discardUnsaved) return false;
+    for (const source of unsavedSources) source.discard();
 
     // The session of the project goes out before its state is cleared.
     void flushSession();
@@ -850,7 +867,7 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
 
   hasUnsavedChanges: () => {
     const { loadedFiles, projectConfigDirty } = get();
-    if (projectConfigDirty) return true;
+    if (projectConfigDirty || [...unsavedSources].some((source) => source.has())) return true;
     for (const file of loadedFiles.values()) {
       if (file.isModified) return true;
     }

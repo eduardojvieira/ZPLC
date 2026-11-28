@@ -15,7 +15,7 @@ import { createMapEditor, type MapEditor } from './editor/mapEditor';
 import { createSceneEditor, type SceneEditor } from './editor/model';
 import { saveProjectScene, saveScene } from './persistence/sceneFiles';
 import { registerSaveAllParticipant, type SaveAllResult } from '../store/saveAll';
-import { useIDEStore } from '../store/useIDEStore';
+import { registerUnsavedSource, useIDEStore } from '../store/useIDEStore';
 import { usePlantDocument } from '../store/usePlantDocument';
 
 export interface PlantEditSession {
@@ -256,3 +256,6 @@ export const useSceneUnsaved = (): boolean => usePlantEdit((state) => unsavedNam
 export function discardEditedScenes(): void {
   usePlantEdit.setState({ ...CLOSED, unsaved: {}, version: usePlantEdit.getState().version + 1 });
 }
+
+// The window close, the project close, the lesson Check and the other guards ask the store: a scene is unsaved work like a modified file.
+registerUnsavedSource({ has: () => unsavedSceneNames().length > 0, names: unsavedSceneNames, discard: discardEditedScenes });
