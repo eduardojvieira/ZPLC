@@ -27,10 +27,10 @@ From a fresh clone, `bun run setup` installs the locked dependencies, builds the
 bun run setup
 bun run build:runtime      # native runtime (CMake + C99 compiler)
 bun run build:compiler     # compiler package
-bun run build:ide          # typecheck and bundle Studio
+bun run build:ide          # typecheck and bundle the application
 ```
 
-Studio finds the simulator at `firmware/lib/zplc_core/build/zplc_runtime`, or at the path in `ZPLC_NATIVE_SIM_BIN`. Formatting checks (`bun run format:check`) require `clang-format` 23.1.3 (set `CLANG_FORMAT` if the binary is not on `PATH`).
+The application finds the simulator at `firmware/lib/zplc_core/build/zplc_runtime`, or at the path in `ZPLC_NATIVE_SIM_BIN`. Formatting checks (`bun run format:check`) require `clang-format` 23.1.3 (set `CLANG_FORMAT` if the binary is not on `PATH`).
 
 ## Checks by layer
 

@@ -119,7 +119,7 @@ test:compiler:ci` and `bun run test:ide:ci` compare the JUnit output against
 run docs:screenshots`) or call a live AI model (`tools/ai-eval/` outside dry
   mode) require a bench, a display or model credentials respectively, and are not
   run during a headless clean-clone check. A person always starts physical board
-  operations (`AGENTS.md` rule 8).
+  operations.
 - **One file or one case.** `bun test <path>` inside `packages/zplc-ide` or
   `packages/zplc-compiler` runs one file. `ZPLC_JOURNEY_ONLY=<text> bun run
 test:journeys` runs the journeys whose name contains the text.
@@ -278,9 +278,8 @@ and a human review against the [engineering principles](docs/docs/contributing/p
   without explicit authorization.
 - The renderer is unprivileged and every IPC request is validated.
 - AI and MCP never flash, deploy, force I/O, change RUN or STOP, open raw serial
-  or run a shell on hardware or on a session a person is running (`AGENTS.md`
-  rule 8). Over MCP, an agent may set inputs and step a simulator that is private
-  to it.
+  or run a shell on hardware or on a session a person is running. Over MCP, an
+  agent may set inputs and step a simulator that is private to it.
 
 ## Reporting a problem
 
@@ -307,12 +306,13 @@ No dates: a gate closes when its checks pass. The full page is
   profiles at `cross-build` level; Linux firmware test method (`native_sim` and
   QEMU); generated binary contract with draft counter; release pipeline with
   rehearsal mode; bilingual documentation checks.
-- **Before 2.1.0 ships:** human bench records on the Raspberry Pi Pico and
+- **Next:** human bench records on the Raspberry Pi Pico and
   ESP32-S3-DevKitC-1, final visual verification, and candidate sign-off on the
-  packaged installers.
-- **Not planned for 2.1:** safety certification, production qualification of a
-  board, board timing guarantees, and Windows host simulator communication
-  blocks (Modbus, MQTT, loopback and device link).
+  packaged installers before 2.1.0 ships.
+- **Later:** Windows host simulator communication blocks (Modbus, MQTT, loopback
+  and device link), signed distribution channels, and further board bench
+  records; safety certification, board production qualification and timing
+  guarantees are not planned for 2.1.
 
 ## Where things are
 

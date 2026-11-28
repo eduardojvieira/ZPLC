@@ -27,10 +27,10 @@ Desde un clon limpio, `bun run setup` instala las dependencias bloqueadas, compi
 bun run setup
 bun run build:runtime      # runtime nativo (CMake + compilador C99)
 bun run build:compiler     # paquete del compilador
-bun run build:ide          # comprobación de tipos y empaquetado de Studio
+bun run build:ide          # comprobación de tipos y empaquetado de la aplicación
 ```
 
-Studio busca el simulador en `firmware/lib/zplc_core/build/zplc_runtime`, o en la ruta indicada en `ZPLC_NATIVE_SIM_BIN`. Las comprobaciones de formato (`bun run format:check`) requieren `clang-format` 23.1.3 (defina `CLANG_FORMAT` si el binario no está en `PATH`).
+La aplicación busca el simulador en `firmware/lib/zplc_core/build/zplc_runtime`, o en la ruta indicada en `ZPLC_NATIVE_SIM_BIN`. Las comprobaciones de formato (`bun run format:check`) requieren `clang-format` 23.1.3 (defina `CLANG_FORMAT` si el binario no está en `PATH`).
 
 ## Verificaciones por capa
 
@@ -78,7 +78,7 @@ Nunca publique, grabe hardware, cargue un programa de PLC ni accione equipos sin
 
 Cada pull request pasa por verificaciones automatizadas en CI (`.github/workflows/ci.yml`) y por una revisión humana frente a los [principios de ingeniería](./principles.md):
 
-1. **Verificaciones automatizadas.** CI ejecuta las herramientas de TypeScript, el compilador, lint, comprobación de tipos, compilación de Studio y recorridos (`typescript`), los ocho fragmentos de la suite de la aplicación y conformidad (`ide-tests`), formato y longitud de línea (`format`), el núcleo C99 de host con y sin sanitizadores (`host-core`, `host-core-sanitized`), el puerto POSIX de FreeRTOS (`freertos-port`), las pruebas Zephyr `native_sim` y las compilaciones cruzadas para las siete placas (`zephyr-twister`, `zephyr-cross-build`), y las comprobaciones de documentación, contrato binario y manifiestos (`docs-and-truth`).
+1. **Verificaciones automatizadas.** CI ejecuta las herramientas de TypeScript, el compilador, lint, comprobación de tipos, compilación de la aplicación y recorridos (`typescript`), los ocho fragmentos de la suite de la aplicación y conformidad (`ide-tests`), formato y longitud de línea (`format`), el núcleo C99 de host con y sin sanitizadores (`host-core`, `host-core-sanitized`), el puerto POSIX de FreeRTOS (`freertos-port`), las pruebas Zephyr `native_sim` y las compilaciones cruzadas para las siete placas (`zephyr-twister`, `zephyr-cross-build`), y las comprobaciones de documentación, contrato binario y manifiestos (`docs-and-truth`).
 2. **Plantilla del pull request y evidencia.** Complete `.github/PULL_REQUEST_TEMPLATE.md` con los comandos que ejecutó, lo que imprimieron y el nivel de evidencia (host, QEMU, compilación para destino, banco o manual) que respalda cada afirmación.
 3. **Revisión humana.** Quien revisa verifica que el cambio tenga un propósito claro y use Conventional Commits, agregue una prueba de comportamiento que falle sin el cambio (sin leer el texto del código fuente del producto), conserve los límites de C99/HAL, salidas seguras, IPC de Electron y operaciones físicas, actualice juntas la documentación en inglés y en español cuando cambia el comportamiento visible para el usuario, y justifique cualquier dependencia nueva, cambio al contrato binario o cambio a un valor seguro por defecto.
 

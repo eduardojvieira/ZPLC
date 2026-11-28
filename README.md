@@ -2,9 +2,21 @@
 
 # ZPLC
 
-**One free, open-source desktop application that takes you from your first rung of Ladder to a real board controlling a machine.**
+**Open-source IEC 61131-3 PLC runtime and development environment on Zephyr RTOS.**
 
-ZPLC joins four legs into one path — for learners, makers, teachers, and people working with the built-in assistant or an AI agent over MCP — and states at every step what has been verified and at what evidence level:
+ZPLC is one free desktop application that takes you from your first rung of Ladder to a real board controlling a machine — joining four legs (**Learn**, **Program**, **Simulate and check**, **Take it to hardware**) for learners, makers, teachers and AI workflows, while stating what is verified at every step.
+
+- **Install ZPLC:** [Windows](docs/docs/getting-started/install.md#windows) · [macOS](docs/docs/getting-started/install.md#macos) · [Linux](docs/docs/getting-started/install.md#linux) ([install guide](docs/docs/getting-started/install.md))
+- **First lesson:** [Your first blink in simulation](docs/docs/learn/lessons/first-blink-simulation.md) · [What a PLC is: your first rung](docs/docs/learn/lessons/ld-what-is-a-plc.md) · [Course overview](docs/docs/learn/index.md) · [Blink without hardware](docs/docs/tutorials/blink-without-hardware.md)
+
+> **Status:** ZPLC 2.1 (2.1.0 installers and `SHA256SUMS` are published when the release is cut). Limits and evidence: [Safety and limitations](docs/docs/safety-and-limitations.md) · [Hardware support](docs/docs/reference/capabilities-evidence.md).
+
+[Download ZPLC](https://github.com/eduardojvieira/ZPLC/releases) · [Documentation](https://eduardojvieira.github.io/ZPLC/) · MIT licence
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Zephyr: pinned in west.yml](https://img.shields.io/badge/Zephyr-pinned%20in%20west.yml-blue.svg)](west.yml)
+[![C99](https://img.shields.io/badge/C-C99-green.svg)](https://en.wikipedia.org/wiki/C99)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
 
 | Leg                     | What you do                                              | What ZPLC gives                                                                                                                                           |
 | ----------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -13,28 +25,14 @@ ZPLC joins four legs into one path — for learners, makers, teachers, and peopl
 | **Simulate and check**  | See the program run a plant and know whether it is right | A 3D plant with physics, scripted scenario tests and deterministic grading, with no hardware needed                                                       |
 | **Take it to hardware** | Run the same bytecode on a board                         | A small C99 runtime on low-cost Zephyr microcontrollers (seven board profiles, cross-build only) and a connected board that can drive the simulated plant |
 
-- **Install ZPLC:** [Windows](docs/docs/getting-started/install.md#windows) · [macOS](docs/docs/getting-started/install.md#macos) · [Linux](docs/docs/getting-started/install.md#linux) ([full install guide](docs/docs/getting-started/install.md) · [GitHub Releases](https://github.com/eduardojvieira/ZPLC/releases))
-- **First lesson:** [Your first blink in simulation](docs/docs/learn/lessons/first-blink-simulation.md) (module 0) · [What a PLC is: your first rung](docs/docs/learn/lessons/ld-what-is-a-plc.md) (Ladder from zero) · [Course overview](docs/docs/learn/index.md)
-- **Quick tutorial:** [Blink without hardware](docs/docs/tutorials/blink-without-hardware.md)
-
-> **Status:** ZPLC 2.1 (release files and `SHA256SUMS` for 2.1.0 are published on [GitHub Releases](https://github.com/eduardojvieira/ZPLC/releases) when the release is cut). What ZPLC does not do, and what to test before it runs a machine: [Safety and limitations](docs/docs/safety-and-limitations.md) · [Hardware support](docs/docs/reference/capabilities-evidence.md).
-
-[Download ZPLC](https://github.com/eduardojvieira/ZPLC/releases) ·
-[Documentation](https://eduardojvieira.github.io/ZPLC/) · MIT licence
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Zephyr: pinned in west.yml](https://img.shields.io/badge/Zephyr-pinned%20in%20west.yml-blue.svg)](west.yml)
-[![C99](https://img.shields.io/badge/C-C99-green.svg)](https://en.wikipedia.org/wiki/C99)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
-
 ## Download
 
 Installers are files of a [GitHub release](https://github.com/eduardojvieira/ZPLC/releases),
 the only channel that exists today. The 2.1.0 installers and their `SHA256SUMS` are published there when 2.1.0 is cut. Check the file against `SHA256SUMS`, then open it ([Install ZPLC](docs/docs/getting-started/install.md)):
 
-- **[Windows](docs/docs/getting-started/install.md#windows):** the `setup-unsigned.exe` installer or `portable-unsigned.exe`. It is unsigned: choose **More info**, then **Run anyway** when SmartScreen warns; Smart App Control blocks it outright.
-- **[macOS](docs/docs/getting-started/install.md#macos):** the `.dmg` or `.zip` for your chip (`arm64` or `x64`). The app is signed ad hoc and not notarized: choose **Done**, then **Privacy & Security**, **Open Anyway**.
-- **[Linux](docs/docs/getting-started/install.md#linux):** the `.deb` or `.rpm`; the AppImage if neither fits. They are unsigned, so the checksum is your check.
+- **Windows:** the `setup-unsigned.exe` installer or `portable-unsigned.exe` ([Windows install steps](docs/docs/getting-started/install.md#windows)). It is unsigned: choose **More info**, then **Run anyway** when SmartScreen warns; Smart App Control blocks it outright.
+- **macOS:** the `.dmg` or `.zip` for your chip (`arm64` or `x64`, [macOS install steps](docs/docs/getting-started/install.md#macos)). The app is signed ad hoc and not notarized: choose **Done**, then **Privacy & Security**, **Open Anyway**.
+- **Linux:** the `.deb` or `.rpm`; the AppImage if neither fits ([Linux install steps](docs/docs/getting-started/install.md#linux)). They are unsigned, so the checksum is your check.
 
 ## What you can do today
 
