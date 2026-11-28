@@ -35,12 +35,14 @@ import { domAuditExpression, type DomAuditResult } from './domAudit';
 import { attachEmulatedDevice } from './emulatedDevice';
 import { findTextOutOfBox } from './textFit';
 import { JOURNEYS_013 } from './journeys013';
+import { practiceFromReading } from './journeys/learnReading';
 import { JOURNEYS_014 } from './journeys014';
 import { journeysManipulator } from './journeys/plantManipulator';
 import { journeysSorting } from './journeys/plantSorting';
 import { journeysStations } from './journeys/plantStations';
 import { journeysCourse } from './journeys/plantCourse';
 import { journeysOperator } from './journeys/plantOperator';
+import { pause } from './journeyTiming';
 
 export interface JourneyContext {
   root: string;
@@ -465,16 +467,16 @@ async function pauseStepResume(app: App): Promise<void> {
   // a scan in flight when Pause was pressed may still be counted, and a loaded machine counts it late: wait for a steady counter
   let held = await cycles(app);
   for (let settled = 0; settled < 2;) {
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await pause(500);
     const now = await cycles(app);
     settled = now === held ? settled + 1 : 0;
     held = now;
   }
-  await new Promise((resolve) => setTimeout(resolve, 800));
+  await pause(800);
   assert((await cycles(app)) === held, `The cycle counter moved while the program was paused (${held} then ${await cycles(app)}).`);
   await app.click(button('Step one cycle', 'prefix'), 'the Step button');
   await app.until('one more cycle to be counted', async () => (await cycles(app)) > held || undefined, 60_000);
-  await new Promise((resolve) => setTimeout(resolve, 800));
+  await pause(800);
   assert((await cycles(app)) === held + 1, `Step one cycle should run exactly one scan (${held} before, ${await cycles(app)} after).`);
   await app.click(button('Resume', 'prefix'), 'the Resume button');
   await app.until('the program to run again', async () => (await app.visible(button('Pause (F6)', 'prefix'))) || undefined, 60_000);
@@ -728,6 +730,7 @@ export async function probeSecurity(
         `document.head.appendChild(script);
       const image = document.createElement('img'); image.setAttribute('onerror', 'window.__zplcHandler = true'); image.src = ` +
         `'zplc-probe-missing.png'; document.body.appendChild(image);
+      // journey-time: runs inside the page
       await new Promise((resolve) => setTimeout(resolve, 400));
       return { ran: window.__zplcInline === true, handlerRan: window.__zplcHandler === true, violations };`,
     );
@@ -744,6 +747,7 @@ export async function probeSecurity(
     const violated = [];
     document.addEventListener('securitypolicyviolation', (event) => violated.push(event.violatedDirective));
     const blocked = await fetch('https://example.invalid/zplc-probe').then(() => false, () => true);
+    // journey-time: runs inside the page
     await new Promise((resolve) => setTimeout(resolve, 100));
     return { blocked, violated };`);
   assert(
@@ -794,6 +798,7 @@ export async function probeSecurity(
     const link = document.createElement('a'); link.href = 'https://example.invalid/zplc-link'; link.target = '_blank'; ` +
       `document.body.appendChild(link); link.click(); link.remove();
     location.assign('https://example.invalid/zplc-navigation');
+    // journey-time: runs inside the page
     await new Promise((resolve) => setTimeout(resolve, 500));
     return { sameDocument: location.href === href, opened: opened !== null, openedSame: openedSame !== null };`,
   );
@@ -959,7 +964,7 @@ const ladderEdit: ChainSpec['edit'] = async (app, project) => {
   writeFileSync(path, JSON.stringify(document, null, 2));
   // the project is open: the window learns of this write from its watcher a moment later, and an edit made before that is offered as a
   // conflict ("Changed outside ZPLC") instead of being kept; give the watcher time to report it
-  await new Promise((resolve) => setTimeout(resolve, 4000));
+  await pause(4000);
   await openDiagram(app, 'src/main.ld.json', '[data-ld-rung-id]');
   const rungs = () => app.eval<number>(`document.querySelectorAll('[data-ld-rung-id]').length`);
   const before = await rungs();
@@ -1696,7 +1701,7 @@ export const JOURNEYS: Journey[] = [
         'Start to show a prepared value',
         async () => (await app.eval(`${watchRow('Start')}?.querySelector('[data-prepared]') !== null`)) === true || undefined,
       );
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      await pause(600);
       assert((await watchValue(app, 'Forward')) === 'FALSE', 'A prepared value was written without the explicit action.');
       await app.click(button('Write prepared values'), 'Write prepared values');
       await app.until(
@@ -1915,6 +1920,7 @@ export const JOURNEYS: Journey[] = [
 
       // 3. Start the course: the workspace is made from the starter and opened, with no folder dialog (none is answered here).
       await app.click(css('[data-learn-continue]'), 'the Start the course button');
+      await practiceFromReading(app, Boolean(LESSON_INDEX.lessons.find(({ id }) => id === FIRST)?.reading));
       await app.until('the project workbench to appear', async () => (await app.visible(toolbar)) || undefined);
       const starter = JSON.parse(disk(join(packageRoot, 'projects', entry.starter.project, 'zplc.json'))) as { name: string };
       assert(
@@ -2456,7 +2462,7 @@ export const JOURNEYS: Journey[] = [
       );
       const third = await relaunch();
       await third.until('the Welcome screen', async () => (await third.visible(button('Open project', 'contains'))) || undefined);
-      await Bun.sleep(500); // the list is read when the screen opens; give it time to appear if it were still stored
+      await pause(500); // the list is read when the screen opens; give it time to appear if it were still stored
       assert(!(await third.visible(recentRow)), 'A forgotten project came back after a restart.');
     },
   },
@@ -2867,7 +2873,7 @@ export const JOURNEYS: Journey[] = [
       const last = await relaunch();
       await openFolder(last, project);
       await last.until('the editor', async () => (await editorText(last)).length > 0 || undefined).catch(() => undefined);
-      await Bun.sleep(1_500);
+      await pause(1_500);
       assert(!(await last.visible(recoveryOffer)), 'A clean exit left something to recover.');
     },
   },
@@ -3510,13 +3516,14 @@ export const JOURNEYS: Journey[] = [
       let worst = 1;
       const started = Date.now();
       while (Date.now() - started < 30_000) {
+        // journey-time: the soak window that measures, not a bound
         const factor = slowdown();
         worst = Math.max(worst, factor);
         const before = Date.now();
         await app.eval<number>('1 + 1');
         raw.push(Date.now() - before);
         latencies.push(Math.round((Date.now() - before) / factor));
-        await new Promise((resolve) => setTimeout(resolve, 1_000));
+        await new Promise((resolve) => setTimeout(resolve, 1_000)); // journey-time: the soak sampling interval
       }
       const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / Math.max(values.length, 1);
       const third = Math.floor(latencies.length / 3);
@@ -5983,11 +5990,7 @@ export const JOURNEYS: Journey[] = [
       );
       await focus('[data-learn-continue]');
       await app.press('Enter');
-      // GDE-006: the reading page covers the Guide; Practice opens the lesson layout, where the Guide board section is reachable.
-      if (onBoard.reading) {
-        await app.until('the reading page', async () => (await app.visible(css('[data-learn-reading-practice]'))) || undefined, 30_000);
-        await app.click(css('[data-learn-reading-practice]'), 'Practice on the reading page');
-      }
+      await practiceFromReading(app, Boolean(onBoard.reading));
       // GDE-009: the Guide keeps the board section closed until the learner opens it; open it by keyboard before reading or switching.
       await app.until('the Guide board section summary', async () => (await app.visible(css('[data-guide-board] > summary'))) || undefined);
       await focus('[data-guide-board] > summary');
@@ -6181,6 +6184,7 @@ export const JOURNEYS: Journey[] = [
         `Continue does not offer to start the course with "${first.text.en.title}": ${startText}`,
       );
       await press(css('[data-learn-continue]'), 'Start the course on the Learn home');
+      await practiceFromReading(app, Boolean(first.reading));
       await app.until(
         'the lesson beside its workspace',
         async () =>
@@ -6277,6 +6281,7 @@ export const JOURNEYS: Journey[] = [
       const doLesson = async (id: string, start: Target, running: () => Promise<void>) => {
         const entry = LESSON_INDEX.lessons.find((lesson) => lesson.id === id)!;
         await app.click(start, `Start for ${id}`);
+        await practiceFromReading(app, Boolean(entry.reading));
         await app.until(
           `the lesson ${id} beside its workspace`,
           async () =>
@@ -7434,6 +7439,7 @@ export const JOURNEYS: Journey[] = [
         await app.eval(
           'Promise.race([Promise.allSettled(document.getAnimations().filter((animation) => ' +
             'animation.effect?.getComputedTiming().iterations !== Infinity).map((animation) => animation.finished)), new ' +
+            // journey-time: this 1500 ms runs inside the page
             'Promise((resolve) => setTimeout(resolve, 1500))]).then(() => new Promise((resolve) => requestAnimationFrame(() => ' +
             'requestAnimationFrame(resolve))))',
         );
@@ -7899,7 +7905,6 @@ export const JOURNEYS: Journey[] = [
       const outputText = (name: string) =>
         app.eval<string>(`document.querySelector('[data-output="MotorPlant.${name}"] [data-output-value]')?.textContent?.trim() ?? ''`);
       const focus = (selector: string) => app.eval(`document.querySelector(${JSON.stringify(selector)}).focus()`);
-      const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
       await unlockAllLessons(app);
       await app.click(button('Learn', 'prefix'), 'the Learn button on the Welcome screen');
@@ -8431,7 +8436,7 @@ export const JOURNEYS: Journey[] = [
             `the window to be ${width} wide`,
             async () => (await app.eval<number>('window.innerWidth')) === width || undefined,
           );
-          await new Promise((resolve) => setTimeout(resolve, 400)); // the layout that follows a resize (a strip that turns compact)
+          await pause(400); // the layout that follows a resize (a strip that turns compact)
           const problems = await app.eval<string[]>(`(${findTextOutOfBox.toString()})(${JSON.stringify(strips)})`);
           for (const problem of problems) found.set(problem, [...(found.get(problem) ?? []), `${journeyLocale} ${width} ${state}`]);
         }
@@ -8477,7 +8482,7 @@ export const JOURNEYS: Journey[] = [
           await check('the communication settings');
           for (const activity of ['search', 'tests', 'learn']) {
             await app.click(css(`[data-activity="${activity}"]`), `the ${activity} activity`);
-            await new Promise((resolve) => setTimeout(resolve, 600));
+            await pause(600);
             await check(`the ${activity} sidebar`);
           }
           await showExplorer(app);

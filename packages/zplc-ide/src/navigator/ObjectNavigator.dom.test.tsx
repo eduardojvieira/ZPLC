@@ -268,3 +268,62 @@ describe('a shortened task row can be read whole (UXV-004)', () => {
     expect(row().getAttribute('aria-describedby')).toBe(dom.screen.getByRole('tooltip').id);
   });
 });
+
+describe('the Plant group of the navigator (PLS-011)', () => {
+  const plantModel = (
+    items: { key: string; label?: string; ref: never }[],
+    onAdd: (template: string, name: string) => Promise<void> = async () => undefined,
+  ) => ({
+    items,
+    templates: [
+      { value: 'empty', label: 'Empty floor' },
+      { value: 'timed-tank', label: 'Timed tank' },
+    ],
+    existing: [],
+    onOpen: () => undefined,
+    onAdd,
+  });
+  const withPlant = (plant: ReturnType<typeof plantModel>) => (
+    <ObjectNavigatorView groups={groupsOf(true)} collapsed={new Set()} onToggle={() => undefined} onOpen={() => undefined} plant={plant} />
+  );
+
+  it('PLS-011 the navigator shows a Plant group with the scene and the plant map when the project has a plant', () => {
+    const { unmount } = dom.render(
+      withPlant(
+        plantModel([
+          { key: 'scene:root', label: 'scene.json', ref: { kind: 'project' } as never },
+          { key: 'plant-map', ref: { kind: 'project' } as never },
+        ]),
+      ),
+    );
+    const plant = dom.within(group('plant'));
+    expect(plant.getByText('scene.json')).toBeTruthy();
+    expect(plant.getByText(dom.t('navigator.plant.map'))).toBeTruthy();
+    unmount();
+  });
+
+  it('PLS-011 a project with no plant offers Add a plant with the empty floor and every shipped scene', async () => {
+    const { user } = dom.render(withPlant(plantModel([])));
+    await user.click(dom.within(group('plant')).getByRole('button', { name: dom.t('plant.activity.add') }));
+    const options = dom.within(dom.screen.getByRole('dialog')).getAllByRole('option');
+    expect(options.map((option) => option.textContent)).toEqual(['Empty floor', 'Timed tank']);
+  });
+
+  it('PLS-011 Add a plant saves the template under a name and opens it', async () => {
+    const onAdd = mock<(template: string, name: string) => Promise<void>>(async () => undefined);
+    const { user } = dom.render(withPlant(plantModel([], onAdd)));
+    await user.click(dom.within(group('plant')).getByRole('button', { name: dom.t('plant.activity.add') }));
+    const dialog = dom.within(dom.screen.getByRole('dialog'));
+    await user.selectOptions(dialog.getByRole('combobox'), 'timed-tank');
+    const name = dialog.getByRole('textbox', { name: dom.t('plant.panel.saveName') });
+    await user.clear(name);
+    await user.type(name, 'my tank');
+    await user.click(dialog.getByRole('button', { name: dom.t('navigator.plant.create') }));
+    expect(onAdd).toHaveBeenCalledWith('timed-tank', 'my tank');
+  });
+
+  it('PLS-011 a project with a scene shows no Add a plant', () => {
+    dom.render(withPlant(plantModel([{ key: 'scene:root', label: 'scene.json', ref: { kind: 'project' } as never }])));
+    expect(dom.within(group('plant')).queryByRole('button', { name: dom.t('plant.activity.add') })).toBeNull();
+  });
+});

@@ -23,6 +23,11 @@ export const u3PlantEn = {
   'plant.activity.colDirection': 'Direction',
   'plant.activity.colBinding': 'Binding',
   'plant.activity.mismatch': 'Type mismatch: {point} is {found}, the signal is {type}',
+  'navigator.group.plant': 'Plant',
+  'navigator.plant.map': 'Plant map',
+  'navigator.plant.template': 'Starting template',
+  'navigator.plant.create': 'Add',
+  'navigator.plant.hint': 'Choose where the plant starts and give it a name. It is saved in this project and opens in the plant document.',
   'plant.panel.breaksAt': 'the text breaks at line {line}, column {column}',
 } as const;
 export const u3PlantEs: Record<keyof typeof u3PlantEn, string> = {
@@ -49,5 +54,11 @@ export const u3PlantEs: Record<keyof typeof u3PlantEn, string> = {
   'plant.activity.colDirection': 'Dirección',
   'plant.activity.colBinding': 'Vínculo',
   'plant.activity.mismatch': 'Tipo distinto: {point} es {found}, la señal es {type}',
+  'navigator.group.plant': 'Planta',
+  'navigator.plant.map': 'Mapa de la planta',
+  'navigator.plant.template': 'Plantilla de partida',
+  'navigator.plant.create': 'Añadir',
+  'navigator.plant.hint':
+    'Elija desde dónde parte la planta y póngale un nombre. Se guarda en este proyecto y se abre en el documento de la planta.',
   'plant.panel.breaksAt': 'el texto se interrumpe en la línea {line}, columna {column}',
 };

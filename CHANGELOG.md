@@ -24,7 +24,10 @@ and version when the release is cut (see `RELEASING.md`).
 
 ### What changed for you
 
+- The installer now carries `zplc-mcp`, the same executable the release publishes as a separate download (which remains), and the MCP panel writes its full path into the client configuration.
+- In the Guide, the Reflect stage is listed but locked, with the text of what opens it, until the lesson passes or you choose to see the solution; it then opens at once and stays open.
 - With the classroom setting that hides solutions on, the last hint of a lesson, which is the full answer, is hidden in the Guide too, as it already was for the assistant and `zplc://lesson/current`; the earlier hints and the notice stay.
+- **Feed the board from the plant** (the Online menu and a button of the plant document) now works with a connected board whose firmware offers plant I/O: it asks for confirmation first, the status bar shows the mode with its mirroring mark and response time, and the mode ends, leaving the board as it was, on Stop, disconnection, a project or plant change and closing ZPLC. It is tested with a fake board, the native simulator and the board builds; the proof on a physical board is pending the owner's bench record, and on Windows and macOS it is not measured.
 - A Function Block Diagram and a Ladder rung place every function of the compiler, the 240 type conversions included, so a
   `REAL` is converted with a block such as `REAL_TO_INT` and no second file in Structured Text is needed. `MUX` takes up
   to eight inputs.
@@ -39,6 +42,11 @@ and version when the release is cut (see `RELEASING.md`).
 - An AI agent debugs in a simulation private to it: six `debug_*` MCP tools start a session, stop it at a breakpoint in
   any of the five languages, step it, set its inputs or plant actions and read variables, function block members, SFC
   steps and plant facts by name; two sessions at most, each stopped after 300 s idle and when the client disconnects.
+- `NOT` of an untyped integer literal, or of an expression made only of such literals such as `NOT(1 + 2)`, now takes the width of its context, as `AND`, `OR` and `XOR` do: 32 bits, and 64 bits
+  when the destination is 64 bits wide. Before, `X : DWORD := NOT(1)` gave 0, and `NOT(0)` gave 1 into any bit string;
+  now it gives `16#FFFFFFFE`, and `NOT(k)` into `BYTE`, `WORD`, `DWORD` and `LWORD` equals `NOT(BYTE#k)`, `NOT(WORD#k)`,
+  `NOT(DWORD#k)` and `NOT(LWORD#k)`. A `BOOL` destination is still refused. No published project or lesson uses this form,
+  and the bytecode of every project, file and documentation example is unchanged.
 
 ### Breaking changes
 
@@ -62,6 +70,9 @@ and version when the release is cut (see `RELEASING.md`).
   to use an `IF` in Structured Text.
 - A 64-bit literal (`LWORD#`, `ULINT#`, `LINT#`) as the input of `SHL`, `SHR`, `ROL` or `ROR` is refused at build time.
   Assign the literal to a variable first. Assignment and arithmetic with those literals work.
+- An untyped integer literal is 32 bits wide, so `ROL(16#8000, 1)` into a `WORD` gives 0, not 1: the bit rotates out of the
+  low 16 bits. Write the literal with its type, `ROL(WORD#16#8000, 1)`, to rotate within 16 bits. The same holds for `ROR`,
+  `SHL` and `SHR`.
 
 ### Details for contributors
 

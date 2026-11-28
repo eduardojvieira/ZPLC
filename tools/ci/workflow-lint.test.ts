@@ -21,6 +21,22 @@ const shardJob = (id: string) => `  ${id}:
           bun run test:ide -- "\${files[@]}"
 `;
 
+const journeyJob = `  desktop-platforms:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: A, runner: a, shard: 1, shards: 2 }
+          - { name: A, runner: a, shard: 2, shards: 2 }
+          - { name: B, runner: b, shard: 1, shards: 1 }
+    steps:
+      - name: Run the end-to-end journeys
+        env:
+          ZPLC_JOURNEY_SHARD: \${{ matrix.shard }}/\${{ matrix.shards }}
+        run: bun run --cwd packages/zplc-ide smoke:journeys
+`;
 const GOOD: Record<string, string> = {
   'ci.yml': `on: push
 jobs:
@@ -32,7 +48,7 @@ ${shardJob('ide-tests')}  format:
 `,
   'nightly-quality.yml': `on: push
 jobs:
-${shardJob('desktop-ide-tests')}`,
+${shardJob('desktop-ide-tests')}${journeyJob}`,
   'release.yml': `on: push
 jobs:
   verify:
@@ -124,5 +140,40 @@ describe('the workflow lint', () => {
     ],
   ])('names an env of %s that sets a variable of the shard plan', (file, from, to, problem) => {
     expect(lintWith(file, from, to)).toEqual([problem]);
+  });
+
+  describe('the journey shards of nightly-quality.yml', () => {
+    const at = 'nightly-quality.yml job desktop-platforms';
+    const include = `${at}: matrix.include must list the shards 1 to n of each system, with shards: n on every entry`;
+    const step = `${at}: the step that runs smoke:journeys must set ZPLC_JOURNEY_SHARD to "\${{ matrix.shard }}/\${{ matrix.shards }}"`;
+    it('names a journey job that is missing', () => {
+      expect(lintWith('nightly-quality.yml', 'desktop-platforms:', 'desktop-journeys:')).toEqual([
+        `${at}: missing; it runs the journeys in shards (ZPLC_JOURNEY_SHARD)`,
+      ]);
+    });
+
+    it('names a system whose shards are not 1 to n', () => {
+      expect(lintWith('nightly-quality.yml', 'shard: 2, shards: 2', 'shard: 3, shards: 2')).toEqual([include]);
+    });
+
+    it('names an entry whose shards is not the count of its system', () => {
+      expect(lintWith('nightly-quality.yml', 'shard: 1, shards: 1', 'shard: 1, shards: 2')).toEqual([include]);
+    });
+
+    it('names a journey step that does not name its shard and the count', () => {
+      expect(lintWith('nightly-quality.yml', '}}/\${{ matrix.shards }}', '}}/2')).toEqual([step]);
+    });
+
+    it('names a journey step that runs every journey', () => {
+      const env = '        env:\n          ZPLC_JOURNEY_SHARD: ${{ matrix.shard }}/${{ matrix.shards }}\n';
+      expect(lintWith('nightly-quality.yml', env, '')).toEqual([step]);
+    });
+
+    it('names a journey job where one failing shard cancels the others', () => {
+      const from = 'fail-fast: false\n      matrix:\n        include';
+      expect(lintWith('nightly-quality.yml', from, from.replace('false', 'true'))).toEqual([
+        `${at}: fail-fast must be false, so that one failing shard stops no other`,
+      ]);
+    });
   });
 });

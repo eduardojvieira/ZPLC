@@ -131,6 +131,10 @@ function main() {
     run('cmake', ['--build', 'firmware/lib/zplc_core/build', '--target', 'zplc_runtime', '--config', 'Release'], stagedRepo);
     mkdirSync(path.join(stagedIde, 'dist-native'), { recursive: true });
     run('cp', ['firmware/lib/zplc_core/build/zplc_runtime', 'packages/zplc-ide/dist-native/'], stagedRepo);
+    // The MCP server the release publishes separately also goes inside the installer (resources/zplc-mcp), signed with the bundle.
+    // ZPLC_MCP_DIST names the folder where the release workflow already built it, so it is not built twice.
+    const mcpFrom = process.env.ZPLC_MCP_DIST ? ['--from', process.env.ZPLC_MCP_DIST] : [];
+    run('bun', ['run', 'stage:mcp', ...mcpFrom], path.join(stagedRepo, 'packages/zplc-ide'));
     run('bun', ['run', 'build:assets'], path.join(stagedRepo, 'packages/zplc-ide'));
     run('bun', ['run', 'build'], path.join(stagedRepo, 'packages/zplc-ide'));
     run('bun', ['run', 'electron:compile'], path.join(stagedRepo, 'packages/zplc-ide'));

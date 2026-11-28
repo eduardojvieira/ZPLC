@@ -3,6 +3,7 @@ import { COMMANDS } from '../../src/commands/registry';
 import { assert } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
 import type { Journey } from '../journeys';
+import { pause } from '../journeyTiming';
 
 const isOpen = (app: App) => app.eval<boolean>(`Boolean(document.querySelector('[role="dialog"] [role="combobox"]'))`);
 
@@ -24,7 +25,7 @@ async function runFromPalette(app: App, command: string, title: string): Promise
   const row = `[role="option"][data-command="${command}"]`;
   const listed = () => app.eval<boolean>(`Boolean(document.querySelector('${row}'))`);
   if (NOT_BOUND_YET.includes(command)) {
-    await Bun.sleep(1000);
+    await pause(1000);
     assert(!(await listed()), `${command} is listed now: remove it from NOT_BOUND_YET so that the journey runs it.`);
     await app.press('Escape');
     await app.until('the palette to close', async () => !(await isOpen(app)) || undefined);
@@ -39,7 +40,7 @@ async function runFromPalette(app: App, command: string, title: string): Promise
   await app.until(`the palette to close after ${command}`, async () => !(await isOpen(app)) || undefined);
   // A command moves the focus after the palette has closed; the next palette must open after that, not before.
   // Preferences (view.agent without a provider) is a lazily loaded document that takes the focus when it is ready.
-  await Bun.sleep(command === 'view.agent' ? 2000 : 300);
+  await pause(command === 'view.agent' ? 2000 : 300);
 }
 
 /** Journeys of task U2-P1 (plan-u2.md): every command of the View menu is reachable from the palette (FND-002). */

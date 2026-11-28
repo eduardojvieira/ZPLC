@@ -24,10 +24,10 @@ import {
   packageRoot,
   smokeVitePort,
   stop,
-  waitFor,
   type OwnedProcess,
 } from '../run-desktop-smoke';
 import type { Journey } from '../journeys';
+import { pause, scaleWait, waitFor } from '../journeyTiming';
 
 export const FRAMING_SIZES: ReadonlyArray<readonly [number, number]> = [
   [480, 640],
@@ -178,7 +178,8 @@ export async function withGlWindow<T>(root: string, runtime: string, body: (page
     for (const method of ['Runtime.enable', 'Log.enable', 'Page.enable', 'Page.bringToFront']) await page.command(method);
     await page.command('Emulation.setFocusEmulationEnabled', { enabled: true });
     // A cold development server transforms the application on this first load: wait longer than a warm window needs.
-    for (const deadline = Date.now() + 300_000; Date.now() < deadline; await Bun.sleep(250))
+    for (const deadline = Date.now() + scaleWait(300_000); Date.now() < deadline; await Bun.sleep(250))
+      // journey-time: poll interval
       if ((await page.evaluate(`document.querySelector('h1')?.textContent`).catch(() => undefined)) === 'ZPLC') break;
     assert(
       (await page.evaluate(`document.querySelector('h1')?.textContent`)) === 'ZPLC',
@@ -190,7 +191,7 @@ export async function withGlWindow<T>(root: string, runtime: string, body: (page
     throw new Error(`${error instanceof Error ? error.message : String(error)}${errors}\n${output.join('').slice(-2_000)}`);
   } finally {
     if (page) void page.command('Browser.close').catch(() => undefined);
-    await Promise.race([electron.exited, Bun.sleep(3_000)]);
+    await Promise.race([electron.exited, pause(3_000)]);
     page?.close();
     await stop(electron);
   }
@@ -223,7 +224,8 @@ export const journeysPlantFraming: Journey[] = [
         );
         // The 21 scenes on software GL take minutes: a page task polled here, never one protocol command.
         let records: SceneFraming[] | undefined;
-        for (const deadline = Date.now() + 900_000; !records && Date.now() < deadline; await Bun.sleep(500)) {
+        for (const deadline = Date.now() + scaleWait(900_000); !records && Date.now() < deadline; await Bun.sleep(500)) {
+          // journey-time: poll interval
           const result = (await page.evaluate('window.__framing')) as { ok?: SceneFraming[]; err?: string } | undefined;
           if (result?.err) throw new Error(result.err);
           records = result?.ok;

@@ -150,7 +150,7 @@ Result after one scan: `Result` = `TRUE`.
 
 `ROL(IN : DWORD, N : INT) : DWORD`
 
-Rotates the 32 bits of IN left by N places; the bits that leave on the left enter on the right.
+Rotates the 32 bits of IN left by N places; the bits that leave on the left enter on the right. An untyped integer literal is 32 bits wide: ROL(16#8000, 1) assigned to a WORD gives 0, and ROL(WORD#16#8000, 1) gives 1.
 
 ```pascal runnable expect="Result=3"
 PROGRAM Example
@@ -169,7 +169,7 @@ Result after one scan: `Result` = `3`.
 
 `ROR(IN : DWORD, N : INT) : DWORD`
 
-Rotates the 32 bits of IN right by N places; the bits that leave on the right enter on the left.
+Rotates the 32 bits of IN right by N places; the bits that leave on the right enter on the left. An untyped integer literal is 32 bits wide: ROR(16#0001, 1) assigned to a WORD gives 0, and ROR(WORD#16#0001, 1) gives 16#8000.
 
 ```pascal runnable expect="Result=2147483649"
 PROGRAM Example
@@ -187,7 +187,7 @@ Result after one scan: `Result` = `2147483649`.
 
 `SHL(IN : ANY_BIT, N : INT) : ANY_BIT`
 
-Shifts IN left by N places; zeros enter on the right.
+Shifts IN left by N places; zeros enter on the right. An untyped integer literal is 32 bits wide: SHL(16#8000, 1) is computed in 32 bits. Write WORD#16#8000 to work within 16 bits.
 
 ```pascal runnable expect="Result=16"
 PROGRAM Example
@@ -205,7 +205,7 @@ Result after one scan: `Result` = `16`.
 
 `SHR(IN : ANY_BIT, N : INT) : ANY_BIT`
 
-Shifts IN right by N places; zeros enter on the left.
+Shifts IN right by N places; zeros enter on the left. An untyped integer literal is 32 bits wide: SHR(16#8000, 1) is computed in 32 bits. Write WORD#16#8000 to work within 16 bits.
 
 ```pascal runnable expect="Result=1"
 PROGRAM Example
