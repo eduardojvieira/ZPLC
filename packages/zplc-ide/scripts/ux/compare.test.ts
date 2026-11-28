@@ -65,4 +65,15 @@ describe('the tolerance of two pictures of one build (UXV-003)', () => {
   test('UXV-003 pictures of different sizes are never within the rule', () => {
     expect(withinRule(diffPictures(decodePng(base), decodePng(png(90, 100, grey)), [canvas]))).toBe(false);
   });
+
+  test('UXV-003 with the edge-noise option, a few pixels outside a canvas that differ by up to 2 levels are within the rule', () => {
+    const noisy = png(100, 100, (x, y) => (x === 80 && y === 80 ? bump(x, y, 2) : grey(x, y)));
+    const diff = diffPictures(decodePng(base), decodePng(noisy), [canvas]);
+    expect(withinRule(diff)).toBe(false);
+    expect(withinRule(diff, { edgeNoise: true })).toBe(true); // 1 px of 10000 is 0.01 %
+    const worse = png(100, 100, (x, y) => (x === 80 && y === 80 ? bump(x, y, 3) : grey(x, y)));
+    expect(withinRule(diffPictures(decodePng(base), decodePng(worse), [canvas]), { edgeNoise: true })).toBe(false);
+    const many = png(100, 100, (x, y) => (x >= 80 && x < 82 && y === 80 ? bump(x, y, 1) : grey(x, y)));
+    expect(withinRule(diffPictures(decodePng(base), decodePng(many), [canvas]), { edgeNoise: true })).toBe(false); // 2 px is over 0.01 %
+  });
 });
