@@ -5,9 +5,9 @@
  * view or of the scene is said here, with the schematic offered, while the program, the plant core and grading keep running
  * (VIS-006, PLS-009); the facts are always there as text (VIS-008).
  *
- * Interim (plan-u3 P1, removed by P4): the scene being edited is the one edit session (`usePlantEdit`), and its editor still renders
- * here, with Done (Undo and Redo are the Edit menu's, P5); the scene chooser and the save sit beside it, off the toolbar, until the
- * Plant activity, the navigator and Save all hold them (P2, P5, P6).
+ * The scene being edited is the one edit session (`usePlantEdit`): its parts are in the Plant activity, the form of the selected part
+ * in the Inspector and the bindings in the plant map editor; undo and redo are the Edit menu's and the save is Save and Save all (P5).
+ * Here are Done and the 3D view of the session. The scene chooser and the save sit off the toolbar until the navigator holds them (P6).
  */
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { DebugController } from '../../hooks/debugControllerTypes';
@@ -22,8 +22,7 @@ import { announce } from '../../utils/announce';
 import { Button, Select, ToggleGroup } from '../../ui';
 import { SaveSceneButton, SceneChooser } from './SceneChooser';
 import { catalogue } from '../core/catalogue';
-import { EditorPanel } from '../editor/EditorPanel';
-import { usePlantEdit } from '../editSession';
+import { markSceneSaved, usePlantEdit } from '../editSession';
 import { usePlantChoice } from './usePlantChoice';
 import { schematicFor } from '../schematic/schematic';
 import { describePlant } from '../text/describe';
@@ -241,11 +240,13 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
   const saveProject = async () => {
     if (!handle || !ready) return;
     await saveProjectScene(handle, ready.scene, ready.map ? JSON.stringify(ready.map) : undefined);
+    markSceneSaved(refKey);
     announce(t('plant.panel.saved', { name: 'scene.json' }));
   };
   const saveToProject = async (name: string) => {
     if (!handle || !ready) return;
     await saveScene(handle, name, ready.scene, ready.map ? JSON.stringify(ready.map) : undefined);
+    markSceneSaved(refKey);
     saved.refresh();
     setRef({ kind: 'file', name });
     announce(t('plant.panel.saved', { name }));
@@ -327,13 +328,7 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
               {t('plantEditor.done')}
             </Button>
           </div>
-          <EditorPanel
-            editor={editing.editor}
-            mapEditor={editing.mapEditor}
-            stopped={stopped}
-            catalogue={catalogue}
-            onMapEditor={session.setMapEditor}
-          />
+          {!stopped && <p role="status">{t('plantEditor.running')}</p>}
         </div>
       )}
       {message && (

@@ -408,7 +408,9 @@ describe('the plant panel (VIS-001, VIS-006, VIS-010, PLS-003, PLS-004, PLS-010)
     await dom.act(async () => dom.fireEvent.click(edit()));
     expect(document.querySelector('[data-plant-editor]')).toBeTruthy();
     const before = r.scenes[0]!.parts.length;
-    await dom.act(async () => dom.fireEvent.click(dom.screen.getByRole('button', { name: dom.t('plantEditor.add') })));
+    // a part added in the Plant activity is an edit of the session
+    const { usePlantEdit } = await import('../editSession');
+    dom.act(() => void usePlantEdit.getState().editor!.place('belt-x', 'belt', [4, 0, 4]));
     await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-edit-done]')!));
     await dom.waitFor(() => expect(r.scenes.length).toBe(2));
     expect(r.scenes[1]!.parts.length).toBe(before + 1);
@@ -818,7 +820,8 @@ describe('one plant edit session and the plant toolbar (PLS-004, PLS-005, PLS-00
     await ready();
     await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-edit-scene]')!));
     const second = dom.render(<SecondView />).container;
-    const first = document.querySelector<HTMLElement>('[data-plant-editor]')!;
+    // the first view is the Plant activity, the second the part list of an editor panel
+    const first = dom.render(<PlantActivityView />).container;
     const id = (r.scenes[0]!.parts[1] as { id: string }).id;
     const pressed = (root: HTMLElement) => root.querySelector(`[data-part="${id}"] [aria-pressed="true"]`);
     expect(pressed(first)).toBeNull();
@@ -942,7 +945,7 @@ describe('one plant edit session and the plant toolbar (PLS-004, PLS-005, PLS-00
     const inA = (selector: string) => viewA.container.querySelector<HTMLElement>(selector);
     await dom.act(async () => dom.fireEvent.click(inA('[data-plant-edit-scene]')!));
     const before = a.scenes[0]!.parts.length;
-    await dom.act(async () => dom.fireEvent.click(dom.within(viewA.container).getByRole('button', { name: dom.t('plantEditor.add') })));
+    dom.act(() => void usePlantEdit.getState().editor!.place('belt-x', 'belt', [4, 0, 4]));
     // B runs: A is still stopped, and its editor still edits
     await dom.act(async () => b.sessions.at(-1)!.start());
     await dom.settle();
