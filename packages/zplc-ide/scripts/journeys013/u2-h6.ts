@@ -3,6 +3,7 @@ import { COMMANDS } from '../../src/commands/registry';
 import { assert } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
 import type { Journey } from '../journeys';
+import { pause } from '../journeyTiming';
 
 type Locale = 'en' | 'es';
 const SETTINGS_KEY = 'zplc-ide-settings';
@@ -74,7 +75,7 @@ const MOVED: Array<{ command: string; tab?: 'interlocks' | 'changes' | 'agent'; 
  * A place is left only once it has settled, as the journey of the View menu does (u2-p1.ts): Preferences (`view.agent` with no
  * provider) is a lazily loaded document that takes the focus when it is ready.
  */
-const settle = (command: string) => Bun.sleep(command === 'view.agent' ? 2000 : 300);
+const settle = (command: string) => pause(command === 'view.agent' ? 2000 : 300);
 
 /** Puts every place back, so that each way of opening one starts from the same screen. */
 async function reset(app: App): Promise<void> {
@@ -84,7 +85,7 @@ async function reset(app: App): Promise<void> {
       `review.useReviewDocument.getState().close(); preferences.usePreferencesDocument.getState().close(); ` +
       `layout.useShellLayout.getState().showActivity('project'); ide.useIDEStore.getState().setActiveConsoleTab('problems'); })`,
   );
-  await Bun.sleep(300);
+  await pause(300);
 }
 
 /** Journeys of task U2-H6 (plan-u2.md): the results panel of five tabs, and the places of the tabs that left it. */
@@ -107,7 +108,7 @@ export const journeysU2H6: Journey[] = [
           await app.cdp.command('Emulation.setDeviceMetricsOverride', { width: 1366, height: 768, deviceScaleFactor: 1, mobile: false });
           await openProject(app, project, locale);
           await app.click(css('#console-tab-output'), 'the Output tab');
-          await new Promise((resolve) => setTimeout(resolve, 500)); // the strip measures its names after the layout
+          await pause(500); // the strip measures its names after the layout
           const tabs = await app.eval<Array<{ id: string; name: string; width: number; inside: boolean }>>(
             `(() => { const strip = document.getElementById('console-tab-output').closest('[role="tablist"]'); ` +
               `const box = strip.getBoundingClientRect(); return [...strip.querySelectorAll('[role="tab"]')].map((tab) => { ` +

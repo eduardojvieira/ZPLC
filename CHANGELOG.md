@@ -24,6 +24,7 @@ and version when the release is cut (see `RELEASING.md`).
 
 ### What changed for you
 
+- The installer now carries `zplc-mcp`, the same executable the release publishes as a separate download (which remains), and the MCP panel writes its full path into the client configuration.
 - In the Guide, the Reflect stage is listed but locked, with the text of what opens it, until the lesson passes or you choose to see the solution; it then opens at once and stays open.
 - With the classroom setting that hides solutions on, the last hint of a lesson, which is the full answer, is hidden in the Guide too, as it already was for the assistant and `zplc://lesson/current`; the earlier hints and the notice stay.
 - **Feed the board from the plant** (the Online menu and a button of the plant document) now works with a connected board whose firmware offers plant I/O: it asks for confirmation first, the status bar shows the mode with its mirroring mark and response time, and the mode ends, leaving the board as it was, on Stop, disconnection, a project or plant change and closing ZPLC. It is tested with a fake board, the native simulator and the board builds; the proof on a physical board is pending the owner's bench record, and on Windows and macOS it is not measured.
