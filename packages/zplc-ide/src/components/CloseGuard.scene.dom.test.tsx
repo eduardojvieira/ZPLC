@@ -109,6 +109,16 @@ describe('an unsaved scene and the project close (FLW-005)', () => {
     expect(useIDEStore.getState().isProjectOpen).toBe(false);
   });
 
+  it('FLW-005 the project-close dialog names the unsaved scene and still names modified files', async () => {
+    openProject(new Map([['f1', { ...modified } as never]]));
+    editScene();
+    dom.render(createElement(NavigatorDialogs));
+    closeProjectCommand();
+    await dom.settle();
+    const items = [...document.querySelectorAll('[data-unsaved-changes-dialog] li')].map((li) => li.textContent);
+    expect(items).toEqual(['main.st', 'Probe floor']);
+  });
+
   it('FLW-005 closing a project with only modified files still prompts and saves as before', async () => {
     openProject(new Map([['f1', { ...modified } as never]]));
     dom.patchStore(useIDEStore, {
