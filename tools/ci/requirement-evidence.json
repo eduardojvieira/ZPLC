@@ -2410,6 +2410,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-008 declares the compact value of every density token in one block that the root element selects"},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-008 sizes the kit controls, rows and tree rows from the density tokens, with no fixed pixel height of its own"},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"density applies to the whole application (UX-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"kit select height (UX-008)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true}
   ],
   "UX-009": [

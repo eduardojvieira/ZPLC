@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'bun:test';
-import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Plus } from 'lucide-react';
 import { auditMarkup } from './audit';
@@ -400,16 +399,5 @@ describe('kit combo box, tree, data grid and toast (UX-001)', () => {
     expect(fault).toContain('role="alert"');
     expect(fault).toContain('aria-label="Dismiss message"');
     expect(auditMarkup(fault)).toEqual([]);
-  });
-});
-
-describe('kit select height (UX-008)', () => {
-  // The real RED is the nightly's measurement on macOS and Windows (journey 55); the GREEN proof is the next nightly.
-  const kit = readFileSync(new URL('./kit.css', import.meta.url), 'utf8');
-  it('gives a select exactly the control height and leaves the text input rule on min-height', () => {
-    expect(kit.match(/select\.ui-input\s*\{([^}]*)\}/)?.[1]).toMatch(/(?<![-\w])height:\s*var\(--control-height\)/);
-    const input = kit.match(/\.ui-input\s*\{([^}]*)\}/)?.[1] ?? '';
-    expect(input).toMatch(/min-height:\s*var\(--control-height\)/);
-    expect(input).not.toMatch(/(?<![-\w])height:/);
   });
 });
