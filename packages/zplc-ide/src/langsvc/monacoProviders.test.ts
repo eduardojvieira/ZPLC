@@ -348,5 +348,7 @@ describe('the project-wide navigation keys (FND-004)', () => {
     keyed[0]!.run();
     keyed[1]!.run();
     expect(ran).toEqual(['definition', 'references']);
+    // the registered Monaco outlives this file (bun runs every file in one process): leave no half-made editor behind
+    monaco.editor!.getEditors = () => [];
   });
 });
