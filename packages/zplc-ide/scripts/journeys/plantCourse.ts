@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { assert, packageRoot } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
+import { chooseByKeys, pressMod } from '../journeyKeys';
 import type { Journey } from '../journeys';
 import { LESSON_INDEX } from '../../src/generated/lessonIndex';
 import { courseOrder } from '../../src/learn/course';
@@ -35,7 +36,7 @@ async function reach(app: App, how: How, target: string, what: string): Promise<
 /** Writes `text` in a field and commits it with Enter (the field applies on Enter or on blur). */
 async function fill(app: App, how: How, label: string, text: string): Promise<void> {
   await reach(app, how, control(label), `the field "${label}"`);
-  await app.press('Ctrl+A');
+  await pressMod(app, 'Ctrl+A');
   await app.type(text);
   await app.press('Enter');
 }
@@ -56,7 +57,12 @@ async function addPart(app: App, how: How, name: string): Promise<void> {
   await fill(app, how, 'Filter parts', name);
   const selected = `${control('Part to add')}.selectedOptions[0]?.textContent`;
   await app.eval(`${control('Part to add')}.focus()`);
-  for (let i = 0; i < 12 && (await app.eval<string>(selected)) !== name; i++) await app.press('ArrowDown');
+  const at = await app.eval<number>(
+    `[...${control('Part to add')}.options].findIndex((option) => option.textContent === ${JSON.stringify(name)})`,
+  );
+  await chooseByKeys(app, control('Part to add'), at, async () => {
+    for (let i = 0; i < 12 && (await app.eval<string>(selected)) !== name; i++) await app.press('ArrowDown');
+  });
   assert((await app.eval<string>(selected)) === name, `The catalogue select cannot be set to "${name}".`);
   await activate(app, how, button('Add part'), 'Add part');
   await app.until(`${name} in the parts of the scene`, async () => (await parts(app)).length === before + 1 || undefined);

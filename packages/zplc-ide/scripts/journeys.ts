@@ -43,6 +43,7 @@ import { journeysStations } from './journeys/plantStations';
 import { journeysCourse } from './journeys/plantCourse';
 import { journeysOperator } from './journeys/plantOperator';
 import { pause } from './journeyTiming';
+import { chooseByKeys, chooseOption, pressMod, selectOption, shortcutName, shortcutText, toggleTabFocus } from './journeyKeys';
 
 export interface JourneyContext {
   root: string;
@@ -1138,7 +1139,8 @@ async function languageChain(app: App, { root, project, runtime }: JourneyContex
     },
     60_000,
   );
-  await app.click(button('Stop (Shift+F5)', 'prefix'), 'Stop'); // the simulator session is implicit: there is no Disconnect to press
+  // the simulator session is implicit: there is no Disconnect to press
+  await app.click(button(shortcutName('Stop', 'Shift+F5'), 'prefix'), 'Stop');
   // a target chosen while the stop is still under way asks "Change the target?" (a program is running), which nobody answers here
   await app.until('the program to stop', async () => (await app.visible(button('Run (F5)', 'prefix'))) || undefined);
 
@@ -1289,7 +1291,7 @@ export const JOURNEYS: Journey[] = [
           (await app.eval<boolean>(`document.querySelector('[data-new-project="name"]')?.value === 'empty-project'`)) || undefined,
       );
       await app.click(field, 'the name field');
-      await app.press('Ctrl+A');
+      await pressMod(app, 'Ctrl+A');
       await app.type('Packing line');
       await selectOption(app, '[data-new-project="language"]', 'Ladder Diagram');
       await app.click(button('Create project'), 'the Create project button');
@@ -1347,7 +1349,7 @@ export const JOURNEYS: Journey[] = [
       await cursorAtEndOfLine(app, 1);
       await app.type(EDIT);
       await app.until('the editor to hold the typed text', async () => (await editorText(app)).includes(EDIT) || undefined);
-      await app.press('Ctrl+S');
+      await pressMod(app, 'Ctrl+S');
       await app.until(
         'Ctrl+S to write the typed text to the file (the cursor is in the editor)',
         () => disk(file).includes(EDIT) || undefined,
@@ -1386,7 +1388,7 @@ export const JOURNEYS: Journey[] = [
         async () =>
           (await app.eval<boolean>(
             `Boolean(document.querySelector('[data-command="debug.run"] kbd')?.textContent === 'F5' && ` +
-              `document.querySelector('[data-command="file.save"] kbd')?.textContent === 'Ctrl+S')`,
+              `document.querySelector('[data-command="file.save"] kbd')?.textContent === ${JSON.stringify(shortcutText('Mod+S'))})`,
           )) || undefined,
       );
     },
@@ -1484,7 +1486,7 @@ export const JOURNEYS: Journey[] = [
       );
       // undoing the typing clears it the next time the project is checked
       await clickEditorLine(app, last + 1);
-      for (let key = 0; key < 3; key++) await app.press('Ctrl+Z');
+      for (let key = 0; key < 3; key++) await pressMod(app, 'Ctrl+Z');
       await app.until(
         'the live diagnostics to be gone',
         async () => !(await app.eval<string>(`${live}?.innerText ?? ''`)).includes('UndefinedVariable') || undefined,
@@ -1666,7 +1668,7 @@ export const JOURNEYS: Journey[] = [
         ),
         'The add field does not offer Start for "Sta".',
       );
-      await app.press('Ctrl+A');
+      await pressMod(app, 'Ctrl+A');
       await app.type('Start');
       await app.press('Enter');
       await watch(app, 'Forward');
@@ -1694,7 +1696,7 @@ export const JOURNEYS: Journey[] = [
         'the value editor of Start to take focus',
         async () => (await app.eval(`document.activeElement === ${watchRow('Start')}?.querySelector('input[type="text"]')`)) || undefined,
       );
-      await app.press('Ctrl+A');
+      await pressMod(app, 'Ctrl+A');
       await app.type('1');
       await app.press('Shift+Enter');
       await app.until(
@@ -1804,13 +1806,13 @@ export const JOURNEYS: Journey[] = [
       await app.click(editorTab('file:src/Motor.st'));
       await app.until('Motor.st in the editor', async () => hasProgram(await editorText(app), 'Motor') || undefined);
       await clickEditorLine(app, 5);
-      await app.press('Ctrl+Z');
+      await pressMod(app, 'Ctrl+Z');
       await app.until('undo in Motor.st', async () => (await modelText(app, 'Motor.st')) === original || undefined);
       assert((await modelText(app, 'Second.st')) === appendToFirstLine(second, ' XY'), 'Undo in Motor.st changed the second file.');
       await app.click(editorTab('file:src/Second.st'));
       await app.until('Second.st in the editor', async () => (await editorText(app)) === appendToFirstLine(second, ' XY') || undefined);
       await clickEditorLine(app, 1);
-      await app.press('Ctrl+Z');
+      await pressMod(app, 'Ctrl+Z');
       await app.until('undo in Second.st', async () => (await modelText(app, 'Second.st')) === second || undefined);
       assert((await modelText(app, 'Motor.st')) === original, 'Undo in Second.st changed Motor.st.');
     },
@@ -2382,11 +2384,11 @@ export const JOURNEYS: Journey[] = [
         'The theme control shows no focus ring.',
       );
       const theme = () => app.eval<string>(`document.documentElement.getAttribute('data-theme')`);
-      await app.press('End');
+      await chooseByKeys(app, `document.querySelector('select[data-theme-control]')`, 2, () => app.press('End'));
       await app.until('High contrast to apply', async () => (await theme()) === 'high-contrast' || undefined);
-      await app.press('ArrowUp');
+      await chooseByKeys(app, `document.querySelector('select[data-theme-control]')`, 1, () => app.press('ArrowUp'));
       await app.until('Dark to apply', async () => (await theme()) === 'dark' || undefined);
-      await app.press('Home');
+      await chooseByKeys(app, `document.querySelector('select[data-theme-control]')`, 0, () => app.press('Home'));
       await app.until('Light to apply', async () => (await theme()) === 'light' || undefined);
       assert(
         (await app.eval<string>(`document.querySelector('select[data-theme-control]').value`)) === 'light',
@@ -2482,7 +2484,7 @@ export const JOURNEYS: Journey[] = [
       const rungs = (await ladderRungs(app)) as number;
       await app.click(button('Add rung', 'contains'), 'the Add rung button');
       await app.until('one more rung in the editor', async () => (await ladderRungs(app)) === rungs + 1 || undefined);
-      await app.press('Ctrl+S');
+      await pressMod(app, 'Ctrl+S');
       const saved = await app.until('pump.ld.json on disk', () => {
         const found = findOnDisk(project, 'pump.ld.json');
         return found.length === 1 ? found[0] : undefined;
@@ -2930,20 +2932,7 @@ export const JOURNEYS: Journey[] = [
     partly: ['IDE-010'],
     run: async (app, { project, relaunch }) => {
       const file = join(project, 'src', 'Motor.st');
-      /** Walks a native select to the option with this text with the arrow keys, as a keyboard user would. */
-      const choose = async (target: App, selector: string, label: string) => {
-        const state = () =>
-          target.eval<{ labels: string[]; index: number }>(
-            `(() => { const select = document.querySelector(${JSON.stringify(selector)}); return { labels: ` +
-              `[...select.options].map((option) => option.textContent), index: select.selectedIndex }; })()`,
-          );
-        const { labels, index } = await state();
-        const wanted = labels.indexOf(label);
-        assert(wanted >= 0, `${selector} offers ${JSON.stringify(labels)}, not ${label}`);
-        await target.eval(`document.querySelector(${JSON.stringify(selector)}).focus()`);
-        for (let step = 0; step < Math.abs(wanted - index); step++) await target.press(wanted > index ? 'ArrowDown' : 'ArrowUp');
-        await target.until(`${selector} to show ${label}`, async () => (await state()).index === wanted || undefined);
-      };
+      const choose = chooseOption;
       const chosen = (target: App, selector: string) =>
         target.eval<string>(
           `(() => { const select = document.querySelector(${JSON.stringify(selector)}); return ` +
@@ -3145,7 +3134,7 @@ export const JOURNEYS: Journey[] = [
       const typeName = async (name: string) => {
         await app.until('the name dialog', async () => (await app.visible(entryDialog)) || undefined);
         await app.eval(`document.getElementById('entry-name').focus()`);
-        await app.press('Ctrl+A');
+        await pressMod(app, 'Ctrl+A');
         await app.type(name);
       };
 
@@ -3228,7 +3217,9 @@ export const JOURNEYS: Journey[] = [
       const folders = await app.eval<string[]>(`[...document.getElementById('entry-folder').options].map((option) => option.value)`);
       assert(folders.includes('src/drivers'), `The move dialog does not offer the new folder: ${JSON.stringify(folders)}`);
       const current = await app.eval<number>(`document.getElementById('entry-folder').selectedIndex`);
-      for (let step = 0; step < folders.indexOf('src/drivers') - current; step++) await app.press('ArrowDown');
+      await chooseByKeys(app, `document.getElementById('entry-folder')`, folders.indexOf('src/drivers'), async () => {
+        for (let step = 0; step < folders.indexOf('src/drivers') - current; step++) await app.press('ArrowDown');
+      });
       await app.click(button('Move'));
       await app.until('the copy in the folder', async () => (await app.visible(node('src/drivers/Drive_copy.st', 'file'))) || undefined);
       assert(
@@ -4030,13 +4021,13 @@ export const JOURNEYS: Journey[] = [
       const moved = await place();
       // one undo takes the whole drag back, and one redo does it again
       await app.click(node, 'the dragged block');
-      await app.press('Ctrl+Z');
+      await pressMod(app, 'Ctrl+Z');
       await app
         .until('the block back where it was', async () => (await place()) === original || undefined)
         .catch(async (error: Error) => {
           throw new Error(`${error.message}: the block is at ${await place()}, was at ${original} and was put down at ${moved}`);
         });
-      await app.press('Ctrl+Shift+Z');
+      await pressMod(app, 'Ctrl+Shift+Z');
       await app.until('the drag done again', async () => (await place()) === moved || undefined);
     },
   },
@@ -4901,7 +4892,9 @@ export const JOURNEYS: Journey[] = [
       const at = folders.indexOf('lib');
       assert(at >= 0, `The dialog does not offer the folder: ${JSON.stringify(folders)}`);
       const current = await app.eval<number>(`document.getElementById('library-folder').selectedIndex`);
-      for (let step = 0; step < Math.abs(at - current); step++) await app.press(at > current ? 'ArrowDown' : 'ArrowUp');
+      await chooseByKeys(app, `document.getElementById('library-folder')`, at, async () => {
+        for (let step = 0; step < Math.abs(at - current); step++) await app.press(at > current ? 'ArrowDown' : 'ArrowUp');
+      });
       await app.click(button('Add library'), 'the Add library button');
       await app.until(
         'zplc.json to name the library',
@@ -5260,7 +5253,7 @@ export const JOURNEYS: Journey[] = [
         (await textOf('run')).includes(ui('studio.flow.done.run')),
         `The run notification should say the program runs: ${await textOf('run')}`,
       );
-      await app.click(button('Stop (Shift+F5)', 'prefix'), 'Stop');
+      await app.click(button(shortcutName('Stop', 'Shift+F5'), 'prefix'), 'Stop');
 
       // A long operation shows progress and a Cancel action, and its end is a result.
       for (const name of ['LongA', 'LongB', 'LongC']) {
@@ -6295,7 +6288,7 @@ export const JOURNEYS: Journey[] = [
         await connectAndRun(app);
         await app.click(tab('Watch', 'prefix'), 'the Watch tab');
         await running();
-        await app.click(button('Stop (Shift+F5)', 'prefix'), 'Stop');
+        await app.click(button(shortcutName('Stop', 'Shift+F5'), 'prefix'), 'Stop');
         await app.until('the program to stop', async () => (await app.visible(button('Run (F5)', 'prefix'))) || undefined);
         writeFileSync(
           join(root, 'profile', 'learn-workspaces', id, entry.starter.program),
@@ -6636,7 +6629,7 @@ export const JOURNEYS: Journey[] = [
       await app.click(button('Close the changes'), 'Close the changes');
       await showExplorer(app);
       await clickEditorLine(app, last + 1);
-      for (let attempt = 0; attempt < 6 && (await editorText(app)) !== before; attempt++) await app.press('Ctrl+Z');
+      for (let attempt = 0; attempt < 6 && (await editorText(app)) !== before; attempt++) await pressMod(app, 'Ctrl+Z');
       assert((await editorText(app)) === before, 'The journey could not undo its statement.');
       await cursorAtEndOfLine(app, last);
       await app.press('Enter');
@@ -6804,7 +6797,7 @@ export const JOURNEYS: Journey[] = [
       await cursorAtEndOfLine(app, 9);
       await app.type('  ');
       await app.until('the typed text in the editor', async () => (await editorText(app)).split('\n')[8] === '  ' || undefined);
-      await app.press('Ctrl+S');
+      await pressMod(app, 'Ctrl+S');
       const built = await compile(app);
       assert(built.kind === 'built', `The example does not build at 1366: ${built.message}`);
       await connectAndRun(app);
@@ -7113,8 +7106,8 @@ export const JOURNEYS: Journey[] = [
           `document.activeElement?.getAttribute('aria-label') ` + `?? ''`,
         )}`,
       );
-      await app.press('Ctrl+A');
-      await app.press('Ctrl+V');
+      await pressMod(app, 'Ctrl+A');
+      await pressMod(app, 'Ctrl+V');
       await app.until('the solution in the editor', async () => (await editorText(app)).includes('Forward') || undefined);
       // Monaco tells the workspace about a paste a few milliseconds after its model holds it, and Save writes what the workspace
       // holds: wait for the tab to show the file as modified, as a person sees it before saving.
@@ -7122,19 +7115,19 @@ export const JOURNEYS: Journey[] = [
         'the tab of Motor.st to show the paste as unsaved',
         async () => (await app.eval<string>(`${editorTab('file:src/Motor.st')}?.textContent ?? ''`)).includes('*') || undefined,
       );
-      await app.press('Ctrl+S');
+      await pressMod(app, 'Ctrl+S');
       await app.until('the save to be announced', async () => /Saved/.test(await live('polite')) || undefined);
 
       // no keyboard trap in the code editor: Tab types a tab there, and Ctrl+M (Monaco's Tab focus mode) makes Tab and Shift+Tab move the
       // focus
-      await app.press('Ctrl+M');
+      await toggleTabFocus(app);
       await app.press('Tab');
       assert(
         await app.eval<boolean>(`document.activeElement?.closest('.monaco-editor') === null`),
         'Tab stayed in the code editor after Ctrl+M (toggle Tab focus mode).',
       );
       await reach('the code editor again', `el.closest('.monaco-editor') !== null`, 'Shift+Tab', 8);
-      await app.press('Ctrl+M');
+      await toggleTabFocus(app);
 
       // 3. Build: Ctrl+B; the result is written to Output and announced
       await app.press('Ctrl+B');
@@ -7359,17 +7352,17 @@ export const JOURNEYS: Journey[] = [
           `area.select(); document.execCommand('copy'); area.remove(); })()`,
       );
       await reach('the code editor of the lesson workspace', `el.closest('.monaco-editor') !== null`, 'Tab', 80);
-      await app.press('Ctrl+A');
-      await app.press('Ctrl+V');
+      await pressMod(app, 'Ctrl+A');
+      await pressMod(app, 'Ctrl+V');
       await app.until('the solution in the lesson workspace', async () => (await editorText(app)).includes('Forward') || undefined);
       await app.until(
         'the tab of Motor.st to show the paste as unsaved',
         async () => (await app.eval<string>(`${editorTab('file:src/Motor.st')}?.textContent ?? ''`)).includes('*') || undefined,
       );
-      await app.press('Ctrl+S');
+      await pressMod(app, 'Ctrl+S');
       await app.until('the save to be announced', async () => /Saved/.test(await live('polite')) || undefined);
       // Ctrl+M lets Tab leave the code editor (step 2).
-      await app.press('Ctrl+M');
+      await toggleTabFocus(app);
       await app.until('the Check button to be enabled', async () => (await isEnabled('[data-learn-check]')) || undefined);
       await reach('the Check button', `el.matches('[data-learn-check]')`, 'Tab', 80);
       // each stage's checkpoint disclosure has its own name (the Guide shows one stage at a time, so the names are read from the
@@ -7864,7 +7857,7 @@ export const JOURNEYS: Journey[] = [
       await outputIs('Total', '100000');
 
       // Where the runtime cannot apply a change the controls are disabled and the panel says why in words.
-      await app.click(button('Stop (Shift+F5)', 'prefix'), 'Stop');
+      await app.click(button(shortcutName('Stop', 'Shift+F5'), 'prefix'), 'Stop');
       const reason = () => app.eval<string>(`document.querySelector('[data-faceplate-reason]')?.textContent ?? ''`);
       await patiently(
         'the faceplate to say that the simulation is not running',
@@ -8121,11 +8114,13 @@ export const JOURNEYS: Journey[] = [
       const themes = await app.eval<string[]>(
         `[...document.querySelector('select[data-theme-control]').options].map((option) => option.value)`,
       );
-      const current = await app.eval<number>(`document.querySelector('select[data-theme-control]').selectedIndex`);
       const wanted = themes.indexOf(theme);
       assert(wanted >= 0, `The theme control offers ${JSON.stringify(themes)}, not ${theme}`);
       await app.eval(`document.querySelector('select[data-theme-control]').focus()`);
-      for (let step = 0; step < Math.abs(wanted - current); step++) await app.press(wanted > current ? 'ArrowDown' : 'ArrowUp');
+      const current = await app.eval<number>(`document.querySelector('select[data-theme-control]').selectedIndex`);
+      await chooseByKeys(app, `document.querySelector('select[data-theme-control]')`, wanted, async () => {
+        for (let step = 0; step < Math.abs(wanted - current); step++) await app.press(wanted > current ? 'ArrowDown' : 'ArrowUp');
+      });
       const themed = () =>
         app.until(
           `the ${theme} theme`,
@@ -8517,26 +8512,3 @@ export const JOURNEYS: Journey[] = [
   ...journeysStations,
   ...journeysCourse,
 ];
-
-/** Walks a native select to the option with this text with the arrow keys, as a keyboard user would. */
-async function selectOption(app: App, selector: string, label: string): Promise<void> {
-  const state = () =>
-    app.eval<{ labels: string[]; index: number }>(
-      `(() => { const select = document.querySelector(${JSON.stringify(selector)}); return { labels: [...select.options].map((option) => ` +
-        `option.textContent), index: select.selectedIndex }; })()`,
-    );
-  const { labels, index } = await state();
-  const wanted = labels.indexOf(label);
-  assert(wanted >= 0, `${selector} offers ${JSON.stringify(labels)}, not ${label}`);
-  await app.eval(`document.querySelector(${JSON.stringify(selector)}).focus()`);
-  for (let step = 0; step < Math.abs(wanted - index); step++) await app.press(wanted > index ? 'ArrowDown' : 'ArrowUp');
-  // macOS does not move a native select with the arrow keys while its popup is closed: set the option through the element and tell
-  // React the way a change from the popup would
-  if ((await state()).index !== wanted) {
-    await app.eval(
-      `(() => { const select = document.querySelector(${JSON.stringify(selector)}); select.selectedIndex = ${wanted}; ` +
-        `select.dispatchEvent(new Event('input', { bubbles: true })); select.dispatchEvent(new Event('change', { bubbles: true })); })()`,
-    );
-  }
-  await app.until(`${selector} to show ${label}`, async () => (await state()).index === wanted || undefined);
-}

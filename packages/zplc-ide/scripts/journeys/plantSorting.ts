@@ -9,6 +9,7 @@
 import { join } from 'node:path';
 import { assert } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
+import { chooseByKeys } from '../journeyKeys';
 import type { Journey } from '../journeys';
 import { holdPushButton, openPlantDocument, plantFacts, runInSimulation, shippedSceneProject, writeSceneProject } from './plantSupport';
 
@@ -95,7 +96,9 @@ export const journeysSorting: Journey[] = [
       assert(total(await plantFacts(app), 'received') === 0, 'An item was misrouted before any fault.');
       // the arrow keys only choose: readingOffset is the second action of the scale, and nothing fires until the button
       await app.eval(`document.querySelector('[data-plant-fault="Scale1"]').focus()`);
-      for (let step = 0; step < 2; step++) await app.press('ArrowDown');
+      await chooseByKeys(app, `document.querySelector('[data-plant-fault="Scale1"]')`, 2, async () => {
+        for (let step = 0; step < 2; step++) await app.press('ArrowDown');
+      });
       const chosen = await app.eval<string>(`document.querySelector('[data-plant-fault="Scale1"]').value`);
       assert(chosen === 'readingOffset', `The arrow keys chose "${chosen}", not readingOffset.`);
       assert(total(await plantFacts(app), 'received') === 0, 'A fault fired while the action was only being chosen.');

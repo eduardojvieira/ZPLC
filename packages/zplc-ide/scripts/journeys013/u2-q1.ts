@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { translate } from '../../src/i18n/translate';
 import { assert, MONACO_MODULE } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
+import { pressMod } from '../journeyKeys';
 import type { Journey } from '../journeys';
 import { runFromPalette } from './w3';
 
@@ -141,7 +142,7 @@ export const journeysU2Q1: Journey[] = [
       await app.click(css('[data-activity="search"]'), 'the Search activity');
       await app.until('the search field', async () => (await app.visible(css('#project-search'))) || undefined);
       await app.click(css('#project-search'), 'the search field');
-      await app.press('Ctrl+A');
+      await pressMod(app, 'Ctrl+A');
       await app.type('Permit');
       const blockMatch = css(`button[aria-label*="BatchCount.fbd.json, FBD block 'var_sensor'"]`);
       await app.until('the match in the block', async () => (await app.visible(blockMatch)) || undefined);
