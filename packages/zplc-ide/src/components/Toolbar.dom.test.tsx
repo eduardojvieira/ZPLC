@@ -738,6 +738,23 @@ describe('Save of the plant document (FLW-005) in a DOM', () => {
     expect(saveFile).not.toHaveBeenCalled();
   });
 
+  it('FLW-005 Save of the plant document does not say saved when no project folder is open', async () => {
+    const saveFile = edit();
+    dom.patchStore(useIDEStore, { directoryHandle: null } as never);
+    usePlantDocument.setState({ open: true, active: true });
+    useNotifications.getState().clear();
+    const { user } = dom.render(<Toolbar debugController={simulatorController().controller} />);
+    await user.click(save());
+    await dom.waitFor(() => expect(useNotifications.getState().items.some((item) => item.kind === 'save')).toBe(true));
+    expect(
+      useNotifications
+        .getState()
+        .items.filter((item) => item.kind === 'save')
+        .map((item) => item.status),
+    ).toEqual(['error']);
+    expect(saveFile).not.toHaveBeenCalled();
+  });
+
   it('FLW-005 Save of a program is unchanged: with a program active the scene is left alone', async () => {
     const saveFile = edit();
     usePlantDocument.setState({ open: true, active: false });

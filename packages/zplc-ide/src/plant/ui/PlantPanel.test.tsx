@@ -459,6 +459,45 @@ describe('the plant panel (VIS-001, VIS-006, VIS-010, PLS-003, PLS-004, PLS-010)
     },
   );
 
+  it('SCN-008 Finish editing is refused while the plant runs', async () => {
+    const { bindCommands, resetCommandsForTest } = await import('../../commands/bus');
+    const { plantEditHandlers } = await import('../../commands/bind/plantEdit');
+    const { usePlantEdit } = await import('../editSession');
+    resetCommandsForTest();
+    bindCommands(plantEditHandlers());
+    const r = rig();
+    dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+    await ready();
+    await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-edit-scene]')!));
+    // the session is edited while stopped, then the plant runs
+    await dom.act(async () => activeTransport(r.controller).run());
+    await dom.waitFor(() => expect((document.querySelector('[data-plant-edit-done]') as HTMLButtonElement).disabled).toBe(true));
+    expect(runCommand('plant.endEdit')).toBe('ran');
+    await dom.settle();
+    expect(usePlantEdit.getState().editor).not.toBeNull();
+    expect(r.scenes.length).toBe(1); // the plant was not rebuilt
+    expect(announcementsSnapshot().polite.message).toBe(dom.t('plantEditor.running'));
+    await dom.act(async () => activeTransport(r.controller).stop());
+    resetCommandsForTest();
+  });
+
+  it('FLW-005 reopening the plant document shows the scene that was edited and not saved', async () => {
+    const { usePlantEdit } = await import('../editSession');
+    const r = rig();
+    const first = dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+    await ready();
+    await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-edit-scene]')!));
+    const before = r.scenes[0]!.parts.length;
+    dom.act(() => void usePlantEdit.getState().editor!.place('belt-x', 'belt', [4, 0, 4]));
+    await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-edit-done]')!));
+    await dom.waitFor(() => expect(r.scenes.length).toBe(2));
+    first.unmount(); // the plant document is closed, and opened again
+    dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+    await dom.waitFor(() => expect(r.scenes.length).toBe(3)); // the plant core was built again for the reopened document
+    expect(r.scenes[2]!.parts.length).toBe(before + 1);
+    usePlantEdit.setState({ unsaved: {} });
+  });
+
   it('FLW-005 the scene being edited joins Save all', async () => {
     const written: string[] = [];
     const fake = {

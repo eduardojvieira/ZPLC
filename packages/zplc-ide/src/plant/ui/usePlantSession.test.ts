@@ -105,4 +105,35 @@ describe('the plant session (SCN-006, FLW-005)', () => {
     expect(written.sort()).toEqual(['Bound floor.plant-map.json', 'Bound floor.scene.json']);
     usePlantEdit.getState().end();
   });
+  it('FLW-005 a scene edited when another project opens is never written into it', async () => {
+    const writes = { a: [] as string[], b: [] as string[] };
+    const folder = (log: string[]) =>
+      ({
+        getDirectoryHandle: async () => ({
+          getFileHandle: async (name: string) => ({
+            createWritable: async () => ({ write: async () => void log.push(name), close: async () => {} }),
+          }),
+        }),
+      }) as unknown as FileSystemDirectoryHandle;
+    const [a, b] = [folder(writes.a), folder(writes.b)];
+    const scene: PlantSceneFile = { schemaVersion: 1, name: 'A floor', parts: [], cameras: [] };
+    const edit = usePlantEdit.getState;
+    const before = useIDEStore.getState().directoryHandle;
+    dom.patchStore(useIDEStore, { loadedFiles: new Map() as never });
+    try {
+      for (const live of [false, true]) {
+        useIDEStore.setState({ directoryHandle: a });
+        dom.act(() => edit().begin({ scene, map: null }, 'empty'));
+        dom.act(() => void edit().editor!.place('belt-x', 'belt', [4, 0, 4]));
+        useIDEStore.setState({ directoryHandle: b }); // another project opens: the panel of the scene closes the session
+        if (!live) dom.act(() => void edit().end());
+        expect((await saveAllDocuments()).saved).toBe(0);
+        expect(writes.b).toEqual([]);
+        dom.act(() => void edit().end());
+        usePlantEdit.setState({ unsaved: {} });
+      }
+    } finally {
+      useIDEStore.setState({ directoryHandle: before });
+    }
+  });
 });

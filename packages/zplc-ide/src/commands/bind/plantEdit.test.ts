@@ -12,12 +12,19 @@ let focused = true;
 await mock.module('../../components/monacoRuntime', () => ({
   DiffEditor: () => null,
   monacoEditor: {
-    getEditors: () => [{ hasTextFocus: () => focused, trigger: (_source: string, id: string) => void triggered.push(id) }],
+    getEditors: () => [
+      {
+        hasTextFocus: () => focused,
+        getModel: () => ({ uri: { path: '/1/file:src/Motor.st' } }),
+        trigger: (_source: string, id: string) => void triggered.push(id),
+      },
+    ],
   },
 }));
 await import('../../plant/core/plantCore'); // registers the shipped parts, as the application does
 const { bindCommands, resetCommandsForTest, runCommand } = await import('../bus');
-const { plantEditHandlers, offerVisualHistory } = await import('./plantEdit');
+const { plantEditHandlers, offerVisualHistory, usePlantEditCommands } = await import('./plantEdit');
+const { useIDEStore } = await import('../../store/useIDEStore');
 const { usePlantEdit } = await import('../../plant/editSession');
 const { usePlantDocument } = await import('../../store/usePlantDocument');
 const { usePlantChoice } = await import('../../plant/ui/usePlantChoice');
@@ -107,11 +114,31 @@ describe('the Edit menu commands of the plant (PLS-005, SCN-008, SCN-010)', () =
     expect(asked).toEqual(['undo', 'redo']);
     expect(triggered).toEqual([]);
     expect(parts()).toBe(before);
-    // with a text file active the editor area does nothing, and the code editor has it
+    // with a text file active the editor area does nothing, and the code editor that shows it has it
     withdraw();
     offerVisualHistory(() => false);
+    dom.patchStore(useIDEStore, {
+      activeFileId: 'file:src/Motor.st',
+      loadedFiles: new Map([
+        ['file:src/Motor.st', { id: 'file:src/Motor.st', name: 'Motor.st', path: 'src/Motor.st', content: '' }],
+      ]) as never,
+    });
     await dom.act(async () => void runCommand('edit.undo'));
     expect(triggered).toEqual(['undo']);
+  });
+
+  it('SCN-010 with no code editor focused and none showing the active file, Undo does nothing', async () => {
+    focused = false;
+    usePlantDocument.setState({ active: false });
+    offerVisualHistory(() => false);
+    dom.patchStore(useIDEStore, {
+      activeFileId: 'file:src/Other.st',
+      loadedFiles: new Map([
+        ['file:src/Other.st', { id: 'file:src/Other.st', name: 'Other.st', path: 'src/Other.st', content: '' }],
+      ]) as never,
+    });
+    await dom.act(async () => void runCommand('edit.undo'));
+    expect(triggered).toEqual([]);
   });
 
   it("SCN-010 in a plain text field Undo is the field's", async () => {
@@ -134,5 +161,70 @@ describe('the Edit menu commands of the plant (PLS-005, SCN-008, SCN-010)', () =
     expect(native).toEqual(['undo', 'redo']);
     expect(parts()).toBe(before);
     expect(triggered).toEqual([]);
+  });
+  it('SCN-010 a checkbox, a radio or a button keeps no history of its own: Undo reaches the plant edit', async () => {
+    dom.act(() => void session().editor!.place('belt-2', 'belt', [4, 0, 4]));
+    const before = parts();
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    document.body.append(box);
+    box.focus();
+    await dom.act(async () => void runCommand('edit.undo'));
+    box.remove();
+    expect(parts()).toBe(before - 1);
+  });
+
+  describe('the keys of Undo and Redo on Windows and Linux', () => {
+    const press = (target: Element, init: KeyboardEventInit) => {
+      const event = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...init });
+      target.dispatchEvent(event);
+      return event;
+    };
+    const row = () => {
+      const button = document.createElement('button');
+      document.body.append(button);
+      button.focus();
+      return button;
+    };
+
+    it('SCN-010 Ctrl+Z on a part row undoes the plant edit on Windows and Linux', async () => {
+      dom.render(createElement(() => (usePlantEditCommands(), null)));
+      dom.act(() => void session().editor!.place('belt-2', 'belt', [4, 0, 4]));
+      const before = parts();
+      const target = row();
+      const undone = press(target, { key: 'z', ctrlKey: true });
+      expect(parts()).toBe(before - 1);
+      expect(undone.defaultPrevented).toBe(true);
+      press(target, { key: 'Z', ctrlKey: true, shiftKey: true });
+      expect(parts()).toBe(before);
+      press(target, { key: 'z', ctrlKey: true });
+      press(target, { key: 'y', ctrlKey: true });
+      expect(parts()).toBe(before);
+      target.remove();
+    });
+
+    it('SCN-010 the keys do nothing in a text field, in a code editor, or when the plant document is not the active one', async () => {
+      dom.render(createElement(() => (usePlantEditCommands(), null)));
+      dom.act(() => void session().editor!.place('belt-2', 'belt', [4, 0, 4]));
+      const before = parts();
+      const field = document.createElement('input');
+      const monaco = document.createElement('div');
+      monaco.className = 'monaco-editor';
+      const area = document.createElement('textarea');
+      monaco.append(area);
+      document.body.append(field, monaco);
+      for (const target of [field, area]) {
+        target.focus();
+        expect(press(target, { key: 'z', ctrlKey: true }).defaultPrevented).toBe(false);
+      }
+      const other = row();
+      usePlantDocument.setState({ active: false });
+      expect(press(other, { key: 'z', ctrlKey: true }).defaultPrevented).toBe(false);
+      expect(parts()).toBe(before);
+      expect(triggered).toEqual([]);
+      field.remove();
+      monaco.remove();
+      other.remove();
+    });
   });
 });
