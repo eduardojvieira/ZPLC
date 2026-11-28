@@ -20,7 +20,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Draw the rungs, save the program, then press {{ui:learn.check}}. The starting program has no rungs, so the belt never moves and no box arrives. Each press of Start must put one box on the belt and start the belt; the belt must keep running after the button is released and stop as soon as EyeFar sees the box, so that the box never falls off the end.",
+      "body": "Draw the rungs, save the program, then press {{ui:learn.check}}. The starting program has no rungs, so the belt never moves and no box arrives. A press of Start must put the box on the belt and start the belt; the belt must keep running after the button is released and stop as soon as EyeFar sees the box, so that the box never falls off the end.",
       "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {

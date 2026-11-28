@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Dibuje los peldaños, guarde el programa y pulse {{ui:learn.check}}. El programa inicial no tiene peldaños, así que la cinta nunca se mueve y no llega ninguna caja. Cada pulsación de Start debe poner una caja en la cinta y arrancar la cinta; la cinta debe seguir en marcha después de soltar el pulsador y detenerse en cuanto EyeFar ve la caja, para que la caja nunca caiga por el extremo.",
+      "body": "Dibuje los peldaños, guarde el programa y pulse {{ui:learn.check}}. El programa inicial no tiene peldaños, así que la cinta nunca se mueve y no llega ninguna caja. Una pulsación de Start debe poner la caja en la cinta y arrancar la cinta; la cinta debe seguir en marcha después de soltar el pulsador y detenerse en cuanto EyeFar ve la caja, para que la caja nunca caiga por el extremo.",
       "checkpoint": "{{ui:learn.check}} informa que el escenario de esta lección pasó."
     },
     {
