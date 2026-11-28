@@ -67,7 +67,7 @@ Dos hábitos mantienen legibles y fiables las secuencias numéricas:
 
 ## Ejemplo resuelto
 
-Un carro lineal transporta una pieza sobre un solo riel entre una posición de reposo (`10.0` cm) y un cabezal de estampado (`65.0` cm). Una pulsación de `CmdStart` envía el carro al cabezal de estampado, activa `StampCmd` hasta que el cabezal informa `MarkDone`, y luego devuelve el carro al reposo. El movimiento se da por terminado cuando `RailPos` está a menos de `0.5` cm de `RailSet`.
+Un carro lineal transporta una pieza sobre un solo riel entre una posición de reposo (`10.0` cm) y un cabezal de estampado (`65.0` cm). Una pulsación de `CmdStart` envía el carro al cabezal de estampado, activa `StampCmd` hasta que el cabezal informa `MarkDone`, y luego devuelve el carro al reposo. El movimiento se da por terminado cuando `RailPos` está a menos de `0.5` cm de `RailSet`. `RailSet` empieza en la posición de reposo, así que un carro que está en reposo al encender se queda donde está.
 
 ```st
 PROGRAM LabelShuttle
@@ -77,7 +77,7 @@ VAR_INPUT
     RailPos  : REAL;
 END_VAR
 VAR_OUTPUT
-    RailSet   : REAL;
+    RailSet   : REAL := 10.0;
     StampCmd  : BOOL;
     ReadyLamp : BOOL;
 END_VAR
@@ -129,7 +129,7 @@ Este carro tiene un solo eje, un ciclo cada vez y una señal externa `MarkDone`.
 
 ## Errores comunes
 
-- Comparar posiciones `REAL` con `=`. Una diferencia mínima deja la condición en FALSE para siempre y congela la secuencia.
+- Comparar posiciones `REAL` con `=`. En un eje real una diferencia mínima deja la condición en FALSE para siempre y congela la secuencia. El eje de esta escena llega exactamente a su consigna, así que aquí `=` funciona por casualidad; la tolerancia es lo que funciona en una máquina real.
 - Escribir una consigna nueva y comprobar el indicador de tolerancia anterior en el mismo ciclo de escaneo (por ejemplo usando bloques `IF` separados en lugar de `IF / ELSIF`). El estado salta directamente el movimiento antes de que el eje haya empezado.
 - Cambiar la consigna horizontal antes de que el eje vertical esté dentro de la tolerancia de la altura segura. Ambos ejes se mueven a la vez y el brazo barre las cintas en diagonal.
 - Elegir una tolerancia demasiado amplia, de modo que la pinza actúe antes de quedar centrada sobre la pieza, o demasiado estrecha para que el eje pueda asentarse dentro de ella.

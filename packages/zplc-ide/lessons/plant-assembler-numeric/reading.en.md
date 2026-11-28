@@ -67,7 +67,7 @@ Two habits keep numeric sequences readable and reliable:
 
 ## Worked example
 
-A linear shuttle carries a work-piece along a single rail between a park position (`10.0` cm) and a stamping head (`65.0` cm). A press of `CmdStart` sends the shuttle to the stamping head, triggers `StampCmd` until the head reports `MarkDone`, and then returns the shuttle to park. The move is considered done when `RailPos` is within `0.5` cm of `RailSet`.
+A linear shuttle carries a work-piece along a single rail between a park position (`10.0` cm) and a stamping head (`65.0` cm). A press of `CmdStart` sends the shuttle to the stamping head, triggers `StampCmd` until the head reports `MarkDone`, and then returns the shuttle to park. The move is considered done when `RailPos` is within `0.5` cm of `RailSet`. `RailSet` starts at the park position, so a shuttle that is parked at power-up stays where it is.
 
 ```st
 PROGRAM LabelShuttle
@@ -77,7 +77,7 @@ VAR_INPUT
     RailPos  : REAL;
 END_VAR
 VAR_OUTPUT
-    RailSet   : REAL;
+    RailSet   : REAL := 10.0;
     StampCmd  : BOOL;
     ReadyLamp : BOOL;
 END_VAR
@@ -129,7 +129,7 @@ This shuttle has only one axis, one cycle at a time, and an external `MarkDone` 
 
 ## Common mistakes
 
-- Comparing `REAL` positions with `=`. A tiny residual difference leaves the condition FALSE forever and freezes the sequence.
+- Comparing `REAL` positions with `=`. On a real axis a tiny residual difference leaves the condition FALSE forever and freezes the sequence. This scene's axis lands exactly on its setpoint, so `=` happens to pass here; the tolerance is what works on a real machine.
 - Writing a new setpoint and checking the old tolerance flag in the same scan (for example using separate `IF` blocks instead of `IF / ELSIF`). The state skips straight past the move before the axis has started.
 - Changing the horizontal setpoint before the vertical axis is within tolerance of the safe height. Both axes move at once and the pad sweeps diagonally across the belts.
 - Choosing a tolerance too wide, so the gripper starts acting before the pad is centred over the part, or too tight for the axis to settle inside it.
