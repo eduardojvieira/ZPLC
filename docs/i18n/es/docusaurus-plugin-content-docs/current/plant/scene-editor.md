@@ -15,7 +15,7 @@ El editor de escenas sirve para construir una escena propia, o cambiar una de la
 2. En **Escena**, elija **Suelo vacío** para empezar de cero, una escena incluida o una escena guardada en su proyecto.
 3. Pulse **Editar escena** en la barra **Herramientas de la planta**.
 
-El editor necesita que la planta esté detenida. Mientras la planta corre, **Editar escena** está desactivado y el editor lo dice. Mientras edita, la barra ofrece **Deshacer**, **Rehacer** y **Terminar de editar**.
+El editor necesita que la planta esté detenida. Mientras la planta corre, **Editar escena** está desactivado y el editor lo dice. Mientras edita, **Terminar de editar** cierra la edición. **Editar la planta** y **Terminar de editar la planta** del menú Editar y de la paleta de comandos hacen lo mismo que **Editar escena** y **Terminar de editar**.
 
 ## Añadir una pieza
 
@@ -58,9 +58,10 @@ El editor tiene un módulo que escribe las declaraciones de variables de una esc
 
 ## Deshacer, rehacer, guardar y ejecutar
 
-- **Deshacer** y **Rehacer** recorren sus ediciones, un paso por cada edición o arrastre. Están desactivados mientras la planta corre.
+- **Deshacer** y **Rehacer** del menú **Editar** recorren sus ediciones, un paso por cada edición o arrastre, y todas las vistas de la escena (la lista de piezas, el formulario de la pieza, las señales) muestran el resultado. Actúan sobre la escena mientras el documento de la planta es el documento activo y se edita una escena; en un editor de código son los del propio editor. Mientras la planta corre no cambian nada y lo dicen.
+- Los problemas de la escena están en la pestaña **Problemas** bajo **Planta**, cada uno en su pieza: al activar uno se selecciona la pieza en la actividad Planta y en el Inspector. Las señales sin enlazar o con tipo distinto del mapa de la planta también se listan ahí y abren su fila.
 - **Terminar de editar** cierra el editor y reconstruye la planta con la escena editada.
-- **Guardar en el proyecto** (en la barra, después de **Terminar de editar**, cuando hay una carpeta de proyecto abierta y la escena no es ya una escena guardada) pide un nombre y guarda la escena y su mapa de la planta como `scenes/<nombre>.scene.json` en su proyecto, donde aparece en **Escena**. La escena propia del proyecto (el `scene.json` de la raíz del proyecto, como lo trae una lección de escena) se guarda en su lugar: **Guardar en el proyecto** no pide nombre y escribe `scene.json` y `plant-map.json` en la raíz, los archivos que califica el Check de una lección, sin crear la carpeta `scenes/`. Una escena editada también participa en **Guardar todo**.
+- **Guardar en el proyecto** (en la barra, después de **Terminar de editar**, cuando hay una carpeta de proyecto abierta y la escena no es ya una escena guardada) pide un nombre y guarda la escena y su mapa de la planta como `scenes/<nombre>.scene.json` en su proyecto, donde aparece en **Escena**. La escena propia del proyecto (el `scene.json` de la raíz del proyecto, como lo trae una lección de escena) se guarda en su lugar: **Guardar en el proyecto** no pide nombre y escribe `scene.json` y `plant-map.json` en la raíz, los archivos que califica el Check de una lección, sin crear la carpeta `scenes/`. Una escena editada, con su mapa de la planta, participa en **Guardar todo**, también cuando el editor no está a la vista.
 - Para ejecutar, use **Ejecutar** en la barra de comandos. Inicia el programa y la planta juntos. Si las señales no están enlazadas, la planta se muestra pero ningún programa la maneja.
 
 ## Usar el teclado

@@ -536,11 +536,26 @@ describe('milestone U3 command contract (FND-002)', () => {
     const pending = COMMAND_LIST.filter((command) => command.pending).map((command) => command.id);
     expect(pending.sort()).toEqual(
       Object.keys(U3_COMMANDS)
-        .filter((id) => !['view.showPlant', 'project.plantMap', 'view.focusCommandBar', 'learn.check', 'view.lessonLayout'].includes(id))
+        .filter(
+          (id) =>
+            ![
+              'view.showPlant',
+              'project.plantMap',
+              'view.focusCommandBar',
+              'learn.check',
+              'view.lessonLayout',
+              // bound by U3-P5: the Edit menu lists them
+              'plant.edit',
+              'plant.endEdit',
+              'edit.undo',
+              'edit.redo',
+            ].includes(id),
+        )
         .sort(),
     );
     const listed = menuCommands.map((command) => command.id);
     for (const id of pending) expect([id, listed.includes(id)]).toEqual([id, false]);
+    for (const id of ['plant.edit', 'plant.endEdit', 'edit.undo', 'edit.redo']) expect([id, listed.includes(id)]).toEqual([id, true]);
   });
 
   it('FND-002 plant.feedBoard is physical and is absent from the AI and MCP command list', () => {
@@ -654,7 +669,9 @@ describe('milestone U2 command contract (FND-002)', () => {
     }
     const edit = (template[1]!.submenu ?? []) as MenuItemConstructorOptions[];
     expect(edit.slice(0, 4).map((item) => item.label)).toEqual(['Go to definition', 'Find all references', 'Go back', 'Go forward']);
-    expect(edit.slice(5).map((item) => item.role)).toEqual(['undo', 'redo', undefined, 'cut', 'copy', 'paste', 'selectAll']);
+    // Undo and Redo are the commands of the registry, once each: the native roles are not added a second time
+    expect(edit.slice(-4).map((item) => item.role)).toEqual(['cut', 'copy', 'paste', 'selectAll']);
+    expect(edit.filter((item) => item.label === 'Undo' || item.label === 'Redo')).toHaveLength(2);
   });
 
   it('UX-015 gives the new shortcuts no clash', () => {

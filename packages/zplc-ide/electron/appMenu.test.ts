@@ -113,6 +113,41 @@ describe('application menu (UX-014)', () => {
     expect(edit.every((item) => typeof item.label === 'string' && item.label.startsWith('«menu.'))).toBe(true);
   });
 
+  for (const platform of ['linux', 'win32', 'darwin'] as const) {
+    it(`SCN-010 the Edit menu of ${platform} holds one Undo and one Redo, the commands, and keeps the clipboard roles`, () => {
+      const commands: MenuCommand[] = [
+        ...COMMANDS,
+        { id: 'edit.undo', titleKey: 'command.edit.undo', category: 'edit', accelerator: null },
+        { id: 'edit.redo', titleKey: 'command.edit.redo', category: 'edit', accelerator: null },
+      ];
+      const sent: string[] = [];
+      const items = flatten(
+        buildMenuTemplate(platform, commands, t, {
+          isPackaged: true,
+          appName: 'ZPLC',
+          categories: CATEGORIES,
+          run: (id) => void sent.push(id),
+          requestReload: noop,
+        }),
+      );
+      const named = (label: string) =>
+        items.filter((item) => item.label === t(label) || item.label === t(label.replace('command.edit.', 'menu.')));
+      expect(named('command.edit.undo')).toHaveLength(1);
+      expect(named('command.edit.redo')).toHaveLength(1);
+      expect(items.filter((item) => item.role === 'undo' || item.role === 'redo')).toEqual([]);
+      expect(items.filter((item) => ['cut', 'copy', 'paste', 'selectAll'].includes(String(item.role)))).toHaveLength(4);
+      const [undo] = named('command.edit.undo');
+      const [redo] = named('command.edit.redo');
+      // the keys the roles carried: shown everywhere, and registered where the menu is the only route to a text field's undo (macOS)
+      expect(undo!.accelerator).toBe('CmdOrCtrl+Z');
+      expect(redo!.accelerator).toBe(platform === 'win32' ? 'Ctrl+Y' : platform === 'linux' ? 'Ctrl+Shift+Z' : 'CmdOrCtrl+Shift+Z');
+      expect(undo!.registerAccelerator).toBe(platform === 'darwin');
+      expect(redo!.registerAccelerator).toBe(platform === 'darwin');
+      undo!.click?.({} as never, undefined, {} as never);
+      expect(sent).toEqual(['edit.undo']);
+    });
+  }
+
   it(
     'UX-015 builds every command item from the registry: label from the translator, accelerator, and a click that sends only its ' + 'id',
     () => {

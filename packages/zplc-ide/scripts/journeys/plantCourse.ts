@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { assert, packageRoot } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
 import { chooseByKeys, pressMod } from '../journeyKeys';
+import { pause } from '../journeyTiming';
 import type { Journey } from '../journeys';
 import { LESSON_INDEX } from '../../src/generated/lessonIndex';
 import { courseOrder } from '../../src/learn/course';
@@ -12,6 +13,7 @@ import {
   holdPushButton,
   openPlantDocument,
   plantFacts,
+  runFromPalette,
   runInSimulation,
   SHIPPED,
   shippedSceneProject,
@@ -28,8 +30,19 @@ const control = (label: string) =>
 async function reach(app: App, how: How, target: string, what: string): Promise<void> {
   if (how === 'pointer') await app.click(target, what);
   else {
-    await app.eval(`(${target}).focus()`);
-    assert(await app.eval<boolean>(`document.activeElement === (${target})`), `${what} cannot take the keyboard focus.`);
+    // the palette gives the focus back a moment after it closes: ask again until the control holds it
+    await app.until(
+      `${what} to take the keyboard focus`,
+      async () => {
+        const held = () => app.eval<boolean>(`document.activeElement === (${target})`);
+        await app.eval(`(${target}).focus()`);
+        if (!(await held())) return undefined;
+        // the focus the palette gives back arrives late and takes it: the control must still hold it after that moment
+        await pause(400);
+        return (await held()) || undefined;
+      },
+      10_000,
+    );
   }
 }
 
@@ -78,10 +91,17 @@ async function placePart(app: App, how: How, id: string, set: { name: string; x:
   await app.until(`${set.name} named in its row`, async () => (await app.text()).includes(set.name) || undefined);
 }
 
-/** Binds every signal of the scene to the point the reference program of belt-to-sensor declares (suffix of the signal). */
+/**
+ * Binds every signal of the scene to the point the reference program of belt-to-sensor declares (suffix of the signal), in the plant map
+ * editor, which is opened for it: the signals of the scene being edited are its rows.
+ */
 const POINT: Record<string, string> = { pressed: 'Start', detect: 'EyeFar', run: 'Run', emit: 'Emit' };
 async function bindSignals(app: App, how: How, count = 3): Promise<void> {
-  const signals = await app.eval<string[]>(`[...document.querySelectorAll('tr[data-signal]')].map((tr) => tr.getAttribute('data-signal'))`);
+  await runFromPalette(app, 'project.plantMap', 'plant map');
+  await app.until('the plant map editor', async () => (await app.visible(css('[data-plant-map-editor]'))) || undefined, 30_000);
+  const rows = `[...document.querySelectorAll('[data-plant-map-editor] tr[data-signal]')]`;
+  await app.until('the signal rows', async () => ((await app.eval<number>(`${rows}.length`)) === count ? true : undefined));
+  const signals = await app.eval<string[]>(`${rows}.map((tr) => tr.getAttribute('data-signal'))`);
   assert(signals.length === count, `The scene exposes ${signals.length} signals instead of ${count}: ${signals.join(', ')}`);
   for (const signal of signals) {
     const point = POINT[signal.split('.')[1] ?? ''];
@@ -89,6 +109,9 @@ async function bindSignals(app: App, how: How, count = 3): Promise<void> {
     await fill(app, how, `Program point for ${signal}`, `BeltToSensor.${point}`);
     await app.until(`${signal} bound`, async () => (await app.text()).includes(`Bound to BeltToSensor.${point}`) || undefined);
   }
+  // back to the plant document, where the edit is ended
+  await runFromPalette(app, 'view.plant', 'show the plant');
+  await app.until('the plant document', async () => (await app.visible(css('[data-plant-document]'))) || undefined, 30_000);
 }
 
 /** A project whose scene is the empty floor, with the program of the reference scene belt-to-sensor and no map. */
@@ -104,10 +127,24 @@ async function openEmptyFloor(app: App, root: string, folder: string): Promise<v
   await openPlantDocument(app, project);
 }
 
+/**
+ * While a scene is edited the parts are in the Plant activity, the form of the selected part is in the Inspector and the bindings are in
+ * the plant map editor (PLS-005, PLS-006): shows the first two once Edit scene was pressed.
+ */
+async function openEditorSurfaces(app: App): Promise<void> {
+  await app.until('the plant editor', async () => (await app.visible(css('[data-plant-editor]'))) || undefined);
+  await app.click(css('[data-activity="plant"]'), 'the Plant activity of the rail');
+  await runFromPalette(app, 'view.showInspector', 'show the inspector');
+  await app.until(
+    'the parts catalogue',
+    async () => (await app.eval<boolean>(`(${control('Filter parts')})?.getBoundingClientRect().width > 0`)) || undefined,
+  );
+}
+
 /** From the empty floor: a belt, an emitter and a push button added, named, positioned and bound, with the editor still open. */
 async function build(app: App, how: How): Promise<void> {
   await app.click(css('[data-plant-edit-scene]'), 'Edit scene');
-  await app.until('the plant editor', async () => (await app.visible(css('[data-plant-editor]'))) || undefined);
+  await openEditorSurfaces(app);
   assert((await app.text()).includes('The scene has no parts yet'), 'The empty floor does not say that it has no parts.');
   await addPart(app, how, 'Belt conveyor');
   await addPart(app, how, 'Item emitter');
@@ -155,7 +192,7 @@ export const journeysCourse: Journey[] = [
       // one more part, then one undo step takes exactly that part back (SCN-010)
       await addPart(app, 'pointer', 'Stop blade');
       assert((await parts(app)).length === 4, 'The fourth part was not added.');
-      await app.click(css('[data-plant-undo]'), 'Undo');
+      await runFromPalette(app, 'edit.undo', 'undo');
       await app.until('the last part taken back by one Undo', async () => (await parts(app)).length === 3 || undefined);
       // the canvas drag needs WebGL 2, which the development host has not: say so rather than pretend it was driven
       if (!(await app.visible(css('[data-plant-drag-hint]'))))
@@ -337,6 +374,7 @@ journeysCourse.push(
       await openProjectSceneInLesson(app);
       await app.click(css('[data-plant-edit-scene]'), 'Edit scene');
       await plantEditorWait(app);
+      await openEditorSurfaces(app);
       await addPart(app, 'keyboard', 'Belt conveyor');
       await addPart(app, 'keyboard', 'Item emitter');
       await addPart(app, 'keyboard', 'Diffuse optical sensor');
@@ -365,6 +403,8 @@ journeysCourse.push(
         readFileSync(join(packageRoot, 'projects', entry.solution.project, entry.solution.program), 'utf8'),
       );
       assert(!existsSync(join(folder, 'scenes')), 'Saving the project scene must not create scenes/.');
+      // the Inspector took the right-hand sidebar for the form of the parts: the lesson, with Check, is one click back
+      await app.click(button('Lesson', 'exact'), 'the Lesson view of the secondary sidebar');
       const after = await check(app);
       assert(after.grade === 'passed', `Check of the built scene grades "${after.grade}": ${after.status}`);
     },

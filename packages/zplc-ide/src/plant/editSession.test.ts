@@ -1,10 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'bun:test';
+import { afterEach, describe, expect, it, mock } from 'bun:test';
+import { projectLoaderStub } from '../test/projectLoaderStub';
 import type { PlantSceneFile } from './contracts';
 import { createPlantCore } from './core/plantCore';
 import { parseScene } from './core/scene';
-import { usePlantEdit } from './editSession';
+await mock.module('../utils/projectLoader', () => projectLoaderStub());
+const { usePlantEdit } = await import('./editSession');
 
 const SCENES = join(import.meta.dir, '../../plant-scenes');
 const sceneOf = (id: string): PlantSceneFile => {
@@ -16,6 +18,7 @@ const sceneOf = (id: string): PlantSceneFile => {
 afterEach(() => {
   usePlantEdit.getState().setRunning(false);
   usePlantEdit.getState().end();
+  usePlantEdit.setState({ unsaved: {} });
 });
 
 describe('the plant edit session (SCN-008, PLS-005)', () => {
@@ -83,5 +86,26 @@ describe('the plant edit session (SCN-008, PLS-005)', () => {
     edit().editor!.select(scene.parts[1]!.id);
     stop();
     expect(seen).toEqual([scene.parts[1]!.id]);
+  });
+  it('SCN-011 the map editor follows the signals of the scene as parts are added, and keeps its bindings', () => {
+    const scene = sceneOf('belt-to-sensor');
+    const map = JSON.parse(readFileSync(join(SCENES, 'belt-to-sensor', 'plant-map.json'), 'utf8'));
+    const edit = usePlantEdit.getState;
+    edit().begin({ scene, map }, 'belt-to-sensor');
+    const bound = Object.keys(edit().mapEditor!.map().signals);
+    expect(bound.length).toBeGreaterThan(0);
+    edit().editor!.place('pb-new', 'push-button', [6, 0, 6]);
+    const fresh = edit()
+      .editor!.signals()
+      .map((signal) => signal.name)
+      .filter((name) => !bound.includes(name));
+    expect(fresh.length).toBeGreaterThan(0);
+    // the map editor of the session knows the new signals (a binding for each can be made in the plant map editor)...
+    const known = edit()
+      .mapEditor!.check({ inputs: [], outputs: [] })
+      .map((problem) => problem.path);
+    for (const name of fresh) expect(known).toContain(`signals.${name}`);
+    // ...and the bindings it had are kept
+    expect(Object.keys(edit().mapEditor!.map().signals)).toEqual(bound);
   });
 });

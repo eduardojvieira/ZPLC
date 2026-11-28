@@ -45,23 +45,37 @@ export function buildMenuTemplate(
   options: MenuBuildOptions,
 ): MenuItemConstructorOptions[] {
   const isMac = platform === 'darwin';
+  // Undo and Redo are commands when the registry lists them: the command is the one Undo and one Redo of the menu and carries the keys
+  // of the roles it replaces. They are registered on macOS only, where the menu is what makes Cmd+Z reach a text field: the command
+  // falls back to the field's own undo there. On Windows and Linux the key stays with the page (a text field, Monaco, a visual editor).
+  const redoKey = platform === 'win32' ? 'Ctrl+Y' : platform === 'linux' ? 'Ctrl+Shift+Z' : 'CmdOrCtrl+Shift+Z';
+  const historyKeys: Record<string, string> = { 'edit.undo': 'CmdOrCtrl+Z', 'edit.redo': redoKey };
+  const hasHistoryCommands =
+    commands.some((command) => command.id === 'edit.undo') && commands.some((command) => command.id === 'edit.redo');
   const itemsOf = (category: string): MenuItemConstructorOptions[] =>
     commands
       .filter((command) => command.category === category)
-      .map((command) => ({
-        label: t(command.titleKey),
-        ...(command.accelerator ? { accelerator: command.accelerator, registerAccelerator: isMac } : {}),
-        click: () => options.run(command.id),
-      }));
+      .map((command) => {
+        const accelerator = command.accelerator ?? historyKeys[command.id];
+        return {
+          label: t(command.titleKey),
+          ...(accelerator ? { accelerator, registerAccelerator: isMac } : {}),
+          click: () => options.run(command.id),
+        };
+      });
   const withTail = (items: MenuItemConstructorOptions[], tail: MenuItemConstructorOptions[]): MenuItemConstructorOptions[] =>
     items.length > 0 && tail.length > 0 ? [...items, SEPARATOR, ...tail] : [...items, ...tail];
 
   const tails: Record<string, MenuItemConstructorOptions[]> = {
     file: [isMac ? { role: 'close', label: t('menu.closeWindow') } : { role: 'quit', label: t('menu.quit') }],
     edit: [
-      { role: 'undo', label: t('menu.undo') },
-      { role: 'redo', label: t('menu.redo') },
-      SEPARATOR,
+      ...(hasHistoryCommands
+        ? []
+        : [
+            { role: 'undo', label: t('menu.undo') } satisfies MenuItemConstructorOptions,
+            { role: 'redo', label: t('menu.redo') } satisfies MenuItemConstructorOptions,
+          ]),
+      ...(hasHistoryCommands ? [] : [SEPARATOR]),
       { role: 'cut', label: t('menu.cut') },
       { role: 'copy', label: t('menu.copy') },
       { role: 'paste', label: t('menu.paste') },
