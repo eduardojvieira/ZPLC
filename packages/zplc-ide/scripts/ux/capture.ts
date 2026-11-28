@@ -162,7 +162,15 @@ const SHOWN: Record<string, string> = {
   'editor.plant': 'waiting for Run',
 };
 /** Surfaces whose element can lie below the fold of its panel: it is scrolled into view before the marker is read. */
-const SCROLL_TO: Record<string, string> = { 'activity.plant.group': '[data-navigator-group="plant"]' };
+const SCROLL_TO: Record<string, string> = {
+  'activity.plant.group': '[data-navigator-group="plant"]',
+  'learn.tryIt': '[data-reading-block="ld-try"]',
+  'learn.exercise': '[data-guide-stage]',
+};
+/** The surfaces with a 3D canvas: they are captured in a launch with software GL (WebGL 2 without a GPU), the others without it. */
+const GL_SURFACES = new Set(['editor.plant', 'plant.operate', 'plant.chooser', 'plant.editor']);
+/** Surfaces that are shown in a dialog of their own, so that a dialog on screen is expected. */
+const IN_DIALOG = new Set(['shell.statusDetails']);
 /** Why a surface has no way in yet; what a fixture cannot show without a real failure or a hook in the product code. */
 const REASONS: Record<string, string> = {
   'shell.notifications': 'shown only after the app raises one; no command or fixture raises one without a real event (needs a test hook)',
@@ -431,11 +439,12 @@ async function captureCondition(
   out: string,
   shared: { harness: Harness; scratch: string },
   lessons: Array<{ id: string; kinds: LessonKind[] }> = [],
+  gl?: 'software',
 ): Promise<ConditionRun> {
   const { launchApp, button, css } = await import('../journeyApp');
   const ui = (key: Parameters<typeof translate>[1]) => translate(condition.locale, key);
   const { harness, scratch } = shared;
-  const launched = await launchApp(harness, mkdtempSync(join(scratch, 'uxv-')), {}, { gl: 'software' });
+  const launched = await launchApp(harness, mkdtempSync(join(scratch, 'uxv-')), {}, gl ? { gl } : {});
   const app = launched.app;
   const captures: CaptureRecord[] = [];
   const failed: Array<{ surface: string; reason: string }> = [];
@@ -523,6 +532,8 @@ async function captureCondition(
     let data = '';
     let same = 0;
     for (let attempt = 0; attempt < 60; attempt++) {
+      // fitted again before each picture: a resize or a late load can have moved the camera after the first fit
+      if (hasCanvas) await run('view.fitPlantScene');
       data = ((await app.cdp.command('Page.captureScreenshot', { format: 'png' })) as { data: string }).data;
       same = data === previous ? same + 1 : 0;
       if (same >= holds && (await app.eval<boolean>(canvasShows(data)))) break;
@@ -565,6 +576,7 @@ async function captureCondition(
     // full-screen reading of a lesson is a modal region too, and it is the surface of learn.reading)
     if (
       plan.surface.area !== 'Dialogs' &&
+      !IN_DIALOG.has(plan.surface.id) &&
       (await app.eval<boolean>(
         `Boolean(document.querySelector('[aria-modal="true"]:not([data-learn-reading]), ` +
           `[role="dialog"]:not([data-learn-reading]), [role="alertdialog"]'))`,
@@ -892,9 +904,25 @@ async function main(): Promise<void> {
   const { harness, scratch, stop } = await startHarness();
   let run: RunResult;
   try {
-    run = await runConditions(conditions, (condition) =>
-      captureCondition(condition, reached, surfaces, project, out, { harness, scratch }, lessons),
-    );
+    // the 3D view needs software GL, which also moves a pixel here and there elsewhere: it has a launch of its own
+    const forGl = reached.filter((entry) => GL_SURFACES.has(entry.surface.id));
+    const rest = reached.filter((entry) => !GL_SURFACES.has(entry.surface.id));
+    run = await runConditions(conditions, async (condition) => {
+      const plain = await captureCondition(condition, rest, surfaces, project, out, { harness, scratch }, lessons);
+      const mine = forGl.filter((entry) => conditionsFor(entry.surface).some((c) => conditionName(c) === conditionName(condition)));
+      if (mine.length === 0) return plain;
+      try {
+        const gl = await captureCondition(condition, mine, surfaces, project, out, { harness, scratch }, [], 'software');
+        return {
+          captures: [...plain.captures, ...gl.captures],
+          failed: [...plain.failed, ...gl.failed],
+          notes: [...(plain.notes ?? []), ...(gl.notes ?? [])],
+        };
+      } catch (error) {
+        const reason = `the launch with software GL failed: ${(error instanceof Error ? error.message : String(error)).split('\n')[0]}`;
+        return { ...plain, failed: [...plain.failed, ...mine.map((entry) => ({ surface: entry.surface.id, reason }))] };
+      }
+    });
   } finally {
     await stop();
   }
