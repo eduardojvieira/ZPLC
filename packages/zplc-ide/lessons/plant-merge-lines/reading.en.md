@@ -95,22 +95,22 @@ signals:
   - { name: NorthReq, edges: [500, 1500] }
   - { name: SouthReq, edges: [500, 5000] }
   - { name: AllowNorth, edges: [500, 3500] }
-  - { name: AllowSouth, edges: [3500, 7000] }
+  - { name: AllowSouth, edges: [3700, 7000] }
   - { name: BridgeBusy, edges: [1200, 3200, 4600, 6600] }
   - { name: WeighDone, edges: [3500, 3700, 7000, 7200] }
 caption: Both lanes request at once; North wins first, and South waits until WeighDone ends North's grant
 ```
 
-Trace the arbitration. Both `NorthReq` and `SouthReq` turn TRUE together while the bridge is free. The outer `IF` allows one new grant, and the inner `IF NorthReq` runs before `ELSIF SouthReq`, so `AllowNorth` latches TRUE while `AllowSouth` stays FALSE. While the north truck crosses, `AllowNorth` blocks the outer `IF`, so `SouthReq` waits. When `WeighDone` clears both grants and `BridgeBusy` is FALSE, the next scan grants `AllowSouth`.
+Trace the arbitration. Both `NorthReq` and `SouthReq` turn TRUE together while the bridge is free. The outer `IF` allows one new grant, and the inner `IF NorthReq` runs before `ELSIF SouthReq`, so `AllowNorth` latches TRUE while `AllowSouth` stays FALSE. While the north truck crosses, `AllowNorth` blocks the outer `IF`, so `SouthReq` waits. While `WeighDone` is TRUE it clears both grants on every scan; on the first scan after it returns to FALSE, with `BridgeBusy` FALSE, `AllowSouth` latches.
 
 Notice what this weighbridge gives you for free that the merge station does not. Here an operator sends `WeighDone` once the truck is gone, and the outputs are active-high green lights. In the practice station there is no `WeighDone` input — the zone sensor is FALSE both before the box reaches it and after it leaves — the blades hold when their output is TRUE rather than FALSE, and the program must also load three boxes on each feeder and count all six boxes out.
 
 ## Common mistakes
 
 - Checking `WaitA` and `WaitB` in two separate `IF` statements instead of one `IF ... ELSIF`. When both sensors are TRUE on the same scan, both grants latch together and two boxes collide.
-- Clearing a grant as soon as `Zone` is FALSE. Before the granted box even reaches `EyeZone`, `Zone` is already FALSE, so the grant clears early and the second blade opens while the first box is still approaching the junction.
-- Forgetting that `HoldA` and `HoldB` are active-high stop blades. Setting them FALSE before `Start` or when idle lets boxes roll straight through unarbitrated.
-- Re-emitting on every scan while `Start` is held or without counting loaded boxes. Each emitter releases one box per rising edge and must stop after three boxes per feeder.
+- Clearing a grant as soon as `Zone` is FALSE. `Zone` is already FALSE when the grant is given, so the grant ends on the same scan, the blade never opens and the boxes wait behind it.
+- Forgetting that a blade holds while its output is TRUE. A blade written FALSE while the line runs and nothing is granted lets the boxes roll straight into the merge.
+- Holding Emit TRUE. The emitter releases one box per rising edge, so a held output puts one box on the feeder; each further box needs the output to go FALSE and TRUE again.
 
 > [!NOTE]
 > An interlock in PLC code protects the sequence against logical collisions in simulation, not people on a real floor. Physical guarding and emergency stops belong in dedicated hardware.

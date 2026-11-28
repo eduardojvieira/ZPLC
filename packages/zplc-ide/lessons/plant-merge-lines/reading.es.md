@@ -95,22 +95,22 @@ signals:
   - { name: NorthReq, edges: [500, 1500] }
   - { name: SouthReq, edges: [500, 5000] }
   - { name: AllowNorth, edges: [500, 3500] }
-  - { name: AllowSouth, edges: [3500, 7000] }
+  - { name: AllowSouth, edges: [3700, 7000] }
   - { name: BridgeBusy, edges: [1200, 3200, 4600, 6600] }
   - { name: WeighDone, edges: [3500, 3700, 7000, 7200] }
 caption: Ambos carriles piden paso a la vez; Norte gana primero y Sur espera hasta que WeighDone borre la concesión de Norte
 ```
 
-Siga el arbitraje. `NorthReq` y `SouthReq` pasan a TRUE juntos mientras la báscula está libre. El `IF` exterior permite una sola concesión nueva, y el `IF NorthReq` interior se evalúa antes que `ELSIF SouthReq`, así que `AllowNorth` se enclava en TRUE mientras `AllowSouth` sigue en FALSE. Mientras el camión del norte cruza, `AllowNorth` bloquea el `IF` exterior, así que `SouthReq` espera. Cuando `WeighDone` borra ambas concesiones y `BridgeBusy` es FALSE, el siguiente ciclo de escaneo concede `AllowSouth`.
+Siga el arbitraje. `NorthReq` y `SouthReq` pasan a TRUE juntos mientras la báscula está libre. El `IF` exterior permite una sola concesión nueva, y el `IF NorthReq` interior se evalúa antes que `ELSIF SouthReq`, así que `AllowNorth` se enclava en TRUE mientras `AllowSouth` sigue en FALSE. Mientras el camión del norte cruza, `AllowNorth` bloquea el `IF` exterior, así que `SouthReq` espera. Mientras `WeighDone` está en TRUE borra ambas concesiones en cada ciclo de escaneo; en el primer ciclo de escaneo después de que vuelve a FALSE, con `BridgeBusy` en FALSE, `AllowSouth` se enclava.
 
 Fíjese en lo que esta báscula le da resuelto y la estación de fusión no. Aquí un operador envía `WeighDone` cuando el camión ya salió, y las salidas son luces verdes activas en alto. En la estación de la práctica no existe una entrada `WeighDone` — el sensor de zona está en FALSE tanto antes de que llegue la caja como después de que sale —, los topes retienen cuando su salida está en TRUE en lugar de FALSE, y el programa también debe cargar tres cajas en cada alimentador y contar las seis salidas.
 
 ## Errores comunes
 
 - Comprobar `WaitA` y `WaitB` en dos sentencias `IF` separadas en lugar de un único `IF ... ELSIF`. Cuando ambos sensores están en TRUE en el mismo ciclo de escaneo, ambas concesiones se enclavan juntas y dos cajas chocan.
-- Borrar una concesión en cuanto `Zone` está en FALSE. Antes de que la caja autorizada llegue siquiera a `EyeZone`, `Zone` ya es FALSE, así que la concesión se borra antes de tiempo y el segundo tope se abre mientras la primera caja aún se acerca a la unión.
-- Olvidar que `HoldA` y `HoldB` son topes retráctiles activos en alto. Dejarlos en FALSE antes de `Start` o en reposo deja pasar las cajas sin arbitraje.
-- Emitir en cada ciclo de escaneo mientras `Start` está presionado o sin contar las cajas cargadas. Cada emisor suelta una caja por flanco ascendente y debe detenerse tras tres cajas por alimentador.
+- Borrar una concesión en cuanto `Zone` está en FALSE. `Zone` ya es FALSE cuando se da la concesión, así que la concesión termina en el mismo ciclo de escaneo, el tope retráctil nunca se abre y las cajas esperan detrás de él.
+- Olvidar que los topes retráctiles retienen mientras su salida está en TRUE. Un tope escrito en FALSE mientras la línea funciona y nada está concedido deja que las cajas rueden directamente hacia la fusión.
+- Mantener Emit en TRUE. El emisor suelta una caja por flanco ascendente, así que una salida mantenida pone una sola caja en el alimentador; cada caja siguiente necesita que la salida pase a FALSE y de nuevo a TRUE.
 
 > [!NOTE]
 > Un enclavamiento en código del PLC protege la secuencia contra colisiones lógicas en simulación, no a las personas en una planta real. Los resguardos físicos y las paradas de emergencia pertenecen al hardware dedicado.
@@ -135,4 +135,4 @@ options:
 
 ## Qué hará en la práctica
 
-El programa inicial en `src/MergeLines.st` declara las cuatro entradas y las ocho salidas y no acciona nada. El escenario acciona el pulsador de inicio a los {{t:200}} ms y comprueba que las seis cajas — tres de cada alimentador — salgan por la cinta de salida sin colisiones y con `Done` encendida a los {{t:25000}} ms. Escriba la carga de los alimentadores, el arbitraje por prioridad y los enclavamientos de los topes, guarde el archivo y pulse {{ui:learn.check}}.
+El proyecto inicial en `src/MergeLines.st` declara las cuatro entradas y las ocho salidas y no acciona nada. El escenario acciona el pulsador de inicio a los {{t:200}} ms y comprueba que las seis cajas — tres de cada alimentador — salgan por la cinta de salida sin colisiones y con `Done` encendida a los {{t:25000}} ms. Escriba la carga de los alimentadores, el arbitraje por prioridad y los enclavamientos de los topes, guarde el archivo y pulse {{ui:learn.check}}.
