@@ -97,7 +97,8 @@ export function collectMeasurement(options: CollectOptions, clippersOf: (box: El
   const name = (element: Element): string => {
     const parts: string[] = [];
     for (let at: Element | null = element; at && at !== document.body && parts.length < 3; at = at.parentElement) {
-      let part = at.tagName.toLowerCase() + (at.id ? `#${at.id}` : '');
+      // a generated id (React useId, Radix) differs from one run to the next: it is not part of the name
+      let part = at.tagName.toLowerCase() + (at.id && !/_r_|^:r|radix|\u00ab/.test(at.id) ? `#${at.id}` : '');
       const label = at.getAttribute('aria-label');
       if (label) part += `[aria-label="${label.slice(0, 40)}"]`;
       for (const attribute of at.attributes)

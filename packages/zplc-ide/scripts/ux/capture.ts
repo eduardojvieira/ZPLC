@@ -112,7 +112,16 @@ const REASONS: Record<string, string> = {
   'learn.result': 'shown only after learn.check grades a lesson, which runs the program',
   'dialog.modal': 'a generic modal with no command of its own: each dialog above is one of them',
 };
-const STILL = '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }';
+/** Motion, the caret and the scrollbars of Monaco (its scrollbar and overview ruler fade on a timer) stand still. */
+export const STILL =
+  '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; } ' +
+  '.monaco-scrollable-element > .scrollbar, .monaco-editor .decorationsOverviewRuler ' +
+  '{ opacity: 0 !important; visibility: hidden !important; }';
+/** The clock of the page, fixed: the Output panel prints the time of each line, so two runs would differ by it (never product code). */
+export const CLOCK =
+  '(() => { const Real = Date; const T = Real.UTC(2026, 10, 28, 10, 0, 0); ' +
+  'function Fixed(...args) { if (!new.target) return new Real(T).toString(); return args.length > 0 ? new Real(...args) : new Real(T); } ' +
+  'Fixed.prototype = Real.prototype; Fixed.now = () => T; Fixed.UTC = Real.UTC; Fixed.parse = Real.parse; globalThis.Date = Fixed; })()';
 
 interface Plan {
   surface: Surface;
@@ -420,6 +429,8 @@ async function captureCondition(
       deviceScaleFactor: condition.scale ?? 1,
       mobile: false,
     });
+    await app.cdp.command('Page.addScriptToEvaluateOnNewDocument', { source: CLOCK });
+    await app.eval(CLOCK);
     await app.cdp.command('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
     await app.eval(
       `(async () => { const { useAppSettings } = await import('/src/store/useAppSettings.ts'); ` +
