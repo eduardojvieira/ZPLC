@@ -536,11 +536,26 @@ describe('milestone U3 command contract (FND-002)', () => {
     const pending = COMMAND_LIST.filter((command) => command.pending).map((command) => command.id);
     expect(pending.sort()).toEqual(
       Object.keys(U3_COMMANDS)
-        .filter((id) => !['view.showPlant', 'project.plantMap', 'view.focusCommandBar', 'learn.check', 'view.lessonLayout'].includes(id))
+        .filter(
+          (id) =>
+            ![
+              'view.showPlant',
+              'project.plantMap',
+              'view.focusCommandBar',
+              'learn.check',
+              'view.lessonLayout',
+              // bound by U3-P5: the Edit menu lists them
+              'plant.edit',
+              'plant.endEdit',
+              'edit.undo',
+              'edit.redo',
+            ].includes(id),
+        )
         .sort(),
     );
     const listed = menuCommands.map((command) => command.id);
     for (const id of pending) expect([id, listed.includes(id)]).toEqual([id, false]);
+    for (const id of ['plant.edit', 'plant.endEdit', 'edit.undo', 'edit.redo']) expect([id, listed.includes(id)]).toEqual([id, true]);
   });
 
   it('FND-002 plant.feedBoard is physical and is absent from the AI and MCP command list', () => {

@@ -9,6 +9,7 @@ const { useIDEStore } = await import('../../store/useIDEStore');
 const { useAppSettings } = await import('../../store/useAppSettings');
 const { activeTransport } = await import('../../store/useTransport');
 const { announcementsSnapshot } = await import('../../utils/announce');
+const { runCommand } = await import('../../commands/bus');
 const { parseSettings } = await import('../../utils/appSettings');
 const { registerParts, catalogue } = await import('../core/catalogue');
 const { itemParts } = await import('../core/parts/items');
@@ -441,21 +442,6 @@ describe('the plant panel (VIS-001, VIS-006, VIS-010, PLS-003, PLS-004, PLS-010)
     },
   );
 
-  it('SCN-010 Undo and Redo of the editor toolbar reach the editor', async () => {
-    const r = rig();
-    dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
-    await ready();
-    await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-edit-scene]')!));
-    const count = () => document.querySelectorAll('[data-plant-editor] ul[aria-label] li').length;
-    const start = count();
-    await dom.act(async () => dom.fireEvent.click(dom.screen.getByRole('button', { name: dom.t('plantEditor.add') })));
-    expect(count()).toBe(start + 1);
-    await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-undo]')!));
-    expect(count()).toBe(start);
-    await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-redo]')!));
-    expect(count()).toBe(start + 1);
-  });
-
   it('FLW-005 the scene being edited joins Save all', async () => {
     const written: string[] = [];
     const fake = {
@@ -465,15 +451,23 @@ describe('the plant panel (VIS-001, VIS-006, VIS-010, PLS-003, PLS-004, PLS-010)
         }),
       }),
     } as unknown as FileSystemDirectoryHandle;
-    dom.patchStore(useIDEStore, { directoryHandle: fake });
+    const files = new Map([['a', { id: 'a', name: 'Main.st', path: 'Main.st', content: 'PROGRAM Main', isModified: false }]]);
+    dom.patchStore(useIDEStore, { directoryHandle: fake, loadedFiles: files as never });
     const { saveAllDocuments } = await import('../../store/saveAll');
+    const { usePlantEdit } = await import('../editSession');
     const r = rig();
     dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
     await ready();
+    expect((await saveAllDocuments()).saved).toBe(0);
     await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-edit-scene]')!));
-    await dom.act(async () => dom.fireEvent.click(dom.screen.getByRole('button', { name: dom.t('plantEditor.add') })));
-    expect((await saveAllDocuments()).saved).toBeGreaterThanOrEqual(1);
-    expect(written.some((name) => name.endsWith('.scene.json'))).toBe(true);
+    expect((await saveAllDocuments()).saved).toBe(0); // editing with no change writes nothing
+    // an edit made in the session, as the Plant activity and the Inspector make it
+    dom.act(() => void usePlantEdit.getState().editor!.place('belt-x', 'belt', [4, 0, 4]));
+    expect((await saveAllDocuments()).saved).toBe(1);
+    expect(written.filter((name) => name.endsWith('.scene.json'))).toHaveLength(1);
+    expect(written.every((name) => name.endsWith('.scene.json'))).toBe(true);
+    expect(useIDEStore.getState().loadedFiles.get('a')).toEqual(files.get('a') as never);
+    expect((await saveAllDocuments()).saved).toBe(0);
   });
 
   it('PLS-010 with visible false no frame is drawn and scan events still arrive', async () => {
@@ -768,10 +762,8 @@ describe('one plant edit session and the plant toolbar (PLS-004, PLS-005, PLS-00
     // the faults and the items of the plant are offered in the document
     expect(document.querySelector('[data-plant-fault-trigger]')).toBeTruthy();
     expect(document.querySelector('[data-plant-add-item]')).toBeTruthy();
-    // while editing, Undo, Redo and Done are in the editor of the session, not on the toolbar
+    // while editing, Done is in the editor of the session, not on the toolbar
     await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-edit-scene]')!));
-    expect(document.querySelector('[data-plant-editor] [data-plant-undo]')).toBeTruthy();
-    expect(document.querySelector('[data-plant-editor] [data-plant-redo]')).toBeTruthy();
     expect(document.querySelector('[data-plant-editor] [data-plant-edit-done]')).toBeTruthy();
     check();
   });
@@ -867,6 +859,56 @@ describe('one plant edit session and the plant toolbar (PLS-004, PLS-005, PLS-00
     expect(document.querySelectorAll('[data-plant-schematic] rect').length).toBeGreaterThan(0);
   });
 
+  it('PLS-005 the Undo and Redo buttons are gone from the toolbar', async () => {
+    const { bindCommands, resetCommandsForTest } = await import('../../commands/bus');
+    const { plantEditHandlers } = await import('../../commands/bind/plantEdit');
+    const { usePlantEdit } = await import('../editSession');
+    resetCommandsForTest();
+    bindCommands(plantEditHandlers());
+    const r = rig();
+    dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+    await ready();
+    // Edit scene is the command plant.edit: the Edit menu and the palette start the same edit
+    expect(runCommand('plant.edit')).toBe('ran');
+    await dom.waitFor(() => expect(document.querySelector('[data-plant-editor]')).toBeTruthy());
+    expect(usePlantEdit.getState().editor).not.toBeNull();
+    for (const gone of ['[data-plant-undo]', '[data-plant-redo]']) expect(document.querySelector(gone)).toBeNull();
+    expect(dom.screen.queryByRole('button', { name: dom.t('plantEditor.undo') })).toBeNull();
+    expect(dom.screen.queryByRole('button', { name: dom.t('plantEditor.redo') })).toBeNull();
+    // and Done is plant.endEdit
+    expect(runCommand('plant.endEdit')).toBe('ran');
+    await dom.waitFor(() => expect(document.querySelector('[data-plant-editor]')).toBeNull());
+    expect(usePlantEdit.getState().editor).toBeNull();
+    resetCommandsForTest();
+  });
+
+  it('CRS-012 the project scene is saved by Save all as the root scene.json, with no scenes folder', async () => {
+    const written: string[] = [];
+    const created: string[] = [];
+    const fake = {
+      // listing the saved scenes opens the folder without creating it; only a save would create it
+      getDirectoryHandle: async (name: string, options?: { create?: boolean }) => {
+        if (options?.create) created.push(name);
+        throw new Error('not found');
+      },
+      getFileHandle: async (name: string) => ({
+        createWritable: async () => ({ write: async () => void written.push(name), close: async () => {} }),
+      }),
+    } as unknown as FileSystemDirectoryHandle;
+    projectScene(sceneFiles('belt-to-sensor').scene);
+    dom.patchStore(useIDEStore, { directoryHandle: fake });
+    const { saveAllDocuments } = await import('../../store/saveAll');
+    const { usePlantEdit } = await import('../editSession');
+    const r = rig();
+    dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+    await ready();
+    await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-edit-scene]')!));
+    dom.act(() => void usePlantEdit.getState().editor!.place('belt-x', 'belt', [4, 0, 4]));
+    expect((await saveAllDocuments()).saved).toBe(1);
+    expect(written).toEqual(['scene.json']);
+    expect(created).toEqual([]);
+  });
+
   it("A4 one panel's session is never ended or marked running by another panel on another scene", async () => {
     const { usePlantEdit } = await import('../editSession');
     dom.patchStore(useIDEStore, { loadedFiles: new Map() as never });
@@ -891,7 +933,7 @@ describe('one plant edit session and the plant toolbar (PLS-004, PLS-005, PLS-00
     await dom.settle();
     expect(usePlantEdit.getState().running).toBe(false);
     expect(usePlantEdit.getState().editor!.state().running).toBe(false);
-    expect((inA('[data-plant-undo]') as HTMLButtonElement).disabled).toBe(false);
+    expect((inA('[data-plant-edit-done]') as HTMLButtonElement).disabled).toBe(false);
     // B closes: A's edits survive, and Done rebuilds A's plant with them
     viewB.unmount();
     expect(inA('[data-plant-editor]')).toBeTruthy();
