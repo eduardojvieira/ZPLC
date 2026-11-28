@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'bun:test';
-import { existsSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { JOURNEY_TIME_FACTOR, journeyFactor, scaleWait } from '../../scripts/journeyTiming';
 import { scaleTime, TIME_FACTOR, timeFactor } from './platformTime';
 
 describe('the platform time factor of the unit tests', () => {
@@ -16,10 +17,13 @@ describe('the platform time factor of the unit tests', () => {
     expect(scaleTime(5_000, 'freebsd')).toBe(5_000);
   });
 
-  it('equals the journey table once scripts/journeyTiming.ts exists', async () => {
-    const journeys = join(import.meta.dir, '..', '..', 'scripts', 'journeyTiming.ts');
-    if (!existsSync(journeys)) return; // the table lives on ci/nightly-journey-shards until that branch merges
-    const { JOURNEY_TIME_FACTOR } = (await import(journeys)) as { JOURNEY_TIME_FACTOR: Record<string, number> };
-    expect(TIME_FACTOR).toEqual(JOURNEY_TIME_FACTOR);
+  it('is the one table: the journeys read the same object', () => {
+    expect(JOURNEY_TIME_FACTOR).toBe(TIME_FACTOR);
+    expect(journeyFactor('darwin')).toBe(timeFactor('darwin'));
+    expect(scaleWait(1_000, 'win32')).toBe(scaleTime(1_000, 'win32'));
+  });
+
+  it('is applied to the default timeout by the preload of bunfig.toml, once for every test file', () => {
+    expect(readFileSync(join(import.meta.dir, '..', '..', 'bunfig.toml'), 'utf8')).toContain('./src/test/applyPlatformTime.ts');
   });
 });

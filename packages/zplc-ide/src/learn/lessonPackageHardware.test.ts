@@ -15,9 +15,6 @@ import {
   programAddresses,
   PROJECTS_DIRECTORY,
 } from './lessonPackageFiles';
-import { scaleDefaultTimeout } from '../test/platformTime';
-
-scaleDefaultTimeout(); // a test with no timeout of its own gets bun's 5 s scaled for the system (src/test/platformTime.ts)
 
 const temporary: string[] = [];
 afterEach(() => {

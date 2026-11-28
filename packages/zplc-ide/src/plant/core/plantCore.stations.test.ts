@@ -6,9 +6,6 @@ import sceneHashes from '../ci/sceneHashes.json';
 import { catalogue } from './catalogue';
 import hashes from './hashes.json';
 import { createPlantCore } from './plantCore';
-import { scaleDefaultTimeout } from '../../test/platformTime';
-
-scaleDefaultTimeout(); // a test with no timeout of its own gets bun's 5 s scaled for the system (src/test/platformTime.ts)
 
 const cores: PlantCore[] = [];
 afterEach(() => {

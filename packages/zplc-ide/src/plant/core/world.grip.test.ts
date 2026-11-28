@@ -2,9 +2,6 @@ import { describe, expect, it } from 'bun:test';
 import { createHash } from 'node:crypto';
 import { createWorld, type PhysicsWorld, type WorldBodySpec } from './world';
 import { loadJolt } from './jolt';
-import { scaleDefaultTimeout } from '../../test/platformTime';
-
-scaleDefaultTimeout(); // a test with no timeout of its own gets bun's 5 s scaled for the system (src/test/platformTime.ts)
 
 const base = { rotationYDeg: 0, friction: 0.6 } as const;
 const floor: WorldBodySpec = {

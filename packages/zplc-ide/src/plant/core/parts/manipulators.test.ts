@@ -10,9 +10,6 @@ import { conveyorParts } from './conveyors';
 import { flowParts } from './flow';
 import { boxSize, itemParts, spawnItem, type PartRuntime } from './items';
 import { manipulatorParts } from './manipulators';
-import { scaleDefaultTimeout } from '../../../test/platformTime';
-
-scaleDefaultTimeout(); // a test with no timeout of its own gets bun's 5 s scaled for the system (src/test/platformTime.ts)
 
 const defs = [...itemParts, ...conveyorParts, ...flowParts, ...manipulatorParts];
 const catalogue = createCatalogue(defs);

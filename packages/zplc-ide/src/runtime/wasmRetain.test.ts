@@ -7,9 +7,6 @@ import { builtWasmModule, itWasm } from '../cli/wasmModuleGuard';
 import { ProjectRecordStore, openRecordStore } from './projectRecordStore';
 import { WASMAdapter } from './wasmAdapter';
 import { MemoryRecordStore, WasmRuntime, type WasmRecordStore } from './wasmRuntime';
-import { scaleDefaultTimeout } from '../test/platformTime';
-
-scaleDefaultTimeout(); // a test with no timeout of its own gets bun's 5 s scaled for the system (src/test/platformTime.ts)
 
 // RT-025, RT-026, RT-027: the browser runtime applies the retain rules of the firmware and of the POSIX host, because it
 // runs the same module of rules (zplc_retain.c) over a store that the host supplies. The scenarios below are the ones of
