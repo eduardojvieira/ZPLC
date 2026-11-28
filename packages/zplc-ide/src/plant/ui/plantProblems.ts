@@ -9,8 +9,7 @@ import type { ProblemAt } from '../editor/validate';
 import { openPlantMapRow, usePlantMapProblems, type PlantMapProblem } from './plantMapProblems';
 
 export type PlantProblemEntry =
-  | { kind: 'scene'; message: string; problem: ProblemAt }
-  | { kind: 'map'; message: string; problem: PlantMapProblem };
+  { kind: 'scene'; message: string; problem: ProblemAt } | { kind: 'map'; message: string; problem: PlantMapProblem };
 
 const NONE: readonly ProblemAt[] = [];
 
