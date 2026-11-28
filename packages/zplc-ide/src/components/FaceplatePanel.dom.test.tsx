@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test';
+import { afterEach, describe, expect, it } from 'bun:test';
 
 import type { DebugMap } from '../compiler';
 import { setupDom, stubProjectLoader } from '../test/dom';
@@ -49,6 +49,9 @@ const paused = () => dom.t('faceplate.paused');
 const inputSwitch = () =>
   document.querySelector('[data-faceplate] [data-input="Motor.Start"] button[role="switch"]') as HTMLButtonElement;
 
+let unregister = () => {};
+afterEach(() => unregister());
+
 function open(vmState: string) {
   dom.patchStore(useIDEStore, {
     debug: { ...useIDEStore.getState().debug, mode: 'simulate', debugMap: DEBUG_MAP, forcedValues: new Map(), forcesUnconfirmed: false },
@@ -57,12 +60,11 @@ function open(vmState: string) {
 }
 
 describe('The faceplate agrees with the status rail about running (spec 014, found by V-P7)', () => {
-  it('a plant running slower than real time while the program reads paused: the faceplate is not paused and its inputs work', () => {
-    const unregister = registerPlantTransport(plant('running', 0.5));
+  it('a plant running slower than real time while the program reads paused: the faceplate is not paused and its inputs work', async () => {
+    unregister = registerPlantTransport(plant('running', 0.5));
     open('paused');
     expect(dom.screen.queryByText(paused())).toBeNull();
-    expect(inputSwitch().disabled).toBe(false);
-    unregister();
+    await dom.waitFor(() => expect(inputSwitch().disabled).toBe(false));
   });
 
   it('a simulation that is really paused still says paused and disables its inputs', () => {
@@ -72,9 +74,8 @@ describe('The faceplate agrees with the status rail about running (spec 014, fou
   });
 
   it('a plant that is paused says paused even when the program reads running', () => {
-    const unregister = registerPlantTransport(plant('paused'));
+    unregister = registerPlantTransport(plant('paused'));
     open('running');
     expect(dom.screen.getByText(paused())).toBeTruthy();
-    unregister();
   });
 });

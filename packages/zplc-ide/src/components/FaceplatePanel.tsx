@@ -15,7 +15,9 @@ import type { WatchVariable } from '../runtime/debugAdapter';
 import { faceplateUnavailable, latestWins, settleInputs } from '../runtime/faceplateState';
 import { listIoMap } from '../runtime/ioMap';
 import { useIDEStore } from '../store/useIDEStore';
+import { useRegisteredPlantTransport } from '../store/useTransport';
 import { announce } from '../utils/announce';
+import { faceplateVmState } from './faceplateVmState';
 import { Faceplate, type FaceplateInputRow, type FaceplateOutputRow, type InputPhase } from './Faceplate';
 
 /** The types a force carries: the Watch table's own (up to 32 bits). */
@@ -39,7 +41,8 @@ export function FaceplatePanel({
   const adapter = controller?.adapter ?? null;
   const connected = Boolean(adapter?.connected);
   const simulated = adapter !== null && adapter.type !== 'serial';
-  const vmState = controller?.vmState ?? 'disconnected';
+  const plant = useRegisteredPlantTransport();
+  const vmState = faceplateVmState(controller?.vmState ?? 'disconnected', plant?.state);
   const supported = controller?.debugCapabilities?.features['simulation-inputs']?.status === 'supported';
   const { setDeclaredInput, readDeclaredInputs } = useDeclaredInputs(adapter);
   const [values, setValues] = useState<ReadonlyMap<string, boolean | number>>(new Map());
