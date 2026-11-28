@@ -24,18 +24,18 @@
       "key": "edit",
       "title": "Edit",
       "body": "Write the program, save it, then press {{ui:learn.check}}. The starting project controls only machine A, so machine B never gets a blank into its chamber, no base is made and Green never lights. Give machine B the same control without writing it a second time, and light Green when both machines have finished four cycles.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press {{ui:toolbar.run.label}} (F5) and open the {{ui:plant.panel.view3d}}.",
       "checkpoint": "The required scenario is named balanced-production-line and contains {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Watch both machines in the 3D view and read produced: and misfires: in the facts text.",
+      "body": "Watch both machines in the {{ui:plant.panel.view3d}} and read produced: and misfires: in the facts text.",
       "checkpoint": "Machine A makes a lid and machine B a base on each cycle, and misfires stays at zero."
     },
     {

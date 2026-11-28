@@ -24,18 +24,18 @@
       "key": "edit",
       "title": "Editar",
       "body": "Escriba el comportamiento que falta, guárdelo y pulse {{ui:learn.check}}. El proyecto inicial almacena cajas, pero una petición nunca se atiende: la caja se queda en su celda, ninguna caja llega al contenedor de salida y Green nunca se enciende. Cuando una petición espera por una celda con caja, el transelevador debe traer esa caja y ponerla en la cinta de salida.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse {{ui:toolbar.run.label}} (F5) y abra la {{ui:plant.panel.view3d}}.",
       "checkpoint": "El escenario requerido se llama stacker-crane-warehouse y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe la horquilla en la vista 3D y lea stored: y blocked: en el texto de hechos; blocked se mantiene en cero.",
+      "body": "Observe la horquilla en la {{ui:plant.panel.view3d}} y lea stored: y blocked: en el texto de hechos; blocked se mantiene en cero.",
       "checkpoint": "stored cuenta las cajas en reposo en la estantería, y blocked se mantiene en cero porque el transelevador nunca se mueve con la horquilla extendida."
     },
     {

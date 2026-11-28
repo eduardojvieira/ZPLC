@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Editar",
       "body": "Escriba el programa, guárdelo y pulse {{ui:learn.check}}. El proyecto inicial no acciona ninguna salida, así que ninguna cinta se mueve y no se clasifica ninguna pieza. Tras Start las dos cintas deben funcionar y cada pieza debe terminar en el contenedor de su código.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

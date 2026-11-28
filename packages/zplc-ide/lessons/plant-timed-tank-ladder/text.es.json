@@ -29,7 +29,7 @@
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta src/TimedTank.ld.json contra el tanque de la escena timed-tank, pulsa Start, opera la parada de emergencia y pulsa Start otra vez, y prueba {{assertions}} aserciones: las salidas en tiempos fijos, y que el tanque nunca se derrame.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta src/TimedTank.ld.json contra el tanque de la escena timed-tank, pulsa Start, opera la parada de emergencia y pulsa Start otra vez, y prueba {{assertions}} aserciones: las salidas en tiempos fijos, y que el tanque nunca se derrame.",
       "checkpoint": "El escenario se llama timed-tank y contiene {{assertions}} aserciones y las pasa todas."
     },
     {

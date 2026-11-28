@@ -24,18 +24,18 @@
       "key": "edit",
       "title": "Editar",
       "body": "Corrija esta omisión del proyecto inicial, guárdelo y pulse {{ui:learn.check}}: El proyecto inicial no gobierna ninguna salida, así que ninguna cinta se mueve y no se pesa ninguna caja; ponga en marcha las cintas tras Start, retenga cada caja en la báscula y envíela al contenedor que indique su peso.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse {{ui:toolbar.run.label}} (F5) y abra la {{ui:plant.panel.view3d}}.",
       "checkpoint": "El escenario requerido se llama weight-sorting y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe la vista 3D y la lectura de Weight: pasa de 0 a 2 o 5 kg cuando la caja se asienta. Siga hacia dónde va cada caja a continuación.",
+      "body": "Observe la {{ui:plant.panel.view3d}} y la lectura de Weight: pasa de 0 a 2 o 5 kg cuando la caja se asienta. Siga hacia dónde va cada caja a continuación.",
       "checkpoint": "Cada caja termina en un contenedor y ninguna cae fuera de la línea."
     },
     {

@@ -29,7 +29,7 @@
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC translates the diagram, runs it against the tank of scene tank-level-control, raises the set point, opens the drain and lowers the set point, and tests {{assertions}} assertions: the level in the band in two windows, out of it at the end, and no spill.",
+      "body": "Press {{ui:learn.check}}. ZPLC translates the diagram, runs it against the tank of scene tank-level-control, raises the set point, opens the drain and lowers the set point, and tests {{assertions}} assertions: the level in the band in two windows, out of it at the end, and no spill.",
       "checkpoint": "The scenario is named tank-pid-fbd and contains {{assertions}} assertions and passes them all."
     },
     {

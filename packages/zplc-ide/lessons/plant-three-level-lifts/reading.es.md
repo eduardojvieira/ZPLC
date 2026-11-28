@@ -103,7 +103,7 @@ Esta máquina tiene un montacargas. La línea de la práctica tiene dos elevador
 - Mover un elevador mientras su cinta está en marcha. {{ui:learn.check}} no lo ve: en una ejecución de prueba que mantuvo en marcha la cinta del elevador A mientras subía, {{ui:learn.check}} aprobó igualmente. Obsérvelo usted mismo en la {{ui:plant.panel.view3d}}.
 
 > [!NOTE]
-> La calificación prueba que una caja llegó al depósito y que Green está encendida al final. No ve el orden de los pasos de cada elevador, así que un diagrama puede aprobar y seguir mal de una manera que solo muestra la vista 3D.
+> La calificación prueba que una caja llegó al depósito y que Green está encendida al final. No ve el orden de los pasos de cada elevador, así que un diagrama puede aprobar y seguir mal de una manera que solo muestra la {{ui:plant.panel.view3d}}.
 
 ## Compruébelo usted
 

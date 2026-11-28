@@ -131,7 +131,7 @@ Esta empacadora tiene solo dos ejes, coloca tres latas en línea por capa y no t
 ## Errores comunes
 
 - Probar igualdad exacta `XPos = XCmd`. Aquí pasa, porque el eje simulado se detiene exactamente en su orden, pero un accionamiento real queda a una o dos cuentas y el paso espera para siempre.
-- Desplazarse en X o Z por debajo de la altura segura. La caja transportada golpea la primera capa y derriba cajas, y Check falla por una caja caída.
+- Desplazarse en X o Z por debajo de la altura segura. La caja transportada golpea la primera capa y derriba cajas, y {{ui:learn.check}} falla por una caja caída.
 - Apagar `Grip` antes de que el pórtico llegue a la altura de descarga. La caja cae desde arriba y cuenta como pieza caída.
 
 > [!NOTE]

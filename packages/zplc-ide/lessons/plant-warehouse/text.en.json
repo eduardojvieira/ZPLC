@@ -24,18 +24,18 @@
       "key": "edit",
       "title": "Edit",
       "body": "Write the missing behaviour, save it, then press {{ui:learn.check}}. The starting project stores boxes, but a request is never served: the box stays in its cell, no box reaches the outfeed bin and Green never lights. When a request waits for a cell that holds a box, the crane must fetch that box and put it on the outfeed belt.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press {{ui:toolbar.run.label}} (F5) and open the {{ui:plant.panel.view3d}}.",
       "checkpoint": "The required scenario is named stacker-crane-warehouse and contains {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Watch the fork in the 3D view and read stored: and blocked: in the facts text; blocked stays at zero.",
+      "body": "Watch the fork in the {{ui:plant.panel.view3d}} and read stored: and blocked: in the facts text; blocked stays at zero.",
       "checkpoint": "stored counts the boxes at rest in the rack, and blocked stays at zero because the crane never moves with the fork out."
     },
     {

@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Edit",
       "body": "Make lift B carry the boxes on from the transfer belt to level 3 while lift A keeps working, save it, then press {{ui:learn.check}}. The starting program runs only lift A, so the boxes pile up on the transfer belt and none reaches the bin.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",

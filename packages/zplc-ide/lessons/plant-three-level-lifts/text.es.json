@@ -24,7 +24,7 @@
       "key": "edit",
       "title": "Editar",
       "body": "Haga que el elevador B lleve las cajas desde la cinta de transferencia hasta el nivel 3 mientras el elevador A sigue trabajando, guárdelo y pulse {{ui:learn.check}}. El proyecto inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la cinta de transferencia y ninguna llega al depósito.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",

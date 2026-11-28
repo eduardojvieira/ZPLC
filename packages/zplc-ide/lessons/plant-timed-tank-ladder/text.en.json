@@ -29,7 +29,7 @@
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs src/TimedTank.ld.json against the tank of scene timed-tank, presses Start, operates the emergency stop and presses Start again, and tests {{assertions}} assertions: the outputs at fixed times, and that the tank never spills.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs src/TimedTank.ld.json against the tank of scene timed-tank, presses Start, operates the emergency stop and presses Start again, and tests {{assertions}} assertions: the outputs at fixed times, and that the tank never spills.",
       "checkpoint": "The scenario is named timed-tank and contains {{assertions}} assertions and passes them all."
     },
     {

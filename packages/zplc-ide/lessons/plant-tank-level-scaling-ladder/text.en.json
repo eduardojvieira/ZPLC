@@ -29,7 +29,7 @@
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs src/TankLevel.ld.json against the tank of scene tank-level-control, raises the set point and opens the drain, and tests {{assertions}} assertions on the tank: it stays in its band in two windows and it never spills.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs src/TankLevel.ld.json against the tank of scene tank-level-control, raises the set point and opens the drain, and tests {{assertions}} assertions on the tank: it stays in its band in two windows and it never spills.",
       "checkpoint": "The scenario is named tank-level-scaling and contains {{assertions}} assertions and passes them all."
     },
     {

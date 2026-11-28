@@ -131,7 +131,7 @@ This packer has only two axes, places three cans in a line per layer, and has no
 ## Common mistakes
 
 - Testing exact equality `XPos = XCmd`. It passes in this simulation, where the axis stops exactly on its command, but a real drive settles a count or two away and the step waits forever.
-- Travelling in X or Z below the safe height. The carried box hits the first layer and knocks boxes off, and Check fails on a dropped box.
+- Travelling in X or Z below the safe height. The carried box hits the first layer and knocks boxes off, and {{ui:learn.check}} fails on a dropped box.
 - Turning `Grip` off before the gantry arrives at the drop height. The box falls from above and counts as a dropped item.
 
 > [!NOTE]

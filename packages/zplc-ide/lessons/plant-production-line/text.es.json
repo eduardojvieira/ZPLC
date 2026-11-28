@@ -24,18 +24,18 @@
       "key": "edit",
       "title": "Editar",
       "body": "Escriba el programa, guárdelo y pulse {{ui:learn.check}}. El proyecto inicial controla solo la máquina A, así que la máquina B nunca recibe una pieza en su cámara, no se hace ninguna base y Green nunca se enciende. Dé a la máquina B el mismo control sin escribirlo una segunda vez, y encienda Green cuando ambas máquinas hayan terminado cuatro ciclos.",
-      "checkpoint": "Comprobar da el escenario de esta lección como aprobado."
+      "checkpoint": "{{ui:learn.check}} da el escenario de esta lección como aprobado."
     },
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse Ejecutar (F5) y abra la vista 3D.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta su programa guardado con el escenario de esta lección, con la planta respondiendo a sus salidas, y enumera cada aserción que falló. Para ver moverse la planta, pulse {{ui:toolbar.run.label}} (F5) y abra la {{ui:plant.panel.view3d}}.",
       "checkpoint": "El escenario requerido se llama balanced-production-line y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe ambas máquinas en la vista 3D y lea produced: y misfires: en el texto de hechos.",
+      "body": "Observe ambas máquinas en la {{ui:plant.panel.view3d}} y lea produced: y misfires: en el texto de hechos.",
       "checkpoint": "La máquina A hace una tapa y la máquina B una base en cada ciclo, y misfires se mantiene en cero."
     },
     {

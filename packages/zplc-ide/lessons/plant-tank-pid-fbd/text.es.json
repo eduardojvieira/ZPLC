@@ -29,7 +29,7 @@
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC traduce el diagrama, lo ejecuta con el tanque de la escena tank-level-control, sube la consigna, abre el vaciado y baja la consigna, y comprueba {{assertions}} aserciones: el nivel dentro de la banda en dos ventanas, fuera de ella al final y sin derrame.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC traduce el diagrama, lo ejecuta con el tanque de la escena tank-level-control, sube la consigna, abre el vaciado y baja la consigna, y comprueba {{assertions}} aserciones: el nivel dentro de la banda en dos ventanas, fuera de ella al final y sin derrame.",
       "checkpoint": "El escenario se llama tank-pid-fbd y contiene {{assertions}} aserciones y las pasa todas."
     },
     {

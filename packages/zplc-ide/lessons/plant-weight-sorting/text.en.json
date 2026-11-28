@@ -21,18 +21,18 @@
       "key": "edit",
       "title": "Edit",
       "body": "Correct this starter omission, save it, then press {{ui:learn.check}}: The starter drives no output, so no belt moves and no box is weighed; run the belts after Start, hold each box on the scale and send it to the bin its weight selects.",
-      "checkpoint": "Check reports the scenario of this lesson as passed."
+      "checkpoint": "{{ui:learn.check}} reports the scenario of this lesson as passed."
     },
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press Run (F5) and open the 3D view.",
+      "body": "Press {{ui:learn.check}}. ZPLC runs your saved program against the scenario of this lesson, with the plant answering your outputs, and lists every assertion that failed. To watch the plant move, press {{ui:toolbar.run.label}} (F5) and open the {{ui:plant.panel.view3d}}.",
       "checkpoint": "The required scenario is named weight-sorting and contains {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Watch the 3D view and the Weight reading: it jumps from 0 to 2 or 5 kg when the box settles. Follow where each box goes next.",
+      "body": "Watch the {{ui:plant.panel.view3d}} and the Weight reading: it jumps from 0 to 2 or 5 kg when the box settles. Follow where each box goes next.",
       "checkpoint": "Every box ends in one bin and none falls off the line."
     },
     {

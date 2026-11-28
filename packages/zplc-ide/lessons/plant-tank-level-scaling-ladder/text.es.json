@@ -29,7 +29,7 @@
     {
       "key": "run",
       "title": "Ejecutar",
-      "body": "Pulse Comprobar. ZPLC ejecuta src/TankLevel.ld.json contra el tanque de la escena tank-level-control, sube la consigna y abre el vaciado, y prueba {{assertions}} aserciones sobre el tanque: se mantiene en su banda en dos ventanas y nunca se derrama.",
+      "body": "Pulse {{ui:learn.check}}. ZPLC ejecuta src/TankLevel.ld.json contra el tanque de la escena tank-level-control, sube la consigna y abre el vaciado, y prueba {{assertions}} aserciones sobre el tanque: se mantiene en su banda en dos ventanas y nunca se derrama.",
       "checkpoint": "El escenario se llama tank-level-scaling y contiene {{assertions}} aserciones y las pasa todas."
     },
     {

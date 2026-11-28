@@ -103,7 +103,7 @@ This machine has one hoist. The line of the practice has two lifts that work at 
 - Moving a lift while its belt runs. {{ui:learn.check}} cannot see it: in a test run that kept lift A's belt running while it rose, {{ui:learn.check}} still passed. Watch it yourself in the {{ui:plant.panel.view3d}}.
 
 > [!NOTE]
-> The grade proves that a box reached the bin and that Green is lit at the end. It does not see the order of the steps of each lift, so a chart can pass and still be wrong in a way only the 3D view shows.
+> The grade proves that a box reached the bin and that Green is lit at the end. It does not see the order of the steps of each lift, so a chart can pass and still be wrong in a way only the {{ui:plant.panel.view3d}} shows.
 
 ## Check yourself
 
